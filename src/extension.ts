@@ -65,13 +65,36 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 	)
 
+	// Check if we're in debug mode
+	const isDebugMode =
+		process.env.VSCODE_DEBUG_MODE === "true" || !!process.execArgv.find((arg) => arg.startsWith("--inspect"))
+
+	// Reset firstInstallCompleted flag if in debug mode to ensure walkthrough shows
+	if (isDebugMode) {
+		outputChannel.appendLine("Debug mode detected, resetting installation state")
+		await context.globalState.update("firstInstallCompleted", undefined)
+	}
+
 	if (!context.globalState.get("firstInstallCompleted")) {
 		outputChannel.appendLine("First installation detected, opening Kilo Code sidebar!")
 		try {
+			// Open the sidebar
 			await vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
-			context.globalState.update("firstInstallCompleted", true)
+
+			// Show the walkthrough
+			outputChannel.appendLine("Opening Kilo Code walkthrough")
+			await vscode.commands.executeCommand(
+				"workbench.action.openWalkthrough",
+				"kilocode.kilo-code#kiloCodeWalkthrough",
+				false,
+			)
+
+			// Update the flag only if not in debug mode
+			if (!isDebugMode) {
+				context.globalState.update("firstInstallCompleted", true)
+			}
 		} catch (error) {
-			outputChannel.appendLine(`Error opening sidebar: ${error.message}`)
+			outputChannel.appendLine(`Error during first-time setup: ${error.message}`)
 		}
 	}
 
