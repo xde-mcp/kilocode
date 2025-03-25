@@ -87,7 +87,7 @@
 					},
 					{
 						"id": "code-actions",
-						"title": "Plan your logic before jumping into code.",
+						"title": "Plan your logic before jumping into code",
 						"description": "Kilo Code can be as your software architect, guiding you through a clear structure.",
 						"media": {
 							"markdown": "walkthrough/step4.md"
@@ -96,7 +96,7 @@
 					{
 						"id": "advanced-features",
 						"title": "...and much more",
-						"description": "Eto enhance your development experience.",
+						"description": "Here's a bunch of other cool stuff you can do with Kilo code:",
 						"media": {
 							"markdown": "walkthrough/step5.md"
 						}
