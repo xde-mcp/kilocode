@@ -166,7 +166,7 @@ type ProviderSettings = {
 	includeMaxTokens?: boolean | undefined
 	fakeAi?: unknown | undefined
 	kilocodeToken?: string | undefined
-	kilocodeProvider?: string | undefined
+	kilocodeModel?: ("claude37" | "gemini25") | undefined
 	fireworksModelId?: string | undefined
 	fireworksApiKey?: string | undefined
 }

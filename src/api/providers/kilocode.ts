@@ -13,10 +13,10 @@ export class KiloCodeHandler extends BaseProvider implements SingleCompletionHan
 
 	constructor(options: ApiHandlerOptions) {
 		super()
-		const handlerType = options.kilocodeProvider || "anthropic"
-		if (handlerType === "anthropic") {
+		const modelType = options.kilocodeModel || "anthropic"
+		if (modelType === "claude37") {
 			this.handler = new KiloCodeAnthropicHandler(options)
-		} else if (handlerType === "openrouter") {
+		} else if (modelType === "gemini25") {
 			const openrouterOptions = {
 				...options,
 				openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
