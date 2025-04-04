@@ -269,7 +269,9 @@ export class ProviderSettingsManager {
 
 	private async load(): Promise<ProviderProfiles> {
 		try {
+			console.log("LJKLKFJHILISJDFKLSJEDFKLJ")
 			const content = await this.context.secrets.get(this.secretsKey)
+			console.log("logging content", content)
 			return content ? providerProfilesSchema.parse(JSON.parse(content)) : this.defaultProviderProfiles
 		} catch (error) {
 			throw new Error(`Failed to read provider profiles from secrets: ${error}`)

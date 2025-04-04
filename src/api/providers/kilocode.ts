@@ -5,7 +5,7 @@ import { anthropicDefaultModelId, anthropicModels, ApiHandlerOptions, ModelInfo 
 import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import { ANTHROPIC_DEFAULT_MAX_TOKENS } from "./constants"
-import { ApiHandler, SingleCompletionHandler, getModelParams } from "../index"
+import { SingleCompletionHandler, getModelParams } from "../index"
 import { OpenRouterHandler } from "./openrouter"
 
 export class KiloCodeHandler extends BaseProvider implements SingleCompletionHandler {
@@ -13,17 +13,23 @@ export class KiloCodeHandler extends BaseProvider implements SingleCompletionHan
 
 	constructor(options: ApiHandlerOptions) {
 		super()
-		const modelType = options.kilocodeModel || "anthropic"
+		console.log("KiloCodeHandler constructor", options)
+		const modelType = options.kilocodeModel || "claude37"
+		console.log("selected model", modelType)
+
 		if (modelType === "claude37") {
 			this.handler = new KiloCodeAnthropicHandler(options)
+			console.log("KiloCodeAnthropicHandler")
 		} else if (modelType === "gemini25") {
 			const openrouterOptions = {
 				...options,
-				openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
+				// openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
+				openRouterBaseUrl: "http://localhost:3000/api/openrouter/",
 				openRouterApiKey: options.kilocodeToken,
 			}
 
 			this.handler = new OpenRouterHandler(openrouterOptions)
+			console.log("OpenRouterHandler", this.handler)
 		} else {
 			throw new Error("Invalid KiloCode provider")
 		}

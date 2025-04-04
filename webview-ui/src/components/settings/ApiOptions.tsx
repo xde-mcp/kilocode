@@ -325,20 +325,21 @@ const ApiOptions = ({
 					<div>
 						<label className="block font-medium mb-1">Provider Type</label>
 						<Select
-							value={apiConfiguration?.kilocodeModel || "claude"}
+							value={apiConfiguration?.kilocodeModel || "claude37"}
 							onValueChange={(value) =>
-								setApiConfigurationField("kilocodeModel", value as "claude" | "gemini")
+								setApiConfigurationField("kilocodeModel", value as "claude37" | "gemini25")
 							}>
 							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Select provider" />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="claude">Claude 3.7 Sonnet</SelectItem>
-								<SelectItem value="gemini">Gemini 2.5 Pro</SelectItem>
+								<SelectItem value="claude37">Claude 3.7 Sonnet</SelectItem>
+								<SelectItem value="gemini25">Gemini 2.5 Pro</SelectItem>
+								<SelectItem value="gemini">Gemini</SelectItem>
 							</SelectContent>
 						</Select>
 						<div className="text-sm text-vscode-descriptionForeground mt-1">
-							{apiConfiguration?.kilocodeModel === "gemini"
+							{apiConfiguration?.kilocodeModel === "gemini25"
 								? "Gemini 2.5 Pro is Google's most capable model for reasoning, coding, and multimodal tasks."
 								: "Claude 3.7 Sonnet is Anthropic's most capable model for reasoning, coding, and multimodal tasks."}
 						</div>
