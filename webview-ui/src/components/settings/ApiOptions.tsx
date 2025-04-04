@@ -335,7 +335,6 @@ const ApiOptions = ({
 							<SelectContent>
 								<SelectItem value="claude37">Claude 3.7 Sonnet</SelectItem>
 								<SelectItem value="gemini25">Gemini 2.5 Pro</SelectItem>
-								<SelectItem value="gemini">Gemini</SelectItem>
 							</SelectContent>
 						</Select>
 						<div className="text-sm text-vscode-descriptionForeground mt-1">

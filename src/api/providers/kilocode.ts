@@ -23,8 +23,8 @@ export class KiloCodeHandler extends BaseProvider implements SingleCompletionHan
 		} else if (modelType === "gemini25") {
 			const openrouterOptions = {
 				...options,
-				// openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
-				openRouterBaseUrl: "http://localhost:3000/api/openrouter/",
+				openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
+				// openRouterBaseUrl: "http://localhost:3000/api/openrouter/",
 				openRouterApiKey: options.kilocodeToken,
 			}
 
@@ -61,6 +61,7 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 	private options: ApiHandlerOptions
 	private client: Anthropic
 	private baseURL: string = "https://kilocode.ai"
+	// private baseURL: string = "https://localhost:3000"
 
 	constructor(options: ApiHandlerOptions) {
 		super()
