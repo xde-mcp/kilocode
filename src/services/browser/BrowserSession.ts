@@ -538,4 +538,15 @@ export class BrowserSession {
 			})
 		})
 	}
+
+	async executeJs(code: string): Promise<BrowserActionResult> {
+		let evaluationResult: any = undefined
+		const result = await this.doAction(async (page) => {
+			evaluationResult = await page.evaluate(code)
+		})
+		return {
+			...result,
+			evaluationResult: evaluationResult,
+		}
+	}
 }
