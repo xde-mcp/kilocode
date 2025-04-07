@@ -24,11 +24,12 @@ Parameters:
     * scroll_down: Scroll down the page by one page height.
     * scroll_up: Scroll up the page by one page height.` +
 		// kilocode_change
-		`* execute_js: Execute JavaScript code in the browser context.
+		`
+    * execute_js: Execute JavaScript code in the browser context.
         - Use with the \`text\` parameter to provide the JavaScript code to execute.
         - Returns the result of the JavaScript evaluation directly in the response.
-        - Useful for extracting data from the page or modifying the page's content.` +
-		`* close: Close the Puppeteer-controlled browser instance. This **must always be the final browser action**.
+        - Useful for extracting data from the page or modifying the page's content.
+    * close: Close the Puppeteer-controlled browser instance. This **must always be the final browser action**.
         - Example: \`<action>close</action>\`
 - url: (optional) Use this for providing the URL for the \`launch\` action.
     * Example: <url>https://example.com</url>
