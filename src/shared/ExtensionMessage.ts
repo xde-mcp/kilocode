@@ -252,6 +252,7 @@ export interface ClineSayBrowserAction {
 	coordinate?: string
 	text?: string
 }
+
 export type BrowserActionResult = {
 	screenshot?: string
 	logs?: string
