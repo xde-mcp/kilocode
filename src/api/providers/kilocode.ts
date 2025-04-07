@@ -13,23 +13,18 @@ export class KiloCodeHandler extends BaseProvider implements SingleCompletionHan
 
 	constructor(options: ApiHandlerOptions) {
 		super()
-		console.log("KiloCodeHandler constructor", options)
 		const modelType = options.kilocodeModel || "claude37"
-		console.log("selected model", modelType)
 
 		if (modelType === "claude37") {
 			this.handler = new KiloCodeAnthropicHandler(options)
-			console.log("KiloCodeAnthropicHandler")
 		} else if (modelType === "gemini25") {
 			const openrouterOptions = {
 				...options,
 				openRouterBaseUrl: "https://kilocode.ai/api/openrouter/",
-				// openRouterBaseUrl: "http://localhost:3000/api/openrouter/",
 				openRouterApiKey: options.kilocodeToken,
 			}
 
 			this.handler = new OpenRouterHandler(openrouterOptions)
-			console.log("OpenRouterHandler", this.handler)
 		} else {
 			throw new Error("Invalid KiloCode provider")
 		}
