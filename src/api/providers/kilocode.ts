@@ -35,6 +35,21 @@ export class KiloCodeHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	getModel(): { id: string; info: ModelInfo } {
+		console.log("KiloCodeHandler getModel")
+		if (this.handler instanceof OpenRouterHandler) {
+			// return hardcoded gemini settings
+			return {
+				id: "google/gemini-2.5-pro-preview-03-25",
+				info: {
+					maxTokens: 8192,
+					contextWindow: 1_000_000,
+					supportsImages: true,
+					supportsComputerUse: true,
+					supportsPromptCache: true,
+				},
+			}
+		}
+
 		return this.handler.getModel()
 	}
 
