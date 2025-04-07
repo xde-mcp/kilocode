@@ -2420,7 +2420,6 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 
 	async upsertApiConfiguration(configName: string, apiConfiguration: ApiConfiguration) {
 		try {
-			console.log("\n\n\n>>>>>", configName)
 			await this.providerSettingsManager.saveConfig(configName, apiConfiguration)
 			const listApiConfig = await this.providerSettingsManager.listConfig()
 
