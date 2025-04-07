@@ -240,6 +240,7 @@ export const browserActions = [
 	"type",
 	"scroll_down",
 	"scroll_up",
+	// kilocode_change
 	"execute_js",
 	"close",
 ] as const
@@ -256,6 +257,7 @@ export type BrowserActionResult = {
 	logs?: string
 	currentUrl?: string
 	currentMousePosition?: string
+	// kilocode_change
 	evaluationResult?: any
 }
 

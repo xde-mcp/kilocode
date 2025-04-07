@@ -538,7 +538,7 @@ export class BrowserSession {
 			})
 		})
 	}
-
+	// kilocode_change
 	async executeJs(code: string): Promise<BrowserActionResult> {
 		let evaluationResult: any = undefined
 		const result = await this.doAction(async (page) => {

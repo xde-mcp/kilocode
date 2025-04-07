@@ -112,6 +112,7 @@ export async function browserActionTool(
 					case "scroll_up":
 						browserActionResult = await cline.browserSession.scrollUp()
 						break
+					// kilocode_change
 					case "execute_js":
 						browserActionResult = await cline.browserSession.executeJs(text!)
 						break
@@ -127,11 +128,13 @@ export async function browserActionTool(
 				case "type":
 				case "scroll_down":
 				case "scroll_up":
+				// kilocode_change
 				case "execute_js":
 					await cline.say("browser_action_result", JSON.stringify(browserActionResult))
 					pushToolResult(
 						formatResponse.toolResult(
 							`The browser action has been executed. The console logs and screenshot have been captured for your analysis.\n\n${
+								// kilocode_change
 								action === "execute_js" && browserActionResult?.evaluationResult !== undefined
 									? `JavaScript Evaluation Result:\n${
 											typeof browserActionResult.evaluationResult === "object"
