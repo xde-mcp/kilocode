@@ -327,7 +327,7 @@ const ApiOptions = ({
 						<Select
 							value={apiConfiguration?.kilocodeModel || "claude37"}
 							onValueChange={(value) =>
-								setApiConfigurationField("kilocodeModel", value as "claude37" | "gemini25")
+								setApiConfigurationField("kilocodeModel", value as "claude37" | "gemini25" | "quasar")
 							}>
 							<SelectTrigger className="w-full">
 								<SelectValue placeholder="Select provider" />
@@ -335,6 +335,7 @@ const ApiOptions = ({
 							<SelectContent>
 								<SelectItem value="claude37">Claude 3.7 Sonnet</SelectItem>
 								<SelectItem value="gemini25">Gemini 2.5 Pro</SelectItem>
+								<SelectItem value="quasar">Quasar Alpha</SelectItem>
 							</SelectContent>
 						</Select>
 						<div className="text-sm text-vscode-descriptionForeground mt-1">
