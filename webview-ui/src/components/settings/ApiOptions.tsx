@@ -304,9 +304,8 @@ const ApiOptions = ({
 			<div className="flex flex-col gap-1 relative">
 				<div className="flex justify-between items-center">
 					<label className="block font-medium mb-1">{t("settings:providers.apiProvider")}</label>
-					{getSelectedProviderDocUrl() && (
-						// kilocode_change do not display until we have our own docs
-						<div className="hidden ext-xs text-vscode-descriptionForeground">
+					{getSelectedProviderDocUrl() && (own docs
+						<div className="ext-xs text-vscode-descriptionForeground">
 							<VSCodeLink
 								href={getSelectedProviderDocUrl()!.url}
 								className="hover:text-vscode-foreground"
