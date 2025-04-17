@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.16.1
-
-### Patch Changes
+## [4.16.1]
 
 - Fix http referer header
 
