@@ -1,5 +1,11 @@
 # kilo-code
 
+## 4.16.2
+
+### Patch Changes
+
+- Include Roo Code v3.12.3 changes
+
 ## [4.16.1]
 
 - Fix http referer header
