@@ -265,7 +265,7 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 					text:
 						"## 😭 Credits depleted\n" +
 						"---\n" +
-						`### 💳 [Top-up now](${this.options.baseURL}/profile?highlight=top-up&source=${vscodeEnv.uriScheme})\n` +
+						`### 💳 [Top-up now](${this.options.baseURL}/payments/extension/topup?source=${vscodeEnv.uriScheme})\n` +
 						"#### 💫 To keep the magic going... 💫\n" +
 						"---\n" +
 						`### 👤 [Show Profile](${this.options.baseURL}/profile)\n`,
