@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.16.2
-
-### Patch Changes
+## [4.16.2]
 
 - Include Roo Code v3.12.3 changes
 
