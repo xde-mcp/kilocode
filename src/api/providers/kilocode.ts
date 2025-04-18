@@ -138,10 +138,10 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 									typeof message.content === "string"
 										? [{ type: "text", text: message.content, cache_control: cacheControl }]
 										: message.content.map((content, contentIndex) =>
-											contentIndex === message.content.length - 1
-												? { ...content, cache_control: cacheControl }
-												: content,
-										),
+												contentIndex === message.content.length - 1
+													? { ...content, cache_control: cacheControl }
+													: content,
+											),
 							}
 						}
 						return message
@@ -254,8 +254,8 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 						"---\n" +
 						`### 🔒 [Login Now](${this.options.baseURL}/profile?source=${vscodeEnv.uriScheme})\n` +
 						"---\n" +
-						"Please log in to Kilo Code.\n" +
-						"Kilo Code has a free tier with $20 worth of Claude 3.7 Sonnet tokens.\n" +
+						"#### Please log in to Kilo Code.\n" +
+						"Kilo Code has a free tier with $20 worth of Claude 3.7 Sonnet tokens.\n\n" +
 						"We'll give out more free tokens if you leave useful feedback.",
 				}
 			}
@@ -265,10 +265,9 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 					text:
 						"## 😭 Credits depleted\n" +
 						"---\n" +
-						`### 💳 [Top-up now](${this.options.baseURL}/payments/extension/topup?source=${vscodeEnv.uriScheme})\n` +
-						"#### 💫 To keep the magic going... 💫\n" +
+						`### 👤 [Top-up on your Profile](${this.options.baseURL}/profile)\n` +
 						"---\n" +
-						`### 👤 [Show Profile](${this.options.baseURL}/profile)\n`,
+						"💫 To keep the magic going... 💫\n",
 				}
 			} else {
 				yield {
@@ -277,8 +276,9 @@ export class KiloCodeAnthropicHandler extends BaseProvider implements SingleComp
 						`If you need any help please check [our homepage](${this.options.baseURL})\n\n` +
 						"Or contact us to ask for help:\n" +
 						" - [eMail](mailto:hi@kilocode.ai)\n\n" +
-						" - [Discord](https://discord.gg/4q3v6J7a)\n\n" +
-						" - [GitHub Discussions](https://github.com/kilocode/discussions)\n",
+						" - [Discord](https://kilocode.ai/discord)\n\n" +
+						" - [GitHub Discussions](https://github.com/Kilo-Org/kilocode/discussions)\n" +
+						" - [Report a bug](https://github.com/Kilo-Org/kilocode/issues)\n",
 				}
 			}
 
