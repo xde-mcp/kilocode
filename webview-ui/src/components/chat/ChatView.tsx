@@ -266,6 +266,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							setSecondaryButtonText(undefined)
 							setDidClickCancel(false)
 							break
+						// kilocode_change begin: pull in /smol from Cline
+						case "condense":
+							setTextAreaDisabled(isPartial)
+							setClineAsk("condense")
+							setEnableButtons(!isPartial)
+							setPrimaryButtonText("Condense Conversation")
+							setSecondaryButtonText(undefined)
+							break
+						// kilocode_end
 					}
 					break
 				case "say":
@@ -386,7 +395,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						case "mistake_limit_reached":
 							vscode.postMessage({ type: "askResponse", askResponse: "messageResponse", text, images })
 							break
-						// There is no other case that a textfield should be enabled.
+						case "condense":
+							vscode.postMessage({
+								type: "askResponse",
+								askResponse: "messageResponse",
+								text,
+								images,
+							})
+							break
+						// there is no other case that a textfield should be enabled
 					}
 				}
 				handleChatReset()
@@ -450,6 +467,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "resume_completed_task":
 					// extension waiting for feedback. but we can just present a new task button
 					startNewTask()
+					break
+				case "condense":
+					vscode.postMessage({
+						type: "condense",
+						text: lastMessage?.text,
+					})
 					break
 			}
 			setTextAreaDisabled(true)

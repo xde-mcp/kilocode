@@ -1232,6 +1232,26 @@ export const ChatRowContent = ({
 							/>
 						</>
 					)
+				// kilocode_change begin: pull in /smol from Cline
+				case "condense":
+					return (
+						<>
+							<div style={headerStyle}>
+								<span
+									className="codicon codicon-new-file"
+									style={{
+										color: normalColor,
+										marginBottom: "-1.5px",
+									}}></span>
+								<span style={{ color: normalColor, fontWeight: "bold" }}>
+									Cline wants to condense your conversation:
+								</span>
+							</div>
+							<div>HALLO {message.text}</div>
+							{/* <NewTaskPreview context={message.text || ""} /> */}
+						</>
+					)
+				// kilocode_change_end
 				// kilocode_change begin
 				case "payment_required_prompt": {
 					return <LowCreditWarning message={message} />

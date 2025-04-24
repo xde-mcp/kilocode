@@ -816,6 +816,7 @@ export const toolNames = [
 	"switch_mode",
 	"new_task",
 	"fetch_instructions",
+	"condense", // kilocode_change: pull in /smol from Cline
 ] as const
 
 export const toolNamesSchema = z.enum(toolNames)

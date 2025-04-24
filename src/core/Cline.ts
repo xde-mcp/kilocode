@@ -86,7 +86,7 @@ import { parseMentions } from "./mentions"
 import { FileContextTracker } from "./context-tracking/FileContextTracker"
 import { RooIgnoreController } from "./ignore/RooIgnoreController"
 import { type AssistantMessageContent, parseAssistantMessage } from "./assistant-message"
-import { truncateConversationIfNeeded } from "./sliding-window"
+import { truncateConversationIfNeeded, truncateConversation } from "./sliding-window"
 import { ClineProvider } from "./webview/ClineProvider"
 import { validateToolUse } from "./mode-validator"
 import { MultiSearchReplaceDiffStrategy } from "./diff/strategies/multi-search-replace"
@@ -1277,6 +1277,10 @@ export class Cline extends EventEmitter<ClineEvents> {
 							const modeName = getModeBySlug(mode, customModes)?.name ?? mode
 							return `[${block.name} in ${modeName} mode: '${message}']`
 						}
+						// kilocode_change begin: pull in /smol from Cline
+						case "condense":
+							return `[${block.name}]`
+						// kilocode_change end
 					}
 				}
 
@@ -1521,6 +1525,63 @@ export class Cline extends EventEmitter<ClineEvents> {
 							askFinishSubTaskApproval,
 						)
 						break
+					// kilocode_begin: pull in /smol from Cline
+					case "condense": {
+						const context: string | undefined = block.params.context
+						try {
+							if (block.partial) {
+								await this.ask("condense", removeClosingTag("context", context), block.partial).catch(
+									() => {},
+								)
+								break
+							} else {
+								if (!context) {
+									this.consecutiveMistakeCount++
+									pushToolResult(await this.sayAndCreateMissingParamError("condense", "context"))
+									break
+								}
+								this.consecutiveMistakeCount = 0
+
+								const { text, images } = await this.ask("condense", context, false)
+
+								// If the user provided a response, treat it as feedback
+								if (text || images?.length) {
+									await this.say("user_feedback", text ?? "", images)
+									pushToolResult(
+										formatResponse.toolResult(
+											`The user provided feedback on the condensed conversation summary:\n<feedback>\n${text}\n</feedback>`,
+											images,
+										),
+									)
+								} else {
+									// If no response, the user accepted the condensed version
+									pushToolResult(formatResponse.toolResult(formatResponse.condense()))
+
+									const lastMessage =
+										this.apiConversationHistory[this.apiConversationHistory.length - 1]
+									const summaryAlreadyAppended = lastMessage && lastMessage.role === "assistant"
+									const keepStrategy = summaryAlreadyAppended ? "lastTwo" : "none"
+
+									// clear the context history at this point in time
+									this.conversationHistoryDeletedRange = this.contextManager.getNextTruncationRange(
+										this.apiConversationHistory,
+										this.conversationHistoryDeletedRange,
+										keepStrategy,
+									)
+									await this.saveClineMessagesAndUpdateHistory()
+									await this.contextManager.triggerApplyStandardContextTruncationNoticeChange(
+										Date.now(),
+										await ensureTaskDirectoryExists(this.getContext(), this.taskId),
+									)
+								}
+								break
+							}
+						} catch (error) {
+							await handleError("condensing context window", error)
+							break
+						}
+					}
+					// kilocode_end
 				}
 
 				break

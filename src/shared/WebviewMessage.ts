@@ -30,6 +30,7 @@ export interface WebviewMessage {
 		| "alwaysAllowExecute"
 		| "webviewDidLaunch"
 		| "newTask"
+		| "condense" // kilocode_change: pull in /smol from Cline
 		| "askResponse"
 		| "clearTask"
 		| "didShowAnnouncement"

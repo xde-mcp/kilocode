@@ -181,6 +181,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	new_task: "create new task",
 	insert_content: "insert content",
 	search_and_replace: "search and replace",
+	condense: "condense",
 } as const
 
 export type { ToolGroup }

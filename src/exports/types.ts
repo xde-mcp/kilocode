@@ -322,6 +322,7 @@ type ClineMessage = {
 				| "use_mcp_server"
 				| "finishTask"
 				| "payment_required_prompt"
+				| "condense"
 		  )
 		| undefined
 	say?:
@@ -408,6 +409,7 @@ type RooCodeEvents = {
 							| "use_mcp_server"
 							| "finishTask"
 							| "payment_required_prompt"
+							| "condense"
 					  )
 					| undefined
 				say?:
