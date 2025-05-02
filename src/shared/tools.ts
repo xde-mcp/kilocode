@@ -215,6 +215,7 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"attempt_completion",
 	"switch_mode",
 	"new_task",
+	"condense",
 ] as const
 
 export type DiffResult =

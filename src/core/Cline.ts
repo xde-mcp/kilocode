@@ -18,6 +18,7 @@ import { ApiHandler, buildApiHandler } from "../api"
 import { ApiStream } from "../api/transform/stream"
 
 import { t } from "../i18n" // kilocode_change
+import { getNextTruncationRange } from "./context/context-management/ContextTruncationUtils"
 
 // shared
 import { ApiConfiguration } from "../shared/api"
@@ -86,7 +87,7 @@ import { parseMentions } from "./mentions"
 import { FileContextTracker } from "./context-tracking/FileContextTracker"
 import { RooIgnoreController } from "./ignore/RooIgnoreController"
 import { type AssistantMessageContent, parseAssistantMessage } from "./assistant-message"
-import { truncateConversationIfNeeded, truncateConversation } from "./sliding-window"
+import { truncateConversationIfNeeded } from "./sliding-window"
 import { ClineProvider } from "./webview/ClineProvider"
 import { validateToolUse } from "./mode-validator"
 import { MultiSearchReplaceDiffStrategy } from "./diff/strategies/multi-search-replace"
@@ -134,6 +135,9 @@ export type ClineOptions = {
 export class Cline extends EventEmitter<ClineEvents> {
 	readonly taskId: string
 	readonly instanceId: string
+
+	// Context management
+	conversationHistoryDeletedRange: [number, number] | undefined
 
 	readonly rootTask: Cline | undefined = undefined
 	readonly parentTask: Cline | undefined = undefined
@@ -220,6 +224,7 @@ export class Cline extends EventEmitter<ClineEvents> {
 		onCreated,
 	}: ClineOptions) {
 		super()
+		this.conversationHistoryDeletedRange = undefined
 
 		if (startTask && !task && !images && !historyItem) {
 			throw new Error("Either historyItem or task/images must be provided")
@@ -1527,19 +1532,21 @@ export class Cline extends EventEmitter<ClineEvents> {
 						break
 					// kilocode_begin: pull in /smol from Cline
 					case "condense": {
-						const context: string | undefined = block.params.context
+						// Check if context parameter exists in block.params
+						if (!("context" in block.params)) {
+							this.consecutiveMistakeCount++
+							pushToolResult(await this.sayAndCreateMissingParamError("condense", "context"))
+							break
+						}
+
+						const context: string = block.params.context || ""
 						try {
 							if (block.partial) {
-								await this.ask("condense", removeClosingTag("context", context), block.partial).catch(
+								await this.ask("condense", removeClosingTag("message", context), block.partial).catch(
 									() => {},
 								)
 								break
 							} else {
-								if (!context) {
-									this.consecutiveMistakeCount++
-									pushToolResult(await this.sayAndCreateMissingParamError("condense", "context"))
-									break
-								}
 								this.consecutiveMistakeCount = 0
 
 								const { text, images } = await this.ask("condense", context, false)
@@ -1562,17 +1569,24 @@ export class Cline extends EventEmitter<ClineEvents> {
 									const summaryAlreadyAppended = lastMessage && lastMessage.role === "assistant"
 									const keepStrategy = summaryAlreadyAppended ? "lastTwo" : "none"
 
-									// clear the context history at this point in time
-									this.conversationHistoryDeletedRange = this.contextManager.getNextTruncationRange(
+									// clear the context history at this point in time using ContextManager
+									const truncRange = getNextTruncationRange(
 										this.apiConversationHistory,
 										this.conversationHistoryDeletedRange,
 										keepStrategy,
 									)
-									await this.saveClineMessagesAndUpdateHistory()
-									await this.contextManager.triggerApplyStandardContextTruncationNoticeChange(
-										Date.now(),
-										await ensureTaskDirectoryExists(this.getContext(), this.taskId),
-									)
+									this.conversationHistoryDeletedRange = truncRange
+									if (truncRange && truncRange[1] >= truncRange[0]) {
+										this.apiConversationHistory.splice(
+											truncRange[0],
+											truncRange[1] - truncRange[0] + 1,
+										)
+									}
+
+									// await this.contextManager.triggerApplyStandardContextTruncationNoticeChange(
+									// 	Date.now(),
+									// 	await ensureTaskDirectoryExists(this.getContext(), this.taskId),
+									// )
 								}
 								break
 							}

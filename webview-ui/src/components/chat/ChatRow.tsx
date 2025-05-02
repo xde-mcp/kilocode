@@ -24,6 +24,7 @@ import McpToolRow from "../mcp/McpToolRow"
 import { Mention } from "./Mention"
 import { CheckpointSaved } from "./checkpoints/CheckpointSaved"
 import { FollowUpSuggest } from "./FollowUpSuggest"
+import NewTaskPreview from "./NewTaskPreview"
 import { LowCreditWarning } from "../kilocode/chat/LowCreditWarning" // kilocode_change
 
 interface ChatRowProps {
@@ -1244,11 +1245,10 @@ export const ChatRowContent = ({
 										marginBottom: "-1.5px",
 									}}></span>
 								<span style={{ color: normalColor, fontWeight: "bold" }}>
-									Cline wants to condense your conversation:
+									Kilo Code wants to condense your conversation:
 								</span>
 							</div>
-							<div>HALLO {message.text}</div>
-							{/* <NewTaskPreview context={message.text || ""} /> */}
+							<NewTaskPreview context={message.text || ""} />
 						</>
 					)
 				// kilocode_change_end
