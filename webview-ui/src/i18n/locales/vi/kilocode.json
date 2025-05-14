@@ -17,6 +17,9 @@
 	"settings": {
 		"sections": {
 			"mcp": "Máy chủ MCP"
+		},
+		"autoApprove": {
+			"maxApiRequestLimitDescription": "Kilo sẽ tự động thực hiện số lượng yêu cầu API này trước khi yêu cầu phê duyệt để tiếp tục nhiệm vụ."
 		}
 	}
 }

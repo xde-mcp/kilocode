@@ -1392,7 +1392,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			language,
 		} = (await this.providerRef.deref()?.getState()) ?? {}
 
-		const { customModes, allowedMaxRequests } = (await this.providerRef.deref()?.getState()) ?? {}
+		const { customModes } = (await this.providerRef.deref()?.getState()) ?? {}
 
 		const systemPrompt = await (async () => {
 			const provider = this.providerRef.deref()
@@ -1493,6 +1493,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		// kilocode_change start
 		// Check if we've reached the maximum number of auto-approved requests
 		// Increment the counter for each new API request
+		const { allowedMaxRequests } = (await this.providerRef.deref()?.getState()) ?? {}
 		const maxRequests = allowedMaxRequests || Infinity
 		this.consecutiveAutoApprovedRequestsCount++
 

@@ -41,7 +41,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setShowAutoApproveMenu: (value: boolean) => void // kilocode_change
 	setShowAnnouncement: (value: boolean) => void
 	setAllowedCommands: (value: string[]) => void
-	setAllowedMaxRequests: (value: number) => void
+	setAllowedMaxRequests: (value: number | undefined) => void
 	setSoundEnabled: (value: boolean) => void
 	setSoundVolume: (value: number) => void
 	terminalShellIntegrationTimeout?: number

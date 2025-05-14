@@ -199,6 +199,8 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 						/>
 					</div>
 
+					{/* kilocode_change start */}
+					{/* Auto-approve API request count limit input row inspired by Cline */}
 					<div
 						style={{
 							display: "flex",
@@ -208,12 +210,11 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 							marginBottom: "8px",
 							color: "var(--vscode-descriptionForeground)",
 						}}>
-						{/* kilocode_change start */}
 						<span style={{ flexShrink: 1, minWidth: 0 }}>Max Requests:</span>
 						<VSCodeTextField
 							value={
 								(allowedMaxRequests ?? Infinity) === Infinity
-									? "No limit"
+									? "Unlimited"
 									: allowedMaxRequests?.toString()
 							}
 							onInput={(e) => {
@@ -221,19 +222,9 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 								// Remove any non-numeric characters
 								input.value = input.value.replace(/[^0-9]/g, "")
 								const value = parseInt(input.value)
-								if (!isNaN(value) && value > 0) {
-									setAllowedMaxRequests(value)
-									vscode.postMessage({ type: "allowedMaxRequests", value })
-								}
-							}}
-							onKeyDown={(e) => {
-								// Prevent non-numeric keys (except for backspace, delete, arrows)
-								if (
-									!/^\d$/.test(e.key) &&
-									!["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(e.key)
-								) {
-									e.preventDefault()
-								}
+								const parsedValue = !isNaN(value) && value > 0 ? value : undefined
+								setAllowedMaxRequests(parsedValue)
+								vscode.postMessage({ type: "allowedMaxRequests", value: parsedValue })
 							}}
 							style={{ flex: 1 }}
 						/>
@@ -244,8 +235,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 							fontSize: "12px",
 							marginBottom: "10px",
 						}}>
-						Kilo will automatically make this many API requests before asking for approval to proceed with
-						the task.
+						<Trans i18nKey="kilocode:settings.autoApprove.maxApiRequestLimitDescription" />
 					</div>
 					{/* kilocode_change end */}
 

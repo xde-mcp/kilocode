@@ -17,6 +17,9 @@
 	"settings": {
 		"sections": {
 			"mcp": "MCP सर्वर"
+		},
+		"autoApprove": {
+			"maxApiRequestLimitDescription": "Kilo कार्य को जारी रखने के लिए अनुमोदन मांगने से पहले स्वचालित रूप से इतने API अनुरोध करेगा।"
 		}
 	}
 }

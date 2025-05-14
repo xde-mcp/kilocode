@@ -30,6 +30,7 @@ import { ProgressIndicator } from "./ProgressIndicator"
 import { Markdown } from "./Markdown"
 import { CommandExecution } from "./CommandExecution"
 import { CommandExecutionError } from "./CommandExecutionError"
+import { AutoApprovedRequestLimitWarning } from "./AutoApprovedRequestLimitWarning"
 
 interface ChatRowProps {
 	message: ClineMessage
@@ -974,36 +975,6 @@ export const ChatRowContent = ({
 			}
 		case "ask":
 			switch (message.ask) {
-				case "auto_approval_max_req_reached":
-					const parts = JSON.parse(message.text ?? "{}")
-					return (
-						<>
-							<div style={{ ...headerStyle, color: normalColor }}>
-								<span className="codicon codicon-warning" />
-								<span style={{ fontWeight: "bold" }}>{parts.title}</span>
-							</div>
-
-							<div
-								className="bg-vscode-panel-border flex flex-col gap-3"
-								style={{
-									borderRadius: "4px",
-									display: "flex",
-									marginTop: "15px",
-									padding: "14px 16px 22px",
-									justifyContent: "center",
-								}}>
-								<div className="flex justify-between items-center">{parts.description}</div>
-								<VSCodeButton
-									style={{ width: "100%", padding: "6px", borderRadius: "4px" }}
-									onClick={(e) => {
-										e.preventDefault()
-										vscode.postMessage({ type: "askResponse", askResponse: "retry_clicked" })
-									}}>
-									{parts.button}
-								</VSCodeButton>
-							</div>
-						</>
-					)
 				case "mistake_limit_reached":
 					return (
 						<>
@@ -1148,7 +1119,11 @@ export const ChatRowContent = ({
 				// kilocode_change begin
 				case "payment_required_prompt": {
 					return <LowCreditWarning message={message} />
-				} // kilocode_change end
+				}
+				case "auto_approval_max_req_reached": {
+					return <AutoApprovedRequestLimitWarning message={message} />
+				}
+				// kilocode_change end
 				default:
 					return null
 			}

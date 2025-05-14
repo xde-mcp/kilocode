@@ -17,6 +17,9 @@
 	"settings": {
 		"sections": {
 			"mcp": "MCP Sunucuları"
+		},
+		"autoApprove": {
+			"maxApiRequestLimitDescription": "Kilo, göreve devam etmek için onay istemeden önce otomatik olarak bu sayıda API isteği yapacaktır."
 		}
 	}
 }

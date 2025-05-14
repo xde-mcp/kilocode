@@ -17,6 +17,9 @@
 	"settings": {
 		"sections": {
 			"mcp": "MCPサーバー"
+		},
+		"autoApprove": {
+			"maxApiRequestLimitDescription": "Kiloはタスクを続行するための承認を求める前に、自動的にこの数のAPIリクエストを行います。"
 		}
 	}
 }

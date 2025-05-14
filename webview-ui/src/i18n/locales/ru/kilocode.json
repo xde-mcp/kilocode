@@ -17,6 +17,9 @@
 	"settings": {
 		"sections": {
 			"mcp": "MCP Серверы"
+		},
+		"autoApprove": {
+			"maxApiRequestLimitDescription": "Kilo автоматически выполнит это количество API-запросов, прежде чем запросить разрешение на продолжение задачи."
 		}
 	}
 }

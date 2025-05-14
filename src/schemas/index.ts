@@ -784,7 +784,7 @@ const globalSettingsRecord: GlobalSettingsRecord = {
 	alwaysAllowSubtasks: undefined,
 	alwaysAllowExecute: undefined,
 	allowedCommands: undefined,
-	allowedMaxRequests: undefined,
+	allowedMaxRequests: undefined, // kilocode_change
 
 	browserToolEnabled: undefined,
 	browserViewportSize: undefined,
