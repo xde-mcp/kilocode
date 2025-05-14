@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { Trans } from "react-i18next"
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeLink, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -25,6 +25,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		alwaysAllowModeSwitch,
 		alwaysAllowSubtasks,
 		alwaysApproveResubmit,
+		allowedMaxRequests,
 		setAlwaysAllowReadOnly,
 		setAlwaysAllowWrite,
 		setAlwaysAllowExecute,
@@ -33,6 +34,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		setAlwaysAllowModeSwitch,
 		setAlwaysAllowSubtasks,
 		setAlwaysApproveResubmit,
+		setAllowedMaxRequests,
 	} = useExtensionState()
 
 	const { t } = useAppTranslation()
@@ -196,6 +198,57 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 							}}
 						/>
 					</div>
+
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: "8px",
+							marginTop: "10px",
+							marginBottom: "8px",
+							color: "var(--vscode-descriptionForeground)",
+						}}>
+						{/* kilocode_change start */}
+						<span style={{ flexShrink: 1, minWidth: 0 }}>Max Requests:</span>
+						<VSCodeTextField
+							value={
+								(allowedMaxRequests ?? Infinity) === Infinity
+									? "No limit"
+									: allowedMaxRequests?.toString()
+							}
+							onInput={(e) => {
+								const input = e.target as HTMLInputElement
+								// Remove any non-numeric characters
+								input.value = input.value.replace(/[^0-9]/g, "")
+								const value = parseInt(input.value)
+								if (!isNaN(value) && value > 0) {
+									setAllowedMaxRequests(value)
+									vscode.postMessage({ type: "allowedMaxRequests", value })
+								}
+							}}
+							onKeyDown={(e) => {
+								// Prevent non-numeric keys (except for backspace, delete, arrows)
+								if (
+									!/^\d$/.test(e.key) &&
+									!["Backspace", "Delete", "ArrowLeft", "ArrowRight"].includes(e.key)
+								) {
+									e.preventDefault()
+								}
+							}}
+							style={{ flex: 1 }}
+						/>
+					</div>
+					<div
+						style={{
+							color: "var(--vscode-descriptionForeground)",
+							fontSize: "12px",
+							marginBottom: "10px",
+						}}>
+						Kilo will automatically make this many API requests before asking for approval to proceed with
+						the task.
+					</div>
+					{/* kilocode_change end */}
+
 					<AutoApproveToggle {...toggles} onToggle={onAutoApproveToggle} />
 				</div>
 			)}
