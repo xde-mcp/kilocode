@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "クレジット残高警告！",
 		"message": "無料クレジットでチャージするか、追加購入できるか確認してください！"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "自動承認リクエスト上限に到達しました",
+			"description": "Kilo Codeは自動承認されたAPIリクエストの上限{{count}}件に達しました。カウントをリセットしてタスクを続行しますか？",
+			"button": "リセットして続行"
+		}
 	}
 }

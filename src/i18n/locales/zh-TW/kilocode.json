@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "餘額不足警告！",
 		"message": "請檢查是否可以充值免費額度或購買更多額度！"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "已達到自動批准請求上限",
+			"description": "Kilo Code 已達到 {{count}} 個自動批准的 API 請求上限。您想重設計數並繼續執行任務嗎？",
+			"button": "重設並繼續"
+		}
 	}
 }

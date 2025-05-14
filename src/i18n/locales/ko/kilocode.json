@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "크레딧 부족 경고!",
 		"message": "무료 크레딧으로 충전하거나 추가 구매가 가능한지 확인하세요!"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "자동 승인된 요청 한도 도달",
+			"description": "Kilo Code가 자동 승인된 API 요청 한도인 {{count}}개에 도달했습니다. 횟수를 재설정하고 작업을 계속하시겠습니까?",
+			"button": "재설정하고 계속하기"
+		}
 	}
 }

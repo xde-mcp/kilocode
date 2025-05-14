@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "Cảnh Báo Tín Dụng Thấp!",
 		"message": "Kiểm tra xem bạn có thể nạp thêm tín dụng miễn phí hoặc mua thêm không!"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "Đã đạt đến giới hạn yêu cầu được tự động phê duyệt",
+			"description": "Kilo Code đã đạt đến giới hạn {{count}} yêu cầu API được tự động phê duyệt. Bạn có muốn đặt lại bộ đếm và tiếp tục tác vụ không?",
+			"button": "Đặt lại và Tiếp tục"
+		}
 	}
 }

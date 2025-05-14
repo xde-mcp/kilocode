@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "Ostrzeżenie o Niskim Kredycie!",
 		"message": "Sprawdź, czy możesz doładować darmowymi kredytami lub kupić więcej!"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "Osiągnięto Limit Automatycznie Zatwierdzonych Żądań",
+			"description": "Kilo Code osiągnął limit {{count}} automatycznie zatwierdzonych żądań API. Czy chcesz zresetować licznik i kontynuować zadanie?",
+			"button": "Zresetuj i Kontynuuj"
+		}
 	}
 }

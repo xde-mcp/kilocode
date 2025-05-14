@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "Low Credit Warning!",
 		"message": "Check to see if you can top up with free credits or purchase some more!"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "Auto-Approved Request Limit Reached",
+			"description": "Kilo Code has reached the auto-approved limit of {{count}} API requests. Would you like to reset the count and proceed with the task?",
+			"button": "Reset and Continue"
+		}
 	}
 }

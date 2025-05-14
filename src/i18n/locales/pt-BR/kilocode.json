@@ -5,5 +5,12 @@
 	"lowCreditWarning": {
 		"title": "Aviso de Crédito Baixo!",
 		"message": "Verifique se você pode recarregar com créditos gratuitos ou comprar mais!"
+	},
+	"ask": {
+		"autoApprovedRequestLimitReached": {
+			"title": "Limite de Solicitações Aprovadas Automaticamente Atingido",
+			"description": "O Kilo Code atingiu o limite de {{count}} solicitações de API aprovadas automaticamente. Gostaria de zerar a contagem e prosseguir com a tarefa?",
+			"button": "Zerar e Continuar"
+		}
 	}
 }
