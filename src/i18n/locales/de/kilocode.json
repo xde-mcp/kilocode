@@ -5,12 +5,5 @@
 	"lowCreditWarning": {
 		"title": "Warnung: Niedriges Guthaben!",
 		"message": "Prüfen Sie, ob Sie kostenloses Guthaben aufladen oder mehr kaufen können!"
-	},
-	"ask": {
-		"autoApprovedRequestLimitReached": {
-			"title": "Limit für automatisch genehmigte Anfragen erreicht",
-			"description": "Kilo Code hat das Limit von {{count}} automatisch genehmigten API-Anfragen erreicht. Möchten Sie den Zähler zurücksetzen und mit der Aufgabe fortfahren?",
-			"button": "Zurücksetzen und Fortfahren"
-		}
 	}
 }

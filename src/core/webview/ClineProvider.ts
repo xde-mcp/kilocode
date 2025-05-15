@@ -1228,7 +1228,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			alwaysAllowMcp,
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
-			allowedMaxRequests, // kilocode_change
+			allowedMaxRequests,
 			soundEnabled,
 			ttsEnabled,
 			ttsSpeed,

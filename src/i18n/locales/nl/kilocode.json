@@ -5,12 +5,5 @@
 	"lowCreditWarning": {
 		"title": "Waarschuwing: laag krediet!",
 		"message": "Controleer of je kunt opwaarderen met gratis credits of meer kunt kopen!"
-	},
-	"ask": {
-		"autoApprovedRequestLimitReached": {
-			"title": "Limiet voor automatisch goedgekeurde verzoeken bereikt",
-			"description": "Kilo Code heeft de limiet van {{count}} automatisch goedgekeurde API-verzoeken bereikt. Wilt u de teller resetten en doorgaan met de taak?",
-			"button": "Resetten en doorgaan"
-		}
 	}
 }

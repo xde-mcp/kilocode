@@ -5,12 +5,5 @@
 	"lowCreditWarning": {
 		"title": "Düşük Kredi Uyarısı!",
 		"message": "Ücretsiz kredilerle yükleme yapabilir veya daha fazla satın alabilir misiniz kontrol edin!"
-	},
-	"ask": {
-		"autoApprovedRequestLimitReached": {
-			"title": "Otomatik Onaylı İstek Sınırına Ulaşıldı",
-			"description": "Kilo Code, {{count}} otomatik onaylı API isteği sınırına ulaştı. Sayacı sıfırlayıp göreve devam etmek ister misiniz?",
-			"button": "Sıfırla ve Devam Et"
-		}
 	}
 }
