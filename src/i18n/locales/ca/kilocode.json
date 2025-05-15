@@ -5,12 +5,5 @@
 	"lowCreditWarning": {
 		"title": "Avís de Crèdit Baix!",
 		"message": "Comprova si pots recarregar amb crèdits gratuïts o comprar-ne més!"
-	},
-	"ask": {
-		"autoApprovedRequestLimitReached": {
-			"title": "Límit de Sol·licituds Aprovades Automàticament Assolit",
-			"description": "Kilo Code ha assolit el límit de {{count}} sol·licituds d'API aprovades automàticament. Vols restablir el comptador i continuar amb la tasca?",
-			"button": "Restablir i Continuar"
-		}
 	}
 }

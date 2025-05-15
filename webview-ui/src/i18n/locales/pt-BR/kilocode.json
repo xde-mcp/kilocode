@@ -17,9 +17,6 @@
 	"settings": {
 		"sections": {
 			"mcp": "Servidores MCP"
-		},
-		"autoApprove": {
-			"maxApiRequestLimitDescription": "O Kilo fará automaticamente esta quantidade de solicitações de API antes de pedir aprovação para continuar com a tarefa."
 		}
 	}
 }

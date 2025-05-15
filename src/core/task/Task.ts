@@ -1500,9 +1500,9 @@ export class Task extends EventEmitter<ClineEvents> {
 			const { response } = await this.ask(
 				"auto_approval_max_req_reached",
 				JSON.stringify({
-					title: t("kilocode:ask.autoApprovedRequestLimitReached.title"),
-					description: t("kilocode:ask.autoApprovedRequestLimitReached.description", { count: maxRequests }),
-					button: t("kilocode:ask.autoApprovedRequestLimitReached.button"),
+					title: t("common:ask.autoApprovedRequestLimitReached.title"),
+					description: t("common:ask.autoApprovedRequestLimitReached.description", { count: maxRequests }),
+					button: t("common:ask.autoApprovedRequestLimitReached.button"),
 				}),
 			)
 			// If we get past the promise, it means the user approved and did not start a new task

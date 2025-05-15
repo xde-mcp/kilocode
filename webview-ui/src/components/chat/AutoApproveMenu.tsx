@@ -234,7 +234,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 							fontSize: "12px",
 							marginBottom: "10px",
 						}}>
-						<Trans i18nKey="kilocode:settings.autoApprove.maxApiRequestLimitDescription" />
+						<Trans i18nKey="settings:autoApprove.apiRequestLimit.description" />
 					</div>
 
 					<AutoApproveToggle {...toggles} onToggle={onAutoApproveToggle} />
