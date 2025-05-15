@@ -142,7 +142,7 @@ export type ExtensionState = Pick<
 	| "alwaysAllowSubtasks"
 	| "alwaysAllowExecute"
 	| "allowedCommands"
-	| "allowedMaxRequests" // kilocode_change
+	| "allowedMaxRequests"
 	| "browserToolEnabled"
 	| "browserViewportSize"
 	| "showAutoApproveMenu" // kilocode_change

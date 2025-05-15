@@ -1120,10 +1120,10 @@ export const ChatRowContent = ({
 				case "payment_required_prompt": {
 					return <LowCreditWarning message={message} />
 				}
+				// kilocode_change end
 				case "auto_approval_max_req_reached": {
 					return <AutoApprovedRequestLimitWarning message={message} />
 				}
-				// kilocode_change end
 				default:
 					return null
 			}

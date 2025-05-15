@@ -166,9 +166,8 @@ export class Task extends EventEmitter<ClineEvents> {
 	consecutiveMistakeCount: number = 0
 	consecutiveMistakeLimit: number
 	consecutiveMistakeCountForApplyDiff: Map<string, number> = new Map()
+	private consecutiveAutoApprovedRequestsCount: number = 0
 	private toolUsage: ToolUsage = {}
-
-	consecutiveAutoApprovedRequestsCount: number = 0 // kilocode_change
 
 	// Checkpoints
 	enableCheckpoints: boolean
@@ -1490,11 +1489,11 @@ export class Task extends EventEmitter<ClineEvents> {
 			return { role, content }
 		})
 
-		// kilocode_change start
 		// Check if we've reached the maximum number of auto-approved requests
-		// Increment the counter for each new API request
 		const { allowedMaxRequests } = (await this.providerRef.deref()?.getState()) ?? {}
 		const maxRequests = allowedMaxRequests || Infinity
+
+		// Increment the counter for each new API request
 		this.consecutiveAutoApprovedRequestsCount++
 
 		if (this.consecutiveAutoApprovedRequestsCount > maxRequests) {
@@ -1506,12 +1505,11 @@ export class Task extends EventEmitter<ClineEvents> {
 					button: t("kilocode:ask.autoApprovedRequestLimitReached.button"),
 				}),
 			)
-			// If we get past the promise, it means the user approved resetting the count and did not start a new task
+			// If we get past the promise, it means the user approved and did not start a new task
 			if (response === "retry_clicked") {
 				this.consecutiveAutoApprovedRequestsCount = 0
 			}
 		}
-		// kilocode_change end
 
 		const stream = this.api.createMessage(systemPrompt, cleanConversationHistory, this.promptCacheKey)
 		const iterator = stream[Symbol.asyncIterator]()

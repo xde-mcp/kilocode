@@ -199,7 +199,6 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 						/>
 					</div>
 
-					{/* kilocode_change start */}
 					{/* Auto-approve API request count limit input row inspired by Cline */}
 					<div
 						style={{
@@ -237,7 +236,6 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 						}}>
 						<Trans i18nKey="kilocode:settings.autoApprove.maxApiRequestLimitDescription" />
 					</div>
-					{/* kilocode_change end */}
 
 					<AutoApproveToggle {...toggles} onToggle={onAutoApproveToggle} />
 				</div>

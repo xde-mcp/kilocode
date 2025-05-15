@@ -1299,7 +1299,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			alwaysAllowMcp: alwaysAllowMcp ?? true,
 			alwaysAllowModeSwitch: alwaysAllowModeSwitch ?? true,
 			alwaysAllowSubtasks: alwaysAllowSubtasks ?? true,
-			allowedMaxRequests: allowedMaxRequests ?? Infinity, // kilocode_change
+			allowedMaxRequests: allowedMaxRequests ?? Infinity,
 			uriScheme: vscode.env.uriScheme,
 			currentTaskItem: this.getCurrentCline()?.taskId
 				? (taskHistory || []).find((item: HistoryItem) => item.id === this.getCurrentCline()?.taskId)
@@ -1400,7 +1400,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			alwaysAllowMcp: stateValues.alwaysAllowMcp ?? true,
 			alwaysAllowModeSwitch: stateValues.alwaysAllowModeSwitch ?? true,
 			alwaysAllowSubtasks: stateValues.alwaysAllowSubtasks ?? true,
-			allowedMaxRequests: stateValues.allowedMaxRequests ?? Infinity, // kilocode_change
+			allowedMaxRequests: stateValues.allowedMaxRequests ?? Infinity,
 			taskHistory: stateValues.taskHistory,
 			allowedCommands: stateValues.allowedCommands,
 			soundEnabled: stateValues.soundEnabled ?? false,

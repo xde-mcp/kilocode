@@ -153,12 +153,10 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			await updateGlobalState("alwaysAllowModeSwitch", message.bool)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "allowedMaxRequests":
 			await updateGlobalState("allowedMaxRequests", message.value)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change end
 		case "alwaysAllowSubtasks":
 			await updateGlobalState("alwaysAllowSubtasks", message.bool)
 			await provider.postStateToWebview()

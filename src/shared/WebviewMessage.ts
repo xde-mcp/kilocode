@@ -62,7 +62,7 @@ export interface WebviewMessage {
 		| "alwaysAllowBrowser"
 		| "alwaysAllowMcp"
 		| "alwaysAllowModeSwitch"
-		| "allowedMaxRequests" // kilocode_change
+		| "allowedMaxRequests"
 		| "alwaysAllowSubtasks"
 		| "playSound"
 		| "playTts"
