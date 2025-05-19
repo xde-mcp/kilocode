@@ -1,6 +1,20 @@
 import fs from "fs/promises"
 import path from "path"
 
+// Use a dynamic require for vscode to avoid issues with Vite's static analysis
+// when this file is inadvertently pulled into the webview-ui build.
+// The 'vscode' module is only available in the extension host environment.
+let vscodeAPI: typeof import("vscode") | undefined
+try {
+	vscodeAPI = require("vscode")
+} catch (e) {
+	// In environments where 'vscode' is not available (like webview-ui build),
+	// vscodeAPI will remain undefined. Notifications will not be shown.
+	// This is acceptable as notifications are a progressive enhancement.
+}
+
+let hasShownNonKilocodeRulesMessage = false // kilocode_change
+
 import { LANGUAGES, isLanguage } from "../../../shared/language"
 import { Dirent } from "fs"
 
@@ -172,6 +186,13 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 	if (await directoryExists(rooRulesDir)) {
 		const files = await readTextFilesFromDirectory(rooRulesDir)
 		if (files.length > 0) {
+			if (vscodeAPI && !hasShownNonKilocodeRulesMessage) {
+				// kilocode_change: show message to move to .kilocode/rules/
+				vscodeAPI.window.showWarningMessage(
+					`Loading non-Kilocode rules from ${rooRulesDir}, consider moving to .kilocode/rules/`,
+				)
+				hasShownNonKilocodeRulesMessage = true
+			} // kilocode_change end
 			return formatDirectoryContent(rooRulesDir, files)
 		}
 	}
@@ -182,6 +203,13 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 	for (const file of ruleFiles) {
 		const content = await safeReadFile(path.join(cwd, file))
 		if (content) {
+			if (file !== ".kilocoderules" && vscodeAPI && !hasShownNonKilocodeRulesMessage) {
+				// kilocode_change: show message to move to .kilocode/rules/
+				vscodeAPI.window.showWarningMessage(
+					`Loading non-Kilocode rules from ${file}, consider moving to .kilocode/rules/`,
+				)
+				hasShownNonKilocodeRulesMessage = true
+			} // kilocode_change end
 			return `\n# Rules from ${file}:\n${content}\n`
 		}
 	}
