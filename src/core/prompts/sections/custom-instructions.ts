@@ -178,6 +178,7 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 			if (vscode && !hasShownNonKilocodeRulesMessage) {
 				// kilocode_change: show a message to move to .kilocode/rules/
 				const message = `Loading non-Kilocode rules from ${rooRulesDir}, consider moving to .kilocode/rules/`
+				console.warn(message)
 				vscode.postMessage({
 					type: "showVsCodeNotification",
 					notificationOptions: {
@@ -199,6 +200,7 @@ export async function loadRuleFiles(cwd: string): Promise<string> {
 			if (file !== ".kilocoderules" && !hasShownNonKilocodeRulesMessage) {
 				// kilocode_change: show a message to move to .kilocode/rules/
 				const message = `Loading non-Kilocode rules from ${file}, consider moving to .kilocode/rules/`
+				console.warn(message)
 				vscode.postMessage({
 					type: "showVsCodeNotification",
 					notificationOptions: {

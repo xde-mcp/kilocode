@@ -1,4 +1,4 @@
-import { WebviewMessage } from "@roo/shared/WebviewMessage"
+import { WebviewMessage } from "../../../src/shared/WebviewMessage"
 import type { WebviewApi } from "vscode-webview"
 
 /**
@@ -33,6 +33,7 @@ class VSCodeAPIWrapper {
 		if (this.vsCodeApi) {
 			this.vsCodeApi.postMessage(message)
 		} else {
+			console.log("FAILFIALIFLAIFLIFALIFLAIFLIAIFLA\n\n\n\n\n\n\n")
 			console.log(message)
 		}
 	}

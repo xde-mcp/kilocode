@@ -21,7 +21,6 @@ import { searchWorkspaceFiles } from "../../services/search/file-search"
 import { fileExistsAtPath } from "../../utils/fs"
 import { playSound, setSoundEnabled, setSoundVolume } from "../../utils/sound"
 import { playTts, setTtsEnabled, setTtsSpeed, stopTts } from "../../utils/tts"
-import { showSystemNotification } from "../../integrations/notifications" // kilocode_change
 import { singleCompletionHandler } from "../../utils/single-completion-handler"
 import { searchCommits } from "../../utils/git"
 import { exportSettings, importSettings } from "../config/importExport"
@@ -43,6 +42,8 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 	const getGlobalState = <K extends keyof GlobalState>(key: K) => provider.contextProxy.getValue(key)
 	const updateGlobalState = async <K extends keyof GlobalState>(key: K, value: GlobalState[K]) =>
 		await provider.contextProxy.setValue(key, value)
+
+	console.log("\n!!!!!!\n\njkmhasdzfgvbk,jasdfhbgnvklajsBGDFV", message)
 
 	switch (message.type) {
 		case "webviewDidLaunch":
@@ -486,13 +487,19 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			break
 		// kilocode_change begin
 		case "showSystemNotification":
-			if (message.notificationOptions) {
-				showSystemNotification(message.notificationOptions)
+			console.log("showSystemNotification", message)
+			if (message.notificationOptions?.message) {
+				vscode.window.showInformationMessage(message.notificationOptions.message)
 			}
 			break
 		case "openInBrowser":
 			if (message.url) {
 				vscode.env.openExternal(vscode.Uri.parse(message.url))
+			}
+			break
+		case "showVsCodeNotification":
+			if (message.notificationOptions) {
+				vscode.window.showInformationMessage(message.notificationOptions.message)
 			}
 			break
 		// kilocode_change end
