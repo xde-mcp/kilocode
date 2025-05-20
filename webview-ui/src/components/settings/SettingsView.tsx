@@ -129,6 +129,17 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		setChangeDetected(JSON.stringify(cachedState) !== JSON.stringify(extensionState))
 	}, [cachedState, extensionState])
 
+	const [shouldRender, setShouldRender] = useState(false)
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setShouldRender(true)
+		}, 1000)
+
+		return () => {
+			clearTimeout(timer)
+		}
+	}, [])
+
 	// kilocode_change end
 
 	const {
@@ -177,7 +188,9 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		terminalCompressProgressBar,
 	} = cachedState
 
-	const apiConfiguration = useMemo(() => cachedState.apiConfiguration ?? {}, [cachedState.apiConfiguration])
+	console.info(cachedState.apiConfiguration, extensionState.apiConfiguration)
+
+	const apiConfiguration = cachedState.apiConfiguration
 
 	useEffect(() => {
 		// Update only when currentApiConfigName is changed.
@@ -246,6 +259,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					return prevState
 				}
 
+				console.info("setApiConfigurationField", prevState.apiConfiguration?.[field], value)
 				setChangeDetected(true)
 				return { ...prevState, apiConfiguration: { ...prevState.apiConfiguration, [field]: value } }
 			})
@@ -582,13 +596,15 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 										})
 									}
 								/>
-								<ApiOptions
-									uriScheme={uriScheme}
-									apiConfiguration={apiConfiguration}
-									setApiConfigurationField={setApiConfigurationField}
-									errorMessage={errorMessage}
-									setErrorMessage={setErrorMessage}
-								/>
+								{shouldRender && (
+									<ApiOptions
+										uriScheme={uriScheme}
+										apiConfiguration={apiConfiguration}
+										setApiConfigurationField={setApiConfigurationField}
+										errorMessage={errorMessage}
+										setErrorMessage={setErrorMessage}
+									/>
+								)}
 							</Section>
 						</div>
 					)}
