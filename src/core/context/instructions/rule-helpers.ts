@@ -1,3 +1,5 @@
+// kilocode_change whole file
+
 import * as path from "path"
 import { ClineRulesToggles } from "../../../shared/cline-rules"
 import { fileExistsAtPath, isDirectory, readDirectory } from "../../../utils/fs"

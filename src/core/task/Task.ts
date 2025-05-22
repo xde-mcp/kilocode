@@ -3,7 +3,7 @@ import os from "os"
 import crypto from "crypto"
 import EventEmitter from "events"
 
-import * as vscode from "vscode"
+import * as vscode from "vscode" // kilocode_change:
 
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
@@ -81,11 +81,11 @@ import { ApiMessage } from "../task-persistence/apiMessages"
 import { getMessagesSinceLastSummary } from "../condense"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 import { processKiloUserContentMentions } from "../mentions/processKiloUserContentMentions" // kilocode_change
-import { refreshWorkflowToggles } from "../context/instructions/workflows"
-import { parseMentions } from "../mentions"
-import { parseKiloSlashCommands } from "../slash-commands/kilo"
-import { GlobalFileNames } from "../../shared/globalFileNames"
-import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rules"
+import { refreshWorkflowToggles } from "../context/instructions/workflows" // kilocode_change
+import { parseMentions } from "../mentions" // kilocode_change
+import { parseKiloSlashCommands } from "../slash-commands/kilo" // kilocode_change
+import { GlobalFileNames } from "../../shared/globalFileNames" // kilocode_change
+import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rules" // kilocode_change
 
 export type ClineEvents = {
 	message: [{ action: "created" | "updated"; message: ClineMessage }]
@@ -102,7 +102,7 @@ export type ClineEvents = {
 }
 
 export type TaskOptions = {
-	context: vscode.ExtensionContext
+	context: vscode.ExtensionContext // kilocode_change
 	provider: ClineProvider
 	apiConfiguration: ProviderSettings
 	enableDiff?: boolean
@@ -120,10 +120,10 @@ export type TaskOptions = {
 	onCreated?: (cline: Task) => void
 }
 
-type UserContent = Array<Anthropic.ContentBlockParam>
+type UserContent = Array<Anthropic.ContentBlockParam> // kilocode_change
 
 export class Task extends EventEmitter<ClineEvents> {
-	private context: vscode.ExtensionContext
+	private context: vscode.ExtensionContext // kilocode_change
 
 	readonly taskId: string
 	readonly instanceId: string
@@ -199,7 +199,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	didCompleteReadingStream = false
 
 	constructor({
-		context,
+		context, // kilocode_change
 		provider,
 		apiConfiguration,
 		enableDiff = false,
@@ -216,7 +216,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		onCreated,
 	}: TaskOptions) {
 		super()
-		this.context = context
+		this.context = context // kilocode_change
 
 		if (startTask && !task && !images && !historyItem) {
 			throw new Error("Either historyItem or task/images must be provided")
@@ -270,6 +270,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
+	// kilocode_change start
 	private getContext(): vscode.ExtensionContext {
 		const context = this.context
 		if (!context) {
@@ -277,6 +278,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 		return context
 	}
+	// kilocode_change end
 
 	static create(options: TaskOptions): [Task, Promise<void>] {
 		const instance = new Task({ ...options, startTask: false })
@@ -1045,7 +1047,7 @@ export class Task extends EventEmitter<ClineEvents> {
 
 		// kilocode_change start
 		const [parsedUserContent, needsRulesFileCheck] = await processKiloUserContentMentions({
-			context: this.context,
+			context: this.context, // kilocode_change
 			userContent,
 			cwd: this.cwd,
 			urlContentFetcher: this.urlContentFetcher,
@@ -1381,6 +1383,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 	}
 
+	// kilocode_change start
 	async loadContext(
 		userContent: UserContent,
 		includeFileDetails: boolean = false,
@@ -1452,6 +1455,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		// Return all results
 		return [processedUserContent, environmentDetails, clinerulesError]
 	}
+	// kilocode_change end
 
 	public async *attemptApiRequest(previousApiReqIndex: number, retryAttempt: number = 0): ApiStream {
 		let mcpHub: McpHub | undefined

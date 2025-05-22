@@ -2,14 +2,14 @@ import { getAllModes } from "@roo/shared/modes"
 
 export interface SlashCommand {
 	name: string
-	description?: string
-	section?: "default" | "custom"
+	description?: string // kilocode_change
+	section?: "default" | "custom" // kilocode_change
 }
 
 // Create a function to get all supported slash commands
 export function getSupportedSlashCommands(
 	customModes?: any[],
-	workflowToggles: Record<string, boolean> = {},
+	workflowToggles: Record<string, boolean> = {}, // kilocode_change
 ): SlashCommand[] {
 	// Start with non-mode commands
 	const baseCommands: SlashCommand[] = [
@@ -32,15 +32,15 @@ export function getSupportedSlashCommands(
 	}))
 
 	// add workflow commands
-	const workflowCommands = getWorkflowCommands(workflowToggles)
-	return [...baseCommands, ...modeCommands, ...workflowCommands]
+	const workflowCommands = getWorkflowCommands(workflowToggles) // kilocode_change
+	return [...baseCommands, ...modeCommands, ...workflowCommands] // kilocode_change
 }
 
 // Export a default instance for backward compatibility
 export const SUPPORTED_SLASH_COMMANDS = getSupportedSlashCommands()
 
 // Regex for detecting slash commands in text
-export const slashCommandRegex = /\/([a-zA-Z0-9_.-]+)(\s|$)/
+export const slashCommandRegex = /\/([a-zA-Z0-9_.-]+)(\s|$)/ // kilocode_change
 export const slashCommandRegexGlobal = new RegExp(slashCommandRegex.source, "g")
 
 /**
@@ -73,6 +73,7 @@ export function shouldShowSlashCommandsMenu(text: string, cursorPosition: number
 	return true
 }
 
+// kilocode_change start
 export function getWorkflowCommands(workflowToggles: Record<string, boolean>): SlashCommand[] {
 	return Object.entries(workflowToggles)
 		.filter(([_, enabled]) => enabled)
@@ -87,6 +88,7 @@ export function getWorkflowCommands(workflowToggles: Record<string, boolean>): S
 			}
 		})
 }
+// kilocode_change end
 
 /**
  * Gets filtered slash commands that match the current input
@@ -94,7 +96,7 @@ export function getWorkflowCommands(workflowToggles: Record<string, boolean>): S
 export function getMatchingSlashCommands(
 	query: string,
 	customModes?: any[],
-	workflowToggles: Record<string, boolean> = {},
+	workflowToggles: Record<string, boolean> = {}, // kilocode_change
 ): SlashCommand[] {
 	const commands = getSupportedSlashCommands(customModes, workflowToggles)
 
@@ -129,14 +131,14 @@ export function insertSlashCommand(text: string, commandName: string): { newValu
 export function validateSlashCommand(
 	command: string,
 	customModes?: any[],
-	workflowToggles: Record<string, boolean> = {},
+	workflowToggles: Record<string, boolean> = {}, // kilocode_change
 ): "full" | "partial" | null {
 	if (!command) {
 		return null
 	}
 
 	// case sensitive matching
-	const commands = getSupportedSlashCommands(customModes, workflowToggles)
+	const commands = getSupportedSlashCommands(customModes, workflowToggles) // kilocode_change
 
 	const exactMatch = commands.some((cmd) => cmd.name === command)
 

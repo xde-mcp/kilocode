@@ -35,7 +35,7 @@ import { Mode, defaultModeSlug } from "../../shared/modes"
 import { GlobalState } from "../../schemas"
 import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
 import { generateSystemPrompt } from "./generateSystemPrompt"
-import { ClineRulesToggles } from "../../shared/cline-rules"
+import { ClineRulesToggles } from "../../shared/cline-rules" // kilocode_change
 
 const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
 
@@ -52,8 +52,8 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			await updateGlobalState("customModes", customModes)
 
 			// Refresh workflow toggles
-			const { refreshWorkflowToggles } = await import("../context/instructions/workflows")
-			await refreshWorkflowToggles(provider.context, provider.cwd)
+			const { refreshWorkflowToggles } = await import("../context/instructions/workflows") // kilocode_change
+			await refreshWorkflowToggles(provider.context, provider.cwd) // kilocode_change
 
 			provider.postStateToWebview()
 			provider.workspaceTracker?.initializeFilePaths() // Don't await.

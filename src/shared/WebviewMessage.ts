@@ -161,8 +161,8 @@ export interface WebviewMessage {
 	toolNames?: string[]
 	url?: string
 	autoApprove?: boolean
-	workflowPath?: string
-	enabled?: boolean
+	workflowPath?: string // kilocode_change
+	enabled?: boolean // kilocode_change
 	// kilocode_change end
 	serverName?: string
 	toolName?: string

@@ -1,3 +1,5 @@
+// kilocode_change whole file
+
 import { ClineRulesToggles } from "../../shared/cline-rules"
 import { newTaskToolResponse, newRuleToolResponse } from "../prompts/commands"
 import fs from "fs/promises"
