@@ -27,6 +27,11 @@ export async function processKiloUserContentMentions({
 }): Promise<[Anthropic.Messages.ContentBlockParam[], boolean]> {
 	// Track if we need to check kilorules file
 	let needsRulesFileCheck = false
+
+	console.log(
+		"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Processing Kilo user content mentions...",
+	)
+
 	/**
 	 * Process mentions in user content, specifically within task and feedback tags
 	 */
@@ -43,6 +48,7 @@ export async function processKiloUserContentMentions({
 		// should parse mentions).
 
 		const workflowToggles = await refreshWorkflowToggles(context, cwd)
+		console.log("procress user cointent Workflow toggles:", workflowToggles)
 
 		return await Promise.all(
 			userContent.map(async (block) => {

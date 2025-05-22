@@ -12,7 +12,7 @@ export async function refreshWorkflowToggles(
 	context: vscode.ExtensionContext,
 	workingDirectory: string,
 ): Promise<ClineRulesToggles> {
-	console.log("Refreshing workflow toggles")
+	console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Refreshing workflow toggles")
 	const proxy = new ContextProxy(context)
 
 	const workflowRulesToggles =

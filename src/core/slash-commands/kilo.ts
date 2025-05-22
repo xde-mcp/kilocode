@@ -10,7 +10,7 @@ export async function parseKiloSlashCommands(
 	text: string,
 	workflowToggles: ClineRulesToggles,
 ): Promise<{ processedText: string; needsRulesFileCheck: boolean }> {
-	const SUPPORTED_COMMANDS = ["newtask", "newrule"]
+	const SUPPORTED_COMMANDS = ["newtask", "newrule", "bullshit"]
 
 	const commandReplacements: Record<string, string> = {
 		newtask: newTaskToolResponse(),
@@ -25,7 +25,6 @@ export async function parseKiloSlashCommands(
 		{ tag: "user_message", regex: /<user_message>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/user_message>/is },
 	]
 
-	console.log("Parsing Kilo slash commands...")
 	// if we find a valid match, we will return inside that block
 	for (const { regex } of tagPatterns) {
 		const regexObj = new RegExp(regex.source, regex.flags)

@@ -7,7 +7,10 @@ export interface SlashCommand {
 }
 
 // Create a function to get all supported slash commands
-export function getSupportedSlashCommands(customModes?: any[]): SlashCommand[] {
+export function getSupportedSlashCommands(
+	customModes?: any[],
+	workflowToggles: Record<string, boolean> = {},
+): SlashCommand[] {
 	// Start with non-mode commands
 	const baseCommands: SlashCommand[] = [
 		{
@@ -28,7 +31,13 @@ export function getSupportedSlashCommands(customModes?: any[]): SlashCommand[] {
 		description: `Switch to ${mode.name.replace(/^[💻🏗️❓🪲🪃]+ /, "")} mode`,
 	}))
 
-	return [...baseCommands, ...modeCommands]
+	// add workflow commands
+
+	console.log("!!!!!!!!!!!!!workflowToggles", workflowToggles)
+	const workflowCommands = getWorkflowCommands(workflowToggles)
+	console.log("!!!!!!!!!!!!!workflowCommands", workflowCommands)
+
+	return [...baseCommands, ...modeCommands, ...workflowCommands]
 }
 
 // Export a default instance for backward compatibility
@@ -91,10 +100,8 @@ export function getMatchingSlashCommands(
 	customModes?: any[],
 	workflowToggles: Record<string, boolean> = {},
 ): SlashCommand[] {
-	const workflowCommands = getWorkflowCommands(workflowToggles)
-	let commands = getSupportedSlashCommands(customModes)
-
-	commands = [...commands, ...workflowCommands]
+	console.log("!!!!!!!!!!!!!getMatchingSlashCommands", workflowToggles)
+	const commands = getSupportedSlashCommands(customModes, workflowToggles)
 
 	if (!query) {
 		return [...commands]
@@ -124,13 +131,17 @@ export function insertSlashCommand(text: string, commandName: string): { newValu
  * Determines the validation state of a slash command
  * Returns partial if we have a partial match against valid commands, or full for full match
  */
-export function validateSlashCommand(command: string, customModes?: any[]): "full" | "partial" | null {
+export function validateSlashCommand(
+	command: string,
+	customModes?: any[],
+	workflowToggles: Record<string, boolean> = {},
+): "full" | "partial" | null {
 	if (!command) {
 		return null
 	}
 
 	// case sensitive matching
-	const commands = getSupportedSlashCommands(customModes)
+	const commands = getSupportedSlashCommands(customModes, workflowToggles)
 
 	const exactMatch = commands.some((cmd) => cmd.name === command)
 

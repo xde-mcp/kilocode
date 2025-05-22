@@ -51,6 +51,10 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			const customModes = await provider.customModesManager.getCustomModes()
 			await updateGlobalState("customModes", customModes)
 
+			// Refresh workflow toggles
+			const { refreshWorkflowToggles } = await import("../context/instructions/workflows")
+			await refreshWorkflowToggles(provider.context, provider.cwd)
+
 			provider.postStateToWebview()
 			provider.workspaceTracker?.initializeFilePaths() // Don't await.
 
