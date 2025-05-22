@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import { Anthropic } from "@anthropic-ai/sdk"
 import { EXPERIMENT_IDS, ExperimentId, experiments } from "../../shared/experiments"
-import { AICommentData, FileChangeData, WatchModeConfig } from "./types"
+import { AICommentData, FileChangeData, WatchModeConfig, TriggerType } from "./types"
 import { WatchModeUI } from "./ui"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ContextProxy } from "../../core/config/ContextProxy"
@@ -12,8 +12,17 @@ import {
 	processAIResponse,
 	updateAICommentPatterns,
 	updateCurrentAICommentPrefix,
+	determineTriggerType,
+	buildReflectionPrompt,
+	estimateTokenCount,
 } from "./commentProcessor"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
+
+// Interface for document change event data
+interface DocumentChangeData {
+	document: vscode.TextDocument
+	isDocumentSave: boolean
+}
 
 /**
  * Service that watches files for changes and processes AI comments
@@ -28,6 +37,15 @@ export class WatchModeService {
 	private highlighter: WatchModeHighlighter
 	private processingFiles: Set<string> = new Set()
 	private currentDebugId?: string
+	private documentListeners: vscode.Disposable[] = []
+	private staticHighlights: Map<string, () => void> = new Map()
+	private recentlyProcessedFiles: Map<string, number> = new Map()
+	private processingDebounceTime: number = 500 // ms to prevent duplicate processing
+
+	// Track active files for context management
+	private activeFiles: Set<string> = new Set()
+	private maxActiveFiles: number = 10 // Maximum number of files to keep in active context
+	private largeFileThreshold: number = 1000000 // ~1MB threshold for large files
 
 	// Event emitters
 	private readonly _onDidChangeActiveState = new vscode.EventEmitter<boolean>()
@@ -158,7 +176,9 @@ export class WatchModeService {
 	 */
 	private initializeWatchers(): void {
 		this.disposeWatchers() // Clean up any existing watchers first
+		this.disposeDocumentListeners() // Clean up any existing document listeners
 
+		// Set up file system watchers for file save events
 		this.config.include.forEach((pattern) => {
 			const watcher = vscode.workspace.createFileSystemWatcher(
 				new vscode.RelativePattern(vscode.workspace.workspaceFolders?.[0]?.uri || "", pattern),
@@ -169,19 +189,13 @@ export class WatchModeService {
 
 			// Handle file creation events
 			watcher.onDidCreate((uri: vscode.Uri) =>
-				this.handleFileChange({
-					fileUri: uri,
-					type: vscode.FileChangeType.Created,
-				}),
+				this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Created }),
 			)
 
-			// Handle file change events
+			// Handle file change events (file saves)
 			watcher.onDidChange((uri: vscode.Uri) => {
 				this.log(`File changed: ${uri.toString()}`)
-				return this.handleFileChange({
-					fileUri: uri,
-					type: vscode.FileChangeType.Changed,
-				})
+				return this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Changed })
 			})
 
 			const watcherId = `watcher-${pattern}`
@@ -190,14 +204,80 @@ export class WatchModeService {
 
 			this.log(`Initialized file watcher for pattern: ${pattern}`)
 		})
+
+		// Set up document change listeners for real-time editing
+		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
+			// Skip excluded files
+			if (this.isFileExcluded(event.document.uri)) {
+				return
+			}
+
+			// Process document changes as they happen (without debounce)
+			this.handleDocumentChange({ document: event.document, isDocumentSave: false })
+		})
+
+		// Set up document save listeners
+		const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
+			// Skip excluded files
+			if (this.isFileExcluded(document.uri)) {
+				return
+			}
+
+			// Process document saves
+			this.handleDocumentChange({ document: document, isDocumentSave: true })
+		})
+
+		this.documentListeners.push(changeListener, saveListener)
+		this.context.subscriptions.push(changeListener, saveListener)
+		this.log(`Initialized document change and save listeners`)
 	}
 
 	/**
-	 * Handles file change events
+	 * Handles document change events (typing or saving)
+	 * @param data Document change event data
+	 */
+	private handleDocumentChange(data: DocumentChangeData): void {
+		const { document, isDocumentSave } = data
+		const fileUri = document.uri
+		const fileKey = fileUri.toString()
+
+		// Clear any existing static highlights for this file
+		this.clearStaticHighlightsForFile(fileUri)
+
+		// For all document changes (typing or saving), immediately detect and highlight comments
+		this.detectAndHighlightComments(document)
+
+		// For save events, immediately process the comments with animation
+		if (isDocumentSave) {
+			// Check if this file was recently processed to avoid duplicate processing
+			if (this.isFileRecentlyProcessed(fileKey)) {
+				this.log(`Skipping duplicate processing for recently saved file: ${fileKey}`)
+				return
+			}
+
+			this.log(`Document saved, immediately processing: ${fileUri.toString()}`)
+
+			// Cancel any pending processing for this file
+			if (this.pendingProcessing.has(fileKey)) {
+				clearTimeout(this.pendingProcessing.get(fileKey))
+				this.pendingProcessing.delete(fileKey)
+			}
+
+			// Mark this file as recently processed
+			this.markFileAsProcessed(fileKey)
+
+			// Process the file immediately without debounce
+			this.processFile(fileUri)
+		}
+	}
+
+	/**
+	 * Handles file change events from file system watcher
 	 * @param data File change event data
 	 */
 	private handleFileChange(data: FileChangeData): void {
 		const { fileUri } = data
+		const fileKey = fileUri.toString()
 
 		// Skip excluded files
 		if (this.isFileExcluded(fileUri)) {
@@ -205,23 +285,18 @@ export class WatchModeService {
 			return
 		}
 
-		// Debounce processing to avoid multiple rapid triggers
-		const fileKey = fileUri.toString()
-
-		if (this.pendingProcessing.has(fileKey)) {
-			clearTimeout(this.pendingProcessing.get(fileKey))
-			this.pendingProcessing.delete(fileKey)
+		// Check if this file was recently processed to avoid duplicate processing
+		if (this.isFileRecentlyProcessed(fileKey)) {
+			this.log(`Skipping duplicate processing for recently changed file: ${fileKey}`)
+			return
 		}
 
-		this.log(`Scheduling processing for ${fileKey} with ${this.config.debounceTime}ms debounce`)
+		// Mark this file as recently processed
+		this.markFileAsProcessed(fileKey)
 
-		const timeout = setTimeout(async () => {
-			this.log(`Debounce complete, processing file: ${fileKey}`)
-			await this.processFile(fileUri)
-			this.pendingProcessing.delete(fileKey)
-		}, this.config.debounceTime)
-
-		this.pendingProcessing.set(fileKey, timeout)
+		// Process the file immediately without debounce
+		this.log(`Processing file from file system event: ${fileUri.toString()}`)
+		this.processFile(fileUri)
 	}
 
 	/**
@@ -256,6 +331,47 @@ export class WatchModeService {
 	 * Processes a file to find and handle AI comments
 	 * @param fileUri URI of the file to process
 	 */
+	/**
+	 * Adds a file to the active files list
+	 * @param fileUri The URI of the file to add
+	 */
+	private addToActiveFiles(fileUri: vscode.Uri): void {
+		const fileKey = fileUri.toString()
+
+		// If already in the set, remove it so it can be added to the front (most recent)
+		if (this.activeFiles.has(fileKey)) {
+			this.activeFiles.delete(fileKey)
+		}
+
+		// Add to the active files set
+		this.activeFiles.add(fileKey)
+
+		// If we've exceeded the maximum, remove the oldest file
+		if (this.activeFiles.size > this.maxActiveFiles) {
+			const iterator = this.activeFiles.values()
+			const oldest = iterator.next().value
+
+			if (oldest) {
+				this.activeFiles.delete(oldest)
+				this.log(`Removed ${oldest} from active files (exceeded max of ${this.maxActiveFiles})`)
+			}
+		}
+
+		this.log(`Active files (${this.activeFiles.size}): ${Array.from(this.activeFiles).join(", ")}`)
+	}
+
+	/**
+	 * Gets a list of active files for context
+	 * @returns Array of active file URIs
+	 */
+	private getActiveFiles(): vscode.Uri[] {
+		return Array.from(this.activeFiles).map((uri) => vscode.Uri.parse(uri))
+	}
+
+	/**
+	 * Processes a file to find and handle AI comments
+	 * @param fileUri URI of the file to process
+	 */
 	private async processFile(fileUri: vscode.Uri): Promise<void> {
 		try {
 			this.log(`Processing file: ${fileUri.fsPath}`)
@@ -264,10 +380,13 @@ export class WatchModeService {
 			const document = await vscode.workspace.openTextDocument(fileUri)
 			const content = document.getText()
 
+			// Add to active files list (even if large, we want to track it)
+			this.addToActiveFiles(fileUri)
+
 			// Skip processing if file is too large
-			if (content.length > 1000000) {
-				// Skip files larger than ~1MB
-				this.log(`Skipping large file: ${fileUri.fsPath}`)
+			if (content.length > this.largeFileThreshold) {
+				// Skip files larger than threshold
+				this.log(`Skipping large file: ${fileUri.fsPath} (${content.length} bytes)`)
 				return
 			}
 
@@ -303,6 +422,152 @@ export class WatchModeService {
 		}
 	}
 
+	/**
+	 * Detects and highlights comments in a document without animation
+	 * @param document The document to check
+	 */
+	/**
+	 * Detects and highlights comments in a document without animation
+	 * @param document The document to check
+	 */
+	private detectAndHighlightComments(document: vscode.TextDocument): void {
+		try {
+			const fileUri = document.uri
+			const content = document.getText()
+
+			// Add to active files list (even if large, we want to track it)
+			this.addToActiveFiles(fileUri)
+
+			// Skip files larger than threshold
+			if (content.length > this.largeFileThreshold) {
+				this.log(`Skipping large file: ${fileUri.fsPath} (${content.length} bytes)`)
+				return
+			}
+
+			const result = detectAIComments({ fileUri, content, languageId: document.languageId })
+
+			if (result.errors) {
+				result.errors.forEach((error) => {
+					this.log(`Error detecting comments: ${error.message}`)
+				})
+			}
+
+			if (result.comments.length === 0) {
+				this.log(`No AI comments found in file: ${fileUri.fsPath}`)
+				return // No comments found, nothing to do
+			}
+
+			this.log(`Found ${result.comments.length} AI comments in ${fileUri.fsPath}`)
+
+			for (const comment of result.comments) {
+				this.highlightCommentKiloOnly(document, comment)
+			}
+		} catch (error) {
+			this.log(
+				`Error detecting comments in ${document.uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+	}
+
+	/**
+	 * Highlights only the KILO keyword in a comment
+	 * @param document The document containing the comment
+	 * @param comment The AI comment data
+	 */
+	private highlightCommentKiloOnly(document: vscode.TextDocument, comment: AICommentData): void {
+		// Create a unique ID for this highlight
+		const highlightId = `static:${document.uri.toString()}:${comment.startPos.line}:${comment.startPos.character}`
+
+		// Clear any existing highlight for this comment
+		if (this.staticHighlights.has(highlightId)) {
+			this.staticHighlights.get(highlightId)?.()
+			this.staticHighlights.delete(highlightId)
+		}
+
+		// Find the position of the KILO prefix in the comment
+		const line = document.lineAt(comment.startPos.line).text
+		const commentPrefix = this.config.commentPrefix
+		const prefixIndex = line.indexOf(commentPrefix)
+
+		if (prefixIndex >= 0) {
+			// Create a range just for the KILO prefix
+			const prefixStart = new vscode.Position(comment.startPos.line, prefixIndex)
+			const prefixEnd = new vscode.Position(comment.startPos.line, prefixIndex + commentPrefix.length)
+			const prefixRange = new vscode.Range(prefixStart, prefixEnd)
+
+			// Apply static highlight with a lighter color only to the KILO prefix
+			const clearHighlight = this.highlighter.highlightRange(document, prefixRange, {
+				backgroundColor: "rgba(0, 122, 255, 0.3)",
+				borderColor: "rgba(0, 122, 255, 0.5)",
+				borderWidth: "1px",
+				borderStyle: "solid",
+				isWholeLine: false,
+			})
+
+			// Store the cleanup function
+			this.staticHighlights.set(highlightId, clearHighlight)
+		} else {
+			// Fallback to highlighting the whole comment if prefix not found
+			const range = new vscode.Range(comment.startPos, comment.endPos)
+
+			// Apply static highlight with a lighter color
+			const fallbackClearHighlight = this.highlighter.highlightRange(document, range, {
+				backgroundColor: "rgba(0, 122, 255, 0.3)",
+				borderColor: "rgba(0, 122, 255, 0.5)",
+				borderWidth: "1px",
+				borderStyle: "solid",
+				isWholeLine: false,
+			})
+
+			// Store the cleanup function
+			this.staticHighlights.set(highlightId, fallbackClearHighlight)
+		}
+	}
+
+	/**
+	 * Clears all static highlights for a specific file
+	 * @param fileUri The URI of the file
+	 */
+	private clearStaticHighlightsForFile(fileUri: vscode.Uri): void {
+		const fileUriStr = fileUri.toString()
+
+		// Find and clear all static highlights for this file
+		for (const [id, clearFn] of this.staticHighlights.entries()) {
+			if (id.includes(fileUriStr)) {
+				clearFn()
+				this.staticHighlights.delete(id)
+			}
+		}
+	}
+
+	/**
+	 * Checks if a file was recently processed to avoid duplicate processing
+	 * @param fileKey The file key (URI as string)
+	 * @returns True if the file was recently processed
+	 */
+	private isFileRecentlyProcessed(fileKey: string): boolean {
+		const lastProcessed = this.recentlyProcessedFiles.get(fileKey)
+		if (!lastProcessed) {
+			return false
+		}
+
+		const now = Date.now()
+		return now - lastProcessed < this.processingDebounceTime
+	}
+
+	/**
+	 * Marks a file as recently processed
+	 * @param fileKey The file key (URI as string)
+	 */
+	private markFileAsProcessed(fileKey: string): void {
+		this.recentlyProcessedFiles.set(fileKey, Date.now())
+
+		// Clean up old entries after a delay
+		setTimeout(() => {
+			this.recentlyProcessedFiles.delete(fileKey)
+		}, this.processingDebounceTime * 2)
+	}
+
 	private async processAIComment(document: vscode.TextDocument, comment: AICommentData): Promise<void> {
 		try {
 			this.log(
@@ -310,73 +575,28 @@ export class WatchModeService {
 			)
 
 			// Highlight the AI comment with animation
-			const clearHighlight = this.highlighter.highlightAICommentWithAnimation(document, comment)
+			const clearHighlight = this.highlighter.highlightRange(
+				document,
+				new vscode.Range(comment.startPos, comment.endPos),
+				{
+					backgroundColor: "rgba(0, 122, 255, 0.4)",
+					borderColor: "rgba(0, 122, 255, 0.9)",
+					borderWidth: "1px",
+					borderStyle: "solid",
+					isWholeLine: true,
+				},
+			)
 
 			// Emit event that we're starting to process this comment
 			this._onDidStartProcessingComment.fire({ fileUri: document.uri, comment })
 
-			// Build prompt from the comment and context
-			this.log("Building AI prompt...")
-			const prompt = buildAIPrompt(comment)
-			this.log(`Prompt built, length: ${prompt.length} characters`)
+			// Determine the trigger type from the comment content
+			this.log("Determining trigger type...")
+			const triggerType = determineTriggerType(comment.content)
+			this.log(`Trigger type determined: ${triggerType}`)
 
-			// Get response from AI model
-			this.log("Calling AI model...")
-
-			let apiResponse: string | null = null
-			try {
-				apiResponse = await this.callAIModel(prompt)
-				this.log(`API response received, length: ${apiResponse?.length || 0} characters`)
-			} catch (apiError) {
-				this.log(`Error calling AI model: ${apiError instanceof Error ? apiError.message : String(apiError)}`)
-				apiResponse = null
-			}
-
-			if (!apiResponse) {
-				this.log("No response from AI model")
-				this._onDidFinishProcessingComment.fire({
-					fileUri: document.uri,
-					comment,
-					success: false,
-				})
-				clearHighlight()
-				return
-			}
-
-			// Process the AI response
-			this.log("Processing AI response...")
-			let success = false
-			try {
-				success = await processAIResponse(document, comment, apiResponse)
-				this.log(`Response processed, success: ${success}`)
-			} catch (processError) {
-				this.log(
-					`Error processing response: ${processError instanceof Error ? processError.message : String(processError)}`,
-				)
-				this._onDidFinishProcessingComment.fire({
-					fileUri: document.uri,
-					comment,
-					success: false,
-				})
-				clearHighlight()
-				return
-			}
-
-			if (success) {
-				this.log(`Successfully applied AI response to ${document.uri.fsPath}`)
-			} else {
-				this.log(`Failed to apply AI response to ${document.uri.fsPath}`)
-			}
-
-			// Emit event that we've finished processing this comment
-			this._onDidFinishProcessingComment.fire({
-				fileUri: document.uri,
-				comment,
-				success,
-			})
-
-			// Clear the highlight
-			clearHighlight()
+			// Process with reflection support (up to 3 attempts)
+			await this.processWithReflection(document, comment, triggerType, clearHighlight)
 		} catch (error) {
 			this.log(`Error processing AI comment: ${error instanceof Error ? error.message : String(error)}`)
 			this._onDidFinishProcessingComment.fire({
@@ -385,6 +605,238 @@ export class WatchModeService {
 				success: false,
 			})
 		}
+	}
+
+	/**
+	 * Processes an AI comment with support for reflection on failed edits
+	 * @param document The document containing the comment
+	 * @param comment The AI comment data
+	 * @param triggerType The trigger type (Edit or Ask)
+	 * @param clearHighlight Function to clear the highlight
+	 */
+	private async processWithReflection(
+		document: vscode.TextDocument,
+		comment: AICommentData,
+		triggerType: TriggerType,
+		clearHighlight: () => void,
+	): Promise<void> {
+		// Maximum number of reflection attempts
+		const MAX_REFLECTION_ATTEMPTS = 3
+		let currentAttempt = 0
+		let success = false
+		let lastResponse: string | null = null
+
+		while (currentAttempt <= MAX_REFLECTION_ATTEMPTS) {
+			try {
+				// Build prompt from the comment and context
+				this.log(`Building AI prompt (attempt ${currentAttempt})...`)
+
+				// Gather content from active files for additional context
+				const activeFilesWithContent: { uri: vscode.Uri; content: string }[] = []
+
+				// Maximum token budget for additional context (roughly 50% of model's context window)
+				const MAX_ADDITIONAL_CONTEXT_TOKENS = 50000
+				let estimatedTokens = 0
+
+				// First, estimate tokens for the base prompt
+				const basePrompt = buildAIPrompt(comment, triggerType)
+				estimatedTokens += estimateTokenCount(basePrompt)
+
+				// Get active files and sort by recency (most recent first)
+				const activeFileUris = this.getActiveFiles()
+
+				// Prioritize open editor tabs
+				const openEditors = vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString())
+
+				// Sort active files: open editors first, then other active files
+				const sortedActiveFiles = activeFileUris.sort((a, b) => {
+					const aIsOpen = openEditors.includes(a.toString())
+					const bIsOpen = openEditors.includes(b.toString())
+
+					if (aIsOpen && !bIsOpen) return -1
+					if (!aIsOpen && bIsOpen) return 1
+					return 0
+				})
+
+				// Add content from active files until we reach the token limit
+				for (const uri of sortedActiveFiles) {
+					// Skip the file with the comment (already included in the context)
+					if (uri.toString() === document.uri.toString()) {
+						continue
+					}
+
+					try {
+						// Skip files that are too large
+						if (uri.fsPath.endsWith(".min.js") || uri.fsPath.endsWith(".min.css")) {
+							this.log(`Skipping minified file: ${uri.fsPath}`)
+							continue
+						}
+
+						const doc = await vscode.workspace.openTextDocument(uri)
+						const content = doc.getText()
+
+						// Skip if file is too large
+						if (content.length > this.largeFileThreshold) {
+							this.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
+							continue
+						}
+
+						// Estimate tokens for this file
+						const fileTokens = estimateTokenCount(content)
+
+						// If adding this file would exceed our budget, skip it
+						if (estimatedTokens + fileTokens > MAX_ADDITIONAL_CONTEXT_TOKENS) {
+							this.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
+							continue
+						}
+
+						// Add file to context
+						activeFilesWithContent.push({ uri, content })
+						estimatedTokens += fileTokens
+
+						this.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
+					} catch (error) {
+						this.log(
+							`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`,
+						)
+					}
+				}
+
+				this.log(
+					`Total context includes ${activeFilesWithContent.length} additional files (est. ${estimatedTokens} tokens)`,
+				)
+
+				// Ensure we always have a valid string prompt
+				const prompt =
+					currentAttempt === 0
+						? buildAIPrompt(comment, triggerType, activeFilesWithContent)
+						: lastResponse || buildAIPrompt(comment, triggerType, activeFilesWithContent)
+
+				this.log(`Prompt built, length: ${prompt.length} characters`)
+				// Log the full prompt for debugging
+				console.log("=== FULL PROMPT ===")
+				console.log(prompt)
+				console.log("=== END PROMPT ===")
+
+				// Get response from AI model
+				this.log("Calling AI model...")
+				let apiResponse: string | null = null
+
+				try {
+					// We know prompt is a valid string at this point
+					apiResponse = await this.callAIModel(prompt)
+					this.log(`API response received, length: ${apiResponse?.length || 0} characters`)
+					// Log the full response for debugging
+					console.log("=== FULL API RESPONSE ===")
+					console.log(apiResponse)
+					console.log("=== END API RESPONSE ===")
+				} catch (apiError) {
+					this.log(
+						`Error calling AI model: ${apiError instanceof Error ? apiError.message : String(apiError)}`,
+					)
+					apiResponse = null
+				}
+
+				if (!apiResponse) {
+					this.log("No response from AI model")
+					this._onDidFinishProcessingComment.fire({
+						fileUri: document.uri,
+						comment,
+						success: false,
+					})
+					clearHighlight()
+					return
+				}
+
+				// Process the AI response
+				this.log(`Processing AI response (attempt ${currentAttempt})...`)
+				try {
+					success = await processAIResponse(document, comment, apiResponse, currentAttempt)
+					this.log(`Response processed, success: ${success}`)
+
+					// If successful, break out of the loop
+					if (success) {
+						break
+					}
+
+					// If we've reached the maximum attempts, break out of the loop
+					if (currentAttempt >= MAX_REFLECTION_ATTEMPTS) {
+						break
+					}
+
+					// Increment the attempt counter
+					currentAttempt++
+				} catch (processError) {
+					// Check if this is a reflection request
+					if (processError instanceof Error && processError.message.startsWith("REFLECTION_NEEDED:")) {
+						// Parse the reflection information
+						const parts = processError.message.split(":")
+						const nextAttempt = parseInt(parts[1], 10)
+						const errorMessages = parts[2].split("|")
+
+						this.log(`Reflection needed, attempt ${nextAttempt} of ${MAX_REFLECTION_ATTEMPTS}`)
+						this.log(`Error messages: ${errorMessages.join(", ")}`)
+
+						// Update the attempt counter
+						currentAttempt = nextAttempt
+
+						// Build a reflection prompt with active files context
+						const reflectionPrompt = buildReflectionPrompt(
+							comment,
+							apiResponse,
+							errorMessages,
+							activeFilesWithContent,
+						)
+						lastResponse = reflectionPrompt
+
+						// Log the full reflection prompt for debugging
+						console.log("=== FULL REFLECTION PROMPT ===")
+						console.log(reflectionPrompt)
+						console.log("=== END REFLECTION PROMPT ===")
+
+						// Continue to the next iteration
+						continue
+					} else {
+						// Handle other errors
+						this.log(
+							`Error processing response: ${processError instanceof Error ? processError.message : String(processError)}`,
+						)
+						this._onDidFinishProcessingComment.fire({
+							fileUri: document.uri,
+							comment,
+							success: false,
+						})
+						clearHighlight()
+						return
+					}
+				}
+			} catch (error) {
+				this.log(`Error in reflection loop: ${error instanceof Error ? error.message : String(error)}`)
+				this._onDidFinishProcessingComment.fire({
+					fileUri: document.uri,
+					comment,
+					success: false,
+				})
+				clearHighlight()
+				return
+			}
+		}
+
+		if (success) {
+			this.log(`Successfully applied AI response to ${document.uri.fsPath}`)
+		} else {
+			this.log(`Failed to apply AI response to ${document.uri.fsPath} after ${currentAttempt} attempts`)
+		}
+
+		// Emit event that we've finished processing this comment
+		this._onDidFinishProcessingComment.fire({
+			fileUri: document.uri,
+			comment,
+			success,
+		})
+
+		// Clear the highlight
+		clearHighlight()
 	}
 
 	/**
@@ -461,6 +913,23 @@ export class WatchModeService {
 	}
 
 	/**
+	 * Disposes all document listeners
+	 */
+	private disposeDocumentListeners(): void {
+		this.log(`Disposing ${this.documentListeners.length} document listeners`)
+		for (const listener of this.documentListeners) {
+			listener.dispose()
+		}
+		this.documentListeners = []
+
+		// Clear all static highlights
+		for (const clearFn of this.staticHighlights.values()) {
+			clearFn()
+		}
+		this.staticHighlights.clear()
+	}
+
+	/**
 	 * Starts the watch mode service
 	 * @returns True if the service was started, false otherwise
 	 */
@@ -501,6 +970,9 @@ export class WatchModeService {
 			clearTimeout(timeout)
 		}
 		this.pendingProcessing.clear()
+
+		// Dispose document listeners
+		this.disposeDocumentListeners()
 
 		this.isActive = false
 		this._onDidChangeActiveState.fire(false)
