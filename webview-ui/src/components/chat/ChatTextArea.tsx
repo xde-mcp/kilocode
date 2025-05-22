@@ -96,10 +96,6 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 		const currentTheme = useVSCodeTheme() // kilocode_change
 
-		//bookmark
-
-		console.log("procress user cointent Workflow toggles:", workflowToggles)
-
 		// Find the ID and display text for the currently selected API configuration
 		const { currentConfigId, displayName } = useMemo(() => {
 			const currentConfig = listApiConfigMeta?.find((config) => config.name === currentApiConfigName)
