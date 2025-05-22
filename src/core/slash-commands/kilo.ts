@@ -10,7 +10,7 @@ export async function parseKiloSlashCommands(
 	text: string,
 	workflowToggles: ClineRulesToggles,
 ): Promise<{ processedText: string; needsRulesFileCheck: boolean }> {
-	const SUPPORTED_COMMANDS = ["newtask", "newrule", "bullshit"]
+	const SUPPORTED_COMMANDS = ["newtask", "newrule"]
 
 	const commandReplacements: Record<string, string> = {
 		newtask: newTaskToolResponse(),
@@ -19,7 +19,7 @@ export async function parseKiloSlashCommands(
 
 	// this currently allows matching prepended whitespace prior to /slash-command
 	const tagPatterns = [
-		{ tag: "task", regex: /<task>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/task>/is },
+		{ tag: "task", regex: /<task>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/task>/is },
 		{ tag: "feedback", regex: /<feedback>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/feedback>/is },
 		{ tag: "answer", regex: /<answer>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/answer>/is },
 		{ tag: "user_message", regex: /<user_message>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/user_message>/is },
@@ -56,7 +56,6 @@ export async function parseKiloSlashCommands(
 			}
 
 			// in practice we want to minimize this work, so we only do it if theres a possible match
-			console.log("Checking for workflow matches...", workflowToggles)
 			const enabledWorkflows = Object.entries(workflowToggles)
 				.filter(([_, enabled]) => enabled)
 				.map(([filePath, _]) => {

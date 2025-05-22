@@ -1,14 +1,17 @@
-import { newTaskToolResponse } from "../prompts/commands"
+import { newTaskToolResponse, newRuleToolResponse } from "../prompts/commands"
+import { ClineRulesToggles } from "../../shared/cline-rules"
+import fs from "fs/promises"
 
 /**
  * Processes text for slash commands and transforms them with appropriate instructions
  * This is called after parseMentions() to process any slash commands in the user's message
  */
-export function parseSlashCommands(text: string): string {
-	const SUPPORTED_COMMANDS = ["newtask"]
+export async function parseSlashCommands(text: string, workflowToggles: ClineRulesToggles = {}): Promise<string> {
+	const SUPPORTED_COMMANDS = ["newtask", "newrule"]
 
 	const commandReplacements: Record<string, string> = {
 		newtask: newTaskToolResponse(),
+		newrule: newRuleToolResponse(),
 	}
 
 	// this currently allows matching prepended whitespace prior to /slash-command
@@ -47,6 +50,47 @@ export function parseSlashCommands(text: string): string {
 				const processedText = commandReplacements[commandName] + textWithoutSlashCommand
 
 				return processedText
+			}
+
+			// Check for workflow commands
+			const enabledWorkflows = Object.entries(workflowToggles)
+				.filter(([_, enabled]) => enabled)
+				.map(([filePath, _]) => {
+					const fileName = filePath.replace(/^.*[/\\]/, "")
+					return {
+						fullPath: filePath,
+						fileName: fileName,
+					}
+				})
+
+			// Check if the command matches any enabled workflow filename
+			const matchingWorkflow = enabledWorkflows.find((workflow) => workflow.fileName === commandName)
+
+			if (matchingWorkflow) {
+				try {
+					// Read workflow file content from the full path
+					const workflowContent = (await fs.readFile(matchingWorkflow.fullPath, "utf8")).trim()
+
+					// find position of slash command within the full match
+					const fullMatchStartIndex = match.index
+					const fullMatch = match[0]
+					const relativeStartIndex = fullMatch.indexOf(match[1])
+
+					// calculate absolute indices in the original string
+					const slashCommandStartIndex = fullMatchStartIndex + relativeStartIndex
+					const slashCommandEndIndex = slashCommandStartIndex + match[1].length
+
+					// remove the slash command and add custom instructions at the top of this message
+					const textWithoutSlashCommand =
+						text.substring(0, slashCommandStartIndex) + text.substring(slashCommandEndIndex)
+					const processedText =
+						`<explicit_instructions type="${matchingWorkflow.fileName}">\n${workflowContent}\n</explicit_instructions>\n` +
+						textWithoutSlashCommand
+
+					return processedText
+				} catch (error) {
+					console.error(`Error reading workflow file ${matchingWorkflow.fullPath}: ${error}`)
+				}
 			}
 		}
 	}

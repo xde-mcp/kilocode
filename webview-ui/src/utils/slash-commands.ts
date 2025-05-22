@@ -44,7 +44,7 @@ export function getSupportedSlashCommands(
 export const SUPPORTED_SLASH_COMMANDS = getSupportedSlashCommands()
 
 // Regex for detecting slash commands in text
-export const slashCommandRegex = /\/([a-zA-Z0-9_-]+)(\s|$)/
+export const slashCommandRegex = /\/([a-zA-Z0-9_.-]+)(\s|$)/
 export const slashCommandRegexGlobal = new RegExp(slashCommandRegex.source, "g")
 
 /**

@@ -830,6 +830,7 @@ describe("Cline", () => {
 						cwd: cline.cwd,
 						urlContentFetcher: cline.urlContentFetcher,
 						fileContextTracker: cline.fileContextTracker,
+						workflowToggles: {},
 					})
 
 					// Regular text should not be processed

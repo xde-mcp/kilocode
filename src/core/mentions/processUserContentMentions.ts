@@ -2,6 +2,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import { parseMentions } from "./index"
 import { UrlContentFetcher } from "../../services/browser/UrlContentFetcher"
 import { FileContextTracker } from "../context-tracking/FileContextTracker"
+import { ClineRulesToggles } from "../../shared/cline-rules"
 
 // kilocode_change begin
 import { parseSlashCommands } from "../slash-commands"
@@ -15,11 +16,13 @@ export async function processUserContentMentions({
 	cwd,
 	urlContentFetcher,
 	fileContextTracker,
+	workflowToggles = {},
 }: {
 	userContent: Anthropic.Messages.ContentBlockParam[]
 	cwd: string
 	urlContentFetcher: UrlContentFetcher
 	fileContextTracker: FileContextTracker
+	workflowToggles?: ClineRulesToggles
 }) {
 	// Process userContent array, which contains various block types:
 	// TextBlockParam, ImageBlockParam, ToolUseBlockParam, and ToolResultBlockParam.
@@ -41,7 +44,7 @@ export async function processUserContentMentions({
 					let parsedText = await parseMentions(block.text, cwd, urlContentFetcher, fileContextTracker)
 
 					// when parsing slash commands, we still want to allow the user to provide their desired context
-					parsedText = parseSlashCommands(parsedText)
+					parsedText = await parseSlashCommands(parsedText, workflowToggles)
 
 					return {
 						...block,
