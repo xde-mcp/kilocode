@@ -82,6 +82,10 @@ import { getMessagesSinceLastSummary } from "../condense"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 import { processKiloUserContentMentions } from "../mentions/processKiloUserContentMentions" // kilocode_change
 import { refreshWorkflowToggles } from "../context/instructions/workflows"
+import { parseMentions } from "../mentions"
+import { parseKiloSlashCommands } from "../slash-commands/kilo"
+import { GlobalFileNames } from "../../shared/globalFileNames"
+import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rules"
 
 export type ClineEvents = {
 	message: [{ action: "created" | "updated"; message: ClineMessage }]
@@ -1041,7 +1045,7 @@ export class Task extends EventEmitter<ClineEvents> {
 
 		// kilocode_change start
 		const [parsedUserContent, needsRulesFileCheck] = await processKiloUserContentMentions({
-			context,
+			context: this.context,
 			userContent,
 			cwd: this.cwd,
 			urlContentFetcher: this.urlContentFetcher,
@@ -1385,7 +1389,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		let needsClinerulesFileCheck = false
 
 		// bookmark
-		const workflowToggles = await refreshWorkflowToggles(this.getContext(), cwd)
+		const workflowToggles = await refreshWorkflowToggles(this.getContext(), this.cwd)
 
 		const processUserContent = async () => {
 			// This is a temporary solution to dynamically load context mentions from tool results. It checks for the presence of tags that indicate that the tool was rejected and feedback was provided (see formatToolDeniedFeedback, attemptCompletion, executeCommand, and consecutiveMistakeCount >= 3) or "<answer>" (see askFollowupQuestion), we place all user generated content in these tags so they can effectively be used as markers for when we should parse mentions). However if we allow multiple tools responses in the future, we will need to parse mentions specifically within the user content tags.
@@ -1403,13 +1407,13 @@ export class Task extends EventEmitter<ClineEvents> {
 						) {
 							const parsedText = await parseMentions(
 								block.text,
-								cwd,
+								this.cwd,
 								this.urlContentFetcher,
 								this.fileContextTracker,
 							)
 
 							// when parsing slash commands, we still want to allow the user to provide their desired context
-							const { processedText, needsClinerulesFileCheck: needsCheck } = await parseSlashCommands(
+							const { processedText, needsRulesFileCheck: needsCheck } = await parseKiloSlashCommands(
 								parsedText,
 								workflowToggles,
 							)
@@ -1432,13 +1436,13 @@ export class Task extends EventEmitter<ClineEvents> {
 		// Run initial promises in parallel
 		const [processedUserContent, environmentDetails] = await Promise.all([
 			processUserContent(),
-			this.getEnvironmentDetails(includeFileDetails),
+			getEnvironmentDetails(this, includeFileDetails),
 		])
 
 		// After processing content, check clinerulesData if needed
 		let clinerulesError = false
 		if (needsClinerulesFileCheck) {
-			clinerulesError = await ensureLocalClineDirExists(cwd, GlobalFileNames.clineRules)
+			clinerulesError = await ensureLocalKilorulesDirExists(this.cwd, GlobalFileNames.kiloRules)
 		}
 
 		// Return all results

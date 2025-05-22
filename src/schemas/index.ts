@@ -6,7 +6,6 @@ import { z } from "zod"
 
 import { Equals, Keys, AssertEqual } from "../utils/type-fu"
 import { McpState } from "../shared/kilocode/mcp"
-import { refreshWorkflowToggles } from "../core/context/instructions/workflows"
 
 /**
  * ProviderName

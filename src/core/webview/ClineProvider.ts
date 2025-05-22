@@ -455,6 +455,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		} = await this.getState()
 
 		const cline = new Task({
+			context: this.context,
 			provider: this,
 			apiConfiguration,
 			enableDiff,
@@ -491,6 +492,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		} = await this.getState()
 
 		const cline = new Task({
+			context: this.context,
 			provider: this,
 			apiConfiguration,
 			enableDiff,
