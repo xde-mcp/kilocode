@@ -1,8 +1,13 @@
 // kilocode_change whole file
 
 import { ClineRulesToggles } from "../../shared/cline-rules"
-import { newTaskToolResponse, newRuleToolResponse } from "../prompts/commands"
 import fs from "fs/promises"
+import {
+	newTaskToolResponse,
+	newRuleToolResponse,
+	reportBugToolResponse,
+	condenseToolResponse,
+} from "../prompts/commands"
 
 /**
  * This file is a duplicate of parseSlashCommands, but it adds a check for the newrule command
@@ -12,11 +17,13 @@ export async function parseKiloSlashCommands(
 	text: string,
 	workflowToggles: ClineRulesToggles,
 ): Promise<{ processedText: string; needsRulesFileCheck: boolean }> {
-	const SUPPORTED_COMMANDS = ["newtask", "newrule"]
+	const SUPPORTED_COMMANDS = ["newtask", "newrule", "reportbug", "smol"]
 
 	const commandReplacements: Record<string, string> = {
 		newtask: newTaskToolResponse(),
 		newrule: newRuleToolResponse(),
+		reportbug: reportBugToolResponse(),
+		smol: condenseToolResponse(),
 	}
 
 	// this currently allows matching prepended whitespace prior to /slash-command
