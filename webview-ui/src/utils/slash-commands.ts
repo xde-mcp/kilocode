@@ -32,11 +32,7 @@ export function getSupportedSlashCommands(
 	}))
 
 	// add workflow commands
-
-	console.log("!!!!!!!!!!!!!workflowToggles", workflowToggles)
 	const workflowCommands = getWorkflowCommands(workflowToggles)
-	console.log("!!!!!!!!!!!!!workflowCommands", workflowCommands)
-
 	return [...baseCommands, ...modeCommands, ...workflowCommands]
 }
 
@@ -100,7 +96,6 @@ export function getMatchingSlashCommands(
 	customModes?: any[],
 	workflowToggles: Record<string, boolean> = {},
 ): SlashCommand[] {
-	console.log("!!!!!!!!!!!!!getMatchingSlashCommands", workflowToggles)
 	const commands = getSupportedSlashCommands(customModes, workflowToggles)
 
 	if (!query) {

@@ -973,9 +973,6 @@ export class Task extends EventEmitter<ClineEvents> {
 		userContent: Anthropic.Messages.ContentBlockParam[],
 		includeFileDetails: boolean = false,
 	): Promise<boolean> {
-		console.log(
-			`[!!!!!!!!] task ${this.taskId}.${this.instanceId} recursivelyMakeClineRequests, consecutiveMistakeCount: ${this.consecutiveMistakeCount}`,
-		)
 		if (this.abort) {
 			throw new Error(`[Cline#recursivelyMakeClineRequests] task ${this.taskId}.${this.instanceId} aborted`)
 		}
@@ -1390,8 +1387,6 @@ export class Task extends EventEmitter<ClineEvents> {
 	): Promise<[UserContent, string, boolean]> {
 		// Track if we need to check clinerulesFile
 		let needsClinerulesFileCheck = false
-
-		console.log(`\n\n\n[subtasks] loading context for task ${this.taskId}.${this.instanceId}`)
 
 		// bookmark
 		const workflowToggles = await refreshWorkflowToggles(this.getContext(), this.cwd)
