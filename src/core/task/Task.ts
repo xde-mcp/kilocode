@@ -3,6 +3,8 @@ import os from "os"
 import crypto from "crypto"
 import EventEmitter from "events"
 
+import * as vscode from "vscode"
+
 import { Anthropic } from "@anthropic-ai/sdk"
 import delay from "delay"
 import pWaitFor from "p-wait-for"
@@ -79,6 +81,7 @@ import { ApiMessage } from "../task-persistence/apiMessages"
 import { getMessagesSinceLastSummary } from "../condense"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 import { processKiloUserContentMentions } from "../mentions/processKiloUserContentMentions" // kilocode_change
+import { refreshWorkflowToggles } from "../context/instructions/workflows"
 
 export type ClineEvents = {
 	message: [{ action: "created" | "updated"; message: ClineMessage }]
@@ -95,6 +98,7 @@ export type ClineEvents = {
 }
 
 export type TaskOptions = {
+	context: vscode.ExtensionContext
 	provider: ClineProvider
 	apiConfiguration: ProviderSettings
 	enableDiff?: boolean
@@ -112,7 +116,11 @@ export type TaskOptions = {
 	onCreated?: (cline: Task) => void
 }
 
+type UserContent = Array<Anthropic.ContentBlockParam>
+
 export class Task extends EventEmitter<ClineEvents> {
+	private context: vscode.ExtensionContext
+
 	readonly taskId: string
 	readonly instanceId: string
 
@@ -187,6 +195,7 @@ export class Task extends EventEmitter<ClineEvents> {
 	didCompleteReadingStream = false
 
 	constructor({
+		context,
 		provider,
 		apiConfiguration,
 		enableDiff = false,
@@ -203,6 +212,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		onCreated,
 	}: TaskOptions) {
 		super()
+		this.context = context
 
 		if (startTask && !task && !images && !historyItem) {
 			throw new Error("Either historyItem or task/images must be provided")
@@ -254,6 +264,14 @@ export class Task extends EventEmitter<ClineEvents> {
 				throw new Error("Either historyItem or task/images must be provided")
 			}
 		}
+	}
+
+	private getContext(): vscode.ExtensionContext {
+		const context = this.context
+		if (!context) {
+			throw new Error("Unable to access extension context")
+		}
+		return context
 	}
 
 	static create(options: TaskOptions): [Task, Promise<void>] {
@@ -1023,6 +1041,7 @@ export class Task extends EventEmitter<ClineEvents> {
 
 		// kilocode_change start
 		const [parsedUserContent, needsRulesFileCheck] = await processKiloUserContentMentions({
+			context,
 			userContent,
 			cwd: this.cwd,
 			urlContentFetcher: this.urlContentFetcher,
@@ -1356,6 +1375,74 @@ export class Task extends EventEmitter<ClineEvents> {
 			// of this instance (see `startTask`).
 			return true // Needs to be true so parent loop knows to end task.
 		}
+	}
+
+	async loadContext(
+		userContent: UserContent,
+		includeFileDetails: boolean = false,
+	): Promise<[UserContent, string, boolean]> {
+		// Track if we need to check clinerulesFile
+		let needsClinerulesFileCheck = false
+
+		// bookmark
+		const workflowToggles = await refreshWorkflowToggles(this.getContext(), cwd)
+
+		const processUserContent = async () => {
+			// This is a temporary solution to dynamically load context mentions from tool results. It checks for the presence of tags that indicate that the tool was rejected and feedback was provided (see formatToolDeniedFeedback, attemptCompletion, executeCommand, and consecutiveMistakeCount >= 3) or "<answer>" (see askFollowupQuestion), we place all user generated content in these tags so they can effectively be used as markers for when we should parse mentions). However if we allow multiple tools responses in the future, we will need to parse mentions specifically within the user content tags.
+			// (Note: this caused the @/ import alias bug where file contents were being parsed as well, since v2 converted tool results to text blocks)
+			return await Promise.all(
+				userContent.map(async (block) => {
+					if (block.type === "text") {
+						// We need to ensure any user generated content is wrapped in one of these tags so that we know to parse mentions
+						// FIXME: Only parse text in between these tags instead of the entire text block which may contain other tool results. This is part of a larger issue where we shouldn't be using regex to parse mentions in the first place (ie for cases where file paths have spaces)
+						if (
+							block.text.includes("<feedback>") ||
+							block.text.includes("<answer>") ||
+							block.text.includes("<task>") ||
+							block.text.includes("<user_message>")
+						) {
+							const parsedText = await parseMentions(
+								block.text,
+								cwd,
+								this.urlContentFetcher,
+								this.fileContextTracker,
+							)
+
+							// when parsing slash commands, we still want to allow the user to provide their desired context
+							const { processedText, needsClinerulesFileCheck: needsCheck } = await parseSlashCommands(
+								parsedText,
+								workflowToggles,
+							)
+
+							if (needsCheck) {
+								needsClinerulesFileCheck = true
+							}
+
+							return {
+								...block,
+								text: processedText,
+							}
+						}
+					}
+					return block
+				}),
+			)
+		}
+
+		// Run initial promises in parallel
+		const [processedUserContent, environmentDetails] = await Promise.all([
+			processUserContent(),
+			this.getEnvironmentDetails(includeFileDetails),
+		])
+
+		// After processing content, check clinerulesData if needed
+		let clinerulesError = false
+		if (needsClinerulesFileCheck) {
+			clinerulesError = await ensureLocalClineDirExists(cwd, GlobalFileNames.clineRules)
+		}
+
+		// Return all results
+		return [processedUserContent, environmentDetails, clinerulesError]
 	}
 
 	public async *attemptApiRequest(previousApiReqIndex: number, retryAttempt: number = 0): ApiStream {

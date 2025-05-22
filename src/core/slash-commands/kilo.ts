@@ -1,10 +1,15 @@
+import { ClineRulesToggles } from "../../shared/cline-rules"
 import { newTaskToolResponse, newRuleToolResponse } from "../prompts/commands"
+import fs from "fs/promises"
 
 /**
  * This file is a duplicate of parseSlashCommands, but it adds a check for the newrule command
  * and processes Kilo-specific slash commands. It should be merged with parseSlashCommands in the future.
  */
-export function parseKiloSlashCommands(text: string): { processedText: string; needsRulesFileCheck: boolean } {
+export async function parseKiloSlashCommands(
+	text: string,
+	workflowToggles: ClineRulesToggles,
+): Promise<{ processedText: string; needsRulesFileCheck: boolean }> {
 	const SUPPORTED_COMMANDS = ["newtask", "newrule"]
 
 	const commandReplacements: Record<string, string> = {
@@ -20,6 +25,7 @@ export function parseKiloSlashCommands(text: string): { processedText: string; n
 		{ tag: "user_message", regex: /<user_message>(\s*\/([a-zA-Z0-9_-]+))(\s+.+?)?\s*<\/user_message>/is },
 	]
 
+	console.log("Parsing Kilo slash commands...")
 	// if we find a valid match, we will return inside that block
 	for (const { regex } of tagPatterns) {
 		const regexObj = new RegExp(regex.source, regex.flags)
@@ -48,6 +54,49 @@ export function parseKiloSlashCommands(text: string): { processedText: string; n
 				const processedText = commandReplacements[commandName] + textWithoutSlashCommand
 
 				return { processedText, needsRulesFileCheck: commandName === "newrule" }
+			}
+
+			// in practice we want to minimize this work, so we only do it if theres a possible match
+			console.log("Checking for workflow matches...", workflowToggles)
+			const enabledWorkflows = Object.entries(workflowToggles)
+				.filter(([_, enabled]) => enabled)
+				.map(([filePath, _]) => {
+					const fileName = filePath.replace(/^.*[/\\]/, "")
+
+					return {
+						fullPath: filePath,
+						fileName: fileName,
+					}
+				})
+
+			// Then check if the command matches any enabled workflow filename
+			const matchingWorkflow = enabledWorkflows.find((workflow) => workflow.fileName === commandName)
+
+			if (matchingWorkflow) {
+				try {
+					// Read workflow file content from the full path
+					const workflowContent = (await fs.readFile(matchingWorkflow.fullPath, "utf8")).trim()
+
+					// find position of slash command within the full match
+					const fullMatchStartIndex = match.index
+					const fullMatch = match[0]
+					const relativeStartIndex = fullMatch.indexOf(match[1])
+
+					// calculate absolute indices in the original string
+					const slashCommandStartIndex = fullMatchStartIndex + relativeStartIndex
+					const slashCommandEndIndex = slashCommandStartIndex + match[1].length
+
+					// remove the slash command and add custom instructions at the top of this message
+					const textWithoutSlashCommand =
+						text.substring(0, slashCommandStartIndex) + text.substring(slashCommandEndIndex)
+					const processedText =
+						`<explicit_instructions type="${matchingWorkflow.fileName}">\n${workflowContent}\n</explicit_instructions>\n` +
+						textWithoutSlashCommand
+
+					return { processedText, needsRulesFileCheck: false }
+				} catch (error) {
+					console.error(`Error reading workflow file ${matchingWorkflow.fullPath}: ${error}`)
+				}
 			}
 		}
 	}

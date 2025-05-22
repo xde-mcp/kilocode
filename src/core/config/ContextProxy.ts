@@ -149,6 +149,17 @@ export class ContextProxy {
 	}
 
 	/**
+	 * WorkspaceState
+	 */
+	async updateWorkspaceState(context: vscode.ExtensionContext, key: string, value: any) {
+		await context.workspaceState.update(key, value)
+	}
+
+	async getWorkspaceState(context: vscode.ExtensionContext, key: string) {
+		return await context.workspaceState.get(key)
+	}
+
+	/**
 	 * GlobalSettings
 	 */
 

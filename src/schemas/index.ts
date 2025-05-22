@@ -6,6 +6,7 @@ import { z } from "zod"
 
 import { Equals, Keys, AssertEqual } from "../utils/type-fu"
 import { McpState } from "../shared/kilocode/mcp"
+import { refreshWorkflowToggles } from "../core/context/instructions/workflows"
 
 /**
  * ProviderName
@@ -707,6 +708,7 @@ export const globalSettingsSchema = z.object({
 	browserToolEnabled: z.boolean().optional(),
 	browserViewportSize: z.string().optional(),
 	showAutoApproveMenu: z.boolean().optional(), // kilocode_change
+	workflowToggles: z.record(z.string(), z.boolean()).optional(),
 	screenshotQuality: z.number().optional(),
 	remoteBrowserEnabled: z.boolean().optional(),
 	remoteBrowserHost: z.string().optional(),
@@ -787,6 +789,7 @@ const globalSettingsRecord: GlobalSettingsRecord = {
 	browserToolEnabled: undefined,
 	browserViewportSize: undefined,
 	showAutoApproveMenu: undefined, // kilocode_change
+	workflowToggles: undefined,
 	screenshotQuality: undefined,
 	remoteBrowserEnabled: undefined,
 	remoteBrowserHost: undefined,

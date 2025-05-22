@@ -2,7 +2,8 @@ import { getAllModes } from "@roo/shared/modes"
 
 export interface SlashCommand {
 	name: string
-	description: string
+	description?: string
+	section?: "default" | "custom"
 }
 
 // Create a function to get all supported slash commands
@@ -67,11 +68,33 @@ export function shouldShowSlashCommandsMenu(text: string, cursorPosition: number
 	return true
 }
 
+export function getWorkflowCommands(workflowToggles: Record<string, boolean>): SlashCommand[] {
+	return Object.entries(workflowToggles)
+		.filter(([_, enabled]) => enabled)
+		.map(([filePath, _]) => {
+			// potentially remove the file extension if there is one, but this would then require
+			// that we prevent users from having the same fname with different extensions
+			const fileName = filePath.replace(/^.*[/\\]/, "")
+
+			return {
+				name: fileName,
+				section: "custom",
+			}
+		})
+}
+
 /**
  * Gets filtered slash commands that match the current input
  */
-export function getMatchingSlashCommands(query: string, customModes?: any[]): SlashCommand[] {
-	const commands = getSupportedSlashCommands(customModes)
+export function getMatchingSlashCommands(
+	query: string,
+	customModes?: any[],
+	workflowToggles: Record<string, boolean> = {},
+): SlashCommand[] {
+	const workflowCommands = getWorkflowCommands(workflowToggles)
+	let commands = getSupportedSlashCommands(customModes)
+
+	commands = [...commands, ...workflowCommands]
 
 	if (!query) {
 		return [...commands]

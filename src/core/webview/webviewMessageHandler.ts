@@ -35,6 +35,7 @@ import { Mode, defaultModeSlug } from "../../shared/modes"
 import { GlobalState } from "../../schemas"
 import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
 import { generateSystemPrompt } from "./generateSystemPrompt"
+import { ClineRulesToggles } from "../../shared/cline-rules"
 
 const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
 
@@ -1297,6 +1298,21 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 
 		case "silentlyRefreshMcpMarketplace": {
 			await provider.silentlyRefreshMcpMarketplace()
+			break
+		}
+
+		case "toggleWorkflow": {
+			const { workflowPath, enabled } = message
+			if (workflowPath && typeof enabled === "boolean") {
+				const toggles =
+					((await provider.contextProxy.getWorkspaceState(
+						provider.context,
+						"workflowToggles",
+					)) as ClineRulesToggles) || {}
+				toggles[workflowPath] = enabled
+				await provider.contextProxy.updateWorkspaceState(provider.context, "workflowToggles", toggles)
+				await provider.postStateToWebview()
+			}
 			break
 		}
 		// end kilocode_change

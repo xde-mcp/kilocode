@@ -141,6 +141,7 @@ export interface WebviewMessage {
 		| "downloadMcp" // kilocode_change
 		| "showSystemNotification" // kilocode_change
 		| "showAutoApproveMenu" // kilocode_change
+		| "toggleWorkflow" // kilocode_change
 	text?: string
 	disabled?: boolean
 	askResponse?: ClineAskResponse
@@ -160,6 +161,8 @@ export interface WebviewMessage {
 	toolNames?: string[]
 	url?: string
 	autoApprove?: boolean
+	workflowPath?: string
+	enabled?: boolean
 	// kilocode_change end
 	serverName?: string
 	toolName?: string
