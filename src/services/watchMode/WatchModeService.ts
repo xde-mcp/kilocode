@@ -19,12 +19,6 @@ import { withReflection, buildWatchModeReflectionPrompt } from "./reflectionWrap
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
 import { getContextFiles } from "./importParser"
 
-// Interface for document change event data
-interface DocumentChangeData {
-	document: vscode.TextDocument
-	isDocumentSave: boolean
-}
-
 /**
  * Service that watches files for changes and processes AI comments
  */
@@ -171,15 +165,12 @@ export class WatchModeService {
 		this.disposeDocumentListeners() // Clean up any existing document listeners
 
 		// Set up document change listeners for real-time editing
-		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-			// Process document changes as they happen (without debounce)
-			this.handleDocumentChange({ document: event.document, isDocumentSave: false })
-		})
-
 		// Set up document save listeners
+		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
+			this.handleDocumentChange({ document: event.document, shouldProcessComments: false })
+		})
 		const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
-			// Process document saves
-			this.handleDocumentChange({ document: document, isDocumentSave: true })
+			this.handleDocumentChange({ document: document, shouldProcessComments: true })
 		})
 
 		this.documentListeners.push(changeListener, saveListener)
@@ -188,10 +179,9 @@ export class WatchModeService {
 
 	/**
 	 * Handles document change events (typing or saving)
-	 * @param data Document change event data
 	 */
-	private handleDocumentChange(data: DocumentChangeData): void {
-		const { document, isDocumentSave } = data
+	private handleDocumentChange(data: { document: vscode.TextDocument; shouldProcessComments: boolean }): void {
+		const { document, shouldProcessComments } = data
 		const fileUri = document.uri
 		const fileKey = fileUri.toString()
 
@@ -202,7 +192,7 @@ export class WatchModeService {
 		this.detectAndHighlightComments(document)
 
 		// For save events, immediately process the comments with animation
-		if (isDocumentSave) {
+		if (shouldProcessComments) {
 			this.log(`Document saved, immediately processing: ${fileUri.toString()}`)
 
 			// Cancel any pending processing for this file
@@ -463,6 +453,7 @@ export class WatchModeService {
 			this.log(`Trigger type determined: ${triggerType}`)
 
 			// Process with reflection support (up to 3 attempts)
+
 			await this.processWithReflection(documentToUse, comment, triggerType, clearHighlight)
 
 			// Clear the tracked document after processing
@@ -499,35 +490,25 @@ export class WatchModeService {
 		triggerType: TriggerType,
 		clearHighlight: () => void,
 	): Promise<void> {
-		// Prepare context for the reflection wrapper
+		// Gather active files context first
 		const context = {
 			document,
 			comment,
 			triggerType,
-			activeFilesWithContent: [] as { uri: vscode.Uri; content: string }[],
+			activeFilesWithContent: await this.gatherActiveFilesContext(document),
 		}
 
-		// Gather active files context first
-		const activeFilesWithContent = await this.gatherActiveFilesContext(document)
-		context.activeFilesWithContent = activeFilesWithContent
-
-		// Use the reflection wrapper
 		const result = await withReflection(context, {
-			buildPrompt: (ctx) => {
-				return buildAIPrompt(ctx.comment, ctx.triggerType, ctx.activeFilesWithContent)
-			},
-			buildReflectionPrompt: (ctx, originalResponse, errors) => {
-				return buildWatchModeReflectionPrompt(
+			buildPrompt: (ctx) => buildAIPrompt(ctx.comment, ctx.triggerType, ctx.activeFilesWithContent),
+			buildReflectionPrompt: (ctx, originalResponse, errors) =>
+				buildWatchModeReflectionPrompt(
 					ctx.comment,
 					originalResponse,
 					errors,
 					ctx.activeFilesWithContent,
 					this.config.commentPrefix,
-				)
-			},
-			callAI: async (prompt) => {
-				return await this.callAIModel(prompt)
-			},
+				),
+			callAI: async (prompt) => await this.callAIModel(prompt),
 			processResponse: async (ctx, response, attemptNumber) => {
 				// Use the tracked document if this is from a quick command
 				const documentToProcess = this.quickCommandDocument || ctx.document
