@@ -1,7 +1,6 @@
 import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
-import * as crypto from "crypto"
 
 /**
  * Flag to enable/disable autocomplete prompt debugging
@@ -19,7 +18,7 @@ const DEBUG_BASE_DIR = path.join(os.tmpdir(), "kilo_prompt_debug")
  */
 interface DebugSession {
 	id: string
-	directory: string
+	filePath: string
 }
 
 /**
@@ -30,42 +29,39 @@ function generateDebugId(): string {
 }
 
 /**
- * Creates a debug directory for a session
+ * Creates a debug session and returns the file path
  * @returns Debug session information
  */
 function createDebugSession(): DebugSession {
 	const id = generateDebugId()
-	const directory = path.join(DEBUG_BASE_DIR, id)
 
 	// Create the directory if it doesn't exist
 	if (!fs.existsSync(DEBUG_BASE_DIR)) {
 		fs.mkdirSync(DEBUG_BASE_DIR, { recursive: true })
 	}
 
-	if (!fs.existsSync(directory)) {
-		fs.mkdirSync(directory, { recursive: true })
-	}
+	const filePath = path.join(DEBUG_BASE_DIR, `debug_${id}.txt`)
+	console.log(`Debug file: ${filePath}`)
 
-	console.log(`Debugging prompt dir: ${directory}`)
-	return { id, directory }
+	return { id, filePath }
 }
 
 /**
- * Writes content to a debug file
- * @param filename The filename to write to
+ * Writes or appends content to a debug file
+ * @param filePath The file path to write to
  * @param content The content to write
- * @param directory The directory to write to
+ * @param append Whether to append to the file
  */
-function writeDebugFile(filename: string, content: string, directory: string): void {
-	const filePath = path.join(directory, filename)
-
-	fs.writeFile(filePath, content, (err) => {
-		if (err) {
-			console.error(`Error writing debug file ${filename}:`, err)
+function writeDebugFile(filePath: string, content: string, append: boolean = false): void {
+	try {
+		if (append) {
+			fs.appendFileSync(filePath, content)
 		} else {
-			// console.log(`Debug file written to ${filePath}`)
+			fs.writeFileSync(filePath, content)
 		}
-	})
+	} catch (err) {
+		console.error(`Error writing debug file:`, err)
+	}
 }
 
 /**
@@ -81,20 +77,29 @@ export function writePromptToDebugFile(systemPrompt: string, userPrompt: string)
 
 	try {
 		const session = createDebugSession()
-		const debugContent = `System Prompt:\n${systemPrompt}\n\nUser Prompt:\n${userPrompt.replaceAll("\\n", "\n")}`
-		writeDebugFile("prompt.txt", debugContent, session.directory)
 
-		// Also write a metadata file with timestamp
-		const metadata = {
-			timestamp: new Date().toISOString(),
-			type: "prompt",
-		}
-		writeDebugFile("metadata.json", JSON.stringify(metadata, null, 2), session.directory)
+		const timestamp = new Date().toISOString()
+		const separator = "=".repeat(80)
 
+		const debugContent = `${separator}
+PROMPT DEBUG SESSION
+Timestamp: ${timestamp}
+${separator}
+
+SYSTEM PROMPT:
+${separator}
+${systemPrompt}
+
+USER PROMPT:
+${separator}
+${userPrompt.replaceAll("\\n", "\n")}
+
+`
+
+		writeDebugFile(session.filePath, debugContent)
 		return session.id
 	} catch (error) {
 		console.error("Error in debug prompt writing:", error)
-		// Continue with normal operation even if debug writing fails
 		return undefined
 	}
 }
@@ -110,26 +115,29 @@ export function writePromptResponseToDebugFile(response: string, debugId?: strin
 	}
 
 	try {
-		let directory: string
+		let filePath: string
 
 		if (debugId) {
-			// Use the existing debug session directory
-			directory = path.join(DEBUG_BASE_DIR, debugId)
-
-			// Create the directory if it doesn't exist (shouldn't happen but just in case)
-			if (!fs.existsSync(directory)) {
-				fs.mkdirSync(directory, { recursive: true })
-			}
+			// Use the existing debug session file
+			filePath = path.join(DEBUG_BASE_DIR, `debug_${debugId}.txt`)
 		} else {
 			// Create a new session if no ID was provided
 			const session = createDebugSession()
-			directory = session.directory
+			filePath = session.filePath
 		}
 
-		const debugContent = `Response:\n${response}`
-		writeDebugFile("response.txt", debugContent, directory)
+		const separator = "=".repeat(80)
+		const debugContent = `AI RESPONSE:
+${separator}
+${response}
+
+${separator}
+END OF DEBUG SESSION
+${separator}
+`
+
+		writeDebugFile(filePath, debugContent, true)
 	} catch (error) {
 		console.error("Error in debug response writing:", error)
-		// Continue with normal operation even if debug writing fails
 	}
 }
