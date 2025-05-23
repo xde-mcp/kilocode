@@ -172,6 +172,4 @@ export async function deactivate() {
 
 	// Clean up terminal handlers
 	TerminalRegistry.cleanup()
-
-	// Watch mode service will be disposed automatically via context.subscriptions
 }

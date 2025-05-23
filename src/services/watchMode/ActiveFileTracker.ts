@@ -10,25 +10,6 @@ export class ActiveFileTracker {
 	private activeFiles: Set<string> = new Set()
 	private maxActiveFiles: number = 10 // Maximum number of files to keep in active context
 	private largeFileThreshold: number = 1000000 // ~1MB threshold for large files
-	private outputChannel?: vscode.OutputChannel
-
-	/**
-	 * Creates a new instance of the ActiveFileTracker
-	 * @param outputChannel Optional output channel for logging
-	 */
-	constructor(outputChannel?: vscode.OutputChannel) {
-		this.outputChannel = outputChannel
-	}
-
-	/**
-	 * Logs a message to the output channel if available
-	 * @param message The message to log
-	 */
-	private log(message: string): void {
-		if (this.outputChannel) {
-			this.outputChannel.appendLine(`[ActiveFileTracker] ${message}`)
-		}
-	}
 
 	/**
 	 * Adds a file to the active files list
@@ -52,11 +33,11 @@ export class ActiveFileTracker {
 
 			if (oldest) {
 				this.activeFiles.delete(oldest)
-				this.log(`Removed ${oldest} from active files (exceeded max of ${this.maxActiveFiles})`)
+				console.log(`Removed ${oldest} from active files (exceeded max of ${this.maxActiveFiles})`)
 			}
 		}
 
-		this.log(`Active files (${this.activeFiles.size}): ${Array.from(this.activeFiles).join(", ")}`)
+		console.log(`Active files (${this.activeFiles.size}): ${Array.from(this.activeFiles).join(", ")}`)
 	}
 
 	/**
@@ -124,7 +105,7 @@ export class ActiveFileTracker {
 			try {
 				// Skip files that are too large
 				if (uri.fsPath.endsWith(".min.js") || uri.fsPath.endsWith(".min.css")) {
-					this.log(`Skipping minified file: ${uri.fsPath}`)
+					console.log(`Skipping minified file: ${uri.fsPath}`)
 					continue
 				}
 
@@ -133,7 +114,7 @@ export class ActiveFileTracker {
 
 				// Skip if file is too large
 				if (this.isFileTooLarge(content)) {
-					this.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
+					console.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
 					continue
 				}
 
@@ -142,7 +123,7 @@ export class ActiveFileTracker {
 
 				// If adding this file would exceed our budget, skip it
 				if (estimatedTokens + fileTokens > MAX_ADDITIONAL_CONTEXT_TOKENS) {
-					this.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
+					console.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
 					continue
 				}
 
@@ -150,13 +131,13 @@ export class ActiveFileTracker {
 				activeFilesWithContent.push({ uri, content })
 				estimatedTokens += fileTokens
 
-				this.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
+				console.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
 			} catch (error) {
-				this.log(`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`)
+				console.log(`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`)
 			}
 		}
 
-		this.log(
+		console.log(
 			`Total context includes ${activeFilesWithContent.length} additional files (est. ${estimatedTokens} tokens)`,
 		)
 
@@ -177,7 +158,7 @@ export class ActiveFileTracker {
 
 			if (oldest) {
 				this.activeFiles.delete(oldest)
-				this.log(`Removed ${oldest} from active files (exceeded new max of ${this.maxActiveFiles})`)
+				console.log(`Removed ${oldest} from active files (exceeded new max of ${this.maxActiveFiles})`)
 			}
 		}
 	}
@@ -195,7 +176,7 @@ export class ActiveFileTracker {
 	 */
 	public clearActiveFiles(): void {
 		this.activeFiles.clear()
-		this.log("Cleared all active files")
+		console.log("Cleared all active files")
 	}
 
 	/**

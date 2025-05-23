@@ -69,7 +69,7 @@ export class WatchModeService {
 		this.config = this.defaultConfig
 		this.ui = new WatchModeStatusBar(context)
 		this.highlighter = new WatchModeHighlighter()
-		this.activeFileTracker = new ActiveFileTracker(outputChannel)
+		this.activeFileTracker = new ActiveFileTracker()
 
 		this.setupApiHandler()
 
