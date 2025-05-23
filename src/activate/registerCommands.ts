@@ -67,7 +67,7 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 
 const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCommandOptions) => {
 	return {
-		"kilo-code.activationCompleted": () => {},
+		"kilo-code.activationCompleted": () => { },
 		"kilo-code.plusButtonClicked": async () => {
 			const visibleProvider = getVisibleProviderOrLog(outputChannel)
 
@@ -248,8 +248,8 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 
 			// Show input box for the command
 			const input = await vscode.window.showInputBox({
-				prompt: "Speak your command...",
-				placeHolder: "e.g., fix the bug in this function, add error handling, refactor this code",
+				prompt: t("kilocode:commands.quickCommand.prompt"),
+				placeHolder: t("kilocode:commands.quickCommand.placeholder"),
 				ignoreFocusOut: true,
 			})
 
