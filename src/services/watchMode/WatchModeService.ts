@@ -292,13 +292,13 @@ export class WatchModeService {
 	}
 
 	private async processAIComment(document: vscode.TextDocument, comment: AICommentData): Promise<void> {
+		// Highlight the AI comment with animation
+		const clearHighlight = this.highlighter.highlightCommentForProcessing(document, comment)
+
 		try {
 			this.log(
 				`Processing AI comment: "${comment.content.substring(0, 50)}${comment.content.length > 50 ? "..." : ""}"`,
 			)
-
-			// Highlight the AI comment with animation
-			const clearHighlight = this.highlighter.highlightCommentForProcessing(document, comment)
 
 			// Emit event that we're starting to process this comment
 			this._onDidStartProcessingComment.fire({ fileUri: document.uri, comment })
@@ -313,6 +313,8 @@ export class WatchModeService {
 				comment,
 				success: false,
 			})
+			// Clear the highlighting decorators when an error occurs
+			clearHighlight()
 		}
 	}
 
