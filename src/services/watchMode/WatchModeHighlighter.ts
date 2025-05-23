@@ -32,6 +32,7 @@ const DEFAULT_OPTIONS: Required<HighlighterOptions> = {
 export class WatchModeHighlighter {
 	private options: Required<HighlighterOptions>
 	private activeHighlights: Map<string, () => void> = new Map()
+	private staticHighlights: Map<string, () => void> = new Map()
 
 	/**
 	 * Creates a new instance of the WatchModeHighlighter
@@ -164,10 +165,17 @@ export class WatchModeHighlighter {
 	 * Clears all active highlights
 	 */
 	public clearAllHighlights(): void {
+		// Clear active highlights
 		for (const cleanup of this.activeHighlights.values()) {
 			cleanup()
 		}
 		this.activeHighlights.clear()
+
+		// Clear static highlights
+		for (const cleanup of this.staticHighlights.values()) {
+			cleanup()
+		}
+		this.staticHighlights.clear()
 	}
 
 	/**
@@ -176,5 +184,97 @@ export class WatchModeHighlighter {
 	 */
 	public updateOptions(options: HighlighterOptions): void {
 		this.options = { ...this.options, ...options }
+	}
+
+	/**
+	 * Highlights only the comment prefix (e.g., "KO!") in a comment
+	 * @param document The document containing the comment
+	 * @param comment The AI comment data
+	 * @param commentPrefix The prefix to highlight (e.g., "KO!")
+	 * @returns A unique ID for the highlight that can be used to clear it later
+	 */
+	public highlightCommentPrefixOnly(
+		document: vscode.TextDocument,
+		comment: AICommentData,
+		commentPrefix: string,
+	): string {
+		// Create a unique ID for this highlight
+		const highlightId = `static:${document.uri.toString()}:${comment.startPos.line}:${comment.startPos.character}`
+
+		// Clear any existing highlight for this comment
+		if (this.staticHighlights.has(highlightId)) {
+			this.staticHighlights.get(highlightId)?.()
+			this.staticHighlights.delete(highlightId)
+		}
+
+		// Find the position of the prefix in the comment
+		const line = document.lineAt(comment.startPos.line).text
+		const prefixIndex = line.indexOf(commentPrefix)
+
+		if (prefixIndex >= 0) {
+			// Create a range just for the prefix
+			const prefixStart = new vscode.Position(comment.startPos.line, prefixIndex)
+			const prefixEnd = new vscode.Position(comment.startPos.line, prefixIndex + commentPrefix.length)
+			const prefixRange = new vscode.Range(prefixStart, prefixEnd)
+
+			// Apply static highlight with a lighter color only to the prefix
+			const clearHighlight = this.highlightRange(document, prefixRange, {
+				backgroundColor: "rgba(0, 122, 255, 0.3)",
+				borderColor: "rgba(0, 122, 255, 0.5)",
+				borderWidth: "1px",
+				borderStyle: "solid",
+				isWholeLine: false,
+			})
+
+			// Store the cleanup function
+			this.staticHighlights.set(highlightId, clearHighlight)
+		} else {
+			// Fallback to highlighting the whole comment if prefix not found
+			const range = new vscode.Range(comment.startPos, comment.endPos)
+
+			// Apply static highlight with a lighter color
+			const fallbackClearHighlight = this.highlightRange(document, range, {
+				backgroundColor: "rgba(0, 122, 255, 0.3)",
+				borderColor: "rgba(0, 122, 255, 0.5)",
+				borderWidth: "1px",
+				borderStyle: "solid",
+				isWholeLine: false,
+			})
+
+			// Store the cleanup function
+			this.staticHighlights.set(highlightId, fallbackClearHighlight)
+		}
+
+		return highlightId
+	}
+
+	/**
+	 * Clears all static highlights for a specific file
+	 * @param fileUri The URI of the file
+	 */
+	public clearStaticHighlightsForFile(fileUri: vscode.Uri): void {
+		const fileUriStr = fileUri.toString()
+		for (const [id, clearFn] of this.staticHighlights.entries()) {
+			if (id.includes(fileUriStr)) {
+				clearFn()
+				this.staticHighlights.delete(id)
+			}
+		}
+	}
+
+	/**
+	 * Highlights a comment with processing decoration
+	 * @param document The document containing the comment
+	 * @param comment The AI comment data
+	 * @returns A function to clear the highlight
+	 */
+	public highlightCommentForProcessing(document: vscode.TextDocument, comment: AICommentData): () => void {
+		return this.highlightRange(document, new vscode.Range(comment.startPos, comment.endPos), {
+			backgroundColor: "rgba(0, 122, 255, 0.4)",
+			borderColor: "rgba(0, 122, 255, 0.9)",
+			borderWidth: "1px",
+			borderStyle: "solid",
+			isWholeLine: true,
+		})
 	}
 }

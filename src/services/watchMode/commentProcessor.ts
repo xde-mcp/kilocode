@@ -9,7 +9,7 @@ import {
 	TriggerType,
 } from "./types"
 import { MultiSearchReplaceDiffStrategy } from "../../core/diff/strategies/multi-search-replace"
-import { ReflectionNeededError } from "./reflectionWrapper"
+import { ReflectionNeededError } from "../../utils/reflectionWrapper"
 
 /**
  * Interface for a diff edit

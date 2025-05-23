@@ -5,7 +5,7 @@ import { AICommentData, WatchModeConfig, TriggerType } from "./types"
 import { WatchModeUI } from "./ui"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ContextProxy } from "../../core/config/ContextProxy"
-import { writePromptToDebugFile, writePromptResponseToDebugFile } from "./PromptDebugger"
+import { writePromptToDebugFile, writePromptResponseToDebugFile } from "../../utils/PromptDebugger"
 import {
 	detectAIComments,
 	buildAIPrompt,
@@ -15,7 +15,7 @@ import {
 	determineTriggerType,
 	estimateTokenCount,
 } from "./commentProcessor"
-import { withReflection, buildWatchModeReflectionPrompt } from "./reflectionWrapper"
+import { withReflection, buildWatchModeReflectionPrompt } from "../../utils/reflectionWrapper"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
 import { getContextFiles } from "./importParser"
 
@@ -25,14 +25,12 @@ import { getContextFiles } from "./importParser"
 export class WatchModeService {
 	private apiHandler: ApiHandler | null = null
 	private pendingProcessing: Map<string, ReturnType<typeof setTimeout>> = new Map()
-	private _isActive: boolean = false
 	private outputChannel?: vscode.OutputChannel
 	private ui: WatchModeUI
 	private highlighter: WatchModeHighlighter
 	private processingFiles: Set<string> = new Set()
 	private currentDebugId?: string
 	private documentListeners: vscode.Disposable[] = []
-	private staticHighlights: Map<string, () => void> = new Map()
 	private quickCommandDocument?: vscode.TextDocument // Track the document that initiated a quick command
 
 	// Track active files for context management
@@ -41,7 +39,6 @@ export class WatchModeService {
 	private largeFileThreshold: number = 1000000 // ~1MB threshold for large files
 
 	// Event emitters
-	private readonly _onDidChangeActiveState = new vscode.EventEmitter<boolean>()
 	private readonly _onDidStartProcessingComment = new vscode.EventEmitter<{
 		fileUri: vscode.Uri
 		comment: AICommentData
@@ -53,7 +50,6 @@ export class WatchModeService {
 	}>()
 
 	// Event handlers
-	readonly onDidChangeActiveState = this._onDidChangeActiveState.event
 	readonly onDidStartProcessingComment = this._onDidStartProcessingComment.event
 	readonly onDidFinishProcessingComment = this._onDidFinishProcessingComment.event
 
@@ -82,10 +78,6 @@ export class WatchModeService {
 		this.setupApiHandler()
 
 		// Listen to our own events to update the UI
-		this.onDidChangeActiveState((isActive) => {
-			this.ui.showStatus(isActive)
-		})
-
 		this.onDidStartProcessingComment(({ fileUri }) => {
 			this.processingFiles.add(fileUri.toString())
 			this.ui.showProcessing(this.processingFiles.size)
@@ -105,6 +97,11 @@ export class WatchModeService {
 				this.ui.showSuccessNotification(filePath, 1)
 			}
 		})
+
+		// Initialize if experiment is enabled
+		if (this.isExperimentEnabled()) {
+			this.initialize()
+		}
 	}
 
 	private async setupApiHandler() {
@@ -159,13 +156,28 @@ export class WatchModeService {
 	}
 
 	/**
+	 * Initializes the watch mode service
+	 */
+	private initialize(): void {
+		this.log("Initializing watch mode")
+		this.loadConfig()
+		this.ui.showStatus(true)
+		this.initializeWatchers()
+	}
+
+	/**
 	 * Initializes file system watchers
 	 */
 	private initializeWatchers(): void {
-		this.disposeDocumentListeners() // Clean up any existing document listeners
+		// Clean up any existing document listeners
+		this.log(`Disposing ${this.documentListeners.length} document listeners`)
+		for (const listener of this.documentListeners) {
+			listener.dispose()
+		}
+		this.documentListeners = []
+		this.highlighter.clearAllHighlights()
 
-		// Set up document change listeners for real-time editing
-		// Set up document save listeners
+		// Set up document change listeners for real-time editing and document save listeners
 		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 			this.handleDocumentChange({ document: event.document, shouldProcessComments: false })
 		})
@@ -184,9 +196,6 @@ export class WatchModeService {
 		const { document, shouldProcessComments } = data
 		const fileUri = document.uri
 		const fileKey = fileUri.toString()
-
-		// Clear any existing static highlights for this file
-		this.clearStaticHighlightsForFile(fileUri)
 
 		// For all document changes (typing or saving), immediately detect and highlight comments
 		this.detectAndHighlightComments(document)
@@ -312,6 +321,9 @@ export class WatchModeService {
 	private detectAndHighlightComments(document: vscode.TextDocument): void {
 		try {
 			const fileUri = document.uri
+			// Clear any existing static highlights for this file
+			this.highlighter.clearStaticHighlightsForFile(fileUri)
+
 			this.addToActiveFiles(fileUri)
 
 			// Skip files larger than threshold
@@ -330,87 +342,13 @@ export class WatchModeService {
 				})
 			}
 
-			if (result.comments.length === 0) {
-				this.log(`No AI comments found in file: ${fileUri.fsPath}`)
-				return
-			}
-
 			for (const comment of result.comments) {
-				this.highlightCommentKiloOnly(document, comment)
+				this.highlighter.highlightCommentPrefixOnly(document, comment, this.config.commentPrefix)
 			}
 		} catch (error) {
 			this.log(
 				`Error detecting comments in ${document.uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`,
 			)
-		}
-	}
-
-	/**
-	 * Highlights only the KILO keyword in a comment
-	 * @param document The document containing the comment
-	 * @param comment The AI comment data
-	 */
-	private highlightCommentKiloOnly(document: vscode.TextDocument, comment: AICommentData): void {
-		// Create a unique ID for this highlight
-		const highlightId = `static:${document.uri.toString()}:${comment.startPos.line}:${comment.startPos.character}`
-
-		// Clear any existing highlight for this comment
-		if (this.staticHighlights.has(highlightId)) {
-			this.staticHighlights.get(highlightId)?.()
-			this.staticHighlights.delete(highlightId)
-		}
-
-		// Find the position of the KILO prefix in the comment
-		const line = document.lineAt(comment.startPos.line).text
-		const commentPrefix = this.config.commentPrefix
-		const prefixIndex = line.indexOf(commentPrefix)
-
-		if (prefixIndex >= 0) {
-			// Create a range just for the KILO prefix
-			const prefixStart = new vscode.Position(comment.startPos.line, prefixIndex)
-			const prefixEnd = new vscode.Position(comment.startPos.line, prefixIndex + commentPrefix.length)
-			const prefixRange = new vscode.Range(prefixStart, prefixEnd)
-
-			// Apply static highlight with a lighter color only to the KILO prefix
-			const clearHighlight = this.highlighter.highlightRange(document, prefixRange, {
-				backgroundColor: "rgba(0, 122, 255, 0.3)",
-				borderColor: "rgba(0, 122, 255, 0.5)",
-				borderWidth: "1px",
-				borderStyle: "solid",
-				isWholeLine: false,
-			})
-
-			// Store the cleanup function
-			this.staticHighlights.set(highlightId, clearHighlight)
-		} else {
-			// Fallback to highlighting the whole comment if prefix not found
-			const range = new vscode.Range(comment.startPos, comment.endPos)
-
-			// Apply static highlight with a lighter color
-			const fallbackClearHighlight = this.highlighter.highlightRange(document, range, {
-				backgroundColor: "rgba(0, 122, 255, 0.3)",
-				borderColor: "rgba(0, 122, 255, 0.5)",
-				borderWidth: "1px",
-				borderStyle: "solid",
-				isWholeLine: false,
-			})
-
-			// Store the cleanup function
-			this.staticHighlights.set(highlightId, fallbackClearHighlight)
-		}
-	}
-
-	/**
-	 * Clears all static highlights for a specific file
-	 * @param fileUri The URI of the file
-	 */
-	private clearStaticHighlightsForFile(fileUri: vscode.Uri): void {
-		const fileUriStr = fileUri.toString()
-		for (const [id, clearFn] of this.staticHighlights.entries()) {
-			if (id.includes(fileUriStr)) {
-				clearFn()
-				this.staticHighlights.delete(id)
-			}
 		}
 	}
 
@@ -421,17 +359,7 @@ export class WatchModeService {
 			)
 
 			// Highlight the AI comment with animation
-			const clearHighlight = this.highlighter.highlightRange(
-				document, // Still highlight in the original document
-				new vscode.Range(comment.startPos, comment.endPos),
-				{
-					backgroundColor: "rgba(0, 122, 255, 0.4)",
-					borderColor: "rgba(0, 122, 255, 0.9)",
-					borderWidth: "1px",
-					borderStyle: "solid",
-					isWholeLine: true,
-				},
-			)
+			const clearHighlight = this.highlighter.highlightCommentForProcessing(document, comment)
 
 			// Emit event that we're starting to process this comment
 			this._onDidStartProcessingComment.fire({ fileUri: document.uri, comment })
@@ -462,7 +390,6 @@ export class WatchModeService {
 		triggerType: TriggerType,
 		clearHighlight: () => void,
 	): Promise<void> {
-		// Gather active files context first
 		const context = {
 			document,
 			comment,
@@ -487,21 +414,7 @@ export class WatchModeService {
 			log: (message) => this.log(message),
 		})
 
-		// Handle the result
-		if (result.success) {
-			this.log(`Successfully applied AI response to ${document.uri.fsPath}`)
-		} else {
-			this.log(`Failed to apply AI response to ${document.uri.fsPath}`)
-		}
-
-		// Emit event that we've finished processing this comment
-		this._onDidFinishProcessingComment.fire({
-			fileUri: document.uri,
-			comment,
-			success: result.success,
-		})
-
-		// Clear the highlight
+		this._onDidFinishProcessingComment.fire({ fileUri: document.uri, comment, success: result.success })
 		clearHighlight()
 	}
 
@@ -532,7 +445,7 @@ export class WatchModeService {
 
 		// Get imported files from the current document
 		const importedFiles = await getContextFiles(document.uri, document.getText(), 2)
-		this.log(`Found ${importedFiles.length} imported files for context`)
+		// this.log(`Found ${importedFiles.length} imported files for context`)
 
 		// Get active files and sort by recency (most recent first)
 		const activeFileUris = this.getActiveFiles()
@@ -667,99 +580,6 @@ export class WatchModeService {
 	}
 
 	/**
-	 * Disposes all document listeners
-	 */
-	private disposeDocumentListeners(): void {
-		this.log(`Disposing ${this.documentListeners.length} document listeners`)
-		for (const listener of this.documentListeners) {
-			listener.dispose()
-		}
-		this.documentListeners = []
-
-		// Clear all static highlights
-		for (const clearFn of this.staticHighlights.values()) {
-			clearFn()
-		}
-		this.staticHighlights.clear()
-	}
-
-	/**
-	 * Starts the watch mode service
-	 * @returns True if the service was started, false otherwise
-	 */
-	public start(): boolean {
-		if (this._isActive) {
-			this.log("Watch mode is already active")
-			return false
-		}
-
-		if (!this.isExperimentEnabled()) {
-			this.log("Watch mode experiment is not enabled")
-			return false
-		}
-
-		this.log("Starting watch mode")
-		this.loadConfig()
-		this.initializeWatchers()
-		this._isActive = true
-		this._onDidChangeActiveState.fire(true)
-		this.log("Watch mode started")
-		return true
-	}
-
-	/**
-	 * Stops the watch mode service
-	 */
-	public stop(): void {
-		if (!this._isActive) {
-			this.log("Watch mode is not active")
-			return
-		}
-
-		this.log("Stopping watch mode")
-
-		// Clear any pending processing
-		for (const timeout of this.pendingProcessing.values()) {
-			clearTimeout(timeout)
-		}
-		this.pendingProcessing.clear()
-
-		// Dispose document listeners
-		this.disposeDocumentListeners()
-
-		this._isActive = false
-		this._onDidChangeActiveState.fire(false)
-		this.log("Watch mode stopped")
-	}
-
-	/**
-	 * Returns whether the watch mode service is active
-	 */
-	public isWatchModeActive(): boolean {
-		return this._isActive
-	}
-
-	/**
-	 * Toggles the watch mode service
-	 * @returns True if the service is now active, false otherwise
-	 */
-	public toggle(): boolean {
-		if (this._isActive) {
-			this.stop()
-			return false
-		} else {
-			return this.start()
-		}
-	}
-
-	/**
-	 * Gets whether the watch mode service is currently active
-	 */
-	public get isActive(): boolean {
-		return this._isActive
-	}
-
-	/**
 	 * Processes a quick command by creating a temporary AI comment in the document
 	 * @param document The document to process
 	 * @param command The command text from the user
@@ -846,28 +666,25 @@ export class WatchModeService {
 		}
 	}
 
-	/**
-	 * Enables the watch mode service (alias for start)
-	 * @returns True if the service was enabled, false otherwise
-	 */
-	public enable(): boolean {
-		return this.start()
-	}
-
-	/**
-	 * Disables the watch mode service (alias for stop)
-	 */
-	public disable(): void {
-		this.stop()
-	}
-
-	/**
-	 * Disposes the watch mode service
-	 */
 	public dispose(): void {
-		this.stop()
-		this._onDidChangeActiveState.dispose()
+		this.log("Disposing watch mode service")
+
+		for (const timeout of this.pendingProcessing.values()) {
+			clearTimeout(timeout)
+		}
+		this.pendingProcessing.clear()
+
+		this.log(`Disposing ${this.documentListeners.length} document listeners`)
+		for (const listener of this.documentListeners) {
+			listener.dispose()
+		}
+		this.documentListeners = []
+
+		this.highlighter.clearAllHighlights()
+
 		this._onDidStartProcessingComment.dispose()
 		this._onDidFinishProcessingComment.dispose()
+
+		this.ui.showStatus(false)
 	}
 }

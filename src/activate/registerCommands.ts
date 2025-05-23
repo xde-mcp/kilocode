@@ -216,16 +216,9 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 			await context.globalState.update("experiments", experimentsConfig)
 
 			outputChannel.appendLine("Watch Mode experiment flag enabled")
-			vscode.window.showInformationMessage("Watch Mode experiment flag enabled. Please restart the service.")
-
-			// Restart the service
-			watchModeService.stop()
-			const success = watchModeService.start()
-			if (success) {
-				vscode.window.showInformationMessage("Watch Mode service restarted successfully")
-			} else {
-				vscode.window.showErrorMessage("Failed to restart Watch Mode service")
-			}
+			vscode.window.showInformationMessage(
+				"Watch Mode experiment flag enabled. Please reload the window for changes to take effect.",
+			)
 		},
 		"kilo-code.quickCommand": async () => {
 			if (!watchModeService) {
@@ -234,18 +227,22 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 				return
 			}
 
-			// Check if watch mode is enabled
-			if (!watchModeService.isActive) {
+			// Check if watch mode experiment is enabled
+			const experimentsConfig = (context.globalState.get("experiments") || {}) as Record<string, boolean>
+			if (!experimentsConfig["watchMode"]) {
 				const enableWatchMode = await vscode.window.showQuickPick(["Yes", "No"], {
-					placeHolder: "Watch Mode is not active. Would you like to enable it?",
+					placeHolder: "Watch Mode experiment is not enabled. Would you like to enable it?",
 				})
 
 				if (enableWatchMode === "Yes") {
-					const success = watchModeService.start()
-					if (!success) {
-						vscode.window.showErrorMessage("Failed to enable Watch Mode")
-						return
-					}
+					experimentsConfig["watchMode"] = true
+					await context.globalState.update("experiments", experimentsConfig)
+					vscode.window.showInformationMessage(
+						"Watch Mode experiment enabled. Please reload the window to activate.",
+					)
+					return
+				} else {
+					return
 				}
 			}
 

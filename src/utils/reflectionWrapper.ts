@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
-import { REFLECTION_ENABLED, MAX_REFLECTION_ATTEMPTS } from "./config"
-import { AICommentData } from "./types"
-import { estimateTokenCount } from "./commentProcessor"
+import { REFLECTION_ENABLED, MAX_REFLECTION_ATTEMPTS } from "../services/watchMode/config"
+import { AICommentData } from "../services/watchMode/types"
+import { estimateTokenCount } from "../services/watchMode/commentProcessor"
 
 /**
  * Error thrown when reflection is needed

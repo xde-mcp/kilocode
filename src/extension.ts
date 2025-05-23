@@ -96,11 +96,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
-	// Initialize and start watch mode service
+	// Initialize watch mode service (it will auto-start if experiment is enabled)
 	watchModeService = new WatchModeService(context, outputChannel)
-	watchModeService.start()
 	context.subscriptions.push(watchModeService)
-	
+
 	registerCommands({ context, outputChannel, provider, watchModeService })
 
 	/**
@@ -173,9 +172,6 @@ export async function deactivate() {
 
 	// Clean up terminal handlers
 	TerminalRegistry.cleanup()
-	
-	// Stop watch mode service if active
-	if (watchModeService) {
-		watchModeService.stop()
-	}
+
+	// Watch mode service will be disposed automatically via context.subscriptions
 }
