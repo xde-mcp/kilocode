@@ -13,7 +13,6 @@ import {
 	updateCurrentAICommentPrefix,
 	determineTriggerType,
 } from "./commentProcessor"
-import { withReflection, buildWatchModeReflectionPrompt } from "../../utils/reflectionWrapper"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
 import { ActiveFileTracker } from "./ActiveFileTracker"
 
@@ -337,24 +336,10 @@ export class WatchModeService {
 			activeFilesWithContent: await this.activeFileTracker.gatherActiveFilesContext(document),
 		}
 
-		const result = await withReflection(context, {
-			buildPrompt: (ctx) => buildAIPrompt(ctx.comment, ctx.triggerType, ctx.activeFilesWithContent),
-			buildReflectionPrompt: (ctx, originalResponse, errors) =>
-				buildWatchModeReflectionPrompt(
-					ctx.comment,
-					originalResponse,
-					errors,
-					ctx.activeFilesWithContent,
-					this.config.commentPrefix,
-				),
-			callAI: async (prompt) => await this.callAIModel(prompt),
-			processResponse: async (ctx, response, attemptNumber) => {
-				return await processAIResponse(ctx.document, ctx.comment, response, attemptNumber)
-			},
-			log: (message) => this.log(message),
-		})
-
-		this._onDidFinishProcessingComment.fire({ fileUri: document.uri, comment, success: result.success })
+		const prompt = buildAIPrompt(context.comment, context.triggerType, context.activeFilesWithContent)
+		const response = await this.callAIModel(prompt)
+		const result = await processAIResponse(context.document, context.comment, response)
+		this._onDidFinishProcessingComment.fire({ fileUri: document.uri, comment, success: result })
 		clearHighlight()
 	}
 

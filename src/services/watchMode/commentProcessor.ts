@@ -9,7 +9,6 @@ import {
 	TriggerType,
 } from "./types"
 import { MultiSearchReplaceDiffStrategy } from "../../core/diff/strategies/multi-search-replace"
-import { ReflectionNeededError } from "../../utils/reflectionWrapper"
 import { hunkToBeforeAfter, processDiffBlock } from "./unifiedDiffStrategy"
 
 /**
@@ -577,7 +576,6 @@ export const processAIResponse = async (
 	document: vscode.TextDocument,
 	commentData: AICommentData,
 	response: string,
-	reflectionAttempt: number = 0,
 ): Promise<boolean> => {
 	// Determine the trigger type from the comment content
 	const triggerType = determineTriggerType(commentData.content)
@@ -662,7 +660,7 @@ export const processAIResponse = async (
 
 	// If the edits failed and we haven't exceeded reflection attempts, throw reflection error
 	if (!success) {
-		throw new ReflectionNeededError(reflectionAttempt + 1, ["Failed to apply edits"], response)
+		throw new Error("Failed to apply edits: " + response)
 	}
 
 	return success
