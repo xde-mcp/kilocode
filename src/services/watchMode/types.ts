@@ -49,16 +49,6 @@ export interface AIResponseOptions {
 }
 
 /**
- * Interface for file change event data
- */
-export interface FileChangeData {
-	/** File URI that changed */
-	fileUri: vscode.Uri
-	/** Type of change event */
-	type: vscode.FileChangeType
-}
-
-/**
  * Configuration options for WatchModeService
  */
 export interface WatchModeConfig {

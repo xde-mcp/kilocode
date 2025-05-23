@@ -39,8 +39,6 @@ export class WatchModeService {
 	private currentDebugId?: string
 	private documentListeners: vscode.Disposable[] = []
 	private staticHighlights: Map<string, () => void> = new Map()
-	private recentlyProcessedFiles: Map<string, number> = new Map()
-	private processingDebounceTime: number = 500 // ms to prevent duplicate processing
 	private quickCommandDocument?: vscode.TextDocument // Track the document that initiated a quick command
 
 	// Track active files for context management
@@ -172,28 +170,6 @@ export class WatchModeService {
 	private initializeWatchers(): void {
 		this.disposeDocumentListeners() // Clean up any existing document listeners
 
-		// Set up file system watcher for all files in the workspace
-		const watcher = vscode.workspace.createFileSystemWatcher(
-			new vscode.RelativePattern(vscode.workspace.workspaceFolders?.[0]?.uri || "", "**/*"),
-			false, // Don't ignore creates
-			false, // Don't ignore changes
-			true, // Ignore deletes
-		)
-
-		// Handle file creation events
-		const createDisposable = watcher.onDidCreate((uri: vscode.Uri) =>
-			this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Created }),
-		)
-
-		// Handle file change events (file saves)
-		const changeDisposable = watcher.onDidChange((uri: vscode.Uri) => {
-			this.log(`File changed: ${uri.toString()}`)
-			return this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Changed })
-		})
-
-		// Add watcher and its event handlers to subscriptions
-		this.context.subscriptions.push(watcher, createDisposable, changeDisposable)
-
 		// Set up document change listeners for real-time editing
 		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 			// Process document changes as they happen (without debounce)
@@ -227,12 +203,6 @@ export class WatchModeService {
 
 		// For save events, immediately process the comments with animation
 		if (isDocumentSave) {
-			// Check if this file was recently processed to avoid duplicate processing
-			if (this.isFileRecentlyProcessed(fileKey)) {
-				this.log(`Skipping duplicate processing for recently saved file: ${fileKey}`)
-				return
-			}
-
 			this.log(`Document saved, immediately processing: ${fileUri.toString()}`)
 
 			// Cancel any pending processing for this file
@@ -240,9 +210,6 @@ export class WatchModeService {
 				clearTimeout(this.pendingProcessing.get(fileKey))
 				this.pendingProcessing.delete(fileKey)
 			}
-
-			// Mark this file as recently processed
-			this.markFileAsProcessed(fileKey)
 
 			// Process the file immediately without debounce
 			this.processFile(fileUri)
@@ -355,18 +322,17 @@ export class WatchModeService {
 	private detectAndHighlightComments(document: vscode.TextDocument): void {
 		try {
 			const fileUri = document.uri
-			const content = document.getText()
-
-			// Add to active files list (even if large, we want to track it)
 			this.addToActiveFiles(fileUri)
 
 			// Skip files larger than threshold
+			const content = document.getText()
 			if (content.length > this.largeFileThreshold) {
 				this.log(`Skipping large file: ${fileUri.fsPath} (${content.length} bytes)`)
 				return
 			}
 
 			const result = detectAIComments({ fileUri, content, languageId: document.languageId })
+			this.log(`Found ${result.comments.length} AI comments in ${fileUri.fsPath}`)
 
 			if (result.errors) {
 				result.errors.forEach((error) => {
@@ -378,8 +344,6 @@ export class WatchModeService {
 				this.log(`No AI comments found in file: ${fileUri.fsPath}`)
 				return
 			}
-
-			this.log(`Found ${result.comments.length} AI comments in ${fileUri.fsPath}`)
 
 			for (const comment of result.comments) {
 				this.highlightCommentKiloOnly(document, comment)
@@ -452,42 +416,12 @@ export class WatchModeService {
 	 */
 	private clearStaticHighlightsForFile(fileUri: vscode.Uri): void {
 		const fileUriStr = fileUri.toString()
-
-		// Find and clear all static highlights for this file
 		for (const [id, clearFn] of this.staticHighlights.entries()) {
 			if (id.includes(fileUriStr)) {
 				clearFn()
 				this.staticHighlights.delete(id)
 			}
 		}
-	}
-
-	/**
-	 * Checks if a file was recently processed to avoid duplicate processing
-	 * @param fileKey The file key (URI as string)
-	 * @returns True if the file was recently processed
-	 */
-	private isFileRecentlyProcessed(fileKey: string): boolean {
-		const lastProcessed = this.recentlyProcessedFiles.get(fileKey)
-		if (!lastProcessed) {
-			return false
-		}
-
-		const now = Date.now()
-		return now - lastProcessed < this.processingDebounceTime
-	}
-
-	/**
-	 * Marks a file as recently processed
-	 * @param fileKey The file key (URI as string)
-	 */
-	private markFileAsProcessed(fileKey: string): void {
-		this.recentlyProcessedFiles.set(fileKey, Date.now())
-
-		// Clean up old entries after a delay
-		setTimeout(() => {
-			this.recentlyProcessedFiles.delete(fileKey)
-		}, this.processingDebounceTime * 2)
 	}
 
 	private async processAIComment(document: vscode.TextDocument, comment: AICommentData): Promise<void> {
