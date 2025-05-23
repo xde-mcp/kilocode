@@ -203,39 +203,6 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 			})
 		},
 		// Watch Mode commands
-		"kilo-code.watchMode.enable": () => {
-			if (!watchModeService) {
-				outputChannel.appendLine("Watch Mode service not initialized")
-				vscode.window.showErrorMessage("Watch Mode service not initialized")
-				return
-			}
-
-			const success = watchModeService.enable()
-			if (success) {
-				vscode.window.showInformationMessage("Watch Mode enabled")
-			} else {
-				vscode.window.showInformationMessage("Watch Mode could not be enabled. Is the experiment enabled?")
-			}
-		},
-		"kilo-code.watchMode.disable": () => {
-			if (!watchModeService) {
-				outputChannel.appendLine("Watch Mode service not initialized")
-				return
-			}
-
-			watchModeService.disable()
-			vscode.window.showInformationMessage("Watch Mode disabled")
-		},
-		"kilo-code.watchMode.toggle": () => {
-			if (!watchModeService) {
-				outputChannel.appendLine("Watch Mode service not initialized")
-				vscode.window.showErrorMessage("Watch Mode service not initialized")
-				return
-			}
-
-			const isActive = watchModeService.toggle()
-			vscode.window.showInformationMessage(`Watch Mode ${isActive ? "enabled" : "disabled"}`)
-		},
 		"kilo-code.watchMode.enableExperiment": async () => {
 			if (!watchModeService) {
 				outputChannel.appendLine("Watch Mode service not initialized")

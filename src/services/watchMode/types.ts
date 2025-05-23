@@ -62,14 +62,8 @@ export interface FileChangeData {
  * Configuration options for WatchModeService
  */
 export interface WatchModeConfig {
-	/** File patterns to include in watching */
-	include: string[]
-	/** File patterns to exclude from watching */
-	exclude: string[]
 	/** The model to use for AI processing */
 	model: string
-	/** Debounce time in milliseconds */
-	debounceTime: number
 	/** Prefix for AI comments (e.g., "KO!") */
 	commentPrefix: string
 }

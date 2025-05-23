@@ -9,6 +9,7 @@ import {
 	TriggerType,
 } from "./types"
 import { MultiSearchReplaceDiffStrategy } from "../../core/diff/strategies/multi-search-replace"
+import { ReflectionNeededError } from "./reflectionWrapper"
 
 /**
  * Interface for a diff edit
@@ -1309,11 +1310,6 @@ export const applySearchReplaceEdits = async (
 }
 
 /**
- * Maximum number of reflection attempts for failed edits
- */
-const MAX_REFLECTION_ATTEMPTS = 1
-
-/**
  * Processes the AI response and applies it to the document
  * @param document The document to modify
  * @param commentData The original AI comment data
@@ -1327,277 +1323,91 @@ export const processAIResponse = async (
 	response: string,
 	reflectionAttempt: number = 0,
 ): Promise<boolean> => {
-	try {
-		// Determine the trigger type from the comment content
-		const triggerType = determineTriggerType(commentData.content)
-		console.log(`[WatchMode DEBUG] Trigger type: ${triggerType}`)
+	// Determine the trigger type from the comment content
+	const triggerType = determineTriggerType(commentData.content)
+	console.log(`[WatchMode DEBUG] Trigger type: ${triggerType}`)
 
-		// Parse the AI response
-		const currentFilePath = vscode.workspace.asRelativePath(document.uri)
-		const parsedResponse = parseAIResponse(response, triggerType, currentFilePath)
+	// Parse the AI response
+	const currentFilePath = vscode.workspace.asRelativePath(document.uri)
+	const parsedResponse = parseAIResponse(response, triggerType, currentFilePath)
 
-		// If it's a question, just show the explanation
-		if (triggerType === TriggerType.Ask) {
-			// Show the explanation in a new editor or information message
-			await vscode.window.showInformationMessage(
-				"AI Response: " + parsedResponse.explanation.substring(0, 100) + "...",
-			)
+	// If it's a question, just show the explanation
+	if (triggerType === TriggerType.Ask) {
+		// Show the explanation in a new editor or information message
+		await vscode.window.showInformationMessage(
+			"AI Response: " + parsedResponse.explanation.substring(0, 100) + "...",
+		)
 
-			// Remove the comment
+		// Remove the comment
+		const edit = new vscode.WorkspaceEdit()
+		const range = new vscode.Range(commentData.startPos, commentData.endPos)
+		edit.delete(document.uri, range)
+		const result = await vscode.workspace.applyEdit(edit)
+
+		console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
+		return result
+	}
+
+	// If there are no edits but there's an explanation, show it
+	if (parsedResponse.edits.length === 0 && parsedResponse.explanation) {
+		console.log("[WatchMode DEBUG] No edits found, but explanation exists")
+
+		// Check if there are code blocks in the explanation that should replace the comment
+		const codeBlocks: string[] = []
+		// Use the existing CODE_BLOCK_REGEX constant
+		let match
+
+		while ((match = CODE_BLOCK_REGEX.exec(parsedResponse.explanation)) !== null) {
+			if (match[1]) {
+				codeBlocks.push(match[1].trim())
+			}
+		}
+
+		if (codeBlocks.length > 0) {
+			console.log(`[WatchMode DEBUG] Found ${codeBlocks.length} code blocks, using as replacement`)
+
+			// Use the code blocks as a direct replacement for the comment
 			const edit = new vscode.WorkspaceEdit()
 			const range = new vscode.Range(commentData.startPos, commentData.endPos)
-			edit.delete(document.uri, range)
+			const replacement = codeBlocks.join("\n\n")
+
+			edit.replace(document.uri, range, replacement)
 			const result = await vscode.workspace.applyEdit(edit)
 
-			console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
+			console.log(`[WatchMode DEBUG] Direct replacement result: ${result ? "SUCCESS" : "FAILED"}`)
 			return result
 		}
 
-		// If there are no edits but there's an explanation, show it
-		if (parsedResponse.edits.length === 0 && parsedResponse.explanation) {
-			console.log("[WatchMode DEBUG] No edits found, but explanation exists")
+		// If no code blocks were found, just remove the comment
+		console.log("[WatchMode DEBUG] No code blocks found, removing comment")
+		const edit = new vscode.WorkspaceEdit()
+		const range = new vscode.Range(commentData.startPos, commentData.endPos)
 
-			// Check if there are code blocks in the explanation that should replace the comment
-			const codeBlocks: string[] = []
-			// Use the existing CODE_BLOCK_REGEX constant
-			let match
+		edit.delete(document.uri, range)
+		const result = await vscode.workspace.applyEdit(edit)
 
-			while ((match = CODE_BLOCK_REGEX.exec(parsedResponse.explanation)) !== null) {
-				if (match[1]) {
-					codeBlocks.push(match[1].trim())
-				}
-			}
-
-			if (codeBlocks.length > 0) {
-				console.log(`[WatchMode DEBUG] Found ${codeBlocks.length} code blocks, using as replacement`)
-
-				// Use the code blocks as a direct replacement for the comment
-				const edit = new vscode.WorkspaceEdit()
-				const range = new vscode.Range(commentData.startPos, commentData.endPos)
-				const replacement = codeBlocks.join("\n\n")
-
-				edit.replace(document.uri, range, replacement)
-				const result = await vscode.workspace.applyEdit(edit)
-
-				console.log(`[WatchMode DEBUG] Direct replacement result: ${result ? "SUCCESS" : "FAILED"}`)
-				return result
-			}
-
-			// If no code blocks were found, just remove the comment
-			console.log("[WatchMode DEBUG] No code blocks found, removing comment")
-			const edit = new vscode.WorkspaceEdit()
-			const range = new vscode.Range(commentData.startPos, commentData.endPos)
-
-			edit.delete(document.uri, range)
-			const result = await vscode.workspace.applyEdit(edit)
-
-			console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
-			return result
-		}
-
-		// Try to apply SEARCH/REPLACE edits first
-		let success = await applySearchReplaceEdits(document, parsedResponse.edits)
-
-		// If SEARCH/REPLACE failed, try unified diff as fallback
-		if (!success) {
-			console.log("[WatchMode DEBUG] SEARCH/REPLACE edits failed, trying unified diff")
-
-			// Convert the edits to the old format
-			const oldFormatEdits = parsedResponse.edits.map((edit) => {
-				// Fix the file path if it doesn't match the current document
-				// This handles cases where the AI uses "untitled" or other incorrect paths
-				const documentPath = vscode.workspace.asRelativePath(document.uri)
-				const editPath = edit.filePath
-
-				// If the edit path is "untitled" or doesn't exist in the workspace, use the current document path
-				const finalPath =
-					editPath === "untitled" || editPath.includes("/dev/null") ? documentPath : edit.filePath
-
-				console.log(`[WatchMode DEBUG] Mapping file path: ${editPath} -> ${finalPath}`)
-
-				return {
-					path: finalPath,
-					hunk: edit.blocks.flatMap((block) =>
-						block.content
-							.split("\n")
-							.map((line) =>
-								block.type === "SEARCH" ? " " + line : block.type === "REPLACE" ? "+" + line : line,
-							),
-					),
-				}
-			})
-
-			const diffHandler = new UnifiedDiffHandler()
-			const documentContent = document.getText()
-			const [newContent, errors] = diffHandler.applyEdits(oldFormatEdits, documentContent, document.uri)
-
-			if (errors.length > 0) {
-				// Log errors but continue with the successful edits
-				console.log(`[WatchMode DEBUG] Encountered ${errors.length} errors while applying diffs`)
-				for (const error of errors) {
-					console.log(`[WatchMode DEBUG] Error: ${error.split("\n")[0]}`)
-				}
-
-				// If all edits failed, try reflection if we haven't exceeded the maximum attempts
-				if (errors.length >= oldFormatEdits.length) {
-					console.log("[WatchMode DEBUG] All edits failed to apply")
-
-					if (reflectionAttempt < MAX_REFLECTION_ATTEMPTS) {
-						console.log(`♻️♻️♻️[WatchMode DEBUG] Attempting reflection #${reflectionAttempt + 1}...`)
-						errors.forEach((error, index) => {
-							console.log(`[WatchMode DEBUG] Error ${index + 1}: ${error}`)
-						})
-
-						throw new Error(
-							`REFLECTION_NEEDED:${reflectionAttempt + 1}:${errors.map((e) => e.split("\n")[0]).join("|")}`,
-						)
-					}
-
-					console.log("[WatchMode DEBUG] ====== processAIResponse END (max reflections reached) ======")
-					return false
-				}
-			}
-
-			// Apply the updated content to the document if different from the original
-			if (newContent !== documentContent) {
-				const fullRange = new vscode.Range(
-					new vscode.Position(0, 0),
-					document.positionAt(documentContent.length),
-				)
-
-				const edit = new vscode.WorkspaceEdit()
-				edit.replace(document.uri, fullRange, newContent)
-				success = await vscode.workspace.applyEdit(edit)
-
-				console.log(`[WatchMode DEBUG] Applied updated content: ${success ? "SUCCESS" : "FAILED"}`)
-			}
-		}
-
-		console.log(`[WatchMode DEBUG] Process result: ${success ? "SUCCESS" : "FAILED"}`)
-		return success
-	} catch (error) {
-		// Check if this is a reflection request
-		if (error instanceof Error && error.message.startsWith("REFLECTION_NEEDED:")) {
-			// Let the calling code handle the reflection
-			throw error
-		}
-
-		console.error("[WatchMode DEBUG] Error in processAIResponse:", error)
-		console.log("[WatchMode DEBUG] ====== processAIResponse END (with error) ======")
-		return false
-	}
-}
-
-/**
- * Builds a reflection prompt for the AI model when edits fail
- * @param commentData The original AI comment data
- * @param originalResponse The original AI response that failed
- * @param errors The errors encountered when applying the edits
- * @returns A prompt for the AI model to reflect on the errors
- */
-export function buildReflectionPrompt(
-	commentData: AICommentData,
-	originalResponse: string,
-	errors: string[],
-	activeFiles: { uri: vscode.Uri; content: string }[] = [],
-): string {
-	console.log("[WatchMode DEBUG] Building reflection prompt")
-	const { content, context, fileUri } = commentData
-	const filePath = vscode.workspace.asRelativePath(fileUri)
-
-	// Extract the prefix without the exclamation mark for display in the prompt
-	const displayPrefix = currentAICommentPrefix.endsWith("!")
-		? currentAICommentPrefix.slice(0, -1)
-		: currentAICommentPrefix
-
-	// Create the reflection prompt with escaped markers
-	let prompt = `
-You are Kilo Code, a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.
-
-# Task
-
-${content}
-
-I've written your instructions in comments in the code and marked them with "${displayPrefix}"
-You can see the "${displayPrefix}" comments shown below.
-Find them in the code files I've shared with you, and follow their instructions.
-
-# Code to modify
-
-\`\`\`
-${context || "No context available"}
-\`\`\`
-
-# Previous response
-
-Your previous response failed to apply correctly. Here's what you provided:
-
-\`\`\`
-${originalResponse}
-\`\`\`
-
-# Errors
-
-The following errors occurred when trying to apply your changes:
-
-${errors.join("\n\n")}
-`
-
-	// Add content from active files for additional context
-	if (activeFiles.length > 0) {
-		prompt += `\n\n# Additional context from open files\n\n`
-
-		for (const file of activeFiles) {
-			if (file.uri.toString() !== fileUri.toString()) {
-				// Skip the file with the comment
-				const relativePath = vscode.workspace.asRelativePath(file.uri)
-				prompt += `## ${relativePath}\n\n\`\`\`\n${file.content}\n\`\`\`\n\n`
-			}
-		}
+		console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
+		return result
 	}
 
-	prompt += `
-# Response format
+	// Apply the edits based on their format
+	// The parseAIResponse function already determines if it's SEARCH/REPLACE or unified diff
+	let success = false
 
-Please correct your previous response to address these errors. Make sure your SEARCH blocks exactly match the code in the file.
-You MUST respond with SEARCH/REPLACE blocks for each edit. Format your changes as follows:
+	// Check if we have any edits to apply
+	if (parsedResponse.edits.length > 0) {
+		console.log(`[WatchMode DEBUG] Applying ${parsedResponse.edits.length} edits`)
+		success = await applySearchReplaceEdits(document, parsedResponse.edits)
+	} else {
+		console.log("[WatchMode DEBUG] No edits found in AI response")
+	}
 
-${filePath}
-\<\<\<\<\<\<\< SEARCH
-exact original code
-\=\=\=\=\=\=\=
-replacement code
-\>\>\>\>\>\>\> REPLACE
+	console.log(`[WatchMode DEBUG] Process result: ${success ? "SUCCESS" : "FAILED"}`)
 
-IMPORTANT: You MUST ALWAYS include the file path (${filePath}) before each SEARCH/REPLACE block.
-You can include multiple SEARCH/REPLACE blocks for the same file, and you can edit multiple files.
-Make sure to include enough context in the SEARCH block to uniquely identify the code to replace.
-After completing the instructions, also BE SURE to remove all the "${displayPrefix}" comments from the code.
+	// If the edits failed and we haven't exceeded reflection attempts, throw reflection error
+	if (!success) {
+		throw new ReflectionNeededError(reflectionAttempt + 1, ["Failed to apply edits"], response)
+	}
 
-NEVER use generic file names like "Code", "file", or similar placeholders. ALWAYS use the actual file path: ${filePath}
-
-If you need to explain your changes, please do so before or after the code blocks.
-`
-
-	const finalPrompt = prompt.trim()
-
-	// Log the full reflection prompt for debugging
-	console.log("[WatchMode DEBUG] === FULL REFLECTION PROMPT ===")
-	console.log(finalPrompt)
-	console.log("[WatchMode DEBUG] === END REFLECTION PROMPT ===")
-
-	// Debug log the full reflection prompt string
-	console.debug(
-		"[WatchMode DEBUG] Full reflection prompt string:",
-		JSON.stringify({
-			prompt: finalPrompt,
-			length: finalPrompt.length,
-			estimatedTokens: estimateTokenCount(finalPrompt),
-			originalResponseLength: originalResponse.length,
-			errorsCount: errors.length,
-			timestamp: new Date().toISOString(),
-		}),
-	)
-
-	return finalPrompt
+	return success
 }

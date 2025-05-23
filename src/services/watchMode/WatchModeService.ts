@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import { Anthropic } from "@anthropic-ai/sdk"
 import { EXPERIMENT_IDS, ExperimentId, experiments } from "../../shared/experiments"
-import { AICommentData, FileChangeData, WatchModeConfig, TriggerType } from "./types"
+import { AICommentData, WatchModeConfig, TriggerType } from "./types"
 import { WatchModeUI } from "./ui"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ContextProxy } from "../../core/config/ContextProxy"
@@ -13,9 +13,9 @@ import {
 	updateAICommentPatterns,
 	updateCurrentAICommentPrefix,
 	determineTriggerType,
-	buildReflectionPrompt,
 	estimateTokenCount,
 } from "./commentProcessor"
+import { withReflection, buildWatchModeReflectionPrompt } from "./reflectionWrapper"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
 import { getContextFiles } from "./importParser"
 
@@ -30,7 +30,6 @@ interface DocumentChangeData {
  */
 export class WatchModeService {
 	private apiHandler: ApiHandler | null = null
-	private watchers: Map<string, vscode.FileSystemWatcher> = new Map()
 	private pendingProcessing: Map<string, ReturnType<typeof setTimeout>> = new Map()
 	private _isActive: boolean = false
 	private outputChannel?: vscode.OutputChannel
@@ -67,10 +66,7 @@ export class WatchModeService {
 	readonly onDidFinishProcessingComment = this._onDidFinishProcessingComment.event
 
 	private readonly defaultConfig: WatchModeConfig = {
-		include: ["**/*.{js,jsx,ts,tsx,py,java,go,rb,php,c,cpp,h,cs}"],
-		exclude: ["**/node_modules/**", "**/dist/**", "**/build/**", "**/.git/**"],
 		model: "claude-3.7",
-		debounceTime: 2000, // 2 seconds
 		commentPrefix: "KO!", // Default AI comment prefix
 	}
 	private config: WatchModeConfig
@@ -155,10 +151,7 @@ export class WatchModeService {
 		const config = vscode.workspace.getConfiguration("kilo-code.watchMode")
 
 		this.config = {
-			include: config.get("include", this.defaultConfig.include),
-			exclude: config.get("exclude", this.defaultConfig.exclude),
 			model: config.get("model", this.defaultConfig.model),
-			debounceTime: config.get("debounceTime", this.defaultConfig.debounceTime),
 			commentPrefix: config.get("commentPrefix", this.defaultConfig.commentPrefix),
 		}
 
@@ -177,61 +170,44 @@ export class WatchModeService {
 	 * Initializes file system watchers
 	 */
 	private initializeWatchers(): void {
-		this.disposeWatchers() // Clean up any existing watchers first
 		this.disposeDocumentListeners() // Clean up any existing document listeners
 
-		// Set up file system watchers for file save events
-		this.config.include.forEach((pattern) => {
-			const watcher = vscode.workspace.createFileSystemWatcher(
-				new vscode.RelativePattern(vscode.workspace.workspaceFolders?.[0]?.uri || "", pattern),
-				false, // Don't ignore creates
-				false, // Don't ignore changes
-				true, // Ignore deletes
-			)
+		// Set up file system watcher for all files in the workspace
+		const watcher = vscode.workspace.createFileSystemWatcher(
+			new vscode.RelativePattern(vscode.workspace.workspaceFolders?.[0]?.uri || "", "**/*"),
+			false, // Don't ignore creates
+			false, // Don't ignore changes
+			true, // Ignore deletes
+		)
 
-			// Handle file creation events
-			watcher.onDidCreate((uri: vscode.Uri) =>
-				this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Created }),
-			)
+		// Handle file creation events
+		const createDisposable = watcher.onDidCreate((uri: vscode.Uri) =>
+			this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Created }),
+		)
 
-			// Handle file change events (file saves)
-			watcher.onDidChange((uri: vscode.Uri) => {
-				this.log(`File changed: ${uri.toString()}`)
-				return this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Changed })
-			})
-
-			const watcherId = `watcher-${pattern}`
-			this.watchers.set(watcherId, watcher)
-			this.context.subscriptions.push(watcher)
-
-			this.log(`Initialized file watcher for pattern: ${pattern}`)
+		// Handle file change events (file saves)
+		const changeDisposable = watcher.onDidChange((uri: vscode.Uri) => {
+			this.log(`File changed: ${uri.toString()}`)
+			return this.handleFileChange({ fileUri: uri, type: vscode.FileChangeType.Changed })
 		})
+
+		// Add watcher and its event handlers to subscriptions
+		this.context.subscriptions.push(watcher, createDisposable, changeDisposable)
 
 		// Set up document change listeners for real-time editing
 		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
-			// Skip excluded files
-			if (this.isFileExcluded(event.document.uri)) {
-				return
-			}
-
 			// Process document changes as they happen (without debounce)
 			this.handleDocumentChange({ document: event.document, isDocumentSave: false })
 		})
 
 		// Set up document save listeners
 		const saveListener = vscode.workspace.onDidSaveTextDocument((document) => {
-			// Skip excluded files
-			if (this.isFileExcluded(document.uri)) {
-				return
-			}
-
 			// Process document saves
 			this.handleDocumentChange({ document: document, isDocumentSave: true })
 		})
 
 		this.documentListeners.push(changeListener, saveListener)
 		this.context.subscriptions.push(changeListener, saveListener)
-		this.log(`Initialized document change and save listeners`)
 	}
 
 	/**
@@ -271,62 +247,6 @@ export class WatchModeService {
 			// Process the file immediately without debounce
 			this.processFile(fileUri)
 		}
-	}
-
-	/**
-	 * Handles file change events from file system watcher
-	 * @param data File change event data
-	 */
-	private handleFileChange(data: FileChangeData): void {
-		const { fileUri } = data
-		const fileKey = fileUri.toString()
-
-		// Skip excluded files
-		if (this.isFileExcluded(fileUri)) {
-			this.log(`File excluded: ${fileUri.toString()}`)
-			return
-		}
-
-		// Check if this file was recently processed to avoid duplicate processing
-		if (this.isFileRecentlyProcessed(fileKey)) {
-			this.log(`Skipping duplicate processing for recently changed file: ${fileKey}`)
-			return
-		}
-
-		// Mark this file as recently processed
-		this.markFileAsProcessed(fileKey)
-
-		// Process the file immediately without debounce
-		this.log(`Processing file from file system event: ${fileUri.toString()}`)
-		this.processFile(fileUri)
-	}
-
-	/**
-	 * Checks if a file should be excluded from processing
-	 * @param uri File URI to check
-	 */
-	private isFileExcluded(uri: vscode.Uri): boolean {
-		const relativePath = vscode.workspace.asRelativePath(uri)
-
-		// Convert glob patterns to proper regex patterns
-		const isExcluded = this.config.exclude.some((pattern) => {
-			// Escape special regex characters except * and ?
-			const escapedPattern = pattern
-				.replace(/[.+^${}()|[\]\\]/g, "\\$&")
-				.replace(/\*/g, ".*")
-				.replace(/\?/g, ".")
-
-			const regExp = new RegExp(`^${escapedPattern}$`)
-			const result = regExp.test(relativePath)
-
-			if (result) {
-				this.log(`File excluded: matched pattern ${pattern}`)
-			}
-
-			return result
-		})
-
-		return isExcluded
 	}
 
 	/**
@@ -645,224 +565,158 @@ export class WatchModeService {
 		triggerType: TriggerType,
 		clearHighlight: () => void,
 	): Promise<void> {
-		// Maximum number of reflection attempts
-		const MAX_REFLECTION_ATTEMPTS = 1
-		let currentAttempt = 0
-		let success = false
-		let lastResponse: string | null = null
-
-		while (currentAttempt <= MAX_REFLECTION_ATTEMPTS) {
-			try {
-				// Build prompt from the comment and context
-				// this.log(`Building AI prompt (attempt ${currentAttempt})...`)
-
-				// Gather content from active files for additional context
-				const activeFilesWithContent: { uri: vscode.Uri; content: string }[] = []
-
-				// Maximum token budget for additional context (roughly 50% of model's context window)
-				const MAX_ADDITIONAL_CONTEXT_TOKENS = 50000
-				let estimatedTokens = 0
-
-				// First, estimate tokens for the base prompt
-				const basePrompt = buildAIPrompt(comment, triggerType)
-				estimatedTokens += estimateTokenCount(basePrompt)
-
-				// Get imported files from the current document
-				const importedFiles = await getContextFiles(document.uri, document.getText(), 2)
-				this.log(`Found ${importedFiles.length} imported files for context`)
-
-				// Get active files and sort by recency (most recent first)
-				const activeFileUris = this.getActiveFiles()
-
-				// Prioritize open editor tabs
-				const openEditors = vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString())
-
-				// Combine imported files with active files, removing duplicates
-				const allContextFiles = new Set<string>()
-
-				// Add imported files first (highest priority)
-				importedFiles.forEach((uri) => allContextFiles.add(uri.toString()))
-
-				// Add open editors next
-				openEditors.forEach((uri) => allContextFiles.add(uri))
-
-				// Add other active files last
-				activeFileUris.forEach((uri) => allContextFiles.add(uri.toString()))
-
-				// Convert back to URIs and sort by priority
-				const sortedContextFiles = Array.from(allContextFiles).map((uriStr) => vscode.Uri.parse(uriStr))
-
-				// Add content from context files until we reach the token limit
-				for (const uri of sortedContextFiles) {
-					// Skip the file with the comment (already included in the context)
-					if (uri.toString() === document.uri.toString()) {
-						continue
-					}
-
-					try {
-						// Skip files that are too large
-						if (uri.fsPath.endsWith(".min.js") || uri.fsPath.endsWith(".min.css")) {
-							this.log(`Skipping minified file: ${uri.fsPath}`)
-							continue
-						}
-
-						const doc = await vscode.workspace.openTextDocument(uri)
-						const content = doc.getText()
-
-						// Skip if file is too large
-						if (content.length > this.largeFileThreshold) {
-							this.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
-							continue
-						}
-
-						// Estimate tokens for this file
-						const fileTokens = estimateTokenCount(content)
-
-						// If adding this file would exceed our budget, skip it
-						if (estimatedTokens + fileTokens > MAX_ADDITIONAL_CONTEXT_TOKENS) {
-							this.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
-							continue
-						}
-
-						// Add file to context
-						activeFilesWithContent.push({ uri, content })
-						estimatedTokens += fileTokens
-
-						this.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
-					} catch (error) {
-						this.log(
-							`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`,
-						)
-					}
-				}
-
-				this.log(
-					`Total context includes ${activeFilesWithContent.length} additional files (est. ${estimatedTokens} tokens)`,
-				)
-
-				// Ensure we always have a valid string prompt
-				const prompt =
-					currentAttempt === 0
-						? buildAIPrompt(comment, triggerType, activeFilesWithContent)
-						: lastResponse || buildAIPrompt(comment, triggerType, activeFilesWithContent)
-
-				this.log(`Prompt built, length: ${prompt.length} characters`)
-				let apiResponse: string | null = null
-
-				try {
-					// We know prompt is a valid string at this point
-					apiResponse = await this.callAIModel(prompt)
-					this.log(`API response received, length: ${apiResponse?.length || 0} characters`)
-					console.log("=== FULL API RESPONSE ===\n" + apiResponse)
-				} catch (apiError) {
-					this.log(
-						`Error calling AI model: ${apiError instanceof Error ? apiError.message : String(apiError)}`,
-					)
-					apiResponse = null
-				}
-
-				if (!apiResponse) {
-					this.log("No response from AI model")
-					this._onDidFinishProcessingComment.fire({
-						fileUri: document.uri,
-						comment,
-						success: false,
-					})
-					clearHighlight()
-					return
-				}
-
-				// Process the AI response
-				this.log(`Processing AI response (attempt ${currentAttempt})...`)
-				try {
-					// Use the tracked document if this is from a quick command
-					const documentToProcess = this.quickCommandDocument || document
-					success = await processAIResponse(documentToProcess, comment, apiResponse, currentAttempt)
-					this.log(`Response processed, success: ${success}`)
-
-					// If successful, break out of the loop
-					if (success) {
-						break
-					}
-
-					// If we've reached the maximum attempts, break out of the loop
-					if (currentAttempt >= MAX_REFLECTION_ATTEMPTS) {
-						break
-					}
-
-					// Increment the attempt counter
-					currentAttempt++
-				} catch (processError) {
-					// Check if this is a reflection request
-					if (processError instanceof Error && processError.message.startsWith("REFLECTION_NEEDED:")) {
-						// Parse the reflection information
-						const parts = processError.message.split(":")
-						const nextAttempt = parseInt(parts[1], 10)
-						const errorMessages = parts[2].split("|")
-
-						this.log(`Reflection needed, attempt ${nextAttempt} of ${MAX_REFLECTION_ATTEMPTS}`)
-						this.log(`Error messages: ${errorMessages.join(", ")}`)
-
-						// Update the attempt counter
-						currentAttempt = nextAttempt
-
-						// Build a reflection prompt with active files context
-						const reflectionPrompt = buildReflectionPrompt(
-							comment,
-							apiResponse,
-							errorMessages,
-							activeFilesWithContent,
-						)
-						lastResponse = reflectionPrompt
-
-						// Log the full reflection prompt for debugging
-						console.log("=== FULL REFLECTION PROMPT ===")
-						console.log(reflectionPrompt)
-						console.log("=== END REFLECTION PROMPT ===")
-
-						// Continue to the next iteration
-						continue
-					} else {
-						// Handle other errors
-						this.log(
-							`Error processing response: ${processError instanceof Error ? processError.message : String(processError)}`,
-						)
-						this._onDidFinishProcessingComment.fire({
-							fileUri: document.uri,
-							comment,
-							success: false,
-						})
-						clearHighlight()
-						return
-					}
-				}
-			} catch (error) {
-				this.log(`Error in reflection loop: ${error instanceof Error ? error.message : String(error)}`)
-				this._onDidFinishProcessingComment.fire({
-					fileUri: document.uri,
-					comment,
-					success: false,
-				})
-				clearHighlight()
-				return
-			}
+		// Prepare context for the reflection wrapper
+		const context = {
+			document,
+			comment,
+			triggerType,
+			activeFilesWithContent: [] as { uri: vscode.Uri; content: string }[],
 		}
 
-		if (success) {
+		// Gather active files context first
+		const activeFilesWithContent = await this.gatherActiveFilesContext(document)
+		context.activeFilesWithContent = activeFilesWithContent
+
+		// Use the reflection wrapper
+		const result = await withReflection(context, {
+			buildPrompt: (ctx) => {
+				return buildAIPrompt(ctx.comment, ctx.triggerType, ctx.activeFilesWithContent)
+			},
+			buildReflectionPrompt: (ctx, originalResponse, errors) => {
+				return buildWatchModeReflectionPrompt(
+					ctx.comment,
+					originalResponse,
+					errors,
+					ctx.activeFilesWithContent,
+					this.config.commentPrefix,
+				)
+			},
+			callAI: async (prompt) => {
+				return await this.callAIModel(prompt)
+			},
+			processResponse: async (ctx, response, attemptNumber) => {
+				// Use the tracked document if this is from a quick command
+				const documentToProcess = this.quickCommandDocument || ctx.document
+				return await processAIResponse(documentToProcess, ctx.comment, response, attemptNumber)
+			},
+			log: (message) => this.log(message),
+		})
+
+		// Handle the result
+		if (result.success) {
 			this.log(`Successfully applied AI response to ${document.uri.fsPath}`)
 		} else {
-			this.log(`Failed to apply AI response to ${document.uri.fsPath} after ${currentAttempt} attempts`)
+			this.log(`Failed to apply AI response to ${document.uri.fsPath}`)
 		}
 
 		// Emit event that we've finished processing this comment
 		this._onDidFinishProcessingComment.fire({
 			fileUri: document.uri,
 			comment,
-			success,
+			success: result.success,
 		})
 
 		// Clear the highlight
 		clearHighlight()
+	}
+
+	/**
+	 * Gathers content from active files for additional context
+	 */
+	private async gatherActiveFilesContext(
+		document: vscode.TextDocument,
+	): Promise<{ uri: vscode.Uri; content: string }[]> {
+		const activeFilesWithContent: { uri: vscode.Uri; content: string }[] = []
+
+		// Maximum token budget for additional context (roughly 50% of model's context window)
+		const MAX_ADDITIONAL_CONTEXT_TOKENS = 50000
+		let estimatedTokens = 0
+
+		// First, estimate tokens for the base prompt
+		const basePrompt = buildAIPrompt(
+			{
+				content: "",
+				startPos: new vscode.Position(0, 0),
+				endPos: new vscode.Position(0, 0),
+				context: "",
+				fileUri: document.uri,
+			},
+			TriggerType.Edit,
+		)
+		estimatedTokens += estimateTokenCount(basePrompt)
+
+		// Get imported files from the current document
+		const importedFiles = await getContextFiles(document.uri, document.getText(), 2)
+		this.log(`Found ${importedFiles.length} imported files for context`)
+
+		// Get active files and sort by recency (most recent first)
+		const activeFileUris = this.getActiveFiles()
+
+		// Prioritize open editor tabs
+		const openEditors = vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString())
+
+		// Combine imported files with active files, removing duplicates
+		const allContextFiles = new Set<string>()
+
+		// Add imported files first (highest priority)
+		importedFiles.forEach((uri) => allContextFiles.add(uri.toString()))
+
+		// Add open editors next
+		openEditors.forEach((uri) => allContextFiles.add(uri))
+
+		// Add other active files last
+		activeFileUris.forEach((uri) => allContextFiles.add(uri.toString()))
+
+		// Convert back to URIs and sort by priority
+		const sortedContextFiles = Array.from(allContextFiles).map((uriStr) => vscode.Uri.parse(uriStr))
+
+		// Add content from context files until we reach the token limit
+		for (const uri of sortedContextFiles) {
+			// Skip the file with the comment (already included in the context)
+			if (uri.toString() === document.uri.toString()) {
+				continue
+			}
+
+			try {
+				// Skip files that are too large
+				if (uri.fsPath.endsWith(".min.js") || uri.fsPath.endsWith(".min.css")) {
+					this.log(`Skipping minified file: ${uri.fsPath}`)
+					continue
+				}
+
+				const doc = await vscode.workspace.openTextDocument(uri)
+				const content = doc.getText()
+
+				// Skip if file is too large
+				if (content.length > this.largeFileThreshold) {
+					this.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
+					continue
+				}
+
+				// Estimate tokens for this file
+				const fileTokens = estimateTokenCount(content)
+
+				// If adding this file would exceed our budget, skip it
+				if (estimatedTokens + fileTokens > MAX_ADDITIONAL_CONTEXT_TOKENS) {
+					this.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
+					continue
+				}
+
+				// Add file to context
+				activeFilesWithContent.push({ uri, content })
+				estimatedTokens += fileTokens
+
+				this.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
+			} catch (error) {
+				this.log(`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`)
+			}
+		}
+
+		this.log(
+			`Total context includes ${activeFilesWithContent.length} additional files (est. ${estimatedTokens} tokens)`,
+		)
+
+		return activeFilesWithContent
 	}
 
 	/**
@@ -879,7 +733,7 @@ export class WatchModeService {
 			}
 
 			// Call the model with the prompt using the streaming API
-			this.log(`Using model: ${this.config.model || this.apiHandler?.getModel()?.id || "unknown"}`)
+			this.log(`Using model: ${this.apiHandler?.getModel()?.id || "unknown"}`)
 
 			// Create a system message and a user message with the prompt
 			const systemPrompt =
@@ -925,17 +779,6 @@ export class WatchModeService {
 			this.log(`Error in callAIModel: ${error instanceof Error ? error.message : String(error)}`)
 			throw error
 		}
-	}
-
-	/**
-	 * Disposes all file system watchers
-	 */
-	private disposeWatchers(): void {
-		this.log(`Disposing ${this.watchers.size} watchers`)
-		for (const watcher of this.watchers.values()) {
-			watcher.dispose()
-		}
-		this.watchers.clear()
 	}
 
 	/**
@@ -989,7 +832,6 @@ export class WatchModeService {
 		}
 
 		this.log("Stopping watch mode")
-		this.disposeWatchers()
 
 		// Clear any pending processing
 		for (const timeout of this.pendingProcessing.values()) {
