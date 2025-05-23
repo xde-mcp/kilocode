@@ -17,6 +17,7 @@ import {
 	estimateTokenCount,
 } from "./commentProcessor"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
+import { getContextFiles } from "./importParser"
 
 // Interface for document change event data
 interface DocumentChangeData {
@@ -666,24 +667,33 @@ export class WatchModeService {
 				const basePrompt = buildAIPrompt(comment, triggerType)
 				estimatedTokens += estimateTokenCount(basePrompt)
 
+				// Get imported files from the current document
+				const importedFiles = await getContextFiles(document.uri, document.getText(), 2)
+				this.log(`Found ${importedFiles.length} imported files for context`)
+
 				// Get active files and sort by recency (most recent first)
 				const activeFileUris = this.getActiveFiles()
 
 				// Prioritize open editor tabs
 				const openEditors = vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString())
 
-				// Sort active files: open editors first, then other active files
-				const sortedActiveFiles = activeFileUris.sort((a, b) => {
-					const aIsOpen = openEditors.includes(a.toString())
-					const bIsOpen = openEditors.includes(b.toString())
+				// Combine imported files with active files, removing duplicates
+				const allContextFiles = new Set<string>()
 
-					if (aIsOpen && !bIsOpen) return -1
-					if (!aIsOpen && bIsOpen) return 1
-					return 0
-				})
+				// Add imported files first (highest priority)
+				importedFiles.forEach((uri) => allContextFiles.add(uri.toString()))
 
-				// Add content from active files until we reach the token limit
-				for (const uri of sortedActiveFiles) {
+				// Add open editors next
+				openEditors.forEach((uri) => allContextFiles.add(uri))
+
+				// Add other active files last
+				activeFileUris.forEach((uri) => allContextFiles.add(uri.toString()))
+
+				// Convert back to URIs and sort by priority
+				const sortedContextFiles = Array.from(allContextFiles).map((uriStr) => vscode.Uri.parse(uriStr))
+
+				// Add content from context files until we reach the token limit
+				for (const uri of sortedContextFiles) {
 					// Skip the file with the comment (already included in the context)
 					if (uri.toString() === document.uri.toString()) {
 						continue

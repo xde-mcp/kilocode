@@ -202,8 +202,6 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 				contextProxy: visibleProvider.contextProxy,
 			})
 		},
-		// kilocode_change end
-
 		// Watch Mode commands
 		"kilo-code.watchMode.enable": () => {
 			if (!watchModeService) {
@@ -262,7 +260,7 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 				vscode.window.showErrorMessage("Failed to restart Watch Mode service")
 			}
 		},
-		"kilo-code.watchMode.quickCommand": async () => {
+		"kilo-code.quickCommand": async () => {
 			if (!watchModeService) {
 				outputChannel.appendLine("Watch Mode service not initialized")
 				vscode.window.showErrorMessage("Watch Mode service not initialized")
@@ -281,8 +279,6 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 						vscode.window.showErrorMessage("Failed to enable Watch Mode")
 						return
 					}
-				} else {
-					return
 				}
 			}
 
@@ -316,6 +312,7 @@ const getCommandsMap = ({ context, outputChannel, watchModeService }: RegisterCo
 			}
 		},
 	}
+	// kilocode_change end
 }
 
 export const openClineInNewTab = async ({ context, outputChannel }: Omit<RegisterCommandOptions, "provider">) => {
