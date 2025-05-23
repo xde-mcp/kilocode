@@ -103,13 +103,12 @@ const extractCodeContext = (
 	contextLines: number = 5,
 ): string => {
 	const lines = content.split("\n")
-
 	const startLine = typeof startPos.line === "number" ? Math.max(0, startPos.line - contextLines) : 0
 	const endLine =
 		typeof endPos.line === "number" ? Math.min(lines.length - 1, endPos.line + contextLines) : lines.length - 1
 
 	const extractedContext = lines.slice(startLine, endLine + 1).join("\n")
-	console.log(`Extracted context: ${extractedContext.substring(0, 100)}${extractedContext.length > 100 ? "..." : ""}`)
+	// console.log(`Extracted context: ${extractedContext.substring(0, 100)}${extractedContext.length > 100 ? "..." : ""}`)
 
 	return extractedContext
 }
@@ -198,7 +197,6 @@ export const buildAIPrompt = (
 	triggerType: TriggerType = TriggerType.Edit,
 	activeFiles: { uri: vscode.Uri; content: string }[] = [],
 ): string => {
-	console.log("[WatchMode DEBUG] Building AI prompt")
 	const { content, context, fileUri } = commentData
 	const filePath = vscode.workspace.asRelativePath(fileUri)
 
@@ -216,14 +214,17 @@ You are Kilo Code, a highly skilled software engineer with extensive knowledge i
 ${content}
 
 I've written your instructions in comments in the code and marked them with "${displayPrefix}"
-You can see the "${displayPrefix}" comments shown below.
-Find them in the code files I've shared with you, and follow their instructions.
+You can see the "${displayPrefix}" comments shown below in the file ${filePath}.
 
-# Code to modify
+# Current file content
 
+File: ${filePath}
 \`\`\`
-${context || "No context available"}
+${context || "// File appears to be empty or only contains the comment"}
 \`\`\`
+
+The above shows the current content of ${filePath} where the "${displayPrefix}" comment is located.
+You need to modify this file according to the instructions in the comment.
 `
 
 	// Add content from active files for additional context
@@ -238,7 +239,7 @@ ${context || "No context available"}
 			if (filePath !== commentPath) {
 				// Skip the file with the comment
 				const relativePath = vscode.workspace.asRelativePath(file.uri)
-				prompt += `## ${relativePath}\n\n\`\`\`\n${file.content}\n\`\`\`\n\n`
+				prompt += `## File: ${relativePath}\n\n\`\`\`\n${file.content}\n\`\`\`\n\n`
 			}
 		}
 	}
@@ -257,6 +258,7 @@ exact original code
 replacement code
 >>>>>>> REPLACE
 
+IMPORTANT: You MUST ALWAYS include the file path (${filePath}) before each SEARCH/REPLACE block.
 You can include multiple SEARCH/REPLACE blocks for the same file, and you can edit multiple files.
 Make sure to include enough context in the SEARCH block to uniquely identify the code to replace.
 After completing the instructions, also BE SURE to remove all the "${displayPrefix}" comments from the code.
@@ -271,6 +273,8 @@ You can also provide unified diff format if that's more appropriate for your cha
 +// New line to replace it (starts with +)
  // Context line(s) after (unchanged, starts with space)
 \`\`\`
+
+NEVER use generic file names like "Code", "file", or similar placeholders. ALWAYS use the actual file path: ${filePath}
 
 If you need to explain your changes, please do so before or after the code blocks.
 `
@@ -289,21 +293,7 @@ If you do need to suggest code changes, you can include them as examples in your
 	const finalPrompt = prompt.trim()
 
 	// Debug log the full prompt string
-	console.log("[WatchMode DEBUG] === FULL AI PROMPT ===")
-	console.log(finalPrompt)
-	console.log("[WatchMode DEBUG] === END AI PROMPT ===")
-
-	// More detailed debug logging of the prompt
-	console.debug(
-		"[WatchMode DEBUG] Full prompt string:",
-		JSON.stringify({
-			prompt: finalPrompt,
-			length: finalPrompt.length,
-			estimatedTokens: estimateTokenCount(finalPrompt),
-			triggerType: triggerType,
-			timestamp: new Date().toISOString(),
-		}),
-	)
+	console.log("🧶🧶🧶[WatchMode DEBUG] === FULL AI PROMPT ===")
 
 	return finalPrompt
 }
@@ -333,9 +323,18 @@ export function parseSearchReplaceBlocks(response: string, defaultFilePath?: str
 	// Process matches with file paths
 	let match
 	while ((match = fileBlockRegex.exec(response)) !== null) {
-		const filePath = match[1].trim()
+		let filePath = match[1].trim()
 		const searchBlock = match[2]
 		const replaceBlock = match[3]
+
+		// Check for generic filenames and use defaultFilePath if available
+		const genericFileNames = ["Code", "code", "file", "File", "test", "Test"]
+		if (defaultFilePath && genericFileNames.includes(filePath)) {
+			console.log(
+				`[WatchMode DEBUG] Replacing generic filename "${filePath}" with actual path: ${defaultFilePath}`,
+			)
+			filePath = defaultFilePath
+		}
 
 		// Create a DiffEdit with DiffBlocks
 		const blocks: DiffBlock[] = [
@@ -383,21 +382,8 @@ export function parseSearchReplaceBlocks(response: string, defaultFilePath?: str
  * @returns An AIResponse object containing the edits and explanation
  */
 export function parseAIResponse(response: string, triggerType: TriggerType, currentFilePath?: string): AIResponse {
-	console.log("[WatchMode DEBUG] Parsing AI response")
-	console.log("[WatchMode DEBUG] === FULL AI RESPONSE ===")
-	console.log(response)
-	console.log("[WatchMode DEBUG] === END AI RESPONSE ===")
+	console.log("🤖🤖🤖[WatchMode DEBUG] === FULL AI RESPONSE ===\n" + response)
 
-	// Debug log the full response string
-	console.debug("[WatchMode DEBUG] Full response string:", {
-		response: response,
-		length: response.length,
-		estimatedTokens: estimateTokenCount(response),
-		triggerType: triggerType,
-		timestamp: new Date().toISOString(),
-	})
-
-	// Initialize the result
 	const result: AIResponse = {
 		edits: [],
 		explanation: "",
@@ -430,8 +416,14 @@ export function parseAIResponse(response: string, triggerType: TriggerType, curr
 		// Convert from old format to new format
 		const [before, after] = hunkToBeforeAfter(edit.hunk, true) as [string[], string[]]
 
+		// Use currentFilePath if the diff path is generic or missing
+		let filePath = edit.path
+		if (currentFilePath && (filePath === "Code" || filePath === "file" || !filePath)) {
+			filePath = currentFilePath
+		}
+
 		return {
-			filePath: edit.path,
+			filePath,
 			blocks: [
 				{ type: "SEARCH" as const, content: (before as string[]).join("\n") },
 				{ type: "REPLACE" as const, content: (after as string[]).join("\n") },
@@ -577,6 +569,13 @@ export function processDiffBlock(lines: string[], startLineNum: number): [number
 			fname = bFname
 		}
 
+		// Check for generic filenames
+		const genericFileNames = ["Code", "code", "file", "File", "test", "Test"]
+		if (fname && genericFileNames.includes(fname)) {
+			console.log(`[WatchMode DEBUG] Warning: Generic filename "${fname}" detected in unified diff`)
+			// We'll handle this later when converting to NewDiffEdit format
+		}
+
 		// Skip the header lines
 		lineNum += 2
 	}
@@ -678,8 +677,18 @@ export function hunkToBeforeAfter(hunk: string[], asLines = false): [string[] | 
 			continue
 		}
 
+		// Special case: a line that's just "-" or "+" represents an empty line being removed or added
+		if (line === "-") {
+			before.push("")
+			continue
+		}
+		if (line === "+") {
+			after.push("")
+			continue
+		}
+
 		if (line.length < 2) {
-			// Very short line, treat as unchanged
+			// Very short line that's not a diff marker, treat as unchanged
 			before.push(line)
 			after.push(line)
 			continue
@@ -1184,15 +1193,11 @@ export const applySearchReplaceEdits = async (
 			editsByFile.get(filePath)!.push(edit)
 		}
 
-		console.log(`[WatchMode DEBUG] Processing edits for ${editsByFile.size} files`)
-
 		// Track overall success
 		let overallSuccess = true
 
 		// Apply edits for each file
 		for (const [filePath, fileEdits] of editsByFile.entries()) {
-			console.log(`[WatchMode DEBUG] Processing ${fileEdits.length} edits for file: ${filePath}`)
-
 			// Get the document for this file
 			let fileDocument = document
 			let documentContent: string
@@ -1322,16 +1327,6 @@ export const processAIResponse = async (
 	response: string,
 	reflectionAttempt: number = 0,
 ): Promise<boolean> => {
-	console.log("[WatchMode DEBUG] ====== processAIResponse START ======")
-	console.log("[WatchMode DEBUG] Document URI:", document.uri.toString())
-	console.log(
-		"[WatchMode DEBUG] Comment:",
-		commentData.content.substring(0, 50) + (commentData.content.length > 50 ? "..." : ""),
-	)
-	console.log("[WatchMode DEBUG] Response length:", response.length)
-	console.log("[WatchMode DEBUG] Response preview:", response.substring(0, 100) + "...")
-	console.log("[WatchMode DEBUG] Reflection attempt:", reflectionAttempt)
-
 	try {
 		// Determine the trigger type from the comment content
 		const triggerType = determineTriggerType(commentData.content)
@@ -1340,9 +1335,6 @@ export const processAIResponse = async (
 		// Parse the AI response
 		const currentFilePath = vscode.workspace.asRelativePath(document.uri)
 		const parsedResponse = parseAIResponse(response, triggerType, currentFilePath)
-		console.log(
-			`[WatchMode DEBUG] Parsed response: ${parsedResponse.edits.length} edits, explanation length: ${parsedResponse.explanation.length}`,
-		)
 
 		// If it's a question, just show the explanation
 		if (triggerType === TriggerType.Ask) {
@@ -1358,7 +1350,6 @@ export const processAIResponse = async (
 			const result = await vscode.workspace.applyEdit(edit)
 
 			console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
-			console.log("[WatchMode DEBUG] ====== processAIResponse END ======")
 			return result
 		}
 
@@ -1389,7 +1380,6 @@ export const processAIResponse = async (
 				const result = await vscode.workspace.applyEdit(edit)
 
 				console.log(`[WatchMode DEBUG] Direct replacement result: ${result ? "SUCCESS" : "FAILED"}`)
-				console.log("[WatchMode DEBUG] ====== processAIResponse END ======")
 				return result
 			}
 
@@ -1402,7 +1392,6 @@ export const processAIResponse = async (
 			const result = await vscode.workspace.applyEdit(edit)
 
 			console.log(`[WatchMode DEBUG] Comment removal result: ${result ? "SUCCESS" : "FAILED"}`)
-			console.log("[WatchMode DEBUG] ====== processAIResponse END ======")
 			return result
 		}
 
@@ -1454,14 +1443,7 @@ export const processAIResponse = async (
 					console.log("[WatchMode DEBUG] All edits failed to apply")
 
 					if (reflectionAttempt < MAX_REFLECTION_ATTEMPTS) {
-						console.log(`[WatchMode DEBUG] Attempting reflection #${reflectionAttempt + 1}`)
-
-						// Signal that reflection is needed
-						// The WatchModeService will handle building the reflection prompt
-						console.log("[WatchMode DEBUG] ====== processAIResponse END (needs reflection) ======")
-
-						// Log the error messages for debugging
-						console.log("[WatchMode DEBUG] Error messages that will be sent to reflection:")
+						console.log(`♻️♻️♻️[WatchMode DEBUG] Attempting reflection #${reflectionAttempt + 1}...`)
 						errors.forEach((error, index) => {
 							console.log(`[WatchMode DEBUG] Error ${index + 1}: ${error}`)
 						})
@@ -1492,7 +1474,6 @@ export const processAIResponse = async (
 		}
 
 		console.log(`[WatchMode DEBUG] Process result: ${success ? "SUCCESS" : "FAILED"}`)
-		console.log("[WatchMode DEBUG] ====== processAIResponse END ======")
 		return success
 	} catch (error) {
 		// Check if this is a reflection request
@@ -1588,9 +1569,12 @@ exact original code
 replacement code
 \>\>\>\>\>\>\> REPLACE
 
+IMPORTANT: You MUST ALWAYS include the file path (${filePath}) before each SEARCH/REPLACE block.
 You can include multiple SEARCH/REPLACE blocks for the same file, and you can edit multiple files.
 Make sure to include enough context in the SEARCH block to uniquely identify the code to replace.
 After completing the instructions, also BE SURE to remove all the "${displayPrefix}" comments from the code.
+
+NEVER use generic file names like "Code", "file", or similar placeholders. ALWAYS use the actual file path: ${filePath}
 
 If you need to explain your changes, please do so before or after the code blocks.
 `

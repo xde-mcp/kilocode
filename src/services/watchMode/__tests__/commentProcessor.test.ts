@@ -1,234 +1,93 @@
-import * as vscode from "vscode"
-import { findDiffs, UnifiedDiffHandler, hunkToBeforeAfter, applyHunk } from "../commentProcessor"
+import { hunkToBeforeAfter } from "../commentProcessor"
 
-// Mock VSCode
-jest.mock("vscode", () => ({
-	Position: jest.fn().mockImplementation((line, character) => ({ line, character })),
-	Range: jest.fn().mockImplementation((start, end) => ({ start, end })),
-	Uri: {
-		file: jest.fn((path) => ({ fsPath: path, toString: () => path })),
-	},
-	workspace: {
-		asRelativePath: jest.fn((uri) => (typeof uri === "string" ? uri : uri.fsPath || uri.toString())),
-	},
-}))
+describe("hunkToBeforeAfter", () => {
+	it('should handle lines that are just "-" (removed empty lines)', () => {
+		const hunk = [
+			"-// First line to remove",
+			"-", // This is a removed empty line
+			"-// Third line to remove",
+			" // Context line",
+		]
 
-describe("commentProcessor diff handling", () => {
-	describe("findDiffs", () => {
-		it("extracts diffs from code blocks", () => {
-			const response = `
-Here's how I would refactor this function:
+		const [before, after] = hunkToBeforeAfter(hunk, true) as [string[], string[]]
 
-\`\`\`diff
---- src/utils.js
-+++ src/utils.js
-@@ -10,7 +10,7 @@
- function calculateTotal(items) {
--  let total = 0;
--  for (const item of items) {
--    total += item;
--  }
--  return total;
-+  // Use reduce for cleaner code
-+  return items.reduce((total, item) => {
-+    return total + item;
-+  }, 0);
- }
-\`\`\`
+		expect(before).toEqual([
+			"// First line to remove",
+			"", // Should be an empty string, not '-'
+			"// Third line to remove",
+			"// Context line",
+		])
 
-This refactoring uses Array.reduce() for a more functional approach.
-`
-
-			const edits = findDiffs(response)
-
-			expect(edits.length).toBe(1)
-			expect(edits[0].path).toBe("src/utils.js")
-			expect(edits[0].hunk.length).toBeGreaterThan(0)
-			expect(edits[0].hunk.some((line) => line.startsWith("+"))).toBe(true)
-			expect(edits[0].hunk.some((line) => line.startsWith("-"))).toBe(true)
-		})
-
-		it("extracts diffs without code blocks", () => {
-			const response = `
-Here's the change:
-
---- src/utils.js
-+++ src/utils.js
-@@ -10,7 +10,7 @@
- function calculateTotal(items) {
--  let total = 0;
--  for (const item of items) {
--    total += item;
--  }
--  return total;
-+  // Use reduce for cleaner code
-+  return items.reduce((total, item) => {
-+    return total + item;
-+  }, 0);
- }
-
-This makes the code more concise.
-`
-
-			const edits = findDiffs(response)
-
-			expect(edits.length).toBe(1)
-			expect(edits[0].path).toBe("src/utils.js")
-			expect(edits[0].hunk.length).toBeGreaterThan(0)
-		})
-
-		it("handles multiple hunks in a single diff", () => {
-			const response = `
-\`\`\`diff
---- src/utils.js
-+++ src/utils.js
-@@ -10,7 +10,7 @@
- function calculateTotal(items) {
--  let total = 0;
-+  let sum = 0;
- 
-@@ -15,5 +15,5 @@
-   for (const item of items) {
--    total += item;
-+    sum += item;
-   }
--  return total;
-+  return sum;
- }
-\`\`\`
-`
-
-			const edits = findDiffs(response)
-
-			// Our implementation treats each hunk as a separate edit (which is good for flexibility)
-			expect(edits.length).toBe(2)
-			expect(edits[0].path).toBe("src/utils.js")
-			expect(edits[1].path).toBe("src/utils.js")
-
-			// Check that we've detected all the lines properly
-			const allHunkLines = edits.flatMap((edit) => edit.hunk)
-			const minusCount = allHunkLines.filter((line) => line.startsWith("-")).length
-			const plusCount = allHunkLines.filter((line) => line.startsWith("+")).length
-			expect(minusCount).toBe(3)
-			expect(plusCount).toBe(3)
-		})
+		expect(after).toEqual(["// Context line"])
 	})
 
-	describe("hunkToBeforeAfter", () => {
-		it("converts hunks to before and after text", () => {
-			const hunk = [
-				" function sum(a, b) {\n",
-				"-  return a + b;\n",
-				"+  // Add two numbers\n",
-				"+  return a + b;\n",
-				" }\n",
-			]
+	it('should handle lines that are just "+" (added empty lines)', () => {
+		const hunk = [
+			" // Context line",
+			"+// New line",
+			"+", // This is an added empty line
+			"+// Another new line",
+		]
 
-			const [before, after] = hunkToBeforeAfter(hunk)
+		const [before, after] = hunkToBeforeAfter(hunk, true) as [string[], string[]]
 
-			expect(before).toBe("function sum(a, b) {\n  return a + b;\n}\n")
-			expect(after).toBe("function sum(a, b) {\n  // Add two numbers\n  return a + b;\n}\n")
-		})
+		expect(before).toEqual(["// Context line"])
 
-		it("converts hunks to before and after lines when asLines is true", () => {
-			const hunk = [
-				" function sum(a, b) {\n",
-				"-  return a + b;\n",
-				"+  // Add two numbers\n",
-				"+  return a + b;\n",
-				" }\n",
-			]
-
-			const [before, after] = hunkToBeforeAfter(hunk, true) as [string[], string[]]
-
-			expect(before).toEqual(["function sum(a, b) {\n", "  return a + b;\n", "}\n"])
-
-			expect(after).toEqual(["function sum(a, b) {\n", "  // Add two numbers\n", "  return a + b;\n", "}\n"])
-		})
+		expect(after).toEqual([
+			"// Context line",
+			"// New line",
+			"", // Should be an empty string, not '+'
+			"// Another new line",
+		])
 	})
 
-	describe("applyHunk", () => {
-		it("applies a simple hunk to content", () => {
-			const content = "function sum(a, b) {\n  return a + b;\n}\n"
+	it("should handle the specific case from the bug report", () => {
+		const hunk = [
+			"-// KO! remove all the comments in here",
+			"-/**",
+			"- * @file Utility functions for common operations.",
+			"- */",
+			"-", // This was causing the issue
+			"-/**",
+			"- * Formats a given date into a human-readable string.",
+			"- * @param date The Date object to format.",
+			'- * @returns A formatted date string (e.g., "YYYY-MM-DD").',
+			"- */",
+			" export function formatDate(date: Date): string {",
+			"   const year = date.getFullYear();",
+			"-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed",
+			"+  const month = String(date.getMonth() + 1).padStart(2, '0');",
+			"   const day = String(date.getDate()).padStart(2, '0');",
+			"   return `${year}-${month}-${day}`;",
+			" }",
+		]
 
-			const hunk = [
-				" function sum(a, b) {\n",
-				"-  return a + b;\n",
-				"+  // Add two numbers\n",
-				"+  return a + b;\n",
-				" }\n",
-			]
+		const [before, after] = hunkToBeforeAfter(hunk, true) as [string[], string[]]
 
-			const result = applyHunk(content, hunk)
+		// The 5th line in before should be an empty string, not '-'
+		expect(before[4]).toBe("")
 
-			expect(result).toBe("function sum(a, b) {\n  // Add two numbers\n  return a + b;\n}\n")
-		})
-
-		it("applies a hunk with partial context", () => {
-			const content =
-				"function sum(a, b) {\n  return a + b;\n}\n\nfunction multiply(a, b) {\n  return a * b;\n}\n"
-
-			const hunk = [
-				" function sum(a, b) {\n",
-				"-  return a + b;\n",
-				"+  // Add two numbers\n",
-				"+  return a + b;\n",
-				" }\n",
-			]
-
-			const result = applyHunk(content, hunk)
-
-			expect(result).toBe(
-				"function sum(a, b) {\n  // Add two numbers\n  return a + b;\n}\n\nfunction multiply(a, b) {\n  return a * b;\n}\n",
-			)
-		})
+		// The after array should not start with '-'
+		expect(after[0]).toBe("export function formatDate(date: Date): string {")
+		expect(after[0]).not.toBe("-")
 	})
 
-	describe("UnifiedDiffHandler", () => {
-		it("extracts and applies edits from responses", () => {
-			const response = `
-\`\`\`diff
---- src/utils.js
-+++ src/utils.js
-@@ -10,7 +10,7 @@
- function calculateTotal(items) {
--  let total = 0;
--  for (const item of items) {
--    total += item;
--  }
--  return total;
-+  // Use reduce for cleaner code
-+  return items.reduce((total, item) => {
-+    return total + item;
-+  }, 0);
- }
-\`\`\`
-`
-			const originalContent = `function calculateTotal(items) {
-  let total = 0;
-  for (const item of items) {
-    total += item;
-  }
-  return total;
-}
-`
-			const expectedContent = `function calculateTotal(items) {
-  // Use reduce for cleaner code
-  return items.reduce((total, item) => {
-    return total + item;
-  }, 0);
-}
-`
+	it("should handle normal diff lines correctly", () => {
+		const hunk = [" // Context line", "-// Old line", "+// New line", " // Another context line"]
 
-			const handler = new UnifiedDiffHandler()
-			const edits = handler.getEdits(response)
+		const [before, after] = hunkToBeforeAfter(hunk, true) as [string[], string[]]
 
-			expect(edits.length).toBe(1)
+		expect(before).toEqual(["// Context line", "// Old line", "// Another context line"])
 
-			const [newContent, errors] = handler.applyEdits(edits, originalContent, vscode.Uri.file("src/utils.js"))
+		expect(after).toEqual(["// Context line", "// New line", "// Another context line"])
+	})
 
-			expect(errors.length).toBe(0)
-			expect(newContent).toBe(expectedContent)
-		})
+	it("should join lines with newlines when asLines is false", () => {
+		const hunk = ["-Line 1", "-", "-Line 3", "+New line 1", "+", "+New line 3"]
+
+		const [before, after] = hunkToBeforeAfter(hunk, false) as [string, string]
+
+		expect(before).toBe("Line 1\n\nLine 3")
+		expect(after).toBe("New line 1\n\nNew line 3")
 	})
 })

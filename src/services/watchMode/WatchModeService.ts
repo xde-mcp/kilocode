@@ -653,7 +653,7 @@ export class WatchModeService {
 		while (currentAttempt <= MAX_REFLECTION_ATTEMPTS) {
 			try {
 				// Build prompt from the comment and context
-				this.log(`Building AI prompt (attempt ${currentAttempt})...`)
+				// this.log(`Building AI prompt (attempt ${currentAttempt})...`)
 
 				// Gather content from active files for additional context
 				const activeFilesWithContent: { uri: vscode.Uri; content: string }[] = []
@@ -737,23 +737,13 @@ export class WatchModeService {
 						: lastResponse || buildAIPrompt(comment, triggerType, activeFilesWithContent)
 
 				this.log(`Prompt built, length: ${prompt.length} characters`)
-				// Log the full prompt for debugging
-				console.log("=== FULL PROMPT ===")
-				console.log(prompt)
-				console.log("=== END PROMPT ===")
-
-				// Get response from AI model
-				this.log("Calling AI model...")
 				let apiResponse: string | null = null
 
 				try {
 					// We know prompt is a valid string at this point
 					apiResponse = await this.callAIModel(prompt)
 					this.log(`API response received, length: ${apiResponse?.length || 0} characters`)
-					// Log the full response for debugging
-					console.log("=== FULL API RESPONSE ===")
-					console.log(apiResponse)
-					console.log("=== END API RESPONSE ===")
+					console.log("=== FULL API RESPONSE ===\n" + apiResponse)
 				} catch (apiError) {
 					this.log(
 						`Error calling AI model: ${apiError instanceof Error ? apiError.message : String(apiError)}`,
