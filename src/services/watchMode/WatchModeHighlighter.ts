@@ -15,9 +15,6 @@ export interface HighlighterOptions {
 	isWholeLine?: boolean
 }
 
-/**
- * Default configuration for the highlighter
- */
 const DEFAULT_OPTIONS: Required<HighlighterOptions> = {
 	animationSpeed: 100,
 	primaryColor: "rgba(0, 122, 255, 0.4)",
@@ -178,10 +175,6 @@ export class WatchModeHighlighter {
 		this.staticHighlights.clear()
 	}
 
-	/**
-	 * Updates the highlighter options
-	 * @param options New options to apply
-	 */
 	public updateOptions(options: HighlighterOptions): void {
 		this.options = { ...this.options, ...options }
 	}
@@ -276,5 +269,12 @@ export class WatchModeHighlighter {
 			borderStyle: "solid",
 			isWholeLine: true,
 		})
+	}
+
+	/**
+	 * Disposes of all resources used by the highlighter
+	 */
+	public dispose(): void {
+		this.clearAllHighlights()
 	}
 }

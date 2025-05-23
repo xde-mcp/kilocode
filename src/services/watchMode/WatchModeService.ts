@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 import { Anthropic } from "@anthropic-ai/sdk"
 import { EXPERIMENT_IDS, ExperimentId, experiments } from "../../shared/experiments"
 import { AICommentData, WatchModeConfig, TriggerType } from "./types"
-import { WatchModeUI } from "./ui"
+import { WatchModeStatusBar } from "./ui"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { writePromptToDebugFile, writePromptResponseToDebugFile } from "../../utils/PromptDebugger"
@@ -13,30 +13,25 @@ import {
 	updateAICommentPatterns,
 	updateCurrentAICommentPrefix,
 	determineTriggerType,
-	estimateTokenCount,
 } from "./commentProcessor"
 import { withReflection, buildWatchModeReflectionPrompt } from "../../utils/reflectionWrapper"
 import { WatchModeHighlighter } from "./WatchModeHighlighter"
-import { getContextFiles } from "./importParser"
+import { ActiveFileTracker } from "./ActiveFileTracker"
 
 /**
  * Service that watches files for changes and processes AI comments
  */
 export class WatchModeService {
 	private apiHandler: ApiHandler | null = null
-	private pendingProcessing: Map<string, ReturnType<typeof setTimeout>> = new Map()
 	private outputChannel?: vscode.OutputChannel
-	private ui: WatchModeUI
+	private ui: WatchModeStatusBar
 	private highlighter: WatchModeHighlighter
 	private processingFiles: Set<string> = new Set()
 	private currentDebugId?: string
 	private documentListeners: vscode.Disposable[] = []
-	private quickCommandDocument?: vscode.TextDocument // Track the document that initiated a quick command
 
-	// Track active files for context management
-	private activeFiles: Set<string> = new Set()
-	private maxActiveFiles: number = 10 // Maximum number of files to keep in active context
-	private largeFileThreshold: number = 1000000 // ~1MB threshold for large files
+	// Active file tracker for context management
+	private activeFileTracker: ActiveFileTracker
 
 	// Event emitters
 	private readonly _onDidStartProcessingComment = new vscode.EventEmitter<{
@@ -72,8 +67,9 @@ export class WatchModeService {
 
 		this.outputChannel = outputChannel
 		this.config = this.defaultConfig
-		this.ui = new WatchModeUI(context)
+		this.ui = new WatchModeStatusBar(context)
 		this.highlighter = new WatchModeHighlighter()
+		this.activeFileTracker = new ActiveFileTracker(outputChannel)
 
 		this.setupApiHandler()
 
@@ -169,14 +165,6 @@ export class WatchModeService {
 	 * Initializes file system watchers
 	 */
 	private initializeWatchers(): void {
-		// Clean up any existing document listeners
-		this.log(`Disposing ${this.documentListeners.length} document listeners`)
-		for (const listener of this.documentListeners) {
-			listener.dispose()
-		}
-		this.documentListeners = []
-		this.highlighter.clearAllHighlights()
-
 		// Set up document change listeners for real-time editing and document save listeners
 		const changeListener = vscode.workspace.onDidChangeTextDocument((event) => {
 			this.handleDocumentChange({ document: event.document, shouldProcessComments: false })
@@ -186,7 +174,6 @@ export class WatchModeService {
 		})
 
 		this.documentListeners.push(changeListener, saveListener)
-		this.context.subscriptions.push(changeListener, saveListener)
 	}
 
 	/**
@@ -195,22 +182,12 @@ export class WatchModeService {
 	private handleDocumentChange(data: { document: vscode.TextDocument; shouldProcessComments: boolean }): void {
 		const { document, shouldProcessComments } = data
 		const fileUri = document.uri
-		const fileKey = fileUri.toString()
 
 		// For all document changes (typing or saving), immediately detect and highlight comments
 		this.detectAndHighlightComments(document)
 
 		// For save events, immediately process the comments with animation
 		if (shouldProcessComments) {
-			this.log(`Document saved, immediately processing: ${fileUri.toString()}`)
-
-			// Cancel any pending processing for this file
-			if (this.pendingProcessing.has(fileKey)) {
-				clearTimeout(this.pendingProcessing.get(fileKey))
-				this.pendingProcessing.delete(fileKey)
-			}
-
-			// Process the file immediately without debounce
 			this.processFile(fileUri)
 		}
 	}
@@ -219,42 +196,6 @@ export class WatchModeService {
 	 * Processes a file to find and handle AI comments
 	 * @param fileUri URI of the file to process
 	 */
-	/**
-	 * Adds a file to the active files list
-	 * @param fileUri The URI of the file to add
-	 */
-	private addToActiveFiles(fileUri: vscode.Uri): void {
-		const fileKey = fileUri.toString()
-
-		// If already in the set, remove it so it can be added to the front (most recent)
-		if (this.activeFiles.has(fileKey)) {
-			this.activeFiles.delete(fileKey)
-		}
-
-		// Add to the active files set
-		this.activeFiles.add(fileKey)
-
-		// If we've exceeded the maximum, remove the oldest file
-		if (this.activeFiles.size > this.maxActiveFiles) {
-			const iterator = this.activeFiles.values()
-			const oldest = iterator.next().value
-
-			if (oldest) {
-				this.activeFiles.delete(oldest)
-				this.log(`Removed ${oldest} from active files (exceeded max of ${this.maxActiveFiles})`)
-			}
-		}
-
-		this.log(`Active files (${this.activeFiles.size}): ${Array.from(this.activeFiles).join(", ")}`)
-	}
-
-	/**
-	 * Gets a list of active files for context
-	 * @returns Array of active file URIs
-	 */
-	private getActiveFiles(): vscode.Uri[] {
-		return Array.from(this.activeFiles).map((uri) => vscode.Uri.parse(uri))
-	}
 
 	/**
 	 * Processes a file to find and handle AI comments
@@ -269,10 +210,10 @@ export class WatchModeService {
 			const content = document.getText()
 
 			// Add to active files list (even if large, we want to track it)
-			this.addToActiveFiles(fileUri)
+			this.activeFileTracker.addToActiveFiles(fileUri)
 
 			// Skip processing if file is too large
-			if (content.length > this.largeFileThreshold) {
+			if (this.activeFileTracker.isFileTooLarge(content)) {
 				// Skip files larger than threshold
 				this.log(`Skipping large file: ${fileUri.fsPath} (${content.length} bytes)`)
 				return
@@ -324,11 +265,11 @@ export class WatchModeService {
 			// Clear any existing static highlights for this file
 			this.highlighter.clearStaticHighlightsForFile(fileUri)
 
-			this.addToActiveFiles(fileUri)
+			this.activeFileTracker.addToActiveFiles(fileUri)
 
 			// Skip files larger than threshold
 			const content = document.getText()
-			if (content.length > this.largeFileThreshold) {
+			if (this.activeFileTracker.isFileTooLarge(content)) {
 				this.log(`Skipping large file: ${fileUri.fsPath} (${content.length} bytes)`)
 				return
 			}
@@ -394,7 +335,7 @@ export class WatchModeService {
 			document,
 			comment,
 			triggerType,
-			activeFilesWithContent: await this.gatherActiveFilesContext(document),
+			activeFilesWithContent: await this.activeFileTracker.gatherActiveFilesContext(document),
 		}
 
 		const result = await withReflection(context, {
@@ -416,105 +357,6 @@ export class WatchModeService {
 
 		this._onDidFinishProcessingComment.fire({ fileUri: document.uri, comment, success: result.success })
 		clearHighlight()
-	}
-
-	/**
-	 * Gathers content from active files for additional context
-	 */
-	private async gatherActiveFilesContext(
-		document: vscode.TextDocument,
-	): Promise<{ uri: vscode.Uri; content: string }[]> {
-		const activeFilesWithContent: { uri: vscode.Uri; content: string }[] = []
-
-		// Maximum token budget for additional context (roughly 50% of model's context window)
-		const MAX_ADDITIONAL_CONTEXT_TOKENS = 50000
-		let estimatedTokens = 0
-
-		// First, estimate tokens for the base prompt
-		const basePrompt = buildAIPrompt(
-			{
-				content: "",
-				startPos: new vscode.Position(0, 0),
-				endPos: new vscode.Position(0, 0),
-				context: "",
-				fileUri: document.uri,
-			},
-			TriggerType.Edit,
-		)
-		estimatedTokens += estimateTokenCount(basePrompt)
-
-		// Get imported files from the current document
-		const importedFiles = await getContextFiles(document.uri, document.getText(), 2)
-		// this.log(`Found ${importedFiles.length} imported files for context`)
-
-		// Get active files and sort by recency (most recent first)
-		const activeFileUris = this.getActiveFiles()
-
-		// Prioritize open editor tabs
-		const openEditors = vscode.window.visibleTextEditors.map((editor) => editor.document.uri.toString())
-
-		// Combine imported files with active files, removing duplicates
-		const allContextFiles = new Set<string>()
-
-		// Add imported files first (highest priority)
-		importedFiles.forEach((uri) => allContextFiles.add(uri.toString()))
-
-		// Add open editors next
-		openEditors.forEach((uri) => allContextFiles.add(uri))
-
-		// Add other active files last
-		activeFileUris.forEach((uri) => allContextFiles.add(uri.toString()))
-
-		// Convert back to URIs and sort by priority
-		const sortedContextFiles = Array.from(allContextFiles).map((uriStr) => vscode.Uri.parse(uriStr))
-
-		// Add content from context files until we reach the token limit
-		for (const uri of sortedContextFiles) {
-			// Skip the file with the comment (already included in the context)
-			if (uri.toString() === document.uri.toString()) {
-				continue
-			}
-
-			try {
-				// Skip files that are too large
-				if (uri.fsPath.endsWith(".min.js") || uri.fsPath.endsWith(".min.css")) {
-					this.log(`Skipping minified file: ${uri.fsPath}`)
-					continue
-				}
-
-				const doc = await vscode.workspace.openTextDocument(uri)
-				const content = doc.getText()
-
-				// Skip if file is too large
-				if (content.length > this.largeFileThreshold) {
-					this.log(`Skipping large file for context: ${uri.fsPath} (${content.length} bytes)`)
-					continue
-				}
-
-				// Estimate tokens for this file
-				const fileTokens = estimateTokenCount(content)
-
-				// If adding this file would exceed our budget, skip it
-				if (estimatedTokens + fileTokens > MAX_ADDITIONAL_CONTEXT_TOKENS) {
-					this.log(`Skipping file due to token budget: ${uri.fsPath} (${fileTokens} tokens)`)
-					continue
-				}
-
-				// Add file to context
-				activeFilesWithContent.push({ uri, content })
-				estimatedTokens += fileTokens
-
-				this.log(`Added file to context: ${uri.fsPath} (${fileTokens} tokens)`)
-			} catch (error) {
-				this.log(`Error reading file ${uri.fsPath}: ${error instanceof Error ? error.message : String(error)}`)
-			}
-		}
-
-		this.log(
-			`Total context includes ${activeFilesWithContent.length} additional files (est. ${estimatedTokens} tokens)`,
-		)
-
-		return activeFilesWithContent
 	}
 
 	/**
@@ -654,7 +496,7 @@ export class WatchModeService {
 			}
 
 			// Add this document to active files to ensure it's included in context
-			this.addToActiveFiles(document.uri)
+			this.activeFileTracker.addToActiveFiles(document.uri)
 
 			// Save the document to trigger the watch mode processing
 			await document.save()
@@ -669,22 +511,15 @@ export class WatchModeService {
 	public dispose(): void {
 		this.log("Disposing watch mode service")
 
-		for (const timeout of this.pendingProcessing.values()) {
-			clearTimeout(timeout)
-		}
-		this.pendingProcessing.clear()
+		this.ui.dispose()
+		this.highlighter.dispose()
+		this.activeFileTracker.dispose()
+		this._onDidStartProcessingComment.dispose()
+		this._onDidFinishProcessingComment.dispose()
 
-		this.log(`Disposing ${this.documentListeners.length} document listeners`)
 		for (const listener of this.documentListeners) {
 			listener.dispose()
 		}
 		this.documentListeners = []
-
-		this.highlighter.clearAllHighlights()
-
-		this._onDidStartProcessingComment.dispose()
-		this._onDidFinishProcessingComment.dispose()
-
-		this.ui.showStatus(false)
 	}
 }

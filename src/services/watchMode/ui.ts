@@ -5,7 +5,7 @@ import { EXPERIMENT_IDS, ExperimentId, experiments } from "../../shared/experime
  * UI manager for the Watch Mode service
  * Handles status bar items and notifications
  */
-export class WatchModeUI {
+export class WatchModeStatusBar {
 	private statusBarItem: vscode.StatusBarItem
 	private processingStatusBarItem: vscode.StatusBarItem
 	private isExperimentEnabled: boolean
@@ -20,7 +20,8 @@ export class WatchModeUI {
 		// Create status bar item to show watch mode status
 		this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
 		this.statusBarItem.name = "Kilo Code Watch Mode"
-		this.statusBarItem.command = "kilo-code.watchMode.toggle"
+		// Remove command since toggle functionality was removed
+		this.statusBarItem.command = undefined
 
 		// Create status bar item to show processing status
 		this.processingStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99)

@@ -294,7 +294,7 @@ If you do need to suggest code changes, you can include them as examples in your
 	const finalPrompt = prompt.trim()
 
 	// Debug log the full prompt string
-	console.log("🧶🧶🧶[WatchMode DEBUG] === FULL AI PROMPT ===")
+	console.log("🧶🧶🧶[WatchMode DEBUG] === FULL AI PROMPT ===\n" + finalPrompt)
 
 	return finalPrompt
 }
@@ -317,25 +317,15 @@ export function estimateTokenCount(text: string): number {
 export function parseSearchReplaceBlocks(response: string, defaultFilePath?: string): NewDiffEdit[] {
 	const edits: NewDiffEdit[] = []
 
-	// Match with file path (standard format)
-	const fileBlockRegex =
-		/([^\s]+?)\n(?:`)?<<<<<<< SEARCH(?:`)?(?:\n|\s)([\s\S]*?)(?:`)?=======(?:`)?(?:\n|\s)([\s\S]*?)(?:`)?>>>>>>> REPLACE(?:`)?/g
+	// Simple regex to match SEARCH/REPLACE blocks with file path
+	const fileBlockRegex = /([^\s]+?)\n<<<<<<< SEARCH\n([\s\S]*?)\n=======\n([\s\S]*?)\n>>>>>>> REPLACE/g
 
-	// Process matches with file paths
+	// Process matches
 	let match
 	while ((match = fileBlockRegex.exec(response)) !== null) {
-		let filePath = match[1].trim()
+		const filePath = defaultFilePath || match[1].trim()
 		const searchBlock = match[2]
 		const replaceBlock = match[3]
-
-		// Check for generic filenames and use defaultFilePath if available
-		const genericFileNames = ["Code", "code", "file", "File", "test", "Test"]
-		if (defaultFilePath && genericFileNames.includes(filePath)) {
-			console.log(
-				`[WatchMode DEBUG] Replacing generic filename "${filePath}" with actual path: ${defaultFilePath}`,
-			)
-			filePath = defaultFilePath
-		}
 
 		// Create a DiffEdit with DiffBlocks
 		const blocks: DiffBlock[] = [
@@ -347,30 +337,6 @@ export function parseSearchReplaceBlocks(response: string, defaultFilePath?: str
 			filePath,
 			blocks,
 		})
-	}
-
-	// Also check for blocks without file paths (directly starting with SEARCH marker)
-	const noFilePathRegex =
-		/^(?:`)?<<<<<<< SEARCH(?:`)?(?:\n|\s)([\s\S]*?)(?:`)?=======(?:`)?(?:\n|\s)([\s\S]*?)(?:`)?>>>>>>> REPLACE(?:`)?/gm
-
-	// Only process these if we have a default file path
-	if (defaultFilePath) {
-		let noPathMatch
-		while ((noPathMatch = noFilePathRegex.exec(response)) !== null) {
-			const searchBlock = noPathMatch[1]
-			const replaceBlock = noPathMatch[2]
-
-			// Create a DiffEdit with DiffBlocks
-			const blocks: DiffBlock[] = [
-				{ type: "SEARCH", content: searchBlock },
-				{ type: "REPLACE", content: replaceBlock },
-			]
-
-			edits.push({
-				filePath: defaultFilePath,
-				blocks,
-			})
-		}
 	}
 
 	return edits
@@ -1173,7 +1139,7 @@ export const applyDiffToDocument = async (
 }
 
 /**
- * Applies SEARCH/REPLACE blocks to a document with enhanced fuzzy matching
+ * Applies SEARCH/REPLACE blocks to a document using MultiSearchReplaceDiffStrategy
  * @param document The document to modify
  * @param edits The NewDiffEdit objects containing SEARCH/REPLACE blocks
  * @returns A promise that resolves to true if the edits were applied successfully
@@ -1183,126 +1149,73 @@ export const applySearchReplaceEdits = async (
 	edits: NewDiffEdit[],
 ): Promise<boolean> => {
 	try {
-		// Group edits by file path
-		const editsByFile = new Map<string, NewDiffEdit[]>()
+		const documentContent = document.getText()
+		const documentUri = document.uri
+		const documentPath = vscode.workspace.asRelativePath(documentUri)
 
+		// Create a new instance of MultiSearchReplaceDiffStrategy with 100% match requirement
+		const diffStrategy = new MultiSearchReplaceDiffStrategy(1.0, 40) // 100% similarity threshold, 40 buffer lines
+
+		// Build the diff content in the format expected by MultiSearchReplaceDiffStrategy
+		let diffContent = ""
 		for (const edit of edits) {
-			const filePath = edit.filePath
-			if (!editsByFile.has(filePath)) {
-				editsByFile.set(filePath, [])
-			}
-			editsByFile.get(filePath)!.push(edit)
-		}
+			const searchBlock = edit.blocks.find((block) => block.type === "SEARCH")
+			const replaceBlock = edit.blocks.find((block) => block.type === "REPLACE")
 
-		// Track overall success
-		let overallSuccess = true
-
-		// Apply edits for each file
-		for (const [filePath, fileEdits] of editsByFile.entries()) {
-			// Get the document for this file
-			let fileDocument = document
-			let documentContent: string
-			let documentUri: vscode.Uri
-
-			// If the file path doesn't match the current document, open the file
-			if (vscode.workspace.asRelativePath(document.uri) !== filePath) {
-				try {
-					// Find the document in the workspace
-					const workspaceFolders = vscode.workspace.workspaceFolders
-					if (!workspaceFolders) {
-						console.log(`[WatchMode DEBUG] No workspace folders found`)
-						overallSuccess = false
-						continue
-					}
-
-					const fileUri = vscode.Uri.joinPath(workspaceFolders[0].uri, filePath)
-					console.log(`[WatchMode DEBUG] Opening file: ${fileUri.toString()}`)
-
-					fileDocument = await vscode.workspace.openTextDocument(fileUri)
-				} catch (error) {
-					console.log(`[WatchMode DEBUG] Error opening file ${filePath}: ${error}`)
-					overallSuccess = false
-					continue
-				}
-			}
-
-			documentContent = fileDocument.getText()
-			documentUri = fileDocument.uri
-			const documentPath = vscode.workspace.asRelativePath(documentUri)
-
-			// Create a new instance of MultiSearchReplaceDiffStrategy with default settings
-			const diffStrategy = new MultiSearchReplaceDiffStrategy(0.9, 40) // 90% similarity threshold, 40 buffer lines
-
-			// Convert NewDiffEdit[] to a format that MultiSearchReplaceDiffStrategy can use
-			let diffContent = ""
-
-			// Build the diff content in the format expected by MultiSearchReplaceDiffStrategy
-			for (const edit of fileEdits) {
-				const searchBlock = edit.blocks.find((block) => block.type === "SEARCH")
-				const replaceBlock = edit.blocks.find((block) => block.type === "REPLACE")
-
-				if (!searchBlock || !replaceBlock) {
-					continue
-				}
-
-				diffContent += "<<<<<<< SEARCH\n"
-				diffContent += ":start_line:0\n" // Use 0 to let the strategy find the best match
-				diffContent += "-------\n"
-				diffContent += searchBlock.content + "\n"
-				diffContent += "=======\n"
-				diffContent += replaceBlock.content + "\n"
-				diffContent += ">>>>>>> REPLACE\n\n"
-			}
-
-			if (diffContent === "") {
-				console.log(`[WatchMode DEBUG] No valid edits found for file ${filePath}`)
+			if (!searchBlock || !replaceBlock) {
 				continue
 			}
 
-			// Apply the diff using MultiSearchReplaceDiffStrategy
-			const result = await diffStrategy.applyDiff(documentContent, diffContent)
+			diffContent += "<<<<<<< SEARCH\n"
+			diffContent += ":start_line:0\n" // Use 0 to let the strategy find the best match
+			diffContent += "-------\n"
+			diffContent += searchBlock.content + "\n"
+			diffContent += "=======\n"
+			diffContent += replaceBlock.content + "\n"
+			diffContent += ">>>>>>> REPLACE\n\n"
+		}
 
-			if (!result.success) {
-				console.error(`[WatchMode DEBUG] Failed to apply diff to ${filePath}:`, result.error || "Unknown error")
-				if (result.failParts && result.failParts.length > 0) {
-					for (const part of result.failParts) {
-						// Check if the part has an error property (only on failed parts)
-						if (!part.success && part.error) {
-							console.error("[WatchMode DEBUG] Diff part failed:", part.error)
-						}
+		if (diffContent === "") {
+			console.log(`[WatchMode DEBUG] No valid edits found`)
+			return false
+		}
+
+		// Apply the diff using MultiSearchReplaceDiffStrategy
+		const result = await diffStrategy.applyDiff(documentContent, diffContent)
+
+		if (!result.success) {
+			console.error(`[WatchMode DEBUG] Failed to apply diff:`, result.error || "Unknown error")
+			if (result.failParts && result.failParts.length > 0) {
+				for (const part of result.failParts) {
+					if (!part.success && part.error) {
+						console.error("[WatchMode DEBUG] Diff part failed:", part.error)
 					}
 				}
-				overallSuccess = false
-				continue
 			}
+			return false
+		}
 
-			// Apply the changes to the document
-			const edit = new vscode.WorkspaceEdit()
-			const fullRange = new vscode.Range(
-				new vscode.Position(0, 0),
-				fileDocument.positionAt(documentContent.length),
-			)
+		// Apply the changes to the document
+		const edit = new vscode.WorkspaceEdit()
+		const fullRange = new vscode.Range(new vscode.Position(0, 0), document.positionAt(documentContent.length))
 
-			edit.replace(documentUri, fullRange, result.content!)
-			const success = await vscode.workspace.applyEdit(edit)
+		edit.replace(documentUri, fullRange, result.content!)
+		const success = await vscode.workspace.applyEdit(edit)
 
-			console.log(`[WatchMode DEBUG] Applied changes to ${documentPath}: ${success ? "SUCCESS" : "FAILED"}`)
+		console.log(`[WatchMode DEBUG] Applied changes to ${documentPath}: ${success ? "SUCCESS" : "FAILED"}`)
 
-			if (success) {
-				// Save the file after modifying it
-				try {
-					await fileDocument.save()
-					console.log(`[WatchMode DEBUG] Saved file ${documentPath}`)
-				} catch (error) {
-					console.error(`[WatchMode DEBUG] Error saving file ${documentPath}:`, error)
-					overallSuccess = false
-				}
-			} else {
-				overallSuccess = false
+		if (success) {
+			// Save the file after modifying it
+			try {
+				await document.save()
+				console.log(`[WatchMode DEBUG] Saved file ${documentPath}`)
+			} catch (error) {
+				console.error(`[WatchMode DEBUG] Error saving file ${documentPath}:`, error)
+				return false
 			}
 		}
 
-		return overallSuccess
+		return success
 	} catch (error) {
 		console.error("[WatchMode DEBUG] Error applying SEARCH/REPLACE edits:", error)
 		return false

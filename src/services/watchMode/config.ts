@@ -1,7 +1,3 @@
-/**
- * Configuration constants for Watch Mode
- */
-
 // Whether reflection is enabled for watch mode
 export const REFLECTION_ENABLED = false
 
