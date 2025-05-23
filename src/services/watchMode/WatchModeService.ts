@@ -376,7 +376,7 @@ export class WatchModeService {
 
 			if (result.comments.length === 0) {
 				this.log(`No AI comments found in file: ${fileUri.fsPath}`)
-				return // No comments found, nothing to do
+				return
 			}
 
 			this.log(`Found ${result.comments.length} AI comments in ${fileUri.fsPath}`)
