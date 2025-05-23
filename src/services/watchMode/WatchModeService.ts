@@ -420,17 +420,6 @@ export class WatchModeService {
 				`Processing AI comment: "${comment.content.substring(0, 50)}${comment.content.length > 50 ? "..." : ""}"`,
 			)
 
-			// Check if this is from a quick command and we have a tracked document
-			const isQuickCommand = this.quickCommandDocument !== undefined
-			if (isQuickCommand) {
-				this.log(
-					`Processing comment from quick command, using tracked document: ${vscode.workspace.asRelativePath(this.quickCommandDocument!.uri)}`,
-				)
-			}
-
-			// Use the tracked document if this is from a quick command
-			const documentToUse = isQuickCommand ? this.quickCommandDocument! : document
-
 			// Highlight the AI comment with animation
 			const clearHighlight = this.highlighter.highlightRange(
 				document, // Still highlight in the original document
@@ -446,21 +435,10 @@ export class WatchModeService {
 
 			// Emit event that we're starting to process this comment
 			this._onDidStartProcessingComment.fire({ fileUri: document.uri, comment })
-
-			// Determine the trigger type from the comment content
-			this.log("Determining trigger type...")
 			const triggerType = determineTriggerType(comment.content)
 			this.log(`Trigger type determined: ${triggerType}`)
 
-			// Process with reflection support (up to 3 attempts)
-
-			await this.processWithReflection(documentToUse, comment, triggerType, clearHighlight)
-
-			// Clear the tracked document after processing
-			if (isQuickCommand) {
-				this.log(`Clearing tracked quick command document`)
-				this.quickCommandDocument = undefined
-			}
+			await this.processWithReflection(document, comment, triggerType, clearHighlight)
 		} catch (error) {
 			this.log(`Error processing AI comment: ${error instanceof Error ? error.message : String(error)}`)
 			this._onDidFinishProcessingComment.fire({
@@ -468,12 +446,6 @@ export class WatchModeService {
 				comment,
 				success: false,
 			})
-
-			// Clear the tracked document in case of error
-			if (this.quickCommandDocument) {
-				this.log(`Clearing tracked quick command document due to error`)
-				this.quickCommandDocument = undefined
-			}
 		}
 	}
 
@@ -510,9 +482,7 @@ export class WatchModeService {
 				),
 			callAI: async (prompt) => await this.callAIModel(prompt),
 			processResponse: async (ctx, response, attemptNumber) => {
-				// Use the tracked document if this is from a quick command
-				const documentToProcess = this.quickCommandDocument || ctx.document
-				return await processAIResponse(documentToProcess, ctx.comment, response, attemptNumber)
+				return await processAIResponse(ctx.document, ctx.comment, response, attemptNumber)
 			},
 			log: (message) => this.log(message),
 		})
@@ -797,11 +767,6 @@ export class WatchModeService {
 	public async processQuickCommand(document: vscode.TextDocument, command: string): Promise<void> {
 		try {
 			this.log(`Processing quick command: ${command}`)
-
-			// Store a reference to the document that initiated the quick command
-			this.quickCommandDocument = document
-			const documentPath = vscode.workspace.asRelativePath(document.uri)
-			this.log(`Tracking quick command document: ${documentPath}`)
 
 			// Get the current cursor position
 			const activeEditor = vscode.window.activeTextEditor
