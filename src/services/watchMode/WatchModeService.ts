@@ -5,7 +5,6 @@ import { AICommentData, WatchModeConfig, TriggerType } from "./types"
 import { WatchModeStatusBar } from "./ui"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ContextProxy } from "../../core/config/ContextProxy"
-import { writePromptToDebugFile, writePromptResponseToDebugFile } from "../../utils/PromptDebugger"
 import {
 	detectAIComments,
 	buildAIPrompt,
@@ -381,7 +380,6 @@ export class WatchModeService {
 			const messages: Anthropic.Messages.MessageParam[] = [{ role: "user", content: prompt }]
 
 			// Write prompt to debug file and store the debug ID
-			this.currentDebugId = writePromptToDebugFile(systemPrompt, JSON.stringify(messages, null, 2))
 
 			this.log("Creating message stream...")
 
@@ -406,7 +404,6 @@ export class WatchModeService {
 				)
 
 				// Write the response to debug file using the same debug ID
-				writePromptResponseToDebugFile(fullResponse, this.currentDebugId)
 			} catch (streamError) {
 				this.log(
 					`Error processing stream: ${streamError instanceof Error ? streamError.message : String(streamError)}`,
