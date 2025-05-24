@@ -41,6 +41,3 @@ logs
 
 # kilocode_change
 .history/
-
-# MCP server signal file
-.mcp-server-running
