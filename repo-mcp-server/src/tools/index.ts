@@ -5,10 +5,12 @@
 
 import { ToolHandler } from "./types.js"
 import { i18nTools } from "./i18n/index.js"
+import { codeExpertTools } from "./code-expert/index.js"
 
 // Combine all tools from different categories
 const allTools: ToolHandler[] = [
 	...i18nTools,
+	...codeExpertTools,
 	// Additional tool categories will be added here as they're developed
 	// For example:
 	// ...devTools,
@@ -34,4 +36,4 @@ export function getToolByName(name: string): ToolHandler | undefined {
 }
 
 // Export all tools by category for direct access
-export { i18nTools }
+export { i18nTools, codeExpertTools }
