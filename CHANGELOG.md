@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.29.1
-
-### Patch Changes
+## [4.29.1]
 
 - [#520](https://github.com/Kilo-Org/kilocode/pull/520) [`2e53902`](https://github.com/Kilo-Org/kilocode/commit/2e539020b1d4d19beba9c9a5929055cacd11f292) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Change recommended model to Claude 4 Sonnet
 
