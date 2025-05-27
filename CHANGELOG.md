@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.29.2
-
-### Patch Changes
+## [4.29.2]
 
 - [#524](https://github.com/Kilo-Org/kilocode/pull/524) [`e1d59f1`](https://github.com/Kilo-Org/kilocode/commit/e1d59f1278916b98ac4f1fa8a02cb694633b475e) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix menu stops working when Kilo Code is moved between primary and secondary sidebars
 
