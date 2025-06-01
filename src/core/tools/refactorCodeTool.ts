@@ -6,6 +6,11 @@ import { formatResponse } from "../prompts/responses"
 import { AskApproval, HandleError, PushToolResult } from "../../shared/tools"
 import { fileExistsAtPath } from "../../utils/fs"
 import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
+import { Project } from "ts-morph"
+import { RefactorEngine, RefactorEngineError } from "./refactor-code/engine"
+import { RobustLLMRefactorParser, RefactorParseError } from "./refactor-code/parser"
+import { BatchOperations } from "./refactor-code/schema"
+import { createDiagnostic } from "./refactor-code/utils/file-system"
 
 /**
  * Refactor code tool implementation
@@ -15,8 +20,6 @@ import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
  *
  * IMPORTANT GUIDELINES:
  * - ALL operations must be provided in an array format
- * - ONLY use symbol-based selectors (identifier) for all operations
- * - Line number-based selectors are not supported
  * - Each operation in the batch is processed independently
  * - If any operation fails, the entire batch will be rolled back
  *
@@ -25,43 +28,6 @@ import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
  * 2. Rename: Rename symbols with proper reference handling
  * 3. Remove: Remove code elements from a file
  *
- * The operations parameter must be a valid JSON array with the following structure:
- *
- * Example batch operations:
- * ```json
- * [
- *   {
- *     "operation": "move",
- *     "selector": {
- *       "type": "identifier",
- *       "name": "calculateTotal",
- *       "filePath": "src/example.ts"
- *     },
- *     "targetFilePath": "src/target.ts"
- *   },
- *   {
- *     "operation": "rename",
- *     "selector": {
- *       "type": "identifier",
- *       "name": "oldName",
- *       "filePath": "src/example.ts"
- *     },
- *     "newName": "newName"
- *   },
- *   {
- *     "operation": "remove",
- *     "selector": {
- *       "type": "identifier",
- *       "name": "unusedFunction",
- *       "filePath": "src/example.ts"
- *     }
- *   }
- *   }
- * ]
- * ```
- *
- * Optional parameters:
- * - preview: Set to "true" to show what would happen without making changes
  */
 export async function refactorCodeTool(
 	cline: Task,
@@ -71,9 +37,8 @@ export async function refactorCodeTool(
 	pushToolResult: PushToolResult,
 	_removeClosingTag: RemoveClosingTag, // Prefixed with underscore as it's no longer used
 ) {
-	const dslCommandJson: string | undefined = block.params.operations
-	// Use type assertion for preview parameter
-	const isPreviewMode: boolean = (block.params as Record<string, string | undefined>).preview === "true"
+	// Extract operations from the parameters
+	const operationsJson: string | undefined = block.params.operations
 
 	// Tool message properties
 	const sharedMessageProps: ClineSayTool = {
@@ -83,247 +48,239 @@ export async function refactorCodeTool(
 	}
 
 	try {
-		// Handle partial execution (preview)
+		// Handle partial execution
 		if (block.partial) {
 			await cline.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
 			return
 		}
 
 		// Verify required operations parameter
-		if (!dslCommandJson) {
+		if (!operationsJson) {
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("refactor_code")
 			pushToolResult(await cline.sayAndCreateMissingParamError("refactor_code", "operations"))
 			return
 		}
 
-		// Log the raw command for debugging
-		console.log("Refactor code tool received command:", dslCommandJson)
+		// DIAGNOSTIC: Log current directories to help debug path issues
+		console.log(`[DIAGNOSTIC] Working directory (cline.cwd): "${cline.cwd}"`)
+		console.log(`[DIAGNOSTIC] Process directory (process.cwd()): "${process.cwd()}"`)
 
-		// Parse batch operations
+		// Create diagnostic function
+		const diagnose = createDiagnostic(cline.cwd)
+
+		// Initialize the RefactorEngine
+		const engine = new RefactorEngine({
+			projectRootPath: cline.cwd,
+		})
+
+		// Parse the operations
+		let operations: BatchOperations
+		try {
+			// Parse the operations using the robust parser
+			let parser = new RobustLLMRefactorParser()
+			let parsedOperations: any[]
+
+			try {
+				// Attempt to parse the raw operations
+				parsedOperations = parser.parseResponse(operationsJson)
+			} catch (parseError) {
+				// If parsing fails, try to directly parse as JSON without the parser's extra logic
+				try {
+					// The input might already be a JSON array
+					const directJson = JSON.parse(operationsJson as string)
+					parsedOperations = Array.isArray(directJson) ? directJson : [directJson]
+				} catch (jsonError) {
+					// If direct parsing also fails, throw the original error
+					throw parseError
+				}
+			}
+
+			// Create a batch operations object
+			operations = {
+				operations: parsedOperations,
+				options: {
+					stopOnError: true,
+				},
+			}
+		} catch (error) {
+			const err = error as Error
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("refactor_code")
+			const formattedError = `Failed to parse refactor operations: ${err.message}`
+			await cline.say("error", formattedError)
+			pushToolResult(formattedError)
+			return
+		}
 
 		// Validate all file paths exist and are accessible
-		// const filesToCheck = new Set<string>()
-		// for (const op of operations) {
-		// 	if (op.selector.filePath) {
-		// 		filesToCheck.add(op.selector.filePath)
-		// 	}
-		// }
+		const filesToCheck = new Set<string>()
+		for (const op of operations.operations) {
+			if ("filePath" in op.selector) {
+				filesToCheck.add(op.selector.filePath)
+			}
 
-		// for (const filePath of filesToCheck) {
-		// 	// Verify path is accessible
-		// 	const accessAllowed = cline.rooIgnoreController?.validateAccess(filePath)
-		// 	if (!accessAllowed) {
-		// 		await cline.say("rooignore_error", filePath)
-		// 		pushToolResult(formatResponse.toolError(formatResponse.rooIgnoreError(filePath)))
-		// 		return
-		// 	}
+			// Check target file for move operations
+			if (op.operation === "move") {
+				filesToCheck.add(op.targetFilePath)
+			}
+		}
 
-		// 	// Verify filYou e exists
-		// 	const absolutePath = path.resolve(cline.cwd, filePath)
-		// 	const fileExists = await fileExistsAtPath(absolutePath)
-		// 	if (!fileExists) {
-		// 		cline.consecutiveMistakeCount++
-		// 		cline.recordToolError("refactor_code")
-		// 		const formattedError = `File does not exist at path: ${filePath}\n\n<error_details>\nThe specified file could not be found. Please verify the file path is relative to the workspace directory: ${cline.cwd}\nResolved absolute path: ${absolutePath}\n</error_details>`
-		// 		await cline.say("error", formattedError)
-		// 		pushToolResult(formattedError)
-		// 		return
-		// 	}
-		// }
+		for (const filePath of filesToCheck) {
+			// Verify path is accessible
+			const accessAllowed = cline.rooIgnoreController?.validateAccess(filePath)
+			if (!accessAllowed) {
+				await cline.say("rooignore_error", filePath)
+				pushToolResult(formatResponse.toolError(formatResponse.rooIgnoreError(filePath)))
+				return
+			}
+
+			// For source files, verify the file exists
+			// (but don't check for target files in move operations, as they may not exist yet)
+			const isTargetFile = operations.operations.some(
+				(op) => op.operation === "move" && op.targetFilePath === filePath,
+			)
+
+			if (!isTargetFile) {
+				// Verify file exists for source files
+				const absolutePath = path.resolve(cline.cwd, filePath)
+				const fileExists = await fileExistsAtPath(absolutePath)
+
+				// DIAGNOSTIC: Log file existence check
+				console.log(
+					`[DIAGNOSTIC] File check - Path: "${filePath}", Absolute: "${absolutePath}", Exists: ${fileExists}`,
+				)
+
+				if (!fileExists) {
+					// Run diagnostic on this file
+					await diagnose(filePath, "File existence check")
+
+					cline.consecutiveMistakeCount++
+					cline.recordToolError("refactor_code")
+					const formattedError = `File does not exist at path: ${filePath}\n\n<error_details>\nThe specified file could not be found. Please verify the file path is relative to the workspace directory: ${cline.cwd}\nResolved absolute path: ${absolutePath}\n</error_details>`
+					await cline.say("error", formattedError)
+					pushToolResult(formattedError)
+					return
+				}
+			}
+		}
 
 		// Create human-readable operation description for approval
-		// let operationDescription = `Batch refactoring: ${operations.length} operation${operations.length > 1 ? "s" : ""}\n\n`
-		// for (let i = 0; i < operations.length; i++) {
-		// 	operationDescription += `${i + 1}. ${createBatchOperationDescription(operations[i])}\n`
-		// }
+		let operationDescription = `Batch refactoring: ${operations.operations.length} operation${operations.operations.length > 1 ? "s" : ""}\n\n`
+
+		for (let i = 0; i < operations.operations.length; i++) {
+			const op = operations.operations[i]
+			let description = `${i + 1}. `
+
+			switch (op.operation) {
+				case "rename":
+					description += `Rename ${op.selector.name} to ${op.newName} in ${op.selector.filePath}`
+					break
+				case "move":
+					description += `Move ${op.selector.name} from ${op.selector.filePath} to ${op.targetFilePath}`
+					break
+				case "remove":
+					description += `Remove ${op.selector.name} from ${op.selector.filePath}`
+					break
+				default:
+					description += `Unsupported operation: ${op.operation}`
+			}
+
+			if (op.reason) {
+				description += ` (Reason: ${op.reason})`
+			}
+
+			operationDescription += `${description}\n`
+		}
 
 		// Ask for approval before performing refactoring
-		// const approvalMessage = JSON.stringify({
-		// 	...sharedMessageProps,
-		// 	content: operationDescription,
-		// } satisfies ClineSayTool)
+		const approvalMessage = JSON.stringify({
+			...sharedMessageProps,
+			content: operationDescription,
+		} satisfies ClineSayTool)
 
-		const didApprove = await askApproval("tool", "approvalMessage")
+		const didApprove = await askApproval("tool", approvalMessage)
 		if (!didApprove) {
 			pushToolResult("Refactoring cancelled by user")
 			return
 		}
 
-		// Create the VS Code adapter
-		// const adapter = new VSCodeRefactoringAdapter(cline.cwd)
+		// Execute the batch operations
+		let result
+		try {
+			// DIAGNOSTIC: Log file state before operation
+			for (const filePath of filesToCheck) {
+				await diagnose(filePath, "Before refactoring")
+			}
 
-		// Execute all operations
-		// const results: string[] = []
-		// let allSuccess = true
-		// const modifiedFiles = new Set<string>()
+			result = await engine.executeBatch(operations)
 
-		// Track renamed identifiers to update selectors in subsequent operations
-		// const renamedIdentifiers = new Map<string, string>()
+			// Track all modified files
+			const modifiedFiles = new Set<string>()
+			if (result.success) {
+				for (const opResult of result.results) {
+					for (const file of opResult.affectedFiles) {
+						const absoluteFilePath = path.resolve(cline.cwd, file)
+						modifiedFiles.add(absoluteFilePath)
+						await cline.fileContextTracker.trackFileContext(file, "roo_edited" as RecordSource)
+					}
+				}
+			}
 
-		// for (let i = 0; i < operations.length; i++) {
-		// 	const op = operations[i]
-		// 	let result: string
-		// 	let success = false
+			// DIAGNOSTIC: Log file state after operation
+			for (const filePath of modifiedFiles) {
+				await diagnose(filePath, "After refactoring")
+			}
+		} catch (error) {
+			// Handle errors in batch execution
+			const errorMessage = `Batch refactoring failed with error: ${(error as Error).message}`
+			console.error(`[ERROR] ${errorMessage}`)
 
-		// 	try {
-		// 		// Convert batch operation to legacy DslCommand format for adapter
-		// 		const dslCommand: DslCommand & { operationDetails: OperationType } = {
-		// 			schemaVersion: "1.0",
-		// 			operation: op.operation,
-		// 			selector: op.selector,
-		// 			operationDetails:
-		// 				op.operation === "move"
-		// 					? ({
-		// 							type: "move",
-		// 							targetFilePath: (op as MoveRefactorOperation).targetFilePath,
-		// 						} as MoveOperation)
-		// 					: op.operation === "rename"
-		// 						? ({
-		// 								type: "rename",
-		// 								newName: (op as RenameRefactorOperation).newName,
-		// 							} as RenameOperation)
-		// 						: ({
-		// 								type: "remove",
-		// 							} as RemoveOperation),
-		// 		}
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("refactor_code", errorMessage)
+			await cline.say("error", errorMessage)
+			pushToolResult(errorMessage)
+			return
+		}
 
-		// 		if (op.operation === "move") {
-		// 			const moveOp = op as MoveRefactorOperation
+		// Format results
+		const resultMessages: string[] = []
+		for (let i = 0; i < result.results.length; i++) {
+			const opResult = result.results[i]
+			const op = result.allOperations[i]
 
-		// 			// Verify target path access
-		// 			const targetAccessAllowed = cline.rooIgnoreController?.validateAccess(moveOp.targetFilePath)
-		// 			if (!targetAccessAllowed) {
-		// 				result = formatResponse.rooIgnoreError(moveOp.targetFilePath)
-		// 				success = false
-		// 			} else {
-		// 				// Track files
-		// 				if (op.selector.filePath) {
-		// 					modifiedFiles.add(path.resolve(cline.cwd, op.selector.filePath))
-		// 				}
-		// 				modifiedFiles.add(path.resolve(cline.cwd, moveOp.targetFilePath))
-
-		// 				// Execute the move operation
-		// 				const opResult = (await adapter.executeDslCommand(dslCommand)) as MoveResult
-
-		// 				if (opResult.success) {
-		// 					success = true
-		// 					const selectorName = op.selector.type === "identifier" ? op.selector.name : "code"
-		// 					result = `Moved ${selectorName} to ${moveOp.targetFilePath}`
-		// 					await cline.fileContextTracker.trackFileContext(
-		// 						moveOp.targetFilePath,
-		// 						"roo_edited" as RecordSource,
-		// 					)
-		// 				} else {
-		// 					result = opResult.error || "Unknown error during code move"
-		// 				}
-		// 			}
-		// 		} else if (op.operation === "rename") {
-		// 			const renameOp = op as RenameRefactorOperation
-
-		// 			// Execute the rename operation
-		// 			const opResult = (await adapter.executeDslCommand(dslCommand)) as RenameResult
-
-		// 			if (opResult.success) {
-		// 				success = true
-		// 				const selectorName = op.selector.type === "identifier" ? op.selector.name : "symbol"
-		// 				result = `Renamed ${selectorName} to ${renameOp.newName}`
-
-		// 				// Track renamed identifiers for subsequent operations
-		// 				if (op.selector.type === "identifier") {
-		// 					renamedIdentifiers.set(op.selector.name, renameOp.newName)
-		// 				}
-
-		// 				// Track modified files
-		// 				if (opResult.modifiedFiles) {
-		// 					for (const file of opResult.modifiedFiles) {
-		// 						modifiedFiles.add(path.resolve(cline.cwd, file))
-		// 						await cline.fileContextTracker.trackFileContext(file, "roo_edited" as RecordSource)
-		// 					}
-		// 				}
-		// 			} else {
-		// 				result = opResult.error || "Unknown error during symbol rename"
-		// 			}
-		// 		} else if (op.operation === "remove") {
-		// 			const _removeOp = op as RemoveRefactorOperation
-
-		// 			// Check if the identifier has been renamed in a previous operation
-		// 			if (op.selector.type === "identifier" && renamedIdentifiers.has(op.selector.name)) {
-		// 				// Update the selector to use the new name
-		// 				const newName = renamedIdentifiers.get(op.selector.name)!
-		// 				console.log(`Updating remove operation selector from ${op.selector.name} to ${newName}`)
-		// 				op.selector.name = newName
-
-		// 				// Update the DSL command
-		// 				dslCommand.selector = op.selector
-		// 			}
-
-		// 			// Execute the remove operation
-		// 			const opResult = (await adapter.executeDslCommand(dslCommand)) as RemoveResult
-
-		// 			if (opResult.success) {
-		// 				success = true
-		// 				const selectorName = op.selector.type === "identifier" ? op.selector.name : "code"
-		// 				result = `Removed ${selectorName} from ${op.selector.filePath}`
-
-		// 				// Track modified files
-		// 				if (opResult.modifiedFiles) {
-		// 					for (const file of opResult.modifiedFiles) {
-		// 						modifiedFiles.add(path.resolve(cline.cwd, file))
-		// 						await cline.fileContextTracker.trackFileContext(file, "roo_edited" as RecordSource)
-		// 					}
-		// 				} else if (op.selector.filePath) {
-		// 					// Fallback to just tracking the source file
-		// 					modifiedFiles.add(path.resolve(cline.cwd, op.selector.filePath))
-		// 					await cline.fileContextTracker.trackFileContext(
-		// 						op.selector.filePath,
-		// 						"roo_edited" as RecordSource,
-		// 					)
-		// 				}
-		// 			} else {
-		// 				result = opResult.error || "Unknown error during code removal"
-		// 			}
-		// 		} else {
-		// 			result = `Unsupported operation: ${(op as any).operation}`
-		// 		}
-		// 	} catch (error) {
-		// 		// Handle structured errors consistently
-		// 		if (error instanceof CodeRefactoringError) {
-		// 			result = error.formatForDisplay()
-		// 		} else {
-		// 			result = `Error: ${error instanceof Error ? error.message : String(error)}`
-		// 		}
-		// 		success = false
-		// 	}
-
-		// 	results.push(`Operation ${i + 1}: ${success ? "✓" : "✗"} ${result}`)
-		// 	if (!success) {
-		// 		allSuccess = false
-		// 		// Stop on first failure
-		// 		break
-		// 	}
-		// }
-
-		// // Track source files
-		// for (const op of operations) {
-		// 	if (op.selector.filePath) {
-		// 		await cline.fileContextTracker.trackFileContext(op.selector.filePath, "roo_edited" as RecordSource)
-		// 	}
-		// }
-		const results: string[] = []
-		const allSuccess = true
+			if (opResult.success) {
+				let message = ""
+				switch (op.operation) {
+					case "rename":
+						message = `Renamed ${op.selector.name} to ${op.newName} in ${op.selector.filePath}`
+						break
+					case "move":
+						message = `Moved ${op.selector.name} from ${op.selector.filePath} to ${op.targetFilePath}`
+						break
+					case "remove":
+						message = `Removed ${op.selector.name} from ${op.selector.filePath}`
+						break
+					default:
+						message = `Executed ${op.operation} operation successfully`
+				}
+				resultMessages.push(`✓ ${message}`)
+			} else {
+				resultMessages.push(`✗ Operation failed: ${opResult.error}`)
+			}
+		}
 
 		// Report results
-		const finalResult = results.join("\n")
-		if (allSuccess) {
+		const finalResult = resultMessages.join("\n")
+		if (result.success) {
 			cline.consecutiveMistakeCount = 0
 			cline.didEditFile = true
 			pushToolResult(`Batch refactoring completed successfully:\n\n${finalResult}`)
 		} else {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("refactor_code", finalResult)
-			await cline.say("error", `Batch refactoring failed:\n\n${finalResult}`)
-			pushToolResult(`Batch refactoring failed:\n\n${finalResult}`)
+			cline.recordToolError("refactor_code", result.error || finalResult)
+			await cline.say("error", `Batch refactoring failed:\n\n${result.error || finalResult}`)
+			pushToolResult(`Batch refactoring failed:\n\n${result.error || finalResult}`)
 		}
 	} catch (error) {
 		await handleError("refactoring code", error)

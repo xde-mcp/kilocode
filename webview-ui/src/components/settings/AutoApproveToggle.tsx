@@ -94,6 +94,7 @@ export const autoApproveSettingsConfig: Record<AutoApproveSetting, AutoApproveCo
 	},
 	// kilocode_change end
 }
+console.log("🚀 ~ autoApproveSettingsConfig:", autoApproveSettingsConfig);
 
 type AutoApproveToggleProps = AutoApproveToggles & {
 	onToggle: (key: AutoApproveSetting, value: boolean) => void

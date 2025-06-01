@@ -63,6 +63,10 @@
 		"title": "Kill Command",
 		"tooltip": "Kill the current command"
 	},
+	"refactor": {
+		"title": "Refactor Code",
+		"tooltip": "Apply the code refactoring"
+	},
 	"resumeTask": {
 		"title": "Resume Task",
 		"tooltip": "Continue the current task"
@@ -76,7 +80,7 @@
 		"tooltip": "Cancel the current operation"
 	},
 	"scrollToBottom": "Scroll to bottom of chat",
-	"about": "Generate, refactor, and debug code with AI assistance. Check out our <DocsLink>documentation</DocsLink> to learn more.",
+	"about": "444 Generate, refactor, and debug code with AI assistance. Check out our <DocsLink>documentation</DocsLink> to learn more.",
 	"onboarding": "Your task list in this workspace is empty.",
 	"rooTips": {
 		"boomerangTasks": {

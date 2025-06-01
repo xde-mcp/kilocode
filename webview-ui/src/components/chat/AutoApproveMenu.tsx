@@ -25,6 +25,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		alwaysAllowModeSwitch,
 		alwaysAllowSubtasks,
 		alwaysApproveResubmit,
+		alwaysAllowRefactorCode,
 		allowedMaxRequests,
 		setAlwaysAllowReadOnly,
 		setAlwaysAllowWrite,
@@ -34,6 +35,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		setAlwaysAllowModeSwitch,
 		setAlwaysAllowSubtasks,
 		setAlwaysApproveResubmit,
+		setAlwaysAllowRefactorCode,
 		setAllowedMaxRequests,
 	} = useExtensionState()
 
@@ -68,6 +70,10 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 				case "alwaysApproveResubmit":
 					setAlwaysApproveResubmit(value)
 					break
+				case "alwaysAllowRefactorCode":
+					console.log("🔧 REFACTOR_DEBUG: Toggle alwaysAllowRefactorCode in AutoApproveMenu:", value)
+					setAlwaysAllowRefactorCode(value)
+					break
 			}
 		},
 		[
@@ -79,6 +85,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			setAlwaysAllowModeSwitch,
 			setAlwaysAllowSubtasks,
 			setAlwaysApproveResubmit,
+			setAlwaysAllowRefactorCode,
 		],
 	)
 
@@ -94,6 +101,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			alwaysAllowModeSwitch: alwaysAllowModeSwitch,
 			alwaysAllowSubtasks: alwaysAllowSubtasks,
 			alwaysApproveResubmit: alwaysApproveResubmit,
+			alwaysAllowRefactorCode: alwaysAllowRefactorCode,
 		}),
 		[
 			alwaysAllowReadOnly,
@@ -104,6 +112,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
 			alwaysApproveResubmit,
+			alwaysAllowRefactorCode,
 		],
 	)
 

@@ -157,6 +157,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			break
 		// kilocode_change start
 		case "alwaysAllowRefactorCode":
+			console.log("🔧 REFACTOR_DEBUG: Updating alwaysAllowRefactorCode in webviewMessageHandler:", message.bool)
 			await updateGlobalState("alwaysAllowRefactorCode", message.bool ?? undefined)
 			await provider.postStateToWebview()
 			break

@@ -92,6 +92,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		soundVolume,
 	} = useExtensionState()
 
+	// Add debugging log to check initial values
+	console.log("🔧 REFACTOR_DEBUG: Initial state values in ChatView:", {
+		autoApprovalEnabled,
+		alwaysAllowRefactorCode
+	})
+
 	const { tasks } = useTaskSearch()
 
 	// Initialize expanded state based on the persisted setting (default to expanded if undefined)
@@ -236,6 +242,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								case "newFileCreated":
 								case "insertContent":
 									setPrimaryButtonText(t("chat:save.title"))
+									setSecondaryButtonText(t("chat:reject.title"))
+									break
+								case "refactorCode":
+									setPrimaryButtonText(t("chat:refactor.title"))
 									setSecondaryButtonText(t("chat:reject.title"))
 									break
 								case "finishTask":
@@ -823,7 +833,13 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const isAutoApproved = useCallback(
 		(message: ClineMessage | undefined) => {
+			console.log("isAutoApproved called with message:", message);
+			console.log("autoApprovalEnabled:", autoApprovalEnabled);
+
 			if (!autoApprovalEnabled || !message || message.type !== "ask") {
+				console.log("Early return false - autoApprovalEnabled:", autoApprovalEnabled,
+					"message exists:", !!message,
+					"message type:", message?.type);
 				return false
 			}
 
@@ -872,11 +888,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					return alwaysAllowSubtasks
 				}
 
-				// kilocode_change start
+				// Check for refactorCode tool
 				if (tool?.tool === "refactorCode") {
-					return alwaysAllowRefactorCode
+					console.log("🔍 REFACTOR_DEBUG: Checking auto-approval for refactorCode tool")
+					console.log("🔍 REFACTOR_DEBUG: Tool details:", tool)
+					console.log("🔍 REFACTOR_DEBUG: alwaysAllowRefactorCode setting:", alwaysAllowRefactorCode)
+					console.log("🔍 REFACTOR_DEBUG: autoApprovalEnabled setting:", autoApprovalEnabled)
+					console.log("🔍 REFACTOR_DEBUG: Final decision:", autoApprovalEnabled && alwaysAllowRefactorCode)
+
+					// Only auto-approve if both master switch and specific flag are enabled
+					return autoApprovalEnabled && alwaysAllowRefactorCode
 				}
-				// kilocode_change end
 
 				const isOutsideWorkspace = !!tool.isOutsideWorkspace
 
@@ -1254,6 +1276,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		alwaysAllowWriteOutsideWorkspace,
 		alwaysAllowExecute,
 		alwaysAllowMcp,
+		alwaysAllowRefactorCode, // Add this to ensure auto-approval is re-evaluated when this setting changes
 		messages,
 		allowedCommands,
 		mcpServers,
@@ -1453,15 +1476,13 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						</div>
 					) : (
 						<div
-							className={`flex ${
-								primaryButtonText || secondaryButtonText || isStreaming ? "px-[15px] pt-[10px]" : "p-0"
-							} ${
-								primaryButtonText || secondaryButtonText || isStreaming
+							className={`flex ${primaryButtonText || secondaryButtonText || isStreaming ? "px-[15px] pt-[10px]" : "p-0"
+								} ${primaryButtonText || secondaryButtonText || isStreaming
 									? enableButtons || (isStreaming && !didClickCancel)
 										? "opacity-100"
 										: "opacity-50"
 									: "opacity-0"
-							}`}>
+								}`}>
 							{primaryButtonText && !isStreaming && (
 								<VSCodeButton
 									appearance="primary"
@@ -1483,7 +1504,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 																: primaryButtonText === t("chat:proceedAnyways.title")
 																	? t("chat:proceedAnyways.tooltip")
 																	: primaryButtonText ===
-																		  t("chat:proceedWhileRunning.title")
+																		t("chat:proceedWhileRunning.title")
 																		? t("chat:proceedWhileRunning.tooltip")
 																		: undefined
 									}

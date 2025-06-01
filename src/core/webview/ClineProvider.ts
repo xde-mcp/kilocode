@@ -1320,7 +1320,11 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			alwaysAllowWrite: alwaysAllowWrite ?? true,
 			alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? true,
 			alwaysAllowExecute: alwaysAllowExecute ?? true,
-			alwaysAllowRefactorCode: alwaysAllowRefactorCode ?? false, // kilocode_change
+			alwaysAllowRefactorCode: (() => {
+				const value = alwaysAllowRefactorCode ?? true
+				console.log("🔧 REFACTOR_DEBUG: Setting alwaysAllowRefactorCode in getStateToPostToWebview:", value)
+				return value
+			})(), // kilocode_change
 			alwaysAllowBrowser: alwaysAllowBrowser ?? true,
 			alwaysAllowMcp: alwaysAllowMcp ?? true,
 			alwaysAllowModeSwitch: alwaysAllowModeSwitch ?? true,
@@ -1435,7 +1439,11 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			alwaysAllowWrite: stateValues.alwaysAllowWrite ?? true,
 			alwaysAllowWriteOutsideWorkspace: stateValues.alwaysAllowWriteOutsideWorkspace ?? true,
 			alwaysAllowExecute: stateValues.alwaysAllowExecute ?? true,
-			alwaysAllowRefactorCode: stateValues.alwaysAllowRefactorCode ?? false, // kilocode_change
+			alwaysAllowRefactorCode: (() => {
+				const value = stateValues.alwaysAllowRefactorCode ?? true
+				console.log("🔧 REFACTOR_DEBUG: Setting alwaysAllowRefactorCode in updateState:", value)
+				return value
+			})(), // kilocode_change
 			alwaysAllowBrowser: stateValues.alwaysAllowBrowser ?? true,
 			alwaysAllowMcp: stateValues.alwaysAllowMcp ?? true,
 			alwaysAllowModeSwitch: stateValues.alwaysAllowModeSwitch ?? true,

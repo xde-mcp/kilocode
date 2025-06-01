@@ -1,0 +1,103 @@
+Let's create a comprehensive test plan for the refactor code tool's move operation to verify our fix works in various scenarios.
+
+# Test Setup
+First, create these files in a new test directory structure:
+
+## 1. Basic Directory Structure
+```
+src/
+  utils/
+    mathUtils.ts
+    stringUtils.ts
+  services/
+    dataService.ts
+```
+
+## 2. File Contents
+
+### src/utils/mathUtils.ts
+```typescript
+// Math utility functions
+
+export function add(a: number, b: number): number {
+  return a + b;
+}
+
+export function subtract(a: number, b: number): number {
+  return a - b;
+}
+
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+```
+
+### src/utils/stringUtils.ts
+```typescript
+// String utility functions
+
+export function capitalize(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function reverse(str: string): string {
+  return str.split('').reverse().join('');
+}
+```
+
+### src/services/dataService.ts
+```typescript
+// Data service functions
+import { add, multiply } from '../utils/mathUtils';
+
+export function processData(data: number[]): number {
+  return data.reduce((sum, val) => add(sum, val), 0);
+}
+
+export function calculateAverage(data: number[]): number {
+  if (data.length === 0) return 0;
+  const sum = processData(data);
+  return sum / data.length;
+}
+
+export function calculateTotal(data: number[], factor: number): number {
+  return multiply(processData(data), factor);
+}
+```
+
+# Test Cases
+
+Now, let's run through the following test cases for the move operation:
+
+1. Simple move: Move the `capitalize` function from stringUtils.ts to mathUtils.ts
+
+2. Move with dependencies: Move the `calculateAverage` function from dataService.ts to mathUtils.ts
+
+3. Move function with imports: Move the `calculateTotal` function from dataService.ts to stringUtils.ts
+
+4. Create a new file and move functions to it: Create a new file `src/utils/advancedMath.ts` and move both `multiply` and `add` functions from mathUtils.ts to this new file
+
+After each test case, verify:
+- The function was properly removed from the source file
+- The function was properly added to the target file
+- All imports were correctly updated
+- The operation reported success
+
+Let's start with Test Case 1: Moving the `capitalize` function from stringUtils.ts to mathUtils.ts
+
+---
+
+IMPORTANT: WHEN YOU HAVE COMPLETED THE TASK ABOVE, YOU MUST EXPLICITLY CALL THE FOLLOWING MCP TOOL:
+
+use_mcp_tool(
+  server_name: "kilo-dev-mcp-server",
+  tool_name: "stop_dev_extension",
+  arguments: {
+    "sessionId": "test-k173khok"
+  }
+)
+
+Session ID: test-k173khok
+
+This will signal that you have finished the task and allow the system to continue.
+DO NOT FORGET to call this tool when you are done. The system will remain blocked until you do.
