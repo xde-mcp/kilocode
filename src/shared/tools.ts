@@ -63,6 +63,9 @@ export const toolParamNames = [
 	"ignore_case",
 	"title", // kilocode_change
 	"description", // kilocode_change
+	"operation", // kilocode_change
+	"new_name", // kilocode_change
+	"target_path", // kilocode_change
 	"start_line",
 	"end_line",
 	"query",
@@ -170,6 +173,18 @@ export interface SearchAndReplaceToolUse extends ToolUse {
 		Partial<Pick<Record<ToolParamName, string>, "use_regex" | "ignore_case" | "start_line" | "end_line">>
 }
 
+// kilocode_change start
+export interface RefactorCodeToolUse extends ToolUse {
+	name: "refactor_code"
+	params: Partial<
+		Pick<
+			Record<ToolParamName, string>,
+			"path" | "operation" | "start_line" | "end_line" | "new_name" | "target_path"
+		>
+	>
+}
+// kilocode_change end
+
 // Define tool group configuration
 export type ToolGroupConfig = {
 	tools: readonly string[]
@@ -197,6 +212,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	new_rule: "create new rule",
 	report_bug: "report bug", // kilocode_change
 	condense: "condense the current context window", // kilocode_change
+	refactor_code: "refactor code", // kilocode_change
 	codebase_search: "codebase search",
 } as const
 
@@ -213,7 +229,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 		],
 	},
 	edit: {
-		tools: ["apply_diff", "write_to_file", "insert_content", "search_and_replace", "new_rule"],
+		tools: ["apply_diff", "write_to_file", "insert_content", "search_and_replace", "new_rule", "refactor_code"], // kilocode_change
 	},
 	browser: {
 		tools: ["browser_action"],
