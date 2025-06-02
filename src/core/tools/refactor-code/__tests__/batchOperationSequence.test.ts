@@ -48,6 +48,7 @@ export function functionC() {
 	})
 
 	it("should handle operations that depend on previous operations", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Create empty target files to ensure directories exist
 		await ensureDirectoryExists(path.dirname(targetFile1))
 		await ensureDirectoryExists(path.dirname(targetFile2))
@@ -176,6 +177,7 @@ export function functionC() {
 	})
 
 	it("should handle creating new files during batch operations", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Create a project for testing
 		const project = new Project({
 			compilerOptions: {

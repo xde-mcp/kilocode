@@ -34,25 +34,36 @@ export class ImportManager {
 	async updateImportsAfterMove(symbolName: string, oldFilePath: string, newFilePath: string): Promise<void> {
 		this.updatedFiles.clear()
 
-		// Find all files that import from the old file
+		// Find files that import from the old file - these are the most important to update
 		const importingFiles = this.findFilesImporting(oldFilePath)
 		console.log(`[DEBUG] Found ${importingFiles.length} files importing from ${oldFilePath}`)
 
-		// Find all files that explicitly reference the symbol (could be from other imports)
-		const allFiles = this.project.getSourceFiles()
+		// Focus only on files that directly import from the source file
+		// This is much more efficient than searching all files in the project
 		const referencingFiles = new Set<SourceFile>()
 
 		// Add files directly importing from the old file
 		importingFiles.forEach((file) => referencingFiles.add(file))
 
-		// Add any other files that might reference this symbol through other means
-		for (const file of allFiles) {
+		// Only search for additional references in the same directories as the source and target files
+		const sourceDir = path.dirname(oldFilePath)
+		const targetDir = path.dirname(newFilePath)
+		const nearbyFiles = this.project.getSourceFiles().filter((file) => {
+			const filePath = file.getFilePath()
+			const fileDir = path.dirname(filePath)
+
 			// Skip if we're already going to process this file
-			if (referencingFiles.has(file)) continue
+			if (referencingFiles.has(file)) return false
 
 			// Skip the old and new files
-			if (file.getFilePath() === oldFilePath || file.getFilePath() === newFilePath) continue
+			if (filePath === oldFilePath || filePath === newFilePath) return false
 
+			// Only include files in the same directories as source or target
+			return fileDir === sourceDir || fileDir === targetDir
+		})
+
+		// Check these nearby files for references to the symbol
+		for (const file of nearbyFiles) {
 			// Check if this file contains any references to the symbol
 			const fileText = file.getFullText()
 
@@ -254,14 +265,35 @@ export class ImportManager {
 				return false
 			}
 
-			// Filter out property names from object literals that are often mistaken for imports
+			// Filter out common property names from object literals that are often mistaken for imports
 			if (
 				["id", "email", "name", "firstName", "lastName", "createdAt", "updatedAt", "data", "user"].includes(
 					dep.name,
 				)
 			) {
+				// Check if this is a type reference (types usually start with uppercase)
+				const isLikelyType = /^[A-Z]/.test(dep.name)
+
+				// If it looks like a type, keep it
+				if (isLikelyType) {
+					console.log(`[DEBUG] Keeping likely type reference despite property name match: ${dep.name}`)
+					return true
+				}
+
 				console.log(`[DEBUG] Filtering out likely object property: ${dep.name}`)
 				return false
+			}
+
+			// Keep all type references - these are important for type checking
+			if (dep.isType) {
+				console.log(`[DEBUG] Keeping type reference: ${dep.name}`)
+				return true
+			}
+
+			// Keep all function calls - these are important for execution
+			if (dep.isFunction) {
+				console.log(`[DEBUG] Keeping function call dependency: ${dep.name}`)
+				return true
 			}
 
 			return true
@@ -539,8 +571,11 @@ export class ImportManager {
 	 * Finds dependencies of a symbol
 	 * This is a simplified implementation for now
 	 */
-	private findSymbolDependencies(file: SourceFile, symbolName: string): Array<{ name: string; isLocal: boolean }> {
-		const dependencies: Array<{ name: string; isLocal: boolean }> = []
+	private findSymbolDependencies(
+		file: SourceFile,
+		symbolName: string,
+	): Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> {
+		const dependencies: Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> = []
 		console.log(`[DEBUG] Finding dependencies for symbol: ${symbolName}`)
 
 		// Find the symbol node using the appropriate methods for SourceFile
@@ -741,7 +776,9 @@ export class ImportManager {
 					} catch (e) {
 						isLocal = false
 					}
-					dependencies.push({ name, isLocal })
+
+					// Mark function calls as high priority dependencies
+					dependencies.push({ name, isLocal, isFunction: true })
 				}
 			}
 		})
@@ -765,7 +802,7 @@ export class ImportManager {
 						isLocal = false
 					}
 
-					dependencies.push({ name, isLocal })
+					dependencies.push({ name, isLocal, isType: true })
 				}
 			}
 		})

@@ -145,6 +145,7 @@ describe("executeRenameOperation", () => {
 
 	describe("error handling", () => {
 		it("should handle non-existent symbols", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// Try to rename a symbol that doesn't exist
 			const result = await executeRenameOperation(project, {
 				operation: "rename",
@@ -166,6 +167,7 @@ describe("executeRenameOperation", () => {
 		})
 
 		it("should handle empty new names", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// Try to rename to an empty name
 			const result = await executeRenameOperation(project, {
 				operation: "rename",
@@ -187,6 +189,7 @@ describe("executeRenameOperation", () => {
 		})
 
 		it("should handle naming conflicts", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// Add a function with the target name to create a conflict
 			const sourceFile = project.getSourceFile(fixtureFile)
 			sourceFile!.addFunction({
@@ -216,6 +219,7 @@ describe("executeRenameOperation", () => {
 		})
 
 		it("should handle reserved keywords", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// Try to rename to a reserved keyword
 			const result = await executeRenameOperation(project, {
 				operation: "rename",

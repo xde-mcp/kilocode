@@ -1,20 +1,25 @@
-import { UserData, createDefaultUser } from "../models/User"
-import { formatUserDisplayName, formatEmail } from "../utils/formatting"
+import { User, createDefaultUser } from "../models/User";
+import { formatFullName, formatEmail } from "../utils/formatting";
 
 // This will be moved to validation.ts in test case 2
 
-export function updateUserProfile(user: UserData, data: Partial<UserData>): UserData {
-	return {
-		...user,
-		...data,
-		updatedAt: new Date(),
-	}
+export function getUserData(userId: string): Promise<User> {
+  // Mock implementation
+  return Promise.resolve(createDefaultUser(`user-${userId}@example.com`));
 }
 
-export function formatUserProfile(user: UserData): string {
-	return `
-    Name: ${formatUserDisplayName(user)}
+export function updateUserProfile(user: User, data: Partial<User>): User {
+  return {
+    ...user,
+    ...data,
+    updatedAt: new Date(),
+  };
+}
+
+export function formatUserProfile(user: User): string {
+  return `
+    Name: ${formatFullName(user)}
     Email: ${formatEmail(user.email)}
     Member since: ${user.createdAt.toLocaleDateString()}
-  `
+  `;
 }

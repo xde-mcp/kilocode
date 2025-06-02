@@ -1,27 +1,28 @@
-import { UserData } from "../models/User"
+import { User } from "../models/User";
 
 // This will be renamed in test case 1
-export function formatUserDisplayName(user: UserData): string {
-	return `${user.firstName} ${user.lastName}`.trim() || "Unnamed User"
+export function formatFullName(user: User): string {
+  return `${user.firstName} ${user.lastName}`.trim() || "Unnamed User";
 }
 
 export function formatEmail(email: string): string {
-	const [username, domain] = email.split("@")
-	if (!domain) return email
+  const [username, domain] = email.split("@");
+  if (!domain) return email;
 
-	return `${username.substring(0, 3)}...@${domain}`
+  return `${username.substring(0, 3)}...@${domain}`;
 }
 
 // This will be used for the date formatting rename test
 export function formatDate(date: Date): string {
-	return date.toLocaleDateString()
+  return date.toLocaleDateString();
 }
+
 
 // This will be removed in test case 3
 export function deprecatedHelper(value: string): string {
-	return value.toLowerCase()
+  return value.toLowerCase();
 }
 
-export function formatUserSummary(user: UserData): string {
-	return `${formatUserDisplayName(user)} (${formatEmail(user.email)})`
+export function formatUserSummary(user: User): string {
+  return `${formatFullName(user)} (${formatEmail(user.email)})`;
 }

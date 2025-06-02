@@ -1,4 +1,4 @@
-export interface UserData {
+export interface User {
   id: string;
   firstName: string;
   lastName: string;
@@ -7,7 +7,7 @@ export interface UserData {
   updatedAt: Date;
 }
 
-export function createDefaultUser(email: string): UserData {
+export function createDefaultUser(email: string): User {
   return {
     id: crypto.randomUUID(),
     firstName: '',

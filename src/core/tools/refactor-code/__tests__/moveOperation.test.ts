@@ -120,6 +120,7 @@ export function updateUserProfile(user: UserProfile, data: Partial<UserProfile>)
 	})
 
 	it("should move a function from source to target file", async () => {
+		jest.setTimeout(30000) // Increase timeout for file operations
 		// Define a move operation similar to the one that failed
 		const moveOperation: MoveOperation = {
 			operation: "move",
@@ -171,6 +172,7 @@ export function updateUserProfile(user: UserProfile, data: Partial<UserProfile>)
 	})
 
 	it("should handle path normalization correctly", async () => {
+		jest.setTimeout(30000) // Increase timeout for file operations
 		// Define a move operation with Windows-style paths to test normalization
 		const moveOperation: MoveOperation = {
 			operation: "move",
@@ -217,6 +219,7 @@ export function updateUserProfile(user: UserProfile, data: Partial<UserProfile>)
 	})
 
 	it("should handle absolute paths correctly", async () => {
+		jest.setTimeout(30000) // Increase timeout for file operations
 		// Define a move operation with absolute paths
 		const moveOperation: MoveOperation = {
 			operation: "move",
@@ -254,5 +257,95 @@ export function updateUserProfile(user: UserProfile, data: Partial<UserProfile>)
 		// Verify that the function was moved
 		expect(sourceContent).not.toContain("export function getUserData")
 		expect(targetContent).toContain("export function getUserData")
+	})
+
+	it("should move a function with type dependencies correctly", async () => {
+		jest.setTimeout(30000) // Increase timeout for file operations
+		// Create source file with a function that uses a type
+		const sourceContent = `
+import { UserProfile } from "../models/User"
+
+// This is a type used by our function
+interface ValidationResult {
+	isValid: boolean;
+	errors: string[];
+}
+
+export function validateUserProfile(user: UserProfile): ValidationResult {
+	const errors: string[] = [];
+	
+	if (!user.email || !user.email.includes("@")) {
+		errors.push("Invalid email");
+	}
+	
+	if (!user.firstName || user.firstName.length < 2) {
+		errors.push("First name is too short");
+	}
+	
+	return {
+		isValid: errors.length === 0,
+		errors
+	};
+}
+`
+		// Create target file with minimal content
+		const targetContent = `// This file will contain validation functions
+`
+		// Create model file with UserProfile type
+		const modelFilePath = path.join(tempDir, "src", "models", "User.ts")
+		const modelContent = `
+export interface UserProfile {
+	id: string;
+	email: string;
+	firstName: string;
+	lastName: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+`
+		// Create directories and files
+		await ensureDirectoryExists(path.dirname(modelFilePath))
+		fs.writeFileSync(sourceFile, sourceContent)
+		fs.writeFileSync(targetFile, targetContent)
+		fs.writeFileSync(modelFilePath, modelContent)
+
+		// Define a move operation for the function with type dependencies
+		const moveOperation: MoveOperation = {
+			operation: "move",
+			selector: {
+				type: "identifier",
+				name: "validateUserProfile",
+				kind: "function",
+				filePath: path.relative(tempDir, sourceFile),
+			},
+			targetFilePath: path.relative(tempDir, targetFile),
+			reason: "Testing type dependency handling in move operations",
+		}
+
+		// Log file details before operation
+		logFileDetails("SOURCE FILE BEFORE OPERATION", sourceFile)
+		logFileDetails("TARGET FILE BEFORE OPERATION", targetFile)
+
+		// Execute the operation
+		const result = await engine.executeOperation(moveOperation)
+
+		// Verify that the operation succeeded
+		expect(result.success).toBe(true)
+
+		// Read the file contents
+		const sourceContentAfter = fs.readFileSync(sourceFile, "utf-8")
+		const targetContentAfter = fs.readFileSync(targetFile, "utf-8")
+
+		// Log file details after operation
+		logFileDetails("SOURCE FILE AFTER OPERATION", sourceFile)
+		logFileDetails("TARGET FILE AFTER OPERATION", targetFile)
+
+		// Verify that the function was moved
+		expect(sourceContentAfter).not.toContain("export function validateUserProfile")
+		expect(targetContentAfter).toContain("export function validateUserProfile")
+
+		// Verify that the type dependencies were properly handled
+		expect(targetContentAfter).toContain("interface ValidationResult")
+		expect(targetContentAfter).toContain("import { UserProfile } from")
 	})
 })

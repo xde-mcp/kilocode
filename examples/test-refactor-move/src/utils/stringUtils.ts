@@ -1,9 +1,11 @@
-// String utility functions
+import { capitalize } from "../../../../../../../../test-refactor-move/src/utils/mathUtils";
+import { calculateTotal } from "../../../../../../../../test-refactor-move/src/utils/stringUtils";
 
-export function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
+// String utility functions
 
 export function reverse(str: string): string {
   return str.split('').reverse().join('');
+}
+export function calculateTotal(data: number[], factor: number): number {
+	return multiply(processData(data), factor)
 }

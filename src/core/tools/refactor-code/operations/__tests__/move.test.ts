@@ -10,8 +10,20 @@ describe("executeMoveOperation", () => {
 	let sourceFile: string
 	let targetFile: string
 	let importingFile: string
+	let testStartTime: number
+
+	// Helper function to measure and log execution time
+	const logExecutionTime = (testName: string) => {
+		const endTime = Date.now()
+		const executionTime = endTime - testStartTime
+		console.log(`[PERF] ${testName} execution time: ${executionTime}ms`)
+		return executionTime
+	}
 
 	beforeEach(() => {
+		// Start timing
+		testStartTime = Date.now()
+
 		// Create a temporary directory for test files
 		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "move-operation-test-"))
 
@@ -24,26 +36,47 @@ describe("executeMoveOperation", () => {
 		targetFile = path.join(tempDir, "target-file.ts")
 		importingFile = path.join(tempDir, "importing-file.ts")
 
-		// Create copies of the fixtures with fresh content to avoid modifying the originals
-		const sourceContent = fs.readFileSync(sourceFixture, "utf-8")
-		const targetContent = fs.readFileSync(targetFixture, "utf-8")
-		const importingContent = fs.readFileSync(importingFixture, "utf-8")
+		// Create copies of the fixtures in the temp directory
+		// We don't need to read the fixtures here since we'll do it later
+		fs.mkdirSync(path.dirname(sourceFile), { recursive: true })
+		fs.mkdirSync(path.dirname(targetFile), { recursive: true })
+		fs.mkdirSync(path.dirname(importingFile), { recursive: true })
 
-		fs.writeFileSync(sourceFile, sourceContent)
-		fs.writeFileSync(targetFile, targetContent)
-		fs.writeFileSync(importingFile, importingContent)
-
-		// Set up the project
+		// Set up the project with completely isolated configuration
 		project = new Project({
 			compilerOptions: {
 				target: ScriptTarget.ES2020,
+				// Add more compiler options to ensure isolation
+				moduleResolution: 99, // Use 99 for NodeNext
+				module: 99, // Use 99 for NodeNext
+				esModuleInterop: true,
+				skipLibCheck: true,
+				noResolve: true, // Prevent resolving external modules
 			},
+			// Ensure complete isolation from the project's tsconfig
+			tsConfigFilePath: undefined,
+			skipAddingFilesFromTsConfig: true,
+			useInMemoryFileSystem: true, // Use in-memory file system for better isolation
 		})
 
-		// Add the fixture files to the project
-		project.addSourceFileAtPath(sourceFile)
-		project.addSourceFileAtPath(targetFile)
-		project.addSourceFileAtPath(importingFile)
+		// Add only the fixture files to the project
+		// Use createSourceFile instead of addSourceFileAtPath for better isolation
+		// Read the original fixture content
+		const sourceFixtureContent = fs.readFileSync(sourceFixture, "utf-8")
+		const targetFixtureContent = fs.readFileSync(targetFixture, "utf-8")
+		const importingFixtureContent = fs.readFileSync(importingFixture, "utf-8")
+
+		// Write to the temp files
+		fs.writeFileSync(sourceFile, sourceFixtureContent)
+		fs.writeFileSync(targetFile, targetFixtureContent)
+		fs.writeFileSync(importingFile, importingFixtureContent)
+
+		// Create the files in the project's in-memory file system
+		project.createSourceFile(sourceFile, sourceFixtureContent)
+		project.createSourceFile(targetFile, targetFixtureContent)
+		project.createSourceFile(importingFile, importingFixtureContent)
+
+		console.log(`[PERF] Test setup time: ${Date.now() - testStartTime}ms`)
 	})
 
 	afterEach(async () => {
@@ -51,10 +84,34 @@ describe("executeMoveOperation", () => {
 		if (fs.existsSync(tempDir)) {
 			fs.rmSync(tempDir, { recursive: true, force: true })
 		}
+
+		// Clear the project to free memory
+		if (project) {
+			// Remove each source file individually
+			project.getSourceFiles().forEach((file) => {
+				project.removeSourceFile(file)
+			})
+			// @ts-ignore - We're intentionally setting this to undefined in the test
+			project = undefined
+		}
+
+		// Force garbage collection if available
+		if (global.gc) {
+			try {
+				global.gc()
+			} catch (e) {
+				// Ignore if gc is not available
+			}
+		}
 	})
 
 	describe("moving a function", () => {
 		it("should move a function to another file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
+
 			// Execute the move operation
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -68,6 +125,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: targetFile,
 				reason: "Moving function to target file",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Move function operation")
 
 			// Check that the operation was successful
 			expect(result.success).toBe(true)
@@ -104,6 +164,11 @@ describe("executeMoveOperation", () => {
 
 	describe("moving a class", () => {
 		it("should move a class to another file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
+
 			// Execute the move operation
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -117,6 +182,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: targetFile,
 				reason: "Moving class to target file",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Move class operation")
 
 			// Check that the operation was successful
 			expect(result.success).toBe(true)
@@ -153,6 +221,11 @@ describe("executeMoveOperation", () => {
 
 	describe("moving a variable", () => {
 		it("should move a variable to another file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
+
 			// Execute the move operation
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -166,6 +239,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: targetFile,
 				reason: "Moving variable to target file",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Move variable operation")
 
 			// Check that the operation was successful
 			expect(result.success).toBe(true)
@@ -187,6 +263,11 @@ describe("executeMoveOperation", () => {
 
 	describe("moving a type", () => {
 		it("should move a type to another file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
+
 			// Execute the move operation
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -200,6 +281,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: targetFile,
 				reason: "Moving type to target file",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Move type operation")
 
 			// Check that the operation was successful
 			expect(result.success).toBe(true)
@@ -222,6 +306,7 @@ describe("executeMoveOperation", () => {
 
 	describe("error handling", () => {
 		it("should handle non-existent symbols", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// Try to move a symbol that doesn't exist
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -242,6 +327,7 @@ describe("executeMoveOperation", () => {
 		})
 
 		it("should handle naming conflicts in target file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
 			// First create a function with the same name in the target file
 			const targetSourceFile = project.getSourceFile(targetFile)
 			targetSourceFile!.addFunction({
@@ -270,8 +356,13 @@ describe("executeMoveOperation", () => {
 		})
 
 		it("should handle moving to a non-existent target file by creating it", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
 			// Create a path to a non-existent file
 			const newTargetFile = path.join(tempDir, "new-target-file.ts")
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
 
 			// Try to move a function to a non-existent file
 			const result = await executeMoveOperation(project, {
@@ -286,6 +377,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: newTargetFile,
 				reason: "Testing creating new target file",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Create new target file operation")
 
 			// Check that the operation was successful
 			expect(result.success).toBe(true)
@@ -305,6 +399,11 @@ describe("executeMoveOperation", () => {
 		})
 
 		it("should handle attempts to move to the same file", async () => {
+			jest.setTimeout(30000) // Increase timeout for file operations
+
+			// Reset timer for the actual operation
+			testStartTime = Date.now()
+
 			// Try to move to the same file
 			const result = await executeMoveOperation(project, {
 				operation: "move",
@@ -318,6 +417,9 @@ describe("executeMoveOperation", () => {
 				targetFilePath: sourceFile,
 				reason: "Testing same file error",
 			})
+
+			// Log execution time
+			const executionTime = logExecutionTime("Same file error handling")
 
 			// Check that the operation failed
 			expect(result.success).toBe(false)

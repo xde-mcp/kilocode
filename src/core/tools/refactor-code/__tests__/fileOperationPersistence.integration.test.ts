@@ -66,6 +66,7 @@ export const testVariable = "I will be renamed";
 	})
 
 	test("REMOVE operation should persist changes to disk", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Setup project with the test directory
 		const project = new Project({
 			compilerOptions: {

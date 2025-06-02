@@ -16,39 +16,130 @@ export async function executeRemoveOperation(
 	project: Project,
 	operation: RemoveOperation,
 ): Promise<Partial<OperationResult>> {
+	// Track affected files (starting with the file containing the symbol)
+	const affectedFiles = new Set<string>([operation.selector.filePath])
+
 	try {
 		// Get project root path for file resolution
 		const projectRoot = project.getCompilerOptions().rootDir || process.cwd()
 
 		// Get source file
-		let sourceFile = project.getSourceFile(operation.selector.filePath)
+		// Normalize file paths for consistent handling
+		const normalizedSourcePath = operation.selector.filePath.replace(/\\/g, "/")
+		let sourceFile = project.getSourceFile(normalizedSourcePath)
 
 		// If the file wasn't found in the project, check if it exists on disk
 		if (!sourceFile) {
-			const absoluteSourcePath = resolveFilePath(operation.selector.filePath, projectRoot)
+			// Try multiple approaches to resolve the file path
+			const absoluteSourcePath = resolveFilePath(normalizedSourcePath, projectRoot)
+			const originalPath = operation.selector.filePath
+			const relativePath = path.isAbsolute(normalizedSourcePath)
+				? path.relative(projectRoot, normalizedSourcePath)
+				: normalizedSourcePath
 
-			// Check if the file exists on disk
-			if (fsSync.existsSync(absoluteSourcePath)) {
-				// Add the file to the project using relative path
+			console.log(`[DEBUG] Source file not found in project. Checking disk: ${absoluteSourcePath}`)
+			console.log(`[DEBUG] Original path: ${originalPath}`)
+			console.log(`[DEBUG] Relative path: ${relativePath}`)
+			console.log(`[DEBUG] File exists on disk (absolute): ${fsSync.existsSync(absoluteSourcePath)}`)
+			console.log(`[DEBUG] File exists on disk (original): ${fsSync.existsSync(originalPath)}`)
+			console.log(`[DEBUG] File exists on disk (relative): ${fsSync.existsSync(relativePath)}`)
+
+			// Try to read the file content directly to verify it exists and is accessible
+			try {
+				const fileContent = fsSync.readFileSync(absoluteSourcePath, "utf8")
+				console.log(`[DEBUG] Successfully read file content, size: ${fileContent.length} bytes`)
+			} catch (readError) {
+				console.log(`[DEBUG] Error reading file: ${(readError as Error).message}`)
+			}
+
+			// Check if the file exists on disk with more thorough checks
+			if (
+				fsSync.existsSync(absoluteSourcePath) ||
+				fsSync.existsSync(originalPath) ||
+				fsSync.existsSync(relativePath)
+			) {
+				// Try multiple approaches to add the file to the project
+				// Try multiple approaches to add the file to the project
+				const pathsToTry = [
+					{ path: normalizedSourcePath, description: "normalized path" },
+					{ path: absoluteSourcePath, description: "absolute path" },
+					{ path: operation.selector.filePath, description: "original path" },
+					{
+						path: path.isAbsolute(normalizedSourcePath)
+							? path.relative(projectRoot, normalizedSourcePath)
+							: normalizedSourcePath,
+						description: "relative path",
+					},
+				]
+
+				// Try each path in sequence
+				for (const { path: pathToTry, description } of pathsToTry) {
+					try {
+						sourceFile = project.addSourceFileAtPath(pathToTry)
+						console.log(`[DEBUG] Added source file using ${description}: ${pathToTry}`)
+						break // Exit the loop if successful
+					} catch (error) {
+						console.log(`[DEBUG] Failed to add with ${description}: ${(error as Error).message}`)
+					}
+				}
+
+				// If all attempts failed, try creating the file from scratch
+				if (!sourceFile) {
+					try {
+						sourceFile = project.createSourceFile(normalizedSourcePath, "", {
+							overwrite: false,
+						})
+						console.log(`[DEBUG] Created source file in project: ${normalizedSourcePath}`)
+					} catch (error) {
+						console.log(`[WARNING] Failed to create source file: ${(error as Error).message}`)
+					}
+				}
+			} else {
+				console.log(`[WARNING] File does not exist on disk: ${absoluteSourcePath}`)
+				// Try to find the file with a case-insensitive search
 				try {
-					// Convert absolute path to relative path for ts-morph
-					const relativeSourcePath = path.isAbsolute(operation.selector.filePath)
-						? path.relative(projectRoot, operation.selector.filePath)
-						: operation.selector.filePath
+					const dirPath = path.dirname(absoluteSourcePath)
+					if (fsSync.existsSync(dirPath)) {
+						const files = fsSync.readdirSync(path.dirname(absoluteSourcePath))
+						const fileName = path.basename(absoluteSourcePath)
+						const matchingFile = files.find((file) => file.toLowerCase() === fileName.toLowerCase())
 
-					sourceFile = project.addSourceFileAtPath(relativeSourcePath)
-					console.log(`[DEBUG] Added existing source file to project: ${operation.selector.filePath}`)
+						if (matchingFile) {
+							const correctCasePath = path.join(path.dirname(absoluteSourcePath), matchingFile)
+							console.log(`[DEBUG] Found file with different case: ${correctCasePath}`)
+							sourceFile = project.addSourceFileAtPath(correctCasePath)
+							console.log(`[DEBUG] Added source file with correct case: ${correctCasePath}`)
+						}
+					}
 				} catch (e) {
-					console.log(`[WARNING] Failed to add source file to project: ${operation.selector.filePath}`)
+					console.log(`[WARNING] Case-insensitive search failed: ${(e as Error).message}`)
 				}
 			}
 
-			// If still not found, return error
+			// If still not found, return error with detailed diagnostics
 			if (!sourceFile) {
+				// Gather detailed diagnostics for better error reporting
+				const diagnostics = {
+					originalPath: {
+						path: originalPath,
+						exists: fsSync.existsSync(originalPath),
+						isAbsolute: path.isAbsolute(originalPath),
+					},
+					absolutePath: {
+						path: absoluteSourcePath,
+						exists: fsSync.existsSync(absoluteSourcePath),
+					},
+					relativePath: {
+						path: relativePath,
+						exists: fsSync.existsSync(relativePath),
+					},
+					projectRoot: projectRoot,
+				}
+
 				return {
 					success: false,
 					operation,
-					error: `Source file not found: ${operation.selector.filePath}`,
+					error: `Source file not found: ${operation.selector.filePath}. Tried multiple paths but none were found in the project. Diagnostics: ${JSON.stringify(diagnostics)}`,
 					affectedFiles: [],
 				}
 			}
@@ -59,7 +150,7 @@ export async function executeRemoveOperation(
 		console.log(`[DEBUG] Loading all potentially related TypeScript files...`)
 		try {
 			// Get the directory of the source file
-			const sourceDir = path.dirname(resolveFilePath(operation.selector.filePath, projectRoot))
+			const sourceDir = path.dirname(resolveFilePath(normalizedSourcePath, projectRoot))
 
 			// Load TypeScript files in the project that might reference this file
 			const projectFiles = project.addSourceFilesAtPaths([
@@ -87,8 +178,7 @@ export async function executeRemoveOperation(
 			}
 		}
 
-		// Track affected files (starting with the file containing the symbol)
-		const affectedFiles = new Set<string>([operation.selector.filePath])
+		// The symbol's file is already tracked in the affectedFiles set initialized at the top
 
 		// Check if symbol is exported
 		const isExported = finder.isExported(symbol)
@@ -242,7 +332,7 @@ export async function executeRemoveOperation(
 			success: false,
 			operation,
 			error: `Remove operation failed: ${err.message}`,
-			affectedFiles: [],
+			affectedFiles: Array.from(affectedFiles || []), // Include affected files even on error
 		}
 	}
 }

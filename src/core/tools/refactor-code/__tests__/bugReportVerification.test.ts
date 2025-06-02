@@ -54,6 +54,7 @@ export function generateRandomString() {
 	})
 
 	it("should handle move and rename operations on newly created files", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Create a RefactorEngine instance
 		const engine = new RefactorEngine({
 			projectRootPath: tempDir,

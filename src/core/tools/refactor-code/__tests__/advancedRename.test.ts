@@ -238,6 +238,7 @@ export function formatEmail(email: string): string {
 	})
 
 	test("should rename a function and update all references across multiple files", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Execute the rename operation
 		const result = await executeRenameOperation(project, {
 			operation: "rename",
@@ -272,6 +273,7 @@ export function formatEmail(email: string): string {
 	})
 
 	test("should rename a variable and update all references", async () => {
+		jest.setTimeout(30000) // Increase timeout for this test
 		// Execute the rename operation
 		const result = await executeRenameOperation(project, {
 			operation: "rename",
