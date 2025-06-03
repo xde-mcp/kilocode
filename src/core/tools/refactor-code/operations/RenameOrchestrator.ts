@@ -1,4 +1,4 @@
-import { Project, Node, SourceFile } from "ts-morph"
+import { Project, Node, SourceFile, ImportDeclaration, ExportDeclaration, SyntaxKind } from "ts-morph"
 import { RenameOperation } from "../schema"
 import { OperationResult } from "../engine"
 import { PathResolver } from "../utils/PathResolver"
@@ -35,15 +35,17 @@ export class RenameOrchestrator {
 	async executeRenameOperation(operation: RenameOperation): Promise<OperationResult> {
 		console.log(`[DEBUG] Starting rename operation: ${operation.selector.name} -> ${operation.newName}`)
 		console.log(`[DEBUG] File path: ${operation.selector.filePath}`)
+		console.log(`[DEBUG] Operation scope: ${operation.scope || "project"}`)
 
 		try {
 			// Validate operation
-			if (!operation.newName || operation.newName.trim() === "") {
-				console.log(`[ERROR] Invalid rename operation: new name cannot be empty`)
+			const validationResult = this.validateRenameOperation(operation)
+			if (!validationResult.isValid) {
+				console.log(`[ERROR] Invalid rename operation: ${validationResult.error}`)
 				return {
 					success: false,
 					operation,
-					error: "New name cannot be empty",
+					error: validationResult.error,
 					affectedFiles: [],
 				}
 			}
@@ -71,10 +73,16 @@ export class RenameOrchestrator {
 				// Load TypeScript files in the project that might reference this file
 				const projectFiles = this.project.addSourceFilesAtPaths([
 					`${sourceDir}/**/*.ts`, // Files in the same directory and subdirectories
+					`${sourceDir}/**/*.tsx`, // Include TSX files
 					`${projectRoot}/**/*.ts`, // All TypeScript files in the project
+					`${projectRoot}/**/*.tsx`, // All TSX files in the project
 				])
 
 				console.log(`[DEBUG] Loaded ${projectFiles.length} potential reference files into project`)
+
+				// Special handling for barrel files (index.ts) - they often re-export symbols
+				// but ts-morph might not catch these references automatically
+				this.loadBarrelFilesInProject(projectRoot)
 			} catch (error) {
 				console.log(`[DEBUG] Error loading reference files: ${(error as Error).message}`)
 				// Continue even if some files couldn't be loaded
@@ -132,6 +140,9 @@ export class RenameOrchestrator {
 			// Perform the rename operation directly
 			symbol.node.rename(operation.newName)
 
+			// Additional manual update for barrel file imports
+			this.updateBarrelImports(affectedFiles, operation.selector.name, operation.newName)
+
 			// Save all affected files directly
 			const affectedFilesArray = Array.from(affectedFiles)
 			for (const filePath of affectedFilesArray) {
@@ -178,15 +189,243 @@ export class RenameOrchestrator {
 	}
 
 	/**
-	 * Gets all references to a symbol
+	 * Validates a rename operation before execution
+	 */
+	private validateRenameOperation(operation: RenameOperation): { isValid: boolean; error?: string } {
+		// Check if new name is provided and not empty
+		if (!operation.newName || operation.newName.trim() === "") {
+			return { isValid: false, error: "New name cannot be empty" }
+		}
+
+		// Check if new name contains invalid characters
+		const validNameRegex = /^[$A-Z_][0-9A-Z_$]*$/i
+		if (!validNameRegex.test(operation.newName)) {
+			return {
+				isValid: false,
+				error: `Invalid name: '${operation.newName}'. Names must start with a letter, $ or _ and contain only letters, numbers, $ or _.`,
+			}
+		}
+
+		// New name shouldn't be the same as the old name
+		if (operation.newName === operation.selector.name) {
+			return { isValid: false, error: "New name must be different from the current name" }
+		}
+
+		return { isValid: true }
+	}
+
+	/**
+	 * Gets all references to a symbol, including import and export declarations
 	 */
 	private getReferences(symbol: ResolvedSymbol, sourceFile: SourceFile): Node[] {
 		if (!Node.isReferenceFindable(symbol.node)) {
 			return []
 		}
 
-		// Cast the references to Identifier[] - we'll handle non-identifiers later if needed
-		return symbol.node.findReferencesAsNodes()
+		// Get direct references to the symbol
+		const directReferences = symbol.node.findReferencesAsNodes()
+
+		// Additional logic to find references in import/export declarations that might be missed
+		const additionalReferences = this.findImportExportReferences(symbol, sourceFile)
+
+		// Combine all references and ensure uniqueness
+		const allReferences = [...directReferences, ...additionalReferences]
+		const uniqueReferences = this.removeDuplicateNodes(allReferences)
+
+		console.log(
+			`[DEBUG] Found ${uniqueReferences.length} total references (${directReferences.length} direct, ${additionalReferences.length} import/export)`,
+		)
+
+		return uniqueReferences
+	}
+
+	/**
+	 * Finds references in import and export declarations that might be missed by regular reference finding
+	 */
+	private findImportExportReferences(symbol: ResolvedSymbol, sourceFile: SourceFile): Node[] {
+		const references: Node[] = []
+		const symbolName = symbol.name
+
+		// Get all source files in the project
+		const projectFiles = this.project.getSourceFiles()
+
+		for (const file of projectFiles) {
+			// Skip processing if in file-only scope and not the source file
+			if (file.getFilePath() !== sourceFile.getFilePath()) {
+				// Process import declarations
+				const importDeclarations = file.getImportDeclarations()
+				for (const importDecl of importDeclarations) {
+					this.processImportDeclaration(importDecl, symbolName, references)
+				}
+
+				// Process export declarations
+				const exportDeclarations = file.getExportDeclarations()
+				for (const exportDecl of exportDeclarations) {
+					this.processExportDeclaration(exportDecl, symbolName, references)
+				}
+
+				// Process namespace imports that might reference our symbol
+				const namespaceImports = file
+					.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
+					.filter((prop) => {
+						const leftText = prop.getExpression().getText()
+						const rightText = prop.getName()
+						return rightText === symbolName && this.isNamespaceReference(leftText, file)
+					})
+
+				references.push(...namespaceImports)
+			}
+		}
+
+		return references
+	}
+
+	/**
+	 * Process an import declaration to find references to the symbol
+	 */
+	private processImportDeclaration(importDecl: ImportDeclaration, symbolName: string, references: Node[]): void {
+		// Check named imports
+		const namedImports = importDecl.getNamedImports()
+		for (const namedImport of namedImports) {
+			// Check both the name and alias
+			const importName = namedImport.getName()
+			const importAlias = namedImport.getAliasNode()?.getText()
+
+			if (importName === symbolName) {
+				references.push(namedImport.getNameNode())
+			} else if (importAlias === symbolName) {
+				references.push(namedImport.getAliasNode()!)
+			}
+		}
+
+		// Check namespace imports that might be importing the module containing our symbol
+		const namespaceImport = importDecl.getNamespaceImport()
+		if (namespaceImport) {
+			// We can't directly add this as a reference, but we'll note it for potential namespace usage
+			// This is handled in findImportExportReferences with PropertyAccessExpressions
+		}
+	}
+
+	/**
+	 * Process an export declaration to find references to the symbol
+	 */
+	private processExportDeclaration(exportDecl: ExportDeclaration, symbolName: string, references: Node[]): void {
+		// Check named exports
+		const namedExports = exportDecl.getNamedExports()
+		for (const namedExport of namedExports) {
+			// Check both the name and alias
+			const exportName = namedExport.getName()
+			const exportAlias = namedExport.getAliasNode()?.getText()
+
+			if (exportName === symbolName) {
+				references.push(namedExport.getNameNode())
+			} else if (exportAlias === symbolName) {
+				references.push(namedExport.getAliasNode()!)
+			}
+		}
+	}
+
+	/**
+	 * Check if a name is a namespace reference in a file
+	 */
+	private isNamespaceReference(name: string, file: SourceFile): boolean {
+		// Check if this name comes from a namespace import
+		const namespaceImports = file
+			.getImportDeclarations()
+			.map((importDecl) => importDecl.getNamespaceImport())
+			.filter(Boolean)
+			.map((namespace) => namespace!.getText())
+
+		return namespaceImports.includes(name)
+	}
+
+	/**
+	 * Remove duplicate nodes from an array of nodes
+	 */
+	private removeDuplicateNodes(nodes: Node[]): Node[] {
+		const seen = new Set<string>()
+		return nodes.filter((node) => {
+			const nodeId = `${node.getSourceFile().getFilePath()}:${node.getPos()}`
+			if (seen.has(nodeId)) {
+				return false
+			}
+			seen.add(nodeId)
+			return true
+		})
+	}
+
+	/**
+	 * Updates imports in files that import through barrel files (index.ts)
+	 * This handles the case where a symbol is imported via a barrel file and
+	 * ts-morph doesn't track it as a direct reference
+	 */
+	private updateBarrelImports(affectedFiles: Set<string>, oldName: string, newName: string): void {
+		// Get all source files in the project
+		const projectFiles = this.project.getSourceFiles()
+
+		// Look for all import statements that might import our renamed symbol through barrel files
+		for (const file of projectFiles) {
+			let modified = false
+			const importDeclarations = file.getImportDeclarations()
+
+			for (const importDecl of importDeclarations) {
+				// Get the module specifier (the path being imported from)
+				const moduleSpecifier = importDecl.getModuleSpecifierValue()
+
+				// If this import is from a likely barrel file (ends with a directory name or is index)
+				if (
+					moduleSpecifier.endsWith("/index") ||
+					!moduleSpecifier.includes("/") || // Top-level import
+					moduleSpecifier.split("/").pop()?.indexOf(".") === -1
+				) {
+					// Directory import
+
+					// Check the named imports
+					const namedImports = importDecl.getNamedImports()
+					for (const namedImport of namedImports) {
+						if (namedImport.getName() === oldName) {
+							namedImport.setName(newName)
+							modified = true
+							console.log(`[DEBUG] Updated barrel import in ${file.getFilePath()}`)
+						}
+					}
+				}
+			}
+
+			// Check for usages of the old name in the file body
+			if (modified) {
+				const fileText = file.getFullText()
+				if (fileText.includes(oldName)) {
+					// Replace direct usages of the old name that were imported via barrel
+					const replacedText = fileText.replace(new RegExp(`\\b${oldName}\\b(?!\\s*=|\\s*:)`, "g"), newName)
+
+					if (replacedText !== fileText) {
+						file.replaceWithText(replacedText)
+						console.log(`[DEBUG] Updated usages of barrel import in ${file.getFilePath()}`)
+					}
+				}
+
+				// If file was modified, ensure it's in affected files
+				affectedFiles.add(file.getFilePath())
+			}
+		}
+	}
+
+	/**
+	 * Load index barrel files that might re-export the renamed symbol
+	 */
+	private loadBarrelFilesInProject(projectRoot: string): void {
+		try {
+			// Find all index.ts files that might be barrel files
+			const barrelFiles = this.project.addSourceFilesAtPaths([
+				`${projectRoot}/**/index.ts`,
+				`${projectRoot}/**/index.tsx`,
+			])
+
+			console.log(`[DEBUG] Loaded ${barrelFiles.length} potential barrel files`)
+		} catch (error) {
+			console.log(`[DEBUG] Error loading barrel files: ${(error as Error).message}`)
+		}
 	}
 
 	/**
