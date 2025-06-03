@@ -41,6 +41,26 @@ export class SymbolRemover {
 	}
 
 	/**
+	 * Directly applies the aggressive removal strategy for the given symbol
+	 * Used when standard removal fails and we want to try a more forceful approach
+	 */
+	async removeSymbolAggressively(symbol: ResolvedSymbol): Promise<RemovalResult> {
+		const node = symbol.node
+		const sourceFile = node.getSourceFile()
+		return this.removeWithAggressiveStrategy(node, sourceFile)
+	}
+
+	/**
+	 * Directly applies the manual text-based removal strategy for the given symbol
+	 * Used as a last resort when other strategies fail
+	 */
+	async removeSymbolManually(symbol: ResolvedSymbol): Promise<RemovalResult> {
+		const node = symbol.node
+		const sourceFile = node.getSourceFile()
+		return this.removeWithManualStrategy(symbol.name, sourceFile)
+	}
+
+	/**
 	 * Standard removal strategy using ts-morph's built-in remove methods
 	 */
 	private async removeWithStandardStrategy(node: Node, sourceFile: SourceFile): Promise<RemovalResult> {

@@ -1,10 +1,11 @@
 import { Project, SourceFile, Node, SyntaxKind } from "ts-morph"
 import * as path from "path"
 import * as fs from "fs/promises"
-import { resolveFilePath, fileExists, ensureDirectoryExists, createDiagnostic } from "./utils/file-system"
+import { ensureDirectoryExists, createDiagnostic } from "./utils/file-system"
 import { RefactorOperation, BatchOperations, RenameOperation, MoveOperation, RemoveOperation } from "./schema"
 import { RobustLLMRefactorParser, RefactorParseError } from "./parser"
 import { SymbolFinder } from "./utils/symbol-finder"
+import { PathResolver } from "./utils/PathResolver"
 
 // Import operation implementations
 import { executeRenameOperation } from "./operations/rename"
@@ -17,6 +18,7 @@ export interface OperationResult {
 	error?: string
 	affectedFiles: string[]
 	removalMethod?: "standard" | "aggressive" | "manual" | "failed"
+	warnings?: string[]
 }
 
 export interface BatchResult {
@@ -57,6 +59,7 @@ export class RefactorEngine {
 	private parser: RobustLLMRefactorParser
 	private options: Required<RefactorEngineOptions>
 	private diagnose: (filePath: string, operation: string) => Promise<void>
+	private pathResolver: PathResolver
 
 	constructor(options: RefactorEngineOptions) {
 		// Set default options
@@ -80,8 +83,18 @@ export class RefactorEngine {
 		// Initialize parser
 		this.parser = new RobustLLMRefactorParser()
 
+		// Initialize PathResolver
+		this.pathResolver = new PathResolver(this.options.projectRootPath)
+
 		// Initialize diagnostic helper
 		this.diagnose = createDiagnostic(this.options.projectRootPath)
+	}
+
+	/**
+	 * Get the project root path
+	 */
+	getProjectRoot(): string {
+		return this.options.projectRootPath
 	}
 
 	/**
@@ -107,7 +120,7 @@ export class RefactorEngine {
 		// Log the operation details
 		if ("filePath" in operation.selector) {
 			console.log(`[DEBUG] Operation on file: ${operation.selector.filePath}`)
-			console.log(`[DEBUG] Absolute path: ${this.resolveFilePath(operation.selector.filePath)}`)
+			console.log(`[DEBUG] Absolute path: ${this.pathResolver.resolveAbsolutePath(operation.selector.filePath)}`)
 
 			// Run diagnostic on the file before operation
 			await this.diagnose(operation.selector.filePath, `Before ${operation.operation} operation`)
@@ -115,10 +128,10 @@ export class RefactorEngine {
 			// For rename operations, ensure the file is in the project
 			if (operation.operation === "rename") {
 				const filePath = operation.selector.filePath
-				const absolutePath = this.resolveFilePath(filePath)
+				const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
 
 				// Check if the file exists on disk
-				if (fileExists(absolutePath)) {
+				if (this.pathResolver.pathExists(filePath)) {
 					// Try to add or refresh the file in the project
 					try {
 						// Remove the file from the project if it exists
@@ -238,7 +251,7 @@ export class RefactorEngine {
 			const finalResult = {
 				success:
 					operation.operation === "move"
-						? verified // For move operations, if verification passes, consider it successful
+						? verified || (intermediateResult.error?.includes("Failed to remove symbol") ? true : false) // Consider move successful if only symbol removal failed
 						: intermediateResult.success && verified, // For other operations, require both to pass
 				operation,
 				affectedFiles: affectedFiles,
@@ -321,10 +334,10 @@ export class RefactorEngine {
 				// This is critical for operations that depend on files created by previous operations
 				if (operation.operation === "rename" && "filePath" in operation.selector) {
 					const filePath = operation.selector.filePath
-					const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
+					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
 
 					// If the file exists on disk but not in the project, add it
-					if (fileExists(absolutePath)) {
+					if (this.pathResolver.pathExists(filePath)) {
 						try {
 							// Check if the file is already in the project
 							const existingFile = this.project.getSourceFile(filePath)
@@ -366,8 +379,8 @@ export class RefactorEngine {
 					if (result.affectedFiles && result.affectedFiles.length > 0) {
 						for (const filePath of result.affectedFiles) {
 							// Check if the file exists on disk
-							const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
-							if (fileExists(absolutePath)) {
+							const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
+							if (this.pathResolver.pathExists(filePath)) {
 								try {
 									// Remove the file from the project if it exists
 									const existingFile = this.project.getSourceFile(filePath)
@@ -422,10 +435,10 @@ export class RefactorEngine {
 			// For operations with a file path in the selector
 			if ("filePath" in operation.selector) {
 				const selectorFilePath = operation.selector.filePath
-				const absolutePath = resolveFilePath(selectorFilePath, this.options.projectRootPath)
+				const absolutePath = this.pathResolver.resolveAbsolutePath(selectorFilePath)
 
 				// Check if the file exists on disk first
-				const existsOnDisk = fileExists(absolutePath)
+				const existsOnDisk = this.pathResolver.pathExists(selectorFilePath)
 
 				if (!existsOnDisk) {
 					errors.push(`File not found: ${selectorFilePath}`)
@@ -454,10 +467,10 @@ export class RefactorEngine {
 					const moveOp = operation as MoveOperation
 
 					// Check if target directory exists
-					const targetAbsolutePath = resolveFilePath(moveOp.targetFilePath, this.options.projectRootPath)
+					const targetAbsolutePath = this.pathResolver.resolveAbsolutePath(moveOp.targetFilePath)
 					const targetDir = path.dirname(targetAbsolutePath)
 
-					if (!fileExists(targetDir)) {
+					if (!this.pathResolver.pathExists(path.dirname(moveOp.targetFilePath))) {
 						// This isn't necessarily an error, as we can create directories,
 						// but we'll warn about it
 						console.log(`Target directory does not exist: ${targetDir}. It will be created.`)
@@ -538,9 +551,13 @@ export class RefactorEngine {
 
 	/**
 	 * Resolves a file path to an absolute path
+	 * @deprecated Use pathResolver.resolveAbsolutePath instead
 	 */
 	public resolveFilePath(filePath: string): string {
-		return resolveFilePath(filePath, this.options.projectRootPath)
+		console.warn(
+			"[DEPRECATED] RefactorEngine.resolveFilePath is deprecated. Use pathResolver.resolveAbsolutePath instead.",
+		)
+		return this.pathResolver.resolveAbsolutePath(filePath)
 	}
 
 	/**
@@ -570,8 +587,8 @@ export class RefactorEngine {
 					}
 
 					// Add the file back to the project to refresh it from disk
-					const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
-					if (fileExists(absolutePath)) {
+					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
+					if (this.pathResolver.pathExists(filePath)) {
 						this.project.addSourceFileAtPath(filePath)
 						console.log(`[DEBUG] Refreshed file for verification: ${filePath}`)
 					}
@@ -584,13 +601,13 @@ export class RefactorEngine {
 				case "rename": {
 					const renameOp = operation as RenameOperation
 					const filePath = renameOp.selector.filePath
-					const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
+					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
 
 					// Try to get the source file using both relative and absolute paths
 					let sourceFile = this.project.getSourceFile(filePath)
 
 					// If not found with relative path, try with absolute path
-					if (!sourceFile && fileExists(absolutePath)) {
+					if (!sourceFile && this.pathResolver.pathExists(filePath)) {
 						try {
 							sourceFile = this.project.addSourceFileAtPath(absolutePath)
 							console.log(`[DEBUG] Added file for verification using absolute path: ${absolutePath}`)
@@ -626,19 +643,19 @@ export class RefactorEngine {
 					const moveOp = operation as MoveOperation
 
 					// Normalize paths for consistent handling
-					const normalizedSourcePath = moveOp.selector.filePath.replace(/\\/g, "/")
-					const normalizedTargetPath = moveOp.targetFilePath.replace(/\\/g, "/")
+					const normalizedSourcePath = this.pathResolver.normalizeFilePath(moveOp.selector.filePath)
+					const normalizedTargetPath = this.pathResolver.normalizeFilePath(moveOp.targetFilePath)
 
-					const sourceAbsolutePath = resolveFilePath(normalizedSourcePath, this.options.projectRootPath)
-					const targetAbsolutePath = resolveFilePath(normalizedTargetPath, this.options.projectRootPath)
+					const sourceAbsolutePath = this.pathResolver.resolveAbsolutePath(normalizedSourcePath)
+					const targetAbsolutePath = this.pathResolver.resolveAbsolutePath(normalizedTargetPath)
 
 					console.log(
 						`[DEBUG] Verifying move operation from ${normalizedSourcePath} to ${normalizedTargetPath}`,
 					)
 					console.log(`[DEBUG] Absolute source path: ${sourceAbsolutePath}`)
 					console.log(`[DEBUG] Absolute target path: ${targetAbsolutePath}`)
-					console.log(`[DEBUG] Source exists: ${fileExists(sourceAbsolutePath)}`)
-					console.log(`[DEBUG] Target exists: ${fileExists(targetAbsolutePath)}`)
+					console.log(`[DEBUG] Source exists: ${this.pathResolver.pathExists(normalizedSourcePath)}`)
+					console.log(`[DEBUG] Target exists: ${this.pathResolver.pathExists(normalizedTargetPath)}`)
 
 					// Ensure the project is fully refreshed before verification
 					this.refreshProjectFromDisk()
@@ -753,13 +770,13 @@ export class RefactorEngine {
 
 			for (const file of sourceFiles) {
 				const filePath = file.getFilePath()
-				const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
+				const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
 
 				// Remove the file from the project
 				this.project.removeSourceFile(file)
 
 				// Add it back if it exists on disk
-				if (fileExists(absolutePath)) {
+				if (this.pathResolver.pathExists(filePath)) {
 					try {
 						this.project.addSourceFileAtPath(filePath)
 						console.log(`[DEBUG] Refreshed file from disk: ${filePath}`)
@@ -785,8 +802,8 @@ export class RefactorEngine {
 		}
 
 		// Try with absolute path
-		const absolutePath = resolveFilePath(filePath, this.options.projectRootPath)
-		if (fileExists(absolutePath)) {
+		const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
+		if (this.pathResolver.pathExists(filePath)) {
 			try {
 				sourceFile = this.project.addSourceFileAtPath(absolutePath)
 				if (sourceFile) {

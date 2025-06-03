@@ -10,11 +10,24 @@ import * as fsSync from "fs"
 /**
  * Resolves a relative file path to an absolute path using the project root.
  *
+ * @deprecated Use PathResolver.resolveAbsolutePath instead for better path handling
+ * across the codebase. This function will be removed in a future release.
+ *
+ * @example
+ * // Instead of:
+ * const absPath = resolveFilePath(filePath, projectRoot);
+ *
+ * // Use:
+ * const pathResolver = new PathResolver(projectRoot);
+ * const absPath = pathResolver.resolveAbsolutePath(filePath);
+ *
  * @param filePath - The relative file path to resolve
  * @param projectRootPath - The project root path
  * @returns The absolute file path
  */
 export function resolveFilePath(filePath: string, projectRootPath: string): string {
+	// Log a warning about deprecated usage
+	console.warn(`[DEPRECATED] resolveFilePath is deprecated. Use PathResolver.resolveAbsolutePath instead.`)
 	// If already absolute, return as is
 	if (path.isAbsolute(filePath)) {
 		return filePath
@@ -144,9 +157,13 @@ export function fileExists(filePath: string): boolean {
  * @returns A diagnostic function that can be used during debugging
  */
 export function createDiagnostic(projectRootPath: string) {
+	// Create a PathResolver instance
+	const { PathResolver } = require("./PathResolver")
+	const pathResolver = new PathResolver(projectRootPath)
+
 	return async function diagnoseFileOperation(filePath: string, operation: string): Promise<void> {
-		const absolutePath = resolveFilePath(filePath, projectRootPath)
-		const exists = fileExists(absolutePath)
+		const absolutePath = pathResolver.resolveAbsolutePath(filePath)
+		const exists = pathResolver.pathExists(filePath)
 		const size = exists ? fsSync.statSync(absolutePath).size : 0
 
 		console.log(`[DIAGNOSTIC] ${operation} - File: ${filePath}`)

@@ -19,13 +19,27 @@ export interface ImportUpdate {
 
 /**
  * Utility for managing imports and exports when moving symbols between files
+ * Contains optimized algorithms for tracking and updating import references
  */
 export class ImportManager {
 	private project: Project
 	private updatedFiles: Set<string> = new Set()
+	private fileImportCache: Map<string, Set<string>> = new Map()
+	private fileExportCache: Map<string, Set<string>> = new Map()
+	private resolvedPathCache: Map<string, string> = new Map()
 
 	constructor(project: Project) {
 		this.project = project
+	}
+
+	/**
+	 * Clears all internal caches to ensure fresh data.
+	 * Call this when files in the project have changed significantly.
+	 */
+	public clearCaches(): void {
+		this.fileImportCache.clear()
+		this.fileExportCache.clear()
+		this.resolvedPathCache.clear()
 	}
 
 	/**
@@ -104,8 +118,20 @@ export class ImportManager {
 
 	/**
 	 * Finds all files that import from the specified file
+	 * Uses caching to improve performance for repeated calls
 	 */
 	private findFilesImporting(filePath: string): SourceFile[] {
+		// Check cache first
+		const cacheKey = `import:${filePath}`
+		if (this.fileImportCache.has(cacheKey)) {
+			const importingFilePaths = this.fileImportCache.get(cacheKey)
+			if (importingFilePaths) {
+				return Array.from(importingFilePaths)
+					.map((path) => this.project.getSourceFile(path))
+					.filter(Boolean) as SourceFile[]
+			}
+		}
+
 		const sourceFile = this.project.getSourceFile(filePath)
 		if (!sourceFile) return []
 
@@ -113,22 +139,48 @@ export class ImportManager {
 		const referencingFiles = sourceFile.getReferencingSourceFiles()
 
 		// Filter to only those that actually import from this file
-		return referencingFiles.filter((file) => {
+		const importingFiles = referencingFiles.filter((file) => {
 			const imports = file.getImportDeclarations()
 			return imports.some((imp) => this.isImportFromFile(imp, filePath))
 		})
+
+		// Cache the results
+		this.fileImportCache.set(cacheKey, new Set(importingFiles.map((file) => file.getFilePath())))
+
+		return importingFiles
 	}
 
 	/**
 	 * Finds all files that re-export from the specified file
+	 * Uses caching to improve performance for repeated calls
 	 */
 	private findFilesReExporting(filePath: string): SourceFile[] {
-		const allFiles = this.project.getSourceFiles()
+		// Check cache first
+		const cacheKey = `export:${filePath}`
+		if (this.fileExportCache.has(cacheKey)) {
+			const exportingFilePaths = this.fileExportCache.get(cacheKey)
+			if (exportingFilePaths) {
+				return Array.from(exportingFilePaths)
+					.map((path) => this.project.getSourceFile(path))
+					.filter(Boolean) as SourceFile[]
+			}
+		}
 
-		return allFiles.filter((file) => {
+		// For re-exports, we need to search only files that reference this file
+		const sourceFile = this.project.getSourceFile(filePath)
+		if (!sourceFile) return []
+
+		const referencingFiles = sourceFile.getReferencingSourceFiles()
+
+		const reExportingFiles = referencingFiles.filter((file) => {
 			const exports = file.getExportDeclarations()
 			return exports.some((exp) => this.isExportFromFile(exp, filePath))
 		})
+
+		// Cache the results
+		this.fileExportCache.set(cacheKey, new Set(reExportingFiles.map((file) => file.getFilePath())))
+
+		return reExportingFiles
 	}
 
 	/**
@@ -487,8 +539,17 @@ export class ImportManager {
 
 	/**
 	 * Calculates relative path between two files
+	 * Uses caching to improve performance for repeated calculations
 	 */
 	private calculateRelativePath(fromPath: string, toPath: string): string {
+		// Create a cache key from the two paths
+		const cacheKey = `${fromPath}|${toPath}`
+
+		// Check the cache first
+		if (this.resolvedPathCache.has(cacheKey)) {
+			return this.resolvedPathCache.get(cacheKey)!
+		}
+
 		// Normalize paths to ensure consistent handling across platforms
 		const normalizedFromPath = fromPath.replace(/\\/g, "/")
 		const normalizedToPath = toPath.replace(/\\/g, "/")
@@ -507,15 +568,28 @@ export class ImportManager {
 			relativePath = "./" + relativePath
 		}
 
+		// Cache the result
+		this.resolvedPathCache.set(cacheKey, relativePath)
+
 		return relativePath
 	}
 
 	/**
-	 * Resolves a module path to an absolute path
+	 * Resolves a module path to an absolute file path
+	 * Uses caching to improve performance for repeated calculations
 	 */
 	private resolveModulePath(fromPath: string, moduleSpecifier: string): string {
+		// Create a cache key from the path and module specifier
+		const cacheKey = `${fromPath}|${moduleSpecifier}`
+
+		// Check the cache first
+		if (this.resolvedPathCache.has(cacheKey)) {
+			return this.resolvedPathCache.get(cacheKey)!
+		}
+
 		if (!moduleSpecifier.startsWith(".")) {
 			// External module
+			this.resolvedPathCache.set(cacheKey, moduleSpecifier)
 			return moduleSpecifier
 		}
 
@@ -531,22 +605,27 @@ export class ImportManager {
 		const extensions = [".ts", ".tsx", ".js", ".jsx"]
 		for (const ext of extensions) {
 			if (normalizedResolved.endsWith(ext)) {
+				this.resolvedPathCache.set(cacheKey, normalizedResolved)
 				return normalizedResolved
 			}
 			const withExt = normalizedResolved + ext
 
 			// Try to find the file in the project
 			if (this.project.getSourceFile(withExt)) {
+				this.resolvedPathCache.set(cacheKey, withExt)
 				return withExt
 			}
 
 			// Also check with original path format to support case-sensitive file systems
 			const originalWithExt = resolved + ext
 			if (this.project.getSourceFile(originalWithExt)) {
+				this.resolvedPathCache.set(cacheKey, originalWithExt)
 				return originalWithExt
 			}
 		}
 
+		// Cache the fallback result
+		this.resolvedPathCache.set(cacheKey, normalizedResolved)
 		return normalizedResolved
 	}
 

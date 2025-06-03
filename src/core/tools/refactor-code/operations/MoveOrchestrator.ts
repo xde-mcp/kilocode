@@ -196,7 +196,9 @@ export class MoveOrchestrator {
 		error?: string
 		affectedFiles?: string[]
 	}> {
-		const sourceFilePath = this.pathResolver.normalizeFilePath(operation.selector.filePath)
+		const sourceFilePath = this.pathResolver.resolveAbsolutePath(
+			this.pathResolver.normalizeFilePath(operation.selector.filePath),
+		)
 		const sourceFile = await this.fileManager.ensureFileInProject(sourceFilePath)
 
 		if (!sourceFile) {
@@ -267,7 +269,9 @@ export class MoveOrchestrator {
 		error?: string
 		affectedFiles?: string[]
 	}> {
-		const targetFilePath = this.pathResolver.normalizeFilePath(operation.targetFilePath)
+		const targetFilePath = this.pathResolver.resolveAbsolutePath(
+			this.pathResolver.normalizeFilePath(operation.targetFilePath),
+		)
 		const targetFile = await this.fileManager.createFileIfNeeded(targetFilePath)
 
 		if (!targetFile) {
@@ -350,8 +354,8 @@ export class MoveOrchestrator {
 	 */
 	private async updateProjectImports(
 		symbolName: string,
-		sourceFilePath: string,
-		targetFilePath: string,
+		sourceFilePath: string, // Already resolved in caller
+		targetFilePath: string, // Already resolved in caller
 	): Promise<{
 		success: boolean
 		updatedFiles: string[]
@@ -367,8 +371,8 @@ export class MoveOrchestrator {
 	 */
 	private async verifyMoveOperation(
 		operation: MoveOperation,
-		sourceFilePath: string,
-		targetFilePath: string,
+		sourceFilePath: string, // Already resolved in caller
+		targetFilePath: string, // Already resolved in caller
 		updatedFiles: string[],
 	): Promise<{
 		success: boolean

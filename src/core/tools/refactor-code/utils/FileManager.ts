@@ -9,13 +9,26 @@ import { ensureDirectoryExists, writeFile } from "./file-system" // Changed path
  * This class handles complex file finding/adding logic and standardizes file operations.
  */
 export class FileManager {
+	private fileCache: Map<string, boolean> = new Map()
+	private sourceFileCache: Map<string, SourceFile | null> = new Map()
+
 	constructor(
 		private project: Project,
 		private pathResolver: PathResolver,
 	) {}
 
 	/**
+	 * Clears all internal caches.
+	 * Call this when you need to ensure fresh data from the filesystem.
+	 */
+	public clearCache(): void {
+		this.fileCache.clear()
+		this.sourceFileCache.clear()
+	}
+
+	/**
 	 * Ensures a file is loaded in the project, trying multiple strategies to add it.
+	 * Uses caching to improve performance for repeated calls with the same file.
 	 *
 	 * @param filePath - The path of the file to ensure is in the project
 	 * @returns The SourceFile if found or added, null otherwise
@@ -23,15 +36,31 @@ export class FileManager {
 	async ensureFileInProject(filePath: string): Promise<SourceFile | null> {
 		const normalizedPath = this.pathResolver.normalizeFilePath(filePath)
 
+		// Check cache first
+		if (this.sourceFileCache.has(normalizedPath)) {
+			return this.sourceFileCache.get(normalizedPath) || null
+		}
+
 		// Try to get existing file first
 		let sourceFile = this.project.getSourceFile(normalizedPath)
 		if (sourceFile) {
+			// Cache the result
+			this.sourceFileCache.set(normalizedPath, sourceFile)
 			return sourceFile
 		}
 
 		// Check if file exists on disk
 		const absolutePath = this.pathResolver.resolveAbsolutePath(normalizedPath)
-		if (!fsSync.existsSync(absolutePath)) {
+
+		// Use file existence cache if available
+		let fileExists = this.fileCache.get(absolutePath)
+		if (fileExists === undefined) {
+			fileExists = fsSync.existsSync(absolutePath)
+			this.fileCache.set(absolutePath, fileExists)
+		}
+
+		if (!fileExists) {
+			this.sourceFileCache.set(normalizedPath, null)
 			return null
 		}
 
@@ -73,7 +102,9 @@ export class FileManager {
 			console.log(`[DEBUG] Case-insensitive fallback failed: ${(error as Error).message}`)
 		}
 
-		return null
+		// Cache the result before returning
+		this.sourceFileCache.set(normalizedPath, sourceFile || null)
+		return sourceFile || null
 	}
 
 	/**
@@ -143,6 +174,15 @@ export class FileManager {
 				sourceFile.saveSync()
 			}
 
+			// Update caches
+			this.fileCache.set(absolutePath, true)
+			if (sourceFile) {
+				this.sourceFileCache.set(filePath, sourceFile)
+			} else {
+				// Remove from cache to force re-fetch next time
+				this.sourceFileCache.delete(filePath)
+			}
+
 			return true
 		} catch (error) {
 			console.error(`[ERROR] Failed to write to file ${filePath}: ${(error as Error).message}`)
@@ -151,17 +191,37 @@ export class FileManager {
 	}
 
 	/**
-	 * Reads content from a file.
+	 * Reads content from a file with error handling.
 	 *
 	 * @param filePath - The path of the file to read
+	 * @param useCache - Whether to use cached file existence information (default: true)
 	 * @returns The file content as a string, or null if the file doesn't exist or can't be read
 	 */
-	readFile(filePath: string): string | null {
+	readFile(filePath: string, useCache: boolean = true): string | null {
 		try {
 			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-			return fsSync.readFileSync(absolutePath, "utf8")
+
+			// Check if file exists using cache if requested
+			if (useCache) {
+				const fileExists = this.fileCache.get(absolutePath)
+				if (fileExists === false) {
+					return null
+				}
+			}
+
+			const content = fsSync.readFileSync(absolutePath, "utf8")
+
+			// Update cache
+			this.fileCache.set(absolutePath, true)
+
+			return content
 		} catch (error) {
 			console.error(`[ERROR] Failed to read file ${filePath}: ${(error as Error).message}`)
+
+			// Update cache on failure
+			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
+			this.fileCache.set(absolutePath, false)
+
 			return null
 		}
 	}

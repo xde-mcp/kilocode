@@ -73,6 +73,13 @@ const RemoveOperationSchema = z.object({
 	operation: z.literal("remove"),
 	selector: IdentifierSelectorSchema,
 	reason: z.string().min(1).optional(),
+	options: z
+		.object({
+			forceRemove: z.boolean().optional(),
+			fallbackToAggressive: z.boolean().optional(),
+			cleanupDependencies: z.boolean().optional(),
+		})
+		.optional(),
 })
 
 const ExtractOperationSchema = z.object({
