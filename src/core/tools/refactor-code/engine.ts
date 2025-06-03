@@ -16,6 +16,7 @@ export interface OperationResult {
 	operation: RefactorOperation
 	error?: string
 	affectedFiles: string[]
+	removalMethod?: "standard" | "aggressive" | "manual" | "failed"
 }
 
 export interface BatchResult {
