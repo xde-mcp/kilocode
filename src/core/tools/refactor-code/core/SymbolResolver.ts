@@ -119,17 +119,23 @@ export class SymbolResolver {
 
 			// Skip references in the same file with same logic as original
 			if (ref.getSourceFile().getFilePath() === symbol.filePath) {
-				const isInDeclaration =
-					ref.getFirstAncestorByKind(SyntaxKind.FunctionDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.ClassDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.InterfaceDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.TypeAliasDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.EnumDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.MethodDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.PropertyDeclaration) === node ||
-					ref.getFirstAncestorByKind(SyntaxKind.VariableDeclaration) === node
+				// Safely check if a node is inside another node by checking its parents
+				const isInsideNode = (refNode: Node, targetNode: Node): boolean => {
+					let current = refNode.getParent()
+					while (current) {
+						if (current === targetNode) return true
+						current = current.getParent()
+					}
+					return false
+				}
 
-				const isInExportDeclaration = ref.getFirstAncestorByKind(SyntaxKind.ExportDeclaration) !== undefined
+				// Check if reference is inside the declaration
+				const isInDeclaration = isInsideNode(ref, node)
+
+				// Check if reference is in an export declaration
+				const isInExportDeclaration = !!ref
+					.getAncestors()
+					.find((ancestor) => Node.isExportDeclaration(ancestor))
 
 				return !isInDeclaration && !isInExportDeclaration
 			}
@@ -142,7 +148,7 @@ export class SymbolResolver {
 			filePath: ref.getSourceFile().getFilePath(),
 			lineNumber: ref.getStartLineNumber(),
 			isInSameFile: ref.getSourceFile().getFilePath() === symbol.filePath,
-			isInExportDeclaration: ref.getFirstAncestorByKind(SyntaxKind.ExportDeclaration) !== undefined,
+			isInExportDeclaration: !!ref.getAncestors().find((ancestor) => Node.isExportDeclaration(ancestor)),
 		}))
 	}
 }

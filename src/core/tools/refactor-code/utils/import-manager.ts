@@ -27,9 +27,26 @@ export class ImportManager {
 	private fileImportCache: Map<string, Set<string>> = new Map()
 	private fileExportCache: Map<string, Set<string>> = new Map()
 	private resolvedPathCache: Map<string, string> = new Map()
+	private symbolExtractor: any // Will be set by setSymbolExtractor
+	private pathResolver: any // Will be set by setPathResolver
 
 	constructor(project: Project) {
 		this.project = project
+	}
+
+	/**
+	 * Sets the SymbolExtractor instance to use for dependency analysis
+	 * This allows us to leverage the enhanced dependency analysis
+	 */
+	public setSymbolExtractor(symbolExtractor: any): void {
+		this.symbolExtractor = symbolExtractor
+	}
+
+	/**
+	 * Sets the PathResolver instance to use for path normalization
+	 */
+	public setPathResolver(pathResolver: any): void {
+		this.pathResolver = pathResolver
 	}
 
 	/**
@@ -293,7 +310,7 @@ export class ImportManager {
 	/**
 	 * Adds missing imports to the new file
 	 */
-	private async addMissingImports(newFile: SourceFile, movedSymbolName: string, oldFilePath: string): Promise<void> {
+	public async addMissingImports(newFile: SourceFile, movedSymbolName: string, oldFilePath: string): Promise<void> {
 		// Get the moved symbol's dependencies from the old file
 		const oldFile = this.project.getSourceFile(oldFilePath)
 		if (!oldFile) {
@@ -550,28 +567,55 @@ export class ImportManager {
 			return this.resolvedPathCache.get(cacheKey)!
 		}
 
-		// Normalize paths to ensure consistent handling across platforms
-		const normalizedFromPath = fromPath.replace(/\\/g, "/")
-		const normalizedToPath = toPath.replace(/\\/g, "/")
+		// Use pathResolver if available for consistent normalization
+		if (this.pathResolver) {
+			// Normalize paths to ensure consistent handling across platforms
+			const normalizedFromPath = this.pathResolver.normalizeFilePath(fromPath)
+			const normalizedToPath = this.pathResolver.normalizeFilePath(toPath)
 
-		const fromDir = path.dirname(normalizedFromPath)
-		let relativePath = path.relative(fromDir, normalizedToPath)
+			const fromDir = path.dirname(normalizedFromPath)
+			let relativePath = path.relative(fromDir, normalizedToPath)
 
-		// Normalize the resulting path
-		relativePath = relativePath.replace(/\\/g, "/")
+			// Normalize the resulting path
+			relativePath = relativePath.replace(/\\/g, "/")
 
-		// Remove file extension
-		relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
+			// Remove file extension
+			relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
 
-		// Ensure it starts with ./ or ../
-		if (!relativePath.startsWith(".")) {
-			relativePath = "./" + relativePath
+			// Ensure it starts with ./ or ../
+			if (!relativePath.startsWith(".")) {
+				relativePath = "./" + relativePath
+			}
+
+			// Cache the result
+			this.resolvedPathCache.set(cacheKey, relativePath)
+			console.log(`[DEBUG] Calculated relative path using PathResolver: ${relativePath}`)
+
+			return relativePath
+		} else {
+			// Normalize paths to ensure consistent handling across platforms
+			const normalizedFromPath = fromPath.replace(/\\/g, "/")
+			const normalizedToPath = toPath.replace(/\\/g, "/")
+
+			const fromDir = path.dirname(normalizedFromPath)
+			let relativePath = path.relative(fromDir, normalizedToPath)
+
+			// Normalize the resulting path
+			relativePath = relativePath.replace(/\\/g, "/")
+
+			// Remove file extension
+			relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
+
+			// Ensure it starts with ./ or ../
+			if (!relativePath.startsWith(".")) {
+				relativePath = "./" + relativePath
+			}
+
+			// Cache the result
+			this.resolvedPathCache.set(cacheKey, relativePath)
+
+			return relativePath
 		}
-
-		// Cache the result
-		this.resolvedPathCache.set(cacheKey, relativePath)
-
-		return relativePath
 	}
 
 	/**
@@ -654,8 +698,151 @@ export class ImportManager {
 		file: SourceFile,
 		symbolName: string,
 	): Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> {
+		// Use enhanced SymbolExtractor if available
+		if (this.symbolExtractor) {
+			console.log(`[DEBUG] Using enhanced SymbolExtractor for dependency analysis of ${symbolName}`)
+
+			// Find the symbol node using the appropriate methods for SourceFile
+			let symbolNode: Node | undefined
+			let symbolKind: string = "unknown"
+
+			// Find variable declarations
+			const variableDeclarations = file.getVariableDeclarations().filter((d) => d.getName() === symbolName)
+			if (variableDeclarations.length > 0) {
+				symbolNode = variableDeclarations[0]
+				symbolKind = "variable"
+			}
+
+			// Find function declarations
+			if (!symbolNode) {
+				const functionDeclarations = file.getFunctions().filter((f) => f.getName() === symbolName)
+				if (functionDeclarations.length > 0) {
+					symbolNode = functionDeclarations[0]
+					symbolKind = "function"
+				}
+			}
+
+			// Find class declarations
+			if (!symbolNode) {
+				const classDeclarations = file.getClasses().filter((c) => c.getName() === symbolName)
+				if (classDeclarations.length > 0) {
+					symbolNode = classDeclarations[0]
+					symbolKind = "class"
+				}
+			}
+
+			// Find interface declarations
+			if (!symbolNode) {
+				const interfaceDeclarations = file.getInterfaces().filter((i) => i.getName() === symbolName)
+				if (interfaceDeclarations.length > 0) {
+					symbolNode = interfaceDeclarations[0]
+					symbolKind = "interface"
+				}
+			}
+
+			// Find type alias declarations
+			if (!symbolNode) {
+				const typeAliasDeclarations = file.getTypeAliases().filter((t) => t.getName() === symbolName)
+				if (typeAliasDeclarations.length > 0) {
+					symbolNode = typeAliasDeclarations[0]
+					symbolKind = "typeAlias"
+				}
+			}
+
+			// Find enum declarations
+			if (!symbolNode) {
+				const enumDeclarations = file.getEnums().filter((e) => e.getName() === symbolName)
+				if (enumDeclarations.length > 0) {
+					symbolNode = enumDeclarations[0]
+					symbolKind = "enum"
+				}
+			}
+
+			if (!symbolNode) {
+				console.log(`[DEBUG] Symbol node not found for: ${symbolName}`)
+				return []
+			}
+
+			// Use our enhanced SymbolExtractor to get all dependencies
+			const symbol = {
+				name: symbolName,
+				kind: symbolKind,
+				filePath: file.getFilePath(),
+				node: symbolNode,
+			}
+
+			try {
+				const extractedSymbol = this.symbolExtractor.extractSymbol(symbol)
+
+				// Convert the dependencies to the format expected by this method
+				const result: Array<{
+					name: string
+					isLocal: boolean
+					isType?: boolean
+					isFunction?: boolean
+				}> = []
+
+				// Process type dependencies
+				for (const typeName of extractedSymbol.dependencies.types) {
+					// Check if this is a local type
+					const isLocalType =
+						file.getInterface(typeName) !== undefined ||
+						file.getTypeAlias(typeName) !== undefined ||
+						file.getEnum(typeName) !== undefined ||
+						file.getClass(typeName) !== undefined
+
+					result.push({
+						name: typeName,
+						isLocal: isLocalType,
+						isType: true,
+						isFunction: false,
+					})
+				}
+
+				// Process import dependencies
+				extractedSymbol.dependencies.imports.forEach((moduleSpecifier: string, symbolName: string) => {
+					// Skip some common identifiers that aren't likely to be imports
+					if (
+						[
+							"string",
+							"number",
+							"boolean",
+							"any",
+							"void",
+							"object",
+							"null",
+							"undefined",
+							"Array",
+							"Promise",
+						].includes(symbolName)
+					) {
+						return
+					}
+
+					result.push({
+						name: symbolName,
+						isLocal: false,
+						isType: false, // We don't know for sure, but imports can be either
+						isFunction: false,
+					})
+				})
+
+				console.log(
+					`[DEBUG] Enhanced dependency analysis found ${result.length} dependencies for ${symbolName}`,
+				)
+
+				// Remove duplicates by name
+				const uniqueDependencies = Array.from(new Map(result.map((item) => [item.name, item])).values())
+				return uniqueDependencies
+			} catch (error) {
+				console.error(`[ERROR] Failed to extract symbol with enhanced extractor: ${error}`)
+				// Fall back to original implementation if extraction fails
+			}
+		}
+
+		// Fall back to original implementation if symbolExtractor is not available or fails
 		const dependencies: Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> = []
-		console.log(`[DEBUG] Finding dependencies for symbol: ${symbolName}`)
+		console.log(`[DEBUG] Finding dependencies for symbol: ${symbolName} using original implementation`)
 
 		// Find the symbol node using the appropriate methods for SourceFile
 		let symbolNode: Node | undefined
@@ -1009,7 +1196,7 @@ export class ImportManager {
 	/**
 	 * Gets list of files that were updated
 	 */
-	getUpdatedFiles(): string[] {
+	public getUpdatedFiles(): string[] {
 		return Array.from(this.updatedFiles)
 	}
 

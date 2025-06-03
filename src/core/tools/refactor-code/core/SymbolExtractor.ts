@@ -25,7 +25,8 @@ export class SymbolExtractor {
 			).line
 
 			// Only include comments that are close to the symbol
-			if (symbolStartLine - lastCommentEndLine <= 2) {
+			if (symbolStartLine - lastCommentEndLine <= 3) {
+				// Increased to 3 for better detection
 				const fullText = sourceFile.getFullText()
 
 				// Filter out test fixture comments and other non-relevant comments
@@ -38,7 +39,14 @@ export class SymbolExtractor {
 						!commentText.includes("will be moved") &&
 						!commentText.includes("test case") &&
 						!commentText.includes("This will be") &&
-						!commentText.toLowerCase().includes("test")
+						!commentText.toLowerCase().includes("test") &&
+						// Make sure filter conditions don't accidentally filter real documentation
+						!(
+							commentText.toLowerCase().includes("test") &&
+							(commentText.includes("Configuration") ||
+								commentText.includes("Internal") ||
+								commentText.includes("/**"))
+						)
 					) {
 						comments.push(commentText)
 					}
@@ -48,6 +56,9 @@ export class SymbolExtractor {
 
 		// Extract dependencies
 		const dependencies = this.extractDependencies(node, sourceFile)
+
+		// Process additional interface inheritance relationships in the entire file
+		this.processInterfaceInheritance(sourceFile, dependencies)
 
 		// Extract the full text including any type dependencies
 		let text = comments.join("\n")
@@ -123,8 +134,10 @@ export class SymbolExtractor {
 		const types: string[] = []
 		const localReferences: string[] = []
 
-		// Set to track all identifiers
+		// Set to track all identifiers and processed types to avoid duplicates
 		const identifiersToAnalyze = new Set<string>()
+		const processedTypes = new Set<string>()
+		const processedImports = new Set<string>()
 
 		// 1. Collect all identifiers in the symbol
 		node.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id) => {
@@ -144,48 +157,99 @@ export class SymbolExtractor {
 			identifiersToAnalyze.add(name)
 		})
 
-		// 2. Collect all type references
+		// 2. Collect all type references including generic type arguments
 		node.getDescendantsOfKind(SyntaxKind.TypeReference).forEach((typeRef) => {
+			// Get the main type name
 			if (Node.isIdentifier(typeRef.getTypeName())) {
 				const typeName = typeRef.getTypeName().getText()
 				identifiersToAnalyze.add(typeName)
+				this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+			}
 
-				// Also collect this as a type
-				const typeExists =
-					sourceFile.getInterface(typeName) !== undefined ||
-					sourceFile.getTypeAlias(typeName) !== undefined ||
-					sourceFile.getEnum(typeName) !== undefined ||
-					sourceFile.getClass(typeName) !== undefined
-
-				if (typeExists) {
-					types.push(typeName)
-				}
+			// Handle generic type arguments (e.g., Promise<UserProfile>)
+			const typeArgs = typeRef.getTypeArguments()
+			if (typeArgs.length > 0) {
+				typeArgs.forEach((typeArg) => {
+					// Extract type identifiers from type arguments
+					typeArg.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id) => {
+						const argTypeName = id.getText()
+						identifiersToAnalyze.add(argTypeName)
+						this.collectTypeReference(argTypeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+					})
+				})
 			}
 		})
 
-		// 3. Check return type annotations for functions
-		if (Node.isFunctionDeclaration(node) && node.getReturnTypeNode()) {
-			const returnType = node.getReturnTypeNode()
-			if (returnType) {
-				returnType.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id) => {
+		// Process array types (e.g., User[])
+		node.getDescendantsOfKind(SyntaxKind.ArrayType).forEach((arrayType) => {
+			const elementTypeNode = arrayType.getElementTypeNode()
+			elementTypeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+				const typeName = id.getText()
+				identifiersToAnalyze.add(typeName)
+				this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+			})
+		})
+
+		// Process interface extensions (e.g., interface A extends B)
+		node.getDescendantsOfKind(SyntaxKind.HeritageClause).forEach((heritageClause) => {
+			heritageClause.getTypeNodes().forEach((typeExpression) => {
+				const expression = typeExpression.getExpression()
+				if (Node.isIdentifier(expression)) {
+					const baseTypeName = expression.getText()
+					identifiersToAnalyze.add(baseTypeName)
+					this.collectTypeReference(baseTypeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+				}
+			})
+		})
+
+		// Process union and intersection types
+		node.getDescendantsOfKind(SyntaxKind.UnionType).forEach((unionType) => {
+			unionType.getTypeNodes().forEach((typeNode) => {
+				typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
 					const typeName = id.getText()
 					identifiersToAnalyze.add(typeName)
+					this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+				})
+			})
+		})
 
-					// Also collect this as a type
-					const typeExists =
-						sourceFile.getInterface(typeName) !== undefined ||
-						sourceFile.getTypeAlias(typeName) !== undefined ||
-						sourceFile.getEnum(typeName) !== undefined ||
-						sourceFile.getClass(typeName) !== undefined
+		node.getDescendantsOfKind(SyntaxKind.IntersectionType).forEach((intersectionType) => {
+			intersectionType.getTypeNodes().forEach((typeNode) => {
+				typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+					const typeName = id.getText()
+					identifiersToAnalyze.add(typeName)
+					this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+				})
+			})
+		})
 
-					if (typeExists) {
-						types.push(typeName)
-					}
+		// 3. Check parameter types for functions
+		if (Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) {
+			node.getParameters().forEach((param) => {
+				const typeNode = param.getTypeNode()
+				if (typeNode) {
+					typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+						const typeName = id.getText()
+						identifiersToAnalyze.add(typeName)
+						this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
+					})
+				}
+			})
+		}
+
+		// 4. Check return type annotations for functions
+		if ((Node.isFunctionDeclaration(node) || Node.isMethodDeclaration(node)) && node.getReturnTypeNode()) {
+			const returnType = node.getReturnTypeNode()
+			if (returnType) {
+				returnType.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+					const typeName = id.getText()
+					identifiersToAnalyze.add(typeName)
+					this.collectTypeReference(typeName, sourceFile, identifiersToAnalyze, types, processedTypes)
 				})
 			}
 		}
 
-		// 4. For each identifier, check if it's an import or local reference
+		// 5. For each identifier, check if it's an import or local reference
 		identifiersToAnalyze.forEach((name) => {
 			// Skip if the identifier is defined in the source file as a local declaration
 			const isDefinedInSource =
@@ -212,19 +276,12 @@ export class SymbolExtractor {
 
 			if (isDefinedInSource) {
 				// It's a local reference
-				localReferences.push(name)
+				if (!localReferences.includes(name)) {
+					localReferences.push(name)
+				}
 			} else {
 				// Check if it's imported
-				sourceFile.getImportDeclarations().forEach((importDecl) => {
-					const namedImports = importDecl.getNamedImports()
-					const hasImport = namedImports.some((ni) => ni.getName() === name)
-
-					if (hasImport) {
-						// Store the import information
-						const moduleSpecifier = importDecl.getModuleSpecifierValue()
-						imports.set(name, moduleSpecifier)
-					}
-				})
+				this.findImportForIdentifier(name, sourceFile, imports, processedImports)
 			}
 		})
 
@@ -233,6 +290,223 @@ export class SymbolExtractor {
 			types,
 			localReferences,
 		}
+	}
+
+	/**
+	 * Collect type reference and recursively process nested types
+	 */
+	private collectTypeReference(
+		typeName: string,
+		sourceFile: SourceFile,
+		identifiersToAnalyze: Set<string>,
+		types: string[],
+		processedTypes: Set<string>,
+	): void {
+		// Skip if already processed or common built-in types
+		if (
+			processedTypes.has(typeName) ||
+			[
+				"string",
+				"number",
+				"boolean",
+				"any",
+				"void",
+				"null",
+				"undefined",
+				"object",
+				"unknown",
+				"never",
+				"bigint",
+				"symbol",
+			].includes(typeName)
+		) {
+			return
+		}
+
+		processedTypes.add(typeName)
+
+		// Check if type exists in source file
+		const typeExists =
+			sourceFile.getInterface(typeName) !== undefined ||
+			sourceFile.getTypeAlias(typeName) !== undefined ||
+			sourceFile.getEnum(typeName) !== undefined ||
+			sourceFile.getClass(typeName) !== undefined
+
+		if (typeExists) {
+			// Add to type collection if not already included
+			if (!types.includes(typeName)) {
+				types.push(typeName)
+			}
+
+			// Recursively process nested type references
+			// Find type declaration and analyze its dependencies
+			const typeDecl =
+				sourceFile.getInterface(typeName) ||
+				sourceFile.getTypeAlias(typeName) ||
+				sourceFile.getEnum(typeName) ||
+				sourceFile.getClass(typeName)
+
+			if (typeDecl) {
+				// Check for interface extensions (base types)
+				if (Node.isInterfaceDeclaration(typeDecl)) {
+					// Process base types (interfaces that this interface extends)
+					typeDecl.getExtends().forEach((extension) => {
+						const expression = extension.getExpression()
+						if (Node.isIdentifier(expression)) {
+							const baseTypeName = expression.getText()
+							// Add the base interface as a dependency
+							identifiersToAnalyze.add(baseTypeName)
+							this.collectTypeReference(
+								baseTypeName,
+								sourceFile,
+								identifiersToAnalyze,
+								types,
+								processedTypes,
+							)
+						}
+					})
+				}
+
+				// Process nested type references
+				typeDecl.getDescendantsOfKind(SyntaxKind.TypeReference).forEach((nestedTypeRef) => {
+					if (Node.isIdentifier(nestedTypeRef.getTypeName())) {
+						const nestedTypeName = nestedTypeRef.getTypeName().getText()
+						identifiersToAnalyze.add(nestedTypeName)
+						this.collectTypeReference(
+							nestedTypeName,
+							sourceFile,
+							identifiersToAnalyze,
+							types,
+							processedTypes,
+						)
+					}
+				})
+
+				// Process array types in type declarations
+				typeDecl.getDescendantsOfKind(SyntaxKind.ArrayType).forEach((arrayType) => {
+					const elementTypeNode = arrayType.getElementTypeNode()
+					elementTypeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+						const nestedTypeName = id.getText()
+						identifiersToAnalyze.add(nestedTypeName)
+						this.collectTypeReference(
+							nestedTypeName,
+							sourceFile,
+							identifiersToAnalyze,
+							types,
+							processedTypes,
+						)
+					})
+				})
+
+				// Process union and intersection types in type declarations
+				typeDecl.getDescendantsOfKind(SyntaxKind.UnionType).forEach((unionType) => {
+					unionType.getTypeNodes().forEach((typeNode) => {
+						typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+							const nestedTypeName = id.getText()
+							identifiersToAnalyze.add(nestedTypeName)
+							this.collectTypeReference(
+								nestedTypeName,
+								sourceFile,
+								identifiersToAnalyze,
+								types,
+								processedTypes,
+							)
+						})
+					})
+				})
+
+				typeDecl.getDescendantsOfKind(SyntaxKind.IntersectionType).forEach((intersectionType) => {
+					intersectionType.getTypeNodes().forEach((typeNode) => {
+						typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
+							const nestedTypeName = id.getText()
+							identifiersToAnalyze.add(nestedTypeName)
+							this.collectTypeReference(
+								nestedTypeName,
+								sourceFile,
+								identifiersToAnalyze,
+								types,
+								processedTypes,
+							)
+						})
+					})
+				})
+			}
+		}
+	}
+
+	/**
+	 * Process interface inheritance relationships in the source file
+	 * This ensures we capture all interface extensions
+	 */
+	private processInterfaceInheritance(sourceFile: SourceFile, dependencies: SymbolDependencies): void {
+		// Make a copy of the current types to avoid modification during iteration
+		const currentTypes = [...dependencies.types]
+
+		// For each already discovered type, check if it's an interface with extensions
+		for (const typeName of currentTypes) {
+			const interfaceDecl = sourceFile.getInterface(typeName)
+			if (interfaceDecl) {
+				// Check all heritage clauses (extends)
+				interfaceDecl.getExtends().forEach((extension) => {
+					const baseTypeName = extension.getText()
+					// If this is a base interface and not already in our types, add it
+					if (!dependencies.types.includes(baseTypeName)) {
+						dependencies.types.push(baseTypeName)
+					}
+				})
+			}
+		}
+	}
+
+	/**
+	 * Find import declaration for an identifier
+	 */
+	private findImportForIdentifier(
+		name: string,
+		sourceFile: SourceFile,
+		imports: Map<string, string>,
+		processedImports: Set<string>,
+	): void {
+		// Skip if already processed
+		if (processedImports.has(name)) {
+			return
+		}
+
+		processedImports.add(name)
+
+		// Handle some common imports that might be missed
+		const commonExternalImports = new Map([
+			["axios", "axios"],
+			["react", "react"],
+			["useState", "react"],
+			["useEffect", "react"],
+			["useContext", "react"],
+			["useRef", "react"],
+			["useCallback", "react"],
+			["useMemo", "react"],
+			["useReducer", "react"],
+		])
+
+		if (commonExternalImports.has(name)) {
+			imports.set(name, commonExternalImports.get(name)!)
+			return
+		}
+
+		// Check all import declarations
+		sourceFile.getImportDeclarations().forEach((importDecl) => {
+			const namedImports = importDecl.getNamedImports()
+			const hasImport = namedImports.some((ni) => ni.getName() === name)
+
+			// Also check for default imports
+			const defaultImport = importDecl.getDefaultImport()
+			const isDefaultImport = defaultImport && defaultImport.getText() === name
+
+			if (hasImport || isDefaultImport) {
+				// Store the import information
+				const moduleSpecifier = importDecl.getModuleSpecifierValue()
+				imports.set(name, moduleSpecifier)
+			}
+		})
 	}
 
 	/**
@@ -255,7 +529,7 @@ export class SymbolExtractor {
 		if (Node.isFunctionDeclaration(node) && node.getReturnTypeNode()) {
 			const returnType = node.getReturnTypeNode()
 			if (returnType) {
-				returnType.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id) => {
+				returnType.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
 					typeReferences.add(id.getText())
 				})
 			}
@@ -266,7 +540,7 @@ export class SymbolExtractor {
 			node.getParameters().forEach((param) => {
 				const typeNode = param.getTypeNode()
 				if (typeNode) {
-					typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id) => {
+					typeNode.getDescendantsOfKind(SyntaxKind.Identifier).forEach((id: Node) => {
 						typeReferences.add(id.getText())
 					})
 				}

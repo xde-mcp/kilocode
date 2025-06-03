@@ -123,19 +123,18 @@ describe("Move Operation Import Handling", () => {
 		expect(result.affectedFiles).toContain(moveRelativeTargetPath.replace(/\\/g, "/"))
 
 		// Check that the function was removed from source file
-		const sourceFile = project.getSourceFile(moveRelativeSourcePath)
-		expect(sourceFile).not.toBeUndefined()
-		const originalFunction = sourceFile?.getFunction("getUserData")
-		expect(originalFunction).toBeUndefined()
+		// Use direct file system access instead of relying on project's source file management
+		console.log(`[TEST] Looking for source file at: ${moveRelativeSourcePath}`)
+		const sourceContent = fs.readFileSync(sourceFilePath, "utf8")
+		expect(sourceContent).not.toContain("export function getUserData")
 
-		// Check that the function was added to target file
-		const targetFile = project.getSourceFile(moveRelativeTargetPath)
-		expect(targetFile).not.toBeUndefined()
-		const movedFunction = targetFile?.getFunction("getUserData")
-		expect(movedFunction).not.toBeUndefined()
+		// Check that the function was added to target file using direct file access
+		console.log(`[TEST] Looking for target file at: ${moveRelativeTargetPath}`)
+		const targetContent = fs.readFileSync(targetFilePath, "utf8")
+		expect(targetContent).toContain("export function getUserData")
+		expect(targetContent).toContain("User")
 
 		// The most important part: verify that the User import was added to the target file
-		const targetContent = fs.readFileSync(targetFilePath, "utf8")
 		expect(targetContent).toContain("import { User")
 		expect(targetContent).toContain('from "../models/User"')
 
@@ -208,12 +207,16 @@ describe("Move Operation Import Handling", () => {
 		// Verify operation succeeded
 		expect(result.success).toBe(true)
 
-		// Verify that the function was moved
-		const targetFile = project.getSourceFile(complexRelativeTargetPath)
-		expect(targetFile?.getFunction("analyzeUserData")).not.toBeUndefined()
+		// Verify that the function was moved using direct file system access
+		console.log(`[TEST] Looking for target file at: ${complexRelativeTargetPath}`)
 
-		// Check target file content to verify dependencies were moved
+		// Check source file to verify function was removed
+		const sourceContent = fs.readFileSync(complexSourcePath, "utf8")
+		expect(sourceContent).not.toContain("export function analyzeUserData(user: User): UserStats")
+
+		// Check target file content to verify function was moved and dependencies were included
 		const targetContent = fs.readFileSync(complexTargetPath, "utf8")
+		expect(targetContent).toContain("export function analyzeUserData(user: User): UserStats")
 
 		// Should have the User import
 		expect(targetContent).toContain("import { User }")
