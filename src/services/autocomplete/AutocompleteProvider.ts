@@ -10,6 +10,7 @@ import { AutocompleteDecorationAnimation } from "./AutocompleteDecorationAnimati
 import { isHumanEdit } from "./utils/EditDetectionUtils"
 import { ExperimentId } from "@roo-code/types"
 import { ClineProvider } from "../../core/webview/ClineProvider"
+import { processTextInsertion, InsertionContext } from "./utils/CompletionTextProcessor"
 
 export const UI_UPDATE_DEBOUNCE_MS = 250
 export const BAIL_OUT_TOO_MANY_LINES_LIMIT = 100
@@ -213,30 +214,31 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 			const linePrefix = document
 				.getText(new vscode.Range(new vscode.Position(position.line, 0), position))
 				.trimStart()
-			console.log(`🚀🛑 Autocomplete for line with prefix: "${linePrefix}"!`)
-
 			const codeContext = await contextGatherer.gatherContext(document, position, true, true)
+			console.log(`🚀🛑 Autocomplete for line: '${codeContext.currentLine}'!`)
 
 			// Check if we have a cached completion for this context
 			const cacheKey = generateCacheKey(codeContext)
 			const cachedCompletions = completionsCache.get(cacheKey) ?? []
 			for (const completion of cachedCompletions) {
 				if (completion.startsWith(linePrefix)) {
-					// Only show the remaining part of the completion
-					const remainingSuffix = completion.substring(linePrefix.length)
-					if (remainingSuffix.length > 0) {
-						console.log(`🚀🎯 Using cached completions (${cachedCompletions.length} options)`)
+					// Process the completion text to avoid duplicating existing text in the document
+					const processedResult = processTextInsertion({ document, position, textToInsert: completion })
+					if (processedResult) {
+						console.log(
+							`🚀🎯 Using cached completion '${processedResult.processedText}' (${cachedCompletions.length} options)`,
+						)
 						animationManager.stopAnimation()
-						return [createInlineCompletionItem(remainingSuffix, position)]
+						return [createInlineCompletionItem(processedResult.processedText, processedResult.insertRange)]
 					}
 				}
 			}
 
-			const result = await debouncedGenerateCompletion({ document, codeContext, position })
-			if (!result || token.isCancellationRequested) {
+			const generationResult = await debouncedGenerateCompletion({ document, codeContext, position })
+			if (!generationResult || token.isCancellationRequested) {
 				return null
 			}
-			const { processedCompletion, cost } = result
+			const { processedCompletion, cost } = generationResult
 			console.log(`🚀🛑🚀🛑🚀🛑🚀🛑🚀🛑 \n`, {
 				processedCompletion,
 				cost: humanFormatCost(cost || 0),
@@ -260,7 +262,11 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 				completionsCache.set(cacheKey, completions)
 			}
 
-			return [createInlineCompletionItem(processedCompletion, position)]
+			const processedResult = processTextInsertion({ document, position, textToInsert: processedCompletion })
+			if (processedResult) {
+				return [createInlineCompletionItem(processedResult.processedText, processedResult.insertRange)]
+			}
+			return null
 		},
 	}
 
@@ -377,18 +383,14 @@ Model: ${DEFAULT_MODEL}\
 /**
  * Creates an inline completion item with tracking command
  * @param completionText The text to be inserted as completion
- * @param insertRange The range where the completion should be inserted
- * @param position The position in the document
  * @returns A configured vscode.InlineCompletionItem
  */
-function createInlineCompletionItem(completionText: string, position: vscode.Position): vscode.InlineCompletionItem {
-	const insertRange = new vscode.Range(position, position)
-
+function createInlineCompletionItem(completionText: string, insertRange: vscode.Range): vscode.InlineCompletionItem {
 	return Object.assign(new vscode.InlineCompletionItem(completionText, insertRange), {
 		command: {
 			command: "kilo-code.trackAcceptedSuggestion",
 			title: "Track Accepted Suggestion",
-			arguments: [completionText, position],
+			arguments: [completionText],
 		},
 	})
 }
