@@ -86,7 +86,6 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	let lastCompletionCost = 0 // Track the cost of the last completion
 	let totalSessionCost = 0 // Track the total cost of all completions in the session
 
-	// LRU Cache for completions
 	const completionsCache = new LRUCache<string, string[]>({
 		max: 50,
 		ttl: 1000 * 60 * 60 * 24, // Cache for 24 hours
@@ -94,12 +93,11 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 	// Services
 	const contextGatherer = new ContextGatherer()
-	const animationManager = AutocompleteDecorationAnimation.getInstance()
+	const animationManager = new AutocompleteDecorationAnimation()
 
-	// Initialize API handler only if we have a valid token
+	// API Handling
 	let apiHandler: ApiHandler | null = null
 	const kilocodeToken = ContextProxy.instance.getProviderSettings().kilocodeToken
-
 	if (kilocodeToken) {
 		apiHandler = buildApiHandler({
 			apiProvider: "kilocode",
@@ -108,6 +106,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		})
 	}
 
+	// Helper Functions
 	const clearState = () => {
 		vscode.commands.executeCommand("editor.action.inlineSuggest.hide")
 		animationManager.stopAnimation()
