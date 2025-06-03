@@ -81,11 +81,11 @@ export function registerAutocomplete(context: vscode.ExtensionContext): void {
 function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable {
 	// State
 	let enabled = true // User toggle state (default to enabled)
-	let activeRequestId: string | null = null
 	let isBackspaceOperation = false // Flag to track backspace operations
 	let justAcceptedSuggestion = false // Flag to track if a suggestion was just accepted
 	let lastCompletionCost = 0 // Track the cost of the last completion
 	let totalSessionCost = 0 // Track the total cost of all completions in the session
+	let abortController: AbortController = new AbortController() // Track the current abort controller
 
 	const completionsCache = new LRUCache<string, string[]>({
 		max: 50,
@@ -111,10 +111,10 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	const clearState = () => {
 		vscode.commands.executeCommand("editor.action.inlineSuggest.hide")
 		animationManager.stopAnimation()
+		abortController?.abort() // Abort any ongoing requests
 
 		isBackspaceOperation = false
 		justAcceptedSuggestion = false
-		activeRequestId = null
 	}
 
 	const generateCompletion = async ({
@@ -128,8 +128,8 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	}) => {
 		if (!apiHandler) throw new Error("apiHandler must be set before calling generateCompletion!")
 
-		const requestId = crypto.randomUUID()
-		activeRequestId = requestId
+		abortController?.abort() // Abort any previous request
+		abortController = new AbortController()
 		animationManager.startAnimation()
 
 		const snippets = [
@@ -152,7 +152,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 		try {
 			for await (const chunk of stream) {
-				if (activeRequestId !== requestId) {
+				if (abortController.signal.aborted) {
 					break // This request is no longer active
 				}
 
@@ -170,7 +170,10 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 				}
 			}
 		} catch (error) {
-			console.error("Error streaming completion:", error)
+			// Don't log abort errors as they are expected when cancelling
+			if (error.name !== "AbortError") {
+				console.error("Error streaming completion:", error)
+			}
 			processedCompletion = ""
 		}
 
@@ -182,9 +185,8 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		// Update status bar with cost information
 		updateStatusBar()
 
-		if (activeRequestId === requestId) {
-			animationManager.stopAnimation()
-		}
+		// Stop animation when completion is done
+		animationManager.stopAnimation()
 
 		return { processedCompletion, lineCount, cost: completionCost }
 	}
