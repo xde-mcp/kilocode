@@ -23,39 +23,7 @@ I've run the test plan from `refactor-tool-test-plan.md` which covered:
 - Testing each operation type individually (rename, move, remove)
 - Testing batch operations with multiple changes
 
-The test plan included sample TypeScript files specifically structured to test various refactoring scenarios, and bug reports were filed using the template in `bugreport-template.md`.
-
-## Issues Found
-
-Below is a summary of the issues discovered during testing. Each issue has a corresponding bug report with full details.
-
-[Insert summary of bugs found during testing here. For each issue, include:
-
-1. Bug ID/reference
-2. Operation type affected
-3. Brief description of the problem
-4. Severity assessment
-5. Link to the full bug report]
-
-## Files and Code Context
-
-Here are the key implementation files that will need to be modified to fix these issues:
-
-### 1. Schema and Validation
-
-The Zod schema definitions in `src/core/tools/refactor-code/schema.ts` define the structure and validation rules for refactoring operations.
-
-### 2. Parser Implementation
-
-The `RobustLLMRefactorParser` in `src/core/tools/refactor-code/parser.ts` is responsible for parsing and validating the JSON operations from LLM responses.
-
-### 3. Refactor Engine
-
-The `RefactorEngine` in `src/core/tools/refactor-code/engine.ts` executes the actual refactoring operations using the TypeScript compiler API.
-
-### 4. Main Tool Implementation
-
-The `refactorCodeTool` function in `src/core/tools/refactorCodeTool.ts` is the entry point that coordinates the parsing and execution process.
+The test plan included sample TypeScript files specifically structured to test various refactoring scenarios, and bug reports were filed in `examples/bugreport.md`
 
 ## Fix Requirements
 
@@ -111,3 +79,4 @@ Your fixes will be considered successful if:
 5. Edge cases are properly handled
 
 Thank you for your help improving our TypeScript refactoring tool!
+Remember, don't add any special hacks in order to get the implementation to work with any specific test implementation. And the goal is to have a generic working implementation of the refactor tool that will work without adding other robust code paths or any kind of hacks. We want to be very generic and work in as many cases as possible. For any bugs you fix, try to add new unit tests so those bugs do not regress in the 

@@ -145,20 +145,76 @@ export async function executeRemoveOperation(
 			}
 		}
 
-		// Load all potential reference files in the project directory
-		// This is critical for finding cross-file references
-		console.log(`[DEBUG] Loading all potentially related TypeScript files...`)
+		// Load potential reference files in the project directory
+		// This is critical for finding cross-file references, but we need to be selective
+		const DEBUG_FILE_LOADING = false // Set to true for detailed debugging output
+
+		if (DEBUG_FILE_LOADING) console.log(`[DEBUG] Loading potentially related TypeScript files...`)
+		const startTime = performance.now()
 		try {
 			// Get the directory of the source file
 			const sourceDir = path.dirname(resolveFilePath(normalizedSourcePath, projectRoot))
 
-			// Load TypeScript files in the project that might reference this file
-			const projectFiles = project.addSourceFilesAtPaths([
-				`${sourceDir}/**/*.ts`, // Files in the same directory and subdirectories
-				`${projectRoot}/**/*.ts`, // All TypeScript files in the project
-			])
+			// Create optimized glob patterns that exclude unnecessary directories
+			// This significantly improves performance by reducing the number of files loaded
+			const includePatterns = [
+				// Include the specific file we're operating on
+				operation.selector.filePath,
+				// Include files in the same directory (most likely to have references)
+				`${path.dirname(operation.selector.filePath)}/*.ts`,
+				// Include files in the source directory and immediate subdirectories (limited depth)
+				`${sourceDir}/*.ts`,
+				`${sourceDir}/*/*.ts`,
+				// Include core project files that might have references
+				`${projectRoot}/core/**/*.ts`,
+			]
 
-			console.log(`[DEBUG] Loaded ${projectFiles.length} potential reference files into project`)
+			const excludePatterns = [
+				// Exclude common directories that won't have relevant references
+				`!${projectRoot}/**/node_modules/**/*.ts`,
+				`!${projectRoot}/**/dist/**/*.ts`,
+				`!${projectRoot}/**/.git/**/*.ts`,
+				`!${projectRoot}/**/build/**/*.ts`,
+				`!${projectRoot}/**/coverage/**/*.ts`,
+				`!${projectRoot}/**/.vscode/**/*.ts`,
+				`!${projectRoot}/**/test-results/**/*.ts`,
+				`!${projectRoot}/**/temp/**/*.ts`,
+				`!${projectRoot}/**/tmp/**/*.ts`,
+			]
+
+			// Combine include and exclude patterns
+			const globPatterns = [...includePatterns, ...excludePatterns]
+
+			if (DEBUG_FILE_LOADING) {
+				// Count files that would be matched without exclusions (for debugging)
+				const allFilesCount = project
+					.getFileSystem()
+					.globSync([`${sourceDir}/**/*.ts`, `${projectRoot}/**/*.ts`]).length
+
+				console.log(`[DEBUG] Without exclusions, would load ${allFilesCount} files`)
+				console.log(`[DEBUG] Using glob patterns:`, globPatterns)
+			}
+
+			// Load TypeScript files in the project that might reference this file
+			const projectFiles = project.addSourceFilesAtPaths(globPatterns)
+
+			const endTime = performance.now()
+			const loadTime = (endTime - startTime).toFixed(2)
+
+			if (DEBUG_FILE_LOADING) {
+				console.log(
+					`[DEBUG] Loaded ${projectFiles.length} potential reference files into project (took ${loadTime}ms)`,
+				)
+
+				// Log some sample paths to verify what's being loaded
+				if (projectFiles.length > 0) {
+					const sampleSize = Math.min(5, projectFiles.length)
+					console.log(`[DEBUG] Sample of loaded files:`)
+					for (let i = 0; i < sampleSize; i++) {
+						console.log(`  - ${projectFiles[i].getFilePath()}`)
+					}
+				}
+			}
 		} catch (error) {
 			console.log(`[DEBUG] Error loading reference files: ${(error as Error).message}`)
 			// Continue even if some files couldn't be loaded
@@ -291,33 +347,175 @@ export async function executeRemoveOperation(
 		}
 
 		// Now remove the symbol itself if we haven't already handled it as an exported variable
+		let removalSuccessful = false
 		if (!skipStandardRemoval) {
-			if (Node.isVariableDeclaration(symbol)) {
-				// For variable declarations, we may need to handle the parent statement
-				const statement = symbol.getParent()?.getParent()
-				if (statement && Node.isVariableStatement(statement)) {
-					// If this is the only variable in the statement, remove the whole statement
-					if (statement.getDeclarations().length === 1) {
-						statement.remove()
-					} else {
-						// Otherwise, just remove this declaration
-						symbol.remove()
+			try {
+				if (Node.isVariableDeclaration(symbol)) {
+					// For variable declarations, we may need to handle the parent statement
+					const statement = symbol.getParent()?.getParent()
+					if (statement && Node.isVariableStatement(statement)) {
+						// If this is the only variable in the statement, remove the whole statement
+						if (statement.getDeclarations().length === 1) {
+							statement.remove()
+						} else {
+							// Otherwise, just remove this declaration
+							symbol.remove()
+						}
 					}
+				} else {
+					// Handle all other types of nodes
+					symbol.remove()
 				}
-			} else {
-				// Handle all other types of nodes
-				symbol.remove()
+
+				// Save the source file immediately to ensure changes are applied
+				sourceFile.saveSync()
+				removalSuccessful = true
+			} catch (error) {
+				console.error(`[ERROR] Standard removal failed: ${(error as Error).message}`)
+			}
+		} else {
+			removalSuccessful = true // If we skipped standard removal, consider it successful
+		}
+
+		// If standard removal failed, use a more aggressive approach
+		if (!removalSuccessful) {
+			console.log(`[DEBUG] Attempting aggressive removal for symbol '${operation.selector.name}'`)
+
+			// Try a more aggressive approach for different node types
+			try {
+				// For functions
+				const functions = sourceFile.getFunctions().filter((f) => f.getName() === operation.selector.name)
+				for (const func of functions) {
+					func.remove()
+					console.log(`[DEBUG] Removed function declaration for ${operation.selector.name}`)
+					removalSuccessful = true
+				}
+
+				// For classes
+				const classes = sourceFile.getClasses().filter((c) => c.getName() === operation.selector.name)
+				for (const cls of classes) {
+					cls.remove()
+					console.log(`[DEBUG] Removed class declaration for ${operation.selector.name}`)
+					removalSuccessful = true
+				}
+
+				// For interfaces
+				const interfaces = sourceFile.getInterfaces().filter((i) => i.getName() === operation.selector.name)
+				for (const iface of interfaces) {
+					iface.remove()
+					console.log(`[DEBUG] Removed interface declaration for ${operation.selector.name}`)
+					removalSuccessful = true
+				}
+
+				// For variables
+				const variables = sourceFile
+					.getVariableDeclarations()
+					.filter((v) => v.getName() === operation.selector.name)
+				for (const variable of variables) {
+					const statement = variable.getParent()?.getParent()
+					if (statement && Node.isVariableStatement(statement)) {
+						if (statement.getDeclarations().length === 1) {
+							statement.remove()
+						} else {
+							variable.remove()
+						}
+					}
+					console.log(`[DEBUG] Removed variable declaration for ${operation.selector.name}`)
+					removalSuccessful = true
+				}
+
+				// Save the file again after aggressive removal
+				sourceFile.saveSync()
+			} catch (error) {
+				console.error(`[ERROR] Aggressive removal failed: ${(error as Error).message}`)
+			}
+		}
+
+		// If neither standard nor aggressive removal worked, try manual text manipulation
+		if (!removalSuccessful) {
+			console.log(`[DEBUG] Attempting manual text removal for symbol '${operation.selector.name}'`)
+			try {
+				const fullText = sourceFile.getFullText()
+				// Create regex patterns to match various declaration types
+				const patterns = [
+					new RegExp(`(export\\s+)?function\\s+${operation.selector.name}\\s*\\([\\s\\S]*?\\}`, "g"),
+					new RegExp(`(export\\s+)?const\\s+${operation.selector.name}\\s*=[\\s\\S]*?;`, "g"),
+					new RegExp(`(export\\s+)?let\\s+${operation.selector.name}\\s*=[\\s\\S]*?;`, "g"),
+					new RegExp(`(export\\s+)?class\\s+${operation.selector.name}\\s*\\{[\\s\\S]*?\\}`, "g"),
+					new RegExp(`(export\\s+)?interface\\s+${operation.selector.name}\\s*\\{[\\s\\S]*?\\}`, "g"),
+				]
+
+				let newText = fullText
+				for (const pattern of patterns) {
+					newText = newText.replace(pattern, "")
+				}
+
+				if (newText !== fullText) {
+					sourceFile.replaceWithText(newText)
+					sourceFile.saveSync()
+					console.log(`[DEBUG] Manual text removal successful`)
+					removalSuccessful = true
+				}
+			} catch (error) {
+				console.error(`[ERROR] Manual text removal failed: ${(error as Error).message}`)
 			}
 		}
 
 		// Verify that the symbol was actually removed
+		// Refresh the source file from disk first to ensure we have the latest content
+		try {
+			project.removeSourceFile(sourceFile)
+			sourceFile = project.addSourceFileAtPath(normalizedSourcePath)
+			console.log(`[DEBUG] Refreshed source file before verification`)
+		} catch (error) {
+			console.error(`[ERROR] Failed to refresh source file: ${(error as Error).message}`)
+		}
+
 		const symbolAfterRemoval = finder.findSymbol(operation.selector)
 		if (symbolAfterRemoval) {
-			return {
-				success: false,
-				operation,
-				error: `Failed to remove symbol '${operation.selector.name}': Symbol still exists after removal attempt`,
-				affectedFiles: [],
+			// Try one more time with an even more aggressive approach
+			try {
+				const sourceFileContent = fsSync.readFileSync(
+					resolveFilePath(normalizedSourcePath, projectRoot),
+					"utf8",
+				)
+				const symbolPattern = new RegExp(
+					`(export\\s+)?(function|const|let|class|interface|type|enum)\\s+${operation.selector.name}[\\s\\S]*?([;\\}])`,
+					"g",
+				)
+				const modifiedContent = sourceFileContent.replace(symbolPattern, "")
+
+				if (modifiedContent !== sourceFileContent) {
+					fsSync.writeFileSync(resolveFilePath(normalizedSourcePath, projectRoot), modifiedContent)
+					console.log(`[DEBUG] Final aggressive removal attempt succeeded`)
+					removalSuccessful = true
+				}
+			} catch (error) {
+				console.error(`[ERROR] Final removal attempt failed: ${(error as Error).message}`)
+			}
+
+			// Final verification
+			try {
+				project.removeSourceFile(sourceFile)
+				sourceFile = project.addSourceFileAtPath(normalizedSourcePath)
+				const finalCheck = finder.findSymbol(operation.selector)
+
+				if (finalCheck) {
+					return {
+						success: false,
+						operation,
+						error: `Failed to remove symbol '${operation.selector.name}': Symbol still exists after multiple removal attempts`,
+						affectedFiles: Array.from(affectedFiles),
+					}
+				}
+			} catch (error) {
+				console.error(`[ERROR] Final verification failed: ${(error as Error).message}`)
+				return {
+					success: false,
+					operation,
+					error: `Remove operation verification failed: ${(error as Error).message}`,
+					affectedFiles: Array.from(affectedFiles),
+				}
 			}
 		}
 
