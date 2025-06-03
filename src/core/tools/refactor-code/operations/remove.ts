@@ -4,7 +4,13 @@ import { OperationResult } from "../engine"
 import { RemoveOrchestrator } from "./RemoveOrchestrator"
 
 /**
- * @deprecated Use RemoveOrchestrator.executeRemoveOperation instead
+ * Executes a remove operation using the RemoveOrchestrator.
+ * This is a standalone function wrapper around the RemoveOrchestrator for
+ * easier testing and backwards compatibility.
+ *
+ * @param project The ts-morph Project to operate on
+ * @param operation The remove operation to execute
+ * @returns The operation result
  */
 export async function executeRemoveOperation(project: Project, operation: RemoveOperation): Promise<OperationResult> {
 	const orchestrator = new RemoveOrchestrator(project)

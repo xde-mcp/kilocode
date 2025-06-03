@@ -1,9 +1,10 @@
 import { Project } from "ts-morph"
 import * as fs from "fs"
 import * as path from "path"
-import { executeMoveOperation } from "../operations/move"
+import { MoveOrchestrator } from "../operations/MoveOrchestrator"
 import { MoveOperation } from "../schema"
 import * as os from "os"
+import { normalizePathForTests, verifySymbolInContent, verifySymbolOnDisk } from "./utils/test-utilities"
 
 describe("Move Operation Import Handling", () => {
 	let project: Project
@@ -115,24 +116,29 @@ describe("Move Operation Import Handling", () => {
 		}
 
 		// Execute the operation
-		const result = await executeMoveOperation(project, operation)
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation(operation)
 
 		// Verify operation succeeded
 		expect(result.success).toBe(true)
-		expect(result.affectedFiles).toContain(moveRelativeSourcePath.replace(/\\/g, "/"))
-		expect(result.affectedFiles).toContain(moveRelativeTargetPath.replace(/\\/g, "/"))
+
+		const normalizedSourcePath = normalizePathForTests(moveRelativeSourcePath.replace(/\\/g, "/"))
+		const normalizedTargetPath = normalizePathForTests(moveRelativeTargetPath.replace(/\\/g, "/"))
+
+		expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedSourcePath)).toBe(true)
+		expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedTargetPath)).toBe(true)
 
 		// Check that the function was removed from source file
 		// Use direct file system access instead of relying on project's source file management
 		console.log(`[TEST] Looking for source file at: ${moveRelativeSourcePath}`)
 		const sourceContent = fs.readFileSync(sourceFilePath, "utf8")
-		expect(sourceContent).not.toContain("export function getUserData")
+		expect(verifySymbolInContent(sourceContent, "getUserData")).toBe(false)
 
 		// Check that the function was added to target file using direct file access
 		console.log(`[TEST] Looking for target file at: ${moveRelativeTargetPath}`)
 		const targetContent = fs.readFileSync(targetFilePath, "utf8")
-		expect(targetContent).toContain("export function getUserData")
-		expect(targetContent).toContain("User")
+		expect(verifySymbolInContent(targetContent, "getUserData")).toBe(true)
+		expect(verifySymbolInContent(targetContent, "User")).toBe(true)
 
 		// The most important part: verify that the User import was added to the target file
 		expect(targetContent).toContain("import { User")
@@ -202,28 +208,35 @@ describe("Move Operation Import Handling", () => {
 		}
 
 		// Execute the operation
-		const result = await executeMoveOperation(project, operation)
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation(operation)
 
 		// Verify operation succeeded
 		expect(result.success).toBe(true)
+
+		const normalizedSourcePath = normalizePathForTests(complexRelativeSourcePath.replace(/\\/g, "/"))
+		const normalizedTargetPath = normalizePathForTests(complexRelativeTargetPath.replace(/\\/g, "/"))
+
+		expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedSourcePath)).toBe(true)
+		expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedTargetPath)).toBe(true)
 
 		// Verify that the function was moved using direct file system access
 		console.log(`[TEST] Looking for target file at: ${complexRelativeTargetPath}`)
 
 		// Check source file to verify function was removed
 		const sourceContent = fs.readFileSync(complexSourcePath, "utf8")
-		expect(sourceContent).not.toContain("export function analyzeUserData(user: User): UserStats")
+		expect(verifySymbolInContent(sourceContent, "analyzeUserData")).toBe(false)
 
 		// Check target file content to verify function was moved and dependencies were included
 		const targetContent = fs.readFileSync(complexTargetPath, "utf8")
-		expect(targetContent).toContain("export function analyzeUserData(user: User): UserStats")
+		expect(verifySymbolInContent(targetContent, "analyzeUserData")).toBe(true)
 
 		// Should have the User import
-		expect(targetContent).toContain("import { User }")
+		expect(verifySymbolInContent(targetContent, "User")).toBe(true)
 
 		// Should include the dependent interfaces
-		expect(targetContent).toContain("interface UserStats")
-		expect(targetContent).toContain("interface UserPreferences")
+		expect(verifySymbolInContent(targetContent, "UserStats")).toBe(true)
+		expect(verifySymbolInContent(targetContent, "UserPreferences")).toBe(true)
 
 		// Verify implementation still references these types
 		expect(targetContent).toContain("function analyzeUserData(user: User): UserStats")

@@ -15,19 +15,27 @@ import { createDiagnostic } from "./refactor-code/utils/file-system"
 /**
  * Refactor code tool implementation
  *
- * This tool uses an AST-based Domain Specific Language (DSL) to perform batch code refactoring
- * operations. ALL operations must be provided as an array, even single operations.
+ * This tool uses a powerful AST-based engine to perform code refactoring operations
+ * with robust validation, error handling, and recovery mechanisms. It supports
+ * batch operations for performing multiple refactorings as a single atomic unit.
  *
  * IMPORTANT GUIDELINES:
- * - ALL operations must be provided in an array format
+ * - ALL operations must be provided in an array format, even single operations
  * - Each operation in the batch is processed independently
- * - If any operation fails, the entire batch will be rolled back
+ * - If any operation fails, the entire batch will be rolled back by default
+ * - Path handling is consistent across all operations
+ * - Import dependencies are automatically managed during move operations
  *
  * Supported operations:
- * 1. Move: Move code elements from one file to another
- * 2. Rename: Rename symbols with proper reference handling
- * 3. Remove: Remove code elements from a file
+ * 1. Move: Move code elements from one file to another with automatic import handling
+ * 2. Rename: Rename symbols with proper reference handling across the project
+ * 3. Remove: Remove code elements with safe validation and cleanup
  *
+ * Error handling has been significantly improved with:
+ * - Detailed validation before operations are executed
+ * - Comprehensive error messages with actionable information
+ * - Recovery mechanisms for common failure scenarios
+ * - Path normalization to prevent file resolution issues
  */
 export async function refactorCodeTool(
 	cline: Task,
@@ -35,7 +43,6 @@ export async function refactorCodeTool(
 	askApproval: AskApproval,
 	handleError: HandleError,
 	pushToolResult: PushToolResult,
-	_removeClosingTag: RemoveClosingTag, // Prefixed with underscore as it's no longer used
 ) {
 	// Extract operations from the parameters
 	const operationsJson: string | undefined = block.params.operations
@@ -165,7 +172,7 @@ export async function refactorCodeTool(
 			}
 		}
 
-		// Create human-readable operation description for approval
+		// Create human-readable operation description for approval with validation info
 		let operationDescription = `Batch refactoring: ${operations.operations.length} operation${operations.operations.length > 1 ? "s" : ""}\n\n`
 
 		for (let i = 0; i < operations.operations.length; i++) {
@@ -192,6 +199,10 @@ export async function refactorCodeTool(
 
 			operationDescription += `${description}\n`
 		}
+
+		// Add note about validation and rollback behavior
+		operationDescription += `\n${operations.options?.stopOnError ? "NOTE: If any operation fails, the entire batch will be rolled back." : "NOTE: Operations will continue executing even if some fail."}`
+		operationDescription += `\nAll imports and references will be automatically updated.`
 
 		// Ask for approval before performing refactoring
 		const approvalMessage = JSON.stringify({
@@ -243,7 +254,7 @@ export async function refactorCodeTool(
 			return
 		}
 
-		// Format results
+		// Format results with detailed diagnostic information
 		const resultMessages: string[] = []
 		for (let i = 0; i < result.results.length; i++) {
 			const opResult = result.results[i]
@@ -265,8 +276,18 @@ export async function refactorCodeTool(
 						message = `Executed ${op.operation} operation successfully`
 				}
 				resultMessages.push(`✓ ${message}`)
+
+				// Add warnings if present
+				if (opResult.warnings && opResult.warnings.length > 0) {
+					resultMessages.push(`  Warnings: ${opResult.warnings.join(", ")}`)
+				}
 			} else {
 				resultMessages.push(`✗ Operation failed: ${opResult.error}`)
+
+				// Add any diagnostic information for failed operations
+				if (opResult.warnings && opResult.warnings.length > 0) {
+					resultMessages.push(`  Additional info: ${opResult.warnings.join(", ")}`)
+				}
 			}
 		}
 

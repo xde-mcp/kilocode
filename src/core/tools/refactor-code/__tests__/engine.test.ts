@@ -38,11 +38,13 @@ jest.mock("../operations/rename", () => ({
 	}),
 }))
 
-jest.mock("../operations/move", () => ({
-	executeMoveOperation: jest.fn().mockResolvedValue({
-		success: true,
-		affectedFiles: ["src/services/userService.ts", "src/services/profileService.ts"],
-	}),
+jest.mock("../operations/MoveOrchestrator", () => ({
+	MoveOrchestrator: jest.fn().mockImplementation(() => ({
+		executeMoveOperation: jest.fn().mockResolvedValue({
+			success: true,
+			affectedFiles: ["src/services/userService.ts", "src/services/profileService.ts"],
+		}),
+	})),
 }))
 
 jest.mock("../operations/remove", () => ({

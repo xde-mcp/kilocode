@@ -1,5 +1,5 @@
 import { Project, ScriptTarget } from "ts-morph"
-import { executeRenameOperation } from "../operations/rename"
+import { RenameOrchestrator } from "../operations/RenameOrchestrator"
 import * as path from "path"
 import * as fs from "fs"
 import * as os from "os"
@@ -10,6 +10,7 @@ describe("Advanced Rename Operations", () => {
 	let modelFile: string
 	let serviceFile: string
 	let utilFile: string
+	let orchestrator: RenameOrchestrator
 
 	beforeEach(() => {
 		// Create a temporary directory for test files
@@ -107,6 +108,9 @@ export function formatEmail(email: string): string {
 		project.addSourceFileAtPath(modelFile)
 		project.addSourceFileAtPath(serviceFile)
 		project.addSourceFileAtPath(utilFile)
+
+		// Initialize the orchestrator
+		orchestrator = new RenameOrchestrator(project)
 	})
 
 	afterEach(async () => {
@@ -119,8 +123,8 @@ export function formatEmail(email: string): string {
 	test("should rename an interface and update all references across multiple files", async () => {
 		jest.setTimeout(30000) // Increase timeout for this test
 
-		// Execute the rename operation
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-interface",
 			selector: {
@@ -166,8 +170,8 @@ export function formatEmail(email: string): string {
 
 	test("should rename a type and update all references", async () => {
 		jest.setTimeout(30000) // Increase timeout for this test
-		// Execute the rename operation
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-type",
 			selector: {
@@ -201,8 +205,8 @@ export function formatEmail(email: string): string {
 
 	test("should rename a property in an interface and update all references", async () => {
 		jest.setTimeout(30000) // Increase timeout for this test
-		// Execute the rename operation
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-property",
 			selector: {
@@ -239,8 +243,8 @@ export function formatEmail(email: string): string {
 
 	test("should rename a function and update all references across multiple files", async () => {
 		jest.setTimeout(30000) // Increase timeout for this test
-		// Execute the rename operation
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-function",
 			selector: {
@@ -274,8 +278,8 @@ export function formatEmail(email: string): string {
 
 	test("should rename a variable and update all references", async () => {
 		jest.setTimeout(30000) // Increase timeout for this test
-		// Execute the rename operation
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-variable",
 			selector: {
@@ -323,8 +327,8 @@ export function formatEmail(email: string): string {
 		// Save the file to ensure the function is written to disk
 		await fs.promises.writeFile(utilFile, utilSourceFile!.getFullText(), "utf-8")
 
-		// Execute the rename operation with file scope
-		const result = await executeRenameOperation(project, {
+		// Execute the rename operation with file scope using the orchestrator
+		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
 			id: "test-rename-scope",
 			selector: {

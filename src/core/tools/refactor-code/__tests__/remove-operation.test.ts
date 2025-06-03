@@ -1,14 +1,15 @@
 import { Project } from "ts-morph"
 import * as fs from "fs"
 import * as path from "path"
-import { executeRemoveOperation } from "../operations/remove"
+import { RemoveOrchestrator } from "../operations/RemoveOrchestrator"
 import { RemoveOperation } from "../schema"
 import * as os from "os"
 
-describe("executeRemoveOperation", () => {
+describe("RemoveOrchestrator", () => {
 	let project: Project
 	let tempDir: string
 	let sourceFilePath: string
+	let orchestrator: RemoveOrchestrator
 
 	beforeEach(async () => {
 		// Create a temporary directory for our test files
@@ -39,6 +40,9 @@ describe("executeRemoveOperation", () => {
 			skipAddingFilesFromTsConfig: true,
 		})
 		project.addSourceFileAtPath(sourceFilePath)
+
+		// Initialize the orchestrator
+		orchestrator = new RemoveOrchestrator(project)
 	})
 
 	afterEach(() => {
@@ -63,8 +67,8 @@ describe("executeRemoveOperation", () => {
 			reason: "This function is deprecated and no longer used",
 		}
 
-		// Execute the operation
-		const result = await executeRemoveOperation(project, operation)
+		// Execute the operation using the orchestrator
+		const result = await orchestrator.executeRemoveOperation(operation)
 
 		// Verify operation succeeded
 		expect(result.success).toBe(true)
@@ -106,8 +110,8 @@ describe("executeRemoveOperation", () => {
 			reason: "This function doesn't exist",
 		}
 
-		// Execute the operation
-		const result = await executeRemoveOperation(project, operation)
+		// Execute the operation using the orchestrator
+		const result = await orchestrator.executeRemoveOperation(operation)
 
 		// Verify operation failed gracefully
 		expect(result.success).toBe(false)
@@ -152,7 +156,7 @@ describe("executeRemoveOperation", () => {
 		// This is an expected limitation of the current implementation
 		// Nested symbols like class methods cannot be directly removed
 		// This test documents the current behavior
-		const result = await executeRemoveOperation(project, operation)
+		const result = await orchestrator.executeRemoveOperation(operation)
 
 		// Currently, the operation would fail because nested symbol removal is not fully supported
 		// This test can be updated when nested symbol removal is implemented

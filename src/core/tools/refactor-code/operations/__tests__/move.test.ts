@@ -1,10 +1,10 @@
 import { Project, ScriptTarget } from "ts-morph"
-import { executeMoveOperation } from "../move"
+import { MoveOrchestrator } from "../MoveOrchestrator"
 import * as path from "path"
 import * as fs from "fs"
 import * as os from "os"
 
-describe("executeMoveOperation", () => {
+describe("MoveOrchestrator.executeMoveOperation", () => {
 	let project: Project
 	let tempDir: string
 	let sourceFile: string
@@ -113,7 +113,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Execute the move operation
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-1",
 				selector: {
@@ -170,7 +171,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Execute the move operation
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-2",
 				selector: {
@@ -227,7 +229,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Execute the move operation
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-3",
 				selector: {
@@ -269,7 +272,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Execute the move operation
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-4",
 				selector: {
@@ -308,7 +312,8 @@ describe("executeMoveOperation", () => {
 		it("should handle non-existent symbols", async () => {
 			jest.setTimeout(30000) // Increase timeout for file operations
 			// Try to move a symbol that doesn't exist
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-error-1",
 				selector: {
@@ -337,7 +342,8 @@ describe("executeMoveOperation", () => {
 			})
 
 			// Try to move a function with a name that already exists in the target
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-error-2",
 				selector: {
@@ -365,7 +371,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Try to move a function to a non-existent file
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-5",
 				selector: {
@@ -405,7 +412,8 @@ describe("executeMoveOperation", () => {
 			testStartTime = Date.now()
 
 			// Try to move to the same file
-			const result = await executeMoveOperation(project, {
+			const orchestrator = new MoveOrchestrator(project)
+			const result = await orchestrator.executeMoveOperation({
 				operation: "move",
 				id: "test-move-error-3",
 				selector: {

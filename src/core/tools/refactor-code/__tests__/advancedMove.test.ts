@@ -1,8 +1,9 @@
 import { Project, ScriptTarget } from "ts-morph"
-import { executeMoveOperation } from "../operations/move"
+import { MoveOrchestrator } from "../operations/MoveOrchestrator"
 import * as path from "path"
 import * as fs from "fs"
 import * as os from "os"
+import { normalizePathForTests, verifySymbolInContent, verifySymbolOnDisk } from "./utils/test-utilities"
 
 describe("Advanced Move Operations", () => {
 	let project: Project
@@ -159,7 +160,8 @@ export function formatProfileName(user: User): string {
 
 	test("should move an interface and update all imports across multiple files", async () => {
 		// Execute the move operation
-		const result = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-interface",
 			selector: {
@@ -180,10 +182,19 @@ export function formatProfileName(user: User): string {
 
 		// Skip success check but verify other properties
 		if (result.success) {
-			expect(result.affectedFiles).toContain(path.relative(tempDir, modelFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, targetFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, serviceFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, importingFile))
+			const normalizedModelPath = normalizePathForTests(path.relative(tempDir, modelFile))
+			const normalizedTargetPath = normalizePathForTests(path.relative(tempDir, targetFile))
+			const normalizedServicePath = normalizePathForTests(path.relative(tempDir, serviceFile))
+			const normalizedImportingPath = normalizePathForTests(path.relative(tempDir, importingFile))
+
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedModelPath)).toBe(true)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedTargetPath)).toBe(true)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedServicePath)).toBe(
+				true,
+			)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedImportingPath)).toBe(
+				true,
+			)
 		} else {
 			console.log("[TEST] Skipping verification due to operation failure")
 		}
@@ -196,7 +207,8 @@ export function formatProfileName(user: User): string {
 
 	test("should move a type and update references including dependent interfaces", async () => {
 		// Execute the move operation
-		const result = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-type",
 			selector: {
@@ -217,10 +229,19 @@ export function formatProfileName(user: User): string {
 
 		// Skip success check but verify other properties
 		if (result.success) {
-			expect(result.affectedFiles).toContain(path.relative(tempDir, modelFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, targetFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, serviceFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, importingFile))
+			const normalizedModelPath = normalizePathForTests(path.relative(tempDir, modelFile))
+			const normalizedTargetPath = normalizePathForTests(path.relative(tempDir, targetFile))
+			const normalizedServicePath = normalizePathForTests(path.relative(tempDir, serviceFile))
+			const normalizedImportingPath = normalizePathForTests(path.relative(tempDir, importingFile))
+
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedModelPath)).toBe(true)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedTargetPath)).toBe(true)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedServicePath)).toBe(
+				true,
+			)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedImportingPath)).toBe(
+				true,
+			)
 		} else {
 			console.log("[TEST] Skipping verification due to operation failure")
 		}
@@ -233,7 +254,8 @@ export function formatProfileName(user: User): string {
 
 	test("should move a function with dependencies and update all imports", async () => {
 		// Execute the move operation
-		const result = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-function-with-deps",
 			selector: {
@@ -254,8 +276,15 @@ export function formatProfileName(user: User): string {
 
 		// Skip success check but verify other properties
 		if (result.success) {
-			expect(result.affectedFiles).toContain(path.relative(tempDir, serviceFile))
-			expect(result.affectedFiles).toContain(path.relative(tempDir, importingFile))
+			const normalizedServicePath = normalizePathForTests(path.relative(tempDir, serviceFile))
+			const normalizedImportingPath = normalizePathForTests(path.relative(tempDir, importingFile))
+
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedServicePath)).toBe(
+				true,
+			)
+			expect(result.affectedFiles.some((file) => normalizePathForTests(file) === normalizedImportingPath)).toBe(
+				true,
+			)
 		} else {
 			console.log("[TEST] Skipping verification due to operation failure")
 		}
@@ -268,7 +297,8 @@ export function formatProfileName(user: User): string {
 
 	test("should move multiple related functions together", async () => {
 		// Execute the move operation for formatName
-		const result1 = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result1 = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-related-1",
 			selector: {
@@ -282,7 +312,7 @@ export function formatProfileName(user: User): string {
 		})
 
 		// Execute the move operation for formatEmail
-		const result2 = await executeMoveOperation(project, {
+		const result2 = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-related-2",
 			selector: {
@@ -333,7 +363,8 @@ export function formatProfileName(user: User): string {
 		})
 
 		// Execute the move operation
-		const result = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-circular",
 			selector: {
@@ -362,7 +393,8 @@ export function formatProfileName(user: User): string {
 
 	test("should move a variable that depends on a type", async () => {
 		// Execute the move operation
-		const result = await executeMoveOperation(project, {
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation({
 			operation: "move",
 			id: "test-move-variable-with-type",
 			selector: {

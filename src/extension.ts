@@ -59,9 +59,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Initialize i18n for internationalization support
 	initializeI18n(context.globalState.get("language") ?? "en-US") // kilocode_change
 
-	// Check for bootstrap parameter in workspace URI
-	checkForBootstrap(context)
-
 	// Initialize terminal shell execution handlers.
 	TerminalRegistry.initialize()
 
@@ -157,6 +154,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Allows other extensions to activate once Kilo Code is ready.
 	vscode.commands.executeCommand(`${Package.name}.activationCompleted`)
 
+	// Check for bootstrap parameter in workspace URI
+	checkForBootstrap(context)
+
 	// Implements the `RooCodeAPI` interface.
 	const socketPath = process.env.ROO_CODE_IPC_SOCKET_PATH
 	const enableLogging = typeof socketPath === "string"
@@ -197,15 +197,12 @@ async function checkForBootstrap(context: vscode.ExtensionContext): Promise<void
 		const fileContent = await vscode.workspace.fs.readFile(promptFilePath)
 		const prompt = Buffer.from(fileContent).toString("utf8")
 
-		console.log(`Found .PROMPT file with content: ${prompt}`)
+		// console.log(`Found .PROMPT file with content: ${prompt}`)
 		setTimeout(async () => {
-			console.log(`🚀 Focusing sidebar: ${prompt}`)
-			await new Promise((resolve) => setTimeout(resolve, 500))
-			await vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
-
-			console.log(`🚀 Executing task!: ${prompt}`)
+			console.log(`🚀 Executing task!`, { prompt })
 			vscode.commands.executeCommand("kilo-code.newTask", { prompt })
-		}, 1000)
+			vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
+		}, 5000)
 	} catch (error) {
 		if (error instanceof vscode.FileSystemError && error.code === "FileNotFound") {
 			// File not found, which is expected if no bootstrap prompt exists

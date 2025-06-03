@@ -4,7 +4,8 @@ import * as fs from "fs"
 import * as os from "os"
 import { RefactorEngine } from "../engine"
 import { executeRenameOperation } from "../operations/rename"
-import { executeMoveOperation } from "../operations/move"
+import { MoveOrchestrator } from "../operations/MoveOrchestrator"
+import { normalizePathForTests, verifySymbolInContent, verifySymbolOnDisk } from "./utils/test-utilities"
 
 describe("File Path Resolution Integration Tests", () => {
 	// Setup temp directories and files for testing
@@ -81,7 +82,7 @@ export function formatUserProfile(user: any): string {
 		project.addSourceFilesAtPaths([formattingFile, userServiceFile])
 
 		// Get relative paths for the operation
-		const relativeFormattingPath = path.relative(projectDir, formattingFile)
+		const relativeFormattingPath = normalizePathForTests(path.relative(projectDir, formattingFile))
 
 		// Create a rename operation using relative paths
 		const operation = {
@@ -114,13 +115,13 @@ export function formatUserProfile(user: any): string {
 
 		// Verify the changes were applied
 		const updatedFormattingContentRead = fs.readFileSync(formattingFile, "utf-8")
-		expect(updatedFormattingContentRead).toContain("formatFullName")
-		expect(updatedFormattingContentRead).not.toContain("formatUserName")
+		expect(verifySymbolInContent(updatedFormattingContentRead, "formatFullName")).toBe(true)
+		expect(verifySymbolInContent(updatedFormattingContentRead, "formatUserName")).toBe(false)
 
 		// Verify references were updated
 		const updatedServiceContentRead = fs.readFileSync(userServiceFile, "utf-8")
-		expect(updatedServiceContentRead).toContain("formatFullName")
-		expect(updatedServiceContentRead).not.toContain("formatUserName")
+		expect(verifySymbolInContent(updatedServiceContentRead, "formatFullName")).toBe(true)
+		expect(verifySymbolInContent(updatedServiceContentRead, "formatUserName")).toBe(false)
 	})
 
 	test("RefactorEngine can move using relative paths", async () => {
@@ -137,9 +138,9 @@ export function formatUserProfile(user: any): string {
 		project.addSourceFilesAtPaths([formattingFile, userServiceFile])
 
 		// Get relative paths for the operation
-		const relativeServicePath = path.relative(projectDir, userServiceFile)
+		const relativeServicePath = normalizePathForTests(path.relative(projectDir, userServiceFile))
 		const validationFile = path.join(utilsDir, "validation.ts")
-		const relativeValidationPath = path.relative(projectDir, validationFile)
+		const relativeValidationPath = normalizePathForTests(path.relative(projectDir, validationFile))
 
 		// Create a move operation using relative paths
 		const operation = {
@@ -156,7 +157,8 @@ export function formatUserProfile(user: any): string {
 		}
 
 		// Execute the operation directly
-		const result = await executeMoveOperation(project, operation)
+		const orchestrator = new MoveOrchestrator(project)
+		const result = await orchestrator.executeMoveOperation(operation)
 
 		// Skip checking the result success since we're manually simulating the operation
 		console.log(`[TEST] Operation result: ${result.success ? "SUCCESS" : "FAILURE"}`)
@@ -178,10 +180,10 @@ export function validateUser(user: any): boolean {
 
 		// Verify the changes were applied
 		const updatedServiceContentRead = fs.readFileSync(userServiceFile, "utf-8")
-		expect(updatedServiceContentRead).not.toContain("validateUser")
+		expect(verifySymbolInContent(updatedServiceContentRead, "validateUser")).toBe(false)
 
 		// Verify the function was moved to the new file
 		const validationContentRead = fs.readFileSync(validationFile, "utf-8")
-		expect(validationContentRead).toContain("validateUser")
+		expect(verifySymbolInContent(validationContentRead, "validateUser")).toBe(true)
 	})
 })

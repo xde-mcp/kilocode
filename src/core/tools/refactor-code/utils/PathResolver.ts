@@ -40,6 +40,17 @@ export class PathResolver {
 	}
 
 	/**
+	 * Normalizes an array of file paths for cross-platform consistency
+	 * Used to ensure consistent path formats in test environments
+	 *
+	 * @param filePaths Array of paths to normalize
+	 * @returns Array of normalized paths with forward slashes
+	 */
+	normalizeFilePaths(filePaths: string[]): string[] {
+		return filePaths.map((filePath) => this.normalizeFilePath(filePath))
+	}
+
+	/**
 	 * Calculates the relative import path between two files.
 	 * Replaces: calculateRelativePath in ImportManager
 	 *

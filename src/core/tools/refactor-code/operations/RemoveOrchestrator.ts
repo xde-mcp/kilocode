@@ -8,9 +8,6 @@ import { SymbolRemover } from "../core/SymbolRemover"
 import { ResolvedSymbol, RemovalResult } from "../core/types"
 
 /**
- * Orchestrates the symbol removal operation
- */
-/**
  * Orchestrates the symbol removal operation with enhanced error recovery
  * and graceful degradation when problems occur
  */
@@ -37,9 +34,6 @@ export class RemoveOrchestrator {
 		this.symbolRemover = new SymbolRemover()
 	}
 
-	/**
-	 * Execute a REMOVE refactoring operation
-	 */
 	/**
 	 * Execute a REMOVE refactoring operation with enhanced error recovery
 	 * and better error messages
@@ -122,7 +116,6 @@ export class RemoveOrchestrator {
 			}
 
 			// 4. Remove the symbol
-			// 4. Remove the symbol
 			const removalResult = await this.symbolRemover.removeSymbol(symbol)
 
 			if (!removalResult.success) {
@@ -143,12 +136,34 @@ export class RemoveOrchestrator {
 				}
 			}
 
-			// 5. Check if any unreferenced dependencies can be removed as well
-			if (operation.options?.cleanupDependencies) {
-				await this.cleanupUnreferencedDependencies(sourceFile)
+			// 5. Ensure changes are written to disk
+			try {
+				console.log(`[DEBUG] Saving changes to disk for file: ${sourceFilePath}`)
+				await sourceFile.save()
+			} catch (saveError) {
+				console.error(`[ERROR] Failed to save changes to disk: ${saveError}`)
+				return {
+					success: false,
+					operation,
+					error: `Successfully removed symbol in memory but failed to save changes to disk: ${saveError}`,
+					affectedFiles: [sourceFilePath],
+				}
 			}
 
-			// 6. Generate final result
+			// 6. Check if any unreferenced dependencies can be removed as well
+			if (operation.options?.cleanupDependencies) {
+				await this.cleanupUnreferencedDependencies(sourceFile)
+
+				// Save again after cleaning up dependencies
+				try {
+					await sourceFile.save()
+				} catch (saveError) {
+					console.log(`[WARNING] Failed to save dependency cleanup changes: ${saveError}`)
+					// Don't fail the operation if just the cleanup fails
+				}
+			}
+
+			// 7. Generate final result
 			this.removalStats.succeeded++
 			return {
 				success: true,
@@ -176,7 +191,7 @@ export class RemoveOrchestrator {
 
 	/**
 	 * Attempts to remove a symbol using more aggressive removal strategies
-	 * when standard removal fails
+	 * when standard removal fails. Ensures changes are written to disk.
 	 */
 	private async attemptAggressiveRemoval(
 		operation: RemoveOperation,
@@ -195,6 +210,20 @@ export class RemoveOrchestrator {
 					operation,
 					error:
 						removalResult.error || `Aggressive removal also failed for symbol: ${operation.selector.name}`,
+					affectedFiles: [sourceFilePath],
+				}
+			}
+
+			// Ensure changes are written to disk
+			try {
+				console.log(`[DEBUG] Saving aggressive removal changes to disk for file: ${sourceFilePath}`)
+				await sourceFile.save()
+			} catch (saveError) {
+				console.error(`[ERROR] Failed to save aggressive removal changes to disk: ${saveError}`)
+				return {
+					success: false,
+					operation,
+					error: `Successfully removed symbol aggressively in memory but failed to save changes to disk: ${saveError}`,
 					affectedFiles: [sourceFilePath],
 				}
 			}
@@ -239,6 +268,20 @@ export class RemoveOrchestrator {
 					success: false,
 					operation,
 					error: `Forced removal failed: ${removalResult.error || "Unknown error"}`,
+					affectedFiles: [sourceFilePath],
+				}
+			}
+
+			// Ensure changes are written to disk
+			try {
+				console.log(`[DEBUG] Saving forced removal changes to disk for file: ${sourceFilePath}`)
+				await sourceFile.save()
+			} catch (saveError) {
+				console.error(`[ERROR] Failed to save forced removal changes to disk: ${saveError}`)
+				return {
+					success: false,
+					operation,
+					error: `Successfully removed symbol forcibly in memory but failed to save changes to disk: ${saveError}`,
 					affectedFiles: [sourceFilePath],
 				}
 			}
@@ -300,6 +343,13 @@ export class RemoveOrchestrator {
 		}
 
 		console.log(`[DEBUG] Removed ${removedCount} unused imports`)
+
+		// Save the file after cleaning up imports
+		try {
+			await sourceFile.save()
+		} catch (error) {
+			console.log(`[WARNING] Failed to save file after cleaning up imports: ${error}`)
+		}
 	}
 
 	/**

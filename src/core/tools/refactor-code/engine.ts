@@ -6,41 +6,127 @@ import { RefactorOperation, BatchOperations, RenameOperation, MoveOperation, Rem
 import { RobustLLMRefactorParser, RefactorParseError } from "./parser"
 import { SymbolFinder } from "./utils/symbol-finder"
 import { PathResolver } from "./utils/PathResolver"
+import {
+	FileSystemCache,
+	SourceFileCache,
+	BatchOptimizer,
+	ParallelExecutor,
+	MemoryOptimizer,
+} from "./utils/performance-optimizations"
 
-// Import operation implementations
-import { executeRenameOperation } from "./operations/rename"
-import { executeRemoveOperation } from "./operations/remove"
-import { executeMoveOperation } from "./operations/move"
+// Import operation orchestrators
+import { RenameOrchestrator } from "./operations/RenameOrchestrator"
+import { RemoveOrchestrator } from "./operations/RemoveOrchestrator"
+import { MoveOrchestrator } from "./operations/MoveOrchestrator"
+import { MoveValidator } from "./operations/MoveValidator"
+import { MoveExecutor } from "./operations/MoveExecutor"
+import { MoveVerifier } from "./operations/MoveVerifier"
 
+/**
+ * Result of a single refactoring operation
+ *
+ * This interface provides detailed information about the result of a
+ * refactoring operation, including success/failure status, affected files,
+ * and diagnostic information.
+ */
 export interface OperationResult {
+	/** Whether the operation was successful */
 	success: boolean
+
+	/** The original operation that was executed */
 	operation: RefactorOperation
+
+	/** Error message if the operation failed */
 	error?: string
+
+	/** List of files that were affected by the operation */
 	affectedFiles: string[]
+
+	/**
+	 * The method used for symbol removal operations
+	 * - standard: AST-based removal (preferred)
+	 * - aggressive: Pattern-based removal (fallback)
+	 * - manual: Guided manual removal (complex cases)
+	 * - failed: Removal attempt that could not complete
+	 */
 	removalMethod?: "standard" | "aggressive" | "manual" | "failed"
+
+	/**
+	 * Warnings that didn't prevent the operation but might be relevant
+	 * These may include information about potential issues or edge cases.
+	 */
 	warnings?: string[]
 }
 
+/**
+ * Result of a batch refactoring operation
+ *
+ * This interface provides detailed information about the result of a
+ * batch of refactoring operations, including individual operation results
+ * and overall success/failure status.
+ */
 export interface BatchResult {
+	/** Whether the overall batch was successful */
 	success: boolean
+
+	/** Results of individual operations */
 	results: OperationResult[]
+
+	/** All operations that were attempted in the batch */
 	allOperations: RefactorOperation[]
+
+	/** Error message if the batch failed */
 	error?: string
 }
 
+/**
+ * Result of validating a refactoring operation
+ *
+ * Validation is performed before executing an operation to ensure
+ * it has the required parameters and is likely to succeed.
+ */
 export interface ValidationResult {
+	/** Whether the operation is valid and can be executed */
 	valid: boolean
+
+	/** The operation that was validated */
 	operation: RefactorOperation
+
+	/** List of validation errors if the operation is invalid */
 	errors: string[]
 }
 
+/**
+ * Configuration options for the RefactorEngine
+ *
+ * These options control the behavior of the refactoring engine
+ * and how it interacts with the project.
+ */
 export interface RefactorEngineOptions {
+	/** Root path of the project (used for resolving relative paths) */
 	projectRootPath: string
+
+	/** Path to the project's tsconfig.json file */
 	tsConfigPath?: string
+
+	/** Whether to stop batch operations on the first error */
 	stopOnError?: boolean
 }
 
+/**
+ * Custom error class for refactor engine errors
+ *
+ * This error class includes additional context about the operation
+ * that caused the error, making it easier to diagnose issues.
+ */
 export class RefactorEngineError extends Error {
+	/**
+	 * Create a new RefactorEngineError
+	 *
+	 * @param message - The error message
+	 * @param operation - The operation that caused the error
+	 * @param cause - The underlying error that caused this error
+	 */
 	constructor(
 		message: string,
 		public operation?: RefactorOperation,
@@ -53,13 +139,36 @@ export class RefactorEngineError extends Error {
 
 /**
  * Core engine for executing refactoring operations
+ *
+ * The RefactorEngine is the central component of the refactoring system,
+ * responsible for validating, executing, and managing refactoring operations.
+ * It coordinates the various orchestrators and utilities to perform complex
+ * refactoring tasks reliably.
  */
 export class RefactorEngine {
+	/** The ts-morph Project instance for AST manipulation */
 	private project: Project
+
+	/** Parser for processing refactoring operations */
 	private parser: RobustLLMRefactorParser
+
+	/** Configuration options with defaults applied */
 	private options: Required<RefactorEngineOptions>
+
+	/** Diagnostic utility function for debugging */
 	private diagnose: (filePath: string, operation: string) => Promise<void>
+
+	/** Path resolver for handling file paths consistently */
 	private pathResolver: PathResolver
+
+	/** File system cache for optimizing I/O operations */
+	private fileCache: FileSystemCache
+
+	/** Source file cache for optimizing ts-morph operations */
+	private sourceFileCache: SourceFileCache
+
+	/** Track last batch size for memory optimization */
+	private lastBatchSize: number = 0
 
 	constructor(options: RefactorEngineOptions) {
 		// Set default options
@@ -88,13 +197,30 @@ export class RefactorEngine {
 
 		// Initialize diagnostic helper
 		this.diagnose = createDiagnostic(this.options.projectRootPath)
+
+		// Initialize performance optimization caches
+		this.fileCache = new FileSystemCache()
+		this.sourceFileCache = new SourceFileCache(this.project)
 	}
 
 	/**
 	 * Get the project root path
+	 *
+	 * @returns The absolute path to the project root directory
 	 */
 	getProjectRoot(): string {
 		return this.options.projectRootPath
+	}
+
+	/**
+	 * Get the ts-morph Project instance
+	 *
+	 * This is useful for orchestrators that need direct access to the project.
+	 *
+	 * @returns The ts-morph Project instance used by this engine
+	 */
+	getProject(): Project {
+		return this.project
 	}
 
 	/**
@@ -282,8 +408,12 @@ export class RefactorEngine {
 	 * Execute a batch of refactoring operations
 	 */
 	async executeBatch(batchOps: BatchOperations): Promise<BatchResult> {
+		const startTime = performance.now()
 		const operations = batchOps.operations
 		const options: { stopOnError?: boolean } = batchOps.options || {}
+
+		// Track batch size for memory optimization
+		this.lastBatchSize = operations.length
 
 		// Override engine options with batch options
 		const originalStopOnError = this.options.stopOnError
@@ -298,112 +428,153 @@ export class RefactorEngine {
 		try {
 			console.log(`[DEBUG] Executing batch of ${operations.length} operations`)
 
-			// Execute operations in sequence
-			for (let i = 0; i < operations.length; i++) {
-				const operation = operations[i]
+			// Apply performance optimization: Optimize operation order
+			const optimizedOperations = BatchOptimizer.optimizeOperationOrder([...operations])
+			console.log(`[DEBUG] Optimized operation order for better performance`)
 
-				// Validate the operation before executing it
-				const validationResult = this.validateOperation(operation)
-				if (!validationResult.valid) {
-					// If validation fails, add a failed result and continue or break
-					const result: OperationResult = {
-						success: false,
-						operation,
-						error: `Validation failed: ${validationResult.errors.join(", ")}`,
-						affectedFiles: [],
+			// Group operations by file for more efficient processing
+			const fileOperationMap = BatchOptimizer.groupOperationsByFile(optimizedOperations)
+			console.log(`[DEBUG] Operations affect ${fileOperationMap.size} distinct files`)
+
+			// Check if operations can be parallelized
+			const canParallelize =
+				ParallelExecutor.canParallelize(optimizedOperations) && optimizedOperations.length > 3 // Only parallelize if enough operations
+
+			if (canParallelize && !this.options.stopOnError) {
+				console.log(`[DEBUG] Operations can be safely parallelized`)
+
+				// Create batches of operations for parallel execution
+				const operationFunctions = optimizedOperations.map((operation) => {
+					return async () => {
+						// Validate the operation
+						const validationResult = this.validateOperation(operation)
+						if (!validationResult.valid) {
+							return {
+								success: false,
+								operation,
+								error: `Validation failed: ${validationResult.errors.join(", ")}`,
+								affectedFiles: [],
+							} as OperationResult
+						}
+
+						// Execute the operation
+						return this.executeOperation(operation)
 					}
+				})
+
+				// Execute operations in parallel batches
+				const parallelResults = await ParallelExecutor.executeInBatches(operationFunctions)
+				results.push(...parallelResults)
+
+				// Check if any operations failed
+				const anyFailed = parallelResults.some((r) => !r.success)
+				if (anyFailed) {
+					success = false
+					const failedOp = parallelResults.find((r) => !r.success)
+					if (failedOp) {
+						errorMessage = `Operation (${failedOp.operation.operation}) failed: ${failedOp.error}`
+					}
+				}
+			} else {
+				console.log(`[DEBUG] Executing operations sequentially`)
+
+				// Execute operations in sequence with optimized file handling
+				for (let i = 0; i < optimizedOperations.length; i++) {
+					const operation = optimizedOperations[i]
+
+					// Validate the operation before executing it
+					const validationResult = this.validateOperation(operation)
+					if (!validationResult.valid) {
+						// If validation fails, add a failed result and continue or break
+						const result: OperationResult = {
+							success: false,
+							operation,
+							error: `Validation failed: ${validationResult.errors.join(", ")}`,
+							affectedFiles: [],
+						}
+						results.push(result)
+						success = false
+
+						if (!errorMessage) {
+							errorMessage = `Operation ${i + 1} (${operation.operation}) validation failed: ${validationResult.errors.join(", ")}`
+						}
+
+						if (this.options.stopOnError) {
+							console.log(
+								`[DEBUG] Stopping batch execution due to validation failure in operation ${i + 1}`,
+							)
+							break
+						} else {
+							console.log(
+								`[DEBUG] Continuing batch execution despite validation failure in operation ${i + 1}`,
+							)
+							continue
+						}
+					}
+
+					// Pre-load source files for the operation using the cache
+					if ("selector" in operation && "filePath" in operation.selector) {
+						const filePath = operation.selector.filePath
+						this.sourceFileCache.getSourceFile(filePath)
+					}
+
+					// Execute the operation
+					const result = await this.executeOperation(operation)
 					results.push(result)
-					success = false
 
-					if (!errorMessage) {
-						errorMessage = `Operation ${i + 1} (${operation.operation}) validation failed: ${validationResult.errors.join(", ")}`
-					}
+					if (!result.success) {
+						success = false
+						if (!errorMessage) {
+							errorMessage = `Operation ${i + 1} (${operation.operation}) failed: ${result.error}`
+						}
 
-					if (this.options.stopOnError) {
-						console.log(`[DEBUG] Stopping batch execution due to validation failure in operation ${i + 1}`)
-						break
+						if (this.options.stopOnError) {
+							console.log(`[DEBUG] Stopping batch execution due to error in operation ${i + 1}`)
+							break
+						} else {
+							console.log(`[DEBUG] Continuing batch execution despite error in operation ${i + 1}`)
+						}
 					} else {
-						console.log(
-							`[DEBUG] Continuing batch execution despite validation failure in operation ${i + 1}`,
-						)
-						continue
-					}
-				}
+						// If the operation was successful, update caches for affected files
+						if (result.affectedFiles && result.affectedFiles.length > 0) {
+							for (const filePath of result.affectedFiles) {
+								// Mark file as modified in source file cache
+								this.sourceFileCache.markModified(filePath)
 
-				// Before each operation, ensure all files exist in the project
-				// This is critical for operations that depend on files created by previous operations
-				if (operation.operation === "rename" && "filePath" in operation.selector) {
-					const filePath = operation.selector.filePath
-					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-
-					// If the file exists on disk but not in the project, add it
-					if (this.pathResolver.pathExists(filePath)) {
-						try {
-							// Check if the file is already in the project
-							const existingFile = this.project.getSourceFile(filePath)
-							if (!existingFile) {
-								// Add the file to the project
-								this.project.addSourceFileAtPath(filePath)
-								console.log(`[DEBUG] Added file to project before operation: ${filePath}`)
-							} else {
-								// Refresh the file in the project
-								this.project.removeSourceFile(existingFile)
-								this.project.addSourceFileAtPath(filePath)
-								console.log(`[DEBUG] Refreshed file in project before operation: ${filePath}`)
+								// Invalidate file system cache
+								this.fileCache.invalidateFile(filePath)
 							}
-						} catch (e) {
-							console.log(`[WARNING] Failed to add/refresh file in project: ${filePath}`)
 						}
 					}
-				}
 
-				// Execute the operation
-				const result = await this.executeOperation(operation)
-				results.push(result)
-
-				if (!result.success) {
-					success = false
-					if (!errorMessage) {
-						errorMessage = `Operation ${i + 1} (${operation.operation}) failed: ${result.error}`
-					}
-
-					if (this.options.stopOnError) {
-						console.log(`[DEBUG] Stopping batch execution due to error in operation ${i + 1}`)
-						break
-					} else {
-						console.log(`[DEBUG] Continuing batch execution despite error in operation ${i + 1}`)
-					}
-				} else {
-					// If the operation was successful, refresh the project's source files
-					// to ensure that newly created files are recognized
-					if (result.affectedFiles && result.affectedFiles.length > 0) {
-						for (const filePath of result.affectedFiles) {
-							// Check if the file exists on disk
-							const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-							if (this.pathResolver.pathExists(filePath)) {
-								try {
-									// Remove the file from the project if it exists
-									const existingFile = this.project.getSourceFile(filePath)
-									if (existingFile) {
-										this.project.removeSourceFile(existingFile)
-									}
-
-									// Add the file to the project
-									this.project.addSourceFileAtPath(filePath)
-									console.log(`[DEBUG] Refreshed file in project after operation: ${filePath}`)
-								} catch (e) {
-									console.log(`[WARNING] Failed to refresh file in project: ${filePath}`)
+					// For large batches, periodically optimize memory usage
+					if (operations.length > 20 && i > 0 && i % 10 === 0) {
+						// Get active files from recent operations
+						const activeFiles = optimizedOperations.slice(Math.max(0, i - 10), i + 5).flatMap((op) => {
+							if ("selector" in op && "filePath" in op.selector) {
+								const files = [op.selector.filePath]
+								if (op.operation === "move" && "targetFilePath" in op) {
+									files.push(op.targetFilePath)
 								}
+								return files
 							}
-						}
+							return []
+						})
+
+						// Optimize memory usage
+						MemoryOptimizer.optimizeMemoryUsage(this.project, activeFiles)
 					}
 				}
-
-				// Skip verification since it's now done inside executeOperation
-				console.log(
-					`[DEBUG] Verification for operation ${i + 1} (${operation.operation}) already performed inside executeOperation`,
-				)
 			}
+
+			// Reset engine options
+			this.options.stopOnError = originalStopOnError
+
+			// Performance logging
+			const endTime = performance.now()
+			const duration = endTime - startTime
+			console.log(`[PERF] Batch execution completed in ${duration.toFixed(2)}ms`)
+			console.log(`[PERF] Average time per operation: ${(duration / operations.length).toFixed(2)}ms`)
 
 			return {
 				success,
@@ -412,16 +583,21 @@ export class RefactorEngine {
 				error: errorMessage,
 			}
 		} catch (error) {
+			// Reset engine options
+			this.options.stopOnError = originalStopOnError
+
 			const err = error as Error
 			return {
 				success: false,
 				results,
 				allOperations: operations,
-				error: `Batch execution failed: ${err.message}`,
+				error: `Batch execution error: ${err.message}`,
 			}
 		} finally {
-			// Restore original engine options
-			this.options.stopOnError = originalStopOnError
+			// For large batches, request garbage collection after completion
+			if (operations.length > 50) {
+				MemoryOptimizer.requestGarbageCollection()
+			}
 		}
 	}
 
@@ -510,22 +686,31 @@ export class RefactorEngine {
 	 * Execute a rename operation
 	 */
 	private async executeRenameOperation(operation: RenameOperation): Promise<Partial<OperationResult>> {
-		// Call rename operation
-		return executeRenameOperation(this.project, operation)
+		const orchestrator = new RenameOrchestrator(this.project)
+		return orchestrator.executeRenameOperation(operation)
 	}
 
 	/**
 	 * Execute a move operation
 	 */
 	private async executeMoveOperation(operation: MoveOperation): Promise<Partial<OperationResult>> {
-		return executeMoveOperation(this.project, operation)
+		// Create component instances with shared dependencies
+		const validator = new MoveValidator(this.project)
+		const executor = new MoveExecutor(this.project)
+		const verifier = new MoveVerifier(this.project)
+
+		// Create orchestrator with the component instances
+		const orchestrator = new MoveOrchestrator(this.project, validator, executor, verifier)
+
+		return orchestrator.executeMoveOperation(operation)
 	}
 
 	/**
 	 * Execute a remove operation
 	 */
 	private async executeRemoveOperation(operation: RemoveOperation): Promise<Partial<OperationResult>> {
-		return executeRemoveOperation(this.project, operation)
+		const orchestrator = new RemoveOrchestrator(this.project)
+		return orchestrator.executeRemoveOperation(operation)
 	}
 
 	/**
@@ -533,6 +718,9 @@ export class RefactorEngine {
 	 */
 	public async saveSourceFile(sourceFile: SourceFile): Promise<void> {
 		try {
+			// Performance tracking
+			const startTime = performance.now()
+
 			const filePath = sourceFile.getFilePath()
 			const projectRoot = this.project.getCompilerOptions().rootDir || process.cwd()
 			const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(projectRoot, filePath)
@@ -542,6 +730,17 @@ export class RefactorEngine {
 			console.log(`[DEBUG] Saving file to disk: ${absolutePath}`)
 			await ensureDirectoryExists(path.dirname(absolutePath))
 			await fs.writeFile(absolutePath, content, "utf8")
+
+			// Performance logging
+			const duration = performance.now() - startTime
+			console.log(`[PERF] File saved in ${duration.toFixed(2)}ms: ${filePath}`)
+
+			// Invalidate file cache after save
+			this.fileCache.invalidateFile(filePath)
+
+			// Mark the file as modified in source file cache
+			this.sourceFileCache.markModified(filePath)
+
 			console.log(`[DEBUG] Source file saved successfully`)
 		} catch (error) {
 			console.error(`[ERROR] Failed to save source file:`, error)
@@ -550,13 +749,9 @@ export class RefactorEngine {
 	}
 
 	/**
-	 * Resolves a file path to an absolute path
-	 * @deprecated Use pathResolver.resolveAbsolutePath instead
+	 * Resolves a file path to an absolute path using the PathResolver
 	 */
 	public resolveFilePath(filePath: string): string {
-		console.warn(
-			"[DEPRECATED] RefactorEngine.resolveFilePath is deprecated. Use pathResolver.resolveAbsolutePath instead.",
-		)
 		return this.pathResolver.resolveAbsolutePath(filePath)
 	}
 
@@ -750,16 +945,6 @@ export class RefactorEngine {
 	}
 
 	/**
-	 * Add source files to the project
-	 */
-	private addSourceFilesToProject() {
-		// Only add files as needed when they are referenced
-		// This is more efficient than scanning the entire project
-		// The ts-morph project will automatically load files when
-		// they are requested via getSourceFile
-	}
-
-	/**
 	 * Refreshes the project state from disk by reloading source files
 	 * to ensure all in-memory representations match the actual files
 	 */
@@ -795,19 +980,32 @@ export class RefactorEngine {
 	 * Tries multiple strategies to find/add the file to the project
 	 */
 	private tryGetSourceFile(filePath: string): SourceFile | undefined {
-		// First try with the provided path
+		// First try with the cached source files
+		const cachedSourceFile = this.sourceFileCache.getSourceFile(filePath)
+		if (cachedSourceFile) {
+			return cachedSourceFile
+		}
+
+		// Try with project's direct lookup
 		let sourceFile = this.project.getSourceFile(filePath)
 		if (sourceFile) {
+			// Cache the found source file
+			this.sourceFileCache.markModified(filePath)
 			return sourceFile
 		}
 
 		// Try with absolute path
 		const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-		if (this.pathResolver.pathExists(filePath)) {
+		// Use optimized file existence check
+		const fileExists = this.pathResolver.pathExists(filePath)
+
+		if (fileExists) {
 			try {
 				sourceFile = this.project.addSourceFileAtPath(absolutePath)
 				if (sourceFile) {
 					console.log(`[DEBUG] Added file to project using absolute path: ${absolutePath}`)
+					// Cache the newly added source file
+					this.sourceFileCache.markModified(filePath)
 					return sourceFile
 				}
 			} catch (e) {
@@ -823,11 +1021,15 @@ export class RefactorEngine {
 				sourceFile = this.project.addSourceFileAtPath(relativePath)
 				if (sourceFile) {
 					console.log(`[DEBUG] Added file to project using relative path: ${relativePath}`)
+					// Cache the newly added source file
+					this.sourceFileCache.markModified(relativePath)
 					return sourceFile
 				}
 			} catch (e) {
 				console.log(`[WARNING] Failed to add file using relative path`)
 			}
+		} else {
+			console.log(`[DEBUG] File does not exist: ${filePath}`)
 		}
 
 		return undefined

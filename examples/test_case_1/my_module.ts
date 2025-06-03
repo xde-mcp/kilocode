@@ -1,3 +1,11 @@
-export function doTheSum(a: number, b: number): number {
-  return a + b;
+function fib(n) {
+	if (n <= 1) {
+		return n
+	}
+	return fib(n - 1) + fib(n - 2)
+}
+
+{
+	// the scope is global
+	;("fib")
 }

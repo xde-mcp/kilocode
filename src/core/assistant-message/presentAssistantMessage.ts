@@ -489,7 +489,7 @@ export async function presentAssistantMessage(cline: Task) {
 					await condenseTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "refactor_code":
-					await refactorCodeTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await refactorCodeTool(cline, block, askApproval, handleError, pushToolResult)
 					break
 				// kilocode_change end
 			}

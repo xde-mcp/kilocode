@@ -7,8 +7,12 @@ import {
 	ExportSpecifier,
 	Node,
 	SyntaxKind,
+	NamespaceImport,
+	ImportClause,
+	ModuleDeclaration,
 } from "ts-morph"
 import * as path from "path"
+import * as fs from "fs"
 
 export interface ImportUpdate {
 	file: SourceFile
@@ -29,6 +33,15 @@ export class ImportManager {
 	private resolvedPathCache: Map<string, string> = new Map()
 	private symbolExtractor: any // Will be set by setSymbolExtractor
 	private pathResolver: any // Will be set by setPathResolver
+
+	// Enum to distinguish between different import types
+	private ImportType = {
+		REGULAR: "regular", // import { X } from 'module'
+		TYPE: "type", // import type { X } from 'module'
+		NAMESPACE: "namespace", // import * as X from 'module'
+		DEFAULT: "default", // import X from 'module'
+		RE_EXPORT: "re-export", // export { X } from 'module'
+	}
 
 	constructor(project: Project) {
 		this.project = project
@@ -68,6 +81,10 @@ export class ImportManager {
 		// Find files that import from the old file - these are the most important to update
 		const importingFiles = this.findFilesImporting(oldFilePath)
 		console.log(`[DEBUG] Found ${importingFiles.length} files importing from ${oldFilePath}`)
+
+		// Also find files that re-export from the old file
+		const reExportingFiles = this.findFilesReExporting(oldFilePath)
+		console.log(`[DEBUG] Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`)
 
 		// Focus only on files that directly import from the source file
 		// This is much more efficient than searching all files in the project
@@ -116,20 +133,25 @@ export class ImportManager {
 		for (const file of referencingFiles) {
 			await this.updateImportPath(file, symbolName, oldFilePath, newFilePath)
 			this.updatedFiles.add(file.getFilePath())
+			// Save changes to disk
+			file.saveSync()
 		}
 
 		// Update re-exports as well
-		const reExportingFiles = this.findFilesReExporting(oldFilePath)
-
+		// We already got the re-exporting files earlier, but we need to re-use them here
 		for (const file of reExportingFiles) {
 			await this.updateReExportPath(file, symbolName, oldFilePath, newFilePath)
 			this.updatedFiles.add(file.getFilePath())
+			// Save changes to disk
+			file.saveSync()
 		}
 
 		// Add necessary imports to the new file
 		const newFile = this.project.getSourceFile(newFilePath)
 		if (newFile) {
 			await this.addMissingImports(newFile, symbolName, oldFilePath)
+			// Save changes to disk
+			newFile.saveSync()
 		}
 	}
 
@@ -217,8 +239,28 @@ export class ImportManager {
 			}
 
 			// Check if this import includes the moved symbol
-			const namedImports = importDecl.getNamedImports()
-			const hasSymbol = namedImports.some((imp) => imp.getName() === symbolName)
+			const importType = this.getImportType(importDecl)
+			let hasSymbol = false
+
+			if (importType === this.ImportType.DEFAULT) {
+				// For default imports, check the default import name
+				const defaultImport = importDecl.getDefaultImport()
+				hasSymbol = defaultImport?.getText() === symbolName
+			} else if (importType === this.ImportType.NAMESPACE) {
+				// For namespace imports, check if the namespace contains the symbol
+				// This is more complex and may require analysis of symbol usage
+				const namespaceImport = importDecl.getNamespaceImport()
+				if (namespaceImport) {
+					// We need special handling here as we can't directly check if the namespace contains the symbol
+					// For now, we'll leave existing namespace imports alone
+					// but will add logic to update references later
+					hasSymbol = false
+				}
+			} else {
+				// For regular and type imports, check named imports
+				const namedImports = importDecl.getNamedImports()
+				hasSymbol = namedImports.some((imp) => imp.getName() === symbolName)
+			}
 
 			if (!hasSymbol) {
 				continue
@@ -228,18 +270,34 @@ export class ImportManager {
 			const newRelativePath = this.calculateRelativePath(file.getFilePath(), newPath)
 
 			// Check if we need to keep the old import for other symbols
-			const otherImports = namedImports.filter((imp) => imp.getName() !== symbolName)
+			const currentImportType = this.getImportType(importDecl)
 
-			if (otherImports.length > 0) {
-				// Remove only the moved symbol from the import
-				const symbolImport = namedImports.find((imp) => imp.getName() === symbolName)
-				symbolImport?.remove()
-
-				// Add a new import for the moved symbol
-				this.addImport(file, symbolName, newRelativePath)
-			} else {
-				// Update the module specifier if this is the only import
+			if (currentImportType === this.ImportType.DEFAULT) {
+				// For default imports, we need to update the entire import
 				importDecl.setModuleSpecifier(newRelativePath)
+			} else if (currentImportType === this.ImportType.NAMESPACE) {
+				// For namespace imports, update the module specifier
+				importDecl.setModuleSpecifier(newRelativePath)
+			} else {
+				// For regular and type imports, check if there are other imports to keep
+				const namedImports = importDecl.getNamedImports()
+				const otherImports = namedImports.filter((imp) => imp.getName() !== symbolName)
+
+				if (otherImports.length > 0) {
+					// Remove only the moved symbol from the import
+					const symbolImport = namedImports.find((imp) => imp.getName() === symbolName)
+					symbolImport?.remove()
+
+					// Add a new import for the moved symbol, preserving the import type
+					if (currentImportType === this.ImportType.TYPE) {
+						this.addTypeImport(file, symbolName, newRelativePath)
+					} else {
+						this.addImport(file, symbolName, newRelativePath)
+					}
+				} else {
+					// Update the module specifier if this is the only import
+					importDecl.setModuleSpecifier(newRelativePath)
+				}
 			}
 		}
 
@@ -282,6 +340,15 @@ export class ImportManager {
 			// Check if this export includes the moved symbol
 			const namedExports = exportDecl.getNamedExports()
 			const hasSymbol = namedExports.some((exp) => exp.getName() === symbolName)
+
+			// Also check for aliased exports (export { X as Y } from 'module')
+			const hasAliasedSymbol = namedExports.some((exp) => {
+				const alias = exp.getAliasNode()
+				if (alias) {
+					return exp.getNameNode().getText() === symbolName || alias.getText() === symbolName
+				}
+				return false
+			})
 
 			if (!hasSymbol) {
 				continue
@@ -567,55 +634,47 @@ export class ImportManager {
 			return this.resolvedPathCache.get(cacheKey)!
 		}
 
-		// Use pathResolver if available for consistent normalization
+		// Normalize paths regardless of whether pathResolver is available
+		let normalizedFromPath: string
+		let normalizedToPath: string
+
 		if (this.pathResolver) {
-			// Normalize paths to ensure consistent handling across platforms
-			const normalizedFromPath = this.pathResolver.normalizeFilePath(fromPath)
-			const normalizedToPath = this.pathResolver.normalizeFilePath(toPath)
-
-			const fromDir = path.dirname(normalizedFromPath)
-			let relativePath = path.relative(fromDir, normalizedToPath)
-
-			// Normalize the resulting path
-			relativePath = relativePath.replace(/\\/g, "/")
-
-			// Remove file extension
-			relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
-
-			// Ensure it starts with ./ or ../
-			if (!relativePath.startsWith(".")) {
-				relativePath = "./" + relativePath
-			}
-
-			// Cache the result
-			this.resolvedPathCache.set(cacheKey, relativePath)
-			console.log(`[DEBUG] Calculated relative path using PathResolver: ${relativePath}`)
-
-			return relativePath
+			normalizedFromPath = this.pathResolver.normalizeFilePath(fromPath)
+			normalizedToPath = this.pathResolver.normalizeFilePath(toPath)
+			console.log(`[DEBUG] Using PathResolver for normalizing paths`)
 		} else {
-			// Normalize paths to ensure consistent handling across platforms
-			const normalizedFromPath = fromPath.replace(/\\/g, "/")
-			const normalizedToPath = toPath.replace(/\\/g, "/")
-
-			const fromDir = path.dirname(normalizedFromPath)
-			let relativePath = path.relative(fromDir, normalizedToPath)
-
-			// Normalize the resulting path
-			relativePath = relativePath.replace(/\\/g, "/")
-
-			// Remove file extension
-			relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
-
-			// Ensure it starts with ./ or ../
-			if (!relativePath.startsWith(".")) {
-				relativePath = "./" + relativePath
-			}
-
-			// Cache the result
-			this.resolvedPathCache.set(cacheKey, relativePath)
-
-			return relativePath
+			normalizedFromPath = fromPath.replace(/\\/g, "/")
+			normalizedToPath = toPath.replace(/\\/g, "/")
 		}
+
+		// Ensure absolute paths for consistent resolution
+		if (this.pathResolver && !path.isAbsolute(normalizedFromPath)) {
+			normalizedFromPath = this.pathResolver.resolveAbsolutePath(normalizedFromPath)
+		}
+
+		if (this.pathResolver && !path.isAbsolute(normalizedToPath)) {
+			normalizedToPath = this.pathResolver.resolveAbsolutePath(normalizedToPath)
+		}
+
+		const fromDir = path.dirname(normalizedFromPath)
+		let relativePath = path.relative(fromDir, normalizedToPath)
+
+		// Normalize the resulting path
+		relativePath = relativePath.replace(/\\/g, "/")
+
+		// Remove file extension
+		relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
+
+		// Ensure it starts with ./ or ../
+		if (!relativePath.startsWith(".")) {
+			relativePath = "./" + relativePath
+		}
+
+		// Cache the result
+		this.resolvedPathCache.set(cacheKey, relativePath)
+		console.log(`[DEBUG] Calculated relative path: ${relativePath} (from ${fromDir} to ${normalizedToPath})`)
+
+		return relativePath
 	}
 
 	/**
@@ -631,46 +690,85 @@ export class ImportManager {
 			return this.resolvedPathCache.get(cacheKey)!
 		}
 
-		if (!moduleSpecifier.startsWith(".")) {
+		// Handle non-relative imports (packages)
+		if (!moduleSpecifier.startsWith(".") && !moduleSpecifier.startsWith("/")) {
 			// External module
 			this.resolvedPathCache.set(cacheKey, moduleSpecifier)
 			return moduleSpecifier
 		}
 
-		// Normalize paths to ensure consistent handling across platforms
-		const normalizedFromPath = fromPath.replace(/\\/g, "/")
-		const normalizedModuleSpecifier = moduleSpecifier.replace(/\\/g, "/")
+		// Use PathResolver if available for consistent path handling
+		if (this.pathResolver) {
+			const normalizedFromPath = this.pathResolver.normalizeFilePath(fromPath)
+			const fromDir = path.dirname(normalizedFromPath)
 
-		const fromDir = path.dirname(normalizedFromPath)
-		const resolved = path.resolve(fromDir, normalizedModuleSpecifier)
-		const normalizedResolved = resolved.replace(/\\/g, "/")
+			// For relative imports, we need to calculate the absolute path
+			let fullPath: string
 
-		// Try with different extensions
-		const extensions = [".ts", ".tsx", ".js", ".jsx"]
-		for (const ext of extensions) {
-			if (normalizedResolved.endsWith(ext)) {
-				this.resolvedPathCache.set(cacheKey, normalizedResolved)
-				return normalizedResolved
-			}
-			const withExt = normalizedResolved + ext
-
-			// Try to find the file in the project
-			if (this.project.getSourceFile(withExt)) {
-				this.resolvedPathCache.set(cacheKey, withExt)
-				return withExt
+			if (path.isAbsolute(moduleSpecifier)) {
+				// Already absolute
+				fullPath = this.pathResolver.normalizeFilePath(moduleSpecifier)
+			} else {
+				// Resolve relative to fromDir
+				fullPath = path.resolve(fromDir, moduleSpecifier)
+				fullPath = this.pathResolver.normalizeFilePath(fullPath)
 			}
 
-			// Also check with original path format to support case-sensitive file systems
-			const originalWithExt = resolved + ext
-			if (this.project.getSourceFile(originalWithExt)) {
-				this.resolvedPathCache.set(cacheKey, originalWithExt)
-				return originalWithExt
+			// Check for extension
+			if (!path.extname(fullPath)) {
+				// Try to find the file with various extensions
+				const extensions = [".ts", ".tsx", ".js", ".jsx"]
+				for (const ext of extensions) {
+					const withExt = fullPath + ext
+					if (fs.existsSync(withExt) || this.project.getSourceFile(withExt)) {
+						this.resolvedPathCache.set(cacheKey, withExt)
+						return withExt
+					}
+				}
 			}
+
+			// Cache and return the resolved path
+			this.resolvedPathCache.set(cacheKey, fullPath)
+			return fullPath
+		} else {
+			// Normalize paths to ensure consistent handling across platforms
+			const normalizedFromPath = fromPath.replace(/\\/g, "/")
+			const normalizedModuleSpecifier = moduleSpecifier.replace(/\\/g, "/")
+
+			const fromDir = path.dirname(normalizedFromPath)
+			const resolved = path.resolve(fromDir, normalizedModuleSpecifier)
+			const normalizedResolved = resolved.replace(/\\/g, "/")
+
+			// Try with different extensions
+			const extensions = [".ts", ".tsx", ".js", ".jsx"]
+			for (const ext of extensions) {
+				if (normalizedResolved.endsWith(ext)) {
+					this.resolvedPathCache.set(cacheKey, normalizedResolved)
+					return normalizedResolved
+				}
+				const withExt = normalizedResolved + ext
+
+				// Try to find the file in the project
+				if (this.project.getSourceFile(withExt)) {
+					this.resolvedPathCache.set(cacheKey, withExt)
+					return withExt
+				}
+
+				// Also check if file exists
+				try {
+					if (fs.existsSync(withExt)) {
+						this.resolvedPathCache.set(cacheKey, withExt)
+						return withExt
+					}
+				} catch (e) {
+					// Ignore file system errors
+				}
+			}
+
+			// Cache the fallback result
+			this.resolvedPathCache.set(cacheKey, normalizedResolved)
+			return normalizedResolved
 		}
-
-		// Cache the fallback result
-		this.resolvedPathCache.set(cacheKey, normalizedResolved)
-		return normalizedResolved
 	}
 
 	/**
@@ -1083,16 +1181,51 @@ export class ImportManager {
 	/**
 	 * Checks if a file already imports a symbol
 	 */
+	/**
+	 * Determines the type of import declaration
+	 */
+	private getImportType(importDecl: ImportDeclaration): string {
+		// Check for import type { X } from 'module'
+		const isTypeOnly = importDecl.isTypeOnly()
+		if (isTypeOnly) {
+			return this.ImportType.TYPE
+		}
+
+		// Check for import * as X from 'module'
+		const namespaceImport = importDecl.getNamespaceImport()
+		if (namespaceImport) {
+			return this.ImportType.NAMESPACE
+		}
+
+		// Check for import X from 'module'
+		const defaultImport = importDecl.getDefaultImport()
+		if (defaultImport && importDecl.getNamedImports().length === 0) {
+			return this.ImportType.DEFAULT
+		}
+
+		// Regular import { X } from 'module'
+		return this.ImportType.REGULAR
+	}
+
+	/**
+	 * Checks if a file already imports a symbol
+	 */
 	private hasImport(file: SourceFile, symbolName: string): boolean {
 		const imports = file.getImportDeclarations()
 
 		return (
+			// Check named imports (both regular and type imports)
 			imports.some((imp) => {
 				const namedImports = imp.getNamedImports()
 				return namedImports.some((ni) => ni.getName() === symbolName)
 			}) ||
+			// Check default imports
 			imports.some((imp) => {
-				// Also check namespace imports that might bring in the symbol
+				const defaultImport = imp.getDefaultImport()
+				return defaultImport?.getText() === symbolName
+			}) ||
+			// Check namespace imports that might bring in the symbol
+			imports.some((imp) => {
 				const namespaceImport = imp.getNamespaceImport()
 				return namespaceImport !== undefined
 			})
@@ -1102,9 +1235,17 @@ export class ImportManager {
 	/**
 	 * Adds an import to a file
 	 */
+	/**
+	 * Adds a regular import to a file
+	 */
 	private addImport(file: SourceFile, symbolName: string, modulePath: string): void {
 		// Check if we already have an import from this module
-		const existingImport = file.getImportDeclaration((imp) => imp.getModuleSpecifierValue() === modulePath)
+		const existingImport = file.getImportDeclaration(
+			(imp) =>
+				imp.getModuleSpecifierValue() === modulePath &&
+				!imp.isTypeOnly() &&
+				imp.getNamespaceImport() === undefined,
+		)
 
 		if (existingImport) {
 			// Add to existing import
@@ -1119,13 +1260,105 @@ export class ImportManager {
 	}
 
 	/**
+	 * Adds a type import to a file
+	 */
+	private addTypeImport(file: SourceFile, symbolName: string, modulePath: string): void {
+		// Check if we already have a type import from this module
+		const existingTypeImport = file.getImportDeclaration(
+			(imp) => imp.getModuleSpecifierValue() === modulePath && imp.isTypeOnly(),
+		)
+
+		if (existingTypeImport) {
+			// Add to existing type import
+			existingTypeImport.addNamedImport(symbolName)
+		} else {
+			// Create new type import
+			file.addImportDeclaration({
+				moduleSpecifier: modulePath,
+				namedImports: [symbolName],
+				isTypeOnly: true,
+			})
+		}
+	}
+
+	/**
+	 * Adds a default import to a file
+	 */
+	private addDefaultImport(file: SourceFile, symbolName: string, modulePath: string): void {
+		// Check if we already have an import from this module
+		const existingImport = file.getImportDeclaration((imp) => imp.getModuleSpecifierValue() === modulePath)
+
+		if (existingImport) {
+			// For default imports, we need to handle carefully
+			if (!existingImport.getDefaultImport()) {
+				// If there's no default import yet, we need to recreate the import
+				// Get any named imports from the existing import
+				const namedImports = existingImport.getNamedImports().map((ni) => ni.getName())
+
+				// Remove the existing import
+				existingImport.remove()
+
+				// Create a new import with both default and named imports
+				file.addImportDeclaration({
+					moduleSpecifier: modulePath,
+					defaultImport: symbolName,
+					namedImports: namedImports.length > 0 ? namedImports : undefined,
+				})
+			} else {
+				// If there's already a default import, we need to create a new import
+				// This is an edge case that might require special handling
+				console.log(
+					`[WARNING] Attempted to add default import ${symbolName} but module already has a default import`,
+				)
+			}
+		} else {
+			// Create new default import
+			file.addImportDeclaration({
+				moduleSpecifier: modulePath,
+				defaultImport: symbolName,
+			})
+		}
+	}
+
+	/**
+	 * Adds a namespace import to a file
+	 */
+	private addNamespaceImport(file: SourceFile, namespaceName: string, modulePath: string): void {
+		// Create new namespace import
+		file.addImportDeclaration({
+			moduleSpecifier: modulePath,
+			namespaceImport: namespaceName,
+		})
+	}
+
+	/**
 	 * Adds a re-export to a file
 	 */
-	private addReExport(file: SourceFile, symbolName: string, modulePath: string): void {
-		file.addExportDeclaration({
-			moduleSpecifier: modulePath,
-			namedExports: [symbolName],
-		})
+	/**
+	 * Adds a re-export to a file
+	 *
+	 * @param file - The file to add the re-export to
+	 * @param symbolName - The name of the symbol to re-export
+	 * @param modulePath - The module path to re-export from
+	 * @param alias - Optional alias for the re-export (export { symbolName as alias })
+	 */
+	private addReExport(file: SourceFile, symbolName: string, modulePath: string, alias?: string): void {
+		if (alias) {
+			file.addExportDeclaration({
+				moduleSpecifier: modulePath,
+				namedExports: [
+					{
+						name: symbolName,
+						alias: alias,
+					},
+				],
+			})
+		} else {
+			file.addExportDeclaration({
+				moduleSpecifier: modulePath,
+				namedExports: [symbolName],
+			})
+		}
 	}
 
 	/**
@@ -1166,6 +1399,9 @@ export class ImportManager {
 		// Get all source files in the project
 		const allFiles = this.project.getSourceFiles()
 
+		// Keep track of source file with the symbol to avoid checking it multiple times
+		let foundInFile: SourceFile | null = null
+
 		// Look for the symbol in exports of all files
 		for (const sourceFile of allFiles) {
 			// Skip the target file itself
@@ -1182,7 +1418,56 @@ export class ImportManager {
 					`[DEBUG] Found symbol ${symbolName} exported by ${sourceFile.getFilePath()}, added import from ${relativePath}`,
 				)
 				found = true
+				foundInFile = sourceFile
 				break
+			}
+		}
+
+		// If we couldn't find a named export, check for default exports
+		if (!found) {
+			for (const sourceFile of allFiles) {
+				// Skip the target file itself
+				if (sourceFile.getFilePath() === file.getFilePath()) {
+					continue
+				}
+
+				// Check for default export that matches the symbol name
+				const defaultExport = sourceFile.getDefaultExportSymbol()
+				if (defaultExport && defaultExport.getName() === symbolName) {
+					const relativePath = this.calculateRelativePath(file.getFilePath(), sourceFile.getFilePath())
+					this.addDefaultImport(file, symbolName, relativePath)
+					console.log(
+						`[DEBUG] Found default export ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}`,
+					)
+					found = true
+					foundInFile = sourceFile
+					break
+				}
+			}
+		}
+
+		// If we still couldn't find it, check for namespace exports
+		if (!found) {
+			for (const sourceFile of allFiles) {
+				// Skip the target file itself
+				if (sourceFile.getFilePath() === file.getFilePath()) {
+					continue
+				}
+
+				// Look for namespace exports that match the symbol name
+				const namespaces = sourceFile.getDescendantsOfKind(SyntaxKind.ModuleDeclaration)
+				const matchingNamespace = namespaces.find((ns: ModuleDeclaration) => ns.getName() === symbolName)
+
+				if (matchingNamespace) {
+					const relativePath = this.calculateRelativePath(file.getFilePath(), sourceFile.getFilePath())
+					this.addNamespaceImport(file, symbolName, relativePath)
+					console.log(
+						`[DEBUG] Found namespace ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}`,
+					)
+					found = true
+					foundInFile = sourceFile
+					break
+				}
 			}
 		}
 
