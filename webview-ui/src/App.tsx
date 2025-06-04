@@ -27,16 +27,6 @@ const tabsByMessageAction: Partial<Record<NonNullable<ExtensionMessage["action"]
 	profileButtonClicked: "profile",
 }
 
-// Custom handler for the prompt debugger button
-// This is a workaround since we can't modify the ExtensionMessage interface
-const handlePromptDebuggerButtonClick = () => {
-	return (tab: Tab) => {
-		if (tab !== "prompt-debugger") {
-			(window as any).switchToPromptDebugger?.();
-		}
-	};
-};
-
 const App = () => {
 	const { didHydrateState, showWelcome, shouldShowAnnouncement } = useExtensionState()
 
@@ -118,7 +108,7 @@ const App = () => {
 	// Add a global function to switch to the prompt debugger tab for testing
 	// This is temporary and would be replaced with proper navigation in a real implementation
 	useEffect(() => {
-		(window as any).switchToPromptDebugger = () => {
+		;(window as any).switchToPromptDebugger = () => {
 			switchTab("prompt-debugger")
 		}
 	}, [switchTab])
@@ -143,7 +133,7 @@ const App = () => {
 			)}
 			{tab === "profile" && <ProfileView onDone={() => switchTab("chat")} />}
 
-				{tab === "prompt-debugger" && <PromptDebuggerView onDone={() => switchTab("chat")} />}
+			{tab === "prompt-debugger" && <PromptDebuggerView onDone={() => switchTab("chat")} />}
 
 			<ChatView
 				ref={chatViewRef}
