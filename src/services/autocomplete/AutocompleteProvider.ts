@@ -1,4 +1,5 @@
 import * as vscode from "vscode"
+import type { ProviderSettings } from "@roo-code/types"
 import { buildApiHandler, ApiHandler } from "../../api"
 import { CodeContext, ContextGatherer } from "./ContextGatherer"
 import { holeFillerTemplate } from "./templating/AutocompleteTemplate"
@@ -76,7 +77,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		totalSessionCost: 0,
 		lastCompletionTime: 0,
 		model: DEFAULT_MODEL,
-		hasValidToken: !!ContextProxy.instance.getProviderSettings().kilocodeToken,
+		hasValidToken: false, // Will be derived from apiHandler state
 	}
 
 	// Internal state
@@ -93,18 +94,31 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 	// API Handling
 	let apiHandler: ApiHandler | null = null
-	const kilocodeToken = ContextProxy.instance.getProviderSettings().kilocodeToken
-	if (kilocodeToken) {
-		apiHandler = buildApiHandler({
-			apiProvider: "kilocode",
-			kilocodeToken,
-			kilocodeModel: DEFAULT_MODEL,
-		})
+
+	/**
+	 * Creates an API handler with the current provider settings
+	 */
+	const createApiHandler = (): ApiHandler | null => {
+		const { kilocodeToken, openRouterApiKey } = ContextProxy.instance.getProviderSettings()
+		const useOpenRouter = false // Use this to try out OpenRouter. Seems slightly faster?
+		const apiProvider = useOpenRouter ? "openrouter" : "kilocode"
+		if ((apiProvider === "kilocode" && kilocodeToken) || (apiProvider === "openrouter" && openRouterApiKey)) {
+			return buildApiHandler({
+				apiProvider,
+				kilocodeToken,
+				kilocodeModel: DEFAULT_MODEL,
+				openRouterModelId: DEFAULT_MODEL,
+				...ContextProxy.instance.getProviderSettings(),
+			})
+		}
+		return null
 	}
+
+	apiHandler = createApiHandler()
 
 	// Helper Functions
 	const updateTokenStatus = () => {
-		state.hasValidToken = !!ContextProxy.instance.getProviderSettings().kilocodeToken
+		state.hasValidToken = apiHandler !== null
 	}
 
 	const clearState = () => {
@@ -223,21 +237,18 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		async provideInlineCompletionItems(document, position, context, token) {
 			if (!state.enabled || !vscode.window.activeTextEditor) return null
 
-			const kilocodeToken = ContextProxy.instance.getProviderSettings().kilocodeToken
-			if (!kilocodeToken) {
+			// Create or recreate the API handler if needed
+			apiHandler = apiHandler ?? createApiHandler()
+
+			if (!apiHandler) {
 				updateTokenStatus()
 				statusBar.updateDisplay(state)
 				return null
 			}
 
-			// Update token status and status bar if token is now available
+			// Update token status and status bar if API handler is available
 			updateTokenStatus()
 			statusBar.updateDisplay(state)
-
-			// Create or recreate the API handler if needed
-			apiHandler =
-				apiHandler ??
-				buildApiHandler({ apiProvider: "kilocode", kilocodeToken: kilocodeToken, kilocodeModel: DEFAULT_MODEL })
 
 			// Skip providing completions if this was triggered by a backspace operation of if we just accepted a suggestion
 			if (isBackspaceOperation || justAcceptedSuggestion) {

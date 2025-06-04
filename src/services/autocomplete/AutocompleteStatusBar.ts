@@ -33,7 +33,8 @@ export class AutocompleteStatusBar implements vscode.Disposable {
 		}
 
 		const totalCostFormatted = formatCost(state.totalSessionCost)
-		this.statusBarItem.text = `$(sparkle) Kilo Complete (${totalCostFormatted})`
+		const timingText = state.lastCompletionTime > 0 ? ` ${state.lastCompletionTime.toFixed(1)}s` : ""
+		this.statusBarItem.text = `$(sparkle) Kilo Complete (${totalCostFormatted}${timingText})`
 		this.statusBarItem.tooltip = `\
 Kilo Code Autocomplete
 
