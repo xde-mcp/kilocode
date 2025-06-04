@@ -85,7 +85,7 @@ export async function attemptCompletionTool(
 				if (lastMessage && lastMessage.ask !== "command") {
 					// Haven't sent a command message yet so first send completion_result then command.
 					await cline.say("completion_result", result, undefined, undefined, false)
-					telemetryService.captureTaskCompleted(cline.taskId)
+					// telemetryService.captureTaskCompleted(cline.taskId)
 					cline.emit("taskCompleted", cline.taskId, cline.getTokenUsage(), cline.toolUsage)
 				}
 
