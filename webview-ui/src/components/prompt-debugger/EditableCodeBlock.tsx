@@ -20,7 +20,7 @@ const EditorContainer = styled.div`
 	line-height: 1.5;
 	background-color: ${CODE_BLOCK_BG_COLOR};
 	border-radius: 5px;
-	overflow: hidden;
+	overflow: auto;
 	display: block;
 	box-sizing: border-box;
 `
@@ -42,7 +42,7 @@ const HiddenTextArea = styled.textarea`
 	white-space: pre-wrap;
 	word-break: break-word;
 	overflow-wrap: break-word;
-	overflow: auto;
+	overflow: visible;
 	font-family: var(--vscode-editor-font-family);
 	font-size: var(--vscode-editor-font-size, var(--vscode-font-size, 12px));
 	line-height: 1.5;
@@ -67,7 +67,7 @@ const SyntaxHighlightedContent = styled.div`
 	white-space: pre-wrap;
 	word-break: break-word;
 	overflow-wrap: break-word;
-	overflow: hidden;
+	overflow: visible;
 	z-index: 1;
 	tab-size: 4;
 
@@ -115,7 +115,6 @@ const EditableCodeBlock = forwardRef<HTMLTextAreaElement, EditableCodeBlockProps
 			}
 		}, [ref])
 		const containerRef = useRef<HTMLDivElement>(null)
-		const [height, setHeight] = useState<number>(0)
 
 		// Update current language when prop changes
 		useEffect(() => {
@@ -169,55 +168,43 @@ const EditableCodeBlock = forwardRef<HTMLTextAreaElement, EditableCodeBlockProps
 			})
 		}, [value, currentLanguage])
 
-		// Update height based on content
+		// Re-highlight when content changes
 		useEffect(() => {
-			if (textAreaRef.current) {
-				const lineHeight = parseInt(getComputedStyle(textAreaRef.current).lineHeight) || 20
-				const minHeight = lineHeight * rows
-				const scrollHeight = textAreaRef.current.scrollHeight
+			// Force a re-render of the syntax highlighting when content changes
+			// This helps keep the highlighting in sync with the textarea
+			const fallback = `<pre><code class="hljs language-${currentLanguage || "txt"}">${value || ""}</code></pre>`
+			setHighlightedCode(fallback)
 
-				// Add a small buffer to ensure all content is visible
-				const newHeight = Math.max(minHeight, scrollHeight + 10)
-				setHeight(newHeight)
-
-				// Force a re-render of the syntax highlighting when content changes
-				// This helps keep the highlighting in sync with the textarea
-				const fallback = `<pre><code class="hljs language-${currentLanguage || "txt"}">${value || ""}</code></pre>`
-				setHighlightedCode(fallback)
-
-				// Schedule a proper highlight after the DOM has updated
-				setTimeout(async () => {
-					try {
-						const highlighter = await getHighlighter(currentLanguage)
-						const html = await highlighter.codeToHtml(value || "", {
-							lang: currentLanguage || "txt",
-							theme: document.body.className.toLowerCase().includes("light")
-								? "github-light"
-								: "github-dark",
-							transformers: [
-								{
-									pre(node) {
-										node.properties.style = "padding: 0; margin: 0; background: transparent;"
-										return node
-									},
-									code(node) {
-										node.properties.class = `hljs language-${currentLanguage}`
-										return node
-									},
-									line(node) {
-										node.properties.class = node.properties.class || ""
-										return node
-									},
+			// Schedule a proper highlight after the DOM has updated
+			setTimeout(async () => {
+				try {
+					const highlighter = await getHighlighter(currentLanguage)
+					const html = await highlighter.codeToHtml(value || "", {
+						lang: currentLanguage || "txt",
+						theme: document.body.className.toLowerCase().includes("light") ? "github-light" : "github-dark",
+						transformers: [
+							{
+								pre(node) {
+									node.properties.style = "padding: 0; margin: 0; background: transparent;"
+									return node
 								},
-							],
-						})
-						setHighlightedCode(html)
-					} catch (e) {
-						console.error("[EditableCodeBlock] Syntax highlighting error:", e)
-					}
-				}, 10)
-			}
-		}, [value, rows, currentLanguage])
+								code(node) {
+									node.properties.class = `hljs language-${currentLanguage}`
+									return node
+								},
+								line(node) {
+									node.properties.class = node.properties.class || ""
+									return node
+								},
+							},
+						],
+					})
+					setHighlightedCode(html)
+				} catch (e) {
+					console.error("[EditableCodeBlock] Syntax highlighting error:", e)
+				}
+			}, 10)
+		}, [value, currentLanguage])
 
 		// Handle input changes
 		const handleChange = useCallback(
@@ -252,10 +239,7 @@ const EditableCodeBlock = forwardRef<HTMLTextAreaElement, EditableCodeBlockProps
 		)
 
 		return (
-			<EditorContainer
-				ref={containerRef}
-				className={className}
-				style={{ height: `${height}px`, minHeight: `${rows * 20}px` }}>
+			<EditorContainer ref={containerRef} className={className} style={{ height: `${rows * 20}px` }}>
 				<HiddenTextArea
 					ref={textAreaRef}
 					value={value}

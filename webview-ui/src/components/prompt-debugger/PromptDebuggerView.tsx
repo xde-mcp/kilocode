@@ -49,36 +49,103 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 	const llmResponseRef = useRef("")
 	const animationFrameIdRef = useRef<number | null>(null)
 
-	// State for test variables
-	const [testVariables, _setTestVariables] = useState({
-		user: {
-			name: "John Doe",
-			email: "john.doe@example.com",
-			role: "Developer",
+	// State for template variables
+	const [templateVariables, setTemplateVariables] = useState({
+		document: {
+			path: "example.js",
+			name: "example.js",
+			language: "javascript",
+			lineCount: 10,
 		},
-		project: {
-			name: "Awesome Project",
-			description: "A really cool project",
-			version: "1.0.0",
+		selection: {
+			text: "console.log('Hello world');",
+			lineNumber: 5,
+			column: 10,
+		},
+		cursor: {
+			line: 5,
+			column: 10,
+		},
+		content: {
+			beforeCursor: "// Example code\nfunction example() {\n  // Function body\n  ",
+			afterCursor: "\n  return true;\n}\n",
+			all: "// Example code\nfunction example() {\n  // Function body\n  console.log('Hello world');\n  return true;\n}\n",
 		},
 		date: new Date().toLocaleDateString(),
-		items: ["Item 1", "Item 2", "Item 3"],
 	})
+
+	// Handle document updates from the extension
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			const message = event.data
+			if (message.type === "editorStateUpdate") {
+				setTemplateVariables((prevVars) => ({
+					...prevVars,
+					...message.editorState,
+				}))
+			}
+		}
+
+		window.addEventListener("message", handleMessage)
+
+		// Notify the extension we're ready to receive editor state updates
+		vscode.postMessage({
+			type: "promptDebuggerReady",
+		})
+
+		return () => {
+			window.removeEventListener("message", handleMessage)
+		}
+	}, [])
 
 	// Reference to the code editor for cursor position
 	const codeEditorRef = useRef<HTMLTextAreaElement | null>(null)
 
+	// Function to convert string values to Handlebars.SafeString to prevent HTML escaping
+	const prepareVariablesForHandlebars = useCallback((obj: any): any => {
+		if (obj === null || obj === undefined) {
+			return obj
+		}
+
+		// If it's a string, wrap it in SafeString to prevent escaping
+		if (typeof obj === "string") {
+			return new Handlebars.SafeString(obj)
+		}
+
+		// If it's an array, process each element
+		if (Array.isArray(obj)) {
+			return obj.map((item) => prepareVariablesForHandlebars(item))
+		}
+
+		// If it's an object, process each property
+		if (typeof obj === "object") {
+			const result: Record<string, any> = {}
+			for (const key in obj) {
+				if (Object.prototype.hasOwnProperty.call(obj, key)) {
+					result[key] = prepareVariablesForHandlebars(obj[key])
+				}
+			}
+			return result
+		}
+
+		// Return other types as is
+		return obj
+	}, [])
+
 	// Update rendered preview whenever the template changes
 	useEffect(() => {
 		try {
+			// Prepare variables with SafeString to prevent HTML escaping
+			const safeVariables = prepareVariablesForHandlebars(templateVariables)
+
 			const template = Handlebars.compile(promptInput)
-			const rendered = template(testVariables)
+			const rendered = template(safeVariables)
 			setRenderedPreview(rendered)
 		} catch (error) {
 			// If there's an error in the template, show the error in the preview
 			setRenderedPreview(`Template Error: ${(error as Error).message}`)
 		}
-	}, [promptInput, testVariables])
+	}, [promptInput, templateVariables, prepareVariablesForHandlebars])
 
 	// Create API handler for the selected model
 	const createApiHandler = useCallback(() => {
@@ -354,51 +421,78 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 
 					<div className="mb-2">
 						<div className="flex flex-wrap gap-2 mb-2 p-2 bg-vscode-editor-background rounded border border-vscode-panel-border">
-							<Button variant="outline" size="sm" onClick={() => insertVariable("user.name")}>
-								user.name
+							<div className="w-full mb-1 text-xs text-vscode-descriptionForeground">Document:</div>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("document.path")}>
+								document.path
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("user.email")}>
-								user.email
+							<Button variant="outline" size="sm" onClick={() => insertVariable("document.name")}>
+								document.name
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("user.role")}>
-								user.role
+							<Button variant="outline" size="sm" onClick={() => insertVariable("document.language")}>
+								document.language
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("project.name")}>
-								project.name
+							<Button variant="outline" size="sm" onClick={() => insertVariable("document.lineCount")}>
+								document.lineCount
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("project.description")}>
-								project.description
+
+							<div className="w-full mt-2 mb-1 text-xs text-vscode-descriptionForeground">
+								Selection & Cursor:
+							</div>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("selection.text")}>
+								selection.text
 							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("project.version")}>
-								project.version
+							<Button variant="outline" size="sm" onClick={() => insertVariable("cursor.line")}>
+								cursor.line
 							</Button>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("cursor.column")}>
+								cursor.column
+							</Button>
+
+							<div className="w-full mt-2 mb-1 text-xs text-vscode-descriptionForeground">Content:</div>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("content.beforeCursor")}>
+								content.beforeCursor
+							</Button>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("content.afterCursor")}>
+								content.afterCursor
+							</Button>
+							<Button variant="outline" size="sm" onClick={() => insertVariable("content.all")}>
+								content.all
+							</Button>
+
+							<div className="w-full mt-2 mb-1 text-xs text-vscode-descriptionForeground">Other:</div>
 							<Button variant="outline" size="sm" onClick={() => insertVariable("date")}>
 								date
-							</Button>
-							<Button variant="outline" size="sm" onClick={() => insertVariable("items")}>
-								items
 							</Button>
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4 mb-4">
+					<div className="grid grid-cols-2 gap-4 mb-4" style={{ height: "400px" }}>
 						<div>
 							<h4 className="text-vscode-foreground m-0 mb-2">{t("Template")}</h4>
-							<EditableCodeBlock
-								ref={codeEditorRef}
-								value={promptInput}
-								onChange={setPromptInput}
-								language="handlebars"
-								placeholder={t("Enter your template here... (e.g. Hello {{user.name}}!)")}
-								rows={8}
-								className="w-full"
-							/>
+							<div style={{ height: "300px", position: "relative" }}>
+								<div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+									<EditableCodeBlock
+										ref={codeEditorRef}
+										value={promptInput}
+										onChange={setPromptInput}
+										language="handlebars"
+										placeholder={t("Enter your template here... (e.g. Hello {{user.name}}!)")}
+										rows={15} /* Increased to ensure it fills the space */
+										className="w-full h-full"
+									/>
+								</div>
+							</div>
 						</div>
 						<div>
 							<h4 className="text-vscode-foreground m-0 mb-2">{t("Rendered Preview")}</h4>
-							<div className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap h-[calc(100%-2.5rem)] overflow-auto">
-								{renderedPreview || t("Preview will appear here...")}
-							</div>
+							<div
+								className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap overflow-auto"
+								style={{ height: "300px" }}
+								// Using dangerouslySetInnerHTML to render HTML content as-is without escaping
+								dangerouslySetInnerHTML={{
+									__html: renderedPreview || t("Preview will appear here..."),
+								}}
+							/>
 						</div>
 					</div>
 
@@ -419,17 +513,25 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 
 					<div className="mb-4">
 						<h4 className="text-vscode-foreground m-0 mb-2">{t("LLM Response")}</h4>
-						<div className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap min-h-[100px]">
-							{llmResponse || t("LLM response will appear here after clicking 'Call LLM'...")}
-						</div>
+						<div
+							className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap overflow-auto"
+							style={{ height: "150px" }}
+							dangerouslySetInnerHTML={{
+								__html: llmResponse || t("LLM response will appear here after clicking 'Call LLM'..."),
+							}}
+						/>
 					</div>
 
 					{debugOutput && (
 						<div className="mb-4">
 							<h4 className="text-vscode-foreground m-0 mb-2">{t("Debug Output")}</h4>
-							<div className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap">
-								{debugOutput}
-							</div>
+							<div
+								className="bg-vscode-editor-background p-4 rounded border border-vscode-panel-border whitespace-pre-wrap overflow-auto"
+								style={{ height: "150px" }}
+								dangerouslySetInnerHTML={{
+									__html: debugOutput,
+								}}
+							/>
 						</div>
 					)}
 				</div>

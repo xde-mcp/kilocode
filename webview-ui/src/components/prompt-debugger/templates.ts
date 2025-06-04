@@ -1,20 +1,30 @@
 // Template definitions for the Prompt Debugger
 
-export const documentationTemplate = `# {{project.name}} Documentation
+export const documentationTemplate = `# Document Analysis: {{document.name}}
 
-## Overview
-{{project.description}}
-Version: {{project.version}}
+## File Information
+- **Path:** {{document.path}}
+- **Language:** {{document.language}}
+- **Line Count:** {{document.lineCount}}
 
-## User Information
-- **Name:** {{user.name}}
-- **Email:** {{user.email}}
-- **Role:** {{user.role}}
+## Current Selection
+\`\`\`{{document.language}}
+{{selection.text}}
+\`\`\`
 
-## Project Items
-{{#each items}}
-- {{this}}
-{{/each}}
+## Cursor Position
+- Line: {{cursor.line}}
+- Column: {{cursor.column}}
+
+## Content Before Cursor
+\`\`\`{{document.language}}
+{{content.beforeCursor}}
+\`\`\`
+
+## Content After Cursor
+\`\`\`{{document.language}}
+{{content.afterCursor}}
+\`\`\`
 
 ## Generated on: {{date}}
 `
@@ -22,14 +32,19 @@ Version: {{project.version}}
 export const holeFillTemplate = `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{HOLE_NAME}}'.
 Your TASK is to complete with a string to replace this hole with, including context-aware indentation, if needed.
 
+## Current file information
+- File: {{document.name}}
+- Language: {{document.language}}
+
 ## Current file content with hole:
-\`\`\`
-function hypothenuse(a, b) {
-  return Math.sqrt({{FILL_HERE}}b ** 2);
-}
+\`\`\`{{document.language}}
+{{content.all}}
 \`\`\`
 
-TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion.`
+## Cursor is at position: Line {{cursor.line}}, Column {{cursor.column}}
+
+TASK: Fill in the code at the cursor position, ensuring it fits properly with the surrounding context.
+Answer only with the CORRECT completion.`
 
 // Default templates array
 export const defaultTemplates = [

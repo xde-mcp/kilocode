@@ -163,6 +163,7 @@ export interface WebviewMessage {
 		| "indexCleared"
 		| "codebaseIndexConfig"
 		| "telemetrySetting"
+		| "promptDebuggerReady" // Added for prompt debugger to request editor state updates
 	text?: string
 	disabled?: boolean
 	askResponse?: ClineAskResponse

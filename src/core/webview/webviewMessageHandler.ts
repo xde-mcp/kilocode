@@ -12,6 +12,7 @@ import { Package } from "../../shared/package"
 import { RouterName, toRouterName, ModelRecord } from "../../shared/api"
 import { supportPrompt } from "../../shared/support-prompt"
 import { checkoutDiffPayloadSchema, checkoutRestorePayloadSchema, WebviewMessage } from "../../shared/WebviewMessage"
+import { EditorState } from "../../shared/ExtensionMessage"
 import { checkExistKey } from "../../shared/checkExistApiConfig"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
@@ -1674,5 +1675,81 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			}
 			break
 		}
+		case "promptDebuggerReady":
+			// Set up tracking for editor state changes and send them to the prompt debugger
+			const sendEditorState = () => {
+				const activeEditor = vscode.window.activeTextEditor
+
+				if (activeEditor) {
+					const document = activeEditor.document
+					const selection = activeEditor.selection
+					const position = selection.active
+
+					// Extract file name from path
+					const fileName = document.fileName.split("/").pop() || document.fileName
+
+					// Get content before and after cursor
+					const beforeCursor = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
+
+					const afterCursor = document.getText(
+						new vscode.Range(position, new vscode.Position(document.lineCount, 0)),
+					)
+
+					const editorState: EditorState = {
+						document: {
+							path: document.fileName,
+							name: fileName,
+							language: document.languageId,
+							lineCount: document.lineCount,
+						},
+						selection: {
+							text: document.getText(selection),
+							lineNumber: selection.start.line + 1,
+							column: selection.start.character + 1,
+						},
+						cursor: {
+							line: position.line + 1,
+							column: position.character + 1,
+						},
+						content: {
+							beforeCursor,
+							afterCursor,
+							all: document.getText(),
+						},
+					}
+
+					// Send editor state to webview
+					provider.postMessageToWebview({
+						type: "editorStateUpdate",
+						editorState,
+					})
+				}
+			}
+
+			// Send initial state
+			sendEditorState()
+
+			// Clean up any existing subscriptions first
+			while (provider.editorStateSubscriptions.length) {
+				const sub = provider.editorStateSubscriptions.pop()
+				if (sub) {
+					sub.dispose()
+				}
+			}
+
+			// Set up listeners for document and selection changes directly on the provider's array
+			provider.editorStateSubscriptions.push(
+				vscode.window.onDidChangeTextEditorSelection(() => {
+					sendEditorState()
+				}),
+				vscode.workspace.onDidChangeTextDocument(() => {
+					sendEditorState()
+				}),
+				vscode.window.onDidChangeActiveTextEditor(() => {
+					sendEditorState()
+				}),
+			)
+
+			break
 	}
 }
