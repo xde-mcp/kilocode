@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.33.0
-
-### Minor Changes
+## [v4.33.0]
 
 - [#597](https://github.com/Kilo-Org/kilocode/pull/597) [`7e9789c`](https://github.com/Kilo-Org/kilocode/commit/7e9789ce160f6fa82365b8bc8b5331ea99848f73) Thanks [@hassoncs](https://github.com/hassoncs)! - Experimental Autocomplete
 
