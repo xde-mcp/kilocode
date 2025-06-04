@@ -19,8 +19,18 @@ describe("RemoveOrchestrator", () => {
 		getCompilerOptions: jest.fn().mockReturnValue({ rootDir: "/project/root" }),
 	} as unknown as Project
 
-	const mockSourceFile = {} as SourceFile
-	const mockNode = {} as Node
+	const mockSourceFile = {
+		getFunction: jest.fn().mockReturnValue(undefined),
+		getClass: jest.fn().mockReturnValue(undefined),
+		getInterface: jest.fn().mockReturnValue(undefined),
+		getTypeAlias: jest.fn().mockReturnValue(undefined),
+		getEnum: jest.fn().mockReturnValue(undefined),
+	} as unknown as SourceFile
+
+	const mockNode = {
+		getAncestors: jest.fn().mockReturnValue([]),
+		getParent: jest.fn().mockReturnValue(undefined),
+	} as unknown as Node
 
 	const mockSymbol: ResolvedSymbol = {
 		node: mockNode,
@@ -42,6 +52,9 @@ describe("RemoveOrchestrator", () => {
 
 	// Mock implementations
 	const mockNormalizeFilePath = jest.fn().mockReturnValue("src/file.ts")
+	const mockIsTestEnvironment = jest.fn().mockImplementation((path) => {
+		return path && (path.includes("test") || path.includes("__tests__") || path.includes("__mocks__"))
+	})
 	const mockEnsureFileInProject = jest.fn().mockResolvedValue(mockSourceFile)
 	const mockResolveSymbol = jest.fn().mockReturnValue(mockSymbol)
 	const mockValidateForRemoval = jest.fn().mockReturnValue({ canProceed: true, blockers: [], warnings: [] })
@@ -62,6 +75,7 @@ describe("RemoveOrchestrator", () => {
 
 		// Set up the prototype mocks
 		PathResolver.prototype.normalizeFilePath = mockNormalizeFilePath
+		PathResolver.prototype.isTestEnvironment = mockIsTestEnvironment
 		FileManager.prototype.ensureFileInProject = mockEnsureFileInProject
 		SymbolResolver.prototype.resolveSymbol = mockResolveSymbol
 		SymbolResolver.prototype.validateForRemoval = mockValidateForRemoval

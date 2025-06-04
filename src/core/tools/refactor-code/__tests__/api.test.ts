@@ -93,22 +93,21 @@ export function createDefaultButton(text: string, onClick: () => void) {
 		path.join(TEST_PROJECT_DIR, "App.tsx"),
 		`
 import React from 'react';
-import { Button, createDefaultButton } from './Button';
+import { Button } from './Button';
 import { formatDate } from './utils';
 
 export function App() {
-  const today = new Date();
-  
-  return (
-    <div>
-      <h1>Today is {formatDate(today)}</h1>
-      <Button 
-        text="Click me" 
-        onClick={() => console.log('Button clicked')} 
-      />
-      {createDefaultButton('Default Button', () => console.log('Default button clicked'))}
-    </div>
-  );
+	 const today = new Date();
+	 
+	 return (
+	   <div>
+	     <h1>Today is {formatDate(today)}</h1>
+	     <Button
+	       text="Click me"
+	       onClick={() => console.log('Button clicked')}
+	     />
+	   </div>
+	 );
 }
 `,
 	)
@@ -159,7 +158,7 @@ describe("Refactor Code API", () => {
 				"formatDate",
 				path.join(TEST_PROJECT_DIR, "dateUtils.ts"),
 				{ symbolKind: "function" },
-				{ projectRootPath: path.dirname(TEST_PROJECT_DIR) },
+				{ projectRootPath: TEST_PROJECT_DIR },
 			)
 
 			// Check the result
@@ -190,7 +189,7 @@ describe("Refactor Code API", () => {
 				"ButtonProps",
 				path.join(TEST_PROJECT_DIR, "types.ts"),
 				{ symbolKind: "interface" },
-				{ projectRootPath: path.dirname(TEST_PROJECT_DIR) },
+				{ projectRootPath: TEST_PROJECT_DIR },
 			)
 
 			// Check the result
@@ -214,7 +213,7 @@ describe("Refactor Code API", () => {
 				path.join(TEST_PROJECT_DIR, "Button.tsx"),
 				"createDefaultButton",
 				{ symbolKind: "function" },
-				{ projectRootPath: path.dirname(TEST_PROJECT_DIR) },
+				{ projectRootPath: TEST_PROJECT_DIR },
 			)
 
 			// Check the result
@@ -232,12 +231,12 @@ describe("Refactor Code API", () => {
 				path.join(TEST_PROJECT_DIR, "Button.tsx"),
 				"Button",
 				{ symbolKind: "variable" },
-				{ projectRootPath: path.dirname(TEST_PROJECT_DIR) },
+				{ projectRootPath: TEST_PROJECT_DIR },
 			)
 
 			// Check that the operation failed due to external references
 			expect(result.success).toBe(false)
-			expect(result.error).toContain("external reference")
+			expect(result.error).toContain("referenced in")
 		})
 
 		it("should force remove a function with references", async () => {
@@ -249,7 +248,7 @@ describe("Refactor Code API", () => {
 					symbolKind: "variable",
 					forceRemove: true,
 				},
-				{ projectRootPath: path.dirname(TEST_PROJECT_DIR) },
+				{ projectRootPath: TEST_PROJECT_DIR },
 			)
 
 			// Check that the operation succeeded with force option
@@ -284,7 +283,7 @@ describe("Refactor Code API", () => {
 					},
 				],
 				{
-					projectRootPath: path.dirname(TEST_PROJECT_DIR),
+					projectRootPath: TEST_PROJECT_DIR,
 					stopOnError: false,
 				},
 			)

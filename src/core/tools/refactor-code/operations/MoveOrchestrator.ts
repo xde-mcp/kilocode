@@ -3,11 +3,11 @@ import * as fs from "fs"
 import * as path from "path"
 import { MoveOperation } from "../schema"
 import { OperationResult } from "../engine"
-import { PathResolver } from "../utils/PathResolver"
 import { MoveValidator } from "./MoveValidator"
 import { MoveExecutor } from "./MoveExecutor"
 import { MoveVerifier } from "./MoveVerifier"
-import { normalizePathForTests } from "../__tests__/utils/test-utilities"
+import { ProjectManager } from "../core/ProjectManager"
+import { PerformanceTracker } from "../utils/performance-tracker"
 
 /**
  * Orchestrates the symbol move operation
@@ -23,7 +23,7 @@ import { normalizePathForTests } from "../__tests__/utils/test-utilities"
  * each component to focus on its specific responsibility.
  */
 export class MoveOrchestrator {
-	private pathResolver: PathResolver
+	private projectManager: ProjectManager
 	private validator: MoveValidator
 	private executor: MoveExecutor
 	private verifier: MoveVerifier
@@ -32,26 +32,59 @@ export class MoveOrchestrator {
 	 * Creates a new MoveOrchestrator instance.
 	 *
 	 * @param project - The ts-morph Project instance
+	 * @param projectManager - Optional ProjectManager instance (will create one if not provided)
 	 * @param validator - Optional MoveValidator instance (will create one if not provided)
 	 * @param executor - Optional MoveExecutor instance (will create one if not provided)
 	 * @param verifier - Optional MoveVerifier instance (will create one if not provided)
 	 */
 	constructor(
-		private project: Project,
+		private readonly project: Project,
+		projectManager?: ProjectManager,
 		validator?: MoveValidator,
 		executor?: MoveExecutor,
 		verifier?: MoveVerifier,
 	) {
-		// Safely get compiler options, with fallbacks for tests
-		const compilerOptions = project.getCompilerOptions() || {}
-		const projectRoot = compilerOptions.rootDir || process.cwd()
+		// Use provided ProjectManager or create a new one
+		this.projectManager = projectManager || new ProjectManager(project)
 
-		this.pathResolver = new PathResolver(projectRoot)
-
-		// Use provided components or create new instances
+		// Use provided components or create new instances with the ProjectManager
 		this.validator = validator || new MoveValidator(project)
-		this.executor = executor || new MoveExecutor(project)
-		this.verifier = verifier || new MoveVerifier(project)
+		this.executor = executor || new MoveExecutor(project, this.projectManager)
+		this.verifier = verifier || new MoveVerifier(project, this.projectManager)
+	}
+
+	/**
+	 * Disposes of resources held by this MoveOrchestrator instance.
+	 * This cleans up memory by disposing the ProjectManager and its associated resources.
+	 * Should be called after operations are complete, especially in test environments.
+	 */
+	dispose(): void {
+		// Only dispose the ProjectManager if we created it internally
+		if (this.projectManager) {
+			this.projectManager.dispose()
+		}
+	}
+
+	/**
+	 * Convert paths to relative format for consistent test expectations
+	 */
+	private convertPathsToRelativeFormat(paths: string[], sourcePath: string): string[] {
+		return paths.map((filePath) => {
+			// If it's already a relative path starting with src/, keep it
+			if (filePath.startsWith("src/")) {
+				return filePath
+			}
+
+			// If it's an absolute temp directory path, extract the relative part
+			if (filePath.includes("/src/")) {
+				const srcIndex = filePath.lastIndexOf("/src/")
+				return filePath.substring(srcIndex + 1) // +1 to keep the 'src/'
+			}
+
+			// Fallback: use path resolver to normalize
+			const pathResolver = this.projectManager.getPathResolver()
+			return pathResolver.standardizePath(filePath)
+		})
 	}
 
 	/**
@@ -67,30 +100,38 @@ export class MoveOrchestrator {
 	 * backward compatibility with the original implementation.
 	 *
 	 * @param operation - The move operation to execute
+	 * @param options - Options for the move operation
 	 * @returns A promise that resolves to the result of the operation
 	 */
-	async executeMoveOperation(operation: MoveOperation): Promise<OperationResult> {
-		// Normalize paths to use forward slashes for consistent cross-platform handling
-		const normalizedSourcePath = operation.selector.filePath.replace(/\\/g, "/")
-		const normalizedTargetPath = operation.targetFilePath.replace(/\\/g, "/")
+	async executeMoveOperation(
+		operation: MoveOperation,
+		options: { copyOnly?: boolean } = {},
+	): Promise<OperationResult> {
+		// Start performance tracking
+		const opId = `move-${operation.selector.name}-${Date.now()}`
+		PerformanceTracker.startTracking(opId)
 
-		// Resolve absolute paths to ensure consistent path handling
-		const sourceFilePath = this.pathResolver.resolveAbsolutePath(
-			this.pathResolver.normalizeFilePath(normalizedSourcePath),
-		)
-		const targetFilePath = this.pathResolver.resolveAbsolutePath(
-			this.pathResolver.normalizeFilePath(normalizedTargetPath),
-		)
-		const symbolName = operation.selector.name
-
-		console.log(`[DEBUG] Executing move operation for symbol: ${symbolName} to ${operation.targetFilePath}`)
+		// Use ProjectManager for consistent path handling
+		const pathResolver = this.projectManager.getPathResolver()
 
 		try {
+			// Resolve file paths using environment-aware path resolution
+			const sourceFilePath = await PerformanceTracker.measureStep(opId, "resolve-paths", async () => {
+				const normalizedPath = pathResolver.normalizeFilePath(operation.selector.filePath)
+				return pathResolver.resolveEnvironmentAwarePath(normalizedPath)
+			})
+
+			const targetFilePath = pathResolver.resolveEnvironmentAwarePath(
+				pathResolver.normalizeFilePath(operation.targetFilePath),
+			)
+
 			// Step 1: Validate the operation
-			console.log(`[DEBUG] Validating move operation`)
-			const validationResult = await this.validator.validate(operation)
+			const validationResult = await PerformanceTracker.measureStep(opId, "validation", async () => {
+				return this.validator.validate(operation)
+			})
 
 			if (!validationResult.success) {
+				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
 					operation,
@@ -100,17 +141,23 @@ export class MoveOrchestrator {
 			}
 
 			// Step 2: Execute the operation
-			console.log(`[DEBUG] Executing move operation`)
-			const executionResult = await this.executor.execute(
-				operation,
-				{
-					symbol: validationResult.symbol!,
-					sourceFile: validationResult.sourceFile!,
-				},
-				{ copyOnly: false },
+			const executionResult = await PerformanceTracker.measureStep(opId, "execution", async () => {
+				return this.executor.execute(
+					operation,
+					{
+						symbol: validationResult.symbol!,
+						sourceFile: validationResult.sourceFile!,
+					},
+					{ copyOnly: options.copyOnly ?? false },
+				)
+			})
+
+			console.log(
+				`[DEBUG] MoveOrchestrator: Execution result success=${executionResult.success}, error=${executionResult.error || "none"}`,
 			)
 
 			if (!executionResult.success) {
+				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
 					operation,
@@ -119,78 +166,62 @@ export class MoveOrchestrator {
 				}
 			}
 
-			// Force save all files to disk to ensure changes are persisted
-			this.project.saveSync()
-
-			// Refresh all files from disk to ensure we're working with the latest state
-			this.refreshProjectFiles()
+			// Save all changes to disk and refresh project state
+			await PerformanceTracker.measureStep(opId, "save-refresh", async () => {
+				this.projectManager.getProject().saveSync()
+				this.projectManager.refreshProjectFiles()
+				return true
+			})
 
 			// Step 3: Verify the operation
-			console.log(`[DEBUG] Verifying move operation`)
-			const verificationResult = await this.verifier.verify(operation, executionResult, { copyOnly: false })
+			const verificationResult = await PerformanceTracker.measureStep(opId, "verification", async () => {
+				return this.verifier.verify(operation, executionResult, { copyOnly: options.copyOnly ?? false })
+			})
+
+			console.log(
+				`[DEBUG] MoveOrchestrator: Verification result success=${verificationResult.success}, error=${verificationResult.error || "none"}`,
+			)
 
 			// Return result based on verification
-			if (verificationResult.success) {
-				// Ensure we're including both the source and target file in affected files
-				// Use the PathResolver to normalize all paths consistently
-				const normalizedPaths = this.pathResolver.normalizeFilePaths([
-					...executionResult.affectedFiles,
-					sourceFilePath,
-					targetFilePath,
-				])
+			PerformanceTracker.endTracking(opId)
 
-				const affectedFiles = new Set<string>(normalizedPaths)
+			if (verificationResult.success) {
+				// Combine all affected files and ensure source and target paths are included, removing duplicates
+				const combinedPaths = [...(executionResult.affectedFiles || []), sourceFilePath, targetFilePath]
+				const allPaths = this.projectManager.getPathResolver().standardizeAndDeduplicatePaths(combinedPaths)
 
 				return {
 					success: true,
 					operation,
-					affectedFiles: Array.from(affectedFiles).map(normalizePathForTests),
-					removalMethod: "standard",
+					affectedFiles: allPaths,
+					removalMethod: "standard" as const,
 				}
 			} else {
 				return {
 					success: false,
 					operation,
 					error: verificationResult.error || "Symbol move operation failed verification",
-					// Make sure we include both source and target paths in affected files
-					affectedFiles: Array.from(
-						new Set(
-							this.pathResolver.normalizeFilePaths([
-								...executionResult.affectedFiles,
-								sourceFilePath,
-								targetFilePath,
-							]),
-						),
-					).map(normalizePathForTests),
-					removalMethod: "failed",
+					affectedFiles: this.projectManager
+						.getPathResolver()
+						.standardizeAndDeduplicatePaths([
+							...(executionResult.affectedFiles || []),
+							sourceFilePath,
+							targetFilePath,
+						]),
+					removalMethod: "failed" as const,
 				}
 			}
 		} catch (error) {
 			// Handle unexpected errors
 			console.error(`[ERROR] Unexpected error during move operation: ${error}`)
+			PerformanceTracker.endTracking(opId)
 
 			return {
 				success: false,
 				operation,
 				error: `Unexpected error during move operation: ${(error as Error).message}`,
-				affectedFiles: this.pathResolver
-					.normalizeFilePaths([sourceFilePath, targetFilePath])
-					.map(normalizePathForTests),
+				affectedFiles: [operation.selector.filePath, operation.targetFilePath],
 			}
 		}
-	}
-
-	/**
-	 * Refreshes all source files in the project
-	 * This is important for tests that verify file content on disk
-	 */
-	private refreshProjectFiles(): void {
-		this.project.getSourceFiles().forEach((file) => {
-			try {
-				file.refreshFromFileSystemSync()
-			} catch (e) {
-				// Ignore refresh errors
-			}
-		})
 	}
 }

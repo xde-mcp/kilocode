@@ -159,7 +159,16 @@ export class SourceFileCache {
 	 * Get source file with caching
 	 */
 	getSourceFile(filePath: string): SourceFile | undefined {
-		const normalizedPath = path.normalize(filePath)
+		// Convert to absolute path if relative
+		let normalizedPath: string
+		if (path.isAbsolute(filePath)) {
+			normalizedPath = path.normalize(filePath)
+		} else {
+			// For relative paths, we need to resolve them properly
+			// Try to get the project root from the project's compilerOptions or use current working directory
+			const projectRoot = this.project.getCompilerOptions().rootDir || process.cwd()
+			normalizedPath = path.resolve(projectRoot, filePath)
+		}
 
 		// If file is in cache and not modified, return it
 		if (this.fileCache.has(normalizedPath) && !this.modifiedFiles.has(normalizedPath)) {

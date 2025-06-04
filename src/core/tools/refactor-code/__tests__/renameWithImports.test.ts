@@ -3,8 +3,12 @@ import { RenameOrchestrator } from "../operations/RenameOrchestrator"
 import * as path from "path"
 import * as fs from "fs"
 import * as os from "os"
+import { PerformanceTracker } from "../utils/performance-tracker"
+import { setRefactorTestTimeout, TestTimer } from "./utils/test-performance"
 
 describe("Rename With Complex Import Scenarios", () => {
+	// Set longer timeout for all tests in this suite
+	jest.setTimeout(30000)
 	let project: Project
 	let tempDir: string
 	let indexFile: string
@@ -110,6 +114,8 @@ export { formatNumber } from '../utils';
 	})
 
 	test("should rename function and update direct imports, re-exports, and namespace imports", async () => {
+		// Using timer to track performance
+		const timer = new TestTimer("rename-function-with-imports")
 		// Execute the rename operation
 		const result = await orchestrator.executeRenameOperation({
 			operation: "rename",
@@ -126,6 +132,7 @@ export { formatNumber } from '../utils';
 		})
 
 		// Check that the operation was successful
+		timer.checkpoint("operation-completed")
 		expect(result.success).toBe(true)
 		expect(result.affectedFiles).toContain(moduleFile)
 		expect(result.affectedFiles).toContain(indexFile)
@@ -158,6 +165,8 @@ export { formatNumber } from '../utils';
 	})
 
 	test("should handle renaming with special characters in paths", async () => {
+		// Using timer to track performance
+		const timer = new TestTimer("rename-with-special-chars")
 		// Create a path with spaces and special characters
 		const specialDir = path.join(tempDir, "special dir")
 		fs.mkdirSync(specialDir)
@@ -190,6 +199,7 @@ export function useFormatter(value: number): string {
 			reason: "More specific name",
 		})
 
+		timer.checkpoint("operation-completed")
 		expect(result.success).toBe(true)
 		expect(result.affectedFiles).toContain(moduleFile)
 		expect(result.affectedFiles).toContain(specialFile)

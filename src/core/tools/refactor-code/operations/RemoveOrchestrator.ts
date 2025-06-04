@@ -1,19 +1,17 @@
 import { Project, SourceFile, SyntaxKind } from "ts-morph"
 import { RemoveOperation } from "../schema"
 import { OperationResult } from "../engine"
-import { PathResolver } from "../utils/PathResolver"
-import { FileManager } from "../utils/FileManager"
 import { SymbolResolver } from "../core/SymbolResolver"
 import { SymbolRemover } from "../core/SymbolRemover"
 import { ResolvedSymbol, RemovalResult } from "../core/types"
+import { ProjectManager } from "../core/ProjectManager"
 
 /**
  * Orchestrates the symbol removal operation with enhanced error recovery
  * and graceful degradation when problems occur
  */
 export class RemoveOrchestrator {
-	private pathResolver: PathResolver
-	private fileManager: FileManager
+	private projectManager: ProjectManager
 	private symbolResolver: SymbolResolver
 	private symbolRemover: SymbolRemover
 	private removalStats: {
@@ -23,15 +21,29 @@ export class RemoveOrchestrator {
 		degraded: number
 	} = { attempted: 0, succeeded: 0, failed: 0, degraded: 0 }
 
-	constructor(private project: Project) {
-		// Safely get compiler options, with fallbacks for tests
-		const compilerOptions = project.getCompilerOptions() || {}
-		const projectRoot = compilerOptions.rootDir || process.cwd()
-
-		this.pathResolver = new PathResolver(projectRoot)
-		this.fileManager = new FileManager(project, this.pathResolver)
+	constructor(project: Project, projectRoot?: string) {
+		this.projectManager = new ProjectManager(project, projectRoot)
 		this.symbolResolver = new SymbolResolver(project)
 		this.symbolRemover = new SymbolRemover()
+	}
+
+	/**
+	 * Disposes of resources held by this RemoveOrchestrator instance.
+	 * This cleans up memory by disposing the ProjectManager and its associated resources.
+	 * Should be called after operations are complete, especially in test environments.
+	 */
+	dispose(): void {
+		// Dispose the ProjectManager to clean up its resources
+		if (this.projectManager) {
+			this.projectManager.dispose()
+		}
+
+		// Clear references to help garbage collection
+		this.symbolResolver = null as any
+		this.symbolRemover = null as any
+
+		// Reset stats
+		this.removalStats = { attempted: 0, succeeded: 0, failed: 0, degraded: 0 }
 	}
 
 	/**
@@ -41,11 +53,20 @@ export class RemoveOrchestrator {
 	async executeRemoveOperation(operation: RemoveOperation): Promise<OperationResult> {
 		try {
 			this.removalStats.attempted++
-			console.log(`[DEBUG] Executing remove operation for symbol: ${operation.selector.name}`)
+			// Use debug logging only in non-test environments
+			if (process.env.NODE_ENV !== "test") {
+				console.log(`[DEBUG] Executing remove operation for symbol: ${operation.selector.name}`)
+			}
 
 			// 1. Find the source file
-			const sourceFilePath = this.pathResolver.normalizeFilePath(operation.selector.filePath)
-			const sourceFile = await this.fileManager.ensureFileInProject(sourceFilePath)
+			// Standardize file path using ProjectManager
+			const sourceFilePath = this.projectManager.getPathResolver().standardizePath(operation.selector.filePath)
+
+			// Load project files around the source file to ensure all references are detected
+			await this.projectManager.loadRelevantProjectFiles(sourceFilePath)
+
+			// Get the source file
+			const sourceFile = await this.projectManager.ensureSourceFile(sourceFilePath)
 
 			if (!sourceFile) {
 				this.removalStats.failed++
@@ -70,24 +91,35 @@ export class RemoveOrchestrator {
 			}
 
 			// Log information about the resolved symbol for better debugging
-			console.log(
-				`[DEBUG] Found symbol '${symbol.name}' of type ${
-					typeof symbol.node.getKindName === "function"
-						? symbol.node.getKindName()
-						: symbol.node.getKind
-							? SyntaxKind[symbol.node.getKind()]
-							: "unknown"
-				}, exported: ${symbol.isExported}`,
-			)
+			if (process.env.NODE_ENV !== "test") {
+				console.log(
+					`[DEBUG] Found symbol '${symbol.name}' of type ${
+						typeof symbol.node.getKindName === "function"
+							? symbol.node.getKindName()
+							: symbol.node.getKind
+								? SyntaxKind[symbol.node.getKind()]
+								: "unknown"
+					}, exported: ${symbol.isExported}`,
+				)
+			}
 
 			// 3. Validate symbol can be removed
 			const validation = this.symbolResolver.validateForRemoval(symbol)
 
 			// Display warnings even if we can proceed
-			if (validation.warnings.length > 0) {
+			if (validation.warnings.length > 0 && process.env.NODE_ENV !== "test") {
 				console.log(`[WARNING] Symbol removal warnings: ${validation.warnings.join(", ")}`)
 			}
 
+			// Check if force removal is enabled
+			if (operation.options?.forceRemove) {
+				if (process.env.NODE_ENV !== "test") {
+					console.log(`[DEBUG] Force remove option detected, bypassing validation checks`)
+				}
+				return this.attemptForcedRemoval(operation, symbol, sourceFile, sourceFilePath)
+			}
+
+			// For regular removal, check if we can proceed
 			if (!validation.canProceed) {
 				// If there are external references, offer specific guidance
 				const hasExternalReferences = validation.blockers.some(
@@ -99,11 +131,6 @@ export class RemoveOrchestrator {
 				if (hasExternalReferences) {
 					errorMessage +=
 						". You may need to remove references to this symbol first, or use the force option to remove it anyway."
-
-					// Check if there's a force option available
-					if (operation.options?.forceRemove) {
-						return this.attemptForcedRemoval(operation, symbol, sourceFile, sourceFilePath)
-					}
 				}
 
 				this.removalStats.failed++
@@ -111,17 +138,34 @@ export class RemoveOrchestrator {
 					success: false,
 					operation,
 					error: errorMessage,
-					affectedFiles: [sourceFilePath],
+					affectedFiles: this.projectManager
+						.getPathResolver()
+						.standardizeAndDeduplicatePaths([sourceFilePath]),
 				}
 			}
 
 			// 4. Remove the symbol
-			const removalResult = await this.symbolRemover.removeSymbol(symbol)
+			// Try to remove the symbol
+			let removalResult = await this.symbolRemover.removeSymbol(symbol)
+
+			// If removal succeeded but we need to save the file via ProjectManager
+			if (removalResult.success) {
+				// Override the save in SymbolRemover by saving via ProjectManager
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+
+				// Force refresh the source file to ensure AST synchronization
+				// This is critical for method removal where tests verify AST state
+				await this.projectManager.forceRefreshSourceFile(sourceFile, sourceFilePath)
+			}
 
 			if (!removalResult.success) {
 				// Try alternative removal methods if standard method fails
 				if (operation.options?.fallbackToAggressive || operation.options?.forceRemove) {
-					console.log(`[DEBUG] Standard removal failed, attempting aggressive removal for: ${symbol.name}`)
+					if (process.env.NODE_ENV !== "test") {
+						console.log(
+							`[DEBUG] Standard removal failed, attempting aggressive removal for: ${symbol.name}`,
+						)
+					}
 					return this.attemptAggressiveRemoval(operation, symbol, sourceFile, sourceFilePath)
 				}
 
@@ -132,21 +176,27 @@ export class RemoveOrchestrator {
 					error:
 						removalResult.error ||
 						`Failed to remove symbol: ${operation.selector.name}. You can try again with aggressive removal option.`,
-					affectedFiles: [sourceFilePath],
+					affectedFiles: this.projectManager
+						.getPathResolver()
+						.standardizeAndDeduplicatePaths([sourceFilePath]),
 				}
 			}
 
 			// 5. Ensure changes are written to disk
 			try {
-				console.log(`[DEBUG] Saving changes to disk for file: ${sourceFilePath}`)
-				await sourceFile.save()
+				// This is already handled above, but keeping for safety
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
 			} catch (saveError) {
-				console.error(`[ERROR] Failed to save changes to disk: ${saveError}`)
+				if (process.env.NODE_ENV !== "test") {
+					console.error(`[ERROR] Failed to save changes to disk: ${saveError}`)
+				}
 				return {
 					success: false,
 					operation,
 					error: `Successfully removed symbol in memory but failed to save changes to disk: ${saveError}`,
-					affectedFiles: [sourceFilePath],
+					affectedFiles: this.projectManager
+						.getPathResolver()
+						.standardizeAndDeduplicatePaths([sourceFilePath]),
 				}
 			}
 
@@ -156,9 +206,11 @@ export class RemoveOrchestrator {
 
 				// Save again after cleaning up dependencies
 				try {
-					await sourceFile.save()
+					await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
 				} catch (saveError) {
-					console.log(`[WARNING] Failed to save dependency cleanup changes: ${saveError}`)
+					if (process.env.NODE_ENV !== "test") {
+						console.log(`[WARNING] Failed to save dependency cleanup changes: ${saveError}`)
+					}
 					// Don't fail the operation if just the cleanup fails
 				}
 			}
@@ -174,7 +226,9 @@ export class RemoveOrchestrator {
 		} catch (error) {
 			this.removalStats.failed++
 			const err = error as Error
-			console.error(`[ERROR] Remove operation failed:`, err)
+			if (process.env.NODE_ENV !== "test") {
+				console.error(`[ERROR] Remove operation failed:`, err)
+			}
 
 			// Provide more context in the error message
 			const errorMessage = `Unexpected error during remove operation: ${err.message}`
@@ -201,7 +255,13 @@ export class RemoveOrchestrator {
 	): Promise<OperationResult> {
 		try {
 			// Try aggressive removal strategy
-			const removalResult = await this.symbolRemover.removeSymbolAggressively(symbol)
+			// Try aggressive removal
+			let removalResult = await this.symbolRemover.removeSymbolAggressively(symbol)
+
+			// If removal succeeded, ensure we save via ProjectManager
+			if (removalResult.success) {
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+			}
 
 			if (!removalResult.success) {
 				this.removalStats.failed++
@@ -216,10 +276,12 @@ export class RemoveOrchestrator {
 
 			// Ensure changes are written to disk
 			try {
-				console.log(`[DEBUG] Saving aggressive removal changes to disk for file: ${sourceFilePath}`)
-				await sourceFile.save()
+				// This is already handled above, but keeping for safety
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
 			} catch (saveError) {
-				console.error(`[ERROR] Failed to save aggressive removal changes to disk: ${saveError}`)
+				if (process.env.NODE_ENV !== "test") {
+					console.error(`[ERROR] Failed to save aggressive removal changes to disk: ${saveError}`)
+				}
 				return {
 					success: false,
 					operation,
@@ -257,10 +319,18 @@ export class RemoveOrchestrator {
 		sourceFilePath: string,
 	): Promise<OperationResult> {
 		try {
-			console.log(`[DEBUG] Attempting forced removal of symbol: ${symbol.name}`)
+			if (process.env.NODE_ENV !== "test") {
+				console.log(`[DEBUG] Attempting forced removal of symbol: ${symbol.name} with forceRemove option`)
+			}
 
 			// Use manual removal as a last resort
-			const removalResult = await this.symbolRemover.removeSymbolManually(symbol)
+			// Try manual removal
+			let removalResult = await this.symbolRemover.removeSymbolManually(symbol)
+
+			// If removal succeeded, ensure we save via ProjectManager
+			if (removalResult.success) {
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+			}
 
 			if (!removalResult.success) {
 				this.removalStats.failed++
@@ -274,10 +344,12 @@ export class RemoveOrchestrator {
 
 			// Ensure changes are written to disk
 			try {
-				console.log(`[DEBUG] Saving forced removal changes to disk for file: ${sourceFilePath}`)
-				await sourceFile.save()
+				// This is already handled above, but keeping for safety
+				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
 			} catch (saveError) {
-				console.error(`[ERROR] Failed to save forced removal changes to disk: ${saveError}`)
+				if (process.env.NODE_ENV !== "test") {
+					console.error(`[ERROR] Failed to save forced removal changes to disk: ${saveError}`)
+				}
 				return {
 					success: false,
 					operation,
@@ -287,6 +359,7 @@ export class RemoveOrchestrator {
 			}
 
 			this.removalStats.degraded++
+			// Success with warning
 			return {
 				success: true,
 				operation,
@@ -296,10 +369,236 @@ export class RemoveOrchestrator {
 			}
 		} catch (error) {
 			this.removalStats.failed++
+			// If all other methods failed, attempt direct file manipulation as a last resort
+			if (process.env.NODE_ENV !== "test") {
+				console.log(
+					`[DEBUG] All removal methods failed, attempting direct file manipulation for ${symbol.name}`,
+				)
+			}
+
+			try {
+				const result = await this.removeSymbolByDirectFileManipulation(symbol, sourceFile, sourceFilePath)
+				if (result.success) {
+					return result
+				}
+
+				return {
+					success: false,
+					operation,
+					error: `Forced removal failed with error: ${(error as Error).message}. Direct manipulation also failed: ${result.error}`,
+					affectedFiles: [sourceFilePath],
+				}
+			} catch (directError) {
+				return {
+					success: false,
+					operation,
+					error: `Forced removal failed with error: ${(error as Error).message}. Direct manipulation error: ${(directError as Error).message}`,
+					affectedFiles: [sourceFilePath],
+				}
+			}
+		}
+	}
+
+	/**
+	 * Last resort method that directly manipulates file content to remove a symbol
+	 * when all other removal methods have failed
+	 */
+	private async removeSymbolByDirectFileManipulation(
+		symbol: ResolvedSymbol,
+		sourceFile: SourceFile,
+		sourceFilePath: string,
+	): Promise<OperationResult> {
+		console.log(`[DEBUG] Attempting direct file manipulation to remove symbol: ${symbol.name}`)
+
+		// Determine the symbol kind based on node kind or default to variable
+		const inferSymbolKind = ():
+			| "function"
+			| "class"
+			| "variable"
+			| "type"
+			| "interface"
+			| "enum"
+			| "method"
+			| "property" => {
+			const nodeKind = symbol.node.getKindName?.() || ""
+
+			// Map ts-morph node kinds to our schema kinds
+			if (nodeKind.includes("Function")) return "function"
+			if (nodeKind.includes("Method")) return "method"
+			if (nodeKind.includes("Class")) return "class"
+			if (nodeKind.includes("Interface")) return "interface"
+			if (nodeKind.includes("Enum")) return "enum"
+			if (nodeKind.includes("Type")) return "type"
+			if (nodeKind.includes("Property")) return "property"
+
+			// Default fallback
+			return "variable"
+		}
+
+		// Create a valid remove operation with correct selector type
+		const operation: RemoveOperation = {
+			operation: "remove", // Must be "remove" not "REMOVE"
+			selector: {
+				type: "identifier",
+				name: symbol.name,
+				kind: inferSymbolKind(),
+				filePath: sourceFilePath,
+			},
+		}
+
+		try {
+			// Last resort: Read and write the file directly using node fs
+			const fs = require("fs")
+			const path = require("path")
+
+			// Make sure we have an absolute path
+			const absolutePath = path.isAbsolute(sourceFilePath)
+				? sourceFilePath
+				: path.resolve(this.projectManager.getPathResolver().getProjectRoot(), sourceFilePath)
+
+			console.log(`[DEBUG] Direct file system manipulation for ${symbol.name} at path: ${absolutePath}`)
+
+			// Read the file content directly
+			if (fs.existsSync(absolutePath)) {
+				const fileContent = fs.readFileSync(absolutePath, "utf8")
+				console.log(`[DEBUG] Original file size: ${fileContent.length} bytes`)
+
+				// Create regexes to match the symbol declaration
+				const functionRegex = new RegExp(
+					`(export\\s+)?(async\\s+)?function\\s+${symbol.name}\\s*\\([^)]*\\)\\s*(:\\s*[^{;]+)?\\s*\\{[\\s\\S]*?\\n\\s*\\}`,
+					"g",
+				)
+
+				// Apply replacement
+				const newContent = fileContent.replace(functionRegex, "")
+
+				if (newContent !== fileContent) {
+					console.log(
+						`[DEBUG] New content size: ${newContent.length} bytes (${fileContent.length - newContent.length} bytes removed)`,
+					)
+
+					// Write directly to the file system
+					fs.writeFileSync(absolutePath, newContent, "utf8")
+					console.log(`[DEBUG] Successfully wrote updated content to disk`)
+
+					// Force the project to refresh
+					try {
+						sourceFile.refreshFromFileSystemSync()
+					} catch (e) {
+						console.log(`[DEBUG] Refresh error: ${(e as Error).message}`)
+					}
+
+					// Read back the file to verify changes were saved
+					const verificationContent = fs.readFileSync(absolutePath, "utf8")
+					const stillContainsSymbol =
+						verificationContent.includes(`function ${symbol.name}`) ||
+						verificationContent.includes(`class ${symbol.name}`) ||
+						verificationContent.includes(`const ${symbol.name}`) ||
+						verificationContent.includes(`let ${symbol.name}`) ||
+						verificationContent.includes(`var ${symbol.name}`)
+
+					if (!stillContainsSymbol) {
+						return {
+							success: true,
+							operation,
+							affectedFiles: [sourceFilePath],
+							removalMethod: "manual",
+							error: "Symbol removed by direct file system manipulation.",
+						}
+					} else {
+						console.log(`[DEBUG] Symbol still found in content after direct file system write`)
+					}
+				} else {
+					console.log(`[DEBUG] Regex replacement didn't change content`)
+				}
+			} else {
+				console.log(`[DEBUG] File not found: ${absolutePath}`)
+			}
+
+			// Try other strategies as fallback
+
+			// Strategy 1: Use node position information
+			const pos = symbol.node.getPos()
+			const end = symbol.node.getEnd()
+
+			if (pos !== undefined && end !== undefined) {
+				// Get the text to remove
+				const symbolText = sourceFile.getFullText().substring(pos, end)
+				if (symbolText) {
+					console.log(
+						`[DEBUG] Removing symbol text by position: ${symbolText.substring(0, 100)}${symbolText.length > 100 ? "..." : ""}`,
+					)
+
+					// Modify the source file directly
+					sourceFile.replaceText([pos, end], "")
+					await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+
+					// Check if it worked
+					const refreshedFile = await this.projectManager.ensureSourceFile(sourceFilePath)
+					if (refreshedFile) {
+						const symbolStillExists = refreshedFile
+							.getDescendantsOfKind(SyntaxKind.Identifier)
+							.some((id) => id.getText() === symbol.name)
+
+						if (!symbolStillExists) {
+							return {
+								success: true,
+								operation,
+								affectedFiles: [sourceFilePath],
+								removalMethod: "manual",
+								error: "Symbol removed by direct position manipulation.",
+							}
+						}
+					}
+				}
+			}
+
+			// Final check if the symbol still exists
+			const refreshedSourceFile = await this.projectManager.ensureSourceFile(sourceFilePath)
+
+			if (!refreshedSourceFile) {
+				return {
+					success: false,
+					operation,
+					error: "Failed to reload source file after direct manipulation",
+					affectedFiles: [sourceFilePath],
+				}
+			}
+
+			// Try to determine if the symbol still exists by looking for identifiers with the same name
+			const identifiers = refreshedSourceFile
+				.getDescendantsOfKind(SyntaxKind.Identifier)
+				.filter((id) => id.getText() === symbol.name)
+
+			if (identifiers.length > 0) {
+				return {
+					success: false,
+					operation,
+					error: "Direct manipulation completed but symbol or references still exist in file",
+					affectedFiles: [sourceFilePath],
+				}
+			}
+
+			return {
+				success: true,
+				operation,
+				affectedFiles: [sourceFilePath],
+				removalMethod: "manual", // Using "manual" as it's a valid enum value
+				error: "Symbol removed by direct file manipulation. This is a last resort method and may affect code structure.",
+			}
+		} catch (error) {
 			return {
 				success: false,
-				operation,
-				error: `Forced removal failed with error: ${(error as Error).message}`,
+				operation: {
+					operation: "remove", // Must be "remove" not "REMOVE"
+					selector: {
+						type: "identifier",
+						name: symbol.name,
+						kind: inferSymbolKind(), // Use the same inference function
+						filePath: sourceFilePath,
+					},
+				},
+				error: `Direct file manipulation failed: ${(error as Error).message}`,
 				affectedFiles: [sourceFilePath],
 			}
 		}
@@ -343,13 +642,6 @@ export class RemoveOrchestrator {
 		}
 
 		console.log(`[DEBUG] Removed ${removedCount} unused imports`)
-
-		// Save the file after cleaning up imports
-		try {
-			await sourceFile.save()
-		} catch (error) {
-			console.log(`[WARNING] Failed to save file after cleaning up imports: ${error}`)
-		}
 	}
 
 	/**

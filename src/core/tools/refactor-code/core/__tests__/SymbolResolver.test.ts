@@ -28,13 +28,37 @@ jest.mock("ts-morph", () => {
 	}
 })
 
+// Create a shared mock instance
+const mockFinderInstance = {
+	findSymbol: jest.fn(),
+	isExported: jest.fn(),
+}
+
 // Mock SymbolFinder
 jest.mock("../../utils/symbol-finder", () => {
 	return {
-		SymbolFinder: jest.fn().mockImplementation(() => ({
-			findSymbol: jest.fn(),
-			isExported: jest.fn(),
-		})),
+		SymbolFinder: jest.fn().mockImplementation(() => mockFinderInstance),
+	}
+})
+// Mock Node static methods
+jest.mock("ts-morph", () => {
+	const actual = jest.requireActual("ts-morph")
+	return {
+		...actual,
+		Node: {
+			...actual.Node,
+			isExportDeclaration: jest.fn(),
+			isReferenceFindable: jest.fn(),
+			isFunctionDeclaration: jest.fn(),
+			isClassDeclaration: jest.fn(),
+			isInterfaceDeclaration: jest.fn(),
+			isTypeAliasDeclaration: jest.fn(),
+			isEnumDeclaration: jest.fn(),
+			isVariableDeclaration: jest.fn(),
+			isMethodDeclaration: jest.fn(),
+			isPropertyDeclaration: jest.fn(),
+			isExportSpecifier: jest.fn(),
+		},
 	}
 })
 
@@ -42,11 +66,12 @@ describe("SymbolResolver", () => {
 	let project: Project
 	let sourceFile: SourceFile
 	let symbolResolver: SymbolResolver
-	let mockFinderInstance: { findSymbol: jest.Mock; isExported: jest.Mock }
 
 	beforeEach(() => {
 		// Reset all mocks
 		jest.clearAllMocks()
+		mockFinderInstance.findSymbol.mockReset()
+		mockFinderInstance.isExported.mockReset()
 
 		// Setup mocks
 		project = {} as Project
@@ -55,9 +80,6 @@ describe("SymbolResolver", () => {
 		} as unknown as SourceFile
 
 		symbolResolver = new SymbolResolver(project)
-
-		// Get the mocked instance that will be returned when SymbolFinder is constructed
-		mockFinderInstance = (SymbolFinder as jest.Mock)() as any
 	})
 
 	describe("resolveSymbol", () => {
@@ -90,7 +112,15 @@ describe("SymbolResolver", () => {
 				filePath: "/path/to/file.ts",
 			}
 
-			const mockNode = {} as Node
+			const mockNode = {
+				getKindName: jest.fn().mockReturnValue("FunctionDeclaration"),
+				getAncestors: jest.fn().mockReturnValue([]),
+				getParent: jest.fn().mockReturnValue(null),
+				getStartLineNumber: jest.fn().mockReturnValue(1),
+				getSourceFile: jest
+					.fn()
+					.mockReturnValue({ getFilePath: jest.fn().mockReturnValue("/path/to/file.ts") }),
+			} as unknown as Node
 
 			// Mock findSymbol to return a node
 			mockFinderInstance.findSymbol.mockReturnValue(mockNode)
@@ -184,6 +214,8 @@ describe("SymbolResolver", () => {
 						}),
 						getStartLineNumber: jest.fn().mockReturnValue(10),
 						getFirstAncestorByKind: jest.fn().mockReturnValue(undefined),
+						getAncestors: jest.fn().mockReturnValue([]),
+						getParent: jest.fn().mockReturnValue(null),
 					},
 				]),
 			} as unknown as Node
@@ -295,13 +327,19 @@ describe("SymbolResolver", () => {
 		it("should filter out declaration and same-file references", () => {
 			// Setup
 			// Create references without circular dependencies
-			const selfReference = {} as any
+			const selfReference = {
+				getParent: jest.fn().mockReturnValue(null),
+				getAncestors: jest.fn().mockReturnValue([]),
+			} as any
+
 			const sameFileReference = {
 				getSourceFile: jest.fn().mockReturnValue({
 					getFilePath: jest.fn().mockReturnValue("/path/to/file.ts"),
 				}),
 				getFirstAncestorByKind: jest.fn(),
 				getStartLineNumber: jest.fn().mockReturnValue(5),
+				getParent: jest.fn(),
+				getAncestors: jest.fn().mockReturnValue([]),
 			}
 
 			const exportReference = {
@@ -310,6 +348,8 @@ describe("SymbolResolver", () => {
 				}),
 				getFirstAncestorByKind: jest.fn(),
 				getStartLineNumber: jest.fn().mockReturnValue(10),
+				getParent: jest.fn().mockReturnValue(null),
+				getAncestors: jest.fn().mockReturnValue([]),
 			}
 
 			const externalReference = {
@@ -318,29 +358,47 @@ describe("SymbolResolver", () => {
 				}),
 				getFirstAncestorByKind: jest.fn().mockReturnValue(undefined),
 				getStartLineNumber: jest.fn().mockReturnValue(20),
+				getParent: jest.fn().mockReturnValue(null),
+				getAncestors: jest.fn().mockReturnValue([]),
 			}
 
 			// Now create the node with references
 			const mockNode = {
-				findReferencesAsNodes: jest
-					.fn()
-					.mockReturnValue([selfReference, sameFileReference, exportReference, externalReference]),
+				findReferencesAsNodes: jest.fn(),
+				getSourceFile: jest.fn().mockReturnValue({
+					getFilePath: jest.fn().mockReturnValue("/path/to/file.ts"),
+				}),
+				getStartLineNumber: jest.fn().mockReturnValue(1),
+				getParent: jest.fn().mockReturnValue(null),
+				getAncestors: jest.fn().mockReturnValue([]),
 			} as any
 
-			// Set up circular reference - self is the node
-			selfReference.getSourceFile = jest.fn().mockReturnValue({
-				getFilePath: jest.fn().mockReturnValue("/path/to/file.ts"),
-			})
-			selfReference.getStartLineNumber = jest.fn().mockReturnValue(1)
+			// Set up circular reference - self is the node (should be filtered out)
+			// Use the same object reference so ref === node comparison works
+			mockNode.findReferencesAsNodes.mockReturnValue([
+				mockNode,
+				sameFileReference,
+				exportReference,
+				externalReference,
+			])
 
-			// Setup the reference checks
+			// Setup the reference checks - sameFileReference should be inside declaration (filtered out)
 			sameFileReference.getFirstAncestorByKind.mockImplementation((kind) =>
 				kind === SyntaxKind.FunctionDeclaration ? mockNode : undefined,
 			)
 
+			// Mock getParent to simulate sameFileReference being inside the declaration
+			// Create a chain where sameFileReference -> mockNode (to be filtered out)
+			sameFileReference.getParent.mockReturnValue(mockNode)
+
+			// exportReference should be in export declaration (filtered out)
 			exportReference.getFirstAncestorByKind.mockImplementation((kind) =>
 				kind === SyntaxKind.ExportDeclaration ? {} : undefined,
 			)
+
+			// Mock getAncestors to simulate exportReference being in export declaration
+			const mockExportDeclaration = { kind: SyntaxKind.ExportDeclaration }
+			exportReference.getAncestors.mockReturnValue([mockExportDeclaration])
 
 			const symbol: ResolvedSymbol = {
 				node: mockNode,
@@ -349,9 +407,12 @@ describe("SymbolResolver", () => {
 				filePath: "/path/to/file.ts",
 			}
 
-			// Mock Node.isReferenceFindable
+			// Mock Node functions
 			const NodeMock = Node as jest.Mocked<typeof Node>
 			NodeMock.isReferenceFindable.mockReturnValue(true)
+			NodeMock.isExportDeclaration.mockImplementation(
+				(node: any) => node && node.kind === SyntaxKind.ExportDeclaration,
+			)
 
 			// Execute
 			const result = symbolResolver.findExternalReferences(symbol)

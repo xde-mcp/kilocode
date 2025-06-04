@@ -484,7 +484,7 @@
 		"tiktoken": "^1.0.21",
 		"tmp": "^0.2.3",
 		"tree-sitter-wasms": "^0.1.11",
-		"ts-morph": "^26.0.0",
+		"ts-morph": "^14.0.0",
 		"turndown": "^7.2.0",
 		"uuid": "^11.1.0",
 		"vscode-material-icons": "^0.1.1",

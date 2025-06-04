@@ -21,17 +21,36 @@ describe("MoveOrchestrator", () => {
 	// Test fixtures
 	const mockProject = {
 		getCompilerOptions: jest.fn().mockReturnValue({ rootDir: "/project/root" }),
+		getSourceFile: jest.fn(),
+		addSourceFileAtPath: jest.fn(),
+		getSourceFiles: jest.fn().mockReturnValue([]),
+		save: jest.fn(),
 	} as unknown as Project
 
 	const mockSourceFile = {
 		getFullText: jest.fn().mockReturnValue("function testFunction() { return true; }"),
+		// Add missing methods needed by MoveValidator
+		getFunction: jest.fn().mockReturnValue(undefined),
+		getClass: jest.fn().mockReturnValue(undefined),
+		getInterface: jest.fn().mockReturnValue(undefined),
+		getTypeAlias: jest.fn().mockReturnValue(undefined),
+		getEnum: jest.fn().mockReturnValue(undefined),
 	} as unknown as SourceFile
 
 	const mockTargetFile = {
 		getFullText: jest.fn().mockReturnValue("// Target file content"),
+		// Add missing methods needed by MoveValidator
+		getFunction: jest.fn().mockReturnValue(undefined),
+		getClass: jest.fn().mockReturnValue(undefined),
+		getInterface: jest.fn().mockReturnValue(undefined),
+		getTypeAlias: jest.fn().mockReturnValue(undefined),
+		getEnum: jest.fn().mockReturnValue(undefined),
 	} as unknown as SourceFile
 
-	const mockNode = {} as Node
+	const mockNode = {
+		getAncestors: jest.fn().mockReturnValue([]),
+		getParent: jest.fn().mockReturnValue(undefined),
+	} as unknown as Node
 
 	const mockSymbol: ResolvedSymbol = {
 		node: mockNode,
@@ -69,6 +88,10 @@ describe("MoveOrchestrator", () => {
 	const mockNormalizeFilePath = jest
 		.fn()
 		.mockImplementation((path) => (path === "src/file.ts" ? "src/file.ts" : "src/target/file.ts"))
+
+	const mockIsTestEnvironment = jest.fn().mockImplementation((path) => {
+		return path && (path.includes("test") || path.includes("__tests__") || path.includes("__mocks__"))
+	})
 
 	const mockEnsureFileInProject = jest.fn().mockImplementation((path) => {
 		if (path === "src/file.ts") return Promise.resolve(mockSourceFile)
@@ -109,8 +132,16 @@ describe("MoveOrchestrator", () => {
 		mockUpdateImportsAfterMove.mockResolvedValue(undefined)
 		mockGetUpdatedFiles.mockReturnValue(["src/another/file.ts", "src/index.ts"])
 
+		// Setup project mock
+		;(mockProject.getSourceFile as jest.Mock).mockImplementation((path: string) => {
+			if (path === "src/file.ts" || path.includes("file.ts")) return mockSourceFile
+			if (path === "src/target/file.ts" || path.includes("target")) return mockTargetFile
+			return undefined
+		})
+
 		// Assign mocks to prototypes
 		PathResolver.prototype.normalizeFilePath = mockNormalizeFilePath
+		PathResolver.prototype.isTestEnvironment = mockIsTestEnvironment
 		FileManager.prototype.ensureFileInProject = mockEnsureFileInProject
 		FileManager.prototype.createFileIfNeeded = mockCreateFileIfNeeded
 		FileManager.prototype.writeToFile = mockWriteToFile

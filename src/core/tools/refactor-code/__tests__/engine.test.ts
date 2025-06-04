@@ -14,6 +14,10 @@ jest.mock("ts-morph", () => ({
 		addSourceFileAtPath: jest.fn(),
 		removeSourceFile: jest.fn(),
 	})),
+	QuoteKind: {
+		Single: 0,
+		Double: 1,
+	},
 }))
 
 // Mock fs access
@@ -30,12 +34,41 @@ jest.mock("fs", () => ({
 	statSync: jest.fn().mockReturnValue({ size: 100 }),
 }))
 
+// Global state for test mocking
+let hasBeenRenamed = false
+
 // Mock the operation implementation modules
 jest.mock("../operations/rename", () => ({
 	executeRenameOperation: jest.fn().mockResolvedValue({
 		success: true,
 		affectedFiles: ["src/utils/formatting.ts", "src/services/userService.ts"],
 	}),
+}))
+
+jest.mock("../operations/RenameOrchestrator", () => ({
+	RenameOrchestrator: jest.fn().mockImplementation(() => ({
+		executeRenameOperation: jest.fn().mockImplementation(async (operation) => {
+			// Simulate the rename by setting the flag
+			if (typeof hasBeenRenamed !== "undefined") {
+				hasBeenRenamed = true
+			}
+			return {
+				success: true,
+				operation: {
+					operation: "rename",
+					selector: {
+						type: "identifier",
+						name: "formatUserName",
+						kind: "function",
+						filePath: "src/utils/formatting.ts",
+					},
+					newName: "formatFullName",
+					reason: "More descriptive name",
+				},
+				affectedFiles: ["src/utils/formatting.ts"],
+			}
+		}),
+	})),
 }))
 
 jest.mock("../operations/MoveOrchestrator", () => ({
@@ -54,18 +87,109 @@ jest.mock("../operations/remove", () => ({
 	}),
 }))
 
+// Mock SymbolFinder to avoid ts-morph complexities
+jest.mock("../utils/symbol-finder", () => ({
+	SymbolFinder: jest.fn().mockImplementation(() => ({
+		findSymbol: jest.fn().mockImplementation((selector) => {
+			// If looking for old name after rename, return null
+			if (hasBeenRenamed && selector.name === "formatUserName") {
+				return null
+			}
+			// If looking for new name after rename, return the new symbol
+			if (hasBeenRenamed && selector.name === "formatFullName") {
+				return {
+					getName: () => "formatFullName",
+					getSymbol: () => ({
+						getName: () => "formatFullName",
+						isExportable: () => true,
+						getExportSymbol: () => null,
+					}),
+					isExported: () => true,
+					getKindName: () => "FunctionDeclaration",
+					getText: () => "export function formatFullName(name: string) { return name; }",
+				}
+			}
+			// Before rename, return the original symbol
+			return {
+				getName: () => "formatUserName",
+				getSymbol: () => ({
+					getName: () => "formatUserName",
+					isExportable: () => true,
+					getExportSymbol: () => null,
+				}),
+				isExported: () => true,
+				getKindName: () => "FunctionDeclaration",
+				getText: () => "export function formatUserName(name: string) { return name; }",
+			}
+		}),
+		isExported: jest.fn().mockReturnValue(true),
+	})),
+}))
+
 describe("RefactorEngine", () => {
 	let engine: RefactorEngine
-	const mockProject = {
-		getSourceFile: jest.fn().mockReturnValue({
-			refreshFromFileSystemSync: jest.fn(),
-			getFullText: jest.fn().mockReturnValue("// Mock file content"),
+	let hasBeenRenamed = false
+	const mockSourceFile = {
+		refreshFromFileSystemSync: jest.fn(),
+		getFullText: jest.fn().mockImplementation(() => {
+			return hasBeenRenamed
+				? "export function formatFullName(name: string) { return name; }"
+				: "export function formatUserName(name: string) { return name; }"
 		}),
+		getFunctions: jest.fn().mockImplementation(() => {
+			if (hasBeenRenamed) {
+				return [
+					{
+						getName: () => "formatFullName",
+						getSymbol: () => ({
+							getName: () => "formatFullName",
+							isExportable: () => true,
+							getExportSymbol: () => null,
+						}),
+						isExported: () => true,
+						getKindName: () => "FunctionDeclaration",
+					},
+				]
+			}
+			return [
+				{
+					getName: () => "formatUserName",
+					getSymbol: () => ({
+						getName: () => "formatUserName",
+						isExportable: () => true,
+						getExportSymbol: () => null,
+					}),
+					isExported: () => true,
+					getKindName: () => "FunctionDeclaration",
+				},
+			]
+		}),
+		getClasses: jest.fn().mockReturnValue([]),
+		getInterfaces: jest.fn().mockReturnValue([]),
+		getTypeAliases: jest.fn().mockReturnValue([]),
+		getVariableDeclarations: jest.fn().mockReturnValue([]),
+		getEnums: jest.fn().mockReturnValue([]),
+		getFilePath: jest.fn().mockReturnValue("/test/src/utils/formatting.ts"),
+	}
+
+	const mockProject = {
+		getSourceFile: jest.fn().mockImplementation((path: string) => {
+			if (path.includes("formatting.ts")) {
+				return mockSourceFile
+			}
+			return null
+		}),
+		getSourceFiles: jest.fn().mockReturnValue([mockSourceFile]),
 		getCompilerOptions: jest.fn().mockReturnValue({ rootDir: "/test" }),
+		addSourceFileAtPath: jest.fn().mockReturnValue(mockSourceFile),
+		addSourceFileAtPathIfExists: jest.fn().mockReturnValue(mockSourceFile),
+		addSourceFilesAtPaths: jest.fn().mockReturnValue([]),
+		removeSourceFile: jest.fn(),
 	}
 
 	beforeEach(() => {
 		jest.clearAllMocks()
+		hasBeenRenamed = false // Reset state for each test
 		engine = new RefactorEngine({ projectRootPath: "/test" })
 
 		// @ts-expect-error - Set mock project directly for testing

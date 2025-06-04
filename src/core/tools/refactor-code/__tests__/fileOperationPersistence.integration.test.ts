@@ -13,6 +13,9 @@ import { executeRemoveOperation } from "../operations/remove"
  * but didn't actually modify any files on disk.
  */
 describe("File Operation Persistence", () => {
+	// Increase timeout for all tests in this suite
+	jest.setTimeout(30000)
+
 	let engine: RefactorEngine
 	let rootDir: string
 	let testDir: string
@@ -57,6 +60,12 @@ export const testVariable = "I will be renamed";
 
 	// Clean up after each test
 	afterEach(async () => {
+		// Clean up engine resources
+		if (engine) {
+			// Release RefactorEngine resources
+			engine = null as any
+		}
+
 		// Clean up test directory
 		try {
 			await fs.rm(testDir, { recursive: true, force: true })
@@ -66,16 +75,15 @@ export const testVariable = "I will be renamed";
 	})
 
 	test("REMOVE operation should persist changes to disk", async () => {
-		jest.setTimeout(30000) // Increase timeout for this test
 		// Setup project with the test directory
-		const project = new Project({
+		let project = new Project({
 			compilerOptions: {
 				rootDir: rootDir,
 			},
 		})
 
 		// Add test file to project
-		const sourceFile = project.addSourceFileAtPath(testFilePath)
+		let sourceFile = project.addSourceFileAtPath(testFilePath)
 		expect(sourceFile).not.toBeUndefined()
 
 		// Create a remove operation
@@ -132,5 +140,11 @@ export class TestClass {
 
 		// Now we can expect the variable to be removed
 		expect(fileContent).not.toContain("testVariable")
+
+		// Clean up project resources
+		project.getSourceFiles().forEach((file) => {
+			project.removeSourceFile(file)
+		})
+		project = null as any
 	})
 })

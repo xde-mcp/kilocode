@@ -30,6 +30,18 @@ jest.mock("ts-morph", () => {
 		getImportDeclarations: jest.fn().mockReturnValue([]),
 		getNamedImports: jest.fn().mockReturnValue([]),
 		getName: jest.fn().mockReturnValue("testFunction"),
+		// Add missing Node methods
+		getAncestors: jest.fn().mockReturnValue([]),
+		getParent: jest.fn().mockReturnValue(undefined),
+		// Add missing methods needed by MoveValidator
+		getFunction: jest.fn().mockReturnValue(undefined),
+		getClass: jest.fn().mockReturnValue(undefined),
+		getInterface: jest.fn().mockReturnValue(undefined),
+		getTypeAlias: jest.fn().mockReturnValue(undefined),
+		getEnum: jest.fn().mockReturnValue(undefined),
+		getExportDeclarations: jest.fn().mockReturnValue([]),
+		getVariable: jest.fn().mockReturnValue(undefined),
+		getVariableDeclarations: jest.fn().mockReturnValue([]),
 	}
 
 	// Create a mock target file
@@ -39,6 +51,15 @@ jest.mock("ts-morph", () => {
 		getImportDeclarations: jest.fn().mockReturnValue([]),
 		getNamedImports: jest.fn().mockReturnValue([]),
 		getName: jest.fn().mockReturnValue(""),
+		// Add missing methods needed by MoveValidator
+		getFunction: jest.fn().mockReturnValue(undefined),
+		getClass: jest.fn().mockReturnValue(undefined),
+		getInterface: jest.fn().mockReturnValue(undefined),
+		getTypeAlias: jest.fn().mockReturnValue(undefined),
+		getEnum: jest.fn().mockReturnValue(undefined),
+		getExportDeclarations: jest.fn().mockReturnValue([]),
+		getVariable: jest.fn().mockReturnValue(undefined),
+		getVariableDeclarations: jest.fn().mockReturnValue([]),
 	}
 
 	return {
@@ -69,13 +90,49 @@ jest.mock("../utils/FileManager", () => {
 				getImportDeclarations: jest.fn().mockReturnValue([]),
 				getNamedImports: jest.fn().mockReturnValue([]),
 				getName: jest.fn().mockReturnValue("testFunction"),
+				// Add missing methods needed by MoveValidator
+				getFunction: jest.fn().mockReturnValue(undefined),
+				getClass: jest.fn().mockReturnValue(undefined),
+				getInterface: jest.fn().mockReturnValue(undefined),
+				getTypeAlias: jest.fn().mockReturnValue(undefined),
+				getEnum: jest.fn().mockReturnValue(undefined),
 			}),
-			createFileIfNeeded: jest.fn().mockResolvedValue({
-				getFilePath: jest.fn().mockReturnValue("/project/src/target.ts"),
-				getFullText: jest.fn().mockReturnValue(""),
-				getImportDeclarations: jest.fn().mockReturnValue([]),
-				getNamedImports: jest.fn().mockReturnValue([]),
-				getName: jest.fn().mockReturnValue(""),
+			createFileIfNeeded: jest.fn().mockImplementation((path) => {
+				// Return the same object when paths are the same (for same-file validation test)
+				if (path === "/project/src/file.ts") {
+					return Promise.resolve({
+						getFilePath: jest.fn().mockReturnValue("/project/src/file.ts"),
+						getFullText: jest.fn().mockReturnValue("function testFunction() { return true; }"),
+						getImportDeclarations: jest.fn().mockReturnValue([]),
+						getNamedImports: jest.fn().mockReturnValue([]),
+						getName: jest.fn().mockReturnValue("testFunction"),
+						// Add missing methods needed by MoveValidator
+						getFunction: jest.fn().mockReturnValue(undefined),
+						getClass: jest.fn().mockReturnValue(undefined),
+						getInterface: jest.fn().mockReturnValue(undefined),
+						getTypeAlias: jest.fn().mockReturnValue(undefined),
+						getEnum: jest.fn().mockReturnValue(undefined),
+						getExportDeclarations: jest.fn().mockReturnValue([]),
+						getVariable: jest.fn().mockReturnValue(undefined),
+						getVariableDeclarations: jest.fn().mockReturnValue([]),
+					})
+				}
+				return Promise.resolve({
+					getFilePath: jest.fn().mockReturnValue("/project/src/target.ts"),
+					getFullText: jest.fn().mockReturnValue(""),
+					getImportDeclarations: jest.fn().mockReturnValue([]),
+					getNamedImports: jest.fn().mockReturnValue([]),
+					getName: jest.fn().mockReturnValue(""),
+					// Add missing methods needed by MoveValidator
+					getFunction: jest.fn().mockReturnValue(undefined),
+					getClass: jest.fn().mockReturnValue(undefined),
+					getInterface: jest.fn().mockReturnValue(undefined),
+					getTypeAlias: jest.fn().mockReturnValue(undefined),
+					getEnum: jest.fn().mockReturnValue(undefined),
+					getExportDeclarations: jest.fn().mockReturnValue([]),
+					getVariable: jest.fn().mockReturnValue(undefined),
+					getVariableDeclarations: jest.fn().mockReturnValue([]),
+				})
 			}),
 		})),
 	}
@@ -147,7 +204,7 @@ describe("MoveValidator", () => {
 			mockOperation.targetFilePath = ""
 			const result = await validator.validate(mockOperation)
 			expect(result.success).toBe(false)
-			expect(result.error).toContain("Target file path cannot be empty")
+			expect(result.error).toContain("Target file path is required")
 		})
 
 		it("should fail when symbol name is empty", async () => {
@@ -158,13 +215,29 @@ describe("MoveValidator", () => {
 		})
 
 		it("should fail when source file doesn't exist", async () => {
-			;(fs.existsSync as jest.Mock).mockImplementation((path) => {
-				return !path.includes("file.ts")
-			})
+			// Mock the project to fail when getting and creating the source file
+			const mockFailingProject = {
+				getCompilerOptions: jest.fn().mockReturnValue({ rootDir: "/project" }),
+				getSourceFile: jest.fn().mockReturnValue(null),
+				createSourceFile: jest.fn().mockImplementation(() => {
+					throw new Error("Cannot create file")
+				}),
+			}
 
-			const result = await validator.validate(mockOperation)
+			// Mock FileManager to also fail
+			const MockFailingFileManager = jest.fn().mockImplementation(() => ({
+				ensureFileInProject: jest.fn().mockRejectedValue(new Error("File not found")),
+				createFileIfNeeded: jest.fn().mockRejectedValue(new Error("Cannot create file")),
+			}))
+
+			// Create a new validator with the failing project and failing file manager
+			const failingValidator = new MoveValidator(mockFailingProject as any)
+			// Replace the fileManager with the failing one
+			;(failingValidator as any).fileManager = new MockFailingFileManager()
+
+			const result = await failingValidator.validate(mockOperation)
 			expect(result.success).toBe(false)
-			expect(result.error).toContain("Source file does not exist")
+			expect(result.error).toContain("Source file not found")
 		})
 
 		it("should fail when source and target files are the same", async () => {

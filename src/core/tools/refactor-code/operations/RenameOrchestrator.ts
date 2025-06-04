@@ -1,12 +1,9 @@
-import { Project, Node, SourceFile, ImportDeclaration, ExportDeclaration, SyntaxKind } from "ts-morph"
+import { Node, SourceFile, ImportDeclaration, ExportDeclaration, SyntaxKind, Project } from "ts-morph"
 import { RenameOperation } from "../schema"
 import { OperationResult } from "../engine"
-import { PathResolver } from "../utils/PathResolver"
-import { FileManager } from "../utils/FileManager"
 import { SymbolResolver } from "../core/SymbolResolver"
 import { ResolvedSymbol } from "../core/types"
-import * as path from "path"
-import * as fs from "fs/promises"
+import { ProjectManager } from "../core/ProjectManager"
 
 /**
  * Orchestrates the symbol rename operation
@@ -15,17 +12,11 @@ import * as fs from "fs/promises"
  * across the project.
  */
 export class RenameOrchestrator {
-	private pathResolver: PathResolver
-	private fileManager: FileManager
+	private projectManager: ProjectManager
 	private symbolResolver: SymbolResolver
 
-	constructor(private project: Project) {
-		// Safely get compiler options, with fallbacks for tests
-		const compilerOptions = project.getCompilerOptions() || {}
-		const projectRoot = compilerOptions.rootDir || process.cwd()
-
-		this.pathResolver = new PathResolver(projectRoot)
-		this.fileManager = new FileManager(project, this.pathResolver)
+	constructor(project: Project, projectRoot?: string) {
+		this.projectManager = new ProjectManager(project, projectRoot)
 		this.symbolResolver = new SymbolResolver(project)
 	}
 
@@ -51,8 +42,8 @@ export class RenameOrchestrator {
 			}
 
 			// Find the source file
-			const sourceFilePath = this.pathResolver.normalizeFilePath(operation.selector.filePath)
-			const sourceFile = await this.fileManager.ensureFileInProject(sourceFilePath)
+			const sourceFilePath = this.projectManager.getPathResolver().normalizeFilePath(operation.selector.filePath)
+			const sourceFile = await this.projectManager.ensureSourceFile(sourceFilePath)
 
 			if (!sourceFile) {
 				return {
@@ -65,28 +56,7 @@ export class RenameOrchestrator {
 
 			// Load all potential reference files in the project directory
 			console.log(`[DEBUG] Loading all potentially related TypeScript files...`)
-			try {
-				// Get the directory of the source file
-				const projectRoot = this.project.getCompilerOptions().rootDir || process.cwd()
-				const sourceDir = path.dirname(path.resolve(projectRoot, sourceFilePath))
-
-				// Load TypeScript files in the project that might reference this file
-				const projectFiles = this.project.addSourceFilesAtPaths([
-					`${sourceDir}/**/*.ts`, // Files in the same directory and subdirectories
-					`${sourceDir}/**/*.tsx`, // Include TSX files
-					`${projectRoot}/**/*.ts`, // All TypeScript files in the project
-					`${projectRoot}/**/*.tsx`, // All TSX files in the project
-				])
-
-				console.log(`[DEBUG] Loaded ${projectFiles.length} potential reference files into project`)
-
-				// Special handling for barrel files (index.ts) - they often re-export symbols
-				// but ts-morph might not catch these references automatically
-				this.loadBarrelFilesInProject(projectRoot)
-			} catch (error) {
-				console.log(`[DEBUG] Error loading reference files: ${(error as Error).message}`)
-				// Continue even if some files couldn't be loaded
-			}
+			await this.projectManager.loadRelevantProjectFiles(sourceFilePath)
 
 			// Find the symbol
 			const symbol = this.symbolResolver.resolveSymbol(operation.selector, sourceFile)
@@ -146,24 +116,9 @@ export class RenameOrchestrator {
 			// Save all affected files directly
 			const affectedFilesArray = Array.from(affectedFiles)
 			for (const filePath of affectedFilesArray) {
-				const affectedFile = this.project.getSourceFile(filePath)
+				const affectedFile = this.projectManager.getProject().getSourceFile(filePath)
 				if (affectedFile) {
-					try {
-						// Get absolute path for the file
-						const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-
-						// Ensure in-memory changes are saved within the project
-						affectedFile.saveSync()
-
-						// Get the content
-						const content = affectedFile.getFullText()
-
-						// Save to disk
-						console.log(`[DEBUG] Saving file to disk: ${absolutePath}`)
-						await fs.writeFile(absolutePath, content, "utf-8")
-					} catch (error) {
-						console.error(`[ERROR] Failed to save file ${filePath}:`, error)
-					}
+					await this.projectManager.saveSourceFile(affectedFile, filePath)
 				}
 			}
 
@@ -247,7 +202,7 @@ export class RenameOrchestrator {
 		const symbolName = symbol.name
 
 		// Get all source files in the project
-		const projectFiles = this.project.getSourceFiles()
+		const projectFiles = this.projectManager.getProject().getSourceFiles()
 
 		for (const file of projectFiles) {
 			// Skip processing if in file-only scope and not the source file
@@ -267,7 +222,7 @@ export class RenameOrchestrator {
 				// Process namespace imports that might reference our symbol
 				const namespaceImports = file
 					.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
-					.filter((prop) => {
+					.filter((prop: any) => {
 						const leftText = prop.getExpression().getText()
 						const rightText = prop.getName()
 						return rightText === symbolName && this.isNamespaceReference(leftText, file)
@@ -361,7 +316,7 @@ export class RenameOrchestrator {
 	 */
 	private updateBarrelImports(affectedFiles: Set<string>, oldName: string, newName: string): void {
 		// Get all source files in the project
-		const projectFiles = this.project.getSourceFiles()
+		const projectFiles = this.projectManager.getProject().getSourceFiles()
 
 		// Look for all import statements that might import our renamed symbol through barrel files
 		for (const file of projectFiles) {
@@ -417,10 +372,9 @@ export class RenameOrchestrator {
 	private loadBarrelFilesInProject(projectRoot: string): void {
 		try {
 			// Find all index.ts files that might be barrel files
-			const barrelFiles = this.project.addSourceFilesAtPaths([
-				`${projectRoot}/**/index.ts`,
-				`${projectRoot}/**/index.tsx`,
-			])
+			const barrelFiles = this.projectManager
+				.getProject()
+				.addSourceFilesAtPaths([`${projectRoot}/**/index.ts`, `${projectRoot}/**/index.tsx`])
 
 			console.log(`[DEBUG] Loaded ${barrelFiles.length} potential barrel files`)
 		} catch (error) {

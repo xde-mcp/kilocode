@@ -110,6 +110,22 @@ export class SymbolExtractor {
 						text += statement.getText()
 					}
 				}
+
+				// Check for separate default export statement that references this variable
+				const variableName = node.getName()
+
+				// Look for "export default variableName" statements in the entire source file
+				const allStatements = sourceFile.getStatements()
+				for (const stmt of allStatements) {
+					const stmtText = stmt.getText().trim()
+					if (
+						stmtText === `export default ${variableName};` ||
+						stmtText === `export default ${variableName}`
+					) {
+						text += "\n" + stmtText
+						break
+					}
+				}
 			} else {
 				text += node.getText()
 			}
