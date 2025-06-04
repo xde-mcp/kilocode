@@ -184,6 +184,7 @@ export class FileManager {
 				const cleanPath = pathToTry.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
 				sourceFile = this.project.addSourceFileAtPath(cleanPath)
 				console.log(`[DEBUG] Added source file using ${description}: ${cleanPath}`)
+				console.log(`[DEBUG] Source file path in project: ${sourceFile.getFilePath()}`)
 				this.sourceFileCache.set(normalizedPath, sourceFile)
 				return sourceFile
 			} catch (error) {
@@ -193,16 +194,16 @@ export class FileManager {
 
 		// Case-insensitive search fallback
 		try {
-			const dirPath = path.dirname(absolutePath)
+			const dirPath = this.pathResolver.getDirectoryPath(absolutePath)
 			if (fsSync.existsSync(dirPath)) {
 				const files = fsSync.readdirSync(dirPath)
-				const fileName = path.basename(absolutePath)
+				const fileName = this.pathResolver.getFileName(absolutePath)
 				const lowerFileName = fileName.toLowerCase()
 
 				// Look for case-insensitive match
 				const matchingFile = files.find((f) => f.toLowerCase() === lowerFileName)
 				if (matchingFile) {
-					const fullPath = path.join(dirPath, matchingFile)
+					const fullPath = this.pathResolver.joinPaths(dirPath, matchingFile)
 					sourceFile = this.project.addSourceFileAtPath(fullPath)
 					console.log(`[DEBUG] Added source file using case-insensitive match: ${fullPath}`)
 					this.sourceFileCache.set(normalizedPath, sourceFile)
@@ -279,8 +280,8 @@ export class FileManager {
 
 						// If base filename has an issue, try creating it directly in the temp directory
 						try {
-							const fileName = path.basename(filePath)
-							const directPath = path.join(tempDir, fileName)
+							const fileName = this.pathResolver.getFileName(filePath)
+							const directPath = this.pathResolver.joinPaths(tempDir, fileName)
 							sourceFile = this.project.createSourceFile(directPath, content, { overwrite: true })
 							console.log(`[DEBUG] Created test file directly in temp dir: ${directPath}`)
 							return sourceFile
@@ -307,7 +308,7 @@ export class FileManager {
 
 		// For regular files, ensure the directory exists
 		const absolutePath = this.pathResolver.resolveAbsolutePath(normalizedPath)
-		await ensureDirectoryExists(path.dirname(absolutePath))
+		await ensureDirectoryExists(this.pathResolver.getDirectoryPath(absolutePath))
 
 		// Create the file on disk if it doesn't exist
 		if (!fsSync.existsSync(absolutePath)) {
@@ -337,7 +338,7 @@ export class FileManager {
 
 					// For tests, just create a stub file at any workable path as a last resort
 					if (isTestEnv) {
-						const baseName = path.basename(normalizedPath)
+						const baseName = this.pathResolver.getFileName(normalizedPath)
 						sourceFile = this.project.createSourceFile(baseName, content, { overwrite: true })
 						console.log(`[DEBUG] Created stub test file as last resort: ${baseName}`)
 					} else {

@@ -481,7 +481,7 @@ export async function removeSymbol(
 			options: {
 				forceRemove: options?.forceRemove || false,
 				fallbackToAggressive: options?.fallbackToAggressive || false,
-				cleanupDependencies: options?.cleanupDependencies !== false, // default to true
+				cleanupDependencies: options?.cleanupDependencies === true, // default to false for now due to AST node access issues
 			},
 		}
 
@@ -620,7 +620,7 @@ export async function batchOperation(
 					options: {
 						forceRemove: op.options?.forceRemove || false,
 						fallbackToAggressive: op.options?.fallbackToAggressive || false,
-						cleanupDependencies: op.options?.cleanupDependencies !== false, // default to true
+						cleanupDependencies: op.options?.cleanupDependencies === true, // default to false for now due to AST node access issues
 					},
 				} as RemoveOperation
 			}

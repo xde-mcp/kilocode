@@ -1,1 +1,0 @@
-This is a test of the launch dev extension tool.

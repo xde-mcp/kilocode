@@ -15,6 +15,15 @@ export class PathResolver {
 	}
 
 	/**
+	 * Normalize path separators to forward slashes for cross-platform compatibility
+	 * @param filePath The file path to normalize
+	 * @returns The normalized path with forward slashes
+	 */
+	private normalizePath(filePath: string): string {
+		return filePath.replace(/\\/g, "/")
+	}
+
+	/**
 	 * Gets the project root path
 	 * @returns The project root path
 	 */
@@ -55,13 +64,16 @@ export class PathResolver {
 	 * @returns The absolute path
 	 */
 	resolveAbsolutePath(relativePath: string): string {
+		// Normalize path separators first for cross-platform compatibility
+		const normalizedPath = this.normalizePath(relativePath)
+
 		// If already absolute, return as is
-		if (path.isAbsolute(relativePath)) {
-			return relativePath
+		if (path.isAbsolute(normalizedPath)) {
+			return normalizedPath
 		}
 
 		// Fix potential src/src duplication before resolving
-		const cleanPath = this.fixSrcDuplication(relativePath)
+		const cleanPath = this.fixSrcDuplication(normalizedPath)
 
 		// Ensure we're using the correct project root, not the current working directory
 		const resolvedPath = path.resolve(this.projectRoot, cleanPath)
@@ -299,14 +311,79 @@ export class PathResolver {
 
 		const normalizedPath = this.normalizeFilePath(filePath)
 
-		// If already relative, return as is
-		if (!path.isAbsolute(normalizedPath)) {
-			return normalizedPath
+		// If already absolute, convert to relative
+		if (path.isAbsolute(normalizedPath)) {
+			return path.relative(this.projectRoot, normalizedPath)
 		}
 
-		// Convert absolute path to relative from project root
-		const relativePath = path.relative(this.projectRoot, normalizedPath)
-		return this.normalizeFilePath(relativePath)
+		return normalizedPath
+	}
+
+	/**
+	 * Gets the directory path of a file
+	 * Centralizes path.dirname() usage
+	 *
+	 * @param filePath The file path
+	 * @returns The directory path
+	 */
+	getDirectoryPath(filePath: string): string {
+		return path.dirname(filePath)
+	}
+
+	/**
+	 * Gets the filename from a path
+	 * Centralizes path.basename() usage
+	 *
+	 * @param filePath The file path
+	 * @returns The filename
+	 */
+	getFileName(filePath: string): string {
+		return path.basename(filePath)
+	}
+
+	/**
+	 * Joins multiple path segments
+	 * Centralizes path.join() usage
+	 *
+	 * @param paths The path segments to join
+	 * @returns The joined path
+	 */
+	joinPaths(...paths: string[]): string {
+		return path.join(...paths)
+	}
+
+	/**
+	 * Gets the filename without extension from a path
+	 * Centralizes path.basename(filePath, path.extname(filePath)) usage
+	 *
+	 * @param filePath The file path
+	 * @returns The filename without extension
+	 */
+	getFileNameWithoutExtension(filePath: string): string {
+		return path.basename(filePath, path.extname(filePath))
+	}
+
+	/**
+	 * Gets the file extension from a path
+	 * Centralizes path.extname() usage
+	 *
+	 * @param filePath The file path
+	 * @returns The file extension
+	 */
+	getFileExtension(filePath: string): string {
+		return path.extname(filePath)
+	}
+
+	/**
+	 * Calculates the relative path from one path to another
+	 * Centralizes path.relative() usage
+	 *
+	 * @param from The source path
+	 * @param to The target path
+	 * @returns The relative path from source to target
+	 */
+	getRelativePath(from: string, to: string): string {
+		return path.relative(from, to)
 	}
 
 	/**

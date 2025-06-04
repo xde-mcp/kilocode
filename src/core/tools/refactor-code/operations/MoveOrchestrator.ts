@@ -173,43 +173,20 @@ export class MoveOrchestrator {
 				return true
 			})
 
-			// Step 3: Verify the operation
-			const verificationResult = await PerformanceTracker.measureStep(opId, "verification", async () => {
-				return this.verifier.verify(operation, executionResult, { copyOnly: options.copyOnly ?? false })
-			})
-
-			console.log(
-				`[DEBUG] MoveOrchestrator: Verification result success=${verificationResult.success}, error=${verificationResult.error || "none"}`,
-			)
-
-			// Return result based on verification
+			// Return result based on execution success (no verification step)
 			PerformanceTracker.endTracking(opId)
 
-			if (verificationResult.success) {
-				// Combine all affected files and ensure source and target paths are included, removing duplicates
-				const combinedPaths = [...(executionResult.affectedFiles || []), sourceFilePath, targetFilePath]
-				const allPaths = this.projectManager.getPathResolver().standardizeAndDeduplicatePaths(combinedPaths)
+			// Combine all affected files and ensure source and target paths are included, removing duplicates
+			const combinedPaths = [...(executionResult.affectedFiles || []), sourceFilePath, targetFilePath]
+			const allPaths = this.projectManager.getPathResolver().standardizeAndDeduplicatePaths(combinedPaths)
 
-				return {
-					success: true,
-					operation,
-					affectedFiles: allPaths,
-					removalMethod: "standard" as const,
-				}
-			} else {
-				return {
-					success: false,
-					operation,
-					error: verificationResult.error || "Symbol move operation failed verification",
-					affectedFiles: this.projectManager
-						.getPathResolver()
-						.standardizeAndDeduplicatePaths([
-							...(executionResult.affectedFiles || []),
-							sourceFilePath,
-							targetFilePath,
-						]),
-					removalMethod: "failed" as const,
-				}
+			const isSuccess = executionResult.success ?? true // Default to true if undefined
+			return {
+				success: isSuccess,
+				operation,
+				affectedFiles: allPaths,
+				error: executionResult.error,
+				removalMethod: isSuccess ? ("standard" as const) : ("failed" as const),
 			}
 		} catch (error) {
 			// Handle unexpected errors

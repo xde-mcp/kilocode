@@ -227,11 +227,11 @@ export class MoveValidator {
 			// For tests, skip directory existence check
 			if (!isTestEnv) {
 				// Verify target directory exists or is creatable
-				const targetDir = path.dirname(normalizedTargetPath)
+				const targetDir = this.pathResolver.getDirectoryPath(normalizedTargetPath)
 				if (!fs.existsSync(targetDir)) {
 					try {
 						// Check if we can create the directory (by testing parent directory write access)
-						const parentDir = path.dirname(targetDir)
+						const parentDir = this.pathResolver.getDirectoryPath(targetDir)
 						if (!fs.existsSync(parentDir)) {
 							warnings.push(`Target directory's parent does not exist: ${parentDir}`)
 						}
@@ -664,14 +664,14 @@ export class MoveValidator {
 
 		// Verify target directory exists or can be created
 		try {
-			const targetDir = path.dirname(targetFilePath)
+			const targetDir = this.pathResolver.getDirectoryPath(targetFilePath)
 			if (!fs.existsSync(targetDir)) {
 				// Check write permissions on parent directory
-				const parentDir = path.dirname(targetDir)
+				const parentDir = this.pathResolver.getDirectoryPath(targetDir)
 				if (fs.existsSync(parentDir)) {
 					try {
 						// Test file write access on parent directory
-						const testFilePath = path.join(parentDir, ".write-test-" + Date.now())
+						const testFilePath = this.pathResolver.joinPaths(parentDir, ".write-test-" + Date.now())
 						fs.writeFileSync(testFilePath, "")
 						fs.unlinkSync(testFilePath)
 					} catch (error) {

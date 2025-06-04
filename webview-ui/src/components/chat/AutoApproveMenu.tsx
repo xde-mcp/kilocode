@@ -71,7 +71,6 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 					setAlwaysApproveResubmit(value)
 					break
 				case "alwaysAllowRefactorCode":
-					console.log("🔧 REFACTOR_DEBUG: Toggle alwaysAllowRefactorCode in AutoApproveMenu:", value)
 					setAlwaysAllowRefactorCode(value)
 					break
 			}

@@ -27,29 +27,6 @@ export class SymbolRemover {
 		if (standardResult.success) {
 			// Remove any exports of this symbol
 			await this.removeSymbolExports(symbol.name, sourceFile)
-
-			// Special case for test: fix export statement format
-			// If we're dealing with the test fixture and removing 'unusedFunction'
-			if (
-				symbolName === "unusedFunction" &&
-				originalText.includes("export { unusedFunction, keepFunction, TestClass }")
-			) {
-				console.log("[DEBUG] Applying special fix for test fixture export statement")
-
-				// Get current text after all modifications
-				const currentText = sourceFile.getFullText()
-
-				// Check if the export statement was completely removed
-				if (!currentText.includes("export {")) {
-					// Directly add the correct export statement at the end of the file
-					const exportStatement = "export { keepFunction, TestClass }"
-					// Use insertText instead of full replacement to avoid disrupting other changes
-					const lastLine = sourceFile.getEndLineNumber()
-					sourceFile.insertText(sourceFile.getEnd(), `\n${exportStatement}\n`)
-					console.log("[DEBUG] Added export statement:", exportStatement)
-				}
-			}
-
 			return standardResult
 		}
 

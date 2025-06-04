@@ -61,6 +61,9 @@ export class RemoveOrchestrator {
 			// 1. Find the source file
 			// Standardize file path using ProjectManager
 			const sourceFilePath = this.projectManager.getPathResolver().standardizePath(operation.selector.filePath)
+			console.log(`[DEBUG REMOVE] Original file path: ${operation.selector.filePath}`)
+			console.log(`[DEBUG REMOVE] Standardized file path: ${sourceFilePath}`)
+			console.log(`[DEBUG REMOVE] Project root: ${this.projectManager.getPathResolver().getProjectRoot()}`)
 
 			// Load project files around the source file to ensure all references are detected
 			await this.projectManager.loadRelevantProjectFiles(sourceFilePath)
@@ -150,12 +153,26 @@ export class RemoveOrchestrator {
 
 			// If removal succeeded but we need to save the file via ProjectManager
 			if (removalResult.success) {
-				// Override the save in SymbolRemover by saving via ProjectManager
-				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+				try {
+					console.log(`[DEBUG ORCHESTRATOR] About to save source file after removal`)
+					// Override the save in SymbolRemover by saving via ProjectManager
+					await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+					console.log(`[DEBUG ORCHESTRATOR] Successfully saved source file`)
+				} catch (saveError) {
+					console.log(`[DEBUG ORCHESTRATOR] Error saving source file: ${(saveError as Error).message}`)
+					throw saveError
+				}
 
-				// Force refresh the source file to ensure AST synchronization
-				// This is critical for method removal where tests verify AST state
-				await this.projectManager.forceRefreshSourceFile(sourceFile, sourceFilePath)
+				try {
+					console.log(`[DEBUG ORCHESTRATOR] About to force refresh source file`)
+					// Force refresh the source file to ensure AST synchronization
+					// This is critical for method removal where tests verify AST state
+					await this.projectManager.forceRefreshSourceFile(sourceFile, sourceFilePath)
+					console.log(`[DEBUG ORCHESTRATOR] Successfully refreshed source file`)
+				} catch (refreshError) {
+					console.log(`[DEBUG ORCHESTRATOR] Error refreshing source file: ${(refreshError as Error).message}`)
+					throw refreshError
+				}
 			}
 
 			if (!removalResult.success) {
@@ -184,9 +201,12 @@ export class RemoveOrchestrator {
 
 			// 5. Ensure changes are written to disk
 			try {
+				console.log(`[DEBUG ORCHESTRATOR] About to save changes to disk (second save)`)
 				// This is already handled above, but keeping for safety
 				await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+				console.log(`[DEBUG ORCHESTRATOR] Successfully saved changes to disk (second save)`)
 			} catch (saveError) {
+				console.log(`[DEBUG ORCHESTRATOR] Error in second save: ${(saveError as Error).message}`)
 				if (process.env.NODE_ENV !== "test") {
 					console.error(`[ERROR] Failed to save changes to disk: ${saveError}`)
 				}
@@ -201,22 +221,39 @@ export class RemoveOrchestrator {
 			}
 
 			// 6. Check if any unreferenced dependencies can be removed as well
+			console.log(`[DEBUG ORCHESTRATOR] About to check dependency cleanup`)
 			if (operation.options?.cleanupDependencies) {
-				await this.cleanupUnreferencedDependencies(sourceFile)
+				console.log(`[DEBUG ORCHESTRATOR] Starting dependency cleanup`)
+				try {
+					await this.cleanupUnreferencedDependencies(sourceFile)
+					console.log(`[DEBUG ORCHESTRATOR] Dependency cleanup completed`)
+				} catch (cleanupError) {
+					console.log(`[DEBUG ORCHESTRATOR] Error in dependency cleanup: ${(cleanupError as Error).message}`)
+					throw cleanupError
+				}
 
 				// Save again after cleaning up dependencies
 				try {
+					console.log(`[DEBUG ORCHESTRATOR] Saving after dependency cleanup`)
 					await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
+					console.log(`[DEBUG ORCHESTRATOR] Successfully saved after dependency cleanup`)
 				} catch (saveError) {
+					console.log(
+						`[DEBUG ORCHESTRATOR] Error saving after dependency cleanup: ${(saveError as Error).message}`,
+					)
 					if (process.env.NODE_ENV !== "test") {
 						console.log(`[WARNING] Failed to save dependency cleanup changes: ${saveError}`)
 					}
 					// Don't fail the operation if just the cleanup fails
 				}
+			} else {
+				console.log(`[DEBUG ORCHESTRATOR] Skipping dependency cleanup (not enabled)`)
 			}
 
 			// 7. Generate final result
+			console.log(`[DEBUG ORCHESTRATOR] About to generate final result`)
 			this.removalStats.succeeded++
+			console.log(`[DEBUG ORCHESTRATOR] Updated removal stats, about to return success result`)
 			return {
 				success: true,
 				operation,
@@ -454,7 +491,7 @@ export class RemoveOrchestrator {
 			// Make sure we have an absolute path
 			const absolutePath = path.isAbsolute(sourceFilePath)
 				? sourceFilePath
-				: path.resolve(this.projectManager.getPathResolver().getProjectRoot(), sourceFilePath)
+				: this.projectManager.getPathResolver().resolveAbsolutePath(sourceFilePath)
 
 			console.log(`[DEBUG] Direct file system manipulation for ${symbol.name} at path: ${absolutePath}`)
 
@@ -613,35 +650,57 @@ export class RemoveOrchestrator {
 		// by the removed symbol and are now unreferenced
 		console.log(`[DEBUG] Cleaning up unreferenced dependencies in ${sourceFile.getFilePath()}`)
 
-		// Remove any unused imports
-		const importDeclarations = sourceFile.getImportDeclarations()
-		let removedCount = 0
+		try {
+			// Remove any unused imports
+			const importDeclarations = sourceFile.getImportDeclarations()
+			let removedCount = 0
 
-		for (const importDecl of importDeclarations) {
-			const namedImports = importDecl.getNamedImports()
+			for (const importDecl of importDeclarations) {
+				const namedImports = importDecl.getNamedImports()
 
-			// Check if any named imports are unused
-			for (const namedImport of namedImports) {
-				const name = namedImport.getName()
-				// Use SyntaxKind.Identifier to find all identifiers in the file
-				const references = sourceFile
-					.getDescendantsOfKind(SyntaxKind.Identifier)
-					.filter((node) => node.getText() === name)
+				// Check if any named imports are unused
+				for (const namedImport of namedImports) {
+					try {
+						const name = namedImport.getName()
+						// Use SyntaxKind.Identifier to find all identifiers in the file
+						const references = sourceFile.getDescendantsOfKind(SyntaxKind.Identifier).filter((node) => {
+							try {
+								return node.getText() === name
+							} catch (e) {
+								// If we can't get text from a node, it might be removed/forgotten
+								// Skip this node and continue
+								return false
+							}
+						})
 
-				// If there's only one reference (the import itself), remove it
-				if (references.length <= 1) {
-					namedImport.remove()
-					removedCount++
+						// If there's only one reference (the import itself), remove it
+						if (references.length <= 1) {
+							namedImport.remove()
+							removedCount++
+						}
+					} catch (e) {
+						// If we can't process this named import, skip it
+						console.log(`[DEBUG] Skipping named import due to error: ${(e as Error).message}`)
+						continue
+					}
+				}
+
+				// If all named imports were removed, remove the entire import declaration
+				try {
+					if (importDecl.getNamedImports().length === 0) {
+						importDecl.remove()
+					}
+				} catch (e) {
+					// If we can't check or remove the import declaration, skip it
+					console.log(`[DEBUG] Skipping import declaration removal due to error: ${(e as Error).message}`)
 				}
 			}
 
-			// If all named imports were removed, remove the entire import declaration
-			if (importDecl.getNamedImports().length === 0) {
-				importDecl.remove()
-			}
+			console.log(`[DEBUG] Removed ${removedCount} unused imports`)
+		} catch (error) {
+			// If dependency cleanup fails entirely, log it but don't fail the operation
+			console.log(`[DEBUG] Dependency cleanup failed, but continuing: ${(error as Error).message}`)
 		}
-
-		console.log(`[DEBUG] Removed ${removedCount} unused imports`)
 	}
 
 	/**

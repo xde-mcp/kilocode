@@ -91,8 +91,7 @@ export class ProjectManager {
 			console.log(`[DEBUG FILE LOADING] Before loading: ${beforeCount} files in project`)
 
 			// Get the directory of the source file
-			const projectRoot = this.project.getCompilerOptions().rootDir || process.cwd()
-			const sourceDir = path.dirname(path.resolve(projectRoot, sourceFilePath))
+			const sourceDir = path.dirname(this.pathResolver.resolveAbsolutePath(sourceFilePath))
 
 			// For test environments, only load the specific directory being tested
 			const isTestEnv = this.pathResolver.isTestEnvironment(sourceFilePath)
@@ -108,7 +107,7 @@ export class ProjectManager {
 				const commonSourceDirs = ["src", "lib", "app", "components", "utils", "services", "types"]
 
 				for (const dir of commonSourceDirs) {
-					const dirPath = path.join(projectRoot, dir)
+					const dirPath = this.pathResolver.resolveAbsolutePath(dir)
 					patterns.push(`${dirPath}/**/*.ts`, `${dirPath}/**/*.tsx`)
 				}
 
@@ -129,7 +128,16 @@ export class ProjectManager {
 				)
 			})
 
-			const projectFiles = this.project.addSourceFilesAtPaths(filteredPatterns)
+			// Convert patterns to absolute paths to ensure correct resolution
+			const absolutePatterns = filteredPatterns.map((pattern) => {
+				if (path.isAbsolute(pattern)) {
+					return pattern
+				}
+				return path.resolve(this.pathResolver.getProjectRoot(), pattern)
+			})
+			console.log(`[DEBUG FILE LOADING] Using absolute patterns:`, absolutePatterns.slice(0, 3))
+
+			const projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
 
 			console.log(
 				`[DEBUG FILE LOADING] Loaded ${projectFiles.length} files. Total files in project: ${this.project.getSourceFiles().length}`,
@@ -141,7 +149,7 @@ export class ProjectManager {
 
 			// Special handling for barrel files (index.ts) - they often re-export symbols
 			// but ts-morph might not catch these references automatically
-			this.loadBarrelFilesInProject(projectRoot)
+			this.loadBarrelFilesInProject(this.pathResolver.getProjectRoot())
 
 			return projectFiles.length
 		} catch (error) {
@@ -179,6 +187,41 @@ export class ProjectManager {
 	 */
 	async ensureSourceFile(filePath: string): Promise<SourceFile | null> {
 		const normalizedPath = this.pathResolver.normalizeFilePath(filePath)
+		console.log(`[DEBUG ENSURE FILE] Original path: ${filePath}`)
+		console.log(`[DEBUG ENSURE FILE] Normalized path: ${normalizedPath}`)
+
+		// Get the absolute path for the file
+		const absolutePath = this.pathResolver.resolveAbsolutePath(normalizedPath)
+		console.log(`[DEBUG ENSURE FILE] Absolute path: ${absolutePath}`)
+
+		// Try to find the file by iterating through all source files in the project
+		// This is necessary because ts-morph might have stored the file with a different path
+		const allSourceFiles = this.project.getSourceFiles()
+		console.log(`[DEBUG ENSURE FILE] Searching through ${allSourceFiles.length} source files`)
+
+		for (const sourceFile of allSourceFiles) {
+			const sourceFilePath = sourceFile.getFilePath()
+			console.log(`[DEBUG ENSURE FILE] Checking source file: ${sourceFilePath}`)
+
+			// Check if this source file matches our target file
+			// Use exact path matching first
+			if (sourceFilePath === absolutePath) {
+				console.log(`[DEBUG ENSURE FILE] Found exact match by absolute path: ${sourceFilePath}`)
+				return sourceFile
+			}
+
+			// Check if the resolved paths match
+			try {
+				if (path.resolve(sourceFilePath) === path.resolve(absolutePath)) {
+					console.log(`[DEBUG ENSURE FILE] Found exact match by resolved path: ${sourceFilePath}`)
+					return sourceFile
+				}
+			} catch (error) {
+				// Ignore path resolution errors
+			}
+		}
+
+		console.log(`[DEBUG ENSURE FILE] No exact match found, using FileManager`)
 		return this.fileManager.ensureFileInProject(normalizedPath)
 	}
 

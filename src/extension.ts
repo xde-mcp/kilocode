@@ -202,7 +202,7 @@ async function checkForBootstrap(context: vscode.ExtensionContext): Promise<void
 			console.log(`🚀 Executing task!`, { prompt })
 			vscode.commands.executeCommand("kilo-code.newTask", { prompt })
 			vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
-		}, 5000)
+		}, 1000)
 	} catch (error) {
 		if (error instanceof vscode.FileSystemError && error.code === "FileNotFound") {
 			// File not found, which is expected if no bootstrap prompt exists

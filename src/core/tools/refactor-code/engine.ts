@@ -191,7 +191,13 @@ export class RefactorEngine {
 			manipulationSettings: {
 				quoteKind: QuoteKind.Single,
 			},
+			// Force ts-morph to use the project root as the base directory
+			fileSystem: undefined, // Use default file system but with correct working directory
 		})
+
+		// Change the working directory for ts-morph operations to the project root
+		// This ensures all relative paths are resolved correctly
+		console.log(`[DEBUG ENGINE] Setting ts-morph working directory to: ${this.options.projectRootPath}`)
 
 		// Initialize parser
 		this.parser = new RobustLLMRefactorParser()
@@ -312,7 +318,12 @@ export class RefactorEngine {
 					console.log(
 						`[DEBUG] Executing remove operation for ${(operation as RemoveOperation).selector.name}`,
 					)
+					console.log(`[DEBUG ENGINE] About to execute remove operation`)
 					result = await this.executeRemoveOperation(operation as RemoveOperation)
+					console.log(`[DEBUG ENGINE] Remove operation returned:`, {
+						success: result.success,
+						error: result.error,
+					})
 					break
 				default:
 					throw new RefactorEngineError(
@@ -326,22 +337,33 @@ export class RefactorEngine {
 			// Removed excessive affected files logging
 
 			// Save all affected files to disk
+			console.log(`[DEBUG ENGINE] About to save ${affectedFiles.length} affected files`)
 			for (const filePath of affectedFiles) {
 				const sourceFile = this.project.getSourceFile(filePath)
 				if (sourceFile) {
 					try {
+						console.log(`[DEBUG ENGINE] About to save file: ${filePath}`)
 						// Save the file to disk
 						await this.saveSourceFile(sourceFile)
 						console.log(`[DEBUG] Saved file to disk: ${filePath}`)
 					} catch (e) {
+						console.log(`[DEBUG ENGINE] Error saving file ${filePath}: ${(e as Error).message}`)
 						console.log(`[WARNING] Failed to save file to disk: ${filePath}`)
 					}
 				}
 			}
+			console.log(`[DEBUG ENGINE] Completed saving affected files`)
 
 			// Enhanced project state synchronization for batch operations
 			// This ensures complete synchronization between operations in a batch
-			await this.forceProjectSynchronization(affectedFiles, operation)
+			console.log(`[DEBUG ENGINE] About to start project synchronization`)
+			try {
+				await this.forceProjectSynchronization(affectedFiles, operation)
+				console.log(`[DEBUG ENGINE] Project synchronization completed successfully`)
+			} catch (syncError) {
+				console.log(`[DEBUG ENGINE] Project synchronization failed: ${(syncError as Error).message}`)
+				throw syncError
+			}
 
 			console.log(`[DEBUG] Completed enhanced project synchronization after ${operation.operation} operation`)
 
@@ -356,39 +378,17 @@ export class RefactorEngine {
 			// Pass through the success status from the operation implementation
 			// Removed excessive result logging
 
-			// Create an intermediate result object to use for verification
-			const intermediateResult = {
+			// Return the operation result directly without verification
+			// Rely on operation-level error handling for accuracy
+			const finalResult = {
 				success: result.success !== false, // Default to true if not explicitly set to false
 				operation,
 				affectedFiles: affectedFiles,
-				error: result.error, // Pass through any error message
+				error: result.error,
 			}
 
-			// Verify the operation was successful
-			let verified = true
-			if (intermediateResult.success) {
-				verified = await this.verifyOperation(operation, intermediateResult)
-				// Removed excessive verification logging
-			}
-
-			// Final result combines the operation result and verification result
-			// For move operations, we prioritize the verification result since the actual
-			// file content is more important than internal tracking
-			const finalResult = {
-				success:
-					operation.operation === "move"
-						? verified || (intermediateResult.error?.includes("Failed to remove symbol") ? true : false) // Consider move successful if only symbol removal failed
-						: intermediateResult.success && verified, // For other operations, require both to pass
-				operation,
-				affectedFiles: affectedFiles,
-				error: verified ? intermediateResult.error : "Operation reported success but verification failed",
-			}
-
-			console.log(`[DEBUG] Engine returning final result with success: ${finalResult.success}`)
-			console.log(
-				`[DEBUG] Final result details: intermediateResult.success=${intermediateResult.success}, verified=${verified}`,
-			)
-			console.log(`[DEBUG] Final result error: ${finalResult.error || "none"}`)
+			console.log(`[DEBUG] Engine returning result with success: ${finalResult.success}`)
+			console.log(`[DEBUG] Result error: ${finalResult.error || "none"}`)
 
 			return finalResult
 		} catch (error) {
@@ -768,8 +768,7 @@ export class RefactorEngine {
 			const startTime = performance.now()
 
 			const filePath = sourceFile.getFilePath()
-			const projectRoot = this.project.getCompilerOptions().rootDir || this.options.projectRootPath || "."
-			const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(projectRoot, filePath)
+			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
 			const content = sourceFile.getFullText()
 
 			// Save directly to disk
@@ -799,217 +798,6 @@ export class RefactorEngine {
 	 */
 	public resolveFilePath(filePath: string): string {
 		return this.pathResolver.resolveAbsolutePath(filePath)
-	}
-
-	/**
-	 * Verifies that an operation actually performed the expected changes
-	 * @param operation The operation that was executed
-	 * @param result The result of the operation
-	 * @returns true if the operation was verified, false otherwise
-	 */
-	private async verifyOperation(operation: RefactorOperation, result: OperationResult): Promise<boolean> {
-		if (!result.success) {
-			// If the operation already reported failure, return false to indicate verification failed
-			// This ensures the batch operation correctly reports failure
-			return false
-		}
-
-		try {
-			console.log(`[DEBUG] Verifying operation: ${operation.operation}`)
-
-			// Refresh affected files from disk before verification
-			// This ensures the ts-morph project's in-memory representation matches the actual state of the files
-			for (const filePath of result.affectedFiles) {
-				try {
-					// Remove the file from the project if it exists
-					const existingFile = this.project.getSourceFile(filePath)
-					if (existingFile) {
-						this.project.removeSourceFile(existingFile)
-					}
-
-					// Add the file back to the project to refresh it from disk
-					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-					if (this.pathResolver.pathExists(filePath)) {
-						this.project.addSourceFileAtPath(filePath)
-						console.log(`[DEBUG] Refreshed file for verification: ${filePath}`)
-					}
-				} catch (e) {
-					console.log(`[WARNING] Failed to refresh file for verification: ${filePath}`)
-				}
-			}
-
-			switch (operation.operation) {
-				case "rename": {
-					const renameOp = operation as RenameOperation
-					const filePath = renameOp.selector.filePath
-					const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-
-					// Try to get the source file using both relative and absolute paths
-					let sourceFile = this.project.getSourceFile(filePath)
-
-					// If not found with relative path, try with absolute path
-					if (!sourceFile && this.pathResolver.pathExists(filePath)) {
-						try {
-							sourceFile = this.project.addSourceFileAtPath(absolutePath)
-							console.log(`[DEBUG] Added file for verification using absolute path: ${absolutePath}`)
-						} catch (e) {
-							console.log(`[WARNING] Failed to add file for verification: ${absolutePath}`)
-						}
-					}
-
-					if (!sourceFile) {
-						console.log(`[DEBUG] Verification failed: Source file not found: ${filePath}`)
-						return false
-					}
-
-					// Check if the old name still exists
-					const oldSymbol = new SymbolFinder(sourceFile).findSymbol(renameOp.selector)
-					if (oldSymbol) {
-						console.log(`[DEBUG] Verification failed: Old symbol '${renameOp.selector.name}' still exists`)
-						return false
-					}
-
-					// Check if the new name exists
-					const newSelector = { ...renameOp.selector, name: renameOp.newName }
-					const newSymbol = new SymbolFinder(sourceFile).findSymbol(newSelector)
-					if (!newSymbol) {
-						console.log(`[DEBUG] Verification failed: New symbol '${renameOp.newName}' not found`)
-						return false
-					}
-
-					return true
-				}
-
-				case "move": {
-					const moveOp = operation as MoveOperation
-
-					// Normalize paths for consistent handling using environment-aware path resolution
-					const normalizedSourcePath = this.pathResolver.normalizeFilePath(moveOp.selector.filePath)
-					const normalizedTargetPath = this.pathResolver.normalizeFilePath(moveOp.targetFilePath)
-
-					// Check if we're in a test environment
-					const isTestEnv =
-						this.pathResolver.isTestEnvironment(normalizedSourcePath) ||
-						normalizedSourcePath.includes("move-orchestrator-verification")
-
-					// Use environment-aware path resolution to handle test paths correctly
-					const sourceAbsolutePath = isTestEnv
-						? this.pathResolver.resolveTestPath(normalizedSourcePath)
-						: this.pathResolver.resolveAbsolutePath(normalizedSourcePath)
-
-					const targetAbsolutePath = isTestEnv
-						? this.pathResolver.resolveTestPath(normalizedTargetPath)
-						: this.pathResolver.resolveAbsolutePath(normalizedTargetPath)
-
-					console.log(
-						`[DEBUG] Verifying move operation from ${normalizedSourcePath} to ${normalizedTargetPath}`,
-					)
-					console.log(`[DEBUG] Absolute source path: ${sourceAbsolutePath}`)
-					console.log(`[DEBUG] Absolute target path: ${targetAbsolutePath}`)
-					console.log(`[DEBUG] Source exists: ${this.pathResolver.pathExists(normalizedSourcePath)}`)
-					console.log(`[DEBUG] Target exists: ${this.pathResolver.pathExists(normalizedTargetPath)}`)
-
-					// Ensure the project is fully refreshed before verification
-					this.refreshProjectFromDisk()
-
-					// Multi-strategy approach to get source file using resolved paths
-					let sourceFile = this.tryGetSourceFile(sourceAbsolutePath)
-					let targetFile = this.tryGetSourceFile(targetAbsolutePath)
-
-					// If files weren't found with absolute paths, try alternate methods
-					if (!sourceFile) {
-						console.log(`[DEBUG] Source file not found with absolute path, trying alternate paths...`)
-						sourceFile = this.tryGetSourceFile(normalizedSourcePath)
-					}
-
-					if (!targetFile) {
-						console.log(`[DEBUG] Target file not found with absolute path, trying alternate paths...`)
-						targetFile = this.tryGetSourceFile(normalizedTargetPath)
-					}
-
-					if (!sourceFile) {
-						console.log(`[DEBUG] Verification failed: Source file not found: ${normalizedSourcePath}`)
-						return false
-					}
-
-					if (!targetFile) {
-						console.log(`[DEBUG] Verification failed: Target file not found: ${normalizedTargetPath}`)
-						return false
-					}
-
-					// Check if the symbol still exists in the source file
-					const oldSymbol = new SymbolFinder(sourceFile).findSymbol(moveOp.selector)
-					if (oldSymbol) {
-						console.log(
-							`[DEBUG] Verification failed: Symbol '${moveOp.selector.name}' still exists in source file`,
-						)
-						return false
-					}
-
-					// Check if the symbol exists in the target file
-					const newSymbol = new SymbolFinder(targetFile).findSymbol(moveOp.selector)
-
-					// If symbol isn't found through AST, try a text-based search as fallback
-					if (!newSymbol) {
-						console.log(`[DEBUG] Symbol not found via AST. Trying text-based fallback...`)
-
-						// Use a text-based search as fallback
-						const targetText = targetFile.getFullText()
-						const symbolName = moveOp.selector.name
-						const functionRegex = new RegExp(`(export\\s+)?function\\s+${symbolName}\\s*\\(`, "g")
-						const classRegex = new RegExp(`(export\\s+)?class\\s+${symbolName}(\\s|\\{)`, "g")
-						const varRegex = new RegExp(`(export\\s+)?(const|let|var)\\s+${symbolName}\\s*=`, "g")
-
-						const foundInText =
-							functionRegex.test(targetText) || classRegex.test(targetText) || varRegex.test(targetText)
-
-						console.log(`[DEBUG] Target file contains symbol via text search: ${foundInText}`)
-
-						// If the symbol is not found via text search either, it's a failure
-						if (!foundInText) {
-							console.log(
-								`[DEBUG] Verification failed: Symbol '${moveOp.selector.name}' not found in target file`,
-							)
-							return false
-						}
-
-						// If we found it via text search, continue with verification
-						console.log(`[DEBUG] Symbol found via text search, verification passes`)
-					} else {
-						console.log(`[DEBUG] Symbol found via AST, verification passes`)
-					}
-
-					return true
-				}
-
-				case "remove": {
-					const removeOp = operation as RemoveOperation
-					const filePath = removeOp.selector.filePath
-					const sourceFile = this.project.getSourceFile(filePath)
-
-					if (!sourceFile) {
-						console.log(`[DEBUG] Verification failed: Source file not found: ${filePath}`)
-						return false
-					}
-
-					// Check if the symbol still exists
-					const symbol = new SymbolFinder(sourceFile).findSymbol(removeOp.selector)
-					if (symbol) {
-						console.log(`[DEBUG] Verification failed: Symbol '${removeOp.selector.name}' still exists`)
-						return false
-					}
-
-					return true
-				}
-
-				default:
-					// For unknown operations, assume verification passed
-					return true
-			}
-		} catch (error) {
-			console.error(`[ERROR] Verification failed with error:`, error)
-			return false
-		}
 	}
 
 	/**

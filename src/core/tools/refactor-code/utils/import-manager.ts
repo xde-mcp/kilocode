@@ -76,18 +76,13 @@ export class ImportManager {
 	 * Updates all imports after a symbol is moved to a new file
 	 */
 	async updateImportsAfterMove(symbolName: string, oldFilePath: string, newFilePath: string): Promise<void> {
-		console.log(
-			`[DEBUG] updateImportsAfterMove called with symbolName="${symbolName}", oldFilePath="${oldFilePath}", newFilePath="${newFilePath}"`,
-		)
 		this.updatedFiles.clear()
 
 		// Find files that import from the old file - these are the most important to update
 		const importingFiles = this.findFilesImporting(oldFilePath)
-		console.log(`[DEBUG] Found ${importingFiles.length} files importing from ${oldFilePath}`)
 
 		// Also find files that re-export from the old file
 		const reExportingFiles = this.findFilesReExporting(oldFilePath)
-		console.log(`[DEBUG] Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`)
 
 		// Focus only on files that directly import from the source file
 		// This is much more efficient than searching all files in the project
@@ -97,11 +92,11 @@ export class ImportManager {
 		importingFiles.forEach((file) => referencingFiles.add(file))
 
 		// Only search for additional references in the same directories as the source and target files
-		const sourceDir = path.dirname(oldFilePath)
-		const targetDir = path.dirname(newFilePath)
+		const sourceDir = this.pathResolver.getDirectoryPath(oldFilePath)
+		const targetDir = this.pathResolver.getDirectoryPath(newFilePath)
 		const nearbyFiles = this.project.getSourceFiles().filter((file) => {
 			const filePath = file.getFilePath()
-			const fileDir = path.dirname(filePath)
+			const fileDir = this.pathResolver.getDirectoryPath(filePath)
 
 			// Skip if we're already going to process this file
 			if (referencingFiles.has(file)) return false
@@ -229,38 +224,42 @@ export class ImportManager {
 			this.ensureAllProjectFilesLoaded(filePath)
 
 			const allFiles = this.project.getSourceFiles()
-			console.log(`[DEBUG] Total files in project after loading: ${allFiles.length}`)
 
-			for (const file of allFiles) {
+			// Filter to only files within the project root and in the same directory tree as the target file
+			// This prevents scanning the entire 3KiloCode project during tests
+			const projectRoot = this.pathResolver.getProjectRoot()
+			const targetDir = this.pathResolver.getDirectoryPath(filePath)
+
+			const relevantFiles = allFiles.filter((file) => {
 				const currentFilePath = file.getFilePath()
-				console.log(`[DEBUG] Checking file: ${currentFilePath}`)
+				const currentDir = this.pathResolver.getDirectoryPath(currentFilePath)
 
 				// Skip the source file itself
 				if (currentFilePath === filePath) {
-					console.log(`[DEBUG] Skipping source file itself: ${currentFilePath}`)
-					continue
+					return false
 				}
 
+				// Only include files within the project root
+				if (!currentFilePath.startsWith(projectRoot)) {
+					return false
+				}
+
+				// Only check files in the same directory tree
+				return currentDir.startsWith(targetDir) || targetDir.startsWith(currentDir)
+			})
+
+			for (const file of relevantFiles) {
+				const currentFilePath = file.getFilePath()
 				const imports = file.getImportDeclarations()
-				console.log(`[DEBUG] File ${currentFilePath} has ${imports.length} import declarations`)
 
 				for (const imp of imports) {
-					const moduleSpecifier = imp.getModuleSpecifierValue()
-					console.log(`[DEBUG] Checking import: ${moduleSpecifier} in file ${currentFilePath}`)
-					console.log(`[DEBUG] Target file path: ${filePath}`)
-
 					const isMatch = this.isImportFromFile(imp, filePath)
-					console.log(`[DEBUG] Import match result: ${isMatch}`)
-
 					if (isMatch) {
 						importingFiles.push(file)
-						console.log(`[DEBUG] Found file importing from ${filePath}: ${currentFilePath}`)
 						break // Only add the file once
 					}
 				}
 			}
-
-			console.log(`[DEBUG] Manual search completed. Found ${importingFiles.length} importing files`)
 		}
 
 		// Cache the results
@@ -476,8 +475,6 @@ export class ImportManager {
 	 * Adds missing imports to the new file
 	 */
 	public async addMissingImports(newFile: SourceFile, movedSymbolName: string, oldFilePath: string): Promise<void> {
-		console.log(`[DEBUG] addMissingImports: Starting for symbol ${movedSymbolName} from ${oldFilePath}`)
-
 		// Get the moved symbol's dependencies from the old file
 		const oldFile = this.project.getSourceFile(oldFilePath)
 		if (!oldFile) {
@@ -658,15 +655,17 @@ export class ImportManager {
 
 				// Only recalculate relative paths
 				if (adjustedModuleSpecifier.startsWith(".")) {
-					const oldFileDirPath = path.dirname(oldFile.getFilePath())
-					const newFileDirPath = path.dirname(newFile.getFilePath())
+					const oldFileDirPath = this.pathResolver.getDirectoryPath(oldFile.getFilePath())
+					const newFileDirPath = this.pathResolver.getDirectoryPath(newFile.getFilePath())
 
 					// First resolve the absolute path from the old file's perspective
-					const absoluteImportPath = path.resolve(oldFileDirPath, moduleSpecifier)
+					const absoluteImportPath = this.pathResolver.resolveAbsolutePath(
+						this.pathResolver.joinPaths(oldFileDirPath, moduleSpecifier),
+					)
 					console.log(`[DEBUG] Resolved absolute import path: ${absoluteImportPath}`)
 
 					// Then calculate the relative path from the new file to that absolute path
-					adjustedModuleSpecifier = path.relative(newFileDirPath, absoluteImportPath)
+					adjustedModuleSpecifier = this.pathResolver.getRelativePath(newFileDirPath, absoluteImportPath)
 
 					// Ensure it starts with ./ or ../
 					if (!adjustedModuleSpecifier.startsWith(".")) {
@@ -773,23 +772,16 @@ export class ImportManager {
 		const moduleSpecifier = importDecl.getModuleSpecifierValue()
 		const importingFilePath = importDecl.getSourceFile().getFilePath()
 
-		console.log(
-			`[DEBUG] isImportFromFile: moduleSpecifier="${moduleSpecifier}", importingFilePath="${importingFilePath}", targetFilePath="${filePath}"`,
-		)
-
 		// Handle non-relative imports (packages)
 		if (!moduleSpecifier.startsWith(".") && !moduleSpecifier.startsWith("/")) {
-			console.log(`[DEBUG] isImportFromFile: Skipping non-relative import: ${moduleSpecifier}`)
 			return false
 		}
 
 		// Resolve the module path
 		const resolvedPath = this.resolveModulePath(importingFilePath, moduleSpecifier)
-		console.log(`[DEBUG] isImportFromFile: resolvedPath="${resolvedPath}"`)
 
 		// Try multiple comparison methods for robustness
 		if (this.pathsMatch(resolvedPath, filePath)) {
-			console.log(`[DEBUG] isImportFromFile: Direct path match found`)
 			return true
 		}
 
@@ -799,13 +791,8 @@ export class ImportManager {
 			const normalizedResolved = this.pathResolver.normalizeFilePath(resolvedPath)
 			const normalizedFilePath = this.pathResolver.normalizeFilePath(filePath)
 
-			console.log(
-				`[DEBUG] isImportFromFile: PathResolver comparison - normalizedResolved="${normalizedResolved}", normalizedFilePath="${normalizedFilePath}"`,
-			)
-
 			// Try direct comparison
 			if (this.pathResolver.arePathsEqual(normalizedResolved, normalizedFilePath)) {
-				console.log(`[DEBUG] Import match found via PathResolver: ${moduleSpecifier} -> ${filePath}`)
 				return true
 			}
 
@@ -813,19 +800,17 @@ export class ImportManager {
 			const extensions = [".ts", ".tsx", ".js", ".jsx"]
 			for (const ext of extensions) {
 				const withExt = normalizedResolved + ext
-				console.log(
-					`[DEBUG] isImportFromFile: Trying with extension ${ext}: "${withExt}" vs "${normalizedFilePath}"`,
-				)
 				if (this.pathResolver.arePathsEqual(withExt, normalizedFilePath)) {
-					console.log(`[DEBUG] Import match found with extension ${ext}: ${moduleSpecifier} -> ${filePath}`)
 					return true
 				}
 			}
 		}
 
 		// Fallback: manual path resolution and comparison
-		const importingDir = path.dirname(importingFilePath)
-		const manualResolved = path.resolve(importingDir, moduleSpecifier)
+		const importingDir = this.pathResolver.getDirectoryPath(importingFilePath)
+		const manualResolved = this.pathResolver.resolveAbsolutePath(
+			this.pathResolver.joinPaths(importingDir, moduleSpecifier),
+		)
 
 		// Try with different extensions
 		const extensions = [".ts", ".tsx", ".js", ".jsx"]
@@ -1199,7 +1184,6 @@ export class ImportManager {
 
 		// Fall back to original implementation if symbolExtractor is not available or fails
 		const dependencies: Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> = []
-		console.log(`[DEBUG] Finding dependencies for symbol: ${symbolName} using original implementation`)
 
 		// Find the symbol node using the appropriate methods for SourceFile
 		let symbolNode: Node | undefined
@@ -1243,11 +1227,8 @@ export class ImportManager {
 		}
 
 		if (!symbolNode) {
-			console.log(`[DEBUG] Symbol node not found for: ${symbolName}`)
 			return dependencies
 		}
-
-		console.log(`[DEBUG] Found symbol node of kind: ${symbolNode.getKindName()}`)
 
 		// Track declarations within the symbol's scope to avoid adding them as dependencies
 		const declarationsInScope = new Set<string>()
@@ -1374,7 +1355,6 @@ export class ImportManager {
 				definitionSource = "error: " + (e as Error).message
 			}
 
-			console.log(`[DEBUG] Found dependency: ${name} (isLocal: ${isLocal}, source: ${definitionSource})`)
 			dependencies.push({ name, isLocal })
 		})
 
@@ -1432,7 +1412,6 @@ export class ImportManager {
 
 		// Remove duplicates by name
 		const uniqueDependencies = Array.from(new Map(dependencies.map((item) => [item.name, item])).values())
-		console.log(`[DEBUG] Found ${uniqueDependencies.length} unique dependencies for ${symbolName}`)
 
 		return uniqueDependencies
 	}
@@ -1848,9 +1827,18 @@ export class ImportManager {
 			console.log(`[DEBUG] Reference file directory: ${referenceDir}`)
 
 			// For test files, only load files in the test directory tree
-			if (referenceFilePath.includes("test-refactor-output")) {
-				// Find the test directory root (e.g., test-refactor-output/api-test)
-				const testDirMatch = referenceFilePath.match(/(.*test-refactor-output[\/\\][^\/\\]+)/)
+			if (
+				referenceFilePath.includes("test-refactor-output") ||
+				referenceFilePath.includes("/tmp/") ||
+				referenceFilePath.includes("import-split-test") ||
+				referenceFilePath.includes("temp")
+			) {
+				// Find the test directory root - either test-refactor-output or temp directory
+				const testDirMatch =
+					referenceFilePath.match(/(.*test-refactor-output[\/\\][^\/\\]+)/) ||
+					referenceFilePath.match(/(.*(\/tmp\/|\\temp\\)[^\/\\]+)/) ||
+					referenceFilePath.match(/(.*import-split-test[^\/\\]*)/)
+
 				if (testDirMatch) {
 					const testRoot = testDirMatch[1]
 					console.log(`[DEBUG] Loading TypeScript files from test directory: ${testRoot}`)

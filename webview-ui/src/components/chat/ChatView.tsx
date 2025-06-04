@@ -92,12 +92,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		soundVolume,
 	} = useExtensionState()
 
-	// Add debugging log to check initial values
-	console.log("🔧 REFACTOR_DEBUG: Initial state values in ChatView:", {
-		autoApprovalEnabled,
-		alwaysAllowRefactorCode
-	})
-
 	const { tasks } = useTaskSearch()
 
 	// Initialize expanded state based on the persisted setting (default to expanded if undefined)
@@ -890,12 +884,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 				// Check for refactorCode tool
 				if (tool?.tool === "refactorCode") {
-					console.log("🔍 REFACTOR_DEBUG: Checking auto-approval for refactorCode tool")
-					console.log("🔍 REFACTOR_DEBUG: Tool details:", tool)
-					console.log("🔍 REFACTOR_DEBUG: alwaysAllowRefactorCode setting:", alwaysAllowRefactorCode)
-					console.log("🔍 REFACTOR_DEBUG: autoApprovalEnabled setting:", autoApprovalEnabled)
-					console.log("🔍 REFACTOR_DEBUG: Final decision:", autoApprovalEnabled && alwaysAllowRefactorCode)
-
 					// Only auto-approve if both master switch and specific flag are enabled
 					return autoApprovalEnabled && alwaysAllowRefactorCode
 				}

@@ -335,10 +335,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		setAlwaysAllowWriteOutsideWorkspace: (value) =>
 			setState((prevState) => ({ ...prevState, alwaysAllowWriteOutsideWorkspace: value })),
 		setAlwaysAllowExecute: (value) => setState((prevState) => ({ ...prevState, alwaysAllowExecute: value })),
-		setAlwaysAllowRefactorCode: (value) => {
-			console.log("🔧 REFACTOR_DEBUG: Setting alwaysAllowRefactorCode in ExtensionStateContext:", value)
-			setState((prevState) => ({ ...prevState, alwaysAllowRefactorCode: value }))
-		}, // kilocode_change
+		setAlwaysAllowRefactorCode: (value) => setState((prevState) => ({ ...prevState, alwaysAllowRefactorCode: value })), // kilocode_change
 		setAlwaysAllowBrowser: (value) => setState((prevState) => ({ ...prevState, alwaysAllowBrowser: value })),
 		setAlwaysAllowMcp: (value) => setState((prevState) => ({ ...prevState, alwaysAllowMcp: value })),
 		setAlwaysAllowModeSwitch: (value) => setState((prevState) => ({ ...prevState, alwaysAllowModeSwitch: value })),

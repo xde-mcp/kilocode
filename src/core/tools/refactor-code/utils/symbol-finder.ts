@@ -93,6 +93,14 @@ export class SymbolFinder {
 	private findFunction(name: string, signatureHint?: string): FunctionDeclaration | undefined {
 		const functions = this.sourceFile.getFunctions()
 
+		// Debug: Log what functions are actually found
+		console.log(`[DEBUG SYMBOL FINDER] Looking for function '${name}' in file: ${this.sourceFile.getFilePath()}`)
+		console.log(
+			`[DEBUG SYMBOL FINDER] Found ${functions.length} functions:`,
+			functions.map((f) => f.getName()),
+		)
+		console.log(`[DEBUG SYMBOL FINDER] File content preview:`, this.sourceFile.getText().substring(0, 200))
+
 		if (signatureHint) {
 			// Try to match with signature hint for overloaded functions
 			return functions.find((fn) => {
