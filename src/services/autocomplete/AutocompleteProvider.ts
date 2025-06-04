@@ -74,6 +74,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		enabled: true,
 		lastCompletionCost: 0,
 		totalSessionCost: 0,
+		lastCompletionTime: 0,
 		model: DEFAULT_MODEL,
 		hasValidToken: !!ContextProxy.instance.getProviderSettings().kilocodeToken,
 	}
@@ -119,6 +120,9 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		codeContext: CodeContext,
 	): Promise<{ autocompletion: Autocompletion | null; cost: number }> => {
 		if (!apiHandler) throw new Error("apiHandler must be set before calling generateCompletion!")
+
+		// Start timing the completion
+		const startTime = performance.now()
 
 		abortController?.abort() // Abort any previous request
 		abortController = new AbortController()
@@ -169,12 +173,19 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 			processedCompletion = ""
 		}
 
-		// Update cost tracking variables
+		// Calculate completion time
+		const endTime = performance.now()
+		const completionTimeMs = endTime - startTime
+		const completionTimeSeconds = completionTimeMs / 1000
+
+		// Update cost and timing tracking variables
 		state.totalSessionCost += completionCost
 		state.lastCompletionCost = completionCost
+		state.lastCompletionTime = completionTimeSeconds
 		console.log(`🚀💰 Completion cost: ${formatCost(completionCost)}`)
+		console.log(`🚀⏱️ Completion time: ${completionTimeSeconds.toFixed(1)}s`)
 
-		// Update status bar with cost information
+		// Update status bar with cost and timing information
 		statusBar.updateDisplay(state)
 
 		// Stop animation when completion is done

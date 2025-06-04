@@ -79,6 +79,7 @@ export interface AutocompleteState {
 	enabled: boolean
 	lastCompletionCost: number
 	totalSessionCost: number
+	lastCompletionTime: number // Time in seconds for the last completion
 	model: string
 	hasValidToken: boolean
 }

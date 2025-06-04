@@ -40,6 +40,7 @@ describe("AutocompleteStatusBar", () => {
 				enabled: false,
 				lastCompletionCost: 0,
 				totalSessionCost: 0,
+				lastCompletionTime: 0,
 				model: "test-model",
 				hasValidToken: true,
 			}
@@ -55,6 +56,7 @@ describe("AutocompleteStatusBar", () => {
 				enabled: true,
 				lastCompletionCost: 0,
 				totalSessionCost: 0,
+				lastCompletionTime: 0,
 				model: "test-model",
 				hasValidToken: false,
 			}
@@ -70,14 +72,15 @@ describe("AutocompleteStatusBar", () => {
 				enabled: true,
 				lastCompletionCost: 0.00123,
 				totalSessionCost: 0.05,
+				lastCompletionTime: 1.5,
 				model: "test-model",
 				hasValidToken: true,
 			}
 
 			statusBar.updateDisplay(state)
 
-			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete ($0.05)")
-			expect(mockStatusBarItem.tooltip).toContain("Last completion: $0.00123")
+			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete ($0.05 1.5s)")
+			expect(mockStatusBarItem.tooltip).toContain("Last completion: $0.00123 (1.5s)")
 			expect(mockStatusBarItem.tooltip).toContain("Session total cost: $0.05")
 			expect(mockStatusBarItem.tooltip).toContain("Model: test-model")
 		})
@@ -87,12 +90,13 @@ describe("AutocompleteStatusBar", () => {
 				enabled: true,
 				lastCompletionCost: 0.005,
 				totalSessionCost: 0.002,
+				lastCompletionTime: 2.3,
 				model: "test-model",
 				hasValidToken: true,
 			}
 
 			statusBar.updateDisplay(state)
-			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete (<$0.01)")
+			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete (<$0.01 2.3s)")
 		})
 
 		it("should format zero cost correctly", () => {
@@ -100,12 +104,44 @@ describe("AutocompleteStatusBar", () => {
 				enabled: true,
 				lastCompletionCost: 0,
 				totalSessionCost: 0,
+				lastCompletionTime: 0,
 				model: "test-model",
 				hasValidToken: true,
 			}
 
 			statusBar.updateDisplay(state)
 			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete ($0.00)")
+		})
+
+		it("should show timing information when available", () => {
+			const state: AutocompleteState = {
+				enabled: true,
+				lastCompletionCost: 0.001,
+				totalSessionCost: 0.01,
+				lastCompletionTime: 2.7,
+				model: "test-model",
+				hasValidToken: true,
+			}
+
+			statusBar.updateDisplay(state)
+			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete ($0.01 2.7s)")
+			expect(mockStatusBarItem.tooltip).toContain("Last completion: $0.00100 (2.7s)")
+		})
+
+		it("should not show timing when lastCompletionTime is 0", () => {
+			const state: AutocompleteState = {
+				enabled: true,
+				lastCompletionCost: 0.001,
+				totalSessionCost: 0.01,
+				lastCompletionTime: 0,
+				model: "test-model",
+				hasValidToken: true,
+			}
+
+			statusBar.updateDisplay(state)
+			expect(mockStatusBarItem.text).toBe("$(sparkle) Kilo Complete ($0.01)")
+			expect(mockStatusBarItem.tooltip).toContain("Last completion: $0.00100")
+			expect(mockStatusBarItem.tooltip).not.toContain("(0.0s)")
 		})
 	})
 

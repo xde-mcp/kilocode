@@ -5,6 +5,7 @@ export interface AutocompleteState {
 	enabled: boolean
 	lastCompletionCost: number
 	totalSessionCost: number
+	lastCompletionTime: number
 	model: string
 	hasValidToken: boolean
 }
@@ -32,11 +33,12 @@ export class AutocompleteStatusBar implements vscode.Disposable {
 		}
 
 		const totalCostFormatted = formatCost(state.totalSessionCost)
-		this.statusBarItem.text = `$(sparkle) Kilo Complete (${totalCostFormatted})`
+		const timeDisplay = state.lastCompletionTime > 0 ? `${state.lastCompletionTime.toFixed(1)}s` : ""
+		this.statusBarItem.text = `$(sparkle) Kilo Complete (${totalCostFormatted}) [${timeDisplay}]`
 		this.statusBarItem.tooltip = `\
 Kilo Code Autocomplete
 
-Last completion: $${state.lastCompletionCost.toFixed(5)}
+Last completion: $${state.lastCompletionCost.toFixed(5)}${state.lastCompletionTime > 0 ? ` (${state.lastCompletionTime.toFixed(1)}s)` : ""}
 Session total cost: ${formatCost(state.totalSessionCost)}
 Model: ${state.model}\
 `
