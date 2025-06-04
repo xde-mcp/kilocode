@@ -1,5 +1,6 @@
 //PLANREF: continue/core/autocomplete/util/types.ts
 //PLANREF: continue/core/autocomplete/types.ts
+import * as vscode from "vscode"
 import { Position } from "vscode"
 import { RangeInFile, Range, RangeInFileWithContents } from "./ide-types"
 
@@ -80,4 +81,10 @@ export interface AutocompleteState {
 	totalSessionCost: number
 	model: string
 	hasValidToken: boolean
+}
+
+export interface Autocompletion {
+	text: string // Full line including prefix
+	range: vscode.Range
+	originalPrefix: string // Store the prefix for subtraction
 }

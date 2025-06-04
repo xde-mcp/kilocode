@@ -12,7 +12,7 @@ import { ExperimentId } from "@roo-code/types"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { processTextInsertion, InsertionContext } from "./utils/CompletionTextProcessor"
 import { AutocompleteStatusBar } from "./AutocompleteStatusBar"
-import { AutocompleteState } from "./types"
+import { AutocompleteState, Autocompletion } from "./types"
 import { formatCost } from "./utils/costFormatting"
 
 export const UI_UPDATE_DEBOUNCE_MS = 250
@@ -115,7 +115,9 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		justAcceptedSuggestion = false
 	}
 
-	const generateCompletion = async (codeContext: CodeContext) => {
+	const generateCompletion = async (
+		codeContext: CodeContext,
+	): Promise<{ autocompletion: Autocompletion | null; cost: number }> => {
 		if (!apiHandler) throw new Error("apiHandler must be set before calling generateCompletion!")
 
 		abortController?.abort() // Abort any previous request
@@ -178,7 +180,30 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		// Stop animation when completion is done
 		animationManager.stopAnimation()
 
-		return { processedCompletion, lineCount, cost: completionCost }
+		// Process the completion text for insertion
+		if (processedCompletion) {
+			const processedResult = processTextInsertion({
+				document: codeContext.document,
+				position: codeContext.position,
+				textToInsert: processedCompletion,
+			})
+
+			if (processedResult) {
+				// Get the line prefix for caching
+				const linePrefix = codeContext.document
+					.getText(new vscode.Range(new vscode.Position(codeContext.position.line, 0), codeContext.position))
+					.trimStart()
+
+				const autocompletion: Autocompletion = {
+					text: linePrefix + processedResult.processedText, // Store full line for cache matching
+					range: processedResult.insertRange,
+					originalPrefix: linePrefix,
+				}
+				return { autocompletion, cost: completionCost }
+			}
+		}
+
+		return { autocompletion: null, cost: completionCost }
 	}
 
 	const debouncedGenerateCompletion = createDebouncedFn(generateCompletion, UI_UPDATE_DEBOUNCE_MS)
@@ -214,26 +239,26 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 			// Check if we have a cached completion for this context
 			const matchingCompletion = completionsCache.findMatchingCompletion(codeContext)
 			if (matchingCompletion) {
-				console.log(`🚀🎯 Using cached completion '${matchingCompletion.processedText}'`)
+				console.log(`🚀🎯 Using cached completion '${matchingCompletion.text}'`, { matchingCompletion })
 				animationManager.stopAnimation()
-				return [createInlineCompletionItem(matchingCompletion.processedText, matchingCompletion.insertRange)]
+				return [createInlineCompletionItem(matchingCompletion.text, matchingCompletion.range)]
 			}
 
-			const generationResult = await debouncedGenerateCompletion(codeContext)
-			if (!generationResult || token.isCancellationRequested) {
-				return null
-			}
-			const { processedCompletion, cost } = generationResult
-			console.log(`🚀🛑🚀🛑🚀🛑🚀🛑🚀🛑 \n`, { processedCompletion, cost: formatCost(cost || 0) })
+			const result = await debouncedGenerateCompletion(codeContext)
+			if (result && result.autocompletion) {
+				const { autocompletion, cost } = result
 
-			// Cache the successful completion for future use
-			if (processedCompletion) {
-				completionsCache.addCompletion(codeContext, processedCompletion)
-			}
+				// Cache the successful completion for future use
+				completionsCache.addCompletion(codeContext, autocompletion)
+				console.log(`🚀🤖🤖🤖🤖🤖🤖🤖🤖🤖🤖🤖🤖 \n`, { result, cost: formatCost(cost || 0) })
 
-			const processedResult = processTextInsertion({ document, position, textToInsert: processedCompletion })
-			if (processedResult) {
-				return [createInlineCompletionItem(processedResult.processedText, processedResult.insertRange)]
+				// Subtract the prefix from the completion text before returning
+				const currentLinePrefix = codeContext.document
+					.getText(new vscode.Range(new vscode.Position(codeContext.position.line, 0), codeContext.position))
+					.trimStart()
+				const completionWithoutPrefix = autocompletion.text.substring(currentLinePrefix.length)
+
+				return [createInlineCompletionItem(completionWithoutPrefix, autocompletion.range)]
 			}
 			return null
 		},
