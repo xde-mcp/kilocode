@@ -73,3 +73,11 @@ export interface Prediction {
 export type AutocompleteSnippetDeprecated = RangeInFileWithContents & {
 	score?: number
 }
+
+export interface AutocompleteState {
+	enabled: boolean
+	lastCompletionCost: number
+	totalSessionCost: number
+	model: string
+	hasValidToken: boolean
+}

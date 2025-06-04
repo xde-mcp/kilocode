@@ -11,6 +11,9 @@ import { isHumanEdit } from "./utils/EditDetectionUtils"
 import { ExperimentId } from "@roo-code/types"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { processTextInsertion, InsertionContext } from "./utils/CompletionTextProcessor"
+import { AutocompleteStatusBar } from "./AutocompleteStatusBar"
+import { AutocompleteState } from "./types"
+import { formatCost } from "./utils/costFormatting"
 
 export const UI_UPDATE_DEBOUNCE_MS = 250
 export const BAIL_OUT_TOO_MANY_LINES_LIMIT = 100
@@ -79,12 +82,17 @@ export function registerAutocomplete(context: vscode.ExtensionContext): void {
 }
 
 function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable {
-	// State
-	let enabled = true // User toggle state (default to enabled)
+	const state: AutocompleteState = {
+		enabled: true,
+		lastCompletionCost: 0,
+		totalSessionCost: 0,
+		model: DEFAULT_MODEL,
+		hasValidToken: !!ContextProxy.instance.getProviderSettings().kilocodeToken,
+	}
+
+	// Internal state
 	let isBackspaceOperation = false // Flag to track backspace operations
 	let justAcceptedSuggestion = false // Flag to track if a suggestion was just accepted
-	let lastCompletionCost = 0 // Track the cost of the last completion
-	let totalSessionCost = 0 // Track the total cost of all completions in the session
 	let abortController: AbortController = new AbortController() // Track the current abort controller
 
 	const completionsCache = new LRUCache<string, string[]>({
@@ -95,6 +103,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	// Services
 	const contextGatherer = new ContextGatherer()
 	const animationManager = new AutocompleteDecorationAnimation()
+	const statusBar = new AutocompleteStatusBar()
 
 	// API Handling
 	let apiHandler: ApiHandler | null = null
@@ -108,6 +117,10 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	}
 
 	// Helper Functions
+	const updateTokenStatus = () => {
+		state.hasValidToken = !!ContextProxy.instance.getProviderSettings().kilocodeToken
+	}
+
 	const clearState = () => {
 		vscode.commands.executeCommand("editor.action.inlineSuggest.hide")
 		animationManager.stopAnimation()
@@ -178,12 +191,12 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		}
 
 		// Update cost tracking variables
-		totalSessionCost += completionCost
-		lastCompletionCost = completionCost
-		console.log(`🚀💰 Completion cost: ${humanFormatCost(completionCost)}`)
+		state.totalSessionCost += completionCost
+		state.lastCompletionCost = completionCost
+		console.log(`🚀💰 Completion cost: ${formatCost(completionCost)}`)
 
 		// Update status bar with cost information
-		updateStatusBar()
+		statusBar.updateDisplay(state)
 
 		// Stop animation when completion is done
 		animationManager.stopAnimation()
@@ -195,12 +208,18 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 	const provider: vscode.InlineCompletionItemProvider = {
 		async provideInlineCompletionItems(document, position, context, token) {
-			if (!enabled || !vscode.window.activeTextEditor) return null
+			if (!state.enabled || !vscode.window.activeTextEditor) return null
 
 			const kilocodeToken = ContextProxy.instance.getProviderSettings().kilocodeToken
 			if (!kilocodeToken) {
+				updateTokenStatus()
+				statusBar.updateDisplay(state)
 				return null
 			}
+
+			// Update token status and status bar if token is now available
+			updateTokenStatus()
+			statusBar.updateDisplay(state)
 
 			// Create or recreate the API handler if needed
 			apiHandler =
@@ -243,7 +262,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 			const { processedCompletion, cost } = generationResult
 			console.log(`🚀🛑🚀🛑🚀🛑🚀🛑🚀🛑 \n`, {
 				processedCompletion,
-				cost: humanFormatCost(cost || 0),
+				cost: formatCost(cost || 0),
 			})
 
 			// Cache the successful completion for future use
@@ -275,51 +294,11 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	// Register provider and commands
 	const providerDisposable = vscode.languages.registerInlineCompletionItemProvider({ pattern: "**" }, provider)
 
-	// Status bar
-	const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
-	statusBar.text = "$(sparkle) Kilo Complete"
-	statusBar.tooltip = "Kilo Code Autocomplete"
-	statusBar.command = "kilo-code.toggleAutocomplete"
-	statusBar.show()
-
-	// Helper function to format cost with special handling for small amounts
-	const humanFormatCost = (cost: number): string => {
-		if (cost === 0) return "$0.00"
-		if (cost > 0 && cost < 0.01) return "<$0.01" // Less than one cent
-		return `$${cost.toFixed(2)}`
-	}
-
-	// Helper function to update status bar with cost information
-	const updateStatusBar = () => {
-		if (!enabled) {
-			statusBar.text = "$(circle-slash) Kilo Complete"
-			statusBar.tooltip = "Kilo Code Autocomplete (disabled)"
-			return
-		}
-
-		// Check if kilocode token is set
-		const kilocodeToken = ContextProxy.instance.getProviderSettings().kilocodeToken
-		if (!kilocodeToken) {
-			statusBar.text = "$(warning) Kilo Complete"
-			statusBar.tooltip = "A valid Kilocode token must be set to use autocomplete"
-			return
-		}
-
-		const totalCostFormatted = humanFormatCost(totalSessionCost)
-		statusBar.text = `$(sparkle) Kilo Complete (${totalCostFormatted})`
-		statusBar.tooltip = `\
-Kilo Code Autocomplete
-
-Last completion: $${lastCompletionCost.toFixed(5)}
-Session total cost: ${totalCostFormatted}
-Model: ${DEFAULT_MODEL}\
-`
-	}
-
-	const toggleCommand = vscode.commands.registerCommand("kilo-code.toggleAutocomplete", () => {
-		enabled = !enabled
-		updateStatusBar()
-		vscode.window.showInformationMessage(`Kilo Complete ${enabled ? "enabled" : "disabled"}`)
+	// Command to toggle autocomplete
+	const toggleAutocompleteCommand = vscode.commands.registerCommand("kilo-code.toggleAutocomplete", () => {
+		state.enabled = !state.enabled
+		statusBar.updateDisplay(state)
+		vscode.window.showInformationMessage(`Kilo Complete ${state.enabled ? "enabled" : "disabled"}`)
 	})
 
 	// Command to track when a suggestion is accepted
@@ -365,7 +344,7 @@ Model: ${DEFAULT_MODEL}\
 	// Create a composite disposable to return
 	const disposable = new vscode.Disposable(() => {
 		providerDisposable.dispose()
-		toggleCommand.dispose()
+		toggleAutocompleteCommand.dispose()
 		trackAcceptedSuggestionCommand.dispose()
 		statusBar.dispose()
 		selectionHandler.dispose()
@@ -377,7 +356,7 @@ Model: ${DEFAULT_MODEL}\
 	context.subscriptions.push(disposable)
 
 	// Initialize status bar with correct state
-	updateStatusBar()
+	statusBar.updateDisplay(state)
 
 	return disposable
 }
