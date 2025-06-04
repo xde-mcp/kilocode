@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Handlebars from "handlebars"
 import { defaultTemplates } from "./templates"
 
@@ -8,6 +8,7 @@ import { Tab, TabContent, TabHeader } from "@src/components/common/Tab"
 import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@src/components/ui"
 import BottomControls from "../chat/BottomControls"
 import EditableCodeBlock from "./EditableCodeBlock"
+import { vscode } from "@src/utils/vscode"
 
 type PromptDebuggerViewProps = {
 	onDone: () => void
@@ -44,6 +45,10 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 	// State for LLM response
 	const [llmResponse, setLlmResponse] = useState("")
 
+	// Refs for streaming response handling
+	const llmResponseRef = useRef("")
+	const animationFrameIdRef = useRef<number | null>(null)
+
 	// State for test variables
 	const [testVariables, _setTestVariables] = useState({
 		user: {
@@ -74,6 +79,40 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 			setRenderedPreview(`Template Error: ${(error as Error).message}`)
 		}
 	}, [promptInput, testVariables])
+
+	// Create API handler for the selected model
+	const createApiHandler = useCallback(() => {
+		// Get the API configuration for the selected model
+		const apiConfig = listApiConfigMeta?.find((config) => config.id === selectedModel)
+		if (!apiConfig) return null
+
+		// Request the extension to create an API handler for us
+		vscode.postMessage({
+			type: "loadApiConfigurationById",
+			text: selectedModel,
+		})
+
+		// Return true to indicate we've requested the API handler
+		return true
+	}, [selectedModel, listApiConfigMeta])
+
+	// Initialize the API handler when the selected model changes
+	useEffect(() => {
+		if (selectedModel) {
+			createApiHandler()
+		}
+	}, [selectedModel, createApiHandler])
+
+	// Function to schedule UI updates for streaming text
+	const scheduleUpdate = useCallback(() => {
+		if (animationFrameIdRef.current) {
+			cancelAnimationFrame(animationFrameIdRef.current)
+		}
+		animationFrameIdRef.current = requestAnimationFrame(() => {
+			setLlmResponse(llmResponseRef.current)
+			animationFrameIdRef.current = null
+		})
+	}, [])
 
 	// Handle template selection change
 	const handleTemplateChange = (templateId: string) => {
@@ -110,28 +149,111 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 	}
 
 	// Handle LLM API call
-	const handleCallLLM = () => {
-		if (!promptInput.trim()) return
+	const handleCallLLM = async () => {
+		if (!promptInput.trim() || !renderedPreview.trim()) return
 
 		setIsLoading(true)
 		setLlmResponse("")
+		llmResponseRef.current = ""
 
-		// Simulate streaming response
-		let response = ""
-		const fullResponse =
-			"This is a simulated LLM response based on your template. In a real implementation, this would be the actual response from the selected model using the rendered template as input. The response would stream in character by character to provide a realistic experience."
-		let index = 0
+		if (animationFrameIdRef.current) {
+			cancelAnimationFrame(animationFrameIdRef.current)
+			animationFrameIdRef.current = null
+		}
 
-		const streamInterval = setInterval(() => {
-			if (index < fullResponse.length) {
-				response += fullResponse[index]
-				setLlmResponse(response)
-				index++
-			} else {
-				clearInterval(streamInterval)
-				setIsLoading(false)
+		// Set a timeout to reset loading state if no response after 10 seconds
+		const timeoutId = setTimeout(() => {
+			setIsLoading(false)
+			llmResponseRef.current =
+				"Request timed out. The model may be unavailable or unsupported. Try selecting a different model from the dropdown."
+			scheduleUpdate()
+		}, 10000)
+
+		try {
+			// Create a unique ID for this request
+			const responseId = crypto.randomUUID()
+
+			// Create the message to send to the extension
+			const systemPrompt = "You are a helpful AI assistant."
+
+			// Send the message to the extension to call the LLM
+			vscode.postMessage({
+				type: "promptDebuggerCallLLM",
+				text: selectedModel, // The API config ID
+				systemPrompt: systemPrompt,
+				userPrompt: renderedPreview,
+				responseId: responseId,
+			})
+
+			// Listen for the response
+			const handleResponse = (event: MessageEvent) => {
+				const message = event.data
+
+				// Check if this is a response to our request using the dedicated prompt debugger message type
+				if (message.type === "promptDebuggerPartialMessage" && message.responseId === responseId) {
+					clearTimeout(timeoutId) // Clear the request timeout
+
+					if (message.partialMessage?.type === "say") {
+						if (message.partialMessage.say === "text") {
+							llmResponseRef.current = message.partialMessage.text || ""
+							scheduleUpdate()
+						} else if (message.partialMessage.say === "error") {
+							llmResponseRef.current = `Error: ${message.partialMessage.text || "Unknown error"}`
+							scheduleUpdate()
+							setIsLoading(false)
+							window.removeEventListener("message", handleResponse) // Clean up this listener
+							if (animationFrameIdRef.current) {
+								cancelAnimationFrame(animationFrameIdRef.current)
+								animationFrameIdRef.current = null
+							}
+						}
+					}
+				}
 			}
-		}, 30)
+
+			// Add the event listener
+			window.addEventListener("message", handleResponse)
+
+			// Also listen for error messages from the extension
+			const handleError = (event: MessageEvent) => {
+				const message = event.data
+				if (message.type === "error" && message.responseId === responseId) {
+					clearTimeout(timeoutId)
+					setIsLoading(false)
+
+					let errorMessage = `Error: ${message.text || "Unknown error occurred"}`
+					if (message.text && message.text.includes("Unsupported model")) {
+						errorMessage = `Error: The selected model "${selectedModel}" is not supported. Please select a different model from the dropdown.`
+					}
+					llmResponseRef.current = errorMessage
+					scheduleUpdate()
+
+					window.removeEventListener("message", handleError) // Clean up this listener
+					if (animationFrameIdRef.current) {
+						cancelAnimationFrame(animationFrameIdRef.current)
+						animationFrameIdRef.current = null
+					}
+				}
+			}
+			window.addEventListener("message", handleError)
+
+			// Return cleanup function
+			return () => {
+				window.removeEventListener("message", handleResponse)
+				window.removeEventListener("message", handleError)
+				clearTimeout(timeoutId)
+				if (animationFrameIdRef.current) {
+					cancelAnimationFrame(animationFrameIdRef.current)
+					animationFrameIdRef.current = null
+				}
+				setIsLoading(false) // Ensure loading is false on cleanup
+			}
+		} catch (error) {
+			console.error("Error calling LLM:", error)
+			setLlmResponse(`Error: ${(error as Error).message}`)
+			setIsLoading(false)
+			clearTimeout(timeoutId)
+		}
 	}
 
 	// Insert variable at cursor position
@@ -166,6 +288,18 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 	// Handle model selection change
 	const handleModelChange = (value: string) => {
 		setSelectedModel(value)
+
+		// Reset loading state if it's currently loading
+		if (isLoading) {
+			setIsLoading(false)
+			setLlmResponse("Model changed. Please try again with the new model.")
+		}
+
+		// Update the current API config in the extension
+		vscode.postMessage({
+			type: "currentApiConfigName",
+			text: value,
+		})
 	}
 
 	// Handle clearing the form
@@ -249,13 +383,13 @@ const PromptDebuggerView = ({ onDone }: PromptDebuggerViewProps) => {
 
 					<div className="grid grid-cols-2 gap-4 mb-4">
 						<div>
-							<h4 className="text-vscode-foreground m-0 mb-2">{t("Handlebars Template")}</h4>
+							<h4 className="text-vscode-foreground m-0 mb-2">{t("Template")}</h4>
 							<EditableCodeBlock
 								ref={codeEditorRef}
 								value={promptInput}
 								onChange={setPromptInput}
 								language="handlebars"
-								placeholder={t("Enter your Handlebars template here... (e.g. Hello {{user.name}}!)")}
+								placeholder={t("Enter your template here... (e.g. Hello {{user.name}}!)")}
 								rows={8}
 								className="w-full"
 							/>

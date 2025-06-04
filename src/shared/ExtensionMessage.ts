@@ -35,6 +35,7 @@ export interface ExtensionMessage {
 		| "workspaceUpdated"
 		| "invoke"
 		| "partialMessage"
+		| "promptDebuggerPartialMessage" // New dedicated type for prompt debugger streaming responses
 		| "mcpServers"
 		| "enhancedPrompt"
 		| "commitSearchResults"
@@ -97,6 +98,7 @@ export interface ExtensionMessage {
 		path?: string
 	}>
 	partialMessage?: ClineMessage
+	responseId?: string // Added for prompt debugger LLM API integration
 	routerModels?: RouterModels
 	openAiModels?: string[]
 	ollamaModels?: string[]
