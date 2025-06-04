@@ -4,7 +4,7 @@ import { CodeContext, ContextGatherer } from "./ContextGatherer"
 import { holeFillerTemplate } from "./templating/AutocompleteTemplate"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { generateImportSnippets, generateDefinitionSnippets } from "./context/snippetProvider"
-import { LRUCache } from "lru-cache"
+import { AutocompleteCache } from "./cache/AutocompleteCache"
 import { createDebouncedFn } from "./utils/createDebouncedFn"
 import { AutocompleteDecorationAnimation } from "./AutocompleteDecorationAnimation"
 import { isHumanEdit } from "./utils/EditDetectionUtils"
@@ -17,7 +17,6 @@ import { formatCost } from "./utils/costFormatting"
 
 export const UI_UPDATE_DEBOUNCE_MS = 250
 export const BAIL_OUT_TOO_MANY_LINES_LIMIT = 100
-export const MAX_COMPLETIONS_PER_CONTEXT = 5 // Per-given prefix/suffix lines, how many different per-line options to cache
 
 // const DEFAULT_MODEL = "mistralai/codestral-2501"
 const DEFAULT_MODEL = "google/gemini-2.5-flash-preview-05-20"
@@ -31,17 +30,6 @@ export function processModelResponse(responseText: string): string {
 		return fullMatch[2].slice(0, -"</COMPLETION>".length)
 	}
 	return fullMatch[2]
-}
-
-/**
- * Generates a cache key based on context's preceding and following lines
- * This is used to identify when we can reuse a previous completion
- */
-function generateCacheKey({ precedingLines, followingLines }: CodeContext): string {
-	const maxLinesToConsider = 5
-	const precedingContext = precedingLines.slice(-maxLinesToConsider).join("\n")
-	const followingContext = followingLines.slice(0, maxLinesToConsider).join("\n")
-	return `${precedingContext}|||${followingContext}`
 }
 
 /**
@@ -95,9 +83,9 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	let justAcceptedSuggestion = false // Flag to track if a suggestion was just accepted
 	let abortController: AbortController = new AbortController() // Track the current abort controller
 
-	const completionsCache = new LRUCache<string, string[]>({
-		max: 50,
-		ttl: 1000 * 60 * 60 * 24, // Cache for 24 hours
+	const completionsCache = new AutocompleteCache({
+		maxSize: 50,
+		ttlMs: 1000 * 60 * 60 * 24, // Cache for 24 hours
 	})
 
 	// Services
@@ -231,28 +219,15 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 				return null
 			}
 
-			// Get exactly what's been typed on the current line
-			const linePrefix = document
-				.getText(new vscode.Range(new vscode.Position(position.line, 0), position))
-				.trimStart()
 			const codeContext = await contextGatherer.gatherContext(document, position, true, true)
 			console.log(`🚀🛑 Autocomplete for line: '${codeContext.currentLine}'!`)
 
 			// Check if we have a cached completion for this context
-			const cacheKey = generateCacheKey(codeContext)
-			const cachedCompletions = completionsCache.get(cacheKey) ?? []
-			for (const completion of cachedCompletions) {
-				if (completion.startsWith(linePrefix)) {
-					// Process the completion text to avoid duplicating existing text in the document
-					const processedResult = processTextInsertion({ document, position, textToInsert: completion })
-					if (processedResult) {
-						console.log(
-							`🚀🎯 Using cached completion '${processedResult.processedText}' (${cachedCompletions.length} options)`,
-						)
-						animationManager.stopAnimation()
-						return [createInlineCompletionItem(processedResult.processedText, processedResult.insertRange)]
-					}
-				}
+			const matchingCompletion = completionsCache.findMatchingCompletion(codeContext, document, position)
+			if (matchingCompletion) {
+				console.log(`🚀🎯 Using cached completion '${matchingCompletion.processedText}'`)
+				animationManager.stopAnimation()
+				return [createInlineCompletionItem(matchingCompletion.processedText, matchingCompletion.insertRange)]
 			}
 
 			const generationResult = await debouncedGenerateCompletion({ document, codeContext, position })
@@ -267,20 +242,10 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 			// Cache the successful completion for future use
 			if (processedCompletion) {
-				const completions = completionsCache.get(cacheKey) ?? []
-
-				// Add the new completion if it's not already in the list
-				if (!completions.includes(processedCompletion)) {
-					completions.push(linePrefix + processedCompletion)
-					console.log(`🚀🛑 Saved new cache entry '${linePrefix + processedCompletion}'`)
-
-					// Prune the array if it exceeds the maximum size
-					// Keep the most recent completions (remove from the beginning)
-					if (completions.length > MAX_COMPLETIONS_PER_CONTEXT) {
-						completions.splice(0, completions.length - MAX_COMPLETIONS_PER_CONTEXT)
-					}
+				const wasAdded = completionsCache.addCompletion(codeContext, document, position, processedCompletion)
+				if (wasAdded) {
+					console.log(`🚀🛑 Saved new cache entry for completion: '${processedCompletion}'`)
 				}
-				completionsCache.set(cacheKey, completions)
 			}
 
 			const processedResult = processTextInsertion({ document, position, textToInsert: processedCompletion })
