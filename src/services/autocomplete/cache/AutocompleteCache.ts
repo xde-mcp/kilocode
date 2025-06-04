@@ -11,14 +11,10 @@ export class AutocompleteCache {
 	private readonly maxCompletionsPerContext = 5
 	private readonly maxLinesToConsider = 5
 
-	/**
-	 * Creates a new AutocompleteCache instance
-	 * @param options Configuration options for the cache
-	 */
-	constructor(options?: { maxSize?: number; ttlMs?: number }) {
+	constructor() {
 		this.cache = new LRUCache<string, string[]>({
-			max: options?.maxSize ?? 50,
-			ttl: options?.ttlMs ?? 1000 * 60 * 60 * 24, // Default: Cache for 24 hours
+			max: 50,
+			ttl: 1000 * 60 * 60 * 24, // Default: Cache for 24 hours
 		})
 	}
 
@@ -26,13 +22,9 @@ export class AutocompleteCache {
 	 * Finds a matching completion from the cache that starts with the current line prefix
 	 * @returns Processed text ready for insertion if found, null otherwise
 	 */
-	public findMatchingCompletion(
-		context: CodeContext,
-		document: vscode.TextDocument,
-		position: vscode.Position,
-	): { processedText: string; insertRange: vscode.Range } | null {
-		const linePrefix = document
-			.getText(new vscode.Range(new vscode.Position(position.line, 0), position))
+	public findMatchingCompletion(context: CodeContext): { processedText: string; insertRange: vscode.Range } | null {
+		const linePrefix = context.document
+			.getText(new vscode.Range(new vscode.Position(context.position.line, 0), context.position))
 			.trimStart()
 
 		const cachedCompletions = this.getCompletionsInternal(context)
@@ -41,8 +33,8 @@ export class AutocompleteCache {
 			if (completion.startsWith(linePrefix)) {
 				// Process the completion text to avoid duplicating existing text in the document
 				const processedResult = processTextInsertion({
-					document,
-					position,
+					document: context.document,
+					position: context.position,
 					textToInsert: completion,
 				})
 
@@ -59,14 +51,9 @@ export class AutocompleteCache {
 	 * Adds a new completion to the cache
 	 * @returns true if the completion was added, false if it was already in the cache
 	 */
-	public addCompletion(
-		context: CodeContext,
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		completion: string,
-	): boolean {
-		const linePrefix = document
-			.getText(new vscode.Range(new vscode.Position(position.line, 0), position))
+	public addCompletion(context: CodeContext, completion: string): boolean {
+		const linePrefix = context.document
+			.getText(new vscode.Range(new vscode.Position(context.position.line, 0), context.position))
 			.trimStart()
 
 		const fullCompletion = linePrefix + completion
@@ -87,6 +74,8 @@ export class AutocompleteCache {
 		}
 
 		this.cache.set(key, completions)
+		console.log(`🚀🛑 Saved new cache entry for completion: '${completion}'`)
+
 		return true
 	}
 

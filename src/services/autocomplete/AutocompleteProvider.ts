@@ -19,7 +19,7 @@ export const UI_UPDATE_DEBOUNCE_MS = 250
 export const BAIL_OUT_TOO_MANY_LINES_LIMIT = 100
 
 // const DEFAULT_MODEL = "mistralai/codestral-2501"
-const DEFAULT_MODEL = "google/gemini-2.5-flash-preview-05-20"
+const DEFAULT_MODEL = "google/gemini-2.5-flash-preview"
 
 export function processModelResponse(responseText: string): string {
 	const fullMatch = /(<COMPLETION>)?([\s\S]*?)(<\/COMPLETION>|$)/.exec(responseText)
@@ -83,15 +83,12 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 	let justAcceptedSuggestion = false // Flag to track if a suggestion was just accepted
 	let abortController: AbortController = new AbortController() // Track the current abort controller
 
-	const completionsCache = new AutocompleteCache({
-		maxSize: 50,
-		ttlMs: 1000 * 60 * 60 * 24, // Cache for 24 hours
-	})
-
 	// Services
 	const contextGatherer = new ContextGatherer()
 	const animationManager = new AutocompleteDecorationAnimation()
+
 	const statusBar = new AutocompleteStatusBar()
+	const completionsCache = new AutocompleteCache()
 
 	// API Handling
 	let apiHandler: ApiHandler | null = null
@@ -118,15 +115,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		justAcceptedSuggestion = false
 	}
 
-	const generateCompletion = async ({
-		codeContext,
-		document,
-		position,
-	}: {
-		codeContext: CodeContext
-		document: vscode.TextDocument
-		position: vscode.Position
-	}) => {
+	const generateCompletion = async (codeContext: CodeContext) => {
 		if (!apiHandler) throw new Error("apiHandler must be set before calling generateCompletion!")
 
 		abortController?.abort() // Abort any previous request
@@ -134,11 +123,11 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		animationManager.startAnimation()
 
 		const snippets = [
-			...generateImportSnippets(true, codeContext.imports, document.uri.fsPath),
+			...generateImportSnippets(true, codeContext.imports, codeContext.document.uri.fsPath),
 			...generateDefinitionSnippets(true, codeContext.definitions),
 		]
 		const systemPrompt = holeFillerTemplate.getSystemPrompt()
-		const userPrompt = holeFillerTemplate.template(codeContext, document, position, snippets)
+		const userPrompt = holeFillerTemplate.template(codeContext, snippets)
 
 		console.log(`🚀🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶🧶\n`, { userPrompt })
 
@@ -223,29 +212,23 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 			console.log(`🚀🛑 Autocomplete for line: '${codeContext.currentLine}'!`)
 
 			// Check if we have a cached completion for this context
-			const matchingCompletion = completionsCache.findMatchingCompletion(codeContext, document, position)
+			const matchingCompletion = completionsCache.findMatchingCompletion(codeContext)
 			if (matchingCompletion) {
 				console.log(`🚀🎯 Using cached completion '${matchingCompletion.processedText}'`)
 				animationManager.stopAnimation()
 				return [createInlineCompletionItem(matchingCompletion.processedText, matchingCompletion.insertRange)]
 			}
 
-			const generationResult = await debouncedGenerateCompletion({ document, codeContext, position })
+			const generationResult = await debouncedGenerateCompletion(codeContext)
 			if (!generationResult || token.isCancellationRequested) {
 				return null
 			}
 			const { processedCompletion, cost } = generationResult
-			console.log(`🚀🛑🚀🛑🚀🛑🚀🛑🚀🛑 \n`, {
-				processedCompletion,
-				cost: formatCost(cost || 0),
-			})
+			console.log(`🚀🛑🚀🛑🚀🛑🚀🛑🚀🛑 \n`, { processedCompletion, cost: formatCost(cost || 0) })
 
 			// Cache the successful completion for future use
 			if (processedCompletion) {
-				const wasAdded = completionsCache.addCompletion(codeContext, document, position, processedCompletion)
-				if (wasAdded) {
-					console.log(`🚀🛑 Saved new cache entry for completion: '${processedCompletion}'`)
-				}
+				completionsCache.addCompletion(codeContext, processedCompletion)
 			}
 
 			const processedResult = processTextInsertion({ document, position, textToInsert: processedCompletion })

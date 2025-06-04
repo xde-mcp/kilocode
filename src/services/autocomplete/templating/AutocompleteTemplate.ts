@@ -11,12 +11,7 @@ import { CodeContext, CodeContextDefinition } from "../ContextGatherer"
 export interface AutocompleteTemplate {
 	compilePrefixSuffix?: (prefix: string, suffix: string) => [string, string]
 	getSystemPrompt: () => string
-	template: (
-		codeContext: CodeContext,
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		snippets: AutocompleteSnippet[],
-	) => string
+	template: (codeContext: CodeContext, snippets: AutocompleteSnippet[]) => string
 	completionOptions?: Partial<CompletionOptions>
 }
 
@@ -121,12 +116,9 @@ function hypothenuse(a, b) {
 `
 		return SYSTEM_MSG
 	},
-	template: (
-		codeContext: CodeContext,
-		document: vscode.TextDocument,
-		position: vscode.Position,
-		snippets: AutocompleteSnippet[],
-	) => {
+	template: (codeContext: CodeContext, snippets: AutocompleteSnippet[]) => {
+		const { document, position } = codeContext
+
 		const offset = document.offsetAt(position)
 		const fileContent = document.getText()
 		const currentFileWithFillPlaceholder =

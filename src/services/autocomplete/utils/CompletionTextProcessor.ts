@@ -1,16 +1,6 @@
 import * as vscode from "vscode"
 
 /**
- * Configuration options for text insertion processing
- */
-export interface TextInsertionOptions {
-	/** Whether to trim overlapping prefix text */
-	trimPrefix?: boolean
-	/** Whether to trim overlapping suffix text */
-	trimSuffix?: boolean
-}
-
-/**
  * Result of text insertion processing
  */
 export interface TextInsertionResult {
@@ -126,11 +116,7 @@ function getInsertionContext(
  * @param options Processing options
  * @returns Processed insertion result or null if nothing to insert
  */
-export function processTextInsertion(
-	context: InsertionContext,
-	options: TextInsertionOptions = {},
-): TextInsertionResult | null {
-	const { trimPrefix = true, trimSuffix = true } = options
+export function processTextInsertion(context: InsertionContext): TextInsertionResult | null {
 	const { document, position, textToInsert } = context
 
 	if (!textToInsert || textToInsert.length === 0) {
@@ -145,7 +131,7 @@ export function processTextInsertion(
 	let suffixTrimmed = 0
 
 	// Handle prefix overlap
-	if (trimPrefix && textBefore.length > 0) {
+	if (textBefore.length > 0) {
 		prefixTrimmed = findMaxPrefixOverlap(textBefore, textToInsert)
 		if (prefixTrimmed > 0) {
 			processedText = textToInsert.substring(prefixTrimmed)
@@ -153,7 +139,7 @@ export function processTextInsertion(
 	}
 
 	// Handle suffix overlap
-	if (trimSuffix && textAfter.length > 0) {
+	if (textAfter.length > 0) {
 		suffixTrimmed = findMaxSuffixOverlap(processedText, textAfter)
 
 		if (suffixTrimmed > 0) {
