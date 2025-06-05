@@ -71,8 +71,8 @@ export class ProjectManager {
 			throw new Error("Unable to determine project root directory")
 		}
 
-		console.log(`[DEBUG] ProjectManager initialized with project root: ${projectRoot}`)
-		console.log(`[DEBUG] Creating PathResolver with project root: ${projectRoot}`)
+		// console.log(`[DEBUG] ProjectManager initialized with project root: ${projectRoot}`)
+		// console.log(`[DEBUG] Creating PathResolver with project root: ${projectRoot}`)
 		this.pathResolver = new PathResolver(projectRoot)
 		this.fileManager = new FileManager(project, this.pathResolver)
 	}
@@ -85,26 +85,33 @@ export class ProjectManager {
 	 * @returns The number of files loaded
 	 */
 	async loadRelevantProjectFiles(sourceFilePath: string): Promise<number> {
+		const startTime = Date.now()
+		// console.log(`[DEBUG PROJECT-MANAGER] 🔄 loadRelevantProjectFiles() called for: ${sourceFilePath}`)
+
 		try {
 			// DEBUG: Track file loading
 			const beforeCount = this.project.getSourceFiles().length
-			console.log(`[DEBUG FILE LOADING] Before loading: ${beforeCount} files in project`)
+			// console.log(`[DEBUG PROJECT-MANAGER] 📊 Before loading: ${beforeCount} files in project`)
 
 			// Get the directory of the source file
 			const sourceDir = path.dirname(this.pathResolver.resolveAbsolutePath(sourceFilePath))
+			// console.log(`[DEBUG PROJECT-MANAGER] 📁 Source directory: ${sourceDir}`)
 
 			// For test environments, only load the specific directory being tested
 			const isTestEnv = this.pathResolver.isTestEnvironment(sourceFilePath)
+			// console.log(`[DEBUG PROJECT-MANAGER] 🧪 Test environment detected: ${isTestEnv}`)
 
 			const patterns: string[] = []
 
 			if (isTestEnv) {
 				// In test environment, only load files in the test directory
 				patterns.push(`${sourceDir}/**/*.ts`, `${sourceDir}/**/*.tsx`)
+				// console.log(`[DEBUG PROJECT-MANAGER] 🧪 Using TEST mode - loading only test directory`)
 			} else {
 				// In production, load files more selectively to avoid memory issues
 				// Only load files in common source directories, excluding tests and node_modules
 				const commonSourceDirs = ["src", "lib", "app", "components", "utils", "services", "types"]
+				// console.log(`[DEBUG PROJECT-MANAGER] 🏢 Using PROD mode - loading common source directories`)
 
 				for (const dir of commonSourceDirs) {
 					const dirPath = this.pathResolver.resolveAbsolutePath(dir)
@@ -115,17 +122,20 @@ export class ProjectManager {
 				patterns.push(`${sourceDir}/**/*.ts`, `${sourceDir}/**/*.tsx`)
 			}
 
-			console.log(`[DEBUG FILE LOADING] Loading patterns (${isTestEnv ? "TEST" : "PROD"} mode):`)
-			patterns.forEach((pattern) => console.log(`  - ${pattern}`))
+			// console.log(`[DEBUG PROJECT-MANAGER] 📋 Loading patterns (${isTestEnv ? "TEST" : "PROD"} mode):`)
+			// patterns.forEach((pattern, index) => console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`))
 
 			// Filter patterns to exclude unwanted directories
 			const filteredPatterns = patterns.filter((pattern) => {
-				return (
+				const shouldInclude =
 					!pattern.includes("node_modules") &&
 					!pattern.includes("__tests__") &&
 					!pattern.includes("dist") &&
 					!pattern.includes("build")
-				)
+				if (!shouldInclude) {
+					// console.log(`[DEBUG PROJECT-MANAGER] ❌ Filtered out pattern: ${pattern}`)
+				}
+				return shouldInclude
 			})
 
 			// Convert patterns to absolute paths to ensure correct resolution
@@ -135,16 +145,36 @@ export class ProjectManager {
 				}
 				return path.resolve(this.pathResolver.getProjectRoot(), pattern)
 			})
-			console.log(`[DEBUG FILE LOADING] Using absolute patterns:`, absolutePatterns.slice(0, 3))
-
-			const projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
+			// console.log(`[DEBUG PROJECT-MANAGER] 📋 Final absolute patterns (${absolutePatterns.length} total):`)
+			absolutePatterns.forEach((pattern, index) => {
+				// console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`)
+			})
 
 			console.log(
-				`[DEBUG FILE LOADING] Loaded ${projectFiles.length} files. Total files in project: ${this.project.getSourceFiles().length}`,
+				`[DEBUG PROJECT-MANAGER] 🚨 CALLING addSourceFilesAtPaths() with ${absolutePatterns.length} patterns`,
 			)
+			const projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
+			// console.log(`[DEBUG PROJECT-MANAGER] ✅ addSourceFilesAtPaths() returned ${projectFiles.length} files`)
+
+			const afterCount = this.project.getSourceFiles().length
+			const filesAdded = afterCount - beforeCount
+			const duration = Date.now() - startTime
+
+			// console.log(`[DEBUG PROJECT-MANAGER] 📊 Loading summary:`)
+			// console.log(`[DEBUG PROJECT-MANAGER]   - Files added: ${filesAdded}`)
+			// console.log(`[DEBUG PROJECT-MANAGER]   - Total files in project: ${afterCount}`)
+			// console.log(`[DEBUG PROJECT-MANAGER]   - Duration: ${duration}ms`)
 
 			if (projectFiles.length > 100) {
-				console.log(`[WARNING] Loaded ${projectFiles.length} files - this may cause memory issues!`)
+				console.log(
+					`[DEBUG PROJECT-MANAGER] ⚠️  WARNING: Loaded ${projectFiles.length} files - this may cause memory issues!`,
+				)
+			}
+
+			if (afterCount > 1000) {
+				console.log(
+					`[DEBUG PROJECT-MANAGER] 🚨 CRITICAL: Project has ${afterCount} total files - this will cause severe performance issues!`,
+				)
 			}
 
 			// Special handling for barrel files (index.ts) - they often re-export symbols
@@ -153,7 +183,7 @@ export class ProjectManager {
 
 			return projectFiles.length
 		} catch (error) {
-			console.log(`[DEBUG] Error loading reference files: ${(error as Error).message}`)
+			// console.log(`[DEBUG] Error loading reference files: ${(error as Error).message}`)
 			return 0
 		}
 	}
@@ -170,11 +200,11 @@ export class ProjectManager {
 			])
 
 			if (process.env.NODE_ENV !== "test") {
-				console.log(`[DEBUG] Loaded ${barrelFiles.length} potential barrel files`)
+				// console.log(`[DEBUG] Loaded ${barrelFiles.length} potential barrel files`)
 			}
 		} catch (error) {
 			if (process.env.NODE_ENV !== "test") {
-				console.log(`[DEBUG] Error loading barrel files: ${(error as Error).message}`)
+				// console.log(`[DEBUG] Error loading barrel files: ${(error as Error).message}`)
 			}
 		}
 	}
@@ -187,33 +217,33 @@ export class ProjectManager {
 	 */
 	async ensureSourceFile(filePath: string): Promise<SourceFile | null> {
 		const normalizedPath = this.pathResolver.normalizeFilePath(filePath)
-		console.log(`[DEBUG ENSURE FILE] Original path: ${filePath}`)
-		console.log(`[DEBUG ENSURE FILE] Normalized path: ${normalizedPath}`)
+		// console.log(`[DEBUG ENSURE FILE] Original path: ${filePath}`)
+		// console.log(`[DEBUG ENSURE FILE] Normalized path: ${normalizedPath}`)
 
 		// Get the absolute path for the file
 		const absolutePath = this.pathResolver.resolveAbsolutePath(normalizedPath)
-		console.log(`[DEBUG ENSURE FILE] Absolute path: ${absolutePath}`)
+		// console.log(`[DEBUG ENSURE FILE] Absolute path: ${absolutePath}`)
 
 		// Try to find the file by iterating through all source files in the project
 		// This is necessary because ts-morph might have stored the file with a different path
 		const allSourceFiles = this.project.getSourceFiles()
-		console.log(`[DEBUG ENSURE FILE] Searching through ${allSourceFiles.length} source files`)
+		// console.log(`[DEBUG ENSURE FILE] Searching through ${allSourceFiles.length} source files`)
 
 		for (const sourceFile of allSourceFiles) {
 			const sourceFilePath = sourceFile.getFilePath()
-			console.log(`[DEBUG ENSURE FILE] Checking source file: ${sourceFilePath}`)
+			// console.log(`[DEBUG ENSURE FILE] Checking source file: ${sourceFilePath}`)
 
 			// Check if this source file matches our target file
 			// Use exact path matching first
 			if (sourceFilePath === absolutePath) {
-				console.log(`[DEBUG ENSURE FILE] Found exact match by absolute path: ${sourceFilePath}`)
+				// console.log(`[DEBUG ENSURE FILE] Found exact match by absolute path: ${sourceFilePath}`)
 				return sourceFile
 			}
 
 			// Check if the resolved paths match
 			try {
 				if (path.resolve(sourceFilePath) === path.resolve(absolutePath)) {
-					console.log(`[DEBUG ENSURE FILE] Found exact match by resolved path: ${sourceFilePath}`)
+					// console.log(`[DEBUG ENSURE FILE] Found exact match by resolved path: ${sourceFilePath}`)
 					return sourceFile
 				}
 			} catch (error) {
@@ -221,7 +251,7 @@ export class ProjectManager {
 			}
 		}
 
-		console.log(`[DEBUG ENSURE FILE] No exact match found, using FileManager`)
+		// console.log(`[DEBUG ENSURE FILE] No exact match found, using FileManager`)
 		return this.fileManager.ensureFileInProject(normalizedPath)
 	}
 
@@ -290,7 +320,7 @@ export class ProjectManager {
 						const newFile = this.project.addSourceFileAtPath(normalizedPath)
 						if (newFile) {
 							newFile.refreshFromFileSystemSync()
-							console.log(`[DEBUG] ProjectManager: Force reloaded file ${normalizedPath}`)
+							// console.log(`[DEBUG] ProjectManager: Force reloaded file ${normalizedPath}`)
 						}
 					} catch (e) {
 						console.log(`[WARNING] ProjectManager: Failed to reload file ${normalizedPath}`)
@@ -320,7 +350,7 @@ export class ProjectManager {
 			// Refresh all files from disk
 			this.refreshProjectFiles()
 
-			console.log(`[DEBUG] ProjectManager: Cleared caches and refreshed project`)
+			// console.log(`[DEBUG] ProjectManager: Cleared caches and refreshed project`)
 		} catch (error) {
 			console.error(`[ERROR] ProjectManager: Failed to clear caches:`, error)
 		}
@@ -351,7 +381,7 @@ export class ProjectManager {
 			if (refreshedFile) {
 				// Force refresh from file system to ensure latest content
 				refreshedFile.refreshFromFileSystemSync()
-				console.log(`[DEBUG] Force refreshed source file: ${displayPath}`)
+				// console.log(`[DEBUG] Force refreshed source file: ${displayPath}`)
 				return refreshedFile
 			} else {
 				console.error(`[ERROR] Failed to re-add source file after refresh: ${displayPath}`)

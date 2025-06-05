@@ -3,22 +3,21 @@ import { RefactorOperation } from "../schema"
 import * as fs from "fs"
 import * as path from "path"
 import * as os from "os"
+import { createTestDirectory, cleanupTestDirectory } from "./utils/test-directory"
 
 describe("Import Splitting Bug Fix", () => {
 	let tempDir: string
 	let engine: RefactorEngine
 
 	beforeEach(() => {
-		// Create a temporary directory for test files
-		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "import-split-test-"))
+		// Create a temporary directory for test files using standardized prefix
+		tempDir = createTestDirectory("import-splitting")
 		engine = new RefactorEngine({ projectRootPath: tempDir })
 	})
 
 	afterEach(() => {
-		// Clean up temporary directory
-		if (fs.existsSync(tempDir)) {
-			fs.rmSync(tempDir, { recursive: true, force: true })
-		}
+		// Clean up temporary directory using standardized cleanup
+		cleanupTestDirectory(tempDir)
 	})
 
 	test("Should properly split imports when moving functions to different files", async () => {
@@ -98,7 +97,7 @@ export class UserService {
 
 		// Verify that imports were properly split
 		expect(updatedUserServiceContent).toContain("import { formatName, formatEmail } from './utility'")
-		expect(updatedUserServiceContent).toContain("import { isValidEmail } from './validation'")
+		expect(updatedUserServiceContent).toContain('import { isValidEmail } from "./validation"')
 
 		// Verify that isValidEmail was moved to validation.ts
 		expect(validationContent).toContain("export function isValidEmail")

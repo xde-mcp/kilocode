@@ -90,22 +90,34 @@ export class FileManager {
 	 * @returns The SourceFile if found or added, null otherwise
 	 */
 	async ensureFileInProject(filePath: string): Promise<SourceFile | null> {
+		console.log(`[DEBUG FILE-MANAGER] 🔍 ensureFileInProject() called for: ${filePath}`)
+
 		const normalizedPath = this.pathResolver.normalizeFilePath(filePath)
 		const isTestEnv = this.pathResolver.isTestEnvironment(filePath)
 		const isMoveVerificationTest = filePath.includes("move-orchestrator-verification")
 
+		console.log(`[DEBUG FILE-MANAGER] 📁 Normalized path: ${normalizedPath}`)
+		console.log(`[DEBUG FILE-MANAGER] 🧪 Test environment: ${isTestEnv}`)
+		console.log(`[DEBUG FILE-MANAGER] 🔬 Move verification test: ${isMoveVerificationTest}`)
+
 		// Check cache first
 		if (this.sourceFileCache.has(normalizedPath)) {
+			console.log(`[DEBUG FILE-MANAGER] ✅ Cache hit for: ${normalizedPath}`)
 			return this.sourceFileCache.get(normalizedPath) || null
 		}
 
 		// Try to get existing file first
 		let sourceFile = this.project.getSourceFile(normalizedPath)
 		if (sourceFile) {
+			console.log(`[DEBUG FILE-MANAGER] ✅ File already in project: ${normalizedPath}`)
 			// Cache the result
 			this.sourceFileCache.set(normalizedPath, sourceFile)
 			return sourceFile
 		}
+
+		console.log(`[DEBUG FILE-MANAGER] ❌ File not in project, attempting to add: ${normalizedPath}`)
+		const currentFileCount = this.project.getSourceFiles().length
+		console.log(`[DEBUG FILE-MANAGER] 📊 Current project file count: ${currentFileCount}`)
 
 		// Special handling for test environment paths
 		if (isTestEnv || isMoveVerificationTest) {
@@ -113,28 +125,44 @@ export class FileManager {
 			if (normalizedPath.includes("/src/src/")) {
 				const fixedPath = normalizedPath.replace("/src/src/", "/src/")
 				try {
-					sourceFile = this.project.getSourceFile(fixedPath) || this.project.addSourceFileAtPath(fixedPath)
+					sourceFile = this.project.getSourceFile(fixedPath)
+					if (!sourceFile) {
+						console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file with fixed test path: ${fixedPath}`)
+						sourceFile = this.project.addSourceFileAtPath(fixedPath)
+						const newFileCount = this.project.getSourceFiles().length
+						console.log(
+							`[DEBUG FILE-MANAGER] ✅ Added source file using fixed test path: ${fixedPath} (project now has ${newFileCount} files)`,
+						)
+					}
 					if (sourceFile) {
-						console.log(`[DEBUG] Added source file using fixed test path: ${fixedPath}`)
 						this.sourceFileCache.set(normalizedPath, sourceFile)
 						return sourceFile
 					}
 				} catch (error) {
-					console.log(`[DEBUG] Failed to add with fixed test path: ${(error as Error).message}`)
+					console.log(
+						`[DEBUG FILE-MANAGER] ❌ Failed to add with fixed test path: ${(error as Error).message}`,
+					)
 				}
 			}
 
 			// For verification tests, use the test resolver
 			const testPath = this.pathResolver.resolveTestPath(normalizedPath)
 			try {
-				sourceFile = this.project.getSourceFile(testPath) || this.project.addSourceFileAtPath(testPath)
+				sourceFile = this.project.getSourceFile(testPath)
+				if (!sourceFile) {
+					console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file with test path: ${testPath}`)
+					sourceFile = this.project.addSourceFileAtPath(testPath)
+					const newFileCount = this.project.getSourceFiles().length
+					console.log(
+						`[DEBUG FILE-MANAGER] ✅ Added source file using test path: ${testPath} (project now has ${newFileCount} files)`,
+					)
+				}
 				if (sourceFile) {
-					console.log(`[DEBUG] Added source file using test path: ${testPath}`)
 					this.sourceFileCache.set(normalizedPath, sourceFile)
 					return sourceFile
 				}
 			} catch (error) {
-				console.log(`[DEBUG] Failed to add with test path: ${(error as Error).message}`)
+				console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with test path: ${(error as Error).message}`)
 			}
 
 			// For tests, create file in-memory if it doesn't exist
@@ -182,8 +210,21 @@ export class FileManager {
 			try {
 				// Fix any src/src duplication before adding to project
 				const cleanPath = pathToTry.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
-				sourceFile = this.project.addSourceFileAtPath(cleanPath)
-				console.log(`[DEBUG] Added source file using ${description}: ${cleanPath}`)
+
+				// CRITICAL FIX: Always use absolute paths for ts-morph to prevent
+				// it from resolving relative to current working directory instead of project root
+				const absolutePathForTsMorph = path.isAbsolute(cleanPath)
+					? cleanPath
+					: this.pathResolver.resolveAbsolutePath(cleanPath)
+
+				console.log(
+					`[DEBUG FILE-MANAGER] 🔄 Adding file using ${description}: ${cleanPath} -> ${absolutePathForTsMorph}`,
+				)
+				sourceFile = this.project.addSourceFileAtPath(absolutePathForTsMorph)
+				const newFileCount = this.project.getSourceFiles().length
+				console.log(
+					`[DEBUG FILE-MANAGER] ✅ Added source file using ${description}: ${cleanPath} (project now has ${newFileCount} files)`,
+				)
 				console.log(`[DEBUG] Source file path in project: ${sourceFile.getFilePath()}`)
 				this.sourceFileCache.set(normalizedPath, sourceFile)
 				return sourceFile
@@ -204,8 +245,12 @@ export class FileManager {
 				const matchingFile = files.find((f) => f.toLowerCase() === lowerFileName)
 				if (matchingFile) {
 					const fullPath = this.pathResolver.joinPaths(dirPath, matchingFile)
+					console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file using case-insensitive match: ${fullPath}`)
 					sourceFile = this.project.addSourceFileAtPath(fullPath)
-					console.log(`[DEBUG] Added source file using case-insensitive match: ${fullPath}`)
+					const newFileCount = this.project.getSourceFiles().length
+					console.log(
+						`[DEBUG FILE-MANAGER] ✅ Added source file using case-insensitive match: ${fullPath} (project now has ${newFileCount} files)`,
+					)
 					this.sourceFileCache.set(normalizedPath, sourceFile)
 					return sourceFile
 				}
@@ -217,12 +262,17 @@ export class FileManager {
 		// Final attempt for test environments: create an in-memory file
 		if (isTestEnv) {
 			try {
+				// CRITICAL FIX: Use absolute path for createSourceFile to prevent
+				// ts-morph from resolving relative to current working directory
+				const absolutePathForTsMorph = this.pathResolver.resolveAbsolutePath(normalizedPath)
 				sourceFile = this.project.createSourceFile(
-					normalizedPath,
+					absolutePathForTsMorph,
 					`// Auto-created source file for testing\n`,
 					{ overwrite: true },
 				)
-				console.log(`[DEBUG] Created in-memory test file as last resort: ${normalizedPath}`)
+				console.log(
+					`[DEBUG] Created in-memory test file as last resort: ${normalizedPath} -> ${absolutePathForTsMorph}`,
+				)
 				this.sourceFileCache.set(normalizedPath, sourceFile)
 				return sourceFile
 			} catch (error) {
@@ -318,16 +368,24 @@ export class FileManager {
 
 		// Try to add the file to the project using multiple strategies
 		try {
+			console.log(`[DEBUG FILE-MANAGER] 🔄 Adding new file to project: ${normalizedPath}`)
 			sourceFile = this.project.addSourceFileAtPath(normalizedPath)
-			console.log(`[DEBUG] Added new file to project: ${normalizedPath}`)
+			const newFileCount = this.project.getSourceFiles().length
+			console.log(
+				`[DEBUG FILE-MANAGER] ✅ Added new file to project: ${normalizedPath} (project now has ${newFileCount} files)`,
+			)
 		} catch (error) {
-			console.log(`[DEBUG] Failed to add with normalized path: ${(error as Error).message}`)
+			console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with normalized path: ${(error as Error).message}`)
 
 			try {
+				console.log(`[DEBUG FILE-MANAGER] 🔄 Retrying with absolute path: ${absolutePath}`)
 				sourceFile = this.project.addSourceFileAtPath(absolutePath)
-				console.log(`[DEBUG] Added new file to project with absolute path: ${absolutePath}`)
+				const newFileCount = this.project.getSourceFiles().length
+				console.log(
+					`[DEBUG FILE-MANAGER] ✅ Added new file to project with absolute path: ${absolutePath} (project now has ${newFileCount} files)`,
+				)
 			} catch (error) {
-				console.log(`[DEBUG] Failed to add with absolute path: ${(error as Error).message}`)
+				console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with absolute path: ${(error as Error).message}`)
 
 				// Last resort: create the file in the project
 				try {

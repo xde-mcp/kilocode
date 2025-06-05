@@ -113,7 +113,7 @@ export class MoveExecutor {
 			if (!symbol.filePath || typeof symbol.filePath !== "string") {
 				// Use the operation data if symbol data is incomplete
 				symbol.filePath = operation.selector.filePath
-				console.log(`[DEBUG] Using operation file path for symbol: ${symbol.filePath}`)
+				// console.log(`[DEBUG] Using operation file path for symbol: ${symbol.filePath}`)
 			}
 
 			// Normalize paths for consistent handling - measure this step
@@ -153,7 +153,7 @@ export class MoveExecutor {
 			})
 
 			if (!targetFile) {
-				console.log(`[DEBUG] MoveExecutor: Failed to prepare target file: ${operation.targetFilePath}`)
+				// console.log(`[DEBUG] MoveExecutor: Failed to prepare target file: ${operation.targetFilePath}`)
 				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
@@ -178,7 +178,7 @@ export class MoveExecutor {
 			})
 
 			if (!targetUpdated) {
-				console.log(`[DEBUG] MoveExecutor: Failed to add symbol to target file: ${operation.targetFilePath}`)
+				// console.log(`[DEBUG] MoveExecutor: Failed to add symbol to target file: ${operation.targetFilePath}`)
 				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
@@ -207,7 +207,7 @@ export class MoveExecutor {
 			}
 
 			// STEP 4: Update imports using centralized ImportManager (replaces duplicate logic)
-			console.log(`[DEBUG] MoveExecutor: Using centralized ImportManager for all import updates`)
+			// console.log(`[DEBUG] MoveExecutor: Using centralized ImportManager for all import updates`)
 			const importUpdatedFiles = await this.updateReferencingFiles(symbol, operation.targetFilePath)
 			let updatedReferenceFiles: string[] = importUpdatedFiles
 
@@ -227,12 +227,22 @@ export class MoveExecutor {
 			const allAffectedFiles = [...affectedFiles, ...updatedReferenceFiles]
 			const finalAffectedFiles = this.pathResolver.standardizeAndDeduplicatePaths(allAffectedFiles)
 
+			// Ensure all paths are absolute for engine compatibility
+			const absoluteAffectedFiles = finalAffectedFiles.map((filePath) => {
+				// If it's already absolute, use it as-is
+				if (path.isAbsolute(filePath)) {
+					return filePath
+				}
+				// Convert relative paths to absolute using the project root
+				return this.pathResolver.resolveAbsolutePath(filePath)
+			})
+
 			// Return successful result with details
-			console.log(`[DEBUG] MoveExecutor: All steps completed, returning success=true`)
+			// console.log(`[DEBUG] MoveExecutor: All steps completed, returning success=true`)
 			PerformanceTracker.endTracking(opId)
 			return {
 				success: true,
-				affectedFiles: finalAffectedFiles,
+				affectedFiles: absoluteAffectedFiles,
 				warnings,
 				details: {
 					sourceFilePath: symbol.filePath,
@@ -266,17 +276,17 @@ export class MoveExecutor {
 
 	private async prepareTargetFile(targetFilePath: string): Promise<SourceFile | null> {
 		try {
-			console.log(`[DEBUG] prepareTargetFile called with: ${targetFilePath}`)
+			// console.log(`[DEBUG] prepareTargetFile called with: ${targetFilePath}`)
 
 			// Use ProjectManager if available for more consistent file handling
 			if (this.projectManager) {
-				console.log(`[DEBUG] Using ProjectManager to ensure source file`)
+				// console.log(`[DEBUG] Using ProjectManager to ensure source file`)
 				const result = await this.projectManager.ensureSourceFile(targetFilePath)
-				console.log(`[DEBUG] ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`)
+				// console.log(`[DEBUG] ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`)
 				if (result) {
 					return result
 				}
-				console.log(`[DEBUG] ProjectManager failed, falling back to direct creation`)
+				// console.log(`[DEBUG] ProjectManager failed, falling back to direct creation`)
 			}
 
 			// Fall back to original implementation
@@ -292,38 +302,39 @@ export class MoveExecutor {
 			try {
 				// First, try to add the existing file to the project if it exists on disk
 				const absoluteTargetPath = this.pathResolver.resolveAbsolutePath(normalizedPath)
-				console.log(`[DEBUG] Checking if file exists on disk: ${absoluteTargetPath}`)
+				// console.log(`[DEBUG] Checking if file exists on disk: ${absoluteTargetPath}`)
 
 				if (fs.existsSync(absoluteTargetPath)) {
-					console.log(`[DEBUG] File exists on disk, adding to project: ${absoluteTargetPath}`)
+					// console.log(`[DEBUG] File exists on disk, adding to project: ${absoluteTargetPath}`)
 					try {
 						targetFile = this.project.addSourceFileAtPath(absoluteTargetPath)
 						if (targetFile) {
-							console.log(`[DEBUG] Successfully added existing file to project`)
+							// console.log(`[DEBUG] Successfully added existing file to project`)
 							return targetFile
 						}
 					} catch (addError) {
-						console.log(`[DEBUG] Failed to add existing file, will create new one: ${addError}`)
+						// console.log(`[DEBUG] Failed to add existing file, will create new one: ${addError}`)
 					}
 				}
 
 				// If file doesn't exist or couldn't be added, create it
-				console.log(`[DEBUG] Creating new file at: ${normalizedPath}`)
+				// console.log(`[DEBUG] Creating new file at: ${normalizedPath}`)
 
 				// Ensure the directory exists
 				const dirName = this.pathResolver.getDirectoryPath(absoluteTargetPath)
 				if (!fs.existsSync(dirName)) {
 					fs.mkdirSync(dirName, { recursive: true })
-					console.log(`[DEBUG] Created directory: ${dirName}`)
+					// console.log(`[DEBUG] Created directory: ${dirName}`)
 				}
 
-				// Create the file in the project
-				targetFile = this.project.createSourceFile(normalizedPath, `// Target file\n`, {
+				// Create the file in the project using absolute path to avoid working directory issues
+				// console.log(`[DEBUG] Creating source file with absolute path: ${absoluteTargetPath}`)
+				targetFile = this.project.createSourceFile(absoluteTargetPath, `// Target file\n`, {
 					overwrite: true,
 				})
 
 				if (targetFile) {
-					console.log(`[DEBUG] Successfully created file in project`)
+					// console.log(`[DEBUG] Successfully created file in project`)
 					return targetFile
 				}
 			} catch (error) {
@@ -377,7 +388,7 @@ export class MoveExecutor {
 			const interfaceName = interfaceDecl.getName()
 			// Check if this interface is referenced by the symbol
 			if (symbolText.includes(interfaceName)) {
-				console.log(`[DEBUG] Found referenced interface: ${interfaceName}`)
+				// console.log(`[DEBUG] Found referenced interface: ${interfaceName}`)
 				relatedTypes.push(interfaceDecl.getText())
 				referencedTypeNames.add(interfaceName)
 			}
@@ -731,7 +742,7 @@ export class MoveExecutor {
 
 			// Skip imports that would point to the target file itself (self-imports)
 			if (normalizedImportPath === normalizedTargetPath) {
-				console.log(`[DEBUG] Filtering out self-import: ${moduleSpecifier} -> ${normalizedImportPath}`)
+				// console.log(`[DEBUG] Filtering out self-import: ${moduleSpecifier} -> ${normalizedImportPath}`)
 				continue
 			}
 
@@ -823,26 +834,6 @@ export class MoveExecutor {
 	}
 
 	/**
-	 * Resolves an import path from a specific file.
-	 *
-	 * @param fromFilePath - The file path that contains the import
-	 * @param importPath - The import path to resolve
-	 * @returns The resolved absolute path to the imported module
-	 */
-	private resolveImportPathFromFile(fromFilePath: string, importPath: string): string {
-		// If the import is a package import, return as-is
-		if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
-			return importPath
-		}
-
-		// Get the directory of the file containing the import
-		const fromDir = this.pathResolver.getDirectoryPath(fromFilePath)
-
-		// Resolve the import path relative to that directory
-		return this.resolveImportPath(fromDir, importPath)
-	}
-
-	/**
 	 * Resolves an import path relative to a source directory.
 	 *
 	 * @param sourceDir - The directory containing the source file
@@ -864,11 +855,11 @@ export class MoveExecutor {
 		// and should resolve relative to the temp directory instead
 		const projectRoot = this.pathResolver.getProjectRoot()
 		if (!resolvedPath.startsWith(projectRoot)) {
-			console.log(`[DEBUG] Resolved path ${resolvedPath} is outside project root ${projectRoot}`)
+			// console.log(`[DEBUG] Resolved path ${resolvedPath} is outside project root ${projectRoot}`)
 			// In test environments, the temp directory is the effective project root
 			const tempRoot = projectRoot // Use the project root which should be the temp directory in tests
 			const tempResolvedPath = path.resolve(tempRoot, importPath)
-			console.log(`[DEBUG] Using temp-relative resolution: ${tempResolvedPath}`)
+			// console.log(`[DEBUG] Using temp-relative resolution: ${tempResolvedPath}`)
 			const normalizedTempPath = this.pathResolver.standardizePath(tempResolvedPath)
 
 			// Append .ts if needed
@@ -981,7 +972,7 @@ export class MoveExecutor {
 					const functionToRemove = functions.find((f) => f.getName() === symbolName)
 
 					if (functionToRemove) {
-						console.log(`[DEBUG] Removing function declaration: ${symbolName}`)
+						// console.log(`[DEBUG] Removing function declaration: ${symbolName}`)
 						functionToRemove.remove()
 						removalSuccessful = true
 					} else {
@@ -990,7 +981,7 @@ export class MoveExecutor {
 						if (exportedFunctions && exportedFunctions.length > 0) {
 							const exportedFunc = exportedFunctions[0]
 							if (exportedFunc.getKindName().includes("Function")) {
-								console.log(`[DEBUG] Removing exported function: ${symbolName}`)
+								// console.log(`[DEBUG] Removing exported function: ${symbolName}`)
 								// Can't directly remove from exportedDeclarations, so find the actual node
 								const nodePos = exportedFunc.getPos()
 								const nodeEnd = exportedFunc.getEnd()
@@ -1013,11 +1004,11 @@ export class MoveExecutor {
 							if (parentOfStatement) {
 								if (parentOfStatement.getKindName().includes("SourceFile")) {
 									const index = statement.getChildIndex()
-									console.log(`[DEBUG] Removing function at statement index: ${index}`)
+									// console.log(`[DEBUG] Removing function at statement index: ${index}`)
 									sourceFile.removeStatements([index, index + 1])
 									removalSuccessful = true
 								} else if ("removeStatement" in parentOfStatement) {
-									console.log(`[DEBUG] Removing function statement from block`)
+									// console.log(`[DEBUG] Removing function statement from block`)
 									// @ts-ignore - Dynamic method call
 									parentOfStatement.removeStatement(statement)
 									removalSuccessful = true
@@ -1029,7 +1020,7 @@ export class MoveExecutor {
 					const interfaces = sourceFile.getInterfaces()
 					const interfaceToRemove = interfaces.find((i) => i.getName() === symbolName)
 					if (interfaceToRemove) {
-						console.log(`[DEBUG] Removing interface declaration: ${symbolName}`)
+						// console.log(`[DEBUG] Removing interface declaration: ${symbolName}`)
 						interfaceToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1037,7 +1028,7 @@ export class MoveExecutor {
 					const classes = sourceFile.getClasses()
 					const classToRemove = classes.find((c) => c.getName() === symbolName)
 					if (classToRemove) {
-						console.log(`[DEBUG] Removing class declaration: ${symbolName}`)
+						// console.log(`[DEBUG] Removing class declaration: ${symbolName}`)
 						classToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1045,7 +1036,7 @@ export class MoveExecutor {
 					const types = sourceFile.getTypeAliases()
 					const typeToRemove = types.find((t) => t.getName() === symbolName)
 					if (typeToRemove) {
-						console.log(`[DEBUG] Removing type alias: ${symbolName}`)
+						// console.log(`[DEBUG] Removing type alias: ${symbolName}`)
 						typeToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1053,7 +1044,7 @@ export class MoveExecutor {
 					const enums = sourceFile.getEnums()
 					const enumToRemove = enums.find((e) => e.getName() === symbolName)
 					if (enumToRemove) {
-						console.log(`[DEBUG] Removing enum: ${symbolName}`)
+						// console.log(`[DEBUG] Removing enum: ${symbolName}`)
 						enumToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1068,11 +1059,11 @@ export class MoveExecutor {
 						if (foundIndex >= 0) {
 							if (declarations.length === 1) {
 								// If this is the only declaration in the statement, remove the whole statement
-								console.log(`[DEBUG] Removing entire variable statement for: ${symbolName}`)
+								// console.log(`[DEBUG] Removing entire variable statement for: ${symbolName}`)
 								statement.remove()
 							} else {
 								// Otherwise just remove this declaration
-								console.log(`[DEBUG] Removing single variable declaration: ${symbolName}`)
+								// console.log(`[DEBUG] Removing single variable declaration: ${symbolName}`)
 								declarations[foundIndex].remove()
 							}
 							removalSuccessful = true
@@ -1091,12 +1082,12 @@ export class MoveExecutor {
 
 					if (statement && statement.getKindName().includes("Statement")) {
 						const index = statement.getChildIndex()
-						console.log(`[DEBUG] Removing generic statement at index: ${index}`)
+						// console.log(`[DEBUG] Removing generic statement at index: ${index}`)
 						try {
 							sourceFile.removeStatements([index, index + 1])
 							removalSuccessful = true
 						} catch (e) {
-							console.log(`[DEBUG] Failed to remove statement: ${e}`)
+							// console.log(`[DEBUG] Failed to remove statement: ${e}`)
 						}
 					}
 				}
@@ -1110,7 +1101,7 @@ export class MoveExecutor {
 				sourceFile.saveSync()
 				sourceFile.refreshFromFileSystemSync()
 			} catch (nodeRemovalError) {
-				console.log(`[DEBUG] Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
+				// console.log(`[DEBUG] Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
 
 				// Second attempt: Text-based removal
 				const startPos = nodeToRemove.getPos()
@@ -1132,7 +1123,7 @@ export class MoveExecutor {
 				}
 
 				// Remove the text with expanded range
-				console.log(`[DEBUG] Text-based removal from positions ${expandedStartPos} to ${expandedEndPos}`)
+				// console.log(`[DEBUG] Text-based removal from positions ${expandedStartPos} to ${expandedEndPos}`)
 				sourceFile.replaceText([expandedStartPos, expandedEndPos], "")
 				sourceFile.saveSync()
 				sourceFile.refreshFromFileSystemSync()
@@ -1141,7 +1132,7 @@ export class MoveExecutor {
 			// Third attempt: Pattern-based removal if still present
 			const updatedText = sourceFile.getFullText()
 			if (updatedText.includes(symbolName) && updatedText !== originalText) {
-				console.log(`[DEBUG] Symbol may still be present. Trying pattern-based removal.`)
+				// console.log(`[DEBUG] Symbol may still be present. Trying pattern-based removal.`)
 
 				// More comprehensive regex patterns for different symbol types
 				const functionPattern = `(export\\s+)?(function|async\\s+function)\\s+${symbolName}\\s*\\([^{]*\\)\\s*\\{[\\s\\S]*?\\}`
@@ -1161,7 +1152,7 @@ export class MoveExecutor {
 						const matchStart = matchResult.index
 						const matchEnd = matchStart + matchResult[0].length
 
-						console.log(`[DEBUG] Pattern match found at positions ${matchStart} to ${matchEnd}`)
+						// console.log(`[DEBUG] Pattern match found at positions ${matchStart} to ${matchEnd}`)
 						sourceFile.replaceText([matchStart, matchEnd], "")
 						sourceFile.saveSync()
 						sourceFile.refreshFromFileSystemSync()
@@ -1216,7 +1207,7 @@ export class MoveExecutor {
 	private async updateReferencingFiles(symbol: ResolvedSymbol, targetFilePath: string): Promise<string[]> {
 		try {
 			console.log(`[CRITICAL DEBUG] *** updateReferencingFiles ENTRY POINT *** symbol: ${symbol.name}`)
-			console.log(`[DEBUG] updateReferencingFiles called for symbol "${symbol.name}"`)
+			// console.log(`[DEBUG] updateReferencingFiles called for symbol "${symbol.name}"`)
 			// Use ImportManager to update all imports that reference the moved symbol
 			const importManager = new ImportManager(this.project)
 			// CRITICAL: Set the PathResolver so import paths are calculated correctly
@@ -1243,14 +1234,34 @@ export class MoveExecutor {
 			const relativeSourcePath = pathResolver.convertToRelativePath(sourceFilePath)
 			const relativeTargetPath = pathResolver.convertToRelativePath(resolvedTargetPath)
 
-			console.log(`[DEBUG] About to call importManager.updateImportsAfterMove`)
-			console.log(`[DEBUG] Source path: ${sourceFilePath} -> ${relativeSourcePath}`)
-			console.log(`[DEBUG] Target path: ${resolvedTargetPath} -> ${relativeTargetPath}`)
+			// console.log(`[DEBUG] About to call importManager.updateImportsAfterMove`)
+			// console.log(`[DEBUG] Source path: ${sourceFilePath} -> ${relativeSourcePath}`)
+			// console.log(`[DEBUG] Target path: ${resolvedTargetPath} -> ${relativeTargetPath}`)
+			// console.log(`[DEBUG] ImportManager object:`, importManager)
+			console.log(
+				`[DEBUG] ImportManager.updateImportsAfterMove method:`,
+				typeof importManager.updateImportsAfterMove,
+			)
+			// console.log(`[DEBUG] ImportManager constructor:`, importManager.constructor.name)
+			// console.log(`[DEBUG] ImportManager prototype:`, Object.getPrototypeOf(importManager))
+			// console.log(`[DEBUG] Method exists on prototype:`, "updateImportsAfterMove" in importManager)
+			console.log(
+				`[DEBUG] Method descriptor:`,
+				Object.getOwnPropertyDescriptor(Object.getPrototypeOf(importManager), "updateImportsAfterMove"),
+			)
 
 			await importManager.updateImportsAfterMove(symbol.name, relativeSourcePath, relativeTargetPath)
-			console.log(`[DEBUG] Completed importManager.updateImportsAfterMove`)
+			// console.log(`[DEBUG] Completed importManager.updateImportsAfterMove`)
 
-			// Find all files that reference the symbol - this is more accurate than relying on ImportManager
+			// Get the list of files that were actually updated by ImportManager
+			// This is much more efficient than scanning all project files
+			const updatedFilesByImportManager = importManager.getUpdatedFiles()
+			console.log(
+				`[DEBUG] ImportManager updated ${updatedFilesByImportManager.length} files:`,
+				updatedFilesByImportManager,
+			)
+
+			// Build comprehensive list of updated files including source and target
 			const updatedFiles: string[] = []
 
 			// Add source and target files with various path formats for maximum compatibility
@@ -1263,23 +1274,13 @@ export class MoveExecutor {
 				resolvedTargetPath,
 			)
 
-			// Find all source files in the project
-			this.project.getSourceFiles().forEach((file) => {
-				const filePath = file.getFilePath()
+			// Add files that were actually updated by ImportManager
+			updatedFiles.push(...updatedFilesByImportManager)
 
-				// Skip source and target files (already in the list)
-				if (filePath === sourceFilePath || filePath === resolvedTargetPath) {
-					return
-				}
+			const uniqueUpdatedFiles = [...new Set(updatedFiles)]
+			// console.log(`[DEBUG] Total unique updated files: ${uniqueUpdatedFiles.length}`)
 
-				// Check if file contains the symbol name (might reference it)
-				const fileContent = file.getFullText()
-				if (fileContent.includes(symbol.name)) {
-					updatedFiles.push(filePath)
-				}
-			})
-
-			return [...new Set(updatedFiles)] // Remove duplicates
+			return uniqueUpdatedFiles
 		} catch (error) {
 			console.error(`Error updating referencing files: ${(error as Error).message}`)
 			return [
@@ -1342,26 +1343,26 @@ export class MoveExecutor {
 	private async ensureAllProjectFilesAreLoaded(): Promise<void> {
 		try {
 			const projectRoot = this.pathResolver.getProjectRoot()
-			console.log(`[DEBUG] Scanning for TypeScript files in: ${projectRoot}`)
+			// console.log(`[DEBUG] Scanning for TypeScript files in: ${projectRoot}`)
 
 			// Get all TypeScript files in the project directory
 			const tsFiles = this.findTypeScriptFiles(projectRoot)
-			console.log(`[DEBUG] Found ${tsFiles.length} TypeScript files to ensure are loaded`)
+			// console.log(`[DEBUG] Found ${tsFiles.length} TypeScript files to ensure are loaded`)
 
 			// Add each file to the project if not already present
 			for (const filePath of tsFiles) {
 				try {
 					const existingFile = this.project.getSourceFile(filePath)
 					if (!existingFile) {
-						console.log(`[DEBUG] Adding file to project: ${filePath}`)
+						// console.log(`[DEBUG] Adding file to project: ${filePath}`)
 						this.project.addSourceFileAtPath(filePath)
 					}
 				} catch (error) {
-					console.log(`[DEBUG] Failed to add file ${filePath}: ${error}`)
+					// console.log(`[DEBUG] Failed to add file ${filePath}: ${error}`)
 				}
 			}
 
-			console.log(`[DEBUG] Project now has ${this.project.getSourceFiles().length} source files loaded`)
+			// console.log(`[DEBUG] Project now has ${this.project.getSourceFiles().length} source files loaded`)
 		} catch (error) {
 			console.error(`[ERROR] Failed to ensure all project files are loaded: ${error}`)
 		}
@@ -1392,7 +1393,7 @@ export class MoveExecutor {
 				}
 			}
 		} catch (error) {
-			console.log(`[DEBUG] Failed to read directory ${dir}: ${error}`)
+			// console.log(`[DEBUG] Failed to read directory ${dir}: ${error}`)
 		}
 
 		return files

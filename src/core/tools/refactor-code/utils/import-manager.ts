@@ -76,110 +76,163 @@ export class ImportManager {
 	 * Updates all imports after a symbol is moved to a new file
 	 */
 	async updateImportsAfterMove(symbolName: string, oldFilePath: string, newFilePath: string): Promise<void> {
-		this.updatedFiles.clear()
+		console.log(`[CRITICAL DEBUG] ===== updateImportsAfterMove CALLED =====`)
+		console.log(`[CRITICAL DEBUG] symbolName: ${symbolName}`)
+		console.log(`[CRITICAL DEBUG] oldFilePath: ${oldFilePath}`)
+		console.log(`[CRITICAL DEBUG] newFilePath: ${newFilePath}`)
+		// console.log(`[DEBUG IMPORT-MANAGER] 🚀🚀🚀 METHOD ENTRY - updateImportsAfterMove called`)
+		// console.log(`[DEBUG IMPORT-MANAGER] 🚀🚀🚀 Parameters: ${symbolName}, ${oldFilePath}, ${newFilePath}`)
+		try {
+			// console.log(`[DEBUG IMPORT-MANAGER] 🚀 updateImportsAfterMove called:`)
+			// console.log(`[DEBUG IMPORT-MANAGER]   - symbolName: ${symbolName}`)
+			// console.log(`[DEBUG IMPORT-MANAGER]   - oldFilePath: ${oldFilePath}`)
+			// console.log(`[DEBUG IMPORT-MANAGER]   - newFilePath: ${newFilePath}`)
 
-		// Find files that import from the old file - these are the most important to update
-		const importingFiles = this.findFilesImporting(oldFilePath)
+			this.updatedFiles.clear()
 
-		// Also find files that re-export from the old file
-		const reExportingFiles = this.findFilesReExporting(oldFilePath)
+			// Find files that import from the old file - these are the most important to update
+			// console.log(`[DEBUG IMPORT-MANAGER] 🚀 About to call findFilesImporting for: ${oldFilePath}`)
+			let importingFiles: SourceFile[] = []
+			try {
+				importingFiles = this.findFilesImporting(oldFilePath)
+				// console.log(`[DEBUG IMPORT-MANAGER] ✅ findFilesImporting completed successfully`)
+			} catch (error) {
+				// console.log(`[DEBUG IMPORT-MANAGER] ❌ findFilesImporting threw an error:`, error)
+				importingFiles = []
+			}
+			// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${importingFiles.length} files importing from ${oldFilePath}`)
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 📋 Importing files list:`,
+				importingFiles.map((f) => f.getFilePath()),
+			)
 
-		// Focus only on files that directly import from the source file
-		// This is much more efficient than searching all files in the project
-		const referencingFiles = new Set<SourceFile>()
+			// Also find files that re-export from the old file
+			const reExportingFiles = this.findFilesReExporting(oldFilePath)
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 📊 Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`,
+			)
+			// Focus only on files that directly import from the source file
+			// This is much more efficient than searching all files in the project
+			const referencingFiles = new Set<SourceFile>()
 
-		// Add files directly importing from the old file
-		importingFiles.forEach((file) => referencingFiles.add(file))
+			// Add files directly importing from the old file
+			importingFiles.forEach((file) => referencingFiles.add(file))
 
-		// Only search for additional references in the same directories as the source and target files
-		const sourceDir = this.pathResolver.getDirectoryPath(oldFilePath)
-		const targetDir = this.pathResolver.getDirectoryPath(newFilePath)
-		const nearbyFiles = this.project.getSourceFiles().filter((file) => {
-			const filePath = file.getFilePath()
-			const fileDir = this.pathResolver.getDirectoryPath(filePath)
+			// Only search for additional references in the same directories as the source and target files
+			const sourceDir = this.pathResolver.getDirectoryPath(oldFilePath)
+			const targetDir = this.pathResolver.getDirectoryPath(newFilePath)
+			// PERFORMANCE FIX: Use targeted file discovery instead of scanning all project files
+			const nearbyFiles: SourceFile[] = []
 
-			// Skip if we're already going to process this file
-			if (referencingFiles.has(file)) return false
+			// Get files from source directory
+			const sourceFiles = this.findFilesInSameDirectoryTree(oldFilePath)
+			// Get files from target directory
+			const targetFiles = this.findFilesInSameDirectoryTree(newFilePath)
 
-			// Skip the old and new files
-			if (filePath === oldFilePath || filePath === newFilePath) return false
+			// Combine and filter
+			const allNearbyFiles = [...sourceFiles, ...targetFiles]
+			for (const file of allNearbyFiles) {
+				const filePath = file.getFilePath()
 
-			// Only include files in the same directories as source or target
-			return fileDir === sourceDir || fileDir === targetDir
-		})
+				// Skip if we're already going to process this file
+				if (referencingFiles.has(file)) continue
 
-		// Check these nearby files for references to the symbol
-		for (const file of nearbyFiles) {
-			// Check if this file contains any references to the symbol
-			const fileText = file.getFullText()
+				// Skip the old and new files
+				if (filePath === oldFilePath || filePath === newFilePath) continue
 
-			// Simple text search as a first pass - we'll verify the imports later
-			if (fileText.includes(symbolName)) {
-				// Look for identifiers that match our symbol
-				const identifiers = file
-					.getDescendantsOfKind(SyntaxKind.Identifier)
-					.filter((id) => id.getText() === symbolName)
+				// Add to nearby files
+				nearbyFiles.push(file)
+			}
 
-				if (identifiers.length > 0) {
-					referencingFiles.add(file)
-					console.log(`[DEBUG] Found additional file referencing ${symbolName}: ${file.getFilePath()}`)
+			// Check these nearby files for references to the symbol
+			for (const file of nearbyFiles) {
+				// Check if this file contains any references to the symbol
+				const fileText = file.getFullText()
+
+				// Simple text search as a first pass - we'll verify the imports later
+				if (fileText.includes(symbolName)) {
+					// Skip the target file itself - we don't want to update imports in the file we just moved the symbol to
+					const absoluteNewPath = this.pathResolver.resolveAbsolutePath(newFilePath)
+					const absoluteFilePath = file.getFilePath() // ts-morph always returns absolute paths
+
+					if (absoluteFilePath === absoluteNewPath) {
+						// console.log(`[DEBUG] Skipping target file itself: ${file.getFilePath()}`)
+						continue
+					}
+
+					// Look for identifiers that match our symbol
+					const identifiers = file
+						.getDescendantsOfKind(SyntaxKind.Identifier)
+						.filter((id) => id.getText() === symbolName)
+
+					if (identifiers.length > 0) {
+						referencingFiles.add(file)
+						// console.log(`[DEBUG] Found additional file referencing ${symbolName}: ${file.getFilePath()}`)
+					}
 				}
 			}
-		}
 
-		// Update imports in all referencing files
-		for (const file of referencingFiles) {
-			await this.updateImportPath(file, symbolName, oldFilePath, newFilePath)
-			this.updatedFiles.add(file.getFilePath())
-			// Save changes to disk
-			file.saveSync()
-		}
+			// Update imports in all referencing files
+			for (const file of referencingFiles) {
+				await this.updateImportPath(file, symbolName, oldFilePath, newFilePath)
+				this.updatedFiles.add(file.getFilePath())
+				// Save changes to disk
+				file.saveSync()
+			}
 
-		// Update re-exports as well
-		// We already got the re-exporting files earlier, but we need to re-use them here
-		for (const file of reExportingFiles) {
-			await this.updateReExportPath(file, symbolName, oldFilePath, newFilePath)
-			this.updatedFiles.add(file.getFilePath())
-			// Save changes to disk
-			file.saveSync()
-		}
+			// Update re-exports as well
+			// We already got the re-exporting files earlier, but we need to re-use them here
+			for (const file of reExportingFiles) {
+				await this.updateReExportPath(file, symbolName, oldFilePath, newFilePath)
+				this.updatedFiles.add(file.getFilePath())
+				// Save changes to disk
+				file.saveSync()
+			}
 
-		// Handle inline symbol definitions that need re-exports
-		// If a symbol was defined inline in the source file and moved away,
-		// we need to either add a re-export (for barrel files) or an import (for regular files)
-		const sourceFile = this.project.getSourceFile(oldFilePath)
-		if (sourceFile) {
-			const shouldAddReExport = this.shouldAddReExportForInlineSymbol(
-				sourceFile,
-				symbolName,
-				oldFilePath,
-				newFilePath,
-			)
-			if (shouldAddReExport) {
-				const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
-				this.addReExport(sourceFile, symbolName, newRelativePath)
-				console.log(`[DEBUG] ImportManager: Added re-export for inline symbol ${symbolName} in ${oldFilePath}`)
-				this.updatedFiles.add(sourceFile.getFilePath())
-				sourceFile.saveSync()
-			} else {
-				// For non-barrel files, check if the source file still uses the moved symbol
-				// If so, add an import statement
-				if (this.fileReferencesSymbol(sourceFile, symbolName)) {
+			// Handle inline symbol definitions that need re-exports
+			// If a symbol was defined inline in the source file and moved away,
+			// we need to either add a re-export (for barrel files) or an import (for regular files)
+			const sourceFile = this.project.getSourceFile(oldFilePath)
+			if (sourceFile) {
+				const shouldAddReExport = this.shouldAddReExportForInlineSymbol(
+					sourceFile,
+					symbolName,
+					oldFilePath,
+					newFilePath,
+				)
+				if (shouldAddReExport) {
 					const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
-					this.addImport(sourceFile, symbolName, newRelativePath)
-					console.log(`[DEBUG] ImportManager: Added import for moved symbol ${symbolName} in ${oldFilePath}`)
+					this.addReExport(sourceFile, symbolName, newRelativePath)
+					console.log(
+						`[DEBUG] ImportManager: Added re-export for inline symbol ${symbolName} in ${oldFilePath}`,
+					)
 					this.updatedFiles.add(sourceFile.getFilePath())
 					sourceFile.saveSync()
+				} else {
+					// For non-barrel files, check if the source file still uses the moved symbol
+					// If so, add an import statement
+					if (this.fileReferencesSymbol(sourceFile, symbolName)) {
+						const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
+						this.addImport(sourceFile, symbolName, newRelativePath)
+						console.log(
+							`[DEBUG] ImportManager: Added import for moved symbol ${symbolName} in ${oldFilePath}`,
+						)
+						this.updatedFiles.add(sourceFile.getFilePath())
+						sourceFile.saveSync()
+					}
 				}
 			}
-		}
 
-		// Add necessary imports to the new file
-		const newFile = this.project.getSourceFile(newFilePath)
-		if (newFile) {
-			await this.addMissingImports(newFile, symbolName, oldFilePath)
-			// Save changes to disk
-			newFile.saveSync()
+			// Add necessary imports to the new file
+			const newFile = this.project.getSourceFile(newFilePath)
+			if (newFile) {
+				await this.addMissingImports(newFile, symbolName, oldFilePath)
+				// Save changes to disk
+				newFile.saveSync()
+			}
+		} catch (error) {
+			console.error(`[ERROR IMPORT-MANAGER] Exception in updateImportsAfterMove:`, error)
+			throw error
 		}
 	}
 
@@ -188,24 +241,58 @@ export class ImportManager {
 	 * Uses caching to improve performance for repeated calls
 	 */
 	private findFilesImporting(filePath: string): SourceFile[] {
+		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 ENTRY: findFilesImporting called with: ${filePath}`)
+		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Finding files importing from: ${filePath}`)
+
+		// DISABLE CACHE for debugging - force fresh search every time
+		// console.log(`[DEBUG IMPORT-MANAGER] 🚫 Cache disabled for debugging - forcing fresh search`)
+
 		// Check cache first
 		const cacheKey = `import:${filePath}`
-		if (this.fileImportCache.has(cacheKey)) {
-			const importingFilePaths = this.fileImportCache.get(cacheKey)
-			if (importingFilePaths) {
-				return Array.from(importingFilePaths)
-					.map((path) => this.project.getSourceFile(path))
-					.filter(Boolean) as SourceFile[]
-			}
+		// if (false && this.fileImportCache.has(cacheKey)) {
+		// 	const importingFilePaths = this.fileImportCache.get(cacheKey)
+		// 	if (importingFilePaths) {
+		// 		console.log(
+		// 			`[DEBUG IMPORT-MANAGER] ✅ Cache hit - found ${importingFilePaths.size} cached importing files`,
+		// 		)
+		// 		return Array.from(importingFilePaths)
+		// 			.map((path) => this.project.getSourceFile(path))
+		// 			.filter(Boolean) as SourceFile[]
+		// 	}
+		// }
+
+		// Try to get the source file - first try as-is, then try absolute path
+		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Looking for source file: ${filePath}`)
+		let sourceFile = this.project.getSourceFile(filePath)
+		// console.log(`[DEBUG IMPORT-MANAGER] 📁 First attempt result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
+
+		if (!sourceFile) {
+			// Try with absolute path
+			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
+			// console.log(`[DEBUG IMPORT-MANAGER] 🔄 Trying absolute path: ${absolutePath}`)
+			sourceFile = this.project.getSourceFile(absolutePath)
+			// console.log(`[DEBUG IMPORT-MANAGER] 📁 Absolute path result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
 		}
 
-		const sourceFile = this.project.getSourceFile(filePath)
-		if (!sourceFile) return []
+		if (!sourceFile) {
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Source file not found in project: ${filePath}`)
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 📊 Available files in project:`,
+				this.project.getSourceFiles().map((f) => f.getFilePath()),
+			)
+			return []
+		}
+
+		// console.log(`[DEBUG IMPORT-MANAGER] ✅ Source file found: ${sourceFile.getFilePath()}`)
 
 		const importingFiles: SourceFile[] = []
 
 		// First try the ts-morph method
 		const referencingFiles = sourceFile.getReferencingSourceFiles()
+		console.log(
+			`[DEBUG IMPORT-MANAGER] 📊 ts-morph getReferencingSourceFiles() returned ${referencingFiles.length} files`,
+		)
+
 		for (const file of referencingFiles) {
 			const imports = file.getImportDeclarations()
 			if (imports.some((imp) => this.isImportFromFile(imp, filePath))) {
@@ -213,53 +300,70 @@ export class ImportManager {
 			}
 		}
 
-		// If we didn't find any files using ts-morph, search all files manually
-		// This is more reliable for finding import relationships
-		if (importingFiles.length === 0) {
+		// FORCE comprehensive search - ts-morph's getReferencingSourceFiles() is unreliable in test environments
+		// Always use comprehensive search to ensure we find cross-directory imports
+		console.log(
+			`[DEBUG IMPORT-MANAGER] 🔄 Forcing comprehensive search regardless of getReferencingSourceFiles() results`,
+		)
+		// console.log(`[DEBUG IMPORT-MANAGER] 🚀 About to start comprehensive search section`)
+		if (true) {
+			// console.log(`[DEBUG IMPORT-MANAGER] ✅ Inside comprehensive search if block`)
 			console.log(
-				`[DEBUG] No files found via getReferencingSourceFiles, searching all project files for imports from ${filePath}`,
+				`[DEBUG IMPORT-MANAGER] ⚠️  No files found via getReferencingSourceFiles, using targeted file discovery for imports from ${filePath}`,
 			)
 
-			// First, ensure we have loaded all TypeScript files in the project directory
-			this.ensureAllProjectFilesLoaded(filePath)
+			// Use targeted file discovery instead of loading all project files
+			const targetedFiles = this.findFilesInSameDirectoryTree(filePath)
+			// console.log(`[DEBUG IMPORT-MANAGER] 🎯 Targeted discovery found ${targetedFiles.length} files to check`)
 
-			const allFiles = this.project.getSourceFiles()
+			// ALSO search in parent directories to find cross-directory imports
+			const allProjectFiles = this.project.getSourceFiles()
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 🌍 Also checking all ${allProjectFiles.length} project files for cross-directory imports`,
+			)
 
-			// Filter to only files within the project root and in the same directory tree as the target file
-			// This prevents scanning the entire 3KiloCode project during tests
-			const projectRoot = this.pathResolver.getProjectRoot()
-			const targetDir = this.pathResolver.getDirectoryPath(filePath)
+			const allFilesToCheck = [...targetedFiles, ...allProjectFiles]
+			const uniqueFiles = Array.from(new Set(allFilesToCheck.map((f) => f.getFilePath())))
+				.map((path) => this.project.getSourceFile(path))
+				.filter(Boolean) as SourceFile[]
 
-			const relevantFiles = allFiles.filter((file) => {
+			// console.log(`[DEBUG IMPORT-MANAGER] 📊 Total unique files to check: ${uniqueFiles.length}`)
+
+			// console.log(`[DEBUG IMPORT-MANAGER] 🔄 Starting to check ${uniqueFiles.length} unique files`)
+
+			for (const file of uniqueFiles) {
 				const currentFilePath = file.getFilePath()
-				const currentDir = this.pathResolver.getDirectoryPath(currentFilePath)
+				// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Checking file for imports: ${currentFilePath}`)
 
 				// Skip the source file itself
 				if (currentFilePath === filePath) {
-					return false
+					// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  Skipping source file: ${currentFilePath}`)
+					continue
 				}
 
-				// Only include files within the project root
-				if (!currentFilePath.startsWith(projectRoot)) {
-					return false
-				}
-
-				// Only check files in the same directory tree
-				return currentDir.startsWith(targetDir) || targetDir.startsWith(currentDir)
-			})
-
-			for (const file of relevantFiles) {
-				const currentFilePath = file.getFilePath()
 				const imports = file.getImportDeclarations()
+				console.log(
+					`[DEBUG IMPORT-MANAGER] 📋 Found ${imports.length} import declarations in ${currentFilePath}`,
+				)
 
 				for (const imp of imports) {
+					const moduleSpecifier = imp.getModuleSpecifierValue()
+					// console.log(`[DEBUG IMPORT-MANAGER] 📦 Checking import: ${moduleSpecifier}`)
+
 					const isMatch = this.isImportFromFile(imp, filePath)
+					// console.log(`[DEBUG IMPORT-MANAGER] 🎯 Import matches target file: ${isMatch}`)
+
 					if (isMatch) {
+						// console.log(`[DEBUG IMPORT-MANAGER] ✅ Found importing file: ${currentFilePath}`)
 						importingFiles.push(file)
 						break // Only add the file once
 					}
 				}
 			}
+
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 🏁 Finished checking all files, found ${importingFiles.length} importing files`,
+			)
 		}
 
 		// Cache the results
@@ -352,47 +456,47 @@ export class ImportManager {
 				continue
 			}
 
-			console.log(`[DEBUG] ImportManager: Found import with symbol ${symbolName} in ${file.getFilePath()}`)
-			console.log(`[DEBUG] ImportManager: Current import: ${importDecl.getText()}`)
+			// console.log(`[DEBUG] ImportManager: Found import with symbol ${symbolName} in ${file.getFilePath()}`)
+			// console.log(`[DEBUG] ImportManager: Current import: ${importDecl.getText()}`)
 
 			// Calculate new relative path
 			const newRelativePath = this.calculateRelativePath(file.getFilePath(), newPath)
-			console.log(`[DEBUG] ImportManager: Updating import path to: ${newRelativePath}`)
+			// console.log(`[DEBUG] ImportManager: Updating import path to: ${newRelativePath}`)
 
 			// Check if we need to keep the old import for other symbols
 			const currentImportType = this.getImportType(importDecl)
 
 			if (currentImportType === this.ImportType.DEFAULT) {
 				// For default imports, we need to update the entire import
-				console.log(`[DEBUG] ImportManager: Updating default import module specifier`)
+				// console.log(`[DEBUG] ImportManager: Updating default import module specifier`)
 				importDecl.setModuleSpecifier(newRelativePath)
 			} else if (currentImportType === this.ImportType.NAMESPACE) {
 				// For namespace imports, update the module specifier
-				console.log(`[DEBUG] ImportManager: Updating namespace import module specifier`)
+				// console.log(`[DEBUG] ImportManager: Updating namespace import module specifier`)
 				importDecl.setModuleSpecifier(newRelativePath)
 			} else {
 				// For regular and type imports, check if there are other imports to keep
 				const namedImports = importDecl.getNamedImports()
 				const otherImports = namedImports.filter((imp) => imp.getName() !== symbolName)
-				console.log(`[DEBUG] ImportManager: Named import - other imports: ${otherImports.length}`)
+				// console.log(`[DEBUG] ImportManager: Named import - other imports: ${otherImports.length}`)
 
 				if (otherImports.length > 0) {
 					// Remove only the moved symbol from the import
-					console.log(`[DEBUG] ImportManager: Removing symbol from import and creating new import`)
+					// console.log(`[DEBUG] ImportManager: Removing symbol from import and creating new import`)
 					const symbolImport = namedImports.find((imp) => imp.getName() === symbolName)
 					symbolImport?.remove()
 
 					// Add a new import for the moved symbol, preserving the import type
 					if (currentImportType === this.ImportType.TYPE) {
-						console.log(`[DEBUG] ImportManager: Adding new type import for ${symbolName}`)
+						// console.log(`[DEBUG] ImportManager: Adding new type import for ${symbolName}`)
 						this.addTypeImport(file, symbolName, newRelativePath)
 					} else {
-						console.log(`[DEBUG] ImportManager: Adding new regular import for ${symbolName}`)
+						// console.log(`[DEBUG] ImportManager: Adding new regular import for ${symbolName}`)
 						this.addImport(file, symbolName, newRelativePath)
 					}
 				} else {
 					// Update the module specifier if this is the only import
-					console.log(`[DEBUG] ImportManager: Updating module specifier for single import`)
+					// console.log(`[DEBUG] ImportManager: Updating module specifier for single import`)
 					importDecl.setModuleSpecifier(newRelativePath)
 				}
 			}
@@ -413,7 +517,7 @@ export class ImportManager {
 			if (!hasUpdatedImport && !this.hasImport(file, symbolName)) {
 				const newRelativePath = this.calculateRelativePath(file.getFilePath(), newPath)
 				this.addImport(file, symbolName, newRelativePath)
-				console.log(`[DEBUG] Added missing import for ${symbolName} in file ${file.getFilePath()}`)
+				// console.log(`[DEBUG] Added missing import for ${symbolName} in file ${file.getFilePath()}`)
 			}
 		}
 	}
@@ -494,7 +598,7 @@ export class ImportManager {
 		const filteredDependencies = dependencies.filter((dep) => {
 			// Never import the symbol we just moved
 			if (dep.name === movedSymbolName) {
-				console.log(`[DEBUG] Filtering out moved symbol itself: ${dep.name}`)
+				// console.log(`[DEBUG] Filtering out moved symbol itself: ${dep.name}`)
 				return false
 			}
 
@@ -509,30 +613,30 @@ export class ImportManager {
 
 				// If it looks like a type, keep it
 				if (isLikelyType) {
-					console.log(`[DEBUG] Keeping likely type reference despite property name match: ${dep.name}`)
+					// console.log(`[DEBUG] Keeping likely type reference despite property name match: ${dep.name}`)
 					return true
 				}
 
-				console.log(`[DEBUG] Filtering out likely object property: ${dep.name}`)
+				// console.log(`[DEBUG] Filtering out likely object property: ${dep.name}`)
 				return false
 			}
 
 			// Keep all type references - these are important for type checking
 			if (dep.isType) {
-				console.log(`[DEBUG] Keeping type reference: ${dep.name}`)
+				// console.log(`[DEBUG] Keeping type reference: ${dep.name}`)
 				return true
 			}
 
 			// Keep all function calls - these are important for execution
 			if (dep.isFunction) {
-				console.log(`[DEBUG] Keeping function call dependency: ${dep.name}`)
+				// console.log(`[DEBUG] Keeping function call dependency: ${dep.name}`)
 				return true
 			}
 
 			return true
 		})
 
-		console.log(`[DEBUG] After filtering, adding ${filteredDependencies.length} dependencies`)
+		// console.log(`[DEBUG] After filtering, adding ${filteredDependencies.length} dependencies`)
 
 		// Collect all local symbols in the original file that might be needed
 		const localSymbols = new Set<string>()
@@ -568,11 +672,11 @@ export class ImportManager {
 				// we need to import it in the new file
 				if (oldFileExports.has(dep.name)) {
 					localSymbols.add(dep.name)
-					console.log(`[DEBUG] Found local dependency that's exported: ${dep.name}`)
+					// console.log(`[DEBUG] Found local dependency that's exported: ${dep.name}`)
 				} else if (allOldFileSymbols.has(dep.name)) {
 					// If it's defined in the file but not exported, we still need to reference it
 					localSymbols.add(dep.name)
-					console.log(`[DEBUG] Found local dependency that's not exported: ${dep.name}`)
+					// console.log(`[DEBUG] Found local dependency that's not exported: ${dep.name}`)
 				}
 			}
 		}
@@ -581,12 +685,12 @@ export class ImportManager {
 		if (localSymbols.size > 0) {
 			// Calculate relative path from new file to old file
 			const relativePath = this.calculateRelativePath(newFile.getFilePath(), oldFilePath)
-			console.log(`[DEBUG] Calculated relative path for local imports: ${relativePath}`)
+			// console.log(`[DEBUG] Calculated relative path for local imports: ${relativePath}`)
 
 			for (const symbolName of localSymbols) {
 				if (!this.hasImport(newFile, symbolName)) {
 					this.addImport(newFile, symbolName, relativePath)
-					console.log(`[DEBUG] Added import for local dependency: ${symbolName} from ${relativePath}`)
+					// console.log(`[DEBUG] Added import for local dependency: ${symbolName} from ${relativePath}`)
 				}
 			}
 		}
@@ -662,7 +766,7 @@ export class ImportManager {
 					const absoluteImportPath = this.pathResolver.resolveAbsolutePath(
 						this.pathResolver.joinPaths(oldFileDirPath, moduleSpecifier),
 					)
-					console.log(`[DEBUG] Resolved absolute import path: ${absoluteImportPath}`)
+					// console.log(`[DEBUG] Resolved absolute import path: ${absoluteImportPath}`)
 
 					// Then calculate the relative path from the new file to that absolute path
 					adjustedModuleSpecifier = this.pathResolver.getRelativePath(newFileDirPath, absoluteImportPath)
@@ -675,7 +779,7 @@ export class ImportManager {
 					// Normalize path separators
 					adjustedModuleSpecifier = adjustedModuleSpecifier.replace(/\\/g, "/")
 
-					console.log(`[DEBUG] Adjusted import path: ${adjustedModuleSpecifier}`)
+					// console.log(`[DEBUG] Adjusted import path: ${adjustedModuleSpecifier}`)
 				}
 
 				// Store import metadata
@@ -744,13 +848,13 @@ export class ImportManager {
 
 			// Check if the dependency is already imported in the new file
 			if (!this.hasImport(newFile, dep.name)) {
-				console.log(`[DEBUG] Adding import for remaining dependency: ${dep.name} (isLocal: ${dep.isLocal})`)
+				// console.log(`[DEBUG] Adding import for remaining dependency: ${dep.name} (isLocal: ${dep.isLocal})`)
 
 				if (dep.isLocal) {
 					// For local dependencies that weren't found in imports, we need to create a new import
 					const relativePath = this.calculateRelativePath(newFile.getFilePath(), oldFilePath)
 					this.addImport(newFile, dep.name, relativePath)
-					console.log(`[DEBUG] Added fallback import for local dependency: ${dep.name} from ${relativePath}`)
+					// console.log(`[DEBUG] Added fallback import for local dependency: ${dep.name} from ${relativePath}`)
 				} else {
 					// External import - try to copy from old file or make best effort
 					const importFound = this.copyImport(newFile, oldFile, dep.name)
@@ -760,7 +864,7 @@ export class ImportManager {
 					}
 				}
 			} else {
-				console.log(`[DEBUG] Dependency ${dep.name} already imported in target file`)
+				// console.log(`[DEBUG] Dependency ${dep.name} already imported in target file`)
 			}
 		}
 	}
@@ -772,12 +876,42 @@ export class ImportManager {
 		const moduleSpecifier = importDecl.getModuleSpecifierValue()
 		const importingFilePath = importDecl.getSourceFile().getFilePath()
 
+		console.log(
+			`[DEBUG IMPORT-MATCH] 🔍 Checking if import "${moduleSpecifier}" from ${importingFilePath} matches target ${filePath}`,
+		)
+
 		// Handle non-relative imports (packages)
 		if (!moduleSpecifier.startsWith(".") && !moduleSpecifier.startsWith("/")) {
+			// console.log(`[DEBUG IMPORT-MATCH] ❌ Non-relative import, skipping`)
 			return false
 		}
 
-		// Resolve the module path
+		// SOLUTION: Use TypeScript's built-in module resolution via ts-morph
+		// This leverages the same resolution logic that TypeScript uses
+		try {
+			const resolvedModule = importDecl.getModuleSpecifierSourceFile()
+			if (resolvedModule) {
+				const resolvedPath = resolvedModule.getFilePath()
+				// console.log(`[DEBUG IMPORT-MATCH] ✅ TypeScript resolved "${moduleSpecifier}" to: ${resolvedPath}`)
+
+				// Normalize both paths for comparison
+				const normalizedResolved = this.pathResolver.normalizeFilePath(resolvedPath)
+				const normalizedTarget = this.pathResolver.normalizeFilePath(filePath)
+
+				const isMatch = this.pathResolver.arePathsEqual(normalizedResolved, normalizedTarget)
+				console.log(
+					`[DEBUG IMPORT-MATCH] 🎯 Path comparison: ${normalizedResolved} === ${normalizedTarget} = ${isMatch}`,
+				)
+
+				return isMatch
+			} else {
+				// console.log(`[DEBUG IMPORT-MATCH] ❌ TypeScript could not resolve "${moduleSpecifier}"`)
+			}
+		} catch (error) {
+			// console.log(`[DEBUG IMPORT-MATCH] ❌ TypeScript resolution failed for "${moduleSpecifier}": ${error}`)
+		}
+
+		// Fallback: manual path resolution for edge cases
 		const resolvedPath = this.resolveModulePath(importingFilePath, moduleSpecifier)
 
 		// Try multiple comparison methods for robustness
@@ -806,7 +940,7 @@ export class ImportManager {
 			}
 		}
 
-		// Fallback: manual path resolution and comparison
+		// Final fallback: manual path resolution and comparison
 		const importingDir = this.pathResolver.getDirectoryPath(importingFilePath)
 		const manualResolved = this.pathResolver.resolveAbsolutePath(
 			this.pathResolver.joinPaths(importingDir, moduleSpecifier),
@@ -1042,7 +1176,7 @@ export class ImportManager {
 	): Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> {
 		// Use enhanced SymbolExtractor if available
 		if (this.symbolExtractor) {
-			console.log(`[DEBUG] Using enhanced SymbolExtractor for dependency analysis of ${symbolName}`)
+			// console.log(`[DEBUG] Using enhanced SymbolExtractor for dependency analysis of ${symbolName}`)
 
 			// Find the symbol node using the appropriate methods for SourceFile
 			let symbolNode: Node | undefined
@@ -1101,7 +1235,7 @@ export class ImportManager {
 			}
 
 			if (!symbolNode) {
-				console.log(`[DEBUG] Symbol node not found for: ${symbolName}`)
+				// console.log(`[DEBUG] Symbol node not found for: ${symbolName}`)
 				return []
 			}
 
@@ -1238,7 +1372,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				console.log(`[DEBUG] Added local declaration to scope: ${name}`)
+				// console.log(`[DEBUG] Added local declaration to scope: ${name}`)
 			}
 		})
 
@@ -1246,7 +1380,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				console.log(`[DEBUG] Added local function to scope: ${name}`)
+				// console.log(`[DEBUG] Added local function to scope: ${name}`)
 			}
 		})
 
@@ -1254,7 +1388,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				console.log(`[DEBUG] Added parameter to scope: ${name}`)
+				// console.log(`[DEBUG] Added parameter to scope: ${name}`)
 			}
 		})
 
@@ -1274,20 +1408,20 @@ export class ImportManager {
 			const parent = identifier.getParent()
 			if (parent && Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) {
 				// This is a property name in an object literal, not a reference to a dependency
-				console.log(`[DEBUG] Skipping object property name: ${name}`)
+				// console.log(`[DEBUG] Skipping object property name: ${name}`)
 				return
 			}
 
 			// Skip property access expressions where this is the property name
 			if (parent && Node.isPropertyAccessExpression(parent) && parent.getNameNode() === identifier) {
 				// This is a property access like obj.prop, and we're looking at "prop"
-				console.log(`[DEBUG] Skipping property access name: ${name}`)
+				// console.log(`[DEBUG] Skipping property access name: ${name}`)
 				return
 			}
 
 			// Skip parameter property names
 			if (parent && Node.isParameterDeclaration(parent) && parent.getNameNode() === identifier) {
-				console.log(`[DEBUG] Skipping parameter property name: ${name}`)
+				// console.log(`[DEBUG] Skipping parameter property name: ${name}`)
 				return
 			}
 
@@ -1303,7 +1437,7 @@ export class ImportManager {
 			// Check if this is a named import specifier (which wouldn't be a dependency)
 			if (parent && Node.isImportSpecifier(parent)) {
 				shouldInclude = false
-				console.log(`[DEBUG] Skipping import specifier: ${name}`)
+				// console.log(`[DEBUG] Skipping import specifier: ${name}`)
 			}
 
 			// Skip if this is the name of a declaration
@@ -1315,7 +1449,7 @@ export class ImportManager {
 				parent.getName() === name
 			) {
 				shouldInclude = false
-				console.log(`[DEBUG] Skipping declaration name: ${name}`)
+				// console.log(`[DEBUG] Skipping declaration name: ${name}`)
 			}
 
 			if (!shouldInclude) {
@@ -1364,7 +1498,7 @@ export class ImportManager {
 			if (Node.isIdentifier(expression)) {
 				const name = expression.getText()
 				if (!declarationsInScope.has(name)) {
-					console.log(`[DEBUG] Found function call dependency: ${name}`)
+					// console.log(`[DEBUG] Found function call dependency: ${name}`)
 					// Try to determine if the called function is local
 					let isLocal = false
 					try {
@@ -1391,7 +1525,7 @@ export class ImportManager {
 			if (Node.isIdentifier(typeRef.getTypeName())) {
 				const name = typeRef.getTypeName().getText()
 				if (!declarationsInScope.has(name)) {
-					console.log(`[DEBUG] Found type reference dependency: ${name}`)
+					// console.log(`[DEBUG] Found type reference dependency: ${name}`)
 
 					// Check if it's a local type
 					let isLocal = false
@@ -1506,7 +1640,7 @@ export class ImportManager {
 	 * Adds a type import to a file
 	 */
 	private addTypeImport(file: SourceFile, symbolName: string, modulePath: string): void {
-		console.log(`[DEBUG] addTypeImport: Adding ${symbolName} from ${modulePath} to ${file.getFilePath()}`)
+		// console.log(`[DEBUG] addTypeImport: Adding ${symbolName} from ${modulePath} to ${file.getFilePath()}`)
 
 		// Check if we already have a type import from this module
 		const existingTypeImport = file.getImportDeclaration(
@@ -1515,11 +1649,11 @@ export class ImportManager {
 
 		if (existingTypeImport) {
 			// Add to existing type import
-			console.log(`[DEBUG] addTypeImport: Adding to existing type import`)
+			// console.log(`[DEBUG] addTypeImport: Adding to existing type import`)
 			existingTypeImport.addNamedImport(symbolName)
 		} else {
 			// Create new type import
-			console.log(`[DEBUG] addTypeImport: Creating new type import declaration`)
+			// console.log(`[DEBUG] addTypeImport: Creating new type import declaration`)
 			file.addImportDeclaration({
 				moduleSpecifier: modulePath,
 				namedImports: [symbolName],
@@ -1527,7 +1661,7 @@ export class ImportManager {
 			})
 		}
 
-		console.log(`[DEBUG] addTypeImport: Import added successfully`)
+		// console.log(`[DEBUG] addTypeImport: Import added successfully`)
 	}
 
 	/**
@@ -1628,7 +1762,7 @@ export class ImportManager {
 					moduleSpecifier: imp.getModuleSpecifierValue(),
 					namedImports: [symbolName],
 				})
-				console.log(`[DEBUG] Copied import for ${symbolName} from ${imp.getModuleSpecifierValue()}`)
+				// console.log(`[DEBUG] Copied import for ${symbolName} from ${imp.getModuleSpecifierValue()}`)
 				found = true
 				break
 			}
@@ -1642,12 +1776,10 @@ export class ImportManager {
 	 * @returns true if the symbol was found and imported, false otherwise
 	 */
 	private findAndAddImportForSymbol(file: SourceFile, symbolName: string): boolean {
-		console.log(`[DEBUG] Searching project for symbol: ${symbolName}`)
+		// console.log(`[DEBUG] Searching project for symbol: ${symbolName}`)
 		let found = false
-
-		// Get all source files in the project
+		// PERFORMANCE FIX: Revert to simple approach - avoid scanning all files
 		const allFiles = this.project.getSourceFiles()
-
 		// Keep track of source file with the symbol to avoid checking it multiple times
 		let foundInFile: SourceFile | null = null
 
@@ -1788,7 +1920,7 @@ export class ImportManager {
 			return true
 		}
 
-		console.log(`[DEBUG] fileReferencesSymbol: No references to ${symbolName} found in ${sourceFile.getFilePath()}`)
+		// console.log(`[DEBUG] fileReferencesSymbol: No references to ${symbolName} found in ${sourceFile.getFilePath()}`)
 		return false
 	}
 
@@ -1821,45 +1953,152 @@ export class ImportManager {
 	 * Only loads files in the test directory scope to avoid memory issues
 	 */
 	private ensureAllProjectFilesLoaded(referenceFilePath: string): void {
+		const startTime = Date.now()
+		const initialFileCount = this.project.getSourceFiles().length
+		// console.log(`[DEBUG IMPORT-MANAGER] 🔄 ensureAllProjectFilesLoaded() called for: ${referenceFilePath}`)
+		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Initial ts-morph project has ${initialFileCount} files loaded`)
+
 		try {
 			// Get the directory of the reference file
 			const referenceDir = path.dirname(referenceFilePath)
-			console.log(`[DEBUG] Reference file directory: ${referenceDir}`)
+			// console.log(`[DEBUG IMPORT-MANAGER] 📁 Reference file directory: ${referenceDir}`)
 
-			// For test files, only load files in the test directory tree
+			// PERFORMANCE FIX: For test files, skip expensive recursive loading
+			// Test files are already loaded by the engine's ensureTestFilesLoaded() method
 			if (
 				referenceFilePath.includes("test-refactor-output") ||
 				referenceFilePath.includes("/tmp/") ||
 				referenceFilePath.includes("import-split-test") ||
 				referenceFilePath.includes("temp")
 			) {
-				// Find the test directory root - either test-refactor-output or temp directory
-				const testDirMatch =
-					referenceFilePath.match(/(.*test-refactor-output[\/\\][^\/\\]+)/) ||
-					referenceFilePath.match(/(.*(\/tmp\/|\\temp\\)[^\/\\]+)/) ||
-					referenceFilePath.match(/(.*import-split-test[^\/\\]*)/)
+				// console.log(`[DEBUG IMPORT-MANAGER] 🧪 Detected test file - skipping expensive recursive loading`)
+				// console.log(`[DEBUG IMPORT-MANAGER] ⚡ Test files should already be loaded by engine initialization`)
 
-				if (testDirMatch) {
-					const testRoot = testDirMatch[1]
-					console.log(`[DEBUG] Loading TypeScript files from test directory: ${testRoot}`)
-					this.loadTypeScriptFilesRecursively(testRoot)
-					return
-				}
+				const finalFileCount = this.project.getSourceFiles().length
+				const duration = Date.now() - startTime
+				console.log(
+					`[DEBUG IMPORT-MANAGER] ✅ Test file loading skipped: ${finalFileCount} files already loaded in ${duration}ms`,
+				)
+				return
 			}
 
+			// console.log(`[DEBUG IMPORT-MANAGER] 🏢 Non-test file - using limited directory loading strategy`)
+
 			// For non-test files, load only the immediate directory and one level up
-			console.log(`[DEBUG] Loading TypeScript files from reference directory: ${referenceDir}`)
+			// console.log(`[DEBUG IMPORT-MANAGER] 📂 Loading TypeScript files from reference directory: ${referenceDir}`)
 			this.loadTypeScriptFilesInDirectory(referenceDir)
 
 			// Also load parent directory (one level up)
 			const parentDir = path.dirname(referenceDir)
 			if (parentDir !== referenceDir) {
-				console.log(`[DEBUG] Loading TypeScript files from parent directory: ${parentDir}`)
+				// console.log(`[DEBUG IMPORT-MANAGER] 📂 Loading TypeScript files from parent directory: ${parentDir}`)
+				this.loadTypeScriptFilesInDirectory(parentDir)
+			}
+
+			const finalFileCount = this.project.getSourceFiles().length
+			const filesAdded = finalFileCount - initialFileCount
+			const duration = Date.now() - startTime
+			console.log(
+				`[DEBUG IMPORT-MANAGER] ✅ Directory loading complete: ${filesAdded} files added in ${duration}ms`,
+			)
+		} catch (error) {
+			const duration = Date.now() - startTime
+			console.log(
+				`[DEBUG IMPORT-MANAGER] ❌ Error loading project files after ${duration}ms: ${(error as Error).message}`,
+			)
+			// Continue without loading additional files - the search will work with what's available
+		}
+	}
+
+	/**
+	 * Finds files in the same directory tree as the target file without loading all project files
+	 * This is a performance-optimized alternative to this.project.getSourceFiles()
+	 */
+	private findFilesInSameDirectoryTree(filePath: string): SourceFile[] {
+		// console.log(`[DEBUG IMPORT-MANAGER] 🎯 findFilesInSameDirectoryTree() called for: ${filePath}`)
+
+		const projectRoot = this.pathResolver.getProjectRoot()
+		// Resolve the file path relative to project root to get the correct directory
+		const absoluteFilePath = this.pathResolver.resolveAbsolutePath(filePath)
+		const targetDir = this.pathResolver.getDirectoryPath(absoluteFilePath)
+
+		// console.log(`[DEBUG IMPORT-MANAGER] 📁 Project root: ${projectRoot}`)
+		// console.log(`[DEBUG IMPORT-MANAGER] 📁 Target directory: ${targetDir}`)
+
+		// Load files only from the target directory and its immediate parent/children
+		// This is much more efficient than loading all project files
+		this.ensureDirectoryFilesLoaded(targetDir)
+
+		// Instead of calling this.project.getSourceFiles() which is expensive,
+		// we'll manually track and return only the files we know about
+		const loadedFiles: SourceFile[] = []
+
+		try {
+			// Get files that are specifically loaded for this directory
+			// Use a more targeted approach by checking specific files
+			const filesToCheck = this.getKnownFilesInDirectory(targetDir)
+
+			for (const fileToCheck of filesToCheck) {
+				const sourceFile = this.project.getSourceFile(fileToCheck)
+				if (sourceFile) {
+					loadedFiles.push(sourceFile)
+				}
+			}
+		} catch (error) {
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error getting loaded files: ${(error as Error).message}`)
+		}
+
+		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${loadedFiles.length} files in same directory tree`)
+		return loadedFiles
+	}
+
+	/**
+	 * Gets known files in a directory without calling expensive project.getSourceFiles()
+	 */
+	private getKnownFilesInDirectory(dirPath: string): string[] {
+		// console.log(`[DEBUG IMPORT-MANAGER] 📂 getKnownFilesInDirectory() called for: ${dirPath}`)
+
+		const knownFiles: string[] = []
+
+		try {
+			// Use Node.js fs to scan the directory for TypeScript files
+			const fs = require("fs")
+			const path = require("path")
+
+			if (fs.existsSync(dirPath)) {
+				const files = fs.readdirSync(dirPath)
+				for (const file of files) {
+					if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+						const fullPath = path.join(dirPath, file)
+						knownFiles.push(fullPath)
+					}
+				}
+			}
+		} catch (error) {
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error scanning directory: ${(error as Error).message}`)
+		}
+
+		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${knownFiles.length} TypeScript files in directory`)
+		return knownFiles
+	}
+
+	/**
+	 * Ensures files in a specific directory are loaded (more targeted than ensureAllProjectFilesLoaded)
+	 */
+	private ensureDirectoryFilesLoaded(dirPath: string): void {
+		// console.log(`[DEBUG IMPORT-MANAGER] 📂 ensureDirectoryFilesLoaded() called for: ${dirPath}`)
+
+		try {
+			// Load files only from the specific directory
+			this.loadTypeScriptFilesInDirectory(dirPath)
+
+			// Also load parent directory for broader context
+			const parentDir = this.pathResolver.getDirectoryPath(dirPath)
+			if (parentDir !== dirPath) {
 				this.loadTypeScriptFilesInDirectory(parentDir)
 			}
 		} catch (error) {
-			console.log(`[DEBUG] Error loading project files: ${(error as Error).message}`)
-			// Continue without loading additional files - the search will work with what's available
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error loading directory files: ${(error as Error).message}`)
 		}
 	}
 
@@ -1867,12 +2106,18 @@ export class ImportManager {
 	 * Loads TypeScript files in a specific directory (non-recursive for safety)
 	 */
 	private loadTypeScriptFilesInDirectory(dirPath: string): void {
+		// console.log(`[DEBUG IMPORT-MANAGER] 📂 loadTypeScriptFilesInDirectory() called for: ${dirPath}`)
+		let filesLoaded = 0
+		let filesSkipped = 0
+
 		try {
 			if (!fs.existsSync(dirPath)) {
+				// console.log(`[DEBUG IMPORT-MANAGER] ❌ Directory does not exist: ${dirPath}`)
 				return
 			}
 
 			const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+			// console.log(`[DEBUG IMPORT-MANAGER] 📋 Found ${entries.length} entries in directory`)
 
 			for (const entry of entries) {
 				if (entry.isFile() && entry.name.match(/\.(ts|tsx)$/)) {
@@ -1881,16 +2126,26 @@ export class ImportManager {
 					if (!this.project.getSourceFile(fullPath)) {
 						try {
 							this.project.addSourceFileAtPath(fullPath)
-							console.log(`[DEBUG] Loaded TypeScript file: ${fullPath}`)
+							filesLoaded++
+							// console.log(`[DEBUG IMPORT-MANAGER] ✅ Loaded TypeScript file: ${fullPath}`)
 						} catch (error) {
 							// Ignore errors loading individual files
-							console.log(`[DEBUG] Failed to load file ${fullPath}: ${(error as Error).message}`)
+							console.log(
+								`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}`,
+							)
 						}
+					} else {
+						filesSkipped++
+						// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  File already loaded: ${fullPath}`)
 					}
 				}
 			}
+
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 📊 Directory loading summary: ${filesLoaded} loaded, ${filesSkipped} skipped`,
+			)
 		} catch (error) {
-			console.log(`[DEBUG] Error reading directory ${dirPath}: ${(error as Error).message}`)
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
 		}
 	}
 
@@ -1898,12 +2153,19 @@ export class ImportManager {
 	 * Recursively loads TypeScript files from a directory
 	 */
 	private loadTypeScriptFilesRecursively(dirPath: string): void {
+		// console.log(`[DEBUG IMPORT-MANAGER] 🔄 loadTypeScriptFilesRecursively() called for: ${dirPath}`)
+		let filesLoaded = 0
+		let filesSkipped = 0
+		let directoriesSkipped = 0
+
 		try {
 			if (!fs.existsSync(dirPath)) {
+				// console.log(`[DEBUG IMPORT-MANAGER] ❌ Directory does not exist: ${dirPath}`)
 				return
 			}
 
 			const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+			// console.log(`[DEBUG IMPORT-MANAGER] 📋 Found ${entries.length} entries in directory`)
 
 			for (const entry of entries) {
 				const fullPath = path.join(dirPath, entry.name)
@@ -1911,9 +2173,12 @@ export class ImportManager {
 				if (entry.isDirectory()) {
 					// Skip common directories that don't contain source code
 					if (["node_modules", ".git", "dist", "build", "coverage", ".next"].includes(entry.name)) {
+						directoriesSkipped++
+						// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  Skipping excluded directory: ${fullPath}`)
 						continue
 					}
 
+					// console.log(`[DEBUG IMPORT-MANAGER] 📁 Recursing into subdirectory: ${fullPath}`)
 					// Recursively load files from subdirectories
 					this.loadTypeScriptFilesRecursively(fullPath)
 				} else if (entry.isFile()) {
@@ -1923,17 +2188,27 @@ export class ImportManager {
 						if (!this.project.getSourceFile(fullPath)) {
 							try {
 								this.project.addSourceFileAtPath(fullPath)
-								console.log(`[DEBUG] Loaded TypeScript file: ${fullPath}`)
+								filesLoaded++
+								// console.log(`[DEBUG IMPORT-MANAGER] ✅ Loaded TypeScript file: ${fullPath}`)
 							} catch (error) {
 								// Ignore errors loading individual files
-								console.log(`[DEBUG] Failed to load file ${fullPath}: ${(error as Error).message}`)
+								console.log(
+									`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}`,
+								)
 							}
+						} else {
+							filesSkipped++
+							// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  File already loaded: ${fullPath}`)
 						}
 					}
 				}
 			}
+
+			console.log(
+				`[DEBUG IMPORT-MANAGER] 📊 Recursive loading summary for ${dirPath}: ${filesLoaded} loaded, ${filesSkipped} skipped, ${directoriesSkipped} dirs skipped`,
+			)
 		} catch (error) {
-			console.log(`[DEBUG] Error reading directory ${dirPath}: ${(error as Error).message}`)
+			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
 		}
 	}
 }

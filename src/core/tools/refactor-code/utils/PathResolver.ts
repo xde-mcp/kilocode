@@ -11,7 +11,7 @@ export class PathResolver {
 	 * @param projectRoot The root path of the project
 	 */
 	constructor(private projectRoot: string) {
-		console.log(`[DEBUG] PathResolver created with project root: ${this.projectRoot}`)
+		// console.log(`[DEBUG] PathResolver created with project root: ${this.projectRoot}`)
 	}
 
 	/**
@@ -44,7 +44,13 @@ export class PathResolver {
 			return process.env.NODE_ENV === "test" || !!process.env.JEST_WORKER_ID
 		}
 
-		// Check for common test directory and file patterns
+		// Primary detection: Check for our standard test prefix (same as RefactorEngine)
+		const standardTestPrefix = "refactor-tool-test"
+		if (filePath.includes(standardTestPrefix) || this.projectRoot.includes(standardTestPrefix)) {
+			return true
+		}
+
+		// Secondary detection: Check for common test directory and file patterns (legacy support)
 		return (
 			filePath.includes("test") ||
 			filePath.includes("__tests__") ||
@@ -67,9 +73,9 @@ export class PathResolver {
 		// Normalize path separators first for cross-platform compatibility
 		const normalizedPath = this.normalizePath(relativePath)
 
-		// If already absolute, return as is
+		// If already absolute, fix any src/src duplication and return
 		if (path.isAbsolute(normalizedPath)) {
-			return normalizedPath
+			return this.fixSrcDuplication(normalizedPath)
 		}
 
 		// Fix potential src/src duplication before resolving
@@ -81,7 +87,7 @@ export class PathResolver {
 		// Additional safety check: if the resolved path contains duplicate src directories, fix it
 		if (resolvedPath.includes("/src/src/") || resolvedPath.includes("\\src\\src\\")) {
 			const fixedPath = resolvedPath.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
-			console.log(`[DEBUG] Fixed duplicate src in resolved path: ${fixedPath} (was ${resolvedPath})`)
+			// console.log(`[DEBUG] Fixed duplicate src in resolved path: ${fixedPath} (was ${resolvedPath})`)
 			return fixedPath
 		}
 
@@ -140,13 +146,13 @@ export class PathResolver {
 			// Check for various forms of src/src duplication with a more robust regex
 			if (normalizedPath.includes("/src/src/") || normalizedPath.includes("\\src\\src\\")) {
 				const fixedPath = normalizedPath.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
-				console.log(`[DEBUG] Fixed duplicated src path in absolute path: ${fixedPath}`)
+				// console.log(`[DEBUG] Fixed duplicated src path in absolute path: ${fixedPath}`)
 				return fixedPath
 			}
 			// Check for src/src at the end of the path
 			if (normalizedPath.endsWith("/src/src") || normalizedPath.endsWith("\\src\\src")) {
 				const fixedPath = normalizedPath.replace(/[\/\\]src[\/\\]src$/g, "/src")
-				console.log(`[DEBUG] Fixed duplicated src path at end: ${fixedPath}`)
+				// console.log(`[DEBUG] Fixed duplicated src path at end: ${fixedPath}`)
 				return fixedPath
 			}
 			return normalizedPath
@@ -159,7 +165,7 @@ export class PathResolver {
 				const pathParts = normalizedPath.split(/[\/\\]src[\/\\]/)
 				const lastPart = pathParts[pathParts.length - 1]
 				const resolvedPath = path.resolve(testRoot, "src", lastPart)
-				console.log(`[DEBUG] Resolved move verification test path: ${resolvedPath} from ${normalizedPath}`)
+				// console.log(`[DEBUG] Resolved move verification test path: ${resolvedPath} from ${normalizedPath}`)
 				return resolvedPath
 			}
 
@@ -287,12 +293,37 @@ export class PathResolver {
 	 * @returns The relative import path suitable for import statements
 	 */
 	getRelativeImportPath(fromFile: string, toFile: string): string {
-		const fromDir = path.dirname(this.normalizeFilePath(fromFile))
-		let relativePath = path.relative(fromDir, this.normalizeFilePath(toFile))
+		// Let Node.js handle the cross-platform path resolution
+		// path.resolve() and path.relative() already handle Windows/Unix differences correctly
 
-		relativePath = this.normalizeFilePath(relativePath)
+		let resolvedFromFile: string
+		let resolvedToFile: string
+
+		// Ensure both paths are absolute so path.relative() works correctly
+		if (path.isAbsolute(fromFile)) {
+			resolvedFromFile = path.normalize(fromFile)
+		} else {
+			resolvedFromFile = path.resolve(this.projectRoot, fromFile)
+		}
+
+		if (path.isAbsolute(toFile)) {
+			resolvedToFile = path.normalize(toFile)
+		} else {
+			// Resolve toFile relative to project root, not fromFile's directory
+			resolvedToFile = path.resolve(this.projectRoot, toFile)
+		}
+
+		// Use Node.js built-in path.relative() which handles cross-platform correctly
+		const fromDir = path.dirname(resolvedFromFile)
+		let relativePath = path.relative(fromDir, resolvedToFile)
+
+		// Normalize to forward slashes for import statements (standard across platforms)
+		relativePath = relativePath.replace(/\\/g, "/")
+
+		// Remove file extension
 		relativePath = relativePath.replace(/\.(ts|tsx|js|jsx)$/, "")
 
+		// Ensure relative imports start with ./ or ../
 		if (!relativePath.startsWith(".")) {
 			relativePath = "./" + relativePath
 		}

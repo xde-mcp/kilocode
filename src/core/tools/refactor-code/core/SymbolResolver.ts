@@ -11,12 +11,12 @@ export class SymbolResolver {
 	 * Extract from: Lines 158-175 in remove, Lines 267-284 in move
 	 */
 	resolveSymbol(selector: IdentifierSelector, sourceFile: SourceFile): ResolvedSymbol | null {
-		console.log(`[DEBUG RESOLVER] Looking for symbol: ${selector.name}, kind: ${selector.kind}`)
+		// console.log(`[DEBUG RESOLVER] Looking for symbol: ${selector.name}, kind: ${selector.kind}`)
 		const finder = new SymbolFinder(sourceFile)
 		const symbol = finder.findSymbol(selector)
 
 		if (!symbol) {
-			console.log(`[DEBUG RESOLVER] Symbol not found: ${selector.name}`)
+			// console.log(`[DEBUG RESOLVER] Symbol not found: ${selector.name}`)
 			return null
 		}
 

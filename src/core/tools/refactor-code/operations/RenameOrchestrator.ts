@@ -87,11 +87,15 @@ export class RenameOrchestrator {
 			console.log(`[DEBUG] Found ${references.length} references to symbol`)
 
 			const affectedFiles = new Set<string>()
-			affectedFiles.add(sourceFilePath)
+			// Ensure all paths are absolute for consistency
+			// Use the source file's actual path from ts-morph which is already absolute
+			const absoluteSourcePath = sourceFile.getFilePath()
+			affectedFiles.add(absoluteSourcePath)
 
 			// Add all files containing references
 			for (const ref of references) {
 				const refFile = ref.getSourceFile().getFilePath()
+				// ts-morph already returns absolute paths for getFilePath()
 				affectedFiles.add(refFile)
 			}
 
@@ -113,23 +117,17 @@ export class RenameOrchestrator {
 			// Additional manual update for barrel file imports
 			this.updateBarrelImports(affectedFiles, operation.selector.name, operation.newName)
 
-			// Save all affected files directly
-			const affectedFilesArray = Array.from(affectedFiles)
-			for (const filePath of affectedFilesArray) {
-				const affectedFile = this.projectManager.getProject().getSourceFile(filePath)
-				if (affectedFile) {
-					await this.projectManager.saveSourceFile(affectedFile, filePath)
-				}
-			}
+			// Note: Files will be saved by the engine after this operation completes
+			// No need to save here as it causes duplicate saves and path conflicts
 
 			console.log(
-				`[DEBUG] Rename operation completed successfully. Affected files: ${affectedFilesArray.join(", ")}`,
+				`[DEBUG] Rename operation completed successfully. Affected files: ${Array.from(affectedFiles).join(", ")}`,
 			)
 
 			return {
 				success: true,
 				operation,
-				affectedFiles: affectedFilesArray,
+				affectedFiles: Array.from(affectedFiles),
 			}
 		} catch (error) {
 			const err = error as Error

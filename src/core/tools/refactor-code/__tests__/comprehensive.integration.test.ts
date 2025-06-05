@@ -5,6 +5,12 @@ import * as os from "os"
 import { RefactorEngine, BatchResult } from "../engine"
 import { RenameOperation, MoveOperation, RemoveOperation, BatchOperations } from "../schema"
 import { performance } from "perf_hooks"
+import {
+	createRefactorEngineTestSetup,
+	createTestFiles,
+	TEST_FILE_TEMPLATES,
+	RefactorEngineTestSetup,
+} from "./utils/standardized-test-setup"
 
 /**
  * Comprehensive integration test suite for the RefactorCodeTool
@@ -149,37 +155,34 @@ export class AuthService {
 		return { result, duration }
 	}
 
+	let setup: RefactorEngineTestSetup
+
 	beforeAll(() => {
-		// Create temp directory structure for tests
-		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "refactor-integration-test-"))
-		projectDir = path.join(tempDir, "project")
+		// Use standardized Pattern 2 setup
+		setup = createRefactorEngineTestSetup()
+		engine = setup.engine
+		projectDir = setup.projectDir
+		tempDir = path.dirname(projectDir)
 		srcDir = path.join(projectDir, "src")
 		utilsDir = path.join(srcDir, "utils")
 		servicesDir = path.join(srcDir, "services")
 		modelsDir = path.join(srcDir, "models")
 
-		// Create directories
-		fs.mkdirSync(projectDir, { recursive: true })
-		fs.mkdirSync(srcDir, { recursive: true })
-		fs.mkdirSync(utilsDir, { recursive: true })
-		fs.mkdirSync(servicesDir, { recursive: true })
-		fs.mkdirSync(modelsDir, { recursive: true })
+		// Create test files using standardized utility
+		const filesToCreate = {
+			"src/models/user.ts": testFiles.userModel,
+			"src/utils/utility.ts": testFiles.utilityFunctions,
+			"src/services/userService.ts": testFiles.userService,
+			"src/services/authService.ts": testFiles.authService,
+		}
 
-		// Create test files
+		createTestFiles(setup.projectDir, filesToCreate)
+
+		// Update test file paths
 		testFilePaths.userModel = path.join(modelsDir, "user.ts")
 		testFilePaths.utilityFunctions = path.join(utilsDir, "utility.ts")
 		testFilePaths.userService = path.join(servicesDir, "userService.ts")
 		testFilePaths.authService = path.join(servicesDir, "authService.ts")
-
-		fs.writeFileSync(testFilePaths.userModel, testFiles.userModel)
-		fs.writeFileSync(testFilePaths.utilityFunctions, testFiles.utilityFunctions)
-		fs.writeFileSync(testFilePaths.userService, testFiles.userService)
-		fs.writeFileSync(testFilePaths.authService, testFiles.authService)
-
-		// Initialize RefactorEngine
-		engine = new RefactorEngine({
-			projectRootPath: projectDir,
-		})
 
 		console.log(`[TEST SETUP] Created test project at: ${projectDir}`)
 		console.log(
@@ -189,8 +192,8 @@ export class AuthService {
 	})
 
 	afterAll(() => {
-		// Clean up temp directory
-		fs.rmSync(tempDir, { recursive: true, force: true })
+		// Use standardized cleanup
+		setup.cleanup()
 	})
 
 	beforeEach(() => {
@@ -278,7 +281,7 @@ export class AuthService {
 		// Expected content after move operation
 		const expectedUserServiceContent = `import { User, validateUser } from "../models/user";
 import { formatName, formatEmail } from "../utils/utility";
-import { isValidEmail } from '../utils/validation';
+import { isValidEmail } from "../utils/validation";
 
 export class UserService {
 		private users: User[] = [];
@@ -424,7 +427,7 @@ export class UserService {
 		// Check if import was updated
 		const hasUpdatedImport = fileContains(
 			testFilePaths.userService,
-			"import { formatName } from '../utils/formatting'",
+			'import { formatName } from "../utils/formatting"',
 		)
 		console.log("[DEBUG BATCH TEST] Has updated import:", hasUpdatedImport)
 
@@ -555,6 +558,19 @@ export function ${tempFuncName}(value: string): string {
 				scope: "project" as const,
 				reason: "Performance testing",
 			})
+		}
+
+		// CRITICAL: Force refresh the utility file after dynamic modifications
+		// The ts-morph project needs to reload the file to see the appended functions
+		const utilitySourceFile = engine.getProject().getSourceFile(testFilePaths.utilityFunctions)
+		if (utilitySourceFile) {
+			utilitySourceFile.refreshFromFileSystemSync()
+			console.log(`[DEBUG BATCH TEST] Refreshed utility file after dynamic modifications`)
+
+			// Verify the functions were loaded
+			const fileContent = utilitySourceFile.getFullText()
+			console.log(`[DEBUG BATCH TEST] File content length after refresh: ${fileContent.length}`)
+			console.log(`[DEBUG BATCH TEST] File contains tempFunction1: ${fileContent.includes("tempFunction1")}`)
 		}
 
 		const batchOperations: BatchOperations = {
