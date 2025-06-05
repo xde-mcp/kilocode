@@ -205,7 +205,7 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			break
 		case "selectImages":
 			const { images, files } = await selectFiles()
-			await provider.postMessageToWebview({ type: "selectedImages", images, files })
+			await provider.postMessageToWebview({ type: "selectedImages", images, filePaths: files })
 			break
 		case "exportCurrentTask":
 			const currentTaskId = provider.getCurrentCline()?.taskId
