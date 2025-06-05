@@ -88,6 +88,7 @@ import { parseMentions } from "../mentions" // kilocode_change
 import { parseKiloSlashCommands } from "../slash-commands/kilo" // kilocode_change
 import { GlobalFileNames } from "../../shared/globalFileNames" // kilocode_change
 import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rules" // kilocode_change
+import { processFilesIntoText } from "../../integrations/misc/extract-text"
 
 export type ClineEvents = {
 	message: [{ action: "created" | "updated"; message: ClineMessage }]
@@ -743,13 +744,25 @@ export class Task extends EventEmitter<ClineEvents> {
 		let imageBlocks: Anthropic.ImageBlockParam[] = formatResponse.imageBlocks(images)
 		console.log(`[subtasks] task ${this.taskId}.${this.instanceId} starting`)
 
-		await this.initiateTaskLoop([
+		let userContent: UserContent = [
 			{
 				type: "text",
 				text: `<task>\n${task}\n</task>`,
 			},
 			...imageBlocks,
-		])
+		]
+
+		if (files && files.length > 0) {
+			const fileContentString = await processFilesIntoText(files)
+			if (fileContentString) {
+				userContent.push({
+					type: "text",
+					text: fileContentString,
+				})
+			}
+		}
+
+		await this.initiateTaskLoop(userContent)
 	}
 
 	public async resumePausedTask(lastMessage: string) {
@@ -828,13 +841,15 @@ export class Task extends EventEmitter<ClineEvents> {
 
 		this.isInitialized = true
 
-		const { response, text, images } = await this.ask(askType) // calls poststatetowebview
+		const { response, text, images, files } = await this.ask(askType) // calls poststatetowebview
 		let responseText: string | undefined
 		let responseImages: string[] | undefined
+		let responseFiles: string[] | undefined
 		if (response === "messageResponse") {
-			await this.say("user_feedback", text, images)
+			await this.say("user_feedback", text, images, files)
 			responseText = text
 			responseImages = images
+			responseFiles = files
 		}
 
 		// Make sure that the api conversation history can be resumed by the API,
@@ -1006,6 +1021,16 @@ export class Task extends EventEmitter<ClineEvents> {
 			newUserContent.push(...formatResponse.imageBlocks(responseImages))
 		}
 
+		if (responseFiles && responseFiles.length > 0) {
+			const fileContentString = await processFilesIntoText(responseFiles)
+			if (fileContentString) {
+				newUserContent.push({
+					type: "text",
+					text: fileContentString,
+				})
+			}
+		}
+
 		await this.overwriteApiConversationHistory(modifiedApiConversationHistory)
 
 		console.log(`[subtasks] task ${this.taskId}.${this.instanceId} resuming from history item`)
@@ -1154,7 +1179,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		}
 
 		if (this.consecutiveMistakeCount >= this.consecutiveMistakeLimit) {
-			const { response, text, images } = await this.ask(
+			const { response, text, images, files } = await this.ask(
 				"mistake_limit_reached",
 				t("common:errors.mistake_limit_guidance"),
 			)
@@ -1167,7 +1192,17 @@ export class Task extends EventEmitter<ClineEvents> {
 					],
 				)
 
-				await this.say("user_feedback", text, images)
+				if (files && files.length > 0) {
+					const fileContentString = await processFilesIntoText(files)
+					if (fileContentString) {
+						userContent.push({
+							type: "text",
+							text: fileContentString,
+						})
+					}
+				}
+
+				await this.say("user_feedback", text, images, files)
 
 				// Track consecutive mistake errors in telemetry.
 				// TelemetryService.instance.captureConsecutiveMistakeError(this.taskId)
