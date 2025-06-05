@@ -77,6 +77,12 @@ Uses **ts-morph** (TypeScript Compiler API wrapper) for:
 - **File system caching** to reduce I/O
 - **Smart operation ordering** to minimize conflicts
 
+### 6. **Security Framework** ✅ **NEW**
+- **Precise file path matching** using `.endsWith()` with full paths
+- **Comprehensive security audits** for file resolution patterns
+- **Zero tolerance for ambiguous file matching** (no `.includes()` for specific files)
+- **File path validation** at all operation entry points
+
 ## Critical Implementation Paths
 
 ### 1. **Batch Operation Flow**
@@ -95,7 +101,8 @@ MoveOrchestrator.executeMoveOperation() →
 ├── MoveValidator.validate()
 │   ├── Check symbol exists
 │   ├── Validate target file path
-│   └── Check for naming conflicts
+│   ├── Check for naming conflicts (with batch context)
+│   └── Security: Validate file path precision
 ├── MoveExecutor.execute()
 │   ├── Extract symbol from source
 │   ├── Add symbol to target
@@ -107,6 +114,31 @@ MoveOrchestrator.executeMoveOperation() →
     └── Confirm source cleaned (if not copy-only)
 ```
 
+### 3. **Batch Context Tracking** ✅ **NEW**
+```
+RefactorEngine.executeBatch() →
+├── Initialize batch context: Map<targetFile, symbols[]>
+├── For each operation:
+│   ├── Pass batch context to validator
+│   ├── Exclude batch-moved symbols from conflict detection
+│   └── Track successful moves in batch context
+└── Final synchronization across all affected files
+```
+
+## Security Architecture ✅ **NEW**
+
+### File Path Resolution Security
+- **Principle**: Never use ambiguous file matching patterns
+- **Implementation**: All file resolution uses precise `.endsWith()` matching
+- **Validation**: Comprehensive security audits prevent file confusion attacks
+- **Enforcement**: Zero tolerance policy for `.includes()` patterns on specific files
+
+### Batch Operation Security
+- **Context Isolation**: Each batch maintains isolated symbol tracking
+- **Conflict Prevention**: Batch context prevents false positive conflicts
+- **State Validation**: Comprehensive validation at each operation boundary
+- **Rollback Safety**: Failed operations don't corrupt batch state
+
 ## Extension Integration
 
 The RefactorCodeTool integrates with the 3KiloCode VS Code extension through:
@@ -115,3 +147,4 @@ The RefactorCodeTool integrates with the 3KiloCode VS Code extension through:
 - **File Tracking**: Integration with file context tracking
 - **Error Reporting**: Consistent error reporting with extension patterns
 - **Telemetry**: Performance and usage metrics collection
+- **Security Compliance**: All file operations follow security framework

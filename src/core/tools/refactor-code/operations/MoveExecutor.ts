@@ -192,10 +192,18 @@ export class MoveExecutor {
 			// Removed excessive success logging
 
 			// Step 4: Remove symbol from source file (unless copy-only)
+			console.log(
+				`[DEBUG REMOVAL] copyOnly=${copyOnly}, symbolName=${symbol.name}, sourceFile=${sourceFile.getFilePath()}`,
+			)
 			if (!copyOnly) {
+				console.log(`[DEBUG REMOVAL] About to call removeSymbolFromSourceFile for ${symbol.name}`)
 				const removeResult = await PerformanceTracker.measureStep(opId, "remove-from-source", async () => {
 					return this.removeSymbolFromSourceFile(symbol, sourceFile)
 				})
+
+				console.log(
+					`[DEBUG REMOVAL] removeSymbolFromSourceFile returned: success=${removeResult.success}, error=${removeResult.error}`,
+				)
 
 				if (!removeResult.success) {
 					console.log(
@@ -204,7 +212,13 @@ export class MoveExecutor {
 					warnings.push(`Symbol may not have been fully removed from source: ${removeResult.error}`)
 
 					console.log(`[WARNING] Symbol removal issue: ${removeResult.error || "Unknown error"}`)
+				} else {
+					console.log(
+						`[DEBUG REMOVAL] Symbol ${symbol.name} successfully removed from ${sourceFile.getFilePath()}`,
+					)
 				}
+			} else {
+				console.log(`[DEBUG REMOVAL] Skipping removal because copyOnly=true`)
 			}
 
 			// STEP 4: Update imports using centralized ImportManager (replaces duplicate logic)
@@ -277,27 +291,38 @@ export class MoveExecutor {
 
 	private async prepareTargetFile(targetFilePath: string): Promise<SourceFile | null> {
 		try {
-			// refactorLogger.debug(`prepareTargetFile called with: ${targetFilePath}`)
+			console.log(`[PRODUCTION DEBUG] 🎯 prepareTargetFile called for: ${targetFilePath}`)
 
 			// Use ProjectManager if available for more consistent file handling
 			if (this.projectManager) {
-				// refactorLogger.debug(`Using ProjectManager to ensure source file`)
+				console.log(`[PRODUCTION DEBUG] 🎯 Using ProjectManager to ensure source file`)
 				const result = await this.projectManager.ensureSourceFile(targetFilePath)
-				// refactorLogger.debug(`ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`)
+				console.log(
+					`[PRODUCTION DEBUG] 🎯 ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`,
+				)
 				if (result) {
+					console.log(
+						`[PRODUCTION DEBUG] 🎯 ProjectManager returned existing file with content: "${result.getFullText()}"`,
+					)
 					return result
 				}
-				// refactorLogger.debug(`ProjectManager failed, falling back to direct creation`)
+				console.log(`[PRODUCTION DEBUG] 🎯 ProjectManager failed, falling back to direct creation`)
 			}
 
 			// Fall back to original implementation
 			const normalizedPath = this.pathResolver.normalizeFilePath(targetFilePath)
+			console.log(`[PRODUCTION DEBUG] 🎯 Normalized path: ${normalizedPath}`)
 
 			// Check if the file already exists in the project first
 			let targetFile = this.project.getSourceFile(normalizedPath)
 			if (targetFile) {
+				console.log(
+					`[PRODUCTION DEBUG] 🎯 Found existing file in project with content: "${targetFile.getFullText()}"`,
+				)
 				return targetFile
 			}
+
+			console.log(`[PRODUCTION DEBUG] 🎯 File not found in project, will create new file`)
 
 			// Try to add existing file first, then create if needed
 			try {
@@ -329,13 +354,16 @@ export class MoveExecutor {
 				}
 
 				// Create the file in the project using absolute path to avoid working directory issues
-				// refactorLogger.debug(`Creating source file with absolute path: ${absoluteTargetPath}`)
-				targetFile = this.project.createSourceFile(absoluteTargetPath, `// Target file\n`, {
+				console.log(`[PRODUCTION DEBUG] 🎯 Creating source file with absolute path: ${absoluteTargetPath}`)
+				// CRITICAL FIX: Create truly empty files to prevent false naming conflicts in batch operations
+				targetFile = this.project.createSourceFile(absoluteTargetPath, "", {
 					overwrite: true,
 				})
 
 				if (targetFile) {
-					// refactorLogger.debug(`Successfully created file in project`)
+					console.log(
+						`[PRODUCTION DEBUG] 🎯 Successfully created file in project with content: "${targetFile.getFullText()}"`,
+					)
 					return targetFile
 				}
 			} catch (error) {
@@ -352,9 +380,15 @@ export class MoveExecutor {
 			// As a last resort, try a simplified approach
 			try {
 				const normalizedPath = this.pathResolver.normalizeFilePath(targetFilePath)
-				return this.project.createSourceFile(normalizedPath, `// Emergency file\n`, {
+				console.log(`[PRODUCTION DEBUG] 🎯 Emergency fallback: creating file at ${normalizedPath}`)
+				// CRITICAL FIX: Emergency fallback should also create empty files
+				const emergencyFile = this.project.createSourceFile(normalizedPath, "", {
 					overwrite: true,
 				})
+				console.log(
+					`[PRODUCTION DEBUG] 🎯 Emergency fallback created file with content: "${emergencyFile.getFullText()}"`,
+				)
+				return emergencyFile
 			} catch (e) {
 				console.error(`Final fallback file creation failed: ${e}`)
 			}
@@ -643,9 +677,23 @@ export class MoveExecutor {
 		sourceFile: SourceFile,
 		relatedTypes: string[] = [],
 	): Promise<boolean> {
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] *** addSymbolToTargetFile ENTRY POINT ***`)
 		try {
 			// Get the current text of the target file
 			const targetText = targetFile.getFullText()
+
+			// CRITICAL FIX: Remove existing imports of the symbol being moved to prevent circular imports
+			const movingSymbolName = this.extractSymbolName(symbolText)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Extracted symbol name: ${movingSymbolName}`)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Source file path: ${sourceFile.getFilePath()}`)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Target file path: ${targetFile.getFilePath()}`)
+			if (movingSymbolName) {
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] About to remove existing imports of '${movingSymbolName}'`)
+				this.removeExistingImportsOfSymbol(targetFile, movingSymbolName, sourceFile.getFilePath())
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Finished removing existing imports`)
+			} else {
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] WARNING: Could not extract symbol name from: ${symbolText}`)
+			}
 
 			// Filter out self-imports to prevent importing from the target file itself
 			const filteredImports = this.filterSelfImports(
@@ -661,8 +709,21 @@ export class MoveExecutor {
 				targetFile.getFilePath(),
 			)
 
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] importsToAdd array:`, importsToAdd)
+
 			// Add imports to the target file using proper import management
 			for (const importText of importsToAdd) {
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Processing import: ${importText}`)
+				// CRITICAL: Skip imports that would create circular dependencies
+				const targetFileName = targetFile.getBaseName().replace(".ts", "")
+				if (
+					importText.includes(`from './${targetFileName}'`) ||
+					importText.includes(`from "./${targetFileName}"`)
+				) {
+					console.log(`[DEBUG CIRCULAR-IMPORT-FIX] SKIPPING circular import: ${importText}`)
+					continue
+				}
+
 				// Parse the import statement to extract module and symbols
 				const importMatch = importText.match(/import\s+(.+?)\s+from\s+['"](.+?)['"]/)
 				if (importMatch) {
@@ -723,16 +784,33 @@ export class MoveExecutor {
 
 			// Check if the symbol already exists in the target file to prevent duplicates
 			const symbolName = this.extractSymbolName(symbolText)
+			console.log(`[DEBUG TARGET] Target file path: ${targetFile.getFilePath()}`)
+			console.log(`[DEBUG TARGET] Symbol name to add: ${symbolName}`)
+			console.log(`[DEBUG TARGET] Symbol text to add: "${symbolText}"`)
+			console.log(`[DEBUG TARGET] Target file content before adding: "${targetFile.getFullText()}"`)
+
 			if (symbolName && !this.symbolExistsInFile(targetFile, symbolName)) {
 				// Add the symbol text to the target file
 				targetFile.addStatements(symbolText)
 				refactorLogger.debug(`Added symbol '${symbolName}' to target file`)
+				console.log(`[DEBUG TARGET] Target file content after adding: "${targetFile.getFullText()}"`)
+			} else if (symbolName && this.symbolExistsInFile(targetFile, symbolName)) {
+				// CRITICAL FIX: Throw error instead of silently skipping when symbol already exists
+				const errorMessage = `Naming conflict: Symbol with name '${symbolName}' already exists in target file`
+				refactorLogger.debug(errorMessage)
+				console.log(`[DEBUG TARGET] ${errorMessage}`)
+				throw new Error(errorMessage)
 			} else {
-				refactorLogger.debug(`Symbol '${symbolName}' already exists in target file, skipping`)
+				// No symbol name extracted - this shouldn't happen but handle gracefully
+				const errorMessage = `Failed to extract symbol name from: "${symbolText}"`
+				refactorLogger.debug(errorMessage)
+				console.log(`[DEBUG TARGET] ${errorMessage}`)
+				throw new Error(errorMessage)
 			}
 
 			// Save the changes
 			targetFile.saveSync()
+			console.log(`[DEBUG TARGET] Target file saved`)
 
 			return true
 		} catch (error) {
@@ -786,6 +864,118 @@ export class MoveExecutor {
 		}
 
 		return filteredImports
+	}
+
+	/**
+	 * Removes existing imports of a specific symbol from the target file to prevent circular imports.
+	 * This is critical when moving a symbol to a file that already imports it.
+	 *
+	 * @param targetFile - The target file to clean up imports from
+	 * @param symbolName - The name of the symbol being moved
+	 * @param sourceFilePath - The path of the source file where the symbol is coming from
+	 */
+	private removeExistingImportsOfSymbol(targetFile: SourceFile, symbolName: string, sourceFilePath: string): void {
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Checking for existing imports of '${symbolName}' in target file`)
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Source file path: ${sourceFilePath}`)
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Target file path: ${targetFile.getFilePath()}`)
+
+		// Get all import declarations in the target file
+		const importDeclarations = targetFile.getImportDeclarations()
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Found ${importDeclarations.length} import declarations in target file`)
+
+		// Normalize the source file path for comparison
+		const normalizedSourcePath = this.pathResolver.standardizePath(sourceFilePath)
+		const targetDir = this.pathResolver.getDirectoryPath(targetFile.getFilePath())
+
+		for (const importDecl of importDeclarations) {
+			const moduleSpecifier = importDecl.getModuleSpecifierValue()
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Checking import: ${importDecl.getText()}`)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Module specifier: ${moduleSpecifier}`)
+
+			// Skip package imports (only check relative imports)
+			if (!moduleSpecifier.startsWith(".") && !moduleSpecifier.startsWith("/")) {
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Skipping package import: ${moduleSpecifier}`)
+				continue
+			}
+
+			// Resolve the import path to see if it points to our source file
+			const resolvedImportPath = this.resolveImportPath(targetDir, moduleSpecifier)
+			const normalizedImportPath = this.pathResolver.standardizePath(resolvedImportPath)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Resolved import path: ${normalizedImportPath}`)
+			console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Comparing with source path: ${normalizedSourcePath}`)
+
+			// Check if this import is from the source file
+			if (normalizedImportPath === normalizedSourcePath) {
+				console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Found import from source file: ${importDecl.getText()}`)
+
+				// Check if this import includes our symbol
+				const namedImports = importDecl.getNamedImports()
+				const defaultImport = importDecl.getDefaultImport()
+				const namespaceImport = importDecl.getNamespaceImport()
+
+				let symbolFound = false
+
+				// Check named imports
+				for (const namedImport of namedImports) {
+					if (namedImport.getName() === symbolName) {
+						console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Found symbol '${symbolName}' in named imports`)
+						symbolFound = true
+
+						// If this is the only named import, remove the entire import declaration
+						if (namedImports.length === 1 && !defaultImport && !namespaceImport) {
+							console.log(
+								`[DEBUG CIRCULAR-IMPORT-FIX] Removing entire import declaration: ${importDecl.getText()}`,
+							)
+							importDecl.remove()
+						} else {
+							// Remove just this named import
+							console.log(
+								`[DEBUG CIRCULAR-IMPORT-FIX] Removing named import '${symbolName}' from: ${importDecl.getText()}`,
+							)
+							namedImport.remove()
+						}
+						break
+					}
+				}
+
+				// Check default import
+				if (!symbolFound && defaultImport && defaultImport.getText() === symbolName) {
+					console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Found symbol '${symbolName}' as default import`)
+					symbolFound = true
+
+					// If this is the only import, remove the entire declaration
+					if (namedImports.length === 0 && !namespaceImport) {
+						console.log(
+							`[DEBUG CIRCULAR-IMPORT-FIX] Removing entire import declaration: ${importDecl.getText()}`,
+						)
+						importDecl.remove()
+					} else {
+						// Remove just the default import
+						console.log(
+							`[DEBUG CIRCULAR-IMPORT-FIX] Removing default import '${symbolName}' from: ${importDecl.getText()}`,
+						)
+						importDecl.removeDefaultImport()
+					}
+				}
+
+				// Check namespace import (less common but possible)
+				if (!symbolFound && namespaceImport) {
+					// For namespace imports, we can't remove just one symbol, so we log a warning
+					console.log(
+						`[DEBUG CIRCULAR-IMPORT-FIX] WARNING: Found namespace import '${namespaceImport.getText()}' - cannot selectively remove '${symbolName}'`,
+					)
+					// We could potentially remove the entire namespace import if needed, but that's more risky
+				}
+
+				if (symbolFound) {
+					console.log(
+						`[DEBUG CIRCULAR-IMPORT-FIX] Successfully removed import of '${symbolName}' from target file`,
+					)
+				}
+			}
+		}
+
+		console.log(`[DEBUG CIRCULAR-IMPORT-FIX] Finished checking imports for symbol '${symbolName}'`)
 	}
 
 	/**
@@ -989,8 +1179,11 @@ export class MoveExecutor {
 		sourceFile: SourceFile,
 	): Promise<{ success: boolean; error?: string }> {
 		try {
+			console.log(`[DEBUG REMOVAL DETAIL] Starting removeSymbolFromSourceFile for ${symbol.name}`)
+
 			// Get the current text for comparison after removal
 			const originalText = sourceFile.getFullText()
+			console.log(`[DEBUG REMOVAL DETAIL] Original file length: ${originalText.length} chars`)
 
 			// Store symbol name and node for later verification
 			const symbolName = symbol.name
@@ -1000,6 +1193,7 @@ export class MoveExecutor {
 			console.log(
 				`[DEBUG] Removing node of kind: ${nodeToRemove.getKindName()} from parent ${nodeToRemove.getParent()?.getKindName()}`,
 			)
+			console.log(`[DEBUG REMOVAL DETAIL] Node text to remove: "${nodeText}"`)
 
 			// First attempt: Use ts-morph's structured removal capabilities
 			try {
@@ -1139,8 +1333,18 @@ export class MoveExecutor {
 				}
 
 				// Save and refresh
+				console.log(`[DEBUG REMOVAL DETAIL] Structured removal successful, saving file`)
+				console.log(`[DEBUG REMOVAL DETAIL] Source file path: ${sourceFile.getFilePath()}`)
 				sourceFile.saveSync()
 				sourceFile.refreshFromFileSystemSync()
+
+				// Verify removal worked
+				const newText = sourceFile.getFullText()
+				console.log(`[DEBUG REMOVAL DETAIL] File length after removal: ${newText.length} chars`)
+				console.log(
+					`[DEBUG REMOVAL DETAIL] Symbol still exists: ${sourceFile.getFunction(symbol.name) !== undefined}`,
+				)
+				console.log(`[DEBUG REMOVAL DETAIL] Final source file content: "${newText}"`)
 			} catch (nodeRemovalError) {
 				// refactorLogger.debug(`Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
 
@@ -1291,7 +1495,33 @@ export class MoveExecutor {
 				Object.getOwnPropertyDescriptor(Object.getPrototypeOf(importManager), "updateImportsAfterMove"),
 			)
 
-			await importManager.updateImportsAfterMove(symbol.name, relativeSourcePath, relativeTargetPath)
+			// CRITICAL FIX: Exclude target file from import updates to prevent circular imports
+			console.log(
+				`[DEBUG CIRCULAR-IMPORT-FIX] Before updateImportsAfterMoveVirtualized - target file: ${relativeTargetPath}`,
+			)
+			console.log(`[DEBUG] About to call updateImportsAfterMoveVirtualized with:`, {
+				symbolName: symbol.name,
+				relativeSourcePath,
+				relativeTargetPath,
+			})
+
+			try {
+				console.log(`[CRITICAL DEBUG] Method exists:`, typeof importManager.updateImportsAfterMoveVirtualized)
+				console.log(`[CRITICAL DEBUG] About to call the method...`)
+				await importManager.updateImportsAfterMoveVirtualized(
+					symbol.name,
+					relativeSourcePath,
+					relativeTargetPath,
+				)
+				console.log(`[DEBUG] updateImportsAfterMoveVirtualized completed successfully`)
+			} catch (error) {
+				console.error(`[ERROR] updateImportsAfterMoveVirtualized failed:`, error)
+				throw error
+			}
+
+			console.log(
+				`[DEBUG CIRCULAR-IMPORT-FIX] After updateImportsAfterMoveVirtualized - excluded target file from updates`,
+			)
 			// refactorLogger.debug(`Completed importManager.updateImportsAfterMove`)
 
 			// Get the list of files that were actually updated by ImportManager

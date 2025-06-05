@@ -1,6 +1,7 @@
 import { Project, SourceFile } from "ts-morph"
 import * as path from "path"
 import * as fs from "fs/promises"
+import { existsSync } from "fs"
 import { PathResolver } from "../utils/PathResolver"
 import { FileManager } from "../utils/FileManager"
 
@@ -86,44 +87,58 @@ export class ProjectManager {
 	 */
 	async loadRelevantProjectFiles(sourceFilePath: string): Promise<number> {
 		const startTime = Date.now()
-		// console.log(`[DEBUG PROJECT-MANAGER] 🔄 loadRelevantProjectFiles() called for: ${sourceFilePath}`)
+		console.log(`[DEBUG PROJECT-MANAGER] 🔄 loadRelevantProjectFiles() called for: ${sourceFilePath}`)
 
 		try {
 			// DEBUG: Track file loading
 			const beforeCount = this.project.getSourceFiles().length
-			// console.log(`[DEBUG PROJECT-MANAGER] 📊 Before loading: ${beforeCount} files in project`)
+			console.log(`[DEBUG PROJECT-MANAGER] 📊 Before loading: ${beforeCount} files in project`)
 
 			// Get the directory of the source file
 			const sourceDir = path.dirname(this.pathResolver.resolveAbsolutePath(sourceFilePath))
-			// console.log(`[DEBUG PROJECT-MANAGER] 📁 Source directory: ${sourceDir}`)
+			console.log(`[DEBUG PROJECT-MANAGER] 📁 Source directory: ${sourceDir}`)
 
 			// For test environments, only load the specific directory being tested
 			const isTestEnv = this.pathResolver.isTestEnvironment(sourceFilePath)
-			// console.log(`[DEBUG PROJECT-MANAGER] 🧪 Test environment detected: ${isTestEnv}`)
+			console.log(`[DEBUG PROJECT-MANAGER] 🧪 Test environment detected: ${isTestEnv}`)
 
 			const patterns: string[] = []
 
 			if (isTestEnv) {
 				// In test environment, only load files in the test directory
 				patterns.push(`${sourceDir}/**/*.ts`, `${sourceDir}/**/*.tsx`)
-				// console.log(`[DEBUG PROJECT-MANAGER] 🧪 Using TEST mode - loading only test directory`)
+				console.log(`[DEBUG PROJECT-MANAGER] 🧪 Using TEST mode - loading only test directory`)
 			} else {
 				// In production, load files more selectively to avoid memory issues
 				// Only load files in common source directories, excluding tests and node_modules
 				const commonSourceDirs = ["src", "lib", "app", "components", "utils", "services", "types"]
-				// console.log(`[DEBUG PROJECT-MANAGER] 🏢 Using PROD mode - loading common source directories`)
+				console.log(`[DEBUG PROJECT-MANAGER] 🏢 Using PROD mode - loading common source directories`)
 
 				for (const dir of commonSourceDirs) {
 					const dirPath = this.pathResolver.resolveAbsolutePath(dir)
-					patterns.push(`${dirPath}/**/*.ts`, `${dirPath}/**/*.tsx`)
+					if (existsSync(dirPath)) {
+						patterns.push(`${dirPath}/**/*.ts`, `${dirPath}/**/*.tsx`)
+						console.log(`[DEBUG PROJECT-MANAGER] ✅ Added pattern for existing dir: ${dirPath}`)
+					} else {
+						console.log(`[DEBUG PROJECT-MANAGER] ⏭️ Skipped non-existent dir: ${dirPath}`)
+					}
 				}
 
-				// Also load files in the same directory as the source file
+				// CRITICAL: Always load files in the same directory as the source file
+				console.log(`[DEBUG PROJECT-MANAGER] 📁 Adding source directory pattern: ${sourceDir}`)
 				patterns.push(`${sourceDir}/**/*.ts`, `${sourceDir}/**/*.tsx`)
+
+				// FALLBACK: If no common directories exist, load from project root
+				if (patterns.length === 2) {
+					// Only sourceDir patterns added
+					const projectRoot = this.pathResolver.getProjectRoot()
+					console.log(`[DEBUG PROJECT-MANAGER] 🔄 Fallback: Adding project root pattern: ${projectRoot}`)
+					patterns.push(`${projectRoot}/**/*.ts`, `${projectRoot}/**/*.tsx`)
+				}
 			}
 
-			// console.log(`[DEBUG PROJECT-MANAGER] 📋 Loading patterns (${isTestEnv ? "TEST" : "PROD"} mode):`)
-			// patterns.forEach((pattern, index) => console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`))
+			console.log(`[DEBUG PROJECT-MANAGER] 📋 Loading patterns (${isTestEnv ? "TEST" : "PROD"} mode):`)
+			patterns.forEach((pattern, index) => console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`))
 
 			// Filter patterns to exclude unwanted directories
 			const filteredPatterns = patterns.filter((pattern) => {
@@ -145,9 +160,9 @@ export class ProjectManager {
 				}
 				return path.resolve(this.pathResolver.getProjectRoot(), pattern)
 			})
-			// console.log(`[DEBUG PROJECT-MANAGER] 📋 Final absolute patterns (${absolutePatterns.length} total):`)
+			console.log(`[DEBUG PROJECT-MANAGER] 📋 Final absolute patterns (${absolutePatterns.length} total):`)
 			absolutePatterns.forEach((pattern, index) => {
-				// console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`)
+				console.log(`[DEBUG PROJECT-MANAGER]   ${index + 1}. ${pattern}`)
 			})
 
 			console.log(
@@ -165,19 +180,33 @@ export class ProjectManager {
 				console.log(`[DEBUG PROJECT-MANAGER] ⏭️  Skipping file loading - files already in project`)
 				projectFiles = existingFiles
 			} else {
-				console.log(`[DEBUG PROJECT-MANAGER] 📂 Loading files from disk`)
+				console.log(
+					`[DEBUG PROJECT-MANAGER] 📂 Loading files from disk with ${absolutePatterns.length} patterns`,
+				)
+				console.log(`[DEBUG PROJECT-MANAGER] 📋 Patterns:`, absolutePatterns)
 				projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
+				console.log(`[DEBUG PROJECT-MANAGER] ✅ Loaded ${projectFiles.length} files from disk`)
+
+				// CRITICAL FIX: If no files were loaded by patterns, try direct file loading
+				if (projectFiles.length === 0 && !isTestEnv) {
+					console.log(`[DEBUG PROJECT-MANAGER] 🚨 No files loaded by patterns - trying direct file discovery`)
+					const projectRoot = this.pathResolver.getProjectRoot()
+					const directPattern = `${projectRoot}/*.ts`
+					console.log(`[DEBUG PROJECT-MANAGER] 🔄 Trying direct pattern: ${directPattern}`)
+					projectFiles = this.project.addSourceFilesAtPaths([directPattern])
+					console.log(`[DEBUG PROJECT-MANAGER] 🔄 Direct loading result: ${projectFiles.length} files`)
+				}
 			}
-			// console.log(`[DEBUG PROJECT-MANAGER] ✅ addSourceFilesAtPaths() returned ${projectFiles.length} files`)
+			console.log(`[DEBUG PROJECT-MANAGER] ✅ addSourceFilesAtPaths() returned ${projectFiles.length} files`)
 
 			const afterCount = this.project.getSourceFiles().length
 			const filesAdded = afterCount - beforeCount
 			const duration = Date.now() - startTime
 
-			// console.log(`[DEBUG PROJECT-MANAGER] 📊 Loading summary:`)
-			// console.log(`[DEBUG PROJECT-MANAGER]   - Files added: ${filesAdded}`)
-			// console.log(`[DEBUG PROJECT-MANAGER]   - Total files in project: ${afterCount}`)
-			// console.log(`[DEBUG PROJECT-MANAGER]   - Duration: ${duration}ms`)
+			console.log(`[DEBUG PROJECT-MANAGER] 📊 Loading summary:`)
+			console.log(`[DEBUG PROJECT-MANAGER]   - Files added: ${filesAdded}`)
+			console.log(`[DEBUG PROJECT-MANAGER]   - Total files in project: ${afterCount}`)
+			console.log(`[DEBUG PROJECT-MANAGER]   - Duration: ${duration}ms`)
 
 			if (projectFiles.length > 100) {
 				console.log(

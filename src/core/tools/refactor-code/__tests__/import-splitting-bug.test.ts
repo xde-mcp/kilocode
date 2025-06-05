@@ -1,35 +1,27 @@
-import { RefactorEngine } from "../engine"
 import { RefactorOperation } from "../schema"
+import {
+	createRefactorEngineTestSetup,
+	RefactorEngineTestSetup,
+	createTestFilesWithAutoLoad,
+} from "./utils/standardized-test-setup"
 import * as fs from "fs"
 import * as path from "path"
-import * as os from "os"
-import { createTestDirectory, cleanupTestDirectory } from "./utils/test-directory"
 
 describe("Import Splitting Bug Fix", () => {
-	let tempDir: string
-	let engine: RefactorEngine
+	let setup: RefactorEngineTestSetup
 
-	beforeEach(() => {
-		// Create a temporary directory for test files using standardized prefix
-		tempDir = createTestDirectory("import-splitting")
-		engine = new RefactorEngine({ projectRootPath: tempDir })
+	beforeAll(() => {
+		setup = createRefactorEngineTestSetup()
 	})
 
-	afterEach(() => {
-		// Clean up temporary directory using standardized cleanup
-		cleanupTestDirectory(tempDir)
+	afterAll(() => {
+		setup.cleanup()
 	})
 
 	test("Should properly split imports when moving functions to different files", async () => {
-		// Create source files
-		const utilityFile = path.join(tempDir, "utility.ts")
-		const userServiceFile = path.join(tempDir, "userService.ts")
-		const validationFile = path.join(tempDir, "validation.ts")
-
-		// Create utility.ts with three functions
-		fs.writeFileSync(
-			utilityFile,
-			`
+		// Create test files using standardized setup
+		const files = {
+			"utility.ts": `
 export function formatName(first: string, last: string): string {
   return \`\${first} \${last}\`.trim();
 }
@@ -41,13 +33,8 @@ export function formatEmail(email: string): string {
 export function isValidEmail(email: string): boolean {
   return email.includes('@') && email.includes('.');
 }
-`,
-		)
-
-		// Create userService.ts that imports all three functions
-		fs.writeFileSync(
-			userServiceFile,
-			`
+			`.trim(),
+			"userService.ts": `
 import { formatName, formatEmail, isValidEmail } from './utility';
 
 export class UserService {
@@ -58,14 +45,16 @@ export class UserService {
     return \`\${formatName(firstName, lastName)} - \${formatEmail(email)}\`;
   }
 }
-`,
-		)
+			`.trim(),
+			"validation.ts": `// Validation utilities`,
+		}
 
-		// Create empty validation.ts file
-		fs.writeFileSync(validationFile, `// Validation utilities\n`)
+		// Load files into the RefactorEngine project
+		createTestFilesWithAutoLoad(setup, files)
 
 		console.log("[TEST] Initial userService.ts content:")
-		console.log(fs.readFileSync(userServiceFile, "utf-8"))
+		const initialContent = fs.readFileSync(path.join(setup.projectDir, "userService.ts"), "utf-8")
+		console.log(initialContent)
 
 		// Move isValidEmail from utility.ts to validation.ts
 		const moveOperation: RefactorOperation = {
@@ -79,25 +68,25 @@ export class UserService {
 			targetFilePath: "validation.ts",
 		}
 
-		const result = await engine.executeBatch({ operations: [moveOperation] })
+		const result = await setup.engine.executeBatch({ operations: [moveOperation] })
 		console.log("[TEST] Move operation result:", result)
 
 		// Check the results
-		const updatedUserServiceContent = fs.readFileSync(userServiceFile, "utf-8")
+		const updatedUserServiceContent = fs.readFileSync(path.join(setup.projectDir, "userService.ts"), "utf-8")
 		console.log("[TEST] Updated userService.ts content:")
 		console.log(updatedUserServiceContent)
 
-		const validationContent = fs.readFileSync(validationFile, "utf-8")
+		const validationContent = fs.readFileSync(path.join(setup.projectDir, "validation.ts"), "utf-8")
 		console.log("[TEST] validation.ts content:")
 		console.log(validationContent)
 
-		const utilityContent = fs.readFileSync(utilityFile, "utf-8")
+		const utilityContent = fs.readFileSync(path.join(setup.projectDir, "utility.ts"), "utf-8")
 		console.log("[TEST] Updated utility.ts content:")
 		console.log(utilityContent)
 
 		// Verify that imports were properly split
 		expect(updatedUserServiceContent).toContain("import { formatName, formatEmail } from './utility'")
-		expect(updatedUserServiceContent).toContain('import { isValidEmail } from "./validation"')
+		expect(updatedUserServiceContent).toContain("import { isValidEmail } from './validation'")
 
 		// Verify that isValidEmail was moved to validation.ts
 		expect(validationContent).toContain("export function isValidEmail")

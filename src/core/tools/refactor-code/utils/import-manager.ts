@@ -13,6 +13,7 @@ import {
 } from "ts-morph"
 import * as path from "path"
 import * as fs from "fs"
+import { VirtualImportManager } from "./virtual-import-manager"
 
 export interface ImportUpdate {
 	file: SourceFile
@@ -33,6 +34,7 @@ export class ImportManager {
 	private resolvedPathCache: Map<string, string> = new Map()
 	private symbolExtractor: any // Will be set by setSymbolExtractor
 	private pathResolver: any // Will be set by setPathResolver
+	private virtualImportManager: VirtualImportManager | null = null
 
 	// Enum to distinguish between different import types
 	private ImportType = {
@@ -60,6 +62,8 @@ export class ImportManager {
 	 */
 	public setPathResolver(pathResolver: any): void {
 		this.pathResolver = pathResolver
+		// Initialize VirtualImportManager when PathResolver is available
+		this.virtualImportManager = new VirtualImportManager(pathResolver)
 	}
 
 	/**
@@ -116,7 +120,23 @@ export class ImportManager {
 			const referencingFiles = new Set<SourceFile>()
 
 			// Add files directly importing from the old file
-			importingFiles.forEach((file) => referencingFiles.add(file))
+			// CRITICAL FIX: Exclude target file to prevent circular imports
+			importingFiles.forEach((file) => {
+				const filePath = file.getFilePath()
+				const normalizedFilePath = this.pathResolver.normalizeFilePath(filePath)
+				const normalizedNewFilePath = this.pathResolver.normalizeFilePath(newFilePath)
+
+				// Skip the target file to prevent circular imports
+				if (
+					normalizedFilePath.endsWith(normalizedNewFilePath) ||
+					normalizedNewFilePath.endsWith(normalizedFilePath)
+				) {
+					console.log(`[DEBUG CIRCULAR-IMPORT-FIX] EXCLUDING target file from import updates: ${filePath}`)
+					return
+				}
+
+				referencingFiles.add(file)
+			})
 
 			// Only search for additional references in the same directories as the source and target files
 			const sourceDir = this.pathResolver.getDirectoryPath(oldFilePath)
@@ -244,15 +264,11 @@ export class ImportManager {
 				} else {
 					// For non-barrel files, check if the source file still uses the moved symbol
 					// If so, add an import statement
-					if (this.fileReferencesSymbol(sourceFile, symbolName)) {
-						const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
-						this.addImport(sourceFile, symbolName, newRelativePath)
-						console.log(
-							`[DEBUG] ImportManager: Added import for moved symbol ${symbolName} in ${oldFilePath}`,
-						)
-						this.updatedFiles.add(sourceFile.getFilePath())
-						sourceFile.saveSync()
-					}
+					// CRITICAL FIX: Don't add imports to source file when moving FROM that file
+					// The source file references are expected after moving the symbol out
+					console.log(
+						`[DEBUG] ImportManager: Skipping import addition to source file ${oldFilePath} - symbol was moved FROM this file`,
+					)
 				}
 			} else {
 				console.log(`[ERROR IMPORT-MANAGER] ❌ Source file not found in project: ${oldFilePath}`)
@@ -267,6 +283,110 @@ export class ImportManager {
 			}
 		} catch (error) {
 			console.error(`[ERROR IMPORT-MANAGER] Exception in updateImportsAfterMove:`, error)
+			throw error
+		}
+	}
+
+	/**
+	 * VIRTUALIZED VERSION: Updates imports after moving a symbol using VirtualImportManager
+	 * This approach eliminates complex branching logic and provides cleaner import management
+	 */
+	async updateImportsAfterMoveVirtualized(
+		symbolName: string,
+		oldFilePath: string,
+		newFilePath: string,
+	): Promise<void> {
+		console.log(`[VIRTUAL-IMPORT] ===== updateImportsAfterMoveVirtualized CALLED =====`)
+		console.log(`[VIRTUAL-IMPORT] symbolName: ${symbolName}`)
+		console.log(`[VIRTUAL-IMPORT] oldFilePath: ${oldFilePath}`)
+		console.log(`[VIRTUAL-IMPORT] newFilePath: ${newFilePath}`)
+
+		if (!this.virtualImportManager) {
+			throw new Error("VirtualImportManager not initialized. Call setPathResolver first.")
+		}
+
+		try {
+			this.updatedFiles.clear()
+
+			// Step 1: Find all files that import from the old file
+			const importingFiles = this.findFilesImporting(oldFilePath)
+			console.log(`[VIRTUAL-IMPORT] Found ${importingFiles.length} files importing from ${oldFilePath}`)
+
+			// Step 2: Initialize virtual import state for all affected files
+			const affectedFiles = new Set<SourceFile>()
+
+			// Add importing files
+			importingFiles.forEach((file) => {
+				affectedFiles.add(file)
+				this.virtualImportManager!.initializeFile(file)
+			})
+
+			// Add source file (if it exists and still references the symbol)
+			const sourceFile = this.project.getSourceFile(oldFilePath)
+			if (sourceFile) {
+				affectedFiles.add(sourceFile)
+				this.virtualImportManager!.initializeFile(sourceFile)
+			}
+
+			// Add target file (if it exists)
+			const targetFile = this.project.getSourceFile(newFilePath)
+			if (targetFile) {
+				affectedFiles.add(targetFile)
+				this.virtualImportManager!.initializeFile(targetFile)
+			}
+
+			// Step 3: Calculate relative paths
+			const oldRelativePath = this.pathResolver.standardizePath(oldFilePath)
+			const newRelativePath = this.pathResolver.standardizePath(newFilePath)
+
+			// Step 4: Update virtual import state for each affected file
+			for (const file of affectedFiles) {
+				const filePath = file.getFilePath()
+				const normalizedFilePath = this.pathResolver.normalizeFilePath(filePath)
+
+				// Skip the target file to prevent circular imports
+				if (normalizedFilePath.endsWith(newRelativePath)) {
+					console.log(`[VIRTUAL-IMPORT] Skipping target file to prevent circular imports: ${filePath}`)
+					continue
+				}
+
+				// Calculate relative import paths from this file's perspective
+				const oldModuleSpecifier = this.virtualImportManager!.calculateRelativePath(filePath, oldFilePath)
+				const newModuleSpecifier = this.virtualImportManager!.calculateRelativePath(filePath, newFilePath)
+
+				// Update import path for the moved symbol
+				this.virtualImportManager!.updateImportPath(
+					filePath,
+					symbolName,
+					oldModuleSpecifier,
+					newModuleSpecifier,
+				)
+			}
+
+			// Step 5: Handle source file special case
+			// The source file should NOT import the symbol it just moved out
+			// This fixes the "partial failure state" bug
+			if (sourceFile) {
+				const sourceFilePath = sourceFile.getFilePath()
+				const newModuleSpecifier = this.virtualImportManager!.calculateRelativePath(sourceFilePath, newFilePath)
+
+				// Remove any import of the moved symbol from the source file
+				this.virtualImportManager!.removeNamedImport(sourceFilePath, symbolName, newModuleSpecifier)
+				console.log(`[VIRTUAL-IMPORT] Removed import of ${symbolName} from source file ${sourceFilePath}`)
+			}
+
+			// Step 6: Write all changes back to files atomically
+			const updatedFilePaths = await this.virtualImportManager!.writeBackToFiles()
+
+			// Update our tracking
+			updatedFilePaths.forEach((filePath) => {
+				this.updatedFiles.add(filePath)
+			})
+
+			console.log(`[VIRTUAL-IMPORT] Successfully updated imports in ${updatedFilePaths.length} files`)
+			console.log(`[VIRTUAL-IMPORT] Updated files:`, updatedFilePaths)
+		} catch (error) {
+			console.error(`[VIRTUAL-IMPORT] Exception in updateImportsAfterMoveVirtualized:`, error)
 			throw error
 		}
 	}

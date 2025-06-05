@@ -11,6 +11,7 @@ import { RefactorEngine, RefactorEngineError } from "./refactor-code/engine"
 import { RobustLLMRefactorParser, RefactorParseError } from "./refactor-code/parser"
 import { BatchOperations } from "./refactor-code/schema"
 import { createDiagnostic } from "./refactor-code/utils/file-system"
+import { checkpointSave } from "../checkpoints"
 
 /**
  * Refactor code tool implementation
@@ -216,6 +217,10 @@ export async function refactorCodeTool(
 			return
 		}
 
+		// Create checkpoint before executing batch operations
+		console.log("[REFACTOR] Creating checkpoint before batch operations")
+		await checkpointSave(cline)
+
 		// Execute the batch operations
 		let result
 		try {
@@ -246,11 +251,17 @@ export async function refactorCodeTool(
 			// Handle errors in batch execution
 			const errorMessage = `Batch refactoring failed with error: ${(error as Error).message}`
 			console.error(`[ERROR] ${errorMessage}`)
+			console.log("[REFACTOR] Batch operation failed - checkpoint available for rollback if needed")
 
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("refactor_code", errorMessage)
-			await cline.say("error", errorMessage)
-			pushToolResult(errorMessage)
+			await cline.say(
+				"error",
+				`${errorMessage}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`,
+			)
+			pushToolResult(
+				`${errorMessage}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`,
+			)
 			return
 		}
 
@@ -296,12 +307,18 @@ export async function refactorCodeTool(
 		if (result.success) {
 			cline.consecutiveMistakeCount = 0
 			cline.didEditFile = true
+
+			// Create checkpoint after successful completion
+			console.log("[REFACTOR] Creating checkpoint after successful batch operations")
+			await checkpointSave(cline)
+
 			pushToolResult(`Batch refactoring completed successfully:\n\n${finalResult}`)
 		} else {
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("refactor_code", result.error || finalResult)
-			await cline.say("error", `Batch refactoring failed:\n\n${result.error || finalResult}`)
-			pushToolResult(`Batch refactoring failed:\n\n${result.error || finalResult}`)
+			const failureMessage = `Batch refactoring failed:\n\n${result.error || finalResult}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`
+			await cline.say("error", failureMessage)
+			pushToolResult(failureMessage)
 		}
 	} catch (error) {
 		await handleError("refactoring code", error)

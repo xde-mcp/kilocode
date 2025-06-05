@@ -105,7 +105,7 @@ export class MoveOrchestrator {
 	 */
 	async executeMoveOperation(
 		operation: MoveOperation,
-		options: { copyOnly?: boolean } = {},
+		options: { copyOnly?: boolean; batchContext?: { movedSymbols: Map<string, string[]> } } = {},
 	): Promise<OperationResult> {
 		// Start performance tracking
 		const opId = `move-${operation.selector.name}-${Date.now()}`
@@ -127,7 +127,7 @@ export class MoveOrchestrator {
 
 			// Step 1: Validate the operation
 			const validationResult = await PerformanceTracker.measureStep(opId, "validation", async () => {
-				return this.validator.validate(operation)
+				return this.validator.validate(operation, options.batchContext)
 			})
 
 			if (!validationResult.success) {

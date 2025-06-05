@@ -83,7 +83,10 @@ export class MoveValidator {
 	 * @param operation - The move operation to validate
 	 * @returns A validation result object with detailed success/error information
 	 */
-	async validate(operation: MoveOperation): Promise<ValidationResult> {
+	async validate(
+		operation: MoveOperation,
+		batchContext?: { movedSymbols: Map<string, string[]> },
+	): Promise<ValidationResult> {
 		// Step 1: Validate operation parameters
 		const paramValidation = this.validateParameters(operation)
 		if (!paramValidation.success) {
@@ -107,7 +110,7 @@ export class MoveValidator {
 		const symbol = symbolValidation.symbol!
 
 		// Step 4: Validate target location
-		const targetValidation = await this.validateTargetLocation(operation)
+		const targetValidation = await this.validateTargetLocation(operation, batchContext)
 		if (!targetValidation.success) {
 			return targetValidation
 		}
@@ -625,7 +628,10 @@ export class MoveValidator {
 	 * @param operation - The move operation with target file path
 	 * @returns A validation result
 	 */
-	private async validateTargetLocation(operation: MoveOperation): Promise<ValidationResult> {
+	private async validateTargetLocation(
+		operation: MoveOperation,
+		batchContext?: { movedSymbols: Map<string, string[]> },
+	): Promise<ValidationResult> {
 		const warnings: string[] = []
 
 		// Check if we're in a test environment
@@ -661,6 +667,7 @@ export class MoveValidator {
 					potentialTargetFile,
 					operation.selector.name,
 					operation.selector.kind || "function",
+					batchContext,
 				)
 
 				if (!namingConflictResult.success) {
@@ -733,6 +740,7 @@ export class MoveValidator {
 					potentialTargetFile,
 					operation.selector.name,
 					operation.selector.kind || "function",
+					batchContext,
 				)
 
 				if (!namingConflictResult.success) {
@@ -768,7 +776,12 @@ export class MoveValidator {
 	 * @param symbolKind - The kind of the symbol being moved
 	 * @returns A validation result indicating success or failure
 	 */
-	private checkForNamingConflicts(targetFile: SourceFile, symbolName: string, symbolKind: string): ValidationResult {
+	private checkForNamingConflicts(
+		targetFile: SourceFile,
+		symbolName: string,
+		symbolKind: string,
+		batchContext?: { movedSymbols: Map<string, string[]> },
+	): ValidationResult {
 		const warnings: string[] = []
 		const targetFilePath = targetFile.getFilePath()
 		let namingConflictFound = false
@@ -802,6 +815,41 @@ export class MoveValidator {
 				namingConflictFound = true
 				break
 			}
+		}
+
+		// Check if this is a batch context conflict (symbol moved by previous operation in same batch)
+		console.log(
+			`[PRODUCTION DEBUG] Checking batch context for naming conflict. Found conflict: ${namingConflictFound}`,
+		)
+		console.log(`[PRODUCTION DEBUG] Target file: ${targetFilePath}`)
+		console.log(`[PRODUCTION DEBUG] Symbol name: ${symbolName}`)
+		console.log(`[PRODUCTION DEBUG] Batch context exists: ${!!batchContext?.movedSymbols}`)
+
+		if (namingConflictFound && batchContext?.movedSymbols) {
+			const targetFileSymbols = batchContext.movedSymbols.get(targetFilePath)
+			console.log(`[PRODUCTION DEBUG] Symbols moved to target file in batch:`, targetFileSymbols)
+			console.log(
+				`[PRODUCTION DEBUG] All batch context entries:`,
+				Array.from(batchContext.movedSymbols.entries()),
+			)
+
+			if (targetFileSymbols?.includes(symbolName)) {
+				// This symbol was moved to this file by a previous operation in the current batch
+				// This is not a real conflict, so we can proceed
+				console.log(`[PRODUCTION DEBUG] ✅ Batch context resolved conflict for '${symbolName}' - allowing move`)
+				namingConflictFound = false
+				warnings.push(
+					`Symbol '${symbolName}' found in target file but was moved there by previous batch operation - allowing move`,
+				)
+			} else {
+				console.log(
+					`[PRODUCTION DEBUG] ❌ Symbol '${symbolName}' not found in batch context - conflict remains`,
+				)
+			}
+		} else if (namingConflictFound) {
+			console.log(`[PRODUCTION DEBUG] ❌ Naming conflict found but no batch context available to resolve it`)
+		} else {
+			console.log(`[PRODUCTION DEBUG] ✅ No naming conflict detected`)
 		}
 
 		// If a naming conflict was found, return failure immediately

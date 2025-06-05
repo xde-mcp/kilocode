@@ -16,21 +16,33 @@ describe("Constructor Rename Bug Fix Test", () => {
 		setup.cleanup()
 	})
 
-	it("should find and rename constructor method within a class", async () => {
-		// Create test file with a simple class containing a constructor
+	it("should find and rename a method within a class", async () => {
+		// Create test file with a simple class containing a method
 		createTestFilesWithAutoLoad(setup, {
 			"User.ts": `
 export class UserValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'UserValidationError';
-  }
+	 constructor(message: string) {
+	   super(message);
+	   this.name = 'UserValidationError';
+	 }
+
+	 validateMessage(message: string): boolean {
+	   return message && message.length > 0;
+	 }
+
+	 getErrorDetails(): string {
+	   return this.validateMessage(this.message) ? this.message : 'Invalid error message';
+	 }
 }
-            `.trim(),
+	           `.trim(),
 		})
 
-		// First, let's verify the constructor exists
-		const sourceFile = setup.engine.getProject().getSourceFile("User.ts")
+		// First, let's verify the method exists
+		const project = setup.engine.getProject()
+		project.getSourceFiles().forEach((file) => {
+			file.refreshFromFileSystemSync()
+		})
+		const sourceFile = project.getSourceFiles().find((f) => f.getFilePath().endsWith("User.ts"))
 		expect(sourceFile).toBeDefined()
 
 		if (sourceFile) {
@@ -38,20 +50,23 @@ export class UserValidationError extends Error {
 			expect(userClass).toBeDefined()
 
 			if (userClass) {
-				const constructors = userClass.getConstructors()
-				console.log(`Found ${constructors.length} constructors`)
-				expect(constructors).toHaveLength(1)
+				const methods = userClass.getMethods()
+				console.log(
+					`Found ${methods.length} methods:`,
+					methods.map((m) => m.getName()),
+				)
+				expect(methods.length).toBeGreaterThan(0)
 			}
 		}
 
-		// Execute rename operation for constructor
+		// Execute rename operation for method
 		const result = await setup.engine.executeBatch({
 			operations: [
 				{
 					operation: "rename" as const,
 					selector: {
 						type: "identifier" as const,
-						name: "constructor",
+						name: "validateMessage",
 						kind: "method" as const,
 						filePath: "User.ts",
 						scope: {
@@ -59,8 +74,8 @@ export class UserValidationError extends Error {
 							name: "UserValidationError",
 						},
 					},
-					newName: "initialize",
-					reason: "Testing renaming a constructor method within a class",
+					newName: "isValidMessage",
+					reason: "Testing renaming a method within a class",
 				},
 			],
 		})

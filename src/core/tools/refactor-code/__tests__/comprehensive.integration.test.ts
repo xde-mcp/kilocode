@@ -318,7 +318,7 @@ export class UserService {
 
 		// Check if the import was properly split and added
 		expect(userServiceContent).toContain('import { formatName, formatEmail } from "../utils/utility"')
-		expect(userServiceContent).toContain('import { isValidEmail } from "../utils/validation"')
+		expect(userServiceContent).toContain("import { isValidEmail } from '../utils/validation'")
 	})
 
 	/**
@@ -424,10 +424,10 @@ export class UserService {
 		console.log("[DEBUG BATCH TEST] userService.ts content after move:")
 		console.log(userServiceContent)
 
-		// Check if import was updated
+		// Check if import was updated (ts-morph uses single quotes)
 		const hasUpdatedImport = fileContains(
 			testFilePaths.userService,
-			'import { formatName } from "../utils/formatting"',
+			"import { formatName } from '../utils/formatting'",
 		)
 		console.log("[DEBUG BATCH TEST] Has updated import:", hasUpdatedImport)
 
