@@ -933,7 +933,7 @@ export const ChatRowContent = ({
 							{message.images && message.images.length > 0 && (
 								<Thumbnails
 									images={message.images}
-									files={message.files}
+									files={message.files ?? []}
 									style={{ marginTop: "8px" }}
 								/>
 							)}

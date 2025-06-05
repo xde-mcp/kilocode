@@ -736,16 +736,20 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							handleChatReset()
 							break
 						case "sendMessage":
-							handleSendMessage(message.text ?? "", message.images ?? [], message.files ?? [])
+							handleSendMessage(message.text ?? "", message.images ?? [], message.filePaths ?? [])
 							break
 						case "setChatBoxMessage":
-							handleSetChatBoxMessage(message.text ?? "", message.images ?? [], message.files ?? [])
+							handleSetChatBoxMessage(message.text ?? "", message.images ?? [], message.filePaths ?? [])
 							break
 						case "primaryButtonClick":
-							handlePrimaryButtonClick(message.text ?? "", message.images ?? [], message.files ?? [])
+							handlePrimaryButtonClick(message.text ?? "", message.images ?? [], message.filePaths ?? [])
 							break
 						case "secondaryButtonClick":
-							handleSecondaryButtonClick(message.text ?? "", message.images ?? [], message.files ?? [])
+							handleSecondaryButtonClick(
+								message.text ?? "",
+								message.images ?? [],
+								message.filePaths ?? [],
+							)
 							break
 					}
 					break
