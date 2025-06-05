@@ -276,6 +276,10 @@ export async function createUserWithProfile(email: string, displayName: string):
 
 		// Target file for all moves
 		targetFile = path.join(targetDir, "moved.ts")
+		// Ensure the target file is completely clean for each test
+		if (fs.existsSync(targetFile)) {
+			fs.unlinkSync(targetFile)
+		}
 		fs.writeFileSync(
 			targetFile,
 			`// Target file for moving symbols
@@ -297,6 +301,19 @@ export async function createUserWithProfile(email: string, displayName: string):
 	})
 
 	afterEach(() => {
+		// Clean up project state
+		if (project) {
+			// Remove all source files from the project to prevent state leakage
+			const sourceFiles = project.getSourceFiles()
+			sourceFiles.forEach((file) => {
+				try {
+					project.removeSourceFile(file)
+				} catch (error) {
+					// Ignore errors during cleanup
+				}
+			})
+		}
+
 		// Clean up temp directory
 		if (fs.existsSync(tempDir)) {
 			fs.rmSync(tempDir, { recursive: true, force: true })
@@ -347,7 +364,7 @@ export async function createUserWithProfile(email: string, displayName: string):
 
 		// TypeScript imports don't include .ts extension
 		const pathWithoutExtension = expectedPath.replace(/\.ts$/, "")
-		expect(userServiceContent.includes(`from "${pathWithoutExtension}"`)).toBe(true)
+		expect(userServiceContent.includes(`from '${pathWithoutExtension}'`)).toBe(true)
 	})
 
 	test("should handle namespace imports correctly when moving symbols", async () => {
@@ -396,9 +413,9 @@ export async function createUserWithProfile(email: string, displayName: string):
 
 		const hasDirectImport =
 			userServiceContent.includes(`import { formatName }`) &&
-			userServiceContent.includes(`from "${expectedPath}"`)
+			userServiceContent.includes(`from '${expectedPath}'`)
 		const hasNamespaceImportUpdate =
-			userServiceContent.includes(`import * as Helpers`) && userServiceContent.includes(`from "${expectedPath}"`)
+			userServiceContent.includes(`import * as Helpers`) && userServiceContent.includes(`from '${expectedPath}'`)
 
 		// One of these approaches should be used - either direct import or namespace update
 		expect(hasDirectImport || hasNamespaceImportUpdate).toBe(true)
@@ -544,7 +561,7 @@ export async function createUserWithProfile(email: string, displayName: string):
 		// TypeScript imports don't include .ts extension
 		const pathWithoutExtension = relativePath.replace(/\.ts$/, "")
 		const expectedPath = pathWithoutExtension.startsWith(".") ? pathWithoutExtension : "./" + pathWithoutExtension
-		expect(profileContent.includes(`import { User } from "${expectedPath}"`)).toBe(true)
+		expect(profileContent.includes(`import { User } from '${expectedPath}'`)).toBe(true)
 	})
 
 	test("should handle relative path adjustments correctly when moving between directories", async () => {

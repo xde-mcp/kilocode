@@ -11,7 +11,7 @@ import { RefactorEngine, RefactorEngineError } from "./refactor-code/engine"
 import { RobustLLMRefactorParser, RefactorParseError } from "./refactor-code/parser"
 import { BatchOperations } from "./refactor-code/schema"
 import { createDiagnostic } from "./refactor-code/utils/file-system"
-import { checkpointSave } from "../checkpoints"
+import { checkpointSave, checkpointRestore } from "../checkpoints"
 
 /**
  * Refactor code tool implementation
@@ -202,7 +202,7 @@ export async function refactorCodeTool(
 		}
 
 		// Add note about validation and rollback behavior
-		operationDescription += `\n${operations.options?.stopOnError ? "NOTE: If any operation fails, the entire batch will be rolled back." : "NOTE: Operations will continue executing even if some fail."}`
+		operationDescription += `\n${operations.options?.stopOnError ? "NOTE: If any operation fails, the entire batch will be automatically rolled back to preserve file integrity." : "NOTE: Operations will continue executing even if some fail."}`
 		operationDescription += `\nAll imports and references will be automatically updated.`
 
 		// Ask for approval before performing refactoring
@@ -219,7 +219,8 @@ export async function refactorCodeTool(
 
 		// Create checkpoint before executing batch operations
 		console.log("[REFACTOR] Creating checkpoint before batch operations")
-		await checkpointSave(cline)
+		const checkpointTimestamp = Date.now()
+		const checkpointResult = await checkpointSave(cline)
 
 		// Execute the batch operations
 		let result
@@ -251,17 +252,34 @@ export async function refactorCodeTool(
 			// Handle errors in batch execution
 			const errorMessage = `Batch refactoring failed with error: ${(error as Error).message}`
 			console.error(`[ERROR] ${errorMessage}`)
-			console.log("[REFACTOR] Batch operation failed - checkpoint available for rollback if needed")
+			console.log("[REFACTOR] Batch operation failed - automatically restoring files from checkpoint")
+
+			// Automatically restore from checkpoint if available
+			if (checkpointResult && cline.enableCheckpoints) {
+				try {
+					// Get the most recent checkpoint (the one we just created)
+					const latestMessage = cline.clineMessages[cline.clineMessages.length - 1]
+					if (latestMessage && latestMessage.ts && latestMessage.ts >= checkpointTimestamp) {
+						await checkpointRestore(cline, {
+							ts: latestMessage.ts,
+							commitHash: latestMessage.ts.toString(), // Use timestamp as commit hash for simplicity
+							mode: "restore",
+						})
+						console.log("[REFACTOR] Files successfully restored to pre-operation state")
+					}
+				} catch (restoreError) {
+					console.error("[REFACTOR] Failed to restore checkpoint:", restoreError)
+					// Continue with error reporting even if restore fails
+				}
+			}
 
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("refactor_code", errorMessage)
 			await cline.say(
 				"error",
-				`${errorMessage}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`,
+				`${errorMessage}\n\nBatch operation aborted. Your files remain in their original state.`,
 			)
-			pushToolResult(
-				`${errorMessage}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`,
-			)
+			pushToolResult(`${errorMessage}\n\nBatch operation aborted. Your files remain in their original state.`)
 			return
 		}
 
@@ -314,9 +332,31 @@ export async function refactorCodeTool(
 
 			pushToolResult(`Batch refactoring completed successfully:\n\n${finalResult}`)
 		} else {
+			// Batch operation failed - automatically restore from checkpoint
+			console.log("[REFACTOR] Batch operation failed - automatically restoring files from checkpoint")
+
+			// Automatically restore from checkpoint if available
+			if (checkpointResult && cline.enableCheckpoints) {
+				try {
+					// Get the most recent checkpoint (the one we just created)
+					const latestMessage = cline.clineMessages[cline.clineMessages.length - 1]
+					if (latestMessage && latestMessage.ts && latestMessage.ts >= checkpointTimestamp) {
+						await checkpointRestore(cline, {
+							ts: latestMessage.ts,
+							commitHash: latestMessage.ts.toString(), // Use timestamp as commit hash for simplicity
+							mode: "restore",
+						})
+						console.log("[REFACTOR] Files successfully restored to pre-operation state")
+					}
+				} catch (restoreError) {
+					console.error("[REFACTOR] Failed to restore checkpoint:", restoreError)
+					// Continue with error reporting even if restore fails
+				}
+			}
+
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("refactor_code", result.error || finalResult)
-			const failureMessage = `Batch refactoring failed:\n\n${result.error || finalResult}\n\nNote: A checkpoint was created before the operation. You can restore the previous state if needed.`
+			const failureMessage = `Batch refactoring failed:\n\n${result.error || finalResult}\n\nBatch operation aborted. Your files remain in their original state.`
 			await cline.say("error", failureMessage)
 			pushToolResult(failureMessage)
 		}

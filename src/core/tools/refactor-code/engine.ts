@@ -182,8 +182,6 @@ export class RefactorEngine {
 			stopOnError: options.stopOnError !== undefined ? options.stopOnError : true,
 		}
 
-		// Removed excessive initialization logging
-
 		// Create a project with explicit compiler options
 		refactorLogger.info(`Creating ts-morph Project with root: ${this.options.projectRootPath}`)
 
@@ -191,8 +189,6 @@ export class RefactorEngine {
 		const isTestEnvironment = this.isTestEnvironment()
 		refactorLogger.info(`Test environment detected: ${isTestEnvironment}`)
 
-		// CRITICAL FIX: In test environments, create a completely isolated project
-		// that cannot discover files outside the test directory
 		// Base compiler options
 		const baseCompilerOptions = {
 			rootDir: this.options.projectRootPath,
@@ -231,9 +227,6 @@ export class RefactorEngine {
 
 		// In test environments, use a custom file system that restricts access
 		if (isTestEnvironment) {
-			console.log(
-				`[DEBUG ENGINE] 🔒 Creating isolated test project - restricting file access to: ${this.options.projectRootPath}`,
-			)
 			// Don't set any additional paths or file discovery mechanisms
 			projectOptions.useInMemoryFileSystem = false
 		}
@@ -241,23 +234,17 @@ export class RefactorEngine {
 		this.project = new Project(projectOptions)
 
 		const initialFileCount = this.project.getSourceFiles().length
-		refactorLogger.debug(`✅ ts-morph Project created with ${initialFileCount} initial files`)
+		refactorLogger.debug(`ts-morph Project created with ${initialFileCount} initial files`)
 
-		// COMPREHENSIVE LOGGING: Show what files were discovered
+		// Log discovered files in production for debugging
 		if (!isTestEnvironment) {
 			const discoveredFiles = this.project.getSourceFiles()
-			refactorLogger.debug(`📁 Discovered ${discoveredFiles.length} TypeScript files:`)
-			discoveredFiles.forEach((file, index) => {
-				const relativePath = path.relative(this.options.projectRootPath, file.getFilePath())
-				refactorLogger.debug(`  ${index + 1}. ${relativePath}`)
-			})
-
 			if (discoveredFiles.length === 0) {
-				refactorLogger.debug(`⚠️  WARNING: No TypeScript files discovered automatically!`)
-				refactorLogger.debug(`🔍 Project root: ${this.options.projectRootPath}`)
-				console.log(
-					`[DEBUG ENGINE] 🔍 tsconfig.json exists: ${fs.existsSync(path.join(this.options.projectRootPath, "tsconfig.json"))}`,
+				refactorLogger.warn(
+					`No TypeScript files discovered automatically in project root: ${this.options.projectRootPath}`,
 				)
+			} else {
+				refactorLogger.debug(`Discovered ${discoveredFiles.length} TypeScript files`)
 			}
 		}
 
@@ -270,7 +257,7 @@ export class RefactorEngine {
 
 		// Change the working directory for ts-morph operations to the project root
 		// This ensures all relative paths are resolved correctly
-		refactorLogger.debug(`📁 Setting ts-morph working directory to: ${this.options.projectRootPath}`)
+		refactorLogger.debug(`Setting ts-morph working directory to: ${this.options.projectRootPath}`)
 
 		// Initialize parser
 		this.parser = new RobustLLMRefactorParser()
@@ -337,8 +324,6 @@ export class RefactorEngine {
 		operation: RefactorOperation,
 		batchContext?: { movedSymbols: Map<string, string[]> },
 	): Promise<OperationResult> {
-		// Removed excessive operation execution logging
-
 		// Log the operation details
 		if ("filePath" in operation.selector) {
 			refactorLogger.debug(`Operation on file: ${operation.selector.filePath}`)
@@ -391,27 +376,13 @@ export class RefactorEngine {
 
 			switch (operation.operation) {
 				case "rename":
-					console.log(
-						`[DEBUG] Executing rename operation for ${(operation as RenameOperation).selector.name} -> ${(operation as RenameOperation).newName}`,
-					)
 					result = await this.executeRenameOperation(operation as RenameOperation)
 					break
 				case "move":
-					console.log(
-						`[DEBUG] Executing move operation from ${(operation as MoveOperation).selector.filePath} -> ${(operation as MoveOperation).targetFilePath}`,
-					)
 					result = await this.executeMoveOperation(operation as MoveOperation, batchContext)
 					break
 				case "remove":
-					console.log(
-						`[DEBUG] Executing remove operation for ${(operation as RemoveOperation).selector.name}`,
-					)
-					refactorLogger.debug(`About to execute remove operation`)
 					result = await this.executeRemoveOperation(operation as RemoveOperation)
-					console.log(`[DEBUG ENGINE] Remove operation returned:`, {
-						success: result.success,
-						error: result.error,
-					})
 					break
 				default:
 					throw new RefactorEngineError(
@@ -422,7 +393,6 @@ export class RefactorEngine {
 
 			// Log affected files
 			const affectedFiles = result.affectedFiles || []
-			// Removed excessive affected files logging
 
 			// Save all affected files to disk
 			refactorLogger.debug(`About to save ${affectedFiles.length} affected files`)
@@ -464,9 +434,6 @@ export class RefactorEngine {
 					await this.diagnose(filePath, `After ${operation.operation} operation`)
 				}
 			}
-
-			// Pass through the success status from the operation implementation
-			// Removed excessive result logging
 
 			// Return the operation result directly without verification
 			// Rely on operation-level error handling for accuracy

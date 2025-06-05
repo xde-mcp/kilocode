@@ -156,8 +156,8 @@ export function createTestFilesWithAutoLoad(
 	if (tsFiles.length > 0) {
 		console.log(`[DEBUG SETUP] Loading ${tsFiles.length} TypeScript files into RefactorEngine project`)
 
-		// Use the engine's project manager to load files
-		const project = (setup.engine as any).project // Access internal project
+		// Use the engine's public getProject() method to access the ts-morph project
+		const project = setup.engine.getProject()
 		if (project && project.addSourceFilesAtPaths) {
 			project.addSourceFilesAtPaths(tsFiles)
 			console.log(`[DEBUG SETUP] Successfully loaded ${tsFiles.length} files into ts-morph project`)

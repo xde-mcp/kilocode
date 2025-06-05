@@ -424,7 +424,7 @@ export class UserService {
 		console.log("[DEBUG BATCH TEST] userService.ts content after move:")
 		console.log(userServiceContent)
 
-		// Check if import was updated (ts-morph uses single quotes)
+		// Check if import was updated (VirtualImportManager uses single quotes)
 		const hasUpdatedImport = fileContains(
 			testFilePaths.userService,
 			"import { formatName } from '../utils/formatting'",

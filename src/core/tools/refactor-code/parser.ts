@@ -33,7 +33,6 @@ export class RobustLLMRefactorParser {
 			}
 		} catch (e) {
 			// Continue with pattern matching if direct parsing fails
-			console.log("Direct JSON parsing failed, continuing with pattern matching")
 		}
 
 		// Second attempt: clean and try again before pattern matching
@@ -64,8 +63,6 @@ export class RobustLLMRefactorParser {
 
 			const matches = llmResponse.match(pattern)
 			if (matches && matches.length > 0) {
-				console.log(`Found matches with pattern ${patternName}`)
-
 				// Use the first capture group if available, otherwise use the full match
 				for (let i = 0; i < matches.length; i++) {
 					const matchContent = matches[i].includes("operation") ? matches[i] : matches[1] || matches[0]
@@ -73,7 +70,6 @@ export class RobustLLMRefactorParser {
 					// Verify it contains operation-related content
 					if (matchContent.includes("operation") && this.isValidJson(matchContent)) {
 						jsonContent = matchContent
-						console.log(`Found valid JSON in match ${i + 1}`)
 						break
 					}
 					allMatches.push(matchContent)

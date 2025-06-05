@@ -202,7 +202,7 @@ describe("ImportManager", () => {
 
 			// Check if importing file's imports were updated
 			const importingFileText = importingFile.getText()
-			expect(importingFileText).toContain('import { utilFunction } from "./target"')
+			expect(importingFileText).toContain("import { utilFunction } from './target'")
 			expect(importingFileText).toContain('import { UtilClass, CONSTANT, UtilType } from "./source"')
 
 			// Check if re-exporting file's exports were updated

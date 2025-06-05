@@ -165,14 +165,14 @@ import { processData as process, validateInput } from './utils'
 import * as Utils from './utils'
 
 export function handleData(data: string[]): string[] {
-    if (Utils.validateInput(data[0])) {
-        return process(data)
-    }
-    return []
+			 if (Utils.validateInput(data[0])) {
+			     return process(data)
+			 }
+			 return []
 }
 
 export function processItems(items: string[]): string[] {
-    return processData(items)
+			 return Utils.processData(items)
 }
 `,
 		})
@@ -207,7 +207,7 @@ export function processItems(items: string[]): string[] {
 		expect(complexImports).not.toContain("processData as process")
 
 		// Verify namespace access was updated
-		expect(complexImports).toContain("return transformData(items)")
-		expect(complexImports).not.toContain("return processData(items)")
+		expect(complexImports).toContain("return Utils.transformData(items)")
+		expect(complexImports).not.toContain("return Utils.processData(items)")
 	})
 })

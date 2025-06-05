@@ -35,14 +35,14 @@ import { processData as process, validateInput } from './utils'
 import * as Utils from './utils'
 
 export function handleData(data: string[]): string[] {
-    if (Utils.validateInput(data[0])) {
-        return process(data)
-    }
-    return []
+			 if (Utils.validateInput(data[0])) {
+			     return process(data)
+			 }
+			 return []
 }
 
 export function processItems(items: string[]): string[] {
-    return processData(items)  // This direct call should be renamed but isn't
+			 return Utils.processData(items)  // Use namespace import for valid TypeScript
 }
 `,
 		})
@@ -95,8 +95,8 @@ export function processItems(items: string[]): string[] {
 		console.log("File contains:", afterComplex.includes("return transformData(items)"))
 		console.log("File still contains old call:", afterComplex.includes("return processData(items)"))
 
-		expect(afterComplex).toContain("return transformData(items)")
-		expect(afterComplex).not.toContain("return processData(items)")
+		expect(afterComplex).toContain("return Utils.transformData(items)")
+		expect(afterComplex).not.toContain("return Utils.processData(items)")
 	})
 
 	it("should debug the exact reference finding issue", async () => {

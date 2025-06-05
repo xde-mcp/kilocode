@@ -63,7 +63,7 @@ export class ImportManager {
 	public setPathResolver(pathResolver: any): void {
 		this.pathResolver = pathResolver
 		// Initialize VirtualImportManager when PathResolver is available
-		this.virtualImportManager = new VirtualImportManager(pathResolver)
+		this.virtualImportManager = new VirtualImportManager(pathResolver, "single")
 	}
 
 	/**
@@ -77,230 +77,15 @@ export class ImportManager {
 	}
 
 	/**
-	 * Updates all imports after a symbol is moved to a new file
-	 */
-	async updateImportsAfterMove(symbolName: string, oldFilePath: string, newFilePath: string): Promise<void> {
-		console.log(`[CRITICAL DEBUG] ===== updateImportsAfterMove CALLED =====`)
-		console.log(`[CRITICAL DEBUG] symbolName: ${symbolName}`)
-		console.log(`[CRITICAL DEBUG] oldFilePath: ${oldFilePath}`)
-		console.log(`[CRITICAL DEBUG] newFilePath: ${newFilePath}`)
-		// console.log(`[DEBUG IMPORT-MANAGER] 🚀🚀🚀 METHOD ENTRY - updateImportsAfterMove called`)
-		// console.log(`[DEBUG IMPORT-MANAGER] 🚀🚀🚀 Parameters: ${symbolName}, ${oldFilePath}, ${newFilePath}`)
-		try {
-			// console.log(`[DEBUG IMPORT-MANAGER] 🚀 updateImportsAfterMove called:`)
-			// console.log(`[DEBUG IMPORT-MANAGER]   - symbolName: ${symbolName}`)
-			// console.log(`[DEBUG IMPORT-MANAGER]   - oldFilePath: ${oldFilePath}`)
-			// console.log(`[DEBUG IMPORT-MANAGER]   - newFilePath: ${newFilePath}`)
-
-			this.updatedFiles.clear()
-
-			// Find files that import from the old file - these are the most important to update
-			// console.log(`[DEBUG IMPORT-MANAGER] 🚀 About to call findFilesImporting for: ${oldFilePath}`)
-			let importingFiles: SourceFile[] = []
-			try {
-				importingFiles = this.findFilesImporting(oldFilePath)
-				// console.log(`[DEBUG IMPORT-MANAGER] ✅ findFilesImporting completed successfully`)
-			} catch (error) {
-				// console.log(`[DEBUG IMPORT-MANAGER] ❌ findFilesImporting threw an error:`, error)
-				importingFiles = []
-			}
-			// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${importingFiles.length} files importing from ${oldFilePath}`)
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 📋 Importing files list:`,
-				importingFiles.map((f) => f.getFilePath()),
-			)
-
-			// Also find files that re-export from the old file
-			const reExportingFiles = this.findFilesReExporting(oldFilePath)
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 📊 Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`,
-			)
-			// Focus only on files that directly import from the source file
-			// This is much more efficient than searching all files in the project
-			const referencingFiles = new Set<SourceFile>()
-
-			// Add files directly importing from the old file
-			// CRITICAL FIX: Exclude target file to prevent circular imports
-			importingFiles.forEach((file) => {
-				const filePath = file.getFilePath()
-				const normalizedFilePath = this.pathResolver.normalizeFilePath(filePath)
-				const normalizedNewFilePath = this.pathResolver.normalizeFilePath(newFilePath)
-
-				// Skip the target file to prevent circular imports
-				if (
-					normalizedFilePath.endsWith(normalizedNewFilePath) ||
-					normalizedNewFilePath.endsWith(normalizedFilePath)
-				) {
-					console.log(`[DEBUG CIRCULAR-IMPORT-FIX] EXCLUDING target file from import updates: ${filePath}`)
-					return
-				}
-
-				referencingFiles.add(file)
-			})
-
-			// Only search for additional references in the same directories as the source and target files
-			const sourceDir = this.pathResolver.getDirectoryPath(oldFilePath)
-			const targetDir = this.pathResolver.getDirectoryPath(newFilePath)
-			// PERFORMANCE FIX: Use targeted file discovery instead of scanning all project files
-			const nearbyFiles: SourceFile[] = []
-
-			// Get files from source directory
-			const sourceFiles = this.findFilesInSameDirectoryTree(oldFilePath)
-			// Get files from target directory
-			const targetFiles = this.findFilesInSameDirectoryTree(newFilePath)
-
-			// Combine and filter
-			const allNearbyFiles = [...sourceFiles, ...targetFiles]
-			for (const file of allNearbyFiles) {
-				const filePath = file.getFilePath()
-
-				// Skip if we're already going to process this file
-				if (referencingFiles.has(file)) continue
-
-				// Skip the old and new files
-				if (filePath === oldFilePath || filePath === newFilePath) continue
-
-				// Add to nearby files
-				nearbyFiles.push(file)
-			}
-
-			// Check these nearby files for references to the symbol
-			for (const file of nearbyFiles) {
-				// Check if this file contains any references to the symbol
-				const fileText = file.getFullText()
-
-				// Simple text search as a first pass - we'll verify the imports later
-				if (fileText.includes(symbolName)) {
-					// Skip the target file itself - we don't want to update imports in the file we just moved the symbol to
-					const absoluteNewPath = this.pathResolver.resolveAbsolutePath(newFilePath)
-					const absoluteFilePath = file.getFilePath() // ts-morph always returns absolute paths
-
-					if (absoluteFilePath === absoluteNewPath) {
-						// console.log(`[DEBUG] Skipping target file itself: ${file.getFilePath()}`)
-						continue
-					}
-
-					// Look for identifiers that match our symbol
-					const identifiers = file
-						.getDescendantsOfKind(SyntaxKind.Identifier)
-						.filter((id) => id.getText() === symbolName)
-
-					if (identifiers.length > 0) {
-						referencingFiles.add(file)
-						// console.log(`[DEBUG] Found additional file referencing ${symbolName}: ${file.getFilePath()}`)
-					}
-				}
-			}
-
-			// Update imports in all referencing files
-			for (const file of referencingFiles) {
-				await this.updateImportPath(file, symbolName, oldFilePath, newFilePath)
-				this.updatedFiles.add(file.getFilePath())
-				// Save changes to disk
-				file.saveSync()
-			}
-
-			// Update re-exports as well
-			// We already got the re-exporting files earlier, but we need to re-use them here
-			for (const file of reExportingFiles) {
-				await this.updateReExportPath(file, symbolName, oldFilePath, newFilePath)
-				this.updatedFiles.add(file.getFilePath())
-				// Save changes to disk
-				file.saveSync()
-			}
-
-			// Handle inline symbol definitions that need re-exports
-			// If a symbol was defined inline in the source file and moved away,
-			// we need to either add a re-export (for barrel files) or an import (for regular files)
-			// Try multiple path formats to find the source file
-			let sourceFile = this.project.getSourceFile(oldFilePath)
-			console.log(`[DEBUG IMPORT-MANAGER] 🔍 Processing source file: ${oldFilePath}`)
-			console.log(`[DEBUG IMPORT-MANAGER] 📁 Source file found (relative): ${sourceFile ? "YES" : "NO"}`)
-
-			if (!sourceFile) {
-				// Try with absolute path
-				const absolutePath = this.pathResolver.resolveAbsolutePath(oldFilePath)
-				sourceFile = this.project.getSourceFile(absolutePath)
-				console.log(`[DEBUG IMPORT-MANAGER] 📁 Source file found (absolute): ${sourceFile ? "YES" : "NO"}`)
-				console.log(`[DEBUG IMPORT-MANAGER] 📍 Tried absolute path: ${absolutePath}`)
-			}
-
-			if (!sourceFile) {
-				// List all available files for debugging
-				const allFiles = this.project.getSourceFiles().map((f) => f.getFilePath())
-				console.log(`[DEBUG IMPORT-MANAGER] 📋 Available files in project:`, allFiles)
-
-				// Try to find by filename match
-				const fileName = this.pathResolver.getFileName(oldFilePath)
-				const matchingFiles = allFiles.filter((f) => f.endsWith(fileName))
-				console.log(`[DEBUG IMPORT-MANAGER] 🔍 Files matching '${fileName}':`, matchingFiles)
-
-				if (matchingFiles.length > 0) {
-					sourceFile = this.project.getSourceFile(matchingFiles[0])
-					console.log(
-						`[DEBUG IMPORT-MANAGER] 📁 Source file found (by filename): ${sourceFile ? "YES" : "NO"}`,
-					)
-				}
-			}
-
-			if (sourceFile) {
-				const shouldAddReExport = this.shouldAddReExportForInlineSymbol(
-					sourceFile,
-					symbolName,
-					oldFilePath,
-					newFilePath,
-				)
-				console.log(`[DEBUG IMPORT-MANAGER] 🤔 Should add re-export: ${shouldAddReExport}`)
-
-				if (shouldAddReExport) {
-					const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
-					console.log(`[DEBUG IMPORT-MANAGER] 📍 Calculated relative path: ${newRelativePath}`)
-					this.addReExport(sourceFile, symbolName, newRelativePath)
-					console.log(
-						`[DEBUG] ImportManager: Added re-export for inline symbol ${symbolName} in ${oldFilePath}`,
-					)
-					this.updatedFiles.add(sourceFile.getFilePath())
-					sourceFile.saveSync()
-				} else {
-					// For non-barrel files, check if the source file still uses the moved symbol
-					// If so, add an import statement
-					// CRITICAL FIX: Don't add imports to source file when moving FROM that file
-					// The source file references are expected after moving the symbol out
-					console.log(
-						`[DEBUG] ImportManager: Skipping import addition to source file ${oldFilePath} - symbol was moved FROM this file`,
-					)
-				}
-			} else {
-				console.log(`[ERROR IMPORT-MANAGER] ❌ Source file not found in project: ${oldFilePath}`)
-			}
-
-			// Add necessary imports to the new file
-			const newFile = this.project.getSourceFile(newFilePath)
-			if (newFile) {
-				await this.addMissingImports(newFile, symbolName, oldFilePath)
-				// Save changes to disk
-				newFile.saveSync()
-			}
-		} catch (error) {
-			console.error(`[ERROR IMPORT-MANAGER] Exception in updateImportsAfterMove:`, error)
-			throw error
-		}
-	}
-
-	/**
-	 * VIRTUALIZED VERSION: Updates imports after moving a symbol using VirtualImportManager
+	 * Updates imports after moving a symbol using VirtualImportManager
 	 * This approach eliminates complex branching logic and provides cleaner import management
 	 */
-	async updateImportsAfterMoveVirtualized(
+	async updateImportsAfterMove(
 		symbolName: string,
 		oldFilePath: string,
 		newFilePath: string,
+		sourceFileRef?: any,
 	): Promise<void> {
-		console.log(`[VIRTUAL-IMPORT] ===== updateImportsAfterMoveVirtualized CALLED =====`)
-		console.log(`[VIRTUAL-IMPORT] symbolName: ${symbolName}`)
-		console.log(`[VIRTUAL-IMPORT] oldFilePath: ${oldFilePath}`)
-		console.log(`[VIRTUAL-IMPORT] newFilePath: ${newFilePath}`)
-
 		if (!this.virtualImportManager) {
 			throw new Error("VirtualImportManager not initialized. Call setPathResolver first.")
 		}
@@ -308,9 +93,37 @@ export class ImportManager {
 		try {
 			this.updatedFiles.clear()
 
-			// Step 1: Find all files that import from the old file
+			// Step 1: Find all files that import or re-export from the old file
 			const importingFiles = this.findFilesImporting(oldFilePath)
+			const reExportingFiles = this.findFilesReExporting(oldFilePath)
+
+			// CRITICAL FIX: Find files that reference the moved symbol but don't currently import it
+			// This handles cases where a symbol is moved from a file and other files use it but don't import it
+			const referencingFiles = this.findFilesReferencingSymbol(symbolName, oldFilePath)
+			console.log(`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
+
+			// CRITICAL FIX: Check if the source file itself contains re-exports that need updating
+			// This handles cases where we move a symbol from a file that re-exports other symbols
+			const sourceFileForReExports = this.project.getSourceFile(oldFilePath)
+			console.log(`[VIRTUAL-IMPORT] Checking source file for re-exports: ${oldFilePath}`)
+			console.log(`[VIRTUAL-IMPORT] Source file exists: ${!!sourceFileForReExports}`)
+			if (sourceFileForReExports) {
+				const hasReExports = this.fileContainsReExports(sourceFileForReExports)
+				console.log(`[VIRTUAL-IMPORT] Source file contains re-exports: ${hasReExports}`)
+				if (hasReExports) {
+					// Add source file to re-exporting files if it's not already included
+					if (!reExportingFiles.some((file) => file.getFilePath() === sourceFileForReExports.getFilePath())) {
+						reExportingFiles.push(sourceFileForReExports)
+						console.log(`[VIRTUAL-IMPORT] Added source file to re-exporting files: ${oldFilePath}`)
+					} else {
+						console.log(`[VIRTUAL-IMPORT] Source file already in re-exporting files: ${oldFilePath}`)
+					}
+				}
+			}
+
 			console.log(`[VIRTUAL-IMPORT] Found ${importingFiles.length} files importing from ${oldFilePath}`)
+			console.log(`[VIRTUAL-IMPORT] Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`)
+			console.log(`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
 
 			// Step 2: Initialize virtual import state for all affected files
 			const affectedFiles = new Set<SourceFile>()
@@ -321,8 +134,21 @@ export class ImportManager {
 				this.virtualImportManager!.initializeFile(file)
 			})
 
+			// Add re-exporting files
+			reExportingFiles.forEach((file) => {
+				affectedFiles.add(file)
+				this.virtualImportManager!.initializeFile(file)
+			})
+
+			// Add referencing files (files that use the symbol but don't import it)
+			referencingFiles.forEach((file) => {
+				affectedFiles.add(file)
+				this.virtualImportManager!.initializeFile(file)
+			})
+
 			// Add source file (if it exists and still references the symbol)
-			const sourceFile = this.project.getSourceFile(oldFilePath)
+			// Use the passed sourceFileRef if available, otherwise try to get it from project
+			const sourceFile = sourceFileRef || this.project.getSourceFile(oldFilePath)
 			if (sourceFile) {
 				affectedFiles.add(sourceFile)
 				this.virtualImportManager!.initializeFile(sourceFile)
@@ -354,25 +180,73 @@ export class ImportManager {
 				const oldModuleSpecifier = this.virtualImportManager!.calculateRelativePath(filePath, oldFilePath)
 				const newModuleSpecifier = this.virtualImportManager!.calculateRelativePath(filePath, newFilePath)
 
-				// Update import path for the moved symbol
-				this.virtualImportManager!.updateImportPath(
-					filePath,
-					symbolName,
-					oldModuleSpecifier,
-					newModuleSpecifier,
-				)
+				// Check if this file is a referencing file (needs new import) or importing file (needs path update)
+				const isReferencingFile = referencingFiles.some((refFile) => refFile.getFilePath() === filePath)
+				const isImportingFile = importingFiles.some((impFile) => impFile.getFilePath() === filePath)
+				const isReExportingFile = reExportingFiles.some((reExpFile) => reExpFile.getFilePath() === filePath)
+
+				console.log(`[VIRTUAL-IMPORT] File classification for ${filePath}:`)
+				console.log(`[VIRTUAL-IMPORT]   - isReferencingFile: ${isReferencingFile}`)
+				console.log(`[VIRTUAL-IMPORT]   - isImportingFile: ${isImportingFile}`)
+				console.log(`[VIRTUAL-IMPORT]   - isReExportingFile: ${isReExportingFile}`)
+
+				if (isReferencingFile && !isImportingFile && !isReExportingFile) {
+					// This file references the symbol but doesn't import it - add new import
+					console.log(
+						`[VIRTUAL-IMPORT] Adding new import for '${symbolName}' to referencing file: ${filePath}`,
+					)
+					this.virtualImportManager!.addNamedImport(filePath, symbolName, newModuleSpecifier, false)
+				} else if (isImportingFile || isReExportingFile) {
+					// This file already imports from the source - update the import path
+					console.log(
+						`[VIRTUAL-IMPORT] Updating import path for '${symbolName}' in importing/re-exporting file: ${filePath}`,
+					)
+					this.virtualImportManager!.updateImportPath(
+						filePath,
+						symbolName,
+						oldModuleSpecifier,
+						newModuleSpecifier,
+					)
+				} else {
+					console.log(`[VIRTUAL-IMPORT] Skipping file (no action needed): ${filePath}`)
+				}
 			}
 
 			// Step 5: Handle source file special case
-			// The source file should NOT import the symbol it just moved out
-			// This fixes the "partial failure state" bug
+			// The source file should NOT import the symbol it just moved out UNLESS it still uses the symbol
+			// This fixes the "partial failure state" bug while preserving imports for symbols still in use
 			if (sourceFile) {
 				const sourceFilePath = sourceFile.getFilePath()
 				const newModuleSpecifier = this.virtualImportManager!.calculateRelativePath(sourceFilePath, newFilePath)
 
-				// Remove any import of the moved symbol from the source file
-				this.virtualImportManager!.removeNamedImport(sourceFilePath, symbolName, newModuleSpecifier)
-				console.log(`[VIRTUAL-IMPORT] Removed import of ${symbolName} from source file ${sourceFilePath}`)
+				// Check if the source file still references the moved symbol
+				const stillReferencesSymbol = this.fileReferencesSymbol(sourceFile, symbolName)
+				console.log(`[VIRTUAL-IMPORT] Source file still references '${symbolName}': ${stillReferencesSymbol}`)
+
+				if (!stillReferencesSymbol) {
+					// Remove any import of the moved symbol from the source file only if it's not used
+					this.virtualImportManager!.removeNamedImport(sourceFilePath, symbolName, newModuleSpecifier)
+					console.log(
+						`[VIRTUAL-IMPORT] Removed import of ${symbolName} from source file ${sourceFilePath} (symbol not used)`,
+					)
+				} else {
+					console.log(
+						`[VIRTUAL-IMPORT] Keeping import of ${symbolName} in source file ${sourceFilePath} (symbol still used)`,
+					)
+				}
+
+				// CRITICAL FIX: Check if source file contains re-exports and add re-export for moved symbol
+				// This handles the case where we move a symbol from a file that re-exports other symbols
+				const exportDeclarations = sourceFile.getExportDeclarations()
+				if (exportDeclarations.length > 0) {
+					console.log(
+						`[VIRTUAL-IMPORT] Source file contains ${exportDeclarations.length} re-exports, adding re-export for moved symbol`,
+					)
+					this.virtualImportManager!.addNamedReExport(sourceFilePath, symbolName, newModuleSpecifier)
+					console.log(
+						`[VIRTUAL-IMPORT] Added re-export: export { ${symbolName} } from "${newModuleSpecifier}"`,
+					)
+				}
 			}
 
 			// Step 6: Write all changes back to files atomically
@@ -534,6 +408,64 @@ export class ImportManager {
 	}
 
 	/**
+	 * Finds all files that reference a specific symbol but don't necessarily import it
+	 * This is used to find files that need new imports added after a symbol is moved
+	 */
+	private findFilesReferencingSymbol(symbolName: string, excludeFilePath: string): SourceFile[] {
+		const referencingFiles: SourceFile[] = []
+		const allFiles = this.project.getSourceFiles()
+
+		console.log(`[VIRTUAL-IMPORT] Searching for references to symbol '${symbolName}' in ${allFiles.length} files`)
+
+		for (const file of allFiles) {
+			const filePath = file.getFilePath()
+
+			// Skip the source file itself
+			if (filePath === excludeFilePath) {
+				continue
+			}
+
+			// Check if this file references the symbol
+			if (this.fileReferencesSymbol(file, symbolName)) {
+				// Check if the file already imports this symbol from the source file
+				const alreadyImports = this.fileImportsSymbolFromFile(file, symbolName, excludeFilePath)
+
+				if (!alreadyImports) {
+					console.log(`[VIRTUAL-IMPORT] Found file referencing '${symbolName}' without import: ${filePath}`)
+					referencingFiles.push(file)
+				} else {
+					console.log(`[VIRTUAL-IMPORT] File already imports '${symbolName}': ${filePath}`)
+				}
+			}
+		}
+
+		console.log(
+			`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing '${symbolName}' without imports`,
+		)
+		return referencingFiles
+	}
+
+	/**
+	 * Checks if a file imports a specific symbol from a specific file
+	 */
+	private fileImportsSymbolFromFile(file: SourceFile, symbolName: string, sourceFilePath: string): boolean {
+		const imports = file.getImportDeclarations()
+
+		for (const imp of imports) {
+			if (this.isImportFromFile(imp, sourceFilePath)) {
+				const namedImports = imp.getNamedImports()
+				for (const namedImport of namedImports) {
+					if (namedImport.getName() === symbolName) {
+						return true
+					}
+				}
+			}
+		}
+
+		return false
+	}
+
+	/**
 	 * Finds all files that re-export from the specified file
 	 * Uses caching to improve performance for repeated calls
 	 */
@@ -564,6 +496,14 @@ export class ImportManager {
 		this.fileExportCache.set(cacheKey, new Set(reExportingFiles.map((file) => file.getFilePath())))
 
 		return reExportingFiles
+	}
+
+	/**
+	 * Checks if a file contains any re-export declarations
+	 */
+	private fileContainsReExports(file: SourceFile): boolean {
+		const exportDeclarations = file.getExportDeclarations()
+		return exportDeclarations.length > 0
 	}
 
 	/**
