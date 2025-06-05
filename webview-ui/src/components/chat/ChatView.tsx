@@ -88,6 +88,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		alwaysAllowModeSwitch,
 		showAutoApproveMenu, // kilocode_change
 		alwaysAllowSubtasks,
+		alwaysAllowRefactorCode,
 		customModes,
 		hasSystemPromptOverride,
 		historyPreviewCollapsed, // Added historyPreviewCollapsed
@@ -261,6 +262,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								case "newFileCreated":
 								case "insertContent":
 									setPrimaryButtonText(t("chat:save.title"))
+									setSecondaryButtonText(t("chat:reject.title"))
+									break
+								case "refactorCode":
+									setPrimaryButtonText(t("chat:refactor.title"))
 									setSecondaryButtonText(t("chat:reject.title"))
 									break
 								case "finishTask":
@@ -894,7 +899,18 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const isAutoApproved = useCallback(
 		(message: ClineMessage | undefined) => {
+			console.log("isAutoApproved called with message:", message)
+			console.log("autoApprovalEnabled:", autoApprovalEnabled)
+
 			if (!autoApprovalEnabled || !message || message.type !== "ask") {
+				console.log(
+					"Early return false - autoApprovalEnabled:",
+					autoApprovalEnabled,
+					"message exists:",
+					!!message,
+					"message type:",
+					message?.type,
+				)
 				return false
 			}
 
@@ -943,6 +959,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					return alwaysAllowSubtasks
 				}
 
+				// Check for refactorCode tool
+				if (tool?.tool === "refactorCode") {
+					// Only auto-approve if both master switch and specific flag are enabled
+					return autoApprovalEnabled && alwaysAllowRefactorCode
+				}
+
 				const isOutsideWorkspace = !!tool.isOutsideWorkspace
 
 				if (isReadOnlyToolAction(message)) {
@@ -971,6 +993,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			isMcpToolAlwaysAllowed,
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
+			alwaysAllowRefactorCode, // kilocode_change
 		],
 	)
 
@@ -1296,6 +1319,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		alwaysAllowWriteOutsideWorkspace,
 		alwaysAllowExecute,
 		alwaysAllowMcp,
+		alwaysAllowRefactorCode, // Add this to ensure auto-approval is re-evaluated when this setting changes
 		messages,
 		allowedCommands,
 		mcpServers,

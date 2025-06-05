@@ -155,6 +155,7 @@ export type ExtensionState = Pick<
 	| "alwaysAllowSubtasks"
 	| "alwaysAllowExecute"
 	| "allowedCommands"
+	| "alwaysAllowRefactorCode" // kilocode_change
 	| "allowedMaxRequests"
 	| "browserToolEnabled"
 	| "browserViewportSize"
@@ -260,6 +261,7 @@ export interface ClineSayTool {
 		| "finishTask"
 		| "searchAndReplace"
 		| "insertContent"
+		| "refactorCode" // kilocode_change
 	path?: string
 	diff?: string
 	content?: string

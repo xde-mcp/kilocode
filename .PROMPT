@@ -1,0 +1,38 @@
+Let's test the move operation with our recent file path fixes. Please run this specific test operation:
+
+```typescript
+<refactor_code>
+<operations>
+[
+  {
+    "operation": "move",
+    "selector": {
+      "type": "identifier",
+      "name": "getUserData",
+      "kind": "function",
+      "filePath": "examples/src/services/userService.ts"
+    },
+    "targetFilePath": "examples/src/services/profileService.ts",
+    "reason": "Testing path resolution in move operations"
+  }
+]
+</operations>
+</refactor_code>
+```
+
+---
+
+IMPORTANT: WHEN YOU HAVE COMPLETED THE TASK ABOVE, YOU MUST EXPLICITLY CALL THE FOLLOWING MCP TOOL:
+
+use_mcp_tool(
+  server_name: "kilo-dev-mcp-server",
+  tool_name: "stop_dev_extension",
+  arguments: {
+    "sessionId": "test-6b8zy2ve"
+  }
+)
+
+Session ID: test-6b8zy2ve
+
+This will signal that you have finished the task and allow the system to continue.
+DO NOT FORGET to call this tool when you are done. The system will remain blocked until you do.

@@ -72,6 +72,7 @@ type GlobalSettings = {
 	alwaysAllowSubtasks?: boolean | undefined
 	alwaysAllowExecute?: boolean | undefined
 	allowedCommands?: string[] | undefined
+	alwaysAllowRefactorCode?: boolean | undefined
 	allowedMaxRequests?: number | undefined
 	autoCondenseContextPercent?: number | undefined
 	browserToolEnabled?: boolean | undefined
@@ -610,6 +611,7 @@ type RooCodeEvents = {
 			| "new_rule"
 			| "report_bug"
 			| "condense"
+			| "refactor_code"
 		),
 		string,
 	]
@@ -845,6 +847,7 @@ type IpcMessage =
 								alwaysAllowSubtasks?: boolean | undefined
 								alwaysAllowExecute?: boolean | undefined
 								allowedCommands?: string[] | undefined
+								alwaysAllowRefactorCode?: boolean | undefined
 								allowedMaxRequests?: number | undefined
 								autoCondenseContextPercent?: number | undefined
 								browserToolEnabled?: boolean | undefined
@@ -1341,6 +1344,7 @@ type TaskCommand =
 					alwaysAllowSubtasks?: boolean | undefined
 					alwaysAllowExecute?: boolean | undefined
 					allowedCommands?: string[] | undefined
+					alwaysAllowRefactorCode?: boolean | undefined
 					allowedMaxRequests?: number | undefined
 					autoCondenseContextPercent?: number | undefined
 					browserToolEnabled?: boolean | undefined

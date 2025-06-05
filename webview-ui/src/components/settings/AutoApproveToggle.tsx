@@ -14,6 +14,7 @@ type AutoApproveToggles = Pick<
 	| "alwaysAllowModeSwitch"
 	| "alwaysAllowSubtasks"
 	| "alwaysAllowExecute"
+	| "alwaysAllowRefactorCode"
 >
 
 export type AutoApproveSetting = keyof AutoApproveToggles
@@ -83,7 +84,17 @@ export const autoApproveSettingsConfig: Record<AutoApproveSetting, AutoApproveCo
 		icon: "terminal",
 		testId: "always-allow-execute-toggle",
 	},
+	// kilocode_change start
+	alwaysAllowRefactorCode: {
+		key: "alwaysAllowRefactorCode",
+		labelKey: "settings:autoApprove.refactorCode.label",
+		descriptionKey: "settings:autoApprove.refactorCode.description",
+		icon: "edit",
+		testId: "always-allow-refactor-code-toggle",
+	},
+	// kilocode_change end
 }
+console.log("🚀 ~ autoApproveSettingsConfig:", autoApproveSettingsConfig)
 
 type AutoApproveToggleProps = AutoApproveToggles & {
 	onToggle: (key: AutoApproveSetting, value: boolean) => void

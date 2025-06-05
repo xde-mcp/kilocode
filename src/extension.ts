@@ -164,6 +164,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Allows other extensions to activate once Kilo Code is ready.
 	vscode.commands.executeCommand(`${Package.name}.activationCompleted`)
 
+	// Check for bootstrap parameter in workspace URI
+	checkForBootstrap(context)
+
 	// Implements the `RooCodeAPI` interface.
 	const socketPath = process.env.ROO_CODE_IPC_SOCKET_PATH
 	const enableLogging = typeof socketPath === "string"
@@ -195,7 +198,40 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	}
 
+	// Store services in extension context
 	return new API(outputChannel, provider, socketPath, enableLogging)
+}
+
+/**
+ * Check for bootstrap parameter in workspace URI and execute bootstrapped task if found
+ */
+async function checkForBootstrap(context: vscode.ExtensionContext): Promise<void> {
+	// Check if we have a workspace folder
+	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+		return
+	}
+
+	const workspaceFolderUri = vscode.workspace.workspaceFolders[0].uri
+	const promptFilePath = vscode.Uri.joinPath(workspaceFolderUri, ".PROMPT")
+
+	try {
+		const fileContent = await vscode.workspace.fs.readFile(promptFilePath)
+		const prompt = Buffer.from(fileContent).toString("utf8")
+
+		// console.log(`Found .PROMPT file with content: ${prompt}`)
+		setTimeout(async () => {
+			console.log(`🚀 Executing task!`, { prompt })
+			vscode.commands.executeCommand("kilo-code.newTask", { prompt })
+			vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
+		}, 1000)
+	} catch (error) {
+		if (error instanceof vscode.FileSystemError && error.code === "FileNotFound") {
+			// File not found, which is expected if no bootstrap prompt exists
+			return
+		}
+		// outputChannel.appendLine(`Error reading .PROMPT file: ${error}`)
+		console.error(`Error reading .PROMPT file: ${error}`)
+	}
 }
 
 // This method is called when your extension is deactivated.
