@@ -192,7 +192,37 @@ export class ImportManager {
 			// Handle inline symbol definitions that need re-exports
 			// If a symbol was defined inline in the source file and moved away,
 			// we need to either add a re-export (for barrel files) or an import (for regular files)
-			const sourceFile = this.project.getSourceFile(oldFilePath)
+			// Try multiple path formats to find the source file
+			let sourceFile = this.project.getSourceFile(oldFilePath)
+			console.log(`[DEBUG IMPORT-MANAGER] 🔍 Processing source file: ${oldFilePath}`)
+			console.log(`[DEBUG IMPORT-MANAGER] 📁 Source file found (relative): ${sourceFile ? "YES" : "NO"}`)
+
+			if (!sourceFile) {
+				// Try with absolute path
+				const absolutePath = this.pathResolver.resolveAbsolutePath(oldFilePath)
+				sourceFile = this.project.getSourceFile(absolutePath)
+				console.log(`[DEBUG IMPORT-MANAGER] 📁 Source file found (absolute): ${sourceFile ? "YES" : "NO"}`)
+				console.log(`[DEBUG IMPORT-MANAGER] 📍 Tried absolute path: ${absolutePath}`)
+			}
+
+			if (!sourceFile) {
+				// List all available files for debugging
+				const allFiles = this.project.getSourceFiles().map((f) => f.getFilePath())
+				console.log(`[DEBUG IMPORT-MANAGER] 📋 Available files in project:`, allFiles)
+
+				// Try to find by filename match
+				const fileName = this.pathResolver.getFileName(oldFilePath)
+				const matchingFiles = allFiles.filter((f) => f.endsWith(fileName))
+				console.log(`[DEBUG IMPORT-MANAGER] 🔍 Files matching '${fileName}':`, matchingFiles)
+
+				if (matchingFiles.length > 0) {
+					sourceFile = this.project.getSourceFile(matchingFiles[0])
+					console.log(
+						`[DEBUG IMPORT-MANAGER] 📁 Source file found (by filename): ${sourceFile ? "YES" : "NO"}`,
+					)
+				}
+			}
+
 			if (sourceFile) {
 				const shouldAddReExport = this.shouldAddReExportForInlineSymbol(
 					sourceFile,
@@ -200,8 +230,11 @@ export class ImportManager {
 					oldFilePath,
 					newFilePath,
 				)
+				console.log(`[DEBUG IMPORT-MANAGER] 🤔 Should add re-export: ${shouldAddReExport}`)
+
 				if (shouldAddReExport) {
 					const newRelativePath = this.calculateRelativePath(oldFilePath, newFilePath)
+					console.log(`[DEBUG IMPORT-MANAGER] 📍 Calculated relative path: ${newRelativePath}`)
 					this.addReExport(sourceFile, symbolName, newRelativePath)
 					console.log(
 						`[DEBUG] ImportManager: Added re-export for inline symbol ${symbolName} in ${oldFilePath}`,
@@ -221,6 +254,8 @@ export class ImportManager {
 						sourceFile.saveSync()
 					}
 				}
+			} else {
+				console.log(`[ERROR IMPORT-MANAGER] ❌ Source file not found in project: ${oldFilePath}`)
 			}
 
 			// Add necessary imports to the new file
@@ -306,7 +341,8 @@ export class ImportManager {
 			`[DEBUG IMPORT-MANAGER] 🔄 Forcing comprehensive search regardless of getReferencingSourceFiles() results`,
 		)
 		// console.log(`[DEBUG IMPORT-MANAGER] 🚀 About to start comprehensive search section`)
-		if (true) {
+		// Always perform comprehensive search when getReferencingSourceFiles fails
+		{
 			// console.log(`[DEBUG IMPORT-MANAGER] ✅ Inside comprehensive search if block`)
 			console.log(
 				`[DEBUG IMPORT-MANAGER] ⚠️  No files found via getReferencingSourceFiles, using targeted file discovery for imports from ${filePath}`,
@@ -366,10 +402,15 @@ export class ImportManager {
 			)
 		}
 
-		// Cache the results
-		this.fileImportCache.set(cacheKey, new Set(importingFiles.map((file) => file.getFilePath())))
+		// Remove duplicates before caching and returning
+		const uniqueImportingFiles = Array.from(new Set(importingFiles.map((file) => file.getFilePath())))
+			.map((path) => this.project.getSourceFile(path))
+			.filter(Boolean) as SourceFile[]
 
-		return importingFiles
+		// Cache the results
+		this.fileImportCache.set(cacheKey, new Set(uniqueImportingFiles.map((file) => file.getFilePath())))
+
+		return uniqueImportingFiles
 	}
 
 	/**
@@ -1930,9 +1971,11 @@ export class ImportManager {
 	 */
 	private isBarrelFile(sourceFile: SourceFile): boolean {
 		const fileName = path.basename(sourceFile.getFilePath())
+		console.log(`[DEBUG IMPORT-MANAGER] 🏗️  isBarrelFile check for: ${fileName}`)
 
 		// Only index files are considered barrel files for re-export purposes
 		if (fileName === "index.ts" || fileName === "index.js") {
+			console.log(`[DEBUG IMPORT-MANAGER] ✅ File is barrel (index file): ${fileName}`)
 			return true
 		}
 
@@ -1940,11 +1983,17 @@ export class ImportManager {
 		const exportDeclarations = sourceFile.getExportDeclarations()
 		const exportedDeclarations = sourceFile.getExportedDeclarations()
 
+		console.log(
+			`[DEBUG IMPORT-MANAGER] 📊 Export analysis: ${exportDeclarations.length} re-exports, ${exportedDeclarations.size} total exports`,
+		)
+
 		// If it has many re-export declarations and few original exports, it's likely a barrel
 		if (exportDeclarations.length >= 3 && exportedDeclarations.size <= exportDeclarations.length + 1) {
+			console.log(`[DEBUG IMPORT-MANAGER] ✅ File is barrel (re-export pattern): ${fileName}`)
 			return true
 		}
 
+		console.log(`[DEBUG IMPORT-MANAGER] ❌ File is NOT barrel: ${fileName}`)
 		return false
 	}
 

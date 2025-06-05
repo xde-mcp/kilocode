@@ -2,6 +2,7 @@ import { Project } from "ts-morph"
 import * as path from "path"
 import { RefactorEngine, OperationResult } from "./engine"
 import { MoveOperation, RemoveOperation, BatchOperations, RefactorOperation } from "./schema"
+import { refactorLogger } from "./utils/RefactorLogger"
 
 /**
  * Configuration options for the refactor API
@@ -379,10 +380,25 @@ export async function moveSymbol(
 			reason: options?.reason,
 		}
 
-		console.log(`[API] Moving symbol ${symbolName} from ${normalizedSourceFile} to ${normalizedTargetFile}`)
+		refactorLogger.operationStart(`Move Symbol: ${symbolName}`, {
+			sourceFile: normalizedSourceFile,
+			targetFile: normalizedTargetFile,
+			symbolKind: options?.symbolKind || "function",
+		})
+
+		// Show the output channel so user can see the operation progress
+		refactorLogger.show()
 
 		// Execute the operation
 		const result = await engine.executeOperation(moveOperation)
+
+		if (result.success) {
+			refactorLogger.operationSuccess(`Move Symbol: ${symbolName}`, {
+				affectedFiles: result.affectedFiles,
+			})
+		} else {
+			refactorLogger.operationFailure(`Move Symbol: ${symbolName}`, result.error)
+		}
 
 		// Convert to the public result format
 		return convertToRefactorResult(result)
@@ -571,7 +587,10 @@ export async function batchOperation(
 	>,
 	apiOptions?: RefactorApiOptions,
 ): Promise<BatchRefactorResult> {
-	console.log(`[API] Executing batch operation with ${operations.length} operations`)
+	refactorLogger.operationStart(`Batch Refactor Operations`, {
+		operationCount: operations.length,
+	})
+	refactorLogger.show()
 	try {
 		const engine = getRefactorEngine(apiOptions)
 
@@ -637,15 +656,27 @@ export async function batchOperation(
 		// Execute the batch
 		const result = await engine.executeBatch(batchOps)
 
+		// Log the result
+		const successfulCount = result.results.filter((r) => r.success).length
+		if (result.success) {
+			refactorLogger.operationSuccess(`Batch Refactor Operations`, {
+				totalOperations: result.allOperations.length,
+				successfulOperations: successfulCount,
+			})
+		} else {
+			refactorLogger.operationFailure(`Batch Refactor Operations`, result.error)
+		}
+
 		// Convert to the public result format
 		return {
 			success: result.success,
 			error: result.error,
 			results: result.results.map(convertToRefactorResult),
 			totalOperations: result.allOperations.length,
-			successfulOperations: result.results.filter((r) => r.success).length,
+			successfulOperations: successfulCount,
 		}
 	} catch (error) {
+		refactorLogger.operationFailure(`Batch Refactor Operations`, error)
 		return {
 			success: false,
 			error: `Failed to execute batch operation: ${(error as Error).message}`,

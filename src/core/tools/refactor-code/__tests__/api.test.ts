@@ -202,7 +202,7 @@ describe("Refactor Code API", () => {
 
 			// Check that the Button file now imports the interface
 			const buttonContent = await fs.readFile(path.join(TEST_PROJECT_DIR, "Button.tsx"), "utf-8")
-			expect(buttonContent).toContain("import { ButtonProps } from './types'")
+			expect(buttonContent).toContain('import { ButtonProps } from "./types"')
 		})
 	})
 

@@ -142,6 +142,10 @@ describe("ImportManager", () => {
 		it("should find files that import from the source file", () => {
 			const manager = new ImportManager(project)
 
+			// Set up required dependencies
+			const pathResolver = new (require("../PathResolver").PathResolver)(tempDir)
+			manager.setPathResolver(pathResolver)
+
 			// Use the private method via any cast
 			const findImporting = (manager as any).findFilesImporting.bind(manager)
 
@@ -153,6 +157,10 @@ describe("ImportManager", () => {
 
 		it("should return empty array for non-existent file", () => {
 			const manager = new ImportManager(project)
+
+			// Set up required dependencies
+			const pathResolver = new (require("../PathResolver").PathResolver)(tempDir)
+			manager.setPathResolver(pathResolver)
 
 			// Use the private method via any cast
 			const findImporting = (manager as any).findFilesImporting.bind(manager)
@@ -167,6 +175,10 @@ describe("ImportManager", () => {
 		it("should find files that re-export from the source file", () => {
 			const manager = new ImportManager(project)
 
+			// Set up required dependencies
+			const pathResolver = new (require("../PathResolver").PathResolver)(tempDir)
+			manager.setPathResolver(pathResolver)
+
 			// Use the private method via any cast
 			const findReExporting = (manager as any).findFilesReExporting.bind(manager)
 
@@ -180,6 +192,10 @@ describe("ImportManager", () => {
 	describe("updateImportsAfterMove", () => {
 		it("should update imports when a symbol is moved to a new file", async () => {
 			const manager = new ImportManager(project)
+
+			// Set up required dependencies
+			const pathResolver = new (require("../PathResolver").PathResolver)(tempDir)
+			manager.setPathResolver(pathResolver)
 
 			// Move the utilFunction symbol
 			await manager.updateImportsAfterMove("utilFunction", sourceFile.getFilePath(), targetFile.getFilePath())

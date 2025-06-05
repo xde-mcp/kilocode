@@ -4,6 +4,7 @@ import { OperationResult } from "../engine"
 import { SymbolResolver } from "../core/SymbolResolver"
 import { ResolvedSymbol } from "../core/types"
 import { ProjectManager } from "../core/ProjectManager"
+import { refactorLogger } from "../utils/RefactorLogger"
 
 /**
  * Orchestrates the symbol rename operation
@@ -24,15 +25,15 @@ export class RenameOrchestrator {
 	 * Execute a RENAME refactoring operation
 	 */
 	async executeRenameOperation(operation: RenameOperation): Promise<OperationResult> {
-		console.log(`[DEBUG] Starting rename operation: ${operation.selector.name} -> ${operation.newName}`)
-		console.log(`[DEBUG] File path: ${operation.selector.filePath}`)
-		console.log(`[DEBUG] Operation scope: ${operation.scope || "project"}`)
+		refactorLogger.debug(`Starting rename operation: ${operation.selector.name} -> ${operation.newName}`)
+		refactorLogger.debug(`File path: ${operation.selector.filePath}`)
+		refactorLogger.debug(`Operation scope: ${operation.scope || "project"}`)
 
 		try {
 			// Validate operation
 			const validationResult = this.validateRenameOperation(operation)
 			if (!validationResult.isValid) {
-				console.log(`[ERROR] Invalid rename operation: ${validationResult.error}`)
+				refactorLogger.error(`Invalid rename operation: ${validationResult.error}`)
 				return {
 					success: false,
 					operation,
@@ -55,7 +56,7 @@ export class RenameOrchestrator {
 			}
 
 			// Load all potential reference files in the project directory
-			console.log(`[DEBUG] Loading all potentially related TypeScript files...`)
+			refactorLogger.debug(`Loading all potentially related TypeScript files...`)
 			await this.projectManager.loadRelevantProjectFiles(sourceFilePath)
 
 			// Find the symbol
@@ -69,7 +70,7 @@ export class RenameOrchestrator {
 				}
 			}
 
-			console.log(`[DEBUG] Found symbol: ${symbol.node.getText()}`)
+			refactorLogger.debug(`Found symbol: ${symbol.node.getText()}`)
 
 			// Check if symbol is renameable
 			if (!Node.isRenameable(symbol.node)) {
@@ -84,7 +85,7 @@ export class RenameOrchestrator {
 
 			// Find all references to track affected files
 			const references = this.getReferences(symbol, sourceFile)
-			console.log(`[DEBUG] Found ${references.length} references to symbol`)
+			refactorLogger.debug(`Found ${references.length} references to symbol`)
 
 			const affectedFiles = new Set<string>()
 			// Ensure all paths are absolute for consistency
@@ -111,8 +112,24 @@ export class RenameOrchestrator {
 				}
 			}
 
-			// Perform the rename operation directly
+			// Perform the rename operation using ts-morph's built-in rename functionality
+			refactorLogger.debug(`About to rename symbol. Node type: ${symbol.node.getKindName()}`)
+			refactorLogger.debug(`Current symbol name: ${symbol.name}`)
+			refactorLogger.debug(`Target name: ${operation.newName}`)
+
+			// Use ts-morph's rename method which handles all references automatically
 			symbol.node.rename(operation.newName)
+			refactorLogger.debug(`ts-morph rename completed successfully`)
+
+			// Verify the rename worked in memory
+			const updatedText = symbol.node.getText()
+			refactorLogger.debug(`Symbol text after rename: ${updatedText}`)
+
+			// Check if the source file is marked as modified
+			const symbolSourceFile = symbol.node.getSourceFile()
+			refactorLogger.debug(`Source file path: ${symbolSourceFile.getFilePath()}`)
+			refactorLogger.debug(`Source file full text after rename:`)
+			console.log(symbolSourceFile.getFullText().substring(0, 200) + "...")
 
 			// Additional manual update for barrel file imports
 			this.updateBarrelImports(affectedFiles, operation.selector.name, operation.newName)
@@ -203,31 +220,28 @@ export class RenameOrchestrator {
 		const projectFiles = this.projectManager.getProject().getSourceFiles()
 
 		for (const file of projectFiles) {
-			// Skip processing if in file-only scope and not the source file
-			if (file.getFilePath() !== sourceFile.getFilePath()) {
-				// Process import declarations
-				const importDeclarations = file.getImportDeclarations()
-				for (const importDecl of importDeclarations) {
-					this.processImportDeclaration(importDecl, symbolName, references)
-				}
-
-				// Process export declarations
-				const exportDeclarations = file.getExportDeclarations()
-				for (const exportDecl of exportDeclarations) {
-					this.processExportDeclaration(exportDecl, symbolName, references)
-				}
-
-				// Process namespace imports that might reference our symbol
-				const namespaceImports = file
-					.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
-					.filter((prop: any) => {
-						const leftText = prop.getExpression().getText()
-						const rightText = prop.getName()
-						return rightText === symbolName && this.isNamespaceReference(leftText, file)
-					})
-
-				references.push(...namespaceImports)
+			// Process import declarations in all files (including source file for re-exports)
+			const importDeclarations = file.getImportDeclarations()
+			for (const importDecl of importDeclarations) {
+				this.processImportDeclaration(importDecl, symbolName, references)
 			}
+
+			// Process export declarations in all files
+			const exportDeclarations = file.getExportDeclarations()
+			for (const exportDecl of exportDeclarations) {
+				this.processExportDeclaration(exportDecl, symbolName, references)
+			}
+
+			// Process namespace imports that might reference our symbol
+			const namespaceImports = file
+				.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)
+				.filter((prop: any) => {
+					const leftText = prop.getExpression().getText()
+					const rightText = prop.getName()
+					return rightText === symbolName && this.isNamespaceReference(leftText, file)
+				})
+
+			references.push(...namespaceImports)
 		}
 
 		return references
@@ -339,7 +353,7 @@ export class RenameOrchestrator {
 						if (namedImport.getName() === oldName) {
 							namedImport.setName(newName)
 							modified = true
-							console.log(`[DEBUG] Updated barrel import in ${file.getFilePath()}`)
+							refactorLogger.debug(`Updated barrel import in ${file.getFilePath()}`)
 						}
 					}
 				}
@@ -354,7 +368,7 @@ export class RenameOrchestrator {
 
 					if (replacedText !== fileText) {
 						file.replaceWithText(replacedText)
-						console.log(`[DEBUG] Updated usages of barrel import in ${file.getFilePath()}`)
+						refactorLogger.debug(`Updated usages of barrel import in ${file.getFilePath()}`)
 					}
 				}
 
@@ -374,9 +388,9 @@ export class RenameOrchestrator {
 				.getProject()
 				.addSourceFilesAtPaths([`${projectRoot}/**/index.ts`, `${projectRoot}/**/index.tsx`])
 
-			console.log(`[DEBUG] Loaded ${barrelFiles.length} potential barrel files`)
+			refactorLogger.debug(`Loaded ${barrelFiles.length} potential barrel files`)
 		} catch (error) {
-			console.log(`[DEBUG] Error loading barrel files: ${(error as Error).message}`)
+			refactorLogger.debug(`Error loading barrel files: ${(error as Error).message}`)
 		}
 	}
 

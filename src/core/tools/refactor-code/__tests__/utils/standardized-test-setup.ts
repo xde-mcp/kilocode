@@ -93,6 +93,81 @@ export function createRefactorEngineTestSetup(): RefactorEngineTestSetup {
 }
 
 /**
+ * Enhanced Pattern 2: RefactorEngine with Automatic File Loading
+ *
+ * Use this for:
+ * - Integration tests that need cross-file reference detection
+ * - Tests that require all project files to be loaded for ts-morph
+ * - Rename operations that need to find references across multiple files
+ */
+export function createRefactorEngineTestSetupWithAutoLoad(): RefactorEngineTestSetup {
+	const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "refactor-tool-test-engine-"))
+	const projectDir = path.join(tempDir, "project")
+
+	// Create project directory
+	fs.mkdirSync(projectDir, { recursive: true })
+
+	const engine = new RefactorEngine({
+		projectRootPath: projectDir,
+	})
+
+	return {
+		tempDir,
+		projectDir,
+		engine,
+		cleanup: () => {
+			if (fs.existsSync(tempDir)) {
+				fs.rmSync(tempDir, { recursive: true, force: true })
+			}
+		},
+	}
+}
+
+/**
+ * Enhanced test file creation that automatically loads files into RefactorEngine
+ */
+export function createTestFilesWithAutoLoad(
+	setup: RefactorEngineTestSetup,
+	files: TestFileStructure,
+): { [fileName: string]: string } {
+	const filePaths: { [fileName: string]: string } = {}
+
+	// Create files on disk
+	for (const [fileName, content] of Object.entries(files)) {
+		const filePath = path.join(setup.projectDir, fileName)
+		const dir = path.dirname(filePath)
+
+		// Ensure directory exists
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true })
+		}
+
+		// Write file
+		fs.writeFileSync(filePath, content, "utf-8")
+		filePaths[fileName] = filePath
+	}
+
+	// CRITICAL: Load all TypeScript files into the RefactorEngine's project
+	// This ensures ts-morph can find cross-file references
+	const tsFiles = Object.keys(files)
+		.filter((fileName) => fileName.endsWith(".ts") || fileName.endsWith(".tsx"))
+		.map((fileName) => path.join(setup.projectDir, fileName))
+
+	if (tsFiles.length > 0) {
+		console.log(`[DEBUG SETUP] Loading ${tsFiles.length} TypeScript files into RefactorEngine project`)
+
+		// Use the engine's project manager to load files
+		const project = (setup.engine as any).project // Access internal project
+		if (project && project.addSourceFilesAtPaths) {
+			project.addSourceFilesAtPaths(tsFiles)
+			console.log(`[DEBUG SETUP] Successfully loaded ${tsFiles.length} files into ts-morph project`)
+		}
+	}
+
+	return filePaths
+}
+
+/**
  * Pattern 3: In-Memory FileSystem for pure unit tests
  *
  * Use this for:

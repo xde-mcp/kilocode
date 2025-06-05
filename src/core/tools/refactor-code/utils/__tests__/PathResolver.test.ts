@@ -97,11 +97,13 @@ describe("PathResolver", () => {
 		})
 
 		it("should normalize backslashes in paths", () => {
+			// Create a PathResolver with Windows-style project root for this test
+			const windowsPathResolver = new PathResolver("C:\\project\\root")
 			const fromFile = "C:\\project\\root\\src\\components\\Button\\index.tsx"
 			const toFile = "C:\\project\\root\\src\\utils\\helpers.ts"
 			const expected = "../../utils/helpers"
 
-			const result = pathResolver.getRelativeImportPath(fromFile, toFile)
+			const result = windowsPathResolver.getRelativeImportPath(fromFile, toFile)
 
 			expect(result).toBe(expected)
 		})

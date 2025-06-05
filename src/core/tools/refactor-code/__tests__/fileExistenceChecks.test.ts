@@ -107,8 +107,8 @@ export function validateEmail(email: string): boolean {
 
 		// Verify that the operation succeeded
 		expect(result.success).toBe(true)
-		expect(result.affectedFiles).toContain(sourceFile)
-		expect(result.affectedFiles).toContain(targetFile)
+		expect(result.affectedFiles).toContain(path.relative(tempDir, sourceFile))
+		expect(result.affectedFiles).toContain(path.relative(tempDir, targetFile))
 
 		// Read the file contents
 		const sourceContent = fs.readFileSync(sourceFile, "utf-8")
@@ -142,7 +142,7 @@ export function validateEmail(email: string): boolean {
 
 		// Verify that the operation succeeded
 		expect(result.success).toBe(true)
-		expect(result.affectedFiles).toContain(sourceFile)
+		expect(result.affectedFiles).toContain(path.relative(tempDir, sourceFile))
 
 		// Read the file content
 		const fileContent = fs.readFileSync(sourceFile, "utf-8")

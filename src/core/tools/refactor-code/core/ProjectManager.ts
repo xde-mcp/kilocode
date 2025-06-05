@@ -153,7 +153,21 @@ export class ProjectManager {
 			console.log(
 				`[DEBUG PROJECT-MANAGER] 🚨 CALLING addSourceFilesAtPaths() with ${absolutePatterns.length} patterns`,
 			)
-			const projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
+
+			// Check if files are already loaded to avoid reloading and losing in-memory changes
+			const existingFiles = this.project.getSourceFiles()
+			console.log(`[DEBUG PROJECT-MANAGER] 📁 Project already has ${existingFiles.length} files loaded`)
+
+			// If we already have files loaded (like in tests), skip the expensive file loading
+			// This prevents reloading files from disk which would overwrite in-memory changes
+			let projectFiles
+			if (existingFiles.length > 0) {
+				console.log(`[DEBUG PROJECT-MANAGER] ⏭️  Skipping file loading - files already in project`)
+				projectFiles = existingFiles
+			} else {
+				console.log(`[DEBUG PROJECT-MANAGER] 📂 Loading files from disk`)
+				projectFiles = this.project.addSourceFilesAtPaths(absolutePatterns)
+			}
 			// console.log(`[DEBUG PROJECT-MANAGER] ✅ addSourceFilesAtPaths() returned ${projectFiles.length} files`)
 
 			const afterCount = this.project.getSourceFiles().length

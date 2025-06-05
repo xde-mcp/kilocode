@@ -341,7 +341,8 @@ export function formatLegacyUserDisplay(user: any, phone: string): string {
 		console.log(`[TEST] Function with references remove result: ${result.success ? "SUCCESS" : "FAILURE"}`)
 		if (!result.success) {
 			console.log(`[TEST] Error: ${result.error}`)
-			expect(result.error).toContain("not found")
+			expect(result.error).toContain("Cannot remove")
+			expect(result.error).toContain("because it is referenced")
 		}
 	})
 

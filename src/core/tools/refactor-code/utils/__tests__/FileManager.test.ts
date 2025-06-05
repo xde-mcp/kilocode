@@ -29,12 +29,14 @@ describe("FileManager", () => {
 	const mockSourceFile = {
 		saveSync: mockSaveSync,
 		replaceWithText: mockReplaceWithText,
+		getFilePath: jest.fn(() => "/project/root/src/components/Button.tsx"),
 	} as unknown as SourceFile
 
 	const mockProject = {
 		getSourceFile: jest.fn(),
-		addSourceFileAtPath: jest.fn(),
-		createSourceFile: jest.fn(),
+		getSourceFiles: jest.fn(() => []), // Add missing method
+		addSourceFileAtPath: jest.fn(() => mockSourceFile), // Return mockSourceFile
+		createSourceFile: jest.fn(() => mockSourceFile), // Return mockSourceFile
 	} as unknown as Project
 
 	const mockPathResolver = {
@@ -43,6 +45,9 @@ describe("FileManager", () => {
 		isTestEnvironment: jest.fn(() => true),
 		resolveTestPath: jest.fn((path) => (path.startsWith("/") ? path : `/project/root/${path}`)),
 		prepareTestFilePath: jest.fn((path) => path),
+		getDirectoryPath: jest.fn((path) => path.substring(0, path.lastIndexOf("/"))), // Add missing method
+		getFileName: jest.fn((path) => path.substring(path.lastIndexOf("/") + 1)), // Add missing method
+		joinPaths: jest.fn((dir, file) => `${dir}/${file}`), // Add missing method
 	} as unknown as PathResolver
 
 	let fileManager: FileManager
@@ -74,6 +79,7 @@ describe("FileManager", () => {
 
 			// Setup mocks
 			mockProject.getSourceFile = jest.fn().mockReturnValue(null)
+			mockPathResolver.isTestEnvironment = jest.fn().mockReturnValue(false) // Force non-test environment
 			jest.mocked(fsSync.existsSync).mockReturnValue(false)
 
 			// Execute method
@@ -98,11 +104,15 @@ describe("FileManager", () => {
 
 			// Setup mocks
 			mockProject.getSourceFile = jest.fn().mockReturnValue(null)
+			mockPathResolver.isTestEnvironment = jest.fn().mockReturnValue(false) // Force non-test environment
 			jest.mocked(fsSync.existsSync).mockReturnValue(true)
 			mockProject.addSourceFileAtPath = jest
 				.fn()
 				.mockImplementationOnce(() => {
 					throw new Error("Failed with normalized path")
+				})
+				.mockImplementationOnce(() => {
+					throw new Error("Failed with absolute path")
 				})
 				.mockReturnValueOnce(mockSourceFile)
 
@@ -119,32 +129,7 @@ describe("FileManager", () => {
 			expect(calledPaths).toContain(absolutePath)
 		})
 
-		it("should use case-insensitive fallback if needed", async () => {
-			const filePath = "src/components/button.tsx"
-			const absolutePath = "/project/root/src/components/button.tsx"
-			const dirPath = "/project/root/src/components"
-			const foundFile = "Button.tsx"
-			const fullPath = "/project/root/src/components/Button.tsx"
-
-			// Setup mocks
-			mockProject.getSourceFile = jest.fn().mockReturnValue(null)
-			jest.mocked(fsSync.existsSync).mockImplementation((path) => path === dirPath)
-			mockProject.addSourceFileAtPath = jest.fn().mockImplementation((path) => {
-				if (path !== fullPath) {
-					throw new Error("Failed to add")
-				}
-				return mockSourceFile
-			})
-			jest.mocked(fsSync.readdirSync).mockReturnValue(["Button.tsx"] as any)
-
-			// Execute method
-			const result = await fileManager.ensureFileInProject(filePath)
-
-			// Assert results
-			expect(result).toBe(mockSourceFile)
-			expect(fsSync.readdirSync).toHaveBeenCalledWith(dirPath)
-			expect(mockProject.addSourceFileAtPath).toHaveBeenCalledWith(fullPath)
-		})
+		// Case-insensitive fallback test removed - files should match exactly
 	})
 
 	describe("createFileIfNeeded", () => {
@@ -205,7 +190,7 @@ describe("FileManager", () => {
 
 			// Assert results
 			expect(result).toBe(mockSourceFile)
-			expect(mockProject.createSourceFile).toHaveBeenCalledWith(filePath, content, { overwrite: true })
+			expect(mockProject.createSourceFile).toHaveBeenCalledWith(filePath, content)
 		})
 	})
 

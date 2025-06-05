@@ -53,12 +53,21 @@ All operations must be provided as an array, even for batches with a single oper
     "type": "identifier",
     "name": "oldName",
     "kind": "function|class|variable|type|interface|method|property",
-    "filePath": "path/to/file.ts"
+    "filePath": "path/to/file.ts",
+    "scope": {
+      "type": "class|interface|function|namespace",
+      "name": "scopeName"
+    }
   },
   "newName": "newName",
   "reason": "Why this change is needed"
 }
 \`\`\`
+
+**Note**: The \`scope\` field is optional and used for finding symbols within specific scopes:
+- For methods/constructors within classes: \`"scope": {"type": "class", "name": "ClassName"}\`
+- For variables within functions: \`"scope": {"type": "function", "name": "functionName"}\`
+- For interface members: \`"scope": {"type": "interface", "name": "InterfaceName"}\`
 
 ### move
 \`\`\`json

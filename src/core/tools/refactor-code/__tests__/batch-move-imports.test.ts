@@ -115,8 +115,10 @@ describe("Move Operation Import Handling", () => {
 			reason: "Organizing user profile related functions together",
 		}
 
-		// Execute the operation
-		const orchestrator = new MoveOrchestrator(project)
+		// Execute the operation with explicit project root
+		const { ProjectManager } = require("../core/ProjectManager")
+		const projectManager = new ProjectManager(project, tempDir)
+		const orchestrator = new MoveOrchestrator(project, projectManager)
 		const result = await orchestrator.executeMoveOperation(operation)
 
 		// Verify operation succeeded
@@ -207,8 +209,10 @@ describe("Move Operation Import Handling", () => {
 			reason: "Moving analysis functions to utils",
 		}
 
-		// Execute the operation
-		const orchestrator = new MoveOrchestrator(project)
+		// Execute the operation with explicit project root
+		const { ProjectManager } = require("../core/ProjectManager")
+		const projectManager = new ProjectManager(project, tempDir)
+		const orchestrator = new MoveOrchestrator(project, projectManager)
 		const result = await orchestrator.executeMoveOperation(operation)
 
 		// Verify operation succeeded

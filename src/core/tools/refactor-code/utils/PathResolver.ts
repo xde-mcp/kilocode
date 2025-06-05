@@ -293,29 +293,30 @@ export class PathResolver {
 	 * @returns The relative import path suitable for import statements
 	 */
 	getRelativeImportPath(fromFile: string, toFile: string): string {
-		// Let Node.js handle the cross-platform path resolution
-		// path.resolve() and path.relative() already handle Windows/Unix differences correctly
+		// Detect path style and use appropriate Node.js path utilities
+		const isWindowsStyle = fromFile.includes("\\") || toFile.includes("\\") || this.projectRoot.includes("\\")
+		const pathUtil = isWindowsStyle ? path.win32 : path.posix
 
 		let resolvedFromFile: string
 		let resolvedToFile: string
 
 		// Ensure both paths are absolute so path.relative() works correctly
-		if (path.isAbsolute(fromFile)) {
-			resolvedFromFile = path.normalize(fromFile)
+		if (pathUtil.isAbsolute(fromFile)) {
+			resolvedFromFile = pathUtil.normalize(fromFile)
 		} else {
-			resolvedFromFile = path.resolve(this.projectRoot, fromFile)
+			resolvedFromFile = pathUtil.resolve(this.projectRoot, fromFile)
 		}
 
-		if (path.isAbsolute(toFile)) {
-			resolvedToFile = path.normalize(toFile)
+		if (pathUtil.isAbsolute(toFile)) {
+			resolvedToFile = pathUtil.normalize(toFile)
 		} else {
 			// Resolve toFile relative to project root, not fromFile's directory
-			resolvedToFile = path.resolve(this.projectRoot, toFile)
+			resolvedToFile = pathUtil.resolve(this.projectRoot, toFile)
 		}
 
-		// Use Node.js built-in path.relative() which handles cross-platform correctly
-		const fromDir = path.dirname(resolvedFromFile)
-		let relativePath = path.relative(fromDir, resolvedToFile)
+		// Use appropriate path.relative() which handles the detected path style correctly
+		const fromDir = pathUtil.dirname(resolvedFromFile)
+		let relativePath = pathUtil.relative(fromDir, resolvedToFile)
 
 		// Normalize to forward slashes for import statements (standard across platforms)
 		relativePath = relativePath.replace(/\\/g, "/")

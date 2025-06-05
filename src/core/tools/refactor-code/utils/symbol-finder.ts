@@ -11,6 +11,7 @@ import {
 	TypeAliasDeclaration,
 	EnumDeclaration,
 	Identifier,
+	SyntaxKind,
 } from "ts-morph"
 import { IdentifierSelector } from "../schema"
 
@@ -25,7 +26,12 @@ export class SymbolFinder {
 	 * Finds a symbol based on an identifier selector
 	 */
 	findSymbol(selector: IdentifierSelector): Node | undefined {
-		// Handle nested symbols (methods, properties)
+		// Handle scoped symbols (new scope field support)
+		if (selector.scope) {
+			return this.findScopedSymbol(selector)
+		}
+
+		// Handle nested symbols (methods, properties) - legacy parent field
 		if (selector.parent) {
 			return this.findNestedSymbol(selector)
 		}
@@ -47,6 +53,84 @@ export class SymbolFinder {
 			default:
 				return this.findAnySymbol(selector.name)
 		}
+	}
+
+	/**
+	 * Finds a symbol within a specific scope (supports constructor, variables in functions, etc.)
+	 */
+	private findScopedSymbol(selector: IdentifierSelector): Node | undefined {
+		if (!selector.scope) return undefined
+
+		// Find the scope container first
+		let scopeContainer: Node | undefined
+
+		switch (selector.scope.type) {
+			case "class":
+				scopeContainer = this.sourceFile.getClass(selector.scope.name)
+				break
+			case "interface":
+				scopeContainer = this.sourceFile.getInterface(selector.scope.name)
+				break
+			case "function":
+				scopeContainer = this.findFunction(selector.scope.name)
+				break
+			case "namespace":
+				scopeContainer = this.sourceFile.getModule(selector.scope.name)
+				break
+		}
+
+		if (!scopeContainer) {
+			console.log(`[DEBUG] Scope container '${selector.scope.name}' not found`)
+			return undefined
+		}
+
+		// Find the symbol within the scope
+		if (selector.scope.type === "class" && Node.isClassDeclaration(scopeContainer)) {
+			if (selector.kind === "method") {
+				// Handle constructor specifically
+				if (selector.name === "constructor") {
+					const constructors = scopeContainer.getConstructors()
+					if (constructors.length > 0) {
+						console.log(`[DEBUG] Found constructor in class ${selector.scope.name}`)
+						return constructors[0]
+					}
+					console.log(`[DEBUG] No constructor found in class ${selector.scope.name}`)
+					return undefined
+				}
+				return scopeContainer.getMethod(selector.name)
+			} else if (selector.kind === "property") {
+				return scopeContainer.getProperty(selector.name)
+			}
+		} else if (selector.scope.type === "interface" && Node.isInterfaceDeclaration(scopeContainer)) {
+			if (selector.kind === "method") {
+				return scopeContainer.getMethod(selector.name)
+			} else if (selector.kind === "property") {
+				return scopeContainer.getProperty(selector.name)
+			}
+		} else if (selector.scope.type === "function" && Node.isFunctionDeclaration(scopeContainer)) {
+			// Find variables within function scope
+			if (selector.kind === "variable") {
+				return this.findVariableInScope(scopeContainer, selector.name)
+			}
+		}
+
+		return undefined
+	}
+
+	/**
+	 * Finds a variable within a specific function or block scope
+	 */
+	private findVariableInScope(scopeNode: Node, variableName: string): Node | undefined {
+		// Get all variable declarations within the scope
+		const variableDeclarations = scopeNode.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
+
+		for (const varDecl of variableDeclarations) {
+			if (Node.isVariableDeclaration(varDecl) && varDecl.getName() === variableName) {
+				return varDecl
+			}
+		}
+
+		return undefined
 	}
 
 	/**

@@ -233,31 +233,7 @@ export class FileManager {
 			}
 		}
 
-		// Case-insensitive search fallback
-		try {
-			const dirPath = this.pathResolver.getDirectoryPath(absolutePath)
-			if (fsSync.existsSync(dirPath)) {
-				const files = fsSync.readdirSync(dirPath)
-				const fileName = this.pathResolver.getFileName(absolutePath)
-				const lowerFileName = fileName.toLowerCase()
-
-				// Look for case-insensitive match
-				const matchingFile = files.find((f) => f.toLowerCase() === lowerFileName)
-				if (matchingFile) {
-					const fullPath = this.pathResolver.joinPaths(dirPath, matchingFile)
-					console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file using case-insensitive match: ${fullPath}`)
-					sourceFile = this.project.addSourceFileAtPath(fullPath)
-					const newFileCount = this.project.getSourceFiles().length
-					console.log(
-						`[DEBUG FILE-MANAGER] ✅ Added source file using case-insensitive match: ${fullPath} (project now has ${newFileCount} files)`,
-					)
-					this.sourceFileCache.set(normalizedPath, sourceFile)
-					return sourceFile
-				}
-			}
-		} catch (error) {
-			console.log(`[DEBUG] Case-insensitive fallback failed: ${(error as Error).message}`)
-		}
+		// Case-insensitive fallback logic removed - files should match exactly
 
 		// Final attempt for test environments: create an in-memory file
 		if (isTestEnv) {

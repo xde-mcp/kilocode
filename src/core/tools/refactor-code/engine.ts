@@ -1,7 +1,8 @@
 import { Project, SourceFile, Node, SyntaxKind } from "ts-morph"
 import { QuoteKind } from "ts-morph"
 import * as path from "path"
-import * as fs from "fs/promises"
+import * as fs from "fs"
+import * as fsPromises from "fs/promises"
 import { ensureDirectoryExists, createDiagnostic } from "./utils/file-system"
 import { RefactorOperation, BatchOperations, RenameOperation, MoveOperation, RemoveOperation } from "./schema"
 import { RobustLLMRefactorParser, RefactorParseError } from "./parser"
@@ -23,6 +24,7 @@ import { MoveValidator } from "./operations/MoveValidator"
 import { MoveExecutor } from "./operations/MoveExecutor"
 import { MoveVerifier } from "./operations/MoveVerifier"
 import { ProjectManager } from "./core/ProjectManager"
+import { refactorLogger } from "./utils/RefactorLogger"
 
 /**
  * Result of a single refactoring operation
@@ -183,27 +185,48 @@ export class RefactorEngine {
 		// Removed excessive initialization logging
 
 		// Create a project with explicit compiler options
-		console.log(`[DEBUG ENGINE] 🏗️  Creating ts-morph Project with root: ${this.options.projectRootPath}`)
+		refactorLogger.info(`Creating ts-morph Project with root: ${this.options.projectRootPath}`)
 
 		// TEST ISOLATION: Detect test environment to prevent file leakage
 		const isTestEnvironment = this.isTestEnvironment()
-		console.log(`[DEBUG ENGINE] 🧪 Test environment detected: ${isTestEnvironment}`)
+		refactorLogger.info(`Test environment detected: ${isTestEnvironment}`)
 
 		// CRITICAL FIX: In test environments, create a completely isolated project
 		// that cannot discover files outside the test directory
+		// Base compiler options
+		const baseCompilerOptions = {
+			rootDir: this.options.projectRootPath,
+			skipLibCheck: true,
+			// In test environments, be more restrictive
+			...(isTestEnvironment && {
+				baseUrl: this.options.projectRootPath,
+				paths: {}, // No path mapping to prevent discovery
+			}),
+		}
+
 		const projectOptions: any = {
-			compilerOptions: {
-				rootDir: this.options.projectRootPath,
-				// In test environments, be more restrictive
-				...(isTestEnvironment && {
-					baseUrl: this.options.projectRootPath,
-					paths: {}, // No path mapping to prevent discovery
-				}),
-			},
-			skipAddingFilesFromTsConfig: true,
+			compilerOptions: baseCompilerOptions,
+			// CRITICAL: Enable automatic file discovery for production, disable for tests
+			skipAddingFilesFromTsConfig: isTestEnvironment,
 			manipulationSettings: {
-				quoteKind: QuoteKind.Double,
+				quoteKind: QuoteKind.Single, // Fixed: Use single quotes to match test expectations
 			},
+		}
+
+		// For production: Enable automatic discovery with exclusions
+		if (!isTestEnvironment) {
+			refactorLogger.debug(`🔍 Production mode: Enabling automatic TypeScript file discovery`)
+
+			// Try to find tsconfig.json in the project root
+			const tsConfigPath = path.join(this.options.projectRootPath, "tsconfig.json")
+			if (fs.existsSync(tsConfigPath)) {
+				refactorLogger.debug(`📄 Found tsconfig.json at: ${tsConfigPath}`)
+				projectOptions.tsConfigFilePath = tsConfigPath
+			} else {
+				refactorLogger.debug(`⚠️  No tsconfig.json found, using default file discovery`)
+			}
+
+			projectOptions.skipFileDependencyResolution = false
 		}
 
 		// In test environments, use a custom file system that restricts access
@@ -218,7 +241,25 @@ export class RefactorEngine {
 		this.project = new Project(projectOptions)
 
 		const initialFileCount = this.project.getSourceFiles().length
-		console.log(`[DEBUG ENGINE] ✅ ts-morph Project created with ${initialFileCount} initial files`)
+		refactorLogger.debug(`✅ ts-morph Project created with ${initialFileCount} initial files`)
+
+		// COMPREHENSIVE LOGGING: Show what files were discovered
+		if (!isTestEnvironment) {
+			const discoveredFiles = this.project.getSourceFiles()
+			refactorLogger.debug(`📁 Discovered ${discoveredFiles.length} TypeScript files:`)
+			discoveredFiles.forEach((file, index) => {
+				const relativePath = path.relative(this.options.projectRootPath, file.getFilePath())
+				refactorLogger.debug(`  ${index + 1}. ${relativePath}`)
+			})
+
+			if (discoveredFiles.length === 0) {
+				refactorLogger.debug(`⚠️  WARNING: No TypeScript files discovered automatically!`)
+				refactorLogger.debug(`🔍 Project root: ${this.options.projectRootPath}`)
+				console.log(
+					`[DEBUG ENGINE] 🔍 tsconfig.json exists: ${fs.existsSync(path.join(this.options.projectRootPath, "tsconfig.json"))}`,
+				)
+			}
+		}
 
 		// TEST ISOLATION: In test environments, ensure all test files are loaded
 		if (isTestEnvironment) {
@@ -229,7 +270,7 @@ export class RefactorEngine {
 
 		// Change the working directory for ts-morph operations to the project root
 		// This ensures all relative paths are resolved correctly
-		console.log(`[DEBUG ENGINE] 📁 Setting ts-morph working directory to: ${this.options.projectRootPath}`)
+		refactorLogger.debug(`📁 Setting ts-morph working directory to: ${this.options.projectRootPath}`)
 
 		// Initialize parser
 		this.parser = new RobustLLMRefactorParser()
@@ -282,13 +323,23 @@ export class RefactorEngine {
 	/**
 	 * Execute a single refactoring operation
 	 */
+
+	/**
+	 * Add source files to the project (for testing)
+	 */
+	addSourceFiles(filePaths: string[]): void {
+		for (const filePath of filePaths) {
+			this.project.addSourceFileAtPath(filePath)
+		}
+	}
+
 	async executeOperation(operation: RefactorOperation): Promise<OperationResult> {
 		// Removed excessive operation execution logging
 
 		// Log the operation details
 		if ("filePath" in operation.selector) {
-			console.log(`[DEBUG] Operation on file: ${operation.selector.filePath}`)
-			console.log(`[DEBUG] Absolute path: ${this.pathResolver.resolveAbsolutePath(operation.selector.filePath)}`)
+			refactorLogger.debug(`Operation on file: ${operation.selector.filePath}`)
+			refactorLogger.debug(`Absolute path: ${this.pathResolver.resolveAbsolutePath(operation.selector.filePath)}`)
 
 			// Run diagnostic on the file before operation (skip in test environment)
 			if (!this.isTestEnvironment()) {
@@ -312,7 +363,7 @@ export class RefactorEngine {
 
 						// Add the file to the project using absolute path
 						this.project.addSourceFileAtPath(absolutePath)
-						console.log(`[DEBUG] Successfully refreshed file in project: ${filePath}`)
+						refactorLogger.debug(`Successfully refreshed file in project: ${filePath}`)
 					} catch (e) {
 						console.log(`[WARNING] Failed to refresh file in project: ${filePath}`, e)
 					}
@@ -352,7 +403,7 @@ export class RefactorEngine {
 					console.log(
 						`[DEBUG] Executing remove operation for ${(operation as RemoveOperation).selector.name}`,
 					)
-					console.log(`[DEBUG ENGINE] About to execute remove operation`)
+					refactorLogger.debug(`About to execute remove operation`)
 					result = await this.executeRemoveOperation(operation as RemoveOperation)
 					console.log(`[DEBUG ENGINE] Remove operation returned:`, {
 						success: result.success,
@@ -371,38 +422,38 @@ export class RefactorEngine {
 			// Removed excessive affected files logging
 
 			// Save all affected files to disk
-			console.log(`[DEBUG ENGINE] About to save ${affectedFiles.length} affected files`)
+			refactorLogger.debug(`About to save ${affectedFiles.length} affected files`)
 			for (const filePath of affectedFiles) {
 				const sourceFile = this.project.getSourceFile(filePath)
 				if (sourceFile) {
 					try {
-						console.log(`[DEBUG ENGINE] About to save file: ${filePath}`)
+						refactorLogger.debug(`About to save file: ${filePath}`)
 						// Save the file to disk
 						await this.saveSourceFile(sourceFile)
-						console.log(`[DEBUG] Saved file to disk: ${filePath}`)
+						refactorLogger.debug(`Saved file to disk: ${filePath}`)
 					} catch (e) {
-						console.log(`[DEBUG ENGINE] Error saving file ${filePath}: ${(e as Error).message}`)
-						console.log(`[WARNING] Failed to save file to disk: ${filePath}`)
+						refactorLogger.debug(`Error saving file ${filePath}: ${(e as Error).message}`)
+						refactorLogger.warn(`Failed to save file to disk: ${filePath}`)
 					}
 				}
 			}
-			console.log(`[DEBUG ENGINE] Completed saving affected files`)
+			refactorLogger.debug(`Completed saving affected files`)
 
 			// Enhanced project state synchronization for batch operations
 			// This ensures complete synchronization between operations in a batch
-			console.log(`[DEBUG ENGINE] About to start project synchronization`)
+			refactorLogger.debug(`About to start project synchronization`)
 			try {
 				await this.forceProjectSynchronization(affectedFiles, operation)
-				console.log(`[DEBUG ENGINE] Project synchronization completed successfully`)
+				refactorLogger.debug(`Project synchronization completed successfully`)
 			} catch (syncError) {
-				console.log(`[DEBUG ENGINE] Project synchronization failed: ${(syncError as Error).message}`)
+				refactorLogger.debug(`Project synchronization failed: ${(syncError as Error).message}`)
 				throw syncError
 			}
 
-			console.log(`[DEBUG] Completed enhanced project synchronization after ${operation.operation} operation`)
+			refactorLogger.debug(`Completed enhanced project synchronization after ${operation.operation} operation`)
 
 			// Log that operation was successful
-			console.log(`[DEBUG] Operation completed successfully`)
+			refactorLogger.debug(`Operation completed successfully`)
 
 			// Run diagnostic on affected files after operation (skip in test environment)
 			if (!this.isTestEnvironment()) {
@@ -423,12 +474,12 @@ export class RefactorEngine {
 				error: result.error,
 			}
 
-			console.log(`[DEBUG] Engine returning result with success: ${finalResult.success}`)
-			console.log(`[DEBUG] Result error: ${finalResult.error || "none"}`)
+			refactorLogger.debug(`Engine returning result with success: ${finalResult.success}`)
+			refactorLogger.debug(`Result error: ${finalResult.error || "none"}`)
 
 			return finalResult
 		} catch (error) {
-			console.error(`[ERROR] Operation failed:`, error)
+			refactorLogger.error(`Operation failed:`, error)
 
 			const err = error as Error
 			return {
@@ -471,9 +522,9 @@ export class RefactorEngine {
 				: BatchOptimizer.optimizeOperationOrder([...operations]) // Optimize independent operations
 
 			if (hasDependentOperations) {
-				console.log(`[DEBUG] Detected dependent operations - preserving original order`)
+				refactorLogger.debug(`Detected dependent operations - preserving original order`)
 			} else {
-				console.log(`[DEBUG] No dependencies detected - using optimized order`)
+				refactorLogger.debug(`No dependencies detected - using optimized order`)
 			}
 			const fileOperationMap = BatchOptimizer.groupOperationsByFile(optimizedOperations)
 			const canParallelize =
@@ -519,13 +570,13 @@ export class RefactorEngine {
 				for (let i = 0; i < optimizedOperations.length; i++) {
 					const operation = optimizedOperations[i]
 
-					console.log(`[DEBUG] === BATCH OPERATION ${i + 1}/${optimizedOperations.length} ===`)
-					console.log(`[DEBUG] Operation type: ${operation.operation}`)
+					refactorLogger.debug(`=== BATCH OPERATION ${i + 1}/${optimizedOperations.length} ===`)
+					refactorLogger.debug(`Operation type: ${operation.operation}`)
 					if ("selector" in operation && "filePath" in operation.selector) {
-						console.log(`[DEBUG] Source file: ${operation.selector.filePath}`)
+						refactorLogger.debug(`Source file: ${operation.selector.filePath}`)
 					}
 					if (operation.operation === "move" && "targetFilePath" in operation) {
-						console.log(`[DEBUG] Target file: ${operation.targetFilePath}`)
+						refactorLogger.debug(`Target file: ${operation.targetFilePath}`)
 					}
 
 					// Validate the operation before executing it
@@ -566,7 +617,7 @@ export class RefactorEngine {
 						const sourceFile = this.project.getSourceFile(filePath)
 						if (sourceFile) {
 							sourceFile.refreshFromFileSystemSync()
-							console.log(`[DEBUG] Force refreshed file before operation: ${filePath}`)
+							refactorLogger.debug(`Force refreshed file before operation: ${filePath}`)
 						}
 						this.sourceFileCache.getSourceFile(filePath)
 					}
@@ -582,15 +633,15 @@ export class RefactorEngine {
 						}
 
 						if (this.options.stopOnError) {
-							console.log(`[DEBUG] Stopping batch execution due to error in operation ${i + 1}`)
+							refactorLogger.debug(`Stopping batch execution due to error in operation ${i + 1}`)
 							break
 						} else {
-							console.log(`[DEBUG] Continuing batch execution despite error in operation ${i + 1}`)
+							refactorLogger.debug(`Continuing batch execution despite error in operation ${i + 1}`)
 						}
 					} else {
 						// If the operation was successful, perform additional synchronization for batch operations
 						if (!this.isTestEnvironment()) {
-							console.log(`[DEBUG] Performing batch operation synchronization for operation ${i + 1}`)
+							refactorLogger.debug(`Performing batch operation synchronization for operation ${i + 1}`)
 							console.log(
 								`[DEBUG] Reported affected files: ${JSON.stringify(result.affectedFiles || [])}`,
 							)
@@ -626,7 +677,7 @@ export class RefactorEngine {
 								optimizedOperations,
 							)
 						} else {
-							console.log(`[DEBUG] No files to synchronize for operation ${i + 1}`)
+							refactorLogger.debug(`No files to synchronize for operation ${i + 1}`)
 						}
 					}
 
@@ -657,8 +708,8 @@ export class RefactorEngine {
 			const endTime = performance.now()
 			const duration = endTime - startTime
 			if (!this.isTestEnvironment()) {
-				console.log(`[PERF] Batch execution completed in ${duration.toFixed(2)}ms`)
-				console.log(`[PERF] Average time per operation: ${(duration / operations.length).toFixed(2)}ms`)
+				refactorLogger.info(`PERF: Batch execution completed in ${duration.toFixed(2)}ms`)
+				refactorLogger.info(`PERF: Average time per operation: ${(duration / operations.length).toFixed(2)}ms`)
 			}
 
 			return {
@@ -810,22 +861,22 @@ export class RefactorEngine {
 			const startTime = performance.now()
 
 			const filePath = sourceFile.getFilePath()
-			console.log(`[DEBUG] ts-morph sourceFile.getFilePath(): ${filePath}`)
+			refactorLogger.debug(`ts-morph sourceFile.getFilePath(): ${filePath}`)
 			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-			console.log(`[DEBUG] PathResolver.resolveAbsolutePath result: ${absolutePath}`)
+			refactorLogger.debug(`PathResolver.resolveAbsolutePath result: ${absolutePath}`)
 
 			// Ensure in-memory changes are committed to the source file first
 			sourceFile.saveSync()
 			const content = sourceFile.getFullText()
 
 			// Save directly to disk
-			console.log(`[DEBUG] Saving file to disk: ${absolutePath}`)
+			refactorLogger.debug(`Saving file to disk: ${absolutePath}`)
 			await ensureDirectoryExists(path.dirname(absolutePath))
-			await fs.writeFile(absolutePath, content, "utf8")
+			await fsPromises.writeFile(absolutePath, content, "utf8")
 
 			// Performance logging
 			const duration = performance.now() - startTime
-			console.log(`[PERF] File saved in ${duration.toFixed(2)}ms: ${filePath}`)
+			refactorLogger.info(`PERF: File saved in ${duration.toFixed(2)}ms: ${filePath}`)
 
 			// Invalidate file cache after save
 			this.fileCache.invalidateFile(filePath)
@@ -833,9 +884,9 @@ export class RefactorEngine {
 			// Mark the file as modified in source file cache
 			this.sourceFileCache.markModified(filePath)
 
-			console.log(`[DEBUG] Source file saved successfully`)
+			refactorLogger.debug(`Source file saved successfully`)
 		} catch (error) {
-			console.error(`[ERROR] Failed to save source file:`, error)
+			refactorLogger.error(`Failed to save source file:`, error)
 			throw new Error(`Failed to save source file: ${(error as Error).message}`)
 		}
 	}
@@ -855,7 +906,7 @@ export class RefactorEngine {
 		try {
 			// PERFORMANCE FIX: Skip expensive synchronization in test environments
 			if (this.isTestEnvironment()) {
-				console.log(`[DEBUG] Test environment detected - using lightweight synchronization`)
+				refactorLogger.debug(`Test environment detected - using lightweight synchronization`)
 
 				// Just clear caches for affected files - no expensive file operations
 				for (const filePath of affectedFiles) {
@@ -863,12 +914,12 @@ export class RefactorEngine {
 					this.fileCache.invalidateFile(filePath)
 				}
 
-				console.log(`[DEBUG] Lightweight synchronization completed for ${affectedFiles.length} files`)
+				refactorLogger.debug(`Lightweight synchronization completed for ${affectedFiles.length} files`)
 				return
 			}
 
 			// Production environment: Full synchronization logic
-			console.log(`[DEBUG] Starting enhanced project synchronization for ${affectedFiles.length} files`)
+			refactorLogger.debug(`Starting enhanced project synchronization for ${affectedFiles.length} files`)
 
 			// Step 1: Save all files in ts-morph project to disk first
 			const allSourceFiles = this.project.getSourceFiles()
@@ -888,7 +939,7 @@ export class RefactorEngine {
 				const existingFile = this.project.getSourceFile(filePath) || this.project.getSourceFile(absolutePath)
 				if (existingFile) {
 					this.project.removeSourceFile(existingFile)
-					console.log(`[DEBUG] Removed file from project cache: ${filePath}`)
+					refactorLogger.debug(`Removed file from project cache: ${filePath}`)
 				}
 
 				// Clear any internal caches
@@ -902,10 +953,10 @@ export class RefactorEngine {
 						if (newSourceFile) {
 							// Force refresh from file system to ensure latest content
 							newSourceFile.refreshFromFileSystemSync()
-							console.log(`[DEBUG] Re-added and refreshed file: ${filePath}`)
+							refactorLogger.debug(`Re-added and refreshed file: ${filePath}`)
 						}
 					} catch (e) {
-						console.log(`[WARNING] Failed to re-add file during synchronization: ${filePath}`)
+						refactorLogger.warn(`Failed to re-add file during synchronization: ${filePath}`)
 					}
 				}
 			}
@@ -929,10 +980,10 @@ export class RefactorEngine {
 						const freshTargetFile = this.project.addSourceFileAtPath(targetAbsolutePath)
 						if (freshTargetFile) {
 							freshTargetFile.refreshFromFileSystemSync()
-							console.log(`[DEBUG] Target file fully synchronized: ${targetFilePath}`)
+							refactorLogger.debug(`Target file fully synchronized: ${targetFilePath}`)
 						}
 					} catch (e) {
-						console.log(`[WARNING] Failed to synchronize target file: ${targetFilePath}`)
+						refactorLogger.warn(`Failed to synchronize target file: ${targetFilePath}`)
 					}
 				}
 			}
@@ -952,9 +1003,9 @@ export class RefactorEngine {
 				// Ignore errors accessing internal properties
 			}
 
-			console.log(`[DEBUG] Enhanced project synchronization completed`)
+			refactorLogger.debug(`Enhanced project synchronization completed`)
 		} catch (error) {
-			console.error(`[ERROR] Failed to synchronize project state:`, error)
+			refactorLogger.error(`Failed to synchronize project state:`, error)
 		}
 	}
 
@@ -970,7 +1021,9 @@ export class RefactorEngine {
 	): Promise<void> {
 		try {
 			if (!this.isTestEnvironment()) {
-				console.log(`[DEBUG] Synchronizing ${affectedFiles.length} files after operation ${operationIndex + 1}`)
+				refactorLogger.debug(
+					`Synchronizing ${affectedFiles.length} files after operation ${operationIndex + 1}`,
+				)
 			}
 
 			// PERFORMANCE FIX: Only save affected files instead of ALL project files
@@ -989,7 +1042,7 @@ export class RefactorEngine {
 			}
 
 			if (!this.isTestEnvironment()) {
-				console.log(`[DEBUG] Saving ${filesToSave.size} specific files instead of all project files`)
+				refactorLogger.debug(`Saving ${filesToSave.size} specific files instead of all project files`)
 			}
 
 			// Only save the specific files we need
@@ -999,10 +1052,10 @@ export class RefactorEngine {
 					try {
 						sourceFile.saveSync()
 						if (!this.isTestEnvironment()) {
-							console.log(`[DEBUG] Saved file: ${filePath}`)
+							refactorLogger.debug(`Saved file: ${filePath}`)
 						}
 					} catch (e) {
-						console.log(`[WARNING] Failed to save file: ${filePath}`)
+						refactorLogger.warn(`Failed to save file: ${filePath}`)
 					}
 				}
 			}
@@ -1011,7 +1064,7 @@ export class RefactorEngine {
 			// PERFORMANCE FIX: Skip expensive file reloading in test environments
 			// Test files are simple and don't need complex synchronization
 			if (this.isTestEnvironment()) {
-				console.log(`[DEBUG] Test environment detected - skipping expensive file reloading`)
+				refactorLogger.debug(`Test environment detected - skipping expensive file reloading`)
 
 				// Just clear caches for affected files
 				for (const filePath of affectedFiles) {
@@ -1019,7 +1072,7 @@ export class RefactorEngine {
 					this.fileCache.invalidateFile(filePath)
 				}
 
-				console.log(`[DEBUG] Cache invalidation completed for ${affectedFiles.length} files`)
+				refactorLogger.debug(`Cache invalidation completed for ${affectedFiles.length} files`)
 				return
 			}
 
@@ -1028,7 +1081,7 @@ export class RefactorEngine {
 			for (const filePath of affectedFiles) {
 				if (futureFilesOfInterest.has(filePath)) {
 					if (!this.isTestEnvironment()) {
-						console.log(`[DEBUG] File ${filePath} will be used by future operations - forcing reload`)
+						refactorLogger.debug(`File ${filePath} will be used by future operations - forcing reload`)
 					}
 
 					// Remove file from project completely
@@ -1048,11 +1101,11 @@ export class RefactorEngine {
 							if (newFile) {
 								newFile.refreshFromFileSystemSync()
 								if (!this.isTestEnvironment()) {
-									console.log(`[DEBUG] Reloaded file for future operations: ${filePath}`)
+									refactorLogger.debug(`Reloaded file for future operations: ${filePath}`)
 								}
 							}
 						} catch (e) {
-							console.log(`[WARNING] Failed to reload file: ${filePath}`)
+							refactorLogger.warn(`Failed to reload file: ${filePath}`)
 						}
 					}
 				} else {
@@ -1081,15 +1134,15 @@ export class RefactorEngine {
 
 							// Verify file size to ensure content was loaded
 							const fileContent = freshTargetFile.getFullText()
-							console.log(`[DEBUG] Target file reloaded - size: ${fileContent.length} bytes`)
+							refactorLogger.debug(`Target file reloaded - size: ${fileContent.length} bytes`)
 						}
 					} catch (e) {
-						console.log(`[WARNING] Failed to reload move target: ${targetPath}`)
+						refactorLogger.warn(`Failed to reload move target: ${targetPath}`)
 					}
 				}
 			}
 		} catch (error) {
-			console.error(`[ERROR] Batch operation synchronization failed:`, error)
+			refactorLogger.error(`Batch operation synchronization failed:`, error)
 		}
 	}
 
@@ -1113,9 +1166,9 @@ export class RefactorEngine {
 				if (this.pathResolver.pathExists(filePath)) {
 					try {
 						this.project.addSourceFileAtPath(filePath)
-						// console.log(`[DEBUG] Refreshed file from disk: ${filePath}`)
+						// refactorLogger.debug(`Refreshed file from disk: ${filePath}`)
 					} catch (e) {
-						console.log(`[WARNING] Failed to refresh file from disk: ${filePath}`)
+						refactorLogger.warn(`Failed to refresh file from disk: ${filePath}`)
 					}
 				}
 			}
@@ -1152,13 +1205,13 @@ export class RefactorEngine {
 			try {
 				sourceFile = this.project.addSourceFileAtPath(absolutePath)
 				if (sourceFile) {
-					console.log(`[DEBUG] Added file to project using absolute path: ${absolutePath}`)
+					refactorLogger.debug(`Added file to project using absolute path: ${absolutePath}`)
 					// Cache the newly added source file
 					this.sourceFileCache.markModified(filePath)
 					return sourceFile
 				}
 			} catch (e) {
-				console.log(`[WARNING] Failed to add file using absolute path: ${absolutePath}`)
+				refactorLogger.warn(`Failed to add file using absolute path: ${absolutePath}`)
 			}
 
 			// Try with relative path
@@ -1169,16 +1222,16 @@ export class RefactorEngine {
 
 				sourceFile = this.project.addSourceFileAtPath(relativePath)
 				if (sourceFile) {
-					console.log(`[DEBUG] Added file to project using relative path: ${relativePath}`)
+					refactorLogger.debug(`Added file to project using relative path: ${relativePath}`)
 					// Cache the newly added source file
 					this.sourceFileCache.markModified(relativePath)
 					return sourceFile
 				}
 			} catch (e) {
-				console.log(`[WARNING] Failed to add file using relative path`)
+				refactorLogger.warn(`Failed to add file using relative path`)
 			}
 		} else {
-			console.log(`[DEBUG] File does not exist: ${filePath}`)
+			refactorLogger.debug(`File does not exist: ${filePath}`)
 		}
 
 		return undefined
@@ -1190,7 +1243,7 @@ export class RefactorEngine {
 	 */
 	private detectDependentOperations(operations: RefactorOperation[]): boolean {
 		try {
-			console.log(`[DEBUG] Checking ${operations.length} operations for dependencies`)
+			refactorLogger.debug(`Checking ${operations.length} operations for dependencies`)
 
 			// Check for move -> rename dependencies
 			for (let i = 0; i < operations.length - 1; i++) {
@@ -1228,16 +1281,16 @@ export class RefactorEngine {
 
 					// Same symbol being operated on in sequence
 					if (currentSymbol === nextSymbol) {
-						console.log(`[DEBUG] Found dependency: Sequential operations on symbol ${currentSymbol}`)
+						refactorLogger.debug(`Found dependency: Sequential operations on symbol ${currentSymbol}`)
 						return true
 					}
 				}
 			}
 
-			console.log(`[DEBUG] No operation dependencies detected`)
+			refactorLogger.debug(`No operation dependencies detected`)
 			return false
 		} catch (error) {
-			console.error(`[ERROR] Failed to detect dependencies:`, error)
+			refactorLogger.error(`Failed to detect dependencies:`, error)
 			// If detection fails, preserve original order to be safe
 			return true
 		}
@@ -1252,7 +1305,7 @@ export class RefactorEngine {
 		// Primary detection: Check for our standard test prefix
 		const standardTestPrefix = "refactor-tool-test"
 		if (projectRoot.includes(standardTestPrefix)) {
-			console.log(`[DEBUG ENGINE] 🧪 Test environment detected via standard prefix: ${standardTestPrefix}`)
+			refactorLogger.debug(`🧪 Test environment detected via standard prefix: ${standardTestPrefix}`)
 			return true
 		}
 
@@ -1276,12 +1329,12 @@ export class RefactorEngine {
 		const isLegacyTest = legacyTestPatterns.some((pattern) => projectRoot.includes(pattern))
 
 		if (isLegacyTest) {
-			console.log(`[DEBUG ENGINE] 🧪 Test environment detected via legacy pattern`)
+			refactorLogger.debug(`🧪 Test environment detected via legacy pattern`)
 		} else {
-			console.log(`[DEBUG ENGINE] 🏭 Production environment detected`)
+			refactorLogger.debug(`🏭 Production environment detected`)
 		}
 
-		console.log(`[DEBUG ENGINE] 🧪 Test environment check - Root: ${projectRoot}, IsTest: ${isLegacyTest}`)
+		refactorLogger.debug(`🧪 Test environment check - Root: ${projectRoot}, IsTest: ${isLegacyTest}`)
 
 		return isLegacyTest
 	}
@@ -1292,13 +1345,13 @@ export class RefactorEngine {
 	private ensureTestFilesLoaded(): void {
 		try {
 			const projectRoot = this.options.projectRootPath
-			console.log(`[DEBUG ENGINE] 📂 Loading all test files from: ${projectRoot}`)
+			refactorLogger.debug(`📂 Loading all test files from: ${projectRoot}`)
 
 			const fs = require("fs")
 			const path = require("path")
 
 			if (!fs.existsSync(projectRoot)) {
-				console.log(`[DEBUG ENGINE] ❌ Test directory does not exist: ${projectRoot}`)
+				refactorLogger.debug(`❌ Test directory does not exist: ${projectRoot}`)
 				return
 			}
 
@@ -1320,7 +1373,7 @@ export class RefactorEngine {
 			}
 
 			const allTypeScriptFiles = findTypeScriptFiles(projectRoot)
-			console.log(`[DEBUG ENGINE] 🔍 Found ${allTypeScriptFiles.length} TypeScript files recursively`)
+			refactorLogger.debug(`🔍 Found ${allTypeScriptFiles.length} TypeScript files recursively`)
 
 			let filesLoaded = 0
 			for (const filePath of allTypeScriptFiles) {
@@ -1331,17 +1384,17 @@ export class RefactorEngine {
 					try {
 						this.project.addSourceFileAtPath(filePath)
 						filesLoaded++
-						console.log(`[DEBUG ENGINE] ✅ Loaded test file: ${relativePath}`)
+						refactorLogger.debug(`✅ Loaded test file: ${relativePath}`)
 					} catch (error) {
-						console.log(`[DEBUG ENGINE] ❌ Failed to load test file: ${relativePath}`)
+						refactorLogger.debug(`❌ Failed to load test file: ${relativePath}`)
 					}
 				} else {
-					console.log(`[DEBUG ENGINE] ⏭️  Test file already loaded: ${relativePath}`)
+					refactorLogger.debug(`⏭️  Test file already loaded: ${relativePath}`)
 				}
 			}
 
 			const totalFiles = this.project.getSourceFiles().length
-			console.log(`[DEBUG ENGINE] 📊 Test file loading complete - Added: ${filesLoaded}, Total: ${totalFiles}`)
+			refactorLogger.debug(`📊 Test file loading complete - Added: ${filesLoaded}, Total: ${totalFiles}`)
 
 			// Add file count limit for test environments to prevent runaway loading
 			if (totalFiles > 50) {
@@ -1350,7 +1403,7 @@ export class RefactorEngine {
 				)
 			}
 		} catch (error) {
-			console.log(`[DEBUG ENGINE] ❌ Error loading test files: ${(error as Error).message}`)
+			refactorLogger.debug(`❌ Error loading test files: ${(error as Error).message}`)
 		}
 	}
 
@@ -1362,7 +1415,7 @@ export class RefactorEngine {
 			const projectRoot = this.options.projectRootPath
 			const loadedFiles = this.project.getSourceFiles()
 
-			console.log(`[DEBUG ENGINE] 🔍 Validating test isolation - checking ${loadedFiles.length} loaded files`)
+			refactorLogger.debug(`🔍 Validating test isolation - checking ${loadedFiles.length} loaded files`)
 
 			let violationCount = 0
 			for (const file of loadedFiles) {
@@ -1370,12 +1423,12 @@ export class RefactorEngine {
 
 				// Check if file is outside the test directory
 				if (!filePath.startsWith(projectRoot)) {
-					console.log(`[DEBUG ENGINE] ⚠️  ISOLATION VIOLATION: File outside test directory: ${filePath}`)
+					refactorLogger.debug(`⚠️  ISOLATION VIOLATION: File outside test directory: ${filePath}`)
 					violationCount++
 
 					// Remove the violating file to prevent scope leakage
 					this.project.removeSourceFile(file)
-					console.log(`[DEBUG ENGINE] 🗑️  Removed violating file from project: ${filePath}`)
+					refactorLogger.debug(`🗑️  Removed violating file from project: ${filePath}`)
 				}
 			}
 
@@ -1385,11 +1438,10 @@ export class RefactorEngine {
 			)
 
 			if (violationCount > 0) {
-				console.log(`[DEBUG ENGINE] 🔧 Removed ${violationCount} files that violated test isolation`)
+				refactorLogger.debug(`🔧 Removed ${violationCount} files that violated test isolation`)
 			}
 		} catch (error) {
-			console.log(`[DEBUG ENGINE] ❌ Error validating test isolation: ${(error as Error).message}`)
+			refactorLogger.debug(`❌ Error validating test isolation: ${(error as Error).message}`)
 		}
 	}
 }
-

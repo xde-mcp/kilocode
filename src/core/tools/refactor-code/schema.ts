@@ -12,6 +12,12 @@ const IdentifierSelectorSchema = z.object({
 			kind: z.enum(["class", "interface", "namespace"]),
 		})
 		.optional(),
+	scope: z
+		.object({
+			type: z.enum(["class", "interface", "function", "namespace"]),
+			name: z.string().min(1),
+		})
+		.optional(),
 	signatureHint: z.string().optional(), // For disambiguating overloads
 })
 

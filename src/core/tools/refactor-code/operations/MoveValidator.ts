@@ -642,7 +642,20 @@ export class MoveValidator {
 		// but we can skip other validations for faster test execution
 		if (isTestEnv && process.env.NODE_ENV === "test") {
 			// Check for potential naming conflicts in target file
-			const potentialTargetFile = this.project.getSourceFile(targetFilePath)
+			// Force reload from disk to get current file state (fixes false conflict bug)
+			let potentialTargetFile = this.project.getSourceFile(targetFilePath)
+			if (potentialTargetFile) {
+				// Refresh the file from disk to ensure we have the latest content
+				try {
+					await potentialTargetFile.refreshFromFileSystem()
+				} catch (error) {
+					// If refresh fails, try to reload the file completely
+					this.project.removeSourceFile(potentialTargetFile)
+					const reloadedFile = await this.fileManager.ensureFileInProject(targetFilePath)
+					potentialTargetFile = reloadedFile || undefined
+				}
+			}
+
 			if (potentialTargetFile) {
 				const namingConflictResult = this.checkForNamingConflicts(
 					potentialTargetFile,
@@ -690,7 +703,7 @@ export class MoveValidator {
 
 		// Check for potential naming conflicts in target file
 		// In test environments, we might not find the file yet, so don't consider it an error
-		const potentialTargetFile = this.project.getSourceFile(targetFilePath)
+		let potentialTargetFile = this.project.getSourceFile(targetFilePath)
 
 		// Special handling for test environments - we'll skip some validations
 		if (isTestEnv && !potentialTargetFile) {
@@ -704,25 +717,39 @@ export class MoveValidator {
 			}
 		}
 		if (potentialTargetFile) {
-			// Use AST-based checks for more accurate naming conflict detection
-			const namingConflictResult = this.checkForNamingConflicts(
-				potentialTargetFile,
-				operation.selector.name,
-				operation.selector.kind || "function",
-			)
+			// Force reload from disk to get current file state (fixes false conflict bug)
+			try {
+				await potentialTargetFile.refreshFromFileSystem()
+			} catch (error) {
+				// If refresh fails, try to reload the file completely
+				this.project.removeSourceFile(potentialTargetFile)
+				const reloadedFile = await this.fileManager.ensureFileInProject(targetFilePath)
+				potentialTargetFile = reloadedFile || undefined
+			}
 
-			if (!namingConflictResult.success) {
-				return namingConflictResult
+			if (potentialTargetFile) {
+				// Use AST-based checks for more accurate naming conflict detection
+				const namingConflictResult = this.checkForNamingConflicts(
+					potentialTargetFile,
+					operation.selector.name,
+					operation.selector.kind || "function",
+				)
+
+				if (!namingConflictResult.success) {
+					return namingConflictResult
+				}
 			}
 
 			// Check for potential import conflicts
-			const existingImports = potentialTargetFile.getImportDeclarations()
-			const potentialConflicts = existingImports.filter((imp) =>
-				imp.getNamedImports().some((named) => named.getName() === operation.selector.name),
-			)
+			if (potentialTargetFile) {
+				const existingImports = potentialTargetFile.getImportDeclarations()
+				const potentialConflicts = existingImports.filter((imp) =>
+					imp.getNamedImports().some((named) => named.getName() === operation.selector.name),
+				)
 
-			if (potentialConflicts.length > 0) {
-				warnings.push(`Potential import conflicts found in target file for '${operation.selector.name}'`)
+				if (potentialConflicts.length > 0) {
+					warnings.push(`Potential import conflicts found in target file for '${operation.selector.name}'`)
+				}
 			}
 		}
 

@@ -9,6 +9,7 @@ import { ResolvedSymbol } from "../core/types"
 import { ImportManager } from "../utils/import-manager"
 import { ProjectManager } from "../core/ProjectManager"
 import { PerformanceTracker } from "../utils/performance-tracker"
+import { refactorLogger } from "../utils/RefactorLogger"
 
 /**
  * Result of a move operation execution.
@@ -113,7 +114,7 @@ export class MoveExecutor {
 			if (!symbol.filePath || typeof symbol.filePath !== "string") {
 				// Use the operation data if symbol data is incomplete
 				symbol.filePath = operation.selector.filePath
-				// console.log(`[DEBUG] Using operation file path for symbol: ${symbol.filePath}`)
+				// refactorLogger.debug(`Using operation file path for symbol: ${symbol.filePath}`)
 			}
 
 			// Normalize paths for consistent handling - measure this step
@@ -153,7 +154,7 @@ export class MoveExecutor {
 			})
 
 			if (!targetFile) {
-				// console.log(`[DEBUG] MoveExecutor: Failed to prepare target file: ${operation.targetFilePath}`)
+				// refactorLogger.debug(`MoveExecutor: Failed to prepare target file: ${operation.targetFilePath}`)
 				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
@@ -178,7 +179,7 @@ export class MoveExecutor {
 			})
 
 			if (!targetUpdated) {
-				// console.log(`[DEBUG] MoveExecutor: Failed to add symbol to target file: ${operation.targetFilePath}`)
+				// refactorLogger.debug(`MoveExecutor: Failed to add symbol to target file: ${operation.targetFilePath}`)
 				PerformanceTracker.endTracking(opId)
 				return {
 					success: false,
@@ -207,7 +208,7 @@ export class MoveExecutor {
 			}
 
 			// STEP 4: Update imports using centralized ImportManager (replaces duplicate logic)
-			// console.log(`[DEBUG] MoveExecutor: Using centralized ImportManager for all import updates`)
+			// refactorLogger.debug(`MoveExecutor: Using centralized ImportManager for all import updates`)
 			const importUpdatedFiles = await this.updateReferencingFiles(symbol, operation.targetFilePath)
 			let updatedReferenceFiles: string[] = importUpdatedFiles
 
@@ -238,7 +239,7 @@ export class MoveExecutor {
 			})
 
 			// Return successful result with details
-			// console.log(`[DEBUG] MoveExecutor: All steps completed, returning success=true`)
+			// refactorLogger.debug(`MoveExecutor: All steps completed, returning success=true`)
 			PerformanceTracker.endTracking(opId)
 			return {
 				success: true,
@@ -276,17 +277,17 @@ export class MoveExecutor {
 
 	private async prepareTargetFile(targetFilePath: string): Promise<SourceFile | null> {
 		try {
-			// console.log(`[DEBUG] prepareTargetFile called with: ${targetFilePath}`)
+			// refactorLogger.debug(`prepareTargetFile called with: ${targetFilePath}`)
 
 			// Use ProjectManager if available for more consistent file handling
 			if (this.projectManager) {
-				// console.log(`[DEBUG] Using ProjectManager to ensure source file`)
+				// refactorLogger.debug(`Using ProjectManager to ensure source file`)
 				const result = await this.projectManager.ensureSourceFile(targetFilePath)
-				// console.log(`[DEBUG] ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`)
+				// refactorLogger.debug(`ProjectManager.ensureSourceFile result: ${result ? "SUCCESS" : "NULL"}`)
 				if (result) {
 					return result
 				}
-				// console.log(`[DEBUG] ProjectManager failed, falling back to direct creation`)
+				// refactorLogger.debug(`ProjectManager failed, falling back to direct creation`)
 			}
 
 			// Fall back to original implementation
@@ -302,39 +303,39 @@ export class MoveExecutor {
 			try {
 				// First, try to add the existing file to the project if it exists on disk
 				const absoluteTargetPath = this.pathResolver.resolveAbsolutePath(normalizedPath)
-				// console.log(`[DEBUG] Checking if file exists on disk: ${absoluteTargetPath}`)
+				// refactorLogger.debug(`Checking if file exists on disk: ${absoluteTargetPath}`)
 
 				if (fs.existsSync(absoluteTargetPath)) {
-					// console.log(`[DEBUG] File exists on disk, adding to project: ${absoluteTargetPath}`)
+					// refactorLogger.debug(`File exists on disk, adding to project: ${absoluteTargetPath}`)
 					try {
 						targetFile = this.project.addSourceFileAtPath(absoluteTargetPath)
 						if (targetFile) {
-							// console.log(`[DEBUG] Successfully added existing file to project`)
+							// refactorLogger.debug(`Successfully added existing file to project`)
 							return targetFile
 						}
 					} catch (addError) {
-						// console.log(`[DEBUG] Failed to add existing file, will create new one: ${addError}`)
+						// refactorLogger.debug(`Failed to add existing file, will create new one: ${addError}`)
 					}
 				}
 
 				// If file doesn't exist or couldn't be added, create it
-				// console.log(`[DEBUG] Creating new file at: ${normalizedPath}`)
+				// refactorLogger.debug(`Creating new file at: ${normalizedPath}`)
 
 				// Ensure the directory exists
 				const dirName = this.pathResolver.getDirectoryPath(absoluteTargetPath)
 				if (!fs.existsSync(dirName)) {
 					fs.mkdirSync(dirName, { recursive: true })
-					// console.log(`[DEBUG] Created directory: ${dirName}`)
+					// refactorLogger.debug(`Created directory: ${dirName}`)
 				}
 
 				// Create the file in the project using absolute path to avoid working directory issues
-				// console.log(`[DEBUG] Creating source file with absolute path: ${absoluteTargetPath}`)
+				// refactorLogger.debug(`Creating source file with absolute path: ${absoluteTargetPath}`)
 				targetFile = this.project.createSourceFile(absoluteTargetPath, `// Target file\n`, {
 					overwrite: true,
 				})
 
 				if (targetFile) {
-					// console.log(`[DEBUG] Successfully created file in project`)
+					// refactorLogger.debug(`Successfully created file in project`)
 					return targetFile
 				}
 			} catch (error) {
@@ -388,7 +389,7 @@ export class MoveExecutor {
 			const interfaceName = interfaceDecl.getName()
 			// Check if this interface is referenced by the symbol
 			if (symbolText.includes(interfaceName)) {
-				// console.log(`[DEBUG] Found referenced interface: ${interfaceName}`)
+				// refactorLogger.debug(`Found referenced interface: ${interfaceName}`)
 				relatedTypes.push(interfaceDecl.getText())
 				referencedTypeNames.add(interfaceName)
 			}
@@ -660,12 +661,48 @@ export class MoveExecutor {
 				targetFile.getFilePath(),
 			)
 
-			// Add imports to the target file if they don't already exist
+			// Add imports to the target file using proper import management
 			for (const importText of importsToAdd) {
-				if (!targetText.includes(importText.trim())) {
-					// Find where to insert the import
-					const insertPosition = this.findImportInsertPosition(targetFile)
-					targetFile.insertText(insertPosition, importText + "\n")
+				// Parse the import statement to extract module and symbols
+				const importMatch = importText.match(/import\s+(.+?)\s+from\s+['"](.+?)['"]/)
+				if (importMatch) {
+					const [, importClause, moduleSpecifier] = importMatch
+
+					// Parse named imports
+					const namedImportsMatch = importClause.match(/\{\s*(.+?)\s*\}/)
+					if (namedImportsMatch) {
+						const namedImports = namedImportsMatch[1].split(",").map((s) => s.trim())
+
+						// Check if there's already an import from this module
+						const existingImport = targetFile.getImportDeclaration(
+							(imp) => imp.getModuleSpecifierValue() === moduleSpecifier && !imp.isTypeOnly(),
+						)
+
+						if (existingImport) {
+							// Add to existing import
+							for (const namedImport of namedImports) {
+								const existingNamedImports = existingImport.getNamedImports()
+								const alreadyImported = existingNamedImports.some(
+									(imp) => imp.getName() === namedImport,
+								)
+								if (!alreadyImported) {
+									existingImport.addNamedImport(namedImport)
+								}
+							}
+						} else {
+							// Create new import only if it doesn't exist
+							if (!targetText.includes(importText.trim())) {
+								const insertPosition = this.findImportInsertPosition(targetFile)
+								targetFile.insertText(insertPosition, importText + "\n")
+							}
+						}
+					} else {
+						// Handle default imports or other import types
+						if (!targetText.includes(importText.trim())) {
+							const insertPosition = this.findImportInsertPosition(targetFile)
+							targetFile.insertText(insertPosition, importText + "\n")
+						}
+					}
 				}
 			}
 
@@ -676,24 +713,22 @@ export class MoveExecutor {
 
 				// Add each related type
 				for (const typeText of relatedTypes) {
-					// Check if this type definition already exists in the target file
-					if (!targetFile.getFullText().includes(typeText.trim())) {
+					// More robust check for existing type definitions
+					const typeName = this.extractTypeName(typeText)
+					if (typeName && !this.typeExistsInFile(targetFile, typeName)) {
 						targetFile.insertText(insertPosition, typeText + "\n\n")
 					}
 				}
 			}
 
-			// Add the symbol text to the target file
-			// If file is empty or has only imports, add a newline before the symbol
-			const fileContent = targetFile.getFullText()
-			const hasContent = fileContent.trim().length > 0
-
-			// Add the symbol text to the target file
-			if (hasContent) {
+			// Check if the symbol already exists in the target file to prevent duplicates
+			const symbolName = this.extractSymbolName(symbolText)
+			if (symbolName && !this.symbolExistsInFile(targetFile, symbolName)) {
+				// Add the symbol text to the target file
 				targetFile.addStatements(symbolText)
+				refactorLogger.debug(`Added symbol '${symbolName}' to target file`)
 			} else {
-				// Create an empty file with the symbol text
-				targetFile.addStatements(symbolText)
+				refactorLogger.debug(`Symbol '${symbolName}' already exists in target file, skipping`)
 			}
 
 			// Save the changes
@@ -742,7 +777,7 @@ export class MoveExecutor {
 
 			// Skip imports that would point to the target file itself (self-imports)
 			if (normalizedImportPath === normalizedTargetPath) {
-				// console.log(`[DEBUG] Filtering out self-import: ${moduleSpecifier} -> ${normalizedImportPath}`)
+				// refactorLogger.debug(`Filtering out self-import: ${moduleSpecifier} -> ${normalizedImportPath}`)
 				continue
 			}
 
@@ -779,14 +814,20 @@ export class MoveExecutor {
 			}
 
 			// For relative imports, adjust the path for the new file location
-			const sourceDir = this.pathResolver.normalizeFilePath(sourceFilePath)
-			const targetDir = this.pathResolver.normalizeFilePath(targetFilePath)
+			const sourceDir = this.pathResolver.getDirectoryPath(sourceFilePath)
+			const targetDir = this.pathResolver.getDirectoryPath(targetFilePath)
 
 			// Resolve the full path of the imported module relative to the source file
 			const absoluteImportPath = this.resolveImportPath(sourceDir, moduleSpecifier)
+			console.log(
+				`[DEBUG MOVE-EXECUTOR] resolveImportPath(${sourceDir}, ${moduleSpecifier}) = ${absoluteImportPath}`,
+			)
 
 			// Calculate the new relative path from the target file to the imported module
-			const newRelativePath = this.pathResolver.getRelativeImportPath(targetDir, absoluteImportPath)
+			const newRelativePath = this.pathResolver.getRelativeImportPath(targetFilePath, absoluteImportPath)
+			console.log(
+				`[DEBUG MOVE-EXECUTOR] getRelativeImportPath(${targetFilePath}, ${absoluteImportPath}) = ${newRelativePath}`,
+			)
 
 			// Create the adjusted import statement
 			const defaultImportNode = importDecl.getDefaultImport()
@@ -855,11 +896,11 @@ export class MoveExecutor {
 		// and should resolve relative to the temp directory instead
 		const projectRoot = this.pathResolver.getProjectRoot()
 		if (!resolvedPath.startsWith(projectRoot)) {
-			// console.log(`[DEBUG] Resolved path ${resolvedPath} is outside project root ${projectRoot}`)
+			// refactorLogger.debug(`Resolved path ${resolvedPath} is outside project root ${projectRoot}`)
 			// In test environments, the temp directory is the effective project root
 			const tempRoot = projectRoot // Use the project root which should be the temp directory in tests
 			const tempResolvedPath = path.resolve(tempRoot, importPath)
-			// console.log(`[DEBUG] Using temp-relative resolution: ${tempResolvedPath}`)
+			// refactorLogger.debug(`Using temp-relative resolution: ${tempResolvedPath}`)
 			const normalizedTempPath = this.pathResolver.standardizePath(tempResolvedPath)
 
 			// Append .ts if needed
@@ -972,7 +1013,7 @@ export class MoveExecutor {
 					const functionToRemove = functions.find((f) => f.getName() === symbolName)
 
 					if (functionToRemove) {
-						// console.log(`[DEBUG] Removing function declaration: ${symbolName}`)
+						// refactorLogger.debug(`Removing function declaration: ${symbolName}`)
 						functionToRemove.remove()
 						removalSuccessful = true
 					} else {
@@ -981,7 +1022,7 @@ export class MoveExecutor {
 						if (exportedFunctions && exportedFunctions.length > 0) {
 							const exportedFunc = exportedFunctions[0]
 							if (exportedFunc.getKindName().includes("Function")) {
-								// console.log(`[DEBUG] Removing exported function: ${symbolName}`)
+								// refactorLogger.debug(`Removing exported function: ${symbolName}`)
 								// Can't directly remove from exportedDeclarations, so find the actual node
 								const nodePos = exportedFunc.getPos()
 								const nodeEnd = exportedFunc.getEnd()
@@ -1004,11 +1045,11 @@ export class MoveExecutor {
 							if (parentOfStatement) {
 								if (parentOfStatement.getKindName().includes("SourceFile")) {
 									const index = statement.getChildIndex()
-									// console.log(`[DEBUG] Removing function at statement index: ${index}`)
+									// refactorLogger.debug(`Removing function at statement index: ${index}`)
 									sourceFile.removeStatements([index, index + 1])
 									removalSuccessful = true
 								} else if ("removeStatement" in parentOfStatement) {
-									// console.log(`[DEBUG] Removing function statement from block`)
+									// refactorLogger.debug(`Removing function statement from block`)
 									// @ts-ignore - Dynamic method call
 									parentOfStatement.removeStatement(statement)
 									removalSuccessful = true
@@ -1020,7 +1061,7 @@ export class MoveExecutor {
 					const interfaces = sourceFile.getInterfaces()
 					const interfaceToRemove = interfaces.find((i) => i.getName() === symbolName)
 					if (interfaceToRemove) {
-						// console.log(`[DEBUG] Removing interface declaration: ${symbolName}`)
+						// refactorLogger.debug(`Removing interface declaration: ${symbolName}`)
 						interfaceToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1028,7 +1069,7 @@ export class MoveExecutor {
 					const classes = sourceFile.getClasses()
 					const classToRemove = classes.find((c) => c.getName() === symbolName)
 					if (classToRemove) {
-						// console.log(`[DEBUG] Removing class declaration: ${symbolName}`)
+						// refactorLogger.debug(`Removing class declaration: ${symbolName}`)
 						classToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1036,7 +1077,7 @@ export class MoveExecutor {
 					const types = sourceFile.getTypeAliases()
 					const typeToRemove = types.find((t) => t.getName() === symbolName)
 					if (typeToRemove) {
-						// console.log(`[DEBUG] Removing type alias: ${symbolName}`)
+						// refactorLogger.debug(`Removing type alias: ${symbolName}`)
 						typeToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1044,7 +1085,7 @@ export class MoveExecutor {
 					const enums = sourceFile.getEnums()
 					const enumToRemove = enums.find((e) => e.getName() === symbolName)
 					if (enumToRemove) {
-						// console.log(`[DEBUG] Removing enum: ${symbolName}`)
+						// refactorLogger.debug(`Removing enum: ${symbolName}`)
 						enumToRemove.remove()
 						removalSuccessful = true
 					}
@@ -1059,11 +1100,11 @@ export class MoveExecutor {
 						if (foundIndex >= 0) {
 							if (declarations.length === 1) {
 								// If this is the only declaration in the statement, remove the whole statement
-								// console.log(`[DEBUG] Removing entire variable statement for: ${symbolName}`)
+								// refactorLogger.debug(`Removing entire variable statement for: ${symbolName}`)
 								statement.remove()
 							} else {
 								// Otherwise just remove this declaration
-								// console.log(`[DEBUG] Removing single variable declaration: ${symbolName}`)
+								// refactorLogger.debug(`Removing single variable declaration: ${symbolName}`)
 								declarations[foundIndex].remove()
 							}
 							removalSuccessful = true
@@ -1082,12 +1123,12 @@ export class MoveExecutor {
 
 					if (statement && statement.getKindName().includes("Statement")) {
 						const index = statement.getChildIndex()
-						// console.log(`[DEBUG] Removing generic statement at index: ${index}`)
+						// refactorLogger.debug(`Removing generic statement at index: ${index}`)
 						try {
 							sourceFile.removeStatements([index, index + 1])
 							removalSuccessful = true
 						} catch (e) {
-							// console.log(`[DEBUG] Failed to remove statement: ${e}`)
+							// refactorLogger.debug(`Failed to remove statement: ${e}`)
 						}
 					}
 				}
@@ -1101,7 +1142,7 @@ export class MoveExecutor {
 				sourceFile.saveSync()
 				sourceFile.refreshFromFileSystemSync()
 			} catch (nodeRemovalError) {
-				// console.log(`[DEBUG] Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
+				// refactorLogger.debug(`Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
 
 				// Second attempt: Text-based removal
 				const startPos = nodeToRemove.getPos()
@@ -1123,7 +1164,7 @@ export class MoveExecutor {
 				}
 
 				// Remove the text with expanded range
-				// console.log(`[DEBUG] Text-based removal from positions ${expandedStartPos} to ${expandedEndPos}`)
+				// refactorLogger.debug(`Text-based removal from positions ${expandedStartPos} to ${expandedEndPos}`)
 				sourceFile.replaceText([expandedStartPos, expandedEndPos], "")
 				sourceFile.saveSync()
 				sourceFile.refreshFromFileSystemSync()
@@ -1132,7 +1173,7 @@ export class MoveExecutor {
 			// Third attempt: Pattern-based removal if still present
 			const updatedText = sourceFile.getFullText()
 			if (updatedText.includes(symbolName) && updatedText !== originalText) {
-				// console.log(`[DEBUG] Symbol may still be present. Trying pattern-based removal.`)
+				// refactorLogger.debug(`Symbol may still be present. Trying pattern-based removal.`)
 
 				// More comprehensive regex patterns for different symbol types
 				const functionPattern = `(export\\s+)?(function|async\\s+function)\\s+${symbolName}\\s*\\([^{]*\\)\\s*\\{[\\s\\S]*?\\}`
@@ -1152,7 +1193,7 @@ export class MoveExecutor {
 						const matchStart = matchResult.index
 						const matchEnd = matchStart + matchResult[0].length
 
-						// console.log(`[DEBUG] Pattern match found at positions ${matchStart} to ${matchEnd}`)
+						// refactorLogger.debug(`Pattern match found at positions ${matchStart} to ${matchEnd}`)
 						sourceFile.replaceText([matchStart, matchEnd], "")
 						sourceFile.saveSync()
 						sourceFile.refreshFromFileSystemSync()
@@ -1207,7 +1248,7 @@ export class MoveExecutor {
 	private async updateReferencingFiles(symbol: ResolvedSymbol, targetFilePath: string): Promise<string[]> {
 		try {
 			console.log(`[CRITICAL DEBUG] *** updateReferencingFiles ENTRY POINT *** symbol: ${symbol.name}`)
-			// console.log(`[DEBUG] updateReferencingFiles called for symbol "${symbol.name}"`)
+			// refactorLogger.debug(`updateReferencingFiles called for symbol "${symbol.name}"`)
 			// Use ImportManager to update all imports that reference the moved symbol
 			const importManager = new ImportManager(this.project)
 			// CRITICAL: Set the PathResolver so import paths are calculated correctly
@@ -1234,9 +1275,9 @@ export class MoveExecutor {
 			const relativeSourcePath = pathResolver.convertToRelativePath(sourceFilePath)
 			const relativeTargetPath = pathResolver.convertToRelativePath(resolvedTargetPath)
 
-			// console.log(`[DEBUG] About to call importManager.updateImportsAfterMove`)
-			// console.log(`[DEBUG] Source path: ${sourceFilePath} -> ${relativeSourcePath}`)
-			// console.log(`[DEBUG] Target path: ${resolvedTargetPath} -> ${relativeTargetPath}`)
+			// refactorLogger.debug(`About to call importManager.updateImportsAfterMove`)
+			// refactorLogger.debug(`Source path: ${sourceFilePath} -> ${relativeSourcePath}`)
+			// refactorLogger.debug(`Target path: ${resolvedTargetPath} -> ${relativeTargetPath}`)
 			// console.log(`[DEBUG] ImportManager object:`, importManager)
 			console.log(
 				`[DEBUG] ImportManager.updateImportsAfterMove method:`,
@@ -1251,7 +1292,7 @@ export class MoveExecutor {
 			)
 
 			await importManager.updateImportsAfterMove(symbol.name, relativeSourcePath, relativeTargetPath)
-			// console.log(`[DEBUG] Completed importManager.updateImportsAfterMove`)
+			// refactorLogger.debug(`Completed importManager.updateImportsAfterMove`)
 
 			// Get the list of files that were actually updated by ImportManager
 			// This is much more efficient than scanning all project files
@@ -1278,7 +1319,7 @@ export class MoveExecutor {
 			updatedFiles.push(...updatedFilesByImportManager)
 
 			const uniqueUpdatedFiles = [...new Set(updatedFiles)]
-			// console.log(`[DEBUG] Total unique updated files: ${uniqueUpdatedFiles.length}`)
+			// refactorLogger.debug(`Total unique updated files: ${uniqueUpdatedFiles.length}`)
 
 			return uniqueUpdatedFiles
 		} catch (error) {
@@ -1308,28 +1349,46 @@ export class MoveExecutor {
 		// Get all import declarations
 		const importDeclarations = file.getImportDeclarations()
 
-		// Find existing imports for the symbol
-		for (const importDecl of importDeclarations) {
-			const namedImports = importDecl.getNamedImports()
+		// First, check if there's already an import from the same module
+		const existingImportFromModule = importDeclarations.find(
+			(imp) => imp.getModuleSpecifierValue() === importPath && !imp.isTypeOnly(),
+		)
 
-			// Check if this import includes our symbol
-			const matchingImport = namedImports.find((named) => named.getName() === symbolName)
+		if (existingImportFromModule) {
+			// Check if the symbol is already imported
+			const namedImports = existingImportFromModule.getNamedImports()
+			const alreadyImported = namedImports.some((named) => named.getName() === symbolName)
 
-			if (matchingImport) {
-				// Update the module specifier
-				importDecl.setModuleSpecifier(importPath)
+			if (!alreadyImported) {
+				// Add to existing import
+				existingImportFromModule.addNamedImport(symbolName)
 				updated = true
-				break
 			}
-		}
+		} else {
+			// Check if the symbol is imported from a different module and update it
+			let symbolFoundInOtherImport = false
 
-		// If no existing import for this symbol, add a new one
-		if (!updated) {
-			file.addImportDeclaration({
-				namedImports: [symbolName],
-				moduleSpecifier: importPath,
-			})
-			updated = true
+			for (const importDecl of importDeclarations) {
+				const namedImports = importDecl.getNamedImports()
+				const matchingImport = namedImports.find((named) => named.getName() === symbolName)
+
+				if (matchingImport) {
+					// Update the module specifier for this import
+					importDecl.setModuleSpecifier(importPath)
+					updated = true
+					symbolFoundInOtherImport = true
+					break
+				}
+			}
+
+			// If symbol not found in any existing import, create new import
+			if (!symbolFoundInOtherImport) {
+				file.addImportDeclaration({
+					namedImports: [symbolName],
+					moduleSpecifier: importPath,
+				})
+				updated = true
+			}
 		}
 
 		return updated
@@ -1343,26 +1402,26 @@ export class MoveExecutor {
 	private async ensureAllProjectFilesAreLoaded(): Promise<void> {
 		try {
 			const projectRoot = this.pathResolver.getProjectRoot()
-			// console.log(`[DEBUG] Scanning for TypeScript files in: ${projectRoot}`)
+			// refactorLogger.debug(`Scanning for TypeScript files in: ${projectRoot}`)
 
 			// Get all TypeScript files in the project directory
 			const tsFiles = this.findTypeScriptFiles(projectRoot)
-			// console.log(`[DEBUG] Found ${tsFiles.length} TypeScript files to ensure are loaded`)
+			// refactorLogger.debug(`Found ${tsFiles.length} TypeScript files to ensure are loaded`)
 
 			// Add each file to the project if not already present
 			for (const filePath of tsFiles) {
 				try {
 					const existingFile = this.project.getSourceFile(filePath)
 					if (!existingFile) {
-						// console.log(`[DEBUG] Adding file to project: ${filePath}`)
+						// refactorLogger.debug(`Adding file to project: ${filePath}`)
 						this.project.addSourceFileAtPath(filePath)
 					}
 				} catch (error) {
-					// console.log(`[DEBUG] Failed to add file ${filePath}: ${error}`)
+					// refactorLogger.debug(`Failed to add file ${filePath}: ${error}`)
 				}
 			}
 
-			// console.log(`[DEBUG] Project now has ${this.project.getSourceFiles().length} source files loaded`)
+			// refactorLogger.debug(`Project now has ${this.project.getSourceFiles().length} source files loaded`)
 		} catch (error) {
 			console.error(`[ERROR] Failed to ensure all project files are loaded: ${error}`)
 		}
@@ -1393,9 +1452,111 @@ export class MoveExecutor {
 				}
 			}
 		} catch (error) {
-			// console.log(`[DEBUG] Failed to read directory ${dir}: ${error}`)
+			// refactorLogger.debug(`Failed to read directory ${dir}: ${error}`)
 		}
 
 		return files
+	}
+
+	/**
+	 * Extracts the type name from a type definition string
+	 */
+	private extractTypeName(typeText: string): string | null {
+		// Match interface, type alias, enum, or class declarations
+		const matches = typeText.match(/(?:export\s+)?(?:interface|type|enum|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/)
+		return matches ? matches[1] : null
+	}
+
+	/**
+	 * Extracts the symbol name from a symbol definition string
+	 */
+	private extractSymbolName(symbolText: string): string | null {
+		// Match function, class, interface, type, enum, or variable declarations
+		const patterns = [
+			/(?:export\s+)?(?:function)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+			/(?:export\s+)?(?:class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+			/(?:export\s+)?(?:interface)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+			/(?:export\s+)?(?:type)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+			/(?:export\s+)?(?:enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+			/(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)/,
+		]
+
+		for (const pattern of patterns) {
+			const match = symbolText.match(pattern)
+			if (match) {
+				return match[1]
+			}
+		}
+		return null
+	}
+
+	/**
+	 * Checks if a type with the given name already exists in the target file
+	 */
+	private typeExistsInFile(targetFile: SourceFile, typeName: string): boolean {
+		// Check for interface declarations
+		if (targetFile.getInterface(typeName)) {
+			return true
+		}
+
+		// Check for type alias declarations
+		if (targetFile.getTypeAlias(typeName)) {
+			return true
+		}
+
+		// Check for enum declarations
+		if (targetFile.getEnum(typeName)) {
+			return true
+		}
+
+		// Check for class declarations
+		if (targetFile.getClass(typeName)) {
+			return true
+		}
+
+		return false
+	}
+
+	/**
+	 * Checks if a symbol with the given name already exists in the target file
+	 */
+	private symbolExistsInFile(targetFile: SourceFile, symbolName: string): boolean {
+		// Check for function declarations
+		if (targetFile.getFunction(symbolName)) {
+			return true
+		}
+
+		// Check for class declarations
+		if (targetFile.getClass(symbolName)) {
+			return true
+		}
+
+		// Check for interface declarations
+		if (targetFile.getInterface(symbolName)) {
+			return true
+		}
+
+		// Check for type alias declarations
+		if (targetFile.getTypeAlias(symbolName)) {
+			return true
+		}
+
+		// Check for enum declarations
+		if (targetFile.getEnum(symbolName)) {
+			return true
+		}
+
+		// Check for variable declarations
+		const variableStatements = targetFile.getVariableStatements()
+		for (const varStatement of variableStatements) {
+			const declarations = varStatement.getDeclarations()
+			for (const declaration of declarations) {
+				if (declaration.getName() === symbolName) {
+					return true
+				}
+			}
+		}
+
+		return false
 	}
 }
