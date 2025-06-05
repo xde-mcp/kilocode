@@ -140,7 +140,7 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 
 		abortController?.abort() // Abort any previous request
 		abortController = new AbortController()
-		animationManager.startAnimation()
+		const stopAnimation = animationManager.startAnimation()
 
 		const snippets = [
 			...generateImportSnippets(true, codeContext.imports, codeContext.document.uri.fsPath),
@@ -202,8 +202,8 @@ function setupAutocomplete(context: vscode.ExtensionContext): vscode.Disposable 
 		// Update status bar with cost and timing information
 		statusBar.updateDisplay(state)
 
-		// Stop animation when completion is done
-		animationManager.stopAnimation()
+		// Stop this animation (no-op if superseded by newer animation)
+		stopAnimation()
 
 		// Process the completion text for insertion
 		if (processedCompletion) {
