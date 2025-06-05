@@ -129,7 +129,7 @@ export class RenameOrchestrator {
 			const symbolSourceFile = symbol.node.getSourceFile()
 			refactorLogger.debug(`Source file path: ${symbolSourceFile.getFilePath()}`)
 			refactorLogger.debug(`Source file full text after rename:`)
-			console.log(symbolSourceFile.getFullText().substring(0, 200) + "...")
+			refactorLogger.debug(symbolSourceFile.getFullText().substring(0, 200) + "...")
 
 			// Additional manual update for barrel file imports
 			this.updateBarrelImports(affectedFiles, operation.selector.name, operation.newName)
@@ -137,8 +137,8 @@ export class RenameOrchestrator {
 			// Note: Files will be saved by the engine after this operation completes
 			// No need to save here as it causes duplicate saves and path conflicts
 
-			console.log(
-				`[DEBUG] Rename operation completed successfully. Affected files: ${Array.from(affectedFiles).join(", ")}`,
+			refactorLogger.debug(
+				`Rename operation completed successfully. Affected files: ${Array.from(affectedFiles).join(", ")}`,
 			)
 
 			return {
@@ -202,8 +202,8 @@ export class RenameOrchestrator {
 		const allReferences = [...directReferences, ...additionalReferences]
 		const uniqueReferences = this.removeDuplicateNodes(allReferences)
 
-		console.log(
-			`[DEBUG] Found ${uniqueReferences.length} total references (${directReferences.length} direct, ${additionalReferences.length} import/export)`,
+		refactorLogger.debug(
+			`Found ${uniqueReferences.length} total references (${directReferences.length} direct, ${additionalReferences.length} import/export)`,
 		)
 
 		return uniqueReferences

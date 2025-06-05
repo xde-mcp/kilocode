@@ -1,4 +1,5 @@
 import { performance } from "perf_hooks"
+import { refactorLogger } from "./RefactorLogger"
 
 /**
  * Simple utility to track performance of operations in the refactor tool.
@@ -21,7 +22,7 @@ export class PerformanceTracker {
 		}
 		// Only log start for critical operations
 		if (operationId.includes("move-") || operationId.includes("batch-")) {
-			console.log(`[PERF] Started tracking: ${operationId}`)
+			refactorLogger.debug(`Started tracking: ${operationId}`)
 		}
 	}
 
@@ -45,14 +46,14 @@ export class PerformanceTracker {
 				this.timers[operationId].operations.push({ name: stepName, duration })
 				// Only log slow steps (>100ms)
 				if (duration > 100) {
-					console.log(`[PERF] Slow step '${stepName}' took ${duration.toFixed(2)}ms`)
+					refactorLogger.warn(`Slow step '${stepName}' took ${duration.toFixed(2)}ms`)
 				}
 			}
 
 			return result
 		} catch (error) {
 			const duration = performance.now() - startTime
-			console.log(`[PERF] Step '${stepName}' failed after ${duration.toFixed(2)}ms: ${error}`)
+			refactorLogger.error(`Step '${stepName}' failed after ${duration.toFixed(2)}ms: ${error}`)
 			throw error
 		}
 	}
@@ -82,13 +83,13 @@ export class PerformanceTracker {
 
 		// Only log if operation took more than 500ms
 		if (totalDuration > 500) {
-			console.log(`[PERF] Slow operation '${operationId}' completed in ${totalDuration.toFixed(2)}ms`)
-			console.log("[PERF] Breakdown:")
+			refactorLogger.warn(`Slow operation '${operationId}' completed in ${totalDuration.toFixed(2)}ms`)
+			refactorLogger.debug("Breakdown:")
 			steps.forEach((step) => {
 				if (step.duration > 50) {
 					// Only show steps >50ms
-					console.log(
-						`[PERF]   - ${step.name}: ${step.duration.toFixed(2)}ms (${step.percentage.toFixed(1)}%)`,
+					refactorLogger.debug(
+						`  - ${step.name}: ${step.duration.toFixed(2)}ms (${step.percentage.toFixed(1)}%)`,
 					)
 				}
 			})

@@ -14,6 +14,7 @@ import {
 import * as path from "path"
 import * as fs from "fs"
 import { VirtualImportManager } from "./virtual-import-manager"
+import { refactorLogger } from "./RefactorLogger"
 
 export interface ImportUpdate {
 	file: SourceFile
@@ -100,30 +101,30 @@ export class ImportManager {
 			// CRITICAL FIX: Find files that reference the moved symbol but don't currently import it
 			// This handles cases where a symbol is moved from a file and other files use it but don't import it
 			const referencingFiles = this.findFilesReferencingSymbol(symbolName, oldFilePath)
-			console.log(`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
+			refactorLogger.debug(`Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
 
 			// CRITICAL FIX: Check if the source file itself contains re-exports that need updating
 			// This handles cases where we move a symbol from a file that re-exports other symbols
 			const sourceFileForReExports = this.project.getSourceFile(oldFilePath)
-			console.log(`[VIRTUAL-IMPORT] Checking source file for re-exports: ${oldFilePath}`)
-			console.log(`[VIRTUAL-IMPORT] Source file exists: ${!!sourceFileForReExports}`)
+			refactorLogger.debug(`Checking source file for re-exports: ${oldFilePath}`)
+			refactorLogger.debug(`Source file exists: ${!!sourceFileForReExports}`)
 			if (sourceFileForReExports) {
 				const hasReExports = this.fileContainsReExports(sourceFileForReExports)
-				console.log(`[VIRTUAL-IMPORT] Source file contains re-exports: ${hasReExports}`)
+				refactorLogger.debug(`Source file contains re-exports: ${hasReExports}`)
 				if (hasReExports) {
 					// Add source file to re-exporting files if it's not already included
 					if (!reExportingFiles.some((file) => file.getFilePath() === sourceFileForReExports.getFilePath())) {
 						reExportingFiles.push(sourceFileForReExports)
-						console.log(`[VIRTUAL-IMPORT] Added source file to re-exporting files: ${oldFilePath}`)
+						refactorLogger.debug(`Added source file to re-exporting files: ${oldFilePath}`)
 					} else {
-						console.log(`[VIRTUAL-IMPORT] Source file already in re-exporting files: ${oldFilePath}`)
+						refactorLogger.debug(`Source file already in re-exporting files: ${oldFilePath}`)
 					}
 				}
 			}
 
-			console.log(`[VIRTUAL-IMPORT] Found ${importingFiles.length} files importing from ${oldFilePath}`)
-			console.log(`[VIRTUAL-IMPORT] Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`)
-			console.log(`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
+			refactorLogger.debug(`Found ${importingFiles.length} files importing from ${oldFilePath}`)
+			refactorLogger.debug(`Found ${reExportingFiles.length} files re-exporting from ${oldFilePath}`)
+			refactorLogger.debug(`Found ${referencingFiles.length} files referencing symbol ${symbolName}`)
 
 			// Step 2: Initialize virtual import state for all affected files
 			const affectedFiles = new Set<SourceFile>()
@@ -172,7 +173,7 @@ export class ImportManager {
 
 				// Skip the target file to prevent circular imports
 				if (normalizedFilePath.endsWith(newRelativePath)) {
-					console.log(`[VIRTUAL-IMPORT] Skipping target file to prevent circular imports: ${filePath}`)
+					refactorLogger.debug(`Skipping target file to prevent circular imports: ${filePath}`)
 					continue
 				}
 
@@ -185,21 +186,19 @@ export class ImportManager {
 				const isImportingFile = importingFiles.some((impFile) => impFile.getFilePath() === filePath)
 				const isReExportingFile = reExportingFiles.some((reExpFile) => reExpFile.getFilePath() === filePath)
 
-				console.log(`[VIRTUAL-IMPORT] File classification for ${filePath}:`)
-				console.log(`[VIRTUAL-IMPORT]   - isReferencingFile: ${isReferencingFile}`)
-				console.log(`[VIRTUAL-IMPORT]   - isImportingFile: ${isImportingFile}`)
-				console.log(`[VIRTUAL-IMPORT]   - isReExportingFile: ${isReExportingFile}`)
+				refactorLogger.debug(`File classification for ${filePath}:`)
+				refactorLogger.debug(`  - isReferencingFile: ${isReferencingFile}`)
+				refactorLogger.debug(`  - isImportingFile: ${isImportingFile}`)
+				refactorLogger.debug(`  - isReExportingFile: ${isReExportingFile}`)
 
 				if (isReferencingFile && !isImportingFile && !isReExportingFile) {
 					// This file references the symbol but doesn't import it - add new import
-					console.log(
-						`[VIRTUAL-IMPORT] Adding new import for '${symbolName}' to referencing file: ${filePath}`,
-					)
+					refactorLogger.debug(`Adding new import for '${symbolName}' to referencing file: ${filePath}`)
 					this.virtualImportManager!.addNamedImport(filePath, symbolName, newModuleSpecifier, false)
 				} else if (isImportingFile || isReExportingFile) {
 					// This file already imports from the source - update the import path
-					console.log(
-						`[VIRTUAL-IMPORT] Updating import path for '${symbolName}' in importing/re-exporting file: ${filePath}`,
+					refactorLogger.debug(
+						`Updating import path for '${symbolName}' in importing/re-exporting file: ${filePath}`,
 					)
 					this.virtualImportManager!.updateImportPath(
 						filePath,
@@ -208,7 +207,7 @@ export class ImportManager {
 						newModuleSpecifier,
 					)
 				} else {
-					console.log(`[VIRTUAL-IMPORT] Skipping file (no action needed): ${filePath}`)
+					refactorLogger.debug(`Skipping file (no action needed): ${filePath}`)
 				}
 			}
 
@@ -221,17 +220,17 @@ export class ImportManager {
 
 				// Check if the source file still references the moved symbol
 				const stillReferencesSymbol = this.fileReferencesSymbol(sourceFile, symbolName)
-				console.log(`[VIRTUAL-IMPORT] Source file still references '${symbolName}': ${stillReferencesSymbol}`)
+				refactorLogger.debug(`Source file still references '${symbolName}': ${stillReferencesSymbol}`)
 
 				if (!stillReferencesSymbol) {
 					// Remove any import of the moved symbol from the source file only if it's not used
 					this.virtualImportManager!.removeNamedImport(sourceFilePath, symbolName, newModuleSpecifier)
-					console.log(
-						`[VIRTUAL-IMPORT] Removed import of ${symbolName} from source file ${sourceFilePath} (symbol not used)`,
+					refactorLogger.debug(
+						`Removed import of ${symbolName} from source file ${sourceFilePath} (symbol not used)`,
 					)
 				} else {
-					console.log(
-						`[VIRTUAL-IMPORT] Keeping import of ${symbolName} in source file ${sourceFilePath} (symbol still used)`,
+					refactorLogger.debug(
+						`Keeping import of ${symbolName} in source file ${sourceFilePath} (symbol still used)`,
 					)
 				}
 
@@ -239,13 +238,11 @@ export class ImportManager {
 				// This handles the case where we move a symbol from a file that re-exports other symbols
 				const exportDeclarations = sourceFile.getExportDeclarations()
 				if (exportDeclarations.length > 0) {
-					console.log(
-						`[VIRTUAL-IMPORT] Source file contains ${exportDeclarations.length} re-exports, adding re-export for moved symbol`,
+					refactorLogger.debug(
+						`Source file contains ${exportDeclarations.length} re-exports, adding re-export for moved symbol`,
 					)
 					this.virtualImportManager!.addNamedReExport(sourceFilePath, symbolName, newModuleSpecifier)
-					console.log(
-						`[VIRTUAL-IMPORT] Added re-export: export { ${symbolName} } from "${newModuleSpecifier}"`,
-					)
+					refactorLogger.debug(`Added re-export: export { ${symbolName} } from "${newModuleSpecifier}"`)
 				}
 			}
 
@@ -257,8 +254,8 @@ export class ImportManager {
 				this.updatedFiles.add(filePath)
 			})
 
-			console.log(`[VIRTUAL-IMPORT] Successfully updated imports in ${updatedFilePaths.length} files`)
-			console.log(`[VIRTUAL-IMPORT] Updated files:`, updatedFilePaths)
+			refactorLogger.debug(`Successfully updated imports in ${updatedFilePaths.length} files`)
+			refactorLogger.debug(`Updated files: ${updatedFilePaths.join(", ")}`)
 		} catch (error) {
 			console.error(`[VIRTUAL-IMPORT] Exception in updateImportsAfterMoveVirtualized:`, error)
 			throw error
@@ -270,11 +267,11 @@ export class ImportManager {
 	 * Uses caching to improve performance for repeated calls
 	 */
 	private findFilesImporting(filePath: string): SourceFile[] {
-		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 ENTRY: findFilesImporting called with: ${filePath}`)
-		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Finding files importing from: ${filePath}`)
+		// refactorLogger.debug(`🔍 ENTRY: findFilesImporting called with: ${filePath}`)
+		// refactorLogger.debug(`🔍 Finding files importing from: ${filePath}`)
 
 		// DISABLE CACHE for debugging - force fresh search every time
-		// console.log(`[DEBUG IMPORT-MANAGER] 🚫 Cache disabled for debugging - forcing fresh search`)
+		// refactorLogger.debug(`🚫 Cache disabled for debugging - forcing fresh search`)
 
 		// Check cache first
 		const cacheKey = `import:${filePath}`
@@ -291,36 +288,33 @@ export class ImportManager {
 		// }
 
 		// Try to get the source file - first try as-is, then try absolute path
-		// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Looking for source file: ${filePath}`)
+		// refactorLogger.debug(`🔍 Looking for source file: ${filePath}`)
 		let sourceFile = this.project.getSourceFile(filePath)
-		// console.log(`[DEBUG IMPORT-MANAGER] 📁 First attempt result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
+		// refactorLogger.debug(`📁 First attempt result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
 
 		if (!sourceFile) {
 			// Try with absolute path
 			const absolutePath = this.pathResolver.resolveAbsolutePath(filePath)
-			// console.log(`[DEBUG IMPORT-MANAGER] 🔄 Trying absolute path: ${absolutePath}`)
+			// refactorLogger.debug(`🔄 Trying absolute path: ${absolutePath}`)
 			sourceFile = this.project.getSourceFile(absolutePath)
-			// console.log(`[DEBUG IMPORT-MANAGER] 📁 Absolute path result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
+			// refactorLogger.debug(`📁 Absolute path result: ${sourceFile ? "FOUND" : "NOT FOUND"}`)
 		}
 
 		if (!sourceFile) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Source file not found in project: ${filePath}`)
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 📊 Available files in project:`,
-				this.project.getSourceFiles().map((f) => f.getFilePath()),
+			// refactorLogger.debug(`❌ Source file not found in project: ${filePath}`)
+			refactorLogger.debug(
+				`Available files in project: ${this.project.getSourceFiles().map((f) => f.getFilePath()).join(", ")}`,
 			)
 			return []
 		}
 
-		// console.log(`[DEBUG IMPORT-MANAGER] ✅ Source file found: ${sourceFile.getFilePath()}`)
+		// refactorLogger.debug(`✅ Source file found: ${sourceFile.getFilePath()}`)
 
 		const importingFiles: SourceFile[] = []
 
 		// First try the ts-morph method
 		const referencingFiles = sourceFile.getReferencingSourceFiles()
-		console.log(
-			`[DEBUG IMPORT-MANAGER] 📊 ts-morph getReferencingSourceFiles() returned ${referencingFiles.length} files`,
-		)
+		refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 📊 ts-morph getReferencingSourceFiles() returned ${referencingFiles.length} files: ${	}`)
 
 		for (const file of referencingFiles) {
 			const imports = file.getImportDeclarations()
@@ -331,69 +325,59 @@ export class ImportManager {
 
 		// FORCE comprehensive search - ts-morph's getReferencingSourceFiles() is unreliable in test environments
 		// Always use comprehensive search to ensure we find cross-directory imports
-		console.log(
-			`[DEBUG IMPORT-MANAGER] 🔄 Forcing comprehensive search regardless of getReferencingSourceFiles() results`,
-		)
-		// console.log(`[DEBUG IMPORT-MANAGER] 🚀 About to start comprehensive search section`)
+		refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 🔄 Forcing comprehensive search regardless of getReferencingSourceFiles() results: ${	}`)
+		// refactorLogger.debug(`🚀 About to start comprehensive search section`)
 		// Always perform comprehensive search when getReferencingSourceFiles fails
 		{
-			// console.log(`[DEBUG IMPORT-MANAGER] ✅ Inside comprehensive search if block`)
-			console.log(
-				`[DEBUG IMPORT-MANAGER] ⚠️  No files found via getReferencingSourceFiles, using targeted file discovery for imports from ${filePath}`,
-			)
+			// refactorLogger.debug(`✅ Inside comprehensive search if block`)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ⚠️  No files found via getReferencingSourceFiles, using targeted file discovery for imports from ${filePath}: ${	}`)
 
 			// Use targeted file discovery instead of loading all project files
 			const targetedFiles = this.findFilesInSameDirectoryTree(filePath)
-			// console.log(`[DEBUG IMPORT-MANAGER] 🎯 Targeted discovery found ${targetedFiles.length} files to check`)
+			// refactorLogger.debug(`🎯 Targeted discovery found ${targetedFiles.length} files to check`)
 
 			// ALSO search in parent directories to find cross-directory imports
 			const allProjectFiles = this.project.getSourceFiles()
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 🌍 Also checking all ${allProjectFiles.length} project files for cross-directory imports`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 🌍 Also checking all ${allProjectFiles.length} project files for cross-directory imports: ${	}`)
 
 			const allFilesToCheck = [...targetedFiles, ...allProjectFiles]
 			const uniqueFiles = Array.from(new Set(allFilesToCheck.map((f) => f.getFilePath())))
 				.map((path) => this.project.getSourceFile(path))
 				.filter(Boolean) as SourceFile[]
 
-			// console.log(`[DEBUG IMPORT-MANAGER] 📊 Total unique files to check: ${uniqueFiles.length}`)
+			// refactorLogger.debug(`📊 Total unique files to check: ${uniqueFiles.length}`)
 
-			// console.log(`[DEBUG IMPORT-MANAGER] 🔄 Starting to check ${uniqueFiles.length} unique files`)
+			// refactorLogger.debug(`🔄 Starting to check ${uniqueFiles.length} unique files`)
 
 			for (const file of uniqueFiles) {
 				const currentFilePath = file.getFilePath()
-				// console.log(`[DEBUG IMPORT-MANAGER] 🔍 Checking file for imports: ${currentFilePath}`)
+				// refactorLogger.debug(`🔍 Checking file for imports: ${currentFilePath}`)
 
 				// Skip the source file itself
 				if (currentFilePath === filePath) {
-					// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  Skipping source file: ${currentFilePath}`)
+					// refactorLogger.debug(`⏭️  Skipping source file: ${currentFilePath}`)
 					continue
 				}
 
 				const imports = file.getImportDeclarations()
-				console.log(
-					`[DEBUG IMPORT-MANAGER] 📋 Found ${imports.length} import declarations in ${currentFilePath}`,
-				)
+				refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 📋 Found ${imports.length} import declarations in ${currentFilePath}: ${	}`)
 
 				for (const imp of imports) {
 					const moduleSpecifier = imp.getModuleSpecifierValue()
-					// console.log(`[DEBUG IMPORT-MANAGER] 📦 Checking import: ${moduleSpecifier}`)
+					// refactorLogger.debug(`📦 Checking import: ${moduleSpecifier}`)
 
 					const isMatch = this.isImportFromFile(imp, filePath)
-					// console.log(`[DEBUG IMPORT-MANAGER] 🎯 Import matches target file: ${isMatch}`)
+					// refactorLogger.debug(`🎯 Import matches target file: ${isMatch}`)
 
 					if (isMatch) {
-						// console.log(`[DEBUG IMPORT-MANAGER] ✅ Found importing file: ${currentFilePath}`)
+						// refactorLogger.debug(`✅ Found importing file: ${currentFilePath}`)
 						importingFiles.push(file)
 						break // Only add the file once
 					}
 				}
 			}
 
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 🏁 Finished checking all files, found ${importingFiles.length} importing files`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 🏁 Finished checking all files, found ${importingFiles.length} importing files: ${	}`)
 		}
 
 		// Remove duplicates before caching and returning
@@ -415,7 +399,7 @@ export class ImportManager {
 		const referencingFiles: SourceFile[] = []
 		const allFiles = this.project.getSourceFiles()
 
-		console.log(`[VIRTUAL-IMPORT] Searching for references to symbol '${symbolName}' in ${allFiles.length} files`)
+		refactorLogger.debug(`Searching for references to symbol '${symbolName}' in ${allFiles.length} files`)
 
 		for (const file of allFiles) {
 			const filePath = file.getFilePath()
@@ -431,17 +415,15 @@ export class ImportManager {
 				const alreadyImports = this.fileImportsSymbolFromFile(file, symbolName, excludeFilePath)
 
 				if (!alreadyImports) {
-					console.log(`[VIRTUAL-IMPORT] Found file referencing '${symbolName}' without import: ${filePath}`)
+					refactorLogger.debug(`Found file referencing '${symbolName}' without import: ${filePath}`)
 					referencingFiles.push(file)
 				} else {
-					console.log(`[VIRTUAL-IMPORT] File already imports '${symbolName}': ${filePath}`)
+					refactorLogger.debug(`File already imports '${symbolName}': ${filePath}`)
 				}
 			}
 		}
 
-		console.log(
-			`[VIRTUAL-IMPORT] Found ${referencingFiles.length} files referencing '${symbolName}' without imports`,
-		)
+		refactorLogger.debug(`Found ${referencingFiles.length} files referencing '${symbolName}' without imports`)
 		return referencingFiles
 	}
 
@@ -542,9 +524,7 @@ export class ImportManager {
 					hasSymbol = namespaceUsagePattern.test(fileText)
 
 					if (hasSymbol) {
-						console.log(
-							`[DEBUG] ImportManager: Found namespace usage ${namespaceAlias}.${symbolName} in ${file.getFilePath()}`,
-						)
+						refactorLogger.debug(`[DEBUG] ImportManager: Found namespace usage ${namespaceAlias}.${symbolName} in ${file.getFilePath()}: ${	}`)
 					}
 				}
 			} else {
@@ -557,47 +537,47 @@ export class ImportManager {
 				continue
 			}
 
-			// console.log(`[DEBUG] ImportManager: Found import with symbol ${symbolName} in ${file.getFilePath()}`)
-			// console.log(`[DEBUG] ImportManager: Current import: ${importDecl.getText()}`)
+			// refactorLogger.debug(`ImportManager: Found import with symbol ${symbolName} in ${file.getFilePath()}`)
+			// refactorLogger.debug(`ImportManager: Current import: ${importDecl.getText()}`)
 
 			// Calculate new relative path
 			const newRelativePath = this.calculateRelativePath(file.getFilePath(), newPath)
-			// console.log(`[DEBUG] ImportManager: Updating import path to: ${newRelativePath}`)
+			// refactorLogger.debug(`ImportManager: Updating import path to: ${newRelativePath}`)
 
 			// Check if we need to keep the old import for other symbols
 			const currentImportType = this.getImportType(importDecl)
 
 			if (currentImportType === this.ImportType.DEFAULT) {
 				// For default imports, we need to update the entire import
-				// console.log(`[DEBUG] ImportManager: Updating default import module specifier`)
+				// refactorLogger.debug(`ImportManager: Updating default import module specifier`)
 				importDecl.setModuleSpecifier(newRelativePath)
 			} else if (currentImportType === this.ImportType.NAMESPACE) {
 				// For namespace imports, update the module specifier
-				// console.log(`[DEBUG] ImportManager: Updating namespace import module specifier`)
+				// refactorLogger.debug(`ImportManager: Updating namespace import module specifier`)
 				importDecl.setModuleSpecifier(newRelativePath)
 			} else {
 				// For regular and type imports, check if there are other imports to keep
 				const namedImports = importDecl.getNamedImports()
 				const otherImports = namedImports.filter((imp) => imp.getName() !== symbolName)
-				// console.log(`[DEBUG] ImportManager: Named import - other imports: ${otherImports.length}`)
+				// refactorLogger.debug(`ImportManager: Named import - other imports: ${otherImports.length}`)
 
 				if (otherImports.length > 0) {
 					// Remove only the moved symbol from the import
-					// console.log(`[DEBUG] ImportManager: Removing symbol from import and creating new import`)
+					// refactorLogger.debug(`ImportManager: Removing symbol from import and creating new import`)
 					const symbolImport = namedImports.find((imp) => imp.getName() === symbolName)
 					symbolImport?.remove()
 
 					// Add a new import for the moved symbol, preserving the import type
 					if (currentImportType === this.ImportType.TYPE) {
-						// console.log(`[DEBUG] ImportManager: Adding new type import for ${symbolName}`)
+						// refactorLogger.debug(`ImportManager: Adding new type import for ${symbolName}`)
 						this.addTypeImport(file, symbolName, newRelativePath)
 					} else {
-						// console.log(`[DEBUG] ImportManager: Adding new regular import for ${symbolName}`)
+						// refactorLogger.debug(`ImportManager: Adding new regular import for ${symbolName}`)
 						this.addImport(file, symbolName, newRelativePath)
 					}
 				} else {
 					// Update the module specifier if this is the only import
-					// console.log(`[DEBUG] ImportManager: Updating module specifier for single import`)
+					// refactorLogger.debug(`ImportManager: Updating module specifier for single import`)
 					importDecl.setModuleSpecifier(newRelativePath)
 				}
 			}
@@ -618,7 +598,7 @@ export class ImportManager {
 			if (!hasUpdatedImport && !this.hasImport(file, symbolName)) {
 				const newRelativePath = this.calculateRelativePath(file.getFilePath(), newPath)
 				this.addImport(file, symbolName, newRelativePath)
-				// console.log(`[DEBUG] Added missing import for ${symbolName} in file ${file.getFilePath()}`)
+				// refactorLogger.debug(`Added missing import for ${symbolName} in file ${file.getFilePath()}`)
 			}
 		}
 	}
@@ -683,13 +663,11 @@ export class ImportManager {
 		// Get the moved symbol's dependencies from the old file
 		const oldFile = this.project.getSourceFile(oldFilePath)
 		if (!oldFile) {
-			console.log(`[ERROR] Could not find source file: ${oldFilePath}`)
+			refactorLogger.error(`Could not find source file: ${oldFilePath}`)
 			return
 		}
 
-		console.log(
-			`[DEBUG] Analyzing dependencies for ${movedSymbolName} to add imports in target file: ${newFile.getFilePath()}`,
-		)
+		refactorLogger.debug(`[DEBUG] Analyzing dependencies for ${movedSymbolName} to add imports in target file: ${newFile.getFilePath()}: ${	}`)
 
 		// Find all symbols that the moved symbol depends on
 		const dependencies = this.findSymbolDependencies(oldFile, movedSymbolName)
@@ -699,7 +677,7 @@ export class ImportManager {
 		const filteredDependencies = dependencies.filter((dep) => {
 			// Never import the symbol we just moved
 			if (dep.name === movedSymbolName) {
-				// console.log(`[DEBUG] Filtering out moved symbol itself: ${dep.name}`)
+				// refactorLogger.debug(`Filtering out moved symbol itself: ${dep.name}`)
 				return false
 			}
 
@@ -714,30 +692,30 @@ export class ImportManager {
 
 				// If it looks like a type, keep it
 				if (isLikelyType) {
-					// console.log(`[DEBUG] Keeping likely type reference despite property name match: ${dep.name}`)
+					// refactorLogger.debug(`Keeping likely type reference despite property name match: ${dep.name}`)
 					return true
 				}
 
-				// console.log(`[DEBUG] Filtering out likely object property: ${dep.name}`)
+				// refactorLogger.debug(`Filtering out likely object property: ${dep.name}`)
 				return false
 			}
 
 			// Keep all type references - these are important for type checking
 			if (dep.isType) {
-				// console.log(`[DEBUG] Keeping type reference: ${dep.name}`)
+				// refactorLogger.debug(`Keeping type reference: ${dep.name}`)
 				return true
 			}
 
 			// Keep all function calls - these are important for execution
 			if (dep.isFunction) {
-				// console.log(`[DEBUG] Keeping function call dependency: ${dep.name}`)
+				// refactorLogger.debug(`Keeping function call dependency: ${dep.name}`)
 				return true
 			}
 
 			return true
 		})
 
-		// console.log(`[DEBUG] After filtering, adding ${filteredDependencies.length} dependencies`)
+		// refactorLogger.debug(`After filtering, adding ${filteredDependencies.length} dependencies`)
 
 		// Collect all local symbols in the original file that might be needed
 		const localSymbols = new Set<string>()
@@ -773,11 +751,11 @@ export class ImportManager {
 				// we need to import it in the new file
 				if (oldFileExports.has(dep.name)) {
 					localSymbols.add(dep.name)
-					// console.log(`[DEBUG] Found local dependency that's exported: ${dep.name}`)
+					// refactorLogger.debug(`Found local dependency that's exported: ${dep.name}`)
 				} else if (allOldFileSymbols.has(dep.name)) {
 					// If it's defined in the file but not exported, we still need to reference it
 					localSymbols.add(dep.name)
-					// console.log(`[DEBUG] Found local dependency that's not exported: ${dep.name}`)
+					// refactorLogger.debug(`Found local dependency that's not exported: ${dep.name}`)
 				}
 			}
 		}
@@ -786,12 +764,12 @@ export class ImportManager {
 		if (localSymbols.size > 0) {
 			// Calculate relative path from new file to old file
 			const relativePath = this.calculateRelativePath(newFile.getFilePath(), oldFilePath)
-			// console.log(`[DEBUG] Calculated relative path for local imports: ${relativePath}`)
+			// refactorLogger.debug(`Calculated relative path for local imports: ${relativePath}`)
 
 			for (const symbolName of localSymbols) {
 				if (!this.hasImport(newFile, symbolName)) {
 					this.addImport(newFile, symbolName, relativePath)
-					// console.log(`[DEBUG] Added import for local dependency: ${symbolName} from ${relativePath}`)
+					// refactorLogger.debug(`Added import for local dependency: ${symbolName} from ${relativePath}`)
 				}
 			}
 		}
@@ -851,9 +829,7 @@ export class ImportManager {
 			)
 
 			if (neededSymbols.length > 0) {
-				console.log(
-					`[DEBUG] Found original import for dependencies: ${neededSymbols.map((s) => s.symbol).join(", ")} from ${moduleSpecifier}`,
-				)
+				refactorLogger.debug(`[DEBUG] Found original import for dependencies: ${neededSymbols.map((s) => s.symbol).join(", ")} from ${moduleSpecifier}: ${	}`)
 
 				// Calculate the correct relative path for the new file
 				let adjustedModuleSpecifier = moduleSpecifier
@@ -867,7 +843,7 @@ export class ImportManager {
 					const absoluteImportPath = this.pathResolver.resolveAbsolutePath(
 						this.pathResolver.joinPaths(oldFileDirPath, moduleSpecifier),
 					)
-					// console.log(`[DEBUG] Resolved absolute import path: ${absoluteImportPath}`)
+					// refactorLogger.debug(`Resolved absolute import path: ${absoluteImportPath}`)
 
 					// Then calculate the relative path from the new file to that absolute path
 					adjustedModuleSpecifier = this.pathResolver.getRelativePath(newFileDirPath, absoluteImportPath)
@@ -880,7 +856,7 @@ export class ImportManager {
 					// Normalize path separators
 					adjustedModuleSpecifier = adjustedModuleSpecifier.replace(/\\/g, "/")
 
-					// console.log(`[DEBUG] Adjusted import path: ${adjustedModuleSpecifier}`)
+					// refactorLogger.debug(`Adjusted import path: ${adjustedModuleSpecifier}`)
 				}
 
 				// Store import metadata
@@ -909,33 +885,25 @@ export class ImportManager {
 				// Add regular imports
 				for (const symbolName of regularSymbols) {
 					this.addImport(newFile, symbolName, moduleSpecifier)
-					console.log(
-						`[DEBUG] Added regular import for external dependency: ${symbolName} from ${moduleSpecifier}`,
-					)
+					refactorLogger.debug(`[DEBUG] Added regular import for external dependency: ${symbolName} from ${moduleSpecifier}: ${	}`)
 				}
 
 				// Add type imports
 				for (const symbolName of typeSymbols) {
 					this.addTypeImport(newFile, symbolName, moduleSpecifier)
-					console.log(
-						`[DEBUG] Added type import for external dependency: ${symbolName} from ${moduleSpecifier}`,
-					)
+					refactorLogger.debug(`[DEBUG] Added type import for external dependency: ${symbolName} from ${moduleSpecifier}: ${	}`)
 				}
 
 				// Add namespace imports
 				for (const symbolInfo of namespaceSymbols) {
 					this.addNamespaceImport(newFile, symbolInfo.symbol, moduleSpecifier)
-					console.log(
-						`[DEBUG] Added namespace import for external dependency: ${symbolInfo.symbol} from ${moduleSpecifier}`,
-					)
+					refactorLogger.debug(`[DEBUG] Added namespace import for external dependency: ${symbolInfo.symbol} from ${moduleSpecifier}: ${	}`)
 				}
 
 				// Add default imports
 				for (const symbolInfo of defaultSymbols) {
 					this.addDefaultImport(newFile, symbolInfo.symbol, moduleSpecifier)
-					console.log(
-						`[DEBUG] Added default import for external dependency: ${symbolInfo.symbol} from ${moduleSpecifier}`,
-					)
+					refactorLogger.debug(`[DEBUG] Added default import for external dependency: ${symbolInfo.symbol} from ${moduleSpecifier}: ${	}`)
 				}
 			}
 		}
@@ -949,13 +917,13 @@ export class ImportManager {
 
 			// Check if the dependency is already imported in the new file
 			if (!this.hasImport(newFile, dep.name)) {
-				// console.log(`[DEBUG] Adding import for remaining dependency: ${dep.name} (isLocal: ${dep.isLocal})`)
+				// refactorLogger.debug(`Adding import for remaining dependency: ${dep.name} (isLocal: ${dep.isLocal})`)
 
 				if (dep.isLocal) {
 					// For local dependencies that weren't found in imports, we need to create a new import
 					const relativePath = this.calculateRelativePath(newFile.getFilePath(), oldFilePath)
 					this.addImport(newFile, dep.name, relativePath)
-					// console.log(`[DEBUG] Added fallback import for local dependency: ${dep.name} from ${relativePath}`)
+					// refactorLogger.debug(`Added fallback import for local dependency: ${dep.name} from ${relativePath}`)
 				} else {
 					// External import - try to copy from old file or make best effort
 					const importFound = this.copyImport(newFile, oldFile, dep.name)
@@ -965,7 +933,7 @@ export class ImportManager {
 					}
 				}
 			} else {
-				// console.log(`[DEBUG] Dependency ${dep.name} already imported in target file`)
+				// refactorLogger.debug(`Dependency ${dep.name} already imported in target file`)
 			}
 		}
 	}
@@ -977,13 +945,11 @@ export class ImportManager {
 		const moduleSpecifier = importDecl.getModuleSpecifierValue()
 		const importingFilePath = importDecl.getSourceFile().getFilePath()
 
-		console.log(
-			`[DEBUG IMPORT-MATCH] 🔍 Checking if import "${moduleSpecifier}" from ${importingFilePath} matches target ${filePath}`,
-		)
+		refactorLogger.debug(`[DEBUG IMPORT-MATCH] 🔍 Checking if import "${moduleSpecifier}" from ${importingFilePath} matches target ${filePath}: ${	}`)
 
 		// Handle non-relative imports (packages)
 		if (!moduleSpecifier.startsWith(".") && !moduleSpecifier.startsWith("/")) {
-			// console.log(`[DEBUG IMPORT-MATCH] ❌ Non-relative import, skipping`)
+			// refactorLogger.debug(`❌ Non-relative import, skipping`)
 			return false
 		}
 
@@ -993,23 +959,21 @@ export class ImportManager {
 			const resolvedModule = importDecl.getModuleSpecifierSourceFile()
 			if (resolvedModule) {
 				const resolvedPath = resolvedModule.getFilePath()
-				// console.log(`[DEBUG IMPORT-MATCH] ✅ TypeScript resolved "${moduleSpecifier}" to: ${resolvedPath}`)
+				// refactorLogger.debug(`✅ TypeScript resolved "${moduleSpecifier}" to: ${resolvedPath}`)
 
 				// Normalize both paths for comparison
 				const normalizedResolved = this.pathResolver.normalizeFilePath(resolvedPath)
 				const normalizedTarget = this.pathResolver.normalizeFilePath(filePath)
 
 				const isMatch = this.pathResolver.arePathsEqual(normalizedResolved, normalizedTarget)
-				console.log(
-					`[DEBUG IMPORT-MATCH] 🎯 Path comparison: ${normalizedResolved} === ${normalizedTarget} = ${isMatch}`,
-				)
+				refactorLogger.debug(`[DEBUG IMPORT-MATCH] 🎯 Path comparison: ${normalizedResolved} === ${normalizedTarget} = ${isMatch}: ${	}`)
 
 				return isMatch
 			} else {
-				// console.log(`[DEBUG IMPORT-MATCH] ❌ TypeScript could not resolve "${moduleSpecifier}"`)
+				// refactorLogger.debug(`❌ TypeScript could not resolve "${moduleSpecifier}"`)
 			}
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MATCH] ❌ TypeScript resolution failed for "${moduleSpecifier}": ${error}`)
+			// refactorLogger.debug(`❌ TypeScript resolution failed for "${moduleSpecifier}": ${error}`)
 		}
 
 		// Fallback: manual path resolution for edge cases
@@ -1052,9 +1016,7 @@ export class ImportManager {
 		for (const ext of extensions) {
 			const withExt = manualResolved + ext
 			if (this.pathsMatch(withExt, filePath)) {
-				console.log(
-					`[DEBUG] Import match found via manual resolution with ${ext}: ${moduleSpecifier} -> ${filePath}`,
-				)
+				refactorLogger.debug(`[DEBUG] Import match found via manual resolution with ${ext}: ${moduleSpecifier} -> ${filePath}: ${	}`)
 				return true
 			}
 		}
@@ -1092,9 +1054,7 @@ export class ImportManager {
 		// Use PathResolver's optimized method if available
 		if (this.pathResolver && typeof this.pathResolver.getRelativeImportPath === "function") {
 			relativePath = this.pathResolver.getRelativeImportPath(fromPath, toPath)
-			console.log(
-				`[DEBUG] Using PathResolver.getRelativeImportPath: ${relativePath} (from ${fromPath} to ${toPath})`,
-			)
+			refactorLogger.debug(`[DEBUG] Using PathResolver.getRelativeImportPath: ${relativePath} (from ${fromPath} to ${toPath}): ${	}`)
 		} else {
 			// Fallback implementation
 			// Normalize paths
@@ -1115,9 +1075,7 @@ export class ImportManager {
 				relativePath = "./" + relativePath
 			}
 
-			console.log(
-				`[DEBUG] Fallback relative path calculation: ${relativePath} (from ${fromDir} to ${normalizedToPath})`,
-			)
+			refactorLogger.debug(`[DEBUG] Fallback relative path calculation: ${relativePath} (from ${fromDir} to ${normalizedToPath}): ${	}`)
 		}
 
 		// Cache the result
@@ -1277,7 +1235,7 @@ export class ImportManager {
 	): Array<{ name: string; isLocal: boolean; isType?: boolean; isFunction?: boolean }> {
 		// Use enhanced SymbolExtractor if available
 		if (this.symbolExtractor) {
-			// console.log(`[DEBUG] Using enhanced SymbolExtractor for dependency analysis of ${symbolName}`)
+			// refactorLogger.debug(`Using enhanced SymbolExtractor for dependency analysis of ${symbolName}`)
 
 			// Find the symbol node using the appropriate methods for SourceFile
 			let symbolNode: Node | undefined
@@ -1336,7 +1294,7 @@ export class ImportManager {
 			}
 
 			if (!symbolNode) {
-				// console.log(`[DEBUG] Symbol node not found for: ${symbolName}`)
+				// refactorLogger.debug(`Symbol node not found for: ${symbolName}`)
 				return []
 			}
 
@@ -1404,9 +1362,7 @@ export class ImportManager {
 					})
 				})
 
-				console.log(
-					`[DEBUG] Enhanced dependency analysis found ${result.length} dependencies for ${symbolName}`,
-				)
+				refactorLogger.debug(`[DEBUG] Enhanced dependency analysis found ${result.length} dependencies for ${symbolName}: ${	}`)
 
 				// Remove duplicates by name
 				const uniqueDependencies = Array.from(new Map(result.map((item) => [item.name, item])).values())
@@ -1473,7 +1429,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				// console.log(`[DEBUG] Added local declaration to scope: ${name}`)
+				// refactorLogger.debug(`Added local declaration to scope: ${name}`)
 			}
 		})
 
@@ -1481,7 +1437,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				// console.log(`[DEBUG] Added local function to scope: ${name}`)
+				// refactorLogger.debug(`Added local function to scope: ${name}`)
 			}
 		})
 
@@ -1489,7 +1445,7 @@ export class ImportManager {
 			const name = d.getName()
 			if (name) {
 				declarationsInScope.add(name)
-				// console.log(`[DEBUG] Added parameter to scope: ${name}`)
+				// refactorLogger.debug(`Added parameter to scope: ${name}`)
 			}
 		})
 
@@ -1509,20 +1465,20 @@ export class ImportManager {
 			const parent = identifier.getParent()
 			if (parent && Node.isPropertyAssignment(parent) && parent.getNameNode() === identifier) {
 				// This is a property name in an object literal, not a reference to a dependency
-				// console.log(`[DEBUG] Skipping object property name: ${name}`)
+				// refactorLogger.debug(`Skipping object property name: ${name}`)
 				return
 			}
 
 			// Skip property access expressions where this is the property name
 			if (parent && Node.isPropertyAccessExpression(parent) && parent.getNameNode() === identifier) {
 				// This is a property access like obj.prop, and we're looking at "prop"
-				// console.log(`[DEBUG] Skipping property access name: ${name}`)
+				// refactorLogger.debug(`Skipping property access name: ${name}`)
 				return
 			}
 
 			// Skip parameter property names
 			if (parent && Node.isParameterDeclaration(parent) && parent.getNameNode() === identifier) {
-				// console.log(`[DEBUG] Skipping parameter property name: ${name}`)
+				// refactorLogger.debug(`Skipping parameter property name: ${name}`)
 				return
 			}
 
@@ -1538,7 +1494,7 @@ export class ImportManager {
 			// Check if this is a named import specifier (which wouldn't be a dependency)
 			if (parent && Node.isImportSpecifier(parent)) {
 				shouldInclude = false
-				// console.log(`[DEBUG] Skipping import specifier: ${name}`)
+				// refactorLogger.debug(`Skipping import specifier: ${name}`)
 			}
 
 			// Skip if this is the name of a declaration
@@ -1550,7 +1506,7 @@ export class ImportManager {
 				parent.getName() === name
 			) {
 				shouldInclude = false
-				// console.log(`[DEBUG] Skipping declaration name: ${name}`)
+				// refactorLogger.debug(`Skipping declaration name: ${name}`)
 			}
 
 			if (!shouldInclude) {
@@ -1599,7 +1555,7 @@ export class ImportManager {
 			if (Node.isIdentifier(expression)) {
 				const name = expression.getText()
 				if (!declarationsInScope.has(name)) {
-					// console.log(`[DEBUG] Found function call dependency: ${name}`)
+					// refactorLogger.debug(`Found function call dependency: ${name}`)
 					// Try to determine if the called function is local
 					let isLocal = false
 					try {
@@ -1626,7 +1582,7 @@ export class ImportManager {
 			if (Node.isIdentifier(typeRef.getTypeName())) {
 				const name = typeRef.getTypeName().getText()
 				if (!declarationsInScope.has(name)) {
-					// console.log(`[DEBUG] Found type reference dependency: ${name}`)
+					// refactorLogger.debug(`Found type reference dependency: ${name}`)
 
 					// Check if it's a local type
 					let isLocal = false
@@ -1741,7 +1697,7 @@ export class ImportManager {
 	 * Adds a type import to a file
 	 */
 	private addTypeImport(file: SourceFile, symbolName: string, modulePath: string): void {
-		// console.log(`[DEBUG] addTypeImport: Adding ${symbolName} from ${modulePath} to ${file.getFilePath()}`)
+		// refactorLogger.debug(`addTypeImport: Adding ${symbolName} from ${modulePath} to ${file.getFilePath()}`)
 
 		// Check if we already have a type import from this module
 		const existingTypeImport = file.getImportDeclaration(
@@ -1750,11 +1706,11 @@ export class ImportManager {
 
 		if (existingTypeImport) {
 			// Add to existing type import
-			// console.log(`[DEBUG] addTypeImport: Adding to existing type import`)
+			// refactorLogger.debug(`addTypeImport: Adding to existing type import`)
 			existingTypeImport.addNamedImport(symbolName)
 		} else {
 			// Create new type import
-			// console.log(`[DEBUG] addTypeImport: Creating new type import declaration`)
+			// refactorLogger.debug(`addTypeImport: Creating new type import declaration`)
 			file.addImportDeclaration({
 				moduleSpecifier: modulePath,
 				namedImports: [symbolName],
@@ -1762,7 +1718,7 @@ export class ImportManager {
 			})
 		}
 
-		// console.log(`[DEBUG] addTypeImport: Import added successfully`)
+		// refactorLogger.debug(`addTypeImport: Import added successfully`)
 	}
 
 	/**
@@ -1791,9 +1747,7 @@ export class ImportManager {
 			} else {
 				// If there's already a default import, we need to create a new import
 				// This is an edge case that might require special handling
-				console.log(
-					`[WARNING] Attempted to add default import ${symbolName} but module already has a default import`,
-				)
+				refactorLogger.debug(`[WARNING] Attempted to add default import ${symbolName} but module already has a default import: ${	}`)
 			}
 		} else {
 			// Create new default import
@@ -1863,7 +1817,7 @@ export class ImportManager {
 					moduleSpecifier: imp.getModuleSpecifierValue(),
 					namedImports: [symbolName],
 				})
-				// console.log(`[DEBUG] Copied import for ${symbolName} from ${imp.getModuleSpecifierValue()}`)
+				// refactorLogger.debug(`Copied import for ${symbolName} from ${imp.getModuleSpecifierValue()}`)
 				found = true
 				break
 			}
@@ -1877,7 +1831,7 @@ export class ImportManager {
 	 * @returns true if the symbol was found and imported, false otherwise
 	 */
 	private findAndAddImportForSymbol(file: SourceFile, symbolName: string): boolean {
-		// console.log(`[DEBUG] Searching project for symbol: ${symbolName}`)
+		// refactorLogger.debug(`Searching project for symbol: ${symbolName}`)
 		let found = false
 		// PERFORMANCE FIX: Revert to simple approach - avoid scanning all files
 		const allFiles = this.project.getSourceFiles()
@@ -1896,9 +1850,7 @@ export class ImportManager {
 				// Found an export of this symbol, calculate relative path
 				const relativePath = this.calculateRelativePath(file.getFilePath(), sourceFile.getFilePath())
 				this.addImport(file, symbolName, relativePath)
-				console.log(
-					`[DEBUG] Found symbol ${symbolName} exported by ${sourceFile.getFilePath()}, added import from ${relativePath}`,
-				)
+				refactorLogger.debug(`[DEBUG] Found symbol ${symbolName} exported by ${sourceFile.getFilePath()}, added import from ${relativePath}: ${	}`)
 				found = true
 				foundInFile = sourceFile
 				break
@@ -1918,9 +1870,7 @@ export class ImportManager {
 				if (defaultExport && defaultExport.getName() === symbolName) {
 					const relativePath = this.calculateRelativePath(file.getFilePath(), sourceFile.getFilePath())
 					this.addDefaultImport(file, symbolName, relativePath)
-					console.log(
-						`[DEBUG] Found default export ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}`,
-					)
+					refactorLogger.debug(`[DEBUG] Found default export ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}: ${	}`)
 					found = true
 					foundInFile = sourceFile
 					break
@@ -1943,9 +1893,7 @@ export class ImportManager {
 				if (matchingNamespace) {
 					const relativePath = this.calculateRelativePath(file.getFilePath(), sourceFile.getFilePath())
 					this.addNamespaceImport(file, symbolName, relativePath)
-					console.log(
-						`[DEBUG] Found namespace ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}`,
-					)
+					refactorLogger.debug(`[DEBUG] Found namespace ${symbolName} in ${sourceFile.getFilePath()}, added import from ${relativePath}: ${	}`)
 					found = true
 					foundInFile = sourceFile
 					break
@@ -1954,7 +1902,7 @@ export class ImportManager {
 		}
 
 		if (!found) {
-			console.log(`[WARNING] Could not find import for symbol: ${symbolName}. This may cause compilation errors.`)
+			refactorLogger.warn(`Could not find import for symbol: ${symbolName}. This may cause compilation errors.`)
 		}
 
 		return found
@@ -1989,17 +1937,13 @@ export class ImportManager {
 
 		// Only add re-export for true barrel files when moving inline symbols
 		if (isBarrelFile) {
-			console.log(
-				`[DEBUG] shouldAddReExportForInlineSymbol: ${symbolName} was moved from barrel file, adding re-export`,
-			)
+			refactorLogger.debug(`[DEBUG] shouldAddReExportForInlineSymbol: ${symbolName} was moved from barrel file, adding re-export: ${	}`)
 			return true
 		}
 
 		// For non-barrel files, we should update import statements instead of adding re-exports
 		// This ensures proper import path updates rather than maintaining old API with re-exports
-		console.log(
-			`[DEBUG] shouldAddReExportForInlineSymbol: ${symbolName} is from non-barrel file, updating imports instead of re-export`,
-		)
+		refactorLogger.debug(`[DEBUG] shouldAddReExportForInlineSymbol: ${symbolName} is from non-barrel file, updating imports instead of re-export: ${	}`)
 		return false
 	}
 
@@ -2015,13 +1959,11 @@ export class ImportManager {
 		const matches = fileText.match(symbolRegex)
 
 		if (matches && matches.length > 0) {
-			console.log(
-				`[DEBUG] fileReferencesSymbol: Found ${matches.length} references to ${symbolName} in ${sourceFile.getFilePath()}`,
-			)
+			refactorLogger.debug(`[DEBUG] fileReferencesSymbol: Found ${matches.length} references to ${symbolName} in ${sourceFile.getFilePath()}: ${	}`)
 			return true
 		}
 
-		// console.log(`[DEBUG] fileReferencesSymbol: No references to ${symbolName} found in ${sourceFile.getFilePath()}`)
+		// refactorLogger.debug(`fileReferencesSymbol: No references to ${symbolName} found in ${sourceFile.getFilePath()}`)
 		return false
 	}
 
@@ -2031,11 +1973,11 @@ export class ImportManager {
 	 */
 	private isBarrelFile(sourceFile: SourceFile): boolean {
 		const fileName = path.basename(sourceFile.getFilePath())
-		console.log(`[DEBUG IMPORT-MANAGER] 🏗️  isBarrelFile check for: ${fileName}`)
+		refactorLogger.debug(`🏗️  isBarrelFile check for: ${fileName}`)
 
 		// Only index files are considered barrel files for re-export purposes
 		if (fileName === "index.ts" || fileName === "index.js") {
-			console.log(`[DEBUG IMPORT-MANAGER] ✅ File is barrel (index file): ${fileName}`)
+			refactorLogger.debug(`✅ File is barrel (index file): ${fileName}`)
 			return true
 		}
 
@@ -2043,17 +1985,15 @@ export class ImportManager {
 		const exportDeclarations = sourceFile.getExportDeclarations()
 		const exportedDeclarations = sourceFile.getExportedDeclarations()
 
-		console.log(
-			`[DEBUG IMPORT-MANAGER] 📊 Export analysis: ${exportDeclarations.length} re-exports, ${exportedDeclarations.size} total exports`,
-		)
+		refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 📊 Export analysis: ${exportDeclarations.length} re-exports, ${exportedDeclarations.size} total exports: ${	}`)
 
 		// If it has many re-export declarations and few original exports, it's likely a barrel
 		if (exportDeclarations.length >= 3 && exportedDeclarations.size <= exportDeclarations.length + 1) {
-			console.log(`[DEBUG IMPORT-MANAGER] ✅ File is barrel (re-export pattern): ${fileName}`)
+			refactorLogger.debug(`✅ File is barrel (re-export pattern): ${fileName}`)
 			return true
 		}
 
-		console.log(`[DEBUG IMPORT-MANAGER] ❌ File is NOT barrel: ${fileName}`)
+		refactorLogger.debug(`❌ File is NOT barrel: ${fileName}`)
 		return false
 	}
 
@@ -2064,13 +2004,13 @@ export class ImportManager {
 	private ensureAllProjectFilesLoaded(referenceFilePath: string): void {
 		const startTime = Date.now()
 		const initialFileCount = this.project.getSourceFiles().length
-		// console.log(`[DEBUG IMPORT-MANAGER] 🔄 ensureAllProjectFilesLoaded() called for: ${referenceFilePath}`)
-		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Initial ts-morph project has ${initialFileCount} files loaded`)
+		// refactorLogger.debug(`🔄 ensureAllProjectFilesLoaded() called for: ${referenceFilePath}`)
+		// refactorLogger.debug(`📊 Initial ts-morph project has ${initialFileCount} files loaded`)
 
 		try {
 			// Get the directory of the reference file
 			const referenceDir = path.dirname(referenceFilePath)
-			// console.log(`[DEBUG IMPORT-MANAGER] 📁 Reference file directory: ${referenceDir}`)
+			// refactorLogger.debug(`📁 Reference file directory: ${referenceDir}`)
 
 			// PERFORMANCE FIX: For test files, skip expensive recursive loading
 			// Test files are already loaded by the engine's ensureTestFilesLoaded() method
@@ -2080,41 +2020,35 @@ export class ImportManager {
 				referenceFilePath.includes("import-split-test") ||
 				referenceFilePath.includes("temp")
 			) {
-				// console.log(`[DEBUG IMPORT-MANAGER] 🧪 Detected test file - skipping expensive recursive loading`)
-				// console.log(`[DEBUG IMPORT-MANAGER] ⚡ Test files should already be loaded by engine initialization`)
+				// refactorLogger.debug(`🧪 Detected test file - skipping expensive recursive loading`)
+				// refactorLogger.debug(`⚡ Test files should already be loaded by engine initialization`)
 
 				const finalFileCount = this.project.getSourceFiles().length
 				const duration = Date.now() - startTime
-				console.log(
-					`[DEBUG IMPORT-MANAGER] ✅ Test file loading skipped: ${finalFileCount} files already loaded in ${duration}ms`,
-				)
+				refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ✅ Test file loading skipped: ${finalFileCount} files already loaded in ${duration}ms: ${	}`)
 				return
 			}
 
-			// console.log(`[DEBUG IMPORT-MANAGER] 🏢 Non-test file - using limited directory loading strategy`)
+			// refactorLogger.debug(`🏢 Non-test file - using limited directory loading strategy`)
 
 			// For non-test files, load only the immediate directory and one level up
-			// console.log(`[DEBUG IMPORT-MANAGER] 📂 Loading TypeScript files from reference directory: ${referenceDir}`)
+			// refactorLogger.debug(`📂 Loading TypeScript files from reference directory: ${referenceDir}`)
 			this.loadTypeScriptFilesInDirectory(referenceDir)
 
 			// Also load parent directory (one level up)
 			const parentDir = path.dirname(referenceDir)
 			if (parentDir !== referenceDir) {
-				// console.log(`[DEBUG IMPORT-MANAGER] 📂 Loading TypeScript files from parent directory: ${parentDir}`)
+				// refactorLogger.debug(`📂 Loading TypeScript files from parent directory: ${parentDir}`)
 				this.loadTypeScriptFilesInDirectory(parentDir)
 			}
 
 			const finalFileCount = this.project.getSourceFiles().length
 			const filesAdded = finalFileCount - initialFileCount
 			const duration = Date.now() - startTime
-			console.log(
-				`[DEBUG IMPORT-MANAGER] ✅ Directory loading complete: ${filesAdded} files added in ${duration}ms`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ✅ Directory loading complete: ${filesAdded} files added in ${duration}ms: ${	}`)
 		} catch (error) {
 			const duration = Date.now() - startTime
-			console.log(
-				`[DEBUG IMPORT-MANAGER] ❌ Error loading project files after ${duration}ms: ${(error as Error).message}`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ❌ Error loading project files after ${duration}ms: ${(error as Error).message}: ${	}`)
 			// Continue without loading additional files - the search will work with what's available
 		}
 	}
@@ -2124,15 +2058,15 @@ export class ImportManager {
 	 * This is a performance-optimized alternative to this.project.getSourceFiles()
 	 */
 	private findFilesInSameDirectoryTree(filePath: string): SourceFile[] {
-		// console.log(`[DEBUG IMPORT-MANAGER] 🎯 findFilesInSameDirectoryTree() called for: ${filePath}`)
+		// refactorLogger.debug(`🎯 findFilesInSameDirectoryTree() called for: ${filePath}`)
 
 		const projectRoot = this.pathResolver.getProjectRoot()
 		// Resolve the file path relative to project root to get the correct directory
 		const absoluteFilePath = this.pathResolver.resolveAbsolutePath(filePath)
 		const targetDir = this.pathResolver.getDirectoryPath(absoluteFilePath)
 
-		// console.log(`[DEBUG IMPORT-MANAGER] 📁 Project root: ${projectRoot}`)
-		// console.log(`[DEBUG IMPORT-MANAGER] 📁 Target directory: ${targetDir}`)
+		// refactorLogger.debug(`📁 Project root: ${projectRoot}`)
+		// refactorLogger.debug(`📁 Target directory: ${targetDir}`)
 
 		// Load files only from the target directory and its immediate parent/children
 		// This is much more efficient than loading all project files
@@ -2154,10 +2088,10 @@ export class ImportManager {
 				}
 			}
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error getting loaded files: ${(error as Error).message}`)
+			// refactorLogger.debug(`❌ Error getting loaded files: ${(error as Error).message}`)
 		}
 
-		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${loadedFiles.length} files in same directory tree`)
+		// refactorLogger.debug(`📊 Found ${loadedFiles.length} files in same directory tree`)
 		return loadedFiles
 	}
 
@@ -2165,7 +2099,7 @@ export class ImportManager {
 	 * Gets known files in a directory without calling expensive project.getSourceFiles()
 	 */
 	private getKnownFilesInDirectory(dirPath: string): string[] {
-		// console.log(`[DEBUG IMPORT-MANAGER] 📂 getKnownFilesInDirectory() called for: ${dirPath}`)
+		// refactorLogger.debug(`📂 getKnownFilesInDirectory() called for: ${dirPath}`)
 
 		const knownFiles: string[] = []
 
@@ -2184,10 +2118,10 @@ export class ImportManager {
 				}
 			}
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error scanning directory: ${(error as Error).message}`)
+			// refactorLogger.debug(`❌ Error scanning directory: ${(error as Error).message}`)
 		}
 
-		// console.log(`[DEBUG IMPORT-MANAGER] 📊 Found ${knownFiles.length} TypeScript files in directory`)
+		// refactorLogger.debug(`📊 Found ${knownFiles.length} TypeScript files in directory`)
 		return knownFiles
 	}
 
@@ -2195,7 +2129,7 @@ export class ImportManager {
 	 * Ensures files in a specific directory are loaded (more targeted than ensureAllProjectFilesLoaded)
 	 */
 	private ensureDirectoryFilesLoaded(dirPath: string): void {
-		// console.log(`[DEBUG IMPORT-MANAGER] 📂 ensureDirectoryFilesLoaded() called for: ${dirPath}`)
+		// refactorLogger.debug(`📂 ensureDirectoryFilesLoaded() called for: ${dirPath}`)
 
 		try {
 			// Load files only from the specific directory
@@ -2207,7 +2141,7 @@ export class ImportManager {
 				this.loadTypeScriptFilesInDirectory(parentDir)
 			}
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error loading directory files: ${(error as Error).message}`)
+			// refactorLogger.debug(`❌ Error loading directory files: ${(error as Error).message}`)
 		}
 	}
 
@@ -2215,18 +2149,18 @@ export class ImportManager {
 	 * Loads TypeScript files in a specific directory (non-recursive for safety)
 	 */
 	private loadTypeScriptFilesInDirectory(dirPath: string): void {
-		// console.log(`[DEBUG IMPORT-MANAGER] 📂 loadTypeScriptFilesInDirectory() called for: ${dirPath}`)
+		// refactorLogger.debug(`📂 loadTypeScriptFilesInDirectory() called for: ${dirPath}`)
 		let filesLoaded = 0
 		let filesSkipped = 0
 
 		try {
 			if (!fs.existsSync(dirPath)) {
-				// console.log(`[DEBUG IMPORT-MANAGER] ❌ Directory does not exist: ${dirPath}`)
+				// refactorLogger.debug(`❌ Directory does not exist: ${dirPath}`)
 				return
 			}
 
 			const entries = fs.readdirSync(dirPath, { withFileTypes: true })
-			// console.log(`[DEBUG IMPORT-MANAGER] 📋 Found ${entries.length} entries in directory`)
+			// refactorLogger.debug(`📋 Found ${entries.length} entries in directory`)
 
 			for (const entry of entries) {
 				if (entry.isFile() && entry.name.match(/\.(ts|tsx)$/)) {
@@ -2236,25 +2170,21 @@ export class ImportManager {
 						try {
 							this.project.addSourceFileAtPath(fullPath)
 							filesLoaded++
-							// console.log(`[DEBUG IMPORT-MANAGER] ✅ Loaded TypeScript file: ${fullPath}`)
+							// refactorLogger.debug(`✅ Loaded TypeScript file: ${fullPath}`)
 						} catch (error) {
 							// Ignore errors loading individual files
-							console.log(
-								`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}`,
-							)
+							refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}: ${	}`)
 						}
 					} else {
 						filesSkipped++
-						// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  File already loaded: ${fullPath}`)
+						// refactorLogger.debug(`⏭️  File already loaded: ${fullPath}`)
 					}
 				}
 			}
 
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 📊 Directory loading summary: ${filesLoaded} loaded, ${filesSkipped} skipped`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 📊 Directory loading summary: ${filesLoaded} loaded, ${filesSkipped} skipped: ${	}`)
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
+			// refactorLogger.debug(`❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
 		}
 	}
 
@@ -2262,19 +2192,19 @@ export class ImportManager {
 	 * Recursively loads TypeScript files from a directory
 	 */
 	private loadTypeScriptFilesRecursively(dirPath: string): void {
-		// console.log(`[DEBUG IMPORT-MANAGER] 🔄 loadTypeScriptFilesRecursively() called for: ${dirPath}`)
+		// refactorLogger.debug(`🔄 loadTypeScriptFilesRecursively() called for: ${dirPath}`)
 		let filesLoaded = 0
 		let filesSkipped = 0
 		let directoriesSkipped = 0
 
 		try {
 			if (!fs.existsSync(dirPath)) {
-				// console.log(`[DEBUG IMPORT-MANAGER] ❌ Directory does not exist: ${dirPath}`)
+				// refactorLogger.debug(`❌ Directory does not exist: ${dirPath}`)
 				return
 			}
 
 			const entries = fs.readdirSync(dirPath, { withFileTypes: true })
-			// console.log(`[DEBUG IMPORT-MANAGER] 📋 Found ${entries.length} entries in directory`)
+			// refactorLogger.debug(`📋 Found ${entries.length} entries in directory`)
 
 			for (const entry of entries) {
 				const fullPath = path.join(dirPath, entry.name)
@@ -2283,11 +2213,11 @@ export class ImportManager {
 					// Skip common directories that don't contain source code
 					if (["node_modules", ".git", "dist", "build", "coverage", ".next"].includes(entry.name)) {
 						directoriesSkipped++
-						// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  Skipping excluded directory: ${fullPath}`)
+						// refactorLogger.debug(`⏭️  Skipping excluded directory: ${fullPath}`)
 						continue
 					}
 
-					// console.log(`[DEBUG IMPORT-MANAGER] 📁 Recursing into subdirectory: ${fullPath}`)
+					// refactorLogger.debug(`📁 Recursing into subdirectory: ${fullPath}`)
 					// Recursively load files from subdirectories
 					this.loadTypeScriptFilesRecursively(fullPath)
 				} else if (entry.isFile()) {
@@ -2298,26 +2228,22 @@ export class ImportManager {
 							try {
 								this.project.addSourceFileAtPath(fullPath)
 								filesLoaded++
-								// console.log(`[DEBUG IMPORT-MANAGER] ✅ Loaded TypeScript file: ${fullPath}`)
+								// refactorLogger.debug(`✅ Loaded TypeScript file: ${fullPath}`)
 							} catch (error) {
 								// Ignore errors loading individual files
-								console.log(
-									`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}`,
-								)
+								refactorLogger.debug(`[DEBUG IMPORT-MANAGER] ❌ Failed to load file ${fullPath}: ${(error as Error).message}: ${	}`)
 							}
 						} else {
 							filesSkipped++
-							// console.log(`[DEBUG IMPORT-MANAGER] ⏭️  File already loaded: ${fullPath}`)
+							// refactorLogger.debug(`⏭️  File already loaded: ${fullPath}`)
 						}
 					}
 				}
 			}
 
-			console.log(
-				`[DEBUG IMPORT-MANAGER] 📊 Recursive loading summary for ${dirPath}: ${filesLoaded} loaded, ${filesSkipped} skipped, ${directoriesSkipped} dirs skipped`,
-			)
+			refactorLogger.debug(`[DEBUG IMPORT-MANAGER] 📊 Recursive loading summary for ${dirPath}: ${filesLoaded} loaded, ${filesSkipped} skipped, ${directoriesSkipped} dirs skipped: ${	}`)
 		} catch (error) {
-			// console.log(`[DEBUG IMPORT-MANAGER] ❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
+			// refactorLogger.debug(`❌ Error reading directory ${dirPath}: ${(error as Error).message}`)
 		}
 	}
 }

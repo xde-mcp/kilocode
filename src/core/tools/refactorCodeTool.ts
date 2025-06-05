@@ -12,6 +12,7 @@ import { RobustLLMRefactorParser, RefactorParseError } from "./refactor-code/par
 import { BatchOperations } from "./refactor-code/schema"
 import { createDiagnostic } from "./refactor-code/utils/file-system"
 import { checkpointSave, checkpointRestore } from "../checkpoints"
+import { refactorLogger } from "./refactor-code/utils/RefactorLogger"
 
 /**
  * Refactor code tool implementation
@@ -70,9 +71,9 @@ export async function refactorCodeTool(
 			return
 		}
 
-		// DIAGNOSTIC: Log current directories to help debug path issues
-		console.log(`[DIAGNOSTIC] Working directory (cline.cwd): "${cline.cwd}"`)
-		console.log(`[DIAGNOSTIC] Process directory (process.cwd()): "${process.cwd()}"`)
+		// Log current directories to help debug path issues
+		refactorLogger.debug(`Working directory (cline.cwd): ${cline.cwd}`)
+		refactorLogger.debug(`Process directory (process.cwd()): ${process.cwd()}`)
 
 		// Create diagnostic function
 		const diagnose = createDiagnostic(cline.cwd)
@@ -154,10 +155,8 @@ export async function refactorCodeTool(
 				const absolutePath = path.resolve(cline.cwd, filePath)
 				const fileExists = await fileExistsAtPath(absolutePath)
 
-				// DIAGNOSTIC: Log file existence check
-				console.log(
-					`[DIAGNOSTIC] File check - Path: "${filePath}", Absolute: "${absolutePath}", Exists: ${fileExists}`,
-				)
+				// Log file existence check
+				refactorLogger.debug(`File check - Path: ${filePath}, Absolute: ${absolutePath}, Exists: ${fileExists}`)
 
 				if (!fileExists) {
 					// Run diagnostic on this file
@@ -218,7 +217,7 @@ export async function refactorCodeTool(
 		}
 
 		// Create checkpoint before executing batch operations
-		console.log("[REFACTOR] Creating checkpoint before batch operations")
+		refactorLogger.info("Creating checkpoint before batch operations")
 		const checkpointTimestamp = Date.now()
 		const checkpointResult = await checkpointSave(cline)
 
@@ -251,8 +250,8 @@ export async function refactorCodeTool(
 		} catch (error) {
 			// Handle errors in batch execution
 			const errorMessage = `Batch refactoring failed with error: ${(error as Error).message}`
-			console.error(`[ERROR] ${errorMessage}`)
-			console.log("[REFACTOR] Batch operation failed - automatically restoring files from checkpoint")
+			refactorLogger.error(errorMessage)
+			refactorLogger.info("Batch operation failed - automatically restoring files from checkpoint")
 
 			// Automatically restore from checkpoint if available
 			if (checkpointResult && cline.enableCheckpoints) {
@@ -327,13 +326,13 @@ export async function refactorCodeTool(
 			cline.didEditFile = true
 
 			// Create checkpoint after successful completion
-			console.log("[REFACTOR] Creating checkpoint after successful batch operations")
+			refactorLogger.info("Creating checkpoint after successful batch operations")
 			await checkpointSave(cline)
 
 			pushToolResult(`Batch refactoring completed successfully:\n\n${finalResult}`)
 		} else {
 			// Batch operation failed - automatically restore from checkpoint
-			console.log("[REFACTOR] Batch operation failed - automatically restoring files from checkpoint")
+			refactorLogger.info("Batch operation failed - automatically restoring files from checkpoint")
 
 			// Automatically restore from checkpoint if available
 			if (checkpointResult && cline.enableCheckpoints) {

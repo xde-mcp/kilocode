@@ -825,15 +825,11 @@ export class MoveExecutor {
 
 						// If this is the only named import, remove the entire import declaration
 						if (namedImports.length === 1 && !defaultImport && !namespaceImport) {
-							console.log(
-								`[DEBUG CIRCULAR-IMPORT-FIX] Removing entire import declaration: ${importDecl.getText()}`,
-							)
+							refactorLogger.debug(`Removing entire import declaration: ${importDecl.getText()}`)
 							importDecl.remove()
 						} else {
 							// Remove just this named import
-							console.log(
-								`[DEBUG CIRCULAR-IMPORT-FIX] Removing named import '${symbolName}' from: ${importDecl.getText()}`,
-							)
+							refactorLogger.debug(`Removing named import '${symbolName}' from: ${importDecl.getText()}`)
 							namedImport.remove()
 						}
 						break
@@ -846,15 +842,11 @@ export class MoveExecutor {
 
 					// If this is the only import, remove the entire declaration
 					if (namedImports.length === 0 && !namespaceImport) {
-						console.log(
-							`[DEBUG CIRCULAR-IMPORT-FIX] Removing entire import declaration: ${importDecl.getText()}`,
-						)
+						refactorLogger.debug(`Removing entire import declaration: ${importDecl.getText()}`)
 						importDecl.remove()
 					} else {
 						// Remove just the default import
-						console.log(
-							`[DEBUG CIRCULAR-IMPORT-FIX] Removing default import '${symbolName}' from: ${importDecl.getText()}`,
-						)
+						refactorLogger.debug(`Removing default import '${symbolName}' from: ${importDecl.getText()}`)
 						importDecl.removeDefaultImport()
 					}
 				}
@@ -862,16 +854,14 @@ export class MoveExecutor {
 				// Check namespace import (less common but possible)
 				if (!symbolFound && namespaceImport) {
 					// For namespace imports, we can't remove just one symbol, so we log a warning
-					console.log(
-						`[DEBUG CIRCULAR-IMPORT-FIX] WARNING: Found namespace import '${namespaceImport.getText()}' - cannot selectively remove '${symbolName}'`,
+					refactorLogger.warn(
+						`Found namespace import '${namespaceImport.getText()}' - cannot selectively remove '${symbolName}'`,
 					)
 					// We could potentially remove the entire namespace import if needed, but that's more risky
 				}
 
 				if (symbolFound) {
-					console.log(
-						`[DEBUG CIRCULAR-IMPORT-FIX] Successfully removed import of '${symbolName}' from target file`,
-					)
+					refactorLogger.debug(`Successfully removed import of '${symbolName}' from target file`)
 				}
 			}
 		}
@@ -908,15 +898,11 @@ export class MoveExecutor {
 
 			// Resolve the full path of the imported module relative to the source file
 			const absoluteImportPath = this.resolveImportPath(sourceDir, moduleSpecifier)
-			console.log(
-				`[DEBUG MOVE-EXECUTOR] resolveImportPath(${sourceDir}, ${moduleSpecifier}) = ${absoluteImportPath}`,
-			)
+			refactorLogger.debug(`resolveImportPath(${sourceDir}, ${moduleSpecifier}) = ${absoluteImportPath}`)
 
 			// Calculate the new relative path from the target file to the imported module
 			const newRelativePath = this.pathResolver.getRelativeImportPath(targetFilePath, absoluteImportPath)
-			console.log(
-				`[DEBUG MOVE-EXECUTOR] getRelativeImportPath(${targetFilePath}, ${absoluteImportPath}) = ${newRelativePath}`,
-			)
+			refactorLogger.debug(`getRelativeImportPath(${targetFilePath}, ${absoluteImportPath}) = ${newRelativePath}`)
 
 			// Create the adjusted import statement
 			const defaultImportNode = importDecl.getDefaultImport()
@@ -1231,9 +1217,7 @@ export class MoveExecutor {
 				// Verify removal worked
 				const newText = sourceFile.getFullText()
 
-				console.log(
-					`[DEBUG REMOVAL DETAIL] Symbol still exists: ${sourceFile.getFunction(symbol.name) !== undefined}`,
-				)
+				refactorLogger.debug(`Symbol still exists: ${sourceFile.getFunction(symbol.name) !== undefined}`)
 			} catch (nodeRemovalError) {
 				// refactorLogger.debug(`Primary node removal failed: ${nodeRemovalError}. Trying text-based removal.`)
 
@@ -1314,7 +1298,7 @@ export class MoveExecutor {
 			const symbolStillPresent = declarationPatterns.some((pattern) => new RegExp(pattern, "g").test(finalText))
 
 			if (symbolStillPresent) {
-				console.log(`[WARNING] Symbol declaration still detected after all removal attempts`)
+				refactorLogger.warn(`Symbol declaration still detected after all removal attempts`)
 				return {
 					success: false,
 					error: "Symbol still present in source file after multiple removal attempts",
@@ -1366,9 +1350,8 @@ export class MoveExecutor {
 			// refactorLogger.debug(`Source path: ${sourceFilePath} -> ${relativeSourcePath}`)
 			// refactorLogger.debug(`Target path: ${resolvedTargetPath} -> ${relativeTargetPath}`)
 			//
-			console.log(
-				`[DEBUG] ImportManager.updateImportsAfterMove method:`,
-				typeof importManager.updateImportsAfterMove,
+			refactorLogger.debug(
+				`ImportManager.updateImportsAfterMove method: ${typeof importManager.updateImportsAfterMove}`,
 			)
 			//
 			// )
@@ -1379,9 +1362,7 @@ export class MoveExecutor {
 			)
 
 			// CRITICAL FIX: Exclude target file from import updates to prevent circular imports
-			console.log(
-				`[DEBUG CIRCULAR-IMPORT-FIX] Before updateImportsAfterMove - target file: ${relativeTargetPath}`,
-			)
+			refactorLogger.debug(`Before updateImportsAfterMove - target file: ${relativeTargetPath}`)
 
 			try {
 				// Get the source file reference before it's potentially modified
@@ -1401,9 +1382,8 @@ export class MoveExecutor {
 			// Get the list of files that were actually updated by ImportManager
 			// This is much more efficient than scanning all project files
 			const updatedFilesByImportManager = importManager.getUpdatedFiles()
-			console.log(
-				`[DEBUG] ImportManager updated ${updatedFilesByImportManager.length} files:`,
-				updatedFilesByImportManager,
+			refactorLogger.debug(
+				`ImportManager updated ${updatedFilesByImportManager.length} files: ${JSON.stringify(updatedFilesByImportManager)}`,
 			)
 
 			// Build comprehensive list of updated files including source and target

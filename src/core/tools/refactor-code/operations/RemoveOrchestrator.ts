@@ -5,6 +5,7 @@ import { SymbolResolver } from "../core/SymbolResolver"
 import { SymbolRemover } from "../core/SymbolRemover"
 import { ResolvedSymbol, RemovalResult } from "../core/types"
 import { ProjectManager } from "../core/ProjectManager"
+import { refactorLogger } from "../utils/RefactorLogger"
 
 /**
  * Orchestrates the symbol removal operation with enhanced error recovery
@@ -55,15 +56,15 @@ export class RemoveOrchestrator {
 			this.removalStats.attempted++
 			// Use debug logging only in non-test environments
 			if (process.env.NODE_ENV !== "test") {
-				console.log(`[DEBUG] Executing remove operation for symbol: ${operation.selector.name}`)
+				refactorLogger.debug(`Executing remove operation for symbol: ${operation.selector.name}`)
 			}
 
 			// 1. Find the source file
 			// Standardize file path using ProjectManager
 			const sourceFilePath = this.projectManager.getPathResolver().standardizePath(operation.selector.filePath)
-			console.log(`[DEBUG REMOVE] Original file path: ${operation.selector.filePath}`)
-			console.log(`[DEBUG REMOVE] Standardized file path: ${sourceFilePath}`)
-			console.log(`[DEBUG REMOVE] Project root: ${this.projectManager.getPathResolver().getProjectRoot()}`)
+			refactorLogger.debug(`Original file path: ${operation.selector.filePath}`)
+			refactorLogger.debug(`Standardized file path: ${sourceFilePath}`)
+			refactorLogger.debug(`Project root: ${this.projectManager.getPathResolver().getProjectRoot()}`)
 
 			// Load project files around the source file to ensure all references are detected
 			await this.projectManager.loadRelevantProjectFiles(sourceFilePath)
@@ -111,13 +112,13 @@ export class RemoveOrchestrator {
 
 			// Display warnings even if we can proceed
 			if (validation.warnings.length > 0 && process.env.NODE_ENV !== "test") {
-				console.log(`[WARNING] Symbol removal warnings: ${validation.warnings.join(", ")}`)
+				refactorLogger.warn(`Symbol removal warnings: ${validation.warnings.join(", ")}`)
 			}
 
 			// Check if force removal is enabled
 			if (operation.options?.forceRemove) {
 				if (process.env.NODE_ENV !== "test") {
-					console.log(`[DEBUG] Force remove option detected, bypassing validation checks`)
+					refactorLogger.debug(`Force remove option detected, bypassing validation checks`)
 				}
 				return this.attemptForcedRemoval(operation, symbol, sourceFile, sourceFilePath)
 			}
@@ -154,12 +155,12 @@ export class RemoveOrchestrator {
 			// If removal succeeded but we need to save the file via ProjectManager
 			if (removalResult.success) {
 				try {
-					console.log(`[DEBUG ORCHESTRATOR] About to save source file after removal`)
+					refactorLogger.debug(`About to save source file after removal`)
 					// Override the save in SymbolRemover by saving via ProjectManager
 					await this.projectManager.saveSourceFile(sourceFile, sourceFilePath)
-					console.log(`[DEBUG ORCHESTRATOR] Successfully saved source file`)
+					refactorLogger.debug(`Successfully saved source file`)
 				} catch (saveError) {
-					console.log(`[DEBUG ORCHESTRATOR] Error saving source file: ${(saveError as Error).message}`)
+					refactorLogger.debug(`Error saving source file: ${(saveError as Error).message}`)
 					throw saveError
 				}
 
@@ -179,8 +180,8 @@ export class RemoveOrchestrator {
 				// Try alternative removal methods if standard method fails
 				if (operation.options?.fallbackToAggressive || operation.options?.forceRemove) {
 					if (process.env.NODE_ENV !== "test") {
-						console.log(
-							`[DEBUG] Standard removal failed, attempting aggressive removal for: ${symbol.name}`,
+						refactorLogger.debug(
+							`Standard removal failed, attempting aggressive removal for: ${symbol.name}`,
 						)
 					}
 					return this.attemptAggressiveRemoval(operation, symbol, sourceFile, sourceFilePath)
@@ -221,14 +222,14 @@ export class RemoveOrchestrator {
 			}
 
 			// 6. Check if any unreferenced dependencies can be removed as well
-			console.log(`[DEBUG ORCHESTRATOR] About to check dependency cleanup`)
+			refactorLogger.debug(`About to check dependency cleanup`)
 			if (operation.options?.cleanupDependencies) {
-				console.log(`[DEBUG ORCHESTRATOR] Starting dependency cleanup`)
+				refactorLogger.debug(`Starting dependency cleanup`)
 				try {
 					await this.cleanupUnreferencedDependencies(sourceFile)
-					console.log(`[DEBUG ORCHESTRATOR] Dependency cleanup completed`)
+					refactorLogger.debug(`Dependency cleanup completed`)
 				} catch (cleanupError) {
-					console.log(`[DEBUG ORCHESTRATOR] Error in dependency cleanup: ${(cleanupError as Error).message}`)
+					refactorLogger.debug(`Error in dependency cleanup: ${(cleanupError as Error).message}`)
 					throw cleanupError
 				}
 
@@ -251,9 +252,9 @@ export class RemoveOrchestrator {
 			}
 
 			// 7. Generate final result
-			console.log(`[DEBUG ORCHESTRATOR] About to generate final result`)
+			refactorLogger.debug(`About to generate final result`)
 			this.removalStats.succeeded++
-			console.log(`[DEBUG ORCHESTRATOR] Updated removal stats, about to return success result`)
+			refactorLogger.debug(`Updated removal stats, about to return success result`)
 			return {
 				success: true,
 				operation,
@@ -357,7 +358,7 @@ export class RemoveOrchestrator {
 	): Promise<OperationResult> {
 		try {
 			if (process.env.NODE_ENV !== "test") {
-				console.log(`[DEBUG] Attempting forced removal of symbol: ${symbol.name} with forceRemove option`)
+				refactorLogger.debug(`Attempting forced removal of symbol: ${symbol.name} with forceRemove option`)
 			}
 
 			// Use manual removal as a last resort
@@ -408,8 +409,8 @@ export class RemoveOrchestrator {
 			this.removalStats.failed++
 			// If all other methods failed, attempt direct file manipulation as a last resort
 			if (process.env.NODE_ENV !== "test") {
-				console.log(
-					`[DEBUG] All removal methods failed, attempting direct file manipulation for ${symbol.name}`,
+				refactorLogger.debug(
+					`All removal methods failed, attempting direct file manipulation for ${symbol.name}`,
 				)
 			}
 
@@ -445,7 +446,7 @@ export class RemoveOrchestrator {
 		sourceFile: SourceFile,
 		sourceFilePath: string,
 	): Promise<OperationResult> {
-		console.log(`[DEBUG] Attempting direct file manipulation to remove symbol: ${symbol.name}`)
+		refactorLogger.debug(`Attempting direct file manipulation to remove symbol: ${symbol.name}`)
 
 		// Determine the symbol kind based on node kind or default to variable
 		const inferSymbolKind = ():
@@ -493,12 +494,12 @@ export class RemoveOrchestrator {
 				? sourceFilePath
 				: this.projectManager.getPathResolver().resolveAbsolutePath(sourceFilePath)
 
-			console.log(`[DEBUG] Direct file system manipulation for ${symbol.name} at path: ${absolutePath}`)
+			refactorLogger.debug(`Direct file system manipulation for ${symbol.name} at path: ${absolutePath}`)
 
 			// Read the file content directly
 			if (fs.existsSync(absolutePath)) {
 				const fileContent = fs.readFileSync(absolutePath, "utf8")
-				console.log(`[DEBUG] Original file size: ${fileContent.length} bytes`)
+				refactorLogger.debug(`Original file size: ${fileContent.length} bytes`)
 
 				// Create regexes to match the symbol declaration
 				const functionRegex = new RegExp(
@@ -510,19 +511,19 @@ export class RemoveOrchestrator {
 				const newContent = fileContent.replace(functionRegex, "")
 
 				if (newContent !== fileContent) {
-					console.log(
-						`[DEBUG] New content size: ${newContent.length} bytes (${fileContent.length - newContent.length} bytes removed)`,
+					refactorLogger.debug(
+						`New content size: ${newContent.length} bytes (${fileContent.length - newContent.length} bytes removed)`,
 					)
 
 					// Write directly to the file system
 					fs.writeFileSync(absolutePath, newContent, "utf8")
-					console.log(`[DEBUG] Successfully wrote updated content to disk`)
+					refactorLogger.debug(`Successfully wrote updated content to disk`)
 
 					// Force the project to refresh
 					try {
 						sourceFile.refreshFromFileSystemSync()
 					} catch (e) {
-						console.log(`[DEBUG] Refresh error: ${(e as Error).message}`)
+						refactorLogger.debug(`Refresh error: ${(e as Error).message}`)
 					}
 
 					// Read back the file to verify changes were saved
@@ -543,13 +544,13 @@ export class RemoveOrchestrator {
 							error: "Symbol removed by direct file system manipulation.",
 						}
 					} else {
-						console.log(`[DEBUG] Symbol still found in content after direct file system write`)
+						refactorLogger.debug(`Symbol still found in content after direct file system write`)
 					}
 				} else {
-					console.log(`[DEBUG] Regex replacement didn't change content`)
+					refactorLogger.debug(`Regex replacement didn't change content`)
 				}
 			} else {
-				console.log(`[DEBUG] File not found: ${absolutePath}`)
+				refactorLogger.debug(`File not found: ${absolutePath}`)
 			}
 
 			// Try other strategies as fallback
@@ -562,8 +563,8 @@ export class RemoveOrchestrator {
 				// Get the text to remove
 				const symbolText = sourceFile.getFullText().substring(pos, end)
 				if (symbolText) {
-					console.log(
-						`[DEBUG] Removing symbol text by position: ${symbolText.substring(0, 100)}${symbolText.length > 100 ? "..." : ""}`,
+					refactorLogger.debug(
+						`Removing symbol text by position: ${symbolText.substring(0, 100)}${symbolText.length > 100 ? "..." : ""}`,
 					)
 
 					// Modify the source file directly
@@ -648,7 +649,7 @@ export class RemoveOrchestrator {
 	private async cleanupUnreferencedDependencies(sourceFile: SourceFile): Promise<void> {
 		// This would identify and remove any imports or helper functions that were only used
 		// by the removed symbol and are now unreferenced
-		console.log(`[DEBUG] Cleaning up unreferenced dependencies in ${sourceFile.getFilePath()}`)
+		refactorLogger.debug(`Cleaning up unreferenced dependencies in ${sourceFile.getFilePath()}`)
 
 		try {
 			// Remove any unused imports
@@ -680,7 +681,7 @@ export class RemoveOrchestrator {
 						}
 					} catch (e) {
 						// If we can't process this named import, skip it
-						console.log(`[DEBUG] Skipping named import due to error: ${(e as Error).message}`)
+						refactorLogger.debug(`Skipping named import due to error: ${(e as Error).message}`)
 						continue
 					}
 				}
@@ -692,14 +693,14 @@ export class RemoveOrchestrator {
 					}
 				} catch (e) {
 					// If we can't check or remove the import declaration, skip it
-					console.log(`[DEBUG] Skipping import declaration removal due to error: ${(e as Error).message}`)
+					refactorLogger.debug(`Skipping import declaration removal due to error: ${(e as Error).message}`)
 				}
 			}
 
-			console.log(`[DEBUG] Removed ${removedCount} unused imports`)
+			refactorLogger.debug(`Removed ${removedCount} unused imports`)
 		} catch (error) {
 			// If dependency cleanup fails entirely, log it but don't fail the operation
-			console.log(`[DEBUG] Dependency cleanup failed, but continuing: ${(error as Error).message}`)
+			refactorLogger.debug(`Dependency cleanup failed, but continuing: ${(error as Error).message}`)
 		}
 	}
 

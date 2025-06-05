@@ -501,12 +501,12 @@ export async function removeSymbol(
 			},
 		}
 
-		console.log(`[API] Removing symbol ${symbolName} from ${normalizedSourceFile}`)
+		refactorLogger.debug(`Removing symbol ${symbolName} from ${normalizedSourceFile}`)
 
 		// Execute the operation
 		const result = await engine.executeOperation(removeOperation)
 
-		console.log(`[API] Remove operation result: ${result.success ? "Success" : "Failure"}`)
+		refactorLogger.debug(`Remove operation result: ${result.success ? "Success" : "Failure"}`)
 		if (!result.success) {
 			console.error(`[API] Error: ${result.error}`)
 		}

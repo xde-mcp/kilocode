@@ -8,6 +8,7 @@ import { MoveExecutor } from "./MoveExecutor"
 import { MoveVerifier } from "./MoveVerifier"
 import { ProjectManager } from "../core/ProjectManager"
 import { PerformanceTracker } from "../utils/performance-tracker"
+import { refactorLogger } from "../utils/RefactorLogger"
 
 /**
  * Orchestrates the symbol move operation
@@ -152,8 +153,8 @@ export class MoveOrchestrator {
 				)
 			})
 
-			console.log(
-				`[DEBUG] MoveOrchestrator: Execution result success=${executionResult.success}, error=${executionResult.error || "none"}`,
+			refactorLogger.debug(
+				`MoveOrchestrator: Execution result success=${executionResult.success}, error=${executionResult.error || "none"}`,
 			)
 
 			if (!executionResult.success) {

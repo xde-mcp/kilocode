@@ -1,5 +1,6 @@
 import * as path from "path"
 import * as fs from "fs"
+import { refactorLogger } from "./RefactorLogger"
 
 /**
  * Utility class that centralizes path resolution operations throughout the refactor tool.
@@ -11,7 +12,7 @@ export class PathResolver {
 	 * @param projectRoot The root path of the project
 	 */
 	constructor(private projectRoot: string) {
-		// console.log(`[DEBUG] PathResolver created with project root: ${this.projectRoot}`)
+		refactorLogger.debug(`PathResolver created with project root: ${this.projectRoot}`)
 	}
 
 	/**
@@ -87,7 +88,7 @@ export class PathResolver {
 		// Additional safety check: if the resolved path contains duplicate src directories, fix it
 		if (resolvedPath.includes("/src/src/") || resolvedPath.includes("\\src\\src\\")) {
 			const fixedPath = resolvedPath.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
-			// console.log(`[DEBUG] Fixed duplicate src in resolved path: ${fixedPath} (was ${resolvedPath})`)
+			refactorLogger.debug(`Fixed duplicate src in resolved path: ${fixedPath} (was ${resolvedPath})`)
 			return fixedPath
 		}
 
@@ -146,13 +147,13 @@ export class PathResolver {
 			// Check for various forms of src/src duplication with a more robust regex
 			if (normalizedPath.includes("/src/src/") || normalizedPath.includes("\\src\\src\\")) {
 				const fixedPath = normalizedPath.replace(/[\/\\]src[\/\\]src[\/\\]/g, "/src/")
-				// console.log(`[DEBUG] Fixed duplicated src path in absolute path: ${fixedPath}`)
+				refactorLogger.debug(`Fixed duplicated src path in absolute path: ${fixedPath}`)
 				return fixedPath
 			}
 			// Check for src/src at the end of the path
 			if (normalizedPath.endsWith("/src/src") || normalizedPath.endsWith("\\src\\src")) {
 				const fixedPath = normalizedPath.replace(/[\/\\]src[\/\\]src$/g, "/src")
-				// console.log(`[DEBUG] Fixed duplicated src path at end: ${fixedPath}`)
+				refactorLogger.debug(`Fixed duplicated src path at end: ${fixedPath}`)
 				return fixedPath
 			}
 			return normalizedPath
@@ -165,7 +166,7 @@ export class PathResolver {
 				const pathParts = normalizedPath.split(/[\/\\]src[\/\\]/)
 				const lastPart = pathParts[pathParts.length - 1]
 				const resolvedPath = path.resolve(testRoot, "src", lastPart)
-				// console.log(`[DEBUG] Resolved move verification test path: ${resolvedPath} from ${normalizedPath}`)
+				refactorLogger.debug(`Resolved move verification test path: ${resolvedPath} from ${normalizedPath}`)
 				return resolvedPath
 			}
 
@@ -179,8 +180,8 @@ export class PathResolver {
 					// Extract the parts after "src"
 					const relativeParts = pathParts.slice(srcIndex + 1)
 					const resolvedPath = path.resolve(testRoot, "src", ...relativeParts)
-					console.log(
-						`[DEBUG] Resolved move verification test path (alt): ${resolvedPath} from ${normalizedPath}`,
+					refactorLogger.debug(
+						`Resolved move verification test path (alt): ${resolvedPath} from ${normalizedPath}`,
 					)
 					return resolvedPath
 				}

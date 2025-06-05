@@ -14,6 +14,7 @@ import {
 	SyntaxKind,
 } from "ts-morph"
 import { IdentifierSelector } from "../schema"
+import { refactorLogger } from "./RefactorLogger"
 
 /**
  * Utility class for finding symbols in TypeScript source files
@@ -80,7 +81,7 @@ export class SymbolFinder {
 		}
 
 		if (!scopeContainer) {
-			console.log(`[DEBUG] Scope container '${selector.scope.name}' not found`)
+			refactorLogger.debug(`Scope container '${selector.scope.name}' not found`)
 			return undefined
 		}
 
@@ -91,10 +92,10 @@ export class SymbolFinder {
 				if (selector.name === "constructor") {
 					const constructors = scopeContainer.getConstructors()
 					if (constructors.length > 0) {
-						console.log(`[DEBUG] Found constructor in class ${selector.scope.name}`)
+						refactorLogger.debug(`Found constructor in class ${selector.scope.name}`)
 						return constructors[0]
 					}
-					console.log(`[DEBUG] No constructor found in class ${selector.scope.name}`)
+					refactorLogger.debug(`No constructor found in class ${selector.scope.name}`)
 					return undefined
 				}
 				return scopeContainer.getMethod(selector.name)
@@ -179,10 +180,7 @@ export class SymbolFinder {
 
 		// Debug: Log what functions are actually found
 		// console.log(`[DEBUG SYMBOL FINDER] Looking for function '${name}' in file: ${this.sourceFile.getFilePath()}`)
-		console.log(
-			`[DEBUG SYMBOL FINDER] Found ${functions.length} functions:`,
-			functions.map((f) => f.getName()),
-		)
+		refactorLogger.debug(`Found ${functions.length} functions: ${functions.map((f) => f.getName()).join(", ")}`)
 		// console.log(`[DEBUG SYMBOL FINDER] File content preview:`, this.sourceFile.getText().substring(0, 200))
 
 		if (signatureHint) {

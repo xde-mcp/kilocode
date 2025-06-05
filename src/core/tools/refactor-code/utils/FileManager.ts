@@ -3,6 +3,7 @@ import * as fsSync from "fs"
 import * as path from "path"
 import { PathResolver } from "./PathResolver"
 import { ensureDirectoryExists, writeFile } from "./file-system" // Changed path
+import { refactorLogger } from "./RefactorLogger"
 
 /**
  * Manages file operations for the refactor tool, centralizing file access, creation, and modifications.
@@ -90,34 +91,34 @@ export class FileManager {
 	 * @returns The SourceFile if found or added, null otherwise
 	 */
 	async ensureFileInProject(filePath: string): Promise<SourceFile | null> {
-		console.log(`[DEBUG FILE-MANAGER] 🔍 ensureFileInProject() called for: ${filePath}`)
+		refactorLogger.debug(`ensureFileInProject() called for: ${filePath}`)
 
 		const normalizedPath = this.pathResolver.normalizeFilePath(filePath)
 		const isTestEnv = this.pathResolver.isTestEnvironment(filePath)
 		const isMoveVerificationTest = filePath.includes("move-orchestrator-verification")
 
-		console.log(`[DEBUG FILE-MANAGER] 📁 Normalized path: ${normalizedPath}`)
-		console.log(`[DEBUG FILE-MANAGER] 🧪 Test environment: ${isTestEnv}`)
-		console.log(`[DEBUG FILE-MANAGER] 🔬 Move verification test: ${isMoveVerificationTest}`)
+		refactorLogger.debug(`Normalized path: ${normalizedPath}`)
+		refactorLogger.debug(`Test environment: ${isTestEnv}`)
+		refactorLogger.debug(`Move verification test: ${isMoveVerificationTest}`)
 
 		// Check cache first
 		if (this.sourceFileCache.has(normalizedPath)) {
-			console.log(`[DEBUG FILE-MANAGER] ✅ Cache hit for: ${normalizedPath}`)
+			refactorLogger.debug(`Cache hit for: ${normalizedPath}`)
 			return this.sourceFileCache.get(normalizedPath) || null
 		}
 
 		// Try to get existing file first
 		let sourceFile = this.project.getSourceFile(normalizedPath)
 		if (sourceFile) {
-			console.log(`[DEBUG FILE-MANAGER] ✅ File already in project: ${normalizedPath}`)
+			refactorLogger.debug(`File already in project: ${normalizedPath}`)
 			// Cache the result
 			this.sourceFileCache.set(normalizedPath, sourceFile)
 			return sourceFile
 		}
 
-		console.log(`[DEBUG FILE-MANAGER] ❌ File not in project, attempting to add: ${normalizedPath}`)
+		refactorLogger.debug(`File not in project, attempting to add: ${normalizedPath}`)
 		const currentFileCount = this.project.getSourceFiles().length
-		console.log(`[DEBUG FILE-MANAGER] 📊 Current project file count: ${currentFileCount}`)
+		refactorLogger.debug(`Current project file count: ${currentFileCount}`)
 
 		// Special handling for test environment paths
 		if (isTestEnv || isMoveVerificationTest) {
@@ -127,11 +128,11 @@ export class FileManager {
 				try {
 					sourceFile = this.project.getSourceFile(fixedPath)
 					if (!sourceFile) {
-						console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file with fixed test path: ${fixedPath}`)
+						refactorLogger.debug(`Adding file with fixed test path: ${fixedPath}`)
 						sourceFile = this.project.addSourceFileAtPath(fixedPath)
 						const newFileCount = this.project.getSourceFiles().length
-						console.log(
-							`[DEBUG FILE-MANAGER] ✅ Added source file using fixed test path: ${fixedPath} (project now has ${newFileCount} files)`,
+						refactorLogger.debug(
+							`Added source file using fixed test path: ${fixedPath} (project now has ${newFileCount} files)`,
 						)
 					}
 					if (sourceFile) {
@@ -139,9 +140,7 @@ export class FileManager {
 						return sourceFile
 					}
 				} catch (error) {
-					console.log(
-						`[DEBUG FILE-MANAGER] ❌ Failed to add with fixed test path: ${(error as Error).message}`,
-					)
+					refactorLogger.debug(`Failed to add with fixed test path: ${(error as Error).message}`)
 				}
 			}
 
@@ -150,11 +149,11 @@ export class FileManager {
 			try {
 				sourceFile = this.project.getSourceFile(testPath)
 				if (!sourceFile) {
-					console.log(`[DEBUG FILE-MANAGER] 🔄 Adding file with test path: ${testPath}`)
+					refactorLogger.debug(`Adding file with test path: ${testPath}`)
 					sourceFile = this.project.addSourceFileAtPath(testPath)
 					const newFileCount = this.project.getSourceFiles().length
-					console.log(
-						`[DEBUG FILE-MANAGER] ✅ Added source file using test path: ${testPath} (project now has ${newFileCount} files)`,
+					refactorLogger.debug(
+						`Added source file using test path: ${testPath} (project now has ${newFileCount} files)`,
 					)
 				}
 				if (sourceFile) {
@@ -162,7 +161,7 @@ export class FileManager {
 					return sourceFile
 				}
 			} catch (error) {
-				console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with test path: ${(error as Error).message}`)
+				refactorLogger.debug(`Failed to add with test path: ${(error as Error).message}`)
 			}
 
 			// For tests, create file in-memory if it doesn't exist
@@ -174,11 +173,11 @@ export class FileManager {
 						`// Auto-created stub file for testing\n`,
 						{ overwrite: true },
 					)
-					console.log(`[DEBUG] Created stub test file: ${normalizedPath}`)
+					refactorLogger.debug(`Created stub test file: ${normalizedPath}`)
 					this.sourceFileCache.set(normalizedPath, sourceFile)
 					return sourceFile
 				} catch (error) {
-					console.log(`[DEBUG] Failed to create stub test file: ${(error as Error).message}`)
+					refactorLogger.debug(`Failed to create stub test file: ${(error as Error).message}`)
 				}
 			}
 		}
@@ -217,19 +216,17 @@ export class FileManager {
 					? cleanPath
 					: this.pathResolver.resolveAbsolutePath(cleanPath)
 
-				console.log(
-					`[DEBUG FILE-MANAGER] 🔄 Adding file using ${description}: ${cleanPath} -> ${absolutePathForTsMorph}`,
-				)
+				refactorLogger.debug(`Adding file using ${description}: ${cleanPath} -> ${absolutePathForTsMorph}`)
 				sourceFile = this.project.addSourceFileAtPath(absolutePathForTsMorph)
 				const newFileCount = this.project.getSourceFiles().length
-				console.log(
-					`[DEBUG FILE-MANAGER] ✅ Added source file using ${description}: ${cleanPath} (project now has ${newFileCount} files)`,
+				refactorLogger.debug(
+					`Added source file using ${description}: ${cleanPath} (project now has ${newFileCount} files)`,
 				)
-				console.log(`[DEBUG] Source file path in project: ${sourceFile.getFilePath()}`)
+				refactorLogger.debug(`Source file path in project: ${sourceFile.getFilePath()}`)
 				this.sourceFileCache.set(normalizedPath, sourceFile)
 				return sourceFile
 			} catch (error) {
-				console.log(`[DEBUG] Failed to add with ${description}: ${(error as Error).message}`)
+				refactorLogger.debug(`Failed to add with ${description}: ${(error as Error).message}`)
 			}
 		}
 
@@ -246,13 +243,13 @@ export class FileManager {
 					`// Auto-created source file for testing\n`,
 					{ overwrite: true },
 				)
-				console.log(
-					`[DEBUG] Created in-memory test file as last resort: ${normalizedPath} -> ${absolutePathForTsMorph}`,
+				refactorLogger.debug(
+					`Created in-memory test file as last resort: ${normalizedPath} -> ${absolutePathForTsMorph}`,
 				)
 				this.sourceFileCache.set(normalizedPath, sourceFile)
 				return sourceFile
 			} catch (error) {
-				console.log(`[DEBUG] Failed to create in-memory test file: ${(error as Error).message}`)
+				refactorLogger.debug(`Failed to create in-memory test file: ${(error as Error).message}`)
 			}
 		}
 
@@ -292,15 +289,15 @@ export class FileManager {
 						// Fix paths that have src/ duplications
 						if (normalizedPath.includes("/src/src/")) {
 							const fixedPath = normalizedPath.replace("/src/src/", "/src/")
-							console.log(`[DEBUG] Fixed duplicated src path: ${fixedPath}`)
+							refactorLogger.debug(`Fixed duplicated src path: ${fixedPath}`)
 
 							// Try to create the file in-memory with the fixed path
 							try {
 								sourceFile = this.project.createSourceFile(fixedPath, content, { overwrite: true })
-								console.log(`[DEBUG] Created test file with fixed path: ${fixedPath}`)
+								refactorLogger.debug(`Created test file with fixed path: ${fixedPath}`)
 								return sourceFile
 							} catch (e) {
-								console.log(`[DEBUG] Failed to create with fixed path: ${e.message}`)
+								refactorLogger.debug(`Failed to create with fixed path: ${e.message}`)
 							}
 						}
 
@@ -309,14 +306,14 @@ export class FileManager {
 							const fileName = this.pathResolver.getFileName(filePath)
 							const directPath = this.pathResolver.joinPaths(tempDir, fileName)
 							sourceFile = this.project.createSourceFile(directPath, content, { overwrite: true })
-							console.log(`[DEBUG] Created test file directly in temp dir: ${directPath}`)
+							refactorLogger.debug(`Created test file directly in temp dir: ${directPath}`)
 							return sourceFile
 						} catch (e) {
-							console.log(`[DEBUG] Failed to create in temp dir: ${e.message}`)
+							refactorLogger.debug(`Failed to create in temp dir: ${e.message}`)
 						}
 					}
 				} catch (error) {
-					console.log(`[DEBUG] Test path handling error: ${error.message}`)
+					refactorLogger.debug(`Test path handling error: ${error.message}`)
 				}
 			}
 
@@ -325,10 +322,10 @@ export class FileManager {
 				// Use a more test-friendly path
 				const testPath = this.pathResolver.prepareTestFilePath(normalizedPath, true)
 				sourceFile = this.project.createSourceFile(testPath, content, { overwrite: true })
-				console.log(`[DEBUG] Created test file: ${testPath}`)
+				refactorLogger.debug(`Created test file: ${testPath}`)
 				return sourceFile
 			} catch (testError) {
-				console.log(`[DEBUG] Failed to create test file: ${testError.message}`)
+				refactorLogger.debug(`Failed to create test file: ${testError.message}`)
 			}
 		}
 
@@ -339,42 +336,40 @@ export class FileManager {
 		// Create the file on disk if it doesn't exist
 		if (!fsSync.existsSync(absolutePath)) {
 			await writeFile(absolutePath, content)
-			console.log(`[DEBUG] Created new file on disk: ${absolutePath}`)
+			refactorLogger.debug(`Created new file on disk: ${absolutePath}`)
 		}
 
 		// Try to add the file to the project using multiple strategies
 		try {
-			console.log(`[DEBUG FILE-MANAGER] 🔄 Adding new file to project: ${normalizedPath}`)
+			refactorLogger.debug(`Adding new file to project: ${normalizedPath}`)
 			sourceFile = this.project.addSourceFileAtPath(normalizedPath)
 			const newFileCount = this.project.getSourceFiles().length
-			console.log(
-				`[DEBUG FILE-MANAGER] ✅ Added new file to project: ${normalizedPath} (project now has ${newFileCount} files)`,
-			)
+			refactorLogger.debug(`Added new file to project: ${normalizedPath} (project now has ${newFileCount} files)`)
 		} catch (error) {
-			console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with normalized path: ${(error as Error).message}`)
+			refactorLogger.debug(`Failed to add with normalized path: ${(error as Error).message}`)
 
 			try {
-				console.log(`[DEBUG FILE-MANAGER] 🔄 Retrying with absolute path: ${absolutePath}`)
+				refactorLogger.debug(`Retrying with absolute path: ${absolutePath}`)
 				sourceFile = this.project.addSourceFileAtPath(absolutePath)
 				const newFileCount = this.project.getSourceFiles().length
-				console.log(
-					`[DEBUG FILE-MANAGER] ✅ Added new file to project with absolute path: ${absolutePath} (project now has ${newFileCount} files)`,
+				refactorLogger.debug(
+					`Added new file to project with absolute path: ${absolutePath} (project now has ${newFileCount} files)`,
 				)
 			} catch (error) {
-				console.log(`[DEBUG FILE-MANAGER] ❌ Failed to add with absolute path: ${(error as Error).message}`)
+				refactorLogger.debug(`Failed to add with absolute path: ${(error as Error).message}`)
 
 				// Last resort: create the file in the project
 				try {
 					sourceFile = this.project.createSourceFile(normalizedPath, content)
-					console.log(`[DEBUG] Created source file directly in project: ${normalizedPath}`)
+					refactorLogger.debug(`Created source file directly in project: ${normalizedPath}`)
 				} catch (finalError) {
-					console.log(`[DEBUG] Final attempt to create file failed: ${finalError.message}`)
+					refactorLogger.debug(`Final attempt to create file failed: ${finalError.message}`)
 
 					// For tests, just create a stub file at any workable path as a last resort
 					if (isTestEnv) {
 						const baseName = this.pathResolver.getFileName(normalizedPath)
 						sourceFile = this.project.createSourceFile(baseName, content, { overwrite: true })
-						console.log(`[DEBUG] Created stub test file as last resort: ${baseName}`)
+						refactorLogger.debug(`Created stub test file as last resort: ${baseName}`)
 					} else {
 						throw finalError
 					}

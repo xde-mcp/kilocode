@@ -353,7 +353,7 @@ export class RefactorEngine {
 						this.project.addSourceFileAtPath(absolutePath)
 						refactorLogger.debug(`Successfully refreshed file in project: ${filePath}`)
 					} catch (e) {
-						console.log(`[WARNING] Failed to refresh file in project: ${filePath}`, e)
+						refactorLogger.warn(`Failed to refresh file in project: ${filePath}`, e)
 					}
 				}
 			}
@@ -652,8 +652,8 @@ export class RefactorEngine {
 						// If the operation was successful, perform additional synchronization for batch operations
 						if (!this.isTestEnvironment()) {
 							refactorLogger.debug(`Performing batch operation synchronization for operation ${i + 1}`)
-							console.log(
-								`[DEBUG] Reported affected files: ${JSON.stringify(result.affectedFiles || [])}`,
+							refactorLogger.debug(
+								`Reported affected files: ${JSON.stringify(result.affectedFiles || [])}`,
 							)
 						}
 
@@ -665,8 +665,8 @@ export class RefactorEngine {
 							filesToSync = result.affectedFiles
 						} else {
 							// Infer affected files from operation when not properly reported
-							console.log(
-								`[DEBUG] No affected files reported, inferring from operation type: ${operation.operation}`,
+							refactorLogger.debug(
+								`No affected files reported, inferring from operation type: ${operation.operation}`,
 							)
 
 							if ("selector" in operation && "filePath" in operation.selector) {
@@ -715,7 +715,7 @@ export class RefactorEngine {
 			this.options.stopOnError = originalStopOnError
 
 			// Final synchronization after all batch operations complete
-			console.log(`[DEBUG BATCH] Performing final synchronization after batch completion`)
+			refactorLogger.debug(`Performing final synchronization after batch completion`)
 
 			// Collect all affected files from successful operations
 			const allAffectedFiles = results
@@ -726,9 +726,9 @@ export class RefactorEngine {
 				// Use the last operation for the synchronization call
 				const lastOperation = operations[operations.length - 1]
 				await this.forceProjectSynchronization(allAffectedFiles, lastOperation)
-				console.log(`[DEBUG BATCH] Final synchronization completed for ${allAffectedFiles.length} files`)
+				refactorLogger.debug(`Final synchronization completed for ${allAffectedFiles.length} files`)
 			} else {
-				console.log(`[DEBUG BATCH] No files to synchronize`)
+				refactorLogger.debug(`No files to synchronize`)
 			}
 
 			// Performance logging
@@ -794,8 +794,8 @@ export class RefactorEngine {
 						if (isTestEnvironment) {
 							// In test environments, files should already be in the project via createTestFilesWithAutoLoad
 							// If they're not, it means the test setup is wrong, not that we should load real source files
-							console.log(
-								`[TEST ISOLATION] File not in test project: ${selectorFilePath} - this indicates incorrect test setup`,
+							refactorLogger.debug(
+								`File not in test project: ${selectorFilePath} - this indicates incorrect test setup`,
 							)
 							errors.push(
 								`File not found in test project: ${selectorFilePath}. Test files must be created via createTestFilesWithAutoLoad.`,
@@ -804,9 +804,9 @@ export class RefactorEngine {
 							try {
 								// Add the file to the project if it's not already there (production only)
 								this.project.addSourceFileAtPath(selectorFilePath)
-								console.log(`Added existing file to project: ${selectorFilePath}`)
+								refactorLogger.debug(`Added existing file to project: ${selectorFilePath}`)
 							} catch (e) {
-								console.log(`Warning: Failed to add file to project: ${selectorFilePath}`)
+								refactorLogger.warn(`Failed to add file to project: ${selectorFilePath}`)
 								// Even if adding to project fails, we know it exists on disk,
 								// but subsequent ts-morph operations might fail.
 								// We'll let the ts-morph errors propagate if they occur.
@@ -829,13 +829,13 @@ export class RefactorEngine {
 					if (!this.pathResolver.pathExists(path.dirname(moveOp.targetFilePath))) {
 						// This isn't necessarily an error, as we can create directories,
 						// but we'll warn about it
-						console.log(`Target directory does not exist: ${targetDir}. It will be created.`)
+						refactorLogger.debug(`Target directory does not exist: ${targetDir}. It will be created.`)
 						// Create the directory
 						try {
 							ensureDirectoryExists(targetDir)
-							console.log(`Created target directory: ${targetDir}`)
+							refactorLogger.debug(`Created target directory: ${targetDir}`)
 						} catch (e) {
-							console.log(`Warning: Failed to create directory: ${targetDir}`)
+							refactorLogger.warn(`Failed to create directory: ${targetDir}`)
 						}
 					}
 
@@ -953,8 +953,8 @@ export class RefactorEngine {
 		try {
 			// PERFORMANCE FIX: Skip expensive synchronization in test environments
 			if (this.isTestEnvironment()) {
-				console.log(
-					`[DEBUG SYNC] Test environment detected - using lightweight synchronization for ${affectedFiles.length} files`,
+				refactorLogger.debug(
+					`Test environment detected - using lightweight synchronization for ${affectedFiles.length} files`,
 				)
 				refactorLogger.debug(`Test environment detected - using lightweight synchronization`)
 
@@ -1247,7 +1247,7 @@ export class RefactorEngine {
 				}
 			}
 		} catch (error) {
-			console.log(`[ERROR] Failed to refresh project from disk: ${(error as Error).message}`)
+			refactorLogger.error(`Failed to refresh project from disk: ${(error as Error).message}`)
 		}
 	}
 
@@ -1335,8 +1335,8 @@ export class RefactorEngine {
 						const renameSourcePath = this.pathResolver.normalizeFilePath(renameOp.selector.filePath)
 
 						if (moveTargetPath === renameSourcePath) {
-							console.log(
-								`[DEBUG] Found dependency: Move to ${moveTargetPath} followed by rename in same file`,
+							refactorLogger.debug(
+								`Found dependency: Move to ${moveTargetPath} followed by rename in same file`,
 							)
 							return true
 						}
@@ -1472,9 +1472,7 @@ export class RefactorEngine {
 
 			// Add file count limit for test environments to prevent runaway loading
 			if (totalFiles > 50) {
-				console.log(
-					`[DEBUG ENGINE] ⚠️  WARNING: Test environment has ${totalFiles} files loaded - this may indicate scope leakage`,
-				)
+				refactorLogger.warn(`Test environment has ${totalFiles} files loaded - this may indicate scope leakage`)
 			}
 		} catch (error) {
 			refactorLogger.debug(`❌ Error loading test files: ${(error as Error).message}`)
@@ -1507,8 +1505,8 @@ export class RefactorEngine {
 			}
 
 			const finalFileCount = this.project.getSourceFiles().length
-			console.log(
-				`[DEBUG ENGINE] ✅ Test isolation validation complete - Violations: ${violationCount}, Final files: ${finalFileCount}`,
+			refactorLogger.debug(
+				`Test isolation validation complete - Violations: ${violationCount}, Final files: ${finalFileCount}`,
 			)
 
 			if (violationCount > 0) {

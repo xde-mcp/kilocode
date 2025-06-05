@@ -1,6 +1,7 @@
 import * as path from "path"
 import * as fs from "fs/promises"
 import * as fsSync from "fs"
+import { refactorLogger } from "./RefactorLogger"
 
 /**
  * Utility functions for file system operations used by the refactor tool.
@@ -166,13 +167,13 @@ export function createDiagnostic(projectRootPath: string) {
 		const exists = pathResolver.pathExists(filePath)
 		const size = exists ? fsSync.statSync(absolutePath).size : 0
 
-		console.log(`[DIAGNOSTIC] ${operation} - File: ${filePath}`)
-		console.log(`[DIAGNOSTIC] Absolute path: ${absolutePath}`)
-		console.log(`[DIAGNOSTIC] File exists: ${exists}, Size: ${size} bytes`)
+		refactorLogger.debug(`${operation} - File: ${filePath}`)
+		refactorLogger.debug(`Absolute path: ${absolutePath}`)
+		refactorLogger.debug(`File exists: ${exists}, Size: ${size} bytes`)
 
 		if (exists) {
 			const content = await readFile(absolutePath)
-			console.log(`[DIAGNOSTIC] Content length: ${content.length} bytes`)
+			refactorLogger.debug(`Content length: ${content.length} bytes`)
 		}
 	}
 }
