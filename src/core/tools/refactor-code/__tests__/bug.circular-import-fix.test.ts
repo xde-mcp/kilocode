@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "@jest/globals"
+import { describe, it, expect, beforeAll, afterAll } from "@jest/globals"
 import {
 	createRefactorEngineTestSetupWithAutoLoad,
 	RefactorEngineTestSetup,
@@ -10,11 +10,11 @@ import * as path from "path"
 describe("Circular Import Bug Fix (RCT-001)", () => {
 	let setup: RefactorEngineTestSetup
 
-	beforeEach(() => {
+	beforeAll(() => {
 		setup = createRefactorEngineTestSetupWithAutoLoad()
 	})
 
-	afterEach(() => {
+	afterAll(() => {
 		setup.cleanup()
 	})
 
@@ -76,12 +76,7 @@ export function anotherFunction(): string {
 		const updatedLargeFile = fs.readFileSync(path.join(setup.projectDir, "large-file.ts"), "utf-8")
 		const updatedUserUtils = fs.readFileSync(path.join(setup.projectDir, "user-utils.ts"), "utf-8")
 
-		console.log("=== UPDATED LARGE FILE ===")
-		console.log(updatedLargeFile)
-		console.log("=== UPDATED USER UTILS ===")
-		console.log(updatedUserUtils)
-
-		// CRITICAL: Verify no circular import was created
+		// Verify no circular import was created
 		expect(updatedLargeFile).not.toContain("import { formatUserDisplayName } from './large-file'")
 		expect(updatedLargeFile).not.toContain("from './large-file'")
 

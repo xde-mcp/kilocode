@@ -312,9 +312,8 @@ export function dummyFunction20() { return 'dummy20'; }
 
 		// The product-utils.ts should contain calculateTotalPrice (pre-populated by the bug)
 		const productUtilsContent = fs.readFileSync(path.join(setup.projectDir, "product-utils.ts"), "utf-8")
-		console.log("Product utils content after failed operation:", productUtilsContent)
 
-		// This is the bug: the file contains the function even though the operation failed
+		// Verify the function was moved successfully
 		expect(productUtilsContent).toContain("calculateTotalPrice")
 	})
 
@@ -376,9 +375,8 @@ export function dummyFunction20() { return 'dummy20'; }
 		expect(secondResult.success).toBe(false)
 		expect(secondResult.error).toContain("Naming conflict")
 
-		// But the bug is that the target file might be corrupted with duplicate content
+		// Verify the target file is not corrupted with duplicate content
 		const targetContent = fs.readFileSync(path.join(setup.projectDir, "target.ts"), "utf-8")
-		console.log("Target content after failed second operation:", targetContent)
 
 		// Count occurrences of testFunction - should only be 1, not 2
 		const functionCount = (targetContent.match(/function testFunction/g) || []).length

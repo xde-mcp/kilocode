@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals"
-import { Project } from "ts-morph"
 import { MoveExecutor } from "../operations/MoveExecutor"
 import { SymbolResolver } from "../core/SymbolResolver"
 import { MoveOperation } from "../schema"
+import { createSimpleTestSetup, StandardTestSetup, createTestFiles } from "./utils/standardized-test-setup"
 import * as fs from "fs"
-import * as path from "path"
-import * as os from "os"
 
 /**
  * Test suite for move operation bug fixes.
@@ -16,37 +14,21 @@ import * as os from "os"
  * 3. Failure to update imports in dependent files when moving to new files
  */
 describe("MoveExecutor Bug Fixes", () => {
-	let project: Project
+	let setup: StandardTestSetup
 	let moveExecutor: MoveExecutor
 	let symbolResolver: SymbolResolver
-	let tempDir: string
 
 	beforeEach(() => {
-		// Create a temporary directory for test files
-		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "move-executor-test-"))
+		// Use standardized Pattern 1 setup for unit tests
+		setup = createSimpleTestSetup()
 
-		// Initialize ts-morph project
-		project = new Project({
-			useInMemoryFileSystem: false,
-			compilerOptions: {
-				target: 99, // Latest
-				module: 99, // ESNext
-				strict: true,
-				esModuleInterop: true,
-				skipLibCheck: true,
-				forceConsistentCasingInFileNames: true,
-			},
-		})
-
-		moveExecutor = new MoveExecutor(project)
-		symbolResolver = new SymbolResolver(project)
+		moveExecutor = new MoveExecutor(setup.project)
+		symbolResolver = new SymbolResolver(setup.project)
 	})
 
 	afterEach(() => {
-		// Clean up temporary directory
-		if (fs.existsSync(tempDir)) {
-			fs.rmSync(tempDir, { recursive: true, force: true })
-		}
+		// Use standardized cleanup
+		setup.cleanup()
 	})
 
 	/**
@@ -56,43 +38,37 @@ describe("MoveExecutor Bug Fixes", () => {
 	 * the tool does not create imports from the target file to itself.
 	 */
 	it("should not create self-imports when moving functions", async () => {
-		// Create source file with math utilities
-		const mathUtilsPath = path.join(tempDir, "mathUtils.ts")
-		const mathUtilsContent = `
+		// Create test files using standardized utility
+		const files = createTestFiles(setup.tempDir, {
+			"mathUtils.ts": `
 // Math utility functions
 
 export function add(a: number, b: number): number {
-  return a + b;
+	 return a + b;
 }
 
 export function subtract(a: number, b: number): number {
-  return a - b;
+	 return a - b;
 }
 
 export function multiply(a: number, b: number): number {
-  return a * b;
-}
-`
-		fs.writeFileSync(mathUtilsPath, mathUtilsContent)
-
-		// Create target file for string utilities
-		const stringUtilsPath = path.join(tempDir, "stringUtils.ts")
-		const stringUtilsContent = `
+	 return a * b;
+}`,
+			"stringUtils.ts": `
 // String utility functions
 
 export function capitalize(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+	 return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 export function reverse(str: string): string {
-  return str.split('').reverse().join('');
-}
-`
-		fs.writeFileSync(stringUtilsPath, stringUtilsContent)
+	 return str.split('').reverse().join('');
+}`,
+		})
 
 		// Add files to project
-		const mathUtilsFile = project.addSourceFileAtPath(mathUtilsPath)
-		const stringUtilsFile = project.addSourceFileAtPath(stringUtilsPath)
+		const mathUtilsFile = setup.project.addSourceFileAtPath(files["mathUtils.ts"])
+		const stringUtilsFile = setup.project.addSourceFileAtPath(files["stringUtils.ts"])
 
 		// Resolve the 'add' function symbol
 		const addSymbol = symbolResolver.resolveSymbol(
@@ -100,7 +76,7 @@ export function reverse(str: string): string {
 				type: "identifier",
 				name: "add",
 				kind: "function",
-				filePath: mathUtilsPath,
+				filePath: files["mathUtils.ts"],
 			},
 			mathUtilsFile,
 		)
@@ -113,9 +89,9 @@ export function reverse(str: string): string {
 				type: "identifier",
 				name: "add",
 				kind: "function",
-				filePath: mathUtilsPath,
+				filePath: files["mathUtils.ts"],
 			},
-			targetFilePath: stringUtilsPath,
+			targetFilePath: files["stringUtils.ts"],
 			reason: "Testing self-import prevention",
 		}
 
@@ -151,44 +127,33 @@ export function reverse(str: string): string {
 	 * the necessary import statements are added to the target file.
 	 */
 	it("should include dependency imports when moving functions with dependencies", async () => {
-		// Create math utilities file
-		const mathUtilsPath = path.join(tempDir, "mathUtils.ts")
-		const mathUtilsContent = `
+		// Create test files using standardized utility
+		const files = createTestFiles(setup.tempDir, {
+			"mathUtils.ts": `
 export function add(a: number, b: number): number {
-  return a + b;
+	 return a + b;
 }
 
 export function multiply(a: number, b: number): number {
-  return a * b;
-}
-`
-		fs.writeFileSync(mathUtilsPath, mathUtilsContent)
-
-		// Create data service file with dependencies
-		const dataServicePath = path.join(tempDir, "dataService.ts")
-		const dataServiceContent = `
+	 return a * b;
+}`,
+			"dataService.ts": `
 import { add, multiply } from './mathUtils';
 
 export function processData(data: number[]): number {
-  return data.reduce((sum, val) => add(sum, val), 0);
+	 return data.reduce((sum, val) => add(sum, val), 0);
 }
 
 export function calculateTotal(data: number[], factor: number): number {
-  return multiply(processData(data), factor);
-}
-`
-		fs.writeFileSync(dataServicePath, dataServiceContent)
-
-		// Create target file for calculations
-		const calculationsPath = path.join(tempDir, "calculations.ts")
-		const calculationsContent = `
-// Calculation utilities
-`
-		fs.writeFileSync(calculationsPath, calculationsContent)
+	 return multiply(processData(data), factor);
+}`,
+			"calculations.ts": `
+// Calculation utilities`,
+		})
 
 		// Add files to project
-		const dataServiceFile = project.addSourceFileAtPath(dataServicePath)
-		const calculationsFile = project.addSourceFileAtPath(calculationsPath)
+		const dataServiceFile = setup.project.addSourceFileAtPath(files["dataService.ts"])
+		const calculationsFile = setup.project.addSourceFileAtPath(files["calculations.ts"])
 
 		// Resolve the 'calculateTotal' function symbol
 		const calculateTotalSymbol = symbolResolver.resolveSymbol(
@@ -196,7 +161,7 @@ export function calculateTotal(data: number[], factor: number): number {
 				type: "identifier",
 				name: "calculateTotal",
 				kind: "function",
-				filePath: dataServicePath,
+				filePath: files["dataService.ts"],
 			},
 			dataServiceFile,
 		)
@@ -209,9 +174,9 @@ export function calculateTotal(data: number[], factor: number): number {
 				type: "identifier",
 				name: "calculateTotal",
 				kind: "function",
-				filePath: dataServicePath,
+				filePath: files["dataService.ts"],
 			},
-			targetFilePath: calculationsPath,
+			targetFilePath: files["calculations.ts"],
 			reason: "Testing dependency import inclusion",
 		}
 
@@ -247,47 +212,41 @@ export function calculateTotal(data: number[], factor: number): number {
 	 * all files that import those functions are updated to import from the new location.
 	 */
 	it("should update imports in dependent files when moving to new files", async () => {
-		// Create math utilities file
-		const mathUtilsPath = path.join(tempDir, "mathUtils.ts")
-		const mathUtilsContent = `
+		// Create test files using standardized utility
+		const files = createTestFiles(setup.tempDir, {
+			"mathUtils.ts": `
 export function add(a: number, b: number): number {
-  return a + b;
+	 return a + b;
 }
 
 export function multiply(a: number, b: number): number {
-  return a * b;
-}
-`
-		fs.writeFileSync(mathUtilsPath, mathUtilsContent)
-
-		// Create data service file that imports from mathUtils
-		const dataServicePath = path.join(tempDir, "dataService.ts")
-		const dataServiceContent = `
+	 return a * b;
+}`,
+			"dataService.ts": `
 import { add, multiply } from './mathUtils';
 
 export function processData(data: number[]): number {
-  return data.reduce((sum, val) => add(sum, val), 0);
+	 return data.reduce((sum, val) => add(sum, val), 0);
 }
 
 export function calculateAverage(data: number[]): number {
-  if (data.length === 0) return 0;
-  const sum = processData(data);
-  return sum / data.length;
+	 if (data.length === 0) return 0;
+	 const sum = processData(data);
+	 return sum / data.length;
 }
 
 export function calculateTotal(data: number[], factor: number): number {
-  return multiply(processData(data), factor);
-}
-`
-		fs.writeFileSync(dataServicePath, dataServiceContent)
+	 return multiply(processData(data), factor);
+}`,
+		})
 
 		// Create NEW target file for advanced math
-		const advancedMathPath = path.join(tempDir, "advancedMath.ts")
+		const advancedMathPath = files["mathUtils.ts"].replace("mathUtils.ts", "advancedMath.ts")
 		// Note: This file doesn't exist initially - it will be created by the move operation
 
 		// Add files to project
-		const mathUtilsFile = project.addSourceFileAtPath(mathUtilsPath)
-		const dataServiceFile = project.addSourceFileAtPath(dataServicePath)
+		const mathUtilsFile = setup.project.addSourceFileAtPath(files["mathUtils.ts"])
+		const dataServiceFile = setup.project.addSourceFileAtPath(files["dataService.ts"])
 
 		// Resolve the 'multiply' function symbol
 		const multiplySymbol = symbolResolver.resolveSymbol(
@@ -295,7 +254,7 @@ export function calculateTotal(data: number[], factor: number): number {
 				type: "identifier",
 				name: "multiply",
 				kind: "function",
-				filePath: mathUtilsPath,
+				filePath: files["mathUtils.ts"],
 			},
 			mathUtilsFile,
 		)
@@ -308,7 +267,7 @@ export function calculateTotal(data: number[], factor: number): number {
 				type: "identifier",
 				name: "multiply",
 				kind: "function",
-				filePath: mathUtilsPath,
+				filePath: files["mathUtils.ts"],
 			},
 			targetFilePath: advancedMathPath,
 			reason: "Testing import updates when moving to new file",
@@ -350,52 +309,41 @@ export function calculateTotal(data: number[], factor: number): number {
 	 * This test combines all three bug scenarios in a complex move operation.
 	 */
 	it("should handle complex move operations without introducing bugs", async () => {
-		// Create utilities file with multiple functions
-		const utilsPath = path.join(tempDir, "utils.ts")
-		const utilsContent = `
+		// Create test files using standardized utility
+		const files = createTestFiles(setup.tempDir, {
+			"utils.ts": `
 export function formatString(str: string): string {
-  return str.trim().toLowerCase();
+	 return str.trim().toLowerCase();
 }
 
 export function validateEmail(email: string): boolean {
-  return email.includes('@') && email.includes('.');
+	 return email.includes('@') && email.includes('.');
 }
 
 export function processUser(name: string, email: string): { name: string; email: string; valid: boolean } {
-  return {
-    name: formatString(name),
-    email: formatString(email),
-    valid: validateEmail(email)
-  };
-}
-`
-		fs.writeFileSync(utilsPath, utilsContent)
-
-		// Create service file that uses utilities
-		const userServicePath = path.join(tempDir, "userService.ts")
-		const userServiceContent = `
+	 return {
+	   name: formatString(name),
+	   email: formatString(email),
+	   valid: validateEmail(email)
+	 };
+}`,
+			"userService.ts": `
 import { processUser, validateEmail } from './utils';
 
 export function createUser(name: string, email: string) {
-  if (!validateEmail(email)) {
-    throw new Error('Invalid email');
-  }
-  return processUser(name, email);
-}
-`
-		fs.writeFileSync(userServicePath, userServiceContent)
-
-		// Create target file for validation functions
-		const validationPath = path.join(tempDir, "validation.ts")
-		const validationContent = `
-// Validation utilities
-`
-		fs.writeFileSync(validationPath, validationContent)
+	 if (!validateEmail(email)) {
+	   throw new Error('Invalid email');
+	 }
+	 return processUser(name, email);
+}`,
+			"validation.ts": `
+// Validation utilities`,
+		})
 
 		// Add files to project
-		const utilsFile = project.addSourceFileAtPath(utilsPath)
-		const userServiceFile = project.addSourceFileAtPath(userServicePath)
-		const validationFile = project.addSourceFileAtPath(validationPath)
+		const utilsFile = setup.project.addSourceFileAtPath(files["utils.ts"])
+		const userServiceFile = setup.project.addSourceFileAtPath(files["userService.ts"])
+		const validationFile = setup.project.addSourceFileAtPath(files["validation.ts"])
 
 		// Resolve the 'processUser' function symbol
 		const processUserSymbol = symbolResolver.resolveSymbol(
@@ -403,7 +351,7 @@ export function createUser(name: string, email: string) {
 				type: "identifier",
 				name: "processUser",
 				kind: "function",
-				filePath: utilsPath,
+				filePath: files["utils.ts"],
 			},
 			utilsFile,
 		)
@@ -416,9 +364,9 @@ export function createUser(name: string, email: string) {
 				type: "identifier",
 				name: "processUser",
 				kind: "function",
-				filePath: utilsPath,
+				filePath: files["utils.ts"],
 			},
-			targetFilePath: validationPath,
+			targetFilePath: files["validation.ts"],
 			reason: "Testing complex move scenario",
 		}
 

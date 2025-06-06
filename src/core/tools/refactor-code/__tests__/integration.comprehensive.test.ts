@@ -6,8 +6,8 @@ import { RefactorEngine, BatchResult } from "../engine"
 import { RenameOperation, MoveOperation, RemoveOperation, BatchOperations } from "../schema"
 import { performance } from "perf_hooks"
 import {
-	createRefactorEngineTestSetup,
-	createTestFiles,
+	createRefactorEngineTestSetupWithAutoLoad,
+	createTestFilesWithAutoLoad,
 	TEST_FILE_TEMPLATES,
 	RefactorEngineTestSetup,
 } from "./utils/standardized-test-setup"
@@ -157,9 +157,10 @@ export class AuthService {
 
 	let setup: RefactorEngineTestSetup
 
-	beforeAll(() => {
-		// Use standardized Pattern 2 setup
-		setup = createRefactorEngineTestSetup()
+	beforeEach(() => {
+		// Create fresh setup for each test to ensure complete isolation
+		// Use the enhanced setup for cross-file reference detection
+		setup = createRefactorEngineTestSetupWithAutoLoad()
 		engine = setup.engine
 		projectDir = setup.projectDir
 		tempDir = path.dirname(projectDir)
@@ -168,7 +169,7 @@ export class AuthService {
 		servicesDir = path.join(srcDir, "services")
 		modelsDir = path.join(srcDir, "models")
 
-		// Create test files using standardized utility
+		// Create test files using enhanced utility that loads files into ts-morph
 		const filesToCreate = {
 			"src/models/user.ts": testFiles.userModel,
 			"src/utils/utility.ts": testFiles.utilityFunctions,
@@ -176,7 +177,7 @@ export class AuthService {
 			"src/services/authService.ts": testFiles.authService,
 		}
 
-		createTestFiles(setup.projectDir, filesToCreate)
+		createTestFilesWithAutoLoad(setup, filesToCreate)
 
 		// Update test file paths
 		testFilePaths.userModel = path.join(modelsDir, "user.ts")
@@ -185,22 +186,11 @@ export class AuthService {
 		testFilePaths.authService = path.join(servicesDir, "authService.ts")
 	})
 
-	afterAll(() => {
-		// Use standardized cleanup
-		setup.cleanup()
-	})
-
-	beforeEach(() => {
-		// Reset test files before each test to prevent interference
-		fs.writeFileSync(testFilePaths.userModel, testFiles.userModel)
-		fs.writeFileSync(testFilePaths.utilityFunctions, testFiles.utilityFunctions)
-		fs.writeFileSync(testFilePaths.userService, testFiles.userService)
-		fs.writeFileSync(testFilePaths.authService, testFiles.authService)
-
-		// Reinitialize RefactorEngine to clear any cached state
-		engine = new RefactorEngine({
-			projectRootPath: projectDir,
-		})
+	afterEach(() => {
+		// Clean up after each test
+		if (setup) {
+			setup.cleanup()
+		}
 	})
 
 	/**

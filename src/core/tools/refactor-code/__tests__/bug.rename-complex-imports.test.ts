@@ -47,12 +47,6 @@ export function processItems(items: string[]): string[] {
 `,
 		})
 
-		console.log("\n=== BEFORE RENAME ===")
-		const beforeUtils = fs.readFileSync(path.join(setup.projectDir, "utils.ts"), "utf-8")
-		const beforeComplex = fs.readFileSync(path.join(setup.projectDir, "complexImports.ts"), "utf-8")
-		console.log("utils.ts:", beforeUtils)
-		console.log("complexImports.ts:", beforeComplex)
-
 		// Perform rename operation
 		const renameOperation = {
 			operation: "rename" as const,
@@ -69,17 +63,12 @@ export function processItems(items: string[]): string[] {
 			operations: [renameOperation],
 		})
 
-		console.log("\n=== RENAME RESULT ===")
-		console.log("Success:", result.success)
-
-		console.log("\n=== AFTER RENAME ===")
-		const afterUtils = fs.readFileSync(path.join(setup.projectDir, "utils.ts"), "utf-8")
-		const afterComplex = fs.readFileSync(path.join(setup.projectDir, "complexImports.ts"), "utf-8")
-		console.log("utils.ts:", afterUtils)
-		console.log("complexImports.ts:", afterComplex)
-
 		// Verify the operation succeeded
 		expect(result.success).toBe(true)
+
+		// Read files after rename
+		const afterUtils = fs.readFileSync(path.join(setup.projectDir, "utils.ts"), "utf-8")
+		const afterComplex = fs.readFileSync(path.join(setup.projectDir, "complexImports.ts"), "utf-8")
 
 		// Check function definition was renamed
 		expect(afterUtils).toContain("export function transformData(data: string[]): string[]")
@@ -89,12 +78,7 @@ export function processItems(items: string[]): string[] {
 		expect(afterComplex).toContain("import { transformData as process, validateInput }")
 		expect(afterComplex).not.toContain("processData as process")
 
-		// This is the critical test - the direct function call should be updated
-		console.log("\n=== CRITICAL TEST ===")
-		console.log("Looking for: return transformData(items)")
-		console.log("File contains:", afterComplex.includes("return transformData(items)"))
-		console.log("File still contains old call:", afterComplex.includes("return processData(items)"))
-
+		// Critical test - namespace function call should be updated
 		expect(afterComplex).toContain("return Utils.transformData(items)")
 		expect(afterComplex).not.toContain("return Utils.processData(items)")
 	})
@@ -125,52 +109,24 @@ export function test3(): string {
 `,
 		})
 
-		// Get access to the internal project to debug
+		// Get access to the internal project for debugging
 		const engine = setup.engine as any
 		const project = engine.project
-
-		console.log("\n=== DEBUGGING REFERENCE FINDING ===")
 
 		const sourceFile = project.getSourceFile("source.ts")
 		const func = sourceFile.getFunction("targetFunction")
 
-		console.log("Function found:", func.getName())
-
-		// Find references manually
+		// Find and verify references
 		const references = func.findReferencesAsNodes()
-		console.log("Total references found:", references.length)
+		expect(references.length).toBeGreaterThan(0)
 
-		references.forEach((ref: any, index: number) => {
-			const sourceFile = ref.getSourceFile()
-			const filePath = sourceFile.getFilePath()
-			const fileName = path.basename(filePath)
-			const text = ref.getText()
-			const parent = ref.getParent()
-			const parentText = parent?.getText() || "NO PARENT"
-
-			console.log(`Reference ${index + 1}:`, {
-				file: fileName,
-				text: text,
-				kind: ref.getKindName(),
-				parentKind: parent?.getKindName(),
-				parentText: parentText.substring(0, 50) + (parentText.length > 50 ? "..." : ""),
-				pos: ref.getPos(),
-			})
-		})
-
-		// Try the rename and see what happens
-		console.log("\n=== PERFORMING RENAME ===")
+		// Perform the rename
 		func.rename("renamedTargetFunction")
 
+		// Verify all references were updated
 		const afterProblematic = project.getSourceFile("problematic.ts")?.getFullText()
-		console.log("\n=== AFTER RENAME ===")
-		console.log("Problematic file after rename:", afterProblematic)
-
-		// Check if all references were updated
-		const hasOldReference = afterProblematic?.includes("targetFunction()")
-		const hasNewReference = afterProblematic?.includes("renamedTargetFunction()")
-
-		console.log("Still has old reference:", hasOldReference)
-		console.log("Has new reference:", hasNewReference)
+		expect(afterProblematic).toBeDefined()
+		expect(afterProblematic).not.toContain("targetFunction()")
+		expect(afterProblematic).toContain("renamedTargetFunction()")
 	})
 })

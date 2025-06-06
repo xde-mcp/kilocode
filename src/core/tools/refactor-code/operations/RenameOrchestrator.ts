@@ -469,6 +469,114 @@ export class RenameOrchestrator {
 			}
 		}
 
+		// Check for method name conflicts within classes
+		if (
+			Node.isMethodDeclaration(symbol.node) ||
+			Node.isGetAccessorDeclaration(symbol.node) ||
+			Node.isSetAccessorDeclaration(symbol.node)
+		) {
+			const parentClass = symbol.node.getParent()
+			if (Node.isClassDeclaration(parentClass)) {
+				// Check for existing methods with the same name
+				const existingMethods = parentClass.getMethods().filter((method) => method !== symbol.node)
+				const existingGetters = parentClass.getGetAccessors().filter((getter) => getter !== symbol.node)
+				const existingSetters = parentClass.getSetAccessors().filter((setter) => setter !== symbol.node)
+
+				// Check method name conflicts
+				for (const method of existingMethods) {
+					if (method.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Method '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check getter name conflicts
+				for (const getter of existingGetters) {
+					if (getter.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Getter '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check setter name conflicts
+				for (const setter of existingSetters) {
+					if (setter.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Setter '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check property name conflicts (methods can't have same name as properties)
+				const existingProperties = parentClass.getProperties().filter((prop) => prop !== symbol.node)
+				for (const property of existingProperties) {
+					if (property.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Property '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+			}
+		}
+
+		// Check for property name conflicts within classes
+		if (Node.isPropertyDeclaration(symbol.node)) {
+			const parentClass = symbol.node.getParent()
+			if (Node.isClassDeclaration(parentClass)) {
+				// Check for existing properties with the same name
+				const existingProperties = parentClass.getProperties().filter((prop) => prop !== symbol.node)
+				const existingMethods = parentClass.getMethods()
+				const existingGetters = parentClass.getGetAccessors()
+				const existingSetters = parentClass.getSetAccessors()
+
+				// Check property name conflicts
+				for (const property of existingProperties) {
+					if (property.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Property '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check method name conflicts (properties can't have same name as methods)
+				for (const method of existingMethods) {
+					if (method.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Method '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check getter name conflicts
+				for (const getter of existingGetters) {
+					if (getter.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Getter '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+
+				// Check setter name conflicts
+				for (const setter of existingSetters) {
+					if (setter.getName() === newName) {
+						return {
+							hasConflict: true,
+							message: `Setter '${newName}' already exists in class '${parentClass.getName() || "anonymous"}'`,
+						}
+					}
+				}
+			}
+		}
+
 		// Check for reserved keywords
 		const reservedKeywords = [
 			"break",

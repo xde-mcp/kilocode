@@ -203,7 +203,7 @@ export async function presentAssistantMessage(cline: Task) {
 					case "condense":
 						return `[${block.name}]`
 					case "refactor_code":
-						return `[${block.name} for '${block.params.path}' - ${block.params.operation}]`
+						return `[${block.name}]`
 					// kilocode_change end
 				}
 			}

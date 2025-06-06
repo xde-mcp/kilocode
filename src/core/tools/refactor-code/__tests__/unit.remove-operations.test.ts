@@ -1,24 +1,21 @@
-import { Project } from "ts-morph"
-import * as fs from "fs"
-import * as path from "path"
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals"
 import { RemoveOrchestrator } from "../operations/RemoveOrchestrator"
 import { RemoveOperation } from "../schema"
-import * as os from "os"
+import { createSimpleTestSetup, StandardTestSetup, createTestFiles } from "./utils/standardized-test-setup"
+import * as fs from "fs"
 
 describe("RemoveOrchestrator", () => {
-	let project: Project
-	let tempDir: string
-	let sourceFilePath: string
+	let setup: StandardTestSetup
 	let orchestrator: RemoveOrchestrator
+	let files: Record<string, string>
 
 	beforeEach(async () => {
-		// Create a temporary directory for our test files
-		tempDir = path.join(os.tmpdir(), `remove-op-test-${Date.now()}`)
-		fs.mkdirSync(tempDir, { recursive: true })
+		// Use standardized Pattern 1 setup for unit tests
+		setup = createSimpleTestSetup()
 
-		// Create a sample TypeScript file
-		sourceFilePath = path.join(tempDir, "test.ts")
-		const sourceCode = `
+		// Create test files using standardized utility
+		files = createTestFiles(setup.tempDir, {
+			"test.ts": `
       export function deprecatedHelper(value: string): string {
         return value.toLowerCase();
       }
@@ -28,30 +25,19 @@ describe("RemoveOrchestrator", () => {
       }
 
       // This comment will be preserved
-      export const CONSTANT = 42;
-    `
-		fs.writeFileSync(sourceFilePath, sourceCode)
-
-		// Initialize ts-morph project
-		project = new Project({
-			compilerOptions: {
-				rootDir: tempDir,
-			},
-			skipAddingFilesFromTsConfig: true,
+      export const CONSTANT = 42;`,
 		})
-		project.addSourceFileAtPath(sourceFilePath)
+
+		// Add files to project
+		setup.project.addSourceFileAtPath(files["test.ts"])
 
 		// Initialize the orchestrator
-		orchestrator = new RemoveOrchestrator(project)
+		orchestrator = new RemoveOrchestrator(setup.project)
 	})
 
 	afterEach(() => {
-		// Clean up temp directory
-		try {
-			fs.rmSync(tempDir, { recursive: true, force: true })
-		} catch (error) {
-			console.error(`Failed to clean up temp directory: ${error}`)
-		}
+		// Use standardized cleanup
+		setup.cleanup()
 	})
 
 	it("should successfully remove a function", async () => {
@@ -75,7 +61,7 @@ describe("RemoveOrchestrator", () => {
 		expect(result.affectedFiles).toContain("test.ts")
 
 		// Check that the file was modified correctly
-		const sourceFile = project.getSourceFile("test.ts")
+		const sourceFile = setup.project.getSourceFile("test.ts")
 		expect(sourceFile).not.toBeUndefined()
 
 		// The deprecated function should be gone
@@ -91,7 +77,7 @@ describe("RemoveOrchestrator", () => {
 		expect(constantDeclaration).not.toBeUndefined()
 
 		// Direct file content check
-		const fileContent = fs.readFileSync(sourceFilePath, "utf8")
+		const fileContent = fs.readFileSync(files["test.ts"], "utf8")
 		expect(fileContent).not.toContain("deprecatedHelper")
 		expect(fileContent).toContain("usefulFunction")
 		expect(fileContent).toContain("CONSTANT = 42")
@@ -119,23 +105,22 @@ describe("RemoveOrchestrator", () => {
 	})
 
 	it("should properly remove nested declarations", async () => {
-		// Create a file with nested declarations
-		const nestedFilePath = path.join(tempDir, "nested.ts")
-		const nestedCode = `
-      export class Container {
-        // This should be removed
-        public helper() {
-          return "helper";
-        }
-        
-        // This should stay
-        public keeper() {
-          return "keeper";
-        }
-      }
-    `
-		fs.writeFileSync(nestedFilePath, nestedCode)
-		project.addSourceFileAtPath(nestedFilePath)
+		// Create additional test file with nested declarations
+		const nestedFiles = createTestFiles(setup.tempDir, {
+			"nested.ts": `
+	     export class Container {
+	       // This should be removed
+	       public helper() {
+	         return "helper";
+	       }
+	       
+	       // This should stay
+	       public keeper() {
+	         return "keeper";
+	       }
+	     }`,
+		})
+		setup.project.addSourceFileAtPath(nestedFiles["nested.ts"])
 
 		// Create a remove operation for the nested method
 		const operation: RemoveOperation = {
@@ -161,7 +146,7 @@ describe("RemoveOrchestrator", () => {
 		// Nested symbol removal is not fully supported yet
 		// The operation may succeed but not actually remove the nested symbol
 		// This test documents the current limitation
-		const sourceContent = fs.readFileSync(nestedFilePath, "utf-8")
+		const sourceContent = fs.readFileSync(nestedFiles["nested.ts"], "utf-8")
 
 		// If the operation claims success but doesn't actually remove the symbol,
 		// we should expect the helper method to still be there

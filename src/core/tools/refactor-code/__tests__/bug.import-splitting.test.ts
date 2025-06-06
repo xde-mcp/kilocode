@@ -52,10 +52,6 @@ export class UserService {
 		// Load files into the RefactorEngine project
 		createTestFilesWithAutoLoad(setup, files)
 
-		console.log("[TEST] Initial userService.ts content:")
-		const initialContent = fs.readFileSync(path.join(setup.projectDir, "userService.ts"), "utf-8")
-		console.log(initialContent)
-
 		// Move isValidEmail from utility.ts to validation.ts
 		const moveOperation: RefactorOperation = {
 			operation: "move",

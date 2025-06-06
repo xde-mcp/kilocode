@@ -61,6 +61,7 @@ export const toolParamNames = [
 	"title", // kilocode_change
 	"description", // kilocode_change
 	"operation", // kilocode_change
+	"operations", // kilocode_change
 	"new_name", // kilocode_change
 	"target_path", // kilocode_change
 	"args",
@@ -174,12 +175,7 @@ export interface SearchAndReplaceToolUse extends ToolUse {
 // kilocode_change start
 export interface RefactorCodeToolUse extends ToolUse {
 	name: "refactor_code"
-	params: Partial<
-		Pick<
-			Record<ToolParamName, string>,
-			"path" | "operation" | "start_line" | "end_line" | "new_name" | "target_path"
-		>
-	>
+	params: Partial<Pick<Record<ToolParamName, string>, "operations">>
 }
 // kilocode_change end
 

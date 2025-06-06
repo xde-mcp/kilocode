@@ -1,43 +1,23 @@
-import { Project, SourceFile } from "ts-morph"
-import * as path from "path"
-import * as fs from "fs"
-import * as os from "os"
 import { SymbolExtractor } from "../core/SymbolExtractor"
 import { SymbolResolver } from "../core/SymbolResolver"
-import { ensureDirectoryExists } from "../utils/file-system"
+import { createSimpleTestSetup, StandardTestSetup } from "./utils/standardized-test-setup"
 
 describe("SymbolExtractor Tests", () => {
-	let tempDir: string
-	let project: Project
-	let sourceFile: SourceFile
+	let setup: StandardTestSetup
 	let symbolExtractor: SymbolExtractor
 	let symbolResolver: SymbolResolver
 
-	beforeEach(async () => {
-		// Create a temporary directory for test files
-		tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "symbol-extractor-test-"))
-
-		// Initialize project
-		project = new Project({
-			useInMemoryFileSystem: true,
-		})
-
+	beforeEach(() => {
+		setup = createSimpleTestSetup()
 		symbolExtractor = new SymbolExtractor()
-		symbolResolver = new SymbolResolver(project)
-
-		// Create source directory
-		const sourceDir = path.join(tempDir, "src")
-		await ensureDirectoryExists(sourceDir)
+		symbolResolver = new SymbolResolver(setup.project)
 	})
 
 	afterEach(() => {
-		// Clean up temp directory
-		if (fs.existsSync(tempDir)) {
-			fs.rmSync(tempDir, { recursive: true, force: true })
-		}
+		setup.cleanup()
 	})
 
-	it("should extract dependencies with nested type references", async () => {
+	it("should extract dependencies with nested type references", () => {
 		// Create a source file with nested type references
 		const sourceContent = `
       import { User } from "./models/user"
@@ -82,7 +62,7 @@ describe("SymbolExtractor Tests", () => {
     `
 
 		// Add the file to the project
-		sourceFile = project.createSourceFile(path.join(tempDir, "src/validator.ts"), sourceContent)
+		const sourceFile = setup.project.createSourceFile("src/validator.ts", sourceContent)
 
 		// Get the validateUser function node
 		const functionNode = sourceFile.getFunction("validateUser")
@@ -125,7 +105,7 @@ describe("SymbolExtractor Tests", () => {
 		expect(extractedSymbol.text).toContain("interface ValidationResultWithDetails")
 	})
 
-	it("should extract dependencies with generic type arguments", async () => {
+	it("should extract dependencies with generic type arguments", () => {
 		// Create a source file with generic type arguments
 		const sourceContent = `
       import { User } from "./models/user"
@@ -137,7 +117,7 @@ describe("SymbolExtractor Tests", () => {
     `
 
 		// Add the file to the project
-		sourceFile = project.createSourceFile(path.join(tempDir, "src/processor.ts"), sourceContent)
+		const sourceFile = setup.project.createSourceFile("src/processor.ts", sourceContent)
 
 		// Get the processUsers function node
 		const functionNode = sourceFile.getFunction("processUsers")

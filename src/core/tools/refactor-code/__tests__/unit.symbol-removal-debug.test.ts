@@ -50,7 +50,6 @@ export function getProductName(product: { name: string }): string {
 		createTestFilesWithAutoLoad(setup, testFiles)
 
 		// Test single operation first
-		console.log("=== TESTING SINGLE OPERATION ===")
 		const singleOperation: BatchOperations = {
 			operations: [
 				{
@@ -70,18 +69,10 @@ export function getProductName(product: { name: string }): string {
 
 		// Check that formatUserName was removed from utils.ts
 		const utilsFileAfterFirst = setup.engine.getProject().getSourceFile("src/utils.ts")
-		console.log("=== UTILS.TS CONTENT AFTER FIRST OPERATION ===")
-		console.log(utilsFileAfterFirst?.getFullText())
-
 		const formatUserNameFunction = utilsFileAfterFirst?.getFunction("formatUserName")
-		console.log(
-			"formatUserName function after first operation:",
-			formatUserNameFunction ? "STILL PRESENT" : "REMOVED",
-		)
 		expect(formatUserNameFunction).toBeUndefined()
 
 		// Test second operation
-		console.log("=== TESTING SECOND OPERATION ===")
 		const secondOperation: BatchOperations = {
 			operations: [
 				{
@@ -101,14 +92,7 @@ export function getProductName(product: { name: string }): string {
 
 		// Check that calculateTotalPrice was removed from utils.ts
 		const utilsFileAfterSecond = setup.engine.getProject().getSourceFile("src/utils.ts")
-		console.log("=== UTILS.TS CONTENT AFTER SECOND OPERATION ===")
-		console.log(utilsFileAfterSecond?.getFullText())
-
 		const calculateTotalPriceFunction = utilsFileAfterSecond?.getFunction("calculateTotalPrice")
-		console.log(
-			"calculateTotalPrice function after second operation:",
-			calculateTotalPriceFunction ? "STILL PRESENT" : "REMOVED",
-		)
 		expect(calculateTotalPriceFunction).toBeUndefined()
 	})
 })
