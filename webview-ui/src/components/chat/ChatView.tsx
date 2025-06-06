@@ -661,40 +661,34 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const selectFilesAndImages = useCallback(async () => {
 		try {
-			// Send message to VSCode extension to handle file and image selection
 			vscode.postMessage({ type: "selectImages" })
 
-			// Create a one-time event listener that removes itself after handling the response
 			const handleFileSelection = (event: MessageEvent) => {
 				const message = event.data
 				if (message.type === "selectedImages") {
-					window.removeEventListener("message", handleFileSelection) // Remove listener first to prevent duplicates
+					window.removeEventListener("message", handleFileSelection)
 
 					const currentTotal = selectedImages.length + selectedFiles.length
 					const availableSlots = MAX_IMAGES_AND_FILES_PER_MESSAGE - currentTotal
 
 					if (availableSlots > 0) {
-						// Handle images
 						if (message.images?.length > 0) {
 							const imagesToAdd = Math.min(message.images.length, availableSlots)
 							if (imagesToAdd > 0) {
 								setSelectedImages((prevImages) => {
 									const newImages = message.images.slice(0, imagesToAdd)
-									// Filter out any duplicates
 									const uniqueNewImages = newImages.filter((img: string) => !prevImages.includes(img))
 									return [...prevImages, ...uniqueNewImages]
 								})
 							}
 						}
 
-						// Handle files
-						if (message.files?.length > 0) {
+						if (message.filePaths?.length > 0) {
 							const remainingSlots = availableSlots - (message.images?.length || 0)
 							if (remainingSlots > 0) {
-								const filesToAdd = Math.min(message.files.length, remainingSlots)
+								const filesToAdd = Math.min(message.filePaths.length, remainingSlots)
 								setSelectedFiles((prevFiles) => {
-									const newFiles = message.files.slice(0, filesToAdd)
-									// Filter out any duplicates
+									const newFiles = message.filePaths.slice(0, filesToAdd)
 									const uniqueNewFiles = newFiles.filter((file: string) => !prevFiles.includes(file))
 									return [...prevFiles, ...uniqueNewFiles]
 								})
@@ -704,7 +698,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				}
 			}
 
-			// Add the event listener
 			window.addEventListener("message", handleFileSelection)
 		} catch (error) {
 			console.error("Error selecting files and images:", error)
@@ -726,9 +719,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							}
 							break
 					}
-					break
-				case "selectedImages":
-					// Remove this case since it's already handled in selectFilesAndImages
 					break
 				case "invoke":
 					switch (message.invoke!) {
@@ -1642,9 +1632,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				placeholderText={placeholderText}
 				selectedImages={selectedImages}
 				setSelectedImages={setSelectedImages}
-				onSend={() => handleSendMessage(inputValue, selectedImages, selectedFiles)}
 				setSelectedFiles={setSelectedFiles}
 				selectedFiles={selectedFiles}
+				onSend={() => handleSendMessage(inputValue, selectedImages, selectedFiles)}
 				onSelectFilesAndImages={selectFilesAndImages}
 				shouldDisableFilesAndImages={shouldDisableFilesAndImages}
 				onHeightChange={() => {
