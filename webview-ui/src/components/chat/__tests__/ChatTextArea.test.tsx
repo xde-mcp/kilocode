@@ -55,7 +55,7 @@ describe("ChatTextArea", () => {
 		sendingDisabled: false,
 		selectApiConfigDisabled: false,
 		onSelectImages: jest.fn(),
-		shouldDisableImages: false,
+		shouldDisableFilesAndImages: false,
 		placeholderText: "Type a message...",
 		selectedImages: [],
 		setSelectedImages: jest.fn(),
