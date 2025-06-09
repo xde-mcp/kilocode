@@ -1,5 +1,5 @@
 ---
-"kilo-code": patch
+"kilo-code": minor
 ---
 
-Allow upload of more file types
+Allow upload of more file types ('txt', 'json', 'log', 'md', 'docx', 'ipynb', 'pdf', 'xml')

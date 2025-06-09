@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import fs from "fs/promises"
 import * as path from "path"
-import sizeOf from "image-size"
+import { extractTextFromFile } from "./extract-text"
 
 /**
  * Gets the MIME type for a file based on its extension
@@ -55,11 +55,11 @@ export async function selectFiles(): Promise<{ images: string[]; files: string[]
 		if (isImage) {
 			try {
 				const buffer = await fs.readFile(filePath)
-				const dimensions = sizeOf(buffer)
+				const stats = await fs.stat(filePath)
 
-				if (dimensions.width! > 7500 || dimensions.height! > 7500) {
+				if (stats.size > 20 * 1024 * 1024) {
 					vscode.window.showErrorMessage(
-						`Image too large: ${path.basename(filePath)} was skipped (dimensions exceed 7500px).`,
+						`Image too large: ${path.basename(filePath)} was skipped (size exceeds 20mb).`,
 					)
 					continue
 				}
@@ -91,3 +91,35 @@ export async function selectFiles(): Promise<{ images: string[]; files: string[]
 
 	return { images, files }
 }
+
+// kilocode_change start
+/**
+ * Helper function used to load file(s) and format them into a string
+ */
+export async function processFilesIntoText(files: string[]): Promise<string> {
+	const fileContentsPromises = files.map(async (filePath) => {
+		// Normalize path separators to forward slashes
+		const normalizedPath = filePath.split(path.sep).join("/")
+		try {
+			const content = await extractTextFromFile(filePath)
+			return `<file_content path="${normalizedPath}">\n${content}\n</file_content>`
+		} catch (error) {
+			console.error(`Error processing file ${filePath}:`, error)
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			return `<file_content path="${normalizedPath}">\nError fetching content: ${errorMessage}\n</file_content>`
+		}
+	})
+
+	const fileContents = await Promise.all(fileContentsPromises)
+
+	const validFileContents = fileContents.filter((content) => content !== null).join("\n\n")
+
+	if (validFileContents) {
+		return `Files attached by the user:\n\n${validFileContents}`
+	}
+
+	// returns empty string if no files were loaded properly, basically it shows
+	// the user text saying that the file wasn't able to be read
+	return ""
+}
+// kilocode_change end

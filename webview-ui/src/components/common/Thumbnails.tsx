@@ -59,13 +59,13 @@ const Thumbnails = ({ images, files, style, setImages, setFiles, onHeightChange 
 			}}>
 			{images.map((image, index) => (
 				<div
-					key={`image-${index}`}
+					key={`${index}`}
 					style={{ position: "relative" }}
-					onMouseEnter={() => setHoveredIndex(`image-${index}`)}
+					onMouseEnter={() => setHoveredIndex(`${index}`)}
 					onMouseLeave={() => setHoveredIndex(null)}>
 					<img
 						src={image}
-						alt={`Thumbnail image-${index + 1}`}
+						alt={`Thumbnail ${index + 1}`}
 						style={{
 							width: 34,
 							height: 34,
@@ -75,7 +75,7 @@ const Thumbnails = ({ images, files, style, setImages, setFiles, onHeightChange 
 						}}
 						onClick={() => handleImageClick(image)}
 					/>
-					{isDeletableImages && hoveredIndex === `image-${index}` && (
+					{isDeletableImages && hoveredIndex === `${index}` && (
 						<div
 							onClick={() => handleDeleteImages(index)}
 							style={{
@@ -102,6 +102,7 @@ const Thumbnails = ({ images, files, style, setImages, setFiles, onHeightChange 
 					)}
 				</div>
 			))}
+			{/* kilocode_change start */}
 			{files.map((filePath, index) => {
 				const fileName = filePath.split(/[\\/]/).pop() || filePath
 
@@ -173,6 +174,7 @@ const Thumbnails = ({ images, files, style, setImages, setFiles, onHeightChange 
 					</div>
 				)
 			})}
+			{/* kilocode_change end */}
 		</div>
 	)
 }

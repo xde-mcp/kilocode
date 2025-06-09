@@ -584,7 +584,7 @@ export class Task extends EventEmitter<ClineEvents> {
 				"condense_context_error",
 				error,
 				undefined /* images */,
-				undefined /* files */,
+				undefined /* files */, // kilocode_change
 				false /* partial */,
 				undefined /* checkpoint */,
 				undefined /* progressStatus */,
