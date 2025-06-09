@@ -226,7 +226,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		this.context = context // kilocode_change
 
 		if (startTask && !task && !images && !files && !historyItem) {
-			throw new Error("Either historyItem or task/images/files must be provided")
+			throw new Error("Either historyItem or task/images must be provided")
 		}
 
 		this.taskId = historyItem ? historyItem.id : crypto.randomUUID()
@@ -272,7 +272,7 @@ export class Task extends EventEmitter<ClineEvents> {
 			} else if (historyItem) {
 				this.resumeTaskFromHistory()
 			} else {
-				throw new Error("Either historyItem or task/images/files must be provided")
+				throw new Error("Either historyItem or task/images must be provided")
 			}
 		}
 	}
@@ -297,7 +297,7 @@ export class Task extends EventEmitter<ClineEvents> {
 		} else if (historyItem) {
 			promise = instance.resumeTaskFromHistory()
 		} else {
-			throw new Error("Either historyItem or task/images/files must be provided")
+			throw new Error("Either historyItem or task/images must be provided")
 		}
 
 		return [instance, promise]
