@@ -18,7 +18,7 @@ import { checkExistKey } from "../../shared/checkExistApiConfig"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
 import { openFile, openImage } from "../../integrations/misc/open-file"
-// import { selectImage } from "../../integrations/misc/select-image" // kilocode_change unused
+import { selectImages } from "../../integrations/misc/process-images"
 import { selectFiles } from "../../integrations/misc/process-files"
 import { getTheme } from "../../integrations/theme/getTheme"
 import { discoverChromeHostUrl, tryChromeHostUrl } from "../../services/browser/browserDiscovery"
@@ -205,8 +205,9 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			await provider.postStateToWebview()
 			break
 		case "selectImages":
-			const { images, files } = await selectFiles()
-			await provider.postMessageToWebview({ type: "selectedImages", images, filePaths: files })
+			const images = await selectImages()
+			const { files } = await selectFiles() // kilocode_change
+			await provider.postMessageToWebview({ type: "selectedImages", images, filePaths: files }) // kilocode_change
 			break
 		case "exportCurrentTask":
 			const currentTaskId = provider.getCurrentCline()?.taskId

@@ -752,10 +752,10 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							handleChatReset()
 							break
 						case "sendMessage":
-							handleSendMessage(message.text ?? "", message.images ?? [], message.filePaths ?? [])
+							handleSendMessage(message.text ?? "", message.images ?? [], message.filePaths ?? []) // kilocode_change
 							break
 						case "setChatBoxMessage":
-							handleSetChatBoxMessage(message.text ?? "", message.images ?? [], message.filePaths ?? [])
+							handleSetChatBoxMessage(message.text ?? "", message.images ?? [], message.filePaths ?? []) // kilocode_change
 							break
 						case "primaryButtonClick":
 							handlePrimaryButtonClick(

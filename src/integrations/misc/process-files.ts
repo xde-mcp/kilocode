@@ -30,7 +30,7 @@ export async function selectFiles(): Promise<{ images: string[]; files: string[]
 
 	const options: vscode.OpenDialogOptions = {
 		canSelectMany: true,
-		openLabel: "Import Images & Files",
+		openLabel: "Upload Images & Files",
 		filters: {
 			"All Files": [...IMAGE_EXTENSIONS, ...OTHER_FILE_EXTENSIONS],
 			Images: IMAGE_EXTENSIONS,
@@ -92,7 +92,6 @@ export async function selectFiles(): Promise<{ images: string[]; files: string[]
 	return { images, files }
 }
 
-// kilocode_change start
 /**
  * Helper function used to load file(s) and format them into a string
  */
@@ -122,4 +121,3 @@ export async function processFilesIntoText(files: string[]): Promise<string> {
 	// the user text saying that the file wasn't able to be read
 	return ""
 }
-// kilocode_change end

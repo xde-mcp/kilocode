@@ -80,6 +80,7 @@ Otherwise, if you have not completed the task and do not need additional informa
 	invalidMcpToolArgumentError: (serverName: string, toolName: string) =>
 		`Invalid JSON argument used with ${serverName} for ${toolName}. Please retry with a properly formatted JSON argument.`,
 
+	// kilocode_change start
 	toolResult: (
 		text: string,
 		images?: string[],
@@ -102,8 +103,8 @@ Otherwise, if you have not completed the task and do not need additional informa
 			const fileBlock: Anthropic.TextBlockParam = { type: "text", text: fileString }
 			toolResultOutput.push(fileBlock)
 		}
-
 		return toolResultOutput
+		// kilocode_change end
 	},
 
 	imageBlocks: (images?: string[]): Anthropic.ImageBlockParam[] => {
