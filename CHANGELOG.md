@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.35.0
-
-### Minor Changes
+## [v4.35.0]
 
 - [#633](https://github.com/Kilo-Org/kilocode/pull/633) [`347cf9e`](https://github.com/Kilo-Org/kilocode/commit/347cf9e6dc10d5b8706af5e111ccc854f7742566) Thanks [@hassoncs](https://github.com/hassoncs)! - # AI-Powered Git Commit Message Generation
 
