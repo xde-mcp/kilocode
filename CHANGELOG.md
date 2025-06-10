@@ -1,6 +1,6 @@
 # kilo-code
 
-## 4.34.1
+## [v4.34.1]
 
 ### Patch Changes
 
