@@ -135,6 +135,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const [didClickCancel, setDidClickCancel] = useState(false)
 	const virtuosoRef = useRef<VirtuosoHandle>(null)
 	const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
+	const prevExpandedRowsRef = useRef<Record<number, boolean>>()
 	const scrollContainerRef = useRef<HTMLDivElement>(null)
 	const disableAutoScrollRef = useRef(false)
 	const [showScrollToBottom, setShowScrollToBottom] = useState(false)
@@ -271,6 +272,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 									setPrimaryButtonText(t("chat:completeSubtaskAndReturn"))
 									setSecondaryButtonText(undefined)
 									break
+								case "readFile":
+									if (tool.batchFiles && Array.isArray(tool.batchFiles)) {
+										setPrimaryButtonText(t("chat:read-batch.approve.title"))
+										setSecondaryButtonText(t("chat:read-batch.deny.title"))
+									} else {
+										setPrimaryButtonText(t("chat:approve.title"))
+										setSecondaryButtonText(t("chat:reject.title"))
+									}
+									break
 								default:
 									setPrimaryButtonText(t("chat:approve.title"))
 									setSecondaryButtonText(t("chat:reject.title"))
@@ -378,14 +388,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							break
 						case "api_req_started":
 							if (secondLastMessage?.ask === "command_output") {
-								// If the last ask is a command_output, and we
-								// receive an api_req_started, then that means
-								// the command has finished and we don't need
-								// input from the user anymore (in every other
-								// case, the user has to interact with input
-								// field or buttons to continue, which does the
-								// following automatically).
-								setInputValue("")
 								setSendingDisabled(true)
 								setSelectedImages([])
 								setClineAsk(undefined)
@@ -424,6 +426,26 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}, [task?.ts])
 
 	useEffect(() => () => everVisibleMessagesTsRef.current.clear(), [])
+
+	useEffect(() => {
+		const prev = prevExpandedRowsRef.current
+		let wasAnyRowExpandedByUser = false
+		if (prev) {
+			// Check if any row transitioned from false/undefined to true
+			for (const [tsKey, isExpanded] of Object.entries(expandedRows)) {
+				const ts = Number(tsKey)
+				if (isExpanded && !(prev[ts] ?? false)) {
+					wasAnyRowExpandedByUser = true
+					break
+				}
+			}
+		}
+
+		if (wasAnyRowExpandedByUser) {
+			disableAutoScrollRef.current = true
+		}
+		prevExpandedRowsRef.current = expandedRows // Store current state for next comparison
+	}, [expandedRows])
 
 	const isStreaming = useMemo(() => {
 		// Checking clineAsk isn't enough since messages effect may be called
@@ -634,7 +656,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							askResponse: "noButtonClicked",
 							text: trimmedInput,
 							images: images,
-							files: files,
+							files: files, // kilocode_change
 						})
 					} else {
 						// Responds to the API with a "This operation failed" and lets it try again
@@ -659,6 +681,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const { info: model } = useSelectedModel(apiConfiguration)
 
+	// kilocode_change start
 	const selectFilesAndImages = useCallback(async () => {
 		try {
 			vscode.postMessage({ type: "selectImages" })
@@ -703,8 +726,11 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			console.error("Error selecting files and images:", error)
 		}
 	}, [selectedImages, selectedFiles])
+	// kilocode_change end
 
+	// kilocode_change start
 	const shouldDisableFilesAndImages = selectedImages.length + selectedFiles.length >= MAX_IMAGES_AND_FILES_PER_MESSAGE
+	// kilocode_change end
 
 	const handleMessage = useCallback(
 		(e: MessageEvent) => {
@@ -732,13 +758,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							handleSetChatBoxMessage(message.text ?? "", message.images ?? [], message.filePaths ?? [])
 							break
 						case "primaryButtonClick":
-							handlePrimaryButtonClick(message.text ?? "", message.images ?? [], message.filePaths ?? [])
+							handlePrimaryButtonClick(
+								message.text ?? "",
+								message.images ?? [],
+								message.filePaths ?? [], // kilocode_change
+							)
 							break
 						case "secondaryButtonClick":
 							handleSecondaryButtonClick(
 								message.text ?? "",
 								message.images ?? [],
-								message.filePaths ?? [],
+								message.filePaths ?? [], // kilocode_change
 							)
 							break
 					}
@@ -1148,54 +1178,21 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		})
 	}, [])
 
+	const handleSetExpandedRow = useCallback(
+		(ts: number, expand?: boolean) => {
+			setExpandedRows((prev) => ({ ...prev, [ts]: expand === undefined ? !prev[ts] : expand }))
+		},
+		[setExpandedRows], // setExpandedRows is stable
+	)
+
 	// Scroll when user toggles certain rows.
 	const toggleRowExpansion = useCallback(
 		(ts: number) => {
-			const isCollapsing = expandedRows[ts] ?? false
-			const lastGroup = groupedMessages.at(-1)
-			const isLast = Array.isArray(lastGroup) ? lastGroup[0].ts === ts : lastGroup?.ts === ts
-			const secondToLastGroup = groupedMessages.at(-2)
-			const isSecondToLast = Array.isArray(secondToLastGroup)
-				? secondToLastGroup[0].ts === ts
-				: secondToLastGroup?.ts === ts
-
-			const isLastCollapsedApiReq =
-				isLast &&
-				!Array.isArray(lastGroup) && // Make sure it's not a browser session group
-				lastGroup?.say === "api_req_started" &&
-				!expandedRows[lastGroup.ts]
-
-			setExpandedRows((prev) => ({ ...prev, [ts]: !prev[ts] }))
-
-			// Disable auto scroll when user expands row
-			if (!isCollapsing) {
-				disableAutoScrollRef.current = true
-			}
-
-			if (isCollapsing && isAtBottom) {
-				const timer = setTimeout(() => scrollToBottomAuto(), 0)
-				return () => clearTimeout(timer)
-			} else if (isLast || isSecondToLast) {
-				if (isCollapsing) {
-					if (isSecondToLast && !isLastCollapsedApiReq) {
-						return
-					}
-
-					const timer = setTimeout(() => scrollToBottomAuto(), 0)
-					return () => clearTimeout(timer)
-				} else {
-					const timer = setTimeout(() => {
-						virtuosoRef.current?.scrollToIndex({
-							index: groupedMessages.length - (isLast ? 1 : 2),
-							align: "start",
-						})
-					}, 0)
-
-					return () => clearTimeout(timer)
-				}
-			}
+			handleSetExpandedRow(ts)
+			// The logic to set disableAutoScrollRef.current = true on expansion
+			// is now handled by the useEffect hook that observes expandedRows.
 		},
-		[groupedMessages, expandedRows, scrollToBottomAuto, isAtBottom],
+		[handleSetExpandedRow],
 	)
 
 	const handleRowHeightChange = useCallback(
@@ -1402,6 +1399,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	}, [handleKeyDown])
 
 	useImperativeHandle(ref, () => ({
+		// kilocode_change start
 		acceptInput: () => {
 			if (enableButtons && primaryButtonText) {
 				handlePrimaryButtonClick(inputValue, selectedImages, selectedFiles)
@@ -1409,7 +1407,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				handleSendMessage(inputValue, selectedImages, selectedFiles)
 			}
 		},
-		// kilocode_change start
 		focusInput: () => {
 			if (textAreaRef.current) {
 				textAreaRef.current.focus()
@@ -1523,10 +1520,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						<Virtuoso
 							ref={virtuosoRef}
 							key={task.ts} // trick to make sure virtuoso re-renders when task changes, and we use initialTopMostItemIndex to start at the bottom
-							className="scrollable grow overflow-y-scroll"
-							components={{
-								Footer: () => <div className="h-[5px]" />, // Add empty padding at the bottom
-							}}
+							className="scrollable grow overflow-y-scroll mb-[5px]"
 							// increasing top by 3_000 to prevent jumping around when user collapses a row
 							increaseViewportBy={{ top: 3_000, bottom: Number.MAX_SAFE_INTEGER }} // hack to make sure the last message is always rendered to get truly perfect scroll to bottom animation when new messages are added (Number.MAX_SAFE_INTEGER is safe for arithmetic operations, which is all virtuoso uses this value for in src/sizeRangeSystem.ts)
 							data={groupedMessages} // messages is the raw format returned by extension, modifiedMessages is the manipulated structure that combines certain messages of related type, and visibleMessages is the filtered structure that removes messages that should not be rendered
