@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.35.1
-
-### Patch Changes
+## [v4.35.1]
 
 - [#695](https://github.com/Kilo-Org/kilocode/pull/695) [`a7910eb`](https://github.com/Kilo-Org/kilocode/commit/a7910eba54a4ede296bfa82beddae71a1d9f77c5) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Fix: Feedback button overlaps new mode creation dialog
 
