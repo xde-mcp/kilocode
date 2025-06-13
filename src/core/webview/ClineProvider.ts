@@ -53,6 +53,7 @@ import type { IndexProgressUpdate } from "../../services/code-index/interfaces/m
 import { fileExistsAtPath } from "../../utils/fs"
 import { setTtsEnabled, setTtsSpeed } from "../../utils/tts"
 import { ContextProxy } from "../config/ContextProxy"
+import { getEnabledRules } from "./kilorules"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { buildApiHandler } from "../../api"
@@ -1197,6 +1198,15 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			// get the task directory full path
 			const { taskDirPath } = await this.getTaskWithId(id)
 
+			// kilocode_change start
+			// Check if task is favorited
+			const history = this.getGlobalState("taskHistory") ?? []
+			const task = history.find((item) => item.id === id)
+			if (task?.isFavorited) {
+				throw new Error("Cannot delete a favorited task. Please unfavorite it first.")
+			}
+			// kilocode_change end
+
 			// remove task from stack if it's the current task
 			if (id === this.getCurrentCline()?.taskId) {
 				// if we found the taskid to delete - call finish to abort this task and allow a new task to be started,
@@ -1250,6 +1260,18 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		const state = await this.getStateToPostToWebview()
 		this.postMessageToWebview({ type: "state", state })
 	}
+
+	// kilocode_change start
+	async postRulesDataToWebview() {
+		const workspacePath = this.cwd
+		if (workspacePath) {
+			this.postMessageToWebview({
+				type: "rulesData",
+				...(await getEnabledRules(workspacePath, this.contextProxy, this.context)),
+			})
+		}
+	}
+	// kilocode_change end
 
 	/**
 	 * Checks if there is a file-based system prompt override for the given mode
@@ -1323,6 +1345,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			historyPreviewCollapsed,
 			cloudUserInfo,
 			cloudIsAuthenticated,
+			sharingEnabled,
 			organizationAllowList,
 			maxConcurrentFileReads,
 			condensingApiConfigId,
@@ -1334,13 +1357,6 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		const machineId = vscode.env.machineId
 		const allowedCommands = vscode.workspace.getConfiguration(Package.name).get<string[]>("allowedCommands") || []
 		const cwd = this.cwd
-
-		// kilocode_change start
-		// Get workflow toggles from workspace state
-		const workflowToggles =
-			((await this.contextProxy.getWorkspaceState(this.context, "workflowToggles")) as Record<string, boolean>) ||
-			{}
-		// kilocode_change end
 
 		// Check if there's a system prompt override for the current mode
 		const currentMode = mode ?? defaultModeSlug
@@ -1426,9 +1442,9 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			terminalCompressProgressBar: terminalCompressProgressBar ?? true,
 			hasSystemPromptOverride,
 			historyPreviewCollapsed: historyPreviewCollapsed ?? false,
-			workflowToggles, // kilocode_change
 			cloudUserInfo,
 			cloudIsAuthenticated: cloudIsAuthenticated ?? false,
+			sharingEnabled: sharingEnabled ?? false,
 			organizationAllowList,
 			condensingApiConfigId,
 			customCondensingPrompt,
@@ -1491,6 +1507,16 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		} catch (error) {
 			console.error(
 				`[getState] failed to get cloud authentication state: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+
+		let sharingEnabled: boolean = false
+
+		try {
+			sharingEnabled = await CloudService.instance.canShareTask()
+		} catch (error) {
+			console.error(
+				`[getState] failed to get sharing enabled state: ${error instanceof Error ? error.message : String(error)}`,
 			)
 		}
 
@@ -1570,6 +1596,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			historyPreviewCollapsed: stateValues.historyPreviewCollapsed ?? false,
 			cloudUserInfo,
 			cloudIsAuthenticated,
+			sharingEnabled,
 			organizationAllowList,
 			// Explicitly add condensing settings
 			condensingApiConfigId: stateValues.condensingApiConfigId,
@@ -1846,4 +1873,38 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 		}
 	}
 	// end kilocode_change
+
+	// kilocode_change start
+	// Add new methods for favorite functionality
+	async toggleTaskFavorite(id: string) {
+		const history = this.getGlobalState("taskHistory") ?? []
+		const updatedHistory = history.map((item) => {
+			if (item.id === id) {
+				return { ...item, isFavorited: !item.isFavorited }
+			}
+			return item
+		})
+		await this.updateGlobalState("taskHistory", updatedHistory)
+		await this.postStateToWebview()
+	}
+
+	async getFavoriteTasks(): Promise<HistoryItem[]> {
+		const history = this.getGlobalState("taskHistory") ?? []
+		return history.filter((item) => item.isFavorited)
+	}
+
+	// Modify batch delete to respect favorites
+	async deleteMultipleTasks(taskIds: string[]) {
+		const history = this.getGlobalState("taskHistory") ?? []
+		const favoritedTaskIds = taskIds.filter((id) => history.find((item) => item.id === id)?.isFavorited)
+
+		if (favoritedTaskIds.length > 0) {
+			throw new Error("Cannot delete favorited tasks. Please unfavorite them first.")
+		}
+
+		for (const id of taskIds) {
+			await this.deleteTaskWithId(id)
+		}
+	}
+	// kilocode_change end
 }
