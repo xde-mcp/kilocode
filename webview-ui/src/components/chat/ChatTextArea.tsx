@@ -182,6 +182,10 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					if (message.requestId === searchRequestId) {
 						setFileSearchResults(message.results || [])
 					}
+				} else if (message.type === "insertTextToChatArea") {
+					if (message.text) {
+						setInputValue(message.text)
+					}
 				}
 			}
 

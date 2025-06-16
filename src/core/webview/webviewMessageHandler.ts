@@ -1689,5 +1689,8 @@ export const webviewMessageHandler = async (provider: ClineProvider, message: We
 			}
 			break
 		// kilocode_change end
+		case "insertTextToChatArea":
+			provider.postMessageToWebview({ type: "insertTextToChatArea", text: message.text })
+			break
 	}
 }
