@@ -18,7 +18,7 @@
 		"sharePublicly": "公開で共有",
 		"sharePubliclyDescription": "リンクを持つ誰でもアクセスできます",
 		"connectToCloud": "クラウドに接続",
-		"connectToCloudDescription": "タスクを共有するためにRoo Code Cloudにサインイン",
+		"connectToCloudDescription": "タスクを共有するためにKilo Code Cloudにサインイン",
 		"sharingDisabledByOrganization": "組織により共有が無効化されています",
 		"shareSuccessOrganization": "組織リンクをクリップボードにコピーしました",
 		"shareSuccessPublic": "公開リンクをクリップボードにコピーしました"
@@ -243,8 +243,8 @@
 		"copyToInput": "入力欄にコピー（またはShift + クリック）"
 	},
 	"announcement": {
-		"title": "🎉 Roo Code {{version}} リリース",
-		"description": "Roo Code {{version}}は、あなたのフィードバックに基づく重要な新機能と改善をもたらします。",
+		"title": "🎉 Kilo Code {{version}} リリース",
+		"description": "Kilo Code {{version}}は、あなたのフィードバックに基づく重要な新機能と改善をもたらします。",
 		"whatsNew": "新機能",
 		"feature1": "<bold>Roo マーケットプレイス開始</bold>: マーケットプレイスが開始されました！これまで以上に簡単にモードとMCPを発見・インストール。",
 		"feature2": "<bold>Gemini 2.5 モデル</bold>: 新しいGemini 2.5 Pro、Flash、Flash Liteモデルのサポートを追加。",

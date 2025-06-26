@@ -18,7 +18,7 @@
 		"sharePublicly": "公开分享",
 		"sharePubliclyDescription": "任何拥有链接的人都可访问",
 		"connectToCloud": "连接到云端",
-		"connectToCloudDescription": "登录 Roo Code Cloud 以分享任务",
+		"connectToCloudDescription": "登录 Kilo Code Cloud 以分享任务",
 		"sharingDisabledByOrganization": "组织已禁用分享功能",
 		"shareSuccessOrganization": "组织链接已复制到剪贴板",
 		"shareSuccessPublic": "公开链接已复制到剪贴板"
@@ -243,8 +243,8 @@
 		"copyToInput": "复制到输入框（或按住Shift点击）"
 	},
 	"announcement": {
-		"title": "🎉 Roo Code {{version}} 已发布",
-		"description": "Roo Code {{version}} 带来基于您反馈的重要新功能和改进。",
+		"title": "🎉 Kilo Code {{version}} 已发布",
+		"description": "Kilo Code {{version}} 带来基于您反馈的重要新功能和改进。",
 		"whatsNew": "新特性",
 		"feature1": "<bold>Roo 市场正式上线</bold>: 市场现已上线！比以往更轻松地发现和安装模式及 MCP。",
 		"feature2": "<bold>Gemini 2.5 模型</bold>: 新增对新版 Gemini 2.5 Pro、Flash 和 Flash Lite 模型的支持。",

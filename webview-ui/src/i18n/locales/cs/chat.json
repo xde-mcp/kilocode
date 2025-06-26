@@ -18,7 +18,7 @@
 		"sharePublicly": "Sdílet veřejně",
 		"sharePubliclyDescription": "Kdokoli s odkazem má přístup",
 		"connectToCloud": "Připojit ke cloudu",
-		"connectToCloudDescription": "Přihlaste se do Roo Code Cloud pro sdílení úkolů",
+		"connectToCloudDescription": "Přihlaste se do Kilo Code Cloud pro sdílení úkolů",
 		"sharingDisabledByOrganization": "Sdílení zakázáno organizací",
 		"shareSuccessOrganization": "Odkaz organizace zkopírován do schránky",
 		"shareSuccessPublic": "Veřejný odkaz zkopírován do schránky"
@@ -249,8 +249,8 @@
 		"description": "Automatické schvalování umožňuje Kilo Code provádět akce bez žádání o povolení. Zapni pouze pro akce, kterým plně důvěřuješ. Podrobnější konfigurace je dostupná v <settingsLink>Nastavení</settingsLink>."
 	},
 	"announcement": {
-		"title": "🎉 Vydán Roo Code {{version}}",
-		"description": "Roo Code {{version}} přináší hlavní nové funkce a vylepšení na základě tvé zpětné vazby.",
+		"title": "🎉 Vydán Kilo Code {{version}}",
+		"description": "Kilo Code {{version}} přináší hlavní nové funkce a vylepšení na základě tvé zpětné vazby.",
 		"whatsNew": "Co je nového",
 		"feature1": "<bold>Spuštění Roo Marketplace</bold>: Tržiště je nyní živé! Objevuj a instaluj režimy a MCP snadněji než kdy dříve.",
 		"feature2": "<bold>Modely Gemini 2.5</bold>: Přidána podpora pro nové modely Gemini 2.5 Pro, Flash a Flash Lite.",
