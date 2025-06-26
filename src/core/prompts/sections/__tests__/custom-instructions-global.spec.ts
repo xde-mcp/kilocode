@@ -41,12 +41,19 @@ describe("custom-instructions global .roo support", () => {
 	const mockCwd = "/mock/project"
 	const mockHomeDir = "/mock/home"
 	const globalRooDir = path.join(mockHomeDir, ".roo")
+	const globalKiloCodeDir = path.join(mockHomeDir, ".kilocode")
 	const projectRooDir = path.join(mockCwd, ".roo")
+	const projectKiloCodeDir = path.join(mockCwd, ".kilocode")
 
 	beforeEach(() => {
 		vi.clearAllMocks()
 		mockHomedir.mockReturnValue(mockHomeDir)
-		mockGetRooDirectoriesForCwd.mockReturnValue([globalRooDir, projectRooDir])
+		mockGetRooDirectoriesForCwd.mockReturnValue([
+			globalRooDir,
+			globalKiloCodeDir,
+			projectRooDir,
+			projectKiloCodeDir,
+		])
 		mockGetGlobalRooDirectory.mockReturnValue(globalRooDir)
 	})
 
@@ -154,12 +161,12 @@ describe("custom-instructions global .roo support", () => {
 				.mockRejectedValueOnce(new Error("ENOENT")) // global rules dir doesn't exist
 				.mockRejectedValueOnce(new Error("ENOENT")) // project rules dir doesn't exist
 
-			// Mock legacy file reading - both fail (using safeReadFile which catches errors)
-			// The safeReadFile function catches ENOENT errors and returns empty string
-			// So we don't need to mock rejections, just empty responses
+			// Mock legacy file reading - both fail
+			// We need to mock rejections with ENOENT errors to properly simulate file not found
 			mockReadFile
-				.mockResolvedValueOnce("") // .roorules returns empty (simulating ENOENT caught by safeReadFile)
-				.mockResolvedValueOnce("") // .clinerules returns empty (simulating ENOENT caught by safeReadFile)
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .kilocoderules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .roorules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .clinerules file doesn't exist
 
 			const result = await loadRuleFiles(mockCwd)
 
@@ -193,8 +200,9 @@ describe("custom-instructions global .roo support", () => {
 			mockReadFile
 				.mockResolvedValueOnce("global mode rule content")
 				.mockResolvedValueOnce("project mode rule content")
-				.mockResolvedValueOnce("") // .roorules legacy file (empty)
-				.mockResolvedValueOnce("") // .clinerules legacy file (empty)
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .kilocoderules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .roorules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .clinerules file doesn't exist
 
 			const result = await addCustomInstructions("", "", mockCwd, mode)
 
@@ -217,13 +225,14 @@ describe("custom-instructions global .roo support", () => {
 
 			// Mock legacy mode file reading
 			mockReadFile
-				.mockResolvedValueOnce("legacy mode rule content") // .roorules-code
-				.mockResolvedValueOnce("") // generic .roorules (empty)
-				.mockResolvedValueOnce("") // generic .clinerules (empty)
+				.mockResolvedValueOnce("legacy mode rule content") // .kilocoderules-code
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .kilocoderules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .roorules file doesn't exist
+				.mockRejectedValueOnce({ code: "ENOENT" }) // .clinerules file doesn't exist
 
 			const result = await addCustomInstructions("", "", mockCwd, mode)
 
-			expect(result).toContain("# Rules from .roorules-code:")
+			expect(result).toContain("# Rules from .kilocoderules-code:")
 			expect(result).toContain("legacy mode rule content")
 		})
 	})
