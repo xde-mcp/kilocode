@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.44.0
-
-### Minor Changes
+## [v4.44.0]
 
 - [#881](https://github.com/Kilo-Org/kilocode/pull/881) [`30836f4`](https://github.com/Kilo-Org/kilocode/commit/30836f4d11a02769787af91c552789c14118ebdf) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Add support for Gemini CLI provider (thanks Roo & Cline!)
 
