@@ -38,7 +38,6 @@ export function parseAssistantMessage(assistantMessage: string): AssistantMessag
 
 				// End of param value.
 				// Don't trim content parameters to preserve newlines, but strip first and last newline only
-				const paramValue = currentParamValue.slice(0, -paramClosingTag.length)
 				currentToolUse.params[currentParamName] =
 					currentParamName === "content"
 						? paramValue.replace(/^\n/, "").replace(/\n$/, "")

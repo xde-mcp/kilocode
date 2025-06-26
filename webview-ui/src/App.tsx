@@ -44,7 +44,7 @@ const App = () => {
 		// machineId, // kilocode_change not used
 		// cloudUserInfo, // kilocode_change not used
 		// cloudIsAuthenticated, // kilocode_change not used
-		cloudApiUrl, // KILO_TODO: check whether this is needed for us
+		// cloudApiUrl, // kilocode_change not used
 		renderContext,
 		mdmCompliant,
 	} = useExtensionState()
@@ -88,6 +88,8 @@ const App = () => {
 	)
 
 	const [currentSection, setCurrentSection] = useState<string | undefined>(undefined)
+	// kilocode change eslint directive on the next line added (temporarily)
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [currentMarketplaceTab, setCurrentMarketplaceTab] = useState<string | undefined>(undefined)
 
 	const onMessage = useCallback(

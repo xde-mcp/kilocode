@@ -5,7 +5,6 @@ import type { CommandId } from "@roo-code/types"
 
 import { getCommand } from "../utils/commands"
 import { ClineProvider } from "../core/webview/ClineProvider"
-import { t } from "../i18n" // kilocode_change
 import { importSettings, exportSettings } from "../core/config/importExport" // kilocode_change
 import { ContextProxy } from "../core/config/ContextProxy"
 import { focusPanel } from "../utils/focusPanel"
@@ -176,22 +175,6 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 	setCustomStoragePath: async () => {
 		const { promptForCustomStoragePath } = await import("../utils/storage")
 		await promptForCustomStoragePath()
-	},
-	importSettings: async (filePath?: string) => {
-		const visibleProvider = getVisibleProviderOrLog(outputChannel)
-		if (!visibleProvider) {
-			return
-		}
-
-		await importSettingsWithFeedback(
-			{
-				providerSettingsManager: visibleProvider.providerSettingsManager,
-				contextProxy: visibleProvider.contextProxy,
-				customModesManager: visibleProvider.customModesManager,
-				provider: visibleProvider,
-			},
-			filePath,
-		)
 	},
 	focusPanel: async () => {
 		try {

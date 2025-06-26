@@ -261,56 +261,62 @@ export const SelectDropdown = React.memo(
 												)
 											}
 
-										if (
-											option.type === DropdownOptionType.SHORTCUT ||
-											(option.disabled && shortcutText && option.label.includes(shortcutText))
-										) {
+											if (
+												option.type === DropdownOptionType.SHORTCUT ||
+												(option.disabled && shortcutText && option.label.includes(shortcutText))
+											) {
+												return (
+													<div
+														key={`label-${index}`}
+														className="px-3 py-1.5 text-sm opacity-50">
+														{option.label}
+													</div>
+												)
+											}
+
+											const itemKey = `item-${option.value || option.label || index}`
+
 											return (
-												<div key={`label-${index}`} className="px-3 py-1.5 text-sm opacity-50">
-													{option.label}
+												<div
+													key={itemKey}
+													onClick={() => !option.disabled && handleSelect(option.value)}
+													className={cn(
+														"px-3 py-1.5 text-sm cursor-pointer flex items-center",
+														option.disabled
+															? "opacity-50 cursor-not-allowed"
+															: "hover:bg-vscode-list-hoverBackground",
+														option.value === value
+															? "bg-vscode-list-activeSelectionBackground text-vscode-list-activeSelectionForeground"
+															: "",
+														itemClassName,
+													)}
+													data-testid="dropdown-item">
+													{renderItem ? (
+														renderItem(option)
+													) : (
+														<>
+															{/* kilocode_change start */}
+															<span
+																slot="start"
+																style={{ fontSize: "12px" }}
+																className={cn(
+																	"codicon opacity-80 mr-1.5",
+																	option.codicon,
+																)}
+															/>
+															{/* kilocode_change end */}
+															<span>{option.label}</span>
+															{option.value === value && (
+																<Check className="ml-auto size-4 p-0.5" />
+															)}
+														</>
+													)}
 												</div>
 											)
-										}
-
-										const itemKey = `item-${option.value || option.label || index}`
-
-										return (
-											<div
-												key={itemKey}
-												onClick={() => !option.disabled && handleSelect(option.value)}
-												className={cn(
-													"px-3 py-1.5 text-sm cursor-pointer flex items-center",
-													option.disabled
-														? "opacity-50 cursor-not-allowed"
-														: "hover:bg-vscode-list-hoverBackground",
-													option.value === value
-														? "bg-vscode-list-activeSelectionBackground text-vscode-list-activeSelectionForeground"
-														: "",
-													itemClassName,
-												)}
-												data-testid="dropdown-item">
-												{renderItem ? (
-													renderItem(option)
-												) : (
-													<>
-														{/* kilocode_change start */}
-														<span
-															slot="start"
-															style={{ fontSize: "12px" }}
-															className={cn("codicon opacity-80 mr-1.5", option.codicon)}
-														/>
-														{/* kilocode_change end */}
-														<span>{option.label}</span>
-														{option.value === value && (
-															<Check className="ml-auto size-4 p-0.5" />
-														)}
-													</>
-												)}
-											</div>
-										)
-									})}
-								</div>
-							)}
+										})}
+									</div>
+								)}
+							</div>
 						</div>
 					</PopoverContent>
 				</Popover>
