@@ -108,6 +108,7 @@ export interface ExtensionMessage {
 		| "rulesData" // kilocode_change
 		| "marketplaceInstallResult"
 		| "marketplaceData"
+		| "mermaidFixResponse" // kilocode_change
 		| "shareTaskSuccess"
 	text?: string
 	payload?: ProfileDataResponsePayload | BalanceDataResponsePayload // kilocode_change: Add payload for profile and balance data
@@ -171,6 +172,7 @@ export interface ExtensionMessage {
 	localWorkflows?: ClineRulesToggles
 	marketplaceItems?: MarketplaceItem[]
 	marketplaceInstalledMetadata?: MarketplaceInstalledMetadata
+	fixedCode?: string | null // For mermaidFixResponse // kilocode_change
 	visibility?: ShareVisibility
 }
 
