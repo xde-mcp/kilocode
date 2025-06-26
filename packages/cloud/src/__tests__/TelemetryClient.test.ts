@@ -296,7 +296,8 @@ describe("TelemetryClient", () => {
 			expect(mockFetch).not.toHaveBeenCalled()
 		})
 
-		it("should not send request when schema validation fails", async () => {
+		it.skip("should not send request when schema validation fails", async () => {
+			// kilocode_change Skipped: TelemetryClient capture method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			await client.capture({
@@ -308,7 +309,8 @@ describe("TelemetryClient", () => {
 			expect(console.error).toHaveBeenCalledWith(expect.stringContaining("Invalid telemetry event"))
 		})
 
-		it("should send request when event is capturable and validation passes", async () => {
+		it.skip("should send request when event is capturable and validation passes", async () => {
+			// kilocode_change Skipped: TelemetryClient capture method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			const providerProperties = {
@@ -353,7 +355,8 @@ describe("TelemetryClient", () => {
 			)
 		})
 
-		it("should attempt to capture TASK_MESSAGE events when recordTaskMessages is true", async () => {
+		it.skip("should attempt to capture TASK_MESSAGE events when recordTaskMessages is true", async () => {
+			// kilocode_change Skipped: TelemetryClient capture method is disabled
 			mockSettingsService.getSettings.mockReturnValue({
 				cloudSettings: {
 					recordTaskMessages: true,
@@ -444,7 +447,8 @@ describe("TelemetryClient", () => {
 			expect(mockFetch).not.toHaveBeenCalled()
 		})
 
-		it("should not send request when no session token available", async () => {
+		it.skip("should not send request when no session token available", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			mockAuthService.getSessionToken.mockReturnValue(null)
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
@@ -465,7 +469,8 @@ describe("TelemetryClient", () => {
 			)
 		})
 
-		it("should send FormData request with correct structure when authenticated", async () => {
+		it.skip("should send FormData request with correct structure when authenticated", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			const providerProperties = {
@@ -536,7 +541,8 @@ describe("TelemetryClient", () => {
 			expect(fileContent).toBe(JSON.stringify(messages))
 		})
 
-		it("should handle provider errors gracefully", async () => {
+		it.skip("should handle provider errors gracefully", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			const mockProvider: TelemetryPropertiesProvider = {
@@ -588,7 +594,8 @@ describe("TelemetryClient", () => {
 			expect(fileContent).toBe(JSON.stringify(messages))
 		})
 
-		it("should work without provider set", async () => {
+		it.skip("should work without provider set", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			const messages = [
@@ -634,7 +641,8 @@ describe("TelemetryClient", () => {
 			expect(fileContent).toBe(JSON.stringify(messages))
 		})
 
-		it("should handle fetch errors gracefully", async () => {
+		it.skip("should handle fetch errors gracefully", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			mockFetch.mockRejectedValue(new Error("Network error"))
@@ -657,7 +665,8 @@ describe("TelemetryClient", () => {
 			)
 		})
 
-		it("should handle HTTP error responses", async () => {
+		it.skip("should handle HTTP error responses", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			mockFetch.mockResolvedValue({
@@ -682,7 +691,8 @@ describe("TelemetryClient", () => {
 			)
 		})
 
-		it("should log debug information when debug is enabled", async () => {
+		it.skip("should log debug information when debug is enabled", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService, true)
 
 			const messages = [
@@ -704,7 +714,8 @@ describe("TelemetryClient", () => {
 			)
 		})
 
-		it("should handle empty messages array", async () => {
+		it.skip("should handle empty messages array", async () => {
+			// kilocode_change Skipped: TelemetryClient backfillMessages method is disabled
 			const client = new TelemetryClient(mockAuthService, mockSettingsService)
 
 			await client.backfillMessages([], "test-task-id")

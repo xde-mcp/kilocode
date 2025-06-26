@@ -251,7 +251,8 @@ describe("PostHogTelemetryClient", () => {
 			expect(mockPostHogClient.capture).not.toHaveBeenCalled()
 		})
 
-		it("should capture events when telemetry is enabled and event is capturable", async () => {
+		// kilocode_change Skip test because the PostHog client capture functionality has been disabled
+		it.skip("should capture events when telemetry is enabled and event is capturable", async () => {
 			const client = new PostHogTelemetryClient()
 			client.updateTelemetryState(true)
 
@@ -283,7 +284,8 @@ describe("PostHogTelemetryClient", () => {
 			})
 		})
 
-		it("should filter out git repository properties when capturing events", async () => {
+		// kilocode_change Skip test because the PostHog client capture functionality has been disabled
+		it.skip("should filter out git repository properties when capturing events", async () => {
 			const client = new PostHogTelemetryClient()
 			client.updateTelemetryState(true)
 
@@ -327,7 +329,8 @@ describe("PostHogTelemetryClient", () => {
 	})
 
 	describe("updateTelemetryState", () => {
-		it("should enable telemetry when user opts in and global telemetry is enabled", () => {
+		// kilocode_change Skip test because the PostHog client optIn functionality has been disabled
+		it.skip("should enable telemetry when user opts in and global telemetry is enabled", () => {
 			const client = new PostHogTelemetryClient()
 
 			;(vscode.workspace.getConfiguration as any).mockReturnValue({
@@ -340,7 +343,8 @@ describe("PostHogTelemetryClient", () => {
 			expect(mockPostHogClient.optIn).toHaveBeenCalled()
 		})
 
-		it("should disable telemetry when user opts out", () => {
+		// kilocode_change Skip test because the PostHog client optOut functionality has been disabled
+		it.skip("should disable telemetry when user opts out", () => {
 			const client = new PostHogTelemetryClient()
 
 			;(vscode.workspace.getConfiguration as any).mockReturnValue({
@@ -353,7 +357,8 @@ describe("PostHogTelemetryClient", () => {
 			expect(mockPostHogClient.optOut).toHaveBeenCalled()
 		})
 
-		it("should disable telemetry when global telemetry is disabled, regardless of user opt-in", () => {
+		// kilocode_change Skip test because the PostHog client optOut functionality has been disabled
+		it.skip("should disable telemetry when global telemetry is disabled, regardless of user opt-in", () => {
 			const client = new PostHogTelemetryClient()
 
 			;(vscode.workspace.getConfiguration as any).mockReturnValue({
@@ -367,7 +372,8 @@ describe("PostHogTelemetryClient", () => {
 	})
 
 	describe("shutdown", () => {
-		it("should call shutdown on the PostHog client", async () => {
+		// kilocode_change Skip test because the PostHog client shutdown functionality has been disabled
+		it.skip("should call shutdown on the PostHog client", async () => {
 			const client = new PostHogTelemetryClient()
 			await client.shutdown()
 			expect(mockPostHogClient.shutdown).toHaveBeenCalled()
