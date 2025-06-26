@@ -70,7 +70,7 @@ export function getProjectRooDirectoryForCwd(cwd: string): string {
 
 // kilocode_change start
 export function getProjectKiloCodeDirectoryForCwd(cwd: string): string {
-	return path.join(cwd, ".roo")
+	return path.join(cwd, ".kilocode")
 }
 // kilocode_change end
 
