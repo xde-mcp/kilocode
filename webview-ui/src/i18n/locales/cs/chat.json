@@ -16,7 +16,12 @@
 		"shareWithOrganization": "Sdílet s organizací",
 		"shareWithOrganizationDescription": "Přístup mají pouze členové tvé organizace",
 		"sharePublicly": "Sdílet veřejně",
-		"sharePubliclyDescription": "Kdokoli s odkazem má přístup"
+		"sharePubliclyDescription": "Kdokoli s odkazem má přístup",
+		"connectToCloud": "Připojit ke cloudu",
+		"connectToCloudDescription": "Přihlaste se do Roo Code Cloud pro sdílení úkolů",
+		"sharingDisabledByOrganization": "Sdílení zakázáno organizací",
+		"shareSuccessOrganization": "Odkaz organizace zkopírován do schránky",
+		"shareSuccessPublic": "Veřejný odkaz zkopírován do schránky"
 	},
 	"history": {
 		"title": "Historie"
@@ -113,6 +118,12 @@
 	"selectApiConfig": "Vyber konfiguraci API",
 	"enhancePrompt": "Vylepšit prompt s dodatečným kontextem",
 	"enhancePromptDescription": "Tlačítko 'Vylepšit prompt' pomáhá zlepšit tvůj prompt poskytnutím dodatečného kontextu, vyjasnění nebo přeformulování. Zkus sem napsat prompt a znovu kliknout na tlačítko, abys viděl, jak to funguje.",
+	"modeSelector": {
+		"title": "Režimy",
+		"marketplace": "Tržiště režimů",
+		"settings": "Nastavení režimů",
+		"description": "Specializované persony, které přizpůsobují chování Roo."
+	},
 	"addImages": "Přidat obrázky do zprávy",
 	"sendMessage": "Odeslat zprávu",
 	"typeMessage": "Napiš zprávu...",

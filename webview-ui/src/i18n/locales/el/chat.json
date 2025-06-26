@@ -16,7 +16,12 @@
 		"shareWithOrganization": "Κοινοποίηση στον Οργανισμό",
 		"shareWithOrganizationDescription": "Μόνο τα μέλη του οργανισμού σου έχουν πρόσβαση",
 		"sharePublicly": "Δημόσια Κοινοποίηση",
-		"sharePubliclyDescription": "Οποιοσδήποτε με τον σύνδεσμο έχει πρόσβαση"
+		"sharePubliclyDescription": "Οποιοσδήποτε με τον σύνδεσμο έχει πρόσβαση",
+		"connectToCloud": "Σύνδεση στο Cloud",
+		"connectToCloudDescription": "Συνδέσου στο Roo Code Cloud για να μοιραστείς εργασίες",
+		"sharingDisabledByOrganization": "Η κοινοποίηση απενεργοποιήθηκε από τον οργανισμό",
+		"shareSuccessOrganization": "Ο σύνδεσμος οργανισμού αντιγράφηκε στο πρόχειρο",
+		"shareSuccessPublic": "Ο δημόσιος σύνδεσμος αντιγράφηκε στο πρόχειρο"
 	},
 	"history": {
 		"title": "Ιστορικό"
@@ -113,6 +118,12 @@
 	"selectApiConfig": "Επίλεξε διαμόρφωση API",
 	"enhancePrompt": "Βελτίωσε το prompt με επιπλέον περιεχόμενο",
 	"enhancePromptDescription": "Το κουμπί 'Βελτίωση Prompt' βοηθά να βελτιώσεις το prompt σου παρέχοντας επιπλέον περιεχόμενο, διευκρίνιση ή αναδιατύπωση. Δοκίμασε να πληκτρολογήσεις ένα prompt εδώ και κάνε κλικ στο κουμπί ξανά για να δεις πώς λειτουργεί.",
+	"modeSelector": {
+		"title": "Λειτουργίες",
+		"marketplace": "Αγορά Λειτουργιών",
+		"settings": "Ρυθμίσεις Λειτουργιών",
+		"description": "Εξειδικευμένες προσωπικότητες που προσαρμόζουν τη συμπεριφορά του Roo."
+	},
 	"addImages": "Πρόσθεσε εικόνες στο μήνυμα",
 	"sendMessage": "Αποστολή μηνύματος",
 	"typeMessage": "Πληκτρολόγησε ένα μήνυμα...",
