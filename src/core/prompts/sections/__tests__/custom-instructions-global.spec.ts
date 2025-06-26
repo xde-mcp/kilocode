@@ -144,7 +144,7 @@ describe("custom-instructions global .roo support", () => {
 
 			const result = await loadRuleFiles(mockCwd)
 
-			expect(result).toContain("# Rules from .roorules:")
+			expect(result).toContain("# Rules from .kilocoderules:")
 			expect(result).toContain("legacy rule content")
 		})
 
