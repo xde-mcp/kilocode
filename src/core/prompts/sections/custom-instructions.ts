@@ -175,8 +175,6 @@ function formatDirectoryContent(dirPath: string, files: Array<{ filename: string
  * Global rules are loaded first, then project-local rules which can override global ones
  */
 export async function loadRuleFiles(cwd: string): Promise<string> {
-	// KILO_TODO I removed fallback from kilo to roo behaviour here, but i think it should go to getRooDirectoriesForCwd
-
 	const rules: string[] = []
 	const rooDirectories = getRooDirectoriesForCwd(cwd)
 
@@ -238,7 +236,6 @@ export async function addCustomInstructions(
 	let usedRuleFile = ""
 
 	if (mode) {
-		// KILO_TODO I removed fallback from kilo to roo behaviour here, but i think it should go to getRooDirectoriesForCwd
 		const modeRules: string[] = []
 		const rooDirectories = getRooDirectoriesForCwd(cwd)
 

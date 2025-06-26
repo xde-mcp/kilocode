@@ -28,6 +28,13 @@ export function getGlobalRooDirectory(): string {
 	return path.join(homeDir, ".roo")
 }
 
+// kilocode_change start
+export function getGlobalKiloCodeDirectory(): string {
+	const homeDir = os.homedir()
+	return path.join(homeDir, ".kilocode")
+}
+// kilocode_change end
+
 /**
  * Gets the project-local .roo directory path for a given cwd
  *
@@ -60,6 +67,12 @@ export function getGlobalRooDirectory(): string {
 export function getProjectRooDirectoryForCwd(cwd: string): string {
 	return path.join(cwd, ".roo")
 }
+
+// kilocode_change start
+export function getProjectKiloCodeDirectoryForCwd(cwd: string): string {
+	return path.join(cwd, ".roo")
+}
+// kilocode_change end
 
 /**
  * Checks if a directory exists
@@ -149,9 +162,11 @@ export function getRooDirectoriesForCwd(cwd: string): string[] {
 
 	// Add global directory first
 	directories.push(getGlobalRooDirectory())
+	directories.push(getGlobalKiloCodeDirectory()) // kilocode_change
 
 	// Add project-local directory second
 	directories.push(getProjectRooDirectoryForCwd(cwd))
+	directories.push(getProjectKiloCodeDirectoryForCwd(cwd)) // kilocode_change
 
 	return directories
 }
@@ -215,17 +230,31 @@ export async function loadConfiguration(
 	project: string | null
 	merged: string
 }> {
-	const globalDir = getGlobalRooDirectory()
-	const projectDir = getProjectRooDirectoryForCwd(cwd)
+	// kilocode_change start
+	const globalDirKilo = getGlobalKiloCodeDirectory()
+	const projectDirKilo = getProjectKiloCodeDirectoryForCwd(cwd)
+
+	const globalFilePathKilo = path.join(globalDirKilo, relativePath)
+	const projectFilePathKilo = path.join(projectDirKilo, relativePath)
+
+	// Read global configuration
+	const globalContentKilo = await readFileIfExists(globalFilePathKilo)
+
+	// Read project-local configuration
+	const projectContentKilo = await readFileIfExists(projectFilePathKilo)
+	// kilocode_change end
+
+	const globalDir = getGlobalKiloCodeDirectory()
+	const projectDir = getProjectKiloCodeDirectoryForCwd(cwd)
 
 	const globalFilePath = path.join(globalDir, relativePath)
 	const projectFilePath = path.join(projectDir, relativePath)
 
 	// Read global configuration
-	const globalContent = await readFileIfExists(globalFilePath)
+	const globalContent = (await readFileIfExists(globalFilePathKilo)) ?? (await readFileIfExists(globalFilePath))
 
 	// Read project-local configuration
-	const projectContent = await readFileIfExists(projectFilePath)
+	const projectContent = (await readFileIfExists(projectFilePathKilo)) ?? (await readFileIfExists(projectFilePath))
 
 	// Merge configurations - project overrides global
 	let merged = ""
