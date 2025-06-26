@@ -105,7 +105,9 @@
 	},
 	"tasks": {
 		"canceled": "Taakfout: gestopt en geannuleerd door gebruiker.",
-		"deleted": "Taakfout: gestopt en verwijderd door gebruiker."
+		"deleted": "Taakfout: gestopt en verwijderd door gebruiker.",
+		"incomplete": "Taak #{{taskNumber}} (Onvolledig)",
+		"no_messages": "Taak #{{taskNumber}} (Geen berichten)"
 	},
 	"storage": {
 		"prompt_custom_path": "Voer een aangepast opslagpad voor gespreksgeschiedenis in, laat leeg voor standaardlocatie",
@@ -126,6 +128,18 @@
 				"description": "Optioneel pad naar je Claude Code CLI. Standaard 'claude' indien niet ingesteld.",
 				"placeholder": "Standaard: claude"
 			}
+		}
+	},
+	"customModes": {
+		"errors": {
+			"yamlParseError": "Ongeldige YAML in .roomodes bestand op regel {{line}}. Controleer:\n• Juiste inspringing (gebruik spaties, geen tabs)\n• Overeenkomende aanhalingstekens en haakjes\n• Geldige YAML syntaxis",
+			"schemaValidationError": "Ongeldig aangepaste modi formaat in .roomodes:\n{{issues}}",
+			"invalidFormat": "Ongeldig aangepaste modi formaat. Zorg ervoor dat je instellingen het juiste YAML formaat volgen.",
+			"updateFailed": "Aangepaste modus bijwerken mislukt: {{error}}",
+			"deleteFailed": "Aangepaste modus verwijderen mislukt: {{error}}",
+			"resetFailed": "Aangepaste modi resetten mislukt: {{error}}",
+			"modeNotFound": "Schrijffout: Modus niet gevonden",
+			"noWorkspaceForProject": "Geen workspace map gevonden voor projectspecifieke modus"
 		}
 	},
 	"mdm": {

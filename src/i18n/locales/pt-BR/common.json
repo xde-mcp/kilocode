@@ -109,7 +109,9 @@
 	},
 	"tasks": {
 		"canceled": "Erro na tarefa: Foi interrompida e cancelada pelo usuário.",
-		"deleted": "Falha na tarefa: Foi interrompida e excluída pelo usuário."
+		"deleted": "Falha na tarefa: Foi interrompida e excluída pelo usuário.",
+		"incomplete": "Tarefa #{{taskNumber}} (Incompleta)",
+		"no_messages": "Tarefa #{{taskNumber}} (Sem mensagens)"
 	},
 	"storage": {
 		"prompt_custom_path": "Digite o caminho de armazenamento personalizado para o histórico de conversas, deixe em branco para usar o local padrão",
@@ -126,6 +128,18 @@
 				"description": "Caminho opcional para sua CLI do Claude Code. Padrão 'claude' se não for definido.",
 				"placeholder": "Padrão: claude"
 			}
+		}
+	},
+	"customModes": {
+		"errors": {
+			"yamlParseError": "YAML inválido no arquivo .roomodes na linha {{line}}. Verifique:\n• Indentação correta (use espaços, não tabs)\n• Aspas e colchetes correspondentes\n• Sintaxe YAML válida",
+			"schemaValidationError": "Formato de modos personalizados inválido em .roomodes:\n{{issues}}",
+			"invalidFormat": "Formato de modos personalizados inválido. Certifique-se de que suas configurações seguem o formato YAML correto.",
+			"updateFailed": "Falha ao atualizar modo personalizado: {{error}}",
+			"deleteFailed": "Falha ao excluir modo personalizado: {{error}}",
+			"resetFailed": "Falha ao redefinir modos personalizados: {{error}}",
+			"modeNotFound": "Erro de escrita: Modo não encontrado",
+			"noWorkspaceForProject": "Nenhuma pasta de workspace encontrada para modo específico do projeto"
 		}
 	},
 	"mdm": {

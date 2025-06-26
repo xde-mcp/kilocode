@@ -1,3 +1,4 @@
+import { safeWriteJson } from "../../utils/safeWriteJson"
 import * as path from "path"
 import fs from "fs/promises"
 import pWaitFor from "p-wait-for"
@@ -29,7 +30,7 @@ import { playTts, setTtsEnabled, setTtsSpeed, stopTts } from "../../utils/tts"
 import { showSystemNotification } from "../../integrations/notifications" // kilocode_change
 import { singleCompletionHandler } from "../../utils/single-completion-handler"
 import { searchCommits } from "../../utils/git"
-import { exportSettings, importSettings } from "../config/importExport"
+import { exportSettings, importSettingsWithFeedback } from "../config/importExport"
 import { getOpenAiModels } from "../../api/providers/openai"
 import { getVsCodeLmModels } from "../../api/providers/vscode-lm"
 import { openMention } from "../mentions"
@@ -231,6 +232,7 @@ export const webviewMessageHandler = async (
 			break
 		case "shareCurrentTask":
 			const shareTaskId = provider.getCurrentCline()?.taskId
+			const clineMessages = provider.getCurrentCline()?.clineMessages
 			if (!shareTaskId) {
 				vscode.window.showErrorMessage(t("common:errors.share_no_active_task"))
 				break
@@ -238,7 +240,7 @@ export const webviewMessageHandler = async (
 
 			try {
 				const visibility = message.visibility || "organization"
-				const result = await CloudService.instance.shareTask(shareTaskId, visibility)
+				const result = await CloudService.instance.shareTask(shareTaskId, visibility, clineMessages)
 
 				if (result.success && result.shareUrl) {
 					// Show success notification
@@ -247,6 +249,13 @@ export const webviewMessageHandler = async (
 							? "common:info.public_share_link_copied"
 							: "common:info.organization_share_link_copied"
 					vscode.window.showInformationMessage(t(messageKey))
+
+					// Send success feedback to webview for inline display
+					await provider.postMessageToWebview({
+						type: "shareTaskSuccess",
+						visibility,
+						text: result.shareUrl,
+					})
 				} else {
 					// Handle error
 					const errorMessage = result.error || "Failed to create share link"
@@ -322,19 +331,12 @@ export const webviewMessageHandler = async (
 			provider.exportTaskWithId(message.text!)
 			break
 		case "importSettings": {
-			const result = await importSettings({
+			await importSettingsWithFeedback({
 				providerSettingsManager: provider.providerSettingsManager,
 				contextProxy: provider.contextProxy,
 				customModesManager: provider.customModesManager,
+				provider: provider,
 			})
-
-			if (result.success) {
-				provider.settingsImportedAt = Date.now()
-				await provider.postStateToWebview()
-				await vscode.window.showInformationMessage(t("common:info.settings_imported"))
-			} else if (result.error) {
-				await vscode.window.showErrorMessage(t("common:errors.settings_import_failed", { error: result.error }))
-			}
 
 			break
 		}
@@ -577,15 +579,22 @@ export const webviewMessageHandler = async (
 		case "cancelTask":
 			await provider.cancelTask()
 			break
-		case "allowedCommands":
-			await updateGlobalState("allowedCommands", message.commands ?? []) // kilocode_change
+		case "allowedCommands": {
+			// Validate and sanitize the commands array
+			const commands = message.commands ?? []
+			const validCommands = Array.isArray(commands)
+				? commands.filter((cmd) => typeof cmd === "string" && cmd.trim().length > 0)
+				: []
+
+			await updateGlobalState("allowedCommands", validCommands)
 
 			// Also update workspace settings.
 			await vscode.workspace
 				.getConfiguration(Package.name)
-				.update("allowedCommands", message.commands, vscode.ConfigurationTarget.Global)
+				.update("allowedCommands", validCommands, vscode.ConfigurationTarget.Global)
 
 			break
+		}
 		case "openCustomModesSettings": {
 			const customModesFilePath = await provider.customModesManager.getCustomModesFilePath()
 
@@ -630,7 +639,7 @@ export const webviewMessageHandler = async (
 					} else {
 						// If neither exists, create .kilocode/mcp.json to mark the territory
 						await fs.mkdir(rooDir, { recursive: true })
-						await fs.writeFile(mcpPath, JSON.stringify({ mcpServers: {} }, null, 2))
+						await safeWriteJson(mcpPath, { mcpServers: {} })
 						await openFile(mcpPath)
 					}
 				}
@@ -990,8 +999,27 @@ export const webviewMessageHandler = async (
 				const updatedPrompts = { ...existingPrompts, [message.promptMode]: message.customPrompt }
 				await updateGlobalState("customModePrompts", updatedPrompts)
 				const currentState = await provider.getStateToPostToWebview()
-				const stateWithPrompts = { ...currentState, customModePrompts: updatedPrompts }
+				const stateWithPrompts = {
+					...currentState,
+					customModePrompts: updatedPrompts,
+					hasOpenedModeSelector: currentState.hasOpenedModeSelector ?? false,
+				}
 				provider.postMessageToWebview({ type: "state", state: stateWithPrompts })
+
+				if (TelemetryService.hasInstance()) {
+					// Determine which setting was changed by comparing objects
+					const oldPrompt = existingPrompts[message.promptMode] || {}
+					const newPrompt = message.customPrompt
+					const changedSettings = Object.keys(newPrompt).filter(
+						(key) =>
+							JSON.stringify((oldPrompt as Record<string, unknown>)[key]) !==
+							JSON.stringify((newPrompt as Record<string, unknown>)[key]),
+					)
+
+					if (changedSettings.length > 0) {
+						TelemetryService.instance.captureModeSettingChanged(changedSettings[0])
+					}
+				}
 			}
 			break
 		case "deleteMessage": {
@@ -1125,6 +1153,10 @@ export const webviewMessageHandler = async (
 			break
 		case "showRooIgnoredFiles":
 			await updateGlobalState("showRooIgnoredFiles", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
+		case "hasOpenedModeSelector":
+			await updateGlobalState("hasOpenedModeSelector", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
 		case "maxReadFileLine":
@@ -1492,12 +1524,41 @@ export const webviewMessageHandler = async (
 			break
 		case "updateCustomMode":
 			if (message.modeConfig) {
+				// Check if this is a new mode or an update to an existing mode
+				const existingModes = await provider.customModesManager.getCustomModes()
+				const isNewMode = !existingModes.some((mode) => mode.slug === message.modeConfig?.slug)
+
 				await provider.customModesManager.updateCustomMode(message.modeConfig.slug, message.modeConfig)
 				// Update state after saving the mode
 				const customModes = await provider.customModesManager.getCustomModes()
 				await updateGlobalState("customModes", customModes)
 				await updateGlobalState("mode", message.modeConfig.slug)
 				await provider.postStateToWebview()
+
+				// Track telemetry for custom mode creation or update
+				if (TelemetryService.hasInstance()) {
+					if (isNewMode) {
+						// This is a new custom mode
+						TelemetryService.instance.captureCustomModeCreated(
+							message.modeConfig.slug,
+							message.modeConfig.name,
+						)
+					} else {
+						// Determine which setting was changed by comparing objects
+						const existingMode = existingModes.find((mode) => mode.slug === message.modeConfig?.slug)
+						const changedSettings = existingMode
+							? Object.keys(message.modeConfig).filter(
+									(key) =>
+										JSON.stringify((existingMode as Record<string, unknown>)[key]) !==
+										JSON.stringify((message.modeConfig as Record<string, unknown>)[key]),
+								)
+							: []
+
+						if (changedSettings.length > 0) {
+							TelemetryService.instance.captureModeSettingChanged(changedSettings[0])
+						}
+					}
+				}
 			}
 			break
 		case "deleteCustomMode":
@@ -1849,6 +1910,7 @@ export const webviewMessageHandler = async (
 					)
 					await provider.postStateToWebview()
 					console.log(`Marketplace item installed and config file opened: ${configFilePath}`)
+
 					// Send success message to webview
 					provider.postMessageToWebview({
 						type: "marketplaceInstallResult",
@@ -1901,7 +1963,11 @@ export const webviewMessageHandler = async (
 
 		case "switchTab": {
 			if (message.tab) {
-				// Send a message to the webview to switch to the specified tab
+				// Capture tab shown event for all switchTab messages (which are user-initiated)
+				if (TelemetryService.hasInstance()) {
+					TelemetryService.instance.captureTabShown(message.tab)
+				}
+
 				await provider.postMessageToWebview({ type: "action", action: "switchTab", tab: message.tab })
 			}
 			break

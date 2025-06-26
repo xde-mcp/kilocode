@@ -6,6 +6,7 @@ import type {
 	ModeConfig,
 	InstallMarketplaceItemOptions,
 	MarketplaceItem,
+	ShareVisibility,
 } from "@roo-code/types"
 import { marketplaceItemSchema } from "@roo-code/types"
 
@@ -177,6 +178,8 @@ export interface WebviewMessage {
 		| "toggleRule" // kilocode_change
 		| "createRuleFile" // kilocode_change
 		| "deleteRuleFile" // kilocode_change
+		| "setHistoryPreviewCollapsed"
+		| "hasOpenedModeSelector"
 		| "accountButtonClicked"
 		| "rooCloudSignIn"
 		| "rooCloudSignOut"
@@ -204,6 +207,7 @@ export interface WebviewMessage {
 		| "switchTab"
 		| "telemetrySetting"
 		| "profileThresholds"
+		| "shareTaskSuccess"
 	text?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account"
 	disabled?: boolean
@@ -257,7 +261,7 @@ export interface WebviewMessage {
 	mpItem?: MarketplaceItem
 	mpInstallOptions?: InstallMarketplaceItemOptions
 	config?: Record<string, any> // Add config to the payload
-	visibility?: "organization" | "public" // For share visibility
+	visibility?: ShareVisibility // For share visibility
 }
 
 // kilocode_change begin

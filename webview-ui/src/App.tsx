@@ -44,6 +44,7 @@ const App = () => {
 		// machineId, // kilocode_change not used
 		// cloudUserInfo, // kilocode_change not used
 		// cloudIsAuthenticated, // kilocode_change not used
+		cloudApiUrl, // KILO_TODO: check whether this is needed for us
 		renderContext,
 		mdmCompliant,
 	} = useExtensionState()
@@ -75,6 +76,7 @@ const App = () => {
 			}
 
 			setCurrentSection(undefined)
+			setCurrentMarketplaceTab(undefined)
 
 			if (settingsRef.current?.checkUnsaveChanges) {
 				settingsRef.current.checkUnsaveChanges(() => setTab(newTab))
@@ -86,6 +88,7 @@ const App = () => {
 	)
 
 	const [currentSection, setCurrentSection] = useState<string | undefined>(undefined)
+	const [currentMarketplaceTab, setCurrentMarketplaceTab] = useState<string | undefined>(undefined)
 
 	const onMessage = useCallback(
 		(e: MessageEvent) => {
@@ -107,14 +110,17 @@ const App = () => {
 					const targetTab = message.tab as Tab
 					switchTab(targetTab)
 					setCurrentSection(undefined)
+					setCurrentMarketplaceTab(undefined)
 				} else {
 					// Handle other actions using the mapping
 					const newTab = tabsByMessageAction[message.action]
 					const section = message.values?.section as string | undefined
+					const marketplaceTab = message.values?.marketplaceTab as string | undefined
 
 					if (newTab) {
 						switchTab(newTab)
 						setCurrentSection(section)
+						setCurrentMarketplaceTab(marketplaceTab)
 					}
 				}
 			}
@@ -178,13 +184,22 @@ const App = () => {
 			{/* kilocode_change: add profileview */}
 			{tab === "profile" && <ProfileView onDone={() => switchTab("chat")} />}
 			{/* kilocode_change: we have our own market place */}
-			{/* {tab === "marketplace" && (
-				<MarketplaceView stateManager={marketplaceStateManager} onDone={() => switchTab("chat")} />
-			)} */}
+			{/*tab === "marketplace" && (
+				<MarketplaceView
+					stateManager={marketplaceStateManager}
+					onDone={() => switchTab("chat")}
+					targetTab={currentMarketplaceTab as "mcp" | "mode" | undefined}
+				/>
+			)*/}
 			{/* kilocode_change: we have our own profile view */}
-			{/* {tab === "account" && (
-				<AccountView userInfo={cloudUserInfo} isAuthenticated={false} onDone={() => switchTab("chat")} />
-			)} */}
+			{/* tab === "account" && (
+				<AccountView
+					userInfo={cloudUserInfo}
+					isAuthenticated={cloudIsAuthenticated}
+					cloudApiUrl={cloudApiUrl}
+					onDone={() => switchTab("chat")}
+				/>
+			)*/}
 			<ChatView
 				ref={chatViewRef}
 				isHidden={tab !== "chat"}

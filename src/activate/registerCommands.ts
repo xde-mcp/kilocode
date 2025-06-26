@@ -13,6 +13,8 @@ import { focusPanel } from "../utils/focusPanel"
 import { registerHumanRelayCallback, unregisterHumanRelayCallback, handleHumanRelayResponse } from "./humanRelay"
 import { handleNewTask } from "./handleTask"
 import { CodeIndexManager } from "../services/code-index/manager"
+import { importSettingsWithFeedback } from "../core/config/importExport"
+import { t } from "../i18n"
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -174,6 +176,22 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 	setCustomStoragePath: async () => {
 		const { promptForCustomStoragePath } = await import("../utils/storage")
 		await promptForCustomStoragePath()
+	},
+	importSettings: async (filePath?: string) => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+		if (!visibleProvider) {
+			return
+		}
+
+		await importSettingsWithFeedback(
+			{
+				providerSettingsManager: visibleProvider.providerSettingsManager,
+				contextProxy: visibleProvider.contextProxy,
+				customModesManager: visibleProvider.customModesManager,
+				provider: visibleProvider,
+			},
+			filePath,
+		)
 	},
 	focusPanel: async () => {
 		try {
