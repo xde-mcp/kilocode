@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.22.0
+
+### Minor Changes
+
+-   - Add 1-click task sharing
+
 ## [3.21.5] - 2025-06-23
 
 - Fix Qdrant URL prefix handling for QdrantClient initialization (thanks @CW-B-W!)
