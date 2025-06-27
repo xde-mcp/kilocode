@@ -130,11 +130,6 @@
 				"icon": "$(add)"
 			},
 			{
-				"command": "kilo-code.importSettings",
-				"title": "Import Settings",
-				"category": "%configuration.title%"
-			},
-			{
 				"command": "kilo-code.exportSettings",
 				"title": "Export Settings",
 				"category": "%configuration.title%"
@@ -215,7 +210,7 @@
 				"category": "%configuration.title%"
 			},
 			{
-				"command": "roo-cline.importSettings",
+				"command": "kilo-code.importSettings",
 				"title": "%command.importSettings.title%",
 				"category": "%configuration.title%"
 			},
