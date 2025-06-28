@@ -170,7 +170,13 @@ export interface ExtensionMessage {
 	localWorkflows?: ClineRulesToggles
 	marketplaceItems?: MarketplaceItem[]
 	marketplaceInstalledMetadata?: MarketplaceInstalledMetadata
-	fixedCode?: string | null // For mermaidFixResponse // kilocode_change
+	fixedCode?: string | null // kilocode_change - for mermaidFixResponse
+	workspaceFolders?: WorkspaceFolder[] // kilocode_change - multi-root workspace support
+}
+
+export interface WorkspaceFolder {
+	name: string
+	path: string
 }
 
 export type ExtensionState = Pick<

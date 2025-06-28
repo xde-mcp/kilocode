@@ -6,7 +6,7 @@ import * as readline from "readline"
 import { byLengthAsc, Fzf } from "fzf"
 import { getBinPath } from "../ripgrep"
 
-export type FileResult = { path: string; type: "file" | "folder"; label?: string }
+export type FileResult = { path: string; type: "file" | "folder"; label?: string; workspaceName?: string }
 
 export async function executeRipgrep({
 	args,
@@ -105,6 +105,22 @@ export async function executeRipgrepForFiles(
 	]
 
 	return executeRipgrep({ args, workspacePath, limit })
+}
+
+export async function searchAllWorkspaceFiles(query: string, limit: number = 20): Promise<FileResult[]> {
+	const workspaceFolders = vscode.workspace.workspaceFolders ?? []
+	const searchPromises = workspaceFolders.map(async (folder) => {
+		try {
+			const results = await searchWorkspaceFiles(query, folder.uri.fsPath, limit)
+			return results.map((result) => ({ ...result, workspaceName: folder.name }))
+		} catch (error) {
+			console.error(`Error searching workspace ${folder.name}:`, error)
+			return []
+		}
+	})
+
+	const allResults = await Promise.all(searchPromises)
+	return allResults.flat().slice(0, limit)
 }
 
 export async function searchWorkspaceFiles(
