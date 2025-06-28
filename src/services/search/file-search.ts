@@ -6,7 +6,7 @@ import * as readline from "readline"
 import { byLengthAsc, Fzf } from "fzf"
 import { getBinPath } from "../ripgrep"
 
-export type FileResult = { path: string; type: "file" | "folder"; label?: string; workspaceName?: string }
+export type FileResult = { path: string; type: "file" | "folder"; label?: string }
 
 export async function executeRipgrep({
 	args,
@@ -125,12 +125,12 @@ export async function searchAllWorkspaceFiles(query: string, limit: number = 20)
 
 export async function searchWorkspaceFiles(
 	query: string,
-	workspacePath: string,
+	dirPath: string,
 	limit: number = 20,
 ): Promise<{ path: string; type: "file" | "folder"; label?: string }[]> {
 	try {
 		// Get all files and directories (from our modified function)
-		const allItems = await executeRipgrepForFiles(workspacePath, 5000)
+		const allItems = await executeRipgrepForFiles(dirPath, 5000)
 
 		// If no query, just return the top items
 		if (!query.trim()) {
@@ -156,7 +156,7 @@ export async function searchWorkspaceFiles(
 		// Verify types of the shortest results
 		const verifiedResults = await Promise.all(
 			fzfResults.map(async (result) => {
-				const fullPath = path.join(workspacePath, result.path)
+				const fullPath = path.join(dirPath, result.path)
 				// Verify if the path exists and is actually a directory
 				if (fs.existsSync(fullPath)) {
 					const isDirectory = fs.lstatSync(fullPath).isDirectory()

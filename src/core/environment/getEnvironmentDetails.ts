@@ -279,7 +279,7 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			allFiles.push(...files)
 		}
 
-		// Format all files relative to the client's current working directory
+		// Format all files relative to `cline.cwd`
 		const { showRooIgnoredFiles = true } = state ?? {}
 		details += formatResponse.formatFilesList(
 			cline.cwd,

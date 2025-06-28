@@ -165,7 +165,7 @@ describe("getEnvironmentDetails", () => {
 
 	it("should include file details when includeFileDetails is true", async () => {
 		const result = await getEnvironmentDetails(mockCline as Task, true)
-		expect(result).toContain("# Current Workspace(s)")
+		expect(result).toContain("# Current Workspace Directory")
 		expect(result).toContain("Files")
 
 		expect(listFiles).toHaveBeenCalledWith(mockCwd, true, 50)
