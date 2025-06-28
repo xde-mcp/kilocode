@@ -115,3 +115,20 @@ export const getWorkspacePath = (defaultCwdPath = "") => {
 	}
 	return cwdPath
 }
+
+export const getAllWorkspacePaths = (): string[] => {
+	return vscode.workspace.workspaceFolders?.map((folder) => folder.uri.fsPath) || []
+}
+
+/**
+ * Gets the primary workspace folder object for accessing .kilocode configuration,
+ * rules, workflows, and other project-specific resources.
+ */
+export const getPrimaryWorkspaceFolder = (): vscode.WorkspaceFolder => {
+	const workspacePath = getWorkspacePath()
+	return {
+		uri: vscode.Uri.file(workspacePath),
+		name: path.basename(workspacePath),
+		index: 0,
+	}
+}
