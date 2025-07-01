@@ -1588,7 +1588,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						</div>
 					) : (
 						<div
-							className={`flex ${
+							className={`${
 								primaryButtonText || secondaryButtonText || isStreaming ? "px-[15px] pt-[10px]" : "p-0"
 							} ${
 								primaryButtonText || secondaryButtonText || isStreaming
@@ -1597,79 +1597,80 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 										: "opacity-50"
 									: "opacity-0"
 							}`}>
-							{primaryButtonText && !isStreaming && (
-								<StandardTooltip
-									content={
-										primaryButtonText === t("chat:retry.title")
-											? t("chat:retry.tooltip")
-											: primaryButtonText === t("chat:save.title")
-												? t("chat:save.tooltip")
-												: primaryButtonText === t("chat:approve.title")
-													? t("chat:approve.tooltip")
-													: primaryButtonText === t("chat:runCommand.title")
-														? t("chat:runCommand.tooltip")
-														: primaryButtonText === t("chat:startNewTask.title")
-															? t("chat:startNewTask.tooltip")
-															: primaryButtonText === t("chat:resumeTask.title")
-																? t("chat:resumeTask.tooltip")
-																: primaryButtonText === t("chat:proceedAnyways.title")
-																	? t("chat:proceedAnyways.tooltip")
+							{/* Main action buttons */}
+							<div className="flex gap-[6px]">
+								{primaryButtonText && !isStreaming && (
+									<StandardTooltip
+										content={
+											primaryButtonText === t("chat:retry.title")
+												? t("chat:retry.tooltip")
+												: primaryButtonText === t("chat:save.title")
+													? t("chat:save.tooltip")
+													: primaryButtonText === t("chat:approve.title")
+														? t("chat:approve.tooltip")
+														: primaryButtonText === t("chat:runCommand.title")
+															? t("chat:runCommand.tooltip")
+															: primaryButtonText === t("chat:startNewTask.title")
+																? t("chat:startNewTask.tooltip")
+																: primaryButtonText === t("chat:resumeTask.title")
+																	? t("chat:resumeTask.tooltip")
 																	: primaryButtonText ===
-																		  t("chat:proceedWhileRunning.title")
-																		? t("chat:proceedWhileRunning.tooltip")
-																		: undefined
-									}>
-									<VSCodeButton
-										appearance="primary"
-										disabled={!enableButtons}
-										onClick={() => handlePrimaryButtonClick(inputValue, selectedImages)}>
-										{primaryButtonText}
-									</VSCodeButton>
-								</StandardTooltip>
-							)}
-							{(secondaryButtonText || isStreaming) && (
-								<StandardTooltip
-									content={
-										isStreaming
-											? t("chat:cancel.tooltip")
-											: secondaryButtonText === t("chat:startNewTask.title")
-												? t("chat:startNewTask.tooltip")
-												: secondaryButtonText === t("chat:reject.title")
-													? t("chat:reject.tooltip")
-													: secondaryButtonText === t("chat:terminate.title")
-														? t("chat:terminate.tooltip")
-														: undefined
-									}>
-									<VSCodeButton
-										appearance="secondary"
-										disabled={!enableButtons && !(isStreaming && !didClickCancel)}
-										className="ml-[6px]"
-										onClick={() => handleSecondaryButtonClick(inputValue, selectedImages)}>
-										{isStreaming ? t("chat:cancel.title") : secondaryButtonText}
-									</VSCodeButton>
-								</StandardTooltip>
-							)}
+																		  t("chat:proceedAnyways.title")
+																		? t("chat:proceedAnyways.tooltip")
+																		: primaryButtonText ===
+																			  t("chat:proceedWhileRunning.title")
+																			? t("chat:proceedWhileRunning.tooltip")
+																			: undefined
+										}>
+										<VSCodeButton
+											appearance="primary"
+											disabled={!enableButtons}
+											className="flex-1"
+											onClick={() => handlePrimaryButtonClick(inputValue, selectedImages)}>
+											{primaryButtonText}
+										</VSCodeButton>
+									</StandardTooltip>
+								)}
+								{(secondaryButtonText || isStreaming) && (
+									<StandardTooltip
+										content={
+											isStreaming
+												? t("chat:cancel.tooltip")
+												: secondaryButtonText === t("chat:startNewTask.title")
+													? t("chat:startNewTask.tooltip")
+													: secondaryButtonText === t("chat:reject.title")
+														? t("chat:reject.tooltip")
+														: secondaryButtonText === t("chat:terminate.title")
+															? t("chat:terminate.tooltip")
+															: undefined
+										}>
+										<VSCodeButton
+											appearance="secondary"
+											disabled={!enableButtons && !(isStreaming && !didClickCancel)}
+											className="flex-1"
+											onClick={() => handleSecondaryButtonClick(inputValue, selectedImages)}>
+											{isStreaming ? t("chat:cancel.title") : secondaryButtonText}
+										</VSCodeButton>
+									</StandardTooltip>
+								)}
+							</div>
 						</div>
 					)}
-					{/* Auto-approve section - full width below buttons */}
+					{/* Auto-approve section - below buttons, full width with horizontal layout */}
 					{clineAsk === "command" && enableButtons && !isStreaming && lastMessage?.text && (
 						<div className="px-[15px] pb-[10px]">
-							<div className="bg-vscode-input-background border border-vscode-input-border rounded-md px-3 py-2 w-full">
-								<div className="flex items-center gap-2">
-									<span className="codicon codicon-terminal text-vscode-descriptionForeground text-sm flex-shrink-0"></span>
-									<div className="flex flex-col gap-1 min-w-0">
-										<div className="text-xs text-vscode-descriptionForeground font-medium">
-											{t("chat:alwaysAllowCommand.pattern")}
-										</div>
-										<code className="text-xs text-vscode-editor-foreground bg-vscode-textCodeBlock-background px-2 py-1 rounded font-mono break-all">
-											{formatCommandPatternForDisplay(
-												extractCommandPattern(lastMessage.text.trim()),
-											)}
-										</code>
+							<div className="bg-vscode-input-background border border-vscode-input-border rounded-md px-3 py-2 w-full flex items-center gap-3">
+								<span className="codicon codicon-terminal text-vscode-descriptionForeground text-sm flex-shrink-0"></span>
+								<div className="flex items-center gap-2 min-w-0 flex-1">
+									<div className="text-xs text-vscode-descriptionForeground font-medium flex-shrink-0">
+										{t("chat:alwaysAllowCommand.pattern")}
 									</div>
+									<code className="text-xs text-vscode-editor-foreground bg-vscode-textCodeBlock-background px-2 py-1 rounded font-mono truncate">
+										{formatCommandPatternForDisplay(extractCommandPattern(lastMessage.text.trim()))}
+									</code>
 								</div>
 								<button
-									className="flex items-center gap-1.5 text-vscode-textLink hover:text-vscode-textLinkActiveForeground text-sm font-medium cursor-pointer bg-transparent border-none transition-colors duration-150 hover:bg-vscode-toolbar-hoverBackground px-2 py-1 rounded mt-2 w-full justify-center"
+									className="flex items-center gap-1.5 text-vscode-textLink hover:text-vscode-textLinkActiveForeground text-sm font-medium cursor-pointer bg-transparent border-none transition-colors duration-150 hover:bg-vscode-toolbar-hoverBackground px-2 py-1 rounded flex-shrink-0"
 									onClick={handleAlwaysAllowCommand}
 									disabled={!enableButtons}
 									title={t("chat:alwaysAllowCommand.tooltip")}>
