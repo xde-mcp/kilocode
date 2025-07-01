@@ -12,7 +12,7 @@ test.describe("Full E2E Test", () => {
 
 		await verifyExtensionInstalled(page)
 
-		await waitForWebviewText(page, "What can Kilo Code do for you?")
+		await waitForWebviewText(page, "Welcome to Kilo Code!")
 
 		await upsertApiConfiguration(page)
 
