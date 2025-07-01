@@ -1622,7 +1622,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 									<VSCodeButton
 										appearance="primary"
 										disabled={!enableButtons}
-										className={secondaryButtonText ? "flex-1 mr-[6px]" : "flex-[2] mr-0"}
 										onClick={() => handlePrimaryButtonClick(inputValue, selectedImages)}>
 										{primaryButtonText}
 									</VSCodeButton>
@@ -1644,39 +1643,40 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 									<VSCodeButton
 										appearance="secondary"
 										disabled={!enableButtons && !(isStreaming && !didClickCancel)}
-										className={isStreaming ? "flex-[2] ml-0" : "flex-1 ml-[6px]"}
+										className="ml-[6px]"
 										onClick={() => handleSecondaryButtonClick(inputValue, selectedImages)}>
 										{isStreaming ? t("chat:cancel.title") : secondaryButtonText}
 									</VSCodeButton>
 								</StandardTooltip>
 							)}
-							{clineAsk === "command" && enableButtons && !isStreaming && lastMessage?.text && (
-								<div className="flex flex-col items-center mt-3 gap-2">
-									<div className="bg-vscode-input-background border border-vscode-input-border rounded-md px-3 py-2 max-w-full">
-										<div className="flex items-center gap-2">
-											<span className="codicon codicon-terminal text-vscode-descriptionForeground text-sm flex-shrink-0"></span>
-											<div className="flex flex-col gap-1 min-w-0">
-												<div className="text-xs text-vscode-descriptionForeground font-medium">
-													{t("chat:alwaysAllowCommand.pattern")}
-												</div>
-												<code className="text-xs text-vscode-editor-foreground bg-vscode-textCodeBlock-background px-2 py-1 rounded font-mono break-all">
-													{formatCommandPatternForDisplay(
-														extractCommandPattern(lastMessage.text.trim()),
-													)}
-												</code>
-											</div>
+						</div>
+					)}
+					{/* Auto-approve section - full width below buttons */}
+					{clineAsk === "command" && enableButtons && !isStreaming && lastMessage?.text && (
+						<div className="px-[15px] pb-[10px]">
+							<div className="bg-vscode-input-background border border-vscode-input-border rounded-md px-3 py-2 w-full">
+								<div className="flex items-center gap-2">
+									<span className="codicon codicon-terminal text-vscode-descriptionForeground text-sm flex-shrink-0"></span>
+									<div className="flex flex-col gap-1 min-w-0">
+										<div className="text-xs text-vscode-descriptionForeground font-medium">
+											{t("chat:alwaysAllowCommand.pattern")}
 										</div>
+										<code className="text-xs text-vscode-editor-foreground bg-vscode-textCodeBlock-background px-2 py-1 rounded font-mono break-all">
+											{formatCommandPatternForDisplay(
+												extractCommandPattern(lastMessage.text.trim()),
+											)}
+										</code>
 									</div>
-									<button
-										className="flex items-center gap-1.5 text-vscode-textLink hover:text-vscode-textLinkActiveForeground text-sm font-medium cursor-pointer bg-transparent border-none transition-colors duration-150 hover:bg-vscode-toolbar-hoverBackground px-2 py-1 rounded"
-										onClick={handleAlwaysAllowCommand}
-										disabled={!enableButtons}
-										title={t("chat:alwaysAllowCommand.tooltip")}>
-										<span className="codicon codicon-check text-xs"></span>
-										{t("chat:alwaysAllowCommand.title")}
-									</button>
 								</div>
-							)}
+								<button
+									className="flex items-center gap-1.5 text-vscode-textLink hover:text-vscode-textLinkActiveForeground text-sm font-medium cursor-pointer bg-transparent border-none transition-colors duration-150 hover:bg-vscode-toolbar-hoverBackground px-2 py-1 rounded mt-2 w-full justify-center"
+									onClick={handleAlwaysAllowCommand}
+									disabled={!enableButtons}
+									title={t("chat:alwaysAllowCommand.tooltip")}>
+									<span className="codicon codicon-check text-xs"></span>
+									{t("chat:alwaysAllowCommand.title")}
+								</button>
+							</div>
 						</div>
 					)}
 				</>
