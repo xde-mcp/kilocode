@@ -75,7 +75,8 @@
 	},
 	"alwaysAllowCommand": {
 		"title": "Always allow",
-		"tooltip": "Add this command to auto-approved commands"
+		"tooltip": "Add this command pattern to auto-approved commands",
+		"pattern": "Auto-approve pattern:"
 	},
 	"proceedWhileRunning": {
 		"title": "Proceed While Running",

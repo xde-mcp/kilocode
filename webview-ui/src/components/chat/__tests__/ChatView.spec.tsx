@@ -778,7 +778,7 @@ describe("ChatView - Auto Approval Tests", () => {
 	})
 
 	describe("Always Allow Command Tests", () => {
-		it("adds command to allowed list when 'Always allow' is clicked", async () => {
+		it("adds command pattern to allowed list when 'Always allow' is clicked", async () => {
 			const { getByText } = renderChatView()
 
 			// First hydrate state with initial task
@@ -796,7 +796,7 @@ describe("ChatView - Auto Approval Tests", () => {
 				],
 			})
 
-			// Then send a command ask message
+			// Then send a command ask message with specific file
 			mockPostMessage({
 				autoApprovalEnabled: true,
 				alwaysAllowExecute: false,
@@ -812,7 +812,7 @@ describe("ChatView - Auto Approval Tests", () => {
 						type: "ask",
 						ask: "command",
 						ts: Date.now(),
-						text: "npm test",
+						text: "wc -l foo.txt",
 						partial: false,
 					},
 				],
@@ -821,17 +821,19 @@ describe("ChatView - Auto Approval Tests", () => {
 			// Wait for the "Always allow" link to appear (using translation key)
 			await waitFor(() => {
 				expect(getByText("chat:alwaysAllowCommand.title")).toBeInTheDocument()
+				// Should show the pattern placeholder (translation key)
+				expect(getByText("chat:alwaysAllowCommand.pattern")).toBeInTheDocument()
 			})
 
 			// Click the "Always allow" link
 			const alwaysAllowLink = getByText("chat:alwaysAllowCommand.title")
 			alwaysAllowLink.click()
 
-			// Verify that the allowedCommands message was sent
+			// Verify that the allowedCommands message was sent with pattern (not full command)
 			await waitFor(() => {
 				expect(vscode.postMessage).toHaveBeenCalledWith({
 					type: "allowedCommands",
-					commands: ["npm test"],
+					commands: ["wc -l"], // Pattern, not full command
 				})
 			})
 
@@ -889,17 +891,19 @@ describe("ChatView - Auto Approval Tests", () => {
 			// Wait for the "Always allow" link to appear (using translation key)
 			await waitFor(() => {
 				expect(getByText("chat:alwaysAllowCommand.title")).toBeInTheDocument()
+				// Should show the pattern placeholder (translation key)
+				expect(getByText("chat:alwaysAllowCommand.pattern")).toBeInTheDocument()
 			})
 
 			// Click the "Always allow" link
 			const alwaysAllowLink = getByText("chat:alwaysAllowCommand.title")
 			alwaysAllowLink.click()
 
-			// Verify that the allowedCommands message was sent with the command
+			// Verify that the allowedCommands message was sent with the simplified pattern
 			await waitFor(() => {
 				expect(vscode.postMessage).toHaveBeenCalledWith({
 					type: "allowedCommands",
-					commands: ["cd /path/to/project && npm install"],
+					commands: ["cd && npm install"],
 				})
 			})
 		})
@@ -941,6 +945,32 @@ describe("ChatView - Auto Approval Tests", () => {
 					expect(queryByText("chat:alwaysAllowCommand.title")).not.toBeInTheDocument()
 				})
 			}
+
+			// Test with command ask - should show both link and pattern
+			vi.clearAllMocks()
+			mockPostMessage({
+				autoApprovalEnabled: true,
+				clineMessages: [
+					{
+						type: "say",
+						say: "task",
+						ts: Date.now() - 2000,
+						text: "Initial task",
+					},
+					{
+						type: "ask",
+						ask: "command",
+						ts: Date.now(),
+						text: "ls -la",
+						partial: false,
+					},
+				],
+			})
+
+			await waitFor(() => {
+				expect(queryByText("chat:alwaysAllowCommand.title")).toBeInTheDocument()
+				expect(queryByText("chat:alwaysAllowCommand.pattern")).toBeInTheDocument()
+			})
 		})
 	})
 })
