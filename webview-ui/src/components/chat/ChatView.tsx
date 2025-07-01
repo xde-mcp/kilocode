@@ -680,6 +680,25 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		[clineAsk, startNewTask, isStreaming],
 	)
 
+	const handleAlwaysAllowCommand = useCallback(() => {
+		if (lastMessage?.ask === "command" && lastMessage.text) {
+			const command = lastMessage.text.trim()
+			if (command) {
+				// Add command to allowed commands list
+				const updatedCommands = [...(allowedCommands || []), command]
+				vscode.postMessage({
+					type: "allowedCommands",
+					commands: updatedCommands,
+				})
+				// Approve the current command
+				vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+				setSendingDisabled(true)
+				setClineAsk(undefined)
+				setEnableButtons(false)
+			}
+		}
+	}, [lastMessage, allowedCommands])
+
 	const handleTaskCloseButtonClick = useCallback(() => startNewTask(), [startNewTask])
 
 	const { info: model } = useSelectedModel(apiConfiguration)
@@ -1626,6 +1645,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 										{isStreaming ? t("chat:cancel.title") : secondaryButtonText}
 									</VSCodeButton>
 								</StandardTooltip>
+							)}
+							{clineAsk === "command" && enableButtons && !isStreaming && (
+								<div className="flex justify-center mt-2">
+									<button
+										className="text-vscode-textLink hover:text-vscode-textLinkActiveForeground text-sm underline cursor-pointer bg-transparent border-none"
+										onClick={handleAlwaysAllowCommand}
+										disabled={!enableButtons}
+										title={t("chat:alwaysAllowCommand.tooltip")}>
+										{t("chat:alwaysAllowCommand.title")}
+									</button>
+								</div>
 							)}
 						</div>
 					)}
