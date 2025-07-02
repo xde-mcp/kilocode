@@ -542,6 +542,7 @@ describe("ClineProvider", () => {
 			maxOpenTabsContext: 20,
 			maxWorkspaceFiles: 200,
 			browserToolEnabled: true,
+			telemetrySetting: "unset",
 			showRooIgnoredFiles: true,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,

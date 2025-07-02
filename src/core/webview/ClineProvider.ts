@@ -89,7 +89,10 @@ class OrganizationAllowListViolationError extends Error {
 	}
 }
 
-export class ClineProvider extends EventEmitter<ClineProviderEvents> implements vscode.WebviewViewProvider {
+export class ClineProvider
+	extends EventEmitter<ClineProviderEvents>
+	implements vscode.WebviewViewProvider, TelemetryPropertiesProvider
+{
 	// Used in package.json as the view's id. This value cannot be changed due
 	// to how VSCode caches views based on their id, and updating the id would
 	// break existing instances of the extension.
@@ -134,6 +137,10 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 
 		// Start configuration loading (which might trigger indexing) in the background.
 		// Don't await, allowing activation to continue immediately.
+
+		// Register this provider with the telemetry service to enable it to add
+		// properties like mode and provider.
+		TelemetryService.instance.setProvider(this)
 
 		this._workspaceTracker = new WorkspaceTracker(this)
 
@@ -325,6 +332,9 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		promptType: CodeActionName,
 		params: Record<string, string | any[]>,
 	): Promise<void> {
+		// Capture telemetry for code action usage
+		TelemetryService.instance.captureCodeActionUsed(promptType)
+
 		const visibleProvider = await ClineProvider.getInstance()
 
 		if (!visibleProvider) {
@@ -349,6 +359,8 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		promptType: TerminalActionPromptType,
 		params: Record<string, string | any[]>,
 	): Promise<void> {
+		TelemetryService.instance.captureCodeActionUsed(promptType)
+
 		const visibleProvider = await ClineProvider.getInstance()
 
 		if (!visibleProvider) {
@@ -798,6 +810,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 		const cline = this.getCurrentCline()
 
 		if (cline) {
+			TelemetryService.instance.captureModeSwitch(cline.taskId, newMode)
 			cline.emit("taskModeSwitched", cline.taskId, newMode)
 		}
 
@@ -1440,6 +1453,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			maxOpenTabsContext,
 			maxWorkspaceFiles,
 			browserToolEnabled,
+			telemetrySetting,
 			showRooIgnoredFiles,
 			language,
 			showAutoApproveMenu, // kilocode_change
@@ -1460,6 +1474,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			profileThresholds,
 		} = await this.getState()
 
+		const telemetryKey = process.env.POSTHOG_API_KEY
 		const machineId = vscode.env.machineId
 
 		const mergedAllowedCommands = this.mergeAllowedCommands(allowedCommands)
@@ -1539,6 +1554,8 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			maxWorkspaceFiles: maxWorkspaceFiles ?? 200,
 			cwd,
 			browserToolEnabled: browserToolEnabled ?? true,
+			telemetrySetting,
+			telemetryKey,
 			machineId,
 			showRooIgnoredFiles: showRooIgnoredFiles ?? true,
 			showAutoApproveMenu: showAutoApproveMenu ?? false, // kilocode_change
@@ -1700,6 +1717,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			maxWorkspaceFiles: stateValues.maxWorkspaceFiles ?? 200,
 			openRouterUseMiddleOutTransform: stateValues.openRouterUseMiddleOutTransform ?? true,
 			browserToolEnabled: stateValues.browserToolEnabled ?? true,
+			telemetrySetting: stateValues.telemetrySetting || "unset",
 			showRooIgnoredFiles: stateValues.showRooIgnoredFiles ?? true,
 			showAutoApproveMenu: stateValues.showAutoApproveMenu ?? false, // kilocode_change
 			showTaskTimeline: stateValues.showTaskTimeline ?? true, // kilocode_change

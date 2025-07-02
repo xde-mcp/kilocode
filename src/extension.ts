@@ -111,7 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, codeIndexManager, mdmService)
-	TelemetryService.instance.setProvider(provider) // kilocode_change no telemetry
+	TelemetryService.instance.setProvider(provider)
 
 	if (codeIndexManager) {
 		context.subscriptions.push(codeIndexManager)
@@ -123,6 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 	)
 
+	/* kilocode_change start */
 	if (!context.globalState.get("firstInstallCompleted")) {
 		outputChannel.appendLine("First installation detected, opening Kilo Code sidebar!")
 		try {
@@ -135,11 +136,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				false,
 			)
 
+			context.globalState.update("telemetrySetting", "enabled")
 			context.globalState.update("firstInstallCompleted", true)
 		} catch (error) {
 			outputChannel.appendLine(`Error during first-time setup: ${error.message}`)
 		}
 	}
+	/* kilocode_change end */
 
 	registerCommands({ context, outputChannel, provider })
 

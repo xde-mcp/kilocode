@@ -130,6 +130,13 @@ export const webviewMessageHandler = async (
 					),
 				)
 
+			// If user already opted in to telemetry, enable telemetry service
+			provider.getStateToPostToWebview().then((state) => {
+				const { telemetrySetting } = state
+				const isOptedIn = telemetrySetting === "enabled"
+				TelemetryService.instance.updateTelemetryState(isOptedIn)
+			})
+
 			provider.isViewLaunched = true
 			break
 		case "newTask":
@@ -1239,6 +1246,10 @@ export const webviewMessageHandler = async (
 						configToUse,
 						supportPrompt.create("ENHANCE", { userInput: message.text }, customSupportPrompts),
 					)
+
+					// Capture telemetry for prompt enhancement.
+					const currentCline = provider.getCurrentCline()
+					TelemetryService.instance.capturePromptEnhanced(currentCline?.taskId)
 
 					await provider.postMessageToWebview({ type: "enhancedPrompt", text: enhancedPrompt })
 				} catch (error) {
