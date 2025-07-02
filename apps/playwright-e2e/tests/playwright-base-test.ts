@@ -4,6 +4,7 @@ export { expect } from "@playwright/test"
 import * as path from "path"
 import * as os from "os"
 import * as fs from "fs"
+import { setupConsoleLogging, cleanLogMessage, isTestRelevant } from "../helpers/console-logging"
 
 const __dirname = path.dirname(__filename)
 
@@ -11,7 +12,7 @@ export type TestOptions = {
 	vscodeVersion: string
 }
 
-type TestFixtures = TestOptions & {
+export type TestFixtures = TestOptions & {
 	workbox: Page
 	createProject: () => Promise<string>
 	createTempDir: () => Promise<string>
@@ -29,12 +30,20 @@ export const test = base.extend<TestFixtures>({
 			args: [
 				"--no-sandbox",
 				"--disable-gpu-sandbox",
+				"--disable-gpu",
+				"--disable-dev-shm-usage",
+				"--disable-setuid-sandbox",
+				"--disable-renderer-backgrounding",
+				"--disable-ipc-flooding-protection",
+				"--disable-web-security",
 				"--disable-updates",
 				"--skip-welcome",
 				"--skip-release-notes",
 				"--disable-workspace-trust",
 				"--disable-telemetry",
 				"--disable-crash-reporter",
+				"--enable-logging",
+				"--log-level=0",
 				`--extensionDevelopmentPath=${path.resolve(__dirname, "..", "..", "..", "src")}`,
 				`--extensions-dir=${path.join(defaultCachePath, "extensions")}`,
 				`--user-data-dir=${path.join(defaultCachePath, "user-data")}`,
@@ -44,6 +53,38 @@ export const test = base.extend<TestFixtures>({
 		})
 
 		const workbox = await electronApp.firstWindow()
+
+		// Setup pass-through logs for the core process and the webview
+		if (process.env.PLAYWRIGHT_VERBOSE_LOGS === "true") {
+			electronApp.process().stdout?.on("data", (data) => {
+				const output = data.toString().trim()
+				const cleaned = cleanLogMessage(output)
+				if (cleaned && isTestRelevant(cleaned, "INFO")) {
+					console.log(`📋 [VSCode] ${cleaned}`)
+				}
+			})
+
+			electronApp.process().stderr?.on("data", (data) => {
+				const output = data.toString().trim()
+				const cleaned = cleanLogMessage(output)
+				if (cleaned) {
+					// Determine severity based on content
+					const isError = output.toLowerCase().includes("error") || output.toLowerCase().includes("failed")
+					const icon = isError ? "❌" : "⚠️"
+					console.log(`${icon} [VSCode] ${cleaned}`)
+				}
+			})
+
+			// Set up comprehensive console logging for the main workbox window
+			setupConsoleLogging(workbox, "WORKBOX")
+
+			// Set up logging for any new windows/webviews that get created
+			electronApp.on("window", (newWindow) => {
+				console.log(`🪟 [VSCode] New window created: ${newWindow.url()}`)
+				setupConsoleLogging(newWindow, "WEBVIEW")
+			})
+		}
+
 		await workbox.waitForLoadState("domcontentloaded")
 
 		try {
@@ -60,7 +101,12 @@ export const test = base.extend<TestFixtures>({
 		const logPath = path.join(defaultCachePath, "user-data")
 		if (fs.existsSync(logPath)) {
 			const logOutputPath = test.info().outputPath("vscode-logs")
-			await fs.promises.cp(logPath, logOutputPath, { recursive: true })
+			try {
+				await fs.promises.cp(logPath, logOutputPath, { recursive: true })
+			} catch (error) {
+				console.warn(`Failed to copy VSCode logs: ${error.message}`)
+				// Don't fail the test due to log copying issues
+			}
 		}
 	},
 
@@ -75,45 +121,17 @@ export const test = base.extend<TestFixtures>({
 			const packageJson = {
 				name: "test-project",
 				version: "1.0.0",
-				description: "Test project for ai agent extension",
-				main: "index.js",
-				scripts: {
-					test: 'echo "Error: no test specified" && exit 1',
-				},
-				keywords: [],
-				author: "",
-				license: "ISC",
 			}
 
 			await fs.promises.writeFile(path.join(projectPath, "package.json"), JSON.stringify(packageJson, null, 2))
 
-			const testFile = `// Test file for extension
-console.log('Hello from the test project!');
-
-function greet(name) {
-  return \`Hello, \${name}!\`;
-}
-
-module.exports = { greet };
-`
-
-			await fs.promises.writeFile(path.join(projectPath, "index.js"), testFile)
-
-			const readme = `# Test Project
-
-This is a test project created for testing the VS Code extension.
-
-## Features
-
-- Basic JavaScript file
-- Package.json configuration
-- Ready for AI assistant interaction
-`
-
-			await fs.promises.writeFile(path.join(projectPath, "README.md"), readme)
-
 			return projectPath
 		})
+	},
+
+	// eslint-disable-next-line no-empty-pattern
+	setupConsoleLogging: async ({}, use) => {
+		await use(setupConsoleLogging)
 	},
 
 	// eslint-disable-next-line no-empty-pattern

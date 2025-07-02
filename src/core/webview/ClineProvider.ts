@@ -601,7 +601,21 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		await this.view?.webview.postMessage(message)
+		this.log(`[DEBUG] postMessageToWebview: Attempting to send message type: ${message.type}`)
+		try {
+			if (!this.view?.webview) {
+				this.log(`[DEBUG] postMessageToWebview: No webview available`)
+				return
+			}
+
+			const result = await this.view.webview.postMessage(message)
+			this.log(`[DEBUG] postMessageToWebview: Message sent successfully, result: ${result}`)
+		} catch (error) {
+			this.log(`[DEBUG] postMessageToWebview: Error sending message: ${error}`)
+			this.log(
+				`[DEBUG] postMessageToWebview: Error stack: ${error instanceof Error ? error.stack : "No stack trace"}`,
+			)
+		}
 	}
 
 	private async getHMRHtmlContent(webview: vscode.Webview): Promise<string> {
@@ -858,6 +872,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			// we rely on the `ContextProxy`'s data store and in other cases
 			// we rely on the `ProviderSettingsManager`'s data store. It might
 			// be simpler to unify these two.
+
 			const id = await this.providerSettingsManager.saveConfig(name, providerSettings)
 
 			if (activate) {

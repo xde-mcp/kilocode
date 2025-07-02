@@ -1,0 +1,144 @@
+name: Playwright E2E Tests
+
+on:
+    pull_request:
+        types: [opened, reopened, ready_for_review, synchronize]
+        branches: [main]
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+# Cancel in-progress jobs when new workflow is triggered
+concurrency:
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+env:
+    DOCKER_BUILDKIT: 1
+    COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+    playwright-e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
+
+            - name: Build Playwright CI image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  file: apps/playwright-e2e/Dockerfile.playwright-ci
+                  tags: playwright-ci:latest
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  push: false
+                  load: true
+
+            - name: Create test results directory
+              run: mkdir -p ${{ github.workspace }}/apps/playwright-e2e/test-results
+
+            - name: Run Playwright E2E tests
+              run: |
+                  docker run --rm \
+                    -e OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}" \
+                    -v ${{ github.workspace }}/apps/playwright-e2e/test-results:/workspace/apps/playwright-e2e/test-results \
+                    -v ${{ github.workspace }}/apps/playwright-e2e/playwright-report:/workspace/apps/playwright-e2e/playwright-report \
+                    playwright-ci:latest
+
+            - name: Upload test results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-test-results-${{ github.run_number }}
+                  path: apps/playwright-e2e/test-results/
+                  retention-days: 7
+
+            - name: Upload Playwright HTML report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-html-report-${{ github.run_number }}
+                  path: apps/playwright-e2e/playwright-report/
+                  retention-days: 7
+
+            - name: Test Results Summary
+              if: always()
+              run: |
+                  echo "## Playwright E2E Test Results" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+
+                  if [ -d "apps/playwright-e2e/test-results" ] && [ "$(ls -A apps/playwright-e2e/test-results)" ]; then
+                    echo "### Test Execution Details" >> $GITHUB_STEP_SUMMARY
+                    echo "- **Test Results**: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+                    echo "- **HTML Report**: Available in artifacts" >> $GITHUB_STEP_SUMMARY
+                    echo "" >> $GITHUB_STEP_SUMMARY
+                    
+                    # Check for failed tests
+                    if find apps/playwright-e2e/test-results -name "*.json" -exec grep -l '"status":"failed"' {} \; | head -1 > /dev/null 2>&1; then
+                      echo "❌ **Some tests failed.** Check the artifacts for detailed results." >> $GITHUB_STEP_SUMMARY
+                    else
+                      echo "✅ **All tests passed successfully!**" >> $GITHUB_STEP_SUMMARY
+                    fi
+                  else
+                    echo "⚠️ **No test results found.** Check the workflow logs for issues." >> $GITHUB_STEP_SUMMARY
+                  fi
+
+            - name: Comment PR with test results
+              if: always() && github.event_name == 'pull_request'
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const fs = require('fs');
+                      const path = require('path');
+
+                      let comment = '## 🎭 Playwright E2E Test Results\n\n';
+
+                      const testResultsDir = 'apps/playwright-e2e/test-results';
+                      const reportDir = 'apps/playwright-e2e/playwright-report';
+
+                      if (fs.existsSync(testResultsDir) && fs.readdirSync(testResultsDir).length > 0) {
+                          // Check for test failures
+                          let hasFailures = false;
+                          try {
+                              const files = fs.readdirSync(testResultsDir, { recursive: true });
+                              for (const file of files) {
+                                  if (file.endsWith('.json')) {
+                                      const content = fs.readFileSync(path.join(testResultsDir, file), 'utf8');
+                                      if (content.includes('"status":"failed"')) {
+                                          hasFailures = true;
+                                          break;
+                                      }
+                                  }
+                              }
+                          } catch (e) {
+                              console.log('Error checking test results:', e);
+                          }
+                          
+                          if (hasFailures) {
+                              comment += '❌ **Some E2E tests failed**\n\n';
+                              comment += '- Check the [test results artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details\n';
+                              comment += '- Review the [HTML report artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for visual debugging\n';
+                          } else {
+                              comment += '✅ **All E2E tests passed successfully!**\n\n';
+                              comment += 'The extension works correctly in a Docker environment with full end-to-end functionality.\n';
+                          }
+                      } else {
+                          comment += '⚠️ **No test results found**\n\n';
+                          comment += 'The E2E tests may not have run properly. Check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.\n';
+                      }
+
+                      comment += '\n---\n';
+                      comment += `*Workflow: [${context.workflow}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
+
+                      github.rest.issues.createComment({
+                          issue_number: context.issue.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          body: comment
+                      });

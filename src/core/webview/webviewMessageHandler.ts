@@ -54,6 +54,10 @@ export const webviewMessageHandler = async (
 	message: WebviewMessage,
 	marketplaceManager?: MarketplaceManager,
 ) => {
+	// Debug: Log every message received
+	console.log(`[EXTENSION DEBUG] webviewMessageHandler received message: ${message.type}`)
+	provider.log(`[DEBUG] webviewMessageHandler received message: ${message.type}`)
+
 	// Utility functions provided for concise get/update of global state via contextProxy API.
 	const getGlobalState = <K extends keyof GlobalState>(key: K) => provider.contextProxy.getValue(key)
 	const updateGlobalState = async <K extends keyof GlobalState>(key: K, value: GlobalState[K]) =>
@@ -1377,8 +1381,27 @@ export const webviewMessageHandler = async (
 			}
 			break
 		case "upsertApiConfiguration":
+			provider.log(
+				`[DEBUG] upsertApiConfiguration handler called with: ${JSON.stringify({
+					text: message.text,
+					apiConfiguration: message.apiConfiguration,
+				})}`,
+			)
 			if (message.text && message.apiConfiguration) {
-				await provider.upsertProviderProfile(message.text, message.apiConfiguration)
+				try {
+					await provider.upsertProviderProfile(message.text, message.apiConfiguration)
+
+					// Note: upsertProviderProfile already calls postStateToWebview() internally
+					// so we don't need to call it again here
+				} catch (error) {
+					provider.log(`Error in upsertApiConfiguration: ${error}`)
+				}
+			}
+			break
+		case "currentApiConfigName":
+			if (message.text) {
+				await updateGlobalState("currentApiConfigName", message.text)
+				await provider.postStateToWebview()
 			}
 			break
 		case "renameApiConfiguration":

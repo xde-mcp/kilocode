@@ -37,15 +37,23 @@ const WelcomeView = () => {
 	)
 
 	const handleSubmit = useCallback(() => {
+		console.log("🚀 WelcomeView: handleSubmit called")
+		console.log("🔧 WelcomeView: currentApiConfigName:", currentApiConfigName)
+		console.log("🔧 WelcomeView: apiConfiguration:", apiConfiguration)
+
 		const error = apiConfiguration ? validateApiConfiguration(apiConfiguration) : undefined
+		console.log("🔍 WelcomeView: validation error:", error)
 
 		if (error) {
+			console.log("❌ WelcomeView: Setting error message and returning early:", error)
 			setErrorMessage(error)
 			return
 		}
 
+		console.log("✅ WelcomeView: Validation passed, sending upsertApiConfiguration message")
 		setErrorMessage(undefined)
 		vscode.postMessage({ type: "upsertApiConfiguration", text: currentApiConfigName, apiConfiguration })
+		console.log("📤 WelcomeView: Message sent to VSCode")
 	}, [apiConfiguration, currentApiConfigName])
 
 	// Using a lazy initializer so it reads once at mount
@@ -152,7 +160,12 @@ const WelcomeView = () => {
 							{t("welcome:importSettings")}
 						</VSCodeLink>
 					</div>
-					<VSCodeButton onClick={handleSubmit} appearance="primary">
+					<VSCodeButton
+						onClick={() => {
+							console.log("🖱️ WelcomeView: Let's go button clicked!")
+							handleSubmit()
+						}}
+						appearance="primary">
 						{t("welcome:start")}
 					</VSCodeButton>
 					{errorMessage && <div className="text-vscode-errorForeground">{errorMessage}</div>}

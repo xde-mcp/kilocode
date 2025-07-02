@@ -7,9 +7,7 @@ import {
 } from "../helpers/webview-helpers"
 
 test.describe("Full E2E Test", () => {
-	test("should configure credentials and send a message", async ({ workbox }) => {
-		const page = workbox
-
+	test("should configure credentials and send a message", async ({ workbox: page }) => {
 		await verifyExtensionInstalled(page)
 
 		await waitForWebviewText(page, "Welcome to Kilo Code!")

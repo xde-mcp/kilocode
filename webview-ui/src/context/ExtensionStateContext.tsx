@@ -279,8 +279,10 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 			switch (message.type) {
 				case "state": {
 					const newState = message.state!
+					const hasValidApiConfig = checkExistKey(newState.apiConfiguration)
+
 					setState((prevState) => mergeExtensionState(prevState, newState))
-					setShowWelcome(!checkExistKey(newState.apiConfiguration))
+					setShowWelcome(!hasValidApiConfig)
 					setDidHydrateState(true)
 					// Handle marketplace data if present in state message
 					if (newState.marketplaceItems !== undefined) {

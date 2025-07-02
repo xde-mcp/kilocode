@@ -49,3 +49,33 @@ export async function upsertApiConfiguration(page: Page, apiConfiguration?: Part
 	})
 	await postWebviewMessage(page, { type: "currentApiConfigName", text: "default" })
 }
+
+export async function configureApiKeyThroughUI(page: Page): Promise<void> {
+	const webviewFrame = await findWebview(page)
+
+	// Click "Use your own API key" button
+	const useOwnKeyButton = webviewFrame.locator('button:has-text("Use your own API key")')
+	await useOwnKeyButton.waitFor()
+	await useOwnKeyButton.click()
+
+	// Wait for the provider selection dropdown to appear
+	const providerDropdown = webviewFrame.locator('[role="combobox"]').first()
+	await providerDropdown.waitFor()
+	await providerDropdown.click()
+
+	// Select OpenRouter from the dropdown
+	const openRouterOption = webviewFrame.locator('[role="option"]:has-text("OpenRouter")')
+	await openRouterOption.waitFor()
+	await openRouterOption.click()
+
+	// Fill in the OpenRouter API key (password field)
+	const apiKeyInput = webviewFrame.locator('input[type="password"]').first()
+	await apiKeyInput.waitFor()
+	await apiKeyInput.fill(process.env.OPENROUTER_API_KEY || "")
+
+	// Submit the configuration by clicking "Let's go!" button
+	const submitButton = webviewFrame.locator('button:has-text("Let\'s go!")')
+	await submitButton.waitFor()
+
+	await submitButton.click()
+}

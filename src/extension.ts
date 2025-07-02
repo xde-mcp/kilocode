@@ -60,6 +60,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	outputChannel = vscode.window.createOutputChannel("Kilo-Code")
 	context.subscriptions.push(outputChannel)
 	outputChannel.appendLine(`${Package.name} extension activated - ${JSON.stringify(Package)}`)
+	console.log("[EXTENSION DEBUG] Extension activation completed, output channel created")
 
 	// Migrate old settings to new
 	await migrateSettings(context, outputChannel)
