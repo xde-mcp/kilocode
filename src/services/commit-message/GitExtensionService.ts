@@ -38,11 +38,11 @@ export class GitExtensionService {
 	}
 
 	/**
-	 * Gathers information about staged changes using git diff --cached
+	 * Gathers information about changes (staged or unstaged)
 	 */
-	public async gatherStagedChanges(): Promise<GitChange[] | null> {
+	public async gatherChanges(options: { staged: boolean }): Promise<GitChange[] | null> {
 		try {
-			const statusOutput = await this.getStagedStatus()
+			const statusOutput = this.getStatus(options)
 			if (!statusOutput.trim()) {
 				return null
 			}
@@ -64,39 +64,8 @@ export class GitExtensionService {
 
 			return changes.length > 0 ? changes : null
 		} catch (error) {
-			console.error("Error gathering staged changes:", error)
-			return null
-		}
-	}
-
-	/**
-	 * Gathers information about unstaged changes using git diff
-	 */
-	public async gatherUnstagedChanges(): Promise<GitChange[] | null> {
-		try {
-			const statusOutput = await this.getUnstagedStatus()
-			if (!statusOutput.trim()) {
-				return null
-			}
-
-			const changes: GitChange[] = []
-			const lines = statusOutput.split("\n").filter((line: string) => line.trim())
-
-			for (const line of lines) {
-				if (line.length < 2) continue
-
-				const statusCode = line.substring(0, 1).trim()
-				const filePath = line.substring(1).trim()
-
-				changes.push({
-					filePath: path.join(this.workspaceRoot, filePath),
-					status: this.getChangeStatusFromCode(statusCode),
-				})
-			}
-
-			return changes.length > 0 ? changes : null
-		} catch (error) {
-			console.error("Error gathering unstaged changes:", error)
+			const changeType = options.staged ? "staged" : "unstaged"
+			console.error(`Error gathering ${changeType} changes:`, error)
 			return null
 		}
 	}
@@ -154,85 +123,46 @@ export class GitExtensionService {
 	}
 
 	/**
-	 * Gets the diff of staged changes, automatically excluding files based on shouldExcludeFromGitDiff
+	 * Gets the diff for changes (staged or unstaged), automatically excluding files based on shouldExcludeFromGitDiff
 	 */
-	private getStagedDiff(): string {
+	private getDiffForChanges(options: { staged: boolean }): string {
+		const { staged } = options
 		try {
 			const diffs: string[] = []
-			const stagedFiles = this.getStagedFilesList()
+			// Get files list directly without delegation
+			const args = staged ? ["diff", "--name-only", "--cached"] : ["diff", "--name-only"]
+			const files = this.spawnGitWithArgs(args)
+				.split("\n")
+				.map((line) => line.trim())
+				.filter((line) => line.length > 0)
 
-			for (const filePath of stagedFiles) {
+			for (const filePath of files) {
 				if (this.ignoreController.validateAccess(filePath) && !shouldExcludeLockFile(filePath)) {
-					const diff = this.getStagedDiffForFile(filePath).trim()
+					// Get diff for file directly without delegation
+					const diffArgs = staged ? ["diff", "--cached", "--", filePath] : ["diff", "--", filePath]
+					const diff = this.spawnGitWithArgs(diffArgs).trim()
 					diffs.push(diff)
 				}
 			}
 
 			return diffs.join("\n")
 		} catch (error) {
-			console.error("Error generating staged diff:", error)
+			const changeType = staged ? "staged" : "unstaged"
+			console.error(`Error generating ${changeType} diff:`, error)
 			return ""
 		}
 	}
 
-	/**
-	 * Gets the diff of unstaged changes, automatically excluding files based on shouldExcludeFromGitDiff
-	 */
-	private getUnstagedDiff(): string {
-		try {
-			const diffs: string[] = []
-			const unstagedFiles = this.getUnstagedFilesList()
-
-			for (const filePath of unstagedFiles) {
-				if (this.ignoreController.validateAccess(filePath) && !shouldExcludeLockFile(filePath)) {
-					const diff = this.getUnstagedDiffForFile(filePath).trim()
-					diffs.push(diff)
-				}
-			}
-
-			return diffs.join("\n")
-		} catch (error) {
-			console.error("Error generating unstaged diff:", error)
-			return ""
-		}
+	private getStatus(options: { staged: boolean }): string {
+		const { staged } = options
+		const args = staged ? ["diff", "--name-status", "--cached"] : ["diff", "--name-status"]
+		return this.spawnGitWithArgs(args)
 	}
 
-	private getStagedFilesList(): string[] {
-		return this.spawnGitWithArgs(["diff", "--name-only", "--cached"])
-			.split("\n")
-			.map((line) => line.trim())
-			.filter((line) => line.length > 0)
-	}
-
-	private getUnstagedFilesList(): string[] {
-		return this.spawnGitWithArgs(["diff", "--name-only"])
-			.split("\n")
-			.map((line) => line.trim())
-			.filter((line) => line.length > 0)
-	}
-
-	private getStagedDiffForFile(filePath: string): string {
-		return this.spawnGitWithArgs(["diff", "--cached", "--", filePath])
-	}
-
-	private getUnstagedDiffForFile(filePath: string): string {
-		return this.spawnGitWithArgs(["diff", "--", filePath])
-	}
-
-	private getStagedStatus(): string {
-		return this.spawnGitWithArgs(["diff", "--name-status", "--cached"])
-	}
-
-	private getUnstagedStatus(): string {
-		return this.spawnGitWithArgs(["diff", "--name-status"])
-	}
-
-	private getStagedSummary(): string {
-		return this.spawnGitWithArgs(["diff", "--cached", "--stat"])
-	}
-
-	private getUnstagedSummary(): string {
-		return this.spawnGitWithArgs(["diff", "--stat"])
+	private getSummary(options: { staged: boolean }): string {
+		const { staged } = options
+		const args = staged ? ["diff", "--cached", "--stat"] : ["diff", "--stat"]
+		return this.spawnGitWithArgs(args)
 	}
 
 	private getCurrentBranch(): string {
@@ -246,34 +176,26 @@ export class GitExtensionService {
 	/**
 	 * Gets all context needed for commit message generation
 	 */
-	public getCommitContext(changes: GitChange[], isUnstaged: boolean = false): string {
+	public getCommitContext(changes: GitChange[], options: { staged: boolean }): string {
+		const { staged } = options
 		try {
 			// Start building the context with the required sections
 			let context = "## Git Context for Commit Message Generation\n\n"
 
 			// Add full diff - essential for understanding what changed
 			try {
-				if (isUnstaged) {
-					const unstagedDiff = this.getUnstagedDiff()
-					context += "### Full Diff of Unstaged Changes\n```diff\n" + unstagedDiff + "\n```\n\n"
-				} else {
-					const stagedDiff = this.getStagedDiff()
-					context += "### Full Diff of Staged Changes\n```diff\n" + stagedDiff + "\n```\n\n"
-				}
+				const diff = this.getDiffForChanges(options)
+				const changeType = staged ? "Staged" : "Unstaged"
+				context += `### Full Diff of ${changeType} Changes\n\`\`\`diff\n` + diff + "\n```\n\n"
 			} catch (error) {
-				const changeType = isUnstaged ? "Unstaged" : "Staged"
+				const changeType = staged ? "Staged" : "Unstaged"
 				context += `### Full Diff of ${changeType} Changes\n\`\`\`diff\n(No diff available)\n\`\`\`\n\n`
 			}
 
 			// Add statistical summary - helpful for quick overview
 			try {
-				if (isUnstaged) {
-					const unstagedSummary = this.getUnstagedSummary()
-					context += "### Statistical Summary\n```\n" + unstagedSummary + "\n```\n\n"
-				} else {
-					const stagedSummary = this.getStagedSummary()
-					context += "### Statistical Summary\n```\n" + stagedSummary + "\n```\n\n"
-				}
+				const summary = this.getSummary(options)
+				context += "### Statistical Summary\n```\n" + summary + "\n```\n\n"
 			} catch (error) {
 				context += "### Statistical Summary\n```\n(No summary available)\n```\n\n"
 			}
