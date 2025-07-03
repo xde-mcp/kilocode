@@ -97,7 +97,9 @@ jobs:
                       const fs = require('fs');
                       const path = require('path');
 
-                      let comment = '## 🎭 Playwright E2E Test Results\n\n';
+                      // Unique identifier for our comment
+                      const commentIdentifier = '<!-- playwright-e2e-results -->';
+                      let comment = `${commentIdentifier}\n## 🎭 Playwright E2E Test Results\n\n`;
 
                       const testResultsDir = 'apps/playwright-e2e/test-results';
                       const reportDir = 'apps/playwright-e2e/playwright-report';
@@ -150,11 +152,35 @@ jobs:
                       }
 
                       comment += '\n---\n';
-                      comment += `*Workflow: [${context.workflow}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*`;
+                      comment += `*Workflow: [${context.workflow}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) • Updated: ${new Date().toISOString()}*`;
 
-                      github.rest.issues.createComment({
+                      // Find existing comment with our identifier
+                      const { data: comments } = await github.rest.issues.listComments({
                           issue_number: context.issue.number,
                           owner: context.repo.owner,
                           repo: context.repo.repo,
-                          body: comment
                       });
+
+                      const existingComment = comments.find(comment =>
+                          comment.body.includes(commentIdentifier)
+                      );
+
+                      if (existingComment) {
+                          // Update existing comment
+                          await github.rest.issues.updateComment({
+                              comment_id: existingComment.id,
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              body: comment
+                          });
+                          console.log('Updated existing Playwright E2E comment');
+                      } else {
+                          // Create new comment
+                          await github.rest.issues.createComment({
+                              issue_number: context.issue.number,
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              body: comment
+                          });
+                          console.log('Created new Playwright E2E comment');
+                      }
