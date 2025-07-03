@@ -64,16 +64,10 @@ export class ProviderSettingsManager {
 		this.initialize().catch(console.error)
 	}
 
-	/**
-	 * Detect if we're running in a Docker environment where VSCode Secret Storage may not work
-	 */
 	private detectDockerEnvironment(): boolean {
 		return process.env.DOCKER_CONTAINER === "true"
 	}
 
-	/**
-	 * Get the fallback file path for storing config in Docker environments
-	 */
 	private getFallbackConfigPath(): string {
 		const tempDir = os.tmpdir()
 		return path.join(tempDir, "kilo-code-config.json")
@@ -226,8 +220,7 @@ export class ProviderSettingsManager {
 	private async migrateOpenAiHeaders(providerProfiles: ProviderProfiles) {
 		try {
 			for (const [_name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
-				// Use type assertion to access the deprecated property safely
-				const configAny = apiConfig as any
+				const configAny = apiConfig as ProviderSettingsWithId & { openAiHostHeader?: string }
 
 				// Check if openAiHostHeader exists but openAiHeaders doesn't
 				if (
@@ -445,26 +438,21 @@ export class ProviderSettingsManager {
 		}
 	}
 
-	/**
-	 * Reset provider profiles by deleting them from secrets and fallback storage.
-	 */
 	public async resetAllConfigs() {
 		return await this.lock(async () => {
-			// Delete from VSCode secrets
 			try {
 				await this.context.secrets.delete(this.secretsKey)
 			} catch (error) {
-				// Ignore deletion errors - secrets may not exist
+				// Ignore deletion errors
 			}
 
-			// Delete from fallback storage if it exists
 			const fallbackPath = this.getFallbackConfigPath()
 			try {
 				if (fs.existsSync(fallbackPath)) {
 					fs.unlinkSync(fallbackPath)
 				}
 			} catch (error) {
-				// Ignore deletion errors - fallback file may not exist
+				// Ignore deletion errors
 			}
 		})
 	}
@@ -487,7 +475,7 @@ export class ProviderSettingsManager {
 
 			const providerProfiles = providerProfilesSchema
 				.extend({
-					apiConfigs: z.record(z.string(), z.any()),
+					apiConfigs: z.record(z.string(), z.unknown()),
 				})
 				.parse(JSON.parse(content))
 
@@ -522,9 +510,6 @@ export class ProviderSettingsManager {
 		}
 	}
 
-	/**
-	 * Load provider profiles from fallback file storage (Docker/CI environments)
-	 */
 	private async loadFromFallback(): Promise<ProviderProfiles> {
 		const fallbackPath = this.getFallbackConfigPath()
 
@@ -541,7 +526,7 @@ export class ProviderSettingsManager {
 
 			const providerProfiles = providerProfilesSchema
 				.extend({
-					apiConfigs: z.record(z.string(), z.any()),
+					apiConfigs: z.record(z.string(), z.unknown()),
 				})
 				.parse(JSON.parse(content))
 
@@ -564,16 +549,12 @@ export class ProviderSettingsManager {
 		}
 	}
 
-	/**
-	 * Store provider profiles to fallback file storage (Docker/CI environments)
-	 */
 	private async storeToFallback(providerProfiles: ProviderProfiles): Promise<void> {
 		const fallbackPath = this.getFallbackConfigPath()
 
 		try {
 			const content = JSON.stringify(providerProfiles, null, 2)
 
-			// Ensure the directory exists
 			const dir = path.dirname(fallbackPath)
 			if (!fs.existsSync(dir)) {
 				fs.mkdirSync(dir, { recursive: true })

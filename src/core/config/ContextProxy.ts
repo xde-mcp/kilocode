@@ -139,15 +139,9 @@ export class ContextProxy {
 		// Update cache.
 		this.secretCache[key] = value
 
-		// Check if we're in a Docker environment where VSCode secrets might not work
 		if (this.isDockerEnvironment()) {
-			// In Docker, we don't need to persist secrets to VSCode storage
-			// since the fallback storage in ProviderSettingsManager handles persistence
-			// Just return a resolved promise to avoid hanging
 			return Promise.resolve()
 		}
-
-		// Write directly to context in normal environments.
 		return value === undefined
 			? this.originalContext.secrets.delete(key)
 			: this.originalContext.secrets.store(key, value)
@@ -165,7 +159,7 @@ export class ContextProxy {
 	/**
 	 * WorkspaceState
 	 */
-	async updateWorkspaceState(context: vscode.ExtensionContext, key: string, value: any) {
+	async updateWorkspaceState(context: vscode.ExtensionContext, key: string, value: unknown) {
 		await context.workspaceState.update(key, value)
 	}
 

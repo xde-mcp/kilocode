@@ -80,9 +80,6 @@ class VSCodeAPIWrapper {
 export const vscode = new VSCodeAPIWrapper()
 
 // kilocode_change start
-// Make vscode available globally - this allows the playwright tests
-// to post messages directly so we can setup provider credentials
-// without having to go through the Settings UI in every test.
 if (typeof window !== "undefined") {
 	;(window as unknown as { vscode: VSCodeAPIWrapper }).vscode = vscode
 }
