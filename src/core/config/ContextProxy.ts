@@ -154,18 +154,7 @@ export class ContextProxy {
 	}
 
 	private isDockerEnvironment(): boolean {
-		return !!(
-			process.env.DOCKER_CONTAINER ||
-			process.env.CI ||
-			process.env.GITHUB_ACTIONS ||
-			process.env.GITLAB_CI ||
-			process.env.JENKINS_URL ||
-			process.env.BUILDKITE ||
-			process.env.CIRCLECI ||
-			process.env.TRAVIS ||
-			process.env.CONTAINER ||
-			process.env.KUBERNETES_SERVICE_HOST
-		)
+		return process.env.DOCKER_CONTAINER === "true"
 	}
 
 	private getAllSecretState(): SecretState {

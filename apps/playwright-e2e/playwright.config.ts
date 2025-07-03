@@ -23,24 +23,12 @@ export default defineConfig<void, TestOptions>({
 			name: "VSCode stable",
 			use: {
 				vscodeVersion: "stable",
-				// Container-specific browser context settings
-				contextOptions: {
-					javaScriptEnabled: true,
-					bypassCSP: true,
-					ignoreHTTPSErrors: true,
-				},
 			},
 		},
 	],
 	use: {
 		trace: "on-first-retry",
-		screenshot: "on", // Capture screenshots for all tests
-		video: "on", // Record video for all tests for debugging
-		// Container-specific settings for webview testing
-		contextOptions: {
-			javaScriptEnabled: true,
-			bypassCSP: true,
-			ignoreHTTPSErrors: true,
-		},
+		screenshot: "only-on-failure",
+		video: "retain-on-failure",
 	},
 })

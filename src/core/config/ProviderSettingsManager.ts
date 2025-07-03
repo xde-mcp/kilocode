@@ -65,21 +65,10 @@ export class ProviderSettingsManager {
 	}
 
 	/**
-	 * Detect if we're running in a Docker/CI environment where VSCode Secret Storage may not work
+	 * Detect if we're running in a Docker environment where VSCode Secret Storage may not work
 	 */
 	private detectDockerEnvironment(): boolean {
-		// Check for common Docker/CI environment indicators
-		const indicators = [
-			process.env.CI === "true",
-			process.env.DOCKER === "true",
-			process.env.CONTAINER === "true",
-			fs.existsSync("/.dockerenv"),
-			process.env.GITHUB_ACTIONS === "true",
-			process.env.GITLAB_CI === "true",
-			process.env.JENKINS_URL !== undefined,
-		]
-
-		return indicators.some((indicator) => indicator)
+		return process.env.DOCKER_CONTAINER === "true"
 	}
 
 	/**
@@ -517,14 +506,6 @@ export class ProviderSettingsManager {
 				),
 			}
 		} catch (error) {
-			// If VSCode secrets fail, try fallback storage as a last resort
-			if (!this.isDockerEnvironment) {
-				try {
-					return await this.loadFromFallback()
-				} catch (fallbackError) {
-					// Both methods failed
-				}
-			}
 			throw new Error(`Failed to read provider profiles from secrets: ${error}`)
 		}
 	}
@@ -537,14 +518,6 @@ export class ProviderSettingsManager {
 		try {
 			await this.context.secrets.store(this.secretsKey, JSON.stringify(providerProfiles, null, 2))
 		} catch (error) {
-			// If VSCode secrets fail, try fallback storage as a last resort
-			if (!this.isDockerEnvironment) {
-				try {
-					return await this.storeToFallback(providerProfiles)
-				} catch (fallbackError) {
-					// Both methods failed
-				}
-			}
 			throw new Error(`Failed to write provider profiles to secrets: ${error}`)
 		}
 	}
