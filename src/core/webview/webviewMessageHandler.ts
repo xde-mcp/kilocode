@@ -963,6 +963,20 @@ export const webviewMessageHandler = async (
 				Terminal.setCompressProgressBar(message.bool)
 			}
 			break
+		case "requestTerminalProfiles": // kilocode_change
+			// Get terminal profiles based on platform
+			const terminalProfiles = Terminal.getAvailableProfiles()
+			await provider.postMessageToWebview({
+				type: "terminalProfiles",
+				terminalProfiles: terminalProfiles,
+			})
+			break
+		case "selectedTerminalProfile": // kilocode_change
+			await updateGlobalState("selectedTerminalProfile", message.text)
+			await provider.postStateToWebview()
+			// The selected profile is automatically used when creating new terminals
+			// via TerminalRegistry.createTerminal() which reads from global state
+			break
 		case "mode":
 			await provider.handleModeSwitch(message.text as Mode)
 			break

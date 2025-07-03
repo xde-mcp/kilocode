@@ -22,13 +22,16 @@ export class TerminalRegistry {
 	private static nextTerminalId = 1
 	private static disposables: vscode.Disposable[] = []
 	private static isInitialized = false
+	private static context: vscode.ExtensionContext | undefined // kilocode_change
 
-	public static initialize() {
+	public static initialize(context?: vscode.ExtensionContext) {
+		// kilocode_change
 		if (this.isInitialized) {
 			throw new Error("TerminalRegistry.initialize() should only be called once")
 		}
 
 		this.isInitialized = true
+		this.context = context // kilocode_change
 
 		// TODO: This initialization code is VSCode specific, and therefore
 		// should probably live elsewhere.
@@ -131,7 +134,19 @@ export class TerminalRegistry {
 		let newTerminal
 
 		if (provider === "vscode") {
-			newTerminal = new Terminal(this.nextTerminalId++, undefined, cwd)
+			// kilocode_change start
+			// Get the selected terminal profile from global state
+			const selectedProfile = this.context?.globalState.get<string>("selectedTerminalProfile")
+
+			if (selectedProfile) {
+				// Create terminal with the selected profile
+				const terminalInstance = Terminal.createWithProfile(selectedProfile, cwd)
+				newTerminal = new Terminal(this.nextTerminalId++, terminalInstance, cwd)
+			} else {
+				// Fall back to default terminal creation
+				newTerminal = new Terminal(this.nextTerminalId++, undefined, cwd)
+			}
+			// kilocode_change end
 		} else {
 			newTerminal = new ExecaTerminal(this.nextTerminalId++, cwd)
 		}

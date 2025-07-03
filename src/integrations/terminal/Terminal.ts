@@ -193,4 +193,106 @@ export class Terminal extends BaseTerminal {
 
 		return env
 	}
+
+	/**
+	 * Gets available terminal profiles based on the platform
+	 * @returns Array of terminal profiles
+	 */
+	public static getAvailableProfiles(): Array<{ id: string; name: string; description?: string }> {
+		// kilocode_change start
+		const platform = process.platform
+
+		if (platform === "win32") {
+			return [
+				{ id: "powershell", name: "PowerShell", description: "Windows PowerShell" },
+				{ id: "cmd", name: "Command Prompt", description: "cmd.exe" },
+				{ id: "git-bash", name: "Git Bash", description: "Git Bash terminal" },
+				{ id: "wsl", name: "WSL", description: "Windows Subsystem for Linux" },
+			]
+		} else if (platform === "darwin") {
+			return [
+				{ id: "zsh", name: "Zsh", description: "Z shell (default on macOS)" },
+				{ id: "bash", name: "Bash", description: "Bourne Again Shell" },
+				{ id: "fish", name: "Fish", description: "Friendly Interactive Shell" },
+			]
+		} else {
+			// Linux and other platforms
+			return [
+				{ id: "bash", name: "Bash", description: "Bourne Again Shell" },
+				{ id: "zsh", name: "Zsh", description: "Z shell" },
+				{ id: "fish", name: "Fish", description: "Friendly Interactive Shell" },
+				{ id: "sh", name: "Sh", description: "Bourne Shell" },
+			]
+		}
+	}
+
+	/**
+	 * Creates a terminal with a specific profile
+	 * @param profile The terminal profile ID
+	 * @param cwd The working directory
+	 * @returns The created terminal
+	 */
+	public static createWithProfile(profile: string, cwd: string): vscode.Terminal {
+		const env = Terminal.getEnv()
+		const iconPath = new vscode.ThemeIcon("rocket")
+		const name = "Kilo Code"
+
+		// Get the shell path based on the profile
+		let shellPath: string | undefined
+		let shellArgs: string[] | undefined
+
+		if (process.platform === "win32") {
+			switch (profile) {
+				case "powershell":
+					shellPath = "powershell.exe"
+					break
+				case "cmd":
+					shellPath = "cmd.exe"
+					break
+				case "git-bash":
+					shellPath = "C:\\Program Files\\Git\\bin\\bash.exe"
+					break
+				case "wsl":
+					shellPath = "wsl.exe"
+					break
+			}
+		} else if (process.platform === "darwin") {
+			switch (profile) {
+				case "zsh":
+					shellPath = "/bin/zsh"
+					break
+				case "bash":
+					shellPath = "/bin/bash"
+					break
+				case "fish":
+					shellPath = "/usr/local/bin/fish"
+					break
+			}
+		} else {
+			// Linux
+			switch (profile) {
+				case "bash":
+					shellPath = "/bin/bash"
+					break
+				case "zsh":
+					shellPath = "/usr/bin/zsh"
+					break
+				case "fish":
+					shellPath = "/usr/bin/fish"
+					break
+				case "sh":
+					shellPath = "/bin/sh"
+					break
+			}
+		}
+
+		return vscode.window.createTerminal({
+			cwd,
+			name,
+			iconPath,
+			env,
+			shellPath,
+			shellArgs,
+		})
+	} // kilocode_change end
 }

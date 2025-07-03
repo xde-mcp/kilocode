@@ -87,6 +87,7 @@ export const globalSettingsSchema = z.object({
 	terminalZshP10k: z.boolean().optional(),
 	terminalZdotdir: z.boolean().optional(),
 	terminalCompressProgressBar: z.boolean().optional(),
+	selectedTerminalProfile: z.string().optional(), // kilocode_change
 
 	rateLimitSeconds: z.number().optional(),
 	diffEnabled: z.boolean().optional(),

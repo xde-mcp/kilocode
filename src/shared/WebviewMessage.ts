@@ -212,6 +212,8 @@ export interface WebviewMessage {
 		| "profileThresholds"
 		| "editMessage" // kilocode_change
 		| "shareTaskSuccess"
+		| "requestTerminalProfiles" // kilocode_change
+		| "selectedTerminalProfile" // kilocode_change
 	text?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account"
 	disabled?: boolean

@@ -1421,6 +1421,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			terminalZshOhMy,
 			terminalZshP10k,
 			terminalZdotdir,
+			selectedTerminalProfile, // kilocode_change
 			fuzzyMatchThreshold,
 			// mcpEnabled,  // kilocode_change: always true
 			enableMcpServerCreation,
@@ -1550,6 +1551,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			allowVeryLargeReads: allowVeryLargeReads ?? false, // kilocode_change
 			settingsImportedAt: this.settingsImportedAt,
 			terminalCompressProgressBar: terminalCompressProgressBar ?? true,
+			selectedTerminalProfile, // kilocode_change
 			hasSystemPromptOverride,
 			historyPreviewCollapsed: historyPreviewCollapsed ?? false,
 			cloudUserInfo,
@@ -1678,6 +1680,7 @@ export class ClineProvider extends EventEmitter<ClineProviderEvents> implements 
 			terminalZshOhMy: stateValues.terminalZshOhMy ?? false,
 			terminalZshP10k: stateValues.terminalZshP10k ?? false,
 			terminalZdotdir: stateValues.terminalZdotdir ?? false,
+			selectedTerminalProfile: stateValues.selectedTerminalProfile, // kilocode_change
 			terminalCompressProgressBar: stateValues.terminalCompressProgressBar ?? true,
 			mode: stateValues.mode ?? defaultModeSlug,
 			language: stateValues.language ?? formatLanguage(vscode.env.language),

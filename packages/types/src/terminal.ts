@@ -28,3 +28,14 @@ export const commandExecutionStatusSchema = z.discriminatedUnion("status", [
 ])
 
 export type CommandExecutionStatus = z.infer<typeof commandExecutionStatusSchema>
+
+export interface TerminalProfile {
+	id: string
+	name: string
+	path?: string
+	description?: string
+}
+
+export interface AvailableTerminalProfiles {
+	profiles: TerminalProfile[]
+}

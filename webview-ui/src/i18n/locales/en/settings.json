@@ -445,6 +445,12 @@
 			"label": "Terminal Settings: Basic",
 			"description": "Basic terminal settings"
 		},
+		"defaultProfile": {
+			"label": "Default terminal profile",
+			"description": "Select the default terminal profile to use when running terminal commands. This allows you to use a specific terminal without changing your system default.",
+			"placeholder": "Select terminal profile",
+			"default": "Default terminal"
+		},
 		"advanced": {
 			"label": "Terminal Settings: Advanced",
 			"description": "The following options may require a terminal restart to apply the setting."

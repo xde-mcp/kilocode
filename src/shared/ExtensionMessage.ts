@@ -9,6 +9,7 @@ import type {
 	OrganizationAllowList,
 	CloudUserInfo,
 	ShareVisibility,
+	TerminalProfile, // kilocode_change
 } from "@roo-code/types"
 
 import { GitCommit } from "../utils/git"
@@ -110,6 +111,8 @@ export interface ExtensionMessage {
 		| "marketplaceData"
 		| "mermaidFixResponse" // kilocode_change
 		| "shareTaskSuccess"
+		| "terminalProfiles" // kilocode_change
+		| "terminalProfileUpdate" // kilocode_change
 	text?: string
 	payload?: ProfileDataResponsePayload | BalanceDataResponsePayload // kilocode_change: Add payload for profile and balance data
 	action?:
@@ -175,6 +178,8 @@ export interface ExtensionMessage {
 	marketplaceInstalledMetadata?: MarketplaceInstalledMetadata
 	fixedCode?: string | null // For mermaidFixResponse // kilocode_change
 	visibility?: ShareVisibility
+	terminalProfiles?: TerminalProfile[] // kilocode_change
+	selectedTerminalProfile?: string // kilocode_change
 }
 
 export type ExtensionState = Pick<
@@ -228,6 +233,7 @@ export type ExtensionState = Pick<
 	| "terminalZshP10k"
 	| "terminalZdotdir"
 	| "terminalCompressProgressBar"
+	| "selectedTerminalProfile" // kilocode_change
 	| "diffEnabled"
 	| "fuzzyMatchThreshold"
 	// | "experiments" // Optional in GlobalSettings, required here.

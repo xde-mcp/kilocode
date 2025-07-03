@@ -2,12 +2,13 @@ import { HTMLAttributes, useState, useCallback } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { vscode } from "@/utils/vscode"
 import { SquareTerminal } from "lucide-react"
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeCheckbox, VSCodeLink, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react" // kilocode_change
 import { Trans } from "react-i18next"
 import { buildDocLink } from "@src/utils/docLinks"
 import { useEvent, useMount } from "react-use"
 
 import { ExtensionMessage } from "@roo/ExtensionMessage"
+import { TerminalProfile } from "@roo-code/types" // kilocode_change
 
 import { cn } from "@/lib/utils"
 import { Slider } from "@/components/ui"
@@ -27,6 +28,7 @@ type TerminalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	terminalZshP10k?: boolean
 	terminalZdotdir?: boolean
 	terminalCompressProgressBar?: boolean
+	selectedTerminalProfile?: string // kilocode_change
 	setCachedStateField: SetCachedStateField<
 		| "terminalOutputLineLimit"
 		| "terminalShellIntegrationTimeout"
@@ -38,6 +40,7 @@ type TerminalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "terminalZshP10k"
 		| "terminalZdotdir"
 		| "terminalCompressProgressBar"
+		| "selectedTerminalProfile" // kilocode_change
 	>
 }
 
@@ -52,6 +55,7 @@ export const TerminalSettings = ({
 	terminalZshP10k,
 	terminalZdotdir,
 	terminalCompressProgressBar,
+	selectedTerminalProfile, // kilocode_change
 	setCachedStateField,
 	className,
 	...props
@@ -59,8 +63,14 @@ export const TerminalSettings = ({
 	const { t } = useAppTranslation()
 
 	const [inheritEnv, setInheritEnv] = useState<boolean>(true)
+	const [terminalProfiles, setTerminalProfiles] = useState<TerminalProfile[]>([]) // kilocode_change
 
-	useMount(() => vscode.postMessage({ type: "getVSCodeSetting", setting: "terminal.integrated.inheritEnv" }))
+	// kilocode_change start
+	useMount(() => {
+		vscode.postMessage({ type: "getVSCodeSetting", setting: "terminal.integrated.inheritEnv" })
+		vscode.postMessage({ type: "requestTerminalProfiles" })
+	})
+	// kilocode_change end
 
 	const onMessage = useCallback((event: MessageEvent) => {
 		const message: ExtensionMessage = event.data
@@ -75,12 +85,27 @@ export const TerminalSettings = ({
 						break
 				}
 				break
+			// kilocode_change start
+			case "terminalProfiles":
+				if (message.terminalProfiles) {
+					setTerminalProfiles(message.terminalProfiles)
+				}
+				break
+			// kilocode_change end
 			default:
 				break
 		}
 	}, [])
 
 	useEvent("message", onMessage)
+
+	// kilocode_change start
+	const handleTerminalProfileChange = (e: any) => {
+		const value = e.target.value
+		setCachedStateField("selectedTerminalProfile", value)
+		vscode.postMessage({ type: "selectedTerminalProfile", text: value })
+	}
+	// kilocode_change end
 
 	return (
 		<div className={cn("flex flex-col", className)} {...props}>
@@ -101,6 +126,25 @@ export const TerminalSettings = ({
 						</div>
 					</div>
 					<div className="flex flex-col gap-3 pl-3 border-l-2 border-vscode-button-background">
+						{/* kilocode_change start */}
+						<div>
+							<label className="block font-medium mb-1">{t("settings:terminal.profile.label")}</label>
+							<VSCodeDropdown
+								value={selectedTerminalProfile || "default"}
+								onChange={handleTerminalProfileChange}
+								data-testid="terminal-profile-dropdown">
+								{terminalProfiles.map((profile) => (
+									<VSCodeOption key={profile.id} value={profile.id}>
+										{profile.name}
+										{profile.description && ` - ${profile.description}`}
+									</VSCodeOption>
+								))}
+							</VSCodeDropdown>
+							<div className="text-vscode-descriptionForeground text-sm mt-1">
+								{t("settings:terminal.profile.description")}
+							</div>
+						</div>
+						{/* kilocode_change end */}
 						<div>
 							<label className="block font-medium mb-1">
 								{t("settings:terminal.outputLineLimit.label")}

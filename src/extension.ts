@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	initializeI18n(context.globalState.get("language") ?? "en-US") // kilocode_change
 
 	// Initialize terminal shell execution handlers.
-	TerminalRegistry.initialize()
+	TerminalRegistry.initialize(context) // kilocode_change
 
 	// Get default commands from configuration.
 	const defaultCommands = vscode.workspace.getConfiguration(Package.name).get<string[]>("allowedCommands") || []
