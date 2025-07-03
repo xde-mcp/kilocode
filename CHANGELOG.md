@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.49.4
-
-### Patch Changes
+## [v4.49.4]
 
 - [#942](https://github.com/Kilo-Org/kilocode/pull/942) [`873e6c8`](https://github.com/Kilo-Org/kilocode/commit/873e6c8f671f5505e6fca8c7ed19ac5e89c73d43) Thanks [@hassoncs](https://github.com/hassoncs)! - Fix auto-generate commit message fails when git diff too large
 
