@@ -103,7 +103,7 @@ export const TerminalSettings = ({
 	const handleTerminalProfileChange = (e: any) => {
 		const value = e.target.value
 		setCachedStateField("selectedTerminalProfile", value)
-		vscode.postMessage({ type: "selectedTerminalProfile", text: value })
+		// vscode.postMessage({ type: "selectedTerminalProfile", text: value })
 	}
 	// kilocode_change end
 
