@@ -79,6 +79,7 @@ describe("CommitMessageProvider", () => {
 		mockGitService = new GitExtensionService()
 		mockGitService.initialize = vi.fn().mockResolvedValue(true)
 		mockGitService.gatherStagedChanges = vi.fn()
+		mockGitService.gatherUnstagedChanges = vi.fn()
 		mockGitService.setCommitMessage = vi.fn()
 		mockGitService.spawnGitWithArgs = vi.fn().mockReturnValue("")
 		mockGitService.getCommitContext = vi.fn().mockReturnValue("Modified file1.ts, Added file2.ts")
@@ -108,8 +109,9 @@ describe("CommitMessageProvider", () => {
 			// Call the method
 			await commitMessageProvider.generateCommitMessage()
 
-			// Verify basic flow
-			expect(vi.mocked(mockGitService.getCommitContext)).toHaveBeenCalledWith(mockChanges)
+			// Verify basic flow - should use staged changes and not check unstaged
+			expect(vi.mocked(mockGitService.gatherUnstagedChanges)).not.toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.getCommitContext)).toHaveBeenCalledWith(mockChanges, false)
 			expect(singleCompletionHandler).toHaveBeenCalled()
 			expect(vi.mocked(mockGitService.setCommitMessage)).toHaveBeenCalled()
 		})
@@ -156,15 +158,53 @@ describe("CommitMessageProvider", () => {
 			expect(vi.mocked(mockGitService.setCommitMessage)).not.toHaveBeenCalled()
 		})
 
-		it("should show information message when staged changes array is empty", async () => {
-			// Mock empty staged changes array
+		it("should generate commit message based on unstaged changes when no staged changes exist", async () => {
+			// Mock empty staged changes array but with unstaged changes
 			vi.mocked(mockGitService.gatherStagedChanges).mockResolvedValue([])
+			const mockUnstagedChanges: GitChange[] = [
+				{ filePath: "file1.ts", status: "Modified" },
+				{ filePath: "file2.ts", status: "Added" },
+			]
+			vi.mocked(mockGitService.gatherUnstagedChanges).mockResolvedValue(mockUnstagedChanges)
+
+			// Call the method
+			await commitMessageProvider.generateCommitMessage()
+
+			// Verify that it uses unstaged changes
+			expect(vi.mocked(mockGitService.gatherUnstagedChanges)).toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.getCommitContext)).toHaveBeenCalledWith(mockUnstagedChanges, true)
+			expect(singleCompletionHandler).toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.setCommitMessage)).toHaveBeenCalled()
+			expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
+				"Generating commit message based on your unstaged changes",
+			)
+		})
+
+		it("should show information message when both staged and unstaged changes are empty", async () => {
+			// Mock empty staged and unstaged changes arrays
+			vi.mocked(mockGitService.gatherStagedChanges).mockResolvedValue([])
+			vi.mocked(mockGitService.gatherUnstagedChanges).mockResolvedValue([])
 
 			// Call the method
 			await commitMessageProvider.generateCommitMessage()
 
 			// Verify that it shows the appropriate message and doesn't proceed
-			expect(vscode.window.showInformationMessage).toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.gatherUnstagedChanges)).toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.getCommitContext)).not.toHaveBeenCalled()
+			expect(singleCompletionHandler).not.toHaveBeenCalled()
+			expect(vi.mocked(mockGitService.setCommitMessage)).not.toHaveBeenCalled()
+		})
+
+		it("should show information message when both staged and unstaged changes are null", async () => {
+			// Mock null staged and unstaged changes
+			vi.mocked(mockGitService.gatherStagedChanges).mockResolvedValue([])
+			vi.mocked(mockGitService.gatherUnstagedChanges).mockResolvedValue(null)
+
+			// Call the method
+			await commitMessageProvider.generateCommitMessage()
+
+			// Verify that it shows the appropriate message and doesn't proceed
+			expect(vi.mocked(mockGitService.gatherUnstagedChanges)).toHaveBeenCalled()
 			expect(vi.mocked(mockGitService.getCommitContext)).not.toHaveBeenCalled()
 			expect(singleCompletionHandler).not.toHaveBeenCalled()
 			expect(vi.mocked(mockGitService.setCommitMessage)).not.toHaveBeenCalled()

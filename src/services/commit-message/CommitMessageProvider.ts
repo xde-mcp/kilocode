@@ -53,7 +53,7 @@ export class CommitMessageProvider {
 	}
 
 	/**
-	 * Generates an AI-powered commit message based on staged changes.
+	 * Generates an AI-powered commit message based on staged changes, or unstaged changes if no staged changes exist.
 	 */
 	public async generateCommitMessage(): Promise<void> {
 		await vscode.window.withProgress(
@@ -66,17 +66,28 @@ export class CommitMessageProvider {
 				try {
 					progress.report({ increment: 25, message: t("kilocode:commitMessage.analyzingChanges") })
 
-					const changes = await this.gitService.gatherStagedChanges()
+					// First, try to get staged changes
+					let changes = await this.gitService.gatherStagedChanges()
+					let isUnstaged = false
+
 					if (changes === null) {
 						vscode.window.showInformationMessage(t("kilocode:commitMessage.noStagedChangesRepo"))
 						return
 					}
+
+					// If no staged changes, try unstaged changes
 					if (changes.length === 0) {
-						vscode.window.showInformationMessage(t("kilocode:commitMessage.noStagedChanges"))
-						return
+						changes = await this.gitService.gatherUnstagedChanges()
+						if (changes === null || changes.length === 0) {
+							vscode.window.showInformationMessage(t("kilocode:commitMessage.noStagedChanges"))
+							return
+						}
+						isUnstaged = true
+						// Show message that we're using unstaged changes
+						vscode.window.showInformationMessage("Generating commit message based on your unstaged changes")
 					}
 
-					const gitContextString = await this.gitService.getCommitContext(changes)
+					const gitContextString = await this.gitService.getCommitContext(changes, isUnstaged)
 					progress.report({ increment: 50, message: t("kilocode:commitMessage.generating") })
 
 					const generatedMessage = await this.callAIForCommitMessage(gitContextString)
