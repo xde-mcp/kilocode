@@ -24,6 +24,12 @@ eval $(dbus-launch --sh-syntax)
 export DBUS_SESSION_BUS_ADDRESS
 echo "D-Bus session started: $DBUS_SESSION_BUS_ADDRESS"
 
+# Ensure test results and report directories have correct permissions
+echo "=== Setting up output directories ==="
+mkdir -p apps/playwright-e2e/test-results
+mkdir -p apps/playwright-e2e/playwright-report
+echo "Output directories created with correct ownership"
+
 # Install pnpm deps
 echo "Starting pnpm install..."
 pnpm install --frozen-lockfile

@@ -103,21 +103,37 @@ jobs:
                       const reportDir = 'apps/playwright-e2e/playwright-report';
 
                       if (fs.existsSync(testResultsDir) && fs.readdirSync(testResultsDir).length > 0) {
-                          // Check for test failures
+                          // Check for test failures with better error handling
                           let hasFailures = false;
                           try {
-                              const files = fs.readdirSync(testResultsDir, { recursive: true });
-                              for (const file of files) {
-                                  if (file.endsWith('.json')) {
-                                      const content = fs.readFileSync(path.join(testResultsDir, file), 'utf8');
-                                      if (content.includes('"status":"failed"')) {
-                                          hasFailures = true;
-                                          break;
+                              function scanDirectory(dir) {
+                                  const items = fs.readdirSync(dir, { withFileTypes: true });
+                                  for (const item of items) {
+                                      const fullPath = path.join(dir, item.name);
+                                      if (item.isDirectory()) {
+                                          try {
+                                              scanDirectory(fullPath);
+                                          } catch (e) {
+                                              // Skip directories we can't access
+                                              console.log(`Skipping directory ${fullPath}: ${e.message}`);
+                                          }
+                                      } else if (item.isFile() && item.name.endsWith('.json')) {
+                                          try {
+                                              const content = fs.readFileSync(fullPath, 'utf8');
+                                              if (content.includes('"status":"failed"')) {
+                                                  hasFailures = true;
+                                                  return;
+                                              }
+                                          } catch (e) {
+                                              // Skip files we can't read
+                                              console.log(`Skipping file ${fullPath}: ${e.message}`);
+                                          }
                                       }
                                   }
                               }
+                              scanDirectory(testResultsDir);
                           } catch (e) {
-                              console.log('Error checking test results:', e);
+                              console.log('Error checking test results:', e.message);
                           }
                           
                           if (hasFailures) {

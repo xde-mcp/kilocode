@@ -81,10 +81,19 @@ RUN echo "=== Installing pnpm 10.8.1 ===" && \
     npm install -g pnpm@10.8.1 && \
     echo "pnpm $(pnpm --version) installed successfully"
 
+# Create a user that matches GitHub Actions runner (UID 1001)
+RUN echo "=== Creating runner user ===" && \
+    groupadd -g 1001 runner && \
+    useradd -u 1001 -g 1001 -m -s /bin/bash runner && \
+    echo "User runner created with UID/GID 1001"
+
 WORKDIR /workspace
 
 # Copy the entire codebase from build context root
 COPY . .
+
+# Set proper ownership for the workspace
+RUN chown -R runner:runner /workspace
 
 # Set environment variables for Electron/VSCode
 ENV NODE_VERSION=20.18.1
@@ -93,12 +102,15 @@ ENV DISPLAY=:99
 ENV DOCKER_CONTAINER=true
 ENV ELECTRON_DISABLE_SANDBOX=false
 ENV ELECTRON_ENABLE_LOGGING=true
-ENV VSCODE_CLI_DATA_DIR=/home/vscode/.vscode-cli
-ENV VSCODE_EXTENSIONS=/home/vscode/.vscode/extensions
+ENV VSCODE_CLI_DATA_DIR=/home/runner/.vscode-cli
+ENV VSCODE_EXTENSIONS=/home/runner/.vscode/extensions
 
 # Copy and set up entrypoint script
 COPY apps/playwright-e2e/docker-entrypoint.sh /usr/local/bin/run-tests.sh
 RUN chmod +x /usr/local/bin/run-tests.sh
+
+# Switch to the runner user
+USER runner
 
 # Use dumb-init as entrypoint for proper signal handling
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
