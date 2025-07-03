@@ -64,12 +64,11 @@ const LOG_CONFIG = {
 		// Shorten long file paths
 		{
 			pattern:
-				/vscode-file:\/\/vscode-app\/workspace\/apps\/playwright-e2e\/\.vscode-test\/[^\/]+\/resources\/app\/out\/vs\/workbench\/[^)]+\)/g,
+				/vscode-file:\/\/vscode-app\/[^\/]*\/apps\/playwright-e2e\/\.vscode-test\/[^\/]+\/resources\/app\/out\/vs\/workbench\/[^)]+\)/g,
 			replacement: "(vscode-workbench)",
 		},
 		{
-			pattern:
-				/\/Users\/[^\/]+\/Workspaces\/[^\/]+\/apps\/playwright-e2e\/\.vscode-test\/[^\/]+\/[^\/]+\/[^\/]+/g,
+			pattern: /[^\/]*\/apps\/playwright-e2e\/\.vscode-test\/[^\/]+\/[^\/]+\/[^\/]+/g,
 			replacement: "/.../vscode-test",
 		},
 		// Clean up source references
@@ -151,73 +150,6 @@ export const cleanLogMessage = (message: string): string | null => {
 }
 
 /**
- * Determine if a log message is test-relevant
- */
-export const isTestRelevant = (message: string, type: string): boolean => {
-	// Always show errors and warnings
-	if (type === "ERROR" || type === "WARN") {
-		return true
-	}
-
-	// In verbose mode, show everything that passes filtering
-	if (LOG_CONFIG.verbose) {
-		return true
-	}
-
-	// Show most messages by default, only filter out very specific noise
-	const noisePatterns = [
-		// Very specific noise patterns to exclude
-		/\[MDM\] No MDM configuration found/,
-		/Settings Sync: Account status changed/,
-		/An iframe which has both allow-scripts and allow-same-origin/,
-		/No service worker controller found/,
-		/\[vite\] connecting\.\.\./,
-		/\[vite\] connected\./,
-		/VizNullHypothesis is disabled/,
-	]
-
-	// Check if message matches noise patterns
-	for (const pattern of noisePatterns) {
-		if (pattern.test(message)) {
-			return false
-		}
-	}
-
-	// Show everything else that passes basic filtering
-	return true
-}
-
-export const setupVerboseLogging = (electronApp): void => {
-	setupConsoleLogging(workbox, "WORKBOX")
-
-	// Set up logging for any new windows/webviews that get created
-	electronApp.on("window", (newWindow) => {
-		console.log(`🪟 [VSCode] New window created: ${newWindow.url()}`)
-		setupConsoleLogging(newWindow, "WEBVIEW")
-	})
-
-	// Set up console logging for the main Electron process
-	electronApp.process().stdout?.on("data", (data) => {
-		const output = data.toString().trim()
-		const cleaned = cleanLogMessage(output)
-		if (cleaned && isTestRelevant(cleaned, "INFO")) {
-			console.log(`📋 [VSCode] ${cleaned}`)
-		}
-	})
-
-	electronApp.process().stderr?.on("data", (data) => {
-		const output = data.toString().trim()
-		const cleaned = cleanLogMessage(output)
-		if (cleaned) {
-			// Determine severity based on content
-			const isError = output.toLowerCase().includes("error") || output.toLowerCase().includes("failed")
-			const icon = isError ? "❌" : "⚠️"
-			console.log(`${icon} [VSCode] ${cleaned}`)
-		}
-	})
-}
-
-/**
  * Set up comprehensive console logging for a page
  * Only logs when PLAYWRIGHT_VERBOSE_LOGS environment variable is set to 'true'
  */
@@ -231,7 +163,7 @@ export const setupConsoleLogging = (page: Page, prefix: string): void => {
 	page.on("console", (msg) => {
 		const text = msg.text()
 		const cleaned = cleanLogMessage(text)
-		if (cleaned && isTestRelevant(cleaned, msg.type().toUpperCase())) {
+		if (cleaned) {
 			const icon = getLogIcon(msg.type(), text)
 			console.log(`${icon} [${prefix}] ${cleaned}`)
 		}
@@ -252,7 +184,7 @@ export const setupConsoleLogging = (page: Page, prefix: string): void => {
 		if (failure) {
 			const message = `${request.method()} ${url} - ${failure.errorText}`
 			const cleaned = cleanLogMessage(message)
-			if (cleaned && isTestRelevant(cleaned, "ERROR")) {
+			if (cleaned) {
 				console.log(`🚫 [${prefix} REQUEST FAILED] ${cleaned}`)
 			}
 		}
