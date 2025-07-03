@@ -1,13 +1,7 @@
 const fs = require("fs")
 const path = require("path")
 
-/**
- * Posts or updates Playwright E2E test results as a PR comment
- * @param {Object} github - GitHub API client
- * @param {Object} context - GitHub Actions context
- */
 async function commentPlaywrightResults(github, context) {
-	// Unique identifier for our comment
 	const commentIdentifier = "<!-- playwright-e2e-results -->"
 	let comment = `${commentIdentifier}\n## 🎭 Playwright E2E Test Results\n\n`
 
@@ -15,7 +9,6 @@ async function commentPlaywrightResults(github, context) {
 	const reportDir = "apps/playwright-e2e/playwright-report"
 
 	if (fs.existsSync(testResultsDir) && fs.readdirSync(testResultsDir).length > 0) {
-		// Check for test failures with better error handling
 		let hasFailures = false
 		try {
 			function scanDirectory(dir) {
@@ -26,7 +19,6 @@ async function commentPlaywrightResults(github, context) {
 						try {
 							scanDirectory(fullPath)
 						} catch (e) {
-							// Skip directories we can't access
 							console.log(`Skipping directory ${fullPath}: ${e.message}`)
 						}
 					} else if (item.isFile() && item.name.endsWith(".json")) {
@@ -37,7 +29,6 @@ async function commentPlaywrightResults(github, context) {
 								return
 							}
 						} catch (e) {
-							// Skip files we can't read
 							console.log(`Skipping file ${fullPath}: ${e.message}`)
 						}
 					}
@@ -64,7 +55,6 @@ async function commentPlaywrightResults(github, context) {
 	comment += "\n---\n"
 	comment += `*Workflow: [${context.workflow}](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}) • Updated: ${new Date().toISOString()}*`
 
-	// Find existing comment with our identifier
 	const { data: comments } = await github.rest.issues.listComments({
 		issue_number: context.issue.number,
 		owner: context.repo.owner,
@@ -74,7 +64,6 @@ async function commentPlaywrightResults(github, context) {
 	const existingComment = comments.find((comment) => comment.body.includes(commentIdentifier))
 
 	if (existingComment) {
-		// Update existing comment
 		await github.rest.issues.updateComment({
 			comment_id: existingComment.id,
 			owner: context.repo.owner,
@@ -83,7 +72,6 @@ async function commentPlaywrightResults(github, context) {
 		})
 		console.log("Updated existing Playwright E2E comment")
 	} else {
-		// Create new comment
 		await github.rest.issues.createComment({
 			issue_number: context.issue.number,
 			owner: context.repo.owner,

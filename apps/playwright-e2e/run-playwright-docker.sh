@@ -26,6 +26,11 @@ for arg in "$@"; do
     esac
 done
 
+# Ensure WORKSPACE_ROOT is set
+if [ -z "$WORKSPACE_ROOT" ]; then
+    WORKSPACE_ROOT="$(cd ../.. && pwd)"
+fi
+
 # Check if OPENROUTER_API_KEY is set
 if [ -z "$OPENROUTER_API_KEY" ]; then
     print error "OPENROUTER_API_KEY environment variable is not set"
@@ -39,7 +44,6 @@ IMAGE_EXISTS=$(docker images -q playwright-ci 2>/dev/null)
 if [ "$REBUILD_IMAGE" = true ] || [ -z "$IMAGE_EXISTS" ]; then
     print status "Building Playwright CI simulation Docker image..."
     # Get the workspace root directory (two levels up from apps/playwright-e2e)
-    WORKSPACE_ROOT="$(cd ../.. && pwd)"
     docker build -f "${WORKSPACE_ROOT}/apps/playwright-e2e/Dockerfile.playwright-ci" -t playwright-ci "${WORKSPACE_ROOT}"
 else
     print success "Using existing Docker image (playwright-ci)"
@@ -49,20 +53,17 @@ else
 fi
 
 
-# Ensure WORKSPACE_ROOT is set (if not already set above)
-if [ -z "$WORKSPACE_ROOT" ]; then
-    WORKSPACE_ROOT="$(cd ../.. && pwd)"
-fi
+
 mkdir -p "${WORKSPACE_ROOT}/apps/playwright-e2e/test-results"
+mkdir -p "${WORKSPACE_ROOT}/apps/playwright-e2e/playwright-report"
 
 print status "Running Playwright tests in Docker with isolated node_modules..."
-echo "   • Using named volumes for node_modules and pnpm store isolation"
-echo "   • Host and Docker dependencies won't conflict"
 
 docker run --rm \
     -v "${WORKSPACE_ROOT}:/workspace" \
     -v "${WORKSPACE_ROOT}/apps/playwright-e2e/test-results:/workspace/apps/playwright-e2e/test-results" \
-    -v "playwright-node-modules:/workspace/node_modules" \
+    -v "${WORKSPACE_ROOT}/apps/playwright-e2e/playwright-report:/workspace/apps/playwright-e2e/playwright-report" \
     -v "playwright-pnpm-store:/workspace/.pnpm-store" \
+    -v "playwright-node-modules:/workspace/node_modules" \
     -e "OPENROUTER_API_KEY" \
     playwright-ci
