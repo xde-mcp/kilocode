@@ -1,5 +1,6 @@
 // npx vitest services/commit-message/__tests__/GitExtensionService.spec.ts
 import { spawnSync } from "child_process"
+import * as path from "path"
 import type { Mock } from "vitest"
 import { GitExtensionService } from "../GitExtensionService"
 
@@ -143,9 +144,9 @@ describe("GitExtensionService", () => {
 			expect(mockSpawnSync).toHaveBeenCalledWith("git", ["diff", "--name-status"], expect.any(Object))
 
 			expect(result).toEqual([
-				{ filePath: "/test/workspace/file1.ts", status: "Modified" },
-				{ filePath: "/test/workspace/file2.ts", status: "Added" },
-				{ filePath: "/test/workspace/file3.ts", status: "Deleted" },
+				{ filePath: path.join("/test/workspace/file1.ts"), status: "Modified" },
+				{ filePath: path.join("/test/workspace/file2.ts"), status: "Added" },
+				{ filePath: path.join("/test/workspace/file3.ts"), status: "Deleted" },
 			])
 		})
 
@@ -158,9 +159,9 @@ describe("GitExtensionService", () => {
 			expect(mockSpawnSync).toHaveBeenCalledWith("git", ["diff", "--name-status", "--cached"], expect.any(Object))
 
 			expect(result).toEqual([
-				{ filePath: "/test/workspace/file1.ts", status: "Modified" },
-				{ filePath: "/test/workspace/file2.ts", status: "Added" },
-				{ filePath: "/test/workspace/file3.ts", status: "Deleted" },
+				{ filePath: path.join("/test/workspace/file1.ts"), status: "Modified" },
+				{ filePath: path.join("/test/workspace/file2.ts"), status: "Added" },
+				{ filePath: path.join("/test/workspace/file3.ts"), status: "Deleted" },
 			])
 		})
 
