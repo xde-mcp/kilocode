@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.50.0
-
-### Minor Changes
+## [v4.50.0]
 
 - [#1111](https://github.com/Kilo-Org/kilocode/pull/1111) [`fe40949`](https://github.com/Kilo-Org/kilocode/commit/fe4094938ffc14fdbc19fde874a45d80f0431c6c) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Make MCP server toggles easier accessible with button in the top bar
 
