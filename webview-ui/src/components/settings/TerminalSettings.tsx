@@ -103,7 +103,6 @@ export const TerminalSettings = ({
 	const handleTerminalProfileChange = (e: any) => {
 		const value = e.target.value
 		setCachedStateField("selectedTerminalProfile", value)
-		// vscode.postMessage({ type: "selectedTerminalProfile", text: value })
 	}
 	// kilocode_change end
 
@@ -130,18 +129,33 @@ export const TerminalSettings = ({
 						<div>
 							<label className="block font-medium mb-1">{t("settings:terminal.profile.label")}</label>
 							<VSCodeDropdown
-								value={selectedTerminalProfile || "default"}
+								value={selectedTerminalProfile || ""}
 								onChange={handleTerminalProfileChange}
 								data-testid="terminal-profile-dropdown">
-								{terminalProfiles.map((profile) => (
-									<VSCodeOption key={profile.id} value={profile.id}>
-										{profile.name}
-										{profile.description && ` - ${profile.description}`}
-									</VSCodeOption>
-								))}
+								{terminalProfiles.length === 0 ? (
+									<VSCodeOption value="">Loading profiles...</VSCodeOption>
+								) : (
+									terminalProfiles.map((profile) => {
+										console.log(
+											"[TerminalSettings] Rendering option - id:",
+											profile.id,
+											"matches selected:",
+											profile.id === selectedTerminalProfile,
+										) // kilocode_change
+										return (
+											<VSCodeOption key={profile.id} value={profile.id}>
+												{profile.name}
+												{profile.description && ` - ${profile.description}`}
+											</VSCodeOption>
+										)
+									})
+								)}
 							</VSCodeDropdown>
 							<div className="text-vscode-descriptionForeground text-sm mt-1">
 								{t("settings:terminal.profile.description")}
+								{selectedTerminalProfile && (
+									<div className="mt-1 text-xs">Current value: {selectedTerminalProfile}</div>
+								)}
 							</div>
 						</div>
 						{/* kilocode_change end */}
