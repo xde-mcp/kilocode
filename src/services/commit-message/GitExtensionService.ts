@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import * as vscode from "vscode"
 import * as path from "path"
 import { spawnSync } from "child_process"

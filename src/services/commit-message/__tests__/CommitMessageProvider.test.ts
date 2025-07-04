@@ -1,7 +1,7 @@
+// kilocode_change - new file
 import * as vscode from "vscode"
 import { CommitMessageProvider } from "../CommitMessageProvider"
 import { GitExtensionService, GitChange } from "../GitExtensionService"
-import { ContextProxy } from "../../../core/config/ContextProxy"
 import { singleCompletionHandler } from "../../../utils/single-completion-handler"
 import type { Mock } from "vitest"
 

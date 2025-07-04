@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import * as vscode from "vscode"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -70,15 +71,10 @@ export class CommitMessageProvider {
 					let changes = await this.gitService.gatherChanges({ staged: true })
 					let isUnstaged = false
 
-					if (changes === null) {
-						vscode.window.showInformationMessage(t("kilocode:commitMessage.noStagedChangesRepo"))
-						return
-					}
-
-					// If no staged changes, try unstaged changes
-					if (changes.length === 0) {
+					// If no staged changes (null or empty array), try unstaged changes
+					if (!changes || changes.length === 0) {
 						changes = await this.gitService.gatherChanges({ staged: false })
-						if (changes === null || changes.length === 0) {
+						if (!changes || changes.length === 0) {
 							vscode.window.showInformationMessage(t("kilocode:commitMessage.noStagedChanges"))
 							return
 						}
