@@ -28,6 +28,7 @@ import { buildDocLink } from "@src/utils/docLinks"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
+import { useQueuedMessageAutoSubmit } from "./hooks/useQueuedMessageAutoSubmit"
 import { StandardTooltip } from "@src/components/ui"
 
 import { useTaskSearch } from "../history/useTaskSearch"
@@ -133,6 +134,38 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const textAreaRef = useRef<HTMLTextAreaElement>(null)
 	const [sendingDisabled, setSendingDisabled] = useState(false)
 	const [selectedImages, setSelectedImages] = useState<string[]>([])
+
+	// kilocode_change start: Add queued messages state management
+	const [queuedMessage, setQueuedMessage] = useState<string | null>(null)
+	const [queuedImages, setQueuedImages] = useState<string[]>([])
+	const hasQueuedMessage = useMemo(() => queuedMessage !== null && queuedMessage.trim() !== "", [queuedMessage])
+
+	const clearQueuedMessage = useCallback(() => {
+		console.log("🔄 Queue cleared")
+		setQueuedMessage(null)
+		setQueuedImages([])
+	}, [])
+
+	const storeMessageInQueue = useCallback(
+		(text: string, images: string[]) => {
+			if (hasQueuedMessage) {
+				console.log("🔄 Queue replacement: Replacing existing queued message with new content")
+				console.log(
+					`🔄 Previous queued: "${queuedMessage?.substring(0, 50)}${(queuedMessage?.length || 0) > 50 ? "..." : ""}"`,
+				)
+				console.log(`🔄 New queued: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}"`)
+				console.log(`🔄 Images replaced: ${queuedImages.length} → ${images.length}`)
+			} else {
+				console.log("🔄 Queue created - message stored for auto-submit")
+				console.log(`🔄 Queued content: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}"`)
+				console.log(`🔄 Queued images: ${images.length}`)
+			}
+			setQueuedMessage(text)
+			setQueuedImages(images)
+		},
+		[hasQueuedMessage, queuedMessage, queuedImages],
+	)
+	// kilocode_change end: Add queued messages state management
 
 	// we need to hold on to the ask because useEffect > lastMessage will always let us know when an ask comes in and handle it, but by the time handleMessage is called, the last message might not be the ask anymore (it could be a say that followed)
 	const [clineAsk, setClineAsk] = useState<ClineAsk | undefined>(undefined)
@@ -509,17 +542,44 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		setSelectedImages([])
 		setClineAsk(undefined)
 		setEnableButtons(false)
+
+		// kilocode_change start: Clear queued message on chat reset
+		if (hasQueuedMessage) {
+			console.log("🔄 Queue auto-cleared - new task/conversation started")
+			clearQueuedMessage()
+		}
+		// kilocode_change end: Clear queued message on chat reset
+
 		// Do not reset mode here as it should persist.
 		// setPrimaryButtonText(undefined)
 		// setSecondaryButtonText(undefined)
 		disableAutoScrollRef.current = false
-	}, [])
+	}, [hasQueuedMessage, clearQueuedMessage])
 
 	const handleSendMessage = useCallback(
 		(text: string, images: string[]) => {
 			text = text.trim()
 
 			if (text || images.length > 0) {
+				// kilocode_change start: Enhanced queued messages routing logic with race condition protection
+				if (sendingDisabled) {
+					console.log("📥 Message routing: Agent busy - storing in queue")
+					storeMessageInQueue(text, images)
+					// Clear input immediately after queuing to prevent confusion
+					setInputValue("")
+					setSelectedImages([])
+					return
+				} else {
+					console.log("📥 Message routing: Agent idle - sending immediately")
+					// If we have a queued message and user is sending manually, clear the queue
+					// to prevent auto-submit race condition
+					if (hasQueuedMessage) {
+						console.log("🔄 Queue cleared - user sent new message manually")
+						clearQueuedMessage()
+					}
+				}
+				// kilocode_change end: Enhanced queued messages routing logic with race condition protection
+
 				if (messagesRef.current.length === 0) {
 					vscode.postMessage({ type: "newTask", text, images })
 				} else if (clineAskRef.current) {
@@ -557,8 +617,33 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				handleChatReset()
 			}
 		},
-		[handleChatReset], // messagesRef and clineAskRef are stable
+		[
+			handleChatReset,
+			sendingDisabled,
+			storeMessageInQueue,
+			hasQueuedMessage,
+			clearQueuedMessage,
+			setInputValue,
+			setSelectedImages,
+		], // messagesRef and clineAskRef are stable
 	)
+
+	// kilocode_change start: Add auto-submit logic for queued messages with race condition prevention
+	useQueuedMessageAutoSubmit({
+		sendingDisabled,
+		hasQueuedMessage,
+		queuedMessage,
+		queuedImages,
+		onAutoSubmit: useCallback(
+			(message: string, images: string[]) => {
+				handleSendMessage(message, images)
+			},
+			[handleSendMessage],
+		),
+		clearQueuedMessage,
+		inputValue, // Add input value for race condition prevention
+	})
+	// kilocode_change end: Add auto-submit logic for queued messages with race condition prevention
 
 	const handleSetChatBoxMessage = useCallback(
 		(text: string, images: string[]) => {
@@ -1652,6 +1737,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				mode={mode}
 				setMode={setMode}
 				modeShortcutText={modeShortcutText}
+				hasQueuedMessage={hasQueuedMessage}
 			/>
 			<BottomControls />
 

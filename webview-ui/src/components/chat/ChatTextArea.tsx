@@ -61,6 +61,9 @@ interface ChatTextAreaProps {
 	mode: Mode
 	setMode: (value: Mode) => void
 	modeShortcutText: string
+	// kilocode_change start: Add queued message indicator
+	hasQueuedMessage?: boolean
+	// kilocode_change end: Add queued message indicator
 }
 
 const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
@@ -80,6 +83,9 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			mode,
 			setMode,
 			modeShortcutText,
+			// kilocode_change start: Add queued message indicator
+			hasQueuedMessage = false,
+			// kilocode_change end: Add queued message indicator
 		},
 		ref,
 	) => {
@@ -546,11 +552,10 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				if (event.key === "Enter" && !event.shiftKey && !isComposing) {
 					event.preventDefault()
 
-					if (!sendingDisabled) {
-						// Reset history navigation state when sending
-						resetHistoryNavigation()
-						onSend()
-					}
+					// Always call onSend - let ChatView decide whether to queue or send immediately
+					// Reset history navigation state when sending
+					resetHistoryNavigation()
+					onSend()
 				}
 
 				if (event.key === "Backspace" && !isComposing) {
@@ -599,7 +604,6 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			},
 			[
 				showSlashCommandsMenu, // kilocode_change
-				sendingDisabled,
 				showContextMenu,
 				selectedSlashCommandsIndex,
 				slashCommandsQuery,
@@ -1046,6 +1050,32 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 								setIsDraggingOver(false)
 							}
 						}}>
+						{/* kilocode_change start: Add queued message indicator */}
+						{hasQueuedMessage && (
+							<div
+								data-testid="queued-indicator"
+								className={cn(
+									"absolute",
+									"top-1",
+									"right-1",
+									"z-[1001]",
+									"px-2",
+									"py-1",
+									"text-xs",
+									"font-medium",
+									"bg-vscode-statusBarItem-warningBackground",
+									"text-vscode-statusBarItem-warningForeground",
+									"rounded",
+									"border",
+									"border-vscode-statusBarItem-warningBorder",
+									"shadow-sm",
+									"pointer-events-none",
+									"select-none",
+								)}>
+								queued
+							</div>
+						)}
+						{/* kilocode_change end: Add queued message indicator */}
 						{/* kilocode_change start: pull slash commands from Cline */}
 						{showSlashCommandsMenu && (
 							<div ref={slashCommandsMenuContainerRef}>
