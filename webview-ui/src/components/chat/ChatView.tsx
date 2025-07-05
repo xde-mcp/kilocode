@@ -141,30 +141,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const hasQueuedMessage = useMemo(() => queuedMessage !== null && queuedMessage.trim() !== "", [queuedMessage])
 
 	const clearQueuedMessage = useCallback(() => {
-		console.log("🔄 Queue cleared")
 		setQueuedMessage(null)
 		setQueuedImages([])
 	}, [])
 
-	const storeMessageInQueue = useCallback(
-		(text: string, images: string[]) => {
-			if (hasQueuedMessage) {
-				console.log("🔄 Queue replacement: Replacing existing queued message with new content")
-				console.log(
-					`🔄 Previous queued: "${queuedMessage?.substring(0, 50)}${(queuedMessage?.length || 0) > 50 ? "..." : ""}"`,
-				)
-				console.log(`🔄 New queued: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}"`)
-				console.log(`🔄 Images replaced: ${queuedImages.length} → ${images.length}`)
-			} else {
-				console.log("🔄 Queue created - message stored for auto-submit")
-				console.log(`🔄 Queued content: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}"`)
-				console.log(`🔄 Queued images: ${images.length}`)
-			}
-			setQueuedMessage(text)
-			setQueuedImages(images)
-		},
-		[hasQueuedMessage, queuedMessage, queuedImages],
-	)
+	const storeMessageInQueue = useCallback((text: string, images: string[]) => {
+		setQueuedMessage(text)
+		setQueuedImages(images)
+	}, [])
 	// kilocode_change end: Add queued messages state management
 
 	// we need to hold on to the ask because useEffect > lastMessage will always let us know when an ask comes in and handle it, but by the time handleMessage is called, the last message might not be the ask anymore (it could be a say that followed)
@@ -545,7 +529,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 		// kilocode_change start: Clear queued message on chat reset
 		if (hasQueuedMessage) {
-			console.log("🔄 Queue auto-cleared - new task/conversation started")
 			clearQueuedMessage()
 		}
 		// kilocode_change end: Clear queued message on chat reset
@@ -563,18 +546,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			if (text || images.length > 0) {
 				// kilocode_change start: Enhanced queued messages routing logic with race condition protection
 				if (sendingDisabled) {
-					console.log("📥 Message routing: Agent busy - storing in queue")
 					storeMessageInQueue(text, images)
-					// Clear input immediately after queuing to prevent confusion
 					setInputValue("")
 					setSelectedImages([])
 					return
 				} else {
-					console.log("📥 Message routing: Agent idle - sending immediately")
-					// If we have a queued message and user is sending manually, clear the queue
-					// to prevent auto-submit race condition
 					if (hasQueuedMessage) {
-						console.log("🔄 Queue cleared - user sent new message manually")
 						clearQueuedMessage()
 					}
 				}
