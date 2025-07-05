@@ -130,7 +130,6 @@ export class GitExtensionService {
 		const { staged } = options
 		try {
 			const diffs: string[] = []
-			// Get files list directly without delegation
 			const args = staged ? ["diff", "--name-only", "--cached"] : ["diff", "--name-only"]
 			const files = this.spawnGitWithArgs(args)
 				.split("\n")
@@ -139,7 +138,6 @@ export class GitExtensionService {
 
 			for (const filePath of files) {
 				if (this.ignoreController.validateAccess(filePath) && !shouldExcludeLockFile(filePath)) {
-					// Get diff for file directly without delegation
 					const diffArgs = staged ? ["diff", "--cached", "--", filePath] : ["diff", "--", filePath]
 					const diff = this.spawnGitWithArgs(diffArgs).trim()
 					diffs.push(diff)
