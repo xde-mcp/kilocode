@@ -1,7 +1,6 @@
 import * as fs from "fs/promises"
 import * as path from "path"
 import getFolderSize from "get-folder-size"
-
 import {
 	type AutoPurgeSettings,
 	type TaskPurgeInfo,
@@ -13,10 +12,8 @@ import {
 	TelemetryEventName,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
-
 import { getTaskDirectoryPath } from "../../utils/storage"
 import { fileExistsAtPath } from "../../utils/fs"
-import { findLastIndex } from "../../shared/array"
 
 /**
  * Service responsible for automatically purging old tasks to manage disk usage
@@ -165,7 +162,7 @@ export class AutoPurgeService {
 			}
 
 			try {
-				const taskType = this.classifyTask(historyItem)
+				const taskType = await this.classifyTask(historyItem)
 				const ageInDays = Math.floor((now - historyItem.ts) / (1000 * 60 * 60 * 24))
 				const retentionDays = this.getRetentionDaysForTaskType(taskType, settings)
 				const shouldPurge = retentionDays !== null && ageInDays > retentionDays
@@ -201,24 +198,53 @@ export class AutoPurgeService {
 	/**
 	 * Classify a task based on its properties and completion status
 	 */
-	private classifyTask(historyItem: HistoryItem): TaskType {
+	private async classifyTask(historyItem: HistoryItem): Promise<TaskType> {
 		// Check if task is favorited
 		if (historyItem.isFavorited) {
 			return TaskType.FAVORITED
 		}
 
-		// For now, we'll classify based on basic heuristics
-		// In a full implementation, we might need to read the task messages
-		// to determine if it's truly completed
+		// Check for actual task completion by reading the task messages
+		// A task is considered completed if it has a completion_result message
+		const isCompleted = await this.checkTaskCompletion(historyItem.id)
 
-		// Simple heuristic: if task has significant token usage, assume it's more complete
-		const hasSignificantActivity = (historyItem.tokensOut || 0) > 100
-
-		if (hasSignificantActivity) {
+		if (isCompleted) {
 			return TaskType.COMPLETED
 		}
 
+		// Tasks with minimal activity are also incomplete
 		return TaskType.INCOMPLETE
+	}
+
+	/**
+	 * Check if a task is completed by examining its messages for completion_result
+	 */
+	private async checkTaskCompletion(taskId: string): Promise<boolean> {
+		try {
+			const taskDirectoryPath = await getTaskDirectoryPath(this.globalStoragePath, taskId)
+			const uiMessagesPath = path.join(taskDirectoryPath, "ui_messages.json")
+
+			// Check if the UI messages file exists
+			if (!(await fileExistsAtPath(uiMessagesPath))) {
+				return false
+			}
+
+			// Read and parse the UI messages
+			const messagesContent = await fs.readFile(uiMessagesPath, "utf8")
+			const messages = JSON.parse(messagesContent)
+
+			// Check if there's any completion_result message
+			// This indicates the task used attempt_completion tool
+			const hasCompletionResult =
+				Array.isArray(messages) &&
+				messages.some((message: any) => message.type === "say" && message.say === "completion_result")
+
+			return hasCompletionResult
+		} catch (error) {
+			// If we can't read the messages, assume not completed
+			console.warn(`[AutoPurgeService] Could not check completion for task ${taskId}:`, error)
+			return false
+		}
 	}
 
 	/**
@@ -295,7 +321,7 @@ export class AutoPurgeService {
 		}
 
 		for (const historyItem of taskHistory) {
-			const taskType = this.classifyTask(historyItem)
+			const taskType = await this.classifyTask(historyItem)
 			stats.tasksByType[taskType]++
 
 			if (historyItem.ts < stats.oldestTaskTimestamp) {

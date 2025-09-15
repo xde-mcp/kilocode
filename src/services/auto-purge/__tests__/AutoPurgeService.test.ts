@@ -394,7 +394,7 @@ describe("AutoPurgeService", () => {
 					ts: Date.now() - 10 * 24 * 60 * 60 * 1000, // 10 days old
 					task: "Completed task",
 					tokensIn: 100,
-					tokensOut: 500, // High token output suggests completion
+					tokensOut: 500,
 					totalCost: 0.05,
 					number: 1,
 				},
@@ -403,7 +403,7 @@ describe("AutoPurgeService", () => {
 					ts: Date.now() - 10 * 24 * 60 * 60 * 1000, // 10 days old
 					task: "Incomplete task",
 					tokensIn: 50,
-					tokensOut: 10, // Low token output suggests incomplete
+					tokensOut: 10,
 					totalCost: 0.01,
 					number: 2,
 				},
@@ -412,11 +412,40 @@ describe("AutoPurgeService", () => {
 			// Mock file operations
 			const { fileExistsAtPath } = await import("../../../utils/fs")
 			const mockFileExistsAtPath = vi.mocked(fileExistsAtPath)
-			mockFileExistsAtPath.mockResolvedValue(true)
+			mockFileExistsAtPath.mockImplementation(async (filePath: string) => {
+				// Mock task directory exists
+				if (filePath.includes("/mock/path/")) {
+					return true
+				}
+				// Mock UI messages file exists only for completed task
+				if (filePath.includes("completed-task") && filePath.includes("ui_messages.json")) {
+					return true
+				}
+				// Incomplete task has no UI messages file (or no completion_result)
+				if (filePath.includes("incomplete-task") && filePath.includes("ui_messages.json")) {
+					return false
+				}
+				return false
+			})
 
 			const { getTaskDirectoryPath } = await import("../../../utils/storage")
 			const mockGetTaskDirectoryPath = vi.mocked(getTaskDirectoryPath)
 			mockGetTaskDirectoryPath.mockImplementation(async (_, taskId) => `/mock/path/${taskId}`)
+
+			// Mock fs.readFile to return completion_result for completed task
+			vi.mocked(fs.readFile).mockImplementation(async (filePath: string | any) => {
+				if (
+					typeof filePath === "string" &&
+					filePath.includes("completed-task") &&
+					filePath.includes("ui_messages.json")
+				) {
+					return JSON.stringify([
+						{ type: "say", say: "text", text: "Working on task..." },
+						{ type: "say", say: "completion_result", text: "Task completed successfully" },
+					])
+				}
+				throw new Error("File not found")
+			})
 
 			const eligibleTasks = await autoPurgeService.getTasksEligibleForPurge(settings, taskHistory)
 
@@ -427,6 +456,91 @@ describe("AutoPurgeService", () => {
 			const incompleteTask = eligibleTasks.find((t) => t.taskId === "incomplete-task")
 			expect(incompleteTask?.taskType).toBe(TaskType.INCOMPLETE)
 			expect(incompleteTask?.shouldPurge).toBe(true) // 10 days > 7 day retention
+		})
+
+		it("should detect task completion based on completion_result messages", async () => {
+			const now = Date.now()
+			const taskHistory: HistoryItem[] = [
+				{
+					id: "truly-completed-task",
+					ts: now - 10 * 24 * 60 * 60 * 1000,
+					task: "Task with completion_result",
+					tokensIn: 50,
+					tokensOut: 50, // Low token output but has completion_result
+					totalCost: 0.01,
+					number: 1,
+				},
+				{
+					id: "high-token-incomplete-task",
+					ts: now - 10 * 24 * 60 * 60 * 1000,
+					task: "Task with high tokens but no completion",
+					tokensIn: 100,
+					tokensOut: 1000, // High token output but no completion_result
+					totalCost: 0.1,
+					number: 2,
+				},
+			]
+
+			// Mock file operations
+			const { fileExistsAtPath } = await import("../../../utils/fs")
+			const mockFileExistsAtPath = vi.mocked(fileExistsAtPath)
+			mockFileExistsAtPath.mockImplementation(async (filePath: string) => {
+				// Both task directories exist
+				if (filePath.includes("/mock/path/")) {
+					return true
+				}
+				// Only the truly completed task has UI messages
+				if (filePath.includes("truly-completed-task") && filePath.includes("ui_messages.json")) {
+					return true
+				}
+				// High token task has no UI messages file
+				if (filePath.includes("high-token-incomplete-task") && filePath.includes("ui_messages.json")) {
+					return false
+				}
+				return false
+			})
+
+			const { getTaskDirectoryPath } = await import("../../../utils/storage")
+			const mockGetTaskDirectoryPath = vi.mocked(getTaskDirectoryPath)
+			mockGetTaskDirectoryPath.mockImplementation(async (_, taskId) => `/mock/path/${taskId}`)
+
+			// Mock fs.readFile to return completion_result for the truly completed task
+			vi.mocked(fs.readFile).mockImplementation(async (filePath: string | any) => {
+				if (
+					typeof filePath === "string" &&
+					filePath.includes("truly-completed-task") &&
+					filePath.includes("ui_messages.json")
+				) {
+					return JSON.stringify([
+						{ type: "say", say: "text", text: "Working on task..." },
+						{ type: "say", say: "completion_result", text: "Task completed successfully" },
+					])
+				}
+				throw new Error("File not found")
+			})
+
+			const settings: AutoPurgeSettings = {
+				enabled: true,
+				defaultRetentionDays: 30,
+				favoritedTaskRetentionDays: null,
+				completedTaskRetentionDays: 30,
+				incompleteTaskRetentionDays: 7,
+			}
+
+			const eligibleTasks = await autoPurgeService.getTasksEligibleForPurge(settings, taskHistory)
+
+			// Only the high-token incomplete task should be eligible for purging
+			// (10 days old > 7 day retention for incomplete tasks)
+			// The truly completed task should not be eligible (10 days old < 30 day retention for completed tasks)
+			expect(eligibleTasks).toHaveLength(1)
+
+			const incompleteTask = eligibleTasks.find((t) => t.taskId === "high-token-incomplete-task")
+			expect(incompleteTask?.taskType).toBe(TaskType.INCOMPLETE)
+			expect(incompleteTask?.shouldPurge).toBe(true)
+
+			// Verify the completed task is not eligible
+			const completedTaskNotEligible = eligibleTasks.find((t) => t.taskId === "truly-completed-task")
+			expect(completedTaskNotEligible).toBeUndefined()
 		})
 	})
 
@@ -456,6 +570,36 @@ describe("AutoPurgeService", () => {
 					isFavorited: true,
 				},
 			]
+
+			// Mock file operations for completion detection
+			const { fileExistsAtPath } = await import("../../../utils/fs")
+			const mockFileExistsAtPath = vi.mocked(fileExistsAtPath)
+			mockFileExistsAtPath.mockImplementation(async (filePath: string) => {
+				// Mock UI messages file exists only for task1 (completed)
+				if (filePath.includes("task1") && filePath.includes("ui_messages.json")) {
+					return true
+				}
+				return false
+			})
+
+			const { getTaskDirectoryPath } = await import("../../../utils/storage")
+			const mockGetTaskDirectoryPath = vi.mocked(getTaskDirectoryPath)
+			mockGetTaskDirectoryPath.mockImplementation(async (_, taskId) => `/mock/path/${taskId}`)
+
+			// Mock fs.readFile to return completion_result for task1
+			vi.mocked(fs.readFile).mockImplementation(async (filePath: string | any) => {
+				if (
+					typeof filePath === "string" &&
+					filePath.includes("task1") &&
+					filePath.includes("ui_messages.json")
+				) {
+					return JSON.stringify([
+						{ type: "say", say: "text", text: "Working on task..." },
+						{ type: "say", say: "completion_result", text: "Task completed successfully" },
+					])
+				}
+				throw new Error("File not found")
+			})
 
 			const stats = await autoPurgeService.getTaskStorageStats(taskHistory)
 
