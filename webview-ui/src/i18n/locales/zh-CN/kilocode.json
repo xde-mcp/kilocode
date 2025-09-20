@@ -13,6 +13,18 @@
 		"addCredit": "添加额度",
 		"lowBalance": "你的 Kilo Code 余额不足"
 	},
+	"pagination": {
+		"previous": "上一页",
+		"next": "下一页",
+		"page": "第 {{page}} 页 / 共 {{count}} 页"
+	},
+	"invalidModel": {
+		"alphaPeriodEnded": "🎉 {{model}} 的测试期已结束！请切换到其他模型继续使用。",
+		"notAllowedForTeam": "⚠️ 您的组织不允许使用 {{model}} 模型。请切换到其他模型继续使用。",
+		"modelUnavailable": "⚠️ 模型 {{model}} 不可用。请切换到其他模型继续使用。",
+		"continueWith": "继续使用 {{model}}",
+		"continue": "继续"
+	},
 	"pricing": {
 		"costUnknown": "费用未知",
 		"costUnknownDescription": "API 提供商未提供任何费用数据或请求已取消。",
@@ -50,7 +62,8 @@
 			"logout": "退出 Kilo Code",
 			"automaticFetch": "最新模型在 Kilo Code 中自动可用。如果您不确定选择哪个模型，Kilo Code 与顶部<strong>粗体</strong>显示的推荐模型配合最佳。",
 			"providerRouting": {
-				"title": "Kilo Code - OpenRouter 提供商路由",
+				"title": "提供商路由",
+				"managedByOrganization": "提供商路由设置由您的组织管理。",
 				"description": "Kilo Code 将请求路由到您模型的最佳可用提供商。默认情况下，请求会在顶级提供商之间进行负载均衡，以最大限度地延长正常运行时间。但是，您可以选择要用于此模型的特定提供商。",
 				"sorting": {
 					"default": "默认提供商排序",
@@ -191,7 +204,6 @@
 	"ghost": {
 		"title": "Autocomplete",
 		"settings": {
-			"autoTrigger": "自动触发",
 			"triggers": "触发器",
 			"keybindingDescription": "Autocomplete 功能可以通过命令触发。你可以在<DocsLink>这里配置键盘快捷键</DocsLink>。",
 			"enableAutoTrigger": {
@@ -203,11 +215,11 @@
 				"description": "你停止输入后 Kilo Code 触发 Autocomplete 前的秒数延迟。延迟越短建议越快，但可能更消耗资源。"
 			},
 			"enableQuickInlineTaskKeybinding": {
-				"label": "快速任务",
+				"label": "快速任务 ({{keybinding}})",
 				"description": "只需要快速更改？选择一些代码（或不选！）然后按 Cmd+I。用简单的中文描述你的目标（\"用这些 props 创建 React 组件\"，\"给这个函数添加错误处理\"），在编辑器中直接获得多个即用建议。<DocsLink>查看快捷键</DocsLink>"
 			},
 			"enableSmartInlineTaskKeybinding": {
-				"label": "手动 Autocomplete",
+				"label": "手动自动完成（{{keybinding}}）",
 				"description": "需要快速修复、补全或重构？Kilo 将使用周围上下文提供即时改进，保持你的工作流。<DocsLink>查看快捷键</DocsLink>"
 			},
 			"enableCustomProvider": {
@@ -219,7 +231,8 @@
 				"label": "API 配置",
 				"current": "使用当前选择的 API 配置",
 				"description": "选择用于 Autocomplete 提示的 API 配置，或直接使用当前选择的配置"
-			}
+			},
+			"keybindingNotFound": "未找到"
 		}
 	},
 	"virtualProvider": {

@@ -94,6 +94,12 @@ export const staticAppPropertiesSchema = z.object({
 	vscodeVersion: z.string(),
 	platform: z.string(),
 	editorName: z.string(),
+	wrapped: z.boolean(), // kilocode_change
+	wrapper: z.string().nullable(), // kilocode_change
+	wrapperTitle: z.string().nullable(), // kilocode_change
+	wrapperCode: z.string().nullable(), // kilocode_change
+	wrapperVersion: z.string().nullable(), // kilocode_change
+	hostname: z.string().optional(),
 })
 
 export type StaticAppProperties = z.infer<typeof staticAppPropertiesSchema>
@@ -266,11 +272,11 @@ export interface TelemetryClient {
 
 	setProvider(provider: TelemetryPropertiesProvider): void
 	capture(options: TelemetryEvent): Promise<void>
-	updateTelemetryState(didUserOptIn: boolean): void
 	// kilocode_change start
 	captureException(error: Error, properties?: Record<string | number, unknown>): void
 	updateIdentity(kilocodeToken: string): Promise<void>
 	// kilocode_change end
+	updateTelemetryState(isOptedIn: boolean): void
 	isTelemetryEnabled(): boolean
 	shutdown(): Promise<void>
 }
