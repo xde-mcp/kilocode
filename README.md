@@ -53,7 +53,7 @@ If you want to contribute or modify the extension locally, see the [DEVELOPMENT.
 ## Contributing
 
 We welcome contributions from developers, writers, and enthusiasts!
-To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, and how to submit pull requests.
+To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, types of contribution and how to submit pull requests.
 
 ## Code of Conduct
 

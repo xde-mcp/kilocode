@@ -15,7 +15,7 @@ If you don't have time to contribute, that's fine. There are other easy ways to 
 - [Code of Conduct](#code-of-conduct)
 - [I Have a Question](#i-have-a-question)
 - [I Want To Contribute](#i-want-to-contribute)
-  - [Code Contributors](code-contributors)
+  - [Code Contributors](#code-contributors)
   - [Reporting Bugs](#reporting-bugs)
   - [Custom Modes](#custom-modes)
   - [Feature Requests](#feature-requests)
@@ -28,13 +28,13 @@ If you don't have time to contribute, that's fine. There are other easy ways to 
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the[Code of Conduct](https://github.com/Kilo-Org/kilocode/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior
+This project and everyone participating in it is governed by the [Code of Conduct](https://github.com/Kilo-Org/kilocode/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior
 to [hi@kilocode.ai](mailto:hi@kilocode.ai).
 
 
 ## I Have a Question
 
-If you need clarification after reading this document, we encourage you to join the [discord](https://kilocode.ai/discord) workspace and join channels [kilo-dev-contributors](https://discord.com/channels/1349288496988160052/1391109167275577464) and [extensions-support channel](https://discord.com/channels/1349288496988160052/1349358641295265864).
+If you need clarification after reading this document, we encourage you to join our [discord](https://kilocode.ai/discord) workspace and join channels [kilo-dev-contributors](https://discord.com/channels/1349288496988160052/1391109167275577464) and [extensions-support channel](https://discord.com/channels/1349288496988160052/1349358641295265864).
 
 
 ## I Want To Contribute
@@ -91,7 +91,7 @@ Please note that the main [documentation](https://github.com/Kilo-Org/docs) repo
 Design contributions are welcome! To ensure smooth collaboration, please use the Design Improvement Template when opening a design-related issue.
 This helps us gather the right context (such as wireframes, mockups, or visual references) and maintain a consistent design language across the project. Feedback and iterations are highly encouraged, design is always a shared process.
 
-### Publish a Blog or Case Study
+### Publish a Blog Post or Case Study
 
 We love hearing how people use or extend Kilo Code in their own projects. If you’ve written about your experience, we’d be happy to feature it!
 Our blog and case study repository has been archived, you can still access it [here](https://github.com/Kilo-Org/docs/tree/main/blog-posts) for reference. To share your work, please start a discussion in the [general](https://discord.com/channels/1349288496988160052/1349288496988160055) channel on discord,  summarizing your post or case study, with a link to the full content.
