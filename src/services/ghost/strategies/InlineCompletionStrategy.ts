@@ -25,15 +25,10 @@ export class InlineCompletionStrategy extends BasePromptStrategy {
 		return hasContentBefore && !context.userInput && !context.range.isEmpty === false && isNotAtEnd
 	}
 
-	getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext> {
-		return {
-			document: context.document,
-			range: context.range,
-		}
-	}
-
-	protected getSpecificSystemInstructions(): string {
-		return `You are an expert code completion assistant specializing in inline completions.
+	getSystemInstructions(): string {
+		return (
+			this.getBaseSystemInstructions() +
+			`You are an expert code completion assistant specializing in inline completions.
 
 ## Core Responsibilities:
 1. Complete partial statements and expressions
@@ -70,9 +65,10 @@ export class InlineCompletionStrategy extends BasePromptStrategy {
 - Complete just enough to finish the current expression
 - Ensure syntactic correctness
 - Match the existing code style`
+		)
 	}
 
-	protected buildUserPrompt(context: Partial<GhostSuggestionContext>): string {
+	getUserPrompt(context: GhostSuggestionContext): string {
 		if (!context.document || !context.range) {
 			return "No context available for inline completion."
 		}

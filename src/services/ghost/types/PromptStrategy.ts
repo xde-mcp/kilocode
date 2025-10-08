@@ -35,13 +35,6 @@ export interface PromptStrategy {
 	canHandle(context: GhostSuggestionContext): boolean
 
 	/**
-	 * Filters the context to only include relevant fields for this strategy
-	 * @param context The full suggestion context
-	 * @returns Partial context with only relevant fields
-	 */
-	getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext>
-
-	/**
 	 * Generates system instructions for the AI model
 	 * @param customInstructions Optional custom instructions to append
 	 * @returns The complete system prompt

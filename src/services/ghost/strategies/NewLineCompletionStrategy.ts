@@ -23,26 +23,12 @@ export class NewLineCompletionStrategy extends BasePromptStrategy {
 	}
 
 	/**
-	 * Focus on surrounding code and recent actions
-	 * Exclude diagnostics and user input
-	 */
-	getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext> {
-		return {
-			document: context.document,
-			range: context.range,
-			recentOperations: context.recentOperations,
-			// Exclude:
-			// - userInput (no explicit request)
-			// - diagnostics (not relevant for new line)
-			// - openFiles (reduces tokens)
-		}
-	}
-
-	/**
 	 * System instructions for new line completion
 	 */
-	protected getSpecificSystemInstructions(): string {
-		return `Task: Proactive Code Completion for New Lines
+	getSystemInstructions(): string {
+		return (
+			this.getBaseSystemInstructions() +
+			`Task: Proactive Code Completion for New Lines
 The user has created a new line. Suggest the most logical next code based on context.
 
 Completion Guidelines:
@@ -75,12 +61,13 @@ Important:
 - Respect existing code patterns and comments
 - Maintain consistent style
 - Consider the most likely next step`
+		)
 	}
 
 	/**
 	 * Build prompt focused on surrounding context
 	 */
-	protected buildUserPrompt(context: Partial<GhostSuggestionContext>): string {
+	getUserPrompt(context: GhostSuggestionContext): string {
 		let prompt = ""
 
 		// Start with cursor context

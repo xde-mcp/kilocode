@@ -20,26 +20,12 @@ export class UserRequestStrategy extends BasePromptStrategy {
 	}
 
 	/**
-	 * Include user input, document, selection, and diagnostics
-	 * Exclude recent operations and open files as they're less relevant
-	 */
-	getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext> {
-		return {
-			document: context.document,
-			userInput: context.userInput,
-			range: context.range,
-			diagnostics: context.diagnostics,
-			// Explicitly exclude:
-			// - recentOperations (not needed for explicit requests)
-			// - openFiles (reduces token usage)
-		}
-	}
-
-	/**
 	 * System instructions specific to user requests
 	 */
-	protected getSpecificSystemInstructions(): string {
-		return `Task: Execute User's Explicit Request
+	getSystemInstructions(): string {
+		return (
+			this.getBaseSystemInstructions() +
+			`Task: Execute User's Explicit Request
 You are responding to a direct user instruction. Your primary goal is to fulfill their specific request accurately.
 
 Priority Order:
@@ -64,12 +50,13 @@ Common Request Patterns:
 - "add comments" → add JSDoc or inline comments
 - "extract function" → move selected code to a new function
 - "fix" → resolve errors, warnings, or obvious issues`
+		)
 	}
 
 	/**
 	 * Build the user prompt with all relevant context
 	 */
-	protected buildUserPrompt(context: Partial<GhostSuggestionContext>): string {
+	getUserPrompt(context: GhostSuggestionContext): string {
 		let prompt = ""
 
 		// User request is the most important part
@@ -137,23 +124,6 @@ Common Request Patterns:
 		}
 
 		return prompt
-	}
-
-	/**
-	 * Override to provide more context for certain types of requests
-	 */
-	override getUserPrompt(context: GhostSuggestionContext): string {
-		// For certain requests, we might want to include more context
-		const request = context.userInput?.toLowerCase() || ""
-
-		// If the request mentions other files or imports, include more context
-		if (request.includes("import") || request.includes("from")) {
-			// Could potentially include information about available modules
-			// For now, we'll use the standard approach
-		}
-
-		// Use the standard prompt building
-		return super.getUserPrompt(context)
 	}
 
 	/**

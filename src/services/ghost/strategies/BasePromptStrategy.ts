@@ -25,23 +25,6 @@ export abstract class BasePromptStrategy implements PromptStrategy {
 	abstract canHandle(context: GhostSuggestionContext): boolean
 
 	/**
-	 * Filters the context to only include relevant fields for this strategy
-	 */
-	abstract getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext>
-
-	/**
-	 * Generates system instructions for the AI model
-	 */
-	getSystemInstructions(customInstructions?: string): string {
-		const baseInstructions = this.getBaseSystemInstructions()
-		const specificInstructions = this.getSpecificSystemInstructions()
-
-		return `${baseInstructions}\n\n---\n\n${specificInstructions}${
-			customInstructions ? `\n\n---\n\n${customInstructions}` : ""
-		}`
-	}
-
-	/**
 	 * Gets the base system instructions that apply to all strategies
 	 */
 	protected getBaseSystemInstructions(): string {
@@ -78,28 +61,23 @@ EXAMPLE:
 	 // old code
 }]]></search><replace><![CDATA[function example() {
 	 // new code
-}]]></replace></change>`
+}]]></replace></change>
+
+--
+
+`
 	}
 
 	/**
 	 * Gets strategy-specific system instructions
 	 * Must be implemented by each strategy
 	 */
-	protected abstract getSpecificSystemInstructions(): string
+	abstract getSystemInstructions(): string
 
 	/**
 	 * Generates the user prompt with context
 	 */
-	getUserPrompt(context: GhostSuggestionContext): string {
-		const relevantContext = this.getRelevantContext(context)
-		return this.buildUserPrompt(relevantContext)
-	}
-
-	/**
-	 * Builds the user prompt from the relevant context
-	 * Must be implemented by each strategy
-	 */
-	protected abstract buildUserPrompt(context: Partial<GhostSuggestionContext>): string
+	abstract getUserPrompt(context: GhostSuggestionContext): string
 
 	/**
 	 * Adds the cursor marker to the document text at the specified position

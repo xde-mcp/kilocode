@@ -17,16 +17,10 @@ export class SelectionRefactorStrategy extends BasePromptStrategy {
 		return !!(context.range && !context.range.isEmpty && !context.userInput)
 	}
 
-	getRelevantContext(context: GhostSuggestionContext): Partial<GhostSuggestionContext> {
-		return {
-			document: context.document,
-			range: context.range,
-			diagnostics: context.diagnostics,
-		}
-	}
-
-	protected getSpecificSystemInstructions(): string {
-		return `You are an expert code refactoring assistant. Your task is to improve selected code while maintaining its functionality.
+	getSystemInstructions(): string {
+		return (
+			this.getBaseSystemInstructions() +
+			`You are an expert code refactoring assistant. Your task is to improve selected code while maintaining its functionality.
 
 ## Core Responsibilities:
 1. Analyze the selected code for improvement opportunities
@@ -52,9 +46,10 @@ export class SelectionRefactorStrategy extends BasePromptStrategy {
 - Do not include explanations outside the code
 
 Remember: The goal is to improve the code quality while keeping the exact same behavior.`
+		)
 	}
 
-	protected buildUserPrompt(context: Partial<GhostSuggestionContext>): string {
+	getUserPrompt(context: GhostSuggestionContext): string {
 		if (!context.document || !context.range) {
 			return "No selection available for refactoring."
 		}
