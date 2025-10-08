@@ -2988,6 +2988,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// effectively passes along all subsequent chunks from the original
 		// stream.
 		yield* iterator
+		Task.lastGlobalApiRequestTime = performance.now()
 	}
 
 	// Checkpoints
