@@ -183,6 +183,7 @@ const baseProviderSettingsSchema = z.object({
 	fuzzyMatchThreshold: z.number().optional(),
 	modelTemperature: z.number().nullish(),
 	rateLimitSeconds: z.number().optional(),
+	rateLimitAfter: z.boolean().optional(),
 	consecutiveMistakeLimit: z.number().min(0).optional(),
 
 	// Model reasoning.
