@@ -124,7 +124,7 @@ import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { KiloCode } from "../kilocode/settings/providers/KiloCode" // kilocode_change
 import { buildDocLink } from "@src/utils/docLinks"
 import { KiloProviderRouting, KiloProviderRoutingManagedByOrganization } from "./providers/KiloProviderRouting"
-import { RateLimitAfterControl } from "./RateLimitAfterSettings"
+import { RateLimitAfterControl } from "./RateLimitAfterSettings" // kilocode_change
 
 export interface ApiOptionsProps {
 	uriScheme: string | undefined
