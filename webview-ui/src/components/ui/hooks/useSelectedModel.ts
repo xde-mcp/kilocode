@@ -93,7 +93,7 @@ import { useOllamaModels } from "./useOllamaModels"
 export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 	const provider = apiConfiguration?.apiProvider || "anthropic"
 	// kilocode_change start
-	const { kilocodeDefaultModel, listApiConfigMeta, virtualQuotaActiveModel } = useExtensionState()
+	const { kilocodeDefaultModel, virtualQuotaActiveModel } = useExtensionState()
 	const lmStudioModelId = provider === "lmstudio" ? apiConfiguration?.lmStudioModelId : undefined
 	const ollamaModelId = provider === "ollama" ? apiConfiguration?.ollamaModelId : undefined
 
@@ -121,7 +121,6 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 					lmStudioModels: lmStudioModels.data,
 					kilocodeDefaultModel,
 					ollamaModels: ollamaModels.data,
-					listApiConfigMeta,
 					virtualQuotaActiveModel,
 				})
 			: { id: anthropicDefaultModelId, info: undefined }
@@ -149,7 +148,6 @@ function getSelectedModel({
 	lmStudioModels,
 	kilocodeDefaultModel,
 	ollamaModels,
-	listApiConfigMeta,
 	virtualQuotaActiveModel,
 }: {
 	provider: ProviderName
@@ -159,7 +157,6 @@ function getSelectedModel({
 	lmStudioModels: ModelRecord | undefined
 	kilocodeDefaultModel: string
 	ollamaModels: ModelRecord | undefined
-	listApiConfigMeta: ProviderSettings[] | undefined
 	virtualQuotaActiveModel?: { id: string; info: ModelInfo }
 }): { id: string; info: ModelInfo | undefined } {
 	// the `undefined` case are used to show the invalid selection to prevent
