@@ -153,6 +153,7 @@ export interface ExtensionMessage {
 		| "commands"
 		| "insertTextIntoTextarea"
 		| "dismissedUpsells"
+		| "showTimestamps" // kilocode_change
 		| "organizationSwitchResult"
 	text?: string
 	// kilocode_change start
@@ -440,6 +441,7 @@ export type ExtensionState = Pick<
 	taskSyncEnabled: boolean
 	featureRoomoteControlEnabled: boolean
 	virtualQuotaActiveModel?: { id: string; info: ModelInfo }
+	showTimestamps?: boolean // kilocode_change: Show timestamps in chat messages
 }
 
 export interface ClineSayTool {
