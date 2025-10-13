@@ -524,7 +524,7 @@ describe("VirtualQuotaFallbackProvider", () => {
 				;(handler as any).activeHandler = undefined
 				const result = handler.getModel()
 				expect(result).toEqual({
-					id: "unknown",
+					id: "",
 					info: {
 						maxTokens: 1,
 						contextWindow: 1,
