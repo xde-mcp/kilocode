@@ -127,7 +127,7 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 		// The handler should be adjusted before this method is called.
 		if (!this.activeHandler) {
 			return {
-				id: "unknown",
+				id: "",
 				info: {
 					maxTokens: 1,
 					contextWindow: 1,
