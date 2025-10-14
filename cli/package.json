@@ -10,6 +10,7 @@
 	},
 	"scripts": {
 		"build": "node esbuild.config.mjs",
+		"dev": "pnpm build --watch",
 		"deps:install": "npm install --prefix ./dist",
 		"start": "node dist/index.js",
 		"clean": "rimraf dist",
@@ -20,7 +21,8 @@
 		"logs": "clear && tail -f ~/.kilocode/cli/logs/cli.txt",
 		"logs:clear": "rimraf ~/.kilocode/cli/logs/* && touch ~/.kilocode/cli/logs/cli.txt",
 		"clean:kilocode": "npx del-cli ./dist/kilocode --force && npx mkdirp ./dist/kilocode",
-		"copy:kilocode": "npx cpy '../bin-unpacked/extension/**' './dist/kilocode' --parents"
+		"copy:kilocode": "npx cpy '../bin-unpacked/extension/**' './dist/kilocode' --parents",
+		"lint": "eslint ."
 	},
 	"dependencies": {
 		"@anthropic-ai/bedrock-sdk": "^0.22.0",
@@ -136,7 +138,6 @@
 		"@types/react": "^18.3.23",
 		"cpy-cli": "^5.0.0",
 		"del-cli": "^5.1.0",
-		"eslint": "^9.27.0",
 		"ink-testing-library": "^4.0.0",
 		"mkdirp": "^3.0.1",
 		"prettier": "^3.4.2",

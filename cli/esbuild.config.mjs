@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 import esbuild from "esbuild"
 import { chmodSync, mkdirSync, copyFileSync } from "fs"
 import { rimrafSync } from "rimraf"
@@ -14,7 +15,7 @@ function copyPostBuildFiles() {
 		try {
 			copyFileSync(".env", "dist/.env")
 			copyFileSync(".env", "dist/kilocode/.env")
-		} catch (err) {
+		} catch {
 			// .env might not exist, that's okay
 		}
 
