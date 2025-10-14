@@ -409,6 +409,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.messageQueueStateChangedHandler = () => {
 			this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
+			this.providerRef.deref()?.postStateToWebview()
 			this.emit("modelChanged")
 		}
 

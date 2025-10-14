@@ -378,7 +378,7 @@ function getSelectedModel({
 			}
 			// Fallback if no profiles or settings found
 			return {
-				id: "unknown",
+				id: "",
 				info: {
 					maxTokens: 1,
 					contextWindow: 1,
