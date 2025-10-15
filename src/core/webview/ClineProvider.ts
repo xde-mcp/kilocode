@@ -253,6 +253,7 @@ export class ClineProvider
 			const onTaskUserMessage = (taskId: string) => this.emit(RooCodeEventName.TaskUserMessage, taskId)
 			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage) =>
 				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage)
+			//kilocode_change: Listen for model changes in virtual quota fallback
 			const onModelChanged = () => this.postStateToWebview()
 
 			// Attach the listeners.
@@ -270,6 +271,7 @@ export class ClineProvider
 			instance.on(RooCodeEventName.TaskSpawned, onTaskSpawned)
 			instance.on(RooCodeEventName.TaskUserMessage, onTaskUserMessage)
 			instance.on(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated)
+			//kilocode_change: Listen for model changes in virtual quota fallback
 			instance.on("modelChanged", onModelChanged)
 
 			// Store the cleanup functions for later removal.
@@ -288,6 +290,7 @@ export class ClineProvider
 				() => instance.off(RooCodeEventName.TaskUnpaused, onTaskUnpaused),
 				() => instance.off(RooCodeEventName.TaskSpawned, onTaskSpawned),
 				() => instance.off(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated),
+				//kilocode_change: Clean up model change listener
 				() => instance.off("modelChanged", onModelChanged),
 			])
 		}
@@ -1923,6 +1926,7 @@ export class ClineProvider
 			featureRoomoteControlEnabled,
 		} = await this.getState()
 
+		//kilocode_change: Get active model for virtual quota fallback UI display
 		const virtualQuotaActiveModel =
 			apiConfiguration?.apiProvider === "virtual-quota-fallback" && this.getCurrentTask()
 				? this.getCurrentTask()!.api.getModel()
@@ -2104,6 +2108,7 @@ export class ClineProvider
 			openRouterImageGenerationSelectedModel,
 			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
+			//kilocode_change: Include virtual quota active model in state
 			virtualQuotaActiveModel,
 		}
 	}

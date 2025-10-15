@@ -93,6 +93,7 @@ import { useOllamaModels } from "./useOllamaModels"
 export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 	const provider = apiConfiguration?.apiProvider || "anthropic"
 	// kilocode_change start
+	//kilocode_change: Get virtual quota active model for UI display
 	const { kilocodeDefaultModel, virtualQuotaActiveModel } = useExtensionState()
 	const lmStudioModelId = provider === "lmstudio" ? apiConfiguration?.lmStudioModelId : undefined
 	const ollamaModelId = provider === "ollama" ? apiConfiguration?.ollamaModelId : undefined
@@ -123,6 +124,7 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 					lmStudioModels: lmStudioModels.data,
 					kilocodeDefaultModel,
 					ollamaModels: ollamaModels.data,
+					//kilocode_change: Pass virtual quota active model
 					virtualQuotaActiveModel,
 				})
 			: { id: anthropicDefaultModelId, info: undefined }
@@ -150,7 +152,7 @@ function getSelectedModel({
 	lmStudioModels,
 	kilocodeDefaultModel,
 	ollamaModels,
-	virtualQuotaActiveModel,
+	virtualQuotaActiveModel, //kilocode_change
 }: {
 	provider: ProviderName
 	apiConfiguration: ProviderSettings
@@ -377,6 +379,7 @@ function getSelectedModel({
 			const info = geminiCliModels[id as keyof typeof geminiCliModels]
 			return { id, info }
 		}
+		//kilocode_change start
 		case "virtual-quota-fallback": {
 			if (virtualQuotaActiveModel) {
 				return virtualQuotaActiveModel

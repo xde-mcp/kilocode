@@ -43,6 +43,7 @@ import { CloudService, BridgeOrchestrator } from "@roo-code/cloud"
 import { ApiHandler, ApiHandlerCreateMessageMetadata, buildApiHandler } from "../../api"
 import { ApiStream, GroundingSource } from "../../api/transform/stream"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
+//kilocode_change: Import VirtualQuotaFallbackHandler for model change notifications
 import { VirtualQuotaFallbackHandler } from "../../api/providers/virtual-quota-fallback"
 
 // shared
@@ -367,6 +368,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.apiConfiguration = apiConfiguration
 		this.api = buildApiHandler(apiConfiguration)
+		//kilocode_change: Listen for model changes in virtual quota fallback
 		if (this.api instanceof VirtualQuotaFallbackHandler) {
 			this.api.on("handlerChanged", () => {
 				this.emit("modelChanged")
@@ -410,6 +412,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.messageQueueStateChangedHandler = () => {
 			this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
 			this.providerRef.deref()?.postStateToWebview()
+			//kilocode_change: Emit modelChanged for virtual quota fallback UI updates
 			this.emit("modelChanged")
 		}
 
@@ -2647,6 +2650,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		const { profileThresholds = {} } = state ?? {}
 
 		const { contextTokens } = this.getTokenUsage()
+		//kilocode_change: Initialize virtual quota fallback handler
 		if (this.api instanceof VirtualQuotaFallbackHandler) {
 			await this.api.initialize()
 		}
@@ -2658,6 +2662,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			settings: this.apiConfiguration,
 		})
 
+		//kilocode_change: Use contextWindow from API handler if available
 		const contextWindow = this.api.contextWindow ?? modelInfo.contextWindow
 
 		// Get the current profile ID using the helper method
@@ -2782,6 +2787,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		const { contextTokens } = this.getTokenUsage()
 
 		if (contextTokens) {
+			//kilocode_change: Initialize and adjust virtual quota fallback handler
 			if (this.api instanceof VirtualQuotaFallbackHandler) {
 				await this.api.initialize()
 				await this.api.adjustActiveHandler("Pre-Request Adjustment")
