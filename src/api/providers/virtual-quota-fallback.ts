@@ -2,7 +2,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import { z } from "zod"
 import * as vscode from "vscode"
-import EventEmitter from "events" //kilocode_change
+import EventEmitter from "events"
 import type { ModelInfo, ProviderSettings } from "@roo-code/types"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { ContextProxy } from "../../core/config/ContextProxy"
