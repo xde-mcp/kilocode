@@ -106,6 +106,7 @@ import {
 	VercelAiGateway,
 	DeepInfra,
 	OvhCloudAiEndpoints, // kilocode_change
+	SapAiCore,
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -789,6 +790,10 @@ const ApiOptions = ({
 
 			{selectedProvider === "featherless" && (
 				<Featherless apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+			)}
+
+			{selectedProvider === "sap-ai-core" && (
+				<SapAiCore apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
 			{selectedProviderModels.length > 0 && (
