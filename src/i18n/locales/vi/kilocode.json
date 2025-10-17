@@ -73,6 +73,7 @@
 				"tokenError": "Phải đặt token hợp lệ để sử dụng Autocomplete",
 				"lastCompletion": "Gợi ý cuối cùng:",
 				"sessionTotal": "Tổng chi phí phiên:",
+				"provider": "Nhà cung cấp:",
 				"model": "Mô hình:"
 			},
 			"cost": {

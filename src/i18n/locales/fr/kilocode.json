@@ -73,6 +73,7 @@
 				"tokenError": "Un token valide doit être défini pour utiliser Autocomplete",
 				"lastCompletion": "Dernière suggestion :",
 				"sessionTotal": "Coût total de la session :",
+				"provider": "Fournisseur:",
 				"model": "Modèle :"
 			},
 			"cost": {

@@ -73,6 +73,7 @@
 				"tokenError": "Ein gültiger Token muss gesetzt werden, um Autocomplete zu verwenden",
 				"lastCompletion": "Letzter Vorschlag:",
 				"sessionTotal": "Sitzungsgesamtkosten:",
+				"provider": "Anbieter:",
 				"model": "Modell:"
 			},
 			"cost": {

@@ -229,7 +229,10 @@
 				"label": "手動オートコンプリート ({{keybinding}})",
 				"description": "素早い修正、補完、またはリファクタリングが必要？Kiloは周囲のコンテキストを使用して即座の改善を提供し、フローを維持します。<DocsLink>ショートカットを見る</DocsLink>"
 			},
-			"keybindingNotFound": "見つかりません"
+			"keybindingNotFound": "見つかりません",
+			"noModelConfigured": "適切なオートコンプリートモデルが見つかりませんでした。API設定でプロバイダーを設定してください。",
+			"model": "モデル",
+			"provider": "プロバイダー"
 		}
 	},
 	"virtualProvider": {

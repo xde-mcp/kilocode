@@ -79,6 +79,7 @@
 				"tokenError": "ต้องตั้งค่าโทเค็นที่ถูกต้องเพื่อใช้ Autocomplete",
 				"lastCompletion": "คำแนะนำล่าสุด:",
 				"sessionTotal": "ค่าใช้จ่ายรวมของเซสชัน:",
+				"provider": "ผู้ให้บริการ:",
 				"model": "โมเดล:"
 			},
 			"cost": {

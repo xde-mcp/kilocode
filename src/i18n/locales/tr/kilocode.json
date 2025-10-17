@@ -73,6 +73,7 @@
 				"tokenError": "Autocomplete kullanmak için geçerli bir token ayarlanmalı",
 				"lastCompletion": "Son öneri:",
 				"sessionTotal": "Oturum toplam maliyeti:",
+				"provider": "Sağlayıcı:",
 				"model": "Model:"
 			},
 			"cost": {

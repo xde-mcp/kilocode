@@ -73,6 +73,7 @@
 				"tokenError": "Autocompleteを使用するには有効なトークンを設定する必要があります",
 				"lastCompletion": "最後の提案:",
 				"sessionTotal": "セッション合計コスト:",
+				"provider": "プロバイダー:",
 				"model": "モデル:"
 			},
 			"cost": {

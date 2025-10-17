@@ -73,6 +73,7 @@
 				"tokenError": "Een geldig token moet worden ingesteld om Autocomplete te gebruiken",
 				"lastCompletion": "Laatste suggestie:",
 				"sessionTotal": "Totale sessiekosten:",
+				"provider": "Provider:",
 				"model": "Model:"
 			},
 			"cost": {

@@ -73,6 +73,7 @@
 				"tokenError": "Token yang valid harus diatur untuk menggunakan Autocomplete",
 				"lastCompletion": "Saran terakhir:",
 				"sessionTotal": "Total biaya sesi:",
+				"provider": "Penyedia:",
 				"model": "Model:"
 			},
 			"cost": {

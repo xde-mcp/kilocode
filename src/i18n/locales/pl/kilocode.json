@@ -79,6 +79,7 @@
 				"tokenError": "Aby używać Autocomplete, musi być ustawiony ważny token",
 				"lastCompletion": "Ostatnia sugestia:",
 				"sessionTotal": "Całkowity koszt sesji:",
+				"provider": "Dostawca:",
 				"model": "Model:"
 			},
 			"cost": {
