@@ -71,6 +71,7 @@ export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = 
 	moonshot: null,
 	deepseek: null,
 	doubao: null,
+	minimax: null,
 	"qwen-code": null,
 	"human-relay": null,
 	"fake-ai": null,
@@ -116,6 +117,7 @@ export const PROVIDER_MODEL_FIELD: Record<ProviderName, string | null> = {
 	moonshot: null,
 	deepseek: null,
 	doubao: null,
+	minimax: null,
 	"qwen-code": null,
 	"human-relay": null,
 	"fake-ai": null,
@@ -193,6 +195,7 @@ export const DEFAULT_MODEL_IDS: Partial<Record<ProviderName, string>> = {
 	sambanova: "Meta-Llama-3.1-8B-Instruct",
 	featherless: "deepseek-ai/DeepSeek-V3-0324",
 	deepinfra: "deepseek-ai/DeepSeek-R1-0528",
+	minimax: "MiniMax-M1",
 }
 
 /**
