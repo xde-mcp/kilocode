@@ -218,7 +218,10 @@
 				"label": "Autocompleció Manual ({{keybinding}})",
 				"description": "Necessites una correcció ràpida, completació o refactorització? Kilo utilitzarà el context circumdant per oferir millores immediates, mantenint-te en el flux. <DocsLink>Veure drecera</DocsLink>"
 			},
-			"keybindingNotFound": "no trobat"
+			"keybindingNotFound": "no trobat",
+			"noModelConfigured": "No s'ha trobat cap model d'autocompletat adequat. Configura un proveïdor a la configuració de l'API.",
+			"model": "Model",
+			"provider": "Proveïdor"
 		}
 	},
 	"virtualProvider": {

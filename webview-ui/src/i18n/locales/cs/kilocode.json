@@ -229,7 +229,10 @@
 				"label": "Ruční dokončování ({{keybinding}})",
 				"description": "Potřebuješ rychlou opravu, dokončení nebo refaktoring? Kilo použije okolní kontext k nabídnutí okamžitých vylepšení, udržujíc tě v toku. <DocsLink>Zobrazit zkratku</DocsLink>"
 			},
-			"keybindingNotFound": "nenalezeno"
+			"keybindingNotFound": "nenalezeno",
+			"noModelConfigured": "Nebyl nalezen žádný vhodný model pro automatické dokončování. Nakonfiguruj prosím poskytovatele v nastavení API.",
+			"model": "Model",
+			"provider": "Poskytovatel"
 		}
 	},
 	"virtualProvider": {
