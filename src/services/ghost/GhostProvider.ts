@@ -11,7 +11,6 @@ import { GhostSuggestionContext } from "./types"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostSuggestionsState } from "./GhostSuggestions"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
-import { GhostCodeLensProvider } from "./GhostCodeLensProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -55,7 +54,6 @@ export class GhostProvider {
 
 	// VSCode Providers
 	public codeActionProvider: GhostCodeActionProvider
-	public codeLensProvider: GhostCodeLensProvider
 
 	private ignoreController?: Promise<RooIgnoreController>
 
@@ -76,7 +74,6 @@ export class GhostProvider {
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
-		this.codeLensProvider = new GhostCodeLensProvider()
 
 		// Register document event handlers
 		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, context.subscriptions)
@@ -398,7 +395,6 @@ export class GhostProvider {
 	private async render() {
 		await this.updateGlobalContext()
 		await this.displaySuggestions()
-		// await this.displayCodeLens()
 	}
 
 	private selectClosestSuggestion() {
@@ -422,36 +418,6 @@ export class GhostProvider {
 			return
 		}
 		await this.decorations.displaySuggestions(this.suggestions)
-	}
-
-	private getSelectedSuggestionLine() {
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			return null
-		}
-		const file = this.suggestions.getFile(editor.document.uri)
-		if (!file) {
-			return null
-		}
-		const selectedGroup = file.getSelectedGroupOperations()
-		if (selectedGroup.length === 0) {
-			return null
-		}
-		const offset = file.getPlaceholderOffsetSelectedGroupOperations()
-		const topOperation = selectedGroup?.length ? selectedGroup[0] : null
-		if (!topOperation) {
-			return null
-		}
-		return topOperation.type === "+" ? topOperation.line + offset.removed : topOperation.line + offset.added
-	}
-
-	private async displayCodeLens() {
-		const topLine = this.getSelectedSuggestionLine()
-		if (topLine === null) {
-			this.codeLensProvider.setSuggestionRange(undefined)
-			return
-		}
-		this.codeLensProvider.setSuggestionRange(new vscode.Range(topLine, 0, topLine, 0))
 	}
 
 	private async updateGlobalContext() {
