@@ -130,8 +130,8 @@ describe("GhostProvider", () => {
 		// Initialize streaming parser
 		streamingParser.initialize(context)
 
-		// Process the response as a single chunk (simulating complete response)
-		const result = streamingParser.processChunk(response)
+		// Process the complete response
+		const result = streamingParser.parseResponse(response)
 
 		// Apply the suggestions
 		await workspaceEdit.applySuggestions(result.suggestions)
@@ -232,7 +232,7 @@ describe("GhostProvider", () => {
 
 			// Test empty response
 			streamingParser.initialize(context)
-			const result = streamingParser.processChunk("")
+			const result = streamingParser.parseResponse("")
 			expect(result.suggestions.hasSuggestions()).toBe(false)
 		})
 
@@ -243,7 +243,7 @@ describe("GhostProvider", () => {
 			// Test invalid diff format
 			const invalidDiff = "This is not a valid diff format"
 			streamingParser.initialize(context)
-			const result = streamingParser.processChunk(invalidDiff)
+			const result = streamingParser.parseResponse(invalidDiff)
 			expect(result.suggestions.hasSuggestions()).toBe(false)
 		})
 
@@ -262,7 +262,7 @@ describe("GhostProvider", () => {
 console.log('test');]]></replace></change>`
 
 			streamingParser.initialize(context)
-			const result = streamingParser.processChunk(xmlResponse)
+			const result = streamingParser.parseResponse(xmlResponse)
 			// Should work with the XML format
 			expect(result.suggestions.hasSuggestions()).toBe(true)
 		})
