@@ -204,9 +204,37 @@ export class GhostProvider {
 		if (this.workspaceEdit.isLocked()) {
 			return
 		}
+
+		// Filter out undo/redo operations
+		if (event.reason !== undefined) {
+			return
+		}
+
 		if (event.contentChanges.length === 0) {
 			return
 		}
+
+		// Heuristic to filter out bulk changes (git operations, external edits)
+		const isBulkChange = event.contentChanges.some((change) => change.rangeLength > 100 || change.text.length > 100)
+		if (isBulkChange) {
+			return
+		}
+
+		// Heuristic to filter out changes far from cursor (likely external or LLM edits)
+		const editor = vscode.window.activeTextEditor
+		if (!editor || editor.document !== event.document) {
+			return
+		}
+
+		const cursorPos = editor.selection.active
+		const isNearCursor = event.contentChanges.some((change) => {
+			const distance = Math.abs(cursorPos.line - change.range.start.line)
+			return distance <= 2
+		})
+		if (!isNearCursor) {
+			return
+		}
+
 		await this.documentStore.storeDocument({ document: event.document })
 		this.lastTextChangeTime = Date.now()
 		this.handleTypingEvent(event)
