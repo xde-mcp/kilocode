@@ -259,8 +259,7 @@ export class ClineProvider
 			const onTaskUserMessage = (taskId: string) => this.emit(RooCodeEventName.TaskUserMessage, taskId)
 			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage) =>
 				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage)
-			//kilocode_change: Listen for model changes in virtual quota fallback
-			const onModelChanged = () => this.postStateToWebview()
+			const onModelChanged = () => this.postStateToWebview() // kilocode_change: Listen for model changes in virtual quota fallback
 
 			// Attach the listeners.
 			instance.on(RooCodeEventName.TaskStarted, onTaskStarted)
@@ -277,8 +276,7 @@ export class ClineProvider
 			instance.on(RooCodeEventName.TaskSpawned, onTaskSpawned)
 			instance.on(RooCodeEventName.TaskUserMessage, onTaskUserMessage)
 			instance.on(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated)
-			//kilocode_change: Listen for model changes in virtual quota fallback
-			instance.on("modelChanged", onModelChanged)
+			instance.on("modelChanged", onModelChanged) // kilocode_change: Listen for model changes in virtual quota fallback
 
 			// Store the cleanup functions for later removal.
 			this.taskEventListeners.set(instance, [
@@ -296,8 +294,7 @@ export class ClineProvider
 				() => instance.off(RooCodeEventName.TaskUnpaused, onTaskUnpaused),
 				() => instance.off(RooCodeEventName.TaskSpawned, onTaskSpawned),
 				() => instance.off(RooCodeEventName.TaskTokenUsageUpdated, onTaskTokenUsageUpdated),
-				//kilocode_change: Clean up model change listener
-				() => instance.off("modelChanged", onModelChanged),
+				() => instance.off("modelChanged", onModelChanged), // kilocode_change: Clean up model change listener
 			])
 		}
 
@@ -1986,11 +1983,12 @@ ${prompt}
 			featureRoomoteControlEnabled,
 		} = await this.getState()
 
-		//kilocode_change: Get active model for virtual quota fallback UI display
+		// kilocode_change start: Get active model for virtual quota fallback UI display
 		const virtualQuotaActiveModel =
 			apiConfiguration?.apiProvider === "virtual-quota-fallback" && this.getCurrentTask()
 				? this.getCurrentTask()!.api.getModel()
 				: undefined
+		// kilocode_change end
 
 		let cloudOrganizations: CloudOrganizationMembership[] = []
 
@@ -2169,8 +2167,7 @@ ${prompt}
 			openRouterImageGenerationSelectedModel,
 			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
-			//kilocode_change: Include virtual quota active model in state
-			virtualQuotaActiveModel,
+			virtualQuotaActiveModel, // kilocode_change: Include virtual quota active model in state
 		}
 	}
 

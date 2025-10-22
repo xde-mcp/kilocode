@@ -93,7 +93,6 @@ import { useOllamaModels } from "./useOllamaModels"
 export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 	const provider = apiConfiguration?.apiProvider || "anthropic"
 	// kilocode_change start
-	//kilocode_change: Get virtual quota active model for UI display
 	const { kilocodeDefaultModel, virtualQuotaActiveModel } = useExtensionState()
 	const lmStudioModelId = provider === "lmstudio" ? apiConfiguration?.lmStudioModelId : undefined
 	const ollamaModelId = provider === "ollama" ? apiConfiguration?.ollamaModelId : undefined
@@ -124,8 +123,7 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 					lmStudioModels: lmStudioModels.data,
 					kilocodeDefaultModel,
 					ollamaModels: ollamaModels.data,
-					//kilocode_change: Pass virtual quota active model
-					virtualQuotaActiveModel,
+					virtualQuotaActiveModel, // kilocode_change: Pass virtual quota active model
 				})
 			: { id: anthropicDefaultModelId, info: undefined }
 
@@ -161,7 +159,7 @@ function getSelectedModel({
 	lmStudioModels: ModelRecord | undefined
 	kilocodeDefaultModel: string
 	ollamaModels: ModelRecord | undefined
-	virtualQuotaActiveModel?: { id: string; info: ModelInfo }
+	virtualQuotaActiveModel?: { id: string; info: ModelInfo } //kilocode_change
 }): { id: string; info: ModelInfo | undefined } {
 	// the `undefined` case are used to show the invalid selection to prevent
 	// users from seeing the default model if their selection is invalid
@@ -379,7 +377,6 @@ function getSelectedModel({
 			const info = geminiCliModels[id as keyof typeof geminiCliModels]
 			return { id, info }
 		}
-		//kilocode_change start
 		case "virtual-quota-fallback": {
 			if (virtualQuotaActiveModel) {
 				return virtualQuotaActiveModel

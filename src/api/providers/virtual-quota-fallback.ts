@@ -29,7 +29,6 @@ interface HandlerConfig {
  * This handler is designed to call other API handlers with automatic fallback when quota limits are reached.
  */
 export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHandler {
-	//kilocode_change: Extend EventEmitter for model change notifications
 	private settingsManager: ProviderSettingsManager
 	private settings: ProviderSettings
 
@@ -41,7 +40,6 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 
 	constructor(options: ProviderSettings) {
 		super()
-		//kilocode_change: Call super() for EventEmitter
 		this.settings = options
 		this.settingsManager = new ProviderSettingsManager(ContextProxy.instance.rawContext)
 		this.usage = UsageTracker.getInstance()
@@ -140,7 +138,6 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 		return this.activeHandler.getModel()
 	}
 
-	//kilocode_change: Add contextWindow getter for virtual quota fallback
 	get contextWindow(): number {
 		if (!this.activeHandler) {
 			return 1 // Default fallback
@@ -249,7 +246,6 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 			}
 			this.activeHandler = handler
 			this.activeProfileId = profileId
-			//kilocode_change: Emit handlerChanged event for model change notifications
 			this.emit("handlerChanged", this.activeHandler)
 			return
 		}
@@ -260,7 +256,6 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 		}
 		this.activeHandler = undefined
 		this.activeProfileId = undefined
-		//kilocode_change: Emit handlerChanged event when no valid handler found
 		this.emit("handlerChanged", this.activeHandler)
 	}
 

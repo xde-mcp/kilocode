@@ -13,8 +13,7 @@ interface ModelSelectorProps {
 	currentApiConfigName?: string
 	apiConfiguration: ProviderSettings
 	fallbackText: string
-	//kilocode_change: Add virtual quota active model for UI display
-	virtualQuotaActiveModel?: { id: string; name: string }
+	virtualQuotaActiveModel?: { id: string; name: string } // kilocode_change: Add virtual quota active model for UI display
 }
 
 export const ModelSelector = ({
@@ -67,7 +66,7 @@ export const ModelSelector = ({
 		return null
 	}
 
-	//kilocode_change: Display active model for virtual quota fallback
+	// kilocode_change start: Display active model for virtual quota fallback
 	if (provider === "virtual-quota-fallback" && virtualQuotaActiveModel) {
 		return (
 			<span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">
@@ -75,6 +74,7 @@ export const ModelSelector = ({
 			</span>
 		)
 	}
+	// kilocode_change end
 
 	if (isError || options.length <= 0) {
 		return <span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">{fallbackText}</span>
