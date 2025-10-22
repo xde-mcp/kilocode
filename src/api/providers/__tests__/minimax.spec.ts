@@ -1,119 +1,48 @@
-// Mocks must come first, before imports
-const mockCreate = vi.fn()
-vi.mock("openai", () => {
-	return {
-		__esModule: true,
-		default: vi.fn().mockImplementation(() => ({
-			chat: {
-				completions: {
-					create: mockCreate.mockImplementation(async (options) => {
-						if (!options.stream) {
-							return {
-								id: "test-completion",
-								choices: [
-									{
-										message: { role: "assistant", content: "Test response", refusal: null },
-										finish_reason: "stop",
-										index: 0,
-									},
-								],
-								usage: {
-									prompt_tokens: 10,
-									completion_tokens: 5,
-									total_tokens: 15,
-									cached_tokens: 2,
-								},
-							}
-						}
+// npx vitest run src/api/providers/__tests__/minimax.spec.ts
 
-						// Return async iterator for streaming
-						return {
-							[Symbol.asyncIterator]: async function* () {
-								yield {
-									choices: [
-										{
-											delta: { content: "Test response" },
-											index: 0,
-										},
-									],
-									usage: null,
-								}
-								yield {
-									choices: [
-										{
-											delta: {},
-											index: 0,
-										},
-									],
-									usage: {
-										prompt_tokens: 10,
-										completion_tokens: 5,
-										total_tokens: 15,
-										cached_tokens: 2,
-									},
-								}
-							},
-						}
-					}),
-				},
-			},
-		})),
-	}
-})
+// kilocode_change start
+vitest.mock("vscode", () => ({
+	workspace: {
+		getConfiguration: vitest.fn().mockReturnValue({
+			get: vitest.fn().mockReturnValue(600), // Default timeout in seconds
+		}),
+	},
+}))
+// kilocode_change end
 
 import OpenAI from "openai"
-import type { Anthropic } from "@anthropic-ai/sdk"
+import { Anthropic } from "@anthropic-ai/sdk"
 
-import { minimaxDefaultModelId } from "@roo-code/types"
-
-import type { ApiHandlerOptions } from "../../../shared/api"
+import { type MinimaxModelId, minimaxDefaultModelId, minimaxModels } from "@roo-code/types"
 
 import { MiniMaxHandler } from "../minimax"
 
+vitest.mock("openai", () => {
+	const createMock = vitest.fn()
+	return {
+		default: vitest.fn(() => ({ chat: { completions: { create: createMock } } })),
+	}
+})
+
 describe("MiniMaxHandler", () => {
 	let handler: MiniMaxHandler
-	let mockOptions: ApiHandlerOptions
+	let mockCreate: any
 
 	beforeEach(() => {
-		mockOptions = {
-			minimaxApiKey: "test-api-key",
-			apiModelId: "MiniMax-M1",
-			minimaxBaseUrl: "https://api.minimax.io/v1",
-		}
-		handler = new MiniMaxHandler(mockOptions)
-		vi.clearAllMocks()
+		vitest.clearAllMocks()
+		mockCreate = (OpenAI as unknown as any)().chat.completions.create
 	})
 
-	describe("constructor", () => {
-		it("should initialize with provided options", () => {
-			expect(handler).toBeInstanceOf(MiniMaxHandler)
-			expect(handler.getModel().id).toBe(mockOptions.apiModelId)
-		})
-
-		it.skip("should throw error if API key is missing", () => {
-			expect(() => {
-				new MiniMaxHandler({
-					...mockOptions,
-					minimaxApiKey: undefined,
-				})
-			}).toThrow("MiniMax API key is required")
-		})
-
-		it("should use default model ID if not provided", () => {
-			const handlerWithoutModel = new MiniMaxHandler({
-				...mockOptions,
-				apiModelId: undefined,
+	describe("International MiniMax (default)", () => {
+		beforeEach(() => {
+			handler = new MiniMaxHandler({
+				minimaxApiKey: "test-minimax-api-key",
+				minimaxBaseUrl: "https://api.minimax.io/v1",
 			})
-			expect(handlerWithoutModel.getModel().id).toBe(minimaxDefaultModelId)
 		})
 
-		it("should use default base URL if not provided", () => {
-			const handlerWithoutBaseUrl = new MiniMaxHandler({
-				...mockOptions,
-				minimaxBaseUrl: undefined,
-			})
-			expect(handlerWithoutBaseUrl).toBeInstanceOf(MiniMaxHandler)
-			// The base URL is passed to OpenAI client internally
+		it("should use the correct international MiniMax base URL by default", () => {
+			new MiniMaxHandler({ minimaxApiKey: "test-minimax-api-key" })
 			expect(OpenAI).toHaveBeenCalledWith(
 				expect.objectContaining({
 					baseURL: "https://api.minimax.io/v1",
@@ -121,239 +50,235 @@ describe("MiniMaxHandler", () => {
 			)
 		})
 
-		it("should use chinese base URL if provided", () => {
-			const customBaseUrl = "https://api.minimax.io/v1"
-			const handlerWithCustomUrl = new MiniMaxHandler({
-				...mockOptions,
-				minimaxBaseUrl: customBaseUrl,
+		it("should use the provided API key", () => {
+			const minimaxApiKey = "test-minimax-api-key"
+			new MiniMaxHandler({ minimaxApiKey })
+			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: minimaxApiKey }))
+		})
+
+		it("should return default model when no model is specified", () => {
+			const model = handler.getModel()
+			expect(model.id).toBe(minimaxDefaultModelId)
+			expect(model.info).toEqual(minimaxModels[minimaxDefaultModelId])
+		})
+
+		it("should return specified model when valid model is provided", () => {
+			const testModelId: MinimaxModelId = "MiniMax-M1"
+			const handlerWithModel = new MiniMaxHandler({
+				apiModelId: testModelId,
+				minimaxApiKey: "test-minimax-api-key",
 			})
-			expect(handlerWithCustomUrl).toBeInstanceOf(MiniMaxHandler)
-			// The custom base URL is passed to OpenAI client
+			const model = handlerWithModel.getModel()
+			expect(model.id).toBe(testModelId)
+			expect(model.info).toEqual(minimaxModels[testModelId])
+		})
+
+		it("should return MiniMax-M1 model with correct configuration", () => {
+			const testModelId: MinimaxModelId = "MiniMax-M1"
+			const handlerWithModel = new MiniMaxHandler({
+				apiModelId: testModelId,
+				minimaxApiKey: "test-minimax-api-key",
+			})
+			const model = handlerWithModel.getModel()
+			expect(model.id).toBe(testModelId)
+			expect(model.info).toEqual(minimaxModels[testModelId])
+			expect(model.info.contextWindow).toBe(1_000_192)
+			expect(model.info.maxTokens).toBe(25_600)
+			expect(model.info.supportsPromptCache).toBe(false)
+		})
+	})
+
+	describe("China MiniMax", () => {
+		beforeEach(() => {
+			handler = new MiniMaxHandler({
+				minimaxApiKey: "test-minimax-api-key",
+				minimaxBaseUrl: "https://api.minimaxi.com/v1",
+			})
+		})
+
+		it("should use the correct China MiniMax base URL", () => {
+			new MiniMaxHandler({
+				minimaxApiKey: "test-minimax-api-key",
+				minimaxBaseUrl: "https://api.minimaxi.com/v1",
+			})
+			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ baseURL: "https://api.minimaxi.com/v1" }))
+		})
+
+		it("should use the provided API key for China", () => {
+			const minimaxApiKey = "test-minimax-api-key"
+			new MiniMaxHandler({ minimaxApiKey, minimaxBaseUrl: "https://api.minimaxi.com/v1" })
+			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: minimaxApiKey }))
+		})
+
+		it("should return default model when no model is specified", () => {
+			const model = handler.getModel()
+			expect(model.id).toBe(minimaxDefaultModelId)
+			expect(model.info).toEqual(minimaxModels[minimaxDefaultModelId])
+		})
+	})
+
+	describe("Default behavior", () => {
+		it("should default to international base URL when none is specified", () => {
+			const handlerDefault = new MiniMaxHandler({ minimaxApiKey: "test-minimax-api-key" })
 			expect(OpenAI).toHaveBeenCalledWith(
 				expect.objectContaining({
-					baseURL: customBaseUrl,
+					baseURL: "https://api.minimax.io/v1",
 				}),
+			)
+
+			const model = handlerDefault.getModel()
+			expect(model.id).toBe(minimaxDefaultModelId)
+			expect(model.info).toEqual(minimaxModels[minimaxDefaultModelId])
+		})
+
+		it("should use undefined as default API key when none is specified", () => {
+			new MiniMaxHandler({})
+			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: undefined }))
+		})
+
+		it("should default to MiniMax-M1 model", () => {
+			const handlerDefault = new MiniMaxHandler({ minimaxApiKey: "test-minimax-api-key" })
+			const model = handlerDefault.getModel()
+			expect(model.id).toBe("MiniMax-M1")
+		})
+	})
+
+	describe("API Methods", () => {
+		beforeEach(() => {
+			handler = new MiniMaxHandler({ minimaxApiKey: "test-minimax-api-key" })
+		})
+
+		it("completePrompt method should return text from MiniMax API", async () => {
+			const expectedResponse = "This is a test response from MiniMax"
+			mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
+			const result = await handler.completePrompt("test prompt")
+			expect(result).toBe(expectedResponse)
+		})
+
+		it("should handle errors in completePrompt", async () => {
+			const errorMessage = "MiniMax API error"
+			mockCreate.mockRejectedValueOnce(new Error(errorMessage))
+			await expect(handler.completePrompt("test prompt")).rejects.toThrow()
+		})
+
+		it("createMessage should yield text content from stream", async () => {
+			const testContent = "This is test content from MiniMax stream"
+
+			mockCreate.mockImplementationOnce(() => {
+				return {
+					[Symbol.asyncIterator]: () => ({
+						next: vitest
+							.fn()
+							.mockResolvedValueOnce({
+								done: false,
+								value: { choices: [{ delta: { content: testContent } }] },
+							})
+							.mockResolvedValueOnce({ done: true }),
+					}),
+				}
+			})
+
+			const stream = handler.createMessage("system prompt", [])
+			const firstChunk = await stream.next()
+
+			expect(firstChunk.done).toBe(false)
+			expect(firstChunk.value).toEqual({ type: "text", text: testContent })
+		})
+
+		it("createMessage should yield usage data from stream", async () => {
+			mockCreate.mockImplementationOnce(() => {
+				return {
+					[Symbol.asyncIterator]: () => ({
+						next: vitest
+							.fn()
+							.mockResolvedValueOnce({
+								done: false,
+								value: {
+									choices: [{ delta: {} }],
+									usage: { prompt_tokens: 10, completion_tokens: 20 },
+								},
+							})
+							.mockResolvedValueOnce({ done: true }),
+					}),
+				}
+			})
+
+			const stream = handler.createMessage("system prompt", [])
+			const firstChunk = await stream.next()
+
+			expect(firstChunk.done).toBe(false)
+			expect(firstChunk.value).toEqual({ type: "usage", inputTokens: 10, outputTokens: 20 })
+		})
+
+		it("createMessage should pass correct parameters to MiniMax client", async () => {
+			const modelId: MinimaxModelId = "MiniMax-M1"
+			const modelInfo = minimaxModels[modelId]
+			const handlerWithModel = new MiniMaxHandler({
+				apiModelId: modelId,
+				minimaxApiKey: "test-minimax-api-key",
+			})
+
+			mockCreate.mockImplementationOnce(() => {
+				return {
+					[Symbol.asyncIterator]: () => ({
+						async next() {
+							return { done: true }
+						},
+					}),
+				}
+			})
+
+			const systemPrompt = "Test system prompt for MiniMax"
+			const messages: Anthropic.Messages.MessageParam[] = [{ role: "user", content: "Test message for MiniMax" }]
+
+			const messageGenerator = handlerWithModel.createMessage(systemPrompt, messages)
+			await messageGenerator.next()
+
+			expect(mockCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					model: modelId,
+					max_tokens: modelInfo.maxTokens,
+					temperature: 0,
+					messages: expect.arrayContaining([{ role: "system", content: systemPrompt }]),
+					stream: true,
+					stream_options: { include_usage: true },
+				}),
+				undefined,
 			)
 		})
 
-		it("should set includeMaxTokens to true", () => {
-			// Create a new handler and verify OpenAI client was called with includeMaxTokens
-			const _handler = new MiniMaxHandler(mockOptions)
-			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: mockOptions.minimaxApiKey }))
-		})
-	})
-
-	describe("getModel", () => {
-		it("should return model info for valid model ID", () => {
-			const model = handler.getModel()
-			expect(model.id).toBe(mockOptions.apiModelId)
-			expect(model.info).toBeDefined()
-			expect(model.info.maxTokens).toBe(16384)
-			expect(model.info.contextWindow).toBe(262144)
-			expect(model.info.supportsImages).toBe(false)
-			expect(model.info.supportsPromptCache).toBe(true) // Should be true now
-		})
-
-		it("should return provided model ID with default model info if model does not exist", () => {
-			const handlerWithInvalidModel = new MiniMaxHandler({
-				...mockOptions,
-				apiModelId: "invalid-model",
+		it("should use temperature 0 by default", async () => {
+			mockCreate.mockImplementationOnce(() => {
+				return {
+					[Symbol.asyncIterator]: () => ({
+						async next() {
+							return { done: true }
+						},
+					}),
+				}
 			})
-			const model = handlerWithInvalidModel.getModel()
-			expect(model.id).toBe("invalid-model") // Returns provided ID
-			expect(model.info).toBeDefined()
-			// With the current implementation, it's the same object reference when using default model info
-			expect(model.info).toBe(handler.getModel().info)
-			// Should have the same base properties
-			expect(model.info.contextWindow).toBe(handler.getModel().info.contextWindow)
-			// And should have supportsPromptCache set to true
-			expect(model.info.supportsPromptCache).toBe(true)
-		})
 
-		it("should return default model if no model ID is provided", () => {
-			const handlerWithoutModel = new MiniMaxHandler({
-				...mockOptions,
-				apiModelId: undefined,
-			})
-			const model = handlerWithoutModel.getModel()
-			expect(model.id).toBe(minimaxDefaultModelId)
-			expect(model.info).toBeDefined()
-			expect(model.info.supportsPromptCache).toBe(true)
-		})
+			const messageGenerator = handler.createMessage("test", [])
+			await messageGenerator.next()
 
-		it("should include model parameters from getModelParams", () => {
-			const model = handler.getModel()
-			expect(model).toHaveProperty("temperature")
-			expect(model).toHaveProperty("maxTokens")
+			expect(mockCreate).toHaveBeenCalledWith(
+				expect.objectContaining({
+					temperature: 0,
+				}),
+				undefined,
+			)
 		})
 	})
 
-	describe("createMessage", () => {
-		const systemPrompt = "You are a helpful assistant."
-		const messages: Anthropic.Messages.MessageParam[] = [
-			{
-				role: "user",
-				content: [
-					{
-						type: "text" as const,
-						text: "Hello!",
-					},
-				],
-			},
-		]
-
-		it("should handle streaming responses", async () => {
-			const stream = handler.createMessage(systemPrompt, messages)
-			const chunks: any[] = []
-			for await (const chunk of stream) {
-				chunks.push(chunk)
-			}
-
-			expect(chunks.length).toBeGreaterThan(0)
-			const textChunks = chunks.filter((chunk) => chunk.type === "text")
-			expect(textChunks).toHaveLength(1)
-			expect(textChunks[0].text).toBe("Test response")
-		})
-
-		it("should include usage information", async () => {
-			const stream = handler.createMessage(systemPrompt, messages)
-			const chunks: any[] = []
-			for await (const chunk of stream) {
-				chunks.push(chunk)
-			}
-
-			const usageChunks = chunks.filter((chunk) => chunk.type === "usage")
-			expect(usageChunks.length).toBeGreaterThan(0)
-			expect(usageChunks[0].inputTokens).toBe(10)
-			expect(usageChunks[0].outputTokens).toBe(5)
-		})
-
-		it("should include cache metrics in usage information", async () => {
-			const stream = handler.createMessage(systemPrompt, messages)
-			const chunks: any[] = []
-			for await (const chunk of stream) {
-				chunks.push(chunk)
-			}
-
-			const usageChunks = chunks.filter((chunk) => chunk.type === "usage")
-			expect(usageChunks.length).toBeGreaterThan(0)
-			expect(usageChunks[0].cacheWriteTokens).toBe(0)
-			expect(usageChunks[0].cacheReadTokens).toBe(2)
-		})
-	})
-
-	describe("processUsageMetrics", () => {
-		it("should correctly process usage metrics including cache information", () => {
-			// We need to access the protected method, so we'll create a test subclass
-			class TestMiniMaxHandler extends MiniMaxHandler {
-				public testProcessUsageMetrics(usage: any) {
-					return this.processUsageMetrics(usage)
-				}
-			}
-
-			const testHandler = new TestMiniMaxHandler(mockOptions)
-
-			const usage = {
-				prompt_tokens: 100,
-				completion_tokens: 50,
-				total_tokens: 150,
-				cached_tokens: 20,
-			}
-
-			const result = testHandler.testProcessUsageMetrics(usage)
-
-			expect(result.type).toBe("usage")
-			expect(result.inputTokens).toBe(100)
-			expect(result.outputTokens).toBe(50)
-			expect(result.cacheWriteTokens).toBe(0)
-			expect(result.cacheReadTokens).toBe(20)
-		})
-
-		it("should handle missing cache metrics gracefully", () => {
-			class TestMiniMaxHandler extends MiniMaxHandler {
-				public testProcessUsageMetrics(usage: any) {
-					return this.processUsageMetrics(usage)
-				}
-			}
-
-			const testHandler = new TestMiniMaxHandler(mockOptions)
-
-			const usage = {
-				prompt_tokens: 100,
-				completion_tokens: 50,
-				total_tokens: 150,
-				// No cached_tokens
-			}
-
-			const result = testHandler.testProcessUsageMetrics(usage)
-
-			expect(result.type).toBe("usage")
-			expect(result.inputTokens).toBe(100)
-			expect(result.outputTokens).toBe(50)
-			expect(result.cacheWriteTokens).toBe(0)
-			expect(result.cacheReadTokens).toBeUndefined()
-		})
-	})
-
-	describe("addMaxTokensIfNeeded", () => {
-		it("should always add max_tokens regardless of includeMaxTokens option", () => {
-			// Create a test subclass to access the protected method
-			class TestMiniMaxHandler extends MiniMaxHandler {
-				public testAddMaxTokensIfNeeded(requestOptions: any, modelInfo: any) {
-					this.addMaxTokensIfNeeded(requestOptions, modelInfo)
-				}
-			}
-
-			const testHandler = new TestMiniMaxHandler(mockOptions)
-			const requestOptions: any = {}
-			const modelInfo = {
-				maxTokens: 32_000,
-			}
-
-			// Test with includeMaxTokens set to false - should still add max tokens
-			testHandler.testAddMaxTokensIfNeeded(requestOptions, modelInfo)
-
-			expect(requestOptions.max_tokens).toBe(32_000)
-		})
-
-		it("should use modelMaxTokens when provided", () => {
-			class TestMiniMaxHandler extends MiniMaxHandler {
-				public testAddMaxTokensIfNeeded(requestOptions: any, modelInfo: any) {
-					this.addMaxTokensIfNeeded(requestOptions, modelInfo)
-				}
-			}
-
-			const customMaxTokens = 5000
-			const testHandler = new TestMiniMaxHandler({
-				...mockOptions,
-				modelMaxTokens: customMaxTokens,
-			})
-			const requestOptions: any = {}
-			const modelInfo = {
-				maxTokens: 32_000,
-			}
-
-			testHandler.testAddMaxTokensIfNeeded(requestOptions, modelInfo)
-
-			expect(requestOptions.max_tokens).toBe(customMaxTokens)
-		})
-
-		it("should fall back to modelInfo.maxTokens when modelMaxTokens is not provided", () => {
-			class TestMiniMaxHandler extends MiniMaxHandler {
-				public testAddMaxTokensIfNeeded(requestOptions: any, modelInfo: any) {
-					this.addMaxTokensIfNeeded(requestOptions, modelInfo)
-				}
-			}
-
-			const testHandler = new TestMiniMaxHandler(mockOptions)
-			const requestOptions: any = {}
-			const modelInfo = {
-				maxTokens: 16_000,
-			}
-
-			testHandler.testAddMaxTokensIfNeeded(requestOptions, modelInfo)
-
-			expect(requestOptions.max_tokens).toBe(16_000)
+	describe("Model Configuration", () => {
+		it("should correctly configure MiniMax-M1 model properties", () => {
+			const model = minimaxModels["MiniMax-M1"]
+			expect(model.maxTokens).toBe(25_600)
+			expect(model.contextWindow).toBe(1_000_192)
+			expect(model.supportsImages).toBe(false)
+			expect(model.supportsPromptCache).toBe(false)
+			expect(model.inputPrice).toBe(0.4)
+			expect(model.outputPrice).toBe(2.2)
 		})
 	})
 })
