@@ -7,14 +7,54 @@ import { ALWAYS_AVAILABLE_TOOLS, TOOL_GROUPS } from "../../../../shared/tools"
 import { isFastApplyAvailable } from "../../../tools/editFileTool"
 import { nativeTools } from "."
 import { apply_diff_multi_file, apply_diff_single_file } from "./apply_diff"
+import pWaitFor from "p-wait-for"
+import { McpHub } from "../../../../services/mcp/McpHub"
+import { McpServerManager } from "../../../../services/mcp/McpServerManager"
+import { getMcpServerTools } from "./mcp_server"
+import { ClineProvider } from "../../../webview/ClineProvider"
+import { ContextProxy } from "../../../config/ContextProxy"
+import * as vscode from "vscode"
 
-export function getAllowedJSONToolsForMode(
+export async function getAllowedJSONToolsForMode(
 	mode: Mode,
-	codeIndexManager?: CodeIndexManager,
-	clineProviderState?: ClineProviderState,
+	provider: ClineProvider | undefined,
 	supportsImages?: boolean,
-): OpenAI.Chat.ChatCompletionTool[] {
-	const config = getModeConfig(mode, clineProviderState?.customModes)
+): Promise<OpenAI.Chat.ChatCompletionTool[]> {
+	const providerState: ClineProviderState | undefined = await provider?.getState()
+	const config = getModeConfig(mode, providerState?.customModes)
+	const context = ContextProxy.instance.rawContext
+
+	// Initialize code index managers for all workspace folders.
+	let codeIndexManager: CodeIndexManager | undefined = undefined
+
+	if (vscode.workspace.workspaceFolders) {
+		for (const folder of vscode.workspace.workspaceFolders) {
+			const manager = CodeIndexManager.getInstance(context, folder.uri.fsPath)
+			if (manager) {
+				codeIndexManager = manager
+			}
+		}
+	}
+
+	const { mcpEnabled } = providerState ?? {}
+	let mcpHub: McpHub | undefined
+	if (mcpEnabled) {
+		if (!provider) {
+			throw new Error("Provider reference lost during view transition")
+		}
+
+		// Wait for MCP hub initialization through McpServerManager
+		mcpHub = await McpServerManager.getInstance(provider.context, provider)
+
+		if (!mcpHub) {
+			throw new Error("Failed to get MCP hub from server manager")
+		}
+
+		// Wait for MCP servers to be connected before generating system prompt
+		await pWaitFor(() => !mcpHub!.isConnecting, { timeout: 10_000 }).catch(() => {
+			console.error("MCP servers failed to connect in time")
+		})
+	}
 
 	const tools = new Set<string>()
 
@@ -28,10 +68,10 @@ export function getAllowedJSONToolsForMode(
 					isToolAllowedForMode(
 						tool as ToolName,
 						mode,
-						clineProviderState?.customModes ?? [],
+						providerState?.customModes ?? [],
 						undefined,
 						undefined,
-						clineProviderState?.experiments ?? {},
+						providerState?.experiments ?? {},
 					)
 				) {
 					tools.add(tool)
@@ -51,8 +91,8 @@ export function getAllowedJSONToolsForMode(
 		tools.delete("codebase_search")
 	}
 
-	if (isFastApplyAvailable(clineProviderState)) {
-		// When Morph is enabled, disable traditional editing tools
+	if (isFastApplyAvailable(providerState)) {
+		// When Fast Apply is enabled, disable traditional editing tools
 		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content", "search_and_replace"]
 		traditionalEditingTools.forEach((tool) => tools.delete(tool))
 	} else {
@@ -60,21 +100,21 @@ export function getAllowedJSONToolsForMode(
 	}
 
 	// Conditionally exclude update_todo_list if disabled in settings
-	if (clineProviderState?.apiConfiguration?.todoListEnabled === false) {
+	if (providerState?.apiConfiguration?.todoListEnabled === false) {
 		tools.delete("update_todo_list")
 	}
 
 	// Conditionally exclude generate_image if experiment is not enabled
-	if (!clineProviderState?.experiments?.imageGeneration) {
+	if (!providerState?.experiments?.imageGeneration) {
 		tools.delete("generate_image")
 	}
 
 	// Conditionally exclude run_slash_command if experiment is not enabled
-	if (!clineProviderState?.experiments?.runSlashCommand) {
+	if (!providerState?.experiments?.runSlashCommand) {
 		tools.delete("run_slash_command")
 	}
 
-	if (!clineProviderState?.browserToolEnabled || !supportsImages) {
+	if (!providerState?.browserToolEnabled || !supportsImages) {
 		tools.delete("browser_action")
 	}
 
@@ -84,8 +124,8 @@ export function getAllowedJSONToolsForMode(
 		nativeToolsMap.set(tool.function.name, tool)
 	})
 
-	if (clineProviderState?.apiConfiguration.diffEnabled) {
-		if (clineProviderState?.experiments.multiFileApplyDiff) {
+	if (providerState?.apiConfiguration.diffEnabled) {
+		if (providerState?.experiments.multiFileApplyDiff) {
 			nativeToolsMap.set("apply_diff", apply_diff_multi_file)
 		} else {
 			nativeToolsMap.set("apply_diff", apply_diff_single_file)
@@ -100,6 +140,15 @@ export function getAllowedJSONToolsForMode(
 			allowedTools.push(nativeTool)
 		}
 	})
+
+	// Check if MCP functionality should be included
+	const hasMcpGroup = config.groups.some((groupEntry) => getGroupName(groupEntry) === "mcp")
+	if (hasMcpGroup && mcpHub) {
+		const mcpTools = getMcpServerTools(mcpHub)
+		if (mcpTools) {
+			allowedTools.push(...mcpTools)
+		}
+	}
 
 	return allowedTools
 }
