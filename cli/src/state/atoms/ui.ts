@@ -113,6 +113,7 @@ export type InputMode =
 	| "autocomplete" // Command autocomplete active
 	| "followup" // Followup suggestions active
 	| "history" // History navigation mode
+	| "shell" // Shell mode for command execution
 
 /**
  * Current input mode
