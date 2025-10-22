@@ -64,7 +64,7 @@ export const MiniMax = ({ apiConfiguration, setApiConfigurationField }: MiniMaxP
 								: "https://www.minimax.io/platform/user-center/basic-information/interface-key"
 						}
 						appearance="secondary">
-						{t("settings:providers.getMinimaxApiKey")}
+						{t("settings:providers.getMiniMaxApiKey")}
 					</VSCodeButtonLink>
 				)}
 			</div>
