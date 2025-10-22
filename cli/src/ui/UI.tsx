@@ -9,6 +9,7 @@ import { useAtomValue, useSetAtom } from "jotai"
 import { isStreamingAtom, errorAtom, addMessageAtom } from "../state/atoms/ui.js"
 import { setCIModeAtom } from "../state/atoms/ci.js"
 import { configValidationAtom } from "../state/atoms/config.js"
+import { addToHistoryAtom, resetHistoryNavigationAtom, exitHistoryModeAtom } from "../state/atoms/history.js"
 import { MessageDisplay } from "./messages/MessageDisplay.js"
 import { CommandInput } from "./components/CommandInput.js"
 import { StatusBar } from "./components/StatusBar.js"
@@ -18,6 +19,7 @@ import { isCommandInput } from "../services/autocomplete.js"
 import { useCommandHandler } from "../state/hooks/useCommandHandler.js"
 import { useMessageHandler } from "../state/hooks/useMessageHandler.js"
 import { useFollowupHandler } from "../state/hooks/useFollowupHandler.js"
+import { useProfile } from "../state/hooks/useProfile.js"
 import { useCIMode } from "../state/hooks/useCIMode.js"
 import { useTheme } from "../state/hooks/useTheme.js"
 import { AppOptions } from "./App.js"
@@ -42,6 +44,9 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	// Initialize CI mode configuration
 	const setCIMode = useSetAtom(setCIModeAtom)
 	const addMessage = useSetAtom(addMessageAtom)
+	const addToHistory = useSetAtom(addToHistoryAtom)
+	const resetHistoryNavigation = useSetAtom(resetHistoryNavigationAtom)
+	const exitHistoryMode = useSetAtom(exitHistoryModeAtom)
 
 	// Use specialized hooks for command and message handling
 	const { executeCommand, isExecuting: isExecutingCommand } = useCommandHandler()
@@ -51,6 +56,9 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 
 	// Followup handler hook for automatic suggestion population
 	useFollowupHandler()
+
+	// Profile hook for handling profile/balance data responses
+	useProfile()
 
 	// CI mode hook for automatic exit
 	const { shouldExit, exitReason } = useCIMode({
@@ -111,6 +119,13 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 			const trimmedInput = input.trim()
 			if (!trimmedInput) return
 
+			// Add to history
+			await addToHistory(trimmedInput)
+
+			// Exit history mode and reset navigation state
+			exitHistoryMode()
+			resetHistoryNavigation()
+
 			// Determine if it's a command or regular message
 			if (isCommandInput(trimmedInput)) {
 				// Handle as command
@@ -120,7 +135,7 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 				await sendUserMessage(trimmedInput)
 			}
 		},
-		[executeCommand, sendUserMessage, onExit],
+		[executeCommand, sendUserMessage, onExit, addToHistory, resetHistoryNavigation, exitHistoryMode],
 	)
 
 	// Determine if any operation is in progress
