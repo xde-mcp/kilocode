@@ -13,7 +13,7 @@ export class MiniMaxHandler extends BaseOpenAiCompatibleProvider<MinimaxModelId>
 			apiKey: options.minimaxApiKey,
 			defaultProviderModelId: minimaxDefaultModelId,
 			providerModels: minimaxModels,
-			defaultTemperature: 0,
+			defaultTemperature: 1.0,
 		})
 	}
 }
