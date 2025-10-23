@@ -245,6 +245,15 @@
 		"searchProviderPlaceholder": "Suchanbieter durchsuchen",
 		"noProviderMatchFound": "Keine Anbieter gefunden",
 		"noMatchFound": "Keine passenden Profile gefunden",
+		"profileName": "Profilname",
+		"profileType": "Profiltyp",
+		"profileTypeChat": "Chat",
+		"profileTypeAutocomplete": "Autovervollständigung",
+		"profileTypeDescription": "Chat-Profile werden für Unterhaltungen verwendet. Es ist nur ein Autovervollständigungsprofil erlaubt.",
+		"autocompleteLabel": "(Autovervollständigung)",
+		"autocomplete": {
+			"onlyOneAllowed": "Es ist nur ein Autovervollständigungsprofil erlaubt. Das Profil \"{{existingName}}\" ist bereits für Autovervollständigung konfiguriert. Bitte ändere zuerst seinen Typ oder lösche es."
+		},
 		"vscodeLmDescription": "Die VS Code Language Model API ermöglicht das Ausführen von Modellen, die von anderen VS Code-Erweiterungen bereitgestellt werden (einschließlich, aber nicht beschränkt auf GitHub Copilot). Der einfachste Weg, um zu starten, besteht darin, die Erweiterungen Copilot und Copilot Chat aus dem VS Code Marketplace zu installieren.",
 		"awsCustomArnUse": "Gib eine gültige Amazon Bedrock ARN für das Modell ein, das du verwenden möchtest. Formatbeispiele:",
 		"awsCustomArnDesc": "Stelle sicher, dass die Region in der ARN mit Ihrer oben ausgewählten AWS-Region übereinstimmt.",
