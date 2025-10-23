@@ -39,11 +39,6 @@ export const registerGhostProvider = (context: vscode.ExtensionContext, cline: C
 		}),
 	)
 	context.subscriptions.push(
-		vscode.commands.registerCommand("kilo-code.ghost.promptCodeSuggestion", async () => {
-			await ghost.promptCodeSuggestion()
-		}),
-	)
-	context.subscriptions.push(
 		vscode.commands.registerCommand("kilo-code.ghost.goToNextSuggestion", async () => {
 			await ghost.selectNextSuggestion()
 		}),
@@ -80,7 +75,4 @@ export const registerGhostProvider = (context: vscode.ExtensionContext, cline: C
 			providedCodeActionKinds: Object.values(ghost.codeActionProvider.providedCodeActionKinds),
 		}),
 	)
-
-	// Register GhostProvider Code Lens
-	context.subscriptions.push(vscode.languages.registerCodeLensProvider("*", ghost.codeLensProvider))
 }

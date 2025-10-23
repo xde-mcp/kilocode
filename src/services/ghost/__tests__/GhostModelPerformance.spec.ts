@@ -1,10 +1,11 @@
 import * as vscode from "vscode"
 import { describe, it, expect } from "vitest"
-import { PromptStrategyManager } from "../PromptStrategyManager"
-import { MockWorkspace } from "./MockWorkspace"
+import { AutoTriggerStrategy } from "../strategies/AutoTriggerStrategy"
 import { ApiHandler, buildApiHandler } from "../../../api"
 import { GhostModel } from "../GhostModel"
 import { allowNetConnect } from "../../../vitest.setup"
+import { AutocompleteInput } from "../types"
+import crypto from "crypto"
 
 const KEYS = {
 	KILOCODE: null,
@@ -14,18 +15,20 @@ const KEYS = {
 
 describe("GhostModelPerformance", () => {
 	const generatePrompt = (userInput: string) => {
-		const strategyManager = new PromptStrategyManager()
-		const mockWorkspace = new MockWorkspace()
+		const autoTriggerStrategy = new AutoTriggerStrategy()
 
 		const testUri = vscode.Uri.parse("file:///example.ts")
-		const document = mockWorkspace.addDocument(testUri, "")
 
-		const context = {
-			userInput,
-			document: document,
+		const autocompleteInput: AutocompleteInput = {
+			isUntitledFile: false,
+			completionId: crypto.randomUUID(),
+			filepath: testUri.fsPath,
+			pos: { line: 0, character: 0 },
+			recentlyVisitedRanges: [],
+			recentlyEditedRanges: [],
 		}
 
-		const { systemPrompt, userPrompt } = strategyManager.buildPrompt(context)
+		const { systemPrompt, userPrompt } = autoTriggerStrategy.getPrompts(autocompleteInput, "", "", "typescript")
 
 		return { systemPrompt, suggestionPrompt: userPrompt }
 	}

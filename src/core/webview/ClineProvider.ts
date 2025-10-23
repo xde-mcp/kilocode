@@ -41,6 +41,7 @@ import {
 	DEFAULT_WRITE_DELAY_MS,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_MODES,
+	getActiveToolUseStyle, // kilocode_change
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { CloudService, BridgeOrchestrator, getRooCodeApiUrl } from "@roo-code/cloud"
@@ -53,7 +54,8 @@ import type { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } f
 import { Mode, defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import { experimentDefault } from "../../shared/experiments"
 import { formatLanguage } from "../../shared/language"
-import { WebviewMessage } from "../../shared/WebviewMessage"
+// kilocode_change: add BalanceDataResponsePayload
+import { WebviewMessage, BalanceDataResponsePayload } from "../../shared/WebviewMessage"
 import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
 import { ProfileValidator } from "../../shared/ProfileValidator"
 
@@ -104,6 +106,7 @@ import { stringifyError } from "../../shared/kilocode/errorUtils"
 import isWsl from "is-wsl"
 import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocodeDefaultModel"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
+import { getKiloBaseUriFromToken } from "@roo-code/types"
 import { getKilocodeConfig, getWorkspaceProjectId, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
@@ -151,8 +154,10 @@ export class ClineProvider
 	private taskCreationCallback: (task: Task) => void
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
+	private creditsStatusBar?: any // kilocode_change
 
 	private recentTasksCache?: string[]
+	private balanceHandlers: Array<(data: BalanceDataResponsePayload) => void> = [] // kilocode_change
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
 	private static readonly PENDING_OPERATION_TIMEOUT_MS = 30000 // 30 seconds
 
@@ -693,6 +698,39 @@ export class ClineProvider
 			await visibleProvider.postMessageToWebview({ type: "invoke", invoke: "setChatBoxMessage", text: prompt })
 			return
 		}
+
+		//kilocode_change start
+		if (command === "addToContextAndFocus") {
+			let messageText = prompt
+
+			const editor = vscode.window.activeTextEditor
+			if (editor) {
+				const fullContent = editor.document.getText()
+				const filePath = params.filePath as string
+
+				messageText = `
+For context, we are working within this file:
+
+'${filePath}' (see below for file content)
+<file_content path="${filePath}">
+${fullContent}
+</file_content>
+
+Heed this prompt:
+
+${prompt}
+`
+			}
+
+			await visibleProvider.postMessageToWebview({
+				type: "invoke",
+				invoke: "setChatBoxMessage",
+				text: messageText,
+			})
+			await vscode.commands.executeCommand("kilo-code.focusChatInput")
+			return
+		}
+		// kilocode_change end
 
 		await visibleProvider.createTask(prompt)
 	}
@@ -1267,6 +1305,12 @@ export class ClineProvider
 
 	// Provider Profile Management
 
+	// kilocode_change start
+	public setCreditsStatusBar(creditsStatusBar: any): void {
+		this.creditsStatusBar = creditsStatusBar
+	}
+	// kilocode_change end
+
 	getProviderProfileEntries(): ProviderSettingsEntry[] {
 		return this.contextProxy.getValues().listApiConfigMeta || []
 	}
@@ -1285,6 +1329,11 @@ export class ClineProvider
 		activate: boolean = true,
 	): Promise<string | undefined> {
 		try {
+			// kilocode_change start
+			const oldOrgId = this.contextProxy.getProviderSettings().kilocodeOrganizationId
+			const newOrgId = providerSettings.kilocodeOrganizationId
+			// kilocode_change end
+
 			// TODO: Do we need to be calling `activateProfile`? It's not
 			// clear to me what the source of truth should be; in some cases
 			// we rely on the `ContextProxy`'s data store and in other cases
@@ -1311,6 +1360,15 @@ export class ClineProvider
 					this.providerSettingsManager.setModeConfig(mode, id),
 					this.contextProxy.setProviderSettings(providerSettings),
 				])
+
+				// kilocode_change start
+				if (oldOrgId !== newOrgId && this.creditsStatusBar) {
+					this.log(
+						`[upsertProviderProfile] Organization ID changed from ${oldOrgId} to ${newOrgId}, notifying CreditsStatusBar`,
+					)
+					await this.creditsStatusBar.clearAndRefresh()
+				}
+				// kilocode_change end
 
 				// Change the provider for the current task.
 				// TODO: We should rename `buildApiHandler` for clarity (e.g. `getProviderClient`).
@@ -1882,6 +1940,7 @@ export class ClineProvider
 			language,
 			showAutoApproveMenu, // kilocode_change
 			showTaskTimeline, // kilocode_change
+			sendMessageOnEnter, // kilocode_change
 			showTimestamps, // kilocode_change
 			hideCostBelowThreshold, // kilocode_change
 			maxReadFileLine,
@@ -2035,6 +2094,7 @@ export class ClineProvider
 			showRooIgnoredFiles: showRooIgnoredFiles ?? false,
 			showAutoApproveMenu: showAutoApproveMenu ?? false, // kilocode_change
 			showTaskTimeline: showTaskTimeline ?? true, // kilocode_change
+			sendMessageOnEnter: sendMessageOnEnter ?? true, // kilocode_change
 			showTimestamps: showTimestamps ?? true, // kilocode_change
 			hideCostBelowThreshold, // kilocode_change
 			language, // kilocode_change
@@ -2287,6 +2347,7 @@ export class ClineProvider
 			showRooIgnoredFiles: stateValues.showRooIgnoredFiles ?? false,
 			showAutoApproveMenu: stateValues.showAutoApproveMenu ?? false, // kilocode_change
 			showTaskTimeline: stateValues.showTaskTimeline ?? true, // kilocode_change
+			sendMessageOnEnter: stateValues.sendMessageOnEnter ?? true, // kilocode_change
 			showTimestamps: stateValues.showTimestamps ?? true, // kilocode_change
 			hideCostBelowThreshold: stateValues.hideCostBelowThreshold ?? 0, // kilocode_change
 			maxReadFileLine: stateValues.maxReadFileLine ?? -1,
@@ -2501,6 +2562,7 @@ export class ClineProvider
 			...config,
 			provider: this,
 			sessionId: vscode.env.sessionId,
+			isCloudAgent: CloudService.instance.isCloudAgent,
 		})
 
 		const bridge = BridgeOrchestrator.getInstance()
@@ -2929,6 +2991,7 @@ export class ClineProvider
 			language,
 			mode,
 			taskId: task?.taskId,
+			parentTaskId: task?.parentTask?.taskId,
 			apiProvider: apiConfiguration?.apiProvider,
 			diffStrategy: task?.diffStrategy?.getName(),
 			isSubtask: task ? !!task.parentTask : undefined,
@@ -2936,6 +2999,7 @@ export class ClineProvider
 			// kilocode_change start
 			currentTaskSize: task?.clineMessages.length,
 			taskHistorySize: this.kiloCodeTaskHistorySizeForTelemetryOnly || undefined,
+			toolStyle: getActiveToolUseStyle(apiConfiguration),
 			// kilocode_change end
 		}
 	}
@@ -3262,6 +3326,95 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 
 	public getTaskHistory(): HistoryItem[] {
 		return this.getGlobalState("taskHistory") || []
+	}
+
+	/**
+	 * Register a balance data handler that will be called when balance data is fetched
+	 * @param handler - Function to call with balance data
+	 * @returns Disposable that can be used to unregister the handler
+	 */
+	public registerBalanceHandler(handler: (data: BalanceDataResponsePayload) => void): vscode.Disposable {
+		this.balanceHandlers.push(handler)
+
+		return new vscode.Disposable(() => {
+			const index = this.balanceHandlers.indexOf(handler)
+			if (index > -1) {
+				this.balanceHandlers.splice(index, 1)
+			}
+		})
+	}
+
+	/**
+	 * Fetch balance data from the Kilo Code API
+	 * @returns Promise with BalanceDataResponsePayload
+	 */
+	public async fetchBalanceData(): Promise<BalanceDataResponsePayload> {
+		try {
+			const { apiConfiguration } = await this.getState()
+			const { kilocodeToken, kilocodeOrganizationId } = apiConfiguration
+
+			if (!kilocodeToken) {
+				const error = "No Kilo Code token available"
+				this.log(`[fetchBalanceData] ${error}`)
+				const result: BalanceDataResponsePayload = { success: false, error }
+				this.balanceHandlers.forEach((handler) => handler(result))
+				return result
+			}
+
+			const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
+			const url = `${baseUrl}/api/profile/balance`
+
+			this.log(`[fetchBalanceData] Fetching balance from: ${url}`)
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${kilocodeToken}`,
+					"Content-Type": "application/json",
+					"X-KiloCode-OrganizationId": kilocodeOrganizationId,
+				},
+				timeout: 10000,
+			})
+
+			if (response.data) {
+				const result: BalanceDataResponsePayload = {
+					success: true,
+					data: response.data,
+				}
+
+				// Notify all registered handlers
+				this.balanceHandlers.forEach((handler) => {
+					try {
+						handler(result)
+					} catch (error) {
+						this.log(`[fetchBalanceData] Error in balance handler: ${error}`)
+					}
+				})
+
+				this.log(`[fetchBalanceData] Successfully fetched balance data`)
+				return result
+			} else {
+				throw new Error("Invalid response from balance API")
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			this.log(`[fetchBalanceData] Error fetching balance: ${errorMessage}`)
+
+			const result: BalanceDataResponsePayload = {
+				success: false,
+				error: errorMessage,
+			}
+
+			// Notify all registered handlers of the error
+			this.balanceHandlers.forEach((handler) => {
+				try {
+					handler(result)
+				} catch (handlerError) {
+					this.log(`[fetchBalanceData] Error in balance handler: ${handlerError}`)
+				}
+			})
+
+			return result
+		}
 	}
 	// kilocode_change end
 

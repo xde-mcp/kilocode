@@ -3,15 +3,14 @@ import * as vscode from "vscode"
 import { t } from "../../i18n"
 import { GhostDocumentStore } from "./GhostDocumentStore"
 import { GhostStreamingParser } from "./GhostStreamingParser"
-import { PromptStrategyManager } from "./PromptStrategyManager"
+import { AutoTriggerStrategy } from "./strategies/AutoTriggerStrategy"
 import { GhostModel } from "./GhostModel"
 import { GhostWorkspaceEdit } from "./GhostWorkspaceEdit"
 import { GhostDecorations } from "./GhostDecorations"
-import { GhostSuggestionContext } from "./types"
+import { GhostSuggestionContext, contextToAutocompleteInput, extractPrefixSuffix } from "./types"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostSuggestionsState } from "./GhostSuggestions"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
-import { GhostCodeLensProvider } from "./GhostCodeLensProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -29,7 +28,7 @@ export class GhostProvider {
 	private documentStore: GhostDocumentStore
 	private model: GhostModel
 	private streamingParser: GhostStreamingParser
-	private strategyManager: PromptStrategyManager
+	private autoTriggerStrategy: AutoTriggerStrategy
 	private workspaceEdit: GhostWorkspaceEdit
 	private suggestions: GhostSuggestionsState = new GhostSuggestionsState()
 	private cline: ClineProvider
@@ -55,7 +54,6 @@ export class GhostProvider {
 
 	// VSCode Providers
 	public codeActionProvider: GhostCodeActionProvider
-	public codeLensProvider: GhostCodeLensProvider
 
 	private ignoreController?: Promise<RooIgnoreController>
 
@@ -66,7 +64,7 @@ export class GhostProvider {
 		this.decorations = new GhostDecorations()
 		this.documentStore = new GhostDocumentStore()
 		this.streamingParser = new GhostStreamingParser()
-		this.strategyManager = new PromptStrategyManager({ debug: true })
+		this.autoTriggerStrategy = new AutoTriggerStrategy()
 		this.workspaceEdit = new GhostWorkspaceEdit()
 		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new GhostModel()
@@ -76,7 +74,6 @@ export class GhostProvider {
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
-		this.codeLensProvider = new GhostCodeLensProvider()
 
 		// Register document event handlers
 		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, context.subscriptions)
@@ -118,16 +115,22 @@ export class GhostProvider {
 		if (!this.settings) {
 			return
 		}
-		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: this.settings })
+		const settingsWithModelInfo = {
+			...this.settings,
+			provider: this.getCurrentProviderName(),
+			model: this.getCurrentModelName(),
+		}
+		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: settingsWithModelInfo })
 		await this.cline.postStateToWebview()
 	}
 
 	public async load() {
 		this.settings = this.loadSettings()
-		await this.model.reload(this.settings, this.providerSettingsManager)
+		await this.model.reload(this.providerSettingsManager)
 		this.cursorAnimation.updateSettings(this.settings || undefined)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
+		await this.saveSettings()
 	}
 
 	public async disable() {
@@ -201,9 +204,37 @@ export class GhostProvider {
 		if (this.workspaceEdit.isLocked()) {
 			return
 		}
+
+		// Filter out undo/redo operations
+		if (event.reason !== undefined) {
+			return
+		}
+
 		if (event.contentChanges.length === 0) {
 			return
 		}
+
+		// Heuristic to filter out bulk changes (git operations, external edits)
+		const isBulkChange = event.contentChanges.some((change) => change.rangeLength > 100 || change.text.length > 100)
+		if (isBulkChange) {
+			return
+		}
+
+		// Heuristic to filter out changes far from cursor (likely external or LLM edits)
+		const editor = vscode.window.activeTextEditor
+		if (!editor || editor.document !== event.document) {
+			return
+		}
+
+		const cursorPos = editor.selection.active
+		const isNearCursor = event.contentChanges.some((change) => {
+			const distance = Math.abs(cursorPos.line - change.range.start.line)
+			return distance <= 2
+		})
+		if (!isNearCursor) {
+			return
+		}
+
 		await this.documentStore.storeDocument({ document: event.document })
 		this.lastTextChangeTime = Date.now()
 		this.handleTypingEvent(event)
@@ -227,34 +258,6 @@ export class GhostProvider {
 		}
 		this.clearAutoTriggerTimer()
 		await this.render()
-	}
-
-	public async promptCodeSuggestion() {
-		if (!this.enabled) {
-			return
-		}
-
-		this.taskId = crypto.randomUUID()
-		TelemetryService.instance.captureEvent(TelemetryEventName.INLINE_ASSIST_QUICK_TASK, {
-			taskId: this.taskId,
-		})
-
-		const userInput = await vscode.window.showInputBox({
-			prompt: t("kilocode:ghost.input.title"),
-			placeHolder: t("kilocode:ghost.input.placeholder"),
-		})
-		if (!userInput) {
-			return
-		}
-
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			return
-		}
-
-		const document = editor.document
-		const range = editor.selection.isEmpty ? undefined : editor.selection
-		await this.provideCodeSuggestions({ document, range, userInput })
 	}
 
 	private async hasAccess(document: vscode.TextDocument) {
@@ -292,7 +295,19 @@ export class GhostProvider {
 		this.isRequestCancelled = false
 
 		const context = await this.ghostContext.generate(initialContext)
-		const { systemPrompt, userPrompt } = this.strategyManager.buildPrompt(context)
+
+		const autocompleteInput = contextToAutocompleteInput(context)
+
+		const position = context.range?.start ?? context.document.positionAt(0)
+		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
+		const languageId = context.document.languageId
+
+		const { systemPrompt, userPrompt } = this.autoTriggerStrategy.getPrompts(
+			autocompleteInput,
+			prefix,
+			suffix,
+			languageId,
+		)
 		if (this.isRequestCancelled) {
 			return
 		}
@@ -324,32 +339,6 @@ export class GhostProvider {
 
 			if (chunk.type === "text") {
 				response += chunk.text
-
-				// Process the text chunk through our streaming parser
-				const parseResult = this.streamingParser.processChunk(chunk.text)
-
-				if (parseResult.hasNewSuggestions) {
-					// Update our suggestions with the new parsed results
-					this.suggestions = parseResult.suggestions
-
-					// If this is the first suggestion, show it immediately
-					if (!hasShownFirstSuggestion && this.suggestions.hasSuggestions()) {
-						hasShownFirstSuggestion = true
-						this.stopProcessing() // Stop the loading animation
-						this.selectClosestSuggestion()
-						void this.render() // Render asynchronously to not block streaming
-					} else if (hasShownFirstSuggestion) {
-						// Update existing suggestions
-						this.selectClosestSuggestion()
-						void this.render() // Update UI asynchronously
-					}
-				}
-
-				// If the response appears complete, finalize
-				if (parseResult.isComplete && hasShownFirstSuggestion) {
-					this.selectClosestSuggestion()
-					void this.render()
-				}
 			}
 		}
 
@@ -386,7 +375,7 @@ export class GhostProvider {
 			}
 
 			// Finish the streaming parser to apply sanitization if needed
-			const finalParseResult = this.streamingParser.finishStream()
+			const finalParseResult = this.streamingParser.parseResponse(response)
 			if (finalParseResult.hasNewSuggestions && !hasShownFirstSuggestion) {
 				// Handle case where sanitization produced suggestions
 				this.suggestions = finalParseResult.suggestions
@@ -420,7 +409,6 @@ export class GhostProvider {
 	private async render() {
 		await this.updateGlobalContext()
 		await this.displaySuggestions()
-		// await this.displayCodeLens()
 	}
 
 	private selectClosestSuggestion() {
@@ -444,36 +432,6 @@ export class GhostProvider {
 			return
 		}
 		await this.decorations.displaySuggestions(this.suggestions)
-	}
-
-	private getSelectedSuggestionLine() {
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			return null
-		}
-		const file = this.suggestions.getFile(editor.document.uri)
-		if (!file) {
-			return null
-		}
-		const selectedGroup = file.getSelectedGroupOperations()
-		if (selectedGroup.length === 0) {
-			return null
-		}
-		const offset = file.getPlaceholderOffsetSelectedGroupOperations()
-		const topOperation = selectedGroup?.length ? selectedGroup[0] : null
-		if (!topOperation) {
-			return null
-		}
-		return topOperation.type === "+" ? topOperation.line + offset.removed : topOperation.line + offset.added
-	}
-
-	private async displayCodeLens() {
-		const topLine = this.getSelectedSuggestionLine()
-		if (topLine === null) {
-			this.codeLensProvider.setSuggestionRange(undefined)
-			return
-		}
-		this.codeLensProvider.setSuggestionRange(new vscode.Range(topLine, 0, topLine, 0))
 	}
 
 	private async updateGlobalContext() {
@@ -614,6 +572,7 @@ export class GhostProvider {
 		this.statusBar = new GhostStatusBar({
 			enabled: false,
 			model: "loading...",
+			provider: "loading...",
 			hasValidToken: false,
 			totalSessionCost: 0,
 			lastCompletionCost: 0,
@@ -625,6 +584,13 @@ export class GhostProvider {
 			return "loading..."
 		}
 		return this.model.getModelName() ?? "unknown"
+	}
+
+	private getCurrentProviderName(): string {
+		if (!this.model.loaded) {
+			return "loading..."
+		}
+		return this.model.getProviderDisplayName() ?? "unknown"
 	}
 
 	private hasValidApiToken(): boolean {
@@ -645,6 +611,7 @@ export class GhostProvider {
 		this.statusBar?.update({
 			enabled: this.settings?.enableAutoTrigger,
 			model: this.getCurrentModelName(),
+			provider: this.getCurrentProviderName(),
 			hasValidToken: this.hasValidApiToken(),
 			totalSessionCost: this.sessionCost,
 			lastCompletionCost: this.lastCompletionCost,
