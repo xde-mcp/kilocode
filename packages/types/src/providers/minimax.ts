@@ -19,4 +19,4 @@ export const minimaxModels = {
 	},
 } as const satisfies Record<string, ModelInfo>
 
-export const MINIMAX_DEFAULT_TEMPERATURE = 0
+export const MINIMAX_DEFAULT_TEMPERATURE = 1.0
