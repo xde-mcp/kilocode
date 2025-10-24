@@ -2,6 +2,7 @@
  * /tasks command - View and manage task history
  */
 
+import { generateMessage } from "../ui/utils/messages.js"
 import type { Command, ArgumentProviderContext } from "./core/types.js"
 import type { HistoryItem } from "@roo-code/types"
 
@@ -68,7 +69,6 @@ function truncate(text: string, maxLength: number): string {
  */
 async function showTaskHistory(context: any, dataOverride?: any): Promise<void> {
 	const { taskHistoryData, taskHistoryLoading, taskHistoryError, fetchTaskHistory, addMessage } = context
-	const now = Date.now()
 
 	// Use override data if provided, otherwise use context data
 	const data = dataOverride || taskHistoryData
@@ -76,10 +76,9 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
 	// If loading, show loading message
 	if (taskHistoryLoading && !dataOverride) {
 		addMessage({
-			id: `system-${now}`,
+			...generateMessage(),
 			type: "system",
 			content: "Loading task history...",
-			ts: now,
 		})
 		return
 	}
@@ -87,10 +86,9 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
 	// If error, show error message
 	if (taskHistoryError && !dataOverride) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to load task history: ${taskHistoryError}`,
-			ts: now,
 		})
 		return
 	}
@@ -99,10 +97,9 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
 	if (!data) {
 		await fetchTaskHistory()
 		addMessage({
-			id: `system-no-data-${now}`,
+			...generateMessage(),
 			type: "system",
 			content: "Loading task history...",
-			ts: now,
 		})
 		return
 	}
@@ -111,10 +108,9 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
 
 	if (historyItems.length === 0) {
 		addMessage({
-			id: `system-no-tasks-${now}`,
+			...generateMessage(),
 			type: "system",
 			content: "No tasks found in history.",
-			ts: now,
 		})
 		return
 	}
@@ -136,10 +132,9 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
 	})
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content,
-		ts: now,
 	})
 }
 
@@ -148,23 +143,20 @@ async function showTaskHistory(context: any, dataOverride?: any): Promise<void> 
  */
 async function searchTasks(context: any, query: string): Promise<void> {
 	const { updateTaskHistoryFilters, addMessage } = context
-	const now = Date.now()
 
 	if (!query) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: "Usage: /tasks search <query>",
-			ts: now,
 		})
 		return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: `Searching for "${query}"...`,
-		ts: now,
 	})
 
 	try {
@@ -174,10 +166,9 @@ async function searchTasks(context: any, query: string): Promise<void> {
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to search tasks: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -187,19 +178,18 @@ async function searchTasks(context: any, query: string): Promise<void> {
  */
 async function selectTask(context: any, taskId: string): Promise<void> {
 	const { sendWebviewMessage, addMessage, replaceMessages, refreshTerminal } = context
-	const now = Date.now()
 
 	if (!taskId) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: "Usage: /tasks select <task-id>",
-			ts: now,
 		})
 		return
 	}
 
 	try {
+		const now = Date.now()
 		replaceMessages([
 			{
 				id: `empty-${now}`,
@@ -223,10 +213,9 @@ async function selectTask(context: any, taskId: string): Promise<void> {
 		})
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to switch to task: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -236,14 +225,12 @@ async function selectTask(context: any, taskId: string): Promise<void> {
  */
 async function changePage(context: any, pageNum: string): Promise<void> {
 	const { taskHistoryData, changeTaskHistoryPage, addMessage } = context
-	const now = Date.now()
 
 	if (!taskHistoryData) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: "No task history loaded. Use /tasks to load history first.",
-			ts: now,
 		})
 		return
 	}
@@ -252,19 +239,17 @@ async function changePage(context: any, pageNum: string): Promise<void> {
 
 	if (isNaN(pageIndex) || pageIndex < 0 || pageIndex >= taskHistoryData.pageCount) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Invalid page number. Must be between 1 and ${taskHistoryData.pageCount}.`,
-			ts: now,
 		})
 		return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: `Loading page ${pageIndex + 1}...`,
-		ts: now,
 	})
 
 	try {
@@ -274,10 +259,9 @@ async function changePage(context: any, pageNum: string): Promise<void> {
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to load page: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -291,29 +275,26 @@ async function nextPage(context: any): Promise<void> {
 
 	if (!taskHistoryData) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: "No task history loaded. Use /tasks to load history first.",
-			ts: Date.now(),
 		})
 		return
 	}
 
 	if (taskHistoryData.pageIndex >= taskHistoryData.pageCount - 1) {
 		addMessage({
-			id: `system-${now}`,
+			...generateMessage(),
 			type: "system",
 			content: "Already on the last page.",
-			ts: Date.now(),
 		})
 		return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: "Loading next page...",
-		ts: now,
 	})
 
 	try {
@@ -323,10 +304,9 @@ async function nextPage(context: any): Promise<void> {
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to load next page: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -336,33 +316,29 @@ async function nextPage(context: any): Promise<void> {
  */
 async function previousPage(context: any): Promise<void> {
 	const { taskHistoryData, previousTaskHistoryPage, addMessage } = context
-	const now = Date.now()
 
 	if (!taskHistoryData) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: "No task history loaded. Use /tasks to load history first.",
-			ts: now,
 		})
 		return
 	}
 
 	if (taskHistoryData.pageIndex <= 0) {
 		addMessage({
-			id: `system-${now}`,
+			...generateMessage(),
 			type: "system",
 			content: "Already on the first page.",
-			ts: now,
 		})
 		return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: "Loading previous page...",
-		ts: now,
 	})
 
 	try {
@@ -372,10 +348,9 @@ async function previousPage(context: any): Promise<void> {
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to load previous page: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -385,26 +360,23 @@ async function previousPage(context: any): Promise<void> {
  */
 async function changeSortOrder(context: any, sortOption: string): Promise<void> {
 	const { updateTaskHistoryFilters, addMessage } = context
-	const now = Date.now()
 
 	const validSorts = Object.keys(SORT_OPTION_MAP)
 	const mappedSort = SORT_OPTION_MAP[sortOption]
 
 	if (!mappedSort) {
 		addMessage({
-			id: `error-validation-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Invalid sort option. Valid options: ${validSorts.join(", ")}`,
-			ts: now,
 		})
 		return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: `Sorting by ${sortOption}...`,
-		ts: Date.now(),
 	})
 
 	try {
@@ -414,10 +386,9 @@ async function changeSortOrder(context: any, sortOption: string): Promise<void> 
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to change sort order: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -427,7 +398,6 @@ async function changeSortOrder(context: any, sortOption: string): Promise<void> 
  */
 async function changeFilter(context: any, filterOption: string): Promise<void> {
 	const { updateTaskHistoryFilters, addMessage } = context
-	const now = Date.now()
 
 	let filterUpdate: any
 	let loadingMessage: string
@@ -455,19 +425,17 @@ async function changeFilter(context: any, filterOption: string): Promise<void> {
 
 		default:
 			addMessage({
-				id: `error-validation-${now}`,
+				...generateMessage(),
 				type: "error",
 				content: "Invalid filter option. Valid options: current, all, favorites, all-tasks",
-				ts: now,
 			})
 			return
 	}
 
 	addMessage({
-		id: `system-${now}`,
+		...generateMessage(),
 		type: "system",
 		content: loadingMessage,
-		ts: Date.now(),
 	})
 
 	try {
@@ -477,10 +445,9 @@ async function changeFilter(context: any, filterOption: string): Promise<void> {
 		await showTaskHistory(context, newData)
 	} catch (error) {
 		addMessage({
-			id: `error-fetch-${now}`,
+			...generateMessage(),
 			type: "error",
 			content: `Failed to change filter: ${error instanceof Error ? error.message : String(error)}`,
-			ts: now,
 		})
 	}
 }
@@ -632,10 +599,9 @@ export const tasksCommand: Command = {
 
 			default:
 				context.addMessage({
-					id: Date.now().toString(),
+					...generateMessage(),
 					type: "error",
 					content: `Unknown subcommand "${subcommand}". Available: search, select, page, next, prev, sort, filter`,
-					ts: Date.now(),
 				})
 		}
 	},
