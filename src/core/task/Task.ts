@@ -122,6 +122,7 @@ import { MessageQueueService } from "../message-queue/MessageQueueService"
 
 import { AutoApprovalHandler } from "./AutoApprovalHandler"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
+import { getAppUrl } from "@roo-code/types"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -2938,7 +2939,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				metadata.allowedTools = await getAllowedJSONToolsForMode(
 					mode,
 					provider,
-					this.api?.getModel()?.info?.supportsImages,
+					this.diffEnabled,
+					this.api?.getModel()?.info?.supportsImages ?? false,
 				)
 			} catch (error) {
 				console.error("[Task] Error getting allowed tools for mode:", error)
@@ -2972,7 +2974,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								title: error.error?.title ?? t("kilocode:lowCreditWarning.title"),
 								message: error.error?.message ?? t("kilocode:lowCreditWarning.message"),
 								balance: error.error?.balance ?? "0.00",
-								buyCreditsUrl: error.error?.buyCreditsUrl ?? "https://kilocode.ai/profile",
+								buyCreditsUrl: error.error?.buyCreditsUrl ?? getAppUrl("/profile"),
 							}),
 						)
 					: this.ask(

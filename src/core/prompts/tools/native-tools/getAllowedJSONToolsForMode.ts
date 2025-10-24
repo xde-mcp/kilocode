@@ -119,16 +119,30 @@ export async function getAllowedJSONToolsForMode(
 	}
 
 	// Create a map of tool names to native tool definitions for quick lookup
-	const nativeToolsMap = new Map<string, OpenAI.Chat.ChatCompletionTool>()
-	nativeTools.forEach((tool) => {
-		nativeToolsMap.set(tool.function.name, tool)
-	})
+	// Exclude apply_diff tools as they are handled specially below
+	const allowedTools: OpenAI.Chat.ChatCompletionTool[] = []
 
-	if (providerState?.apiConfiguration.diffEnabled) {
-		if (providerState?.experiments.multiFileApplyDiff) {
-			nativeToolsMap.set("apply_diff", apply_diff_multi_file)
+	let isApplyDiffToolAllowedForMode = false
+	for (const nativeTool of nativeTools) {
+		const toolName = nativeTool.function.name
+
+		// If the tool is in the allowed set, add it.
+		if (tools.has(toolName)) {
+			if (toolName === "apply_diff") {
+				isApplyDiffToolAllowedForMode = true
+			} else {
+				allowedTools.push(nativeTool)
+			}
+		}
+	}
+
+	// Handle the "apply_diff" logic separately because the same tool has different
+	// implementations depending on whether multi-file diffs are enabled, but the same name is used.
+	if (isApplyDiffToolAllowedForMode && diffEnabled) {
+		if (clineProviderState?.experiments.multiFileApplyDiff) {
+			allowedTools.push(apply_diff_multi_file)
 		} else {
-			nativeToolsMap.set("apply_diff", apply_diff_single_file)
+			allowedTools.push(apply_diff_single_file)
 		}
 	}
 

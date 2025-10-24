@@ -104,7 +104,7 @@ async function generatePrompt(
 
 	const basePrompt = `${roleDefinition}
 
-${markdownFormattingSection()}
+${markdownFormattingSection(toolUseStyle ?? "xml" /*kilocode_change*/)}
 
 ${getSharedToolUseSection(toolUseStyle /*kilocode_change*/)}
 
@@ -137,7 +137,7 @@ ${getCapabilitiesSection(cwd, supportsComputerUse, shouldIncludeMcp ? mcpHub : u
 
 ${modesSection}
 
-${getRulesSection(cwd, supportsComputerUse, effectiveDiffStrategy, codeIndexManager, clineProviderState /* kilocode_change */)}
+${getRulesSection(cwd, supportsComputerUse, effectiveDiffStrategy, codeIndexManager, clineProviderState, toolUseStyle /* kilocode_change */)}
 
 ${getSystemInfoSection(cwd)}
 
