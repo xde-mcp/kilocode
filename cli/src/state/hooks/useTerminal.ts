@@ -20,9 +20,7 @@ export function useTerminal(): void {
 
 	// Clear terminal when reset counter changes
 	useEffect(() => {
-		if (refreshTerminalCounter !== 0) {
-			clearTerminal()
-		}
+		clearTerminal()
 	}, [refreshTerminalCounter, clearTerminal])
 
 	// Resize effect
