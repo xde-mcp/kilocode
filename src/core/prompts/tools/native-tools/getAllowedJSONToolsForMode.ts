@@ -18,6 +18,7 @@ import * as vscode from "vscode"
 export async function getAllowedJSONToolsForMode(
 	mode: Mode,
 	provider: ClineProvider | undefined,
+	diffEnabled: boolean = false,
 	supportsImages?: boolean,
 ): Promise<OpenAI.Chat.ChatCompletionTool[]> {
 	const providerState: ClineProviderState | undefined = await provider?.getState()
@@ -120,7 +121,12 @@ export async function getAllowedJSONToolsForMode(
 
 	// Create a map of tool names to native tool definitions for quick lookup
 	// Exclude apply_diff tools as they are handled specially below
-	const allowedTools: OpenAI.Chat.ChatCompletionTool[] = []
+	// Create a map of tool names to native tool definitions for quick lookup
+	const nativeToolsMap = new Map<string, OpenAI.Chat.ChatCompletionTool>()
+	nativeTools.forEach((tool) => {
+		nativeToolsMap.set(tool.function.name, tool)
+	})
+	let allowedTools: OpenAI.Chat.ChatCompletionTool[] = []
 
 	let isApplyDiffToolAllowedForMode = false
 	for (const nativeTool of nativeTools) {
@@ -139,21 +145,12 @@ export async function getAllowedJSONToolsForMode(
 	// Handle the "apply_diff" logic separately because the same tool has different
 	// implementations depending on whether multi-file diffs are enabled, but the same name is used.
 	if (isApplyDiffToolAllowedForMode && diffEnabled) {
-		if (clineProviderState?.experiments.multiFileApplyDiff) {
+		if (providerState?.experiments.multiFileApplyDiff) {
 			allowedTools.push(apply_diff_multi_file)
 		} else {
 			allowedTools.push(apply_diff_single_file)
 		}
 	}
-
-	// Map allowed tools to their native definitions
-	const allowedTools: OpenAI.Chat.ChatCompletionTool[] = []
-	tools.forEach((toolName) => {
-		const nativeTool = nativeToolsMap.get(toolName)
-		if (nativeTool) {
-			allowedTools.push(nativeTool)
-		}
-	})
 
 	// Check if MCP functionality should be included
 	const hasMcpGroup = config.groups.some((groupEntry) => getGroupName(groupEntry) === "mcp")
