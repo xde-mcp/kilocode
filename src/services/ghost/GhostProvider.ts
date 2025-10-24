@@ -5,12 +5,11 @@ import { GhostDocumentStore } from "./GhostDocumentStore"
 import { GhostStreamingParser } from "./GhostStreamingParser"
 import { AutoTriggerStrategy } from "./strategies/AutoTriggerStrategy"
 import { GhostModel } from "./GhostModel"
-import { GhostWorkspaceEdit } from "./GhostWorkspaceEdit"
-import { GhostDecorations } from "./GhostDecorations"
 import { GhostSuggestionContext, contextToAutocompleteInput, extractPrefixSuffix } from "./types"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostSuggestionsState } from "./GhostSuggestions"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
+import { GhostInlineCompletionProvider } from "./GhostInlineCompletionProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -18,24 +17,20 @@ import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { GhostGutterAnimation } from "./GhostGutterAnimation"
-import { GhostCursor } from "./GhostCursor"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { normalizeAutoTriggerDelayToMs } from "./utils/autocompleteDelayUtils"
 
 export class GhostProvider {
 	private static instance: GhostProvider | null = null
-	private decorations: GhostDecorations
 	private documentStore: GhostDocumentStore
 	private model: GhostModel
 	private streamingParser: GhostStreamingParser
 	private autoTriggerStrategy: AutoTriggerStrategy
-	private workspaceEdit: GhostWorkspaceEdit
 	private suggestions: GhostSuggestionsState = new GhostSuggestionsState()
 	private cline: ClineProvider
 	private providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
 	private ghostContext: GhostContext
-	private cursor: GhostCursor
 	private cursorAnimation: GhostGutterAnimation
 
 	private enabled: boolean = true
@@ -54,6 +49,7 @@ export class GhostProvider {
 
 	// VSCode Providers
 	public codeActionProvider: GhostCodeActionProvider
+	public inlineCompletionProvider: GhostInlineCompletionProvider
 
 	private ignoreController?: Promise<RooIgnoreController>
 
@@ -61,19 +57,17 @@ export class GhostProvider {
 		this.cline = cline
 
 		// Register Internal Components
-		this.decorations = new GhostDecorations()
 		this.documentStore = new GhostDocumentStore()
 		this.streamingParser = new GhostStreamingParser()
 		this.autoTriggerStrategy = new AutoTriggerStrategy()
-		this.workspaceEdit = new GhostWorkspaceEdit()
 		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
-		this.cursor = new GhostCursor()
 		this.cursorAnimation = new GhostGutterAnimation(context)
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
+		this.inlineCompletionProvider = new GhostInlineCompletionProvider()
 
 		// Register document event handlers
 		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, context.subscriptions)
@@ -199,9 +193,6 @@ export class GhostProvider {
 
 	private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
 		if (!this.enabled || event.document.uri.scheme !== "file") {
-			return
-		}
-		if (this.workspaceEdit.isLocked()) {
 			return
 		}
 
@@ -375,18 +366,21 @@ export class GhostProvider {
 			}
 
 			// Finish the streaming parser to apply sanitization if needed
-			const finalParseResult = this.streamingParser.parseResponse(response)
+			const finalParseResult = this.streamingParser.parseResponse(response, prefix, suffix)
+
+			if (finalParseResult.suggestions.getFillInAtCursor()) {
+				console.info("Final suggestion:", finalParseResult.suggestions.getFillInAtCursor())
+			}
+
 			if (finalParseResult.hasNewSuggestions && !hasShownFirstSuggestion) {
 				// Handle case where sanitization produced suggestions
 				this.suggestions = finalParseResult.suggestions
 				hasShownFirstSuggestion = true
 				this.stopProcessing()
-				this.selectClosestSuggestion()
 				await this.render()
 			} else if (finalParseResult.hasNewSuggestions && hasShownFirstSuggestion) {
 				// Update existing suggestions with sanitized results
 				this.suggestions = finalParseResult.suggestions
-				this.selectClosestSuggestion()
 				await this.render()
 			}
 
@@ -395,10 +389,6 @@ export class GhostProvider {
 				console.warn("No suggestions were generated during streaming")
 				this.stopProcessing()
 			}
-
-			// Final render to ensure everything is up to date
-			this.selectClosestSuggestion()
-			await this.render()
 		} catch (error) {
 			console.error("Error in streaming generation:", error)
 			this.stopProcessing()
@@ -408,30 +398,10 @@ export class GhostProvider {
 
 	private async render() {
 		await this.updateGlobalContext()
-		await this.displaySuggestions()
-	}
 
-	private selectClosestSuggestion() {
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			return
-		}
-		const file = this.suggestions.getFile(editor.document.uri)
-		if (!file) {
-			return
-		}
-		file.selectClosestGroup(editor.selection)
-	}
+		this.inlineCompletionProvider.updateSuggestions(this.suggestions)
 
-	public async displaySuggestions() {
-		if (!this.enabled) {
-			return
-		}
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			return
-		}
-		await this.decorations.displaySuggestions(this.suggestions)
+		await vscode.commands.executeCommand("editor.action.inlineSuggest.trigger")
 	}
 
 	private async updateGlobalContext() {
@@ -458,110 +428,16 @@ export class GhostProvider {
 	}
 
 	public async cancelSuggestions() {
-		if (!this.hasPendingSuggestions() || this.workspaceEdit.isLocked()) {
+		if (!this.hasPendingSuggestions()) {
 			return
 		}
 		TelemetryService.instance.captureEvent(TelemetryEventName.INLINE_ASSIST_REJECT_SUGGESTION, {
 			taskId: this.taskId,
 		})
-		this.decorations.clearAll()
+		this.inlineCompletionProvider.updateSuggestions(null)
 		this.suggestions.clear()
 
 		this.clearAutoTriggerTimer()
-		await this.render()
-	}
-
-	public async applySelectedSuggestions() {
-		if (!this.enabled) {
-			return
-		}
-		if (!this.hasPendingSuggestions() || this.workspaceEdit.isLocked()) {
-			return
-		}
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			await this.cancelSuggestions()
-			return
-		}
-		const suggestionsFile = this.suggestions.getFile(editor.document.uri)
-		if (!suggestionsFile) {
-			await this.cancelSuggestions()
-			return
-		}
-		if (suggestionsFile.getSelectedGroup() === null) {
-			await this.cancelSuggestions()
-			return
-		}
-		TelemetryService.instance.captureEvent(TelemetryEventName.INLINE_ASSIST_ACCEPT_SUGGESTION, {
-			taskId: this.taskId,
-		})
-		this.decorations.clearAll()
-		await this.workspaceEdit.applySelectedSuggestions(this.suggestions)
-		this.cursor.moveToAppliedGroup(this.suggestions)
-		suggestionsFile.deleteSelectedGroup()
-		suggestionsFile.selectClosestGroup(editor.selection)
-		this.suggestions.validateFiles()
-		this.clearAutoTriggerTimer()
-		await this.render()
-	}
-
-	public async applyAllSuggestions() {
-		if (!this.enabled) {
-			return
-		}
-		if (!this.hasPendingSuggestions() || this.workspaceEdit.isLocked()) {
-			return
-		}
-		TelemetryService.instance.captureEvent(TelemetryEventName.INLINE_ASSIST_ACCEPT_SUGGESTION, {
-			taskId: this.taskId,
-		})
-		this.decorations.clearAll()
-		await this.workspaceEdit.applySuggestions(this.suggestions)
-		this.suggestions.clear()
-
-		this.clearAutoTriggerTimer()
-		await this.render()
-	}
-
-	public async selectNextSuggestion() {
-		if (!this.enabled) {
-			return
-		}
-		if (!this.hasPendingSuggestions()) {
-			return
-		}
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			await this.cancelSuggestions()
-			return
-		}
-		const suggestionsFile = this.suggestions.getFile(editor.document.uri)
-		if (!suggestionsFile) {
-			await this.cancelSuggestions()
-			return
-		}
-		suggestionsFile.selectNextGroup()
-		await this.render()
-	}
-
-	public async selectPreviousSuggestion() {
-		if (!this.enabled) {
-			return
-		}
-		if (!this.hasPendingSuggestions()) {
-			return
-		}
-		const editor = vscode.window.activeTextEditor
-		if (!editor) {
-			await this.cancelSuggestions()
-			return
-		}
-		const suggestionsFile = this.suggestions.getFile(editor.document.uri)
-		if (!suggestionsFile) {
-			await this.cancelSuggestions()
-			return
-		}
-		suggestionsFile.selectPreviousGroup()
 		await this.render()
 	}
 
@@ -654,8 +530,6 @@ export class GhostProvider {
 		if (this.autoTriggerTimer) {
 			this.clearAutoTriggerTimer()
 		}
-		// Reset streaming parser when cancelling
-		this.streamingParser.reset()
 	}
 
 	/**
@@ -730,7 +604,6 @@ export class GhostProvider {
 		this.cancelRequest()
 
 		this.suggestions.clear()
-		this.decorations.clearAll()
 
 		this.statusBar?.dispose()
 		this.cursorAnimation.dispose()
