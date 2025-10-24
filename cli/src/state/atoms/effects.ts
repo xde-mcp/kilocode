@@ -16,6 +16,7 @@ import {
 	setProfileErrorAtom,
 	setBalanceErrorAtom,
 } from "./profile.js"
+import { taskHistoryDataAtom, taskHistoryLoadingAtom, taskHistoryErrorAtom } from "./taskHistory.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -159,6 +160,22 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 					set(updateBalanceDataAtom, message.payload.data)
 				} else {
 					set(setBalanceErrorAtom, message.payload?.error || "Failed to fetch balance")
+				}
+				break
+
+			case "taskHistoryResponse":
+				// Handle task history response
+				set(taskHistoryLoadingAtom, false)
+				if (message.payload) {
+					const { historyItems, pageIndex, pageCount } = message.payload as any
+					set(taskHistoryDataAtom, {
+						historyItems: historyItems || [],
+						pageIndex: pageIndex || 0,
+						pageCount: pageCount || 1,
+					})
+					set(taskHistoryErrorAtom, null)
+				} else {
+					set(taskHistoryErrorAtom, "Failed to fetch task history")
 				}
 				break
 

@@ -42,6 +42,7 @@ import { Box, Static } from "ink"
 import { useAtomValue } from "jotai"
 import { type UnifiedMessage, staticMessagesAtom, dynamicMessagesAtom } from "../../state/atoms/ui.js"
 import { MessageRow } from "./MessageRow.js"
+import { logs } from "../../services/logs.js"
 
 interface MessageDisplayProps {
 	/** Optional filter to show only specific message types */
