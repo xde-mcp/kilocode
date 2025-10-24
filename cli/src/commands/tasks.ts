@@ -66,11 +66,14 @@ function truncate(text: string, maxLength: number): string {
 /**
  * Show current task history
  */
-async function showTaskHistory(context: any): Promise<void> {
+async function showTaskHistory(context: any, dataOverride?: any): Promise<void> {
 	const { taskHistoryData, taskHistoryLoading, taskHistoryError, fetchTaskHistory, addMessage } = context
 
+	// Use override data if provided, otherwise use context data
+	const data = dataOverride || taskHistoryData
+
 	// If loading, show loading message
-	if (taskHistoryLoading) {
+	if (taskHistoryLoading && !dataOverride) {
 		addMessage({
 			id: Date.now().toString(),
 			type: "system",
@@ -81,7 +84,7 @@ async function showTaskHistory(context: any): Promise<void> {
 	}
 
 	// If error, show error message
-	if (taskHistoryError) {
+	if (taskHistoryError && !dataOverride) {
 		addMessage({
 			id: Date.now().toString(),
 			type: "error",
@@ -92,7 +95,7 @@ async function showTaskHistory(context: any): Promise<void> {
 	}
 
 	// If no data, fetch it
-	if (!taskHistoryData) {
+	if (!data) {
 		await fetchTaskHistory()
 		addMessage({
 			id: Date.now().toString(),
@@ -103,7 +106,7 @@ async function showTaskHistory(context: any): Promise<void> {
 		return
 	}
 
-	const { historyItems, pageIndex, pageCount } = taskHistoryData
+	const { historyItems, pageIndex, pageCount } = data
 
 	if (historyItems.length === 0) {
 		addMessage({
@@ -155,8 +158,6 @@ async function searchTasks(context: any, query: string): Promise<void> {
 		return
 	}
 
-	await updateTaskHistoryFilters({ search: query, sort: "mostRelevant" })
-
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
@@ -164,8 +165,19 @@ async function searchTasks(context: any, query: string): Promise<void> {
 		ts: Date.now(),
 	})
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	try {
+		// Wait for the new data to arrive
+		const newData = await updateTaskHistoryFilters({ search: query, sort: "mostRelevant" })
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to search tasks: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**
@@ -245,8 +257,6 @@ async function changePage(context: any, pageNum: string): Promise<void> {
 		return
 	}
 
-	await changeTaskHistoryPage(pageIndex)
-
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
@@ -254,8 +264,19 @@ async function changePage(context: any, pageNum: string): Promise<void> {
 		ts: Date.now(),
 	})
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	try {
+		// Wait for the new data to arrive
+		const newData = await changeTaskHistoryPage(pageIndex)
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to load page: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**
@@ -284,8 +305,6 @@ async function nextPage(context: any): Promise<void> {
 		return
 	}
 
-	await nextTaskHistoryPage()
-
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
@@ -293,8 +312,19 @@ async function nextPage(context: any): Promise<void> {
 		ts: Date.now(),
 	})
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	try {
+		// Wait for the new data to arrive
+		const newData = await nextTaskHistoryPage()
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to load next page: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**
@@ -323,8 +353,6 @@ async function previousPage(context: any): Promise<void> {
 		return
 	}
 
-	await previousTaskHistoryPage()
-
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
@@ -332,8 +360,19 @@ async function previousPage(context: any): Promise<void> {
 		ts: Date.now(),
 	})
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	try {
+		// Wait for the new data to arrive
+		const newData = await previousTaskHistoryPage()
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to load previous page: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**
@@ -355,8 +394,6 @@ async function changeSortOrder(context: any, sortOption: string): Promise<void> 
 		return
 	}
 
-	await updateTaskHistoryFilters({ sort: mappedSort as any })
-
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
@@ -364,8 +401,19 @@ async function changeSortOrder(context: any, sortOption: string): Promise<void> 
 		ts: Date.now(),
 	})
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	try {
+		// Wait for the new data to arrive
+		const newData = await updateTaskHistoryFilters({ sort: mappedSort as any })
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to change sort order: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**
@@ -374,45 +422,28 @@ async function changeSortOrder(context: any, sortOption: string): Promise<void> 
 async function changeFilter(context: any, filterOption: string): Promise<void> {
 	const { updateTaskHistoryFilters, addMessage } = context
 
+	let filterUpdate: any
+	let loadingMessage: string
+
 	switch (filterOption) {
 		case "current":
-			await updateTaskHistoryFilters({ workspace: "current" })
-			addMessage({
-				id: Date.now().toString(),
-				type: "system",
-				content: "Filtering to current workspace...",
-				ts: Date.now(),
-			})
+			filterUpdate = { workspace: "current" }
+			loadingMessage = "Filtering to current workspace..."
 			break
 
 		case "all":
-			await updateTaskHistoryFilters({ workspace: "all" })
-			addMessage({
-				id: Date.now().toString(),
-				type: "system",
-				content: "Showing all workspaces...",
-				ts: Date.now(),
-			})
+			filterUpdate = { workspace: "all" }
+			loadingMessage = "Showing all workspaces..."
 			break
 
 		case "favorites":
-			await updateTaskHistoryFilters({ favoritesOnly: true })
-			addMessage({
-				id: Date.now().toString(),
-				type: "system",
-				content: "Showing favorites only...",
-				ts: Date.now(),
-			})
+			filterUpdate = { favoritesOnly: true }
+			loadingMessage = "Showing favorites only..."
 			break
 
 		case "all-tasks":
-			await updateTaskHistoryFilters({ favoritesOnly: false })
-			addMessage({
-				id: Date.now().toString(),
-				type: "system",
-				content: "Showing all tasks...",
-				ts: Date.now(),
-			})
+			filterUpdate = { favoritesOnly: false }
+			loadingMessage = "Showing all tasks..."
 			break
 
 		default:
@@ -425,8 +456,26 @@ async function changeFilter(context: any, filterOption: string): Promise<void> {
 			return
 	}
 
-	// Show results after a brief delay
-	setTimeout(() => showTaskHistory(context), 100)
+	addMessage({
+		id: Date.now().toString(),
+		type: "system",
+		content: loadingMessage,
+		ts: Date.now(),
+	})
+
+	try {
+		// Wait for the new data to arrive
+		const newData = await updateTaskHistoryFilters(filterUpdate)
+		// Now display the fresh data
+		await showTaskHistory(context, newData)
+	} catch (error) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Failed to change filter: ${error instanceof Error ? error.message : String(error)}`,
+			ts: Date.now(),
+		})
+	}
 }
 
 /**

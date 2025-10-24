@@ -12,9 +12,13 @@ import {
 	taskHistoryErrorAtom,
 	updateTaskHistoryFiltersAtom,
 	changeTaskHistoryPageAtom,
+	addPendingRequestAtom,
+	removePendingRequestAtom,
 	type TaskHistoryFilters,
+	type TaskHistoryData,
 } from "../atoms/taskHistory.js"
 import { extensionServiceAtom } from "../atoms/service.js"
+import { logs } from "../../services/logs.js"
 
 export function useTaskHistory() {
 	const service = useAtomValue(extensionServiceAtom)
@@ -25,6 +29,8 @@ export function useTaskHistory() {
 	const error = useAtomValue(taskHistoryErrorAtom)
 	const updateFilters = useSetAtom(updateTaskHistoryFiltersAtom)
 	const changePage = useSetAtom(changeTaskHistoryPageAtom)
+	const addPendingRequest = useSetAtom(addPendingRequestAtom)
+	const removePendingRequest = useSetAtom(removePendingRequestAtom)
 
 	/**
 	 * Fetch task history from the extension
@@ -48,51 +54,128 @@ export function useTaskHistory() {
 				},
 			})
 		} catch (err) {
-			console.error("Failed to fetch task history:", err)
+			logs.error("fetchTaskHistory error:", "useTaskHistory", { error: err })
 		}
 	}, [service, filters, pageIndex])
 
 	/**
-	 * Update filters and fetch new data
+	 * Update filters and fetch new data - returns a Promise that resolves when data arrives
 	 */
 	const updateFiltersAndFetch = useCallback(
-		async (newFilters: Partial<TaskHistoryFilters>) => {
+		async (newFilters: Partial<TaskHistoryFilters>): Promise<TaskHistoryData> => {
+			if (!service) {
+				throw new Error("Extension service not available")
+			}
+
 			updateFilters(newFilters)
-			// Wait a bit for the atom to update
-			setTimeout(() => fetchTaskHistory(), 50)
+
+			// Create a unique request ID
+			const requestId = `${Date.now()}-${Math.random()}`
+
+			// Get the updated filters (filters will be reset to page 0 by updateFilters)
+			const updatedFilters = { ...filters, ...newFilters }
+
+			// Create a promise that will be resolved when the response arrives
+			return new Promise<TaskHistoryData>((resolve, reject) => {
+				// Set up timeout (5 seconds)
+				const timeout = setTimeout(() => {
+					removePendingRequest(requestId)
+					reject(new Error("Request timeout - no response received"))
+				}, 5000)
+
+				// Store the resolver using the action atom
+				addPendingRequest({ requestId, resolve, reject, timeout })
+
+				// Send the request with updated filters
+				service
+					.sendWebviewMessage({
+						type: "taskHistoryRequest",
+						payload: {
+							requestId,
+							workspace: updatedFilters.workspace,
+							sort: updatedFilters.sort,
+							favoritesOnly: updatedFilters.favoritesOnly,
+							pageIndex: 0, // Filters reset to page 0
+							search: updatedFilters.search,
+						},
+					})
+					.catch((err) => {
+						removePendingRequest(requestId)
+						reject(err)
+					})
+			})
 		},
-		[updateFilters, fetchTaskHistory],
+		[updateFilters, service, filters, addPendingRequest, removePendingRequest],
 	)
 
 	/**
-	 * Change page and fetch new data
+	 * Change page and fetch new data - returns a Promise that resolves when data arrives
 	 */
 	const changePageAndFetch = useCallback(
-		async (newPageIndex: number) => {
+		async (newPageIndex: number): Promise<TaskHistoryData> => {
+			if (!service) {
+				throw new Error("Extension service not available")
+			}
+
 			changePage(newPageIndex)
-			// Wait a bit for the atom to update
-			setTimeout(() => fetchTaskHistory(), 50)
+
+			// Create a unique request ID
+			const requestId = `${Date.now()}-${Math.random()}`
+
+			// Create a promise that will be resolved when the response arrives
+			return new Promise<TaskHistoryData>((resolve, reject) => {
+				// Set up timeout (5 seconds)
+				const timeout = setTimeout(() => {
+					removePendingRequest(requestId)
+					reject(new Error("Request timeout - no response received"))
+				}, 5000)
+
+				// Store the resolver using the action atom
+				addPendingRequest({ requestId, resolve, reject, timeout })
+
+				// Send the request
+				service
+					.sendWebviewMessage({
+						type: "taskHistoryRequest",
+						payload: {
+							requestId,
+							workspace: filters.workspace,
+							sort: filters.sort,
+							favoritesOnly: filters.favoritesOnly,
+							pageIndex: newPageIndex,
+							search: filters.search,
+						},
+					})
+					.catch((err) => {
+						removePendingRequest(requestId)
+						reject(err)
+					})
+			})
 		},
-		[changePage, fetchTaskHistory],
+		[changePage, service, filters, addPendingRequest, removePendingRequest],
 	)
 
 	/**
 	 * Go to next page
 	 */
-	const nextPage = useCallback(async () => {
+	const nextPage = useCallback(async (): Promise<TaskHistoryData> => {
 		if (data && pageIndex < data.pageCount - 1) {
-			await changePageAndFetch(pageIndex + 1)
+			return await changePageAndFetch(pageIndex + 1)
 		}
+		// If already on last page, return current data
+		return data || { historyItems: [], pageIndex: 0, pageCount: 0 }
 	}, [data, pageIndex, changePageAndFetch])
 
 	/**
 	 * Go to previous page
 	 */
-	const previousPage = useCallback(async () => {
+	const previousPage = useCallback(async (): Promise<TaskHistoryData> => {
 		if (pageIndex > 0) {
-			await changePageAndFetch(pageIndex - 1)
+			return await changePageAndFetch(pageIndex - 1)
 		}
-	}, [pageIndex, changePageAndFetch])
+		// If already on first page, return current data
+		return data || { historyItems: [], pageIndex: 0, pageCount: 0 }
+	}, [data, pageIndex, changePageAndFetch])
 
 	return {
 		data,

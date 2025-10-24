@@ -62,10 +62,10 @@ export interface CommandContext {
 	taskHistoryLoading: boolean
 	taskHistoryError: string | null
 	fetchTaskHistory: () => Promise<void>
-	updateTaskHistoryFilters: (filters: Partial<TaskHistoryFilters>) => Promise<void>
-	changeTaskHistoryPage: (pageIndex: number) => Promise<void>
-	nextTaskHistoryPage: () => Promise<void>
-	previousTaskHistoryPage: () => Promise<void>
+	updateTaskHistoryFilters: (filters: Partial<TaskHistoryFilters>) => Promise<TaskHistoryData>
+	changeTaskHistoryPage: (pageIndex: number) => Promise<TaskHistoryData>
+	nextTaskHistoryPage: () => Promise<TaskHistoryData>
+	previousTaskHistoryPage: () => Promise<TaskHistoryData>
 	sendWebviewMessage: (message: any) => Promise<void>
 	refreshTerminal: () => Promise<void>
 }

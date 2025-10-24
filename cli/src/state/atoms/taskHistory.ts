@@ -25,6 +25,16 @@ export interface TaskHistoryFilters {
 }
 
 /**
+ * Pending request resolver
+ */
+interface PendingRequest {
+	requestId: string
+	resolve: (data: TaskHistoryData) => void
+	reject: (error: Error) => void
+	timeout: NodeJS.Timeout
+}
+
+/**
  * Current task history data
  */
 export const taskHistoryDataAtom = atom<TaskHistoryData | null>(null)
@@ -57,6 +67,11 @@ export const taskHistoryErrorAtom = atom<string | null>(null)
  * Request ID counter for tracking responses
  */
 export const taskHistoryRequestIdAtom = atom<number>(0)
+
+/**
+ * Map of pending requests waiting for responses
+ */
+export const taskHistoryPendingRequestsAtom = atom<Map<string, PendingRequest>>(new Map())
 
 /**
  * Action atom to fetch task history
@@ -97,3 +112,63 @@ export const changeTaskHistoryPageAtom = atom(null, (get, set, pageIndex: number
 		set(taskHistoryPageIndexAtom, pageIndex)
 	}
 })
+
+/**
+ * Action atom to add a pending request
+ */
+export const addPendingRequestAtom = atom(
+	null,
+	(
+		get,
+		set,
+		request: {
+			requestId: string
+			resolve: (data: TaskHistoryData) => void
+			reject: (error: Error) => void
+			timeout: NodeJS.Timeout
+		},
+	) => {
+		const pendingRequests = get(taskHistoryPendingRequestsAtom)
+		const newPendingRequests = new Map(pendingRequests)
+		newPendingRequests.set(request.requestId, request)
+		set(taskHistoryPendingRequestsAtom, newPendingRequests)
+	},
+)
+
+/**
+ * Action atom to remove a pending request
+ */
+export const removePendingRequestAtom = atom(null, (get, set, requestId: string) => {
+	const pendingRequests = get(taskHistoryPendingRequestsAtom)
+	const request = pendingRequests.get(requestId)
+	if (request) {
+		clearTimeout(request.timeout)
+		const newPendingRequests = new Map(pendingRequests)
+		newPendingRequests.delete(requestId)
+		set(taskHistoryPendingRequestsAtom, newPendingRequests)
+	}
+})
+
+/**
+ * Action atom to resolve a pending request
+ */
+export const resolveTaskHistoryRequestAtom = atom(
+	null,
+	(get, set, { requestId, data, error }: { requestId: string; data?: TaskHistoryData; error?: string }) => {
+		const pendingRequests = get(taskHistoryPendingRequestsAtom)
+		const request = pendingRequests.get(requestId)
+
+		if (request) {
+			clearTimeout(request.timeout)
+			if (error) {
+				request.reject(new Error(error))
+			} else if (data) {
+				request.resolve(data)
+			}
+			// Remove from pending requests
+			const newPendingRequests = new Map(pendingRequests)
+			newPendingRequests.delete(requestId)
+			set(taskHistoryPendingRequestsAtom, newPendingRequests)
+		}
+	},
+)

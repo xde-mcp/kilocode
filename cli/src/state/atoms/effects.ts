@@ -16,7 +16,12 @@ import {
 	setProfileErrorAtom,
 	setBalanceErrorAtom,
 } from "./profile.js"
-import { taskHistoryDataAtom, taskHistoryLoadingAtom, taskHistoryErrorAtom } from "./taskHistory.js"
+import {
+	taskHistoryDataAtom,
+	taskHistoryLoadingAtom,
+	taskHistoryErrorAtom,
+	resolveTaskHistoryRequestAtom,
+} from "./taskHistory.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -167,15 +172,32 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				// Handle task history response
 				set(taskHistoryLoadingAtom, false)
 				if (message.payload) {
-					const { historyItems, pageIndex, pageCount } = message.payload as any
-					set(taskHistoryDataAtom, {
+					const { historyItems, pageIndex, pageCount, requestId } = message.payload as any
+					const data = {
 						historyItems: historyItems || [],
 						pageIndex: pageIndex || 0,
 						pageCount: pageCount || 1,
-					})
+					}
+					set(taskHistoryDataAtom, data)
 					set(taskHistoryErrorAtom, null)
+
+					// Resolve any pending request with this requestId
+					if (requestId) {
+						console.log("[taskHistoryResponse] Resolving request:", requestId)
+						set(resolveTaskHistoryRequestAtom, { requestId, data })
+					} else {
+						console.warn("[taskHistoryResponse] No requestId in response!")
+					}
 				} else {
+					console.error("[taskHistoryResponse] No payload in response")
 					set(taskHistoryErrorAtom, "Failed to fetch task history")
+					// Reject any pending requests
+					if (message.payload?.requestId) {
+						set(resolveTaskHistoryRequestAtom, {
+							requestId: message.payload.requestId,
+							error: "Failed to fetch task history",
+						})
+					}
 				}
 				break
 
