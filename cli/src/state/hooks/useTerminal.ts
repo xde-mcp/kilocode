@@ -16,7 +16,7 @@ export function useTerminal(): void {
 		process.stdout.write("\x1b[2J\x1b[3J\x1b[H")
 		// Increment the message reset counter to force re-render of Static component
 		incrementResetCounter((prev) => prev + 1)
-	}, [incrementResetCounter])
+	}, [])
 
 	// Clear terminal when reset counter changes
 	useEffect(() => {
