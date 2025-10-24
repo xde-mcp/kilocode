@@ -183,13 +183,9 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 
 					// Resolve any pending request with this requestId
 					if (requestId) {
-						console.log("[taskHistoryResponse] Resolving request:", requestId)
 						set(resolveTaskHistoryRequestAtom, { requestId, data })
-					} else {
-						console.warn("[taskHistoryResponse] No requestId in response!")
 					}
 				} else {
-					console.error("[taskHistoryResponse] No payload in response")
 					set(taskHistoryErrorAtom, "Failed to fetch task history")
 					// Reject any pending requests
 					if (message.payload?.requestId) {
