@@ -45,6 +45,9 @@ import { initializeI18n } from "./i18n"
 import { registerGhostProvider } from "./services/ghost" // kilocode_change
 import { registerMainThreadForwardingLogger } from "./utils/fowardingLogger" // kilocode_change
 import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kilocode_change
+import { ContinueCompletionProvider } from "./services/continuedev/core/vscode-test-harness/src/autocomplete/completionProvider"
+import { MinimalConfigProvider } from "./services/continuedev/core/autocomplete/MinimalConfig"
+import { VsCodeIde } from "./services/continuedev/core/vscode-test-harness/src/VSCodeIde"
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -391,6 +394,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	await checkAndRunAutoLaunchingTask(context) // kilocode_change
+
+	// attempt to register continue
+	const minimalConfigProvider = new MinimalConfigProvider()
+	const ide = new VsCodeIde(context)
+	const usingFullFileDiff = false
+	const continueProvider = new ContinueCompletionProvider(minimalConfigProvider, ide, usingFullFileDiff)
+	// context.subscriptions.push(
+  //     vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider)
+	// );
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }
