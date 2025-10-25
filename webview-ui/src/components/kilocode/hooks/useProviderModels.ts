@@ -49,9 +49,9 @@ import {
 	deepInfraDefaultModelId,
 	cerebrasModels,
 	cerebrasDefaultModelId,
-	ovhCloudAiEndpointsDefaultModelId,
+	ovhCloudAiEndpointsDefaultModelId, // kilocode_change
 	minimaxModels,
-	minimaxDefaultModelId, // kilocode_change
+	minimaxDefaultModelId,
 } from "@roo-code/types"
 import type { ModelRecord, RouterModels } from "@roo/api"
 import { useRouterModels } from "../../ui/hooks/useRouterModels"
