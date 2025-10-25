@@ -22,7 +22,7 @@ export default {
 					description: "Optional glob to limit which files are searched (e.g., *.ts)",
 				},
 			},
-			required: ["path", "regex"],
+			required: ["path", "regex", "file_pattern"],
 			additionalProperties: false,
 		},
 	},

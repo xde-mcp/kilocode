@@ -19,7 +19,7 @@ export default {
 					description: "Optional working directory for the command, relative or absolute",
 				},
 			},
-			required: ["command"],
+			required: ["command", "cwd"],
 			additionalProperties: false,
 		},
 	},

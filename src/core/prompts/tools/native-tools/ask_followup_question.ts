@@ -31,7 +31,7 @@ export default {
 									"Optional mode slug to switch to if this suggestion is chosen (e.g., code, architect)",
 							},
 						},
-						required: ["text"],
+						required: ["text", "mode"],
 						additionalProperties: false,
 					},
 					minItems: 2,

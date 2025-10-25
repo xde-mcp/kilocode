@@ -30,7 +30,7 @@ export default {
 								},
 							},
 						},
-						required: ["path"],
+						required: ["path", "line_ranges"],
 						additionalProperties: false,
 					},
 					minItems: 1,

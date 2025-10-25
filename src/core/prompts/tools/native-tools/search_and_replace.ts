@@ -39,7 +39,7 @@ export default {
 					description: "Set true to ignore case when matching",
 				},
 			},
-			required: ["path", "search", "replace"],
+			required: ["path", "search", "replace", "start_line", "end_line", "use_regex", "ignore_case"],
 			additionalProperties: false,
 		},
 	},
