@@ -45,6 +45,8 @@ import {
 	claudeCodeDefaultModelId,
 	geminiCliModels,
 	geminiCliDefaultModelId,
+	minimaxModels,
+	minimaxDefaultModelId,
 } from "@roo-code/types"
 
 /**
@@ -304,6 +306,11 @@ export function getModelsByProvider(params: {
 			return {
 				models: moonshotModels as ModelRecord,
 				defaultModel: moonshotDefaultModelId,
+			}
+		case "minimax":
+			return {
+				models: minimaxModels as ModelRecord,
+				defaultModel: minimaxDefaultModelId,
 			}
 		case "deepseek":
 			return {
