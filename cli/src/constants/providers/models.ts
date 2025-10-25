@@ -241,7 +241,7 @@ export const DEFAULT_MODEL_IDS: Partial<Record<ProviderName, string>> = {
 	sambanova: sambaNovaDefaultModelId,
 	featherless: featherlessDefaultModelId,
 	deepinfra: "deepseek-ai/DeepSeek-R1-0528",
-	minimax: "MiniMax-M1",
+	minimax: "MiniMax-M2",
 	zai: internationalZAiDefaultModelId,
 	roo: rooDefaultModelId,
 	"gemini-cli": geminiCliDefaultModelId,

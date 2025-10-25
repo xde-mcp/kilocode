@@ -841,7 +841,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	"vercel-ai-gateway": "gpt-4o",
 	"virtual-quota-fallback": "gpt-4o",
 	"human-relay": "human",
-	minimax: "MiniMax-M1",
+	minimax: "MiniMax-M2",
 	"fake-ai": "fake-model",
 }
 
