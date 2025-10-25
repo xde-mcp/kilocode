@@ -77,8 +77,8 @@ export function getKiloUrlFromToken(targetUrl: string, kilocodeToken?: string): 
 	const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
 	const target = new URL(targetUrl)
 
-	const { protocol, port } = new URL(baseUrl)
-	Object.assign(target, { protocol, port })
+	const { protocol, host } = new URL(baseUrl)
+	Object.assign(target, { protocol, host })
 
 	return target.toString()
 }
