@@ -1,4 +1,3 @@
-import { MiniMaxHandler } from "./minimax"
 export { AnthropicVertexHandler } from "./anthropic-vertex"
 export { AnthropicHandler } from "./anthropic"
 export { AwsBedrockHandler } from "./bedrock"
