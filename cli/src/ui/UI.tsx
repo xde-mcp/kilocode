@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useRef } from "react"
 import { Box, Text } from "ink"
 import { useAtomValue, useSetAtom } from "jotai"
-import { isStreamingAtom, errorAtom, addMessageAtom } from "../state/atoms/ui.js"
+import { isStreamingAtom, errorAtom, addMessageAtom, messageResetCounterAtom } from "../state/atoms/ui.js"
 import { setCIModeAtom } from "../state/atoms/ci.js"
 import { configValidationAtom } from "../state/atoms/config.js"
 import { addToHistoryAtom, resetHistoryNavigationAtom, exitHistoryModeAtom } from "../state/atoms/history.js"
@@ -19,6 +19,7 @@ import { isCommandInput } from "../services/autocomplete.js"
 import { useCommandHandler } from "../state/hooks/useCommandHandler.js"
 import { useMessageHandler } from "../state/hooks/useMessageHandler.js"
 import { useFollowupHandler } from "../state/hooks/useFollowupHandler.js"
+import { useApprovalMonitor } from "../state/hooks/useApprovalMonitor.js"
 import { useProfile } from "../state/hooks/useProfile.js"
 import { useCIMode } from "../state/hooks/useCIMode.js"
 import { useTheme } from "../state/hooks/useTheme.js"
@@ -26,6 +27,7 @@ import { AppOptions } from "./App.js"
 import { logs } from "../services/logs.js"
 import { createConfigErrorInstructions, createWelcomeMessage } from "./utils/welcomeMessage.js"
 import { generateUpdateAvailableMessage, getAutoUpdateStatus } from "../utils/auto-update.js"
+import { useTerminal } from "../state/hooks/useTerminal.js"
 
 // Initialize commands on module load
 initializeCommands()
@@ -40,6 +42,7 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	const error = useAtomValue(errorAtom)
 	const theme = useTheme()
 	const configValidation = useAtomValue(configValidationAtom)
+	const resetCounter = useAtomValue(messageResetCounterAtom)
 
 	// Initialize CI mode configuration
 	const setCIMode = useSetAtom(setCIModeAtom)
@@ -57,8 +60,14 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	// Followup handler hook for automatic suggestion population
 	useFollowupHandler()
 
+	// Approval monitor hook for centralized approval handling
+	useApprovalMonitor()
+
 	// Profile hook for handling profile/balance data responses
 	useProfile()
+
+	// This clears the terminal and forces re-render of static components
+	useTerminal()
 
 	// CI mode hook for automatic exit
 	const { shouldExit, exitReason } = useCIMode({
@@ -183,13 +192,13 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 
 	return (
 		// Using stdout.rows causes layout shift during renders
-		<Box flexDirection="column">
+		<Box key={resetCounter} flexDirection="column">
 			<Box flexDirection="column" overflow="hidden">
 				<MessageDisplay />
 			</Box>
 
 			{error && (
-				<Box borderStyle="single" borderColor={theme.semantic.error} paddingX={1} marginY={1}>
+				<Box borderStyle="round" borderColor={theme.semantic.error} paddingX={1} marginY={1}>
 					<Text color={theme.semantic.error}>⚠ {error}</Text>
 				</Box>
 			)}
