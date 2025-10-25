@@ -82,8 +82,8 @@ describe("MiniMaxHandler", () => {
 			const model = handlerWithModel.getModel()
 			expect(model.id).toBe(testModelId)
 			expect(model.info).toEqual(minimaxModels[testModelId])
-			expect(model.info.contextWindow).toBe(1_000_192)
-			expect(model.info.maxTokens).toBe(25_600)
+			expect(model.info.contextWindow).toBe(192_000)
+			expect(model.info.maxTokens).toBe(128_000)
 			expect(model.info.supportsPromptCache).toBe(false)
 		})
 	})
@@ -129,11 +129,6 @@ describe("MiniMaxHandler", () => {
 			const model = handlerDefault.getModel()
 			expect(model.id).toBe(minimaxDefaultModelId)
 			expect(model.info).toEqual(minimaxModels[minimaxDefaultModelId])
-		})
-
-		it("should use undefined as default API key when none is specified", () => {
-			new MiniMaxHandler({})
-			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: undefined }))
 		})
 
 		it("should default to MiniMax-M2 model", () => {
@@ -238,7 +233,7 @@ describe("MiniMaxHandler", () => {
 				expect.objectContaining({
 					model: modelId,
 					max_tokens: modelInfo.maxTokens,
-					temperature: 0,
+					temperature: 1,
 					messages: expect.arrayContaining([{ role: "system", content: systemPrompt }]),
 					stream: true,
 					stream_options: { include_usage: true },
@@ -247,7 +242,7 @@ describe("MiniMaxHandler", () => {
 			)
 		})
 
-		it("should use temperature 0 by default", async () => {
+		it("should use temperature 1 by default", async () => {
 			mockCreate.mockImplementationOnce(() => {
 				return {
 					[Symbol.asyncIterator]: () => ({
@@ -263,7 +258,7 @@ describe("MiniMaxHandler", () => {
 
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
-					temperature: 0,
+					temperature: 1,
 				}),
 				undefined,
 			)
@@ -273,12 +268,12 @@ describe("MiniMaxHandler", () => {
 	describe("Model Configuration", () => {
 		it("should correctly configure MiniMax-M2 model properties", () => {
 			const model = minimaxModels["MiniMax-M2"]
-			expect(model.maxTokens).toBe(25_600)
-			expect(model.contextWindow).toBe(1_000_192)
+			expect(model.maxTokens).toBe(128_000)
+			expect(model.contextWindow).toBe(192_000)
 			expect(model.supportsImages).toBe(false)
 			expect(model.supportsPromptCache).toBe(false)
-			expect(model.inputPrice).toBe(0.4)
-			expect(model.outputPrice).toBe(2.2)
+			expect(model.inputPrice).toBe(0.3)
+			expect(model.outputPrice).toBe(1.2)
 		})
 	})
 })

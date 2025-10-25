@@ -24,6 +24,5 @@ export * from "./type-fu.js"
 export * from "./vscode.js"
 export * from "./kilocode/kilocode.js"
 export * from "./kilocode/native-function-calling.js"
-export * from "./usage-tracker.js" // kilocode_change
-
-export * from "./providers/index.js"
+export * from "./usage-tracker.js"
+export * from "./providers/index.js" // kilocode_change
