@@ -13,12 +13,15 @@ import { requestRouterModelsAtom } from "./state/atoms/actions.js"
 import { loadHistoryAtom } from "./state/atoms/history.js"
 import { getTelemetryService, getIdentityManager } from "./services/telemetry/index.js"
 
+import type { ModeConfig } from "./types/messages.js"
+
 export interface CLIOptions {
 	mode?: string
 	workspace?: string
 	ci?: boolean
 	prompt?: string
 	timeout?: number
+	customModes?: ModeConfig[]
 }
 
 /**
@@ -86,6 +89,10 @@ export class CLI {
 					sessionId: identity.sessionId,
 					cliUserId: identity.cliUserId,
 				}
+			}
+
+			if (this.options.customModes) {
+				serviceOptions.customModes = this.options.customModes
 			}
 
 			this.service = createExtensionService(serviceOptions)

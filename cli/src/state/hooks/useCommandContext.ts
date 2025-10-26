@@ -67,6 +67,7 @@ export function useCommandContext(): UseCommandContextReturn {
 	const currentProvider = useAtomValue(providerAtom)
 	const extensionState = useAtomValue(extensionStateAtom)
 	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || ""
+	const customModes = extensionState?.customModes || []
 
 	// Get profile state
 	const profileData = useAtomValue(profileDataAtom)
@@ -131,6 +132,8 @@ export function useCommandContext(): UseCommandContextReturn {
 				balanceData,
 				profileLoading,
 				balanceLoading,
+				// Custom modes context
+				customModes,
 			}
 		},
 		[
@@ -150,6 +153,7 @@ export function useCommandContext(): UseCommandContextReturn {
 			balanceData,
 			profileLoading,
 			balanceLoading,
+			customModes,
 		],
 	)
 
