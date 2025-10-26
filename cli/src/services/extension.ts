@@ -73,7 +73,10 @@ export interface ExtensionServiceEvents {
 export class ExtensionService extends EventEmitter {
 	private extensionHost: ExtensionHost
 	private messageBridge: MessageBridge
-	private options: Required<Omit<ExtensionServiceOptions, "identity">> & { identity?: IdentityInfo }
+	private options: Required<Omit<ExtensionServiceOptions, "identity" | "customModes">> & {
+		identity?: IdentityInfo
+		customModes?: ModeConfig[]
+	}
 	private isInitialized = false
 	private isDisposed = false
 
