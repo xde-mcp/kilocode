@@ -159,8 +159,6 @@ export function findBestMatch(content: string, searchPattern: string): number {
 				return contentStart
 			}
 		}
-
-		break
 	}
 
 	return -1 // No match found
