@@ -48,6 +48,7 @@ import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kiloco
 import { ContinueCompletionProvider } from "./services/continuedev/core/vscode-test-harness/src/autocomplete/completionProvider"
 import { MinimalConfigProvider } from "./services/continuedev/core/autocomplete/MinimalConfig"
 import { VsCodeIde } from "./services/continuedev/core/vscode-test-harness/src/VSCodeIde"
+import Mistral from "./services/continuedev/core/llm/llms/Mistral"
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -395,8 +396,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	await checkAndRunAutoLaunchingTask(context) // kilocode_change
 
+	const llm = new Mistral({
+		model: "codestral-latest",
+		// apiKey goes here
+		autocompleteOptions: {
+			useCache: false,
+		},
+	})
+
 	// attempt to register continue
-	const minimalConfigProvider = new MinimalConfigProvider()
+	const minimalConfigProvider = new MinimalConfigProvider({
+		selectedModelByRole: {
+			autocomplete: llm,
+		},
+	})
 	const ide = new VsCodeIde(context)
 	const usingFullFileDiff = false
 	const continueProvider = new ContinueCompletionProvider(minimalConfigProvider, ide, usingFullFileDiff)
