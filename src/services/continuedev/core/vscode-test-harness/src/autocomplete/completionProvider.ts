@@ -72,13 +72,15 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 			return config.selectedModelByRole?.autocomplete ?? undefined
 		}
 
-		this.completionProvider = new CompletionProvider(
-			this.configHandler,
-			this.ide,
-			getAutocompleteModel,
-			this.onError.bind(this),
-			getDefinitionsFromLsp,
-		)
+		this.completionProvider = null as any
+
+		// this.completionProvider = new CompletionProvider(
+		// 	this.configHandler,
+		// 	this.ide,
+		// 	getAutocompleteModel,
+		// 	this.onError.bind(this),
+		// 	getDefinitionsFromLsp,
+		// )
 
 		// Logging service must be created first.
 		this.nextEditLoggingService = NextEditLoggingService.getInstance()
