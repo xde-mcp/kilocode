@@ -2,14 +2,14 @@ import crypto from "crypto"
 import * as vscode from "vscode"
 import { t } from "../../i18n"
 import { GhostDocumentStore } from "./GhostDocumentStore"
-import { GhostStreamingParser } from "./GhostStreamingParser"
-import { AutoTriggerStrategy } from "./strategies/AutoTriggerStrategy"
+import { parseGhostResponse } from "./classic-auto-complete/GhostStreamingParser"
+import { AutoTriggerStrategy } from "./classic-auto-complete/AutoTriggerStrategy"
 import { GhostModel } from "./GhostModel"
 import { GhostSuggestionContext, contextToAutocompleteInput, extractPrefixSuffix } from "./types"
 import { GhostStatusBar } from "./GhostStatusBar"
-import { GhostSuggestionsState } from "./GhostSuggestions"
+import { GhostSuggestionsState } from "./classic-auto-complete/GhostSuggestions"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
-import { GhostInlineCompletionProvider } from "./GhostInlineCompletionProvider"
+import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -24,7 +24,6 @@ export class GhostProvider {
 	private static instance: GhostProvider | null = null
 	private documentStore: GhostDocumentStore
 	private model: GhostModel
-	private streamingParser: GhostStreamingParser
 	private autoTriggerStrategy: AutoTriggerStrategy
 	private suggestions: GhostSuggestionsState = new GhostSuggestionsState()
 	private cline: ClineProvider
@@ -58,7 +57,6 @@ export class GhostProvider {
 
 		// Register Internal Components
 		this.documentStore = new GhostDocumentStore()
-		this.streamingParser = new GhostStreamingParser()
 		this.autoTriggerStrategy = new AutoTriggerStrategy()
 		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new GhostModel()
@@ -293,6 +291,11 @@ export class GhostProvider {
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 		const languageId = context.document.languageId
 
+		// Check cache before making API call
+		if (this.inlineCompletionProvider.cachedSuggestionAvailable(prefix, suffix)) {
+			return
+		}
+
 		const { systemPrompt, userPrompt } = this.autoTriggerStrategy.getPrompts(
 			autocompleteInput,
 			prefix,
@@ -307,12 +310,6 @@ export class GhostProvider {
 			this.stopProcessing()
 			await this.load()
 		}
-
-		console.log("system", systemPrompt)
-		console.log("userprompt", userPrompt)
-
-		// Initialize the streaming parser
-		this.streamingParser.initialize(context)
 
 		let hasShownFirstSuggestion = false
 		let cost = 0
@@ -366,7 +363,7 @@ export class GhostProvider {
 			}
 
 			// Finish the streaming parser to apply sanitization if needed
-			const finalParseResult = this.streamingParser.parseResponse(response, prefix, suffix)
+			const finalParseResult = parseGhostResponse(response, prefix, suffix, context.document, context.range)
 
 			if (finalParseResult.suggestions.getFillInAtCursor()) {
 				console.info("Final suggestion:", finalParseResult.suggestions.getFillInAtCursor())
@@ -434,7 +431,6 @@ export class GhostProvider {
 		TelemetryService.instance.captureEvent(TelemetryEventName.INLINE_ASSIST_REJECT_SUGGESTION, {
 			taskId: this.taskId,
 		})
-		this.inlineCompletionProvider.updateSuggestions(null)
 		this.suggestions.clear()
 
 		this.clearAutoTriggerTimer()
