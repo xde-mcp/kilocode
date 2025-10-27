@@ -561,6 +561,79 @@ function fibonacci(n: number): number {
 				expect(index).toBe(-1)
 			})
 		})
+
+		describe("bug: break prevents matching later in string", () => {
+			it("should find match later in content when first position fails", () => {
+				// This test demonstrates the bug at lines 169-170
+				// The content has "wrong" at the start, then the actual match "function test()" later
+				const content = "wrong function test() { return true; }"
+				const search = "function test()"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find the match at position 6 (after "wrong ")
+				// Actual: Returns -1 because the break statement prevents trying subsequent positions
+				expect(index).toBe(6)
+			})
+
+			it("should find match after whitespace mismatch", () => {
+				// Another case: pattern starts with space, content doesn't
+				const content = "abc def ghi"
+				const search = "def"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find "def" at position 4
+				// Actual: May fail due to early break
+				expect(index).toBe(4)
+			})
+
+			it("should find match when first character differs", () => {
+				const content = "x function test() {}"
+				const search = "function test()"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find the match at position 2 (after "x ")
+				// Actual: Returns -1 due to break on first character mismatch
+				expect(index).toBe(2)
+			})
+
+			it("should find match after multiple failed attempts", () => {
+				const content = "aaa bbb ccc target ddd"
+				const search = "target"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find "target" at position 12
+				// Actual: Should work since exact match is tried first, but fuzzy fallback would fail
+				expect(index).toBe(12)
+			})
+
+			it("should find fuzzy match later in content", () => {
+				// This is the critical test case that shows the bug
+				// Content has extra spaces at start, then the pattern we're looking for
+				const content = "  x  function  test()"
+				const search = "function test()"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find fuzzy match starting at position 5 (after "  x  ")
+				// Actual: Returns -1 because break prevents trying position 5
+				expect(index).toBe(5)
+			})
+
+			it("should handle newline mismatch and continue searching", () => {
+				const content = "line1 line2\nfunction test() {}"
+				const search = "function test()"
+
+				const index = findBestMatch(content, search)
+				
+				// Expected: Should find the match at position 12 (after "line1 line2\n")
+				// Actual: May fail if fuzzy matcher breaks early
+				expect(index).toBe(12)
+			})
+		})
 	})
 
 	describe("error handling", () => {
