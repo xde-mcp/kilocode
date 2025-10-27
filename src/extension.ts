@@ -49,6 +49,7 @@ import { ContinueCompletionProvider } from "./services/continuedev/core/vscode-t
 import { MinimalConfigProvider } from "./services/continuedev/core/autocomplete/MinimalConfig"
 import { VsCodeIde } from "./services/continuedev/core/vscode-test-harness/src/VSCodeIde"
 import Mistral from "./services/continuedev/core/llm/llms/Mistral"
+import { registerAutocompleteProvider } from "./services/autocomplete"
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -324,7 +325,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	const { kiloCodeWrapped } = getKiloCodeWrapperProperties()
 	if (!kiloCodeWrapped) {
 		// Only use autocomplete in VS Code
-		registerGhostProvider(context, provider)
+		// registerGhostProvider(context, provider)
+		registerAutocompleteProvider(context, provider)
 	} else {
 		// Only foward logs in Jetbrains
 		registerMainThreadForwardingLogger(context)
@@ -395,27 +397,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	await checkAndRunAutoLaunchingTask(context) // kilocode_change
-
-	const llm = new Mistral({
-		model: "codestral-latest",
-		// apiKey goes here
-		autocompleteOptions: {
-			useCache: false,
-		},
-	})
-
-	// attempt to register continue
-	const minimalConfigProvider = new MinimalConfigProvider({
-		selectedModelByRole: {
-			autocomplete: llm,
-		},
-	})
-	const ide = new VsCodeIde(context)
-	const usingFullFileDiff = false
-	const continueProvider = new ContinueCompletionProvider(minimalConfigProvider, ide, usingFullFileDiff)
-	context.subscriptions.push(
-		vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider),
-	)
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }
