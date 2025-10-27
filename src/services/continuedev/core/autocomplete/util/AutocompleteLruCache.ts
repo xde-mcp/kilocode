@@ -1,52 +1,20 @@
 import { Mutex } from "async-mutex"
-import { open } from "sqlite"
-import sqlite3 from "sqlite3"
-import { getTabAutocompleteCacheSqlitePath } from "../../util/paths.js"
-import { type Database } from "sqlite"
 
-const SQLITE_MAX_LIKE_PATTERN_LENGTH = 50000
-
-function truncateSqliteLikePattern(input: string, safety: number = 100) {
-	const maxBytes = SQLITE_MAX_LIKE_PATTERN_LENGTH - safety
-	let bytes = 0
-	let startIndex = 0
-
-	for (let i = input.length - 1; i >= 0; i--) {
-		bytes += new TextEncoder().encode(input[i]).length
-		if (bytes > maxBytes) {
-			startIndex = i + 1
-			break
-		}
-	}
-
-	return input.substring(startIndex, input.length)
+interface CacheEntry {
+	value: string
+	timestamp: number
 }
 
+// TODO: (bmc) Re-implement w/ something that's not in memory
 export class AutocompleteLruCache {
 	private static capacity = 1000
 	private mutex = new Mutex()
+	private cache: Map<string, CacheEntry> = new Map()
 
-	constructor(private db: Database<sqlite3.Database>) {}
+	constructor() {}
 
 	static async get(): Promise<AutocompleteLruCache> {
-		const db = await open({
-			filename: getTabAutocompleteCacheSqlitePath(),
-			driver: sqlite3.Database,
-		})
-
-		// Enable WAL mode for better concurrency: allows concurrent readers with one writer
-		await db.exec("PRAGMA journal_mode = WAL;")
-		await db.exec("PRAGMA busy_timeout = 3000;")
-
-		await db.run(`
-      CREATE TABLE IF NOT EXISTS cache (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        timestamp INTEGER NOT NULL
-      )
-    `)
-
-		return new AutocompleteLruCache(db)
+		return new AutocompleteLruCache()
 	}
 
 	async get(prefix: string): Promise<string | undefined> {
@@ -54,21 +22,29 @@ export class AutocompleteLruCache {
 
 		// If the query is "co" and we have "c" -> "ontinue" in the cache,
 		// we should return "ntinue" as the completion.
-		// Have to make sure we take the key with shortest length
-		const truncatedPrefix = truncateSqliteLikePattern(prefix)
+		// Have to make sure we take the key with longest length
 		try {
-			const result = await this.db.get(
-				"SELECT key, value FROM cache WHERE ? LIKE key || '%' ORDER BY LENGTH(key) DESC LIMIT 1",
-				truncatedPrefix,
-			)
+			// Find all keys where prefix starts with the key
+			let bestMatch: { key: string; entry: CacheEntry } | undefined
+
+			for (const [key, entry] of this.cache.entries()) {
+				// Check if prefix starts with this key (equivalent to SQL: prefix LIKE key || '%')
+				if (prefix.startsWith(key)) {
+					// Take the longest matching key (ORDER BY LENGTH(key) DESC LIMIT 1)
+					if (!bestMatch || key.length > bestMatch.key.length) {
+						bestMatch = { key, entry }
+					}
+				}
+			}
+
 			// Validate that the cached completion is a valid completion for the prefix
-			if (result && result.value.startsWith(truncatedPrefix.slice(result.key.length))) {
-				await this.db.run("UPDATE cache SET timestamp = ? WHERE key = ?", Date.now(), truncatedPrefix)
+			if (bestMatch && bestMatch.entry.value.startsWith(prefix.slice(bestMatch.key.length))) {
+				// Update timestamp on access
+				bestMatch.entry.timestamp = Date.now()
 				// And then truncate so we aren't writing something that's already there
-				return result.value.slice(truncatedPrefix.length - result.key.length)
+				return bestMatch.entry.value.slice(prefix.length - bestMatch.key.length)
 			}
 		} catch (e) {
-			// catches e.g. old SQLITE LIKE OR GLOB PATTERN TOO COMPLEX
 			console.error(e)
 		}
 
@@ -78,44 +54,40 @@ export class AutocompleteLruCache {
 	async put(prefix: string, completion: string) {
 		const release = await this.mutex.acquire()
 
-		const truncatedPrefix = truncateSqliteLikePattern(prefix)
 		try {
-			await this.db.run("BEGIN TRANSACTION")
+			const existingEntry = this.cache.get(prefix)
 
-			try {
-				const result = await this.db.get("SELECT key FROM cache WHERE key = ?", truncatedPrefix)
+			if (existingEntry) {
+				// Update existing entry
+				existingEntry.value = completion
+				existingEntry.timestamp = Date.now()
+			} else {
+				// Check capacity and evict if necessary
+				if (this.cache.size >= AutocompleteLruCache.capacity) {
+					// Find and remove the entry with the oldest timestamp (LRU)
+					let oldestKey: string | undefined
+					let oldestTimestamp = Infinity
 
-				if (result) {
-					await this.db.run(
-						"UPDATE cache SET value = ?, timestamp = ? WHERE key = ?",
-						completion,
-						Date.now(),
-						truncatedPrefix,
-					)
-				} else {
-					const count = await this.db.get("SELECT COUNT(*) as count FROM cache")
-
-					if (count.count >= AutocompleteLruCache.capacity) {
-						await this.db.run(
-							"DELETE FROM cache WHERE key = (SELECT key FROM cache ORDER BY timestamp ASC LIMIT 1)",
-						)
+					for (const [key, entry] of this.cache.entries()) {
+						if (entry.timestamp < oldestTimestamp) {
+							oldestTimestamp = entry.timestamp
+							oldestKey = key
+						}
 					}
 
-					await this.db.run(
-						"INSERT INTO cache (key, value, timestamp) VALUES (?, ?, ?)",
-						truncatedPrefix,
-						completion,
-						Date.now(),
-					)
+					if (oldestKey) {
+						this.cache.delete(oldestKey)
+					}
 				}
 
-				await this.db.run("COMMIT")
-			} catch (error) {
-				await this.db.run("ROLLBACK")
-				throw error
+				// Insert new entry
+				this.cache.set(prefix, {
+					value: completion,
+					timestamp: Date.now(),
+				})
 			}
 		} catch (e) {
-			console.error("Error creating transaction: ", e)
+			console.error("Error updating cache: ", e)
 		} finally {
 			release()
 		}
