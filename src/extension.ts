@@ -400,9 +400,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	const ide = new VsCodeIde(context)
 	const usingFullFileDiff = false
 	const continueProvider = new ContinueCompletionProvider(minimalConfigProvider, ide, usingFullFileDiff)
-	// context.subscriptions.push(
-  //     vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider)
-	// );
+	context.subscriptions.push(
+		vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider),
+	)
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }

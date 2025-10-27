@@ -277,3 +277,5 @@ export class CompletionProvider {
 		}
 	}
 }
+
+export default CompletionProvider
