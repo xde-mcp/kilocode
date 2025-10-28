@@ -1,6 +1,6 @@
 import { LLMClient } from "./llm-client.js"
 import { AutoTriggerStrategy } from "../services/ghost/classic-auto-complete/AutoTriggerStrategy.js"
-import { GhostSuggestionContext, AutocompleteInput } from "../services/ghost/types.js"
+import { GhostSuggestionContext, AutocompleteInput, extractPrefixSuffix } from "../services/ghost/types.js"
 import { MockTextDocument } from "../services/mocking/MockTextDocument.js"
 import { CURSOR_MARKER } from "../services/ghost/classic-auto-complete/ghostConstants.js"
 import { parseGhostResponse } from "../services/ghost/classic-auto-complete/GhostStreamingParser.js"
@@ -95,7 +95,9 @@ export class StrategyTester {
 				range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)) as any,
 			}
 
-			const result = parseGhostResponse(xmlResponse, "", "", dummyContext.document, dummyContext.range)
+			const position = dummyContext.range?.start ?? new vscode.Position(0, 0)
+			const { prefix, suffix } = extractPrefixSuffix(dummyContext.document, position)
+			const result = parseGhostResponse(xmlResponse, prefix, suffix)
 
 			// Check if we have any suggestions
 			if (!result.suggestions.hasSuggestions()) {

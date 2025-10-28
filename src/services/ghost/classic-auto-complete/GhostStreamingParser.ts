@@ -11,12 +11,6 @@ export interface StreamingParseResult {
 export interface ParsedChange {
 	search: string
 	replace: string
-	cursorPosition?: number // Offset within replace content where cursor should be positioned
-}
-
-function extractCursorPosition(content: string): number | undefined {
-	const markerIndex = content.indexOf(CURSOR_MARKER)
-	return markerIndex !== -1 ? markerIndex : undefined
 }
 
 function removeCursorMarker(content: string): string {
@@ -215,20 +209,14 @@ function sanitizeResponseIfNeeded(response: string): { sanitizedResponse: string
 /**
  * Parse the response
  */
-export function parseGhostResponse(
-	fullResponse: string,
-	prefix: string,
-	suffix: string,
-	document: vscode.TextDocument,
-	range: vscode.Range | undefined,
-): StreamingParseResult {
+export function parseGhostResponse(fullResponse: string, prefix: string, suffix: string): StreamingParseResult {
 	const { sanitizedResponse, isComplete } = sanitizeResponseIfNeeded(fullResponse)
 
 	const newChanges = extractCompletedChanges(sanitizedResponse)
 	let hasNewSuggestions = newChanges.length > 0
 
 	// Generate suggestions from all completed changes
-	const modifiedContent = generateModifiedContent(newChanges, document, range)
+	const modifiedContent = generateModifiedContent(newChanges, prefix, suffix, prefix + suffix)
 
 	const modifiedContent_has_prefix_and_suffix =
 		modifiedContent?.startsWith(prefix) && modifiedContent.endsWith(suffix)
@@ -256,32 +244,13 @@ export function parseGhostResponse(
  * Extract completed <change> blocks from the buffer
  */
 function extractCompletedChanges(searchText: string): ParsedChange[] {
-	const newChanges: ParsedChange[] = []
-
-	// Updated regex to handle both single-line XML format and traditional format with whitespace
 	const changeRegex =
 		/<change>\s*<search>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/search>\s*<replace>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/replace>\s*<\/change>/g
 
-	let match
-	let lastMatchEnd = 0
-
-	while ((match = changeRegex.exec(searchText)) !== null) {
-		// Preserve cursor marker in search content (LLM includes it when it sees it in document)
-		const searchContent = match[1]
-		// Extract cursor position from replace content
-		const replaceContent = match[2]
-		const cursorPosition = extractCursorPosition(replaceContent)
-
-		newChanges.push({
-			search: searchContent,
-			replace: replaceContent,
-			cursorPosition,
-		})
-
-		lastMatchEnd = match.index + match[0].length
-	}
-
-	return newChanges
+	return Array.from(searchText.matchAll(changeRegex), (match) => ({
+		search: match[1],
+		replace: match[2],
+	}))
 }
 
 /**
@@ -289,32 +258,28 @@ function extractCompletedChanges(searchText: string): ParsedChange[] {
  */
 function generateModifiedContent(
 	changes: ParsedChange[],
-	document: vscode.TextDocument,
-	range: vscode.Range | undefined,
+	prefix: string,
+	suffix: string,
+	currentContent: string,
 ): string | undefined {
 	if (changes.length === 0) {
 		return undefined
 	}
-
-	const currentContent = document.getText()
 
 	// Add cursor marker to document content if it's not already there
 	// This ensures that when LLM searches for <<<AUTOCOMPLETE_HERE>>>, it can find it
 	let modifiedContent = currentContent
 	const needsCursorMarker =
 		changes.some((change) => change.search.includes(CURSOR_MARKER)) && !currentContent.includes(CURSOR_MARKER)
-	if (needsCursorMarker && range) {
-		// Add cursor marker at the specified range position
-		const cursorOffset = document.offsetAt(range.start)
-		modifiedContent =
-			currentContent.substring(0, cursorOffset) + CURSOR_MARKER + currentContent.substring(cursorOffset)
+	if (needsCursorMarker) {
+		// Construct content with cursor marker at the position between prefix and suffix
+		modifiedContent = prefix + CURSOR_MARKER + suffix
 	}
 
 	// Process changes: preserve search content as-is, clean replace content for application
 	const filteredChanges = changes.map((change) => ({
 		search: change.search, // Keep cursor markers for matching against document
 		replace: removeCursorMarker(change.replace), // Clean for content application
-		cursorPosition: change.cursorPosition,
 	}))
 
 	// Apply changes in reverse order to maintain line numbers
@@ -323,7 +288,6 @@ function generateModifiedContent(
 		replaceContent: string
 		startIndex: number
 		endIndex: number
-		cursorPosition?: number
 	}> = []
 
 	for (const change of filteredChanges) {
@@ -372,7 +336,6 @@ function generateModifiedContent(
 				replaceContent: adjustedReplaceContent,
 				startIndex: searchIndex,
 				endIndex: endIndex,
-				cursorPosition: change.cursorPosition, // Preserve cursor position info
 			})
 		}
 	}
