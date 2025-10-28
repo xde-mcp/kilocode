@@ -146,7 +146,7 @@ export class TestRunner {
 						console.log("    " + "─".repeat(76))
 
 						if (this.verbose && result.completion) {
-							console.log("    Full XML Response:")
+							console.log("    Full LLM Response:")
 							console.log(
 								result.completion
 									.split("\n")

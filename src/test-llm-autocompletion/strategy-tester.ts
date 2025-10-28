@@ -1,9 +1,8 @@
 import { LLMClient } from "./llm-client.js"
 import { AutoTriggerStrategy } from "../services/ghost/classic-auto-complete/AutoTriggerStrategy.js"
-import { GhostSuggestionContext, AutocompleteInput, extractPrefixSuffix } from "../services/ghost/types.js"
+import { GhostSuggestionContext, AutocompleteInput } from "../services/ghost/types.js"
 import { MockTextDocument } from "../services/mocking/MockTextDocument.js"
 import { CURSOR_MARKER } from "../services/ghost/classic-auto-complete/ghostConstants.js"
-import { parseGhostResponse } from "../services/ghost/classic-auto-complete/GhostStreamingParser.js"
 import * as vscode from "vscode"
 import crypto from "crypto"
 
@@ -86,29 +85,27 @@ export class StrategyTester {
 		return response.content
 	}
 
-	parseCompletion(originalContent: string, xmlResponse: string): string | null {
+	parseCompletion(originalContent: string, fimResponse: string): string | null {
 		try {
+			// Extract prefix and suffix from original content
 			const cursorIndex = originalContent.indexOf(CURSOR_MARKER)
-			const prefix = originalContent.substring(0, cursorIndex)
-			const suffix = originalContent.substring(cursorIndex + CURSOR_MARKER.length)
-
-			const result = parseGhostResponse(xmlResponse, prefix, suffix)
-
-			// Check if we have any suggestions
-			if (!result.suggestions.hasSuggestions()) {
-				console.warn("No suggestions found")
+			if (cursorIndex === -1) {
+				console.warn("No cursor marker found in original content")
 				return null
 			}
 
-			// Get the FIM suggestion
-			const fimSuggestion = result.suggestions.getFillInAtCursor()
-			if (!fimSuggestion) {
-				console.warn("No FIM suggestion found")
+			const prefix = originalContent.substring(0, cursorIndex)
+			const suffix = originalContent.substring(cursorIndex + CURSOR_MARKER.length)
+
+			// Check if response is empty (but preserve whitespace/newlines)
+			if (!fimResponse || fimResponse.trim().length === 0) {
+				console.warn("Empty FIM response")
 				return null
 			}
 
 			// Reconstruct the complete content with the FIM text inserted
-			return fimSuggestion.prefix + fimSuggestion.text + fimSuggestion.suffix
+			// Don't trim - preserve leading/trailing whitespace as it may be intentional
+			return prefix + fimResponse + suffix
 		} catch (error) {
 			console.warn("Failed to parse completion:", error)
 			return null
