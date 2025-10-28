@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.112.1
-
-### Patch Changes
+## [v4.112.1]
 
 - [#3375](https://github.com/Kilo-Org/kilocode/pull/3375) [`52d39dd`](https://github.com/Kilo-Org/kilocode/commit/52d39ddaadf3b3ce8388db02078b004b6573e6da) Thanks [@RSO](https://github.com/RSO)! - Fixed autocomplete enabling/disabling
 
