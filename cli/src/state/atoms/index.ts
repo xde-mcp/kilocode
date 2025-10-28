@@ -158,17 +158,6 @@ export {
 	notificationsAtom,
 	notificationsLoadingAtom,
 	notificationsErrorAtom,
-
-	// Derived notifications atoms
-	hasNotificationsAtom,
-	firstNotificationAtom,
-	notificationCountAtom,
-
-	// Notifications action atoms
-	setNotificationsAtom,
-	clearNotificationsAtom,
-	setNotificationsLoadingAtom,
-	setNotificationsErrorAtom,
 } from "./notifications.js"
 
 // ============================================================================
