@@ -125,8 +125,10 @@ export class CLI {
 			// Request router models after configuration is injected
 			void this.requestRouterModels()
 
-			// Fetch Kilocode notifications if provider is kilocode
-			void this.fetchNotifications()
+			if (!this.options.ci && !this.options.prompt) {
+				// Fetch Kilocode notifications if provider is kilocode
+				void this.fetchNotifications()
+			}
 
 			this.isInitialized = true
 			logs.info("Kilo Code CLI initialized successfully", "CLI")
