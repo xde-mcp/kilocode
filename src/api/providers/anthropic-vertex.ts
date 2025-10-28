@@ -32,9 +32,9 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 
 		// https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-claude#regions
 		const projectId = this.options.vertexProjectId ?? "not-provided"
-		const region = this.options.vertexRegion ?? "global"
+		const region = this.options.vertexRegion ?? "us-east5"
 
-		//kilocode_change start
+		// kilocode_change start
 		// Manually construct the baseURL for the global endpoint because the format has changed,
 		// but updating the required anthropic libraries has significant breaking changes for other parts of the application.
 		// TODO: Upgrade the anthropic libraries
@@ -56,7 +56,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			region,
 			...(googleAuthConfig && { googleAuth: new GoogleAuth(googleAuthConfig) }),
 		})
-		//kilocode_change end
+		// kilocode_change end
 	}
 
 	override async *createMessage(
