@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.111.2
-
-### Patch Changes
+## [v4.111.2]
 
 - [#3363](https://github.com/Kilo-Org/kilocode/pull/3363) [`233334c`](https://github.com/Kilo-Org/kilocode/commit/233334cd284477290b67359add7e0f703d8707b7) Thanks [@markijbema](https://github.com/markijbema)! - Various improvements to the autocomplete functionality
 
