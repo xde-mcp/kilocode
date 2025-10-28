@@ -76,35 +76,8 @@ export class AutocompleteProvider {
 
 	private async loadCodeCompletion() {
 		try {
-			// Get the list of configured profiles
-			const profiles = await this.providerSettingsManager.listConfig()
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS) as Array<AutocompleteProviderKey>
-
-			// Find the first usable provider with valid configuration
-			let llm = null
-			let selectedProvider: AutocompleteProviderKey | null = null
-
-			for (const provider of supportedProviders) {
-				const selectedProfile = profiles.find(
-					(x): x is typeof x & { apiProvider: string } => x?.apiProvider === provider,
-				)
-
-				if (selectedProfile) {
-					// Get the full profile with credentials
-					const profile = await this.providerSettingsManager.getProfile({
-						id: selectedProfile.id,
-					})
-
-					// Try to create ILLM instance from profile
-					llm = this.model.createILLMFromProfile(profile, provider)
-
-					if (llm) {
-						selectedProvider = provider
-						console.log(`[AutocompleteProvider] Using ${provider} for autocomplete`)
-						break
-					}
-				}
-			}
+			// The model.reload() has already loaded the profile, so we can get the ILLM
+			const llm = this.model.getILLM()
 
 			if (!llm) {
 				console.warn("[AutocompleteProvider] No valid autocomplete provider found")
@@ -124,9 +97,7 @@ export class AutocompleteProvider {
 				vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider),
 			)
 
-			console.log(
-				`[AutocompleteProvider] Successfully registered autocomplete with provider: ${selectedProvider}`,
-			)
+			console.log("[AutocompleteProvider] Successfully registered autocomplete")
 		} catch (error) {
 			console.error("[AutocompleteProvider] Error loading code completion:", error)
 		}

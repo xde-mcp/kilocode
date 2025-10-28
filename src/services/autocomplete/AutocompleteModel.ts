@@ -11,13 +11,14 @@ import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
-import { ILLM, LLMOptions, TabAutocompleteOptions } from "../continuedev/core/index.js"
+import { ILLM, LLMOptions } from "../continuedev/core/index.js"
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../continuedev/core/util/parameters.js"
 import Mistral from "../continuedev/core/llm/llms/Mistral"
 import { OpenAI } from "../continuedev/core/llm/llms/OpenAI"
 
 export class AutocompleteModel {
 	private apiHandler: ApiHandler | null = null
+	private profile: ProviderSettings | null = null
 	public loaded = false
 
 	constructor(apiHandler: ApiHandler | null = null) {
@@ -28,6 +29,7 @@ export class AutocompleteModel {
 	}
 	private cleanup(): void {
 		this.apiHandler = null
+		this.profile = null
 		this.loaded = false
 	}
 
@@ -63,12 +65,12 @@ export class AutocompleteModel {
 		selectedProfile: ProviderSettingsEntry,
 		provider: keyof typeof AUTOCOMPLETE_PROVIDER_MODELS,
 	): Promise<void> {
-		const profile = await providerSettingsManager.getProfile({
+		this.profile = await providerSettingsManager.getProfile({
 			id: selectedProfile.id,
 		})
 
 		this.apiHandler = buildApiHandler({
-			...profile,
+			...this.profile,
 			[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
 		})
 
@@ -80,20 +82,21 @@ export class AutocompleteModel {
 	/**
 	 * Creates an ILLM-compatible instance from provider settings for autocomplete.
 	 * Supports mistral, kilocode, openrouter, and bedrock providers.
+	 * Uses the current profile loaded in this.profile.
 	 *
-	 * @param profile - The provider settings profile
-	 * @param provider - The autocomplete provider key
 	 * @returns ILLM instance or null if configuration is invalid
 	 */
-	public createILLMFromProfile(profile: ProviderSettings, provider: AutocompleteProviderKey): ILLM | null {
-		const model = "codestral-latest"
-		const apiKey = 'TODO_FILL_THIS_IN'
-		const apiBase = 'https://api.mistral.ai/v1'
-		const overrideProvider = 'mistral'
+	public getILLM(): ILLM | null {
+		if (!this.profile?.apiProvider) {
+			console.warn("[AutocompleteModel] No profile loaded")
+			return null
+		}
+
+		const provider = this.profile.apiProvider as AutocompleteProviderKey
 
 		try {
 			// Extract provider-specific configuration
-			const config = this.extractProviderConfig(profile, provider)
+			const config = this.extractProviderConfig()
 			if (!config) {
 				console.warn(`[AutocompleteModel] Failed to extract config for provider: ${provider}`)
 				return null
@@ -101,12 +104,12 @@ export class AutocompleteModel {
 
 			// Build LLM options
 			const llmOptions: LLMOptions = {
-				model: model || config.model,
-				apiKey: apiKey || config.apiKey,
-				apiBase: apiBase || config.apiBase,
+				model: config.model,
+				apiKey: config.apiKey,
+				apiBase: config.apiBase,
 				contextLength: 32000, // Default for Codestral models
 				completionOptions: {
-					model: model || config.model,
+					model: config.model,
 					temperature: 0.2, // Lower temperature for more deterministic autocomplete
 					maxTokens: 256, // Reasonable limit for code completions
 				},
@@ -114,57 +117,59 @@ export class AutocompleteModel {
 					...DEFAULT_AUTOCOMPLETE_OPTS,
 					useCache: false, // Disable caching for autocomplete
 				},
-				uniqueId: `autocomplete-${overrideProvider || provider}-${Date.now()}`,
+				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 			}
 
 			// Create appropriate LLM instance based on provider
-			return this.createLLMInstance(overrideProvider || provider, llmOptions)
+			return this.createLLMInstance(provider, llmOptions)
 		} catch (error) {
-			console.error(`[AutocompleteModel] Error creating ILLM for provider ${overrideProvider || provider}:`, error)
+			console.error(`[AutocompleteModel] Error creating ILLM for provider ${provider}:`, error)
 			return null
 		}
 	}
 
 	/**
-	 * Extracts provider-specific configuration (API key, base URL, model)
+	 * Extracts provider-specific configuration (API key, base URL, model) from this.profile
 	 */
-	private extractProviderConfig(
-		profile: ProviderSettings,
-		provider: AutocompleteProviderKey,
-	): { apiKey: string; apiBase: string; model: string } | null {
+	private extractProviderConfig(): { apiKey: string; apiBase: string; model: string } | null {
+		if (!this.profile?.apiProvider) {
+			return null
+		}
+
+		const provider = this.profile.apiProvider as AutocompleteProviderKey
 		const model = AUTOCOMPLETE_PROVIDER_MODELS[provider]
 
 		switch (provider) {
 			case "mistral":
-				if (!profile.mistralApiKey) {
+				if (!this.profile.mistralApiKey) {
 					console.warn("[AutocompleteModel] Missing Mistral API key")
 					return null
 				}
 				return {
-					apiKey: profile.mistralApiKey,
-					apiBase: profile.mistralCodestralUrl || "https://codestral.mistral.ai/v1/",
+					apiKey: this.profile.mistralApiKey,
+					apiBase: this.profile.mistralCodestralUrl || "https://codestral.mistral.ai/v1/",
 					model,
 				}
 
 			case "kilocode":
-				if (!profile.kilocodeToken) {
+				if (!this.profile.kilocodeToken) {
 					console.warn("[AutocompleteModel] Missing Kilocode token")
 					return null
 				}
 				return {
-					apiKey: profile.kilocodeToken,
-					apiBase: `${getKiloBaseUriFromToken(profile.kilocodeToken)}/openrouter/api/v1`,
+					apiKey: this.profile.kilocodeToken,
+					apiBase: `${getKiloBaseUriFromToken(this.profile.kilocodeToken)}/openrouter/api/v1`,
 					model,
 				}
 
 			case "openrouter":
-				if (!profile.openRouterApiKey) {
+				if (!this.profile.openRouterApiKey) {
 					console.warn("[AutocompleteModel] Missing OpenRouter API key")
 					return null
 				}
 				return {
-					apiKey: profile.openRouterApiKey,
-					apiBase: profile.openRouterBaseUrl || "https://openrouter.ai/api/v1",
+					apiKey: this.profile.openRouterApiKey,
+					apiBase: this.profile.openRouterBaseUrl || "https://openrouter.ai/api/v1",
 					model,
 				}
 

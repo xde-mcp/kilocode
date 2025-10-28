@@ -16,20 +16,22 @@ describe("AutocompleteModel", () => {
 		vi.clearAllMocks()
 	})
 
-	describe("createILLMFromProfile", () => {
+	describe("getILLM", () => {
 		describe("Mistral provider", () => {
 			it("should create Mistral instance with valid configuration", () => {
-				const profile: ProviderSettings = {
+				// Set the profile on the model
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-mistral-key",
 					mistralCodestralUrl: "https://custom.mistral.ai/v1/",
 				}
 
-				const result = model.createILLMFromProfile(profile, "mistral")
+				const result = model.getILLM()
 
 				expect(result).toBeDefined()
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "codestral-latest",
+						model: "codestral-2501",
 						apiKey: "test-mistral-key",
 						apiBase: "https://custom.mistral.ai/v1/",
 						contextLength: 32000,
@@ -38,11 +40,12 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should use default Mistral URL when not provided", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-mistral-key",
 				}
 
-				model.createILLMFromProfile(profile, "mistral")
+				model.getILLM()
 
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
@@ -52,9 +55,11 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should return null when API key is missing", () => {
-				const profile: ProviderSettings = {}
+				;(model as any).profile = {
+					apiProvider: "mistral",
+				}
 
-				const result = model.createILLMFromProfile(profile, "mistral")
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 				expect(Mistral).not.toHaveBeenCalled()
@@ -63,25 +68,28 @@ describe("AutocompleteModel", () => {
 
 		describe("Kilocode provider", () => {
 			it("should create OpenAI instance with valid Kilocode configuration", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "kilocode",
 					kilocodeToken: "test-kilocode-token",
 				}
 
-				const result = model.createILLMFromProfile(profile, "kilocode")
+				const result = model.getILLM()
 
 				expect(result).toBeDefined()
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "mistralai/codestral-2508",
+						model: "mistralai/codestral-2501",
 						apiKey: "test-kilocode-token",
 					}),
 				)
 			})
 
 			it("should return null when Kilocode token is missing", () => {
-				const profile: ProviderSettings = {}
+				;(model as any).profile = {
+					apiProvider: "kilocode",
+				}
 
-				const result = model.createILLMFromProfile(profile, "kilocode")
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 				expect(OpenAI).not.toHaveBeenCalled()
@@ -90,17 +98,18 @@ describe("AutocompleteModel", () => {
 
 		describe("OpenRouter provider", () => {
 			it("should create OpenAI instance with valid OpenRouter configuration", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "openrouter",
 					openRouterApiKey: "test-openrouter-key",
 					openRouterBaseUrl: "https://custom.openrouter.ai/api/v1",
 				}
 
-				const result = model.createILLMFromProfile(profile, "openrouter")
+				const result = model.getILLM()
 
 				expect(result).toBeDefined()
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "mistralai/codestral-2508",
+						model: "mistralai/codestral-2501",
 						apiKey: "test-openrouter-key",
 						apiBase: "https://custom.openrouter.ai/api/v1",
 					}),
@@ -108,11 +117,12 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should use default OpenRouter URL when not provided", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "openrouter",
 					openRouterApiKey: "test-openrouter-key",
 				}
 
-				model.createILLMFromProfile(profile, "openrouter")
+				model.getILLM()
 
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
@@ -122,9 +132,11 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should return null when API key is missing", () => {
-				const profile: ProviderSettings = {}
+				;(model as any).profile = {
+					apiProvider: "openrouter",
+				}
 
-				const result = model.createILLMFromProfile(profile, "openrouter")
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 				expect(OpenAI).not.toHaveBeenCalled()
@@ -133,13 +145,14 @@ describe("AutocompleteModel", () => {
 
 		describe("Bedrock provider", () => {
 			it("should return null as Bedrock is not yet supported", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "bedrock",
 					awsAccessKey: "test-access-key",
 					awsSecretKey: "test-secret-key",
 					awsRegion: "us-east-1",
 				}
 
-				const result = model.createILLMFromProfile(profile, "bedrock")
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 			})
@@ -147,11 +160,12 @@ describe("AutocompleteModel", () => {
 
 		describe("LLM options", () => {
 			it("should set correct completion options for autocomplete", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-key",
 				}
 
-				model.createILLMFromProfile(profile, "mistral")
+				model.getILLM()
 
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
@@ -164,11 +178,12 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should set autocomplete options with cache disabled", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-key",
 				}
 
-				model.createILLMFromProfile(profile, "mistral")
+				model.getILLM()
 
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
@@ -180,11 +195,12 @@ describe("AutocompleteModel", () => {
 			})
 
 			it("should generate unique ID with correct format", () => {
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-key",
 				}
 
-				model.createILLMFromProfile(profile, "mistral")
+				model.getILLM()
 				const call = vi.mocked(Mistral).mock.calls[0][0]
 
 				expect(call.uniqueId).toMatch(/^autocomplete-mistral-\d+$/)
@@ -198,12 +214,12 @@ describe("AutocompleteModel", () => {
 				vi.mocked(Mistral).mockImplementationOnce(() => {
 					throw new Error("Instantiation failed")
 				})
-
-				const profile: ProviderSettings = {
+				;(model as any).profile = {
+					apiProvider: "mistral",
 					mistralApiKey: "test-key",
 				}
 
-				const result = model.createILLMFromProfile(profile, "mistral")
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 				expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -214,13 +230,8 @@ describe("AutocompleteModel", () => {
 				consoleErrorSpy.mockRestore()
 			})
 
-			it("should handle invalid provider gracefully", () => {
-				const profile: ProviderSettings = {
-					mistralApiKey: "test-key",
-				}
-
-				// @ts-expect-error Testing invalid provider
-				const result = model.createILLMFromProfile(profile, "invalid-provider")
+			it("should return null when no profile is loaded", () => {
+				const result = model.getILLM()
 
 				expect(result).toBeNull()
 			})
