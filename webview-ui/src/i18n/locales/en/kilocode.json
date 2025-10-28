@@ -56,7 +56,7 @@
 			"providerRouting": {
 				"title": "Provider Routing",
 				"managedByOrganization": "Manage Organization-level Provider Routing",
-				"createOrganization": "Create Organization to Manage Provider Routing",
+				"createOrganization": "Create an Organization to Manage Provider Routing",
 				"sorting": {
 					"default": "Default provider sorting",
 					"price": "Prefer providers with lower price",
@@ -139,7 +139,7 @@
 			"viewAll": "View all pricing options"
 		},
 		"detailedUsage": "Detailed Usage",
-		"createOrganization": "Create Organization to Track Detailed Usage"
+		"createOrganization": "Create an Organization to Track Detailed Usage"
 	},
 	"docs": "Docs",
 	"rules": {
