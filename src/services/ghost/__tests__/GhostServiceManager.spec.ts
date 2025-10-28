@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { MockWorkspace } from "./MockWorkspace"
 import * as vscode from "vscode"
 import { parseGhostResponse } from "../classic-auto-complete/GhostStreamingParser"
-import { GhostSuggestionContext } from "../types"
+import { GhostSuggestionContext, extractPrefixSuffix } from "../types"
 
 vi.mock("vscode", () => ({
 	Uri: {
@@ -63,7 +63,7 @@ vi.mock("vscode", () => ({
 	},
 }))
 
-describe("GhostProvider", () => {
+describe("GhostServiceManager", () => {
 	let mockWorkspace: MockWorkspace
 
 	beforeEach(() => {
@@ -105,7 +105,9 @@ describe("GhostProvider", () => {
 			const { context } = await setupTestDocument("empty.js", initialContent)
 
 			// Test empty response
-			const result = parseGhostResponse("", "", "", context.document, context.range)
+			const position = context.range?.start ?? context.document.positionAt(0)
+			const { prefix, suffix } = extractPrefixSuffix(context.document, position)
+			const result = parseGhostResponse("", prefix, suffix)
 			expect(result.suggestions.hasSuggestions()).toBe(false)
 		})
 
@@ -115,7 +117,9 @@ describe("GhostProvider", () => {
 
 			// Test invalid XML format
 			const invalidXML = "This is not a valid XML format"
-			const result = parseGhostResponse(invalidXML, "", "", context.document, context.range)
+			const position = context.range?.start ?? context.document.positionAt(0)
+			const { prefix, suffix } = extractPrefixSuffix(context.document, position)
+			const result = parseGhostResponse(invalidXML, prefix, suffix)
 			expect(result.suggestions.hasSuggestions()).toBe(false)
 		})
 
@@ -133,7 +137,9 @@ describe("GhostProvider", () => {
 			const xmlResponse = `<change><search><![CDATA[console.log('test');]]></search><replace><![CDATA[// Added comment
 console.log('test');]]></replace></change>`
 
-			const result = parseGhostResponse(xmlResponse, "", "", context.document, context.range)
+			const position = context.range?.start ?? context.document.positionAt(0)
+			const { prefix, suffix } = extractPrefixSuffix(context.document, position)
+			const result = parseGhostResponse(xmlResponse, prefix, suffix)
 			// Should work with the XML format
 			expect(result.suggestions.hasSuggestions()).toBe(true)
 		})

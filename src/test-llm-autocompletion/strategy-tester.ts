@@ -1,6 +1,6 @@
 import { LLMClient } from "./llm-client.js"
 import { AutoTriggerStrategy } from "../services/ghost/classic-auto-complete/AutoTriggerStrategy.js"
-import { GhostSuggestionContext, AutocompleteInput } from "../services/ghost/types.js"
+import { GhostSuggestionContext, AutocompleteInput, extractPrefixSuffix } from "../services/ghost/types.js"
 import { MockTextDocument } from "../services/mocking/MockTextDocument.js"
 import { CURSOR_MARKER } from "../services/ghost/classic-auto-complete/ghostConstants.js"
 import { parseGhostResponse } from "../services/ghost/classic-auto-complete/GhostStreamingParser.js"
@@ -88,39 +88,11 @@ export class StrategyTester {
 
 	parseCompletion(originalContent: string, xmlResponse: string): string | null {
 		try {
-			const uri = vscode.Uri.parse("file:///test.js")
-
-			const lines = originalContent.split("\n")
-			let cursorLine = 0
-			let cursorCharacter = 0
-			let found = false
-
-			for (let i = 0; i < lines.length; i++) {
-				const markerIndex = lines[i].indexOf(CURSOR_MARKER)
-				if (markerIndex !== -1) {
-					cursorLine = i
-					cursorCharacter = markerIndex
-					found = true
-					break
-				}
-			}
-
-			if (!found) {
-				console.warn("Cursor marker not found")
-				return null
-			}
-
-			const contentWithoutMarker = originalContent.replace(CURSOR_MARKER, "")
-
 			const cursorIndex = originalContent.indexOf(CURSOR_MARKER)
 			const prefix = originalContent.substring(0, cursorIndex)
 			const suffix = originalContent.substring(cursorIndex + CURSOR_MARKER.length)
 
-			const document = new MockTextDocument(uri, contentWithoutMarker) as any
-			const position = new vscode.Position(cursorLine, cursorCharacter)
-			const range = new vscode.Range(position, position) as any
-
-			const result = parseGhostResponse(xmlResponse, prefix, suffix, document, range)
+			const result = parseGhostResponse(xmlResponse, prefix, suffix)
 
 			// Check if we have any suggestions
 			if (!result.suggestions.hasSuggestions()) {
