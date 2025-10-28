@@ -86,6 +86,11 @@ export class AutocompleteModel {
 	 * @returns ILLM instance or null if configuration is invalid
 	 */
 	public createILLMFromProfile(profile: ProviderSettings, provider: AutocompleteProviderKey): ILLM | null {
+		const model = "codestral-latest"
+		const apiKey = 'TODO_FILL_THIS_IN'
+		const apiBase = 'https://api.mistral.ai/v1'
+		const overrideProvider = 'mistral'
+
 		try {
 			// Extract provider-specific configuration
 			const config = this.extractProviderConfig(profile, provider)
@@ -96,12 +101,12 @@ export class AutocompleteModel {
 
 			// Build LLM options
 			const llmOptions: LLMOptions = {
-				model: config.model,
-				apiKey: config.apiKey,
-				apiBase: config.apiBase,
+				model: model || config.model,
+				apiKey: apiKey || config.apiKey,
+				apiBase: apiBase || config.apiBase,
 				contextLength: 32000, // Default for Codestral models
 				completionOptions: {
-					model: config.model,
+					model: model || config.model,
 					temperature: 0.2, // Lower temperature for more deterministic autocomplete
 					maxTokens: 256, // Reasonable limit for code completions
 				},
@@ -109,13 +114,13 @@ export class AutocompleteModel {
 					...DEFAULT_AUTOCOMPLETE_OPTS,
 					useCache: false, // Disable caching for autocomplete
 				},
-				uniqueId: `autocomplete-${provider}-${Date.now()}`,
+				uniqueId: `autocomplete-${overrideProvider || provider}-${Date.now()}`,
 			}
 
 			// Create appropriate LLM instance based on provider
-			return this.createLLMInstance(provider, llmOptions)
+			return this.createLLMInstance(overrideProvider || provider, llmOptions)
 		} catch (error) {
-			console.error(`[AutocompleteModel] Error creating ILLM for provider ${provider}:`, error)
+			console.error(`[AutocompleteModel] Error creating ILLM for provider ${overrideProvider || provider}:`, error)
 			return null
 		}
 	}

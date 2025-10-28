@@ -119,8 +119,11 @@ export const IGNORE_PATH_PATTERNS: Partial<Record<LanguageName, RegExp[]>> = {
 }
 
 export async function getParserForFile(filepath: string) {
+	console.log('getting parser for filePath', filepath)
 	try {
+		console.log('calling parser init')
 		await Parser.init()
+		console.log('parse init worked')
 		const parser = new Parser()
 
 		const language = await getLanguageForFile(filepath)
@@ -238,12 +241,16 @@ async function loadLanguageForFileExt(fileExtension: string): Promise<Language> 
 
 	for (const p of candidatePaths) {
 		if (fs.existsSync(p)) {
+			console.log('trying to load', p)
 			return await Language.load(p)
+		} else {
+			console.log('not found', p)
 		}
 	}
 
 	// Fallback (will throw with a clear path in error if still missing)
 	const fallback = path.join(candidateRoots[0]!, "node_modules", "tree-sitter-wasms", "out", filename)
+	console.log('loading fallback path', fallback)
 	return await Language.load(fallback)
 }
 

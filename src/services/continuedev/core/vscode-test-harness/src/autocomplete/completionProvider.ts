@@ -19,6 +19,9 @@ import { RecentlyEditedTracker } from "./recentlyEdited"
 import { RecentlyVisitedRangesService } from "./RecentlyVisitedRangesService"
 import { StatusBarStatus, getStatusBarStatus, setupStatusBar, stopStatusBarLoading } from "./statusBar"
 import { IDE } from "../../../"
+import { Logger } from "../../../util/logger"
+
+const logger = new Logger(__filename)
 
 export class ContinueCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private async onError(e: unknown) {
@@ -124,7 +127,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 		token: vscode.CancellationToken,
 		// @ts-expect-error -- return type mismatch between vscode types and implementation
 	): ProviderResult<InlineCompletionItem[] | InlineCompletionList> {
-		console.log("🔵 [DEBUG] provideInlineCompletionItems called", {
+		logger.debug("provideInlineCompletionItems called", {
 			uri: document.uri.toString(),
 			position: { line: position.line, character: position.character },
 			triggerKind: context.triggerKind,
@@ -142,25 +145,25 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 		// e.g. filepath, cursor position, editor, notebook-ness, etc.
 
 		const enableTabAutocomplete = getStatusBarStatus() === StatusBarStatus.Enabled
-		console.log("🔵 [DEBUG] Status check", { enableTabAutocomplete, isCancelled: token.isCancellationRequested })
+		logger.debug("Status check", { enableTabAutocomplete, isCancelled: token.isCancellationRequested })
 		if (token.isCancellationRequested || !enableTabAutocomplete) {
-			console.log("🔴 [EXIT] Early return: cancellation or autocomplete disabled")
+			logger.warn("Early return: cancellation or autocomplete disabled")
 			return null
 		}
 
 		if (document.uri.scheme === "vscode-scm") {
-			console.log("🔴 [EXIT] Early return: vscode-scm scheme")
+			logger.error("Early return: vscode-scm scheme")
 			return null
 		}
 
 		const editor = vscode.window.activeTextEditor
 		if (!editor) {
-			console.log("🔴 [EXIT] Early return: no active editor")
+			logger.error("Early return: no active editor")
 			return undefined
 		}
 		// Don't autocomplete with multi-cursor
 		if (editor && editor.selections.length > 1) {
-			console.log("🔴 [EXIT] Early return: multi-cursor detected")
+			logger.error("Early return: multi-cursor detected")
 			return null
 		}
 
@@ -170,19 +173,19 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 		// To improve the accuracy of suggestions it checks if the user has typed at least 4 characters
 		// This helps refine and filter out irrelevant autocomplete options
 		if (selectedCompletionInfo) {
-			console.log("🔵 [DEBUG] Selected completion info present", selectedCompletionInfo)
+			logger.debug("Selected completion info present", selectedCompletionInfo)
 			const { text, range } = selectedCompletionInfo
 			const typedText = document.getText(range)
 
 			const typedLength = range.end.character - range.start.character
 
 			if (typedLength < 4) {
-				console.log("🔴 [EXIT] Early return: typed length < 4", { typedLength })
+				logger.info("Early return: typed length < 4", { typedLength })
 				return null
 			}
 
 			if (!text.startsWith(typedText)) {
-				console.log("🔴 [EXIT] Early return: text doesn't start with typed text", { text, typedText })
+				logger.warn("Early return: text doesn't start with typed text", { text, typedText })
 				return null
 			}
 		}
@@ -309,7 +312,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 			const unprocessedCount = this.prefetchQueue.unprocessedCount
 			this.prefetchQueue.peekThreeProcessed()
 
-			console.log("🔵 [DEBUG] Jump/Chain state", {
+			logger.debug("Jump/Chain state", {
 				isJumping,
 				chainExists,
 				processedCount,
@@ -320,7 +323,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 
 			let resetChainInFullFileDiff = false
 			if (chainExists && this.usingFullFileDiff && processedCount === 0 && unprocessedCount === 0) {
-				console.log("🔵 [DEBUG] Resetting chain in full file diff mode")
+				logger.debug("Resetting chain in full file diff mode")
 				// Skipping jump logic due to empty queues while using full file diff
 				await this.nextEditProvider.deleteChain()
 				chainExists = false
@@ -328,7 +331,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 			}
 
 			if (isJumping && chainExists) {
-				console.log("🟢 [CASE 2] Jumping - chain exists, jump was taken")
+				logger.info("[CASE 2] Jumping - chain exists, jump was taken")
 				// Case 2: Jumping (chain exists, jump was taken)
 				// Reset jump state.
 				this.jumpManager.setJumpInProgress(false)
@@ -336,12 +339,12 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 				// Use the saved completion from JumpManager instead of dequeuing.
 				const savedCompletion = this.jumpManager.completionAfterJump
 				if (savedCompletion) {
-					console.log("🔵 [DEBUG] Using saved completion from JumpManager")
+					logger.debug("Using saved completion from JumpManager")
 					outcome = savedCompletion.outcome
 					this.jumpManager.clearCompletionAfterJump()
 				} else {
 					// Fall back to prefetch queue. This technically should not happen.
-					console.error("Fell back to prefetch queue even after jump was taken")
+					logger.error("Fell back to prefetch queue even after jump was taken")
 					outcome = this.prefetchQueue.dequeueProcessed()?.outcome
 
 					// Fill in the spot after dequeuing.
@@ -354,7 +357,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 					}
 				}
 			} else if (chainExists) {
-				console.log("🟢 [CASE 3] Accepting - chain exists, jump not taken")
+				logger.info("[CASE 3] Accepting - chain exists, jump not taken")
 				// Case 3: Accepting next edit outcome (chain exists, jump is not taken).
 				// Try suggesting jump for each location.
 				let isJumpSuggested = false
@@ -394,7 +397,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 							currentPosition: jumpPosition,
 						})
 
-						console.log("🔵 [DEBUG] Jump suggested, returning undefined to wait for jump")
+						logger.debug("Jump suggested, returning undefined to wait for jump")
 						// Don't display anything yet. This will be handled in Case 2.
 						// Recall from above that provideInlineCompletions runs on every cursor movement.
 						return undefined
@@ -402,12 +405,12 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 				}
 
 				if (!isJumpSuggested) {
-					console.log("🔴 [EXIT] No suitable jump location found after trying all positions")
+					logger.error("[EXIT] No suitable jump location found after trying all positions")
 					this.nextEditProvider.deleteChain()
 					return undefined
 				}
 			} else {
-				console.log("🟢 [CASE 1] Typing - chain does not exist")
+				logger.info("[CASE 1] Typing - chain does not exist")
 				// Case 1: Typing (chain does not exist).
 				// if resetChainInFullFileDiff is true then we are Rebuilding next edit chain after clearing empty queues in full file diff mode
 				this.nextEditProvider.startChain()
@@ -422,13 +425,13 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 
 				// Get initial completion.
 				if (this.isNextEditActive) {
-					console.log("🔵 [DEBUG] Requesting next edit completion")
+					logger.debug("Requesting next edit completion")
 					outcome = await this.nextEditProvider.provideInlineCompletionItems(input, signal, {
 						withChain: false,
 						usingFullFileDiff: this.usingFullFileDiff,
 					})
 
-					console.log("🔵 [DEBUG] Next edit outcome received", {
+					logger.debug("Next edit outcome received", {
 						hasOutcome: !!outcome,
 						hasCompletion: outcome?.completion ? true : false,
 						diffLinesLength: (outcome as NextEditOutcome)?.diffLines?.length ?? 0,
@@ -438,7 +441,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 						resetChainInFullFileDiff &&
 						(!outcome || (!outcome.completion && outcome.diffLines.length === 0))
 					) {
-						console.log("🔴 [EXIT] No next edit outcome after resetting chain")
+						logger.error("🔴 [EXIT] No next edit outcome after resetting chain")
 						// No next edit outcome after resetting chain; returning null
 						return null
 					}
@@ -452,18 +455,18 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 					// If initial outcome is null, suggest a jump instead.
 					// Calling this method again will call it with chain active but jump not suggested yet.
 					if (!outcome || (!outcome.completion && outcome.diffLines.length === 0)) {
-						console.log("🔵 [DEBUG] No initial outcome, recursively calling for jump suggestion")
+						logger.debug("No initial outcome, recursively calling for jump suggestion")
 						return this.provideInlineCompletionItems(document, position, context, token)
 					}
 				} else {
-					console.log("🔵 [DEBUG] Requesting regular autocomplete completion")
+					logger.debug("Requesting regular autocomplete completion")
 					// Handle regular autocomplete request.
 					outcome = await this.completionProvider.provideInlineCompletionItems(
 						input,
 						signal,
 						wasManuallyTriggered,
 					)
-					console.log("🔵 [DEBUG] Autocomplete outcome received", {
+					logger.debug("Autocomplete outcome received", {
 						hasOutcome: !!outcome,
 						hasCompletion: outcome?.completion ? true : false,
 						completionLength: outcome?.completion?.length ?? 0,
@@ -479,7 +482,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 					!(outcome as NextEditOutcome).completion &&
 					(outcome as NextEditOutcome).diffLines.length === 0)
 			) {
-				console.log("🔴 [EXIT] No valid outcome found", {
+				logger.error("[EXIT] No valid outcome found", {
 					hasOutcome: !!outcome,
 					isNextEditActive: this.isNextEditActive,
 					hasCompletion: outcome?.completion ? true : false,
@@ -504,9 +507,9 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 				outcome.completion = selectedCompletionInfo.text + outcome.completion
 			}
 			const willDisplay = this.willDisplay(document, selectedCompletionInfo, signal, outcome)
-			console.log("🔵 [DEBUG] willDisplay check", { willDisplay })
+			logger.debug("willDisplay check", { willDisplay })
 			if (!willDisplay) {
-				console.log("🔴 [EXIT] willDisplay returned false")
+				logger.error("willDisplay returned false")
 				return null
 			}
 
@@ -542,7 +545,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 				const result = processSingleLineCompletion(lastLineOfCompletionText, currentText, startPos.character)
 
 				if (result === undefined) {
-					console.log("🔴 [EXIT] processSingleLineCompletion returned undefined")
+					logger.error("[EXIT] processSingleLineCompletion returned undefined")
 					return undefined
 				}
 
@@ -568,7 +571,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 
 			// Handle autocomplete request.
 			if (!this.isNextEditActive) {
-				console.log("🟢 [SUCCESS] Returning autocomplete completion item", {
+				logger.info("[SUCCESS] Returning autocomplete completion item", {
 					completionText: completionText.substring(0, 50) + (completionText.length > 50 ? "..." : ""),
 				})
 				return [autocompleteCompletionItem]
@@ -588,7 +591,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 
 			// We don't need to show the next edit window if the predicted edits are identical to the previous version.
 			if (oldEditRangeSlice === newEditRangeSlice) {
-				console.log("🔴 [EXIT] Old and new edit range slices are identical")
+				logger.error("[EXIT] Old and new edit range slices are identical")
 				this.nextEditLoggingService.cancelRejectionTimeout(completionId)
 				return undefined
 			}
@@ -602,12 +605,12 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 			// If the diff is a FIM, render a ghost text.
 			const { isFim, fimText } = checkFim(oldEditRangeSlice, newEditRangeSlice, relativeCursorPos)
 
-			console.log("🔵 [DEBUG] FIM check result", { isFim, hasFimText: !!fimText })
+			logger.debug("FIM check result", { isFim, hasFimText: !!fimText })
 
 			if (isFim) {
 				if (!fimText) {
-					console.log("🔴 [EXIT] FIM detected but no fimText")
-					console.debug("deleteChain from completionProvider.ts: !fimText")
+					logger.error("[EXIT] FIM detected but no fimText")
+					logger.debug("deleteChain from completionProvider.ts: !fimText")
 					this.nextEditProvider.deleteChain()
 					return undefined
 				}
@@ -634,19 +637,19 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 						arguments: [completionId, this.nextEditLoggingService],
 					},
 				)
-				console.log("🟢 [SUCCESS] Returning FIM next edit completion item")
+				logger.info("[SUCCESS] Returning FIM next edit completion item")
 				return [nextEditCompletionItem]
 			}
 
 			// Handle non-FIM cases with the NextEditWindowManager.
-			console.log("🔵 [DEBUG] Handling non-FIM case with NextEditWindowManager")
+			logger.debug("Handling non-FIM case with NextEditWindowManager")
 			const diffLines = (outcome as NextEditOutcome).diffLines
 			if (diffLines.length === 0) {
 				// At this point, there is no way that diffLines.length === 0.
 				// Only time we ever reach this point would be after the jump was taken, or if its after the very first repsonse.
 				// In case of jump, this is impossible, as the JumpManager wouldn't have suggested a jump here in the first place.
 				// In case of initial response, we suggested a jump.
-				console.debug("deleteChain from completionProvider.ts: diffLines.length === 0")
+				logger.debug("deleteChain from completionProvider.ts: diffLines.length === 0")
 				NextEditProvider.getInstance().deleteChain()
 			}
 
@@ -664,7 +667,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 				)
 			}
 
-			console.log("🔴 [EXIT] Returning undefined after NextEditWindowManager handling")
+			logger.error("[EXIT] Returning undefined after NextEditWindowManager handling")
 			return undefined
 		} finally {
 			stopStatusBarLoading()
@@ -682,7 +685,7 @@ export class ContinueCompletionProvider implements vscode.InlineCompletionItemPr
 		if (selectedCompletionInfo) {
 			const { text, range } = selectedCompletionInfo
 			if (!outcome.completion.startsWith(text)) {
-				console.debug(
+				logger.debug(
 					`Won't display completion because text doesn't match: ${text}, ${outcome.completion}`,
 					range,
 				)
