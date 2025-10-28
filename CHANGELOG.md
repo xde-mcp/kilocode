@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.112.0
-
-### Minor Changes
+## [v4.112.0]
 
 - [#3346](https://github.com/Kilo-Org/kilocode/pull/3346) [`c70b93e`](https://github.com/Kilo-Org/kilocode/commit/c70b93e80de2e365c2dadad516006752c6fac54a) Thanks [@mcowger](https://github.com/mcowger)! - Update baseURL for Vertex Anthropic models to fix.
 
