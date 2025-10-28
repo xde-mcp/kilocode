@@ -33,7 +33,8 @@ describe("GhostStreamingParser", () => {
 	describe("finishStream", () => {
 		it("should handle incomplete XML", () => {
 			const incompleteXml = "<change><search><![CDATA["
-			const result = parseGhostResponse(incompleteXml, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(incompleteXml, docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(false)
 			expect(result.isComplete).toBe(false)
@@ -42,6 +43,9 @@ describe("GhostStreamingParser", () => {
 
 		it("should parse complete change blocks", () => {
 			const completeChange = `<change><search><![CDATA[function test() {
+	return true;
+}]]></search><replace><![CDATA[function test() {
+	// Added comment
 	return true;
 }]]></search><replace><![CDATA[function test() {
 	// Added comment
@@ -60,6 +64,9 @@ describe("GhostStreamingParser", () => {
 }]]></search><replace><![CDATA[function test() {
 	// Added comment
 	return true;
+}]]></search><replace><![CDATA[function test() {
+	// Added comment
+	return true;
 }]]></replace></change>`
 
 			const result = parseGhostResponse(fullResponse, "", "", document, range)
@@ -72,7 +79,8 @@ describe("GhostStreamingParser", () => {
 			const fullResponse = `<change><search><![CDATA[function test() {]]></search><replace><![CDATA[function test() {
 	// First change]]></replace></change><change><search><![CDATA[return true;]]></search><replace><![CDATA[return false; // Second change]]></replace></change>`
 
-			const result = parseGhostResponse(fullResponse, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(fullResponse, docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(true)
 		})
@@ -85,7 +93,8 @@ describe("GhostStreamingParser", () => {
 	return true;
 }]]></replace></change>`
 
-			const result = parseGhostResponse(completeResponse, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(completeResponse, docText, "", document, range)
 
 			expect(result.isComplete).toBe(true)
 		})
@@ -96,7 +105,8 @@ describe("GhostStreamingParser", () => {
 }]]></search><replace><![CDATA[function test() {
 	// Added comment`
 
-			const result = parseGhostResponse(incompleteResponse, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(incompleteResponse, docText, "", document, range)
 
 			expect(result.isComplete).toBe(false)
 		})
@@ -130,7 +140,8 @@ function fibonacci(n: number): number {
 		return fibonacci(n - 1) + fibonacci(n - 2);
 }]]></replace></change>`
 
-			const result = parseGhostResponse(changeWithCursor, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(changeWithCursor, docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(true)
 			expect(result.suggestions.hasSuggestions()).toBe(true)
@@ -156,7 +167,8 @@ function fibonacci(n: number): number {
 		return fibonacci(n - 1) + fibonacci(n - 2);
 }]]></replace></change>`
 
-			const result = parseGhostResponse(changeWithCursor, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(changeWithCursor, docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(true)
 			expect(result.suggestions.hasSuggestions()).toBe(true)
@@ -165,7 +177,8 @@ function fibonacci(n: number): number {
 		it("should handle malformed XML gracefully", () => {
 			const malformedXml = `<change><search><![CDATA[test]]><replace><![CDATA[replacement]]></replace></change>`
 
-			const result = parseGhostResponse(malformedXml, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(malformedXml, docText, "", document, range)
 
 			// Should not crash and should not produce suggestions
 			expect(result.hasNewSuggestions).toBe(false)
@@ -173,7 +186,8 @@ function fibonacci(n: number): number {
 		})
 
 		it("should handle empty response", () => {
-			const result = parseGhostResponse("", "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse("", docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(false)
 			expect(result.isComplete).toBe(true) // Empty is considered complete
@@ -181,7 +195,8 @@ function fibonacci(n: number): number {
 		})
 
 		it("should handle whitespace-only response", () => {
-			const result = parseGhostResponse("   \n\t  ", "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse("   \n\t  ", docText, "", document, range)
 
 			expect(result.hasNewSuggestions).toBe(false)
 			expect(result.isComplete).toBe(true)
@@ -544,7 +559,8 @@ function fibonacci(n: number): number {
 			const largeChange = `<change><search><![CDATA[${"x".repeat(10000)}]]></search><replace><![CDATA[${"y".repeat(10000)}]]></replace></change>`
 
 			const startTime = performance.now()
-			const result = parseGhostResponse(largeChange, "", "", document, range)
+			const docText = document.getText()
+			const result = parseGhostResponse(largeChange, docText, "", document, range)
 			const endTime = performance.now()
 
 			expect(endTime - startTime).toBeLessThan(100) // Should complete in under 100ms
@@ -555,7 +571,8 @@ function fibonacci(n: number): number {
 			const largeResponse = Array(1000).fill("x").join("")
 			const startTime = performance.now()
 
-			parseGhostResponse(largeResponse, "", "", document, range)
+			const docText = document.getText()
+			parseGhostResponse(largeResponse, docText, "", document, range)
 			const endTime = performance.now()
 
 			expect(endTime - startTime).toBeLessThan(200) // Should complete in under 200ms

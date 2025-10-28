@@ -222,7 +222,7 @@ export function parseGhostResponse(
 	let hasNewSuggestions = newChanges.length > 0
 
 	// Generate suggestions from all completed changes
-	const modifiedContent = generateModifiedContent(newChanges, document, range)
+	const modifiedContent = generateModifiedContent(newChanges, prefix, suffix, document.getText())
 
 	const modifiedContent_has_prefix_and_suffix =
 		modifiedContent?.startsWith(prefix) && modifiedContent.endsWith(suffix)
@@ -264,25 +264,22 @@ function extractCompletedChanges(searchText: string): ParsedChange[] {
  */
 function generateModifiedContent(
 	changes: ParsedChange[],
-	document: vscode.TextDocument,
-	range: vscode.Range | undefined,
+	prefix: string,
+	suffix: string,
+	currentContent: string,
 ): string | undefined {
 	if (changes.length === 0) {
 		return undefined
 	}
-
-	const currentContent = document.getText()
 
 	// Add cursor marker to document content if it's not already there
 	// This ensures that when LLM searches for <<<AUTOCOMPLETE_HERE>>>, it can find it
 	let modifiedContent = currentContent
 	const needsCursorMarker =
 		changes.some((change) => change.search.includes(CURSOR_MARKER)) && !currentContent.includes(CURSOR_MARKER)
-	if (needsCursorMarker && range) {
-		// Add cursor marker at the specified range position
-		const cursorOffset = document.offsetAt(range.start)
-		modifiedContent =
-			currentContent.substring(0, cursorOffset) + CURSOR_MARKER + currentContent.substring(cursorOffset)
+	if (needsCursorMarker) {
+		// Construct content with cursor marker at the position between prefix and suffix
+		modifiedContent = prefix + CURSOR_MARKER + suffix
 	}
 
 	// Process changes: preserve search content as-is, clean replace content for application
