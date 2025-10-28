@@ -263,7 +263,6 @@ function extractCompletedChanges(searchText: string): ParsedChange[] {
 		/<change>\s*<search>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/search>\s*<replace>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/replace>\s*<\/change>/g
 
 	let match
-	let lastMatchEnd = 0
 
 	while ((match = changeRegex.exec(searchText)) !== null) {
 		// Preserve cursor marker in search content (LLM includes it when it sees it in document)
@@ -277,8 +276,6 @@ function extractCompletedChanges(searchText: string): ParsedChange[] {
 			replace: replaceContent,
 			cursorPosition,
 		})
-
-		lastMatchEnd = match.index + match[0].length
 	}
 
 	return newChanges
