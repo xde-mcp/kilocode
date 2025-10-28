@@ -1,4 +1,4 @@
-import { parseGhostResponse, findBestMatch } from "../GhostStreamingParser"
+import { parseGhostResponse, findBestMatch, type MatchResult } from "../GhostStreamingParser"
 import * as vscode from "vscode"
 
 // Mock vscode module
@@ -130,28 +130,25 @@ describe("GhostStreamingParser - Fuzzy Match Length Bug", () => {
 	})
 
 	describe("Root cause analysis", () => {
-		it("should show findBestMatch returns start index but we need match length", () => {
-			// This is the root cause: findBestMatch only returns the start index
+		it("should show findBestMatch now returns both start index and match length", () => {
+			// The fix: findBestMatch now returns both start index and actual matched length
 			const content = "function         test()         {         return         true;         }"
 			const search = "function test() { return true; }"
 
-			const matchIndex = findBestMatch(content, search)
+			const matchResult = findBestMatch(content, search)
 
 			// We get the start index: 0
-			expect(matchIndex).toBe(0)
+			expect(matchResult.startIndex).toBe(0)
 
-			// But we don't know the actual length of the matched content
+			// And now we also get the actual length of the matched content
 			// search.length = 32
 			// Actual matched content length = 72 (has MANY extra spaces)
-			// Difference = 40 characters of code that will be left behind!
+			expect(matchResult.matchLength).toBe(72)
 
-			// The fix would be to return both:
-			// { startIndex: 0, matchLength: 72 }
-
-			// Then in generateModifiedContent at line 332, instead of:
+			// This ensures that in generateModifiedContent, we use:
+			// const endIndex = matchResult.startIndex + matchResult.matchLength
+			// Instead of the buggy:
 			// const endIndex = searchIndex + change.search.length
-			// We would use:
-			// const endIndex = searchIndex + matchResult.matchLength
 		})
 	})
 })
