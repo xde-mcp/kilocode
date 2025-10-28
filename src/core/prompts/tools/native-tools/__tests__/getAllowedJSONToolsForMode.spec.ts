@@ -16,6 +16,14 @@ vi.mock("../../../../config/ContextProxy")
 describe("getAllowedJSONToolsForMode", () => {
 	let mockProvider: Partial<ClineProvider>
 	let mockContext: any
+	const modelWithImages = {
+		id: "mock-model",
+		info: { contextWindow: 2048, supportsPromptCache: false, supportsImages: true },
+	}
+	const modelWithoutImages = {
+		id: "mock-model",
+		info: { contextWindow: 2048, supportsPromptCache: false, supportsImages: false },
+	}
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -102,7 +110,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, false, false)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				false,
+				undefined,
+			)
 
 			const applyDiffTool = tools.find((tool) => "function" in tool && tool.function.name === "apply_diff")
 			expect(applyDiffTool).toBeUndefined()
@@ -117,7 +130,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			// Check for duplicate tool names
 			const toolNames = tools.map((tool) => ("function" in tool ? tool.function.name : ""))
@@ -133,8 +151,18 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools1 = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
-			const tools2 = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools1 = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
+			const tools2 = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			expect(tools1.length).toBe(tools2.length)
 		})
@@ -149,7 +177,12 @@ describe("getAllowedJSONToolsForMode", () => {
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 			vi.mocked(CodeIndexManager.getInstance).mockReturnValue(undefined)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const codebaseSearchTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "codebase_search",
@@ -165,7 +198,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const browserActionTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "browser_action",
@@ -181,7 +219,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, false)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithoutImages,
+			)
 
 			const browserActionTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "browser_action",
@@ -199,7 +242,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const todoListTool = tools.find((tool) => "function" in tool && tool.function.name === "update_todo_list")
 			expect(todoListTool).toBeUndefined()
@@ -214,7 +262,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const generateImageTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "generate_image",
@@ -231,7 +284,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const runSlashCommandTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "run_slash_command",
@@ -248,7 +306,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const askTool = tools.find((tool) => "function" in tool && tool.function.name === "ask_followup_question")
 			expect(askTool).toBeDefined()
@@ -261,7 +324,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithoutImages,
+			)
 
 			const completionTool = tools.find(
 				(tool) => "function" in tool && tool.function.name === "attempt_completion",
@@ -276,7 +344,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const switchModeTool = tools.find((tool) => "function" in tool && tool.function.name === "switch_mode")
 			expect(switchModeTool).toBeDefined()
@@ -289,7 +362,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, true)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				modelWithImages,
+			)
 
 			const newTaskTool = tools.find((tool) => "function" in tool && tool.function.name === "new_task")
 			expect(newTaskTool).toBeDefined()
