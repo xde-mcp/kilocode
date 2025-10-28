@@ -209,20 +209,14 @@ function sanitizeResponseIfNeeded(response: string): { sanitizedResponse: string
 /**
  * Parse the response
  */
-export function parseGhostResponse(
-	fullResponse: string,
-	prefix: string,
-	suffix: string,
-	document: vscode.TextDocument,
-	range: vscode.Range | undefined,
-): StreamingParseResult {
+export function parseGhostResponse(fullResponse: string, prefix: string, suffix: string): StreamingParseResult {
 	const { sanitizedResponse, isComplete } = sanitizeResponseIfNeeded(fullResponse)
 
 	const newChanges = extractCompletedChanges(sanitizedResponse)
 	let hasNewSuggestions = newChanges.length > 0
 
 	// Generate suggestions from all completed changes
-	const modifiedContent = generateModifiedContent(newChanges, prefix, suffix, document.getText())
+	const modifiedContent = generateModifiedContent(newChanges, prefix, suffix, prefix + suffix)
 
 	const modifiedContent_has_prefix_and_suffix =
 		modifiedContent?.startsWith(prefix) && modifiedContent.endsWith(suffix)
