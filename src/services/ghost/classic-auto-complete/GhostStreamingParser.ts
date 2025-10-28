@@ -11,12 +11,6 @@ export interface StreamingParseResult {
 export interface ParsedChange {
 	search: string
 	replace: string
-	cursorPosition?: number // Offset within replace content where cursor should be positioned
-}
-
-function extractCursorPosition(content: string): number | undefined {
-	const markerIndex = content.indexOf(CURSOR_MARKER)
-	return markerIndex !== -1 ? markerIndex : undefined
 }
 
 function removeCursorMarker(content: string): string {
@@ -262,7 +256,6 @@ function extractCompletedChanges(searchText: string): ParsedChange[] {
 	return Array.from(searchText.matchAll(changeRegex), (match) => ({
 		search: match[1],
 		replace: match[2],
-		cursorPosition: extractCursorPosition(match[2]),
 	}))
 }
 
@@ -296,7 +289,6 @@ function generateModifiedContent(
 	const filteredChanges = changes.map((change) => ({
 		search: change.search, // Keep cursor markers for matching against document
 		replace: removeCursorMarker(change.replace), // Clean for content application
-		cursorPosition: change.cursorPosition,
 	}))
 
 	// Apply changes in reverse order to maintain line numbers
@@ -305,7 +297,6 @@ function generateModifiedContent(
 		replaceContent: string
 		startIndex: number
 		endIndex: number
-		cursorPosition?: number
 	}> = []
 
 	for (const change of filteredChanges) {
@@ -354,7 +345,6 @@ function generateModifiedContent(
 				replaceContent: adjustedReplaceContent,
 				startIndex: searchIndex,
 				endIndex: endIndex,
-				cursorPosition: change.cursorPosition, // Preserve cursor position info
 			})
 		}
 	}
