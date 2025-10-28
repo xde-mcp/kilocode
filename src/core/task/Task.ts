@@ -2961,7 +2961,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					mode,
 					provider,
 					this.diffEnabled,
-					this.api?.getModel()?.info?.supportsImages ?? false,
+					this.api?.getModel(),
 				)
 			} catch (error) {
 				console.error("[Task] Error getting allowed tools for mode:", error)

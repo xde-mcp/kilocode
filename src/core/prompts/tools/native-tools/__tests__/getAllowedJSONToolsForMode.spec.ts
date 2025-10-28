@@ -58,7 +58,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, false)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				undefined,
+			)
 
 			const applyDiffTool = tools.find((tool) => "function" in tool && tool.function.name === "apply_diff")
 			expect(applyDiffTool).toBeDefined()
@@ -75,7 +80,12 @@ describe("getAllowedJSONToolsForMode", () => {
 
 			vi.mocked(mockProvider.getState!).mockResolvedValue(providerState as ClineProviderState)
 
-			const tools = await getAllowedJSONToolsForMode("code" as Mode, mockProvider as ClineProvider, true, false)
+			const tools = await getAllowedJSONToolsForMode(
+				"code" as Mode,
+				mockProvider as ClineProvider,
+				true,
+				undefined,
+			)
 
 			const applyDiffTool = tools.find((tool) => "function" in tool && tool.function.name === "apply_diff")
 			expect(applyDiffTool).toBeDefined()

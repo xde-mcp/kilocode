@@ -1,4 +1,4 @@
-import { ToolName } from "@roo-code/types"
+import { ModelInfo, shouldUseSingleFileRead, ToolName } from "@roo-code/types"
 import { CodeIndexManager } from "../../../../services/code-index/manager"
 import { Mode, getModeConfig, isToolAllowedForMode, getGroupName } from "../../../../shared/modes"
 import { ClineProviderState } from "../../../webview/ClineProvider"
@@ -14,12 +14,13 @@ import { getMcpServerTools } from "./mcp_server"
 import { ClineProvider } from "../../../webview/ClineProvider"
 import { ContextProxy } from "../../../config/ContextProxy"
 import * as vscode from "vscode"
+import { read_file_multi, read_file_single } from "./read_file"
 
 export async function getAllowedJSONToolsForMode(
 	mode: Mode,
 	provider: ClineProvider | undefined,
 	diffEnabled: boolean = false,
-	supportsImages?: boolean,
+	model: { id: string; info: ModelInfo } | undefined,
 ): Promise<OpenAI.Chat.ChatCompletionTool[]> {
 	const providerState: ClineProviderState | undefined = await provider?.getState()
 	const config = getModeConfig(mode, providerState?.customModes)
@@ -115,7 +116,7 @@ export async function getAllowedJSONToolsForMode(
 		tools.delete("run_slash_command")
 	}
 
-	if (!providerState?.browserToolEnabled || !supportsImages) {
+	if (!providerState?.browserToolEnabled || !model?.info.supportsImages) {
 		tools.delete("browser_action")
 	}
 
@@ -128,17 +129,28 @@ export async function getAllowedJSONToolsForMode(
 	})
 	let allowedTools: OpenAI.Chat.ChatCompletionTool[] = []
 
+	let isReadFileToolAllowedForMode = false
 	let isApplyDiffToolAllowedForMode = false
 	for (const nativeTool of nativeTools) {
 		const toolName = nativeTool.function.name
 
 		// If the tool is in the allowed set, add it.
 		if (tools.has(toolName)) {
-			if (toolName === "apply_diff") {
+			if (toolName === "read_file") {
+				isReadFileToolAllowedForMode = true
+			} else if (toolName === "apply_diff") {
 				isApplyDiffToolAllowedForMode = true
 			} else {
 				allowedTools.push(nativeTool)
 			}
+		}
+	}
+
+	if (isReadFileToolAllowedForMode) {
+		if (model?.id && shouldUseSingleFileRead(model?.id)) {
+			allowedTools.push(read_file_single)
+		} else {
+			allowedTools.push(read_file_multi)
 		}
 	}
 
