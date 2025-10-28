@@ -151,6 +151,27 @@ export {
 } from "./config-sync.js"
 
 // ============================================================================
+// Notifications Atoms - Kilocode notifications management
+// ============================================================================
+export {
+	// Core notifications atoms
+	notificationsAtom,
+	notificationsLoadingAtom,
+	notificationsErrorAtom,
+
+	// Derived notifications atoms
+	hasNotificationsAtom,
+	firstNotificationAtom,
+	notificationCountAtom,
+
+	// Notifications action atoms
+	setNotificationsAtom,
+	clearNotificationsAtom,
+	setNotificationsLoadingAtom,
+	setNotificationsErrorAtom,
+} from "./notifications.js"
+
+// ============================================================================
 // UI Atoms - Command-based UI state
 // ============================================================================
 export {
@@ -219,3 +240,4 @@ export type {
 export type { CliMessage } from "../../types/cli.js"
 export type { CommandSuggestion, ArgumentSuggestion } from "../../services/autocomplete.js"
 export type { FollowupSuggestion } from "./ui.js"
+export type { KilocodeNotification } from "./notifications.js"

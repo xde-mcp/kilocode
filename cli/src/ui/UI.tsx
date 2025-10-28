@@ -27,6 +27,8 @@ import { AppOptions } from "./App.js"
 import { logs } from "../services/logs.js"
 import { createConfigErrorInstructions, createWelcomeMessage } from "./utils/welcomeMessage.js"
 import { generateUpdateAvailableMessage, getAutoUpdateStatus } from "../utils/auto-update.js"
+import { generateNotificationMessage } from "../utils/notifications.js"
+import { firstNotificationAtom } from "../state/atoms/notifications.js"
 import { useTerminal } from "../state/hooks/useTerminal.js"
 
 // Initialize commands on module load
@@ -43,6 +45,7 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	const theme = useTheme()
 	const configValidation = useAtomValue(configValidationAtom)
 	const resetCounter = useAtomValue(messageResetCounterAtom)
+	const firstNotification = useAtomValue(firstNotificationAtom)
 
 	// Initialize CI mode configuration
 	const setCIMode = useSetAtom(setCIModeAtom)
@@ -164,20 +167,23 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 		}
 	}, [options.ci, options.prompt, addMessage, configValidation])
 
-	// Auto-update check on mount
-	const checkVersion = async () => {
+	// Auto-update check on mount, and show notification if no update available
+	const checkVersionAndNotifications = async () => {
 		const status = await getAutoUpdateStatus()
 		if (status.isOutdated) {
 			addMessage(generateUpdateAvailableMessage(status))
+		} else if (firstNotification) {
+			// Only show notification if there's no pending update
+			addMessage(generateNotificationMessage(firstNotification))
 		}
 	}
 
 	useEffect(() => {
 		if (!autoUpdatedCheckedRef.current && !options.ci) {
 			autoUpdatedCheckedRef.current = true
-			checkVersion()
+			checkVersionAndNotifications()
 		}
-	}, [])
+	}, [firstNotification])
 
 	// Exit if provider configuration is invalid
 	useEffect(() => {
