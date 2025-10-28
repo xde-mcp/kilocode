@@ -256,29 +256,14 @@ export function parseGhostResponse(
  * Extract completed <change> blocks from the buffer
  */
 function extractCompletedChanges(searchText: string): ParsedChange[] {
-	const newChanges: ParsedChange[] = []
-
-	// Updated regex to handle both single-line XML format and traditional format with whitespace
 	const changeRegex =
 		/<change>\s*<search>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/search>\s*<replace>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/replace>\s*<\/change>/g
 
-	let match
-
-	while ((match = changeRegex.exec(searchText)) !== null) {
-		// Preserve cursor marker in search content (LLM includes it when it sees it in document)
-		const searchContent = match[1]
-		// Extract cursor position from replace content
-		const replaceContent = match[2]
-		const cursorPosition = extractCursorPosition(replaceContent)
-
-		newChanges.push({
-			search: searchContent,
-			replace: replaceContent,
-			cursorPosition,
-		})
-	}
-
-	return newChanges
+	return Array.from(searchText.matchAll(changeRegex), (match) => ({
+		search: match[1],
+		replace: match[2],
+		cursorPosition: extractCursorPosition(match[2]),
+	}))
 }
 
 /**
