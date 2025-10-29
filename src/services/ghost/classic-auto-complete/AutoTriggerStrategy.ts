@@ -1,26 +1,91 @@
 import { AutocompleteInput } from "../types"
 import { CURSOR_MARKER } from "./ghostConstants"
-import { isCommentLine, cleanComment } from "./CommentHelpers"
 import type { TextDocument, Range } from "vscode"
 
 export function getBaseSystemInstructions(): string {
-	return `You are a Fill-In-the-Middle (FIM) code completion assistant.
+	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
 
-CRITICAL OUTPUT FORMAT:
-- Return ONLY the code that should go at the cursor position
-- Do NOT include any prefix or suffix code that already exists
-- Do NOT include explanations, markdown formatting, or XML tags
-- Do NOT wrap your response in triple backticks (\`\`\`) or code blocks
-- Return just the raw code text that fills the gap
-- Include necessary newlines and spacing at the start/end of your completion
+## EXAMPLE QUERY:
 
-GUIDELINES:
-- Be conservative and minimal
-- Complete only what appears to be in progress
-- Match the existing code style and indentation
-- Single line completions are preferred
-- If nothing obvious to complete, return nothing
-- If completing after a comment or line, start with a newline
+<QUERY>
+function sum_evens(lim) {
+  var sum = 0;
+  for (var i = 0; i < lim; ++i) {
+    {{FILL_HERE}}
+  }
+  return sum;
+}
+</QUERY>
+
+TASK: Fill the {{FILL_HERE}} hole.
+
+## CORRECT COMPLETION
+
+<COMPLETION>if (i % 2 === 0) {
+      sum += i;
+    }</COMPLETION>
+
+## EXAMPLE QUERY:
+
+<QUERY>
+def sum_list(lst):
+  total = 0
+  for x in lst:
+  {{FILL_HERE}}
+  return total
+
+print sum_list([1, 2, 3])
+</QUERY>
+
+## CORRECT COMPLETION:
+
+<COMPLETION>  total += x</COMPLETION>
+
+## EXAMPLE QUERY:
+
+<QUERY>
+// data Tree a = Node (Tree a) (Tree a) | Leaf a
+
+// sum :: Tree Int -> Int
+// sum (Node lft rgt) = sum lft + sum rgt
+// sum (Leaf val)     = val
+
+// convert to TypeScript:
+{{FILL_HERE}}
+</QUERY>
+
+## CORRECT COMPLETION:
+
+<COMPLETION>type Tree<T>
+  = {$:"Node", lft: Tree<T>, rgt: Tree<T>}
+  | {$:"Leaf", val: T};
+
+function sum(tree: Tree<number>): number {
+  switch (tree.$) {
+    case "Node":
+      return sum(tree.lft) + sum(tree.rgt);
+    case "Leaf":
+      return tree.val;
+  }
+}</COMPLETION>
+
+## EXAMPLE QUERY:
+
+The 5th {{FILL_HERE}} is Jupiter.
+
+## CORRECT COMPLETION:
+
+<COMPLETION>planet from the Sun</COMPLETION>
+
+## EXAMPLE QUERY:
+
+function hypothenuse(a, b) {
+  return Math.sqrt({{FILL_HERE}}b ** 2);
+}
+
+## CORRECT COMPLETION:
+
+<COMPLETION>a ** 2 + </COMPLETION>
 
 `
 }
@@ -49,20 +114,6 @@ export class AutoTriggerStrategy {
 		return prefix.replace(/\n[\t ]+(\n)?$/, "\n")
 	}
 
-	shouldTreatAsComment(prefix: string, languageId: string): boolean {
-		const lines = prefix.split("\n")
-		const currentLine = lines[lines.length - 1].trim() || ""
-		const previousLine = lines.length > 1 ? lines[lines.length - 2].trim() : ""
-
-		if (isCommentLine(currentLine, languageId)) {
-			return true
-		} else if (currentLine === "" && previousLine) {
-			return isCommentLine(previousLine, languageId)
-		} else {
-			return false
-		}
-	}
-
 	getPrompts(
 		autocompleteInput: AutocompleteInput,
 		prefix: string,
@@ -72,16 +123,9 @@ export class AutoTriggerStrategy {
 		systemPrompt: string
 		userPrompt: string
 	} {
-		if (this.shouldTreatAsComment(prefix, languageId)) {
-			return {
-				systemPrompt: this.getCommentsSystemInstructions(),
-				userPrompt: this.getCommentsUserPrompt(prefix, suffix, languageId),
-			}
-		} else {
-			return {
-				systemPrompt: this.getSystemInstructions(),
-				userPrompt: this.getUserPrompt(autocompleteInput, prefix, suffix, languageId),
-			}
+		return {
+			systemPrompt: this.getSystemInstructions(),
+			userPrompt: this.getUserPrompt(autocompleteInput, prefix, suffix, languageId),
 		}
 	}
 
@@ -99,72 +143,15 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	 * Build minimal prompt for auto-trigger
 	 */
 	getUserPrompt(autocompleteInput: AutocompleteInput, prefix: string, suffix: string, languageId: string): string {
-		// Trim trailing indentation if cursor is on empty indented line
+		// Trim trailing indentation - VSCode will handle adding it back via the replacement range
 		const trimmedPrefix = this.trimTrailingIndentation(prefix)
 
-		let prompt = `Language: ${languageId}\n\n`
+		const prompt = `<QUERY>
+${trimmedPrefix}{{FILL_HERE}}${suffix}
+</QUERY>
 
-		// FIM request structure without markdown code blocks
-		prompt += "Fill in the missing code at <<<FILL_HERE>>>.\n\n"
-		prompt += "<CODE>\n"
-		prompt += trimmedPrefix
-		prompt += "<<<FILL_HERE>>>"
-		prompt += suffix
-		prompt += "\n</CODE>\n\n"
-
-		prompt += "Return ONLY the code that belongs at <<<FILL_HERE>>>.\n"
-		prompt += "Do NOT wrap your response in triple backticks (```) or any other formatting.\n"
-		prompt += "Include any necessary newlines or spacing at the beginning or end of your completion.\n"
-		prompt += "Just the raw code text, nothing else.\n"
-
-		return prompt
-	}
-
-	getCommentsSystemInstructions(): string {
-		return (
-			getBaseSystemInstructions() +
-			`You are an expert code generation assistant that implements code based on comments.
-
-## Core Responsibilities:
-1. Read and understand the comment's intent
-2. Generate complete, working code that fulfills the comment's requirements
-3. Follow the existing code style and patterns
-
-## Output Requirements:
-- CRITICAL: Your response MUST start with a newline character (\\n)
-- Return ONLY the code that implements the comment
-- Match the indentation level of the comment
-- Do not include the comment itself in your output
-- Ensure the code is production-ready`
-		)
-	}
-
-	getCommentsUserPrompt(prefix: string, suffix: string, languageId: string): string {
-		// Trim trailing indentation if cursor is on empty indented line
-		const trimmedPrefix = this.trimTrailingIndentation(prefix)
-
-		// Extract the comment from the prefix
-		const lines = trimmedPrefix.split("\n")
-		const lastLine = lines[lines.length - 1]
-		const previousLine = lines.length > 1 ? lines[lines.length - 2] : ""
-
-		// Determine which line contains the comment
-		const commentLine = isCommentLine(lastLine, languageId) ? lastLine : previousLine
-		const comment = cleanComment(commentLine, languageId)
-
-		let prompt = `Language: ${languageId}\n\n`
-		prompt += `Comment to implement: ${comment}\n\n`
-
-		prompt += "<CODE>\n"
-		prompt += trimmedPrefix
-		prompt += "<<<FILL_HERE>>>"
-		prompt += suffix
-		prompt += "\n</CODE>\n\n"
-
-		prompt += "Return ONLY the code that belongs at <<<FILL_HERE>>>.\n"
-		prompt += "Do NOT wrap your response in triple backticks (```) or any other formatting.\n"
-		prompt += "CRITICAL: Your response MUST start with \\n (newline character).\n"
-		prompt += "Just the raw code, nothing else.\n"
+TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
+<COMPLETION>`
 
 		return prompt
 	}
