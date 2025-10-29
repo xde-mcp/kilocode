@@ -92,12 +92,10 @@ describe("AutoTriggerStrategy", () => {
 
 			// Verify system prompt contains comment-specific keywords
 			expect(systemPrompt.toLowerCase()).toContain("comment")
-			expect(systemPrompt).toContain("TODO")
-			expect(systemPrompt).toContain("implement")
+			expect(systemPrompt).toContain("implements code based on comments")
 
 			// Verify user prompt contains comment context
-			expect(userPrompt).toContain("Comment-Driven Development")
-			expect(userPrompt).toContain("implement sum function")
+			expect(userPrompt).toContain("Comment to implement: TODO: implement sum function")
 		})
 
 		it("should use comment-specific prompts when cursor is on comment line", () => {
@@ -110,11 +108,10 @@ describe("AutoTriggerStrategy", () => {
 
 			// Verify system prompt contains comment-specific keywords
 			expect(systemPrompt.toLowerCase()).toContain("comment")
-			expect(systemPrompt).toContain("FIXME")
+			expect(systemPrompt).toContain("implements code based on comments")
 
 			// Verify user prompt contains comment context
-			expect(userPrompt).toContain("Comment-Driven")
-			expect(userPrompt).toContain("handle edge case")
+			expect(userPrompt).toContain("Comment to implement: FIXME: handle edge case")
 		})
 	})
 
@@ -131,9 +128,13 @@ describe("AutoTriggerStrategy", () => {
 			expect(systemPrompt).toContain("Auto-Completion")
 			expect(systemPrompt).toContain("non-intrusive")
 
-			// Verify user prompt contains auto-trigger instructions
-			expect(userPrompt).toContain("minimal, obvious completion")
-			expect(userPrompt).toContain("Single line preferred")
+			// Verify user prompt uses CODE tags instead of markdown code blocks
+			expect(userPrompt).toContain("Fill in the missing code at <<<FILL_HERE>>>")
+			expect(userPrompt).toContain("Return ONLY the code that belongs at <<<FILL_HERE>>>")
+			expect(userPrompt).toContain("<CODE>")
+			// Should not use markdown code blocks for code sections
+			expect(userPrompt).not.toMatch(/```typescript/)
+			expect(userPrompt).not.toMatch(/```\nconst x = 1;/)
 		})
 
 		it("should not treat empty line without preceding comment as comment-driven", () => {
@@ -147,6 +148,81 @@ describe("AutoTriggerStrategy", () => {
 			// Should use auto-trigger, not comment-driven
 			expect(systemPrompt).toContain("Auto-Completion")
 			expect(systemPrompt).not.toContain("Comment-Driven")
+		})
+	})
+
+	describe("trimTrailingIndentation", () => {
+		it("should remove trailing tabs followed by newline from prefix", () => {
+			const prefix = "'POST',\n\t\t\t\n"
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 2, 0),
+				prefix,
+				"",
+				"javascript",
+			)
+			// The prefix in the prompt should not contain the trailing indentation
+			expect(userPrompt).toContain("'POST',\n")
+			expect(userPrompt).not.toContain("\t\t\t")
+		})
+
+		it("should remove trailing spaces followed by newline from prefix", () => {
+			const prefix = "const x = 1;\n    \n"
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 1, 0),
+				prefix,
+				"",
+				"javascript",
+			)
+			// The prefix in the prompt should not contain the trailing spaces
+			expect(userPrompt).toContain("const x = 1;\n")
+			expect(userPrompt).not.toMatch(/\n    \n/)
+		})
+
+		it("should remove trailing tabs without final newline from prefix", () => {
+			const prefix = "function test() {\n\t\t"
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 1, 2),
+				prefix,
+				"",
+				"javascript",
+			)
+			// The prefix should have trailing tabs removed, ending with just newline
+			expect(userPrompt).toContain("function test() {\n")
+			expect(userPrompt).not.toContain("\t\t")
+		})
+
+		it("should not modify prefix without trailing indentation", () => {
+			const prefix = "const x = 1;"
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 0, 13),
+				prefix,
+				"",
+				"javascript",
+			)
+			expect(userPrompt).toContain("const x = 1;")
+		})
+
+		it("should not modify prefix ending with code on last line", () => {
+			const prefix = "const x = 1;\nconst y = "
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 1, 11),
+				prefix,
+				"",
+				"javascript",
+			)
+			expect(userPrompt).toContain("const y = ")
+		})
+
+		it("should handle mixed tabs and spaces in trailing indentation", () => {
+			const prefix = "class Test {\n\t  \t\n"
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.js", 1, 0),
+				prefix,
+				"",
+				"javascript",
+			)
+			expect(userPrompt).toContain("class Test {\n")
+			expect(userPrompt).not.toMatch(/\n\t  \t/)
 		})
 	})
 })

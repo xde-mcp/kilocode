@@ -94,7 +94,7 @@ export class StrategyTester {
 				return null
 			}
 
-			const prefix = originalContent.substring(0, cursorIndex)
+			let prefix = originalContent.substring(0, cursorIndex)
 			const suffix = originalContent.substring(cursorIndex + CURSOR_MARKER.length)
 
 			// Check if response is empty (but preserve whitespace/newlines)
@@ -103,8 +103,18 @@ export class StrategyTester {
 				return null
 			}
 
+			// Simulate the replacement range behavior from GhostInlineCompletionProvider
+			// If prefix ends with trailing indentation, we need to remove it before inserting
+			// This simulates VSCode replacing the indentation range with the completion
+			const indentationMatch = prefix.match(/\n([\t ]+)(\n)?$/)
+			if (indentationMatch) {
+				// Remove the trailing indentation to simulate the replacement range
+				const indentationLength = indentationMatch[1].length
+				prefix = prefix.substring(0, prefix.length - indentationLength - (indentationMatch[2] ? 1 : 0))
+			}
+
 			// Reconstruct the complete content with the FIM text inserted
-			// Don't trim - preserve leading/trailing whitespace as it may be intentional
+			// Don't modify fimResponse - use it as-is to see real output
 			return prefix + fimResponse + suffix
 		} catch (error) {
 			console.warn("Failed to parse completion:", error)

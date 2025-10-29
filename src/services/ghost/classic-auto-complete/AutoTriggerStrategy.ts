@@ -10,6 +10,7 @@ CRITICAL OUTPUT FORMAT:
 - Return ONLY the code that should go at the cursor position
 - Do NOT include any prefix or suffix code that already exists
 - Do NOT include explanations, markdown formatting, or XML tags
+- Do NOT wrap your response in triple backticks (\`\`\`) or code blocks
 - Return just the raw code text that fills the gap
 - Include necessary newlines and spacing at the start/end of your completion
 
@@ -36,6 +37,18 @@ export function addCursorMarker(document: TextDocument, range?: Range): string {
 }
 
 export class AutoTriggerStrategy {
+	/**
+	 * Remove trailing indentation from the prefix if the cursor is on an empty indented line.
+	 * If the prefix ends with a newline followed by only whitespace (tabs/spaces),
+	 * remove that whitespace.
+	 *
+	 * Example: 'POST',\n\t\t\t\n -> 'POST',\n
+	 */
+	private trimTrailingIndentation(prefix: string): string {
+		// Match and remove: newline + whitespace + optional newline at the end
+		return prefix.replace(/\n[\t ]+(\n)?$/, "\n")
+	}
+
 	shouldTreatAsComment(prefix: string, languageId: string): boolean {
 		const lines = prefix.split("\n")
 		const currentLine = lines[lines.length - 1].trim() || ""
@@ -86,23 +99,23 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	 * Build minimal prompt for auto-trigger
 	 */
 	getUserPrompt(autocompleteInput: AutocompleteInput, prefix: string, suffix: string, languageId: string): string {
+		// Trim trailing indentation if cursor is on empty indented line
+		const trimmedPrefix = this.trimTrailingIndentation(prefix)
+
 		let prompt = `Language: ${languageId}\n\n`
 
-		// FIM request structure
-		prompt += "Fill in the missing code at the cursor position.\n\n"
-		prompt += "## Code Before Cursor (PREFIX):\n"
-		prompt += "```" + languageId + "\n"
-		prompt += prefix
-		prompt += "\n```\n\n"
-
-		prompt += "## Code After Cursor (SUFFIX):\n"
-		prompt += "```" + languageId + "\n"
+		// FIM request structure without markdown code blocks
+		prompt += "Fill in the missing code at <<<FILL_HERE>>>.\n\n"
+		prompt += "<CODE>\n"
+		prompt += trimmedPrefix
+		prompt += "<<<FILL_HERE>>>"
 		prompt += suffix
-		prompt += "\n```\n\n"
+		prompt += "\n</CODE>\n\n"
 
-		prompt += "Return ONLY the code that belongs at the cursor position.\n"
+		prompt += "Return ONLY the code that belongs at <<<FILL_HERE>>>.\n"
+		prompt += "Do NOT wrap your response in triple backticks (```) or any other formatting.\n"
 		prompt += "Include any necessary newlines or spacing at the beginning or end of your completion.\n"
-		prompt += "No explanations, no markdown, just the raw code text.\n"
+		prompt += "Just the raw code text, nothing else.\n"
 
 		return prompt
 	}
@@ -118,6 +131,7 @@ Provide a subtle, non-intrusive completion after a typing pause.
 3. Follow the existing code style and patterns
 
 ## Output Requirements:
+- CRITICAL: Your response MUST start with a newline character (\\n)
 - Return ONLY the code that implements the comment
 - Match the indentation level of the comment
 - Do not include the comment itself in your output
@@ -126,8 +140,11 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	}
 
 	getCommentsUserPrompt(prefix: string, suffix: string, languageId: string): string {
+		// Trim trailing indentation if cursor is on empty indented line
+		const trimmedPrefix = this.trimTrailingIndentation(prefix)
+
 		// Extract the comment from the prefix
-		const lines = prefix.split("\n")
+		const lines = trimmedPrefix.split("\n")
 		const lastLine = lines[lines.length - 1]
 		const previousLine = lines.length > 1 ? lines[lines.length - 2] : ""
 
@@ -138,19 +155,16 @@ Provide a subtle, non-intrusive completion after a typing pause.
 		let prompt = `Language: ${languageId}\n\n`
 		prompt += `Comment to implement: ${comment}\n\n`
 
-		prompt += "## Code Before Cursor (PREFIX):\n"
-		prompt += "```" + languageId + "\n"
-		prompt += prefix
-		prompt += "\n```\n\n"
-
-		prompt += "## Code After Cursor (SUFFIX):\n"
-		prompt += "```" + languageId + "\n"
+		prompt += "<CODE>\n"
+		prompt += trimmedPrefix
+		prompt += "<<<FILL_HERE>>>"
 		prompt += suffix
-		prompt += "\n```\n\n"
+		prompt += "\n</CODE>\n\n"
 
-		prompt += "Return ONLY the code that implements this comment.\n"
-		prompt += "Include a newline at the start if the code should be on a new line.\n"
-		prompt += "No explanations, just the raw code.\n"
+		prompt += "Return ONLY the code that belongs at <<<FILL_HERE>>>.\n"
+		prompt += "Do NOT wrap your response in triple backticks (```) or any other formatting.\n"
+		prompt += "CRITICAL: Your response MUST start with \\n (newline character).\n"
+		prompt += "Just the raw code, nothing else.\n"
 
 		return prompt
 	}

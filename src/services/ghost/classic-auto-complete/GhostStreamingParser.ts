@@ -229,7 +229,17 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 
 	if (modifiedContent_has_prefix_and_suffix && modifiedContent) {
 		// Mark as FIM option
-		const middle = modifiedContent.slice(prefix.length, modifiedContent.length - suffix.length)
+		let middle = modifiedContent.slice(prefix.length, modifiedContent.length - suffix.length)
+
+		// Remove markdown code fence artifacts
+		// LLM sometimes mimics the markdown code block format from the prompt
+
+		// Remove leading backticks with optional language identifier and newline
+		middle = middle.replace(/^```[a-z]*\n?/i, "")
+
+		// Remove trailing backticks with optional preceding newline
+		middle = middle.replace(/\n?```$/i, "")
+
 		suggestions.setFillInAtCursor({
 			text: middle,
 			prefix,
