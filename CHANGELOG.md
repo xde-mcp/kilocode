@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.113.0
-
-### Minor Changes
+## [v4.113.0]
 
 - [#3382](https://github.com/Kilo-Org/kilocode/pull/3382) [`98c4d89`](https://github.com/Kilo-Org/kilocode/commit/98c4d89f414394de0b5ab579e9216c860b4a1d30) Thanks [@hassoncs](https://github.com/hassoncs)! - Add descriptions to the MCP and modes marketplace headers
 
