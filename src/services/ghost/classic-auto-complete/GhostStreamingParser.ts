@@ -37,8 +37,6 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 		hasNewSuggestions = true
 	}
 
-	// If no COMPLETION tags, don't create any suggestions
-
 	return {
 		suggestions,
 		isComplete,
