@@ -89,9 +89,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.autoTriggerStrategy = new AutoTriggerStrategy()
 	}
 
-	/**
-	 * Update the provider's settings
-	 */
 	public updateSettings(settings: GhostServiceSettings | null): void {
 		this.settings = settings
 	}
