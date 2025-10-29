@@ -102,18 +102,6 @@ export function addCursorMarker(document: TextDocument, range?: Range): string {
 }
 
 export class AutoTriggerStrategy {
-	/**
-	 * Remove trailing indentation from the prefix if the cursor is on an empty indented line.
-	 * If the prefix ends with a newline followed by only whitespace (tabs/spaces),
-	 * remove that whitespace.
-	 *
-	 * Example: 'POST',\n\t\t\t\n -> 'POST',\n
-	 */
-	private trimTrailingIndentation(prefix: string): string {
-		// Match and remove: newline + whitespace + optional newline at the end
-		return prefix.replace(/\n[\t ]+(\n)?$/, "\n")
-	}
-
 	getPrompts(
 		autocompleteInput: AutocompleteInput,
 		prefix: string,
@@ -143,11 +131,8 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	 * Build minimal prompt for auto-trigger
 	 */
 	getUserPrompt(autocompleteInput: AutocompleteInput, prefix: string, suffix: string, languageId: string): string {
-		// Trim trailing indentation - VSCode will handle adding it back via the replacement range
-		const trimmedPrefix = this.trimTrailingIndentation(prefix)
-
 		const prompt = `<QUERY>
-${trimmedPrefix}{{FILL_HERE}}${suffix}
+${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
