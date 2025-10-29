@@ -311,9 +311,9 @@ export async function presentAssistantMessage(cline: Task) {
 				progressStatus?: ToolProgressStatus,
 				isProtected?: boolean,
 			) => {
-				const state = await cline.providerRef.deref()?.getState()
-
 				// kilocode_change start: yolo mode
+
+				const state = await cline.providerRef.deref()?.getState()
 				if (state?.yoloMode) {
 					return true
 				}
