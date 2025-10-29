@@ -35,6 +35,7 @@ sidebar_label: Overview
 → [完整设置指南](/providers/kilocode)
 
 ### 选项 2：您自己的提供商
+_即将登陆 Kilo Code Teams 和 Enterprise 平台！_
 **更多控制，更多设置**
 1. 从 30 多个受支持的提供商中选择
 2. 从您的提供商处获取 API 密钥

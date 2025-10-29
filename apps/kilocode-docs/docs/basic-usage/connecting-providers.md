@@ -40,6 +40,8 @@ sidebar_label: Overview
 
 ### Option 2: Your Own Provider
 
+_Coming soon to Kilo Code Teams and Enterprise!_
+
 **More control, more setup**
 
 1. Choose from 30+ supported providers
