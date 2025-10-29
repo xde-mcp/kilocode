@@ -19,6 +19,8 @@ Kilo Code 需要 AI 模型提供商的 API 密钥才能运行。
 
 ## 使用其他 API 提供商
 
+_即将登陆 Kilo Code Teams 和 Enterprise 平台！_
+
 ### 获取您的API密钥
 
 #### 选项1：LLM路由器
@@ -84,3 +86,5 @@ LLM路由器让您可以通过一个API密钥访问多个AI模型，简化了成
     - 对于**OpenRouter**：选择`anthropic/claude-3.7-sonnet` ([模型详情](https://openrouter.ai/anthropic/claude-3.7-sonnet))
     - 对于**Anthropic**：选择`claude-3-7-sonnet-20250219` ([模型详情](https://www.anthropic.com/pricing#anthropic-api))
 5. 点击"Let's go!"保存设置并开始使用Kilo Code
+
+_即将登陆 Kilo Code Teams 和 Enterprise 平台！_
