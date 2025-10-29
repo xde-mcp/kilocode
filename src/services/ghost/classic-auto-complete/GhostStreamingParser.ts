@@ -214,38 +214,29 @@ function sanitizeResponseIfNeeded(response: string): { sanitizedResponse: string
  * Parse the response
  */
 export function parseGhostResponse(fullResponse: string, prefix: string, suffix: string): StreamingParseResult {
-	const { sanitizedResponse, isComplete } = sanitizeResponseIfNeeded(fullResponse)
-
-	const newChanges = extractCompletedChanges(sanitizedResponse)
-	let hasNewSuggestions = newChanges.length > 0
-
-	// Generate suggestions from all completed changes
-	const modifiedContent = generateModifiedContent(newChanges, prefix, suffix, prefix + suffix)
-
-	const modifiedContent_has_prefix_and_suffix =
-		modifiedContent?.startsWith(prefix) && modifiedContent.endsWith(suffix)
-
 	const suggestions = new GhostSuggestionsState()
+	let hasNewSuggestions = false
 
-	if (modifiedContent_has_prefix_and_suffix && modifiedContent) {
-		// Mark as FIM option
-		let middle = modifiedContent.slice(prefix.length, modifiedContent.length - suffix.length)
+	// FIM format: treat entire response as text to insert at cursor
+	let fimText = fullResponse.trim()
 
-		// Remove markdown code fence artifacts
-		// LLM sometimes mimics the markdown code block format from the prompt
+	// Remove markdown code fence artifacts
+	// LLM sometimes mimics the markdown code block format from the prompt
+	fimText = fimText.replace(/^```[a-z]*\n?/i, "")
+	fimText = fimText.replace(/\n?```$/i, "")
 
-		// Remove leading backticks with optional language identifier and newline
-		middle = middle.replace(/^```[a-z]*\n?/i, "")
-
-		// Remove trailing backticks with optional preceding newline
-		middle = middle.replace(/\n?```$/i, "")
-
+	// Create suggestion if there's actual content
+	if (fimText.length > 0) {
 		suggestions.setFillInAtCursor({
-			text: middle,
+			text: fimText,
 			prefix,
 			suffix,
 		})
+		hasNewSuggestions = true
 	}
+
+	// Response is complete when it's not empty (no streaming state to track)
+	const isComplete = fullResponse.trim().length > 0
 
 	return {
 		suggestions,

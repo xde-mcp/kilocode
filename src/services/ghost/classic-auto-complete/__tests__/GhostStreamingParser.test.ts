@@ -33,174 +33,45 @@ describe("GhostStreamingParser", () => {
 		range = undefined
 	})
 
-	describe("finishStream", () => {
-		it("should handle incomplete XML", () => {
-			const incompleteXml = "<change><search><![CDATA["
+	describe("FIM response parsing", () => {
+		it("should handle plain FIM text response", () => {
+			const fimResponse = "console.log('test');"
 			const position = range?.start ?? document.positionAt(0)
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(incompleteXml, prefix, suffix)
-
-			expect(result.hasNewSuggestions).toBe(false)
-			expect(result.isComplete).toBe(false)
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should parse complete change blocks", () => {
-			const completeChange = `<change><search><![CDATA[function test() {
-	return true;
-}]]></search><replace><![CDATA[function test() {
-	// Added comment
-	return true;
-}]]></replace></change>`
-
-			// The change modifies the whole document, so we need prefix="" and suffix=document
-			// After the change is applied, the result won't match prefix+suffix anymore
-			// So this test should check hasNewSuggestions but suggestions won't have FIM
-			const prefix = ""
-			const suffix = document.getText()
-			const result = parseGhostResponse(completeChange, prefix, suffix)
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
 
 			expect(result.hasNewSuggestions).toBe(true)
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should handle complete response built from multiple chunks", () => {
-			const fullResponse = `<change><search><![CDATA[function test() {
-	return true;
-}]]></search><replace><![CDATA[function test() {
-	// Added comment
-	return true;
-}]]></replace></change>`
-
-			// The change modifies the whole document
-			const prefix = ""
-			const suffix = document.getText()
-			const result = parseGhostResponse(fullResponse, prefix, suffix)
-
-			expect(result.hasNewSuggestions).toBe(true)
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should handle multiple complete changes", () => {
-			const fullResponse = `<change><search><![CDATA[function test() {]]></search><replace><![CDATA[function test() {
-	// First change]]></replace></change><change><search><![CDATA[return true;]]></search><replace><![CDATA[return false; // Second change]]></replace></change>`
-
-			const position = range?.start ?? document.positionAt(0)
-			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(fullResponse, prefix, suffix)
-
-			expect(result.hasNewSuggestions).toBe(true)
-		})
-
-		it("should detect when response is complete", () => {
-			const completeResponse = `<change><search><![CDATA[function test() {
-	return true;
-}]]></search><replace><![CDATA[function test() {
-	// Added comment
-	return true;
-}]]></replace></change>`
-
-			const position = range?.start ?? document.positionAt(0)
-			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(completeResponse, prefix, suffix)
-
 			expect(result.isComplete).toBe(true)
+			expect(result.suggestions.hasSuggestions()).toBe(true)
+
+			const fim = result.suggestions.getFillInAtCursor()
+			expect(fim?.text).toBe("console.log('test');")
 		})
 
-		it("should detect incomplete response", () => {
-			const incompleteResponse = `<change><search><![CDATA[function test() {
-	return true;
-}]]></search><replace><![CDATA[function test() {
-	// Added comment`
-
+		it("should handle multiline FIM response", () => {
+			const fimResponse = "const x = 5;\nconst y = 10;\nreturn x + y;"
 			const position = range?.start ?? document.positionAt(0)
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(incompleteResponse, prefix, suffix)
-
-			expect(result.isComplete).toBe(false)
-		})
-
-		it("should handle cursor marker in search content for matching", () => {
-			// Mock document WITHOUT cursor marker (parser should add it)
-			const mockDocumentWithoutCursor = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `function test() {
-	return true;
-}`,
-				languageId: "typescript",
-				offsetAt: (position: any) => 20, // Mock cursor position
-			} as vscode.TextDocument
-
-			const mockRange = {
-				start: { line: 1, character: 1 },
-				end: { line: 1, character: 1 },
-				isEmpty: true,
-				isSingleLine: true,
-			} as vscode.Range
-
-			const contextWithCursor = {
-				document: mockDocumentWithoutCursor,
-				range: mockRange,
-			}
-
-			const changeWithCursor = `<change><search><![CDATA[<<<AUTOCOMPLETE_HERE>>>]]></search><replace><![CDATA[// New function
-function fibonacci(n: number): number {
-		if (n <= 1) return n;
-		return fibonacci(n - 1) + fibonacci(n - 2);
-}]]></replace></change>`
-
-			const position = mockRange.start
-			const { prefix, suffix } = extractPrefixSuffix(mockDocumentWithoutCursor, position)
-			const result = parseGhostResponse(changeWithCursor, prefix, suffix)
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
 
 			expect(result.hasNewSuggestions).toBe(true)
 			expect(result.suggestions.hasSuggestions()).toBe(true)
+
+			const fim = result.suggestions.getFillInAtCursor()
+			expect(fim?.text).toBe("const x = 5;\nconst y = 10;\nreturn x + y;")
 		})
 
-		it("should handle document that already contains cursor marker", () => {
-			// Mock document that already contains cursor marker
-			const mockDocumentWithCursor = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `function test() {
-	<<<AUTOCOMPLETE_HERE>>>
-}`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-				offsetAt: (position: any) => position.character,
-			} as vscode.TextDocument
-
-			const contextWithCursor = {
-				document: mockDocumentWithCursor,
-			}
-
-			const changeWithCursor = `<change><search><![CDATA[<<<AUTOCOMPLETE_HERE>>>]]></search><replace><![CDATA[// New function
-function fibonacci(n: number): number {
-		if (n <= 1) return n;
-		return fibonacci(n - 1) + fibonacci(n - 2);
-}]]></replace></change>`
-
-			// The change modifies the document
-			const prefix = ""
-			const suffix = mockDocumentWithCursor.getText()
-			const result = parseGhostResponse(changeWithCursor, prefix, suffix)
-
-			expect(result.hasNewSuggestions).toBe(true)
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should handle malformed XML gracefully", () => {
-			const malformedXml = `<change><search><![CDATA[test]]><replace><![CDATA[replacement]]></replace></change>`
-
+		it("should remove markdown code fences", () => {
+			const fimResponse = "```typescript\nconst result = 42;\n```"
 			const position = range?.start ?? document.positionAt(0)
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(malformedXml, prefix, suffix)
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
 
-			// Should not crash and should not produce suggestions
-			expect(result.hasNewSuggestions).toBe(false)
-			expect(result.suggestions.hasSuggestions()).toBe(false)
+			expect(result.hasNewSuggestions).toBe(true)
+			expect(result.suggestions.hasSuggestions()).toBe(true)
+
+			const fim = result.suggestions.getFillInAtCursor()
+			expect(fim?.text).toBe("const result = 42;")
 		})
 
 		it("should handle empty response", () => {
@@ -209,7 +80,7 @@ function fibonacci(n: number): number {
 			const result = parseGhostResponse("", prefix, suffix)
 
 			expect(result.hasNewSuggestions).toBe(false)
-			expect(result.isComplete).toBe(true) // Empty is considered complete
+			expect(result.isComplete).toBe(false)
 			expect(result.suggestions.hasSuggestions()).toBe(false)
 		})
 
@@ -219,8 +90,57 @@ function fibonacci(n: number): number {
 			const result = parseGhostResponse("   \n\t  ", prefix, suffix)
 
 			expect(result.hasNewSuggestions).toBe(false)
-			expect(result.isComplete).toBe(true)
+			expect(result.isComplete).toBe(false)
 			expect(result.suggestions.hasSuggestions()).toBe(false)
+		})
+
+		it("should handle plain FIM text response with custom prefix/suffix", () => {
+			const fimResponse = "console.log('Hello, World!');"
+			const prefix = "function test() {\n  "
+			const suffix = "\n}"
+
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
+
+			expect(result.hasNewSuggestions).toBe(true)
+			expect(result.suggestions.hasSuggestions()).toBe(true)
+			expect(result.isComplete).toBe(true)
+
+			const fimContent = result.suggestions.getFillInAtCursor()
+			expect(fimContent).toEqual({
+				text: "console.log('Hello, World!');",
+				prefix: "function test() {\n  ",
+				suffix: "\n}",
+			})
+		})
+
+		it("should handle multiline plain FIM text response with custom prefix/suffix", () => {
+			const fimResponse = "const x = 5;\nconst y = 10;\nreturn x + y;"
+			const prefix = "function sum() {\n  "
+			const suffix = "\n}"
+
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
+
+			expect(result.hasNewSuggestions).toBe(true)
+			expect(result.suggestions.hasSuggestions()).toBe(true)
+
+			const fimContent = result.suggestions.getFillInAtCursor()
+			expect(fimContent?.text).toBe("const x = 5;\nconst y = 10;\nreturn x + y;")
+		})
+
+		it("should handle prefix/suffix with special characters", () => {
+			const fimResponse = 'const middle = "inserted";'
+			const prefix = "const regex = /test/g;\n"
+			const suffix = '\nconst result = "match";'
+
+			const result = parseGhostResponse(fimResponse, prefix, suffix)
+
+			expect(result.suggestions.hasSuggestions()).toBe(true)
+			const fimContent = result.suggestions.getFillInAtCursor()
+			expect(fimContent).toEqual({
+				text: 'const middle = "inserted";',
+				prefix: "const regex = /test/g;\n",
+				suffix: '\nconst result = "match";',
+			})
 		})
 	})
 
@@ -313,7 +233,6 @@ function fibonacci(n: number): number {
 				const search = "return true;\n"
 
 				const result = findBestMatch(content, search)
-				// Fuzzy matcher handles this by normalizing whitespace
 				expect(result.startIndex).toBe(19)
 			})
 
@@ -322,7 +241,6 @@ function fibonacci(n: number): number {
 				const search = "return true;\n"
 
 				const result = findBestMatch(content, search)
-				// Fuzzy matcher handles this by normalizing whitespace
 				expect(result.startIndex).toBe(19)
 			})
 		})
@@ -397,7 +315,6 @@ function fibonacci(n: number): number {
 				const search = "function test() {\n    return true;\n}"
 
 				const result = findBestMatch(content, search)
-				// Should match because tabs/spaces are flexible but newlines must match
 				expect(result.startIndex).toBe(0)
 			})
 		})
@@ -454,7 +371,6 @@ function fibonacci(n: number): number {
 
 		describe("real-world scenarios", () => {
 			it("should handle code with inconsistent indentation", () => {
-				// Use explicit \t and spaces to ensure correct test case
 				const content = 'function example() {\n\tif (true) {\n\t\tconsole.log("test");\n\t}\n}'
 				const search = 'function example() {\n    if (true) {\n        console.log("test");\n    }\n}'
 
@@ -505,7 +421,7 @@ function fibonacci(n: number): number {
 				const endTime = performance.now()
 
 				expect(result.startIndex).toBe(10000)
-				expect(endTime - startTime).toBeLessThan(50) // Should complete quickly
+				expect(endTime - startTime).toBeLessThan(50)
 			})
 
 			it("should handle large pattern efficiently", () => {
@@ -539,7 +455,6 @@ function fibonacci(n: number): number {
 				const search = "  function test() {}"
 
 				const result = findBestMatch(content, search)
-				// Fuzzy matcher doesn't handle leading whitespace in pattern that doesn't exist in content
 				expect(result.startIndex).toBe(-1)
 			})
 
@@ -548,7 +463,6 @@ function fibonacci(n: number): number {
 				const search = "function test() {}  "
 
 				const result = findBestMatch(content, search)
-				// Fuzzy matcher now allows trailing whitespace in pattern
 				expect(result.startIndex).toBe(0)
 			})
 
@@ -557,34 +471,24 @@ function fibonacci(n: number): number {
 				const search = "  function test() {}  "
 
 				const result = findBestMatch(content, search)
-				// Fuzzy matcher doesn't handle leading/trailing whitespace in pattern that doesn't exist in content
 				expect(result.startIndex).toBe(-1)
 			})
 		})
 
 		describe("bug: break prevents matching later in string", () => {
 			it("should find match later in content when first position fails", () => {
-				// This test demonstrates the bug at lines 169-170
-				// The content has "wrong" at the start, then the actual match "function test()" later
 				const content = "wrong function test() { return true; }"
 				const search = "function test()"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find the match at position 6 (after "wrong ")
-				// Actual: Returns -1 because the break statement prevents trying subsequent positions
 				expect(result.startIndex).toBe(6)
 			})
 
 			it("should find match after whitespace mismatch", () => {
-				// Another case: pattern starts with space, content doesn't
 				const content = "abc def ghi"
 				const search = "def"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find "def" at position 4
-				// Actual: May fail due to early break
 				expect(result.startIndex).toBe(4)
 			})
 
@@ -593,9 +497,6 @@ function fibonacci(n: number): number {
 				const search = "function test()"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find the match at position 2 (after "x ")
-				// Actual: Returns -1 due to break on first character mismatch
 				expect(result.startIndex).toBe(2)
 			})
 
@@ -604,22 +505,14 @@ function fibonacci(n: number): number {
 				const search = "target"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find "target" at position 12
-				// Actual: Should work since exact match is tried first, but fuzzy fallback would fail
 				expect(result.startIndex).toBe(12)
 			})
 
 			it("should find fuzzy match later in content", () => {
-				// This is the critical test case that shows the bug
-				// Content has extra spaces at start, then the pattern we're looking for
 				const content = "  x  function  test()"
 				const search = "function test()"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find fuzzy match starting at position 5 (after "  x  ")
-				// Actual: Returns -1 because break prevents trying position 5
 				expect(result.startIndex).toBe(5)
 			})
 
@@ -628,9 +521,6 @@ function fibonacci(n: number): number {
 				const search = "function test()"
 
 				const result = findBestMatch(content, search)
-
-				// Expected: Should find the match at position 12 (after "line1 line2\n")
-				// Actual: May fail if fuzzy matcher breaks early
 				expect(result.startIndex).toBe(12)
 			})
 		})
@@ -640,28 +530,25 @@ function fibonacci(n: number): number {
 		it("should handle context without document", () => {
 			const invalidDocument = undefined as any
 
-			const change = `<change><search><![CDATA[test]]></search><replace><![CDATA[replacement]]></replace></change>`
-
-			// This should throw or handle gracefully - expect it to throw
 			expect(() => {
 				const position = range?.start ?? invalidDocument.positionAt(0)
 				const { prefix, suffix } = extractPrefixSuffix(invalidDocument, position)
-				parseGhostResponse(change, prefix, suffix)
+				parseGhostResponse("test", prefix, suffix)
 			}).toThrow()
 		})
 	})
 
 	describe("performance", () => {
 		it("should handle large responses efficiently", () => {
-			const largeChange = `<change><search><![CDATA[${"x".repeat(10000)}]]></search><replace><![CDATA[${"y".repeat(10000)}]]></replace></change>`
+			const largeResponse = "y".repeat(10000)
 
 			const startTime = performance.now()
 			const position = range?.start ?? document.positionAt(0)
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
-			const result = parseGhostResponse(largeChange, prefix, suffix)
+			const result = parseGhostResponse(largeResponse, prefix, suffix)
 			const endTime = performance.now()
 
-			expect(endTime - startTime).toBeLessThan(100) // Should complete in under 100ms
+			expect(endTime - startTime).toBeLessThan(100)
 			expect(result.hasNewSuggestions).toBe(true)
 		})
 
@@ -674,212 +561,7 @@ function fibonacci(n: number): number {
 			parseGhostResponse(largeResponse, prefix, suffix)
 			const endTime = performance.now()
 
-			expect(endTime - startTime).toBeLessThan(200) // Should complete in under 200ms
-		})
-	})
-
-	describe("Fill-In-Middle (FIM) behavior", () => {
-		it("should set FIM when modifiedContent has both prefix and suffix", () => {
-			const mockDocWithPrefix = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const prefix = "start";\nconst suffix = "end";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const prefix = "start";\nconst suffix = "end";]]></search><replace><![CDATA[const prefix = "start";\nconst middle = "inserted";\nconst suffix = "end";]]></replace></change>`
-
-			const prefix = 'const prefix = "start";\n'
-			const suffix = 'const suffix = "end";'
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			expect(result.suggestions.hasSuggestions()).toBe(true)
-			// Check that FIM was set
-			const fimContent = result.suggestions.getFillInAtCursor()
-			expect(fimContent).toEqual({
-				text: 'const middle = "inserted";\n',
-				prefix: 'const prefix = "start";\n',
-				suffix: 'const suffix = "end";',
-			})
-		})
-
-		it("should NOT set FIM when prefix doesn't match", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const prefix = "start";\nconst suffix = "end";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const prefix = "start";\nconst suffix = "end";]]></search><replace><![CDATA[const prefix = "start";\nconst middle = "inserted";\nconst suffix = "end";]]></replace></change>`
-
-			const prefix = "WRONG_PREFIX"
-			const suffix = 'const suffix = "end";'
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// The change will still be applied and FIM will be set
-			// but with the wrong prefix/suffix (not matching the modified content)
-			expect(result.suggestions.hasSuggestions()).toBe(true)
-			const fimContent = result.suggestions.getFillInAtCursor()
-			// FIM is set but with empty text because prefix+suffix don't match the modified content
-			expect(fimContent?.text).toBe("")
-		})
-
-		it("should NOT set FIM when suffix doesn't match", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const prefix = "start";\nconst suffix = "end";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const prefix = "start";\nconst suffix = "end";]]></search><replace><![CDATA[const prefix = "start";\nconst middle = "inserted";\nconst suffix = "end";]]></replace></change>`
-
-			const prefix = 'const prefix = "start";\n'
-			const suffix = "WRONG_SUFFIX"
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// The change will still be applied and FIM will be set
-			// but with the wrong prefix/suffix (not matching the modified content)
-			expect(result.suggestions.hasSuggestions()).toBe(true)
-			const fimContent = result.suggestions.getFillInAtCursor()
-			// FIM is set but with empty text because prefix+suffix don't match the modified content
-			expect(fimContent?.text).toBe("")
-		})
-
-		it("should NOT set FIM when both prefix and suffix don't match", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const prefix = "start";\nconst suffix = "end";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const prefix = "start";\nconst suffix = "end";]]></search><replace><![CDATA[const prefix = "start";\nconst middle = "inserted";\nconst suffix = "end";]]></replace></change>`
-
-			const prefix = "WRONG_PREFIX"
-			const suffix = "WRONG_SUFFIX"
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// The change will still be applied and FIM will be set
-			// but with the wrong prefix/suffix (not matching the modified content)
-			expect(result.suggestions.hasSuggestions()).toBe(true)
-			const fimContent = result.suggestions.getFillInAtCursor()
-			// FIM is set but with empty text because prefix+suffix don't match the modified content
-			expect(fimContent?.text).toBe("")
-		})
-
-		it("should handle empty prefix and suffix", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const middle = "content";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const middle = "content";]]></search><replace><![CDATA[const middle = "updated";]]></replace></change>`
-
-			// The change modifies the whole document
-			const prefix = ""
-			const suffix = 'const middle = "content";'
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should extract correct middle content when FIM matches", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `function test() {\n\treturn true;\n}`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[function test() {\n\treturn true;\n}]]></search><replace><![CDATA[function test() {\n\tconst x = 5;\n\treturn true;\n}]]></replace></change>`
-
-			// The change modifies the whole document
-			const prefix = ""
-			const suffix = "function test() {\n\treturn true;\n}"
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should NOT set FIM when modifiedContent is undefined", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const x = 1;`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			// Change that won't match anything in the document
-			const change = `<change><search><![CDATA[NONEXISTENT]]></search><replace><![CDATA[REPLACEMENT]]></replace></change>`
-
-			const prefix = "const x = 1;"
-			const suffix = ""
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			const fimContent = result.suggestions.getFillInAtCursor()
-			// When no changes are applied, FIM is set to empty string (the entire unchanged document matches prefix+suffix)
-			expect(fimContent).toEqual({
-				text: "",
-				prefix: "const x = 1;",
-				suffix: "",
-			})
-		})
-
-		it("should handle multiline prefix and suffix correctly", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `class Test {\n\tconstructor() {\n\t\tthis.value = 0;\n\t}\n}`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[class Test {\n\tconstructor() {\n\t\tthis.value = 0;\n\t}\n}]]></search><replace><![CDATA[class Test {\n\tconstructor() {\n\t\tthis.value = 0;\n\t\tthis.name = "test";\n\t}\n}]]></replace></change>`
-
-			// The change modifies the whole document
-			const prefix = ""
-			const suffix = "class Test {\n\tconstructor() {\n\t\tthis.value = 0;\n\t}\n}"
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			// FIM won't be set because modified content doesn't end with original suffix
-			expect(result.suggestions.hasSuggestions()).toBe(false)
-		})
-
-		it("should handle prefix/suffix with special characters", () => {
-			const mockDoc = {
-				uri: { toString: () => "/test/file.ts", fsPath: "/test/file.ts" },
-				getText: () => `const regex = /test/g;\nconst result = "match";`,
-				languageId: "typescript",
-				positionAt: (offset: number) => ({ line: 0, character: offset }),
-			} as vscode.TextDocument
-
-			const change = `<change><search><![CDATA[const regex = /test/g;\nconst result = "match";]]></search><replace><![CDATA[const regex = /test/g;\nconst middle = "inserted";\nconst result = "match";]]></replace></change>`
-
-			const prefix = "const regex = /test/g;\n"
-			const suffix = 'const result = "match";'
-
-			const result = parseGhostResponse(change, prefix, suffix)
-
-			expect(result.suggestions.hasSuggestions()).toBe(true)
-			const fimContent = result.suggestions.getFillInAtCursor()
-			expect(fimContent).toEqual({
-				text: 'const middle = "inserted";\n',
-				prefix: "const regex = /test/g;\n",
-				suffix: 'const result = "match";',
-			})
+			expect(endTime - startTime).toBeLessThan(200)
 		})
 	})
 })
