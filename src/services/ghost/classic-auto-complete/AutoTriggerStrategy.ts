@@ -136,7 +136,7 @@ ${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
-<COMPLETION>`
+Return the COMPLETION tags`
 
 		return prompt
 	}
