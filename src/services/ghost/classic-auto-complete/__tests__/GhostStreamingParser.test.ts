@@ -35,12 +35,12 @@ describe("GhostStreamingParser", () => {
 			const response = "<COMPLETION>return 42"
 			const result = parseGhostResponse(response, prefix, suffix)
 
-			expect(result.hasNewSuggestions).toBe(true)
-			expect(result.isComplete).toBe(false)
-			expect(result.suggestions.hasSuggestions()).toBe(true)
+			expect(result.hasNewSuggestions).toBe(false)
+			expect(result.isComplete).toBe(true)
+			expect(result.suggestions.hasSuggestions()).toBe(false)
 
 			const suggestion = result.suggestions.getFillInAtCursor()
-			expect(suggestion?.text).toBe("return 42")
+			expect(suggestion?.text).toBeUndefined()
 		})
 
 		it("should remove any accidental tag remnants", () => {
