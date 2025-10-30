@@ -2,8 +2,8 @@
 	"welcome": {
 		"greeting": "Chào mừng bạn đến với Kilo Code!",
 		"introText1": "Kilo Code là một agent lập trình AI miễn phí và mã nguồn mở.",
-		"introText2": "Hoạt động với các mô hình AI mới nhất như Claude 4 Sonnet, Gemini 2.5 Pro, GPT-4.1, và hơn 450 mô hình khác.",
-		"introText3": "Tạo tài khoản miễn phí và nhận lên đến $25 token để sử dụng với bất kỳ mô hình AI nào.",
+		"introText2": "Hoạt động với các mô hình AI mới nhất như Claude Sonnet 4.5, Gemini 2.5 Pro, GPT-5, và hơn 450 mô hình khác.",
+		"introText3": "Tạo tài khoản miễn phí và nhận $20 tín dụng thưởng khi nạp tiền lần đầu.",
 		"ctaButton": "Bắt đầu",
 		"manualModeButton": "Sử dụng khóa API của riêng bạn",
 		"alreadySignedUp": "Đã đăng ký?",
@@ -11,7 +11,13 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Thêm tín dụng",
-		"lowBalance": "Số dư Kilo Code của bạn thấp"
+		"lowBalance": "Số dư Kilo Code của bạn thấp",
+		"newOrganization": "Sử dụng Kilo cho công việc?"
+	},
+	"pagination": {
+		"previous": "Trước",
+		"next": "Tiếp",
+		"page": "Trang {{page}} / {{count}}"
 	},
 	"invalidModel": {
 		"alphaPeriodEnded": "🎉 Giai đoạn alpha cho {{model}} đã kết thúc! Chuyển sang mô hình khác để tiếp tục.",
@@ -24,9 +30,7 @@
 		"costUnknown": "chi phí không xác định",
 		"costUnknownDescription": "Nhà cung cấp API không cung cấp dữ liệu chi phí hoặc yêu cầu đã bị hủy.",
 		"freeModelsDescription": "Các mô hình miễn phí có thể có giới hạn tốc độ. Sử dụng liên kết dưới đây để tối ưu hóa việc sử dụng mô hình miễn phí của bạn!",
-		"freeModelsLink": "Khám phá các tùy chọn mô hình miễn phí",
-		"openRouterMarkup": "Nhà cung cấp Kilo Code bao gồm tất cả các mô hình OpenRouter, không có phí đánh giá và hoa hồng 0%!",
-		"switchToKiloCode": "Chuyển sang Kilo Code"
+		"freeModelsLink": "Khám phá các tùy chọn mô hình miễn phí"
 	},
 	"notifications": {
 		"toolRequest": "Yêu cầu công cụ đang chờ phê duyệt",
@@ -50,7 +54,8 @@
 			"logout": "Đăng xuất khỏi Kilo Code",
 			"providerRouting": {
 				"title": "Định tuyến nhà cung cấp",
-				"managedByOrganization": "Cài đặt Định tuyến nhà cung cấp được quản lý bởi tổ chức của bạn.",
+				"managedByOrganization": "Quản lý Định tuyến nhà cung cấp cấp tổ chức",
+				"createOrganization": "Tạo tổ chức để quản lý Định tuyến nhà cung cấp",
 				"description": "Kilo Code định tuyến các yêu cầu đến các nhà cung cấp tốt nhất có sẵn cho mô hình của bạn. Theo mặc định, các yêu cầu được cân bằng tải trên các nhà cung cấp hàng đầu để tối đa hóa thời gian hoạt động. Tuy nhiên, bạn có thể chọn một nhà cung cấp cụ thể để sử dụng cho mô hình này.",
 				"sorting": {
 					"default": "Sắp xếp nhà cung cấp mặc định",
@@ -60,8 +65,10 @@
 				},
 				"dataCollection": {
 					"default": "Không thiết lập chính sách dữ liệu",
-					"allow": "Cho phép thu thập dữ liệu của nhà cung cấp",
-					"deny": "Từ chối thu thập dữ liệu của nhà cung cấp"
+					"allowFree": "Cho phép huấn luyện prompt (chỉ miễn phí)",
+					"allow": "Cho phép huấn luyện prompt",
+					"deny": "Từ chối huấn luyện prompt",
+					"zdr": "Không lưu trữ dữ liệu"
 				}
 			},
 			"automaticFetch": "Các mô hình mới nhất được tự động cung cấp trong Kilo Code. Nếu bạn không chắc chắn nên chọn mô hình nào, Kilo Code hoạt động tốt nhất với các mô hình được khuyến nghị được liệt kê ở đầu bằng <strong>chữ đậm</strong>."
@@ -102,7 +109,10 @@
 			"wantsToCondense": "Kilo Code muốn tóm tắt cuộc trò chuyện của bạn",
 			"condenseConversation": "Tóm tắt cuộc trò chuyện"
 		},
-		"seeNewChanges": "Hiển thị thay đổi mới"
+		"seeNewChanges": "Hiển thị thay đổi mới",
+		"revertNewChanges": "Hoàn tác thay đổi mới",
+		"confirmRevertChanges": "Xác nhận hoàn tác thay đổi",
+		"cancelRevertChanges": "Hủy hoàn tác thay đổi"
 	},
 	"newTaskPreview": {
 		"task": "Nhiệm vụ"
@@ -121,7 +131,9 @@
 			"credits": "tín dụng",
 			"action": "Mua Ngay",
 			"viewAll": "Xem tất cả tùy chọn giá"
-		}
+		},
+		"detailedUsage": "Sử dụng chi tiết",
+		"createOrganization": "Tạo tổ chức để theo dõi sử dụng chi tiết"
 	},
 	"docs": "Tài liệu",
 	"rules": {
@@ -199,7 +211,6 @@
 	"ghost": {
 		"title": "Autocomplete",
 		"settings": {
-			"autoTrigger": "Kích Hoạt Tự Động",
 			"triggers": "Bộ Kích Hoạt",
 			"keybindingDescription": "Các tính năng Autocomplete có thể được kích hoạt bằng lệnh. Bạn có thể cấu hình <DocsLink>Phím Tắt ở đây</DocsLink>.",
 			"enableAutoTrigger": {
@@ -211,23 +222,17 @@
 				"description": "Độ trễ tính bằng giây trước khi Kilo Code kích hoạt Autocomplete sau khi bạn ngừng gõ. Độ trễ ngắn hơn có nghĩa là gợi ý nhanh hơn, nhưng có thể tốn nhiều tài nguyên hơn."
 			},
 			"enableQuickInlineTaskKeybinding": {
-				"label": "Tác Vụ Nhanh",
+				"label": "Tác vụ nhanh ({{keybinding}})",
 				"description": "Chỉ cần một thay đổi nhanh? Chọn một số mã (hoặc không!) và nhấn Cmd+I. Mô tả mục tiêu của bạn bằng tiếng Việt đơn giản (\"tạo component React với những props này\", \"thêm xử lý lỗi vào hàm này\"), và nhận nhiều gợi ý sẵn sàng sử dụng ngay trong editor của bạn. <DocsLink>Xem phím tắt</DocsLink>"
 			},
 			"enableSmartInlineTaskKeybinding": {
-				"label": "Autocomplete Thủ Công",
+				"label": "Tự động hoàn thành thủ công ({{keybinding}})",
 				"description": "Cần sửa chữa nhanh, hoàn thành, hoặc tái cấu trúc? Kilo sẽ sử dụng ngữ cảnh xung quanh để cung cấp cải tiến ngay lập tức, giữ bạn trong luồng làm việc. <DocsLink>Xem phím tắt</DocsLink>"
 			},
-			"enableCustomProvider": {
-				"label": "Sử dụng nhà cung cấp tùy chỉnh",
-				"description": "Autocomplete sử dụng thông tin xác thực KiloCode / OpenRouter / Mistral của bạn để sử dụng mô hình Codestral theo mặc định"
-			},
-			"provider": "Nhà Cung Cấp",
-			"apiConfigId": {
-				"label": "Cấu Hình API",
-				"current": "Sử dụng cấu hình API hiện được chọn",
-				"description": "Chọn cấu hình API để sử dụng cho các prompt Autocomplete, hoặc chỉ sử dụng cái hiện được chọn"
-			}
+			"keybindingNotFound": "không tìm thấy",
+			"noModelConfigured": "Không tìm thấy mô hình tự động hoàn thành phù hợp. Vui lòng cấu hình nhà cung cấp trong cài đặt API.",
+			"model": "Mô hình",
+			"provider": "Nhà cung cấp"
 		}
 	},
 	"virtualProvider": {
@@ -240,7 +245,7 @@
 		"removeProfile": "Xóa hồ sơ",
 		"selectProfilePlaceholder": "Chọn hồ sơ...",
 		"addProfile": "Thêm hồ sơ",
-		"noProfilesAvailable": "Không có hồ sơ cá nhân nào khả dụng. Vui lòng cấu hình ít nhất một hồ sơ nhà cung cấp không ảo trước.",
+		"noProfilesAvailable": "Không có hồ sơ nào. Vui lòng cấu hình ít nhất một hồ sơ nhà cung cấp không ảo trước.",
 		"dangerZoneTitle": "Vùng Nguy hiểm",
 		"dangerZoneDescription": "Những hành động này có tính phá hoại và không thể hoàn tác.",
 		"clearUsageData": "Xóa Dữ liệu Sử dụng",
@@ -252,9 +257,30 @@
 		"perHour": "Một Giờ",
 		"requestsLabel": "Yêu cầu"
 	},
+	"toolCallStyle": {
+		"title": "Kiểu Gọi Công Cụ",
+		"description": "Chọn cách định dạng các lệnh gọi công cụ trong system prompt. JSON hiện đang ở giai đoạn thử nghiệm và chủ yếu dành cho người dùng quan tâm đến việc đóng góp vào phát triển của nó.",
+		"automatic": "Để Kilo quyết định",
+		"xml": "XML",
+		"json": "JSON (thử nghiệm)"
+	},
 	"imageWarnings": {
 		"modelNoImageSupport": "Hình ảnh không được hỗ trợ bởi mô hình hiện tại.",
 		"maxImagesReached": "Tối đa 20 hình ảnh cho mỗi tin nhắn. Hãy xóa một số hình ảnh để thêm được nhiều hơn.",
 		"imagesRemovedNoSupport": "Hình ảnh đã bị xóa, không được mô hình hỗ trợ."
+	},
+	"memoryWarning": {
+		"message": "Mức sử dụng bộ nhớ đang ở {{percentage}}%. Vui lòng khởi động lại IDE của bạn để tránh sự cố."
+	},
+	"marketplace": {
+		"mcp": {
+			"description": "Những máy chủ MCP này được duy trì bởi cộng đồng. Nhấp <1>vào đây</1> để chỉnh sửa cài đặt MCP của riêng bạn."
+		},
+		"modes": {
+			"description": "Những chế độ này được cung cấp từ cộng đồng. Nhấp <1>vào đây</1> để chỉnh sửa chế độ tùy chỉnh của riêng bạn."
+		}
+	},
+	"modes": {
+		"shareModesNewBanner": "Mới: Chia sẻ chế độ bằng cách tạo một tổ chức"
 	}
 }
