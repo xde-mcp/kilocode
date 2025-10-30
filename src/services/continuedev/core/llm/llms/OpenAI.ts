@@ -169,6 +169,12 @@ export class OpenAI extends BaseLLM {
 		args.prompt = prompt
 		args.messages = undefined
 
+		console.log("Legacy Body", {
+			...args,
+			stream: true,
+			...this.extraBodyProperties(),
+		})
+
 		const response = await fetch(this._getEndpoint("completions"), {
 			method: "POST",
 			headers: this._getHeaders(),
@@ -211,6 +217,11 @@ export class OpenAI extends BaseLLM {
 		}
 
 		const body = this._convertArgs(options, messages)
+
+		console.log("BODYYYYY", {
+			...body,
+			...this.extraBodyProperties(),
+		})
 
 		const response = await fetch(this._getEndpoint("chat/completions"), {
 			method: "POST",

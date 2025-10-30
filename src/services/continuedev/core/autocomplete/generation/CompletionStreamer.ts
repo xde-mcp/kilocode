@@ -30,6 +30,7 @@ export class CompletionStreamer {
 		const generator = this.generatorReuseManager.getGenerator(
 			prefix,
 			(abortSignal: AbortSignal) => {
+				console.log("SUPPORT FIM", llm.supportsFim())
 				const generator = llm.supportsFim()
 					? llm.streamFim(prefix, suffix, abortSignal, completionOptions)
 					: llm.streamComplete(prompt, abortSignal, {
