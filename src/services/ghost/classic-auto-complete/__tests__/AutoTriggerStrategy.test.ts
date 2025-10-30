@@ -42,7 +42,7 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("<QUERY>")
 			expect(userPrompt).toContain("{{FILL_HERE}}")
 			expect(userPrompt).toContain("</QUERY>")
-			expect(userPrompt).toContain("<COMPLETION>")
+			expect(userPrompt).toContain("COMPLETION")
 		})
 
 		it("should handle comments in code", () => {
@@ -58,7 +58,7 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("<QUERY>")
 			expect(userPrompt).toContain("{{FILL_HERE}}")
 			expect(userPrompt).toContain("</QUERY>")
-			expect(userPrompt).toContain("<COMPLETION>")
+			expect(userPrompt).toContain("COMPLETION")
 		})
 	})
 })

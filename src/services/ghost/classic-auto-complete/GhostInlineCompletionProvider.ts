@@ -231,21 +231,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 
-		// Check if cursor is on an empty indented line and calculate replacement range
-		const indentationMatch = prefix.match(/\n([\t ]+)(\n)?$/)
-		const replacementRange = indentationMatch
-			? new vscode.Range(
-					new vscode.Position(position.line, position.character - indentationMatch[1].length),
-					position,
-				)
-			: new vscode.Range(position, position)
-
 		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 		if (matchingText !== null) {
 			const item: vscode.InlineCompletionItem = {
 				insertText: matchingText,
-				range: replacementRange,
+				range: new vscode.Range(position, position),
 			}
 			return [item]
 		}
@@ -285,7 +276,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			if (fillInAtCursor) {
 				const item: vscode.InlineCompletionItem = {
 					insertText: fillInAtCursor.text,
-					range: replacementRange,
+					range: new vscode.Range(position, position),
 				}
 				return [item]
 			}
