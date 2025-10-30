@@ -102,4 +102,4 @@ export const PROVIDERS = [
 	{ value: "minimax", label: "MiniMax" },
 ].sort((a, b) => a.label.localeCompare(b.label))
 
-PROVIDERS.unshift({ value: "kilocode", label: "Kilo Code" }) // kilocode_change
+PROVIDERS.unshift({ value: "kilocode", label: "Kilo Gateway" }) // kilocode_change
