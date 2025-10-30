@@ -35,7 +35,10 @@ export class TestRunner {
 	async runTest(testCase: TestCase): Promise<TestResult> {
 		try {
 			const startTime = performance.now()
-			const { prefix, completion, suffix } = await this.strategyTester.getCompletion(testCase.input)
+			const { prefix, completion, suffix } = await this.strategyTester.getCompletion(
+				testCase.input,
+				testCase.name,
+			)
 			const llmRequestDuration = performance.now() - startTime
 			let actualValue: string = prefix + completion + suffix
 

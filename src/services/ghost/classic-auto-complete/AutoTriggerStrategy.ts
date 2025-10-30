@@ -5,6 +5,9 @@ import type { TextDocument, Range } from "vscode"
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
 
+## Context Tags
+<LANGUAGE>: file language | <RECENT_EDITS>: recent changes | <QUERY>: code with {{FILL_HERE}}
+
 ## EXAMPLE QUERY:
 
 <QUERY>
@@ -131,7 +134,18 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	 * Build minimal prompt for auto-trigger
 	 */
 	getUserPrompt(autocompleteInput: AutocompleteInput, prefix: string, suffix: string, languageId: string): string {
-		const prompt = `<QUERY>
+		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
+
+		if (autocompleteInput.recentlyEditedRanges && autocompleteInput.recentlyEditedRanges.length > 0) {
+			prompt += "<RECENT_EDITS>\n"
+			autocompleteInput.recentlyEditedRanges.forEach((range, index) => {
+				const description = `Edited ${range.filepath} at line ${range.range.start.line}`
+				prompt += `${index + 1}. ${description}\n`
+			})
+			prompt += "</RECENT_EDITS>\n\n"
+		}
+
+		prompt += `<QUERY>
 ${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
 

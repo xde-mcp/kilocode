@@ -45,6 +45,63 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("COMPLETION")
 		})
 
+		it("should document context tags in system prompt", () => {
+			const { systemPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.ts", 0, 13),
+				"const x = 1;\n",
+				"",
+				"typescript",
+			)
+
+			// Verify system prompt documents the XML tags
+			expect(systemPrompt).toContain("Context Tags")
+			expect(systemPrompt).toContain("<LANGUAGE>")
+			expect(systemPrompt).toContain("<RECENT_EDITS>")
+			expect(systemPrompt).toContain("<QUERY>")
+		})
+
+		it("should include language ID in prompt with XML tags", () => {
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.ts", 0, 13),
+				"const x = 1;\n",
+				"",
+				"typescript",
+			)
+
+			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
+		})
+
+		it("should include recently edited ranges in prompt with XML tags", () => {
+			const input = createAutocompleteInput("/test.ts", 5, 0)
+			input.recentlyEditedRanges = [
+				{
+					filepath: "/test.ts",
+					range: { start: { line: 2, character: 0 }, end: { line: 3, character: 0 } },
+					timestamp: Date.now(),
+					lines: ["function sum(a, b) {"],
+					symbols: new Set(["sum"]),
+				},
+			]
+
+			const { userPrompt } = strategy.getPrompts(input, "const x = 1;\n", "", "typescript")
+
+			expect(userPrompt).toContain("<RECENT_EDITS>")
+			expect(userPrompt).toContain("</RECENT_EDITS>")
+			expect(userPrompt).toContain("Edited /test.ts at line 2")
+		})
+
+		it("should handle empty recently edited ranges", () => {
+			const { userPrompt } = strategy.getPrompts(
+				createAutocompleteInput("/test.ts", 0, 13),
+				"const x = 1;\n",
+				"",
+				"typescript",
+			)
+
+			expect(userPrompt).not.toContain("<RECENT_EDITS>")
+			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
+		})
+
 		it("should handle comments in code", () => {
 			const { systemPrompt, userPrompt } = strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 1, 0),
