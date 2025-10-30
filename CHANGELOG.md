@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.113.1
-
-### Patch Changes
+## [v4.113.1]
 
 - [#3408](https://github.com/Kilo-Org/kilocode/pull/3408) [`5aee3ad`](https://github.com/Kilo-Org/kilocode/commit/5aee3ad6ee200eefd5dd12933ba650989ccc0857) Thanks [@brianc](https://github.com/brianc)! - Fix auto-complete indicator. It now hides properly if the autocomplete request errors in the background.
 
