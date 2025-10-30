@@ -59,6 +59,7 @@ export const dynamicProviders = [
 	"requesty",
 	"unbound",
 	"glama",
+	"inception",
 ] as const
 
 export type DynamicProvider = (typeof dynamicProviders)[number]
@@ -154,6 +155,7 @@ export const providerNames = [
 	"vertex",
 	"xai",
 	"zai",
+	"inception",
 ] as const
 
 export const providerNamesSchema = z.enum(providerNames)
@@ -411,6 +413,12 @@ const sambaNovaSchema = apiModelIdProviderModelSchema.extend({
 	sambaNovaApiKey: z.string().optional(),
 })
 
+const inceptionSchema = apiModelIdProviderModelSchema.extend({
+	inceptionLabsBaseUrl: z.string().optional(),
+	inceptionLabsApiKey: z.string().optional(),
+	inceptionLabsModelId: z.string().optional(),
+})
+
 // kilocode_change start
 const ovhcloudSchema = baseProviderSettingsSchema.extend({
 	ovhCloudAiEndpointsApiKey: z.string().optional(),
@@ -537,6 +545,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	qwenCodeSchema.merge(z.object({ apiProvider: z.literal("qwen-code") })),
 	rooSchema.merge(z.object({ apiProvider: z.literal("roo") })),
 	vercelAiGatewaySchema.merge(z.object({ apiProvider: z.literal("vercel-ai-gateway") })),
+	inceptionSchema.merge(z.object({ apiProvider: z.literal("inception") })),
 	defaultSchema,
 ])
 
@@ -585,6 +594,7 @@ export const providerSettingsSchema = z.object({
 	...vercelAiGatewaySchema.shape,
 	...codebaseIndexProviderSchema.shape,
 	...ovhcloudSchema.shape, // kilocode_change
+	...inceptionSchema.shape,
 })
 
 export type ProviderSettings = z.infer<typeof providerSettingsSchema>
@@ -620,6 +630,7 @@ export const modelIdKeys = [
 	"deepInfraModelId",
 	"kilocodeModel",
 	"ovhCloudAiEndpointsModelId", // kilocode_change
+	"inceptionLabsModelId",
 ] as const satisfies readonly (keyof ProviderSettings)[]
 
 export type ModelIdKey = (typeof modelIdKeys)[number]
@@ -676,6 +687,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	kilocode: "kilocodeModel",
 	"virtual-quota-fallback": "apiModelId",
 	ovhcloud: "ovhCloudAiEndpointsModelId", // kilocode_change
+	inception: "inceptionLabsModelId",
 }
 
 /**
@@ -808,6 +820,7 @@ export const MODELS_BY_PROVIDER: Record<
 	requesty: { id: "requesty", label: "Requesty", models: [] },
 	unbound: { id: "unbound", label: "Unbound", models: [] },
 	ovhcloud: { id: "ovhcloud", label: "OVHcloud AI Endpoints", models: [] }, // kilocode_change
+	inception: { id: "inception", label: "Inception Labs", models: [] },
 
 	// kilocode_change start
 	kilocode: { id: "kilocode", label: "Kilocode", models: [] },

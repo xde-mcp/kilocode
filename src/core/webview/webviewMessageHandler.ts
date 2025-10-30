@@ -813,6 +813,7 @@ export const webviewMessageHandler = async (
 				ollama: {},
 				lmstudio: {},
 				ovhcloud: {}, // kilocode_change
+				inception: {},
 			}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -886,6 +887,14 @@ export const webviewMessageHandler = async (
 					},
 				},
 				// kilocode_change end
+				{
+					key: "inception",
+					options: {
+						provider: "inception",
+						apiKey: apiConfiguration.inceptionLabsApiKey,
+						baseUrl: apiConfiguration.inceptionLabsBaseUrl,
+					},
+				},
 			]
 			// kilocode_change end
 
