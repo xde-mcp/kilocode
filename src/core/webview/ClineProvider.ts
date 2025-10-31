@@ -330,8 +330,7 @@ export class ClineProvider
 					}
 				},
 				async () => {
-					const state = await this.getState()
-					return state.taskHistory || []
+					return this.getTaskHistory()
 				},
 				() => this.getCurrentTask()?.taskId,
 				async (taskId: string) => {

@@ -3784,7 +3784,7 @@ export const webviewMessageHandler = async (
 
 				await scheduler.triggerManualPurge(
 					autoPurgeSettings,
-					state.taskHistory || [],
+					provider.getTaskHistory(),
 					currentTaskId,
 					async (taskId: string) => {
 						// Remove task from state when purged
