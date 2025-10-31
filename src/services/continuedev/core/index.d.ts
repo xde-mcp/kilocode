@@ -620,7 +620,7 @@ export class SignatureInformation {
 	 * The label of this signature. Will be shown in
 	 * the UI.
 	 */
-	label: strin
+	label: string
 	/**
 	 * The parameters of this signature.
 	 */
@@ -632,7 +632,6 @@ export class SignatureInformation {
 	 * If provided, this is used in place of {@linkcode SignatureHelp.activeParameter}.
 	 */
 	activeParameter?: number
-	g
 }
 
 export type ConfigMergeType = "merge" | "overwrite"

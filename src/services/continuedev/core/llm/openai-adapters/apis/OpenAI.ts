@@ -78,7 +78,6 @@ export class OpenAIApi implements BaseLlmApi {
 		body: ChatCompletionCreateParamsNonStreaming,
 		signal: AbortSignal,
 	): Promise<ChatCompletion> {
-		console.log("chatCompletionNonStream", body)
 		const response = await this.openai.chat.completions.create(this.modifyChatBody(body), {
 			signal,
 		})
@@ -89,7 +88,6 @@ export class OpenAIApi implements BaseLlmApi {
 		body: ChatCompletionCreateParamsStreaming,
 		signal: AbortSignal,
 	): AsyncGenerator<ChatCompletionChunk, any, unknown> {
-		console.log("chatCompletionStream", body)
 		const response = await this.openai.chat.completions.create(this.modifyChatBody(body), {
 			signal,
 		})
@@ -98,7 +96,6 @@ export class OpenAIApi implements BaseLlmApi {
 		}
 	}
 	async completionNonStream(body: CompletionCreateParamsNonStreaming, signal: AbortSignal): Promise<Completion> {
-		console.log("completionNonStream", body)
 		const response = await this.openai.completions.create(this.modifyCompletionBody(body), { signal })
 		return response
 	}
@@ -106,7 +103,6 @@ export class OpenAIApi implements BaseLlmApi {
 		body: CompletionCreateParamsStreaming,
 		signal: AbortSignal,
 	): AsyncGenerator<Completion, any, unknown> {
-		console.log("completionStream", body)
 		const response = await this.openai.completions.create(this.modifyCompletionBody(body), { signal })
 		for await (const result of response) {
 			yield result
@@ -116,7 +112,6 @@ export class OpenAIApi implements BaseLlmApi {
 		body: FimCreateParamsStreaming,
 		signal: AbortSignal,
 	): AsyncGenerator<ChatCompletionChunk, any, unknown> {
-		console.log("fimStream", body)
 		const endpoint = new URL("fim/completions", this.apiBase)
 		const modifiedBody = this.modifyFimBody(body)
 		const resp = await fetch(endpoint, {

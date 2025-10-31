@@ -120,27 +120,6 @@ class KiloCode extends OpenRouter {
 
 		const endpoint = new URL("fim/completions", this.apiFIMBase)
 
-		console.log("endpoint", endpoint)
-		console.log("HEADER", {
-			"Content-Type": "application/json",
-			Accept: "application/json",
-			"x-api-key": this.apiKey ?? "",
-			Authorization: `Bearer ${this.apiKey}`,
-		})
-		console.log("BODYYYY", {
-			model: options.model,
-			prompt: prefix,
-			suffix,
-			max_tokens: options.maxTokens,
-			temperature: options.temperature,
-			top_p: options.topP,
-			frequency_penalty: options.frequencyPenalty,
-			presence_penalty: options.presencePenalty,
-			stop: options.stop,
-			stream: true,
-			...this.extraBodyProperties(),
-		})
-
 		try {
 			const resp = await fetch(endpoint, {
 				method: "POST",

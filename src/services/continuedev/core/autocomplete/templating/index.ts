@@ -199,16 +199,6 @@ export function renderPromptWithTokenLimit({
 
 	const stopTokens = getStopTokens(completionOptions, helper.lang, helper.modelName)
 
-	console.log("HEREEEE", {
-		prompt,
-		compiledPrefix,
-		compiledSuffix,
-		completionOptions: {
-			...completionOptions,
-			stop: stopTokens,
-		},
-	})
-
 	return {
 		prompt,
 		prefix: compiledPrefix,

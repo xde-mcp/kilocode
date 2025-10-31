@@ -75,8 +75,6 @@ class OpenRouter extends OpenAI {
 		// First apply parent modifications
 		body = super.modifyChatBody(body)
 
-		console.log("BODY", body)
-
 		// Check if we should apply Anthropic caching
 		if (!this.isAnthropicModel(body.model) || (!this.cacheBehavior && !this.completionOptions.promptCaching)) {
 			return body
