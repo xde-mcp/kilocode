@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Aggiungi credito",
-		"lowBalance": "Il tuo saldo Kilo Code è basso"
+		"lowBalance": "Il tuo saldo Kilo Code è basso",
+		"newOrganization": "Usi Kilo per lavoro?"
 	},
 	"pagination": {
 		"previous": "Precedente",
@@ -270,5 +271,16 @@
 		"automatic": "Lascia decidere a Kilo",
 		"xml": "XML",
 		"json": "JSON (sperimentale)"
+	},
+	"marketplace": {
+		"mcp": {
+			"description": "Questi server MCP sono gestiti dalla comunità. Clicca <1>qui</1> per modificare le tue impostazioni MCP."
+		},
+		"modes": {
+			"description": "Queste modalità sono disponibili dalla community. Clicca <1>qui</1> per modificare le tue modalità personalizzate."
+		}
+	},
+	"modes": {
+		"shareModesNewBanner": "Novità: Condividi le modalità creando un'organizzazione"
 	}
 }
