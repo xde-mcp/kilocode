@@ -7,6 +7,7 @@ import { GhostModel } from "../GhostModel"
 import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
+import { GhostServiceSettings } from "@roo-code/types"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -73,6 +74,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private costTrackingCallback: CostTrackingCallback
 	private ghostContext: GhostContext
 	private cursorAnimation: GhostGutterAnimation
+	private settings: GhostServiceSettings | null = null
 
 	constructor(
 		model: GhostModel,
@@ -85,6 +87,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.ghostContext = ghostContext
 		this.cursorAnimation = cursorAnimation
 		this.autoTriggerStrategy = new AutoTriggerStrategy()
+	}
+
+	public updateSettings(settings: GhostServiceSettings | null): void {
+		this.settings = settings
 	}
 
 	/**
@@ -200,7 +206,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 
 		// Parse the response using the standalone function
-		const finalParseResult = parseGhostResponse(response, prefix, suffix, context.document, context.range)
+		const finalParseResult = parseGhostResponse(response, prefix, suffix)
 
 		if (finalParseResult.suggestions.getFillInAtCursor()) {
 			console.info("Final suggestion:", finalParseResult.suggestions.getFillInAtCursor())
@@ -226,7 +232,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public async provideInlineCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
-		_context: vscode.InlineCompletionContext,
+		context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
@@ -241,6 +247,18 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return [item]
 		}
 
+		// Check if auto-trigger is enabled
+		// Only proceed with LLM call if:
+		// 1. It's a manual trigger (triggerKind === Invoke), OR
+		// 2. Auto-trigger is enabled (enableAutoTrigger === true)
+		const isManualTrigger = context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke
+		const isAutoTriggerEnabled = this.settings?.enableAutoTrigger ?? false
+
+		if (!isManualTrigger && !isAutoTriggerEnabled) {
+			// Auto-trigger is disabled and this is not a manual trigger
+			return []
+		}
+
 		// No cached suggestion available - invoke LLM
 		if (this.model && this.ghostContext) {
 			// Show cursor animation while generating
@@ -252,33 +270,39 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 
 			const fullContext = await this.ghostContext.generate(context)
-			const result = await this.getFromLLM(fullContext, this.model)
+			try {
+				const result = await this.getFromLLM(fullContext, this.model)
 
-			// Hide cursor animation after generation
-			this.cursorAnimation.hide()
+				// Hide cursor animation after generation
+				this.cursorAnimation.hide()
 
-			// Track costs
-			if (this.costTrackingCallback) {
-				this.costTrackingCallback(
-					result.cost,
-					result.inputTokens,
-					result.outputTokens,
-					result.cacheWriteTokens,
-					result.cacheReadTokens,
-				)
-			}
-
-			// Update suggestions history
-			this.updateSuggestions(result.suggestions)
-
-			// Return the new suggestion if available
-			const fillInAtCursor = result.suggestions.getFillInAtCursor()
-			if (fillInAtCursor) {
-				const item: vscode.InlineCompletionItem = {
-					insertText: fillInAtCursor.text,
-					range: new vscode.Range(position, position),
+				// Track costs
+				if (this.costTrackingCallback) {
+					this.costTrackingCallback(
+						result.cost,
+						result.inputTokens,
+						result.outputTokens,
+						result.cacheWriteTokens,
+						result.cacheReadTokens,
+					)
 				}
-				return [item]
+
+				// Update suggestions history
+				this.updateSuggestions(result.suggestions)
+
+				// Return the new suggestion if available
+				const fillInAtCursor = result.suggestions.getFillInAtCursor()
+				if (fillInAtCursor) {
+					const item: vscode.InlineCompletionItem = {
+						insertText: fillInAtCursor.text,
+						range: new vscode.Range(position, position),
+					}
+					return [item]
+				}
+			} catch (error) {
+				this.cursorAnimation.hide()
+				console.error("Error getting inline completion from LLM:", error)
+				return []
 			}
 		}
 

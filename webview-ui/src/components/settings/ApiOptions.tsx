@@ -879,7 +879,9 @@ const ApiOptions = ({
 				// kilocode_change start
 				(selectedProvider === "kilocode" || selectedProvider === "openrouter") &&
 					(apiConfiguration.kilocodeOrganizationId ? (
-						<KiloProviderRoutingManagedByOrganization />
+						<KiloProviderRoutingManagedByOrganization
+							organizationId={apiConfiguration.kilocodeOrganizationId}
+						/>
 					) : (
 						<KiloProviderRouting
 							apiConfiguration={apiConfiguration}
