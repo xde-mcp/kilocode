@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Añadir Crédito",
-		"lowBalance": "Tu saldo de Kilo Code es bajo"
+		"lowBalance": "Tu saldo de Kilo Code es bajo",
+		"newOrganization": "¿Usas Kilo para el trabajo?"
 	},
 	"pagination": {
 		"previous": "Anterior",
@@ -270,5 +271,16 @@
 	},
 	"memoryWarning": {
 		"message": "El uso de memoria está al {{percentage}}%. Por favor reinicia tu IDE para evitar fallos."
+	},
+	"marketplace": {
+		"mcp": {
+			"description": "Estos servidores MCP son mantenidos por la comunidad. Haga clic <1>aquí</1> para editar sus propios ajustes de MCP."
+		},
+		"modes": {
+			"description": "Estos modos están disponibles en la comunidad. Haz clic <1>aquí</1> para editar tus propios modos personalizados."
+		}
+	},
+	"modes": {
+		"shareModesNewBanner": "Nuevo: Comparte modos creando una organización"
 	}
 }
