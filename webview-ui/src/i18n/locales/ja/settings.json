@@ -799,9 +799,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Fast Applyを有効化",
-			"description": "有効にすると、Kilo Codeはコード変更に最適化された専用モデルを使用してFast Applyでファイルを編集できます。Kilo Code APIプロバイダー、OpenRouter、またはMorph APIキーが必要です。",
-			"apiKey": "Morph APIキー",
-			"placeholder": "Morph APIキーを入力してください",
+			"description": "有効にすると、Kilo Codeはコード変更に最適化された専用モデルを使用してFast Applyでファイルを編集できます。Kilo Gateway Provider、OpenRouter、またはMorph APIキーが必要です。",
+			"apiKey": "Morph APIキー（オプション）",
+			"placeholder": "Morph APIキーを入力してください（オプション）",
 			"modelLabel": "モデル選択",
 			"modelDescription": "ファイル編集に使用するFast Applyモデルを選択",
 			"models": {
@@ -928,6 +928,10 @@
 		"taskTimeline": {
 			"label": "タスクのタイムラインを表示",
 			"description": "タスクメッセージの視覚的なタイムラインを表示し、種類ごとに色分けすることで、タスクの進捗状況を素早く確認したり、タスク履歴の特定のポイントまでスクロールバックしたりすることができます。"
+		},
+		"sendMessageOnEnter": {
+			"label": "Enterでメッセージを送信",
+			"description": "有効にすると、Enterキーで送信し、Shift+Enterで改行します。代わりにShift+Enterで送信するにはオフにします。"
 		},
 		"costThreshold": {
 			"label": "しきい値以下のコストを非表示にする",

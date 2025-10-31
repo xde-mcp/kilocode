@@ -799,9 +799,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Abilita Fast Apply",
-			"description": "Quando abilitato, Kilo Code può modificare i file utilizzando Fast Apply con modelli specializzati ottimizzati per le modifiche al codice. Richiede il provider API Kilo Code, OpenRouter o una chiave API Morph.",
-			"apiKey": "Chiave API Morph",
-			"placeholder": "Inserisci la tua chiave API Morph",
+			"description": "Quando abilitato, Kilo Code può modificare i file utilizzando Fast Apply con modelli specializzati ottimizzati per le modifiche al codice. Richiede Kilo Gateway Provider, OpenRouter o una chiave API Morph.",
+			"apiKey": "Chiave API Morph (opzionale)",
+			"placeholder": "Inserisci la tua chiave API Morph (opzionale)",
 			"modelLabel": "Selezione modello",
 			"modelDescription": "Scegli quale modello Fast Apply utilizzare per le modifiche ai file",
 			"models": {
@@ -928,6 +928,10 @@
 		"taskTimeline": {
 			"label": "Mostra cronologia attività",
 			"description": "Visualizza una cronologia visiva dei messaggi delle attività, colorati per tipologia, permettendoti di visualizzare rapidamente i progressi delle attività e scorrere indietro fino a punti specifici nella cronologia dell'attività."
+		},
+		"sendMessageOnEnter": {
+			"label": "Invia messaggio con Invio",
+			"description": "Quando abilitato, premi Invio per inviare e Maiusc+Invio per una nuova riga. Disattiva per usare Maiusc+Invio per inviare invece."
 		},
 		"costThreshold": {
 			"label": "Nascondi costo sotto la soglia",

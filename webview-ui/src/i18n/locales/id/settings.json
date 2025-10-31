@@ -788,9 +788,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Aktifkan Fast Apply",
-			"description": "Ketika diaktifkan, Kilo Code dapat mengedit file menggunakan Fast Apply dengan model khusus yang dioptimalkan untuk modifikasi kode. Memerlukan Kilo Code API Provider, OpenRouter, atau kunci API Morph.",
-			"apiKey": "Kunci API Morph",
-			"placeholder": "Masukkan kunci API Morph kamu",
+			"description": "Ketika diaktifkan, Kilo Code dapat mengedit file menggunakan Fast Apply dengan model khusus yang dioptimalkan untuk modifikasi kode. Memerlukan Kilo Gateway Provider, OpenRouter, atau kunci API Morph.",
+			"apiKey": "Kunci API Morph (opsional)",
+			"placeholder": "Masukkan kunci API Morph kamu (opsional)",
 			"modelLabel": "Pemilihan Model",
 			"modelDescription": "Pilih model Fast Apply mana yang akan digunakan untuk edit file",
 			"models": {
@@ -948,6 +948,10 @@
 		"taskTimeline": {
 			"label": "Tampilkan linimasa tugas",
 			"description": "Tampilkan timeline visual dari pesan-pesan tugas, diwarnai berdasarkan jenisnya, memungkinkan Anda untuk melihat kemajuan tugas dengan cepat dan menggulir kembali ke titik-titik tertentu dalam riwayat tugas."
+		},
+		"sendMessageOnEnter": {
+			"label": "Kirim pesan dengan Enter",
+			"description": "Saat diaktifkan, tekan Enter untuk mengirim dan Shift+Enter untuk baris baru. Matikan untuk menggunakan Shift+Enter untuk mengirim."
 		},
 		"costThreshold": {
 			"label": "Sembunyikan biaya di bawah ambang batas",

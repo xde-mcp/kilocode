@@ -767,9 +767,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Fast Apply inschakelen",
-			"description": "Wanneer ingeschakeld, kan Kilo Code bestanden bewerken met Fast Apply met gespecialiseerde modellen geoptimaliseerd voor codewijzigingen. Vereist de Kilo Code API Provider, OpenRouter, of een Morph API-sleutel.",
-			"apiKey": "Morph API-sleutel",
-			"placeholder": "Voer je Morph API-sleutel in",
+			"description": "Wanneer ingeschakeld, kan Kilo Code bestanden bewerken met Fast Apply met gespecialiseerde modellen geoptimaliseerd voor codewijzigingen. Vereist de Kilo Gateway Provider, OpenRouter, of een Morph API-sleutel.",
+			"apiKey": "Morph API-sleutel (optioneel)",
+			"placeholder": "Voer je Morph API-sleutel in (optioneel)",
 			"modelLabel": "Modelselectie",
 			"modelDescription": "Kies welk Fast Apply-model te gebruiken voor bestandsbewerkingen",
 			"models": {
@@ -927,6 +927,10 @@
 		"taskTimeline": {
 			"label": "Taaktijdlijn weergeven",
 			"description": "Toon een visuele tijdlijn van taakmeldingen, gekleurd per type, waardoor je snel de voortgang van taken kunt bekijken en terug kunt scrollen naar specifieke punten in de geschiedenis van de taak."
+		},
+		"sendMessageOnEnter": {
+			"label": "Bericht verzenden met Enter",
+			"description": "Indien ingeschakeld, druk op Enter om te verzenden en Shift+Enter voor een nieuwe regel. Schakel uit om in plaats daarvan Shift+Enter te gebruiken om te verzenden."
 		},
 		"costThreshold": {
 			"label": "Kosten onder drempel verbergen",

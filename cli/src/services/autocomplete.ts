@@ -13,7 +13,6 @@ import type {
 	InputState,
 	ArgumentProvider,
 } from "../commands/core/types.js"
-import { logs } from "./logs.js"
 
 // ============================================================================
 // TYPE DEFINITIONS & EXPORTS
@@ -149,7 +148,7 @@ function calculateMatchScore(
  * Highlight matching parts of text
  * For now, just returns the text - UI handles highlighting
  */
-function highlightMatch(text: string, query: string): string {
+function highlightMatch(text: string): string {
 	return text
 }
 
@@ -230,7 +229,7 @@ export function getSuggestions(input: string): CommandSuggestion[] {
 		matches.push({
 			command,
 			matchScore: score,
-			highlightedName: highlightMatch(command.name, lowerQuery),
+			highlightedName: highlightMatch(command.name),
 		})
 	}
 
@@ -443,6 +442,8 @@ function createProviderContext(
 			routerModels: commandContext.routerModels || null,
 			currentProvider: commandContext.currentProvider || null,
 			kilocodeDefaultModel: commandContext.kilocodeDefaultModel || "",
+			profileData: commandContext.profileData || null,
+			profileLoading: commandContext.profileLoading || false,
 			updateProviderModel: commandContext.updateProviderModel,
 			refreshRouterModels: commandContext.refreshRouterModels,
 		}
@@ -532,7 +533,7 @@ function filterAndScore(suggestions: ArgumentSuggestion[], query: string): Argum
 		.map((s) => ({
 			...s,
 			matchScore: calculateMatchScore(s.value, lowerQuery),
-			highlightedValue: highlightMatch(s.value, lowerQuery),
+			highlightedValue: highlightMatch(s.value),
 		}))
 		.filter((s) => s.matchScore > 0)
 		.sort((a, b) => b.matchScore - a.matchScore)

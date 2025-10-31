@@ -561,6 +561,10 @@
 			"label": "Show task timeline",
 			"description": "Display a visual timeline of task messages, colorized by type, allowing you to quickly view task progress and scroll back to specific points in the task's history."
 		},
+		"sendMessageOnEnter": {
+			"label": "Send message with Enter",
+			"description": "When enabled, press Enter to send and Shift+Enter for a new line. Turn off to use Shift+Enter to send instead."
+		},
 		"costThreshold": {
 			"label": "Hide cost below threshold",
 			"description": "Only show request costs above this amount. Costs are always visible when the details pane is open.",
@@ -793,10 +797,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Enable Fast Apply",
-			"description": "When enabled, Kilo Code can edit files using Fast Apply with specialized models optimized for code modifications. Requires the Kilo Code API Provider, OpenRouter, or a Morph API key.",
-			"apiProvider": "Fast Apply Model API Provider",
-			"apiKey": "Fast Apply Model API key",
-			"placeholder": "Enter your Fast Apply Model API key",
+			"description": "When enabled, Kilo Code can edit files using Fast Apply with specialized models optimized for code modifications. Requires the Kilo Gateway Provider, OpenRouter, or a Morph API key.",
+			"apiKey": "Morph API key (optional)",
+			"placeholder": "Enter your Morph API key (optional)",
 			"modelLabel": "Model Selection",
 			"modelDescription": "Choose which Fast Apply model to use for file edits",
 			"models": {

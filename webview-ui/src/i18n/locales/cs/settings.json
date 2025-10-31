@@ -602,6 +602,10 @@
 			"label": "Zobrazit časovou osu úkolu",
 			"description": "Zobrazit vizuální časovou osu zpráv úkolu, barevně odlišenou podle typu, což vám umožní rychle zobrazit průběh úkolu a posunout se zpět na konkrétní body v historii úkolu."
 		},
+		"sendMessageOnEnter": {
+			"label": "Odeslat zprávu pomocí Enter",
+			"description": "Je-li povoleno, stiskněte Enter pro odeslání a Shift+Enter pro nový řádek. Vypněte pro použití Shift+Enter pro odeslání."
+		},
 		"costThreshold": {
 			"label": "Skrýt cenu pod prahem",
 			"currentValue": "Aktuální práh: ${{value}}",
@@ -816,10 +820,10 @@
 			"description": "Povolit experimentální sjednocenou strategii diff. Tato strategie může snížit počet opakování způsobených chybami modelu, ale může způsobit neočekávané chování nebo nesprávné úpravy. Povolte pouze pokud rozumíte rizikům a jste ochotni pečlivě zkontrolovat všechny změny."
 		},
 		"MORPH_FAST_APPLY": {
-			"name": "Povolit rychlé aplikování",
-			"description": "Pokud je povoleno, Kilo Code může upravovat soubory pomocí rychlého aplikování se specializovanými modely optimalizovanými pro úpravy kódu. Vyžaduje poskytovatele Kilo Code API, OpenRouter nebo klíč API Morph.",
-			"apiKey": "Klíč API Morph",
-			"placeholder": "Zadejte svůj klíč API Morph",
+			"name": "Povolit Fast Apply",
+			"description": "Pokud je povoleno, Kilo Code může upravovat soubory pomocí Fast Apply se specializovanými modely optimalizovanými pro úpravy kódu. Vyžaduje Kilo Gateway Provider, OpenRouter nebo klíč API Morph.",
+			"apiKey": "Klíč API Morph (volitelné)",
+			"placeholder": "Zadejte svůj klíč API Morph (volitelné)",
 			"modelLabel": "Výběr modelu",
 			"modelDescription": "Vyberte, který model rychlého aplikování použít pro úpravy souborů",
 			"models": {

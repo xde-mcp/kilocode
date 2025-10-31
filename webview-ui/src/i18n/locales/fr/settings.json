@@ -766,9 +766,9 @@
 		},
 		"MORPH_FAST_APPLY": {
 			"name": "Activer Fast Apply",
-			"description": "Lorsque cette option est activée, Kilo Code peut éditer des fichiers en utilisant Fast Apply avec des modèles spécialisés optimisés pour les modifications de code. Nécessite le fournisseur d'API Kilo Code, OpenRouter ou une clé API Morph.",
-			"apiKey": "Clé API Morph",
-			"placeholder": "Entrez votre clé API Morph",
+			"description": "Lorsque cette option est activée, Kilo Code peut éditer des fichiers en utilisant Fast Apply avec des modèles spécialisés optimisés pour les modifications de code. Nécessite Kilo Gateway Provider, OpenRouter ou une clé API Morph.",
+			"apiKey": "Clé API Morph (optionnel)",
+			"placeholder": "Entrez votre clé API Morph (optionnel)",
 			"modelLabel": "Sélection du modèle",
 			"modelDescription": "Choisissez quel modèle Fast Apply utiliser pour les éditions de fichiers",
 			"models": {
@@ -926,6 +926,10 @@
 		"taskTimeline": {
 			"label": "Afficher la chronologie des tâches",
 			"description": "Afficher une chronologie visuelle des messages de tâches, colorés selon leur type, permettant de voir rapidement la progression des tâches et de revenir à des points spécifiques dans l'historique de la tâche."
+		},
+		"sendMessageOnEnter": {
+			"label": "Envoyer le message avec Entrée",
+			"description": "Lorsque cette option est activée, appuyez sur Entrée pour envoyer et sur Maj+Entrée pour une nouvelle ligne. Désactivez-la pour utiliser Maj+Entrée pour envoyer à la place."
 		},
 		"costThreshold": {
 			"label": "Masquer le coût en dessous du seuil",

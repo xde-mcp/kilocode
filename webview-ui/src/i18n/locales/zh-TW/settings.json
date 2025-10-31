@@ -767,10 +767,10 @@
 			"description": "啟用後 Kilo Code 可在單個請求中編輯多個檔案。停用後 Kilo Code 必須逐個編輯檔案。停用此功能有助於使用能力較弱的模型或需要更精確控制檔案修改時。"
 		},
 		"MORPH_FAST_APPLY": {
-			"name": "啟用快速套用",
-			"description": "啟用後，Kilo Code 可使用專為程式碼修改最佳化的特殊模型進行快速套用編輯檔案。需要 Kilo Code API 供應商、OpenRouter 或 Morph API 金鑰。",
-			"apiKey": "Morph API 金鑰",
-			"placeholder": "輸入您的 Morph API 金鑰",
+			"name": "啟用 Fast Apply",
+			"description": "啟用後，Kilo Code 可使用專為程式碼修改最佳化的特殊模型進行 Fast Apply 編輯檔案。需要 Kilo Gateway Provider、OpenRouter 或 Morph API 金鑰。",
+			"apiKey": "Morph API 金鑰（選用）",
+			"placeholder": "輸入您的 Morph API 金鑰（選用）",
 			"modelLabel": "模型選擇",
 			"modelDescription": "選擇用於檔案編輯的快速套用模型",
 			"models": {
@@ -808,11 +808,11 @@
 			"successConfigured": "✓ 圖像生成已設定完成並準備使用"
 		},
 		"INLINE_ASSIST": {
-			"name": "Autocomplete",
-			"description": "啟用 Autocomplete 功能，在編輯器中直接提供快速程式碼建議和改進。包括針對性變更的快速工作（Cmd+I）和內容改進的 Autocomplete。"
+			"name": "自動補全",
+			"description": "啟用自動補全功能，在編輯器中直接提供快速程式碼建議和改進。包括針對性變更的快速工作（Cmd+I）和內容改進的自動補全"
 		},
 		"RUN_SLASH_COMMAND": {
-			"name": "啟用模型啟動的斜線命令",
+			"name": "啟用模型發起斜線命令",
 			"description": "啟用時，Kilo Code 可以執行您的斜線命令來執行工作流程。"
 		}
 	},
@@ -929,10 +929,14 @@
 			"label": "顯示任務時間軸",
 			"description": "顯示任務訊息的視覺化時間軸，按類型著色，讓您能夠快速查看任務進度並回滾到任務歷史中的特定節點。"
 		},
+		"sendMessageOnEnter": {
+			"label": "使用 Enter 鍵傳送訊息",
+			"description": "啟用後，按 Enter 鍵傳送訊息，Shift+Enter 鍵換行。停用後，使用 Shift+Enter 鍵傳送訊息。"
+		},
 		"costThreshold": {
-			"description": "仅显示超过此金额的请求费用。当详细信息面板打开时，费用始终可见。",
-			"label": "隐藏低于阈值的费用",
-			"currentValue": "当前阈值：${{value}}"
+			"description": "僅顯示超過此金額的請求費用。當詳細資訊儀錶板打開時，費用始終可見。",
+			"label": "隱藏低於閾值的費用",
+			"currentValue": "當前閾值：${{value}}"
 		},
 		"showTimestamps": {
 			"label": "顯示時間戳記",
