@@ -94,7 +94,7 @@ export class GhostServiceManager {
 
 	// Settings Management
 	private loadSettings() {
-		const state = ContextProxy.instance?.getValues?.()
+		const state = ContextProxy.instance.getValues()
 		return state.ghostServiceSettings
 	}
 
@@ -107,7 +107,7 @@ export class GhostServiceManager {
 			provider: this.getCurrentProviderName(),
 			model: this.getCurrentModelName(),
 		}
-		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: settingsWithModelInfo })
+		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
 		await this.cline.postStateToWebview()
 	}
 
