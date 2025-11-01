@@ -6,12 +6,15 @@ import pWaitFor from "p-wait-for"
 import * as vscode from "vscode"
 // kilocode_change start
 import axios from "axios"
-import { getKiloBaseUriFromToken } from "../../shared/kilocode/token"
+import { getKiloUrlFromToken, isGlobalStateKey } from "@roo-code/types"
+import { getAppUrl } from "@roo-code/types"
 import {
+	MaybeTypedWebviewMessage,
 	ProfileData,
 	SeeNewChangesPayload,
 	TaskHistoryRequestPayload,
 	TasksByIdRequestPayload,
+	UpdateGlobalStateMessage,
 } from "../../shared/WebviewMessage"
 // kilocode_change end
 
@@ -21,7 +24,10 @@ import {
 	type ClineMessage,
 	type TelemetrySetting,
 	TelemetryEventName,
-	ghostServiceSettingsSchema, // kilocode_change
+	// kilocode_change start
+	ghostServiceSettingsSchema,
+	fastApplyModelSchema,
+	// kilocode_change end
 	UserSettingsConfig,
 } from "@roo-code/types"
 import { CloudService } from "@roo-code/cloud"
@@ -34,7 +40,7 @@ import { ClineProvider } from "./ClineProvider"
 import { handleCheckpointRestoreOperation } from "./checkpointRestoreHandler"
 import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
-import { RouterName, toRouterName, ModelRecord } from "../../shared/api"
+import { type RouterName, type ModelRecord, toRouterName } from "../../shared/api"
 import { MessageEnhancer } from "./messageEnhancer"
 
 import {
@@ -78,10 +84,11 @@ import { setPendingTodoList } from "../tools/updateTodoListTool"
 import { UsageTracker } from "../../utils/usage-tracker"
 import { seeNewChanges } from "../checkpoints/kilocode/seeNewChanges" // kilocode_change
 import { getTaskHistory } from "../../shared/kilocode/getTaskHistory" // kilocode_change
+import { fetchAndRefreshOrganizationModesOnStartup, refreshOrganizationModes } from "./kiloWebviewMessgeHandlerHelpers"
 
 export const webviewMessageHandler = async (
 	provider: ClineProvider,
-	message: WebviewMessage,
+	message: MaybeTypedWebviewMessage, // kilocode_change switch to MaybeTypedWebviewMessage for better type-safety
 	marketplaceManager?: MarketplaceManager,
 ) => {
 	// Utility functions provided for concise get/update of global state via contextProxy API.
@@ -449,6 +456,11 @@ export const webviewMessageHandler = async (
 			const customModes = await provider.customModesManager.getCustomModes()
 			await updateGlobalState("customModes", customModes)
 
+			// kilocode_change start: Fetch organization modes on startup
+			// Fetch organization modes on startup if an organization is selected
+			await fetchAndRefreshOrganizationModesOnStartup(provider, updateGlobalState)
+			// kilocode_change end
+
 			// Refresh workflow toggles
 			const { refreshWorkflowToggles } = await import("../context/instructions/workflows") // kilocode_change
 			await refreshWorkflowToggles(provider.context, provider.cwd) // kilocode_change
@@ -786,16 +798,22 @@ export const webviewMessageHandler = async (
 		case "requestRouterModels":
 			const { apiConfiguration } = await provider.getState()
 
-			const routerModels: Partial<Record<RouterName, ModelRecord>> = {
+			const routerModels: Record<RouterName, ModelRecord> = {
 				openrouter: {},
-				requesty: {},
-				glama: {},
-				unbound: {},
+				gemini: {}, // kilocode_change
+				"vercel-ai-gateway": {},
+				huggingface: {},
 				litellm: {},
 				"kilocode-openrouter": {}, // kilocode_change
+				deepinfra: {},
+				"io-intelligence": {},
+				requesty: {},
+				unbound: {},
+				glama: {},
+				chutes: {}, // kilocode_change
 				ollama: {},
 				lmstudio: {},
-				deepinfra: {},
+				ovhcloud: {}, // kilocode_change
 			}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -806,7 +824,8 @@ export const webviewMessageHandler = async (
 						`Failed to fetch models in webviewMessageHandler requestRouterModels for ${options.provider}:`,
 						error,
 					)
-					throw error // Re-throw to be caught by Promise.allSettled
+
+					throw error // Re-throw to be caught by Promise.allSettled.
 				}
 			}
 
@@ -819,6 +838,16 @@ export const webviewMessageHandler = async (
 					key: "openrouter",
 					options: { provider: "openrouter", apiKey: openRouterApiKey, baseUrl: openRouterBaseUrl },
 				},
+				// kilocode_change start
+				{
+					key: "gemini",
+					options: {
+						provider: "gemini",
+						apiKey: apiConfiguration.geminiApiKey,
+						baseUrl: apiConfiguration.googleGeminiBaseUrl,
+					},
+				},
+				// kilocode_change end
 				{
 					key: "requesty",
 					options: {
@@ -829,6 +858,7 @@ export const webviewMessageHandler = async (
 				},
 				{ key: "glama", options: { provider: "glama" } },
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
+				{ key: "chutes", options: { provider: "chutes", apiKey: apiConfiguration.chutesApiKey } }, // kilocode_change
 				{
 					key: "kilocode-openrouter",
 					options: {
@@ -847,11 +877,22 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.deepInfraBaseUrl,
 					},
 				},
+				// kilocode_change start
+				{
+					key: "ovhcloud",
+					options: {
+						provider: "ovhcloud",
+						apiKey: apiConfiguration.ovhCloudAiEndpointsApiKey,
+						baseUrl: apiConfiguration.ovhCloudAiEndpointsBaseUrl,
+					},
+				},
+				// kilocode_change end
 			]
 			// kilocode_change end
 
-			// Add IO Intelligence if API key is provided
+			// Add IO Intelligence if API key is provided.
 			const ioIntelligenceApiKey = apiConfiguration.ioIntelligenceApiKey
+
 			if (ioIntelligenceApiKey) {
 				modelFetchPromises.push({
 					key: "io-intelligence",
@@ -859,11 +900,12 @@ export const webviewMessageHandler = async (
 				})
 			}
 
-			// Don't fetch Ollama and LM Studio models by default anymore
-			// They have their own specific handlers: requestOllamaModels and requestLmStudioModels
+			// Don't fetch Ollama and LM Studio models by default anymore.
+			// They have their own specific handlers: requestOllamaModels and requestLmStudioModels.
 
 			const litellmApiKey = apiConfiguration.litellmApiKey || message?.values?.litellmApiKey
 			const litellmBaseUrl = apiConfiguration.litellmBaseUrl || message?.values?.litellmBaseUrl
+
 			if (litellmApiKey && litellmBaseUrl) {
 				modelFetchPromises.push({
 					key: "litellm",
@@ -874,24 +916,17 @@ export const webviewMessageHandler = async (
 			const results = await Promise.allSettled(
 				modelFetchPromises.map(async ({ key, options }) => {
 					const models = await safeGetModels(options)
-					return { key, models } // key is RouterName here
+					return { key, models } // The key is `ProviderName` here.
 				}),
 			)
 
-			const fetchedRouterModels: Partial<Record<RouterName, ModelRecord>> = {
-				...routerModels,
-				// Initialize ollama and lmstudio with empty objects since they use separate handlers
-				ollama: {},
-				lmstudio: {},
-			}
-
 			results.forEach((result, index) => {
-				const routerName = modelFetchPromises[index].key // Get RouterName using index
+				const routerName = modelFetchPromises[index].key
 
 				if (result.status === "fulfilled") {
-					fetchedRouterModels[routerName] = result.value.models
+					routerModels[routerName] = result.value.models
 
-					// Ollama and LM Studio settings pages still need these events
+					// Ollama and LM Studio settings pages still need these events.
 					if (routerName === "ollama" && Object.keys(result.value.models).length > 0) {
 						provider.postMessageToWebview({
 							type: "ollamaModels",
@@ -904,11 +939,11 @@ export const webviewMessageHandler = async (
 						})
 					}
 				} else {
-					// Handle rejection: Post a specific error message for this provider
+					// Handle rejection: Post a specific error message for this provider.
 					const errorMessage = result.reason instanceof Error ? result.reason.message : String(result.reason)
 					console.error(`Error fetching models for ${routerName}:`, result.reason)
 
-					fetchedRouterModels[routerName] = {} // Ensure it's an empty object in the main routerModels message
+					routerModels[routerName] = {} // Ensure it's an empty object in the main routerModels message.
 
 					provider.postMessageToWebview({
 						type: "singleRouterModelFetchResponse",
@@ -919,30 +954,24 @@ export const webviewMessageHandler = async (
 				}
 			})
 
-			provider.postMessageToWebview({
-				type: "routerModels",
-				routerModels: fetchedRouterModels as Record<RouterName, ModelRecord>,
-			})
-
+			provider.postMessageToWebview({ type: "routerModels", routerModels })
 			break
 		case "requestOllamaModels": {
-			// Specific handler for Ollama models only
+			// Specific handler for Ollama models only.
 			const { apiConfiguration: ollamaApiConfig } = await provider.getState()
 			try {
-				// Flush cache first to ensure fresh models
+				// Flush cache first to ensure fresh models.
 				await flushModels("ollama")
 
 				const ollamaModels = await getModels({
 					provider: "ollama",
 					baseUrl: ollamaApiConfig.ollamaBaseUrl,
 					apiKey: ollamaApiConfig.ollamaApiKey,
+					numCtx: ollamaApiConfig.ollamaNumCtx, // kilocode_change
 				})
 
 				if (Object.keys(ollamaModels).length > 0) {
-					provider.postMessageToWebview({
-						type: "ollamaModels",
-						ollamaModels: ollamaModels,
-					})
+					provider.postMessageToWebview({ type: "ollamaModels", ollamaModels: ollamaModels })
 				}
 			} catch (error) {
 				// Silently fail - user hasn't configured Ollama yet
@@ -951,10 +980,10 @@ export const webviewMessageHandler = async (
 			break
 		}
 		case "requestLmStudioModels": {
-			// Specific handler for LM Studio models only
+			// Specific handler for LM Studio models only.
 			const { apiConfiguration: lmStudioApiConfig } = await provider.getState()
 			try {
-				// Flush cache first to ensure fresh models
+				// Flush cache first to ensure fresh models.
 				await flushModels("lmstudio")
 
 				const lmStudioModels = await getModels({
@@ -969,7 +998,7 @@ export const webviewMessageHandler = async (
 					})
 				}
 			} catch (error) {
-				// Silently fail - user hasn't configured LM Studio yet
+				// Silently fail - user hasn't configured LM Studio yet.
 				console.debug("LM Studio models fetch failed:", error)
 			}
 			break
@@ -992,19 +1021,18 @@ export const webviewMessageHandler = async (
 			provider.postMessageToWebview({ type: "vsCodeLmModels", vsCodeLmModels })
 			break
 		case "requestHuggingFaceModels":
+			// TODO: Why isn't this handled by `requestRouterModels` above?
 			try {
 				const { getHuggingFaceModelsWithMetadata } = await import("../../api/providers/fetchers/huggingface")
 				const huggingFaceModelsResponse = await getHuggingFaceModelsWithMetadata()
+
 				provider.postMessageToWebview({
 					type: "huggingFaceModels",
 					huggingFaceModels: huggingFaceModelsResponse.models,
 				})
 			} catch (error) {
 				console.error("Failed to fetch Hugging Face models:", error)
-				provider.postMessageToWebview({
-					type: "huggingFaceModels",
-					huggingFaceModels: [],
-				})
+				provider.postMessageToWebview({ type: "huggingFaceModels", huggingFaceModels: [] })
 			}
 			break
 		case "openImage":
@@ -1129,6 +1157,18 @@ export const webviewMessageHandler = async (
 				openFile(customModesFilePath)
 			}
 
+			break
+		}
+		case "openKeyboardShortcuts": {
+			// Open VSCode keyboard shortcuts settings and optionally filter to show the Roo Code commands
+			const searchQuery = message.text || ""
+			if (searchQuery) {
+				// Open with a search query pre-filled
+				await vscode.commands.executeCommand("workbench.action.openGlobalKeybindings", searchQuery)
+			} else {
+				// Just open the keyboard shortcuts settings
+				await vscode.commands.executeCommand("workbench.action.openGlobalKeybindings")
+			}
 			break
 		}
 		case "openMcpSettings": {
@@ -1425,6 +1465,12 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("morphApiKey", message.text)
 			await provider.postStateToWebview()
 			break
+		case "fastApplyModel": {
+			const nextModel = fastApplyModelSchema.safeParse(message.text).data ?? "auto"
+			await updateGlobalState("fastApplyModel", nextModel)
+			await provider.postStateToWebview()
+			break
+		}
 		// kilocode_change end
 		case "updateVSCodeSetting": {
 			const { setting, value } = message
@@ -1708,6 +1754,20 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change start
+		case "sendMessageOnEnter":
+			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
+			await provider.postStateToWebview()
+			break
+		// kilocode_change end
+		case "showTimestamps":
+			await updateGlobalState("showTimestamps", message.bool ?? false)
+			await provider.postStateToWebview()
+			break
+		case "hideCostBelowThreshold":
+			await updateGlobalState("hideCostBelowThreshold", message.value)
+			await provider.postStateToWebview()
+			break
 		case "allowVeryLargeReads":
 			await updateGlobalState("allowVeryLargeReads", message.bool ?? false)
 			await provider.postStateToWebview()
@@ -1738,6 +1798,10 @@ export const webviewMessageHandler = async (
 			break
 		case "setHistoryPreviewCollapsed": // Add the new case handler
 			await updateGlobalState("historyPreviewCollapsed", message.bool ?? false)
+			// No need to call postStateToWebview here as the UI already updated optimistically
+			break
+		case "setReasoningBlockCollapsed":
+			await updateGlobalState("reasoningBlockCollapsed", message.bool ?? true)
 			// No need to call postStateToWebview here as the UI already updated optimistically
 			break
 		case "toggleApiConfigPin":
@@ -1808,6 +1872,12 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("autoApprovalEnabled", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change start: yolo mode
+		case "yoloMode":
+			await updateGlobalState("yoloMode", message.bool ?? false)
+			await provider.postStateToWebview()
+			break
+		// kilocode_change end
 		case "enhancePrompt":
 			if (message.text) {
 				try {
@@ -1918,7 +1988,7 @@ export const webviewMessageHandler = async (
 			} else if (answer === discordText) {
 				await vscode.env.openExternal(vscode.Uri.parse("https://discord.gg/fxrhCFGhkP"))
 			} else if (answer === customerSupport) {
-				await vscode.env.openExternal(vscode.Uri.parse("https://kilocode.ai/support"))
+				await vscode.env.openExternal(vscode.Uri.parse(getAppUrl("/support")))
 			}
 			break
 		}
@@ -1977,6 +2047,7 @@ export const webviewMessageHandler = async (
 					await provider.providerSettingsManager.saveConfig(message.text, message.apiConfiguration)
 					const listApiConfig = await provider.providerSettingsManager.listConfig()
 					await updateGlobalState("listApiConfigMeta", listApiConfig)
+					vscode.commands.executeCommand("kilo-code.ghost.reload") // kilocode_change: Reload ghost model when API provider settings change
 				} catch (error) {
 					provider.log(
 						`Error save api configuration: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
@@ -1986,9 +2057,11 @@ export const webviewMessageHandler = async (
 			}
 			break
 		case "upsertApiConfiguration":
-			// kilocode_change start: check for kilocodeToken change to remove organizationId
+			// kilocode_change start: check for kilocodeToken change to remove organizationId and fetch organization modes
 			if (message.text && message.apiConfiguration) {
 				let configToSave = message.apiConfiguration
+				let organizationChanged = false
+
 				try {
 					const { ...currentConfig } = await provider.providerSettingsManager.getProfile({
 						name: message.text,
@@ -2000,8 +2073,17 @@ export const webviewMessageHandler = async (
 
 					if (hadPreviousToken && hasNewToken && tokensAreDifferent) {
 						configToSave = { ...message.apiConfiguration, kilocodeOrganizationId: undefined }
+						await updateGlobalState("hasPerformedOrganizationAutoSwitch", undefined)
 					}
-					if (currentConfig.kilocodeOrganizationId !== message.apiConfiguration.kilocodeOrganizationId) {
+
+					organizationChanged =
+						currentConfig.kilocodeOrganizationId !== message.apiConfiguration.kilocodeOrganizationId
+
+					if (organizationChanged) {
+						// Fetch organization-specific custom modes
+						await refreshOrganizationModes(message, provider, updateGlobalState)
+
+						// Flush and refetch models
 						await flushModels("kilocode-openrouter")
 						const models = await getModels({
 							provider: "kilocode-openrouter",
@@ -2018,8 +2100,13 @@ export const webviewMessageHandler = async (
 				}
 
 				await provider.upsertProviderProfile(message.text, configToSave)
+
+				// Ensure state is posted to webview after profile update to reflect organization mode changes
+				if (organizationChanged) {
+					await provider.postStateToWebview()
+				}
 			}
-			// kilocode_change end
+			// kilocode_change end: check for kilocodeToken change to remove organizationId and fetch organization modes
 			break
 		case "renameApiConfiguration":
 			if (message.values && message.apiConfiguration) {
@@ -2522,12 +2609,8 @@ export const webviewMessageHandler = async (
 					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 				}
 
-				const response = await axios.get<Omit<ProfileData, "kilocodeToken">>(
-					`${getKiloBaseUriFromToken(kilocodeToken)}/api/profile`,
-					{
-						headers,
-					},
-				)
+				const url = getKiloUrlFromToken("https://api.kilocode.ai/api/profile", kilocodeToken)
+				const response = await axios.get<Omit<ProfileData, "kilocodeToken">>(url, { headers })
 
 				// Go back to Personal when no longer part of the current set organization
 				const organizationExists = (response.data.organizations ?? []).some(
@@ -2540,8 +2623,43 @@ export const webviewMessageHandler = async (
 					})
 				}
 
+				try {
+					const shouldAutoSwitch =
+						response.data.organizations &&
+						response.data.organizations.length > 0 &&
+						!apiConfiguration.kilocodeOrganizationId &&
+						!getGlobalState("hasPerformedOrganizationAutoSwitch")
+
+					if (shouldAutoSwitch) {
+						const firstOrg = response.data.organizations![0]
+						provider.log(
+							`[Auto-switch] Performing automatic organization switch to: ${firstOrg.name} (${firstOrg.id})`,
+						)
+
+						const upsertMessage: WebviewMessage = {
+							type: "upsertApiConfiguration",
+							text: currentApiConfigName ?? "default",
+							apiConfiguration: {
+								...apiConfiguration,
+								kilocodeOrganizationId: firstOrg.id,
+							},
+						}
+
+						await webviewMessageHandler(provider, upsertMessage)
+						await updateGlobalState("hasPerformedOrganizationAutoSwitch", true)
+
+						vscode.window.showInformationMessage(`Automatically switched to organization: ${firstOrg.name}`)
+
+						provider.log(`[Auto-switch] Successfully switched to organization: ${firstOrg.name}`)
+					}
+				} catch (error) {
+					provider.log(
+						`[Auto-switch] Error during automatic organization switch: ${error instanceof Error ? error.message : String(error)}`,
+					)
+				}
+
 				provider.postMessageToWebview({
-					type: "profileDataResponse", // Assuming this response type is still appropriate for /api/profile
+					type: "profileDataResponse",
 					payload: { success: true, data: { kilocodeToken, ...response.data } },
 				})
 			} catch (error: any) {
@@ -2587,10 +2705,8 @@ export const webviewMessageHandler = async (
 					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 				}
 
-				const response = await axios.get(`${getKiloBaseUriFromToken(kilocodeToken)}/api/profile/balance`, {
-					// Original path for balance
-					headers,
-				})
+				const url = getKiloUrlFromToken("https://api.kilocode.ai/api/profile/balance", kilocodeToken)
+				const response = await axios.get(url, { headers })
 				provider.postMessageToWebview({
 					type: "balanceDataResponse", // New response type
 					payload: { success: true, data: response.data },
@@ -2618,9 +2734,12 @@ export const webviewMessageHandler = async (
 				const uiKind = message.values?.uiKind || "Desktop"
 				const source = uiKind === "Web" ? "web" : uriScheme
 
-				const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
+				const url = getKiloUrlFromToken(
+					`https://api.kilocode.ai/payments/topup?origin=extension&source=${source}&amount=${credits}`,
+					kilocodeToken,
+				)
 				const response = await axios.post(
-					`${baseUrl}/payments/topup?origin=extension&source=${source}&amount=${credits}`,
+					url,
 					{},
 					{
 						headers: {
@@ -2754,6 +2873,17 @@ export const webviewMessageHandler = async (
 
 			break
 		}
+		case "cloudLandingPageSignIn": {
+			try {
+				const landingPageSlug = message.text || "supernova"
+				TelemetryService.instance.captureEvent(TelemetryEventName.AUTHENTICATION_INITIATED)
+				await CloudService.instance.login(landingPageSlug)
+			} catch (error) {
+				provider.log(`CloudService#login failed: ${error}`)
+				vscode.window.showErrorMessage("Sign in failed.")
+			}
+			break
+		}
 		case "rooCloudSignOut": {
 			try {
 				await CloudService.instance.logout()
@@ -2806,6 +2936,38 @@ export const webviewMessageHandler = async (
 				vscode.window.showErrorMessage(`${t("common:errors.manual_url_auth_error")}: ${errorMessage}`)
 			}
 
+			break
+		}
+		case "switchOrganization": {
+			try {
+				const organizationId = message.organizationId ?? null
+
+				// Switch to the new organization context
+				await CloudService.instance.switchOrganization(organizationId)
+
+				// Refresh the state to update UI
+				await provider.postStateToWebview()
+
+				// Send success response back to webview
+				await provider.postMessageToWebview({
+					type: "organizationSwitchResult",
+					success: true,
+					organizationId: organizationId,
+				})
+			} catch (error) {
+				provider.log(`Organization switch failed: ${error}`)
+				const errorMessage = error instanceof Error ? error.message : String(error)
+
+				// Send error response back to webview
+				await provider.postMessageToWebview({
+					type: "organizationSwitchResult",
+					success: false,
+					error: errorMessage,
+					organizationId: message.organizationId ?? null,
+				})
+
+				vscode.window.showErrorMessage(`Failed to switch organization: ${errorMessage}`)
+			}
 			break
 		}
 
@@ -3059,6 +3221,38 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		// kilocode_change start
+		case "cancelIndexing": {
+			try {
+				const manager = provider.getCurrentWorkspaceCodeIndexManager()
+				if (!manager) {
+					provider.postMessageToWebview({
+						type: "indexingStatusUpdate",
+						values: {
+							systemStatus: "Error",
+							message: t("embeddings:orchestrator.indexingRequiresWorkspace"),
+							processedItems: 0,
+							totalItems: 0,
+							currentItemUnit: "items",
+						},
+					})
+					provider.log("Cannot cancel indexing: No workspace folder open")
+					return
+				}
+				if (manager.isFeatureEnabled && manager.isFeatureConfigured) {
+					manager.cancelIndexing()
+					// Immediately reflect updated status to UI
+					provider.postMessageToWebview({
+						type: "indexingStatusUpdate",
+						values: manager.getCurrentStatus(),
+					})
+				}
+			} catch (error) {
+				provider.log(`Error canceling indexing: ${error instanceof Error ? error.message : String(error)}`)
+			}
+			break
+		}
+		// kilocode_change end
 		case "clearIndexData": {
 			try {
 				const manager = provider.getCurrentWorkspaceCodeIndexManager()
@@ -3287,7 +3481,12 @@ export const webviewMessageHandler = async (
 					TelemetryService.instance.captureTabShown(message.tab)
 				}
 
-				await provider.postMessageToWebview({ type: "action", action: "switchTab", tab: message.tab })
+				await provider.postMessageToWebview({
+					type: "action",
+					action: "switchTab",
+					tab: message.tab,
+					values: message.values,
+				})
 			}
 			break
 		}
@@ -3312,6 +3511,16 @@ export const webviewMessageHandler = async (
 			break
 		}
 		// kilocode_change end
+		// kilocode_change start: Type-safe global state handler
+		case "updateGlobalState": {
+			const { stateKey, stateValue } = message as UpdateGlobalStateMessage
+			if (stateKey !== undefined && stateValue !== undefined && isGlobalStateKey(stateKey)) {
+				await updateGlobalState(stateKey, stateValue)
+				await provider.postStateToWebview()
+			}
+			break
+		}
+		// kilocode_change end: Type-safe global state handler
 		case "insertTextToChatArea":
 			provider.postMessageToWebview({ type: "insertTextToChatArea", text: message.text })
 			break

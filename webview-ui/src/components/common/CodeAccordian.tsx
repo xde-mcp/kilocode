@@ -33,13 +33,13 @@ const CodeAccordian = ({
 	onJumpToFile,
 }: CodeAccordianProps) => {
 	const inferredLanguage = useMemo(() => language ?? (path ? getLanguageFromPath(path) : "txt"), [path, language])
-	const source = useMemo(() => code.trim(), [code])
+	const source = useMemo(() => String(code).trim() /*kilocode_change: coerce to string*/, [code])
 	const hasHeader = Boolean(path || isFeedback || header)
 
 	return (
 		<ToolUseBlock>
 			{hasHeader && (
-				<ToolUseBlockHeader onClick={onToggleExpand}>
+				<ToolUseBlockHeader onClick={onToggleExpand} className="group">
 					{isLoading && <VSCodeProgressRing className="size-3 mr-2" />}
 					{header ? (
 						<div className="flex items-center">
@@ -81,7 +81,10 @@ const CodeAccordian = ({
 							aria-label={`Open file: ${path}`}
 						/>
 					)}
-					{!onJumpToFile && <span className={`codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>}
+					{!onJumpToFile && (
+						<span
+							className={`opacity-0 group-hover:opacity-100 codicon codicon-chevron-${isExpanded ? "up" : "down"}`}></span>
+					)}
 				</ToolUseBlockHeader>
 			)}
 			{(!hasHeader || isExpanded) && (

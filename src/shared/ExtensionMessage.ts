@@ -10,6 +10,7 @@ import type {
 	MarketplaceItem,
 	TodoItem,
 	CloudUserInfo,
+	CloudOrganizationMembership,
 	OrganizationAllowList,
 	ShareVisibility,
 	QueuedMessage,
@@ -95,6 +96,7 @@ export interface ExtensionMessage {
 		| "updatePrompt"
 		| "systemPrompt"
 		| "autoApprovalEnabled"
+		| "yoloMode" // kilocode_change
 		| "updateCustomMode"
 		| "deleteCustomMode"
 		| "exportModeResult"
@@ -151,6 +153,8 @@ export interface ExtensionMessage {
 		| "commands"
 		| "insertTextIntoTextarea"
 		| "dismissedUpsells"
+		| "showTimestamps" // kilocode_change
+		| "organizationSwitchResult"
 	text?: string
 	// kilocode_change start
 	payload?:
@@ -172,6 +176,7 @@ export interface ExtensionMessage {
 		| "focusInput"
 		| "switchTab"
 		| "focusChatInput" // kilocode_change
+		| "toggleAutoApprove"
 	invoke?: "newChat" | "sendMessage" | "primaryButtonClick" | "secondaryButtonClick" | "setChatBoxMessage"
 	state?: ExtensionState
 	images?: string[]
@@ -262,6 +267,7 @@ export interface ExtensionMessage {
 	commands?: Command[]
 	queuedMessages?: QueuedMessage[]
 	list?: string[] // For dismissedUpsells
+	organizationId?: string | null // For organizationSwitchResult
 }
 
 export type ExtensionState = Pick<
@@ -274,6 +280,7 @@ export type ExtensionState = Pick<
 	// | "taskHistory" // Optional in GlobalSettings, required here.
 	| "dismissedUpsells"
 	| "autoApprovalEnabled"
+	| "yoloMode" // kilocode_change
 	| "alwaysAllowReadOnly"
 	| "alwaysAllowReadOnlyOutsideWorkspace"
 	| "alwaysAllowWrite"
@@ -297,6 +304,7 @@ export type ExtensionState = Pick<
 	| "browserToolEnabled"
 	| "browserViewportSize"
 	| "showAutoApproveMenu" // kilocode_change
+	| "hideCostBelowThreshold" // kilocode_change
 	| "screenshotQuality"
 	| "remoteBrowserEnabled"
 	| "cachedChromeHostUrl"
@@ -327,6 +335,7 @@ export type ExtensionState = Pick<
 	| "diffEnabled"
 	| "fuzzyMatchThreshold"
 	| "morphApiKey" // kilocode_change: Morph fast apply - global setting
+	| "fastApplyModel" // kilocode_change: Fast Apply model selection
 	// | "experiments" // Optional in GlobalSettings, required here.
 	| "language"
 	// | "telemetrySetting" // Optional in GlobalSettings, required here.
@@ -356,6 +365,7 @@ export type ExtensionState = Pick<
 	| "maxDiagnosticMessages"
 	| "openRouterImageGenerationSelectedModel"
 	| "includeTaskHistoryInEnhance"
+	| "reasoningBlockCollapsed"
 > & {
 	version: string
 	clineMessages: ClineMessage[]
@@ -403,10 +413,13 @@ export type ExtensionState = Pick<
 	settingsImportedAt?: number
 	historyPreviewCollapsed?: boolean
 	showTaskTimeline?: boolean // kilocode_change
+	sendMessageOnEnter?: boolean // kilocode_change
+	hideCostBelowThreshold?: number // kilocode_change
 
 	cloudUserInfo: CloudUserInfo | null
 	cloudIsAuthenticated: boolean
 	cloudApiUrl?: string
+	cloudOrganizations?: CloudOrganizationMembership[]
 	sharingEnabled: boolean
 	organizationAllowList: OrganizationAllowList
 	organizationSettingsVersion?: number
@@ -429,6 +442,7 @@ export type ExtensionState = Pick<
 	remoteControlEnabled: boolean
 	taskSyncEnabled: boolean
 	featureRoomoteControlEnabled: boolean
+	showTimestamps?: boolean // kilocode_change: Show timestamps in chat messages
 }
 
 export interface ClineSayTool {
@@ -547,7 +561,10 @@ export interface ClineApiReqInfo {
 	cacheWrites?: number
 	cacheReads?: number
 	cost?: number
-	usageMissing?: boolean // kilocode_change
+	// kilocode_change
+	usageMissing?: boolean
+	inferenceProvider?: string
+	// kilocode_change end
 	cancelReason?: ClineApiReqCancelReason
 	streamingFailedMessage?: string
 	apiProtocol?: "anthropic" | "openai"

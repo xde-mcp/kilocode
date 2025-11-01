@@ -45,7 +45,8 @@ import { initializeI18n } from "./i18n"
 import { registerGhostProvider } from "./services/ghost" // kilocode_change
 import { registerMainThreadForwardingLogger } from "./utils/fowardingLogger" // kilocode_change
 import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kilocode_change
-import { SettingsSyncService } from "./services/settings-sync/SettingsSyncService"
+import { SettingsSyncService } from "./services/settings-sync/SettingsSyncService" // kilocode_change
+import { registerAutocompleteProvider } from "./services/autocomplete" // kilocode_change
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -226,7 +227,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Add to subscriptions for proper cleanup on deactivate.
 	context.subscriptions.push(cloudService)
 
-	// Trigger initial cloud profile sync now that CloudService is ready
+	// Trigger initial cloud profile sync now that CloudService is ready.
 	try {
 		await provider.initializeCloudProfileSyncWhenReady()
 	} catch (error) {
@@ -347,6 +348,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	if (!kiloCodeWrapped) {
 		// Only use autocomplete in VS Code
 		registerGhostProvider(context, provider)
+		// Experimental
+		// registerAutocompleteProvider(context, provider)
 	} else {
 		// Only foward logs in Jetbrains
 		registerMainThreadForwardingLogger(context)

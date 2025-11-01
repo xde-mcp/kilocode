@@ -29,7 +29,7 @@ import {
 	xaiModels,
 	groqModels,
 	groqDefaultModelId,
-	chutesModels,
+	// chutesModels, // kilocode_change
 	chutesDefaultModelId,
 	vscodeLlmModels,
 	vscodeLlmDefaultModelId,
@@ -50,6 +50,8 @@ import {
 	mainlandZAiModels,
 	fireworksModels,
 	fireworksDefaultModelId,
+	syntheticModels, // kilocode_change
+	syntheticDefaultModelId, // kilocode_change
 	featherlessModels,
 	featherlessDefaultModelId,
 	ioIntelligenceDefaultModelId,
@@ -59,8 +61,9 @@ import {
 	qwenCodeDefaultModelId,
 	qwenCodeModels,
 	vercelAiGatewayDefaultModelId,
-	BEDROCK_CLAUDE_SONNET_4_MODEL_ID,
+	BEDROCK_1M_CONTEXT_MODEL_IDS,
 	deepInfraDefaultModelId,
+	ovhCloudAiEndpointsDefaultModelId, // kilocode_change
 } from "@roo-code/types"
 
 import type { ModelRecord, RouterModels } from "@roo/api"
@@ -96,8 +99,10 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 
 	const routerModels = useRouterModels({
 		openRouterBaseUrl: apiConfiguration?.openRouterBaseUrl,
-		openRouterApiKey: apiConfiguration?.apiKey, // kilocode_change
-		kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId, // kilocode_change
+		openRouterApiKey: apiConfiguration?.apiKey,
+		kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId,
+		geminiApiKey: apiConfiguration?.geminiApiKey,
+		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
 	})
 	const openRouterModelProviders = useModelProviders(kilocodeDefaultModel, apiConfiguration)
 	// kilocode_change end
@@ -220,7 +225,7 @@ function getSelectedModel({
 		}
 		case "chutes": {
 			const id = apiConfiguration.apiModelId ?? chutesDefaultModelId
-			const info = chutesModels[id as keyof typeof chutesModels]
+			const info = routerModels.chutes[id] // kilocode_change
 			return { id, info }
 		}
 		case "bedrock": {
@@ -235,8 +240,8 @@ function getSelectedModel({
 				}
 			}
 
-			// Apply 1M context for Claude Sonnet 4 when enabled
-			if (id === BEDROCK_CLAUDE_SONNET_4_MODEL_ID && apiConfiguration.awsBedrock1MContext && baseInfo) {
+			// Apply 1M context for Claude Sonnet 4 / 4.5 when enabled
+			if (BEDROCK_1M_CONTEXT_MODEL_IDS.includes(id as any) && apiConfiguration.awsBedrock1MContext && baseInfo) {
 				// Create a new ModelInfo object with updated context window
 				const info: ModelInfo = {
 					...baseInfo,
@@ -252,11 +257,14 @@ function getSelectedModel({
 			const info = vertexModels[id as keyof typeof vertexModels]
 			return { id, info }
 		}
+		// kilocode_change start
 		case "gemini": {
 			const id = apiConfiguration.apiModelId ?? geminiDefaultModelId
-			const info = geminiModels[id as keyof typeof geminiModels]
-			return { id, info }
+			const remoteInfo = routerModels.gemini?.[id]
+			const staticInfo = geminiModels[id as keyof typeof geminiModels]
+			return { id, info: remoteInfo ?? staticInfo }
 		}
+		// kilocode_change end
 		case "deepseek": {
 			const id = apiConfiguration.apiModelId ?? deepSeekDefaultModelId
 			const info = deepSeekModels[id as keyof typeof deepSeekModels]
@@ -273,7 +281,7 @@ function getSelectedModel({
 			return { id, info }
 		}
 		case "zai": {
-			const isChina = apiConfiguration.zaiApiLine === "china"
+			const isChina = apiConfiguration.zaiApiLine === "china_coding"
 			const models = isChina ? mainlandZAiModels : internationalZAiModels
 			const defaultModelId = isChina ? mainlandZAiDefaultModelId : internationalZAiDefaultModelId
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -298,9 +306,17 @@ function getSelectedModel({
 		case "ollama": {
 			const id = apiConfiguration.ollamaModelId ?? ""
 			const info = ollamaModels && ollamaModels[apiConfiguration.ollamaModelId!]
+
+			const adjustedInfo =
+				info?.contextWindow &&
+				apiConfiguration?.ollamaNumCtx &&
+				apiConfiguration.ollamaNumCtx < info.contextWindow
+					? { ...info, contextWindow: apiConfiguration.ollamaNumCtx }
+					: info
+
 			return {
 				id,
-				info: info || undefined,
+				info: adjustedInfo || undefined,
 			}
 		}
 		case "lmstudio": {
@@ -389,6 +405,13 @@ function getSelectedModel({
 			const info = fireworksModels[id as keyof typeof fireworksModels]
 			return { id, info }
 		}
+		// kilocode_change start
+		case "synthetic": {
+			const id = apiConfiguration.apiModelId ?? syntheticDefaultModelId
+			const info = syntheticModels[id as keyof typeof syntheticModels]
+			return { id, info }
+		}
+		// kilocode_change end
 		case "featherless": {
 			const id = apiConfiguration.apiModelId ?? featherlessDefaultModelId
 			const info = featherlessModels[id as keyof typeof featherlessModels]
@@ -427,22 +450,35 @@ function getSelectedModel({
 			const info = routerModels["vercel-ai-gateway"]?.[id]
 			return { id, info }
 		}
+		// kilocode_change start
+		case "ovhcloud": {
+			const id = apiConfiguration.ovhCloudAiEndpointsModelId ?? ovhCloudAiEndpointsDefaultModelId
+			const info = routerModels.ovhcloud[id]
+			return { id, info }
+		}
+		// kilocode_change end
 		// case "anthropic":
 		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "human-relay" | "fake-ai"
+			provider satisfies
+				| "anthropic"
+				| "gemini-cli"
+				| "qwen-code"
+				| "human-relay"
+				| "fake-ai"
+				| "kilocode-openrouter"
 			const id = apiConfiguration.apiModelId ?? anthropicDefaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 
 			// Apply 1M context beta tier pricing for Claude Sonnet 4
 			if (
 				provider === "anthropic" &&
-				id === "claude-sonnet-4-20250514" &&
+				(id === "claude-sonnet-4-20250514" || id === "claude-sonnet-4-5") &&
 				apiConfiguration.anthropicBeta1MContext &&
 				baseInfo
 			) {
-				// Type assertion since we know claude-sonnet-4-20250514 has tiers
+				// Type assertion since we know claude-sonnet-4-20250514 and claude-sonnet-4-5 have tiers
 				const modelWithTiers = baseInfo as typeof baseInfo & {
 					tiers?: Array<{
 						contextWindow: number
