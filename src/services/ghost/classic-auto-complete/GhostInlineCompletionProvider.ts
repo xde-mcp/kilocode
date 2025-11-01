@@ -233,18 +233,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-		const { prefix, suffix } = extractPrefixSuffix(document, position)
-
-		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
-
-		if (matchingText !== null) {
-			const item: vscode.InlineCompletionItem = {
-				insertText: matchingText,
-				range: new vscode.Range(position, position),
-			}
-			return [item]
-		}
-
 		// Check if auto-trigger is enabled
 		// Only proceed with LLM call if:
 		// 1. It's a manual trigger (triggerKind === Invoke), OR
@@ -256,6 +244,27 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		if (!isManualTrigger && !isAutoTriggerEnabled) {
 			// Auto-trigger is disabled and this is not a manual trigger
 			return []
+		}
+
+		return this.provideInlineCompletionItems_Internal(document, position, context, _token)
+	}
+
+	public async provideInlineCompletionItems_Internal(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		_token: vscode.CancellationToken,
+	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+		const { prefix, suffix } = extractPrefixSuffix(document, position)
+
+		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+
+		if (matchingText !== null) {
+			const item: vscode.InlineCompletionItem = {
+				insertText: matchingText,
+				range: new vscode.Range(position, position),
+			}
+			return [item]
 		}
 
 		// No cached suggestion available - invoke LLM

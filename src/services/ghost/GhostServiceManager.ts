@@ -285,7 +285,7 @@ export class GhostServiceManager {
 		const tokenSource = new vscode.CancellationTokenSource()
 
 		try {
-			const completions = await this.inlineCompletionProvider.provideInlineCompletionItems(
+			const completions = await this.inlineCompletionProvider.provideInlineCompletionItems_Internal(
 				document,
 				position,
 				context,
