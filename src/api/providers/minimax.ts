@@ -4,6 +4,7 @@ import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
 import {
 	type ModelInfo,
 	MINIMAX_DEFAULT_MAX_TOKENS,
+	MINIMAX_DEFAULT_TEMPERATURE,
 	MinimaxModelId,
 	minimaxDefaultModelId,
 	minimaxModels,
@@ -38,12 +39,12 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 		metadata?: ApiHandlerCreateMessageMetadata,
 	): ApiStream {
 		let stream: AnthropicStream<Anthropic.Messages.RawMessageStreamEvent>
-		let { id: modelId, maxTokens, temperature } = this.getModel()
+		let { id: modelId, maxTokens } = this.getModel()
 
 		stream = await this.client.messages.create({
 			model: modelId,
 			max_tokens: maxTokens ?? MINIMAX_DEFAULT_MAX_TOKENS,
-			temperature,
+			temperature: MINIMAX_DEFAULT_TEMPERATURE,
 			system: [{ text: systemPrompt, type: "text" }],
 			messages,
 			stream: true,
@@ -205,13 +206,13 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 	}
 
 	async completePrompt(prompt: string) {
-		let { id: model, temperature } = this.getModel()
+		let { id: model } = this.getModel()
 
 		const message = await this.client.messages.create({
 			model,
 			max_tokens: MINIMAX_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
-			temperature,
+			temperature: MINIMAX_DEFAULT_TEMPERATURE,
 			messages: [{ role: "user", content: prompt }],
 			stream: false,
 		})
