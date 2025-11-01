@@ -781,7 +781,7 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 			]
 		case "minimax":
 			return [
-				createFieldConfig("minimaxBaseUrl", config, "https://api.minimax.io/v1"),
+				createFieldConfig("minimaxBaseUrl", config, "https://api.minimax.io/anthropic"),
 				createFieldConfig("minimaxApiKey", config),
 			]
 		case "fake-ai":

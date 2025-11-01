@@ -322,7 +322,7 @@ export interface ProviderSettings {
 	vercelAiGatewayModelId?: string
 
 	// MiniMax AI
-	minimaxBaseUrl?: "https://api.minimax.io/v1" | "https://api.minimaxi.com/v1"
+	minimaxBaseUrl?: "https://api.minimax.io/anthropic" | "https://api.minimaxi.com/anthropic"
 	minimaxApiKey?: string
 
 	// Allow additional fields for extensibility
