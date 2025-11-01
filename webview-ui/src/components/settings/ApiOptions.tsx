@@ -921,10 +921,14 @@ const ApiOptions = ({
 								maxValue={2}
 							/>
 						)}
-						<RateLimitAfterControl
-							rateLimitAfterEnabled={apiConfiguration.rateLimitAfter}
-							onChange={(field, value) => setApiConfigurationField(field, value)}
-						/>
+						{
+							// kilocode_change start
+							<RateLimitAfterControl
+								rateLimitAfterEnabled={apiConfiguration.rateLimitAfter}
+								onChange={(field, value) => setApiConfigurationField(field, value)}
+							/>
+							// kilocode_change end
+						}
 						<RateLimitSecondsControl
 							value={apiConfiguration.rateLimitSeconds || 0}
 							onChange={(value) => setApiConfigurationField("rateLimitSeconds", value)}
