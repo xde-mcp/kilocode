@@ -276,8 +276,41 @@ export class GhostServiceManager {
 			await this.load()
 		}
 
-		// Trigger the inline completion provider
-		await vscode.commands.executeCommand("editor.action.inlineSuggest.trigger")
+		// Call the inline completion provider directly with manual trigger context
+		const position = editor.selection.active
+		const context: vscode.InlineCompletionContext = {
+			triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
+			selectedCompletionInfo: undefined,
+		}
+		const tokenSource = new vscode.CancellationTokenSource()
+
+		try {
+			const completions = await this.inlineCompletionProvider.provideInlineCompletionItems(
+				document,
+				position,
+				context,
+				tokenSource.token,
+			)
+
+			// If we got completions, directly insert the first one
+			if (completions && (Array.isArray(completions) ? completions.length > 0 : completions.items.length > 0)) {
+				const items = Array.isArray(completions) ? completions : completions.items
+				const firstCompletion = items[0]
+
+				if (firstCompletion && firstCompletion.insertText) {
+					const insertText =
+						typeof firstCompletion.insertText === "string"
+							? firstCompletion.insertText
+							: firstCompletion.insertText.value
+
+					await editor.edit((editBuilder) => {
+						editBuilder.insert(position, insertText)
+					})
+				}
+			}
+		} finally {
+			tokenSource.dispose()
+		}
 	}
 
 	private async updateGlobalContext() {
