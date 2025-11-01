@@ -230,29 +230,23 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public async provideInlineCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
-		context: vscode.InlineCompletionContext,
+		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-		// Check if auto-trigger is enabled
-		// Only proceed with LLM call if:
-		// 1. It's a manual trigger (triggerKind === Invoke), OR
-		// 2. Auto-trigger is enabled (enableAutoTrigger === true)
-		const isManualTrigger = context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke
 		const settings = this.getSettings()
 		const isAutoTriggerEnabled = settings?.enableAutoTrigger ?? false
 
-		if (!isManualTrigger && !isAutoTriggerEnabled) {
-			// Auto-trigger is disabled and this is not a manual trigger
+		if (!isAutoTriggerEnabled) {
 			return []
 		}
 
-		return this.provideInlineCompletionItems_Internal(document, position, context, _token)
+		return this.provideInlineCompletionItems_Internal(document, position, _context, _token)
 	}
 
 	public async provideInlineCompletionItems_Internal(
 		document: vscode.TextDocument,
 		position: vscode.Position,
-		context: vscode.InlineCompletionContext,
+		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
