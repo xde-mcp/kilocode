@@ -58,7 +58,7 @@ export class AutocompleteProvider {
 
 	// Settings Management
 	private loadSettings() {
-		const state = ContextProxy.instance?.getValues?.()
+		const state = ContextProxy.instance.getValues()
 		return state.ghostServiceSettings
 	}
 
@@ -71,7 +71,7 @@ export class AutocompleteProvider {
 			provider: this.getCurrentProviderName(),
 			model: this.getCurrentModelName(),
 		}
-		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: settingsWithModelInfo })
+		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
 		await this.cline.postStateToWebview()
 	}
 
