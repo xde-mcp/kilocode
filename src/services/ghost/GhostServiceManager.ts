@@ -121,20 +121,21 @@ export class GhostServiceManager {
 		await this.saveSettings()
 	}
 
-	/**
-	 * Update the inline completion provider with current settings
-	 */
 	private async updateInlineCompletionProviderRegistration() {
-		// Always keep the provider registered so manual triggers (cmd-L) work
-		// The provider will check enableAutoTrigger internally to decide whether to auto-trigger
-		if (!this.inlineCompletionProviderDisposable) {
+		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+
+		if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
+			// Register the provider
 			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
 				"*",
 				this.inlineCompletionProvider,
 			)
 			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+		} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
+			// Deregister the provider
+			this.inlineCompletionProviderDisposable.dispose()
+			this.inlineCompletionProviderDisposable = null
 		}
-		// No need to update settings - provider reads them dynamically via getSettings callback
 	}
 
 	public async disable() {

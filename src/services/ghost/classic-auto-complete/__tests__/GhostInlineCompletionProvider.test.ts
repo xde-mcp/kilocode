@@ -922,7 +922,7 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(mockModel.generateResponse).not.toHaveBeenCalled()
 		})
 
-		it("should allow manual trigger even when auto-trigger is disabled", async () => {
+		it("should block manual trigger when auto-trigger is disabled (defense in depth)", async () => {
 			// Set auto-trigger to false
 			mockSettings = { enableAutoTrigger: false }
 
@@ -932,10 +932,17 @@ describe("GhostInlineCompletionProvider", () => {
 				selectedCompletionInfo: undefined,
 			} as vscode.InlineCompletionContext
 
-			await provider.provideInlineCompletionItems(mockDocument, mockPosition, manualContext, mockToken)
+			const result = await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				manualContext,
+				mockToken,
+			)
 
-			// Model should be called even though auto-trigger is disabled
-			expect(mockModel.generateResponse).toHaveBeenCalled()
+			// Should return empty array as defense in depth, even for manual triggers
+			// The provider should be deregistered at the manager level when disabled
+			expect(result).toEqual([])
+			expect(mockModel.generateResponse).not.toHaveBeenCalled()
 		})
 
 		it("should read settings dynamically on each call", async () => {

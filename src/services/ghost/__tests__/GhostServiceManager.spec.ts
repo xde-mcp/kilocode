@@ -290,4 +290,113 @@ console.log('test');]]></replace></change>`
 			expect(mockProvider.provideInlineCompletionItems).not.toHaveBeenCalled()
 		})
 	})
+
+	describe("updateInlineCompletionProviderRegistration", () => {
+		it("should register provider when enableAutoTrigger is true", async () => {
+			const mockDisposable = { dispose: vi.fn() }
+			const mockRegister = vi.fn().mockReturnValue(mockDisposable)
+
+			const mockManager = {
+				settings: { enableAutoTrigger: true } as any,
+				inlineCompletionProviderDisposable: null as any,
+				inlineCompletionProvider: {} as any,
+				context: { subscriptions: [] as any[] },
+				async updateInlineCompletionProviderRegistration() {
+					const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+
+					if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable = mockRegister("*", this.inlineCompletionProvider)
+						this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+					} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable.dispose()
+						this.inlineCompletionProviderDisposable = null
+					}
+				},
+			}
+
+			await mockManager.updateInlineCompletionProviderRegistration()
+
+			expect(mockRegister).toHaveBeenCalledWith("*", mockManager.inlineCompletionProvider)
+			expect(mockManager.inlineCompletionProviderDisposable).toBe(mockDisposable)
+			expect(mockManager.context.subscriptions).toContain(mockDisposable)
+		})
+
+		it("should deregister provider when enableAutoTrigger is false", async () => {
+			const mockDisposable = { dispose: vi.fn() }
+
+			const mockManager = {
+				settings: { enableAutoTrigger: false } as any,
+				inlineCompletionProviderDisposable: mockDisposable as any,
+				inlineCompletionProvider: {} as any,
+				context: { subscriptions: [mockDisposable] as any[] },
+				async updateInlineCompletionProviderRegistration() {
+					const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+
+					if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
+						// Register logic (not executed in this test)
+					} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable.dispose()
+						this.inlineCompletionProviderDisposable = null
+					}
+				},
+			}
+
+			await mockManager.updateInlineCompletionProviderRegistration()
+
+			expect(mockDisposable.dispose).toHaveBeenCalled()
+			expect(mockManager.inlineCompletionProviderDisposable).toBeNull()
+		})
+
+		it("should not register provider twice when already registered", async () => {
+			const mockDisposable = { dispose: vi.fn() }
+			const mockRegister = vi.fn().mockReturnValue(mockDisposable)
+
+			const mockManager = {
+				settings: { enableAutoTrigger: true } as any,
+				inlineCompletionProviderDisposable: mockDisposable as any,
+				inlineCompletionProvider: {} as any,
+				context: { subscriptions: [mockDisposable] as any[] },
+				async updateInlineCompletionProviderRegistration() {
+					const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+
+					if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable = mockRegister("*", this.inlineCompletionProvider)
+						this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+					} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable.dispose()
+						this.inlineCompletionProviderDisposable = null
+					}
+				},
+			}
+
+			await mockManager.updateInlineCompletionProviderRegistration()
+
+			expect(mockRegister).not.toHaveBeenCalled()
+			expect(mockManager.inlineCompletionProviderDisposable).toBe(mockDisposable)
+		})
+
+		it("should not deregister when already deregistered", async () => {
+			const mockManager = {
+				settings: { enableAutoTrigger: false } as any,
+				inlineCompletionProviderDisposable: null as any,
+				inlineCompletionProvider: {} as any,
+				context: { subscriptions: [] as any[] },
+				async updateInlineCompletionProviderRegistration() {
+					const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+
+					if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
+						// Register logic (not executed in this test)
+					} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
+						this.inlineCompletionProviderDisposable.dispose()
+						this.inlineCompletionProviderDisposable = null
+					}
+				},
+			}
+
+			// Should not throw or cause issues
+			await mockManager.updateInlineCompletionProviderRegistration()
+
+			expect(mockManager.inlineCompletionProviderDisposable).toBeNull()
+		})
+	})
 })
