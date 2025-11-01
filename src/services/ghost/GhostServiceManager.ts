@@ -60,6 +60,7 @@ export class GhostServiceManager {
 			this.updateCostTracking.bind(this),
 			this.ghostContext,
 			this.cursorAnimation,
+			() => this.settings,
 		)
 
 		// Register document event handlers
@@ -134,9 +135,7 @@ export class GhostServiceManager {
 			)
 			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
 		}
-
-		// Update the provider's settings
-		this.inlineCompletionProvider.updateSettings(this.settings)
+		// No need to update settings - provider reads them dynamically via getSettings callback
 	}
 
 	public async disable() {

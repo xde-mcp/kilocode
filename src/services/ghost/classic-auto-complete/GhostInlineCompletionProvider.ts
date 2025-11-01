@@ -7,7 +7,7 @@ import { GhostModel } from "../GhostModel"
 import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
-import { GhostServiceSettings } from "@roo-code/types"
+import type { GhostServiceSettings } from "@roo-code/types"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -74,23 +74,21 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private costTrackingCallback: CostTrackingCallback
 	private ghostContext: GhostContext
 	private cursorAnimation: GhostGutterAnimation
-	private settings: GhostServiceSettings | null = null
+	private getSettings: () => GhostServiceSettings | null
 
 	constructor(
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
 		ghostContext: GhostContext,
 		cursorAnimation: GhostGutterAnimation,
+		getSettings: () => GhostServiceSettings | null,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.ghostContext = ghostContext
 		this.cursorAnimation = cursorAnimation
+		this.getSettings = getSettings
 		this.autoTriggerStrategy = new AutoTriggerStrategy()
-	}
-
-	public updateSettings(settings: GhostServiceSettings | null): void {
-		this.settings = settings
 	}
 
 	/**
@@ -252,7 +250,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// 1. It's a manual trigger (triggerKind === Invoke), OR
 		// 2. Auto-trigger is enabled (enableAutoTrigger === true)
 		const isManualTrigger = context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke
-		const isAutoTriggerEnabled = this.settings?.enableAutoTrigger ?? false
+		const settings = this.getSettings()
+		const isAutoTriggerEnabled = settings?.enableAutoTrigger ?? false
 
 		if (!isManualTrigger && !isAutoTriggerEnabled) {
 			// Auto-trigger is disabled and this is not a manual trigger
