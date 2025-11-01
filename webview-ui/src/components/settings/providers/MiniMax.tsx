@@ -59,7 +59,7 @@ export const MiniMax = ({ apiConfiguration, setApiConfigurationField }: MiniMaxP
 				{!apiConfiguration?.minimaxApiKey && (
 					<VSCodeButtonLink
 						href={
-							apiConfiguration.minimaxBaseUrl === "https://api.minimaxi.com/v1"
+							apiConfiguration.minimaxBaseUrl === "https://api.minimaxi.com/anthropic"
 								? "https://platform.minimaxi.com/user-center/basic-information/interface-key"
 								: "https://www.minimax.io/platform/user-center/basic-information/interface-key"
 						}
