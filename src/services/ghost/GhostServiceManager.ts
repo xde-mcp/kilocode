@@ -26,7 +26,6 @@ export class GhostServiceManager {
 	private ghostContext: GhostContext
 	private cursorAnimation: GhostGutterAnimation
 
-	private enabled: boolean = true
 	private taskId: string | null = null
 	private isProcessing: boolean = false
 
@@ -164,7 +163,7 @@ export class GhostServiceManager {
 
 	// VsCode Event Handlers
 	private onDidCloseTextDocument(document: vscode.TextDocument): void {
-		if (!this.enabled || document.uri.scheme !== "file") {
+		if (document.uri.scheme !== "file") {
 			return
 		}
 		this.documentStore.removeDocument(document.uri)
@@ -194,7 +193,7 @@ export class GhostServiceManager {
 	}
 
 	private async onDidOpenTextDocument(document: vscode.TextDocument): Promise<void> {
-		if (!this.enabled || document.uri.scheme !== "file") {
+		if (document.uri.scheme !== "file") {
 			return
 		}
 		await this.documentStore.storeDocument({
@@ -203,7 +202,7 @@ export class GhostServiceManager {
 	}
 
 	private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-		if (!this.enabled || event.document.uri.scheme !== "file") {
+		if (event.document.uri.scheme !== "file") {
 			return
 		}
 
@@ -241,14 +240,11 @@ export class GhostServiceManager {
 	}
 
 	private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
-		if (!this.enabled) {
-			return
-		}
 		this.cursorAnimation.update()
 	}
 
 	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-		if (!this.enabled || !editor) {
+		if (!editor) {
 			return
 		}
 		// Update global context when switching editors
@@ -260,9 +256,6 @@ export class GhostServiceManager {
 	}
 
 	public async codeSuggestion() {
-		if (!this.enabled) {
-			return
-		}
 		const editor = vscode.window.activeTextEditor
 		if (!editor) {
 			return
@@ -302,9 +295,6 @@ export class GhostServiceManager {
 	}
 
 	private initializeStatusBar() {
-		if (!this.enabled) {
-			return
-		}
 		this.statusBar = new GhostStatusBar({
 			enabled: false,
 			model: "loading...",
