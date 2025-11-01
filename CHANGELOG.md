@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.114.0
-
-### Minor Changes
+## [v4.114.0]
 
 - [#3435](https://github.com/Kilo-Org/kilocode/pull/3435) [`bd4f19d`](https://github.com/Kilo-Org/kilocode/commit/bd4f19da040462b6477087d76cffe1006ef8d444) Thanks [@markijbema](https://github.com/markijbema)! - Cmd-L now directly inserts instead of showing as ghost text
 
