@@ -187,6 +187,7 @@ const baseProviderSettingsSchema = z.object({
 	fuzzyMatchThreshold: z.number().optional(),
 	modelTemperature: z.number().nullish(),
 	rateLimitSeconds: z.number().optional(),
+	rateLimitAfter: z.boolean().optional(), // kilocode_change
 	consecutiveMistakeLimit: z.number().min(0).optional(),
 
 	// Model reasoning.
@@ -449,7 +450,7 @@ const virtualQuotaFallbackSchema = baseProviderSettingsSchema.extend({
 })
 // kilocode_change end
 
-export const zaiApiLineSchema = z.enum(["international_coding", "international", "china_coding", "china"])
+export const zaiApiLineSchema = z.enum(["international_coding", "china_coding"])
 
 export type ZaiApiLine = z.infer<typeof zaiApiLineSchema>
 

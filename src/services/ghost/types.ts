@@ -35,22 +35,6 @@ export interface GhostDocumentStoreItem {
 	recentActions?: UserAction[]
 }
 
-export type GhostSuggestionEditOperationType = "+" | "-"
-
-export interface GhostSuggestionEditOperation {
-	type: GhostSuggestionEditOperationType
-	line: number
-	oldLine: number
-	newLine: number
-	content: string
-}
-
-export interface GhostSuggestionEditOperationsOffset {
-	added: number
-	removed: number
-	offset: number
-}
-
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
 	editor?: vscode.TextEditor
@@ -169,7 +153,7 @@ export interface AutocompleteOutcome extends TabAutocompleteOptions {
 	completion: string
 	modelProvider: string
 	modelName: string
-	completionOptions: any
+	completionOptions: Record<string, unknown>
 	cacheHit: boolean
 	numLines: number
 	filepath: string
@@ -211,21 +195,6 @@ export function extractPrefixSuffix(
 		prefix: text.substring(0, offset),
 		suffix: text.substring(offset),
 	}
-}
-
-/**
- * Extract prefix (all lines up to cursor) from context
- */
-export function extractPrefix(context: GhostSuggestionContext): string {
-	if (!context.document || !context.range) {
-		return ""
-	}
-
-	const lines: string[] = []
-	for (let i = 0; i <= context.range.start.line; i++) {
-		lines.push(context.document.lineAt(i).text)
-	}
-	return lines.join("\n")
 }
 
 /**
