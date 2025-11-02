@@ -169,6 +169,11 @@ const config: Config = {
 						to: "/basic-usage/adding-credits",
 						from: ["/basic-usage/adding-tokens"],
 					},
+					// Change to plans language
+					{
+						to: "/plans",
+						from: ["/seats"],
+					},
 				],
 			},
 		],
