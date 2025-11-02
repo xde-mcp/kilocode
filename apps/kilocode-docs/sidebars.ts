@@ -98,7 +98,7 @@ const sidebars: SidebarsConfig = {
 		},
 		{
 			type: "category",
-			label: "Kilo for Teams & Enterprise",
+			label: "Kilo Paid Plans",
 			items: [
 				"seats/about",
 				"seats/getting-started",
