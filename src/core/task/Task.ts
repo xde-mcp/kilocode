@@ -119,7 +119,7 @@ import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rule
 import { getMessagesSinceLastSummary, summarizeConversation } from "../condense"
 import { Gpt5Metadata, ClineMessageWithMetadata } from "./types"
 import { MessageQueueService } from "../message-queue/MessageQueueService"
-import { findPartialAskMessage, findPartialSayMessage } from "./message-utils" // kilocode_change
+import { findPartialAskMessage, findPartialSayMessage } from "../kilocode/task/message-utils" // kilocode_change
 
 import { AutoApprovalHandler } from "./AutoApprovalHandler"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
@@ -774,9 +774,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// non-interactive messages (like checkpoint_saved) are inserted during streaming
 			const partialResult = findPartialAskMessage(this.clineMessages, type)
 			const lastMessage = partialResult?.message
-			// kilocode_change end
-
 			const isUpdatingPreviousPartial = lastMessage !== undefined
+			// kilocode_change end
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {
@@ -1166,9 +1165,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// Search for the most recent partial say of this type
 			const partialResult = findPartialSayMessage(this.clineMessages, type)
 			const lastMessage = partialResult?.message
-			// kilocode_change end
-
 			const isUpdatingPreviousPartial = lastMessage !== undefined
+			// kilocode_change end
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {

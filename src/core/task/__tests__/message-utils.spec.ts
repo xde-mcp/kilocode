@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from "vitest"
-import { findPartialAskMessage, findPartialSayMessage } from "../message-utils"
+import { findPartialAskMessage, findPartialSayMessage } from "../../kilocode/task/message-utils"
 import type { ClineMessage } from "@roo-code/types"
 
 describe("findPartialAskMessage", () => {
