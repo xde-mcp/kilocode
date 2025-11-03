@@ -119,6 +119,7 @@ import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rule
 import { getMessagesSinceLastSummary, summarizeConversation } from "../condense"
 import { Gpt5Metadata, ClineMessageWithMetadata } from "./types"
 import { MessageQueueService } from "../message-queue/MessageQueueService"
+import { findPartialAskMessage, findPartialSayMessage } from "./message-utils" // kilocode_change
 
 import { AutoApprovalHandler } from "./AutoApprovalHandler"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
@@ -768,10 +769,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		let askTs: number
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
+			// kilocode_change start: Fix orphaned partial asks by searching backwards
+			// Search for the most recent partial ask of this type, handling cases where
+			// non-interactive messages (like checkpoint_saved) are inserted during streaming
+			const partialResult = findPartialAskMessage(this.clineMessages, type)
+			const lastMessage = partialResult?.message
+			// kilocode_change end
 
-			const isUpdatingPreviousPartial =
-				lastMessage && lastMessage.partial && lastMessage.type === "ask" && lastMessage.ask === type
+			const isUpdatingPreviousPartial = lastMessage !== undefined
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {
@@ -1157,10 +1162,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
+			// kilocode_change start: Fix orphaned partial says by searching backwards
+			// Search for the most recent partial say of this type
+			const partialResult = findPartialSayMessage(this.clineMessages, type)
+			const lastMessage = partialResult?.message
+			// kilocode_change end
 
-			const isUpdatingPreviousPartial =
-				lastMessage && lastMessage.partial && lastMessage.type === "say" && lastMessage.say === type
+			const isUpdatingPreviousPartial = lastMessage !== undefined
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {
@@ -3146,11 +3154,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// stream.
 		yield* iterator
 
-        // kilocode_change start
+		// kilocode_change start
 		if (apiConfiguration?.rateLimitAfter) {
 			Task.lastGlobalApiRequestTime = performance.now()
 		}
-        // kilocode_change end
+		// kilocode_change end
 	}
 
 	// Checkpoints
