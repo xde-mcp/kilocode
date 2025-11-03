@@ -14,7 +14,7 @@ This PR improves the display of MCP tool requests and responses in the CLI, addr
 Created new `SayMcpServerResponseMessage` component for MCP responses and refactored `AskUseMcpServerMessage` to share formatting logic. Both will make use of newly added utility functions for JSON detection, formatting, and metadata display.
 `formatContentWithMetadata()` - Detects JSON, formats it, handles preview logic (>20 lines → show 5)
 `formatJson()` - Pretty-prints JSON with configurable indentation
-`calculateByteSize()` - Chunked processing for large strings (>10KB) to avoid memory spikes
+`approximateByteSize()` - Estimates byte size using `str.length * 3`
 `formatByteSize()`, `buildMetadataString()` - Display helpers
 
 | before                                                                                                                               | after                                                                                                                               |
