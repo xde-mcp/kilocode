@@ -197,9 +197,9 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
-				// kilocode_change end
 				inceptionLabsApiKey: "inception-key",
 				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",
+				// kilocode_change end
 			},
 		})
 	})
@@ -239,12 +239,12 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			apiKey: "gemini-key",
 			baseUrl: "https://gemini.example.com",
 		})
-		// kilocode_change end
 		expect(mockGetModels).toHaveBeenCalledWith({
 			provider: "inception",
 			apiKey: "inception-key",
 			baseUrl: "https://api.inceptionlabs.ai/v1/",
 		})
+		// kilocode_change end
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
 		expect(mockGetModels).toHaveBeenCalledWith({
 			provider: "litellm",
@@ -273,7 +273,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				huggingface: {},
 				"io-intelligence": {},
 				ovhcloud: mockModels, // kilocode_change
-				inception: mockModels,
+				inception: mockModels, // kilocode_change
 			},
 		})
 	})
@@ -374,7 +374,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				huggingface: {},
 				"io-intelligence": {},
 				ovhcloud: mockModels, // kilocode_change
-				inception: mockModels,
+				inception: mockModels, // kilocode_change
 			},
 		})
 	})
@@ -402,7 +402,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway
 			.mockResolvedValueOnce(mockModels) // deepinfra
 			.mockResolvedValueOnce(mockModels) // kilocode_change ovhcloud
-			.mockRejectedValueOnce(new Error("Inception API error"))
+			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
 
 		await webviewMessageHandler(mockClineProvider, {
@@ -424,7 +424,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"kilocode-openrouter": mockModels,
 				ollama: {},
 				ovhcloud: mockModels, // kilocode_change
-				inception: {},
+				inception: {}, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
 				huggingface: {},
@@ -454,13 +454,13 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			error: "Chutes API error",
 			values: { provider: "chutes" },
 		})
-		// kilocode_change end
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Inception API error",
 			values: { provider: "inception" },
 		})
+		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
@@ -484,7 +484,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Vercel AI Gateway error")) // vercel-ai-gateway
 			.mockRejectedValueOnce(new Error("DeepInfra API error")) // deepinfra
 			.mockRejectedValueOnce(new Error("OVHcloud AI Endpoints error")) // ovhcloud // kilocode_change
-			.mockRejectedValueOnce(new Error("Inception API error")) // inception
+			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change inception
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
 
 		await webviewMessageHandler(mockClineProvider, {
@@ -573,13 +573,13 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			error: "OVHcloud AI Endpoints error",
 			values: { provider: "ovhcloud" },
 		})
-		// kilocode_change end
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Inception API error",
 			values: { provider: "inception" },
 		})
+		// kilocode_change end
 	})
 
 	it("prefers config values over message values for LiteLLM", async () => {

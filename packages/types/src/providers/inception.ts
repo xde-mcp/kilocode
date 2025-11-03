@@ -1,3 +1,5 @@
+// kilocode_change - file added
+
 import type { ModelInfo } from "../model.js"
 
 // Default fallback values for Inception when model metadata is not yet loaded.

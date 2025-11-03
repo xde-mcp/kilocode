@@ -65,8 +65,8 @@ describe("Model Validation Functions", () => {
 		ovhcloud: {},
 		chutes: {},
 		gemini: {},
-		// kilocode_change end
 		inception: {},
+		// kilocode_change end
 	}
 
 	const allowAllOrganization: OrganizationAllowList = {

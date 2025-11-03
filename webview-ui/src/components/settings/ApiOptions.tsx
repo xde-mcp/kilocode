@@ -40,7 +40,7 @@ import {
 	vercelAiGatewayDefaultModelId,
 	deepInfraDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId, // kilocode_change
-	inceptionDefaultModelId,
+	inceptionDefaultModelId, // kilocode_change
 	nativeFunctionCallingProviders, // kilocode_change: Added import for native function calling providers
 } from "@roo-code/types"
 
@@ -101,14 +101,14 @@ import {
 	GeminiCli,
 	VirtualQuotaFallbackProvider,
 	Synthetic,
+	OvhCloudAiEndpoints,
+	Inception,
 	// kilocode_change end
 	ZAi,
 	Fireworks,
 	Featherless,
 	VercelAiGateway,
 	DeepInfra,
-	OvhCloudAiEndpoints, // kilocode_change
-	Inception,
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -402,7 +402,7 @@ const ApiOptions = ({
 				synthetic: { field: "apiModelId", default: syntheticDefaultModelId }, // kilocode_change
 				featherless: { field: "apiModelId", default: featherlessDefaultModelId },
 				ovhcloud: { field: "ovhCloudAiEndpointsModelId", default: ovhCloudAiEndpointsDefaultModelId }, // kilocode_change
-				inception: { field: "inceptionLabsModelId", default: inceptionDefaultModelId },
+				inception: { field: "inceptionLabsModelId", default: inceptionDefaultModelId }, // kilocode_change
 				"io-intelligence": { field: "ioIntelligenceModelId", default: ioIntelligenceDefaultModelId },
 				roo: { field: "apiModelId", default: rooDefaultModelId },
 				"vercel-ai-gateway": { field: "vercelAiGatewayModelId", default: vercelAiGatewayDefaultModelId },
@@ -574,6 +574,7 @@ const ApiOptions = ({
 				/>
 			)}
 
+			{/* kilocode_change start */}
 			{selectedProvider === "inception" && (
 				<Inception
 					apiConfiguration={apiConfiguration}
@@ -584,6 +585,7 @@ const ApiOptions = ({
 					modelValidationError={modelValidationError}
 				/>
 			)}
+			{/* kilocode_change end */}
 
 			{selectedProvider === "anthropic" && (
 				<Anthropic apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />

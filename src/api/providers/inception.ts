@@ -1,3 +1,5 @@
+// kilocode_change - file added
+
 import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from ".."
 import { ApiHandlerOptions } from "../../shared/api"
 import { calculateApiCostOpenAI } from "../../shared/cost"

@@ -222,6 +222,8 @@ export const SECRET_STATE_KEYS = [
 	// kilocode_change start
 	"kilocodeToken",
 	"syntheticApiKey",
+	"ovhCloudAiEndpointsApiKey",
+	"inceptionLabsApiKey",
 	// kilocode_change end
 	"codebaseIndexOpenAiCompatibleApiKey",
 	"codebaseIndexGeminiApiKey",
@@ -234,8 +236,6 @@ export const SECRET_STATE_KEYS = [
 	"featherlessApiKey",
 	"ioIntelligenceApiKey",
 	"vercelAiGatewayApiKey",
-	"ovhCloudAiEndpointsApiKey", // kilocode_change
-	"inceptionLabsApiKey",
 ] as const
 
 // Global secrets that are part of GlobalSettings (not ProviderSettings)

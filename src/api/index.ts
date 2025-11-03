@@ -50,9 +50,9 @@ import {
 } from "./providers"
 // kilocode_change start
 import { KilocodeOpenrouterHandler } from "./providers/kilocode-openrouter"
+import { InceptionLabsHandler } from "./providers/inception"
 // kilocode_change end
 import { NativeOllamaHandler } from "./providers/native-ollama"
-import { InceptionLabsHandler } from "./providers/inception"
 
 export interface SingleCompletionHandler {
 	completePrompt(prompt: string): Promise<string>
@@ -192,6 +192,10 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 		// kilocode_change start
 		case "synthetic":
 			return new SyntheticHandler(options)
+		case "inception":
+			return new InceptionLabsHandler(options)
+		case "ovhcloud":
+			return new OVHcloudAIEndpointsHandler(options)
 		// kilocode_change end
 		case "io-intelligence":
 			return new IOIntelligenceHandler(options)
@@ -203,12 +207,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new FeatherlessHandler(options)
 		case "vercel-ai-gateway":
 			return new VercelAiGatewayHandler(options)
-		case "inception":
-			return new InceptionLabsHandler(options)
-		// kilocode_change start
-		case "ovhcloud":
-			return new OVHcloudAIEndpointsHandler(options)
-		// kilocode_change end
 		default:
 			apiProvider satisfies "gemini-cli" | undefined
 			return new AnthropicHandler(options)
