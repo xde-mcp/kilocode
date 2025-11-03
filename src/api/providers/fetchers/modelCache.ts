@@ -27,11 +27,11 @@ import { getIOIntelligenceModels } from "./io-intelligence"
 import { getOvhCloudAiEndpointsModels } from "./ovhcloud"
 import { getChutesModels } from "./chutes"
 import { getGeminiModels } from "./gemini"
+import { getInceptionModels } from "./inception"
 // kilocode_change end
 
 import { getDeepInfraModels } from "./deepinfra"
 import { getHuggingFaceModels } from "./huggingface"
-import { getInceptionModels } from "./inception"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
@@ -133,10 +133,10 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 			case "huggingface":
 				models = await getHuggingFaceModels()
 				break
+			// kilocode_change start
 			case "inception":
 				models = await getInceptionModels()
 				break
-			// kilocode_change start
 			case "ovhcloud":
 				models = await getOvhCloudAiEndpointsModels()
 				break
