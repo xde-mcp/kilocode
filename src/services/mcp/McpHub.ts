@@ -847,7 +847,7 @@ export class McpHub {
 			this.kiloNotificationService.connect(name, connection.client)
 
 			// Initial fetch of tools and resources
-			this.fetchAvailableServerCapabilities(name, source) // kilocode_change: logic moved into method
+			await this.fetchAvailableServerCapabilities(name, source) // kilocode_change: logic moved into method
 		} catch (error) {
 			// Update status with error
 			const connection = this.findConnection(name, source)
@@ -1434,7 +1434,7 @@ export class McpHub {
 						await this.connectToServer(serverName, config, serverSource)
 					} else if (connection.server.status === "connected") {
 						// Only refresh capabilities if connected
-						this.fetchAvailableServerCapabilities(serverName, serverSource) // kilocode_change: logic moved into method
+						await this.fetchAvailableServerCapabilities(serverName, serverSource) // kilocode_change: logic moved into method
 					}
 				} catch (error) {
 					console.error(`Failed to refresh capabilities for ${serverName}:`, error)
