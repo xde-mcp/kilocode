@@ -38,7 +38,7 @@ export const SayMcpServerResponseMessage: React.FC<MessageComponentProps> = ({ m
 
 			// Fall back to plain text format
 			return message.text
-		}, [message.text, message])
+		}, [message])
 
 		// Format content with metadata
 		const formatted = useMemo(
