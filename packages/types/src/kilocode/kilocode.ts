@@ -88,10 +88,6 @@ function getGlobalKilocodeBackendUrl(): string {
 	)
 }
 
-function ensureLeadingSlash(path: string): string {
-	return path.startsWith("/") ? path : `/${path}`
-}
-
 /**
  * Gets the app/web URL for the current environment.
  * In development: http://localhost:3000
@@ -99,15 +95,6 @@ function ensureLeadingSlash(path: string): string {
  */
 export function getAppUrl(path: string = ""): string {
 	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
-}
-
-/**
- * Gets the API base URL for the current environment.
- * In development: http://localhost:3000/api
- * In production: https://kilocode.ai/api
- */
-export function getApiUrl(path: string = ""): string {
-	return getAppUrl(`/api${path ? ensureLeadingSlash(path) : ""}`)
 }
 
 /**
