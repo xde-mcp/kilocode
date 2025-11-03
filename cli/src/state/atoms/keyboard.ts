@@ -487,11 +487,17 @@ function handleAutocompleteKeys(get: any, set: any, key: Key): void {
 				const suggestion = allSuggestions[selectedIndex]
 				const currentText = get(textBufferStringAtom)
 
-				// Get only the missing part to append
-				const completionText = getCompletionText(currentText, suggestion)
-
-				// Insert the completion text
-				set(insertTextAtom, completionText)
+				// For argument suggestions, replace the entire input with formatted suggestion
+				// For command suggestions, append the completion text
+				if ("command" in suggestion) {
+					// CommandSuggestion - append only the missing part
+					const completionText = getCompletionText(currentText, suggestion)
+					set(insertTextAtom, completionText)
+				} else {
+					// ArgumentSuggestion - replace entire input to avoid duplication
+					const newText = formatSuggestion(suggestion, currentText)
+					set(setTextAtom, newText)
+				}
 			}
 			return
 
