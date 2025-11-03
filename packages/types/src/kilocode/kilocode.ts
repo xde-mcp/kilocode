@@ -93,13 +93,6 @@ function ensureLeadingSlash(path: string): string {
 }
 
 /**
- * Internal helper to build URLs for the current environment.
- */
-function buildUrl(path: string = ""): string {
-	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
-}
-
-/**
  * Gets the app/web URL for the current environment.
  * In development: http://localhost:3000
  * In production: https://kilocode.ai
@@ -114,7 +107,7 @@ export function getAppUrl(path: string = ""): string {
  * In production: https://kilocode.ai/api
  */
 export function getApiUrl(path: string = ""): string {
-	return buildUrl(`/api${path ? ensureLeadingSlash(path) : ""}`)
+	return getAppUrl(`/api${path ? ensureLeadingSlash(path) : ""}`)
 }
 
 /**
