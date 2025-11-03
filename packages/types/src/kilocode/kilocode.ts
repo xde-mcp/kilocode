@@ -88,10 +88,6 @@ function getGlobalKilocodeBackendUrl(): string {
 	)
 }
 
-function removeTrailingSlash(url: string, pathname: string): string {
-	return url.endsWith("/") && (pathname === "/" || pathname === "") ? url.slice(0, -1) : url
-}
-
 function ensureLeadingSlash(path: string): string {
 	return path.startsWith("/") ? path : `/${path}`
 }
@@ -100,22 +96,7 @@ function ensureLeadingSlash(path: string): string {
  * Internal helper to build URLs for the current environment.
  */
 function buildUrl(path: string = ""): string {
-	try {
-		const backend = new URL(getGlobalKilocodeBackendUrl())
-		const result = new URL(backend)
-
-		// Separate pathname and search parameters
-		const [pathname, search] = path.split("?")
-		result.pathname = pathname ? ensureLeadingSlash(pathname) : ""
-		if (search) {
-			result.search = `?${search}`
-		}
-
-		return removeTrailingSlash(result.toString(), result.pathname)
-	} catch (error) {
-		console.warn("Failed to build URL:", path, error)
-		return `https://kilocode.ai${path ? ensureLeadingSlash(path) : ""}`
-	}
+	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
 }
 
 /**
