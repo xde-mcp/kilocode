@@ -354,9 +354,61 @@ describe("keypress atoms", () => {
 			}
 			store.set(keyboardHandlerAtom, tabKey)
 
-			// Should append only 'de' to complete '/mode'
+			// Should complete to '/mode'
 			const text = store.get(textBufferStringAtom)
 			expect(text).toBe("/mode")
+		})
+
+		it("should complete command even when user types wrong letters", () => {
+			// Type '/modl' - typo, but 'model' should still be suggested
+			const chars = ["/", "m", "o", "d", "l"]
+			for (const char of chars) {
+				const key: Key = {
+					name: char,
+					sequence: char,
+					ctrl: false,
+					meta: false,
+					shift: false,
+					paste: false,
+				}
+				store.set(keyboardHandlerAtom, key)
+			}
+
+			// Autocomplete should now be visible
+			expect(store.get(showAutocompleteAtom)).toBe(true)
+
+			// Set up autocomplete suggestions
+			const mockCommand: Command = {
+				name: "model",
+				description: "Manage models",
+				aliases: [],
+				usage: "/model <subcommand>",
+				examples: ["/model info"],
+				category: "settings",
+				handler: vi.fn(),
+			}
+			const mockSuggestion: CommandSuggestion = {
+				command: mockCommand,
+				matchScore: 70,
+				highlightedName: "model",
+			}
+			store.set(suggestionsAtom, [mockSuggestion])
+			store.set(selectedIndexAtom, 0)
+
+			// Press Tab
+			const tabKey: Key = {
+				name: "tab",
+				sequence: "\t",
+				ctrl: false,
+				meta: false,
+				shift: false,
+				paste: false,
+			}
+			store.set(keyboardHandlerAtom, tabKey)
+
+			// Should replace '/modl' with '/model' (not '/modlmodel')
+			const text = store.get(textBufferStringAtom)
+			expect(text).toBe("/model")
 		})
 
 		it("should complete argument by replacing partial text", () => {
