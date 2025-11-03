@@ -105,7 +105,7 @@ function buildUrl(path: string = ""): string {
  * In production: https://kilocode.ai
  */
 export function getAppUrl(path: string = ""): string {
-	return buildUrl(path)
+	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
 }
 
 /**
