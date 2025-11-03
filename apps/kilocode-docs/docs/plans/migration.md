@@ -358,8 +358,8 @@ Switch to **Kilo Teams** or **Kilo Enterprise** from other AI coding tools and e
 
 ## Next Steps
 
-- [Get started with your team](/seats/getting-started)
-- [Explore team management features](/seats/team-management)
-- [Understand billing and pricing](/seats/billing)
+- [Get started with your team](/plans/getting-started)
+- [Explore team management features](/plans/team-management)
+- [Understand billing and pricing](/plans/billing)
 
 Ready to make the switch? Contact our migration team at migrations@kilocode.ai to plan your transition to transparent AI coding.
