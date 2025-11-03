@@ -2,4 +2,4 @@
 "kilo-code": minor
 ---
 
-Added support for Inception as a provider
+Thanks @pranjaldatta! Added support for Inception as a provider
