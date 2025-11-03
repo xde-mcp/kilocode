@@ -1,3 +1,4 @@
+import { z } from "zod"
 import type { ExtensionChatMessage } from "../../../types/messages.js"
 import type { ToolData, McpServerData, FollowUpData, ApiReqInfo, ImageData } from "./types.js"
 
@@ -21,39 +22,32 @@ export function parseToolData(message: ExtensionChatMessage): ToolData | null {
 }
 
 /**
- * Type guard to check if an object is valid McpServerData
+ * Zod schema for MCP server data validation
  */
-export function isMcpServerData(obj: any): obj is McpServerData {
-	if (!obj || typeof obj !== "object") return false
+const McpServerDataSchema = z.object({
+	type: z.enum(["use_mcp_tool", "access_mcp_resource"]),
+	serverName: z.string(),
+	toolName: z.string().optional(),
+	arguments: z.string().optional(),
+	uri: z.string().optional(),
+	response: z.any().optional(),
+})
 
-	// Check required fields
-	if (!obj.type || typeof obj.serverName !== "string") return false
-
-	// Validate type field
-	if (obj.type !== "use_mcp_tool" && obj.type !== "access_mcp_resource") return false
-
-	// Type-specific validation
-	if (obj.type === "use_mcp_tool") {
-		// Tool use should have toolName
-		if (obj.toolName !== undefined && typeof obj.toolName !== "string") return false
-	} else if (obj.type === "access_mcp_resource") {
-		// Resource access should have uri
-		if (obj.uri !== undefined && typeof obj.uri !== "string") return false
-	}
-
-	// Validate optional fields if present
-	if (obj.arguments !== undefined && typeof obj.arguments !== "string") return false
-
-	return true
+/**
+ * Type guard to check if an object is valid McpServerData
+ * Uses Zod for validation
+ */
+export function isMcpServerData(obj: unknown): obj is McpServerData {
+	return McpServerDataSchema.safeParse(obj).success
 }
 
 /**
- * Parse MCP server data from message with validation
+ * Parse MCP server data from message with Zod validation
  */
 export function parseMcpServerData(message: ExtensionChatMessage): McpServerData | null {
-	const parsed = parseMessageJson<McpServerData>(message.text)
-	if (!parsed || !isMcpServerData(parsed)) return null
-	return parsed
+	const parsed = parseMessageJson(message.text)
+	const result = McpServerDataSchema.safeParse(parsed)
+	return result.success ? (result.data as McpServerData) : null
 }
 
 /**
@@ -253,31 +247,14 @@ export function formatJson(jsonString: string, indent: number = 2): string | nul
 }
 
 /**
- * Calculate byte size of string without creating full byte array for large strings
- * Uses chunked approach for strings over 10KB to avoid memory spike
+ * Approximate byte size of string for display purposes
+ * Uses 3x multiplier as conservative estimate (handles ASCII, UTF-8, emoji)
  *
  * @param str - The string to measure
- * @returns The byte size in UTF-8 encoding
+ * @returns Approximate byte size
  */
-function calculateByteSize(str: string): number {
-	const CHUNK_THRESHOLD = 10000
-	const CHUNK_SIZE = 10000
-
-	// For small strings, use TextEncoder directly (faster)
-	if (str.length < CHUNK_THRESHOLD) {
-		return new TextEncoder().encode(str).length
-	}
-
-	// For large strings, chunk it to avoid memory spike
-	const encoder = new TextEncoder()
-	let totalBytes = 0
-
-	for (let i = 0; i < str.length; i += CHUNK_SIZE) {
-		const chunk = str.slice(i, Math.min(i + CHUNK_SIZE, str.length))
-		totalBytes += encoder.encode(chunk).length
-	}
-
-	return totalBytes
+function approximateByteSize(str: string): number {
+	return str.length * 3
 }
 
 /**
@@ -323,7 +300,7 @@ export function formatContentWithMetadata(
 	const lines = content.split("\n")
 	const lineCount = lines.length
 	const charCount = content.length
-	const byteSize = calculateByteSize(content)
+	const byteSize = approximateByteSize(content)
 
 	// Determine if preview is needed
 	const isPreview = lineCount > maxLines
@@ -348,11 +325,12 @@ export function formatContentWithMetadata(
 
 /**
  * Format byte size for display
+ * Adds ~ prefix for approximations (KB/MB)
  */
 export function formatByteSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+	if (bytes < 1024 * 1024) return `~${(bytes / 1024).toFixed(1)} KB`
+	return `~${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 /**

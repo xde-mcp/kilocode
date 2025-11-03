@@ -118,22 +118,22 @@ describe("formatByteSize", () => {
 		expect(formatByteSize(1023)).toBe("1023 B")
 	})
 
-	it("should format kilobytes", () => {
-		expect(formatByteSize(1024)).toBe("1.0 KB")
-		expect(formatByteSize(2048)).toBe("2.0 KB")
-		expect(formatByteSize(1536)).toBe("1.5 KB")
+	it("should format kilobytes with ~ prefix", () => {
+		expect(formatByteSize(1024)).toBe("~1.0 KB")
+		expect(formatByteSize(2048)).toBe("~2.0 KB")
+		expect(formatByteSize(1536)).toBe("~1.5 KB")
 	})
 
-	it("should format megabytes", () => {
-		expect(formatByteSize(1024 * 1024)).toBe("1.0 MB")
-		expect(formatByteSize(2.5 * 1024 * 1024)).toBe("2.5 MB")
-		expect(formatByteSize(10 * 1024 * 1024)).toBe("10.0 MB")
+	it("should format megabytes with ~ prefix", () => {
+		expect(formatByteSize(1024 * 1024)).toBe("~1.0 MB")
+		expect(formatByteSize(2.5 * 1024 * 1024)).toBe("~2.5 MB")
+		expect(formatByteSize(10 * 1024 * 1024)).toBe("~10.0 MB")
 	})
 
 	it("should round to one decimal place", () => {
-		expect(formatByteSize(1536)).toBe("1.5 KB")
-		expect(formatByteSize(1587)).toBe("1.5 KB") // Should round down
-		expect(formatByteSize(1638)).toBe("1.6 KB") // Should round up
+		expect(formatByteSize(1536)).toBe("~1.5 KB")
+		expect(formatByteSize(1587)).toBe("~1.5 KB") // Should round down
+		expect(formatByteSize(1638)).toBe("~1.6 KB") // Should round up
 	})
 })
 
@@ -225,7 +225,7 @@ describe("buildMetadataString", () => {
 		}
 
 		const result = buildMetadataString(metadata)
-		expect(result).toBe("JSON, 26 lines, 11.2 KB")
+		expect(result).toBe("JSON, 26 lines, ~11.2 KB")
 	})
 })
 
