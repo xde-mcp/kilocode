@@ -1,10 +1,53 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Text } from "ink"
 import { parse, setOptions } from "marked"
 import TerminalRenderer, { type TerminalRendererOptions } from "marked-terminal"
 
 export type MarkdownTextProps = TerminalRendererOptions & {
 	children: string
+}
+
+/**
+ * Calculate adaptive animation speed based on chunk timing and remaining unrendered text
+ * Returns both interval duration and characters per update to match streaming speed
+ *
+ * @param timeSinceLastChunk - Milliseconds since last chunk arrived
+ * @param remainingChars - Number of characters still to be rendered (not just new chunk)
+ * @returns Object with intervalMs (update frequency) and charsPerUpdate (chars per interval)
+ */
+const calculateAdaptiveSpeed = (
+	timeSinceLastChunk: number,
+	remainingChars: number,
+): { intervalMs: number; charsPerUpdate: number } => {
+	// Calculate how much time we have per character based on remaining work
+	const timePerChar = timeSinceLastChunk / Math.max(remainingChars, 1)
+
+	// Use 98% of available time to aggressively match streaming speed
+	const targetTimePerChar = timePerChar * 0.98
+
+	// Keep update intervals smooth but allow faster updates
+	let intervalMs: number
+	let charsPerUpdate: number
+
+	if (targetTimePerChar < 8) {
+		// Very fast streaming: show many chars per update
+		intervalMs = 8
+		charsPerUpdate = Math.max(1, Math.ceil(intervalMs / targetTimePerChar))
+	} else if (targetTimePerChar < 15) {
+		// Fast streaming: show 2-3 chars per update
+		intervalMs = 10
+		charsPerUpdate = Math.max(2, Math.ceil(intervalMs / targetTimePerChar))
+	} else if (targetTimePerChar > 30) {
+		// Slow streaming: one char per slower update
+		intervalMs = Math.min(targetTimePerChar, 40)
+		charsPerUpdate = 1
+	} else {
+		// Normal streaming: one char per update at natural pace
+		intervalMs = targetTimePerChar
+		charsPerUpdate = 1
+	}
+
+	return { intervalMs, charsPerUpdate }
 }
 
 /**
@@ -86,6 +129,32 @@ export const MarkdownText: React.FC<MarkdownTextProps> = ({ children, ...options
 		}
 	}, [])
 
+	/**
+	 * Start animation at the specified interval, showing N characters per update
+	 */
+	const startAnimation = useCallback((intervalMs: number) => {
+		if (animationTimerRef.current) {
+			clearInterval(animationTimerRef.current)
+		}
+
+		animationTimerRef.current = setInterval(() => {
+			if (currentIndexRef.current < targetTextRef.current.length) {
+				// Show N characters per update based on streaming speed
+				currentIndexRef.current = Math.min(
+					currentIndexRef.current + charsPerUpdateRef.current,
+					targetTextRef.current.length,
+				)
+				setDisplayedText(targetTextRef.current.slice(0, currentIndexRef.current))
+			} else {
+				// Animation complete - clear the timer
+				if (animationTimerRef.current) {
+					clearInterval(animationTimerRef.current)
+					animationTimerRef.current = null
+				}
+			}
+		}, intervalMs)
+	}, [])
+
 	// Handle new content arrival
 	useEffect(() => {
 		// If the text is empty or just whitespace, reset state
@@ -156,76 +225,7 @@ export const MarkdownText: React.FC<MarkdownTextProps> = ({ children, ...options
 		}
 
 		previousContentRef.current = children
-	}, [children])
-
-	/**
-	 * Calculate adaptive animation speed based on chunk timing and remaining unrendered text
-	 * Returns both interval duration and characters per update to match streaming speed
-	 *
-	 * @param timeSinceLastChunk - Milliseconds since last chunk arrived
-	 * @param remainingChars - Number of characters still to be rendered (not just new chunk)
-	 * @returns Object with intervalMs (update frequency) and charsPerUpdate (chars per interval)
-	 */
-	const calculateAdaptiveSpeed = (
-		timeSinceLastChunk: number,
-		remainingChars: number,
-	): { intervalMs: number; charsPerUpdate: number } => {
-		// Calculate how much time we have per character based on remaining work
-		const timePerChar = timeSinceLastChunk / Math.max(remainingChars, 1)
-
-		// Use 98% of available time to aggressively match streaming speed
-		const targetTimePerChar = timePerChar * 0.98
-
-		// Keep update intervals smooth but allow faster updates
-		let intervalMs: number
-		let charsPerUpdate: number
-
-		if (targetTimePerChar < 8) {
-			// Very fast streaming: show many chars per update
-			intervalMs = 8
-			charsPerUpdate = Math.max(1, Math.ceil(intervalMs / targetTimePerChar))
-		} else if (targetTimePerChar < 15) {
-			// Fast streaming: show 2-3 chars per update
-			intervalMs = 10
-			charsPerUpdate = Math.max(2, Math.ceil(intervalMs / targetTimePerChar))
-		} else if (targetTimePerChar > 30) {
-			// Slow streaming: one char per slower update
-			intervalMs = Math.min(targetTimePerChar, 40)
-			charsPerUpdate = 1
-		} else {
-			// Normal streaming: one char per update at natural pace
-			intervalMs = targetTimePerChar
-			charsPerUpdate = 1
-		}
-
-		return { intervalMs, charsPerUpdate }
-	}
-
-	/**
-	 * Start animation at the specified interval, showing N characters per update
-	 */
-	const startAnimation = (intervalMs: number) => {
-		if (animationTimerRef.current) {
-			clearInterval(animationTimerRef.current)
-		}
-
-		animationTimerRef.current = setInterval(() => {
-			if (currentIndexRef.current < targetTextRef.current.length) {
-				// Show N characters per update based on streaming speed
-				currentIndexRef.current = Math.min(
-					currentIndexRef.current + charsPerUpdateRef.current,
-					targetTextRef.current.length,
-				)
-				setDisplayedText(targetTextRef.current.slice(0, currentIndexRef.current))
-			} else {
-				// Animation complete - clear the timer
-				if (animationTimerRef.current) {
-					clearInterval(animationTimerRef.current)
-					animationTimerRef.current = null
-				}
-			}
-		}, intervalMs)
-	}
+	}, [children, startAnimation])
 
 	// Determine what text to actually display
 	// On initial render before effect runs, use children directly
