@@ -814,6 +814,7 @@ export const webviewMessageHandler = async (
 				ollama: {},
 				lmstudio: {},
 				ovhcloud: {}, // kilocode_change
+				inception: {}, // kilocode_change
 			}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -838,7 +839,6 @@ export const webviewMessageHandler = async (
 					key: "openrouter",
 					options: { provider: "openrouter", apiKey: openRouterApiKey, baseUrl: openRouterBaseUrl },
 				},
-				// kilocode_change start
 				{
 					key: "gemini",
 					options: {
@@ -847,7 +847,6 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.googleGeminiBaseUrl,
 					},
 				},
-				// kilocode_change end
 				{
 					key: "requesty",
 					options: {
@@ -877,7 +876,6 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.deepInfraBaseUrl,
 					},
 				},
-				// kilocode_change start
 				{
 					key: "ovhcloud",
 					options: {
@@ -886,7 +884,14 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.ovhCloudAiEndpointsBaseUrl,
 					},
 				},
-				// kilocode_change end
+				{
+					key: "inception",
+					options: {
+						provider: "inception",
+						apiKey: apiConfiguration.inceptionLabsApiKey,
+						baseUrl: apiConfiguration.inceptionLabsBaseUrl,
+					},
+				},
 			]
 			// kilocode_change end
 
