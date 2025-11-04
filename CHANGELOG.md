@@ -2,7 +2,7 @@
 
 ## [3.30.0] - 2025-11-03
 
-- ![3.30.0 Release - PR Fixer](/releases/3.30.0-release.png)
+![3.30.0 Release - PR Fixer](/releases/3.30.0-release.png)
 
 - Feat: Add OpenRouter embedding provider support (#8972 by @dmarkey, PR by @dmarkey)
 - Feat: Add GLM-4.6 model to Fireworks provider (#8752 by @mmealman, PR by @app/roomote)
