@@ -561,10 +561,12 @@ function handleAutocompleteKeys(get: any, set: any, key: Key): void {
 			break
 
 		case "escape":
-			// For file mentions, just clear the suggestion, not the entire buffer
+			// For file mentions, clear suggestions and add a space, but keep the buffer
 			if (fileMentionSuggestions.length > 0) {
-				// Don't clear the buffer, just continue with text input
-				handleTextInputKeys(get, set, key)
+				// Clear file mention suggestions
+				set(fileMentionSuggestionsAtom, [])
+				// Add a space to the buffer
+				set(insertCharAtom, " ")
 				return
 			}
 			set(clearTextBufferAtom)
