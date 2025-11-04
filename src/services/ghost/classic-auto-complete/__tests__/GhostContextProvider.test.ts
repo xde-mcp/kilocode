@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GhostContextProvider, formatContextForPrompt, ContextSnippets } from "../GhostContextProvider"
+import { GhostContextProvider } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import * as vscode from "vscode"
@@ -36,7 +36,7 @@ vi.mock("../../../continuedev/core/autocomplete/context/ContextRetrievalService"
 
 vi.mock("../../../continuedev/core/vscode-test-harness/src/VSCodeIde", () => ({
 	VsCodeIde: vi.fn().mockImplementation(() => ({
-		getWorkspaceDirs: vi.fn().mockResolvedValue([]),
+		getWorkspaceDirs: vi.fn().mockResolvedValue(["/workspace"]),
 		readFile: vi.fn().mockResolvedValue("const example = 'test';"),
 		getClipboardContent: vi.fn().mockResolvedValue({ text: "", copiedAt: new Date().toISOString() }),
 		getUniqueId: vi.fn().mockResolvedValue("test-machine-id"),
@@ -54,11 +54,12 @@ vi.mock("../../../continuedev/core/autocomplete/util/HelperVars", () => ({
 			fullSuffix: "",
 			prunedPrefix: "",
 			prunedSuffix: "",
-			lang: { name: "typescript", topLevelKeywords: [] },
+			prunedCaretWindow: "",
+			lang: { name: "typescript", topLevelKeywords: [], singleLineComment: "//" },
 			treePath: undefined,
-			workspaceUris: [],
+			workspaceUris: ["/workspace"],
 			options: {},
-			modelName: "gpt-4",
+			modelName: "codestral",
 			input: {},
 		}),
 	},
@@ -95,7 +96,18 @@ vi.mock("../../../continuedev/core/autocomplete/templating/filtering", () => ({
 			...payload.clipboardSnippets,
 			...payload.staticSnippet,
 			...payload.recentlyVisitedRangesSnippets,
+			...payload.recentlyEditedRangeSnippets,
 		]
+	}),
+}))
+
+// Mock formatSnippets (continuedev's comment-based formatting)
+vi.mock("../../../continuedev/core/autocomplete/templating/formatting", () => ({
+	formatSnippets: vi.fn().mockImplementation((helper, snippets, _workspaceDirs) => {
+		// Simulate comment-wrapped format
+		if (snippets.length === 0) return ""
+		const commentMark = helper.lang.singleLineComment
+		return snippets.map((s: any) => `${commentMark} Path: ${s.filepath}\n${commentMark} ${s.content}`).join("\n")
 	}),
 }))
 
@@ -126,29 +138,15 @@ describe("GhostContextProvider", () => {
 		contextProvider = new GhostContextProvider(mockContext)
 	})
 
-	describe("getContextSnippets", () => {
-		it("should return empty snippets when getAllSnippetsWithoutRace returns empty", async () => {
+	describe("getFormattedContext", () => {
+		it("should return empty string when no snippets available", async () => {
 			const input = createAutocompleteInput("/test.ts")
-			const snippets = await contextProvider.getContextSnippets(input, "/test.ts")
+			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			expect(snippets).toBeDefined()
-			expect(snippets.recentlyOpenedFiles).toEqual([])
-			expect(snippets.importDefinitions).toEqual([])
-			expect(snippets.rootPath).toEqual([])
+			expect(formatted).toBe("")
 		})
 
-		it("should call getAllSnippetsWithoutRace with correct parameters", async () => {
-			const { getAllSnippetsWithoutRace } = await import(
-				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
-			)
-			const input = createAutocompleteInput("/test.ts")
-
-			await contextProvider.getContextSnippets(input, "/test.ts")
-
-			expect(getAllSnippetsWithoutRace).toHaveBeenCalled()
-		})
-
-		it("should return snippets from getAllSnippetsWithoutRace", async () => {
+		it("should return comment-wrapped context when snippets available", async () => {
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
 			)
@@ -160,25 +158,10 @@ describe("GhostContextProvider", () => {
 						filepath: "/recent.ts",
 						content: "const recent = 1;",
 						type: AutocompleteSnippetType.Code,
-						range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
 					},
 				],
-				importDefinitionSnippets: [
-					{
-						filepath: "/import.ts",
-						content: "export const imported = 2;",
-						type: AutocompleteSnippetType.Code,
-						range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-					},
-				],
-				rootPathSnippets: [
-					{
-						filepath: "/root.ts",
-						content: "const root = 3;",
-						type: AutocompleteSnippetType.Code,
-						range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-					},
-				],
+				importDefinitionSnippets: [],
+				rootPathSnippets: [],
 				recentlyEditedRangeSnippets: [],
 				recentlyVisitedRangesSnippets: [],
 				diffSnippets: [],
@@ -188,17 +171,28 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const snippets = await contextProvider.getContextSnippets(input, "/test.ts")
+			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			expect(snippets.recentlyOpenedFiles).toHaveLength(1)
-			expect(snippets.recentlyOpenedFiles[0].filepath).toBe("/recent.ts")
-			expect(snippets.importDefinitions).toHaveLength(1)
-			expect(snippets.importDefinitions[0].filepath).toBe("/import.ts")
-			expect(snippets.rootPath).toHaveLength(1)
-			expect(snippets.rootPath[0].filepath).toBe("/root.ts")
+			// Should contain comment-wrapped context
+			expect(formatted).toContain("//")
+			expect(formatted).toContain("/recent.ts")
 		})
 
-		it("should handle errors gracefully and return empty snippets", async () => {
+		it("should call getAllSnippetsWithoutRace and formatSnippets", async () => {
+			const { getAllSnippetsWithoutRace } = await import(
+				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
+			)
+			const { formatSnippets } = await import("../../../continuedev/core/autocomplete/templating/formatting")
+
+			const input = createAutocompleteInput("/test.ts")
+			await contextProvider.getFormattedContext(input, "/test.ts")
+
+			// Verify integration with continuedev services
+			expect(getAllSnippetsWithoutRace).toHaveBeenCalled()
+			expect(formatSnippets).toHaveBeenCalled()
+		})
+
+		it("should handle errors gracefully and return empty string", async () => {
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
 			)
@@ -207,13 +201,10 @@ describe("GhostContextProvider", () => {
 			;(getAllSnippetsWithoutRace as any).mockRejectedValueOnce(new Error("Test error"))
 
 			const input = createAutocompleteInput("/test.ts")
-			const snippets = await contextProvider.getContextSnippets(input, "/test.ts")
+			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			// Should return empty snippets instead of throwing
-			expect(snippets).toBeDefined()
-			expect(snippets.recentlyOpenedFiles).toEqual([])
-			expect(snippets.importDefinitions).toEqual([])
-			expect(snippets.rootPath).toEqual([])
+			// Should return empty string instead of throwing
+			expect(formatted).toBe("")
 		})
 
 		it("should convert recentlyVisitedRanges to include type property", async () => {
@@ -231,7 +222,7 @@ describe("GhostContextProvider", () => {
 				},
 			]
 
-			await contextProvider.getContextSnippets(input, "/test.ts")
+			await contextProvider.getFormattedContext(input, "/test.ts")
 
 			// Verify HelperVars.create was called with input that has type property
 			expect(HelperVars.create).toHaveBeenCalled()
@@ -246,285 +237,15 @@ describe("GhostContextProvider", () => {
 				expect(callArgs.recentlyVisitedRanges[0].type).toBe(AutocompleteSnippetType.Code)
 			}
 		})
-	})
-})
 
-// Pure function tests - no mocks needed!
-describe("formatContextForPrompt", () => {
-	it("should return empty string for empty snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
+		it("should use token-based filtering via getSnippets", async () => {
+			const { getSnippets } = await import("../../../continuedev/core/autocomplete/templating/filtering")
 
-		const formatted = formatContextForPrompt(snippets)
-		expect(formatted).toBe("")
-	})
+			const input = createAutocompleteInput("/test.ts")
+			await contextProvider.getFormattedContext(input, "/test.ts")
 
-	it("should format recently opened files", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [
-				{
-					filepath: "/test1.ts",
-					content: "const x = 1;\nconst y = 2;",
-				},
-			],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<RECENTLY_OPENED_FILES>
-File 1: /test1.ts
-const x = 1;
-const y = 2;
-
-</RECENTLY_OPENED_FILES>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format import definitions", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [
-				{
-					filepath: "/utils.ts",
-					content: "export function sum(a: number, b: number) { return a + b; }",
-				},
-			],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<IMPORTED_SYMBOLS>
-1. From /utils.ts:
-export function sum(a: number, b: number) { return a + b; }
-
-</IMPORTED_SYMBOLS>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format root path context", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [
-				{
-					filepath: "/similar.ts",
-					content: "interface User { name: string; }",
-				},
-			],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<SIMILAR_FILES>
-1. /similar.ts:
-interface User { name: string; }
-
-</SIMILAR_FILES>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format all provided snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [
-				{ filepath: "/test0.ts", content: "const x0 = 0;" },
-				{ filepath: "/test1.ts", content: "const x1 = 1;" },
-				{ filepath: "/test2.ts", content: "const x2 = 2;" },
-			],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<RECENTLY_OPENED_FILES>
-File 1: /test0.ts
-const x0 = 0;
-
-File 2: /test1.ts
-const x1 = 1;
-
-File 3: /test2.ts
-const x2 = 2;
-
-</RECENTLY_OPENED_FILES>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should show preview of large file contents", () => {
-		const largeContent = Array(50)
-			.fill(null)
-			.map((_, i) => `line ${i}`)
-			.join("\n")
-
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [
-				{
-					filepath: "/large.ts",
-					content: largeContent,
-				},
-			],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<RECENTLY_OPENED_FILES>
-File 1: /large.ts
-line 0
-line 1
-line 2
-line 3
-line 4
-line 5
-line 6
-line 7
-line 8
-line 9
-...
-
-</RECENTLY_OPENED_FILES>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format clipboard snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [
-				{
-					filepath: "clipboard",
-					content: "copied text",
-				},
-			],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<CLIPBOARD>
-1. copied text
-
-</CLIPBOARD>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format static context snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [
-				{
-					filepath: "structure",
-					content: "class User { constructor() {} }",
-				},
-			],
-			recentlyVisited: [],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<CODE_STRUCTURE>
-1. class User { constructor() {} }
-
-</CODE_STRUCTURE>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format recently visited snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [
-				{
-					filepath: "/visited.ts",
-					content: "const visited = true;",
-				},
-			],
-			recentlyEdited: [],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<RECENTLY_VISITED>
-1. /visited.ts:
-const visited = true;
-
-</RECENTLY_VISITED>
-
-`
-		expect(formatted).toBe(expected)
-	})
-
-	it("should format recently edited snippets", () => {
-		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: [],
-			importDefinitions: [],
-			rootPath: [],
-			clipboard: [],
-			static: [],
-			recentlyVisited: [],
-			recentlyEdited: [
-				{
-					filepath: "/edited.ts",
-					content: "const edited = true;",
-				},
-			],
-		}
-
-		const formatted = formatContextForPrompt(snippets)
-		const expected = `<RECENTLY_EDITED>
-1. /edited.ts:
-const edited = true;
-
-</RECENTLY_EDITED>
-
-`
-		expect(formatted).toBe(expected)
+			// Verify token-based filtering is used
+			expect(getSnippets).toHaveBeenCalled()
+		})
 	})
 })

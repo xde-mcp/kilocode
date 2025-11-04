@@ -1,7 +1,7 @@
 import { AutocompleteInput } from "../types"
 import { CURSOR_MARKER } from "./ghostConstants"
 import type { TextDocument, Range } from "vscode"
-import { GhostContextProvider, formatContextForPrompt } from "./GhostContextProvider"
+import { GhostContextProvider } from "./GhostContextProvider"
 
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
@@ -145,19 +145,18 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	): Promise<string> {
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
 
-		// Add context from context provider if available
+		// Add context from context provider if available (comment-wrapped format)
 		if (this.contextProvider && autocompleteInput.filepath) {
 			try {
-				const contextSnippets = await this.contextProvider.getContextSnippets(
+				const formattedContext = await this.contextProvider.getFormattedContext(
 					autocompleteInput,
 					autocompleteInput.filepath,
 				)
-				const contextString = formatContextForPrompt(contextSnippets)
-				if (contextString.trim()) {
-					prompt += contextString
+				if (formattedContext.trim()) {
+					prompt += formattedContext + "\n\n"
 				}
 			} catch (error) {
-				console.warn("Failed to get context snippets:", error)
+				console.warn("Failed to get formatted context:", error)
 			}
 		}
 
