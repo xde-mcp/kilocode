@@ -8,6 +8,7 @@ import {
 } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
+import { ContextProxy } from "../../core/config/ContextProxy"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
 import { ILLM, LLMOptions } from "../continuedev/core/index.js"
@@ -129,8 +130,17 @@ export class AutocompleteModel {
 				env: {
 					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
 					kilocodeOrganizationId: config.organizationId,
-					// Provide live token so KiloCode can refresh from latest settings on each call
-					kilocodeTokenProvider: () => this.profile?.kilocodeToken ?? "",
+					// Provide live token via ContextProxy when available; fall back to this.profile
+					kilocodeTokenProvider: () => {
+						try {
+							// ContextProxy.instance throws if not initialized
+							// Read from in-memory cache (no async) for hot path safety
+							const live = ContextProxy.instance?.getValue?.("kilocodeToken")
+							return typeof live === "string" && live ? live : (this.profile?.kilocodeToken ?? "")
+						} catch {
+							return this.profile?.kilocodeToken ?? ""
+						}
+					},
 				},
 			}
 
