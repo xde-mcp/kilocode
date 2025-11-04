@@ -1,5 +1,15 @@
 # Roo Code Changelog
 
+## 3.30.0
+
+### Minor Changes
+
+- ![3.30.0 Release - PR Fixer](/releases/3.30.0-release.png)
+
+### Patch Changes
+
+- v3.29.6
+
 ## [3.29.5] - 2025-11-01
 
 - Fix: Resolve Qdrant codebase_search error by adding keyword index for type field (#8963 by @rossdonald, PR by @app/roomote)
