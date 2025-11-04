@@ -14,12 +14,14 @@ import {
 	X_KILOCODE_TESTER,
 } from "../../shared/kilocode/headers"
 import { DEFAULT_HEADERS } from "./constants"
+import { IFimProvider } from "./kilocode/IFimProvider"
 
 /**
  * A custom OpenRouter handler that overrides the getModel function
  * to provide custom model information and fetches models from the KiloCode OpenRouter endpoint.
+ * Implements IFimProvider for FIM (Fill-In-the-Middle) completion support.
  */
-export class KilocodeOpenrouterHandler extends OpenRouterHandler {
+export class KilocodeOpenrouterHandler extends OpenRouterHandler implements IFimProvider {
 	protected override models: ModelRecord = {}
 	defaultModel: string = openRouterDefaultModelId
 	private apiFIMBase: string

@@ -346,6 +346,7 @@ export interface LLMOptions {
 	capabilities?: ModelCapability
 	env?: Record<string, string | number | boolean>
 	promptTemplates?: Partial<Record<keyof PromptTemplates, PromptTemplate>>
+	fimProvider?: IFimProvider // to call a kilocode provider definition
 }
 
 type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &

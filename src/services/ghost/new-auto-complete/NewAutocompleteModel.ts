@@ -218,7 +218,11 @@ export class NewAutocompleteModel {
 
 			case "kilocode":
 				// Use dedicated KiloCode class with custom headers and routing
-				return new KiloCode(options)
+				// Pass the existing apiHandler as fimProvider if available
+				return new KiloCode({
+					...options,
+					fimProvider: this.apiHandler || undefined,
+				})
 
 			case "openrouter":
 				// Use standard OpenRouter
