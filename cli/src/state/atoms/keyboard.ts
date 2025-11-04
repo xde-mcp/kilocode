@@ -311,6 +311,31 @@ export const submitInputAtom = atom(null, (get, set, text: string | Buffer) => {
 // ============================================================================
 
 /**
+ * Calculate row and column position from an absolute character position in text
+ * @param text - The text to calculate position in
+ * @param absolutePosition - The absolute character position (0-indexed)
+ * @returns Object with row and column (both 0-indexed)
+ */
+function calculateRowColumnFromPosition(text: string, absolutePosition: number): { row: number; column: number } {
+	const lines = text.split("\n")
+	let pos = 0
+	let row = 0
+	let col = 0
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineLength = lines[i]?.length || 0
+		if (pos + lineLength >= absolutePosition) {
+			row = i
+			col = absolutePosition - pos
+			break
+		}
+		pos += lineLength + 1 // +1 for newline
+	}
+
+	return { row, column: col }
+}
+
+/**
  * Helper function to format autocomplete suggestions for display/submission
  */
 function formatSuggestion(
@@ -494,23 +519,9 @@ function handleAutocompleteKeys(get: any, set: any, key: Key): void {
 					const escapedPath = fileSuggestion.value.replace(/ /g, "\\ ")
 					const cursorPosition = fileMentionContext.mentionStart + 1 + escapedPath.length + 1 // @ + path + space
 
-					// Calculate row and column from absolute position
-					const lines = newText.split("\n")
-					let pos = 0
-					let row = 0
-					let col = 0
-
-					for (let i = 0; i < lines.length; i++) {
-						const lineLength = lines[i]?.length || 0
-						if (pos + lineLength >= cursorPosition) {
-							row = i
-							col = cursorPosition - pos
-							break
-						}
-						pos += lineLength + 1 // +1 for newline
-					}
-
-					set(moveToAtom, { row, column: col })
+					// Calculate row and column from absolute position and set cursor
+					const { row, column } = calculateRowColumnFromPosition(newText, cursorPosition)
+					set(moveToAtom, { row, column })
 				}
 			}
 			return
@@ -532,23 +543,9 @@ function handleAutocompleteKeys(get: any, set: any, key: Key): void {
 						const escapedPath = fileSuggestion.value.replace(/ /g, "\\ ")
 						const cursorPosition = fileMentionContext.mentionStart + 1 + escapedPath.length + 1 // @ + path + space
 
-						// Calculate row and column from absolute position
-						const lines = newText.split("\n")
-						let pos = 0
-						let row = 0
-						let col = 0
-
-						for (let i = 0; i < lines.length; i++) {
-							const lineLength = lines[i]?.length || 0
-							if (pos + lineLength >= cursorPosition) {
-								row = i
-								col = cursorPosition - pos
-								break
-							}
-							pos += lineLength + 1 // +1 for newline
-						}
-
-						set(moveToAtom, { row, column: col })
+						// Calculate row and column from absolute position and set cursor
+						const { row, column } = calculateRowColumnFromPosition(newText, cursorPosition)
+						set(moveToAtom, { row, column })
 					}
 					return
 				}
