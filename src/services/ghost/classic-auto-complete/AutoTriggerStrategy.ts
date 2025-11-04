@@ -1,7 +1,7 @@
 import { AutocompleteInput } from "../types"
 import { CURSOR_MARKER } from "./ghostConstants"
 import type { TextDocument, Range } from "vscode"
-import { GhostContextProvider } from "./GhostContextProvider"
+import { GhostContextProvider, formatContextForPrompt } from "./GhostContextProvider"
 
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
@@ -152,7 +152,7 @@ Provide a subtle, non-intrusive completion after a typing pause.
 					autocompleteInput,
 					autocompleteInput.filepath,
 				)
-				const contextString = this.contextProvider.formatContextForPrompt(contextSnippets)
+				const contextString = formatContextForPrompt(contextSnippets)
 				if (contextString.trim()) {
 					prompt += contextString
 				}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GhostContextProvider } from "../GhostContextProvider"
+import { GhostContextProvider, formatContextForPrompt, ContextSnippets } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import * as vscode from "vscode"
@@ -232,119 +232,159 @@ describe("GhostContextProvider", () => {
 			}
 		})
 	})
+})
 
-	describe("formatContextForPrompt", () => {
-		it("should return empty string for empty snippets", () => {
-			const snippets = {
-				recentlyOpenedFiles: [],
-				importDefinitions: [],
-				rootPath: [],
-			}
+// Pure function tests - no mocks needed!
+describe("formatContextForPrompt", () => {
+	it("should return empty string for empty snippets", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [],
+		}
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			expect(formatted).toBe("")
-		})
+		const formatted = formatContextForPrompt(snippets)
+		expect(formatted).toBe("")
+	})
 
-		it("should format recently opened files", () => {
-			const snippets = {
-				recentlyOpenedFiles: [
-					{
-						filepath: "/test1.ts",
-						content: "const x = 1;\nconst y = 2;",
-					},
-				],
-				importDefinitions: [],
-				rootPath: [],
-			}
+	it("should format recently opened files", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [
+				{
+					filepath: "/test1.ts",
+					content: "const x = 1;\nconst y = 2;",
+				},
+			],
+			importDefinitions: [],
+			rootPath: [],
+		}
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			expect(formatted).toContain("<RECENTLY_OPENED_FILES>")
-			expect(formatted).toContain("</RECENTLY_OPENED_FILES>")
-			expect(formatted).toContain("/test1.ts")
-			expect(formatted).toContain("const x = 1;")
-		})
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<RECENTLY_OPENED_FILES>
+File 1: /test1.ts
+const x = 1;
+const y = 2;
+...
 
-		it("should format import definitions", () => {
-			const snippets = {
-				recentlyOpenedFiles: [],
-				importDefinitions: [
-					{
-						filepath: "/utils.ts",
-						content: "export function sum(a: number, b: number) { return a + b; }",
-					},
-				],
-				rootPath: [],
-			}
+</RECENTLY_OPENED_FILES>
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			expect(formatted).toContain("<IMPORTED_SYMBOLS>")
-			expect(formatted).toContain("</IMPORTED_SYMBOLS>")
-			expect(formatted).toContain("/utils.ts")
-			expect(formatted).toContain("export function sum")
-		})
+`
+		expect(formatted).toBe(expected)
+	})
 
-		it("should format root path context", () => {
-			const snippets = {
-				recentlyOpenedFiles: [],
-				importDefinitions: [],
-				rootPath: [
-					{
-						filepath: "/similar.ts",
-						content: "interface User { name: string; }",
-					},
-				],
-			}
+	it("should format import definitions", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [
+				{
+					filepath: "/utils.ts",
+					content: "export function sum(a: number, b: number) { return a + b; }",
+				},
+			],
+			rootPath: [],
+		}
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			expect(formatted).toContain("<SIMILAR_FILES>")
-			expect(formatted).toContain("</SIMILAR_FILES>")
-			expect(formatted).toContain("/similar.ts")
-			expect(formatted).toContain("interface User")
-		})
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<IMPORTED_SYMBOLS>
+1. From /utils.ts:
+export function sum(a: number, b: number) { return a + b; }
 
-		it("should limit number of snippets per category", () => {
-			const snippets = {
-				recentlyOpenedFiles: Array(10)
-					.fill(null)
-					.map((_, i) => ({
-						filepath: `/test${i}.ts`,
-						content: `const x${i} = ${i};`,
-					})),
-				importDefinitions: [],
-				rootPath: [],
-			}
+</IMPORTED_SYMBOLS>
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			// Should only include first 3 files
-			expect(formatted).toContain("/test0.ts")
-			expect(formatted).toContain("/test1.ts")
-			expect(formatted).toContain("/test2.ts")
-			expect(formatted).not.toContain("/test3.ts")
-		})
+`
+		expect(formatted).toBe(expected)
+	})
 
-		it("should truncate large file contents", () => {
-			const largeContent = Array(50)
+	it("should format root path context", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [
+				{
+					filepath: "/similar.ts",
+					content: "interface User { name: string; }",
+				},
+			],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<SIMILAR_FILES>
+1. /similar.ts:
+interface User { name: string; }
+
+</SIMILAR_FILES>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should limit number of snippets per category", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: Array(10)
 				.fill(null)
-				.map((_, i) => `line ${i}`)
-				.join("\n")
+				.map((_, i) => ({
+					filepath: `/test${i}.ts`,
+					content: `const x${i} = ${i};`,
+				})),
+			importDefinitions: [],
+			rootPath: [],
+		}
 
-			const snippets = {
-				recentlyOpenedFiles: [
-					{
-						filepath: "/large.ts",
-						content: largeContent,
-					},
-				],
-				importDefinitions: [],
-				rootPath: [],
-			}
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<RECENTLY_OPENED_FILES>
+File 1: /test0.ts
+const x0 = 0;
+...
 
-			const formatted = contextProvider.formatContextForPrompt(snippets)
-			// Should only show first 10 lines
-			expect(formatted).toContain("line 0")
-			expect(formatted).toContain("line 9")
-			expect(formatted).toContain("...")
-			expect(formatted).not.toContain("line 40")
-		})
+File 2: /test1.ts
+const x1 = 1;
+...
+
+File 3: /test2.ts
+const x2 = 2;
+...
+
+</RECENTLY_OPENED_FILES>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should truncate large file contents", () => {
+		const largeContent = Array(50)
+			.fill(null)
+			.map((_, i) => `line ${i}`)
+			.join("\n")
+
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [
+				{
+					filepath: "/large.ts",
+					content: largeContent,
+				},
+			],
+			importDefinitions: [],
+			rootPath: [],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<RECENTLY_OPENED_FILES>
+File 1: /large.ts
+line 0
+line 1
+line 2
+line 3
+line 4
+line 5
+line 6
+line 7
+line 8
+line 9
+...
+
+</RECENTLY_OPENED_FILES>
+
+`
+		expect(formatted).toBe(expected)
 	})
 })

@@ -23,6 +23,46 @@ export interface ContextSnippets {
 }
 
 /**
+ * Format context snippets into a string suitable for adding to prompts
+ * Pure function for easy testing without mocks
+ */
+export function formatContextForPrompt(snippets: ContextSnippets): string {
+	let context = ""
+
+	// Add recently opened files
+	if (snippets.recentlyOpenedFiles.length > 0) {
+		context += "<RECENTLY_OPENED_FILES>\n"
+		snippets.recentlyOpenedFiles.slice(0, 3).forEach((snippet, index) => {
+			const preview = snippet.content.split("\n").slice(0, 10).join("\n")
+			context += `File ${index + 1}: ${snippet.filepath}\n${preview}\n...\n\n`
+		})
+		context += "</RECENTLY_OPENED_FILES>\n\n"
+	}
+
+	// Add import definitions
+	if (snippets.importDefinitions.length > 0) {
+		context += "<IMPORTED_SYMBOLS>\n"
+		snippets.importDefinitions.slice(0, 3).forEach((snippet, index) => {
+			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+			context += `${index + 1}. From ${snippet.filepath}:\n${preview}\n\n`
+		})
+		context += "</IMPORTED_SYMBOLS>\n\n"
+	}
+
+	// Add root path context
+	if (snippets.rootPath.length > 0) {
+		context += "<SIMILAR_FILES>\n"
+		snippets.rootPath.slice(0, 2).forEach((snippet, index) => {
+			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+			context += `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
+		})
+		context += "</SIMILAR_FILES>\n\n"
+	}
+
+	return context
+}
+
+/**
  * Provides code context for autocomplete prompts by wrapping continuedev's context services
  */
 export class GhostContextProvider {
@@ -92,44 +132,5 @@ export class GhostContextProvider {
 				rootPath: [],
 			}
 		}
-	}
-
-	/**
-	 * Format context snippets into a string suitable for adding to prompts
-	 */
-	formatContextForPrompt(snippets: ContextSnippets): string {
-		let context = ""
-
-		// Add recently opened files
-		if (snippets.recentlyOpenedFiles.length > 0) {
-			context += "<RECENTLY_OPENED_FILES>\n"
-			snippets.recentlyOpenedFiles.slice(0, 3).forEach((snippet, index) => {
-				const preview = snippet.content.split("\n").slice(0, 10).join("\n")
-				context += `File ${index + 1}: ${snippet.filepath}\n${preview}\n...\n\n`
-			})
-			context += "</RECENTLY_OPENED_FILES>\n\n"
-		}
-
-		// Add import definitions
-		if (snippets.importDefinitions.length > 0) {
-			context += "<IMPORTED_SYMBOLS>\n"
-			snippets.importDefinitions.slice(0, 3).forEach((snippet, index) => {
-				const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-				context += `${index + 1}. From ${snippet.filepath}:\n${preview}\n\n`
-			})
-			context += "</IMPORTED_SYMBOLS>\n\n"
-		}
-
-		// Add root path context
-		if (snippets.rootPath.length > 0) {
-			context += "<SIMILAR_FILES>\n"
-			snippets.rootPath.slice(0, 2).forEach((snippet, index) => {
-				const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-				context += `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
-			})
-			context += "</SIMILAR_FILES>\n\n"
-		}
-
-		return context
 	}
 }
