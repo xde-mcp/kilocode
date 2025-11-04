@@ -84,6 +84,21 @@ vi.mock("../../../continuedev/core/vscode-test-harness/src/autocomplete/lsp", ()
 	getDefinitionsFromLsp: vi.fn().mockResolvedValue([]),
 }))
 
+// Mock getSnippets (token-based filtering)
+vi.mock("../../../continuedev/core/autocomplete/templating/filtering", () => ({
+	getSnippets: vi.fn().mockImplementation((_helper, payload) => {
+		// Return all snippets for testing - in production this filters by tokens
+		return [
+			...payload.recentlyOpenedFileSnippets,
+			...payload.importDefinitionSnippets,
+			...payload.rootPathSnippets,
+			...payload.clipboardSnippets,
+			...payload.staticSnippet,
+			...payload.recentlyVisitedRangesSnippets,
+		]
+	}),
+}))
+
 function createAutocompleteInput(filepath: string = "/test.ts"): AutocompleteInput {
 	return {
 		isUntitledFile: false,
@@ -241,6 +256,10 @@ describe("formatContextForPrompt", () => {
 			recentlyOpenedFiles: [],
 			importDefinitions: [],
 			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
@@ -257,6 +276,10 @@ describe("formatContextForPrompt", () => {
 			],
 			importDefinitions: [],
 			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
@@ -264,7 +287,6 @@ describe("formatContextForPrompt", () => {
 File 1: /test1.ts
 const x = 1;
 const y = 2;
-...
 
 </RECENTLY_OPENED_FILES>
 
@@ -282,6 +304,10 @@ const y = 2;
 				},
 			],
 			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
@@ -305,6 +331,10 @@ export function sum(a: number, b: number) { return a + b; }
 					content: "interface User { name: string; }",
 				},
 			],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
@@ -318,31 +348,31 @@ interface User { name: string; }
 		expect(formatted).toBe(expected)
 	})
 
-	it("should limit number of snippets per category", () => {
+	it("should format all provided snippets", () => {
 		const snippets: ContextSnippets = {
-			recentlyOpenedFiles: Array(10)
-				.fill(null)
-				.map((_, i) => ({
-					filepath: `/test${i}.ts`,
-					content: `const x${i} = ${i};`,
-				})),
+			recentlyOpenedFiles: [
+				{ filepath: "/test0.ts", content: "const x0 = 0;" },
+				{ filepath: "/test1.ts", content: "const x1 = 1;" },
+				{ filepath: "/test2.ts", content: "const x2 = 2;" },
+			],
 			importDefinitions: [],
 			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
 		const expected = `<RECENTLY_OPENED_FILES>
 File 1: /test0.ts
 const x0 = 0;
-...
 
 File 2: /test1.ts
 const x1 = 1;
-...
 
 File 3: /test2.ts
 const x2 = 2;
-...
 
 </RECENTLY_OPENED_FILES>
 
@@ -350,7 +380,7 @@ const x2 = 2;
 		expect(formatted).toBe(expected)
 	})
 
-	it("should truncate large file contents", () => {
+	it("should show preview of large file contents", () => {
 		const largeContent = Array(50)
 			.fill(null)
 			.map((_, i) => `line ${i}`)
@@ -365,6 +395,10 @@ const x2 = 2;
 			],
 			importDefinitions: [],
 			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
 		}
 
 		const formatted = formatContextForPrompt(snippets)
@@ -383,6 +417,112 @@ line 9
 ...
 
 </RECENTLY_OPENED_FILES>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should format clipboard snippets", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [],
+			clipboard: [
+				{
+					filepath: "clipboard",
+					content: "copied text",
+				},
+			],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<CLIPBOARD>
+1. copied text
+
+</CLIPBOARD>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should format static context snippets", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [],
+			clipboard: [],
+			static: [
+				{
+					filepath: "structure",
+					content: "class User { constructor() {} }",
+				},
+			],
+			recentlyVisited: [],
+			recentlyEdited: [],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<CODE_STRUCTURE>
+1. class User { constructor() {} }
+
+</CODE_STRUCTURE>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should format recently visited snippets", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [
+				{
+					filepath: "/visited.ts",
+					content: "const visited = true;",
+				},
+			],
+			recentlyEdited: [],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<RECENTLY_VISITED>
+1. /visited.ts:
+const visited = true;
+
+</RECENTLY_VISITED>
+
+`
+		expect(formatted).toBe(expected)
+	})
+
+	it("should format recently edited snippets", () => {
+		const snippets: ContextSnippets = {
+			recentlyOpenedFiles: [],
+			importDefinitions: [],
+			rootPath: [],
+			clipboard: [],
+			static: [],
+			recentlyVisited: [],
+			recentlyEdited: [
+				{
+					filepath: "/edited.ts",
+					content: "const edited = true;",
+				},
+			],
+		}
+
+		const formatted = formatContextForPrompt(snippets)
+		const expected = `<RECENTLY_EDITED>
+1. /edited.ts:
+const edited = true;
+
+</RECENTLY_EDITED>
 
 `
 		expect(formatted).toBe(expected)
