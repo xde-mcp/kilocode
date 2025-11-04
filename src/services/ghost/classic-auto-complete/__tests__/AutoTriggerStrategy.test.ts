@@ -26,7 +26,7 @@ describe("AutoTriggerStrategy", () => {
 	})
 
 	describe("getPrompts", () => {
-		it("should generate prompts with QUERY/FILL_HERE format", async () => {
+		it("should generate basic prompt without context provider", async () => {
 			const { systemPrompt, userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
@@ -34,85 +34,60 @@ describe("AutoTriggerStrategy", () => {
 				"typescript",
 			)
 
-			// Verify system prompt contains auto-trigger keywords
 			expect(systemPrompt).toContain("Auto-Completion")
-			expect(systemPrompt).toContain("non-intrusive")
-
-			// Verify user prompt uses QUERY/FILL_HERE format
-			expect(userPrompt).toContain("<QUERY>")
-			expect(userPrompt).toContain("{{FILL_HERE}}")
-			expect(userPrompt).toContain("</QUERY>")
-			expect(userPrompt).toContain("COMPLETION")
-		})
-
-		it("should document context format in system prompt", async () => {
-			const { systemPrompt } = await strategy.getPrompts(
-				createAutocompleteInput("/test.ts", 0, 13),
-				"const x = 1;\n",
-				"",
-				"typescript",
-			)
-
 			expect(systemPrompt).toContain("Context Format")
-			expect(systemPrompt).toContain("<LANGUAGE>")
-			expect(systemPrompt).toContain("<QUERY>")
+
+			const expected = `<LANGUAGE>typescript</LANGUAGE>
+
+<QUERY>
+const x = 1;
+{{FILL_HERE}}
+</QUERY>
+
+TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
+Return the COMPLETION tags`
+
+			expect(userPrompt).toBe(expected)
 		})
 
-		it("should include language ID in prompt with XML tags", async () => {
-			const { userPrompt } = await strategy.getPrompts(
-				createAutocompleteInput("/test.ts", 0, 13),
-				"const x = 1;\n",
-				"",
-				"typescript",
-			)
-
-			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
-		})
-
-		it("should include context in QUERY when context provider not set", async () => {
-			const input = createAutocompleteInput("/test.ts", 5, 0)
-			input.recentlyEditedRanges = [
-				{
-					filepath: "/test.ts",
-					range: { start: { line: 2, character: 0 }, end: { line: 3, character: 0 } },
-					timestamp: Date.now(),
-					lines: ["function sum(a, b) {"],
-					symbols: new Set(["sum"]),
+		it("should include comment-wrapped context when provider is set", async () => {
+			const mockContextProvider = {
+				getFormattedContext: async () => {
+					// Simulate comment-wrapped format
+					return `// Path: utils.ts
+// export function sum(a: number, b: number) {
+//   return a + b
+// }
+// Path: app.ts
+`
 				},
-			]
+			} as any
 
-			const { userPrompt } = await strategy.getPrompts(input, "const x = 1;\n", "", "typescript")
-
-			// Context is now comment-wrapped inside QUERY, not as separate XML tags
-			expect(userPrompt).toContain("<QUERY>")
-			expect(userPrompt).toContain("{{FILL_HERE}}")
-		})
-
-		it("should handle empty context gracefully", async () => {
-			const { userPrompt } = await strategy.getPrompts(
-				createAutocompleteInput("/test.ts", 0, 13),
-				"const x = 1;\n",
-				"",
+			const strategyWithContext = new AutoTriggerStrategy(mockContextProvider)
+			const { userPrompt } = await strategyWithContext.getPrompts(
+				createAutocompleteInput("/app.ts", 5, 0),
+				"function calculate() {\n  ",
+				"\n}",
 				"typescript",
 			)
 
-			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
-		})
+			const expected = `<LANGUAGE>typescript</LANGUAGE>
 
-		it("should handle comments in code", async () => {
-			const { systemPrompt, userPrompt } = await strategy.getPrompts(
-				createAutocompleteInput("/test.ts", 1, 0),
-				"// TODO: implement sum function\n",
-				"",
-				"typescript",
-			)
+<QUERY>
+// Path: utils.ts
+// export function sum(a: number, b: number) {
+//   return a + b
+// }
+// Path: app.ts
+function calculate() {
+  {{FILL_HERE}}
+}
+</QUERY>
 
-			// Should use same prompt format
-			expect(systemPrompt).toContain("Auto-Completion")
-			expect(userPrompt).toContain("<QUERY>")
-			expect(userPrompt).toContain("{{FILL_HERE}}")
-			expect(userPrompt).toContain("</QUERY>")
-			expect(userPrompt).toContain("COMPLETION")
+TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
+Return the COMPLETION tags`
+
+			expect(userPrompt).toBe(expected)
 		})
 	})
 })
