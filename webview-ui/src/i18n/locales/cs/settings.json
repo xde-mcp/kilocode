@@ -892,10 +892,6 @@
 				"relace": "Relace Apply v3"
 			}
 		},
-		"SEARCH_AND_REPLACE": {
-			"name": "Použít experimentální nástroj hledání a nahrazování",
-			"description": "Povolit experimentální nástroj hledání a nahrazování, který umožňuje Kilo Code nahradit více výskytů hledaného výrazu v jednom požadavku."
-		},
 		"INSERT_BLOCK": {
 			"name": "Použít experimentální nástroj vkládání obsahu",
 			"description": "Povolit experimentální nástroj vkládání obsahu, který umožňuje Kilo Code vkládat obsah na konkrétní čísla řádků bez nutnosti vytvářet diff."

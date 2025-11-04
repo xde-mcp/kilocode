@@ -315,8 +315,6 @@
 		"getFireworksApiKey": "احصل على مفتاح Fireworks",
 		"syntheticApiKey": "مفتاح Synthetic API",
 		"getSyntheticApiKey": "احصل على مفتاح Synthetic API",
-		"zaiApiKey": "مفتاح Z.AI",
-		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"moonshotApiKey": "مفتاح Moonshot",
 		"getMoonshotApiKey": "احصل على مفتاح Moonshot",
 		"moonshotBaseUrl": "نقطة دخول Moonshot",
@@ -868,10 +866,6 @@
 		"DIFF_STRATEGY_UNIFIED": {
 			"name": "استخدم استراتيجية diff الموحدة التجريبية",
 			"description": "قد تقلل من الإعادات لكنها مخاطرة."
-		},
-		"SEARCH_AND_REPLACE": {
-			"name": "أداة بحث واستبدال تجريبية",
-			"description": "تمكّن استبدال متعدد في طلب واحد."
 		},
 		"INSERT_BLOCK": {
 			"name": "أداة إدراج محتوى تجريبية",
