@@ -29,13 +29,23 @@ export function useTerminal(): void {
 		if (!process.stdout.isTTY) {
 			return
 		}
+
 		const handleResize = () => {
 			if (process.stdout.columns === width.current) {
 				return
 			}
 			width.current = process.stdout.columns
-			clearTerminal()
+
+			// Clear the terminal screen and reset cursor position
+			// \x1b[2J - Clear entire screen
+			// \x1b[3J - Clear scrollback buffer (needed for gnome-terminal)
+			// \x1b[H - Move cursor to home position (0,0)
+			process.stdout.write("\x1b[2J\x1b[3J\x1b[H")
+
+			// Increment reset counter to force Static component remount
+			incrementResetCounter((prev) => prev + 1)
 		}
+
 		// Listen for resize events
 		process.stdout.on("resize", handleResize)
 
@@ -43,5 +53,5 @@ export function useTerminal(): void {
 		return () => {
 			process.stdout.off("resize", handleResize)
 		}
-	}, [clearTerminal])
+	}, [incrementResetCounter])
 }
