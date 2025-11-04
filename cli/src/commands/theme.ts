@@ -5,7 +5,7 @@
 import type { Command, ArgumentProviderContext } from "./core/types.js"
 import type { CLIConfig } from "../config/types.js"
 import { getThemeById, getAvailableThemes } from "../constants/themes/index.js"
-import { messageResetCounterAtom } from "../state/atoms/ui.js"
+import { generateMessage } from "../ui/utils/messages.js"
 
 /**
  * Autocomplete provider for theme names
@@ -107,7 +107,7 @@ export const themeCommand: Command = {
 		},
 	],
 	handler: async (context) => {
-		const { args, addMessage, setTheme, config } = context
+		const { args, addMessage, setTheme, config, refreshTerminal } = context
 		const availableThemeIds = getAvailableThemes(config)
 
 		try {
@@ -154,10 +154,9 @@ export const themeCommand: Command = {
 				helpText.push("Usage: /theme <theme-name>")
 
 				addMessage({
-					id: Date.now().toString(),
+					...generateMessage(),
 					type: "system",
 					content: helpText.join("\n"),
-					ts: Date.now(),
 				})
 				return
 			}
@@ -166,10 +165,9 @@ export const themeCommand: Command = {
 
 			if (!availableThemeIds.includes(requestedTheme)) {
 				addMessage({
-					id: Date.now().toString(),
+					...generateMessage(),
 					type: "error",
 					content: `Invalid theme "${requestedTheme}". Available themes: ${availableThemeIds.join(", ")}`,
-					ts: Date.now(),
 				})
 				return
 			}
@@ -180,27 +178,25 @@ export const themeCommand: Command = {
 
 			try {
 				addMessage({
-					id: Date.now().toString(),
+					...generateMessage(),
 					type: "system",
 					content: `Switched to **${themeName}** theme.`,
-					ts: Date.now(),
 				})
-				setTheme(requestedTheme)
+				await setTheme(requestedTheme)
+				await refreshTerminal()
 			} catch (error) {
 				addMessage({
-					id: Date.now().toString(),
+					...generateMessage(),
 					type: "error",
 					content: `Failed to switch to **${themeName}** theme: ${error instanceof Error ? error.message : String(error)}`,
-					ts: Date.now(),
 				})
 			}
 		} catch (error) {
 			// Handler-level error for unexpected issues (e.g., config corruption)
 			addMessage({
-				id: Date.now().toString(),
+				...generateMessage(),
 				type: "error",
 				content: `Theme command failed: ${error instanceof Error ? error.message : String(error)}`,
-				ts: Date.now(),
 			})
 		}
 	},

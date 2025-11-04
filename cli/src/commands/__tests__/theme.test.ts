@@ -8,15 +8,25 @@ import type { CommandContext } from "../core/types.js"
 import type { Theme } from "../../types/theme.js"
 import type { CLIConfig } from "../../config/types.js"
 
+// Mock the generateMessage utility
+vi.mock("../../ui/utils/messages.js", () => ({
+	generateMessage: vi.fn(() => ({
+		id: "mock-id",
+		createdAt: Date.now(),
+	})),
+}))
+
 describe("/theme command", () => {
 	let mockContext: CommandContext
 	let addMessageMock: ReturnType<typeof vi.fn>
 	let setThemeMock: ReturnType<typeof vi.fn>
+	let refreshTerminalMock: ReturnType<typeof vi.fn>
+	let mockConfig: CLIConfig
 
 	const mockTheme: Theme = {
 		id: "custom-theme",
 		name: "Test Theme",
-		type: "Custom",
+		type: "custom",
 		brand: {
 			primary: "#007acc",
 			secondary: "#005a9e",
@@ -83,6 +93,19 @@ describe("/theme command", () => {
 	beforeEach(() => {
 		addMessageMock = vi.fn()
 		setThemeMock = vi.fn().mockResolvedValue(undefined)
+		refreshTerminalMock = vi.fn().mockResolvedValue(undefined)
+
+		// Create mock config
+		mockConfig = {
+			version: "1.0.0",
+			mode: "code",
+			telemetry: true,
+			provider: "test-provider",
+			providers: [],
+			customThemes: {
+				"custom-theme": mockTheme,
+			},
+		}
 
 		// Mock config loading
 		vi.doMock("../../config/persistence.js", () => ({
@@ -111,7 +134,7 @@ describe("/theme command", () => {
 					dark: {
 						id: "dark",
 						name: "Dark",
-						type: "Dark",
+						type: "dark",
 						brand: { primary: "#3b82f6", secondary: "#1d4ed8" },
 						semantic: {
 							success: "#4ade80",
@@ -146,7 +169,7 @@ describe("/theme command", () => {
 					light: {
 						id: "light",
 						name: "Light",
-						type: "Light",
+						type: "light",
 						brand: { primary: "#3b82f6", secondary: "#1d4ed8" },
 						semantic: {
 							success: "#4ade80",
@@ -184,7 +207,7 @@ describe("/theme command", () => {
 					themes[id] || {
 						id: "unknown",
 						name: "Unknown Theme",
-						type: "Dark",
+						type: "dark",
 						brand: { primary: "#000000", secondary: "#000000" },
 						semantic: {
 							success: "#000000",
@@ -230,14 +253,19 @@ describe("/theme command", () => {
 			input: "/theme",
 			args: [],
 			options: {},
+			config: mockConfig,
 			sendMessage: vi.fn().mockResolvedValue(undefined),
 			addMessage: addMessageMock,
 			clearMessages: vi.fn(),
 			replaceMessages: vi.fn(),
+			setMessageCutoffTimestamp: vi.fn(),
 			clearTask: vi.fn().mockResolvedValue(undefined),
 			setMode: vi.fn(),
 			exit: vi.fn(),
 			setTheme: setThemeMock,
+			setCommittingParallelMode: vi.fn(),
+			isParallelMode: false,
+			refreshTerminal: refreshTerminalMock,
 			// Model-related context
 			routerModels: null,
 			currentProvider: null,
@@ -251,6 +279,21 @@ describe("/theme command", () => {
 			balanceData: null,
 			profileLoading: false,
 			balanceLoading: false,
+			// Task history context
+			taskHistoryData: null,
+			taskHistoryFilters: {
+				workspace: "current",
+				sort: "newest",
+				favoritesOnly: false,
+			},
+			taskHistoryLoading: false,
+			taskHistoryError: null,
+			fetchTaskHistory: vi.fn().mockResolvedValue(undefined),
+			updateTaskHistoryFilters: vi.fn().mockResolvedValue(null),
+			changeTaskHistoryPage: vi.fn().mockResolvedValue(null),
+			nextTaskHistoryPage: vi.fn().mockResolvedValue(null),
+			previousTaskHistoryPage: vi.fn().mockResolvedValue(null),
+			sendWebviewMessage: vi.fn().mockResolvedValue(undefined),
 		}
 	})
 
@@ -308,9 +351,9 @@ describe("/theme command", () => {
 			const message = addMessageMock.mock.calls[0][0]
 			expect(message.type).toBe("system")
 			expect(message.content).toContain("Available Themes:")
-			expect(message.content).toContain("**Dark:**")
-			expect(message.content).toContain("**Light:**")
-			expect(message.content).toContain("**Custom:**")
+			expect(message.content).toContain("**dark:**")
+			expect(message.content).toContain("**light:**")
+			expect(message.content).toContain("**custom:**")
 			expect(message.content).toContain("Usage: /theme <theme-name>")
 		})
 
@@ -318,7 +361,7 @@ describe("/theme command", () => {
 			await themeCommand.handler(mockContext)
 
 			const message = addMessageMock.mock.calls[0][0]
-			expect(message.content).toContain("**Custom:**")
+			expect(message.content).toContain("**custom:**")
 			expect(message.content).toContain("Test Theme")
 			expect(message.content).toContain("(custom-theme)")
 		})
@@ -330,13 +373,14 @@ describe("/theme command", () => {
 
 			await themeCommand.handler(mockContext)
 
-			expect(setThemeMock).toHaveBeenCalledTimes(1)
-			expect(setThemeMock).toHaveBeenCalledWith("dark")
-
 			expect(addMessageMock).toHaveBeenCalledTimes(1)
 			const message = addMessageMock.mock.calls[0][0]
 			expect(message.type).toBe("system")
 			expect(message.content).toContain("Switched to **Dark** theme.")
+
+			expect(setThemeMock).toHaveBeenCalledTimes(1)
+			expect(setThemeMock).toHaveBeenCalledWith("dark")
+			expect(refreshTerminalMock).toHaveBeenCalledTimes(1)
 		})
 
 		it("should switch to a custom theme", async () => {
@@ -344,13 +388,14 @@ describe("/theme command", () => {
 
 			await themeCommand.handler(mockContext)
 
-			expect(setThemeMock).toHaveBeenCalledTimes(1)
-			expect(setThemeMock).toHaveBeenCalledWith("custom-theme")
-
 			expect(addMessageMock).toHaveBeenCalledTimes(1)
 			const message = addMessageMock.mock.calls[0][0]
 			expect(message.type).toBe("system")
 			expect(message.content).toContain("Switched to **Test Theme** theme.")
+
+			expect(setThemeMock).toHaveBeenCalledTimes(1)
+			expect(setThemeMock).toHaveBeenCalledWith("custom-theme")
+			expect(refreshTerminalMock).toHaveBeenCalledTimes(1)
 		})
 
 		it("should show error for invalid theme", async () => {
@@ -375,13 +420,18 @@ describe("/theme command", () => {
 
 			await themeCommand.handler(mockContext)
 
-			expect(setThemeMock).toHaveBeenCalledWith("dark")
+			// Message is added before setTheme, then error message is added
+			expect(addMessageMock).toHaveBeenCalledTimes(2)
+			const successMessage = addMessageMock.mock.calls[0][0]
+			expect(successMessage.type).toBe("system")
+			expect(successMessage.content).toContain("Switched to **Dark** theme.")
 
-			expect(addMessageMock).toHaveBeenCalledTimes(1)
-			const message = addMessageMock.mock.calls[0][0]
-			expect(message.type).toBe("error")
-			expect(message.content).toContain("Failed to switch to **Dark** theme")
-			expect(message.content).toContain("Theme switching failed")
+			const errorMessage = addMessageMock.mock.calls[1][0]
+			expect(errorMessage.type).toBe("error")
+			expect(errorMessage.content).toContain("Failed to switch to **Dark** theme")
+			expect(errorMessage.content).toContain("Theme switching failed")
+
+			expect(setThemeMock).toHaveBeenCalledWith("dark")
 		})
 
 		it("should handle case insensitive theme names", async () => {
@@ -476,9 +526,9 @@ describe("/theme command", () => {
 					expect(firstSuggestion).toHaveProperty("matchScore")
 
 					// Check that we have themes of different types
-					const hasDark = suggestions.some((s) => typeof s !== "string" && s.description === "Dark")
-					const hasLight = suggestions.some((s) => typeof s !== "string" && s.description === "Light")
-					const hasCustom = suggestions.some((s) => typeof s !== "string" && s.description === "Custom")
+					const hasDark = suggestions.some((s) => typeof s !== "string" && s.description === "dark")
+					const hasLight = suggestions.some((s) => typeof s !== "string" && s.description === "light")
+					const hasCustom = suggestions.some((s) => typeof s !== "string" && s.description === "custom")
 
 					expect(hasDark).toBe(true)
 					expect(hasLight).toBe(true)
@@ -517,7 +567,7 @@ describe("/theme command", () => {
 					command: themeCommand,
 					commandContext: {
 						...mockContext,
-						config: {} as Record<string, unknown>, // Using an empty object to simulate config loading issues
+						config: {} as CLIConfig,
 					},
 				}
 
