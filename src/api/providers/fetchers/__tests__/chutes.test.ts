@@ -4,7 +4,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import axios from "axios"
 import { getChutesModels } from "../chutes"
-import type { ChutesModel } from "../chutes"
 
 // Mock axios
 vi.mock("axios")

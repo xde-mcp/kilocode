@@ -3,7 +3,8 @@ import {
 	type ChutesModelId,
 	chutesDefaultModelId,
 	chutesModels,
-	getActiveToolUseStyle, // kilocode_change
+	getActiveToolUseStyle,
+	chutesDefaultModelInfo, // kilocode_change
 } from "@roo-code/types"
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"

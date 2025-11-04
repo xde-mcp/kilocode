@@ -1838,6 +1838,7 @@ describe("Cline", () => {
 					apiConfiguration: mockApiConfig,
 					task: "test task",
 					startTask: false,
+					context: mockExtensionContext, // kilocode_change
 				})
 
 				// Spy on console.error to verify error logging
@@ -1937,6 +1938,7 @@ describe("Queued message processing after condense", () => {
 			apiConfiguration: apiConfig,
 			task: "initial task",
 			startTask: false,
+			context: provider.context, // kilocode_change
 		})
 
 		// Make condense fast + deterministic
@@ -1967,12 +1969,14 @@ describe("Queued message processing after condense", () => {
 			apiConfiguration: apiConfig,
 			task: "task A",
 			startTask: false,
+			context: providerA.context, // kilocode_change
 		})
 		const taskB = new Task({
 			provider: providerB,
 			apiConfiguration: apiConfig,
 			task: "task B",
 			startTask: false,
+			context: providerB.context, // kilocode_change
 		})
 
 		vi.spyOn(taskA as any, "getSystemPrompt").mockResolvedValue("system")

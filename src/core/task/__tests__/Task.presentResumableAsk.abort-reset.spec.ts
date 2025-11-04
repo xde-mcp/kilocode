@@ -64,6 +64,7 @@ describe("Task.presentResumableAsk abort reset", () => {
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			startTask: false,
+			context: mockProvider.context, // kilocode_change
 		})
 	})
 

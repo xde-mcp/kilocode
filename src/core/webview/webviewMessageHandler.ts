@@ -807,6 +807,12 @@ export const webviewMessageHandler = async (
 			const routerModels: Record<RouterName, ModelRecord> = providerFilter
 				? ({} as Record<RouterName, ModelRecord>)
 				: {
+						// kilocode_change start
+						ovhcloud: {},
+						inception: {},
+						"kilocode-openrouter": {},
+						gemini: {},
+						// kilocode_change end
 						openrouter: {},
 						"vercel-ai-gateway": {},
 						huggingface: {},
@@ -820,8 +826,6 @@ export const webviewMessageHandler = async (
 						lmstudio: {},
 						roo: {},
 						chutes: {},
-						ovhcloud: {}, // kilocode_change
-						inception: {}, // kilocode_change
 					}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -899,6 +903,8 @@ export const webviewMessageHandler = async (
 						apiKey: apiConfiguration.inceptionLabsApiKey,
 						baseUrl: apiConfiguration.inceptionLabsBaseUrl,
 					},
+				},
+				{
 					key: "roo",
 					options: {
 						provider: "roo",
