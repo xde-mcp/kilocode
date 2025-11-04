@@ -121,7 +121,7 @@ describe("GhostRecentOperations", () => {
 		const prefix = enrichedContext.document.getText()
 		const suffix = ""
 		const languageId = enrichedContext.document.languageId
-		const { userPrompt } = autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
+		const { userPrompt } = await autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
 
 		// Verify that the prompt includes the recent operations section
 		// The strategy system uses "<RECENT_EDITS>" XML format
@@ -143,7 +143,7 @@ describe("GhostRecentOperations", () => {
 		const prefix = enrichedContext.document.getText()
 		const suffix = ""
 		const languageId = enrichedContext.document.languageId
-		const { userPrompt } = autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
+		const { userPrompt } = await autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
 
 		// Verify that the prompt does not include recent operations section
 		// The current document content will still be in the prompt, so we should only check

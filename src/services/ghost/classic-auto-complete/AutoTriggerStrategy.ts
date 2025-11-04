@@ -1,6 +1,7 @@
 import { AutocompleteInput } from "../types"
 import { CURSOR_MARKER } from "./ghostConstants"
 import type { TextDocument, Range } from "vscode"
+import { GhostContextProvider } from "./GhostContextProvider"
 
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
@@ -105,18 +106,21 @@ export function addCursorMarker(document: TextDocument, range?: Range): string {
 }
 
 export class AutoTriggerStrategy {
-	getPrompts(
+	constructor(private contextProvider?: GhostContextProvider) {}
+
+	async getPrompts(
 		autocompleteInput: AutocompleteInput,
 		prefix: string,
 		suffix: string,
 		languageId: string,
-	): {
+	): Promise<{
 		systemPrompt: string
 		userPrompt: string
-	} {
+	}> {
+		const userPrompt = await this.getUserPrompt(autocompleteInput, prefix, suffix, languageId)
 		return {
 			systemPrompt: this.getSystemInstructions(),
-			userPrompt: this.getUserPrompt(autocompleteInput, prefix, suffix, languageId),
+			userPrompt,
 		}
 	}
 
@@ -131,10 +135,31 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	}
 
 	/**
-	 * Build minimal prompt for auto-trigger
+	 * Build minimal prompt for auto-trigger with optional context
 	 */
-	getUserPrompt(autocompleteInput: AutocompleteInput, prefix: string, suffix: string, languageId: string): string {
+	async getUserPrompt(
+		autocompleteInput: AutocompleteInput,
+		prefix: string,
+		suffix: string,
+		languageId: string,
+	): Promise<string> {
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
+
+		// Add context from context provider if available
+		if (this.contextProvider && autocompleteInput.filepath) {
+			try {
+				const contextSnippets = await this.contextProvider.getContextSnippets(
+					autocompleteInput,
+					autocompleteInput.filepath,
+				)
+				const contextString = this.contextProvider.formatContextForPrompt(contextSnippets)
+				if (contextString.trim()) {
+					prompt += contextString
+				}
+			} catch (error) {
+				console.warn("Failed to get context snippets:", error)
+			}
+		}
 
 		if (autocompleteInput.recentlyEditedRanges && autocompleteInput.recentlyEditedRanges.length > 0) {
 			prompt += "<RECENT_EDITS>\n"

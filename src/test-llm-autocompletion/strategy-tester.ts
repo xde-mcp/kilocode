@@ -126,7 +126,7 @@ export class StrategyTester {
 			recentlyEditedRanges: [],
 		}
 
-		const { systemPrompt, userPrompt } = this.autoTriggerStrategy.getPrompts(
+		const { systemPrompt, userPrompt } = await this.autoTriggerStrategy.getPrompts(
 			autocompleteInput,
 			prefix,
 			suffix,

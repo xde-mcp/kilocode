@@ -145,7 +145,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 		}
 
-		const { systemPrompt, userPrompt } = this.autoTriggerStrategy.getPrompts(
+		const { systemPrompt, userPrompt } = await this.autoTriggerStrategy.getPrompts(
 			autocompleteInput,
 			prefix,
 			suffix,

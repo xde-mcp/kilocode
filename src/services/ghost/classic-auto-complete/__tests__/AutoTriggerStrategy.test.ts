@@ -26,8 +26,8 @@ describe("AutoTriggerStrategy", () => {
 	})
 
 	describe("getPrompts", () => {
-		it("should generate prompts with QUERY/FILL_HERE format", () => {
-			const { systemPrompt, userPrompt } = strategy.getPrompts(
+		it("should generate prompts with QUERY/FILL_HERE format", async () => {
+			const { systemPrompt, userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
 				"",
@@ -45,8 +45,8 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("COMPLETION")
 		})
 
-		it("should document context tags in system prompt", () => {
-			const { systemPrompt } = strategy.getPrompts(
+		it("should document context tags in system prompt", async () => {
+			const { systemPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
 				"",
@@ -60,8 +60,8 @@ describe("AutoTriggerStrategy", () => {
 			expect(systemPrompt).toContain("<QUERY>")
 		})
 
-		it("should include language ID in prompt with XML tags", () => {
-			const { userPrompt } = strategy.getPrompts(
+		it("should include language ID in prompt with XML tags", async () => {
+			const { userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
 				"",
@@ -71,7 +71,7 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
 		})
 
-		it("should include recently edited ranges in prompt with XML tags", () => {
+		it("should include recently edited ranges in prompt with XML tags", async () => {
 			const input = createAutocompleteInput("/test.ts", 5, 0)
 			input.recentlyEditedRanges = [
 				{
@@ -83,15 +83,15 @@ describe("AutoTriggerStrategy", () => {
 				},
 			]
 
-			const { userPrompt } = strategy.getPrompts(input, "const x = 1;\n", "", "typescript")
+			const { userPrompt } = await strategy.getPrompts(input, "const x = 1;\n", "", "typescript")
 
 			expect(userPrompt).toContain("<RECENT_EDITS>")
 			expect(userPrompt).toContain("</RECENT_EDITS>")
 			expect(userPrompt).toContain("Edited /test.ts at line 2")
 		})
 
-		it("should handle empty recently edited ranges", () => {
-			const { userPrompt } = strategy.getPrompts(
+		it("should handle empty recently edited ranges", async () => {
+			const { userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
 				"",
@@ -102,8 +102,8 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
 		})
 
-		it("should handle comments in code", () => {
-			const { systemPrompt, userPrompt } = strategy.getPrompts(
+		it("should handle comments in code", async () => {
+			const { systemPrompt, userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 1, 0),
 				"// TODO: implement sum function\n",
 				"",
