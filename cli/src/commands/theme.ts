@@ -6,22 +6,15 @@ import type { Command, ArgumentProviderContext } from "./core/types.js"
 import type { CLIConfig } from "../config/types.js"
 import { getThemeById, getAvailableThemes } from "../constants/themes/index.js"
 import { messageResetCounterAtom } from "../state/atoms/ui.js"
-import { createStore } from "jotai"
-
-/**
- * Get config from disk
- */
-async function getConfig(): Promise<{ config: CLIConfig }> {
-	const { loadConfig } = await import("../config/persistence.js")
-	const { config } = await loadConfig()
-	return { config }
-}
 
 /**
  * Autocomplete provider for theme names
  */
-async function themeAutocompleteProvider(_context: ArgumentProviderContext) {
-	const { config } = await getConfig()
+async function themeAutocompleteProvider(context: ArgumentProviderContext) {
+	if (!context.commandContext) {
+		return []
+	}
+	const config = context.commandContext.config
 	const availableThemeIds = getAvailableThemes(config)
 
 	// Create theme display info array to apply same sorting logic
@@ -36,8 +29,8 @@ async function themeAutocompleteProvider(_context: ArgumentProviderContext) {
 			}
 		})
 		.sort((a, b) => {
-			// Sort by type (Dark first, then Light, then Custom), then by ID alphabetically
-			const typeOrder = { Dark: 0, Light: 1, Custom: 2 }
+			// Sort by type (dark first, then light, then custom), then by ID alphabetically
+			const typeOrder = { dark: 0, light: 1, custom: 2 }
 			const typeAOrder = typeOrder[a.type as keyof typeof typeOrder] ?? 3
 			const typeBOrder = typeOrder[b.type as keyof typeof typeOrder] ?? 3
 
@@ -102,7 +95,7 @@ export const themeCommand: Command = {
 			 * Validate theme argument against available themes
 			 */
 			validate: async (value, _context) => {
-				const { config } = await getConfig()
+				const config = _context.commandContext?.config
 				const availableThemeIds = getAvailableThemes(config)
 				const isValid = availableThemeIds.includes(value.trim().toLowerCase())
 
@@ -114,8 +107,7 @@ export const themeCommand: Command = {
 		},
 	],
 	handler: async (context) => {
-		const { args, addMessage, setTheme } = context
-		const { config } = await getConfig()
+		const { args, addMessage, setTheme, config } = context
 		const availableThemeIds = getAvailableThemes(config)
 
 		try {
@@ -142,7 +134,7 @@ export const themeCommand: Command = {
 				)
 
 				// Define the order for displaying theme types
-				const typeOrder = ["Dark", "Light", "Custom"]
+				const typeOrder = ["dark", "light", "custom"]
 
 				// Show interactive theme selection menu
 				const helpText: string[] = ["**Available Themes:**", ""]
@@ -187,25 +179,13 @@ export const themeCommand: Command = {
 			const themeName = theme.name || requestedTheme
 
 			try {
-				await setTheme(requestedTheme)
-
-				// Repaint the terminal to immediately show theme changes
-				// Clear the terminal screen and reset cursor position
-				// \x1b[2J - Clear entire screen
-				// \x1b[3J - Clear scrollback buffer (needed for gnome-terminal)
-				// \x1b[H - Move cursor to home position (0,0)
-				process.stdout.write("\x1b[2J\x1b[3J\x1b[H")
-
-				// Increment reset counter to force UI re-render
-				const store = createStore()
-				store.set(messageResetCounterAtom, (prev: number) => prev + 1)
-
 				addMessage({
 					id: Date.now().toString(),
 					type: "system",
 					content: `Switched to **${themeName}** theme.`,
 					ts: Date.now(),
 				})
+				setTheme(requestedTheme)
 			} catch (error) {
 				addMessage({
 					id: Date.now().toString(),

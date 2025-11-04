@@ -9,7 +9,7 @@ import type { Theme } from "../../types/theme.js"
 export const xcodeTheme: Theme = {
 	id: "xcode",
 	name: "Xcode",
-	type: "Light",
+	type: "light",
 
 	brand: {
 		primary: "#1c00cf", // Use first gradient color for banner

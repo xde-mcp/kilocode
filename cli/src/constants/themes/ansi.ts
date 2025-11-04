@@ -9,7 +9,7 @@ import type { Theme } from "../../types/theme.js"
 export const ansiTheme: Theme = {
 	id: "ansi",
 	name: "ANSI",
-	type: "Dark",
+	type: "dark",
 
 	brand: {
 		primary: "cyan", // Use first gradient color for banner

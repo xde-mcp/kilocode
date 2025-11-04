@@ -9,7 +9,7 @@ import type { Theme } from "../../types/theme.js"
 export const shadesOfPurpleTheme: Theme = {
 	id: "shades-of-purple",
 	name: "Shades of Purple",
-	type: "Dark",
+	type: "dark",
 
 	brand: {
 		primary: "#4d21fc", // Use first gradient color for banner

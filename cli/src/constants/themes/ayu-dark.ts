@@ -9,7 +9,7 @@ import type { Theme } from "../../types/theme.js"
 export const ayuDarkTheme: Theme = {
 	id: "ayu-dark",
 	name: "Ayu Dark",
-	type: "Dark",
+	type: "dark",
 
 	brand: {
 		primary: "#FFB454", // Use first gradient color for banner

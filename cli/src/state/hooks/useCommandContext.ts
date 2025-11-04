@@ -15,7 +15,7 @@ import {
 	isCommittingParallelModeAtom,
 	refreshTerminalAtom,
 } from "../atoms/ui.js"
-import { setModeAtom, providerAtom, updateProviderAtom, setThemeAtom } from "../atoms/config.js"
+import { setModeAtom, setThemeAtom, providerAtom, updateProviderAtom, configAtom } from "../atoms/config.js"
 import { routerModelsAtom, extensionStateAtom, isParallelModeAtom } from "../atoms/extension.js"
 import { requestRouterModelsAtom } from "../atoms/actions.js"
 import { profileDataAtom, balanceDataAtom, profileLoadingAtom, balanceLoadingAtom } from "../atoms/profile.js"
@@ -87,6 +87,7 @@ export function useCommandContext(): UseCommandContextReturn {
 	const extensionState = useAtomValue(extensionStateAtom)
 	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || ""
 	const isParallelMode = useAtomValue(isParallelModeAtom)
+	const config = useAtomValue(configAtom)
 
 	// Get profile state
 	const profileData = useAtomValue(profileDataAtom)
@@ -114,6 +115,7 @@ export function useCommandContext(): UseCommandContextReturn {
 				input,
 				args,
 				options,
+				config,
 				sendMessage: async (message: any) => {
 					await sendMessage(message)
 				},
@@ -193,6 +195,7 @@ export function useCommandContext(): UseCommandContextReturn {
 			}
 		},
 		[
+			config,
 			addMessage,
 			clearMessages,
 			setMode,

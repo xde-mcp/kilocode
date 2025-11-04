@@ -9,7 +9,7 @@ import type { Theme } from "../../types/theme.js"
 export const darkTheme: Theme = {
 	id: "dark",
 	name: "Dark",
-	type: "Dark",
+	type: "dark",
 
 	brand: {
 		primary: "#faf74f",

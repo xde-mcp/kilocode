@@ -7,7 +7,7 @@
 /**
  * Theme type for categorization
  */
-export type ThemeType = "Dark" | "Light" | "Custom"
+export type ThemeType = "dark" | "light" | "custom"
 
 /**
  * Core theme interface defining all color categories

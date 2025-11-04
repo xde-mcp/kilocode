@@ -3,7 +3,7 @@
  */
 
 import type { RouterModels } from "../../types/messages.js"
-import type { ProviderConfig } from "../../config/types.js"
+import type { CLIConfig, ProviderConfig } from "../../config/types.js"
 import type { ProfileData, BalanceData } from "../../state/atoms/profile.js"
 import type { TaskHistoryData, TaskHistoryFilters } from "../../state/atoms/taskHistory.js"
 
@@ -33,6 +33,7 @@ export interface CommandContext {
 	input: string
 	args: string[]
 	options: Record<string, any>
+	config: CLIConfig
 	sendMessage: (message: any) => Promise<void>
 	addMessage: (message: any) => void
 	clearMessages: () => void
@@ -122,6 +123,7 @@ export interface ArgumentProviderContext {
 
 	// CommandContext properties for providers that need them
 	commandContext?: {
+		config: CLIConfig
 		routerModels: RouterModels | null
 		currentProvider: ProviderConfig | null
 		kilocodeDefaultModel: string
