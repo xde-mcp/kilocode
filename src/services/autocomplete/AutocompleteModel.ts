@@ -125,16 +125,13 @@ export class AutocompleteModel {
 					useCache: false, // Disable caching for autocomplete
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
-				// Add env for KiloCode metadata (organizationId and tester suppression)
-				env: config.organizationId
-					? {
-							kilocodeOrganizationId: config.organizationId,
-							// Add tester suppression if configured
-							...(this.profile?.kilocodeTesterWarningsDisabledUntil && {
-								kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
-							}),
-						}
-					: undefined,
+				// Add env for KiloCode metadata (organizationId, tester suppression) and live token provider
+				env: {
+					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
+					kilocodeOrganizationId: config.organizationId,
+					// Provide live token so KiloCode can refresh from latest settings on each call
+					kilocodeTokenProvider: () => this.profile?.kilocodeToken ?? "",
+				},
 			}
 
 			// Create appropriate LLM instance based on provider
