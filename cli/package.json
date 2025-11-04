@@ -23,7 +23,7 @@
 		"logs": "clear && tail -f ~/.kilocode/cli/logs/cli.txt",
 		"logs:clear": "rimraf ~/.kilocode/cli/logs/* && touch ~/.kilocode/cli/logs/cli.txt",
 		"clean:kilocode": "npx del-cli ./dist/kilocode --force && npx mkdirp ./dist/kilocode",
-		"copy:kilocode": "npx cpy '../bin-unpacked/extension/**' './dist/kilocode' --parents",
+		"copy:kilocode": "node scripts/copy-extension.mjs",
 		"lint": "eslint .",
 		"changeset:version": "jq --arg version \"$(jq -r '.version' package.json)\" '.version = $version' package.dist.json > tmp.json && mv tmp.json package.dist.json && prettier --write package.dist.json"
 	},
