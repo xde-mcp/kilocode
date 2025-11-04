@@ -767,7 +767,7 @@
 	"advanced": {
 		"diff": {
 			"label": "Aktifkan editing melalui diff",
-			"description": "Ketika diaktifkan, Roo akan dapat mengedit file lebih cepat dan akan secara otomatis menolak penulisan file penuh yang terpotong",
+			"description": "Ketika diaktifkan, Kilo Code akan dapat mengedit file lebih cepat dan akan secara otomatis menolak penulisan file penuh yang terpotong",
 			"strategy": {
 				"label": "Strategi diff",
 				"options": {
