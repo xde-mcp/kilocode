@@ -31,6 +31,7 @@ type CheckpointSettingsProps = HTMLAttributes<HTMLDivElement> & {
 		| "autoPurgeFavoritedTaskRetentionDays"
 		| "autoPurgeCompletedTaskRetentionDays"
 		| "autoPurgeIncompleteTaskRetentionDays"
+		| "checkpointTimeout"
 	>
 	onManualPurge?: () => void
 	// kilocode_change end
