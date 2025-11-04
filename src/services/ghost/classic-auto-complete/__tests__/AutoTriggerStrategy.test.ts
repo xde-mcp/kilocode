@@ -45,7 +45,7 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("COMPLETION")
 		})
 
-		it("should document context tags in system prompt", async () => {
+		it("should document context format in system prompt", async () => {
 			const { systemPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
@@ -53,10 +53,8 @@ describe("AutoTriggerStrategy", () => {
 				"typescript",
 			)
 
-			// Verify system prompt documents the XML tags
-			expect(systemPrompt).toContain("Context Tags")
+			expect(systemPrompt).toContain("Context Format")
 			expect(systemPrompt).toContain("<LANGUAGE>")
-			expect(systemPrompt).toContain("<RECENT_EDITS>")
 			expect(systemPrompt).toContain("<QUERY>")
 		})
 
@@ -71,7 +69,7 @@ describe("AutoTriggerStrategy", () => {
 			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
 		})
 
-		it("should include recently edited ranges in prompt with XML tags", async () => {
+		it("should include context in QUERY when context provider not set", async () => {
 			const input = createAutocompleteInput("/test.ts", 5, 0)
 			input.recentlyEditedRanges = [
 				{
@@ -85,12 +83,12 @@ describe("AutoTriggerStrategy", () => {
 
 			const { userPrompt } = await strategy.getPrompts(input, "const x = 1;\n", "", "typescript")
 
-			expect(userPrompt).toContain("<RECENT_EDITS>")
-			expect(userPrompt).toContain("</RECENT_EDITS>")
-			expect(userPrompt).toContain("Edited /test.ts at line 2")
+			// Context is now comment-wrapped inside QUERY, not as separate XML tags
+			expect(userPrompt).toContain("<QUERY>")
+			expect(userPrompt).toContain("{{FILL_HERE}}")
 		})
 
-		it("should handle empty recently edited ranges", async () => {
+		it("should handle empty context gracefully", async () => {
 			const { userPrompt } = await strategy.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"const x = 1;\n",
@@ -98,7 +96,6 @@ describe("AutoTriggerStrategy", () => {
 				"typescript",
 			)
 
-			expect(userPrompt).not.toContain("<RECENT_EDITS>")
 			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
 		})
 

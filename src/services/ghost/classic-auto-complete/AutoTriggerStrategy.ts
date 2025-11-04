@@ -6,8 +6,10 @@ import { GhostContextProvider } from "./GhostContextProvider"
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
 
-## Context Tags
-<LANGUAGE>: file language | <RECENT_EDITS>: recent changes | <QUERY>: code with {{FILL_HERE}}
+## Context Format
+<LANGUAGE>: file language
+<QUERY>: contains commented reference code (// Path: file.ts) followed by code with {{FILL_HERE}}
+Comments provide context from related files, recent edits, imports, etc.
 
 ## EXAMPLE QUERY:
 
@@ -145,32 +147,22 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	): Promise<string> {
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
 
-		// Add context from context provider if available (comment-wrapped format)
+		// Get comment-wrapped context (includes all context types with token-based filtering)
+		let formattedContext = ""
 		if (this.contextProvider && autocompleteInput.filepath) {
 			try {
-				const formattedContext = await this.contextProvider.getFormattedContext(
+				formattedContext = await this.contextProvider.getFormattedContext(
 					autocompleteInput,
 					autocompleteInput.filepath,
 				)
-				if (formattedContext.trim()) {
-					prompt += formattedContext + "\n\n"
-				}
 			} catch (error) {
 				console.warn("Failed to get formatted context:", error)
 			}
 		}
 
-		if (autocompleteInput.recentlyEditedRanges && autocompleteInput.recentlyEditedRanges.length > 0) {
-			prompt += "<RECENT_EDITS>\n"
-			autocompleteInput.recentlyEditedRanges.forEach((range, index) => {
-				const description = `Edited ${range.filepath} at line ${range.range.start.line}`
-				prompt += `${index + 1}. ${description}\n`
-			})
-			prompt += "</RECENT_EDITS>\n\n"
-		}
-
+		// Context and code go together in QUERY (comments provide context for the code)
 		prompt += `<QUERY>
-${prefix}{{FILL_HERE}}${suffix}
+${formattedContext}${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.

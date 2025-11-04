@@ -95,7 +95,7 @@ describe("GhostRecentOperations", () => {
 		vi.clearAllMocks()
 	})
 
-	it("should include recent operations in the prompt when available", async () => {
+	it("should include recent operations in autocomplete input", async () => {
 		// Store initial document version
 		await documentStore.storeDocument({ document: mockDocument, bypassDebounce: true })
 
@@ -117,18 +117,22 @@ describe("GhostRecentOperations", () => {
 
 		const autocompleteInput = contextToAutocompleteInput(enrichedContext)
 
+		// Verify recent operations are converted to recentlyEditedRanges
+		expect(autocompleteInput.recentlyEditedRanges).toBeDefined()
+		expect(autocompleteInput.recentlyEditedRanges.length).toBeGreaterThan(0)
+
 		// Generate prompt
 		const prefix = enrichedContext.document.getText()
 		const suffix = ""
 		const languageId = enrichedContext.document.languageId
 		const { userPrompt } = await autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
 
-		// Verify that the prompt includes the recent operations section
-		// The strategy system uses "<RECENT_EDITS>" XML format
-		expect(userPrompt).toContain("<RECENT_EDITS>")
+		// Context is now comment-wrapped inside QUERY (not as separate XML tags)
+		expect(userPrompt).toContain("<QUERY>")
+		expect(userPrompt).toContain("{{FILL_HERE}}")
 	})
 
-	it("should not include recent operations in the prompt when not available", async () => {
+	it("should work without recent operations", async () => {
 		// Create a suggestion context without storing document history
 		const suggestionContext: GhostSuggestionContext = {
 			document: mockDocument,
@@ -145,9 +149,9 @@ describe("GhostRecentOperations", () => {
 		const languageId = enrichedContext.document.languageId
 		const { userPrompt } = await autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
 
-		// Verify that the prompt does not include recent operations section
-		// The current document content will still be in the prompt, so we should only check
-		// that the "**Recent Changes (Diff):**" section is not present
-		expect(userPrompt.includes("**Recent Changes (Diff):**")).toBe(false)
+		// Should still generate valid prompt with QUERY and FILL_HERE
+		expect(userPrompt).toContain("<QUERY>")
+		expect(userPrompt).toContain("{{FILL_HERE}}")
+		expect(userPrompt).toContain("</QUERY>")
 	})
 })
