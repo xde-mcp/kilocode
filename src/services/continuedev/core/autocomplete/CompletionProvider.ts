@@ -55,7 +55,6 @@ export class CompletionProvider {
 			return undefined
 		}
 
-
 		// Temporary fix for JetBrains autocomplete bug as described in https://github.com/continuedev/continue/pull/3022
 		if (llm.model === undefined && llm.completionOptions?.model !== undefined) {
 			llm.model = llm.completionOptions.model
@@ -212,18 +211,9 @@ export class CompletionProvider {
 
 				// Don't postprocess if aborted
 				if (token.aborted) {
-<<<<<<< HEAD
 					return undefined
 				}
 
-=======
-					console.log('aborted')
-					return undefined
-				}
-
-				console.log('raw completion', completion)
-
->>>>>>> 40ab73e3d8 (Reset formatting changes to upstream versions)
 				const processedCompletion = helper.options.transform
 					? postprocessCompletion({
 							completion,
