@@ -28,84 +28,152 @@ export interface ContextSnippets {
 }
 
 /**
+ * Helper to format a section of snippets with consistent XML tags
+ */
+function formatSection(
+	snippets: ContextSnippet[],
+	tagName: string,
+	formatter: (snippet: ContextSnippet, index: number) => string,
+): string {
+	if (snippets.length === 0) return ""
+
+	let section = `<${tagName}>\n`
+	snippets.forEach((snippet, index) => {
+		section += formatter(snippet, index)
+	})
+	section += `</${tagName}>\n\n`
+
+	return section
+}
+
+/**
  * Format context snippets into a string suitable for adding to prompts
  * Pure function for easy testing without mocks
  */
 export function formatContextForPrompt(snippets: ContextSnippets): string {
 	let context = ""
 
-	// Add clipboard (highest priority in continuedev)
-	if (snippets.clipboard.length > 0) {
-		context += "<CLIPBOARD>\n"
-		snippets.clipboard.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-			context += `${index + 1}. ${snippet.content.length > 200 ? preview + "\n..." : snippet.content}\n\n`
-		})
-		context += "</CLIPBOARD>\n\n"
-	}
+	// Add clipboard (highest priority)
+	context += formatSection(snippets.clipboard, "CLIPBOARD", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+		return `${index + 1}. ${snippet.content.length > 200 ? preview + "\n..." : snippet.content}\n\n`
+	})
 
 	// Add recently opened files
-	if (snippets.recentlyOpenedFiles.length > 0) {
-		context += "<RECENTLY_OPENED_FILES>\n"
-		snippets.recentlyOpenedFiles.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 10).join("\n")
-			context += `File ${index + 1}: ${snippet.filepath}\n${preview}\n${
-				snippet.content.split("\n").length > 10 ? "...\n" : ""
-			}\n`
-		})
-		context += "</RECENTLY_OPENED_FILES>\n\n"
-	}
+	context += formatSection(snippets.recentlyOpenedFiles, "RECENTLY_OPENED_FILES", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 10).join("\n")
+		const hasMore = snippet.content.split("\n").length > 10
+		return `File ${index + 1}: ${snippet.filepath}\n${preview}\n${hasMore ? "...\n" : ""}\n`
+	})
 
 	// Add recently visited ranges
-	if (snippets.recentlyVisited.length > 0) {
-		context += "<RECENTLY_VISITED>\n"
-		snippets.recentlyVisited.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-			context += `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
-		})
-		context += "</RECENTLY_VISITED>\n\n"
-	}
-
-	// Add import definitions
-	if (snippets.importDefinitions.length > 0) {
-		context += "<IMPORTED_SYMBOLS>\n"
-		snippets.importDefinitions.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-			context += `${index + 1}. From ${snippet.filepath}:\n${preview}\n\n`
-		})
-		context += "</IMPORTED_SYMBOLS>\n\n"
-	}
-
-	// Add root path context (similar files)
-	if (snippets.rootPath.length > 0) {
-		context += "<SIMILAR_FILES>\n"
-		snippets.rootPath.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-			context += `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
-		})
-		context += "</SIMILAR_FILES>\n\n"
-	}
+	context += formatSection(snippets.recentlyVisited, "RECENTLY_VISITED", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+		return `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
+	})
 
 	// Add recently edited ranges
-	if (snippets.recentlyEdited.length > 0) {
-		context += "<RECENTLY_EDITED>\n"
-		snippets.recentlyEdited.forEach((snippet, index) => {
-			const preview = snippet.content.split("\n").slice(0, 5).join("\n")
-			context += `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
-		})
-		context += "</RECENTLY_EDITED>\n\n"
-	}
+	context += formatSection(snippets.recentlyEdited, "RECENTLY_EDITED", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+		return `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
+	})
+
+	// Add import definitions
+	context += formatSection(snippets.importDefinitions, "IMPORTED_SYMBOLS", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+		return `${index + 1}. From ${snippet.filepath}:\n${preview}\n\n`
+	})
+
+	// Add root path context (similar files)
+	context += formatSection(snippets.rootPath, "SIMILAR_FILES", (snippet, index) => {
+		const preview = snippet.content.split("\n").slice(0, 5).join("\n")
+		return `${index + 1}. ${snippet.filepath}:\n${preview}\n\n`
+	})
 
 	// Add static context (tree-sitter analysis)
-	if (snippets.static.length > 0) {
-		context += "<CODE_STRUCTURE>\n"
-		snippets.static.forEach((snippet, index) => {
-			context += `${index + 1}. ${snippet.content}\n\n`
-		})
-		context += "</CODE_STRUCTURE>\n\n"
-	}
+	context += formatSection(snippets.static, "CODE_STRUCTURE", (snippet, index) => {
+		return `${index + 1}. ${snippet.content}\n\n`
+	})
 
 	return context
+}
+
+/**
+ * Helper to create empty ContextSnippets
+ */
+function createEmptyContextSnippets(): ContextSnippets {
+	return {
+		recentlyOpenedFiles: [],
+		importDefinitions: [],
+		rootPath: [],
+		clipboard: [],
+		static: [],
+		recentlyVisited: [],
+		recentlyEdited: [],
+	}
+}
+
+/**
+ * Convert Ghost AutocompleteInput to continuedev format
+ */
+function convertToContinuedevInput(autocompleteInput: AutocompleteInput) {
+	return {
+		...autocompleteInput,
+		recentlyVisitedRanges: autocompleteInput.recentlyVisitedRanges.map((range) => ({
+			...range,
+			type: AutocompleteSnippetType.Code,
+		})),
+	}
+}
+
+/**
+ * Categorize filtered snippets by type
+ */
+function categorizeSnippets(filteredSnippets: any[], snippetPayload: any): ContextSnippets {
+	const result = createEmptyContextSnippets()
+
+	// Create lookup sets for efficient categorization
+	const categoryMaps = {
+		recentlyEdited: new Set(snippetPayload.recentlyEditedRangeSnippets.map((s: any) => s.filepath)),
+		recentlyOpened: new Set(snippetPayload.recentlyOpenedFileSnippets.map((s: any) => s.filepath)),
+		recentlyVisited: new Set(snippetPayload.recentlyVisitedRangesSnippets.map((s: any) => s.filepath)),
+		importDef: new Set(snippetPayload.importDefinitionSnippets.map((s: any) => s.filepath)),
+		rootPath: new Set(snippetPayload.rootPathSnippets.map((s: any) => s.filepath)),
+	}
+
+	filteredSnippets.forEach((snippet) => {
+		const contextSnippet: ContextSnippet = {
+			filepath: (snippet as AutocompleteCodeSnippet).filepath || "clipboard",
+			content: snippet.content,
+		}
+
+		switch (snippet.type) {
+			case AutocompleteSnippetType.Clipboard:
+				result.clipboard.push(contextSnippet)
+				break
+			case AutocompleteSnippetType.Static:
+				result.static.push(contextSnippet)
+				break
+			case AutocompleteSnippetType.Code: {
+				const codeSnippet = snippet as AutocompleteCodeSnippet
+				// Check in priority order
+				if (categoryMaps.recentlyEdited.has(codeSnippet.filepath)) {
+					result.recentlyEdited.push(contextSnippet)
+				} else if (categoryMaps.recentlyOpened.has(codeSnippet.filepath)) {
+					result.recentlyOpenedFiles.push(contextSnippet)
+				} else if (categoryMaps.recentlyVisited.has(codeSnippet.filepath)) {
+					result.recentlyVisited.push(contextSnippet)
+				} else if (categoryMaps.importDef.has(codeSnippet.filepath)) {
+					result.importDefinitions.push(contextSnippet)
+				} else if (categoryMaps.rootPath.has(codeSnippet.filepath)) {
+					result.rootPath.push(contextSnippet)
+				}
+				break
+			}
+		}
+	})
+
+	return result
 }
 
 /**
@@ -126,27 +194,19 @@ export class GhostContextProvider {
 	 */
 	async getContextSnippets(autocompleteInput: AutocompleteInput, filepath: string): Promise<ContextSnippets> {
 		try {
-			// Initialize import definitions cache for the file
+			// Initialize import definitions cache
 			await this.contextService.initializeForFile(filepath)
 
-			// Convert to continuedev AutocompleteInput format by adding type property
-			const continuedevInput = {
-				...autocompleteInput,
-				recentlyVisitedRanges: autocompleteInput.recentlyVisitedRanges.map((range) => ({
-					...range,
-					type: AutocompleteSnippetType.Code,
-				})),
-			}
-
-			// Create HelperVars with default autocomplete options
+			// Convert input format and create helper
+			const continuedevInput = convertToContinuedevInput(autocompleteInput)
 			const helper = await HelperVars.create(
 				continuedevInput as any,
 				DEFAULT_AUTOCOMPLETE_OPTS,
-				"codestral", // Default model name for token counting
+				"codestral",
 				this.ide,
 			)
 
-			// Get all snippets using continuedev's context gathering
+			// Get all available snippets
 			const snippetPayload = await getAllSnippetsWithoutRace({
 				helper,
 				ide: this.ide,
@@ -154,74 +214,12 @@ export class GhostContextProvider {
 				contextRetrievalService: this.contextService,
 			})
 
-			// Use continuedev's token-based filtering for intelligent snippet selection
+			// Apply token-based filtering and categorize
 			const filteredSnippets = getSnippets(helper, snippetPayload)
-
-			// Organize filtered snippets by type using snippet.type property
-			const snippetsByType: ContextSnippets = {
-				recentlyOpenedFiles: [],
-				importDefinitions: [],
-				rootPath: [],
-				clipboard: [],
-				static: [],
-				recentlyVisited: [],
-				recentlyEdited: [],
-			}
-
-			// Create lookup sets for categorization (since getSnippets() mixes all types)
-			const recentlyOpenedSet = new Set(snippetPayload.recentlyOpenedFileSnippets.map((s) => s.filepath))
-			const importDefSet = new Set(snippetPayload.importDefinitionSnippets.map((s) => s.filepath))
-			const rootPathSet = new Set(snippetPayload.rootPathSnippets.map((s) => s.filepath))
-			const recentlyVisitedSet = new Set(snippetPayload.recentlyVisitedRangesSnippets.map((s) => s.filepath))
-			const recentlyEditedSet = new Set(snippetPayload.recentlyEditedRangeSnippets.map((s) => s.filepath))
-
-			// Categorize each filtered snippet
-			filteredSnippets.forEach((snippet) => {
-				const contextSnippet: ContextSnippet = {
-					filepath: (snippet as AutocompleteCodeSnippet).filepath || "clipboard",
-					content: snippet.content,
-				}
-
-				// Use type and filepath to determine category
-				switch (snippet.type) {
-					case AutocompleteSnippetType.Clipboard:
-						snippetsByType.clipboard.push(contextSnippet)
-						break
-					case AutocompleteSnippetType.Static:
-						snippetsByType.static.push(contextSnippet)
-						break
-					case AutocompleteSnippetType.Code: {
-						// Further categorize Code snippets by matching filepath
-						const codeSnippet = snippet as AutocompleteCodeSnippet
-						if (recentlyEditedSet.has(codeSnippet.filepath)) {
-							snippetsByType.recentlyEdited.push(contextSnippet)
-						} else if (recentlyOpenedSet.has(codeSnippet.filepath)) {
-							snippetsByType.recentlyOpenedFiles.push(contextSnippet)
-						} else if (recentlyVisitedSet.has(codeSnippet.filepath)) {
-							snippetsByType.recentlyVisited.push(contextSnippet)
-						} else if (importDefSet.has(codeSnippet.filepath)) {
-							snippetsByType.importDefinitions.push(contextSnippet)
-						} else if (rootPathSet.has(codeSnippet.filepath)) {
-							snippetsByType.rootPath.push(contextSnippet)
-						}
-						break
-					}
-				}
-			})
-
-			return snippetsByType
+			return categorizeSnippets(filteredSnippets, snippetPayload)
 		} catch (error) {
 			console.warn("Failed to get context snippets:", error)
-			// Return empty snippets on error to avoid breaking autocomplete
-			return {
-				recentlyOpenedFiles: [],
-				importDefinitions: [],
-				rootPath: [],
-				clipboard: [],
-				static: [],
-				recentlyVisited: [],
-				recentlyEdited: [],
-			}
+			return createEmptyContextSnippets()
 		}
 	}
 }
