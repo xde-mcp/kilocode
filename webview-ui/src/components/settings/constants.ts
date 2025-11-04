@@ -17,7 +17,6 @@ import {
 	vertexModels,
 	xaiModels,
 	groqModels,
-	// chutesModels, // kilocode_change
 	sambaNovaModels,
 	doubaoModels,
 	internationalZAiModels,
@@ -25,6 +24,7 @@ import {
 	syntheticModels, // kilocode_change
 	rooModels,
 	featherlessModels,
+	minimaxModels,
 } from "@roo-code/types"
 
 export const MODELS_BY_PROVIDER: Partial<Record<ProviderName, Record<string, ModelInfo>>> = {
@@ -52,6 +52,7 @@ export const MODELS_BY_PROVIDER: Partial<Record<ProviderName, Record<string, Mod
 	synthetic: syntheticModels, // kilocode_change
 	roo: rooModels,
 	featherless: featherlessModels,
+	minimax: minimaxModels,
 }
 
 export const PROVIDERS = [
@@ -98,6 +99,7 @@ export const PROVIDERS = [
 	// { value: "roo", label: "Roo Code Cloud" },
 	// kilocode_change end
 	{ value: "vercel-ai-gateway", label: "Vercel AI Gateway" },
+	{ value: "minimax", label: "MiniMax" },
 ].sort((a, b) => a.label.localeCompare(b.label))
 
 PROVIDERS.unshift({ value: "kilocode", label: "Kilo Gateway" }) // kilocode_change

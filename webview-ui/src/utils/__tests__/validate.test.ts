@@ -63,10 +63,11 @@ describe("Model Validation Functions", () => {
 		huggingface: {},
 		// kilocode_change start
 		ovhcloud: {},
-		chutes: {},
 		gemini: {},
 		inception: {},
 		// kilocode_change end
+		roo: {},
+		chutes: {},
 	}
 
 	const allowAllOrganization: OrganizationAllowList = {
