@@ -1,10 +1,8 @@
 import {
 	DEEP_SEEK_DEFAULT_TEMPERATURE,
-	type ChutesModelId,
 	chutesDefaultModelId,
-	chutesModels,
-	getActiveToolUseStyle,
-	chutesDefaultModelInfo, // kilocode_change
+	chutesDefaultModelInfo,
+	getActiveToolUseStyle, // kilocode_change
 } from "@roo-code/types"
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
@@ -17,9 +15,8 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStream } from "../transform/stream"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
-import { BaseOpenAiCompatibleProvider } from "./base-openai-compatible-provider"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 import { RouterProvider } from "./router-provider"
+import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 
 export class ChutesHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {
@@ -62,6 +59,8 @@ export class ChutesHandler extends RouterProvider implements SingleCompletionHan
 		if (this.supportsTemperature(model)) {
 			params.temperature = this.options.modelTemperature ?? info.temperature
 		}
+
+		addNativeToolCallsToParams(params, this.options, metadata) // kilocode_change
 
 		return params
 	}
@@ -118,10 +117,18 @@ export class ChutesHandler extends RouterProvider implements SingleCompletionHan
 			}
 		} else {
 			// For non-DeepSeek-R1 models, use standard OpenAI streaming
-			const stream = await this.client.chat.completions.create(this.getCompletionParams(systemPrompt, messages))
+			const stream = await this.client.chat.completions.create(
+				this.getCompletionParams(
+					systemPrompt,
+					messages,
+					metadata, // kilocode_change
+				),
+			)
 
 			for await (const chunk of stream) {
 				const delta = chunk.choices[0]?.delta
+
+				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
 
 				if (delta?.content) {
 					yield { type: "text", text: delta.content }
