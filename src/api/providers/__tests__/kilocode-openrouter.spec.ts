@@ -196,4 +196,138 @@ describe("KilocodeOpenrouterHandler", () => {
 			)
 		})
 	})
+
+	describe("FIM support", () => {
+		it("supportsFim returns true for codestral models", () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "mistral/codestral-latest",
+			})
+
+			expect(handler.supportsFim()).toBe(true)
+		})
+
+		it("supportsFim returns false for non-codestral models", () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "anthropic/claude-sonnet-4",
+			})
+
+			expect(handler.supportsFim()).toBe(false)
+		})
+
+		it("completeFim makes request with correct parameters", async () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "mistral/codestral-latest",
+				kilocodeOrganizationId: "test-org-id",
+			})
+
+			const mockStream = new ReadableStream({
+				start(controller) {
+					controller.enqueue(
+						new TextEncoder().encode('data: {"choices":[{"delta":{"content":"completed "}}]}\n'),
+					)
+					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"code"}}]}\n'))
+					controller.enqueue(new TextEncoder().encode("data: [DONE]\n"))
+					controller.close()
+				},
+			})
+
+			const mockResponse = {
+				ok: true,
+				body: mockStream,
+			}
+
+			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+
+			const result = await handler.completeFim("prefix code", "suffix code", "test-task-id")
+
+			expect(result).toBe("completed code")
+			expect(global.fetch).toHaveBeenCalledWith(
+				expect.any(URL),
+				expect.objectContaining({
+					method: "POST",
+					headers: expect.objectContaining({
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						"x-api-key": "test-token",
+						Authorization: "Bearer test-token",
+						[X_KILOCODE_TASKID]: "test-task-id",
+						[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
+					}),
+					body: expect.stringContaining('"stream":true'),
+				}),
+			)
+		})
+
+		it("completeFim handles errors correctly", async () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "mistral/codestral-latest",
+			})
+
+			const mockResponse = {
+				ok: false,
+				status: 500,
+				statusText: "Internal Server Error",
+				text: vitest.fn().mockResolvedValue("Error details"),
+			}
+
+			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+
+			await expect(handler.completeFim("prefix", "suffix")).rejects.toThrow(
+				"FIM streaming failed: 500 Internal Server Error - Error details",
+			)
+		})
+
+		it("streamFim yields chunks correctly", async () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "mistral/codestral-latest",
+			})
+
+			const mockStream = new ReadableStream({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"chunk1"}}]}\n'))
+					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"chunk2"}}]}\n'))
+					controller.enqueue(new TextEncoder().encode("data: [DONE]\n"))
+					controller.close()
+				},
+			})
+
+			const mockResponse = {
+				ok: true,
+				body: mockStream,
+			}
+
+			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+
+			const chunks: string[] = []
+			for await (const chunk of handler.streamFim("prefix", "suffix")) {
+				chunks.push(chunk)
+			}
+
+			expect(chunks).toEqual(["chunk1", "chunk2"])
+		})
+
+		it("streamFim handles errors correctly", async () => {
+			const handler = new KilocodeOpenrouterHandler({
+				...mockOptions,
+				kilocodeModel: "mistral/codestral-latest",
+			})
+
+			const mockResponse = {
+				ok: false,
+				status: 400,
+				statusText: "Bad Request",
+				text: vitest.fn().mockResolvedValue("Invalid request"),
+			}
+
+			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+
+			const generator = handler.streamFim("prefix", "suffix")
+			await expect(generator.next()).rejects.toThrow("FIM streaming failed: 400 Bad Request - Invalid request")
+		})
+	})
 })
