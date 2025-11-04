@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.115.0
-
-### Minor Changes
+## [v4.115.0]
 
 - [#3486](https://github.com/Kilo-Org/kilocode/pull/3486) [`2b89d84`](https://github.com/Kilo-Org/kilocode/commit/2b89d8472123e48db866e10a88b5b6160812d73e) Thanks [@markijbema](https://github.com/markijbema)! - Show MCP tool instead of server name when asked to approve a tool
 
