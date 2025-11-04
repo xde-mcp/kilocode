@@ -100,7 +100,6 @@ class FileSearchService {
 		const entries = await fg("**/*", {
 			cwd,
 			dot: false, // Don't include hidden files
-			gitignore: false, // We'll handle gitignore manually for better control
 			followSymbolicLinks: false,
 			markDirectories: true, // Add trailing slash to directories
 			stats: false, // We don't need file stats
@@ -109,7 +108,7 @@ class FileSearchService {
 
 		// Process and filter results
 		const results: FileSearchResult[] = entries
-			.map((entry: string) => {
+			.map((entry: string): FileSearchResult => {
 				const isFolder = entry.endsWith("/")
 				const filePath = isFolder ? entry.slice(0, -1) : entry
 				const parts = filePath.split("/")
@@ -118,7 +117,7 @@ class FileSearchService {
 
 				return {
 					path: filePath,
-					type: isFolder ? "folder" : "file",
+					type: isFolder ? ("folder" as const) : ("file" as const),
 					basename,
 					dirname,
 				}
