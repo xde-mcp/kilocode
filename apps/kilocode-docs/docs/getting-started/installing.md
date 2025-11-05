@@ -100,8 +100,7 @@ If you prefer to download and install the VSIX file directly:
 * If VS Code Marketplace is inaccessible, try the Open VSX Registry method
 
 **Windows Users**  
-* Support for Windows is currently limited  
-* If you encounter errors, ensure **`PowerShell` is added to your `PATH`**:  
+* Ensure that **`PowerShell` is added to your `PATH`**:  
   1. Open **Edit system environment variables** → **Environment Variables**  
   2. Under **System variables**, select **Path** → **Edit** → **New**  
   3. Add: `C:\Windows\System32\WindowsPowerShell\v1.0\`  
