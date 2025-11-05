@@ -1,5 +1,5 @@
 // kilocode_change - new file
-import { HTMLAttributes, useMemo, useState } from "react"
+import { HTMLAttributes, useMemo } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { Monitor } from "lucide-react"
