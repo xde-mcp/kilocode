@@ -88,7 +88,7 @@ export function useHotkeys(): UseHotkeysReturn {
 				{ keys: "↑↓", description: "history" },
 				{ keys: "Enter", description: "to execute" },
 				{ keys: "Esc", description: "to exit" },
-				{ keys: "!", description: "to toggle shell mode" },
+				{ keys: "!", description: "to exit shell mode" },
 			]
 		}
 
