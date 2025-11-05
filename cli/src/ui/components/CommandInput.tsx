@@ -3,7 +3,7 @@
  * Updated to use useCommandInput, useWebviewMessage, useApprovalHandler, and useFollowupSuggestions hooks
  */
 
-import React, { useEffect } from "react"
+import React, { useCallback, useEffect } from "react"
 import { Box, Text } from "ink"
 import { useSetAtom, useAtomValue, useAtom } from "jotai"
 import { submissionCallbackAtom } from "../../state/atoms/keyboard.js"
@@ -96,15 +96,18 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 	const isInputDisabled = disabled || isApprovalPending || isCommittingParallelMode
 
 	// Enhanced submission handler for shell mode
-	const handleSubmit = (value: string) => {
-		if (isShellModeActive) {
-			// Execute as shell command
-			executeShellCommand(value)
-		} else {
-			// Normal submission
-			onSubmit(value)
-		}
-	}
+	const handleSubmit = useCallback(
+		(value: string) => {
+			if (isShellModeActive) {
+				// Execute as shell command
+				executeShellCommand(value)
+			} else {
+				// Normal submission
+				onSubmit(value)
+			}
+		},
+		[isShellModeActive, executeShellCommand, onSubmit],
+	)
 
 	// Set the submission callback so keyboard handler can trigger onSubmit
 	useEffect(() => {
