@@ -126,7 +126,6 @@ export class NewAutocompleteModel {
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 				// Add env for KiloCode metadata (organizationId and tester suppression)
-				// Add env for KiloCode metadata (organizationId, tester suppression) and live token provider
 				env: {
 					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
 					kilocodeOrganizationId: config.organizationId,
