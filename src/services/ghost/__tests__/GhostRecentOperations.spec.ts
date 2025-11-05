@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import * as vscode from "vscode"
 import { GhostContext } from "../GhostContext"
 import { GhostDocumentStore } from "../GhostDocumentStore"
-import { AutoTriggerStrategy } from "../strategies/AutoTriggerStrategy"
+import { AutoTriggerStrategy } from "../classic-auto-complete/AutoTriggerStrategy"
 import { GhostSuggestionContext, contextToAutocompleteInput } from "../types"
 import { MockTextDocument } from "../../mocking/MockTextDocument"
 
@@ -124,8 +124,8 @@ describe("GhostRecentOperations", () => {
 		const { userPrompt } = autoTriggerStrategy.getPrompts(autocompleteInput, prefix, suffix, languageId)
 
 		// Verify that the prompt includes the recent operations section
-		// The new strategy system uses "## Recent Typing" format
-		expect(userPrompt).toContain("## Recent Typing")
+		// The strategy system uses "<RECENT_EDITS>" XML format
+		expect(userPrompt).toContain("<RECENT_EDITS>")
 	})
 
 	it("should not include recent operations in the prompt when not available", async () => {

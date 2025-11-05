@@ -1,13 +1,18 @@
 import { z } from "zod"
 import { ProviderSettings, ProviderSettingsEntry } from "../provider-settings.js"
 
+declare global {
+	interface Window {
+		KILOCODE_BACKEND_BASE_URL: string | undefined
+	}
+}
+
 export const ghostServiceSettingsSchema = z
 	.object({
 		enableAutoTrigger: z.boolean().optional(),
-		autoTriggerDelay: z.number().min(1).max(5000).default(3000).optional(),
 		enableQuickInlineTaskKeybinding: z.boolean().optional(),
 		enableSmartInlineTaskKeybinding: z.boolean().optional(),
-		showGutterAnimation: z.boolean().optional(),
+		useNewAutocomplete: z.boolean().optional(),
 		provider: z.string().optional(),
 		model: z.string().optional(),
 	})
@@ -38,6 +43,8 @@ export const fastApplyModelSchema = z.enum([
 
 export type FastApplyModel = z.infer<typeof fastApplyModelSchema>
 
+export const DEFAULT_KILOCODE_BACKEND_URL = "https://kilocode.ai"
+
 export function getKiloBaseUriFromToken(kilocodeToken?: string) {
 	if (kilocodeToken) {
 		try {
@@ -54,6 +61,61 @@ export function getKiloBaseUriFromToken(kilocodeToken?: string) {
 		}
 	}
 	return "https://api.kilocode.ai"
+}
+
+/**
+ * Helper function that combines token-based base URL resolution with URL construction.
+ * Takes a token and a full URL, uses the token to get the appropriate base URL,
+ * then constructs the final URL by replacing the domain in the target URL.
+ *
+ * @param targetUrl The target URL to transform
+ * @param kilocodeToken The KiloCode authentication token
+ * @returns Fully constructed KiloCode URL with proper backend mapping based on token
+ */
+export function getKiloUrlFromToken(targetUrl: string, kilocodeToken?: string): string {
+	const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
+	const target = new URL(targetUrl)
+
+	const { protocol, host } = new URL(baseUrl)
+	Object.assign(target, { protocol, host })
+
+	return target.toString()
+}
+
+function getGlobalKilocodeBackendUrl(): string {
+	return (
+		(typeof window !== "undefined" ? window.KILOCODE_BACKEND_BASE_URL : undefined) ||
+		process.env.KILOCODE_BACKEND_BASE_URL ||
+		DEFAULT_KILOCODE_BACKEND_URL
+	)
+}
+
+/**
+ * Gets the app/web URL for the current environment.
+ * In development: http://localhost:3000
+ * In production: https://kilocode.ai
+ */
+export function getAppUrl(path: string = ""): string {
+	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
+}
+
+/**
+ * Gets the extension config URL, which uses a legacy subdomain structure.
+ * In development: http://localhost:3000/extension-config.json
+ * In production: https://api.kilocode.ai/extension-config.json
+ */
+export function getExtensionConfigUrl(): string {
+	try {
+		const backend = getGlobalKilocodeBackendUrl()
+		if (backend.includes("localhost")) {
+			return getAppUrl("/extension-config.json")
+		} else {
+			return "https://api.kilocode.ai/extension-config.json"
+		}
+	} catch (error) {
+		console.warn("Failed to build extension config URL:", error)
+		return "https://api.kilocode.ai/extension-config.json"
+	}
 }
 
 /**

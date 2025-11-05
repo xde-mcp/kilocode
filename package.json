@@ -36,6 +36,7 @@
 		"cli:build": "turbo run cli:build",
 		"cli:bundle": "turbo run cli:bundle --force",
 		"cli:deps": "pnpm --filter @kilocode/cli run deps:install",
+		"cli:dev": "pnpm --filter @kilocode/cli run dev",
 		"cli:run": "pnpm --filter @kilocode/cli run start",
 		"docs:start": "pnpm --filter kilocode-docs start",
 		"docs:build": "pnpm --filter kilocode-docs build"
@@ -46,7 +47,7 @@
 		"@dotenvx/dotenvx": "^1.34.0",
 		"@roo-code/config-typescript": "workspace:^",
 		"@types/glob": "^9.0.0",
-		"@types/node": "^24.1.0",
+		"@types/node": "20.x",
 		"@vscode/vsce": "3.3.2",
 		"esbuild": "^0.25.0",
 		"eslint": "^9.27.0",

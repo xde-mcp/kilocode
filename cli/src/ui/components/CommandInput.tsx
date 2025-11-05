@@ -5,9 +5,14 @@
 
 import React, { useEffect } from "react"
 import { Box, Text } from "ink"
-import { useSetAtom, useAtomValue } from "jotai"
+import { useSetAtom, useAtomValue, useAtom } from "jotai"
 import { submissionCallbackAtom } from "../../state/atoms/keyboard.js"
-import { selectedIndexAtom, inputModeAtom } from "../../state/atoms/ui.js"
+import {
+	selectedIndexAtom,
+	inputModeAtom,
+	isCommittingParallelModeAtom,
+	commitCountdownSecondsAtom,
+} from "../../state/atoms/ui.js"
 import { shellModeActiveAtom, executeShellCommandAtom } from "../../state/atoms/keyboard.js"
 import { MultilineTextInput } from "./MultilineTextInput.js"
 import { useCommandInput } from "../../state/hooks/useCommandInput.js"
@@ -17,6 +22,7 @@ import { useTheme } from "../../state/hooks/useTheme.js"
 import { AutocompleteMenu } from "./AutocompleteMenu.js"
 import { ApprovalMenu } from "./ApprovalMenu.js"
 import { FollowupSuggestionsMenu } from "./FollowupSuggestionsMenu.js"
+import { useResetAtom } from "jotai/utils"
 
 interface CommandInputProps {
 	onSubmit: (value: string) => void
@@ -38,7 +44,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 	const executeShellCommand = useSetAtom(executeShellCommandAtom)
 
 	// Use the command input hook for autocomplete functionality
-	const { isAutocompleteVisible, commandSuggestions, argumentSuggestions } = useCommandInput()
+	const { isAutocompleteVisible, commandSuggestions, argumentSuggestions, fileMentionSuggestions } = useCommandInput()
 
 	// Use the approval handler hook for approval functionality
 	// This hook sets up the approval callbacks that the keyboard handler uses
@@ -50,13 +56,44 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 	// Setup centralized keyboard handler
 	const setSubmissionCallback = useSetAtom(submissionCallbackAtom)
 	const sharedSelectedIndex = useAtomValue(selectedIndexAtom)
+	const isCommittingParallelMode = useAtomValue(isCommittingParallelModeAtom)
+	const [countdownSeconds, setCountdownSeconds] = useAtom(commitCountdownSecondsAtom)
+	const resetCountdownSeconds = useResetAtom(commitCountdownSecondsAtom)
+
+	// Countdown timer effect for parallel mode commit
+	useEffect(() => {
+		if (!isCommittingParallelMode) {
+			resetCountdownSeconds()
+			return
+		}
+
+		resetCountdownSeconds()
+
+		const interval = setInterval(() => {
+			setCountdownSeconds((prev) => {
+				if (prev <= 1) {
+					clearInterval(interval)
+					return 0
+				}
+				return prev - 1
+			})
+		}, 1000)
+
+		return () => clearInterval(interval)
+	}, [isCommittingParallelMode, setCountdownSeconds, resetCountdownSeconds])
 
 	// Determine suggestion type for autocomplete menu
 	const suggestionType =
-		commandSuggestions.length > 0 ? "command" : argumentSuggestions.length > 0 ? "argument" : "none"
+		fileMentionSuggestions.length > 0
+			? "file-mention"
+			: commandSuggestions.length > 0
+				? "command"
+				: argumentSuggestions.length > 0
+					? "argument"
+					: "none"
 
-	// Determine if input should be disabled (during approval or when explicitly disabled)
-	const isInputDisabled = disabled || isApprovalPending
+	// Determine if input should be disabled (during approval, when explicitly disabled, or when committing parallel mode)
+	const isInputDisabled = disabled || isApprovalPending || isCommittingParallelMode
 
 	// Enhanced submission handler for shell mode
 	const handleSubmit = (value: string) => {
@@ -74,24 +111,30 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 		setSubmissionCallback({ callback: handleSubmit })
 	}, [handleSubmit, setSubmissionCallback])
 
-	// Determine styling based on mode
+	// Determine styling based on mode (priority: parallel mode > shell mode > approval > normal)
 	const isShellMode = inputMode === "shell"
-	const borderColor = isShellMode
-		? theme.semantic.warning
-		: isApprovalPending
-			? theme.actions.pending
-			: theme.ui.border.active
-	const promptColor = isShellMode
-		? theme.semantic.warning
-		: isApprovalPending
-			? theme.actions.pending
-			: theme.ui.border.active
-	const promptSymbol = isShellMode ? "$ " : isApprovalPending ? "[!] " : "> "
-	const inputPlaceholder = isShellMode
-		? "Type shell command..."
-		: isApprovalPending
-			? "Awaiting approval..."
-			: placeholder
+	const borderColor = isCommittingParallelMode
+		? theme.ui.border.active
+		: isShellMode
+			? theme.semantic.warning
+			: isApprovalPending
+				? theme.actions.pending
+				: theme.ui.border.active
+	const promptColor = isCommittingParallelMode
+		? theme.ui.border.active
+		: isShellMode
+			? theme.semantic.warning
+			: isApprovalPending
+				? theme.actions.pending
+				: theme.ui.border.active
+	const promptSymbol = isCommittingParallelMode ? "⏳ " : isShellMode ? "$ " : isApprovalPending ? "[!] " : "> "
+	const inputPlaceholder = isCommittingParallelMode
+		? `Committing your changes... (${countdownSeconds}s)`
+		: isShellMode
+			? "Type shell command..."
+			: isApprovalPending
+				? "Awaiting approval..."
+				: placeholder
 
 	return (
 		<Box flexDirection="column">
@@ -99,15 +142,15 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 			<Box borderStyle="round" borderColor={borderColor} paddingX={1}>
 				<Box flexDirection="row" alignItems="center">
 					<Text color={promptColor} bold>
-						{isShellMode && <Text color={promptColor}>shell</Text>}
-						{isShellMode && <Text> </Text>}
+						{isShellMode && !isCommittingParallelMode && <Text color={promptColor}>shell</Text>}
+						{isShellMode && !isCommittingParallelMode && <Text> </Text>}
 						{promptSymbol}
 					</Text>
 					<MultilineTextInput
 						placeholder={inputPlaceholder}
 						showCursor={!isInputDisabled}
 						maxLines={5}
-						width={Math.max(10, process.stdout.columns - 12)}
+						width={Math.max(10, isShellMode ? process.stdout.columns - 12 : process.stdout.columns - 6)}
 						focus={!isInputDisabled}
 					/>
 				</Box>
@@ -131,6 +174,7 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 					type={suggestionType}
 					commandSuggestions={commandSuggestions}
 					argumentSuggestions={argumentSuggestions}
+					fileMentionSuggestions={fileMentionSuggestions}
 					selectedIndex={sharedSelectedIndex}
 					visible={isAutocompleteVisible}
 				/>
