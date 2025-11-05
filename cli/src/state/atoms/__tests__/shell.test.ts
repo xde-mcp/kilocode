@@ -471,6 +471,165 @@ describe("shell mode - comprehensive tests", () => {
 		})
 	})
 
+	describe("@ tag (file mention) handling in shell mode", () => {
+		it("should not trigger file mention autocomplete when typing @ in shell mode", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type text with @ symbol
+			store.set(setTextAtom, "git commit -m 'fix @username'")
+
+			// Verify shell mode is still active
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+			expect(store.get(inputModeAtom)).toBe("shell")
+
+			// The @ should be treated as regular text, not triggering file mentions
+			expect(store.get(textBufferStringAtom)).toBe("git commit -m 'fix @username'")
+		})
+
+		it("should allow @ symbols in email addresses in shell mode", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with email
+			const emailCommand = "git config user.email user@example.com"
+			store.set(setTextAtom, emailCommand)
+
+			// Verify the @ is preserved as normal text
+			expect(store.get(textBufferStringAtom)).toBe(emailCommand)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow multiple @ symbols in shell commands", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with multiple @ symbols
+			const command = "echo 'user@host, admin@host, test@domain'"
+			store.set(setTextAtom, command)
+
+			// Verify all @ symbols are preserved
+			expect(store.get(textBufferStringAtom)).toBe(command)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow @ in shell command arguments", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with @ in various positions
+			const command = "ssh user@remote.host -p 22"
+			store.set(setTextAtom, command)
+
+			// Verify @ is treated as normal text
+			expect(store.get(textBufferStringAtom)).toBe(command)
+		})
+
+		it("should handle @ at the start of a shell command", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command starting with @
+			store.set(setTextAtom, "@echo test")
+
+			// Verify @ is preserved
+			expect(store.get(textBufferStringAtom)).toBe("@echo test")
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+	})
+
+	describe("/ command suggestions in shell mode", () => {
+		it("should not trigger command suggestions when typing / in shell mode", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type text with / for paths
+			store.set(setTextAtom, "cd /home/user/projects")
+
+			// Verify shell mode is still active
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+			expect(store.get(inputModeAtom)).toBe("shell")
+
+			// The / should be treated as regular text (path separator), not triggering commands
+			expect(store.get(textBufferStringAtom)).toBe("cd /home/user/projects")
+		})
+
+		it("should allow absolute paths with / in shell mode", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with absolute path
+			const pathCommand = "ls -la /var/log/"
+			store.set(setTextAtom, pathCommand)
+
+			// Verify the / is preserved as normal text
+			expect(store.get(textBufferStringAtom)).toBe(pathCommand)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow multiple slashes in file paths", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with multiple slashes
+			const command = "cat /etc/nginx/nginx.conf"
+			store.set(setTextAtom, command)
+
+			// Verify all / symbols are preserved
+			expect(store.get(textBufferStringAtom)).toBe(command)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow / at the start of a shell command (absolute paths)", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command starting with / (absolute path)
+			store.set(setTextAtom, "/usr/bin/python3 script.py")
+
+			// Verify / is preserved
+			expect(store.get(textBufferStringAtom)).toBe("/usr/bin/python3 script.py")
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow URLs with / and @ in shell mode", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type command with URL containing both @ and /
+			const curlCommand = "curl https://user@example.com/api/endpoint"
+			store.set(setTextAtom, curlCommand)
+
+			// Verify both @ and / are preserved
+			expect(store.get(textBufferStringAtom)).toBe(curlCommand)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+
+		it("should allow git commands with / in branch names", () => {
+			// Enter shell mode
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Type git command with / in branch name
+			const gitCommand = "git checkout feature/add-new-feature"
+			store.set(setTextAtom, gitCommand)
+
+			// Verify / is preserved
+			expect(store.get(textBufferStringAtom)).toBe(gitCommand)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+		})
+	})
+
 	describe("edge cases", () => {
 		it("should handle empty string command gracefully", async () => {
 			await store.set(executeShellCommandAtom, "")
