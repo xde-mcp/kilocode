@@ -2705,7 +2705,6 @@ describe("ClineProvider - Router Models", () => {
 				litellmApiKey: "litellm-key",
 				litellmBaseUrl: "http://localhost:4000",
 				// kilocode_change start
-				chutesApiKey: "chutes-key",
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
@@ -2744,7 +2743,6 @@ describe("ClineProvider - Router Models", () => {
 			baseUrl: "https://gemini.example.com",
 		})
 		expect(getModels).toHaveBeenCalledWith({ provider: "ovhcloud", apiKey: "ovhcloud-key" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "chutes", apiKey: "chutes-key" })
 		expect(getModels).toHaveBeenCalledWith({
 			provider: "inception",
 			apiKey: "inception-key",
@@ -2830,7 +2828,6 @@ describe("ClineProvider - Router Models", () => {
 			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty fail
 			.mockResolvedValueOnce(mockModels) // glama success
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound fail
-			.mockRejectedValueOnce(new Error("Chutes API error")) // kilocode_change: chutes fail
 			.mockRejectedValueOnce(new Error("Kilocode-OpenRouter API error")) // kilocode-openrouter fail
 			.mockRejectedValueOnce(new Error("Ollama API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway success

@@ -8,6 +8,11 @@ vi.mock("vscode", () => ({
 		showErrorMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 		showInformationMessage: vi.fn(),
+		// kilocode_change start
+		createTextEditorDecorationType: vi.fn(() => ({
+			dispose: vi.fn(),
+		})),
+		// kilocode_change end
 	},
 	workspace: {
 		workspaceFolders: undefined,

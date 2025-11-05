@@ -274,7 +274,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"kilocode-openrouter": mockModels,
 				roo: mockModels,
 				chutes: mockModels,
-				ollama: {},
+				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
 				huggingface: {},
@@ -406,7 +406,6 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty
 			.mockResolvedValueOnce(mockModels) // glama
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound
-			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes // kilocode_change
 			.mockResolvedValueOnce(mockModels) // kilocode-openrouter
 			.mockRejectedValueOnce(new Error("Ollama API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway
@@ -437,12 +436,6 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		})
 
 		// kilocode_change start
-		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Chutes API error",
-			values: { provider: "chutes" },
-		})
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
@@ -482,6 +475,12 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"vercel-ai-gateway": mockModels,
 				huggingface: {},
 				"io-intelligence": {},
+				// kilocode_change start
+				"kilocode-openrouter": mockModels,
+				inception: {},
+				gemini: mockModels,
+				ovhcloud: mockModels,
+				// kilocode_change end
 			},
 			values: undefined,
 		})
@@ -551,13 +550,6 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
-			error: "Chutes API error",
-			values: { provider: "chutes" },
-		})
-
-		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
 			error: "Ollama API error",
 			values: { provider: "ollama" },
 		})
@@ -567,6 +559,13 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			success: false,
 			error: "Vercel AI Gateway error",
 			values: { provider: "vercel-ai-gateway" },
+		})
+
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Chutes API error",
+			values: { provider: "chutes" },
 		})
 		// kilocode_change end
 
