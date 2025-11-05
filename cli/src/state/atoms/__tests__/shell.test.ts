@@ -1,14 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
 import { createStore } from "jotai"
-import {
-	shellModeActiveAtom,
-	shellHistoryAtom,
-	toggleShellModeAtom,
-	executeShellCommandAtom,
-	keyboardHandlerAtom,
-} from "../keyboard.js"
+import { shellModeActiveAtom, toggleShellModeAtom, executeShellCommandAtom, keyboardHandlerAtom } from "../keyboard.js"
 import { inputModeAtom } from "../ui.js"
 import type { Key } from "../../../types/keyboard.js"
+import { shellHistoryAtom } from "../shell.js"
 
 // Mock child_process to avoid actual command execution
 vi.mock("child_process", () => ({

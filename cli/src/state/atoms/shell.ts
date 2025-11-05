@@ -3,7 +3,10 @@
  */
 
 import { atom } from "jotai"
-import { inputModeAtom, type InputMode } from "./ui.js"
+import { addMessageAtom, inputModeAtom, type InputMode } from "./ui.js"
+import { exec } from "child_process"
+import { chatMessagesAtom } from "./extension.js"
+import { clearTextAtom, setTextAtom } from "./textBuffer.js"
 
 // ============================================================================
 // Shell Mode Atoms
@@ -27,7 +30,7 @@ export const shellHistoryIndexAtom = atom<number>(-1)
 /**
  * Action atom to toggle shell mode
  */
-export const toggleShellModeAtom = atom(null, async (get, set) => {
+export const toggleShellModeAtom = atom(null, (get, set) => {
 	const isCurrentlyActive = get(shellModeActiveAtom)
 	set(shellModeActiveAtom, !isCurrentlyActive)
 
@@ -36,14 +39,12 @@ export const toggleShellModeAtom = atom(null, async (get, set) => {
 		set(inputModeAtom, "shell" as InputMode)
 		set(shellHistoryIndexAtom, -1)
 		// Clear text buffer when entering shell mode
-		const { clearTextAtom } = await import("./textBuffer.js")
 		set(clearTextAtom)
 	} else {
 		// Exiting shell mode
 		set(inputModeAtom, "normal" as InputMode)
 		set(shellHistoryIndexAtom, -1)
 		// Clear text buffer when exiting shell mode
-		const { clearTextAtom } = await import("./textBuffer.js")
 		set(clearTextAtom)
 	}
 })
@@ -61,7 +62,7 @@ export const addToShellHistoryAtom = atom(null, (get, set, command: string) => {
 /**
  * Action atom to navigate shell history up
  */
-export const navigateShellHistoryUpAtom = atom(null, async (get, set) => {
+export const navigateShellHistoryUpAtom = atom(null, (get, set) => {
 	const history = get(shellHistoryAtom)
 	const currentIndex = get(shellHistoryIndexAtom)
 
@@ -82,14 +83,13 @@ export const navigateShellHistoryUpAtom = atom(null, async (get, set) => {
 	set(shellHistoryIndexAtom, newIndex)
 
 	// Set the text buffer to the history command
-	const { setTextAtom } = await import("./textBuffer.js")
 	set(setTextAtom, history[newIndex] || "")
 })
 
 /**
  * Action atom to navigate shell history down
  */
-export const navigateShellHistoryDownAtom = atom(null, async (get, set) => {
+export const navigateShellHistoryDownAtom = atom(null, (get, set) => {
 	const history = get(shellHistoryAtom)
 	const currentIndex = get(shellHistoryIndexAtom)
 
@@ -107,7 +107,6 @@ export const navigateShellHistoryDownAtom = atom(null, async (get, set) => {
 	set(shellHistoryIndexAtom, newIndex)
 
 	// Set the text buffer to the history command or clear it
-	const { setTextAtom, clearTextAtom } = await import("./textBuffer.js")
 	if (newIndex === -1) {
 		set(clearTextAtom)
 	} else {
@@ -125,13 +124,10 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 	set(addToShellHistoryAtom, command.trim())
 
 	// Clear the text buffer immediately for better UX
-	const { clearTextAtom } = await import("./textBuffer.js")
 	set(clearTextAtom)
 
 	// Execute the command immediately (no approval needed)
 	try {
-		const { exec } = await import("child_process")
-
 		// Execute command and capture output
 		const childProcess = exec(command, {
 			cwd: process.cwd(),
@@ -167,10 +163,6 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 
 		const output = stdout || stderr || "Command executed successfully"
 
-		// Add the command and its output to both the message system and chat context
-		const { addMessageAtom } = await import("./ui.js")
-		const { chatMessagesAtom } = await import("./extension.js")
-
 		// Display as system message for visibility
 		const systemMessage = {
 			id: `shell-${Date.now()}`,
@@ -194,8 +186,6 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 		set(chatMessagesAtom, [...currentMessages, chatMessage])
 	} catch (error: any) {
 		// Handle errors and display them in the message system
-		const { addMessageAtom } = await import("./ui.js")
-		const { chatMessagesAtom } = await import("./extension.js")
 
 		const errorOutput = `❌ Error: ${error.message}`
 
