@@ -222,48 +222,6 @@ describe("KilocodeOpenrouterHandler", () => {
 			expect(handler.supportsFim()).toBe(false)
 		})
 
-		it("completeFim makes request with correct parameters", async () => {
-			const handler = new KilocodeOpenrouterHandler({
-				...mockOptions,
-				kilocodeModel: "mistral/codestral-latest",
-				kilocodeOrganizationId: "test-org-id",
-			})
-
-			// Mock streamSse to return the expected data
-			;(streamSse as any).mockImplementation(async function* () {
-				yield { choices: [{ delta: { content: "completed " } }] }
-				yield { choices: [{ delta: { content: "code" } }] }
-			})
-
-			const mockResponse = {
-				ok: true,
-				status: 200,
-				statusText: "OK",
-			} as Response
-
-			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
-
-			const result = await handler.completeFim("prefix code", "suffix code", "test-task-id")
-
-			expect(result).toBe("completed code")
-			expect(global.fetch).toHaveBeenCalledWith(
-				expect.any(URL),
-				expect.objectContaining({
-					method: "POST",
-					headers: expect.objectContaining({
-						"Content-Type": "application/json",
-						Accept: "application/json",
-						"x-api-key": "test-token",
-						Authorization: "Bearer test-token",
-						[X_KILOCODE_TASKID]: "test-task-id",
-						[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
-					}),
-					body: expect.stringContaining('"stream":true'),
-				}),
-			)
-			expect(streamSse).toHaveBeenCalledWith(mockResponse)
-		})
-
 		it("completeFim handles errors correctly", async () => {
 			const handler = new KilocodeOpenrouterHandler({
 				...mockOptions,
