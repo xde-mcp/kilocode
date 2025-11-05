@@ -126,15 +126,10 @@ export class NewAutocompleteModel {
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 				// Add env for KiloCode metadata (organizationId and tester suppression)
-				env: config.organizationId
-					? {
-							kilocodeOrganizationId: config.organizationId,
-							// Add tester suppression if configured
-							...(this.profile?.kilocodeTesterWarningsDisabledUntil && {
-								kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
-							}),
-						}
-					: undefined,
+				env: {
+					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
+					kilocodeOrganizationId: config.organizationId,
+				},
 			}
 
 			// Create appropriate LLM instance based on provider
@@ -218,7 +213,11 @@ export class NewAutocompleteModel {
 
 			case "kilocode":
 				// Use dedicated KiloCode class with custom headers and routing
-				return new KiloCode(options)
+				// Pass the existing apiHandler as fimProvider if available
+				return new KiloCode({
+					...options,
+					fimProvider: this.apiHandler || undefined,
+				})
 
 			case "openrouter":
 				// Use standard OpenRouter
