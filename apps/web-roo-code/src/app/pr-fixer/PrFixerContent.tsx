@@ -10,7 +10,7 @@ import { EXTERNAL_LINKS } from "@/lib/constants"
 import { trackGoogleAdsConversion } from "@/lib/analytics/google-ads"
 
 // Workaround for next/image choking on these for some reason
-import hero from "/public/heroes/agent-pr-fixer.png"
+const hero = "hero" // kilocode_change from: import hero from "/public/heroes/agent-pr-fixer.png"
 
 interface Feature {
 	icon: LucideIcon

@@ -76,7 +76,7 @@ const howItWorks: Feature[] = [
 ]
 
 // Workaround for next/image choking on these for some reason
-import hero from "/public/heroes/agent-reviewer.png"
+const hero = "hero" // kilocode_change from: import hero from "/public/heroes/agent-reviewer.png"
 
 export function ReviewerContent() {
 	return (
