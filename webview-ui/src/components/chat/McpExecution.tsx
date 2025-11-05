@@ -54,10 +54,11 @@ export const McpExecution = ({
 	// kilocode_change: Main collapse state for the entire MCP execution content
 	const [isResponseExpanded, setIsResponseExpanded] = useState(initiallyExpanded)
 
-	// Remove "renamed_" prefix from property names in JSON
-	const removeRenamedPrefix = useCallback((text: string): string => {
-		if (!text) return text
-		return text.replace(/"renamed_([^"]+)":/g, '"$1":')
+	// kilocode_change: Remove "renamed_" prefix from property names in JSON (native tool calling)
+	const removeRenamedPrefix_kilocode = useCallback((text: string): string => {
+		const prefix = "renamed_"
+		if (!text || !text.startsWith(prefix)) return text
+		return text.substring(prefix.length)
 	}, [])
 
 	// Try to parse JSON and return both the result and formatted text
@@ -281,7 +282,7 @@ export const McpExecution = ({
 							"mt-1 pt-1":
 								!isArguments && (useMcpServer?.type === "use_mcp_tool" || (toolName && serverName)),
 						})}>
-						<CodeBlock source={removeRenamedPrefix(formattedArgumentsText)} language="json" />
+						<CodeBlock source={removeRenamedPrefix_kilocode(formattedArgumentsText)} language="json" />
 					</div>
 				)}
 
