@@ -43,7 +43,7 @@ export type ChutesModelId =
 	| "Qwen/Qwen3-Next-80B-A3B-Thinking"
 	| "Qwen/Qwen3-VL-235B-A22B-Thinking"
 
-export const chutesDefaultModelId: ChutesModelId = "zai-org/GLM-4.6-FP8" // kilocode_change
+export const chutesDefaultModelId: ChutesModelId = "deepseek-ai/DeepSeek-R1-0528"
 
 export const chutesModels = {
 	"deepseek-ai/DeepSeek-R1-0528": {
