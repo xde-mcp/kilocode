@@ -627,7 +627,6 @@ function handleHistoryKeys(get: any, set: any, key: Key): void {
  * Handles shell command input and execution using existing text buffer
  */
 async function handleShellKeys(get: any, set: any, key: Key): Promise<void> {
-	const { textBufferStringAtom } = await import("./textBuffer.js")
 	const currentInput = get(textBufferStringAtom)
 
 	switch (key.name) {
@@ -654,14 +653,6 @@ async function handleShellKeys(get: any, set: any, key: Key): Promise<void> {
 		case "escape":
 			// Exit shell mode
 			set(toggleShellModeAtom)
-			return
-
-		case "backspace":
-		case "delete":
-		case "left":
-		case "right":
-			// Let the default text input handlers deal with these
-			handleTextInputKeys(get, set, key)
 			return
 
 		default:
