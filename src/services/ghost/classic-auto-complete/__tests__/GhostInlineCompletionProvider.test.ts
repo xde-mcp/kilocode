@@ -8,7 +8,6 @@ import { FillInAtCursorSuggestion } from "../GhostSuggestions"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
 import { GhostContext } from "../../GhostContext"
-import { GhostGutterAnimation } from "../../GhostGutterAnimation"
 
 // Mock vscode InlineCompletionTriggerKind enum
 vi.mock("vscode", async () => {
@@ -288,7 +287,6 @@ describe("GhostInlineCompletionProvider", () => {
 	let mockModel: GhostModel
 	let mockCostTrackingCallback: CostTrackingCallback
 	let mockGhostContext: GhostContext
-	let mockCursorAnimation: GhostGutterAnimation
 	let mockSettings: { enableAutoTrigger: boolean } | null
 
 	beforeEach(() => {
@@ -319,19 +317,11 @@ describe("GhostInlineCompletionProvider", () => {
 				range: ctx.range,
 			})),
 		} as unknown as GhostContext
-		mockCursorAnimation = {
-			active: vi.fn(),
-			hide: vi.fn(),
-			update: vi.fn(),
-			dispose: vi.fn(),
-			updateSettings: vi.fn(),
-		} as unknown as GhostGutterAnimation
 
 		provider = new GhostInlineCompletionProvider(
 			mockModel,
 			mockCostTrackingCallback,
 			mockGhostContext,
-			mockCursorAnimation,
 			() => mockSettings,
 		)
 	})
