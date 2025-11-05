@@ -42,6 +42,8 @@ to start the CLI and begin a new task with your preferred model and relevant mod
 | `/model list`   | List available models                                            |                             |
 | `/model info`   | Prints description for a specific model by name                  | `/model info z-ai/glm-4.5v` |
 | `/model select` | Select and switch to a new model                                 |                             |
+| `/teams`        | List all organizations you can switch into                       |                             |
+| `/teams select` | Switch to a different organization                               |                             |
 | `/config`       | Open configuration editor (same as `kilocode config`)            |                             |
 | `/new`          | Start a new task with the agent with a clean slate               |                             |
 | `/help`         | List available commands and how to use them                      |                             |
@@ -60,6 +62,26 @@ to complete configuration with an interactive workflow on the command line.
 :::tip
 You can also use the `/config` slash command during an interactive session, which is equivalent to running `kilocode config`.
 :::
+
+## Parallel mode
+
+Parallel mode allows multiple Kilo Code instances to work in parallel on the same directory, without conflicts. You can spawn as many Kilo Code instances as you need! Once finished, changes will be available on a separate git branch.
+
+```bash
+# Prerequisite: must be within a valid git repository
+
+# In interactive mode, changes will be committed on /exit
+# Terminal 1
+kilocode --parallel "improve xyz"
+# Terminal 2
+kilocode --parallel "improve abc"
+
+# Pairs great with auto mode 🚀
+# Terminal 1
+kilocode --parallel --auto "improve xyz"
+# Terminal 2
+kilocode --parallel --auto "improve abc"
+```
 
 ## Autonomous mode (Non-Interactive)
 
@@ -234,4 +256,5 @@ Use the `/teams` command to see a list of all organizations you can switch into.
 
 Use `/teams select` and start typing the team name to switch teams.
 
+The process is the same when switching into a Team or Enterprise organization.
 The process is the same when switching into a Team or Enterprise organization.

@@ -33,6 +33,7 @@ export const messagesAtom = atom<CliMessage[]>([])
  * Atom to track when messages have been reset/replaced
  * Increments each time replaceMessages is called to force Static component re-render
  */
+export const refreshTerminalCounterAtom = atom<number>(0)
 export const messageResetCounterAtom = atom<number>(0)
 
 /**
@@ -266,7 +267,7 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 	const messages = get(chatMessagesAtom)
 
 	// Ask types that require user approval
-	const approvalAskTypes = ["tool", "command", "browser_action_launch", "use_mcp_server"]
+	const approvalAskTypes = ["tool", "command", "browser_action_launch", "use_mcp_server", "payment_required_prompt"]
 
 	const lastMessage = messages[messages.length - 1]
 	if (
@@ -313,8 +314,8 @@ export const clearMessagesAtom = atom(null, (get, set) => {
  * Increments the reset counter to force Static component re-render
  */
 export const replaceMessagesAtom = atom(null, (get, set, messages: CliMessage[]) => {
+	set(messageCutoffTimestampAtom, 0)
 	set(messagesAtom, messages)
-	set(messageResetCounterAtom, (prev) => prev + 1)
 })
 
 /**
@@ -350,6 +351,10 @@ export const updateTextBufferAtom = atom(null, (get, set, value: string) => {
 	if (isCommand) {
 		set(selectedIndexAtom, 0)
 	}
+})
+
+export const refreshTerminalAtom = atom(null, (get, set) => {
+	set(refreshTerminalCounterAtom, (prev) => prev + 1)
 })
 
 /**

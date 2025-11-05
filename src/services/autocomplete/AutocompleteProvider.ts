@@ -13,9 +13,10 @@ import { ClineProvider } from "../../core/webview/ClineProvider"
 import { MinimalConfigProvider } from "../continuedev/core/autocomplete/MinimalConfig"
 import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { ContinueCompletionProvider } from "../continuedev/core/vscode-test-harness/src/autocomplete/completionProvider"
+import OpenRouter from "../continuedev/core/llm/llms/OpenRouter"
 
 export class AutocompleteProvider {
-	private static instance: AutocompleteProvider | null = null
+	private completionProviderDisposable: vscode.Disposable | null = null
 	private model: AutocompleteModel
 	private providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
@@ -28,7 +29,7 @@ export class AutocompleteProvider {
 	// VSCode Providers
 	public inlineCompletionProvider: any
 
-	private constructor(
+	constructor(
 		private context: vscode.ExtensionContext,
 		private cline: ClineProvider,
 	) {
@@ -39,25 +40,11 @@ export class AutocompleteProvider {
 		void this.load()
 	}
 
-	// Singleton Management
-	public static initialize(context: vscode.ExtensionContext, cline: ClineProvider): AutocompleteProvider {
-		if (AutocompleteProvider.instance) {
-			throw new Error("AutocompleteProvider is already initialized. Use getInstance() instead.")
-		}
-		AutocompleteProvider.instance = new AutocompleteProvider(context, cline)
-		return AutocompleteProvider.instance
-	}
-
-	public static getInstance(): AutocompleteProvider {
-		if (!AutocompleteProvider.instance) {
-			throw new Error("AutocompleteProvider is not initialized. Call initialize() first.")
-		}
-		return AutocompleteProvider.instance
-	}
+	// Instance is created and managed by the registration function
 
 	// Settings Management
 	private loadSettings() {
-		const state = ContextProxy.instance?.getValues?.()
+		const state = ContextProxy.instance.getValues()
 		return state.ghostServiceSettings
 	}
 
@@ -70,21 +57,27 @@ export class AutocompleteProvider {
 			provider: this.getCurrentProviderName(),
 			model: this.getCurrentModelName(),
 		}
-		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: settingsWithModelInfo })
+		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
 		await this.cline.postStateToWebview()
 	}
 
 	private async loadCodeCompletion() {
 		try {
+			// Dispose any existing registration up front to keep logic centralized
+			this.dispose()
+
+			// Decide whether the provider should be registered at all based on settings
+			if (!this.settings?.enableAutoTrigger) {
+				return
+			}
+
 			// The model.reload() has already loaded the profile, so we can get the ILLM
 			const llm = this.model.getILLM()
-
 			if (!llm) {
 				console.warn("[AutocompleteProvider] No valid autocomplete provider found")
 				return
 			}
 
-			// Register the Continue completion provider with the selected LLM
 			const minimalConfigProvider = new MinimalConfigProvider({
 				selectedModelByRole: {
 					autocomplete: llm,
@@ -93,9 +86,13 @@ export class AutocompleteProvider {
 			const ide = new VsCodeIde(this.context)
 			const usingFullFileDiff = false
 			const continueProvider = new ContinueCompletionProvider(minimalConfigProvider, ide, usingFullFileDiff)
-			this.context.subscriptions.push(
-				vscode.languages.registerInlineCompletionItemProvider([{ pattern: "**" }], continueProvider),
+
+			// Register provider and hold onto disposable to prevent duplicates
+			this.completionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
+				[{ pattern: "**" }],
+				continueProvider,
 			)
+			this.context.subscriptions.push(this.completionProviderDisposable)
 
 			console.log("[AutocompleteProvider] Successfully registered autocomplete")
 		} catch (error) {
@@ -149,9 +146,12 @@ export class AutocompleteProvider {
 	}
 
 	/**
-	 * Dispose of all resources used by the GhostProvider
+	 * Dispose of all resources used by the AutocompleteProvider
 	 */
 	public dispose(): void {
-		AutocompleteProvider.instance = null // Reset singleton
+		if (this.completionProviderDisposable) {
+			this.completionProviderDisposable.dispose()
+			this.completionProviderDisposable = null
+		}
 	}
 }
