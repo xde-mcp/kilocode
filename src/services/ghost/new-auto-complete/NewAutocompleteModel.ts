@@ -126,15 +126,11 @@ export class NewAutocompleteModel {
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 				// Add env for KiloCode metadata (organizationId and tester suppression)
-				env: config.organizationId
-					? {
-							kilocodeOrganizationId: config.organizationId,
-							// Add tester suppression if configured
-							...(this.profile?.kilocodeTesterWarningsDisabledUntil && {
-								kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
-							}),
-						}
-					: undefined,
+				// Add env for KiloCode metadata (organizationId, tester suppression) and live token provider
+				env: {
+					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
+					kilocodeOrganizationId: config.organizationId,
+				},
 			}
 
 			// Create appropriate LLM instance based on provider

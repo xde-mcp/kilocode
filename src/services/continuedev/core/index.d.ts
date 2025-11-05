@@ -344,7 +344,7 @@ export interface LLMOptions {
 	apiBase?: string
 	useLegacyCompletionsEndpoint?: boolean
 	capabilities?: ModelCapability
-	env?: Record<string, string | number | boolean>
+	env?: Record<string, string | number | boolean | undefined>
 	promptTemplates?: Partial<Record<keyof PromptTemplates, PromptTemplate>>
 	fimProvider?: IFimProvider // to call a kilocode provider definition
 }
