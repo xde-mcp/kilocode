@@ -444,6 +444,31 @@ describe("shell mode - comprehensive tests", () => {
 			expect(store.get(shellModeActiveAtom)).toBe(false)
 			expect(store.get(inputModeAtom)).toBe("normal")
 		})
+
+		it("should insert '!' when Shift+1 is pressed with text in input", async () => {
+			const shift1Key: Key = {
+				name: "shift-1",
+				sequence: "!",
+				ctrl: false,
+				meta: false,
+				shift: true,
+				paste: false,
+			}
+
+			// Add text to input
+			store.set(setTextAtom, "some command")
+			expect(store.get(textBufferStringAtom)).toBe("some command")
+
+			// Press Shift+1
+			await store.set(keyboardHandlerAtom, shift1Key)
+
+			// Should NOT activate shell mode
+			expect(store.get(shellModeActiveAtom)).toBe(false)
+			expect(store.get(inputModeAtom)).toBe("normal")
+
+			// Should insert "!" into the text
+			expect(store.get(textBufferStringAtom)).toBe("some command!")
+		})
 	})
 
 	describe("edge cases", () => {

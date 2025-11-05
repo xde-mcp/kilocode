@@ -811,10 +811,17 @@ function handleGlobalHotkeys(get: any, set: any, key: Key): boolean {
 				return true
 			}
 			break
-		case "shift-1":
-			// Toggle shell mode with Shift+1 or Shift+!
-			set(toggleShellModeAtom)
-			return true
+		case "shift-1": {
+			// Toggle shell mode with Shift+1 or Shift+! only if input is empty
+			const isEmpty = get(textBufferIsEmptyAtom)
+			if (isEmpty) {
+				// Input is empty, toggle shell mode
+				set(toggleShellModeAtom)
+				return true
+			}
+			// Input has text, don't consume the key - let it be inserted as "!"
+			return false
+		}
 	}
 	return false
 }
