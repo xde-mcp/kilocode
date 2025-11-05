@@ -124,6 +124,7 @@ async function main() {
 		plugins,
 		entryPoints: ["extension.ts"],
 		outfile: "dist/extension.js",
+		// kilocode_change added ps-list
 		external: ["vscode", "sqlite3", "ps-list"],
 	}
 

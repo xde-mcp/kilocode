@@ -8,6 +8,7 @@ import { type ExerciseLanguage, EVALS_REPO_PATH } from "../exercises/index.js"
 
 import { Logger } from "./utils.js"
 
+// kilocode_change start
 /**
  * Get child process IDs for a given parent PID
  */
@@ -20,6 +21,7 @@ async function getChildPids(parentPid: number): Promise<number[]> {
 		return []
 	}
 }
+// kilocode_change end
 
 const UNIT_TEST_TIMEOUT = 2 * 60 * 1_000
 
@@ -51,7 +53,7 @@ export const runUnitTest = async ({ task, logger }: RunUnitTestOptions) => {
 			subprocess.stderr.pipe(process.stderr)
 
 			const timeout = setTimeout(async () => {
-				const descendants = await getChildPids(subprocess.pid!)
+				const descendants = await getChildPids(subprocess.pid!) // kilocode_change
 
 				logger.info(
 					`"${command.join(" ")}" timed out, killing ${subprocess.pid} + ${JSON.stringify(descendants)}`,
