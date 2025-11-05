@@ -57,9 +57,7 @@ program
 		}
 
 		// Validate that piped stdin requires autonomous mode
-		// Check if stdin is actually being piped (not just isTTY being undefined)
-		const isStdinPiped = process.stdin.isTTY === false
-		if (isStdinPiped && !options.auto) {
+		if (!process.stdin.isTTY && !options.auto) {
 			console.error("Error: Piped input requires --auto flag to be enabled")
 			process.exit(1)
 		}
