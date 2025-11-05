@@ -4,6 +4,7 @@
  */
 
 import type { Key } from "../../types/keyboard.js"
+import { logs } from "../../services/logs.js"
 import {
 	ESC,
 	CSI,
@@ -240,11 +241,9 @@ export function parseKittySequence(buffer: string): ParseResult {
 
 			// Handle Shift+1/Shift+! for shell mode toggle
 			if (shift && (keyCode === CHAR_CODE_DIGIT_1 || keyCode === CHAR_CODE_EXCLAMATION)) {
-				console.log("🔥 Shift+1/! detected in key parsing!", {
-					keyCode,
-					shift,
-					sequence: buffer.slice(0, match[0].length),
-				})
+				logs.debug(
+					`Shift+1/! detected in key parsing: keyCode=${keyCode}, shift=${shift}, sequence=${buffer.slice(0, match[0].length)}`,
+				)
 				return {
 					key: {
 						name: "shift-1",

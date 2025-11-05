@@ -88,7 +88,7 @@ export function useHotkeys(): UseHotkeysReturn {
 				{ keys: "↑↓", description: "history" },
 				{ keys: "Enter", description: "to execute" },
 				{ keys: "Esc", description: "to exit" },
-				{ keys: "Shift+1", description: "to toggle" },
+				{ keys: "!", description: "to toggle shell mode" },
 			]
 		}
 
@@ -96,7 +96,7 @@ export function useHotkeys(): UseHotkeysReturn {
 		return [
 			{ keys: "/help", description: "for commands" },
 			{ keys: "/mode", description: "to switch mode" },
-			{ keys: "Shift+1", description: "for shell mode", primary: true },
+			{ keys: "!", description: "for shell mode", primary: true },
 		]
 	}, [hasResumeTask, isApprovalPending, isStreaming, isFollowupVisible, isShellModeActive, modifierKey])
 
