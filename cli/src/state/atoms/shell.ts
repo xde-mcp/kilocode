@@ -212,5 +212,6 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 		set(chatMessagesAtom, [...currentMessages, chatErrorMessage])
 	}
 
-	// Reset history navxAtom, -1)
+	// Reset history navigation index
+	set(shellHistoryIndexAtom, -1)
 })
