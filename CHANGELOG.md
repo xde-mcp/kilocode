@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.116.1
-
-### Patch Changes
+## [v4.116.1]
 
 - [#3533](https://github.com/Kilo-Org/kilocode/pull/3533) [`f5bb82d`](https://github.com/Kilo-Org/kilocode/commit/f5bb82ddf4038ed2d9e5a1266c9e6b0dc09c0af5) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix hang at startup
 
