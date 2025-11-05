@@ -10,6 +10,12 @@ import OpenAI from "openai"
 import { KilocodeOpenrouterHandler } from "../kilocode-openrouter"
 import { ApiHandlerOptions } from "../../../shared/api"
 import { X_KILOCODE_TASKID, X_KILOCODE_ORGANIZATIONID, X_KILOCODE_PROJECTID } from "../../../shared/kilocode/headers"
+import { streamSse } from "../../../services/continuedev/core/fetch/stream"
+
+// Mock the stream module
+vitest.mock("../../../services/continuedev/core/fetch/stream", () => ({
+	streamSse: vitest.fn(),
+}))
 
 // Mock dependencies
 vitest.mock("openai")
@@ -223,21 +229,17 @@ describe("KilocodeOpenrouterHandler", () => {
 				kilocodeOrganizationId: "test-org-id",
 			})
 
-			const mockStream = new ReadableStream({
-				start(controller) {
-					controller.enqueue(
-						new TextEncoder().encode('data: {"choices":[{"delta":{"content":"completed "}}]}\n'),
-					)
-					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"code"}}]}\n'))
-					controller.enqueue(new TextEncoder().encode("data: [DONE]\n"))
-					controller.close()
-				},
+			// Mock streamSse to return the expected data
+			;(streamSse as any).mockImplementation(async function* () {
+				yield { choices: [{ delta: { content: "completed " } }] }
+				yield { choices: [{ delta: { content: "code" } }] }
 			})
 
 			const mockResponse = {
 				ok: true,
-				body: mockStream,
-			}
+				status: 200,
+				statusText: "OK",
+			} as Response
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
@@ -259,6 +261,7 @@ describe("KilocodeOpenrouterHandler", () => {
 					body: expect.stringContaining('"stream":true'),
 				}),
 			)
+			expect(streamSse).toHaveBeenCalledWith(mockResponse)
 		})
 
 		it("completeFim handles errors correctly", async () => {
@@ -287,19 +290,17 @@ describe("KilocodeOpenrouterHandler", () => {
 				kilocodeModel: "mistral/codestral-latest",
 			})
 
-			const mockStream = new ReadableStream({
-				start(controller) {
-					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"chunk1"}}]}\n'))
-					controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"chunk2"}}]}\n'))
-					controller.enqueue(new TextEncoder().encode("data: [DONE]\n"))
-					controller.close()
-				},
+			// Mock streamSse to return the expected data
+			;(streamSse as any).mockImplementation(async function* () {
+				yield { choices: [{ delta: { content: "chunk1" } }] }
+				yield { choices: [{ delta: { content: "chunk2" } }] }
 			})
 
 			const mockResponse = {
 				ok: true,
-				body: mockStream,
-			}
+				status: 200,
+				statusText: "OK",
+			} as Response
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
@@ -309,6 +310,7 @@ describe("KilocodeOpenrouterHandler", () => {
 			}
 
 			expect(chunks).toEqual(["chunk1", "chunk2"])
+			expect(streamSse).toHaveBeenCalledWith(mockResponse)
 		})
 
 		it("streamFim handles errors correctly", async () => {

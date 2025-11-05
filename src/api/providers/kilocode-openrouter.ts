@@ -14,14 +14,13 @@ import {
 	X_KILOCODE_TESTER,
 } from "../../shared/kilocode/headers"
 import { DEFAULT_HEADERS } from "./constants"
-import { IFimProvider } from "./kilocode/IFimProvider"
+import { streamSse } from "../../services/continuedev/core/fetch/stream"
 
 /**
  * A custom OpenRouter handler that overrides the getModel function
  * to provide custom model information and fetches models from the KiloCode OpenRouter endpoint.
- * Implements IFimProvider for FIM (Fill-In-the-Middle) completion support.
  */
-export class KilocodeOpenrouterHandler extends OpenRouterHandler implements IFimProvider {
+export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	protected override models: ModelRecord = {}
 	defaultModel: string = openRouterDefaultModelId
 	private apiFIMBase: string
@@ -178,44 +177,11 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler implements IFim
 			throw new Error(`FIM streaming failed: ${response.status} ${response.statusText} - ${errorText}`)
 		}
 
-		// Parse SSE stream
-		const reader = response.body?.getReader()
-		if (!reader) {
-			throw new Error("No response body available")
-		}
-
-		const decoder = new TextDecoder()
-		let buffer = ""
-
-		try {
-			while (true) {
-				const { done, value } = await reader.read()
-				if (done) break
-
-				buffer += decoder.decode(value, { stream: true })
-				const lines = buffer.split("\n")
-				buffer = lines.pop() ?? ""
-
-				for (const line of lines) {
-					if (line.startsWith("data: ")) {
-						const data = line.slice(6)
-						if (data === "[DONE]") {
-							return
-						}
-						try {
-							const parsed = JSON.parse(data)
-							const content = parsed.choices?.[0]?.delta?.content
-							if (content) {
-								yield content
-							}
-						} catch (e) {
-							// Skip invalid JSON
-						}
-					}
-				}
+		for await (const data of streamSse(response)) {
+			const content = data.choices?.[0]?.delta?.content
+			if (content) {
+				yield content
 			}
-		} finally {
-			reader.releaseLock()
 		}
 	}
 }
