@@ -6,7 +6,7 @@ import { atom } from "jotai"
 import { addMessageAtom, inputModeAtom, type InputMode } from "./ui.js"
 import { exec } from "child_process"
 import { chatMessagesAtom } from "./extension.js"
-import { clearTextAtom, setTextAtom } from "./textBuffer.js"
+import { clearTextAtom, setTextAtom, textBufferIsEmptyAtom } from "./textBuffer.js"
 
 // ============================================================================
 // Shell Mode Atoms
@@ -29,19 +29,26 @@ export const shellHistoryIndexAtom = atom<number>(-1)
 
 /**
  * Action atom to toggle shell mode
+ * Only enters shell mode if input is empty, but always allows exiting
  */
 export const toggleShellModeAtom = atom(null, (get, set) => {
 	const isCurrentlyActive = get(shellModeActiveAtom)
-	set(shellModeActiveAtom, !isCurrentlyActive)
+	const isEmpty = get(textBufferIsEmptyAtom)
 
 	if (!isCurrentlyActive) {
-		// Entering shell mode
+		// Entering shell mode - only allow if input is empty
+		if (!isEmpty) {
+			// Don't enter shell mode if there's already text in the input
+			return
+		}
+		set(shellModeActiveAtom, true)
 		set(inputModeAtom, "shell" as InputMode)
 		set(shellHistoryIndexAtom, -1)
 		// Clear text buffer when entering shell mode
 		set(clearTextAtom)
 	} else {
-		// Exiting shell mode
+		// Exiting shell mode - always allow
+		set(shellModeActiveAtom, false)
 		set(inputModeAtom, "normal" as InputMode)
 		set(shellHistoryIndexAtom, -1)
 		// Clear text buffer when exiting shell mode
@@ -184,10 +191,10 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 
 		const currentMessages = get(chatMessagesAtom)
 		set(chatMessagesAtom, [...currentMessages, chatMessage])
-	} catch (error: any) {
+	} catch (error: unknown) {
 		// Handle errors and display them in the message system
 
-		const errorOutput = `❌ Error: ${error.message}`
+		const errorOutput = `❌ Error: ${error instanceof Error ? error.message : error}`
 
 		// Display as error message for visibility
 		const errorMessage = {

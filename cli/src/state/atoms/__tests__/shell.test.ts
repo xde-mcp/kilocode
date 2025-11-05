@@ -10,7 +10,7 @@ import {
 	navigateShellHistoryDownAtom,
 	addToShellHistoryAtom,
 } from "../shell.js"
-import { textBufferStringAtom } from "../textBuffer.js"
+import { textBufferStringAtom, setTextAtom } from "../textBuffer.js"
 
 // Mock child_process to avoid actual command execution
 vi.mock("child_process", () => ({
@@ -56,17 +56,48 @@ describe("shell mode - comprehensive tests", () => {
 	})
 
 	describe("shell mode activation", () => {
-		it("should toggle shell mode on and off", () => {
+		it("should toggle shell mode on and off when input is empty", () => {
 			// Initial state
 			expect(store.get(shellModeActiveAtom)).toBe(false)
 			expect(store.get(inputModeAtom)).toBe("normal")
+			expect(store.get(textBufferStringAtom)).toBe("")
 
-			// Toggle on
+			// Toggle on (input is empty)
 			store.set(toggleShellModeAtom)
 			expect(store.get(shellModeActiveAtom)).toBe(true)
 			expect(store.get(inputModeAtom)).toBe("shell")
 
 			// Toggle off
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(false)
+			expect(store.get(inputModeAtom)).toBe("normal")
+		})
+
+		it("should NOT enter shell mode when input is not empty", () => {
+			// Set some text in the buffer
+			store.set(setTextAtom, "some text")
+			expect(store.get(textBufferStringAtom)).toBe("some text")
+
+			// Try to toggle on
+			store.set(toggleShellModeAtom)
+
+			// Should NOT activate shell mode
+			expect(store.get(shellModeActiveAtom)).toBe(false)
+			expect(store.get(inputModeAtom)).toBe("normal")
+
+			// Text should still be there
+			expect(store.get(textBufferStringAtom)).toBe("some text")
+		})
+
+		it("should exit shell mode even when text is present", () => {
+			// Enter shell mode (with empty input)
+			store.set(toggleShellModeAtom)
+			expect(store.get(shellModeActiveAtom)).toBe(true)
+
+			// Add some text
+			store.set(setTextAtom, "some command")
+
+			// Toggle off should work even with text
 			store.set(toggleShellModeAtom)
 			expect(store.get(shellModeActiveAtom)).toBe(false)
 			expect(store.get(inputModeAtom)).toBe("normal")
@@ -95,8 +126,8 @@ describe("shell mode - comprehensive tests", () => {
 			expect(store.get(shellHistoryIndexAtom)).toBe(-1)
 		})
 
-		it("should handle multiple rapid toggles", () => {
-			// Toggle multiple times
+		it("should handle multiple rapid toggles when input is empty", () => {
+			// Toggle multiple times (with empty input)
 			store.set(toggleShellModeAtom)
 			expect(store.get(shellModeActiveAtom)).toBe(true)
 
@@ -351,7 +382,7 @@ describe("shell mode - comprehensive tests", () => {
 	})
 
 	describe("Shift+1 key detection", () => {
-		it("should detect Shift+1 and toggle shell mode", async () => {
+		it("should detect Shift+1 and toggle shell mode when input is empty", async () => {
 			const shift1Key: Key = {
 				name: "shift-1",
 				sequence: "!",
@@ -360,6 +391,9 @@ describe("shell mode - comprehensive tests", () => {
 				shift: true,
 				paste: false,
 			}
+
+			// Ensure input is empty
+			expect(store.get(textBufferStringAtom)).toBe("")
 
 			// Press Shift+1
 			await store.set(keyboardHandlerAtom, shift1Key)
@@ -379,12 +413,34 @@ describe("shell mode - comprehensive tests", () => {
 				paste: false,
 			}
 
-			// Activate
+			// Activate (with empty input)
 			await store.set(keyboardHandlerAtom, shift1Key)
 			expect(store.get(shellModeActiveAtom)).toBe(true)
 
 			// Deactivate
 			await store.set(keyboardHandlerAtom, shift1Key)
+			expect(store.get(shellModeActiveAtom)).toBe(false)
+			expect(store.get(inputModeAtom)).toBe("normal")
+		})
+
+		it("should NOT activate shell mode via Shift+1 when input has text", async () => {
+			const shift1Key: Key = {
+				name: "shift-1",
+				sequence: "!",
+				ctrl: false,
+				meta: false,
+				shift: true,
+				paste: false,
+			}
+
+			// Add text to input
+			store.set(setTextAtom, "some command")
+			expect(store.get(textBufferStringAtom)).toBe("some command")
+
+			// Try to activate with Shift+1
+			await store.set(keyboardHandlerAtom, shift1Key)
+
+			// Should NOT activate shell mode
 			expect(store.get(shellModeActiveAtom)).toBe(false)
 			expect(store.get(inputModeAtom)).toBe("normal")
 		})
