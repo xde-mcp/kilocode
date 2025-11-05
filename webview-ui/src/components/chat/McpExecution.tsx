@@ -31,6 +31,13 @@ interface McpExecutionProps {
 	initiallyExpanded?: boolean // kilocode_change: For Storybook stories only
 }
 
+function removeRenamedPrefix_kilocode(text: string): string {
+	// Remove "renamed_" prefix from property names in JSON (native tool calling)
+	const prefix = "renamed_"
+	if (!text || !text.startsWith(prefix)) return text
+	return text.substring(prefix.length)
+}
+
 export const McpExecution = ({
 	executionId,
 	text,
@@ -53,13 +60,6 @@ export const McpExecution = ({
 
 	// kilocode_change: Main collapse state for the entire MCP execution content
 	const [isResponseExpanded, setIsResponseExpanded] = useState(initiallyExpanded)
-
-	// kilocode_change: Remove "renamed_" prefix from property names in JSON (native tool calling)
-	const removeRenamedPrefix_kilocode = useCallback((text: string): string => {
-		const prefix = "renamed_"
-		if (!text || !text.startsWith(prefix)) return text
-		return text.substring(prefix.length)
-	}, [])
 
 	// Try to parse JSON and return both the result and formatted text
 	const tryParseJson = useCallback((text: string): { isJson: boolean; formatted: string } => {
