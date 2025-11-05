@@ -5,7 +5,6 @@
 import { atom } from "jotai"
 import { addMessageAtom, inputModeAtom, type InputMode } from "./ui.js"
 import { exec } from "child_process"
-import { chatMessagesAtom } from "./extension.js"
 import { clearTextAtom, setTextAtom, textBufferIsEmptyAtom } from "./textBuffer.js"
 
 // ============================================================================
@@ -170,7 +169,7 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 
 		const output = stdout || stderr || "Command executed successfully"
 
-		// Display as system message for visibility
+		// Display as system message for visibility in CLI
 		const systemMessage = {
 			id: `shell-${Date.now()}`,
 			type: "system" as const,
@@ -178,25 +177,14 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 			content: `$ ${command}\n${output}`,
 			partial: false,
 		}
+
 		set(addMessageAtom, systemMessage)
-
-		// Add to chat messages for agent context
-		const chatMessage = {
-			ts: Date.now(),
-			type: "say" as const,
-			say: "shell_command",
-			text: `Shell command executed:\n$ ${command}\n${output}`,
-			partial: false,
-		}
-
-		const currentMessages = get(chatMessagesAtom)
-		set(chatMessagesAtom, [...currentMessages, chatMessage])
 	} catch (error: unknown) {
 		// Handle errors and display them in the message system
 
 		const errorOutput = `❌ Error: ${error instanceof Error ? error.message : error}`
 
-		// Display as error message for visibility
+		// Display as error message for visibility in CLI
 		const errorMessage = {
 			id: `shell-error-${Date.now()}`,
 			type: "error" as const,
@@ -204,19 +192,8 @@ export const executeShellCommandAtom = atom(null, async (get, set, command: stri
 			content: `$ ${command}\n${errorOutput}`,
 			partial: false,
 		}
+
 		set(addMessageAtom, errorMessage)
-
-		// Add to chat messages for agent context
-		const chatErrorMessage = {
-			ts: Date.now(),
-			type: "say" as const,
-			say: "shell_command_error",
-			text: `Shell command failed:\n$ ${command}\n${errorOutput}`,
-			partial: false,
-		}
-
-		const currentMessages = get(chatMessagesAtom)
-		set(chatMessagesAtom, [...currentMessages, chatErrorMessage])
 	}
 
 	// Reset history navigation index
