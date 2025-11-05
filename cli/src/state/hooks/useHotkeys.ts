@@ -85,7 +85,7 @@ export function useHotkeys(): UseHotkeysReturn {
 		// Priority 5: Shell mode hotkeys
 		if (isShellModeActive) {
 			return [
-				{ keys: "↑↓", description: "history" },
+				{ keys: "Up/Down", description: "history" },
 				{ keys: "Enter", description: "to execute" },
 				{ keys: "Esc", description: "to exit" },
 				{ keys: "!", description: "to exit shell mode" },

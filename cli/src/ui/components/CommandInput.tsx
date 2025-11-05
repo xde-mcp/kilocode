@@ -145,8 +145,12 @@ export const CommandInput: React.FC<CommandInputProps> = ({
 			<Box borderStyle="round" borderColor={borderColor} paddingX={1}>
 				<Box flexDirection="row" alignItems="center">
 					<Text color={promptColor} bold>
-						{isShellMode && !isCommittingParallelMode && <Text color={promptColor}>shell</Text>}
-						{isShellMode && !isCommittingParallelMode && <Text> </Text>}
+						{isShellMode && !isCommittingParallelMode && (
+							<>
+								<Text color={promptColor}>shell</Text>
+								<Text> </Text>
+							</>
+						)}
 						{promptSymbol}
 					</Text>
 					<MultilineTextInput
