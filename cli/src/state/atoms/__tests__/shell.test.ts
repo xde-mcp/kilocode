@@ -3,7 +3,7 @@ import { createStore } from "jotai"
 import { shellModeActiveAtom, toggleShellModeAtom, executeShellCommandAtom, keyboardHandlerAtom } from "../keyboard.js"
 import { inputModeAtom } from "../ui.js"
 import type { Key } from "../../../types/keyboard.js"
-import { shellHistoryAtom } from "../shell.js"
+import { shellHistoryAtom, shellHistoryIndexAtom } from "../shell.js"
 
 // Mock child_process to avoid actual command execution
 vi.mock("child_process", () => ({
@@ -82,6 +82,22 @@ describe("shell mode - essential tests", () => {
 
 			const history = store.get(shellHistoryAtom)
 			expect(history).toHaveLength(0)
+		})
+
+		it("should reset history navigation index after command execution", async () => {
+			// Add a few commands to history
+			await store.set(executeShellCommandAtom, "echo 'test1'")
+			await store.set(executeShellCommandAtom, "echo 'test2'")
+
+			// Set history index to simulate navigation
+			store.set(shellHistoryIndexAtom, 1)
+			expect(store.get(shellHistoryIndexAtom)).toBe(1)
+
+			// Execute a new command
+			await store.set(executeShellCommandAtom, "echo 'test3'")
+
+			// History index should be reset to -1
+			expect(store.get(shellHistoryIndexAtom)).toBe(-1)
 		})
 	})
 
