@@ -8,6 +8,7 @@ import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
 import type { GhostServiceSettings } from "@roo-code/types"
+import { refuseUselessSuggestion } from "./uselessSuggestionFilter"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -193,9 +194,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 
 		// Parse the response using the standalone function
-		const fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
+		let fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
 
-		if (fillInAtCursorSuggestion.text) {
+		// Check if the suggestion is useless and clear it if so
+		if (fillInAtCursorSuggestion.text && refuseUselessSuggestion(fillInAtCursorSuggestion.text, prefix, suffix)) {
+			fillInAtCursorSuggestion = { text: "", prefix, suffix }
+		} else if (fillInAtCursorSuggestion.text) {
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
 		}
 

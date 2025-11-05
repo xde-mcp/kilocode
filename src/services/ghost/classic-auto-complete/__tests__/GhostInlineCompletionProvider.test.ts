@@ -1163,4 +1163,135 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(mockCostTrackingCallback).not.toHaveBeenCalled()
 		})
 	})
+
+	describe("useless suggestion filtering", () => {
+		it("should refuse suggestions that match the end of prefix", async () => {
+			// Mock the model to return a suggestion that matches the end of prefix
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "= 1" }) // This matches the end of "const x = 1"
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return empty array because the suggestion is useless
+			expect(result).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should refuse suggestions that match the start of suffix", async () => {
+			// Mock the model to return a suggestion that matches the start of suffix
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "\nconst" }) // This matches the start of "\nconst y = 2"
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return empty array because the suggestion is useless
+			expect(result).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should accept useful suggestions that don't match prefix end or suffix start", async () => {
+			// Mock the model to return a useful suggestion
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "\nconsole.log('useful');" }) // Useful suggestion
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return the suggestion because it's useful
+			expect(result).toHaveLength(1)
+			expect(result[0].insertText).toBe("\nconsole.log('useful');")
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should cache refused suggestions as empty to avoid repeated LLM calls", async () => {
+			// Mock the model to return a useless suggestion
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "= 1" }) // Matches end of prefix
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			// First call - should invoke LLM and refuse the suggestion
+			const result1 = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			expect(result1).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+
+			// Second call with same prefix/suffix - should use cache, not call LLM
+			vi.mocked(mockModel.generateResponse).mockClear()
+			const result2 = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			expect(result2).toHaveLength(0)
+			expect(mockModel.generateResponse).not.toHaveBeenCalled()
+		})
+	})
 })
