@@ -39,10 +39,15 @@ export default async function authWizard() {
 			break
 		}
 		case "zai": {
-			console.info("\nPlease manually configure ZAI provider settings in the config file.\n")
-			await wait(1500)
-			await openConfigFile()
-			return
+			const { zaiApiKey } = await inquirer.prompt<{ zaiApiKey: string }>([
+				{
+					type: "password",
+					name: "zaiApiKey",
+					message: "Please enter your zAI token:",
+				},
+			])
+			providerSpecificConfig = { zaiApiKey }
+			break
 		}
 		case "other": {
 			console.info("Please manually add your provider setttings to the config file.")
