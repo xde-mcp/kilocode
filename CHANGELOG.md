@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.116.0
-
-### Minor Changes
+## [v4.116.0]
 
 - [#3288](https://github.com/Kilo-Org/kilocode/pull/3288) [`afeca17`](https://github.com/Kilo-Org/kilocode/commit/afeca176f4ef7d227831715b5e5a672fcf3fe58f) Thanks [@mcowger](https://github.com/mcowger)! - Add Native MCP Support for JSON Tool Calling
 
