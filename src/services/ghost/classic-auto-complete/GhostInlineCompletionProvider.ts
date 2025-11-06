@@ -10,7 +10,6 @@ import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
-import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import type { GhostServiceSettings } from "@roo-code/types"
 
 const MAX_SUGGESTIONS_HISTORY = 20
@@ -227,19 +226,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	/**
-	 * Cancel any ongoing LLM request
-	 */
 	public cancelRequest(): void {
 		this.isRequestCancelled = true
 	}
 
-	/**
-	 * Dispose of resources
-	 */
 	public dispose(): void {
-		// continuedev services don't have dispose methods
-		// They handle cleanup internally via event listeners
+		this.recentlyVisitedRangesService.dispose()
+		this.recentlyEditedTracker.dispose()
 	}
 
 	public async provideInlineCompletionItems(
