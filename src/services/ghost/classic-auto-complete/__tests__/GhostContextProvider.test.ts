@@ -11,6 +11,10 @@ vi.mock("vscode", () => ({
 			toString: () => uriString,
 			fsPath: uriString.replace("file://", ""),
 		}),
+		file: (path: string) => ({
+			toString: () => `file://${path}`,
+			fsPath: path,
+		}),
 	},
 	workspace: {
 		textDocuments: [],
@@ -29,14 +33,14 @@ vi.mock("../../../continuedev/core/autocomplete/context/ContextRetrievalService"
 
 vi.mock("../../../continuedev/core/vscode-test-harness/src/VSCodeIde", () => ({
 	VsCodeIde: vi.fn().mockImplementation(() => ({
-		getWorkspaceDirs: vi.fn().mockResolvedValue(["/workspace"]),
+		getWorkspaceDirs: vi.fn().mockResolvedValue(["file:///workspace"]),
 	})),
 }))
 
 vi.mock("../../../continuedev/core/autocomplete/util/HelperVars", () => ({
 	HelperVars: {
 		create: vi.fn().mockResolvedValue({
-			filepath: "/test.ts",
+			filepath: "file:///test.ts",
 			lang: { name: "typescript", singleLineComment: "//" },
 		}),
 	},
@@ -135,7 +139,7 @@ describe("GhostContextProvider", () => {
 			const input = createAutocompleteInput("/test.ts")
 			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			const expected = "// Path: /recent.ts\nconst recent = 1;"
+			const expected = "// Path: file:///recent.ts\nconst recent = 1;"
 			expect(formatted).toBe(expected)
 		})
 
@@ -171,7 +175,7 @@ describe("GhostContextProvider", () => {
 			const input = createAutocompleteInput("/test.ts")
 			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			const expected = "// Path: /file1.ts\nconst first = 1;\n// Path: /file2.ts\nconst second = 2;"
+			const expected = "// Path: file:///file1.ts\nconst first = 1;\n// Path: file:///file2.ts\nconst second = 2;"
 			expect(formatted).toBe(expected)
 		})
 

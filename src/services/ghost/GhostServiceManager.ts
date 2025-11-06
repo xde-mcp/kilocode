@@ -6,6 +6,7 @@ import { GhostModel } from "./GhostModel"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
+import { GhostContextProvider } from "./classic-auto-complete/GhostContextProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -24,6 +25,7 @@ export class GhostServiceManager {
 	private providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
 	private ghostContext: GhostContext
+	private ghostContextProvider: GhostContextProvider
 	private cursorAnimation: GhostGutterAnimation
 
 	private taskId: string | null = null
@@ -50,6 +52,7 @@ export class GhostServiceManager {
 		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
+		this.ghostContextProvider = new GhostContextProvider(context)
 		this.cursorAnimation = new GhostGutterAnimation(context)
 
 		// Register the providers
@@ -60,6 +63,7 @@ export class GhostServiceManager {
 			this.ghostContext,
 			this.cursorAnimation,
 			() => this.settings,
+			this.ghostContextProvider,
 		)
 
 		// Register document event handlers

@@ -3,6 +3,7 @@ import { FillInAtCursorSuggestion, GhostSuggestionsState } from "./GhostSuggesti
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
 import { parseGhostResponse } from "./GhostStreamingParser"
 import { AutoTriggerStrategy } from "./AutoTriggerStrategy"
+import { GhostContextProvider } from "./GhostContextProvider"
 import { GhostModel } from "../GhostModel"
 import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
@@ -86,13 +87,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		ghostContext: GhostContext,
 		cursorAnimation: GhostGutterAnimation,
 		getSettings: () => GhostServiceSettings | null,
+		contextProvider?: GhostContextProvider,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.ghostContext = ghostContext
 		this.cursorAnimation = cursorAnimation
 		this.getSettings = getSettings
-		this.autoTriggerStrategy = new AutoTriggerStrategy()
+		this.autoTriggerStrategy = new AutoTriggerStrategy(contextProvider)
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
