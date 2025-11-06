@@ -2,14 +2,21 @@ import type { CLIConfig } from "./types.js"
 import { logs } from "../services/logs.js"
 
 /**
- * Environment variable prefix for provider field overrides
- */
-export const PROVIDER_OVERRIDE_PREFIX = "KILO_PROVIDER_OVERRIDE_"
-
-/**
  * Environment variable name for provider selection
  */
 export const PROVIDER_ENV_VAR = "KILO_PROVIDER"
+
+/**
+ * Environment variable prefix for Kilocode provider
+ */
+export const KILOCODE_PREFIX = "KILOCODE_"
+
+/**
+ * Environment variable prefix for other providers
+ */
+export const KILO_PREFIX = "KILO_"
+
+const specificEnvVars = new Set([PROVIDER_ENV_VAR])
 
 /**
  * Apply environment variable overrides to the config
@@ -17,12 +24,15 @@ export const PROVIDER_ENV_VAR = "KILO_PROVIDER"
  *
  * Environment variables:
  * - KILO_PROVIDER: Override the active provider ID
- * - KILO_PROVIDER_OVERRIDE_<fieldName>: Override any field in the current provider
+ * - For Kilocode provider: KILOCODE_<FIELD_NAME> (e.g., KILOCODE_MODEL → kilocodeModel)
  *   Examples:
- *   - KILO_PROVIDER_OVERRIDE_apiModelId
- *   - KILO_PROVIDER_OVERRIDE_kilocodeModel
- *   - KILO_PROVIDER_OVERRIDE_kilocodeOrganizationId
- *   - KILO_PROVIDER_OVERRIDE_apiKey
+ *   - KILOCODE_MODEL → kilocodeModel
+ *   - KILOCODE_ORGANIZATION_ID → kilocodeOrganizationId
+ * - For other providers: KILO_<FIELD_NAME> (e.g., KILO_API_KEY → apiKey)
+ *   Examples:
+ *   - KILO_API_KEY → apiKey
+ *   - KILO_BASE_URL → baseUrl
+ *   - KILO_API_MODEL_ID → apiModelId
  *
  * @param config The config to apply overrides to
  * @returns The config with environment variable overrides applied
@@ -57,8 +67,8 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 		return overriddenConfig
 	}
 
-	// Find all KILO_PROVIDER_OVERRIDE_* environment variables
-	const overrideFields = getProviderOverrideFields()
+	// Find all environment variable overrides for the current provider
+	const overrideFields = getProviderOverrideFields(currentProvider.provider)
 
 	if (overrideFields.length > 0) {
 		// Create a new providers array with the updated provider
@@ -71,7 +81,7 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 					updatedProvider[fieldName] = value
 
 					logs.info(
-						`Config override: ${fieldName} set to "${value}" from ${PROVIDER_OVERRIDE_PREFIX}${fieldName} for provider "${currentProvider.id}"`,
+						`Config override: ${fieldName} set to "${value}" for provider "${currentProvider.id}"`,
 						"EnvOverrides",
 					)
 				}
@@ -87,18 +97,43 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 }
 
 /**
- * Get all KILO_PROVIDER_OVERRIDE_* environment variables
+ * Convert snake_case or SCREAMING_SNAKE_CASE to camelCase
+ * Examples:
+ * - API_KEY → apiKey
+ * - BASE_URL → baseUrl
+ * - API_MODEL_ID → apiModelId
+ * - ORGANIZATION_ID → organizationId
+ */
+function snakeToCamelCase(str: string): string {
+	return str.toLowerCase().replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+}
+
+/**
+ * Get all environment variable overrides for the current provider
+ * - For Kilocode provider: looks for KILOCODE_* vars and transforms to kilocodeXyz
+ * - For other providers: looks for KILO_* vars (excluding KILO_PROVIDER) and transforms to xyzAbc
  * Returns an array of { fieldName, value } objects
  */
-function getProviderOverrideFields(): Array<{ fieldName: string; value: string }> {
+function getProviderOverrideFields(provider: string): Array<{ fieldName: string; value: string }> {
 	const overrides: Array<{ fieldName: string; value: string }> = []
 
-	for (const [key, value] of Object.entries(process.env)) {
-		if (key.startsWith(PROVIDER_OVERRIDE_PREFIX) && value) {
-			const fieldName = key.substring(PROVIDER_OVERRIDE_PREFIX.length)
+	if (provider === "kilocode") {
+		// For Kilocode provider: KILOCODE_XYZ → kilocodeXyz
+		for (const [key, value] of Object.entries(process.env)) {
+			if (key.startsWith(KILOCODE_PREFIX) && value) {
+				overrides.push({ fieldName: snakeToCamelCase(key), value })
+			}
+		}
+	} else {
+		// For other providers: KILO_XYZ_ABC → xyzAbc
+		for (const [key, value] of Object.entries(process.env)) {
+			if (key.startsWith(KILO_PREFIX) && !specificEnvVars.has(key) && value) {
+				const remainder = key.substring(KILO_PREFIX.length)
 
-			if (fieldName) {
-				overrides.push({ fieldName, value })
+				if (remainder) {
+					const fieldName = snakeToCamelCase(remainder)
+					overrides.push({ fieldName, value })
+				}
 			}
 		}
 	}
