@@ -30,6 +30,13 @@ export class GhostContextProvider {
 	}
 
 	/**
+	 * Get the IDE instance for use by tracking services
+	 */
+	public getIde(): VsCodeIde {
+		return this.ide
+	}
+
+	/**
 	 * Get context snippets for the current autocomplete request
 	 * Returns comment-based formatted context that can be added to prompts
 	 */
