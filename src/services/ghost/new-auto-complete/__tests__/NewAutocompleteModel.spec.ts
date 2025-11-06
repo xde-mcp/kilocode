@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { AutocompleteModel } from "../AutocompleteModel"
+import { NewAutocompleteModel } from "../NewAutocompleteModel"
 import { ProviderSettings } from "@roo-code/types"
-import Mistral from "../../continuedev/core/llm/llms/Mistral"
-import { OpenAI } from "../../continuedev/core/llm/llms/OpenAI"
+import Mistral from "../../../continuedev/core/llm/llms/Mistral"
+import { OpenAI } from "../../../continuedev/core/llm/llms/OpenAI"
 
 // Mock the LLM classes
-vi.mock("../../continuedev/core/llm/llms/Mistral")
-vi.mock("../../continuedev/core/llm/llms/OpenAI")
+vi.mock("../../../continuedev/core/llm/llms/Mistral")
+vi.mock("../../../continuedev/core/llm/llms/OpenAI")
 
-describe("AutocompleteModel", () => {
-	let model: AutocompleteModel
+describe("NewAutocompleteModel", () => {
+	let model: NewAutocompleteModel
 
 	beforeEach(() => {
-		model = new AutocompleteModel()
+		model = new NewAutocompleteModel()
 		vi.clearAllMocks()
 	})
 
@@ -31,7 +31,7 @@ describe("AutocompleteModel", () => {
 				expect(result).toBeDefined()
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "codestral-2501",
+						model: "codestral-latest",
 						apiKey: "test-mistral-key",
 						apiBase: "https://custom.mistral.ai/v1/",
 						contextLength: 32000,
@@ -78,7 +78,7 @@ describe("AutocompleteModel", () => {
 				expect(result).toBeDefined()
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "codestral-2501",
+						model: "mistralai/codestral-2508",
 						apiKey: "test-kilocode-token",
 					}),
 				)
@@ -109,7 +109,7 @@ describe("AutocompleteModel", () => {
 				expect(result).toBeDefined()
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "mistralai/codestral-2501",
+						model: "mistralai/codestral-2508",
 						apiKey: "test-openrouter-key",
 						apiBase: "https://custom.openrouter.ai/api/v1",
 					}),

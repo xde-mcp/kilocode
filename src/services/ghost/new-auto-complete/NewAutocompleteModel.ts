@@ -1,4 +1,5 @@
 import {
+	AUTOCOMPLETE_PROVIDER_MODELS,
 	AutocompleteProviderKey,
 	defaultProviderUsabilityChecker,
 	getKiloBaseUriFromToken,
@@ -6,24 +7,17 @@ import {
 	ProviderSettings,
 	ProviderSettingsEntry,
 } from "@roo-code/types"
-import { ApiHandler, buildApiHandler } from "../../api"
-import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
-import { OpenRouterHandler } from "../../api/providers"
-import { ApiStreamChunk } from "../../api/transform/stream"
-import { ILLM, LLMOptions } from "../continuedev/core/index.js"
-import { DEFAULT_AUTOCOMPLETE_OPTS } from "../continuedev/core/util/parameters.js"
-import Mistral from "../continuedev/core/llm/llms/Mistral"
-import OpenRouter from "../continuedev/core/llm/llms/OpenRouter"
-import KiloCode from "../continuedev/core/llm/llms/KiloCode"
+import { ApiHandler, buildApiHandler } from "../../../api"
+import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
+import { OpenRouterHandler } from "../../../api/providers"
+import { ApiStreamChunk } from "../../../api/transform/stream"
+import { ILLM, LLMOptions } from "../../continuedev/core/index.js"
+import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameters.js"
+import Mistral from "../../continuedev/core/llm/llms/Mistral"
+import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
+import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
 
-export const AUTOCOMPLETE_PROVIDER_MODELS = {
-	mistral: "codestral-2501",
-	kilocode: "codestral-2501",
-	openrouter: "mistralai/codestral-2501",
-	bedrock: "mistral.codestral-2501-v1:0",
-} as const
-
-export class AutocompleteModel {
+export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null
 	private profile: ProviderSettings | null = null
 	public loaded = false
@@ -95,7 +89,7 @@ export class AutocompleteModel {
 	 */
 	public getILLM(): ILLM | null {
 		if (!this.profile?.apiProvider) {
-			console.warn("[AutocompleteModel] No profile loaded")
+			console.warn("[NewAutocompleteModel] No profile loaded")
 			return null
 		}
 
@@ -105,7 +99,7 @@ export class AutocompleteModel {
 			// Extract provider-specific configuration
 			const config = this.extractProviderConfig()
 			if (!config) {
-				console.warn(`[AutocompleteModel] Failed to extract config for provider: ${provider}`)
+				console.warn(`[NewAutocompleteModel] Failed to extract config for provider: ${provider}`)
 				return null
 			}
 
@@ -126,21 +120,16 @@ export class AutocompleteModel {
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 				// Add env for KiloCode metadata (organizationId and tester suppression)
-				env: config.organizationId
-					? {
-							kilocodeOrganizationId: config.organizationId,
-							// Add tester suppression if configured
-							...(this.profile?.kilocodeTesterWarningsDisabledUntil && {
-								kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
-							}),
-						}
-					: undefined,
+				env: {
+					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
+					kilocodeOrganizationId: config.organizationId,
+				},
 			}
 
 			// Create appropriate LLM instance based on provider
 			return this.createLLMInstance(provider, llmOptions)
 		} catch (error) {
-			console.error(`[AutocompleteModel] Error creating ILLM for provider ${provider}:`, error)
+			console.error(`[NewAutocompleteModel] Error creating ILLM for provider ${provider}:`, error)
 			return null
 		}
 	}
@@ -164,7 +153,7 @@ export class AutocompleteModel {
 		switch (provider) {
 			case "mistral":
 				if (!this.profile.mistralApiKey) {
-					console.warn("[AutocompleteModel] Missing Mistral API key")
+					console.warn("[NewAutocompleteModel] Missing Mistral API key")
 					return null
 				}
 				return {
@@ -175,7 +164,7 @@ export class AutocompleteModel {
 
 			case "kilocode":
 				if (!this.profile.kilocodeToken) {
-					console.warn("[AutocompleteModel] Missing Kilocode token")
+					console.warn("[NewAutocompleteModel] Missing Kilocode token")
 					return null
 				}
 				return {
@@ -187,7 +176,7 @@ export class AutocompleteModel {
 
 			case "openrouter":
 				if (!this.profile.openRouterApiKey) {
-					console.warn("[AutocompleteModel] Missing OpenRouter API key")
+					console.warn("[NewAutocompleteModel] Missing OpenRouter API key")
 					return null
 				}
 				return {
@@ -199,11 +188,11 @@ export class AutocompleteModel {
 			case "bedrock":
 				// Bedrock uses AWS credentials, not a simple API key
 				// For now, return null as it requires more complex setup
-				console.warn("[AutocompleteModel] Bedrock provider not yet supported for autocomplete")
+				console.warn("[NewAutocompleteModel] Bedrock provider not yet supported for autocomplete")
 				return null
 
 			default:
-				console.warn(`[AutocompleteModel] Unsupported provider: ${provider}`)
+				console.warn(`[NewAutocompleteModel] Unsupported provider: ${provider}`)
 				return null
 		}
 	}
@@ -218,7 +207,11 @@ export class AutocompleteModel {
 
 			case "kilocode":
 				// Use dedicated KiloCode class with custom headers and routing
-				return new KiloCode(options)
+				// Pass the existing apiHandler as fimProvider if available
+				return new KiloCode({
+					...options,
+					fimProvider: this.apiHandler || undefined,
+				})
 
 			case "openrouter":
 				// Use standard OpenRouter

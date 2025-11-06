@@ -7,13 +7,13 @@ import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
 import { GhostContextProvider } from "./classic-auto-complete/GhostContextProvider"
+//import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
-import { GhostGutterAnimation } from "./GhostGutterAnimation"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 
 export class GhostServiceManager {
@@ -26,7 +26,6 @@ export class GhostServiceManager {
 	private settings: GhostServiceSettings | null = null
 	private ghostContext: GhostContext
 	private ghostContextProvider: GhostContextProvider
-	private cursorAnimation: GhostGutterAnimation
 
 	private taskId: string | null = null
 	private isProcessing: boolean = false
@@ -39,6 +38,7 @@ export class GhostServiceManager {
 	// VSCode Providers
 	public codeActionProvider: GhostCodeActionProvider
 	public inlineCompletionProvider: GhostInlineCompletionProvider
+	//private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	private ignoreController?: Promise<RooIgnoreController>
@@ -53,7 +53,6 @@ export class GhostServiceManager {
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
 		this.ghostContextProvider = new GhostContextProvider(context)
-		this.cursorAnimation = new GhostGutterAnimation(context)
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
@@ -61,7 +60,6 @@ export class GhostServiceManager {
 			this.model,
 			this.updateCostTracking.bind(this),
 			this.ghostContext,
-			this.cursorAnimation,
 			() => this.settings,
 			this.ghostContextProvider,
 		)
@@ -75,9 +73,6 @@ export class GhostServiceManager {
 		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, context.subscriptions)
 
 		void this.load()
-
-		// Initialize cursor animation with settings after load
-		this.cursorAnimation.updateSettings(this.settings || undefined)
 	}
 
 	// Singleton Management
@@ -118,7 +113,6 @@ export class GhostServiceManager {
 	public async load() {
 		this.settings = this.loadSettings()
 		await this.model.reload(this.providerSettingsManager)
-		this.cursorAnimation.updateSettings(this.settings || undefined)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
@@ -127,18 +121,36 @@ export class GhostServiceManager {
 
 	private async updateInlineCompletionProviderRegistration() {
 		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
 
-		if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
-			// Register the provider
-			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
-				"*",
-				this.inlineCompletionProvider,
-			)
-			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
-		} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
-			// Deregister the provider
+		// First, dispose any existing registration
+		if (this.inlineCompletionProviderDisposable) {
 			this.inlineCompletionProviderDisposable.dispose()
 			this.inlineCompletionProviderDisposable = null
+		}
+
+		// Dispose new autocomplete provider if switching away from it
+		//if (!useNewAutocomplete && this.newAutocompleteProvider) {
+		//	this.newAutocompleteProvider.dispose()
+		//	this.newAutocompleteProvider = null
+		//}
+
+		if (shouldBeRegistered) {
+			if (useNewAutocomplete) {
+				// Initialize new autocomplete provider if not already created
+				//if (!this.newAutocompleteProvider) {
+				//	this.newAutocompleteProvider = new NewAutocompleteProvider(this.context, this.cline)
+				//	await this.newAutocompleteProvider.load()
+				//}
+				// New autocomplete provider registers itself internally
+			} else {
+				// Register classic provider
+				this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
+					"*",
+					this.inlineCompletionProvider,
+				)
+				this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+			}
 		}
 	}
 
@@ -148,7 +160,6 @@ export class GhostServiceManager {
 			enableAutoTrigger: false,
 			enableSmartInlineTaskKeybinding: false,
 			enableQuickInlineTaskKeybinding: false,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()
@@ -160,7 +171,6 @@ export class GhostServiceManager {
 			enableAutoTrigger: true,
 			enableSmartInlineTaskKeybinding: true,
 			enableQuickInlineTaskKeybinding: true,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()
@@ -245,7 +255,7 @@ export class GhostServiceManager {
 	}
 
 	private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
-		this.cursorAnimation.update()
+		// No longer needed - gutter animation removed
 	}
 
 	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
@@ -273,6 +283,15 @@ export class GhostServiceManager {
 
 		const document = editor.document
 		if (!(await this.hasAccess(document))) {
+			return
+		}
+
+		// Check if using new autocomplete
+		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
+
+		if (useNewAutocomplete) {
+			// New autocomplete doesn't support manual code suggestion yet
+			// Just return for now
 			return
 		}
 
@@ -413,14 +432,19 @@ export class GhostServiceManager {
 	}
 
 	private stopProcessing() {
-		this.cursorAnimation.hide()
 		this.isProcessing = false
 		this.updateGlobalContext()
 	}
 
 	public cancelRequest() {
 		this.stopProcessing()
-		this.inlineCompletionProvider.cancelRequest()
+		// Check which provider is active and cancel appropriately
+		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
+		if (useNewAutocomplete) {
+			// New autocomplete doesn't have a cancel method yet
+		} else {
+			this.inlineCompletionProvider.cancelRequest()
+		}
 	}
 
 	/**
@@ -430,7 +454,6 @@ export class GhostServiceManager {
 		this.cancelRequest()
 
 		this.statusBar?.dispose()
-		this.cursorAnimation.dispose()
 
 		// Dispose inline completion provider registration
 		if (this.inlineCompletionProviderDisposable) {
@@ -440,6 +463,11 @@ export class GhostServiceManager {
 
 		// Dispose inline completion provider resources
 		this.inlineCompletionProvider.dispose()
+		// Dispose new autocomplete provider if it exists
+		//if (this.newAutocompleteProvider) {
+		//	this.newAutocompleteProvider.dispose()
+		//	this.newAutocompleteProvider = null
+		//}
 
 		this.disposeIgnoreController()
 
