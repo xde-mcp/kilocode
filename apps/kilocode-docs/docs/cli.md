@@ -250,12 +250,7 @@ The CLI supports overriding config values with environment variables. The suppor
 
 - `KILO_PROVIDER`: Override the active provider ID
 - For `kilocode` provider: `KILOCODE_<FIELD_NAME>` (e.g., `KILOCODE_MODEL` → `kilocodeModel`)
-    - `KILOCODE_MODEL` → `kilocodeModel`
-    - `KILOCODE_ORGANIZATION_ID` → `kilocodeOrganizationId`
 - For other providers: `KILO_<FIELD_NAME>` (e.g., `KILO_API_KEY` → `apiKey`)
-    - `KILO_API_KEY` → `apiKey`
-    - `KILO_BASE_URL` → `baseUrl`
-    - `KILO_API_MODEL_ID` → `apiModelId`
 
 ## Local Development
 
