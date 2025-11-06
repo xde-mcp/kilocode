@@ -17,10 +17,10 @@ import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
 
 export const AUTOCOMPLETE_PROVIDER_MODELS = {
-	mistral: "codestral-2501",
-	kilocode: "codestral-2501",
-	openrouter: "mistralai/codestral-2501",
-	bedrock: "mistral.codestral-2501-v1:0",
+	mistral: "codestral-2508",
+	kilocode: "codestral-2508",
+	openrouter: "mistralai/codestral-2508",
+	bedrock: "mistral.codestral-2508-v1:0",
 } as const
 
 export class NewAutocompleteModel {
