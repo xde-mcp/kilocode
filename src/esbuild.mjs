@@ -29,6 +29,9 @@ async function main() {
 		format: "cjs",
 		sourcesContent: false,
 		platform: "node",
+		banner: {
+			js: "const __importMetaUrl = typeof __filename !== 'undefined' ? require('url').pathToFileURL(__filename).href : undefined;",
+		},
 	}
 
 	const srcDir = __dirname
@@ -44,6 +47,22 @@ async function main() {
 	 * @type {import('esbuild').Plugin[]}
 	 */
 	const plugins = [
+		{
+			name: "import-meta-url-plugin",
+			setup(build) {
+				build.onLoad({ filter: /\.js$/ }, async (args) => {
+					const fs = await import("fs")
+					let contents = await fs.promises.readFile(args.path, "utf8")
+
+					// Replace import.meta.url with our polyfill
+					if (contents.includes("import.meta.url")) {
+						contents = contents.replace(/import\.meta\.url/g, "__importMetaUrl")
+					}
+
+					return { contents, loader: "js" }
+				})
+			},
+		},
 		{
 			name: "copyFiles",
 			setup(build) {
