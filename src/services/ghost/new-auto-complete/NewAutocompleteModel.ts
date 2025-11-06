@@ -1,4 +1,5 @@
 import {
+	AUTOCOMPLETE_PROVIDER_MODELS,
 	AutocompleteProviderKey,
 	defaultProviderUsabilityChecker,
 	getKiloBaseUriFromToken,
@@ -15,13 +16,6 @@ import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameter
 import Mistral from "../../continuedev/core/llm/llms/Mistral"
 import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
-
-export const AUTOCOMPLETE_PROVIDER_MODELS = {
-	mistral: "codestral-2501",
-	kilocode: "codestral-2501",
-	openrouter: "mistralai/codestral-2501",
-	bedrock: "mistral.codestral-2501-v1:0",
-} as const
 
 export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null
@@ -126,15 +120,10 @@ export class NewAutocompleteModel {
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
 				// Add env for KiloCode metadata (organizationId and tester suppression)
-				env: config.organizationId
-					? {
-							kilocodeOrganizationId: config.organizationId,
-							// Add tester suppression if configured
-							...(this.profile?.kilocodeTesterWarningsDisabledUntil && {
-								kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
-							}),
-						}
-					: undefined,
+				env: {
+					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
+					kilocodeOrganizationId: config.organizationId,
+				},
 			}
 
 			// Create appropriate LLM instance based on provider
@@ -218,7 +207,11 @@ export class NewAutocompleteModel {
 
 			case "kilocode":
 				// Use dedicated KiloCode class with custom headers and routing
-				return new KiloCode(options)
+				// Pass the existing apiHandler as fimProvider if available
+				return new KiloCode({
+					...options,
+					fimProvider: this.apiHandler || undefined,
+				})
 
 			case "openrouter":
 				// Use standard OpenRouter
