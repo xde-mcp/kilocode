@@ -36,7 +36,7 @@ describe("HoleFiller", () => {
 
 			// Verify system prompt contains auto-trigger keywords
 			expect(systemPrompt).toContain("Auto-Completion")
-			expect(systemPrompt).toContain("Contect Format")
+			expect(systemPrompt).toContain("Context Format")
 
 			const expected = `<LANGUAGE>typescript</LANGUAGE>
 
