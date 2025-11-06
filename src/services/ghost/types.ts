@@ -220,7 +220,10 @@ export function vscodeRangeToRange(range: vscode.Range): Range {
 /**
  * Convert GhostSuggestionContext to AutocompleteInput
  */
-export function contextToAutocompleteInput(context: GhostSuggestionContext): AutocompleteInput {
+export function contextToAutocompleteInput(
+	context: GhostSuggestionContext,
+	recentlyVisitedRanges: AutocompleteCodeSnippet[] = [],
+): AutocompleteInput {
 	const position = context.range?.start ?? context.document.positionAt(0)
 	const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 
@@ -251,7 +254,7 @@ export function contextToAutocompleteInput(context: GhostSuggestionContext): Aut
 		completionId: crypto.randomUUID(),
 		filepath: context.document.uri.fsPath,
 		pos: vscodePositionToPosition(position),
-		recentlyVisitedRanges: [], // Not tracked in current Ghost implementation
+		recentlyVisitedRanges, // Now populated from GhostRecentlyVisitedRangesService
 		recentlyEditedRanges,
 		manuallyPassFileContents: undefined,
 		manuallyPassPrefix: prefix,

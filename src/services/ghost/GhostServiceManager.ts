@@ -438,6 +438,9 @@ export class GhostServiceManager {
 			this.inlineCompletionProviderDisposable = null
 		}
 
+		// Dispose inline completion provider resources
+		this.inlineCompletionProvider.dispose()
+
 		this.disposeIgnoreController()
 
 		GhostServiceManager.instance = null // Reset singleton

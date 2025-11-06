@@ -71,6 +71,8 @@ export class GhostContextProvider {
 			const workspaceDirs = await this.ide.getWorkspaceDirs()
 			const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
+			console.log("[GhostContextProvider] - formattedContext:", formattedContext)
+
 			return formattedContext
 		} catch (error) {
 			console.warn("Failed to get formatted context:", error)

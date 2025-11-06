@@ -8,6 +8,7 @@ import { GhostModel } from "../GhostModel"
 import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
+import { GhostRecentlyVisitedRangesService } from "./GhostRecentlyVisitedRangesService"
 import type { GhostServiceSettings } from "@roo-code/types"
 
 const MAX_SUGGESTIONS_HISTORY = 20
@@ -80,6 +81,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private ghostContext: GhostContext
 	private cursorAnimation: GhostGutterAnimation
 	private getSettings: () => GhostServiceSettings | null
+	private recentlyVisitedRangesService: GhostRecentlyVisitedRangesService
 
 	constructor(
 		model: GhostModel,
@@ -95,6 +97,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.cursorAnimation = cursorAnimation
 		this.getSettings = getSettings
 		this.autoTriggerStrategy = new AutoTriggerStrategy(contextProvider)
+		this.recentlyVisitedRangesService = new GhostRecentlyVisitedRangesService()
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -127,7 +130,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
 		this.isRequestCancelled = false
 
-		const autocompleteInput = contextToAutocompleteInput(context)
+		const autocompleteInput = contextToAutocompleteInput(context, this.recentlyVisitedRangesService.getSnippets())
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
@@ -216,6 +219,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 */
 	public cancelRequest(): void {
 		this.isRequestCancelled = true
+	}
+
+	/**
+	 * Dispose of resources
+	 */
+	public dispose(): void {
+		this.recentlyVisitedRangesService.dispose()
 	}
 
 	public async provideInlineCompletionItems(
