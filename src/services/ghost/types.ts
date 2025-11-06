@@ -223,12 +223,13 @@ export function vscodeRangeToRange(range: vscode.Range): Range {
 export function contextToAutocompleteInput(
 	context: GhostSuggestionContext,
 	recentlyVisitedRanges: AutocompleteCodeSnippet[] = [],
+	recentlyEditedRanges: RecentlyEditedRange[] = [],
 ): AutocompleteInput {
 	const position = context.range?.start ?? context.document.positionAt(0)
 	const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 
-	// Convert recent operations to recently edited ranges
-	const recentlyEditedRanges: RecentlyEditedRange[] =
+	// Merge recently edited ranges from context operations with tracked ranges
+	const contextEditedRanges: RecentlyEditedRange[] =
 		context.recentOperations?.map((op) => {
 			const range: Range = op.lineRange
 				? {
@@ -249,13 +250,16 @@ export function contextToAutocompleteInput(
 			}
 		}) ?? []
 
+	// Combine tracked recently edited ranges with context operations
+	const allRecentlyEditedRanges = [...recentlyEditedRanges, ...contextEditedRanges]
+
 	return {
 		isUntitledFile: context.document.isUntitled,
 		completionId: crypto.randomUUID(),
 		filepath: context.document.uri.fsPath,
 		pos: vscodePositionToPosition(position),
-		recentlyVisitedRanges, // Now populated from GhostRecentlyVisitedRangesService
-		recentlyEditedRanges,
+		recentlyVisitedRanges, // Populated from GhostRecentlyVisitedRangesService
+		recentlyEditedRanges: allRecentlyEditedRanges, // Populated from GhostRecentlyEditedTracker
 		manuallyPassFileContents: undefined,
 		manuallyPassPrefix: prefix,
 	}

@@ -9,6 +9,7 @@ import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { GhostGutterAnimation } from "../GhostGutterAnimation"
 import { GhostRecentlyVisitedRangesService } from "./GhostRecentlyVisitedRangesService"
+import { GhostRecentlyEditedTracker } from "./GhostRecentlyEditedTracker"
 import type { GhostServiceSettings } from "@roo-code/types"
 
 const MAX_SUGGESTIONS_HISTORY = 20
@@ -82,6 +83,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private cursorAnimation: GhostGutterAnimation
 	private getSettings: () => GhostServiceSettings | null
 	private recentlyVisitedRangesService: GhostRecentlyVisitedRangesService
+	private recentlyEditedTracker: GhostRecentlyEditedTracker
 
 	constructor(
 		model: GhostModel,
@@ -98,6 +100,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.getSettings = getSettings
 		this.autoTriggerStrategy = new AutoTriggerStrategy(contextProvider)
 		this.recentlyVisitedRangesService = new GhostRecentlyVisitedRangesService()
+		this.recentlyEditedTracker = new GhostRecentlyEditedTracker()
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -130,7 +133,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
 		this.isRequestCancelled = false
 
-		const autocompleteInput = contextToAutocompleteInput(context, this.recentlyVisitedRangesService.getSnippets())
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
+		const autocompleteInput = contextToAutocompleteInput(context, recentlyVisitedRanges, recentlyEditedRanges)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
@@ -226,6 +231,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 */
 	public dispose(): void {
 		this.recentlyVisitedRangesService.dispose()
+		this.recentlyEditedTracker.dispose()
 	}
 
 	public async provideInlineCompletionItems(
