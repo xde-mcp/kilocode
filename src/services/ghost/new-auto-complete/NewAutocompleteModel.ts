@@ -1,4 +1,5 @@
 import {
+	AUTOCOMPLETE_PROVIDER_MODELS,
 	AutocompleteProviderKey,
 	defaultProviderUsabilityChecker,
 	getKiloBaseUriFromToken,
@@ -15,13 +16,6 @@ import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameter
 import Mistral from "../../continuedev/core/llm/llms/Mistral"
 import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
-
-export const AUTOCOMPLETE_PROVIDER_MODELS = {
-	mistral: "codestral-2508",
-	kilocode: "codestral-2508",
-	openrouter: "mistralai/codestral-2508",
-	bedrock: "mistral.codestral-2508-v1:0",
-} as const
 
 export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null

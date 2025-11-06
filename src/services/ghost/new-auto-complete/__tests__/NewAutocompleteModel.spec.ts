@@ -31,7 +31,7 @@ describe("NewAutocompleteModel", () => {
 				expect(result).toBeDefined()
 				expect(Mistral).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "codestral-2508",
+						model: "codestral-latest",
 						apiKey: "test-mistral-key",
 						apiBase: "https://custom.mistral.ai/v1/",
 						contextLength: 32000,
@@ -78,7 +78,7 @@ describe("NewAutocompleteModel", () => {
 				expect(result).toBeDefined()
 				expect(OpenAI).toHaveBeenCalledWith(
 					expect.objectContaining({
-						model: "codestral-2508",
+						model: "mistralai/codestral-2508",
 						apiKey: "test-kilocode-token",
 					}),
 				)
