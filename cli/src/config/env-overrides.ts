@@ -2,13 +2,14 @@ import type { CLIConfig } from "./types.js"
 import { logs } from "../services/logs.js"
 
 /**
- * Environment variable names for config overrides
+ * Environment variable prefix for provider field overrides
  */
-export const ENV_OVERRIDES = {
-	PROVIDER: "KILO_PROVIDER",
-	MODEL: "KILO_MODEL",
-	ORG_ID: "KILO_ORG_ID",
-} as const
+export const PROVIDER_OVERRIDE_PREFIX = "KILO_PROVIDER_OVERRIDE_"
+
+/**
+ * Environment variable name for provider selection
+ */
+export const PROVIDER_ENV_VAR = "KILO_PROVIDER"
 
 /**
  * Apply environment variable overrides to the config
@@ -16,8 +17,12 @@ export const ENV_OVERRIDES = {
  *
  * Environment variables:
  * - KILO_PROVIDER: Override the active provider ID
- * - KILO_MODEL: Override the model for the current provider
- * - KILO_ORG_ID: Override the organization ID (for kilocode provider)
+ * - KILO_PROVIDER_OVERRIDE_<fieldName>: Override any field in the current provider
+ *   Examples:
+ *   - KILO_PROVIDER_OVERRIDE_apiModelId
+ *   - KILO_PROVIDER_OVERRIDE_kilocodeModel
+ *   - KILO_PROVIDER_OVERRIDE_kilocodeOrganizationId
+ *   - KILO_PROVIDER_OVERRIDE_apiKey
  *
  * @param config The config to apply overrides to
  * @returns The config with environment variable overrides applied
@@ -26,7 +31,7 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 	const overriddenConfig = { ...config }
 
 	// Override provider if KILO_PROVIDER is set
-	const envProvider = process.env[ENV_OVERRIDES.PROVIDER]
+	const envProvider = process.env[PROVIDER_ENV_VAR]
 
 	if (envProvider) {
 		// Check if the provider exists in the config
@@ -35,13 +40,10 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 		if (providerExists) {
 			overriddenConfig.provider = envProvider
 
-			logs.info(
-				`Config override: provider set to "${envProvider}" from ${ENV_OVERRIDES.PROVIDER}`,
-				"EnvOverrides",
-			)
+			logs.info(`Config override: provider set to "${envProvider}" from ${PROVIDER_ENV_VAR}`, "EnvOverrides")
 		} else {
 			logs.warn(
-				`Config override ignored: provider "${envProvider}" from ${ENV_OVERRIDES.PROVIDER} not found in config`,
+				`Config override ignored: provider "${envProvider}" from ${PROVIDER_ENV_VAR} not found in config`,
 				"EnvOverrides",
 			)
 		}
@@ -55,116 +57,51 @@ export function applyEnvOverrides(config: CLIConfig): CLIConfig {
 		return overriddenConfig
 	}
 
-	// Override model if KILO_MODEL is set
-	const envModel = process.env[ENV_OVERRIDES.MODEL]
+	// Find all KILO_PROVIDER_OVERRIDE_* environment variables
+	const overrideFields = getProviderOverrideFields()
 
-	if (envModel) {
-		// Apply model override based on provider type
-		const modelField = getModelFieldForProvider(currentProvider.provider)
-
-		if (modelField) {
-			// Create a new providers array with the updated provider
-			overriddenConfig.providers = overriddenConfig.providers.map((p) => {
-				if (p.id === currentProvider.id) {
-					return {
-						...p,
-						[modelField]: envModel,
-					}
-				}
-
-				return p
-			})
-
-			logs.info(
-				`Config override: ${modelField} set to "${envModel}" from ${ENV_OVERRIDES.MODEL} for provider "${currentProvider.id}"`,
-				"EnvOverrides",
-			)
-		}
-	}
-
-	// Override organization ID if KILO_ORG_ID is set (only for kilocode provider)
-	const envOrgId = process.env[ENV_OVERRIDES.ORG_ID]
-
-	if (envOrgId && currentProvider.provider === "kilocode") {
+	if (overrideFields.length > 0) {
 		// Create a new providers array with the updated provider
 		overriddenConfig.providers = overriddenConfig.providers.map((p) => {
 			if (p.id === currentProvider.id) {
-				return {
-					...p,
-					kilocodeOrganizationId: envOrgId,
+				const updatedProvider = { ...p }
+
+				// Apply each override
+				for (const { fieldName, value } of overrideFields) {
+					updatedProvider[fieldName] = value
+
+					logs.info(
+						`Config override: ${fieldName} set to "${value}" from ${PROVIDER_OVERRIDE_PREFIX}${fieldName} for provider "${currentProvider.id}"`,
+						"EnvOverrides",
+					)
 				}
+
+				return updatedProvider
 			}
 
 			return p
 		})
-
-		logs.info(
-			`Config override: kilocodeOrganizationId set to "${envOrgId}" from ${ENV_OVERRIDES.ORG_ID} for provider "${currentProvider.id}"`,
-			"EnvOverrides",
-		)
-	} else if (envOrgId && currentProvider.provider !== "kilocode") {
-		logs.warn(
-			`Config override ignored: ${ENV_OVERRIDES.ORG_ID} is only applicable for kilocode provider, current provider is "${currentProvider.provider}"`,
-			"EnvOverrides",
-		)
 	}
 
 	return overriddenConfig
 }
 
 /**
- * Get the model field name for a given provider
- * Different providers use different field names for their model ID
+ * Get all KILO_PROVIDER_OVERRIDE_* environment variables
+ * Returns an array of { fieldName, value } objects
  */
-function getModelFieldForProvider(provider: string): string | null {
-	switch (provider) {
-		case "kilocode":
-			return "kilocodeModel"
+function getProviderOverrideFields(): Array<{ fieldName: string; value: string }> {
+	const overrides: Array<{ fieldName: string; value: string }> = []
 
-		case "anthropic":
-			return "apiModelId"
+	for (const [key, value] of Object.entries(process.env)) {
+		if (key.startsWith(PROVIDER_OVERRIDE_PREFIX) && value) {
+			const fieldName = key.substring(PROVIDER_OVERRIDE_PREFIX.length)
 
-		case "openai-native":
-			return "apiModelId"
-
-		case "openrouter":
-			return "openRouterModelId"
-
-		case "ollama":
-			return "ollamaModelId"
-
-		case "lmstudio":
-			return "lmStudioModelId"
-
-		case "openai":
-			return "apiModelId"
-
-		case "glama":
-			return "glamaModelId"
-
-		case "litellm":
-			return "litellmModelId"
-
-		case "deepinfra":
-			return "deepInfraModelId"
-
-		case "unbound":
-			return "unboundModelId"
-
-		case "requesty":
-			return "requestyModelId"
-
-		case "vercel-ai-gateway":
-			return "vercelAiGatewayModelId"
-
-		case "io-intelligence":
-			return "ioIntelligenceModelId"
-
-		case "huggingface":
-			return "huggingFaceModelId"
-
-		default:
-			// For most other providers, use apiModelId as fallback
-			return "apiModelId"
+			if (fieldName) {
+				overrides.push({ fieldName, value })
+			}
+		}
 	}
+
+	return overrides
 }
