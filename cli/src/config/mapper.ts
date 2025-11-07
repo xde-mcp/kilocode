@@ -52,7 +52,7 @@ function mapProviderToApiConfig(provider: ProviderConfig): ProviderSettings {
 	Object.keys(provider).forEach((key) => {
 		if (key !== "id" && key !== "provider") {
 			// Type assertion needed because we're dynamically accessing keys
-			;(config as any)[key] = (provider as any)[key]
+			;(config as Record<string, unknown>)[key] = (provider as Record<string, unknown>)[key]
 		}
 	})
 
