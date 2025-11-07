@@ -41,49 +41,44 @@ export class GhostContextProvider {
 	 * Returns comment-based formatted context that can be added to prompts
 	 */
 	async getFormattedContext(autocompleteInput: AutocompleteInput, filepath: string): Promise<string> {
-		try {
-			// Convert filepath to URI if it's not already one
-			const filepathUri = filepath.startsWith("file://") ? filepath : vscode.Uri.file(filepath).toString()
+		// Convert filepath to URI if it's not already one
+		const filepathUri = filepath.startsWith("file://") ? filepath : vscode.Uri.file(filepath).toString()
 
-			// Initialize import definitions cache
-			await this.contextService.initializeForFile(filepathUri)
+		// Initialize import definitions cache
+		await this.contextService.initializeForFile(filepathUri)
 
-			const continuedevInput = convertToContinuedevInput(autocompleteInput)
+		const continuedevInput = convertToContinuedevInput(autocompleteInput)
 
-			// Create helper with URI filepath
-			const helperInput = {
-				...continuedevInput,
-				filepath: filepathUri,
-			}
-
-			const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, "codestral", this.ide)
-
-			const snippetPayload = await getAllSnippetsWithoutRace({
-				helper,
-				ide: this.ide,
-				getDefinitionsFromLsp,
-				contextRetrievalService: this.contextService,
-			})
-
-			const filteredSnippets = getSnippets(helper, snippetPayload)
-
-			// Convert all snippet filepaths to URIs
-			const snippetsWithUris = filteredSnippets.map((snippet: any) => ({
-				...snippet,
-				filepath: snippet.filepath?.startsWith("file://")
-					? snippet.filepath
-					: vscode.Uri.file(snippet.filepath).toString(),
-			}))
-
-			const workspaceDirs = await this.ide.getWorkspaceDirs()
-			const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
-
-			console.log("[GhostContextProvider] - formattedContext:", formattedContext)
-
-			return formattedContext
-		} catch (error) {
-			console.warn("Failed to get formatted context:", error)
-			return ""
+		// Create helper with URI filepath
+		const helperInput = {
+			...continuedevInput,
+			filepath: filepathUri,
 		}
+
+		const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, "codestral", this.ide)
+
+		const snippetPayload = await getAllSnippetsWithoutRace({
+			helper,
+			ide: this.ide,
+			getDefinitionsFromLsp,
+			contextRetrievalService: this.contextService,
+		})
+
+		const filteredSnippets = getSnippets(helper, snippetPayload)
+
+		// Convert all snippet filepaths to URIs
+		const snippetsWithUris = filteredSnippets.map((snippet: any) => ({
+			...snippet,
+			filepath: snippet.filepath?.startsWith("file://")
+				? snippet.filepath
+				: vscode.Uri.file(snippet.filepath).toString(),
+		}))
+
+		const workspaceDirs = await this.ide.getWorkspaceDirs()
+		const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
+
+		console.log("[GhostContextProvider] - formattedContext:", formattedContext)
+
+		return formattedContext
 	}
 }
