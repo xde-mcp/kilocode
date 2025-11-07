@@ -35,11 +35,10 @@ export class GhostModel {
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
-				const kilocodeProfile = selectedProfile
 
-				if (!kilocodeProfile) continue
+				if (!selectedProfile) continue
 
-				const profile = await providerSettingsManager.getProfile({ id: kilocodeProfile.id })
+				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 				const kilocodeToken = profile.kilocodeToken
 				const kilocodeOrgId = profile.kilocodeOrganizationId
 
