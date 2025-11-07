@@ -6,13 +6,13 @@ import { GhostModel } from "./GhostModel"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
+//import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
-import { GhostGutterAnimation } from "./GhostGutterAnimation"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 
 export class GhostServiceManager {
@@ -24,9 +24,7 @@ export class GhostServiceManager {
 	private providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
 	private ghostContext: GhostContext
-	private cursorAnimation: GhostGutterAnimation
 
-	private enabled: boolean = true
 	private taskId: string | null = null
 	private isProcessing: boolean = false
 
@@ -38,6 +36,7 @@ export class GhostServiceManager {
 	// VSCode Providers
 	public codeActionProvider: GhostCodeActionProvider
 	public inlineCompletionProvider: GhostInlineCompletionProvider
+	//private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	private ignoreController?: Promise<RooIgnoreController>
@@ -48,10 +47,9 @@ export class GhostServiceManager {
 
 		// Register Internal Components
 		this.documentStore = new GhostDocumentStore()
-		this.providerSettingsManager = new ProviderSettingsManager(context)
+		this.providerSettingsManager = cline.providerSettingsManager
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
-		this.cursorAnimation = new GhostGutterAnimation(context)
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
@@ -59,7 +57,7 @@ export class GhostServiceManager {
 			this.model,
 			this.updateCostTracking.bind(this),
 			this.ghostContext,
-			this.cursorAnimation,
+			() => this.settings,
 		)
 
 		// Register document event handlers
@@ -71,9 +69,6 @@ export class GhostServiceManager {
 		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, context.subscriptions)
 
 		void this.load()
-
-		// Initialize cursor animation with settings after load
-		this.cursorAnimation.updateSettings(this.settings || undefined)
 	}
 
 	// Singleton Management
@@ -92,51 +87,61 @@ export class GhostServiceManager {
 		return GhostServiceManager.instance
 	}
 
-	// Settings Management
-	private loadSettings() {
-		const state = ContextProxy.instance?.getValues?.()
-		return state.ghostServiceSettings
-	}
-
 	private async saveSettings() {
-		if (!this.settings) {
-			return
-		}
 		const settingsWithModelInfo = {
 			...this.settings,
 			provider: this.getCurrentProviderName(),
 			model: this.getCurrentModelName(),
 		}
-		await ContextProxy.instance?.setValues?.({ ghostServiceSettings: settingsWithModelInfo })
+		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
 		await this.cline.postStateToWebview()
 	}
 
 	public async load() {
-		this.settings = this.loadSettings()
+		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
+			enableQuickInlineTaskKeybinding: true,
+			enableSmartInlineTaskKeybinding: true,
+		}
 		await this.model.reload(this.providerSettingsManager)
-		this.cursorAnimation.updateSettings(this.settings || undefined)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
 		await this.saveSettings()
 	}
 
-	/**
-	 * Update the inline completion provider with current settings
-	 */
 	private async updateInlineCompletionProviderRegistration() {
-		// Always keep the provider registered so manual triggers (cmd-L) work
-		// The provider will check enableAutoTrigger internally to decide whether to auto-trigger
-		if (!this.inlineCompletionProviderDisposable) {
-			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
-				"*",
-				this.inlineCompletionProvider,
-			)
-			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
+		const useNewAutocomplete = false // this.settings?.useNewAutocomplete ?? false
+
+		// First, dispose any existing registration
+		if (this.inlineCompletionProviderDisposable) {
+			this.inlineCompletionProviderDisposable.dispose()
+			this.inlineCompletionProviderDisposable = null
 		}
 
-		// Update the provider's settings
-		this.inlineCompletionProvider.updateSettings(this.settings)
+		// Dispose new autocomplete provider if switching away from it
+		//if (!useNewAutocomplete && this.newAutocompleteProvider) {
+		//	this.newAutocompleteProvider.dispose()
+		//	this.newAutocompleteProvider = null
+		//}
+
+		if (shouldBeRegistered) {
+			if (useNewAutocomplete) {
+				// Initialize new autocomplete provider if not already created
+				//if (!this.newAutocompleteProvider) {
+				//	this.newAutocompleteProvider = new NewAutocompleteProvider(this.context, this.cline)
+				//	await this.newAutocompleteProvider.load()
+				//}
+				// New autocomplete provider registers itself internally
+			} else {
+				// Register classic provider
+				this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
+					"*",
+					this.inlineCompletionProvider,
+				)
+				this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
+			}
+		}
 	}
 
 	public async disable() {
@@ -145,7 +150,6 @@ export class GhostServiceManager {
 			enableAutoTrigger: false,
 			enableSmartInlineTaskKeybinding: false,
 			enableQuickInlineTaskKeybinding: false,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()
@@ -157,7 +161,6 @@ export class GhostServiceManager {
 			enableAutoTrigger: true,
 			enableSmartInlineTaskKeybinding: true,
 			enableQuickInlineTaskKeybinding: true,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()
@@ -165,7 +168,7 @@ export class GhostServiceManager {
 
 	// VsCode Event Handlers
 	private onDidCloseTextDocument(document: vscode.TextDocument): void {
-		if (!this.enabled || document.uri.scheme !== "file") {
+		if (document.uri.scheme !== "file") {
 			return
 		}
 		this.documentStore.removeDocument(document.uri)
@@ -195,7 +198,7 @@ export class GhostServiceManager {
 	}
 
 	private async onDidOpenTextDocument(document: vscode.TextDocument): Promise<void> {
-		if (!this.enabled || document.uri.scheme !== "file") {
+		if (document.uri.scheme !== "file") {
 			return
 		}
 		await this.documentStore.storeDocument({
@@ -204,7 +207,7 @@ export class GhostServiceManager {
 	}
 
 	private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-		if (!this.enabled || event.document.uri.scheme !== "file") {
+		if (event.document.uri.scheme !== "file") {
 			return
 		}
 
@@ -242,14 +245,11 @@ export class GhostServiceManager {
 	}
 
 	private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
-		if (!this.enabled) {
-			return
-		}
-		this.cursorAnimation.update()
+		// No longer needed - gutter animation removed
 	}
 
 	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-		if (!this.enabled || !editor) {
+		if (!editor) {
 			return
 		}
 		// Update global context when switching editors
@@ -261,9 +261,6 @@ export class GhostServiceManager {
 	}
 
 	public async codeSuggestion() {
-		if (!this.enabled) {
-			return
-		}
 		const editor = vscode.window.activeTextEditor
 		if (!editor) {
 			return
@@ -279,13 +276,55 @@ export class GhostServiceManager {
 			return
 		}
 
+		// Check if using new autocomplete
+		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
+
+		if (useNewAutocomplete) {
+			// New autocomplete doesn't support manual code suggestion yet
+			// Just return for now
+			return
+		}
+
 		// Ensure model is loaded
 		if (!this.model.loaded) {
 			await this.load()
 		}
 
-		// Trigger the inline completion provider
-		await vscode.commands.executeCommand("editor.action.inlineSuggest.trigger")
+		// Call the inline completion provider directly with manual trigger context
+		const position = editor.selection.active
+		const context: vscode.InlineCompletionContext = {
+			triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
+			selectedCompletionInfo: undefined,
+		}
+		const tokenSource = new vscode.CancellationTokenSource()
+
+		try {
+			const completions = await this.inlineCompletionProvider.provideInlineCompletionItems_Internal(
+				document,
+				position,
+				context,
+				tokenSource.token,
+			)
+
+			// If we got completions, directly insert the first one
+			if (completions && (Array.isArray(completions) ? completions.length > 0 : completions.items.length > 0)) {
+				const items = Array.isArray(completions) ? completions : completions.items
+				const firstCompletion = items[0]
+
+				if (firstCompletion && firstCompletion.insertText) {
+					const insertText =
+						typeof firstCompletion.insertText === "string"
+							? firstCompletion.insertText
+							: firstCompletion.insertText.value
+
+					await editor.edit((editBuilder) => {
+						editBuilder.insert(position, insertText)
+					})
+				}
+			}
+		} finally {
+			tokenSource.dispose()
+		}
 	}
 
 	private async updateGlobalContext() {
@@ -303,9 +342,6 @@ export class GhostServiceManager {
 	}
 
 	private initializeStatusBar() {
-		if (!this.enabled) {
-			return
-		}
 		this.statusBar = new GhostStatusBar({
 			enabled: false,
 			model: "loading...",
@@ -386,14 +422,19 @@ export class GhostServiceManager {
 	}
 
 	private stopProcessing() {
-		this.cursorAnimation.hide()
 		this.isProcessing = false
 		this.updateGlobalContext()
 	}
 
 	public cancelRequest() {
 		this.stopProcessing()
-		this.inlineCompletionProvider.cancelRequest()
+		// Check which provider is active and cancel appropriately
+		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
+		if (useNewAutocomplete) {
+			// New autocomplete doesn't have a cancel method yet
+		} else {
+			this.inlineCompletionProvider.cancelRequest()
+		}
 	}
 
 	/**
@@ -403,13 +444,18 @@ export class GhostServiceManager {
 		this.cancelRequest()
 
 		this.statusBar?.dispose()
-		this.cursorAnimation.dispose()
 
 		// Dispose inline completion provider registration
 		if (this.inlineCompletionProviderDisposable) {
 			this.inlineCompletionProviderDisposable.dispose()
 			this.inlineCompletionProviderDisposable = null
 		}
+
+		// Dispose new autocomplete provider if it exists
+		//if (this.newAutocompleteProvider) {
+		//	this.newAutocompleteProvider.dispose()
+		//	this.newAutocompleteProvider = null
+		//}
 
 		this.disposeIgnoreController()
 

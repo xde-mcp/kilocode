@@ -230,6 +230,14 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		alwaysAllowUpdateTodoList,
 		followupAutoApproveTimeoutMs,
 		ghostServiceSettings, // kilocode_change
+		// kilocode_change start - Auto-purge settings
+		autoPurgeEnabled,
+		autoPurgeDefaultRetentionDays,
+		autoPurgeFavoritedTaskRetentionDays,
+		autoPurgeCompletedTaskRetentionDays,
+		autoPurgeIncompleteTaskRetentionDays,
+		autoPurgeLastRunTimestamp,
+		// kilocode_change end - Auto-purge settings
 		includeDiagnosticMessages,
 		maxDiagnosticMessages,
 		includeTaskHistoryInEnhance,
@@ -301,6 +309,32 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 			return { ...prevState, [field]: value }
 		})
 	}, [])
+
+	// kilocode_change start
+	const setGhostServiceSettingsField = useCallback(
+		<K extends keyof NonNullable<ExtensionStateContextType["ghostServiceSettings"]>>(
+			field: K,
+			value: NonNullable<ExtensionStateContextType["ghostServiceSettings"]>[K],
+		) => {
+			setCachedState((prevState) => {
+				const currentSettings = prevState.ghostServiceSettings || {}
+				if (currentSettings[field] === value) {
+					return prevState
+				}
+
+				setChangeDetected(true)
+				return {
+					...prevState,
+					ghostServiceSettings: {
+						...currentSettings,
+						[field]: value,
+					},
+				}
+			})
+		},
+		[],
+	)
+	// kilocode_change end
 
 	const setApiConfigurationField = useCallback(
 		<K extends keyof ProviderSettings>(field: K, value: ProviderSettings[K], isUserAction: boolean = true) => {
@@ -484,6 +518,22 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 				type: "openRouterImageGenerationSelectedModel",
 				text: openRouterImageGenerationSelectedModel,
 			})
+			// kilocode_change start - Auto-purge settings
+			vscode.postMessage({ type: "autoPurgeEnabled", bool: autoPurgeEnabled })
+			vscode.postMessage({ type: "autoPurgeDefaultRetentionDays", value: autoPurgeDefaultRetentionDays })
+			vscode.postMessage({
+				type: "autoPurgeFavoritedTaskRetentionDays",
+				value: autoPurgeFavoritedTaskRetentionDays ?? undefined,
+			})
+			vscode.postMessage({
+				type: "autoPurgeCompletedTaskRetentionDays",
+				value: autoPurgeCompletedTaskRetentionDays,
+			})
+			vscode.postMessage({
+				type: "autoPurgeIncompleteTaskRetentionDays",
+				value: autoPurgeIncompleteTaskRetentionDays,
+			})
+			// kilocode_change end
 			// Update cachedState to match the current state to prevent isChangeDetected from being set back to true
 			setCachedState((prevState) => ({ ...prevState, ...extensionState }))
 			setChangeDetected(false)
@@ -844,6 +894,17 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 						<CheckpointSettings
 							enableCheckpoints={enableCheckpoints}
 							setCachedStateField={setCachedStateField}
+							// kilocode_change start
+							autoPurgeEnabled={autoPurgeEnabled}
+							autoPurgeDefaultRetentionDays={autoPurgeDefaultRetentionDays}
+							autoPurgeFavoritedTaskRetentionDays={autoPurgeFavoritedTaskRetentionDays}
+							autoPurgeCompletedTaskRetentionDays={autoPurgeCompletedTaskRetentionDays}
+							autoPurgeIncompleteTaskRetentionDays={autoPurgeIncompleteTaskRetentionDays}
+							autoPurgeLastRunTimestamp={autoPurgeLastRunTimestamp}
+							onManualPurge={() => {
+								vscode.postMessage({ type: "manualPurge" })
+							}}
+							// kilocode_change end
 						/>
 					)}
 
@@ -854,7 +915,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							showTaskTimeline={showTaskTimeline}
 							sendMessageOnEnter={sendMessageOnEnter}
 							showTimestamps={cachedState.showTimestamps} // kilocode_change
-							ghostServiceSettings={ghostServiceSettings}
 							hideCostBelowThreshold={hideCostBelowThreshold}
 							setCachedStateField={setCachedStateField}
 						/>
@@ -862,7 +922,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					{activeTab === "ghost" && (
 						<GhostServiceSettingsView
 							ghostServiceSettings={ghostServiceSettings}
-							setCachedStateField={setCachedStateField}
+							onGhostServiceSettingsChange={setGhostServiceSettingsField}
 						/>
 					)}
 					{/* kilocode_change end display section */}
