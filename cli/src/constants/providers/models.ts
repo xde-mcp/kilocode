@@ -139,6 +139,8 @@ export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = 
 	"gemini-cli": null,
 	"virtual-quota-fallback": null,
 	huggingface: null,
+	inception: null,
+	synthetic: null,
 }
 
 /**
@@ -186,6 +188,8 @@ export const PROVIDER_MODEL_FIELD: Record<ProviderName, string | null> = {
 	"gemini-cli": null,
 	"virtual-quota-fallback": null,
 	huggingface: null,
+	inception: "inceptionLabsModelId",
+	synthetic: null,
 }
 
 /**

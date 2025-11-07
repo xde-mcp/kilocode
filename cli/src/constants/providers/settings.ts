@@ -863,6 +863,8 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	minimax: "MiniMax-M2",
 	"fake-ai": "fake-model",
 	ovhcloud: "gpt-oss-120b",
+	inception: "gpt-4o",
+	synthetic: "synthetic-model",
 }
 
 /**
