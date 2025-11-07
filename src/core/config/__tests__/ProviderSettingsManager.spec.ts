@@ -28,7 +28,6 @@ describe("ProviderSettingsManager", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
-
 		// Reset all mock implementations to default successful behavior
 		mockSecrets.get.mockResolvedValue(null)
 		mockSecrets.store.mockResolvedValue(undefined)
