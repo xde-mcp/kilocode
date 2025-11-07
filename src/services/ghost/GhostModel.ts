@@ -31,14 +31,13 @@ export class GhostModel {
 		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
 		for (const provider of supportedProviders) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
-			if (selectedProfile) {
-				const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
-				if (!isUsable) continue
+			if (!selectedProfile) continue
+			const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
+			if (!isUsable) continue
 
-				this.loadProfile(providerSettingsManager, selectedProfile, provider)
-				this.loaded = true
-				return true
-			}
+			this.loadProfile(providerSettingsManager, selectedProfile, provider)
+			this.loaded = true
+			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
