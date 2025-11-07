@@ -83,7 +83,10 @@ export class ProviderSettingsManager {
 		// kilocode_change start
 		// only initialize ONCE, and save the promise in case somebody needs to wait.
 		this.initialization = this.init_runMigrations()
+		// kilocode_change end
 	}
+
+	// kilocode_change start
 	private readonly initialization: Promise<void>
 	/**
 	 * Wait for initialization migrations to complete.  These were started during construction.
