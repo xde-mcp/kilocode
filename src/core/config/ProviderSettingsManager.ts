@@ -80,6 +80,7 @@ export class ProviderSettingsManager {
 	constructor(context: ExtensionContext) {
 		this.context = context
 
+		// TODO: We really shouldn't have async methods in the constructor.
 		// kilocode_change start
 		// only initialize ONCE, and save the promise in case somebody needs to wait.
 		this.initialization = this.init_runMigrations().catch(console.error)
