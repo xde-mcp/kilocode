@@ -145,13 +145,16 @@ export class GhostServiceManager {
 	}
 
 	public async disable() {
-		this.settings = {
-			...this.settings,
-			enableAutoTrigger: false,
-			enableSmartInlineTaskKeybinding: false,
-			enableQuickInlineTaskKeybinding: false,
-		}
-		await this.saveSettings()
+		const settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {}
+		await ContextProxy.instance.setValues({
+			ghostServiceSettings: {
+				...settings,
+				enableAutoTrigger: false,
+				enableSmartInlineTaskKeybinding: false,
+				enableQuickInlineTaskKeybinding: false,
+			},
+		})
+
 		await this.load()
 	}
 
