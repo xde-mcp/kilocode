@@ -87,16 +87,6 @@ export class GhostServiceManager {
 		return GhostServiceManager.instance
 	}
 
-	private async saveSettings() {
-		const settingsWithModelInfo = {
-			...this.settings,
-			provider: this.getCurrentProviderName(),
-			model: this.getCurrentModelName(),
-		}
-		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
-		await this.cline.postStateToWebview()
-	}
-
 	public async load() {
 		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
 			enableQuickInlineTaskKeybinding: true,
@@ -106,7 +96,13 @@ export class GhostServiceManager {
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
-		await this.saveSettings()
+		const settingsWithModelInfo = {
+			...this.settings,
+			provider: this.getCurrentProviderName(),
+			model: this.getCurrentModelName(),
+		}
+		await ContextProxy.instance.setValues({ ghostServiceSettings: settingsWithModelInfo })
+		await this.cline.postStateToWebview()
 	}
 
 	private async updateInlineCompletionProviderRegistration() {
