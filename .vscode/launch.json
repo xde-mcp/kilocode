@@ -17,6 +17,9 @@
 			"env": {
 				"NODE_ENV": "development",
 				"VSCODE_DEBUG_MODE": "true"
+				//"https_proxy": "http://localhost:8080",
+				//"HTTPS_PROXY": "http://localhost:8080",
+				//"NODE_TLS_REJECT_UNAUTHORIZED": "0"
 			},
 			"resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
 			"presentation": {
@@ -43,7 +46,11 @@
 				"VSCODE_DEBUG_MODE": "true"
 			},
 			"resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
-			"presentation": { "hidden": false, "group": "tasks", "order": 1 }
+			"presentation": {
+				"hidden": false,
+				"group": "tasks",
+				"order": 1
+			}
 		},
 		{
 			"name": "Run Extension [Local Backend]",
@@ -60,7 +67,11 @@
 				"KILOCODE_BACKEND_BASE_URL": "${input:kilocodeBackendBaseUrl}"
 			},
 			"resolveSourceMapLocations": ["${workspaceFolder}/**", "!**/node_modules/**"],
-			"presentation": { "hidden": false, "group": "tasks", "order": 2 }
+			"presentation": {
+				"hidden": false,
+				"group": "tasks",
+				"order": 2
+			}
 		}
 	],
 	"inputs": [

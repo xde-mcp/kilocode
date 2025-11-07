@@ -43,8 +43,8 @@ export const syntheticModels = {
 		contextWindow: 262144,
 		supportsImages: false,
 		supportsPromptCache: false,
-		inputPrice: 1.2,
-		outputPrice: 1.2,
+		inputPrice: 0.55,
+		outputPrice: 2.19,
 		description:
 			"Moonshot's latest hybrid reasoner. Extremely good at math — it saturates the AIME25 math benchmark — and competitive with GPT-5 and Claude 4.5 at tool use and codegen. 256k-token context.",
 	},
@@ -53,8 +53,8 @@ export const syntheticModels = {
 		contextWindow: 262144,
 		supportsImages: false,
 		supportsPromptCache: false,
-		inputPrice: 0.55,
-		outputPrice: 2.19,
+		inputPrice: 1.2,
+		outputPrice: 1.2,
 		description:
 			"Kimi K2 model gets a new version update: Agentic coding: more accurate, better generalization across scaffolds. Frontend coding: improved aesthetics and functionalities on web, 3d, and other tasks. Context length: extended from 128k to 256k, providing better long-horizon support.",
 	},
