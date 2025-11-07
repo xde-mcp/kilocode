@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { AutocompleteLruCacheInMem } from "./AutoCompleteLruCacheInMem"
+import { AutocompleteLruCacheInMem } from "./AutocompleteLruCacheInMem"
 
 describe("AutoCompleteLruCacheInMem", () => {
 	let cache: AutocompleteLruCacheInMem
