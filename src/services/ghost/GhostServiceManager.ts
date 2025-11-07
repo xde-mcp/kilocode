@@ -87,12 +87,6 @@ export class GhostServiceManager {
 		return GhostServiceManager.instance
 	}
 
-	// Settings Management
-	private loadSettings() {
-		const state = ContextProxy.instance.getValues()
-		return state.ghostServiceSettings
-	}
-
 	private async saveSettings() {
 		if (!this.settings) {
 			return
@@ -107,7 +101,7 @@ export class GhostServiceManager {
 	}
 
 	public async load() {
-		this.settings = this.loadSettings()
+		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings")
 		await this.model.reload(this.providerSettingsManager)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
@@ -117,7 +111,7 @@ export class GhostServiceManager {
 
 	private async updateInlineCompletionProviderRegistration() {
 		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
-		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
+		const useNewAutocomplete = false // this.settings?.useNewAutocomplete ?? false
 
 		// First, dispose any existing registration
 		if (this.inlineCompletionProviderDisposable) {
