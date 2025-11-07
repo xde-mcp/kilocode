@@ -198,7 +198,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 
 		if (data.state === "active-session" || data.state === "logged-out") {
-			await handleRooModelsCache()
+			// kilocode_change: await handleRooModelsCache()
 		}
 	}
 
