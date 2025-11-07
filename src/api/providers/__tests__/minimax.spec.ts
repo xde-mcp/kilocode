@@ -35,8 +35,8 @@ vitest.mock("@anthropic-ai/sdk", () => {
 								usage: {
 									input_tokens: 100,
 									output_tokens: 50,
-									cache_creation_input_tokens: 0,
-									cache_read_input_tokens: 0,
+									cache_creation_input_tokens: 20,
+									cache_read_input_tokens: 10,
 								},
 							},
 						}
@@ -58,7 +58,6 @@ vitest.mock("@anthropic-ai/sdk", () => {
 					},
 				}
 			}),
-			countTokens: vitest.fn().mockResolvedValue({ input_tokens: 42 }),
 		},
 	}))
 
@@ -77,12 +76,12 @@ describe("MiniMaxHandler", () => {
 	let mockOptions: ApiHandlerOptions
 
 	beforeEach(() => {
+		vitest.clearAllMocks()
 		mockOptions = {
 			minimaxApiKey: "test-minimax-api-key",
 			apiModelId: minimaxDefaultModelId,
 		}
 		handler = new MiniMaxHandler(mockOptions)
-		vitest.clearAllMocks()
 	})
 
 	describe("constructor", () => {
@@ -169,7 +168,7 @@ describe("MiniMaxHandler", () => {
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
 					model: minimaxDefaultModelId,
-					max_tokens: 38400,
+					max_tokens: 16384,
 					temperature: MINIMAX_DEFAULT_TEMPERATURE,
 					system: [{ text: systemPrompt, type: "text" }],
 					stream: true,
@@ -259,42 +258,17 @@ describe("MiniMaxHandler", () => {
 		it("should return correct model configuration for MiniMax-M2", () => {
 			const model = handler.getModel()
 			expect(model.id).toBe("MiniMax-M2")
-			expect(model.info.maxTokens).toBe(128_000)
+			expect(model.info.maxTokens).toBe(16384)
 			expect(model.info.contextWindow).toBe(192_000)
 			expect(model.info.supportsImages).toBe(false)
-			expect(model.info.supportsPromptCache).toBe(false)
+			expect(model.info.supportsPromptCache).toBe(true)
 			expect(model.info.inputPrice).toBe(0.3)
 			expect(model.info.outputPrice).toBe(1.2)
 		})
 
 		it("should use correct default max tokens", () => {
 			const model = handler.getModel()
-			expect(model.maxTokens).toBe(128000)
-		})
-	})
-
-	describe("countTokens", () => {
-		it("should count tokens using Anthropic API", async () => {
-			const content = [{ type: "text" as const, text: "Test content for MiniMax" }]
-			const result = await handler.countTokens(content)
-
-			expect(result).toBe(42)
-			const anthropicInstance = mockAnthropicConstructor.mock.results[0]?.value
-			expect(anthropicInstance.messages.countTokens).toHaveBeenCalledWith({
-				model: minimaxDefaultModelId,
-				messages: [{ role: "user", content }],
-			})
-		})
-
-		it("should fallback to base implementation on error", async () => {
-			const anthropicInstance = mockAnthropicConstructor.mock.results[0]?.value
-			anthropicInstance.messages.countTokens.mockRejectedValueOnce(new Error("API error"))
-
-			const content = [{ type: "text" as const, text: "Test content" }]
-			const result = await handler.countTokens(content)
-
-			// Should not throw and return some number from fallback
-			expect(typeof result).toBe("number")
+			expect(model.maxTokens).toBe(16384)
 		})
 	})
 
@@ -302,14 +276,16 @@ describe("MiniMaxHandler", () => {
 		it("should have correct model configuration", () => {
 			expect(minimaxDefaultModelId).toBe("MiniMax-M2")
 			expect(minimaxModels["MiniMax-M2"]).toEqual({
-				maxTokens: 128_000,
+				maxTokens: 16384,
 				contextWindow: 192_000,
 				supportsImages: false,
-				supportsPromptCache: false,
+				supportsPromptCache: true,
 				inputPrice: 0.3,
 				outputPrice: 1.2,
-				cacheWritesPrice: 0,
-				cacheReadsPrice: 0,
+				cacheWritesPrice: 0.375,
+				cacheReadsPrice: 0.03,
+				description:
+					"MiniMax M2, a model born for Agents and code, featuring Top-tier Coding Capabilities, Powerful Agentic Performance, and Ultimate Cost-Effectiveness & Speed.",
 			})
 		})
 
