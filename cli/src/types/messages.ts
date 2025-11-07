@@ -397,6 +397,11 @@ export interface ModeConfig {
 	name: string
 	description?: string
 	systemPrompt?: string
+	roleDefinition?: string
+	whenToUse?: string
+	customInstructions?: string
 	rules?: string[]
-	source?: "global" | "project"
+	groups?: (string | [string, { fileRegex?: string; description?: string }])[]
+	iconName?: string
+	source?: "global" | "project" | "organization"
 }
