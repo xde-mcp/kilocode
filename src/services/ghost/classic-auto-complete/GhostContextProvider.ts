@@ -2,23 +2,12 @@ import * as vscode from "vscode"
 import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
 import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { AutocompleteInput } from "../types"
-import { AutocompleteSnippetType } from "../../continuedev/core/autocomplete/snippets/types"
 import { HelperVars } from "../../continuedev/core/autocomplete/util/HelperVars"
 import { getAllSnippetsWithoutRace } from "../../continuedev/core/autocomplete/snippets/getAllSnippets"
 import { getDefinitionsFromLsp } from "../../continuedev/core/vscode-test-harness/src/autocomplete/lsp"
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameters"
 import { getSnippets } from "../../continuedev/core/autocomplete/templating/filtering"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
-
-function convertToContinuedevInput(autocompleteInput: AutocompleteInput) {
-	return {
-		...autocompleteInput,
-		recentlyVisitedRanges: autocompleteInput.recentlyVisitedRanges.map((range) => ({
-			...range,
-			type: AutocompleteSnippetType.Code,
-		})),
-	}
-}
 
 export class GhostContextProvider {
 	private contextService: ContextRetrievalService
@@ -47,11 +36,9 @@ export class GhostContextProvider {
 		// Initialize import definitions cache
 		await this.contextService.initializeForFile(filepathUri)
 
-		const continuedevInput = convertToContinuedevInput(autocompleteInput)
-
 		// Create helper with URI filepath
 		const helperInput = {
-			...continuedevInput,
+			...autocompleteInput,
 			filepath: filepathUri,
 		}
 

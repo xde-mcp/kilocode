@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import type { AutocompleteCodeSnippet as ContinuedevAutocompleteCodeSnippet } from "../continuedev/core/autocomplete/snippets/types"
+import type { AutocompleteCodeSnippet } from "../continuedev/core/autocomplete/snippets/types"
 import type { RecentlyEditedRange as ContinuedevRecentlyEditedRange } from "../continuedev/core/autocomplete/util/types"
 
 /**
@@ -115,13 +115,9 @@ export interface RecentlyEditedRange extends RangeInFile {
 
 /**
  * Code snippet for autocomplete context
- * Duplicated from continuedev/core to avoid coupling
+ * Re-exported from continuedev/core for compatibility
  */
-export interface AutocompleteCodeSnippet extends Partial<RangeInFile> {
-	filepath: string
-	content: string
-	score?: number
-}
+export type { AutocompleteCodeSnippet }
 
 /**
  * Input for autocomplete request (CompletionProvider-compatible)
@@ -225,7 +221,7 @@ export function vscodeRangeToRange(range: vscode.Range): Range {
  */
 export function contextToAutocompleteInput(
 	context: GhostSuggestionContext,
-	recentlyVisitedRanges: ContinuedevAutocompleteCodeSnippet[] = [],
+	recentlyVisitedRanges: AutocompleteCodeSnippet[] = [],
 	recentlyEditedRanges: ContinuedevRecentlyEditedRange[] = [],
 ): AutocompleteInput {
 	const position = context.range?.start ?? context.document.positionAt(0)
