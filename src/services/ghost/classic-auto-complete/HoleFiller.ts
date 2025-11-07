@@ -165,7 +165,6 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	): Promise<string> {
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
 
-		// Get comment-wrapped context (includes all context types with token-based filtering)
 		let formattedContext = ""
 		if (this.contextProvider && autocompleteInput.filepath) {
 			try {
@@ -178,7 +177,6 @@ Provide a subtle, non-intrusive completion after a typing pause.
 			}
 		}
 
-		// Context and code go together in QUERY (comments provide context for the code)
 		prompt += `<QUERY>
 ${formattedContext}${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
