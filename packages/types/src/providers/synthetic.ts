@@ -53,8 +53,8 @@ export const syntheticModels = {
 		contextWindow: 262144,
 		supportsImages: false,
 		supportsPromptCache: false,
-		inputPrice: 1.2,
-		outputPrice: 1.2,
+		inputPrice: 0.55,
+		outputPrice: 2.19,
 		description:
 			"Kimi K2 model gets a new version update: Agentic coding: more accurate, better generalization across scaffolds. Frontend coding: improved aesthetics and functionalities on web, 3d, and other tasks. Context length: extended from 128k to 256k, providing better long-horizon support.",
 	},
