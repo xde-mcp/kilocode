@@ -3,7 +3,7 @@ import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
-import { AUTOCOMPLETE_PROVIDER_MODELS, defaultProviderUsabilityChecker } from "./utils/kilocode-utils"
+import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null
@@ -32,8 +32,21 @@ export class GhostModel {
 		for (const provider of supportedProviders) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (!selectedProfile) continue
-			const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
-			if (!isUsable) continue
+
+			if (provider === "kilocode") {
+				// For all other providers, assume they are usable
+				const profiles = await providerSettingsManager.listConfig()
+				const kilocodeProfile = profiles.find((p) => p.apiProvider === "kilocode")
+
+				if (!kilocodeProfile) continue
+
+				const profile = await providerSettingsManager.getProfile({ id: kilocodeProfile.id })
+				const kilocodeToken = profile.kilocodeToken
+				const kilocodeOrgId = profile.kilocodeOrganizationId
+
+				if (!kilocodeToken) continue
+				if (!(await checkKilocodeBalance(kilocodeToken, kilocodeOrgId))) continue
+			}
 
 			this.loadProfile(providerSettingsManager, selectedProfile, provider)
 			this.loaded = true
