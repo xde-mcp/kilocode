@@ -137,7 +137,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
 		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
-		const autocompleteInput = contextToAutocompleteInput(context, recentlyVisitedRanges, recentlyEditedRanges)
+
+		const enrichedContext: GhostSuggestionContext = {
+			...context,
+			recentlyVisitedRanges,
+			recentlyEditedRanges,
+		}
+
+		const autocompleteInput = contextToAutocompleteInput(enrichedContext)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
