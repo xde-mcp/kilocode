@@ -88,9 +88,6 @@ export class GhostServiceManager {
 	}
 
 	private async saveSettings() {
-		if (!this.settings) {
-			return
-		}
 		const settingsWithModelInfo = {
 			...this.settings,
 			provider: this.getCurrentProviderName(),
@@ -101,7 +98,10 @@ export class GhostServiceManager {
 	}
 
 	public async load() {
-		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings")
+		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
+			enableQuickInlineTaskKeybinding: true,
+			enableSmartInlineTaskKeybinding: true,
+		}
 		await this.model.reload(this.providerSettingsManager)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
