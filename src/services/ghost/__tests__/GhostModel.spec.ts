@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
 import { AUTOCOMPLETE_PROVIDER_MODELS } from "../utils/kilocode-utils"
+import * as apiIndex from "../../../api"
 
 describe("GhostModel", () => {
 	let mockProviderSettingsManager: ProviderSettingsManager
@@ -314,12 +315,25 @@ describe("GhostModel", () => {
 				mistralApiKey: "test-key",
 			} as any)
 
+			// Mock buildApiHandler to return a handler with providerName
+			const mockApiHandler = {
+				providerName: "Test Provider",
+				getModel: vi.fn().mockReturnValue({ id: "test-model", info: {} }),
+				createMessage: vi.fn(),
+				countTokens: vi.fn(),
+			}
+			vi.spyOn(apiIndex, "buildApiHandler").mockReturnValue(mockApiHandler as any)
+
 			const model = new GhostModel()
 			await model.reload(mockProviderSettingsManager)
 
 			const providerName = model.getProviderDisplayName()
 			expect(providerName).toBeTruthy()
 			expect(typeof providerName).toBe("string")
+			expect(providerName).toBe("Test Provider")
+
+			// Restore the spy
+			vi.restoreAllMocks()
 		})
 	})
 })
