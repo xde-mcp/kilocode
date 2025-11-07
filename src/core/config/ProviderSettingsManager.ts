@@ -82,7 +82,7 @@ export class ProviderSettingsManager {
 
 		// kilocode_change start
 		// only initialize ONCE, and save the promise in case somebody needs to wait.
-		this.initialization = this.init_runMigrations()
+		this.initialization = this.init_runMigrations().catch(console.error)
 		// kilocode_change end
 	}
 
