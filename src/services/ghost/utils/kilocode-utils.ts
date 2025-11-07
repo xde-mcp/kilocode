@@ -44,12 +44,10 @@ export const AUTOCOMPLETE_PROVIDER_MODELS = {
 } as const
 export type AutocompleteProviderKey = keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
 
-export type ProviderUsabilityChecker = (
+export const defaultProviderUsabilityChecker = async (
 	provider: AutocompleteProviderKey,
 	providerSettingsManager: ProviderSettingsManager,
-) => Promise<boolean>
-
-export const defaultProviderUsabilityChecker: ProviderUsabilityChecker = async (provider, providerSettingsManager) => {
+): Promise<boolean> => {
 	if (provider === "kilocode") {
 		try {
 			const profiles = await providerSettingsManager.listConfig()
