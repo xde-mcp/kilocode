@@ -155,17 +155,6 @@ export class GhostServiceManager {
 		await this.load()
 	}
 
-	public async enable() {
-		this.settings = {
-			...this.settings,
-			enableAutoTrigger: true,
-			enableSmartInlineTaskKeybinding: true,
-			enableQuickInlineTaskKeybinding: true,
-		}
-		await this.saveSettings()
-		await this.load()
-	}
-
 	// VsCode Event Handlers
 	private onDidCloseTextDocument(document: vscode.TextDocument): void {
 		if (document.uri.scheme !== "file") {
