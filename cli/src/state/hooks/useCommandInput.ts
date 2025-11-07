@@ -45,7 +45,7 @@ import {
 import { shellModeActiveAtom } from "../atoms/shell.js"
 import { textBufferStringAtom, textBufferCursorAtom } from "../atoms/textBuffer.js"
 import { routerModelsAtom, extensionStateAtom } from "../atoms/extension.js"
-import { providerAtom, updateProviderAtom } from "../atoms/config.js"
+import { configAtom, providerAtom, updateProviderAtom } from "../atoms/config.js"
 import { requestRouterModelsAtom } from "../atoms/actions.js"
 import { profileDataAtom, profileLoadingAtom } from "../atoms/profile.js"
 import { taskHistoryDataAtom } from "../atoms/taskHistory.js"
@@ -163,10 +163,11 @@ export function useCommandInput(): UseCommandInputReturn {
 	const selectedSuggestion = useAtomValue(getSelectedSuggestionAtom)
 
 	// Get command context for autocomplete
+	const config = useAtomValue(configAtom)
 	const routerModels = useAtomValue(routerModelsAtom)
 	const currentProvider = useAtomValue(providerAtom)
 	const extensionState = useAtomValue(extensionStateAtom)
-	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || ""
+	const kilocodeDefaultModel = (extensionState?.kilocodeDefaultModel as string | undefined) || ""
 	const profileData = useAtomValue(profileDataAtom)
 	const profileLoading = useAtomValue(profileLoadingAtom)
 	const taskHistoryData = useAtomValue(taskHistoryDataAtom)
@@ -266,6 +267,7 @@ export function useCommandInput(): UseCommandInputReturn {
 		} else if (state.type === "argument") {
 			// Create command context for argument providers
 			const commandContext = {
+				config,
 				routerModels,
 				currentProvider: currentProvider || null,
 				kilocodeDefaultModel,
@@ -304,6 +306,7 @@ export function useCommandInput(): UseCommandInputReturn {
 		setFileMentionSuggestionsAction,
 		setFileMentionContextAction,
 		clearFileMentionAction,
+		config,
 		routerModels,
 		currentProvider,
 		kilocodeDefaultModel,

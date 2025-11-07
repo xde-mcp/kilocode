@@ -39,9 +39,10 @@ function getModelDisplayName(apiConfig: ProviderSettings | null, routerModels: R
 		// Get current model ID
 		const currentModelId = getCurrentModelId({
 			providerConfig: {
-				provider: apiConfig.apiProvider,
+				id: "default",
+				provider: apiConfig.apiProvider || "",
 				...apiConfig,
-			} as any,
+			},
 			routerModels,
 			kilocodeDefaultModel: apiConfig.kilocodeModel || "",
 		})

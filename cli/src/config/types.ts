@@ -110,7 +110,7 @@ export interface ProviderConfig {
 	id: string
 	provider: ProviderName
 	// Provider-specific fields
-	[key: string]: any
+	[key: string]: unknown
 }
 
 // Type guards

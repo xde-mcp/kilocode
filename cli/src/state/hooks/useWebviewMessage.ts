@@ -87,7 +87,7 @@ export interface UseWebviewMessageReturn {
 	/** Respond to a tool use request */
 	respondToTool: (params: RespondToToolParams) => Promise<void>
 	/** Send API configuration */
-	sendApiConfiguration: (config: any) => Promise<void>
+	sendApiConfiguration: (config: unknown) => Promise<void>
 	/** Send custom instructions */
 	sendCustomInstructions: (instructions: string) => Promise<void>
 	/** Send always allow setting */
@@ -200,8 +200,8 @@ export function useWebviewMessage(): UseWebviewMessageReturn {
 	)
 
 	const sendApiConfiguration = useCallback(
-		async (config: any) => {
-			await sendApiConfigurationAction(config)
+		async (config: unknown) => {
+			await sendApiConfigurationAction(config as Parameters<typeof sendApiConfigurationAction>[0])
 		},
 		[sendApiConfigurationAction],
 	)

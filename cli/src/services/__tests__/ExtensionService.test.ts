@@ -13,9 +13,9 @@ vi.mock("../../utils/extension-paths.js", () => ({
 
 describe("ExtensionService", () => {
 	let service: ExtensionService
-	let mockExtensionModule: any
-	let originalRequire: any
-	let mockVSCodeAPI: any
+	let mockExtensionModule: unknown
+	let originalRequire: unknown
+	let mockVSCodeAPI: unknown
 
 	beforeAll(() => {
 		// Create a mock VSCode API
@@ -144,18 +144,18 @@ describe("ExtensionService", () => {
 		const Module = require("module")
 		originalRequire = Module.prototype.require
 
-		Module.prototype.require = function (this: any, id: string) {
+		Module.prototype.require = function (this: unknown, id: string) {
 			if (id === "/mock/extension/dist/extension.js") {
 				return mockExtensionModule
 			}
 			if (id === "vscode" || id === "vscode-mock") {
 				return mockVSCodeAPI
 			}
-			return originalRequire.call(this, id)
+			return (originalRequire as (id: string) => unknown).call(this, id)
 		}
 
 		// Set global vscode
-		;(global as any).vscode = mockVSCodeAPI
+		;(global as unknown as { vscode: unknown }).vscode = mockVSCodeAPI
 	})
 
 	afterAll(() => {
@@ -166,7 +166,7 @@ describe("ExtensionService", () => {
 			Module.prototype.require = originalRequire
 		}
 		// Clean up global vscode
-		delete (global as any).vscode
+		delete (global as unknown as { vscode?: unknown }).vscode
 	})
 
 	afterEach(async () => {

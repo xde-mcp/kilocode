@@ -39,9 +39,10 @@ function getContextWindowFromModel(apiConfig: ProviderSettings | null, routerMod
 		// Get current model ID
 		const currentModelId = getCurrentModelId({
 			providerConfig: {
-				provider: apiConfig.apiProvider,
+				id: "default",
+				provider: apiConfig.apiProvider || "",
 				...apiConfig,
-			} as any,
+			},
 			routerModels,
 			kilocodeDefaultModel: apiConfig.kilocodeModel || "",
 		})
@@ -92,7 +93,7 @@ function getContextTokensFromMessages(messages: ExtensionChatMessage[]): number 
 			}
 		} else if (message.type === "say" && message.say === "condense_context") {
 			// Check if message has contextCondense metadata
-			const contextCondense = (message as any).contextCondense
+			const contextCondense = message.metadata as { newContextTokens?: number } | undefined
 			if (contextCondense && typeof contextCondense.newContextTokens === "number") {
 				return contextCondense.newContextTokens
 			}
@@ -177,7 +178,7 @@ export function calculateContextUsage(
 		}
 
 		// Get maxTokens setting if available
-		const maxTokens = apiConfig?.apiModelMaxTokens
+		const maxTokens = typeof apiConfig?.apiModelMaxTokens === "number" ? apiConfig.apiModelMaxTokens : undefined
 
 		// Calculate token distribution
 		const distribution = calculateTokenDistribution(contextWindow, contextTokens, maxTokens)

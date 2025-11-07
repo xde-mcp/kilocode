@@ -550,7 +550,8 @@ export const isOptionalField = (field: string): boolean => {
  */
 const createFieldConfig = (field: string, config: ProviderSettings, defaultValue?: string): ProviderSettingConfig => {
 	const fieldInfo = getFieldInfo(field)
-	const actualValue = (config as any)[field] || ""
+	const rawValue = config[field as keyof ProviderSettings]
+	const actualValue = rawValue ?? ""
 
 	let displayValue: string
 	if (fieldInfo.type === "password") {
@@ -558,14 +559,14 @@ const createFieldConfig = (field: string, config: ProviderSettings, defaultValue
 	} else if (fieldInfo.type === "boolean") {
 		displayValue = actualValue ? "Enabled" : "Disabled"
 	} else {
-		displayValue = actualValue || defaultValue || "Not set"
+		displayValue = (typeof actualValue === "string" ? actualValue : "") || defaultValue || "Not set"
 	}
 
 	return {
 		field,
 		label: fieldInfo.label,
 		value: displayValue,
-		actualValue: fieldInfo.type === "boolean" ? (actualValue ? "true" : "false") : actualValue,
+		actualValue: fieldInfo.type === "boolean" ? (actualValue ? "true" : "false") : String(actualValue),
 		type: fieldInfo.type,
 	}
 }

@@ -4,7 +4,7 @@
  */
 
 import { atom } from "jotai"
-import type { WebviewMessage } from "../../types/messages.js"
+import type { WebviewMessage, ProviderSettings } from "../../types/messages.js"
 import { extensionServiceAtom, isServiceReadyAtom, setServiceErrorAtom } from "./service.js"
 import { resetMessageCutoffAtom } from "./ui.js"
 import { logs } from "../../services/logs.js"
@@ -183,7 +183,7 @@ export const respondToToolAtom = atom(
 /**
  * Action atom to send API configuration
  */
-export const sendApiConfigurationAtom = atom(null, async (get, set, apiConfiguration: any) => {
+export const sendApiConfigurationAtom = atom(null, async (_get, set, apiConfiguration: ProviderSettings) => {
 	const message: WebviewMessage = {
 		type: "apiConfiguration",
 		apiConfiguration,

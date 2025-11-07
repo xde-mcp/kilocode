@@ -48,7 +48,7 @@ describe("ExtensionHost Console Interception", () => {
 
 	it("should clean up global __interceptedConsole on deactivation", async () => {
 		// Verify that the global console interception is cleaned up
-		expect((global as any).__interceptedConsole).toBeUndefined()
+		expect((global as unknown as { __interceptedConsole?: unknown }).__interceptedConsole).toBeUndefined()
 	})
 })
 

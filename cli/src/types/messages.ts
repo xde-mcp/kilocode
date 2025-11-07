@@ -11,11 +11,11 @@ export interface ExtensionMessage {
 	type: string
 	action?: string
 	text?: string
-	state?: any
+	state?: ExtensionState
 	images?: string[]
-	chatMessages?: any
-	values?: Record<string, any>
-	[key: string]: any
+	chatMessages?: ExtensionChatMessage[]
+	values?: Record<string, unknown>
+	[key: string]: unknown
 }
 
 export interface WebviewMessage {
@@ -25,15 +25,15 @@ export interface WebviewMessage {
 	bool?: boolean
 	value?: number
 	commands?: string[]
-	apiConfiguration?: any
+	apiConfiguration?: ProviderSettings
 	mode?: string
-	values?: Record<string, any>
+	values?: Record<string, unknown>
 	askResponse?: string
 	terminalOperation?: string
 	context?: string
 	invoke?: string
 	action?: string
-	[key: string]: any
+	[key: string]: unknown
 }
 
 export interface ExtensionChatMessage {
@@ -46,8 +46,8 @@ export interface ExtensionChatMessage {
 	partial?: boolean
 	isProtected?: boolean
 	isAnswered?: boolean
-	checkpoint?: any
-	metadata?: any
+	checkpoint?: unknown
+	metadata?: unknown
 }
 
 export interface HistoryItem {
@@ -331,7 +331,7 @@ export interface ProviderSettings {
 	ovhCloudAiEndpointsModelId?: string
 
 	// Allow additional fields for extensibility
-	[key: string]: any
+	[key: string]: unknown
 }
 
 export interface TodoItem {
@@ -388,7 +388,7 @@ export interface ExtensionState {
 	currentTaskItem?: HistoryItem
 	currentTaskTodos?: TodoItem[]
 	mode: string
-	customModes: any[]
+	customModes: ModeConfig[]
 	taskHistoryFullLength: number
 	taskHistoryVersion: number
 	mcpServers?: McpServer[]
@@ -397,7 +397,7 @@ export interface ExtensionState {
 	cwd?: string
 	organizationAllowList?: OrganizationAllowList
 	routerModels?: RouterModels
-	[key: string]: any
+	[key: string]: unknown
 }
 
 export type Mode = string

@@ -7,6 +7,7 @@ import { useSetAtom, useAtomValue } from "jotai"
 import { useCallback } from "react"
 import type { CommandContext } from "../../commands/core/types.js"
 import type { CliMessage } from "../../types/cli.js"
+import type { ProviderConfig } from "../../config/types.js"
 import {
 	addMessageAtom,
 	clearMessagesAtom,
@@ -37,7 +38,7 @@ const TERMINAL_CLEAR_DELAY_MS = 500
 export type CommandContextFactory = (
 	input: string,
 	args: string[],
-	options: Record<string, any>,
+	options: Record<string, string | number | boolean>,
 	onExit: () => void,
 ) => CommandContext
 
@@ -85,7 +86,7 @@ export function useCommandContext(): UseCommandContextReturn {
 	const routerModels = useAtomValue(routerModelsAtom)
 	const currentProvider = useAtomValue(providerAtom)
 	const extensionState = useAtomValue(extensionStateAtom)
-	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || ""
+	const kilocodeDefaultModel = (extensionState?.kilocodeDefaultModel as string) || ""
 	const isParallelMode = useAtomValue(isParallelModeAtom)
 	const config = useAtomValue(configAtom)
 	const chatMessages = useAtomValue(chatMessagesAtom)
@@ -111,14 +112,19 @@ export function useCommandContext(): UseCommandContextReturn {
 
 	// Create the factory function
 	const createContext = useCallback<CommandContextFactory>(
-		(input: string, args: string[], options: Record<string, any>, onExit: () => void): CommandContext => {
+		(
+			input: string,
+			args: string[],
+			options: Record<string, string | number | boolean>,
+			onExit: () => void,
+		): CommandContext => {
 			return {
 				input,
 				args,
 				options,
 				config,
-				sendMessage: async (message: any) => {
-					await sendMessage(message)
+				sendMessage: async (message: unknown) => {
+					await sendMessage(message as Parameters<typeof sendMessage>[0])
 				},
 				addMessage: (message: CliMessage) => {
 					addMessage(message)
@@ -174,7 +180,7 @@ export function useCommandContext(): UseCommandContextReturn {
 					await refreshRouterModels()
 				},
 				// Provider update function for teams command
-				updateProvider: async (providerId: string, updates: any) => {
+				updateProvider: async (providerId: string, updates: Partial<ProviderConfig>) => {
 					await updateProvider(providerId, updates)
 				},
 				// Profile data context

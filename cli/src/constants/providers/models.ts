@@ -1,4 +1,4 @@
-import type { ProviderName } from "../../types/messages.js"
+import type { ProviderName, ProviderSettings } from "../../types/messages.js"
 import type { ProviderConfig } from "../../config/types.js"
 
 // Import model definitions from @roo-code/types
@@ -449,8 +449,8 @@ export function getCurrentModelId(params: {
 
 	// Special handling for vscode-lm
 	if (provider === "vscode-lm" && providerConfig.vsCodeLmModelSelector) {
-		const selector = providerConfig.vsCodeLmModelSelector as any
-		return `${selector.vendor}/${selector.family}`
+		const selector = providerConfig.vsCodeLmModelSelector as ProviderSettings["vsCodeLmModelSelector"]
+		return `${selector?.vendor}/${selector?.family}`
 	}
 
 	// Get model ID from config

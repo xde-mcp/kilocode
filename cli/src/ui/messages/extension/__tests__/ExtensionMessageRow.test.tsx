@@ -6,7 +6,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import React from "react"
 import { render } from "ink-testing-library"
 import { ExtensionMessageRow } from "../ExtensionMessageRow.js"
 import type { ExtensionChatMessage } from "../../../../types/messages.js"
@@ -109,7 +108,7 @@ describe("ExtensionMessageRow", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
 				type: "ask",
-				ask: "unknown_type" as any,
+				ask: "unknown_type",
 				text: "Unknown ask type",
 			}
 
@@ -202,7 +201,7 @@ describe("ExtensionMessageRow", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
 				type: "say",
-				say: "unknown_type" as any,
+				say: "unknown_type",
 				text: "Unknown say type",
 			}
 
@@ -218,7 +217,7 @@ describe("ExtensionMessageRow", () => {
 		it("should show fallback for completely unknown message type", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
-				type: "unknown" as any,
+				type: "unknown" as unknown as ExtensionChatMessage["type"],
 				text: "Unknown message",
 			}
 
