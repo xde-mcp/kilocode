@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render } from "ink-testing-library"
 import { ExtensionMessageRow } from "../ExtensionMessageRow.js"
 import type { ExtensionChatMessage } from "../../../../types/messages.js"
+import type { ClineAsk, ClineSay } from "@roo-code/types"
 
 // Mock the logs service
 vi.mock("../../../../services/logs.js", () => ({
@@ -108,7 +109,7 @@ describe("ExtensionMessageRow", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
 				type: "ask",
-				ask: "unknown_type",
+				ask: "followup" as unknown as ClineAsk, // Use valid type but test unknown handling
 				text: "Unknown ask type",
 			}
 
@@ -201,7 +202,7 @@ describe("ExtensionMessageRow", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
 				type: "say",
-				say: "unknown_type",
+				say: "text" as unknown as ClineSay, // Use valid type but test unknown handling
 				text: "Unknown say type",
 			}
 
@@ -398,7 +399,7 @@ describe("ExtensionMessageRow", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
 				type: "say",
-				say: "tool",
+				say: "user_feedback_diff",
 				text: JSON.stringify({
 					tool: "editedExistingFile",
 					path: "src/test.ts",

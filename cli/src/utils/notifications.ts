@@ -28,12 +28,12 @@ export async function fetchKilocodeNotifications({
 		return []
 	}
 
-	if (!kilocodeToken) {
+	if (!kilocodeToken || typeof kilocodeToken !== "string") {
 		logs.debug("No kilocode token found, skipping notification fetch", "fetchKilocodeNotifications")
 		return []
 	}
 
-	const url = getKiloUrlFromToken("https://api.kilocode.ai/api/users/notifications", kilocodeToken)
+	const url = getKiloUrlFromToken("https://api.kilocode.ai/api/users/notifications", kilocodeToken as string)
 
 	logs.debug("Fetching Kilocode notifications", "NotificationsUtil", { url })
 

@@ -19,6 +19,7 @@ import {
 } from "../atoms/taskHistory.js"
 import { extensionServiceAtom } from "../atoms/service.js"
 import { logs } from "../../services/logs.js"
+import type { TaskHistoryRequestPayload } from "../../types/messages.js"
 
 export function useTaskHistory() {
 	const service = useAtomValue(extensionServiceAtom)
@@ -42,16 +43,17 @@ export function useTaskHistory() {
 
 		try {
 			// Send task history request to extension
+			const payload: TaskHistoryRequestPayload = {
+				requestId: Date.now().toString(),
+				workspace: filters.workspace,
+				sort: filters.sort,
+				favoritesOnly: filters.favoritesOnly,
+				pageIndex,
+				...(filters.search && { search: filters.search }),
+			}
 			await service.sendWebviewMessage({
 				type: "taskHistoryRequest",
-				payload: {
-					requestId: Date.now().toString(),
-					workspace: filters.workspace,
-					sort: filters.sort,
-					favoritesOnly: filters.favoritesOnly,
-					pageIndex,
-					search: filters.search,
-				},
+				payload,
 			})
 		} catch (err) {
 			logs.error("fetchTaskHistory error:", "useTaskHistory", { error: err })
@@ -87,17 +89,18 @@ export function useTaskHistory() {
 				addPendingRequest({ requestId, resolve, reject, timeout })
 
 				// Send the request with updated filters
+				const payload: TaskHistoryRequestPayload = {
+					requestId,
+					workspace: updatedFilters.workspace,
+					sort: updatedFilters.sort,
+					favoritesOnly: updatedFilters.favoritesOnly,
+					pageIndex: 0, // Filters reset to page 0
+					...(updatedFilters.search && { search: updatedFilters.search }),
+				}
 				service
 					.sendWebviewMessage({
 						type: "taskHistoryRequest",
-						payload: {
-							requestId,
-							workspace: updatedFilters.workspace,
-							sort: updatedFilters.sort,
-							favoritesOnly: updatedFilters.favoritesOnly,
-							pageIndex: 0, // Filters reset to page 0
-							search: updatedFilters.search,
-						},
+						payload,
 					})
 					.catch((err) => {
 						removePendingRequest(requestId)
@@ -134,17 +137,18 @@ export function useTaskHistory() {
 				addPendingRequest({ requestId, resolve, reject, timeout })
 
 				// Send the request
+				const payload: TaskHistoryRequestPayload = {
+					requestId,
+					workspace: filters.workspace,
+					sort: filters.sort,
+					favoritesOnly: filters.favoritesOnly,
+					pageIndex: newPageIndex,
+					...(filters.search && { search: filters.search }),
+				}
 				service
 					.sendWebviewMessage({
 						type: "taskHistoryRequest",
-						payload: {
-							requestId,
-							workspace: filters.workspace,
-							sort: filters.sort,
-							favoritesOnly: filters.favoritesOnly,
-							pageIndex: newPageIndex,
-							search: filters.search,
-						},
+						payload,
 					})
 					.catch((err) => {
 						removePendingRequest(requestId)

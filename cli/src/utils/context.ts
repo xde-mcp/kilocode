@@ -178,7 +178,7 @@ export function calculateContextUsage(
 		}
 
 		// Get maxTokens setting if available
-		const maxTokens = typeof apiConfig?.apiModelMaxTokens === "number" ? apiConfig.apiModelMaxTokens : undefined
+		const maxTokens = typeof apiConfig?.modelMaxTokens === "number" ? apiConfig.modelMaxTokens : undefined
 
 		// Calculate token distribution
 		const distribution = calculateTokenDistribution(contextWindow, contextTokens, maxTokens)
