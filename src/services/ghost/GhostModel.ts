@@ -109,20 +109,20 @@ export class GhostModel {
 		}
 	}
 
-	public getModelName(): string | null {
-		if (!this.apiHandler) return null
+	public getModelName(): string | undefined {
+		if (!this.apiHandler) return undefined
 
-		return this.apiHandler.getModel().id ?? "unknown"
+		return this.apiHandler.getModel().id ?? undefined
 	}
 
-	public getProviderDisplayName(): string | null {
-		if (!this.apiHandler) return null
+	public getProviderDisplayName(): string | undefined {
+		if (!this.apiHandler) return undefined
 
 		const handler = this.apiHandler as any
 		if (handler.providerName && typeof handler.providerName === "string") {
 			return handler.providerName
 		} else {
-			return "unknown"
+			return undefined
 		}
 	}
 

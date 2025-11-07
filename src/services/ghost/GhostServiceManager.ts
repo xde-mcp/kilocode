@@ -333,18 +333,18 @@ export class GhostServiceManager {
 		})
 	}
 
-	private getCurrentModelName(): string {
+	private getCurrentModelName(): string | undefined {
 		if (!this.model.loaded) {
-			return "loading..."
+			return
 		}
-		return this.model.getModelName() ?? "unknown"
+		return this.model.getModelName()
 	}
 
-	private getCurrentProviderName(): string {
+	private getCurrentProviderName(): string | undefined {
 		if (!this.model.loaded) {
-			return "loading..."
+			return
 		}
-		return this.model.getProviderDisplayName() ?? "unknown"
+		return this.model.getProviderDisplayName()
 	}
 
 	private hasValidApiToken(): boolean {
