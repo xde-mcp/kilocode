@@ -35,7 +35,6 @@ export class GhostModel {
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
-				const profiles = await providerSettingsManager.listConfig()
 				const kilocodeProfile = profiles.find((p) => p.apiProvider === "kilocode")
 
 				if (!kilocodeProfile) continue
