@@ -30,9 +30,7 @@ export class GhostModel {
 
 		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
 		for (const provider of supportedProviders) {
-			const selectedProfile = profiles.find(
-				(x): x is typeof x & { apiProvider: string } => x?.apiProvider === provider,
-			)
+			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (selectedProfile) {
 				const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
 				if (!isUsable) continue
