@@ -24,6 +24,8 @@ export class CodeIndexConfigManager {
 	private qdrantApiKey?: string
 	private searchMinScore?: number
 	private searchMaxResults?: number
+	private embeddingBatchSize?: number
+	private scannerMaxBatchRetries?: number
 
 	constructor(private readonly contextProxy: ContextProxy) {
 		// Initialize with current configuration to avoid false restart triggers
@@ -51,6 +53,8 @@ export class CodeIndexConfigManager {
 			codebaseIndexEmbedderModelId: "",
 			codebaseIndexSearchMinScore: undefined,
 			codebaseIndexSearchMaxResults: undefined,
+			codebaseIndexEmbeddingBatchSize: undefined,
+			codebaseIndexScannerMaxBatchRetries: undefined,
 		}
 
 		const {
@@ -61,6 +65,8 @@ export class CodeIndexConfigManager {
 			codebaseIndexEmbedderModelId,
 			codebaseIndexSearchMinScore,
 			codebaseIndexSearchMaxResults,
+			codebaseIndexEmbeddingBatchSize,
+			codebaseIndexScannerMaxBatchRetries,
 		} = codebaseIndexConfig
 
 		const openAiKey = this.contextProxy?.getSecret("codeIndexOpenAiKey") ?? ""
@@ -78,6 +84,8 @@ export class CodeIndexConfigManager {
 		this.qdrantApiKey = qdrantApiKey ?? ""
 		this.searchMinScore = codebaseIndexSearchMinScore
 		this.searchMaxResults = codebaseIndexSearchMaxResults
+		this.embeddingBatchSize = codebaseIndexEmbeddingBatchSize
+		this.scannerMaxBatchRetries = codebaseIndexScannerMaxBatchRetries
 
 		// Validate and set model dimension
 		const rawDimension = codebaseIndexConfig.codebaseIndexEmbedderModelDimension
@@ -399,6 +407,8 @@ export class CodeIndexConfigManager {
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,
 			searchMaxResults: this.currentSearchMaxResults,
+			embeddingBatchSize: this.currentEmbeddingBatchSize,
+			scannerMaxBatchRetries: this.currentScannerMaxBatchRetries,
 		}
 	}
 
@@ -479,5 +489,21 @@ export class CodeIndexConfigManager {
 	 */
 	public get currentSearchMaxResults(): number {
 		return this.searchMaxResults ?? DEFAULT_MAX_SEARCH_RESULTS
+	}
+
+	/**
+	 * Gets the configured embedding batch size.
+	 * Returns user setting if configured, otherwise returns undefined (will use default from constants).
+	 */
+	public get currentEmbeddingBatchSize(): number | undefined {
+		return this.embeddingBatchSize
+	}
+
+	/**
+	 * Gets the configured scanner max batch retries.
+	 * Returns user setting if configured, otherwise returns undefined (will use default from constants).
+	 */
+	public get currentScannerMaxBatchRetries(): number | undefined {
+		return this.scannerMaxBatchRetries
 	}
 }
