@@ -37,10 +37,7 @@ export class GhostModel {
 				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
 
-			this.apiHandler = buildApiHandler({
-				...profile,
-				[modelIdKeysByProvider[provider]]: model,
-			})
+			this.apiHandler = buildApiHandler({ ...profile, [modelIdKeysByProvider[provider]]: model })
 
 			if (this.apiHandler instanceof OpenRouterHandler) {
 				await this.apiHandler.fetchModel()
