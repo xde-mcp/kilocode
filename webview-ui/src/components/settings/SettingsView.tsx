@@ -922,7 +922,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 							showTaskTimeline={showTaskTimeline}
 							sendMessageOnEnter={sendMessageOnEnter}
 							showTimestamps={cachedState.showTimestamps} // kilocode_change
-							ghostServiceSettings={ghostServiceSettings}
 							hideCostBelowThreshold={hideCostBelowThreshold}
 							setCachedStateField={setCachedStateField}
 						/>
