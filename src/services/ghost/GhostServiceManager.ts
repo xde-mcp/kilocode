@@ -71,16 +71,11 @@ export class GhostServiceManager {
 	// Singleton Management
 	public static initialize(context: vscode.ExtensionContext, cline: ClineProvider): GhostServiceManager {
 		if (GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is already initialized. Use getInstance() instead.")
+			throw new Error(
+				"GhostServiceManager is already initialized. Restart VS code, or change this to return the cached instance.",
+			)
 		}
 		GhostServiceManager.instance = new GhostServiceManager(context, cline)
-		return GhostServiceManager.instance
-	}
-
-	public static getInstance(): GhostServiceManager {
-		if (!GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is not initialized. Call initialize() first.")
-		}
 		return GhostServiceManager.instance
 	}
 
