@@ -13,11 +13,7 @@ import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameter
 import Mistral from "../../continuedev/core/llm/llms/Mistral"
 import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
-import {
-	AUTOCOMPLETE_PROVIDER_MODELS,
-	AutocompleteProviderKey,
-	defaultProviderUsabilityChecker,
-} from "../utils/kilocode-utils"
+import { AUTOCOMPLETE_PROVIDER_MODELS, AutocompleteProviderKey, checkKilocodeBalance } from "../utils/kilocode-utils"
 
 export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null
@@ -48,8 +44,13 @@ export class NewAutocompleteModel {
 		for (const provider of supportedProviders) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (!selectedProfile) continue
-			const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
-			if (!isUsable) continue
+
+			if (provider === "kilocode") {
+				// For all other providers, assume they are usable
+				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
+				if (!profile.kilocodeToken) continue
+				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
+			}
 
 			this.loadProfile(providerSettingsManager, selectedProfile, provider)
 			this.loaded = true
@@ -59,7 +60,6 @@ export class NewAutocompleteModel {
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
 	}
-
 	public async loadProfile(
 		providerSettingsManager: ProviderSettingsManager,
 		selectedProfile: ProviderSettingsEntry,
