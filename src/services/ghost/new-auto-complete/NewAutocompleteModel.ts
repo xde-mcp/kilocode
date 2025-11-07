@@ -1,7 +1,4 @@
 import {
-	AUTOCOMPLETE_PROVIDER_MODELS,
-	AutocompleteProviderKey,
-	defaultProviderUsabilityChecker,
 	getKiloBaseUriFromToken,
 	modelIdKeysByProvider,
 	ProviderSettings,
@@ -16,6 +13,11 @@ import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameter
 import Mistral from "../../continuedev/core/llm/llms/Mistral"
 import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
+import {
+	AUTOCOMPLETE_PROVIDER_MODELS,
+	AutocompleteProviderKey,
+	defaultProviderUsabilityChecker,
+} from "../utils/kilocode-utils"
 
 export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null

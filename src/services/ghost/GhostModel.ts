@@ -1,13 +1,9 @@
-import {
-	AUTOCOMPLETE_PROVIDER_MODELS,
-	defaultProviderUsabilityChecker,
-	modelIdKeysByProvider,
-	ProviderSettingsEntry,
-} from "@roo-code/types"
+import { modelIdKeysByProvider, ProviderSettingsEntry } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
+import { AUTOCOMPLETE_PROVIDER_MODELS, defaultProviderUsabilityChecker } from "./utils/kilocode-utils"
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null

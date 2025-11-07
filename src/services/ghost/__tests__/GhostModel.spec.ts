@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
-import { AUTOCOMPLETE_PROVIDER_MODELS } from "@roo-code/types"
+import { AUTOCOMPLETE_PROVIDER_MODELS } from "../utils/kilocode-utils"
 
 describe("GhostModel", () => {
 	let mockProviderSettingsManager: ProviderSettingsManager
