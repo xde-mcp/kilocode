@@ -43,35 +43,3 @@ export const AUTOCOMPLETE_PROVIDER_MODELS = {
 	bedrock: "mistral.codestral-2508-v1:0",
 } as const
 export type AutocompleteProviderKey = keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-
-export const defaultProviderUsabilityChecker = async (
-	provider: AutocompleteProviderKey,
-	providerSettingsManager: ProviderSettingsManager,
-): Promise<boolean> => {
-	if (provider === "kilocode") {
-		try {
-			const profiles = await providerSettingsManager.listConfig()
-			const kilocodeProfile = profiles.find((p) => p.apiProvider === "kilocode")
-
-			if (!kilocodeProfile) {
-				return false
-			}
-
-			const profile = await providerSettingsManager.getProfile({ id: kilocodeProfile.id })
-			const kilocodeToken = profile.kilocodeToken
-			const kilocodeOrgId = profile.kilocodeOrganizationId
-
-			if (!kilocodeToken) {
-				return false
-			}
-
-			return await checkKilocodeBalance(kilocodeToken, kilocodeOrgId)
-		} catch (error) {
-			console.error("Error checking kilocode balance:", error)
-			return false
-		}
-	}
-
-	// For all other providers, assume they are usable
-	return true
-}
