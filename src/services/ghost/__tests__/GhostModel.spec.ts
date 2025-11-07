@@ -297,9 +297,9 @@ describe("GhostModel", () => {
 	})
 
 	describe("getProviderDisplayName", () => {
-		it("returns null when no provider is loaded", () => {
+		it("returns undefined when no provider is loaded", () => {
 			const model = new GhostModel()
-			expect(model.getProviderDisplayName()).toBeNull()
+			expect(model.getProviderDisplayName()).toBeUndefined()
 		})
 
 		it("returns provider name from API handler when provider is loaded", async () => {
