@@ -271,7 +271,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				glama: mockModels,
 				unbound: mockModels,
 				litellm: mockModels,
-				"kilocode-openrouter": mockModels,
+				kilocode: mockModels,
 				roo: mockModels,
 				chutes: mockModels,
 				ollama: mockModels, // kilocode_change
@@ -376,7 +376,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				roo: mockModels,
 				chutes: mockModels,
 				litellm: {},
-				"kilocode-openrouter": mockModels,
+				kilocode: mockModels,
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
@@ -476,7 +476,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				huggingface: {},
 				"io-intelligence": {},
 				// kilocode_change start
-				"kilocode-openrouter": mockModels,
+				kilocode: mockModels,
 				inception: {},
 				gemini: mockModels,
 				ovhcloud: mockModels,

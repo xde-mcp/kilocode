@@ -96,7 +96,7 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 				models = await getLiteLLMModels(options.apiKey, options.baseUrl)
 				break
 			// kilocode_change start
-			case "kilocode-openrouter": {
+			case "kilocode": {
 				const backendUrl = options.kilocodeOrganizationId
 					? `https://api.kilocode.ai/api/organizations/${options.kilocodeOrganizationId}`
 					: "https://api.kilocode.ai/api/openrouter"

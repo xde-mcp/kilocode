@@ -369,9 +369,9 @@ function getSelectedModel({
 		// kilocode_change begin
 		case "kilocode": {
 			// Use the fetched models from routerModels
-			if (routerModels["kilocode-openrouter"] && apiConfiguration.kilocodeModel) {
+			if (routerModels["kilocode"] && apiConfiguration.kilocodeModel) {
 				// Find the model in the fetched models
-				const modelEntries = Object.entries(routerModels["kilocode-openrouter"])
+				const modelEntries = Object.entries(routerModels["kilocode"])
 
 				const selectedModelId = apiConfiguration.kilocodeModel.toLowerCase()
 
@@ -397,7 +397,7 @@ function getSelectedModel({
 			const invalidOrDefaultModel = apiConfiguration.kilocodeModel ?? kilocodeDefaultModel
 			return {
 				id: invalidOrDefaultModel,
-				info: routerModels["kilocode-openrouter"][invalidOrDefaultModel],
+				info: routerModels["kilocode"][invalidOrDefaultModel],
 			}
 		}
 		case "gemini-cli": {
@@ -492,13 +492,7 @@ function getSelectedModel({
 		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies
-				| "anthropic"
-				| "gemini-cli"
-				| "qwen-code"
-				| "human-relay"
-				| "fake-ai"
-				| "kilocode-openrouter"
+			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "human-relay" | "fake-ai" | "kilocode"
 			const id = apiConfiguration.apiModelId ?? anthropicDefaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 

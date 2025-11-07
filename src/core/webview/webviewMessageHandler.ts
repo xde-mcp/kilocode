@@ -810,7 +810,7 @@ export const webviewMessageHandler = async (
 						// kilocode_change start
 						ovhcloud: {},
 						inception: {},
-						"kilocode-openrouter": {},
+						kilocode: {},
 						gemini: {},
 						// kilocode_change end
 						openrouter: {},
@@ -870,9 +870,9 @@ export const webviewMessageHandler = async (
 				{ key: "glama", options: { provider: "glama" } },
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 				{
-					key: "kilocode-openrouter",
+					key: "kilocode",
 					options: {
-						provider: "kilocode-openrouter",
+						provider: "kilocode",
 						kilocodeToken: apiConfiguration.kilocodeToken,
 						kilocodeOrganizationId: apiConfiguration.kilocodeOrganizationId,
 					},
@@ -2161,15 +2161,15 @@ export const webviewMessageHandler = async (
 						await refreshOrganizationModes(message, provider, updateGlobalState)
 
 						// Flush and refetch models
-						await flushModels("kilocode-openrouter")
+						await flushModels("kilocode")
 						const models = await getModels({
-							provider: "kilocode-openrouter",
+							provider: "kilocode",
 							kilocodeOrganizationId: message.apiConfiguration.kilocodeOrganizationId,
 							kilocodeToken: message.apiConfiguration.kilocodeToken,
 						})
 						provider.postMessageToWebview({
 							type: "routerModels",
-							routerModels: { "kilocode-openrouter": models } as Record<RouterName, ModelRecord>,
+							routerModels: { kilocode: models } as Record<RouterName, ModelRecord>,
 						})
 					}
 				} catch (error) {

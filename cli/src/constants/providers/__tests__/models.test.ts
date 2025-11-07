@@ -210,7 +210,7 @@ describe("Static Provider Models", () => {
 			glama: {},
 			unbound: {},
 			requesty: {},
-			"kilocode-openrouter": {},
+			kilocode: {},
 			"io-intelligence": {},
 			deepinfra: {},
 			"vercel-ai-gateway": {},

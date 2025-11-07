@@ -48,7 +48,7 @@ export const dynamicProviders = [
 	"huggingface",
 	"litellm",
 	// kilocode_change start
-	"kilocode-openrouter",
+	"kilocode",
 	"ovhcloud",
 	"chutes",
 	"gemini",
@@ -665,7 +665,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	"claude-code": "apiModelId",
 	glama: "glamaModelId",
 	openrouter: "openRouterModelId",
-	"kilocode-openrouter": "openRouterModelId",
+	kilocode: "kilocodeModel",
 	bedrock: "apiModelId",
 	vertex: "apiModelId",
 	"openai-native": "openAiModelId",
@@ -696,7 +696,6 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	"io-intelligence": "ioIntelligenceModelId",
 	roo: "apiModelId",
 	"vercel-ai-gateway": "vercelAiGatewayModelId",
-	kilocode: "kilocodeModel",
 	"virtual-quota-fallback": "apiModelId",
 	ovhcloud: "ovhCloudAiEndpointsModelId", // kilocode_change
 	inception: "inceptionLabsModelId", // kilocode_change
@@ -841,7 +840,6 @@ export const MODELS_BY_PROVIDER: Record<
 	ovhcloud: { id: "ovhcloud", label: "OVHcloud AI Endpoints", models: [] },
 	inception: { id: "inception", label: "Inception", models: [] },
 	kilocode: { id: "kilocode", label: "Kilocode", models: [] },
-	"kilocode-openrouter": { id: "kilocode-openrouter", label: "Kilocode", models: [] }, // temporarily needed to satisfy because we're using 2 inconsistent names apparently
 	"virtual-quota-fallback": { id: "virtual-quota-fallback", label: "Virtual Quota Fallback", models: [] },
 	// kilocode_change end
 	deepinfra: { id: "deepinfra", label: "DeepInfra", models: [] },
