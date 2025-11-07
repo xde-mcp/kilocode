@@ -103,17 +103,6 @@ function hypothenuse(a, b) {
 `
 }
 
-export function addCursorMarker(document: TextDocument, range?: Range): string {
-	if (!range) return document.getText()
-
-	const fullText = document.getText()
-	const cursorOffset = document.offsetAt(range.start)
-	const beforeCursor = fullText.substring(0, cursorOffset)
-	const afterCursor = fullText.substring(cursorOffset)
-
-	return `${beforeCursor}${CURSOR_MARKER}${afterCursor}`
-}
-
 /**
  * Parse the response - only handles responses with <COMPLETION> tags
  * Returns a FillInAtCursorSuggestion with the extracted text, or an empty string if nothing found
