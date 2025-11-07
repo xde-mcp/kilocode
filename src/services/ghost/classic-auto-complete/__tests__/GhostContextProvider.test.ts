@@ -179,7 +179,7 @@ describe("GhostContextProvider", () => {
 			expect(formatted).toBe(expected)
 		})
 
-		it("should handle errors gracefully and return empty string", async () => {
+		it("should propagate errors from getAllSnippetsWithoutRace", async () => {
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
 			)
@@ -187,9 +187,8 @@ describe("GhostContextProvider", () => {
 			;(getAllSnippetsWithoutRace as any).mockRejectedValueOnce(new Error("Test error"))
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
 
-			expect(formatted).toBe("")
+			await expect(contextProvider.getFormattedContext(input, "/test.ts")).rejects.toThrow("Test error")
 		})
 	})
 })
