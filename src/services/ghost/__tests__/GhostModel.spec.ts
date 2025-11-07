@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
-import { AUTOCOMPLETE_PROVIDER_MODELS } from "@roo-code/types"
+import { AUTOCOMPLETE_PROVIDER_MODELS } from "../utils/kilocode-utils"
 
 describe("GhostModel", () => {
 	let mockProviderSettingsManager: ProviderSettingsManager
@@ -15,7 +15,7 @@ describe("GhostModel", () => {
 
 	describe("reload", () => {
 		it("sorts profiles by supportedProviders index order", async () => {
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 			const profiles = [
 				{ id: "3", name: "profile3", apiProvider: supportedProviders[2] },
 				{ id: "1", name: "profile1", apiProvider: supportedProviders[0] },
@@ -37,7 +37,7 @@ describe("GhostModel", () => {
 		})
 
 		it("filters out profiles without apiProvider", async () => {
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 			const profiles = [
 				{ id: "1", name: "profile1", apiProvider: undefined },
 				{ id: "2", name: "profile2", apiProvider: supportedProviders[0] },
@@ -58,7 +58,7 @@ describe("GhostModel", () => {
 		})
 
 		it("filters out profiles with unsupported apiProvider", async () => {
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 			const profiles = [
 				{ id: "1", name: "profile1", apiProvider: "unsupported" },
 				{ id: "2", name: "profile2", apiProvider: supportedProviders[0] },
@@ -90,7 +90,7 @@ describe("GhostModel", () => {
 		})
 
 		it("returns true when profile found", async () => {
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 			const profiles = [{ id: "1", name: "profile1", apiProvider: supportedProviders[0] }] as any
 
 			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
@@ -303,7 +303,7 @@ describe("GhostModel", () => {
 		})
 
 		it("returns provider name from API handler when provider is loaded", async () => {
-			const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 			const profiles = [{ id: "1", name: "profile1", apiProvider: supportedProviders[0] }] as any
 
 			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)

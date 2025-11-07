@@ -1,6 +1,10 @@
 import { AutocompleteInput } from "../types"
-import { CURSOR_MARKER } from "./ghostConstants"
-import type { TextDocument, Range } from "vscode"
+
+export interface FillInAtCursorSuggestion {
+	text: string
+	prefix: string
+	suffix: string
+}
 
 export function getBaseSystemInstructions(): string {
 	return `You are a HOLE FILLER. You are provided with a file containing holes, formatted as '{{FILL_HERE}}'. Your TASK is to complete with a string to replace this hole with, inside a <COMPLETION/> XML tag, including context-aware indentation, if needed. All completions MUST be truthful, accurate, well-written and correct.
@@ -93,18 +97,32 @@ function hypothenuse(a, b) {
 `
 }
 
-export function addCursorMarker(document: TextDocument, range?: Range): string {
-	if (!range) return document.getText()
+/**
+ * Parse the response - only handles responses with <COMPLETION> tags
+ * Returns a FillInAtCursorSuggestion with the extracted text, or an empty string if nothing found
+ */
+export function parseGhostResponse(fullResponse: string, prefix: string, suffix: string): FillInAtCursorSuggestion {
+	let fimText: string = ""
 
-	const fullText = document.getText()
-	const cursorOffset = document.offsetAt(range.start)
-	const beforeCursor = fullText.substring(0, cursorOffset)
-	const afterCursor = fullText.substring(cursorOffset)
+	// Match content strictly between <COMPLETION> and </COMPLETION> tags
+	const completionMatch = fullResponse.match(/<COMPLETION>([\s\S]*?)<\/COMPLETION>/i)
 
-	return `${beforeCursor}${CURSOR_MARKER}${afterCursor}`
+	if (completionMatch) {
+		// Extract the captured group (content between tags)
+		fimText = completionMatch[1] || ""
+	}
+	// Remove any accidentally captured tag remnants
+	fimText = fimText.replace(/<\/?COMPLETION>/gi, "")
+
+	// Return FillInAtCursorSuggestion with the text (empty string if nothing found)
+	return {
+		text: fimText,
+		prefix,
+		suffix,
+	}
 }
 
-export class AutoTriggerStrategy {
+export class HoleFiller {
 	getPrompts(
 		autocompleteInput: AutocompleteInput,
 		prefix: string,
