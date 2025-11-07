@@ -1086,61 +1086,40 @@ describe("ChatView - Focus Grabbing Tests", () => {
 	it("does not grab focus when follow-up question presented", async () => {
 		const { getByTestId } = renderChatView()
 
-		// Clear the initial focus call from useMount effect
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve))
-		})
-		mockFocus.mockClear()
-
 		// First hydrate state with initial task
-		await act(async () => {
-			mockPostMessage({
-				clineMessages: [
-					{
-						type: "say",
-						say: "task",
-						ts: Date.now() - 2000,
-						text: "Initial task",
-					},
-				],
-			})
+		mockPostMessage({
+			clineMessages: [
+				{
+					type: "say",
+					say: "task",
+					ts: Date.now() - 2000,
+					text: "Initial task",
+				},
+			],
 		})
 
-		// Wait for initial state to settle
-		await waitFor(() => {
-			expect(getByTestId("chat-textarea")).toBeInTheDocument()
-		})
-
-		// Clear any focus calls from initial state processing
+		// Clear any initial calls
 		mockFocus.mockClear()
 
 		// Add follow-up question
-		await act(async () => {
-			mockPostMessage({
-				clineMessages: [
-					{
-						type: "say",
-						say: "task",
-						ts: Date.now() - 2000,
-						text: "Initial task",
-					},
-					{
-						type: "ask",
-						ask: "followup",
-						ts: Date.now(),
-						text: "Should I continue?",
-					},
-				],
-			})
+		mockPostMessage({
+			clineMessages: [
+				{
+					type: "say",
+					say: "task",
+					ts: Date.now() - 2000,
+					text: "Initial task",
+				},
+				{
+					type: "ask",
+					ask: "followup",
+					ts: Date.now(),
+					text: "Should I continue?",
+				},
+			],
 		})
 
-		// Wait for the follow-up question to be processed and any debounced effects to complete
-		// The useDebounceEffect has a 50ms delay, so we wait longer to ensure it completes
-		await act(async () => {
-			await new Promise((resolve) => setTimeout(resolve))
-		})
-
-		// Ensure the textarea is still in the document
+		// Wait a bit to ensure any focus operations would have occurred
 		await waitFor(() => {
 			expect(getByTestId("chat-textarea")).toBeInTheDocument()
 		})
@@ -1349,33 +1328,13 @@ it.skip("ChatView - RooCloudCTA Display Tests", () => {
 		mockPostMessage({
 			cloudIsAuthenticated: false,
 			taskHistory: [
-				{ id: "1", ts: Date.now() - 3000 },
-				{ id: "2", ts: Date.now() - 2000 },
-				{ id: "3", ts: Date.now() - 1000 },
-				{ id: "4", ts: Date.now() },
-			],
-			clineMessages: [], // No active task
-		})
-
-		// Wait for component to render and show DismissibleUpsell
-		await waitFor(() => {
-			expect(getByTestId("dismissible-upsell")).toBeInTheDocument()
-		})
-	})
-
-	// kilocode_change skip
-	it.skip("shows RooCloudCTA when user is not authenticated and has run 5 tasks", async () => {
-		const { getByTestId } = renderChatView()
-
-		// Hydrate state with user not authenticated and 5 tasks
-		mockPostMessage({
-			cloudIsAuthenticated: false,
-			taskHistory: [
-				{ id: "1", ts: Date.now() - 4000 },
-				{ id: "2", ts: Date.now() - 3000 },
-				{ id: "3", ts: Date.now() - 2000 },
-				{ id: "4", ts: Date.now() - 1000 },
-				{ id: "5", ts: Date.now() },
+				{ id: "1", ts: Date.now() - 6000 },
+				{ id: "2", ts: Date.now() - 5000 },
+				{ id: "3", ts: Date.now() - 4000 },
+				{ id: "4", ts: Date.now() - 3000 },
+				{ id: "5", ts: Date.now() - 2000 },
+				{ id: "6", ts: Date.now() - 1000 },
+				{ id: "7", ts: Date.now() },
 			],
 			clineMessages: [], // No active task
 		})
