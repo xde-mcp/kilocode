@@ -4,7 +4,7 @@ import { GhostSuggestionContext, AutocompleteInput } from "../services/ghost/typ
 import { MockTextDocument } from "../services/mocking/MockTextDocument.js"
 import * as vscode from "vscode"
 import crypto from "crypto"
-import { CURSOR_MARKER } from "test-cases.js"
+import { CURSOR_MARKER } from "./test-cases.js"
 
 export class StrategyTester {
 	private llmClient: LLMClient
