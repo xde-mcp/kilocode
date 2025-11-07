@@ -29,17 +29,13 @@ export class GhostModel {
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MAP) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (!selectedProfile) continue
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
-				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 				if (!profile.kilocodeToken) continue
 				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
-
-			const profile = await providerSettingsManager.getProfile({
-				id: selectedProfile.id,
-			})
 
 			this.apiHandler = buildApiHandler({
 				...profile,
