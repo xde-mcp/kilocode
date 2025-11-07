@@ -3,7 +3,7 @@ import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
-import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
+import { AUTOCOMPLETE_PROVIDER_MAP, AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null
@@ -22,14 +22,11 @@ export class GhostModel {
 
 	public async reload(providerSettingsManager: ProviderSettingsManager): Promise<boolean> {
 		const profiles = await providerSettingsManager.listConfig()
-		const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS) as Array<
-			keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-		>
 
 		this.cleanup()
 
 		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
-		for (const provider of supportedProviders) {
+		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MAP) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (!selectedProfile) continue
 
@@ -46,7 +43,7 @@ export class GhostModel {
 
 			this.apiHandler = buildApiHandler({
 				...profile,
-				[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
+				[modelIdKeysByProvider[provider]]: model,
 			})
 
 			if (this.apiHandler instanceof OpenRouterHandler) {

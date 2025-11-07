@@ -43,3 +43,10 @@ export const AUTOCOMPLETE_PROVIDER_MODELS = {
 	bedrock: "mistral.codestral-2508-v1:0",
 } as const
 export type AutocompleteProviderKey = keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
+export const AUTOCOMPLETE_PROVIDER_MAP = new Map([
+	["mistral", "codestral-latest"],
+	["kilocode", "mistralai/codestral-2508"],
+	["openrouter", "mistralai/codestral-2508"],
+	["bedrock", "mistral.codestral-2508-v1:0"],
+] as const)
+export type AutocompleteProviderKey2 = typeof AUTOCOMPLETE_PROVIDER_MAP extends Map<infer K, any> ? K : never
