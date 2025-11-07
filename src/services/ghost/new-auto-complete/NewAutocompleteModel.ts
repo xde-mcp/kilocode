@@ -34,49 +34,32 @@ export class NewAutocompleteModel {
 
 	public async reload(providerSettingsManager: ProviderSettingsManager): Promise<boolean> {
 		const profiles = await providerSettingsManager.listConfig()
-		const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS) as Array<
-			keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-		>
 
 		this.cleanup()
 
 		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
-		for (const provider of supportedProviders) {
+		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
 			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
 			if (!selectedProfile) continue
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
-				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 				if (!profile.kilocodeToken) continue
 				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
 
-			this.loadProfile(providerSettingsManager, selectedProfile, provider)
+			this.apiHandler = buildApiHandler({ ...profile, [modelIdKeysByProvider[provider]]: model })
+
+			if (this.apiHandler instanceof OpenRouterHandler) {
+				await this.apiHandler.fetchModel()
+			}
 			this.loaded = true
 			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
-	}
-	public async loadProfile(
-		providerSettingsManager: ProviderSettingsManager,
-		selectedProfile: ProviderSettingsEntry,
-		provider: keyof typeof AUTOCOMPLETE_PROVIDER_MODELS,
-	): Promise<void> {
-		this.profile = await providerSettingsManager.getProfile({
-			id: selectedProfile.id,
-		})
-
-		this.apiHandler = buildApiHandler({
-			...this.profile,
-			[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
-		})
-
-		if (this.apiHandler instanceof OpenRouterHandler) {
-			await this.apiHandler.fetchModel()
-		}
 	}
 
 	/**
@@ -147,7 +130,11 @@ export class NewAutocompleteModel {
 		}
 
 		const provider = this.profile.apiProvider as AutocompleteProviderKey
-		const model = AUTOCOMPLETE_PROVIDER_MODELS[provider]
+		const model = AUTOCOMPLETE_PROVIDER_MODELS.get(provider)
+		if (!model) {
+			console.warn(`[NewAutocompleteModel] Unsupported provider: ${provider}`)
+			return null
+		}
 
 		switch (provider) {
 			case "mistral":
