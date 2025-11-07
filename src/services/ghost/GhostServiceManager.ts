@@ -9,7 +9,6 @@ import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInli
 //import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
-import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
@@ -21,7 +20,6 @@ export class GhostServiceManager {
 	private model: GhostModel
 	private cline: ClineProvider
 	private context: vscode.ExtensionContext
-	private providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
 	private ghostContext: GhostContext
 
@@ -47,7 +45,6 @@ export class GhostServiceManager {
 
 		// Register Internal Components
 		this.documentStore = new GhostDocumentStore()
-		this.providerSettingsManager = cline.providerSettingsManager
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
 
@@ -74,16 +71,11 @@ export class GhostServiceManager {
 	// Singleton Management
 	public static initialize(context: vscode.ExtensionContext, cline: ClineProvider): GhostServiceManager {
 		if (GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is already initialized. Use getInstance() instead.")
+			throw new Error(
+				"GhostServiceManager is already initialized. Restart VS code, or change this to return the cached instance.",
+			)
 		}
 		GhostServiceManager.instance = new GhostServiceManager(context, cline)
-		return GhostServiceManager.instance
-	}
-
-	public static getInstance(): GhostServiceManager {
-		if (!GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is not initialized. Call initialize() first.")
-		}
 		return GhostServiceManager.instance
 	}
 
@@ -92,7 +84,8 @@ export class GhostServiceManager {
 			enableQuickInlineTaskKeybinding: true,
 			enableSmartInlineTaskKeybinding: true,
 		}
-		await this.model.reload(this.providerSettingsManager)
+		await this.cline.providerSettingsManager.initialize() // avoid race condition with settings migrations
+		await this.model.reload(this.cline.providerSettingsManager)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
