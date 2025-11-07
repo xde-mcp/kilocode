@@ -80,9 +80,19 @@ export class ProviderSettingsManager {
 	constructor(context: ExtensionContext) {
 		this.context = context
 
-		// TODO: We really shouldn't have async methods in the constructor.
-		this.initialize().catch(console.error)
+		// kilocode_change start
+		// only initialize ONCE, and save the promise in case somebody needs to wait.
+		this.initialization = this.init_runMigrations()
 	}
+	private readonly initialization: Promise<void>
+	/**
+	 * Wait for initialization migrations to complete.  These were started during construction.
+	 * The odd active-verb name is retained to simplify roo-merged.
+	 */
+	public initialize(): Promise<void> {
+		return this.initialization
+	}
+	// kilocode_change end
 
 	public generateId() {
 		return Math.random().toString(36).substring(2, 15)
@@ -96,10 +106,8 @@ export class ProviderSettingsManager {
 		return next
 	}
 
-	/**
-	 * Initialize config if it doesn't exist and run migrations.
-	 */
-	public async initialize() {
+	// kilocode_change: private & renamed:
+	async init_runMigrations() {
 		try {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
