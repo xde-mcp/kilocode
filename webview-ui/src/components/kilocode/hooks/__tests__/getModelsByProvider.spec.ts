@@ -33,6 +33,7 @@ describe("getModelsByProvider", () => {
 			chutes: { "test-model": testModel },
 			// kilocode_change end
 			"sap-ai-core": { "test-model": testModel },
+			inception: { "test-model": testModel },
 		}
 
 		const exceptions = [

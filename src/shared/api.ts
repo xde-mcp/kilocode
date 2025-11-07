@@ -174,6 +174,7 @@ const dynamicProviderExtras = {
 		sapAiCoreResourceGroup?: string
 		sapAiCoreUseOrchestration?: boolean
 	},
+	inception: {} as { apiKey?: string; baseUrl?: string }, // kilocode_change
 } as const satisfies Record<RouterName, object>
 
 // Build the dynamic options union from the map, intersected with CommonFetchParams
