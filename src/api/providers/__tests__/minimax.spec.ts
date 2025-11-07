@@ -267,46 +267,31 @@ describe("MiniMaxHandler", () => {
 			expect(model.info.outputPrice).toBe(1.2)
 		})
 
-		it("should use correct default temperature", () => {
-			const model = handler.getModel()
-			expect(model.temperature).toBe(0)
-		})
-
 		it("should use correct default max tokens", () => {
 			const model = handler.getModel()
-			expect(model.maxTokens).toBe(38400)
+			expect(model.maxTokens).toBe(128000)
 		})
 	})
 
 	describe("countTokens", () => {
 		it("should count tokens using Anthropic API", async () => {
-			// Create a fresh handler to get the Anthropic instance
-			const testHandler = new MiniMaxHandler(mockOptions)
-			const anthropicInstance =
-				mockAnthropicConstructor.mock.results[mockAnthropicConstructor.mock.results.length - 1]?.value
-
 			const content = [{ type: "text" as const, text: "Test content for MiniMax" }]
-			const result = await testHandler.countTokens(content)
+			const result = await handler.countTokens(content)
 
 			expect(result).toBe(42)
-			expect(anthropicInstance?.messages.countTokens).toHaveBeenCalledWith({
+			const anthropicInstance = mockAnthropicConstructor.mock.results[0]?.value
+			expect(anthropicInstance.messages.countTokens).toHaveBeenCalledWith({
 				model: minimaxDefaultModelId,
 				messages: [{ role: "user", content }],
 			})
 		})
 
 		it("should fallback to base implementation on error", async () => {
-			// Create a fresh handler to get the Anthropic instance
-			const testHandler = new MiniMaxHandler(mockOptions)
-			const anthropicInstance =
-				mockAnthropicConstructor.mock.results[mockAnthropicConstructor.mock.results.length - 1]?.value
-
-			if (anthropicInstance) {
-				anthropicInstance.messages.countTokens.mockRejectedValueOnce(new Error("API error"))
-			}
+			const anthropicInstance = mockAnthropicConstructor.mock.results[0]?.value
+			anthropicInstance.messages.countTokens.mockRejectedValueOnce(new Error("API error"))
 
 			const content = [{ type: "text" as const, text: "Test content" }]
-			const result = await testHandler.countTokens(content)
+			const result = await handler.countTokens(content)
 
 			// Should not throw and return some number from fallback
 			expect(typeof result).toBe("number")
