@@ -35,7 +35,7 @@ export class GhostModel {
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
-				const kilocodeProfile = profiles.find((p) => p.apiProvider === "kilocode")
+				const kilocodeProfile = selectedProfile
 
 				if (!kilocodeProfile) continue
 
