@@ -378,7 +378,7 @@ export interface ExtensionState {
 	currentTaskItem?: HistoryItem
 	currentTaskTodos?: TodoItem[]
 	mode: string
-	customModes: any[]
+	customModes: ModeConfig[]
 	taskHistoryFullLength: number
 	taskHistoryVersion: number
 	mcpServers?: McpServer[]
