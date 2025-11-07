@@ -40,32 +40,24 @@ export class GhostModel {
 				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
 
-			this.loadProfile(providerSettingsManager, selectedProfile, provider)
+			const profile = await providerSettingsManager.getProfile({
+				id: selectedProfile.id,
+			})
+
+			this.apiHandler = buildApiHandler({
+				...profile,
+				[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
+			})
+
+			if (this.apiHandler instanceof OpenRouterHandler) {
+				await this.apiHandler.fetchModel()
+			}
 			this.loaded = true
 			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
-	}
-
-	public async loadProfile(
-		providerSettingsManager: ProviderSettingsManager,
-		selectedProfile: ProviderSettingsEntry,
-		provider: keyof typeof AUTOCOMPLETE_PROVIDER_MODELS,
-	): Promise<void> {
-		const profile = await providerSettingsManager.getProfile({
-			id: selectedProfile.id,
-		})
-
-		this.apiHandler = buildApiHandler({
-			...profile,
-			[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
-		})
-
-		if (this.apiHandler instanceof OpenRouterHandler) {
-			await this.apiHandler.fetchModel()
-		}
 	}
 
 	/**
