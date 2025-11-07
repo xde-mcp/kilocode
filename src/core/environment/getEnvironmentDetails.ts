@@ -220,9 +220,9 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	// kilocode_change start
 	// Be sure to fetch the model information before we need it.
-	if (cline.api instanceof OpenRouterHandler || cline.api instanceof NativeOllamaHandler) {
+	if (cline.api instanceof OpenRouterHandler || ("fetchModel" in cline.api && cline.api.fetchModel)) {
 		try {
-			await cline.api.fetchModel()
+			await (cline.api.fetchModel as () => Promise<unknown>)()
 		} catch (e) {
 			TelemetryService.instance.captureException(e, { context: "getEnvironmentDetails" })
 			await cline.say(
