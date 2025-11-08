@@ -1,4 +1,5 @@
 import { Anthropic } from "@anthropic-ai/sdk"
+import OpenAI from "openai"
 import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
 
 import {
@@ -33,6 +34,21 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 		})
 	}
 
+	private convertOpenAIToolsToAnthropic(allowedTools?: OpenAI.Chat.ChatCompletionTool[]): Anthropic.ToolUnion[] {
+		if (!allowedTools) return []
+
+		return allowedTools
+			.filter((tool) => tool.type === "function" && "function" in tool && !!tool.function)
+			.map((tool) => {
+				const func = (tool as any).function
+				return {
+					name: func.name,
+					description: func.description || "",
+					input_schema: func.parameters || { type: "object", properties: {} },
+				}
+			})
+	}
+
 	async *createMessage(
 		systemPrompt: string,
 		messages: Anthropic.Messages.MessageParam[],
@@ -41,6 +57,7 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 		let stream: AnthropicStream<Anthropic.Messages.RawMessageStreamEvent>
 		let { id: modelId, maxTokens } = this.getModel()
 
+		const nativeTools = this.convertOpenAIToolsToAnthropic(metadata?.allowedTools)
 		stream = await this.client.messages.create({
 			model: modelId,
 			max_tokens: maxTokens ?? MINIMAX_DEFAULT_MAX_TOKENS,
@@ -48,6 +65,8 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 			system: [{ text: systemPrompt, type: "text" }],
 			messages,
 			stream: true,
+			tools: nativeTools.length > 0 ? nativeTools : undefined,
+			tool_choice: nativeTools.length > 0 ? { type: "any" } : undefined,
 		})
 
 		let inputTokens = 0
@@ -57,6 +76,7 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 		let thinkingDeltaAccumulator = ""
 		let thinkText = ""
 		let thinkSignature = ""
+		const lastStartedToolCall = { id: "", name: "", arguments: "" }
 		for await (const chunk of stream) {
 			switch (chunk.type) {
 				case "message_start": {
@@ -127,6 +147,14 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 								data: chunk.content_block.data,
 							}
 							break
+						case "tool_use":
+							if (chunk.content_block.id && chunk.content_block.name) {
+								// Convert Anthropic tool_use to OpenAI-compatible format
+								lastStartedToolCall.id = chunk.content_block.id
+								lastStartedToolCall.name = chunk.content_block.name
+								lastStartedToolCall.arguments = ""
+							}
+							break
 						case "text":
 							// We may receive multiple text blocks, in which
 							// case just insert a line break between them.
@@ -158,6 +186,22 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 						case "text_delta":
 							yield { type: "text", text: chunk.delta.text }
 							break
+						case "input_json_delta":
+							if (lastStartedToolCall.id && lastStartedToolCall.name && chunk.delta.partial_json) {
+								// 	// Convert Anthropic tool_use to OpenAI-compatible format
+								yield {
+									type: "native_tool_calls",
+									toolCalls: [
+										{
+											id: lastStartedToolCall?.id,
+											function: {
+												name: lastStartedToolCall?.name,
+												arguments: chunk.delta.partial_json,
+											},
+										},
+									],
+								}
+							}
 					}
 
 					break
@@ -219,31 +263,5 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 
 		const content = message.content.find(({ type }) => type === "text")
 		return content?.type === "text" ? content.text : ""
-	}
-
-	/**
-	 * Counts tokens for the given content using Anthropic's API
-	 *
-	 * @param content The content blocks to count tokens for
-	 * @returns A promise resolving to the token count
-	 */
-	override async countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number> {
-		try {
-			// Use the current model
-			const { id: model } = this.getModel()
-
-			const response = await this.client.messages.countTokens({
-				model,
-				messages: [{ role: "user", content: content }],
-			})
-
-			return response.input_tokens
-		} catch (error) {
-			// Log error but fallback to tiktoken estimation
-			console.warn("Anthropic token counting failed, using fallback", error)
-
-			// Use the base provider's implementation as fallback
-			return super.countTokens(content)
-		}
 	}
 }
