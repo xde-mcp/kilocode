@@ -66,7 +66,7 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 			messages,
 			stream: true,
 			tools: nativeTools.length > 0 ? nativeTools : undefined,
-			tool_choice: nativeTools.length > 0 ? { type: "any" } : undefined,
+			tool_choice: nativeTools.length > 0 ? { type: "auto", disable_parallel_tool_use: true } : undefined,
 		})
 
 		let inputTokens = 0
