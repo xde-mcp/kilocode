@@ -9,6 +9,7 @@ export type ApiStreamChunk =
 	| ApiStreamReasoningChunk
 	| ApiStreamGroundingChunk
 	| ApiStreamError
+	| ApiStreamReasoningDetailsChunk
 
 export interface ApiStreamError {
 	type: "error"
@@ -24,6 +25,11 @@ export interface ApiStreamTextChunk {
 export interface ApiStreamReasoningChunk {
 	type: "reasoning"
 	text: string
+}
+
+export interface ApiStreamReasoningDetailsChunk {
+	type: "reasoning_details"
+	reasoning_details: any // openrouter has various properties that we can pass back unmodified in api requests to preserve reasoning traces
 }
 
 export interface ApiStreamUsageChunk {
