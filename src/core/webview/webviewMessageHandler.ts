@@ -816,6 +816,7 @@ export const webviewMessageHandler = async (
 				lmstudio: {},
 				ovhcloud: {}, // kilocode_change
 				inception: {}, // kilocode_change
+				synthetic: {}, // kilocode_change
 			}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -893,6 +894,7 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.inceptionLabsBaseUrl,
 					},
 				},
+				{ key: "synthetic", options: { provider: "synthetic", apiKey: apiConfiguration.syntheticApiKey } }, // kilocode_change
 			]
 			// kilocode_change end
 

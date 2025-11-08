@@ -60,6 +60,7 @@ export const dynamicProviders = [
 	"requesty",
 	"unbound",
 	"glama",
+	"synthetic",
 ] as const
 
 export type DynamicProvider = (typeof dynamicProviders)[number]

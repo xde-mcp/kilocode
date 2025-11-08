@@ -223,7 +223,7 @@ const ApiOptions = ({
 		deepInfraApiKey: apiConfiguration?.deepInfraApiKey,
 		geminiApiKey: apiConfiguration?.geminiApiKey,
 		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
-		chutesApiKey: apiConfiguration?.chutesApiKey,
+		syntheticApiKey: apiConfiguration?.syntheticApiKey,
 	})
 
 	//const { data: openRouterModelProviders } = useOpenRouterModelProviders(
@@ -275,7 +275,8 @@ const ApiOptions = ({
 			} else if (
 				selectedProvider === "litellm" ||
 				selectedProvider === "deepinfra" ||
-				selectedProvider === "chutes" // kilocode_change
+				selectedProvider === "chutes" || // kilocode_change
+				selectedProvider === "synthetic" // kilocode_change
 			) {
 				vscode.postMessage({ type: "requestRouterModels" })
 			}
@@ -776,12 +777,15 @@ const ApiOptions = ({
 			{selectedProvider === "fireworks" && (
 				<Fireworks apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
+
 			{
-				// kilocode_change start
 				selectedProvider === "synthetic" && (
 					<Synthetic
 						apiConfiguration={apiConfiguration}
 						setApiConfigurationField={setApiConfigurationField}
+						routerModels={routerModels}
+						organizationAllowList={organizationAllowList}
+						modelValidationError={modelValidationError}
 					/>
 				)
 				// kilocode_change end

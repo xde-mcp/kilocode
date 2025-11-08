@@ -66,6 +66,7 @@ describe("Model Validation Functions", () => {
 		chutes: {},
 		gemini: {},
 		inception: {},
+		synthetic: {},
 		// kilocode_change end
 	}
 

@@ -17,7 +17,6 @@ import {
 	// kilocode_change start
 	geminiCliDefaultModelId,
 	geminiCliModels,
-	syntheticModels,
 	syntheticDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
@@ -104,6 +103,7 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 		kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId,
 		geminiApiKey: apiConfiguration?.geminiApiKey,
 		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
+		syntheticApiKey: apiConfiguration?.syntheticApiKey, // kilocode_change
 	})
 	const openRouterModelProviders = useModelProviders(kilocodeDefaultModel, apiConfiguration)
 	// kilocode_change end
@@ -418,7 +418,7 @@ function getSelectedModel({
 		// kilocode_change start
 		case "synthetic": {
 			const id = apiConfiguration.apiModelId ?? syntheticDefaultModelId
-			const info = syntheticModels[id as keyof typeof syntheticModels]
+			const info = routerModels.synthetic[id]
 			return { id, info }
 		}
 		// kilocode_change end
