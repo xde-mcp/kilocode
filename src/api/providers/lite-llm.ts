@@ -1,7 +1,7 @@
 import OpenAI from "openai"
 import { Anthropic } from "@anthropic-ai/sdk" // Keep for type usage only
 
-import { litellmDefaultModelId, litellmDefaultModelInfo } from "@roo-code/types"
+import { litellmDefaultModelId, litellmDefaultModelInfo, getActiveToolUseStyle } from "@roo-code/types"
 
 import { calculateApiCostOpenAI } from "../../shared/cost"
 
@@ -12,6 +12,7 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
+import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 
 /**
  * LiteLLM provider handler
@@ -118,7 +119,6 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming = {
 			model: modelId,
-			max_completion_tokens: maxTokens, // kilocode_change
 			messages: [systemMessage, ...enhancedMessages],
 			stream: true,
 			stream_options: {
@@ -130,12 +130,14 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 		if (isGPT5Model && maxTokens) {
 			requestOptions.max_completion_tokens = maxTokens
 		} else if (maxTokens) {
-			requestOptions.max_tokens = maxTokens
+			requestOptions.max_tokens = null
 		}
 
 		if (this.supportsTemperature(modelId)) {
 			requestOptions.temperature = this.options.modelTemperature ?? 0
 		}
+
+		addNativeToolCallsToParams(requestOptions, this.options, metadata) // kilocode_change
 
 		try {
 			const { data: completion } = await this.client.chat.completions.create(requestOptions).withResponse()
@@ -145,6 +147,8 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 			for await (const chunk of completion) {
 				const delta = chunk.choices[0]?.delta
 				const usage = chunk.usage as LiteLLMUsage
+
+				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
 
 				if (delta?.content) {
 					yield { type: "text", text: delta.content }
@@ -208,7 +212,11 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 				requestOptions.temperature = this.options.modelTemperature ?? 0
 			}
 
-			requestOptions.max_completion_tokens = info.maxTokens // kilocode_change
+			if (isGPT5Model && info.maxTokens) {
+				requestOptions.max_completion_tokens = info.maxTokens
+			} else if (info.maxTokens) {
+				requestOptions.max_tokens = info.maxTokens
+			}
 
 			const response = await this.client.chat.completions.create(requestOptions)
 			return response.choices[0]?.message.content || ""
