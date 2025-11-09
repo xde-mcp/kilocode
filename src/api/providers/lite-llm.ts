@@ -130,7 +130,7 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 		if (isGPT5Model && maxTokens) {
 			requestOptions.max_completion_tokens = maxTokens
 		} else if (maxTokens) {
-			requestOptions.max_tokens = null
+			requestOptions.max_tokens = maxTokens
 		}
 
 		if (this.supportsTemperature(modelId)) {
