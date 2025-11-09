@@ -70,6 +70,8 @@ export interface CommandContext {
 	previousTaskHistoryPage: () => Promise<TaskHistoryData>
 	sendWebviewMessage: (message: any) => Promise<void>
 	refreshTerminal: () => Promise<void>
+	// Chat messages for checkpoint and other commands
+	chatMessages: any[]
 }
 
 export type CommandHandler = (context: CommandContext) => Promise<void> | void
@@ -132,6 +134,7 @@ export interface ArgumentProviderContext {
 		updateProviderModel: (modelId: string) => Promise<void>
 		refreshRouterModels: () => Promise<void>
 		taskHistoryData: TaskHistoryData | null
+		chatMessages: any[]
 	}
 }
 
