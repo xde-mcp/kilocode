@@ -133,7 +133,7 @@ export interface ArgumentProviderContext {
 		updateProviderModel: (modelId: string) => Promise<void>
 		refreshRouterModels: () => Promise<void>
 		taskHistoryData: TaskHistoryData | null
-		chatMessages: any[]
+		chatMessages: ExtensionMessage[]
 	}
 }
 
