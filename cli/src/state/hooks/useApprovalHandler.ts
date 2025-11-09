@@ -270,8 +270,6 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 
 					// Track manual rejection
 					approvalTelemetry.trackManualRejection(currentPendingApproval)
-				} else {
-					logs.debug("Checkpoint restore cancelled - no response sent", "useApprovalHandler")
 				}
 
 				// Complete processing atomically - this clears both pending and processing state

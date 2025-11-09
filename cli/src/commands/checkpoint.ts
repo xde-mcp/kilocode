@@ -4,6 +4,7 @@
 
 import type { Command, CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "./core/types.js"
 import { logs } from "../services/logs.js"
+import { ExtensionMessage } from "../types/messages.js"
 
 /**
  * Interface for checkpoint message from chatMessages
@@ -24,7 +25,7 @@ interface CheckpointMessage {
 /**
  * Extract checkpoint messages from chatMessages
  */
-function getCheckpointMessages(chatMessages: any[]): CheckpointMessage[] {
+function getCheckpointMessages(chatMessages: ExtensionMessage[]): CheckpointMessage[] {
 	return chatMessages
 		.filter((msg): msg is CheckpointMessage => msg.type === "say" && msg.say === "checkpoint_saved" && !!msg.text)
 		.reverse() // Most recent first
@@ -36,13 +37,12 @@ function getCheckpointMessages(chatMessages: any[]): CheckpointMessage[] {
 function findCheckpointByHash(
 	checkpoints: CheckpointMessage[],
 	hash: string,
-): { message: CheckpointMessage; fullHash: string } | null {
+): { message: CheckpointMessage; hash: string } | null {
 	const lowerHash = hash.toLowerCase()
 
-	// Try exact match first
 	const exactMatch = checkpoints.find((cp) => cp.text?.toLowerCase() === lowerHash)
 	if (exactMatch && exactMatch.text) {
-		return { message: exactMatch, fullHash: exactMatch.text }
+		return { message: exactMatch, hash: exactMatch.text }
 	}
 
 	return null
@@ -140,7 +140,7 @@ async function handleRestore(context: CommandContext, hash: string): Promise<voi
 		return
 	}
 
-	const { message, fullHash } = result
+	const { message, hash: fullHash } = result
 
 	// Count messages that will be removed
 	const currentIndex = chatMessages.findIndex((msg) => msg.ts === message.ts)
@@ -149,9 +149,8 @@ async function handleRestore(context: CommandContext, hash: string): Promise<voi
 	logs.info("Preparing to restore checkpoint", "checkpoint", { fullHash, messagesToRemove })
 
 	// Send request to extension to create ask message and handle approval
-	const shortHash = fullHash.substring(0, 8)
 	const confirmLines = [
-		`**Warning:** This will revert to checkpoint ${shortHash}`,
+		`**Warning:** This will revert to checkpoint ${fullHash}`,
 		"",
 		"This action will:",
 		`  - Perform a git hard reset (all uncommitted changes will be lost)`,
@@ -171,7 +170,7 @@ async function handleRestore(context: CommandContext, hash: string): Promise<voi
 		},
 	})
 
-	logs.info("Sent checkpoint restore approval request to extension", "checkpoint", { shortHash })
+	logs.info("Sent checkpoint restore approval request to extension", "checkpoint", { fullHash })
 }
 
 /**
@@ -198,17 +197,16 @@ async function provideCheckpointHashes(context: ArgumentProviderContext): Promis
 
 	return checkpoints.map((cp, index) => {
 		const hash = cp.text || ""
-		const shortHash = hash.substring(0, 8)
 		const timestamp = formatTimestamp(cp.ts)
 		const isSuppressed = cp.metadata?.suppressMessage === true
 		const label = isSuppressed ? " (auto-saved)" : ""
 
 		return {
 			value: hash,
-			title: `${shortHash} - ${timestamp}${label}`,
+			title: `${hash} - ${timestamp}${label}`,
 			description: hash,
 			matchScore: 100 - index, // Recent first
-			highlightedValue: shortHash,
+			highlightedValue: hash,
 		}
 	})
 }
