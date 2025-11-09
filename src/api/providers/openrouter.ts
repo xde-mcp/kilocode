@@ -280,7 +280,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 					"reasoning_details" in delta &&
 					delta.reasoning_details &&
 					// @ts-ignore-next-line
-					delta.reasoning_details.length && // exists and non-0
 					!shouldSkipReasoningForModel(this.options.openRouterModelId)
 				) {
 					yield {
