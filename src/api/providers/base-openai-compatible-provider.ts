@@ -137,10 +137,12 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
+	// kilocode_change: Add systemPrompt parameter for gatekeeper
 	async completePrompt(prompt: string, systemPrompt?: string): Promise<string> {
 		const { id: modelId } = this.getModel()
 
 		try {
+			// kilocode_change start: Support system prompt
 			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
 
 			if (systemPrompt) {
@@ -148,6 +150,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			}
 
 			messages.push({ role: "user", content: prompt })
+			// kilocode_change end
 
 			const response = await this.client.chat.completions.create({
 				model: modelId,

@@ -2013,7 +2013,7 @@ ${prompt}
 			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
 			yoloMode, // kilocode_change
-			yoloGatekeeperApiConfigId,
+			yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 		} = await this.getState()
 
 		// kilocode_change start: Get active model for virtual quota fallback UI display

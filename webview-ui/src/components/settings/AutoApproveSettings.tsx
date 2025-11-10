@@ -95,7 +95,7 @@ export const AutoApproveSettings = ({
 	const { t } = useAppTranslation()
 	const [commandInput, setCommandInput] = useState("")
 	const [deniedCommandInput, setDeniedCommandInput] = useState("")
-	const { autoApprovalEnabled, setAutoApprovalEnabled, listApiConfigMeta } = useExtensionState()
+	const { autoApprovalEnabled, setAutoApprovalEnabled, listApiConfigMeta } = useExtensionState() // kilocode_change: Add listApiConfigMeta for gatekeeper
 
 	const toggles = useAutoApprovalToggles()
 
@@ -465,6 +465,7 @@ export const AutoApproveSettings = ({
 						</p>
 					</div>
 
+					{/* kilocode_change start: AI gatekeeper for YOLO mode */}
 					{yoloMode && (
 						<div className="mt-4 pl-6 border-l-2 border-yellow-500/50">
 							<label className="block font-medium mb-1">AI Safety Gatekeeper (Optional)</label>
@@ -499,6 +500,7 @@ export const AutoApproveSettings = ({
 							</div>
 						</div>
 					)}
+					{/* kilocode_change end */}
 				</div>
 			</Section>
 			{/* kilocode_change end */}

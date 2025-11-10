@@ -6,7 +6,7 @@ import { TelemetryService } from "@roo-code/telemetry"
 
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import type { ToolParamName, ToolResponse } from "../../shared/tools"
-import { evaluateGatekeeperApproval } from "./gatekeeperApproval"
+import { evaluateGatekeeperApproval } from "./gatekeeperApproval" // kilocode_change: AI gatekeeper for YOLO mode
 
 import { fetchInstructionsTool } from "../tools/fetchInstructionsTool"
 import { listFilesTool } from "../tools/listFilesTool"
@@ -312,7 +312,7 @@ export async function presentAssistantMessage(cline: Task) {
 				progressStatus?: ToolProgressStatus,
 				isProtected?: boolean,
 			) => {
-				// kilocode_change start: yolo mode with AI gatekeeper
+				// kilocode_change start: YOLO mode with AI gatekeeper
 				const state = await cline.providerRef.deref()?.getState()
 				if (state?.yoloMode) {
 					// If gatekeeper is configured, use it to evaluate the approval
