@@ -149,6 +149,7 @@ const __dirname = __dirname__(__filename);
 		"simple-git",
 		"socket.io-client",
 		"sound-play",
+		"sqlite3",
 		"stream-json",
 		"strip-bom",
 		"tiktoken",

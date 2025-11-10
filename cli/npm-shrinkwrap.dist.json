@@ -1,12 +1,12 @@
 {
 	"name": "@kilocode/cli",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"lockfileVersion": 3,
 	"requires": true,
 	"packages": {
 		"": {
 			"name": "@kilocode/cli",
-			"version": "0.1.2",
+			"version": "0.2.0",
 			"license": "Apache-2.0",
 			"dependencies": {
 				"@anthropic-ai/bedrock-sdk": "^0.22.0",
@@ -6994,6 +6994,16 @@
 				"node": ">= 0.8"
 			}
 		},
+		"node_modules/encoding": {
+			"version": "0.1.13",
+			"resolved": "https://registry.npmjs.org/encoding/-/encoding-0.1.13.tgz",
+			"integrity": "sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==",
+			"license": "MIT",
+			"optional": true,
+			"dependencies": {
+				"iconv-lite": "^0.6.2"
+			}
+		},
 		"node_modules/encoding-sniffer": {
 			"version": "0.2.1",
 			"resolved": "https://registry.npmjs.org/encoding-sniffer/-/encoding-sniffer-0.2.1.tgz",
@@ -7786,6 +7796,12 @@
 			"engines": {
 				"node": ">= 0.8"
 			}
+		},
+		"node_modules/fs-constants": {
+			"version": "1.0.0",
+			"resolved": "https://registry.npmjs.org/fs-constants/-/fs-constants-1.0.0.tgz",
+			"integrity": "sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow==",
+			"license": "MIT"
 		},
 		"node_modules/fs-constants": {
 			"version": "1.0.0",
