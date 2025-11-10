@@ -93,7 +93,6 @@ describe("GhostServiceManager", () => {
 
 		const context: GhostSuggestionContext = {
 			document: mockDocument,
-			openFiles: [mockDocument],
 		}
 
 		return { testUri, context, mockDocument }
@@ -126,10 +125,9 @@ describe("GhostServiceManager", () => {
 			const initialContent = `console.log('test');`
 			const { mockDocument } = await setupTestDocument("missing.js", initialContent)
 
-			// Create context without the file in openFiles
+			// Create context without the file
 			const context: GhostSuggestionContext = {
 				document: mockDocument,
-				openFiles: [],
 			}
 
 			const completionResponse = `<COMPLETION>// Added comment
