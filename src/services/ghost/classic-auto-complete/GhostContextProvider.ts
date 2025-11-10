@@ -34,6 +34,9 @@ export class GhostContextProvider {
 		const filepathUri = filepath.startsWith("file://") ? filepath : vscode.Uri.file(filepath).toString()
 
 		// Initialize import definitions cache
+		// this looks like a race, but the contextService only prefetches data here; it's not a mode switch.
+		// This odd-looking API seems to be an optimization that's used in continue but not (currently) in our codebase,
+		// continue preloads the tree-sitter parse on text editor tab switch to reduce autocomplete latency.
 		await this.contextService.initializeForFile(filepathUri)
 
 		// Create helper with URI filepath
