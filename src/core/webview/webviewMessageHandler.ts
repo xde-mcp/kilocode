@@ -1889,6 +1889,10 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("condensingApiConfigId", message.text)
 			await provider.postStateToWebview()
 			break
+		case "yoloGatekeeperApiConfigId": // kilocode_change: AI gatekeeper for YOLO mode
+			await updateGlobalState("yoloGatekeeperApiConfigId", message.text)
+			await provider.postStateToWebview()
+			break
 		case "updateCondensingPrompt":
 			// Store the condensing prompt in customSupportPrompts["CONDENSE"] instead of customCondensingPrompt
 			const currentSupportPrompts = getGlobalState("customSupportPrompts") ?? {}

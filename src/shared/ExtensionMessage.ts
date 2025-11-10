@@ -370,6 +370,7 @@ export type ExtensionState = Pick<
 	| "autoPurgeLastRunTimestamp" // kilocode_change
 	| "condensingApiConfigId"
 	| "customCondensingPrompt"
+	| "yoloGatekeeperApiConfigId" // kilocode_change: AI gatekeeper for YOLO mode
 	| "codebaseIndexConfig"
 	| "codebaseIndexModels"
 	| "profileThresholds"
