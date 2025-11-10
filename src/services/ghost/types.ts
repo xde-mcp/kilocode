@@ -166,26 +166,3 @@ export function vscodePositionToPosition(pos: vscode.Position): Position {
 		character: pos.character,
 	}
 }
-
-/**
- * Convert GhostSuggestionContext to AutocompleteInput
- */
-export function contextToAutocompleteInput(context: GhostSuggestionContext): AutocompleteInput {
-	const position = context.range?.start ?? context.document.positionAt(0)
-	const { prefix, suffix } = extractPrefixSuffix(context.document, position)
-
-	// Get recently visited and edited ranges from context, with empty arrays as fallback
-	const recentlyVisitedRanges = context.recentlyVisitedRanges ?? []
-	const recentlyEditedRanges = context.recentlyEditedRanges ?? []
-
-	return {
-		isUntitledFile: context.document.isUntitled,
-		completionId: crypto.randomUUID(),
-		filepath: context.document.uri.fsPath,
-		pos: vscodePositionToPosition(position),
-		recentlyVisitedRanges,
-		recentlyEditedRanges,
-		manuallyPassFileContents: undefined,
-		manuallyPassPrefix: prefix,
-	}
-}
