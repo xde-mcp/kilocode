@@ -8,14 +8,17 @@ import { getDefinitionsFromLsp } from "../../continuedev/core/vscode-test-harnes
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameters"
 import { getSnippets } from "../../continuedev/core/autocomplete/templating/filtering"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
+import { GhostModel } from "../GhostModel"
 
 export class GhostContextProvider {
 	private contextService: ContextRetrievalService
 	private ide: VsCodeIde
+	private model: GhostModel
 
-	constructor(context: vscode.ExtensionContext) {
+	constructor(context: vscode.ExtensionContext, model: GhostModel) {
 		this.ide = new VsCodeIde(context)
 		this.contextService = new ContextRetrievalService(this.ide)
+		this.model = model
 	}
 
 	/**
@@ -45,7 +48,8 @@ export class GhostContextProvider {
 			filepath: filepathUri,
 		}
 
-		const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, "codestral", this.ide)
+		const modelName = this.model.getModelName() ?? "codestral"
+		const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, modelName, this.ide)
 
 		const snippetPayload = await getAllSnippetsWithoutRace({
 			helper,

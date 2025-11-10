@@ -49,7 +49,7 @@ export class GhostServiceManager {
 		this.documentStore = new GhostDocumentStore()
 		this.model = new GhostModel()
 		this.ghostContext = new GhostContext(this.documentStore)
-		this.ghostContextProvider = new GhostContextProvider(context)
+		this.ghostContextProvider = new GhostContextProvider(context, this.model)
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()

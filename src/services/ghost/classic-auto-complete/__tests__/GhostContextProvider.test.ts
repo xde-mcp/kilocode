@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest"
 import { GhostContextProvider } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
+import { GhostModel } from "../../GhostModel"
 import * as vscode from "vscode"
 import crypto from "crypto"
 
@@ -91,6 +92,7 @@ function createAutocompleteInput(filepath: string = "/test.ts"): AutocompleteInp
 describe("GhostContextProvider", () => {
 	let contextProvider: GhostContextProvider
 	let mockContext: vscode.ExtensionContext
+	let mockModel: GhostModel
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -102,7 +104,11 @@ describe("GhostContextProvider", () => {
 			},
 		} as any
 
-		contextProvider = new GhostContextProvider(mockContext)
+		mockModel = {
+			getModelName: vi.fn().mockReturnValue("codestral"),
+		} as any
+
+		contextProvider = new GhostContextProvider(mockContext, mockModel)
 	})
 
 	describe("getFormattedContext", () => {
