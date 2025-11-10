@@ -117,7 +117,9 @@ describe("MiniMaxHandler", () => {
 				minimaxApiKey: "test-minimax-api-key",
 				minimaxBaseUrl: "https://api.minimaxi.com/anthropic", // kilocode_change: anthropic
 			})
-			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ baseURL: "https://api.minimaxi.com/v1" }))
+			expect(OpenAI).toHaveBeenCalledWith(
+				expect.objectContaining({ baseURL: "https://api.minimaxi.com/anthropic" }), // kilocode_change: anthropic
+			)
 		})
 
 		it("should use the provided API key for China", () => {
