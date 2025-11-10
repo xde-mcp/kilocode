@@ -85,6 +85,7 @@ export class GhostServiceManager {
 
 	public async load() {
 		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
+			enableAutoTrigger: true,
 			enableQuickInlineTaskKeybinding: true,
 			enableSmartInlineTaskKeybinding: true,
 		}
