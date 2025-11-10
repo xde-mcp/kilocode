@@ -29,9 +29,11 @@ async function main() {
 		format: "cjs",
 		sourcesContent: false,
 		platform: "node",
+		// kilocode_change start: for ps-list
 		banner: {
 			js: "const __importMetaUrl = typeof __filename !== 'undefined' ? require('url').pathToFileURL(__filename).href : undefined;",
 		},
+		// kilocode_change end
 	}
 
 	const srcDir = __dirname
