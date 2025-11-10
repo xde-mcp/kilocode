@@ -168,16 +168,6 @@ export function vscodePositionToPosition(pos: vscode.Position): Position {
 }
 
 /**
- * Convert VSCode Range to our Range type
- */
-export function vscodeRangeToRange(range: vscode.Range): Range {
-	return {
-		start: vscodePositionToPosition(range.start),
-		end: vscodePositionToPosition(range.end),
-	}
-}
-
-/**
  * Convert GhostSuggestionContext to AutocompleteInput
  */
 export function contextToAutocompleteInput(context: GhostSuggestionContext): AutocompleteInput {
