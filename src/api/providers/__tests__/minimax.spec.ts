@@ -1,6 +1,7 @@
+// kilocode_change - file added
 // npx vitest run src/api/providers/__tests__/minimax.spec.ts
 
-import { MiniMaxHandler } from "../minimax"
+import { MiniMaxAnthropicHandler } from "../minimax-anthropic"
 import { ApiHandlerOptions } from "../../../shared/api"
 import {
 	minimaxDefaultModelId,
@@ -72,7 +73,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 const mockAnthropicConstructor = vitest.mocked(Anthropic)
 
 describe("MiniMaxHandler", () => {
-	let handler: MiniMaxHandler
+	let handler: MiniMaxAnthropicHandler
 	let mockOptions: ApiHandlerOptions
 
 	beforeEach(() => {
@@ -81,17 +82,17 @@ describe("MiniMaxHandler", () => {
 			minimaxApiKey: "test-minimax-api-key",
 			apiModelId: minimaxDefaultModelId,
 		}
-		handler = new MiniMaxHandler(mockOptions)
+		handler = new MiniMaxAnthropicHandler(mockOptions)
 	})
 
 	describe("constructor", () => {
 		it("should initialize with provided options", () => {
-			expect(handler).toBeInstanceOf(MiniMaxHandler)
+			expect(handler).toBeInstanceOf(MiniMaxAnthropicHandler)
 			expect(handler.getModel().id).toBe(minimaxDefaultModelId)
 		})
 
 		it("should use default international base URL", () => {
-			new MiniMaxHandler(mockOptions)
+			new MiniMaxAnthropicHandler(mockOptions)
 			expect(mockAnthropicConstructor).toHaveBeenCalledWith(
 				expect.objectContaining({
 					baseURL: "https://api.minimax.io/anthropic",
@@ -102,7 +103,7 @@ describe("MiniMaxHandler", () => {
 
 		it("should use custom base URL if provided", () => {
 			const customBaseUrl = "https://api.minimaxi.com/anthropic"
-			new MiniMaxHandler({
+			new MiniMaxAnthropicHandler({
 				...mockOptions,
 				minimaxBaseUrl: customBaseUrl,
 			})
@@ -115,7 +116,7 @@ describe("MiniMaxHandler", () => {
 
 		it("should use China base URL when provided", () => {
 			const chinaBaseUrl = "https://api.minimaxi.com/anthropic"
-			new MiniMaxHandler({
+			new MiniMaxAnthropicHandler({
 				...mockOptions,
 				minimaxBaseUrl: chinaBaseUrl,
 			})
@@ -128,11 +129,11 @@ describe("MiniMaxHandler", () => {
 		})
 
 		it("should initialize without API key", () => {
-			const handlerWithoutKey = new MiniMaxHandler({
+			const handlerWithoutKey = new MiniMaxAnthropicHandler({
 				...mockOptions,
 				minimaxApiKey: undefined,
 			})
-			expect(handlerWithoutKey).toBeInstanceOf(MiniMaxHandler)
+			expect(handlerWithoutKey).toBeInstanceOf(MiniMaxAnthropicHandler)
 		})
 	})
 
@@ -240,7 +241,7 @@ describe("MiniMaxHandler", () => {
 
 	describe("getModel", () => {
 		it("should return default model if no model ID is provided", () => {
-			const handlerWithoutModel = new MiniMaxHandler({
+			const handlerWithoutModel = new MiniMaxAnthropicHandler({
 				...mockOptions,
 				apiModelId: undefined,
 			})

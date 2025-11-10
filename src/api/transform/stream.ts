@@ -7,14 +7,14 @@ export type ApiStreamChunk =
 	// kilocode_change start
 	| ApiStreamNativeToolCallsChunk
 	| ApiStreamReasoningDetailsChunk
+	| ApiStreamAnthropicThinkingChunk
+	| ApiStreamAnthropicRedactedThinkingChunk
 	// kilocode_change end
 	| ApiStreamTextChunk
 	| ApiStreamUsageChunk
 	| ApiStreamReasoningChunk
 	| ApiStreamGroundingChunk
 	| ApiStreamError
-	| ApiStreamAnthropicThinkingChunk
-	| ApiStreamAnthropicRedactedThinkingChunk
 
 export interface ApiStreamError {
 	type: "error"

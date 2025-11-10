@@ -229,8 +229,8 @@ export const SECRET_STATE_KEYS = [
 	"deepInfraApiKey",
 	"codeIndexOpenAiKey",
 	"codeIndexQdrantApiKey",
-	"minimaxApiKey",
 	// kilocode_change start
+	"minimaxApiKey",
 	"kilocodeToken",
 	"syntheticApiKey",
 	"ovhCloudAiEndpointsApiKey",

@@ -1,3 +1,4 @@
+// kilocode_change - file added
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
@@ -20,7 +21,7 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { calculateApiCostAnthropic } from "../../shared/cost"
 
-export class MiniMaxHandler extends BaseProvider implements SingleCompletionHandler {
+export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompletionHandler {
 	private options: ApiHandlerOptions
 	private client: Anthropic
 

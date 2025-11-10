@@ -33,6 +33,9 @@ import {
 	// kilocode_change start
 	VirtualQuotaFallbackHandler,
 	GeminiCliHandler,
+	SyntheticHandler,
+	OVHcloudAIEndpointsHandler,
+	MiniMaxHandler,
 	// kilocode_change end
 	ClaudeCodeHandler,
 	QwenCodeHandler,
@@ -41,13 +44,10 @@ import {
 	DoubaoHandler,
 	ZAiHandler,
 	FireworksHandler,
-	MiniMaxHandler,
-	SyntheticHandler, // kilocode_change
 	RooHandler,
 	FeatherlessHandler,
 	VercelAiGatewayHandler,
 	DeepInfraHandler,
-	OVHcloudAIEndpointsHandler, // kilocode_change
 } from "./providers"
 // kilocode_change start
 import { KilocodeOpenrouterHandler } from "./providers/kilocode-openrouter"

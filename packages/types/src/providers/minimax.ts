@@ -1,3 +1,4 @@
+// kilocode_change - file added
 import type { ModelInfo } from "../model.js"
 
 // Minimax

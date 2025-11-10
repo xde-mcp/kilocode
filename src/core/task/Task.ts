@@ -2066,14 +2066,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				let reasoningMessage = ""
 				let pendingGroundingSources: GroundingSource[] = []
 				this.isStreaming = true
-				const antThinkingContent: (
-					| Anthropic.Messages.RedactedThinkingBlock
-					| Anthropic.Messages.ThinkingBlock
-				)[] = []
 
 				// kilocode_change start
 				const assistantToolUses = new Array<Anthropic.Messages.ToolUseBlockParam>()
 				const reasoningDetails = new Array<ReasoningDetail>()
+				const antThinkingContent = new Array<
+					Anthropic.Messages.RedactedThinkingBlock | Anthropic.Messages.ThinkingBlock
+				>()
 				// kilocode_change end
 
 				try {
@@ -2151,6 +2150,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								presentAssistantMessage(this)
 								break
 							}
+							case "ant_thinking":
+								antThinkingContent.push({
+									type: "thinking",
+									thinking: chunk.thinking,
+									signature: chunk.signature,
+								})
+								break
+							case "ant_redacted_thinking":
+								antThinkingContent.push({
+									type: "redacted_thinking",
+									data: chunk.data,
+								})
+								break
 							// kilocode_change end
 							case "text": {
 								assistantMessage += chunk.text
@@ -2169,19 +2181,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								presentAssistantMessage(this)
 								break
 							}
-							case "ant_thinking":
-								antThinkingContent.push({
-									type: "thinking",
-									thinking: chunk.thinking,
-									signature: chunk.signature,
-								})
-								break
-							case "ant_redacted_thinking":
-								antThinkingContent.push({
-									type: "redacted_thinking",
-									data: chunk.data,
-								})
-								break
 						}
 
 						if (this.abort) {

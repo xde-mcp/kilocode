@@ -22,7 +22,13 @@ import {
 	geminiCliDefaultModelId,
 	deepSeekDefaultModelId,
 	moonshotDefaultModelId,
+	// kilocode_change start
 	minimaxDefaultModelId,
+	syntheticDefaultModelId,
+	ovhCloudAiEndpointsDefaultModelId,
+	inceptionDefaultModelId,
+	nativeFunctionCallingProviders,
+	// kilocode_change end
 	mistralDefaultModelId,
 	xaiDefaultModelId,
 	groqDefaultModelId,
@@ -34,15 +40,11 @@ import {
 	internationalZAiDefaultModelId,
 	mainlandZAiDefaultModelId,
 	fireworksDefaultModelId,
-	syntheticDefaultModelId, // kilocode_change
 	featherlessDefaultModelId,
 	ioIntelligenceDefaultModelId,
 	rooDefaultModelId,
 	vercelAiGatewayDefaultModelId,
 	deepInfraDefaultModelId,
-	ovhCloudAiEndpointsDefaultModelId, // kilocode_change
-	inceptionDefaultModelId, // kilocode_change
-	nativeFunctionCallingProviders, // kilocode_change: Added import for native function calling providers
 } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
@@ -104,9 +106,9 @@ import {
 	Synthetic,
 	OvhCloudAiEndpoints,
 	Inception,
+	MiniMax,
 	// kilocode_change end
 	ZAi,
-	MiniMax,
 	Fireworks,
 	Featherless,
 	VercelAiGateway,
@@ -401,12 +403,8 @@ const ApiOptions = ({
 							? mainlandZAiDefaultModelId
 							: internationalZAiDefaultModelId,
 				},
-				minimax: { field: "apiModelId", default: minimaxDefaultModelId },
 				fireworks: { field: "apiModelId", default: fireworksDefaultModelId },
-				synthetic: { field: "apiModelId", default: syntheticDefaultModelId }, // kilocode_change
 				featherless: { field: "apiModelId", default: featherlessDefaultModelId },
-				ovhcloud: { field: "ovhCloudAiEndpointsModelId", default: ovhCloudAiEndpointsDefaultModelId }, // kilocode_change
-				inception: { field: "inceptionLabsModelId", default: inceptionDefaultModelId }, // kilocode_change
 				"io-intelligence": { field: "ioIntelligenceModelId", default: ioIntelligenceDefaultModelId },
 				roo: { field: "apiModelId", default: rooDefaultModelId },
 				"vercel-ai-gateway": { field: "vercelAiGatewayModelId", default: vercelAiGatewayDefaultModelId },
@@ -416,6 +414,10 @@ const ApiOptions = ({
 				// kilocode_change start
 				kilocode: { field: "kilocodeModel", default: kilocodeDefaultModel },
 				"gemini-cli": { field: "apiModelId", default: geminiCliDefaultModelId },
+				minimax: { field: "apiModelId", default: minimaxDefaultModelId },
+				synthetic: { field: "apiModelId", default: syntheticDefaultModelId },
+				ovhcloud: { field: "ovhCloudAiEndpointsModelId", default: ovhCloudAiEndpointsDefaultModelId },
+				inception: { field: "inceptionLabsModelId", default: inceptionDefaultModelId },
 				// kilocode_change end
 			}
 
@@ -701,10 +703,6 @@ const ApiOptions = ({
 				<XAI apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
-			{selectedProvider === "minimax" && (
-				<MiniMax apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
-			)}
-
 			{selectedProvider === "groq" && (
 				<Groq apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
@@ -728,6 +726,10 @@ const ApiOptions = ({
 					organizationAllowList={organizationAllowList}
 					modelValidationError={modelValidationError}
 				/>
+			)}
+
+			{selectedProvider === "minimax" && (
+				<MiniMax apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
 			{selectedProvider === "gemini-cli" && (

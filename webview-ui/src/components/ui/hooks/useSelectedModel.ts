@@ -21,6 +21,8 @@ import {
 	syntheticDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
+	minimaxDefaultModelId,
+	minimaxModels,
 	// kilocode_change end
 	mistralDefaultModelId,
 	mistralModels,
@@ -65,8 +67,6 @@ import {
 	vercelAiGatewayDefaultModelId,
 	BEDROCK_1M_CONTEXT_MODEL_IDS,
 	deepInfraDefaultModelId,
-	minimaxDefaultModelId,
-	minimaxModels,
 } from "@roo-code/types"
 
 import type { ModelRecord, RouterModels } from "@roo/api"

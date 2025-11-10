@@ -58,7 +58,7 @@ describe("checkExistKey", () => {
 			vsCodeLmModelSelector: undefined,
 			requestyApiKey: undefined,
 			unboundApiKey: undefined,
-			minimaxApiKey: undefined,
+			minimaxApiKey: undefined, // kilocode_change
 		}
 		expect(checkExistKey(config)).toBe(false)
 	})
