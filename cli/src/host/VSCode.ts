@@ -1649,25 +1649,29 @@ export class WindowAPI {
 
 				// Call resolveWebviewView immediately with initialization context
 				// No setTimeout needed - use event-based synchronization instead
-				try {
-					// Pass isInitialSetup flag in context to prevent task abortion
-					const context = {
-						preserveFocus: false,
-						isInitialSetup: extensionHost.isInInitialSetup(),
+				;(async () => {
+					try {
+						// Pass isInitialSetup flag in context to prevent task abortion
+						const context = {
+							preserveFocus: false,
+							isInitialSetup: extensionHost.isInInitialSetup(),
+						}
+
+						logs.debug(
+							`Calling resolveWebviewView with isInitialSetup=${context.isInitialSetup}`,
+							"VSCode.Window",
+						)
+
+						// Await the result to ensure webview is fully initialized before marking ready
+						await provider.resolveWebviewView(mockWebviewView, context, {})
+
+						// Mark webview as ready after resolution completes
+						extensionHost.markWebviewReady()
+						logs.debug("Webview resolution complete, marked as ready", "VSCode.Window")
+					} catch (error) {
+						logs.error("Error resolving webview view", "VSCode.Window", { error })
 					}
-
-					logs.debug(
-						`Calling resolveWebviewView with isInitialSetup=${context.isInitialSetup}`,
-						"VSCode.Window",
-					)
-					provider.resolveWebviewView(mockWebviewView, context, {})
-
-					// Mark webview as ready after resolution completes
-					extensionHost.markWebviewReady()
-					logs.debug("Webview resolution complete, marked as ready", "VSCode.Window")
-				} catch (error) {
-					logs.error("Error resolving webview view", "VSCode.Window", { error })
-				}
+				})()
 			}
 		}
 		return {

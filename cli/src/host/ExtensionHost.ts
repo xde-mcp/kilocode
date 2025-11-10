@@ -52,11 +52,6 @@ export class ExtensionHost extends EventEmitter {
 		// Increase max listeners to avoid warnings in tests
 		process.setMaxListeners(20)
 		this.setupGlobalErrorHandlers()
-
-		// Create a promise that will be resolved when the webview provider is registered
-		this.webviewProviderReady = new Promise((resolve) => {
-			this.webviewProviderReadyResolve = resolve
-		})
 	}
 
 	/**
@@ -904,14 +899,6 @@ export class ExtensionHost extends EventEmitter {
 	registerWebviewProvider(viewId: string, provider: any): void {
 		this.webviewProviders.set(viewId, provider)
 		logs.info(`Webview provider registered: ${viewId}`, "ExtensionHost")
-
-		// Resolve the ready promise to unblock any waiting messages
-		if (this.webviewProviderReadyResolve) {
-			this.webviewProviderReadyResolve()
-			this.webviewProviderReadyResolve = null
-			this.webviewProviderReady = null
-			logs.info("Webview provider ready signal sent", "ExtensionHost")
-		}
 	}
 
 	unregisterWebviewProvider(viewId: string): void {
