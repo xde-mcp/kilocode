@@ -11,7 +11,6 @@ import {
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions, ModelRecord } from "../../shared/api"
-import { shouldSkipReasoningForModel } from "../../utils/model-utils"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStreamChunk } from "../transform/stream"
 import { convertToR1Format } from "../transform/r1-format"
@@ -44,6 +43,7 @@ type OpenRouterProviderParams = {
 
 import { safeJsonParse } from "../../shared/safeJsonParse"
 import { isAnyRecognizedKiloCodeError } from "../../shared/kilocode/errorUtils"
+import { ReasoningDetail } from "../transform/kilocode/reasoning-details"
 // kilocode_change end
 
 import { handleOpenAIError } from "./utils/openai-error-handler"
@@ -274,21 +274,16 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 					yield { type: "reasoning", text: delta.reasoning }
 				}
 
+				// kilocode_change start
+
 				// OpenRouter passes reasoning details that we can pass back unmodified in api requests to preserve reasoning traces for model
 				// See: https://openrouter.ai/docs/use-cases/reasoning-tokens#preserving-reasoning-blocks
-				if (
-					"reasoning_details" in delta &&
-					delta.reasoning_details &&
-					// @ts-ignore-next-line
-					!shouldSkipReasoningForModel(this.options.openRouterModelId)
-				) {
+				if (delta && "reasoning_details" in delta && delta.reasoning_details) {
 					yield {
 						type: "reasoning_details",
-						reasoning_details: delta.reasoning_details,
+						reasoning_details: delta.reasoning_details as ReasoningDetail,
 					}
 				}
-
-				// kilocode_change start
 				if (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string") {
 					yield { type: "reasoning", text: delta.reasoning_content }
 				}
