@@ -20,7 +20,7 @@ function truncatePrefix(input: string, safety: number = 100): string {
 }
 
 export class AutocompleteLruCacheInMem {
-	private static capacity = 1000
+	private static capacity = 100
 	private cache: LRUCache<string, string>
 
 	private constructor() {
