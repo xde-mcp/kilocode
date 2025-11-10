@@ -275,7 +275,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 					switch (chunk.delta.type) {
 						case "thinking_delta":
 							yield { type: "reasoning", text: chunk.delta.thinking }
-							thinkingDeltaAccumulator += chunk.delta.thinking
+							thinkingDeltaAccumulator += chunk.delta.thinking // kilocode_change
 							break
 
 						// kilocode_change start
