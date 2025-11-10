@@ -125,7 +125,12 @@ export class StrategyTester {
 			recentlyEditedRanges: [],
 		}
 
-		const { systemPrompt, userPrompt } = this.holeFiller.getPrompts(autocompleteInput, prefix, suffix, languageId)
+		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(
+			autocompleteInput,
+			prefix,
+			suffix,
+			languageId,
+		)
 
 		const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
 
