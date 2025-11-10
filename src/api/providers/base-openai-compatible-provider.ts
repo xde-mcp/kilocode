@@ -154,7 +154,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
 			const response = await this.client.chat.completions.create({
 				model: modelId,
-				messages,
+				messages, // kilocode_change
 			})
 
 			return response.choices[0]?.message.content || ""

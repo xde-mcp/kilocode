@@ -377,7 +377,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			model: modelId,
 			max_tokens: maxTokens,
 			temperature,
-			messages,
+			messages, // kilocode_change
 			stream: false,
 			...this.getProviderParams(), // kilocode_change: original expression was moved into function
 			...(reasoning && { reasoning }),
