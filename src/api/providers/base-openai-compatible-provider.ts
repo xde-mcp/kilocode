@@ -131,8 +131,9 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		)
 
 		for await (const chunk of stream) {
-			verifyFinishReason(chunk.choices[0]) // kilocode_change
-			const delta = chunk.choices[0]?.delta
+			verifyFinishReason(chunk.choices?.[0]) // kilocode_change
+
+			const delta = chunk.choices?.[0]?.delta
 
 			yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
 
