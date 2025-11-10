@@ -17,13 +17,13 @@ import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 
 export class GhostServiceManager {
 	private static instance: GhostServiceManager | null = null
-	private documentStore: GhostDocumentStore
-	private model: GhostModel
-	private cline: ClineProvider
-	private context: vscode.ExtensionContext
+	private readonly documentStore: GhostDocumentStore
+	private readonly model: GhostModel
+	private readonly cline: ClineProvider
+	private readonly context: vscode.ExtensionContext
 	private settings: GhostServiceSettings | null = null
-	private ghostContext: GhostContext
-	private ghostContextProvider: GhostContextProvider
+	private readonly ghostContext: GhostContext
+	private readonly ghostContextProvider: GhostContextProvider
 
 	private taskId: string | null = null
 	private isProcessing: boolean = false
@@ -34,8 +34,8 @@ export class GhostServiceManager {
 	private lastCompletionCost: number = 0
 
 	// VSCode Providers
-	public codeActionProvider: GhostCodeActionProvider
-	public inlineCompletionProvider: GhostInlineCompletionProvider
+	public readonly codeActionProvider: GhostCodeActionProvider
+	public readonly inlineCompletionProvider: GhostInlineCompletionProvider
 	//private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
