@@ -135,7 +135,7 @@ export const AutoApproveSettings = ({
 					<div className="bg-yellow-500/10 border border-yellow-500/30 rounded p-3 flex items-center gap-2">
 						<span className="text-lg">⚡</span>
 						<span className="text-sm font-medium text-yellow-500">
-							YOLO Mode is active - all auto-approval settings above are overridden
+							YOLO Mode is active - all auto-approval settings below are overridden
 						</span>
 					</div>
 				</Section>
