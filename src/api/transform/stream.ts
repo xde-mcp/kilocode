@@ -7,6 +7,8 @@ export type ApiStreamChunk =
 	// kilocode_change start
 	| ApiStreamNativeToolCallsChunk
 	| ApiStreamReasoningDetailsChunk
+	| ApiStreamAnthropicThinkingChunk
+	| ApiStreamAnthropicRedactedThinkingChunk
 	// kilocode_change end
 	| ApiStreamTextChunk
 	| ApiStreamUsageChunk
@@ -31,6 +33,17 @@ export interface ApiStreamReasoningChunk {
 }
 
 // kilocode_change start
+export interface ApiStreamAnthropicThinkingChunk {
+	type: "ant_thinking"
+	thinking: string
+	signature: string
+}
+
+export interface ApiStreamAnthropicRedactedThinkingChunk {
+	type: "ant_redacted_thinking"
+	data: string
+}
+
 export interface ApiStreamReasoningDetailsChunk {
 	type: "reasoning_details"
 	reasoning_details: ReasoningDetail
