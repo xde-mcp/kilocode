@@ -49,6 +49,7 @@ async function main() {
 	 * @type {import('esbuild').Plugin[]}
 	 */
 	const plugins = [
+		// kilocode_change start
 		{
 			name: "import-meta-url-plugin",
 			setup(build) {
@@ -65,6 +66,7 @@ async function main() {
 				})
 			},
 		},
+		// kilocode_change end
 		{
 			name: "copyFiles",
 			setup(build) {
