@@ -25,8 +25,6 @@ export class ExtensionHost extends EventEmitter {
 	private extensionAPI: any = null
 	private vscodeAPI: any = null
 	private webviewProviders: Map<string, any> = new Map()
-	private webviewProviderReady: Promise<void> | null = null
-	private webviewProviderReadyResolve: (() => void) | null = null
 	private webviewInitialized = false
 	private pendingMessages: WebviewMessage[] = []
 	private isInitialSetup = true
