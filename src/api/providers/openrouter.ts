@@ -359,14 +359,22 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		return { id, info, topP: isDeepSeekR1 ? 0.95 : undefined, ...params }
 	}
 
-	async completePrompt(prompt: string) {
+	async completePrompt(prompt: string, systemPrompt?: string) {
 		let { id: modelId, maxTokens, temperature, reasoning } = await this.fetchModel()
+
+		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
+
+		if (systemPrompt) {
+			messages.push({ role: "system", content: systemPrompt })
+		}
+
+		messages.push({ role: "user", content: prompt })
 
 		const completionParams: OpenRouterChatCompletionParams = {
 			model: modelId,
 			max_tokens: maxTokens,
 			temperature,
-			messages: [{ role: "user", content: prompt }],
+			messages,
 			stream: false,
 			...this.getProviderParams(), // kilocode_change: original expression was moved into function
 			...(reasoning && { reasoning }),

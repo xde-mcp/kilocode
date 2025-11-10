@@ -137,13 +137,21 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<string> {
 		const { id: modelId } = this.getModel()
 
 		try {
+			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
+
+			if (systemPrompt) {
+				messages.push({ role: "system", content: systemPrompt })
+			}
+
+			messages.push({ role: "user", content: prompt })
+
 			const response = await this.client.chat.completions.create({
 				model: modelId,
-				messages: [{ role: "user", content: prompt }],
+				messages,
 			})
 
 			return response.choices[0]?.message.content || ""
