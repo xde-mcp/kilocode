@@ -274,10 +274,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const context: GhostSuggestionContext = {
 				document,
-				editor: vscode.window.activeTextEditor,
-				openFiles: vscode.workspace.textDocuments?.filter((doc) => doc.uri.scheme === "file") ?? [],
 				range: new vscode.Range(position, position),
-				diagnostics: vscode.languages.getDiagnostics?.(document.uri) ?? [],
 				recentlyVisitedRanges,
 				recentlyEditedRanges,
 			}

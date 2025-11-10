@@ -22,7 +22,6 @@ export class GhostServiceManager {
 	private readonly ghostContextProvider: GhostContextProvider
 
 	private taskId: string | null = null
-	private isProcessing: boolean = false
 
 	// Status bar integration
 	private statusBar: GhostStatusBar | null = null
@@ -244,7 +243,6 @@ export class GhostServiceManager {
 	}
 
 	private async updateGlobalContext() {
-		await vscode.commands.executeCommand("setContext", "kilocode.ghost.isProcessing", this.isProcessing)
 		await vscode.commands.executeCommand(
 			"setContext",
 			"kilocode.ghost.enableQuickInlineTaskKeybinding",
@@ -337,13 +335,7 @@ export class GhostServiceManager {
 		}
 	}
 
-	private stopProcessing() {
-		this.isProcessing = false
-		this.updateGlobalContext()
-	}
-
 	public cancelRequest() {
-		this.stopProcessing()
 		// Check which provider is active and cancel appropriately
 		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
 		if (useNewAutocomplete) {
