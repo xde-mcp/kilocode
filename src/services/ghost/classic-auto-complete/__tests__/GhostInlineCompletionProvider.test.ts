@@ -7,7 +7,6 @@ import {
 import { FillInAtCursorSuggestion } from "../HoleFiller"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
-import { GhostContext } from "../../GhostContext"
 
 // Mock vscode InlineCompletionTriggerKind enum and event listeners
 vi.mock("vscode", async () => {
@@ -294,7 +293,6 @@ describe("GhostInlineCompletionProvider", () => {
 	let mockToken: vscode.CancellationToken
 	let mockModel: GhostModel
 	let mockCostTrackingCallback: CostTrackingCallback
-	let mockGhostContext: GhostContext
 	let mockSettings: { enableAutoTrigger: boolean } | null
 	let mockContextProvider: any
 
@@ -333,18 +331,10 @@ describe("GhostInlineCompletionProvider", () => {
 			}),
 		} as unknown as GhostModel
 		mockCostTrackingCallback = vi.fn() as CostTrackingCallback
-		mockGhostContext = {
-			generate: vi.fn().mockImplementation(async (ctx) => ({
-				...ctx,
-				document: ctx.document,
-				range: ctx.range,
-			})),
-		} as unknown as GhostContext
 
 		provider = new GhostInlineCompletionProvider(
 			mockModel,
 			mockCostTrackingCallback,
-			mockGhostContext,
 			() => mockSettings,
 			mockContextProvider,
 		)

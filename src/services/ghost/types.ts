@@ -29,21 +29,12 @@ export interface UserAction {
 	content?: string // The actual content that was added, deleted, or modified
 }
 
-export interface GhostDocumentStoreItem {
-	uri: string
-	document: vscode.TextDocument
-	history: string[]
-	lastParsedVersion?: number
-	recentActions?: UserAction[]
-}
-
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
 	editor?: vscode.TextEditor
 	openFiles?: vscode.TextDocument[]
 	range?: vscode.Range | vscode.Selection
 	userInput?: string
-	recentOperations?: UserAction[] // Stores meaningful user actions instead of raw diff
 	diagnostics?: vscode.Diagnostic[] // Document diagnostics (errors, warnings, etc.)
 	recentlyVisitedRanges?: AutocompleteCodeSnippet[] // Recently visited code snippets for context
 	recentlyEditedRanges?: RecentlyEditedRange[] // Recently edited ranges for context
@@ -229,38 +220,13 @@ export function contextToAutocompleteInput(context: GhostSuggestionContext): Aut
 	const recentlyVisitedRanges = context.recentlyVisitedRanges ?? []
 	const recentlyEditedRanges = context.recentlyEditedRanges ?? []
 
-	// Merge recently edited ranges from context operations with tracked ranges
-	const contextEditedRanges: RecentlyEditedRange[] =
-		context.recentOperations?.map((op) => {
-			const range: Range = op.lineRange
-				? {
-						start: { line: op.lineRange.start, character: 0 },
-						end: { line: op.lineRange.end, character: 0 },
-					}
-				: {
-						start: { line: 0, character: 0 },
-						end: { line: 0, character: 0 },
-					}
-
-			return {
-				filepath: context.document.uri.fsPath,
-				range,
-				timestamp: op.timestamp ?? Date.now(),
-				lines: op.content ? op.content.split("\n") : [],
-				symbols: new Set(op.affectedSymbol ? [op.affectedSymbol] : []),
-			}
-		}) ?? []
-
-	// Combine tracked recently edited ranges with context operations
-	const allRecentlyEditedRanges = [...recentlyEditedRanges, ...contextEditedRanges]
-
 	return {
 		isUntitledFile: context.document.isUntitled,
 		completionId: crypto.randomUUID(),
 		filepath: context.document.uri.fsPath,
 		pos: vscodePositionToPosition(position),
 		recentlyVisitedRanges,
-		recentlyEditedRanges: allRecentlyEditedRanges,
+		recentlyEditedRanges,
 		manuallyPassFileContents: undefined,
 		manuallyPassPrefix: prefix,
 	}
