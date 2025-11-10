@@ -1,6 +1,5 @@
 // kilocode_change - file added
 import { Anthropic } from "@anthropic-ai/sdk"
-import OpenAI from "openai"
 import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
 
 import {
@@ -20,6 +19,7 @@ import { getModelParams } from "../transform/model-params"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { calculateApiCostAnthropic } from "../../shared/cost"
+import { convertOpenAIToolsToAnthropic } from "./kilocode/nativeToolCallHelpers"
 
 export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompletionHandler {
 	private options: ApiHandlerOptions
@@ -35,21 +35,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		})
 	}
 
-	private convertOpenAIToolsToAnthropic(allowedTools?: OpenAI.Chat.ChatCompletionTool[]): Anthropic.ToolUnion[] {
-		if (!allowedTools) return []
-
-		return allowedTools
-			.filter((tool) => tool.type === "function" && "function" in tool && !!tool.function)
-			.map((tool) => {
-				const func = (tool as any).function
-				return {
-					name: func.name,
-					description: func.description || "",
-					input_schema: func.parameters || { type: "object", properties: {} },
-				}
-			})
-	}
-
 	async *createMessage(
 		systemPrompt: string,
 		messages: Anthropic.Messages.MessageParam[],
@@ -58,7 +43,12 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		let stream: AnthropicStream<Anthropic.Messages.RawMessageStreamEvent>
 		let { id: modelId, maxTokens } = this.getModel()
 
-		const nativeTools = this.convertOpenAIToolsToAnthropic(metadata?.allowedTools)
+		const tools =
+			(metadata?.allowedTools ?? []).length > 0
+				? convertOpenAIToolsToAnthropic(metadata?.allowedTools)
+				: undefined
+		const tool_choice = (tools ?? []).length > 0 ? { type: "any" as const } : undefined
+
 		stream = await this.client.messages.create({
 			model: modelId,
 			max_tokens: maxTokens ?? MINIMAX_DEFAULT_MAX_TOKENS,
@@ -66,8 +56,8 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 			system: [{ text: systemPrompt, type: "text" }],
 			messages,
 			stream: true,
-			tools: nativeTools.length > 0 ? nativeTools : undefined,
-			tool_choice: nativeTools.length > 0 ? { type: "any" } : undefined,
+			tools,
+			tool_choice,
 		})
 
 		let inputTokens = 0
@@ -138,7 +128,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 							}
 							break
 						case "redacted_thinking":
-							// Content is encrypted, and we don't want to pass placeholder text back to the API
 							yield {
 								type: "reasoning",
 								text: "[Redacted thinking block]",
@@ -150,7 +139,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 							break
 						case "tool_use":
 							if (chunk.content_block.id && chunk.content_block.name) {
-								// Convert Anthropic tool_use to OpenAI-compatible format
 								lastStartedToolCall.id = chunk.content_block.id
 								lastStartedToolCall.name = chunk.content_block.name
 								lastStartedToolCall.arguments = ""
@@ -174,8 +162,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 							thinkingDeltaAccumulator += chunk.delta.thinking
 							break
 						case "signature_delta":
-							// It's used when sending the thinking block back to the API
-							// API expects this in completed form, not as array of deltas
 							if (thinkingDeltaAccumulator && chunk.delta.signature) {
 								yield {
 									type: "ant_thinking",
@@ -189,7 +175,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 							break
 						case "input_json_delta":
 							if (lastStartedToolCall.id && lastStartedToolCall.name && chunk.delta.partial_json) {
-								// 	// Convert Anthropic tool_use to OpenAI-compatible format
 								yield {
 									type: "native_tool_calls",
 									toolCalls: [
