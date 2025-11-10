@@ -148,6 +148,7 @@ export const providerNames = [
 	"roo",
 	// kilocode_change start
 	"kilocode",
+	"minimax",
 	"gemini-cli",
 	"virtual-quota-fallback",
 	"synthetic",
@@ -367,7 +368,7 @@ const moonshotSchema = apiModelIdProviderModelSchema.extend({
 
 const minimaxSchema = apiModelIdProviderModelSchema.extend({
 	minimaxBaseUrl: z
-		.union([z.literal("https://api.minimax.io/v1"), z.literal("https://api.minimaxi.com/v1")])
+		.union([z.literal("https://api.minimax.io/anthropic"), z.literal("https://api.minimaxi.com/anthropic")]) // kilocode_change: anthropic
 		.optional(),
 	minimaxApiKey: z.string().optional(),
 })
@@ -683,6 +684,11 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	unbound: "unboundModelId",
 	requesty: "requestyModelId",
 	xai: "apiModelId",
+	// kilocode_change start
+	synthetic: "apiModelId",
+	ovhcloud: "ovhCloudAiEndpointsModelId",
+	inception: "inceptionLabsModelId",
+	// kilocode_change end
 	groq: "apiModelId",
 	chutes: "apiModelId",
 	litellm: "litellmModelId",
@@ -691,14 +697,11 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	sambanova: "apiModelId",
 	zai: "apiModelId",
 	fireworks: "apiModelId",
-	synthetic: "apiModelId", // kilocode_change
 	featherless: "apiModelId",
 	"io-intelligence": "ioIntelligenceModelId",
 	roo: "apiModelId",
 	"vercel-ai-gateway": "vercelAiGatewayModelId",
 	"virtual-quota-fallback": "apiModelId",
-	ovhcloud: "ovhCloudAiEndpointsModelId", // kilocode_change
-	inception: "inceptionLabsModelId", // kilocode_change
 }
 
 /**

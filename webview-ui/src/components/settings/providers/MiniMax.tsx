@@ -36,12 +36,14 @@ export const MiniMax = ({ apiConfiguration, setApiConfigurationField }: MiniMaxP
 					value={apiConfiguration.minimaxBaseUrl}
 					onChange={handleInputChange("minimaxBaseUrl")}
 					className={cn("w-full")}>
-					<VSCodeOption value="https://api.minimax.io/v1" className="p-2">
+					{/* kilocode_change start: anthropic api */}
+					<VSCodeOption value="https://api.minimax.io/anthropic" className="p-2">
 						api.minimax.io
 					</VSCodeOption>
-					<VSCodeOption value="https://api.minimaxi.com/v1" className="p-2">
+					<VSCodeOption value="https://api.minimaxi.com/anthropic" className="p-2">
 						api.minimaxi.com
 					</VSCodeOption>
+					{/* kilocode_change end */}
 				</VSCodeDropdown>
 			</div>
 			<div>
@@ -59,7 +61,8 @@ export const MiniMax = ({ apiConfiguration, setApiConfigurationField }: MiniMaxP
 				{!apiConfiguration?.minimaxApiKey && (
 					<VSCodeButtonLink
 						href={
-							apiConfiguration.minimaxBaseUrl === "https://api.minimaxi.com/v1"
+							// kilocode_change: anthropic api
+							apiConfiguration.minimaxBaseUrl === "https://api.minimaxi.com/anthropic"
 								? "https://platform.minimaxi.com/user-center/basic-information/interface-key"
 								: "https://www.minimax.io/platform/user-center/basic-information/interface-key"
 						}

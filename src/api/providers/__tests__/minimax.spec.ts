@@ -35,7 +35,7 @@ describe("MiniMaxHandler", () => {
 		beforeEach(() => {
 			handler = new MiniMaxHandler({
 				minimaxApiKey: "test-minimax-api-key",
-				minimaxBaseUrl: "https://api.minimax.io/v1",
+				minimaxBaseUrl: "https://api.minimax.io/anthropic", // kilocode_change: anthropic
 			})
 		})
 
@@ -82,7 +82,25 @@ describe("MiniMaxHandler", () => {
 			expect(model.info).toEqual(minimaxModels[testModelId])
 			expect(model.info.contextWindow).toBe(192_000)
 			expect(model.info.maxTokens).toBe(16_384)
-			expect(model.info.supportsPromptCache).toBe(false)
+			expect(model.info.supportsPromptCache).toBe(true)
+			expect(model.info.cacheWritesPrice).toBe(0.375)
+			expect(model.info.cacheReadsPrice).toBe(0.03)
+		})
+
+		it("should return MiniMax-M2-Stable model with correct configuration", () => {
+			const testModelId: MinimaxModelId = "MiniMax-M2-Stable"
+			const handlerWithModel = new MiniMaxHandler({
+				apiModelId: testModelId,
+				minimaxApiKey: "test-minimax-api-key",
+			})
+			const model = handlerWithModel.getModel()
+			expect(model.id).toBe(testModelId)
+			expect(model.info).toEqual(minimaxModels[testModelId])
+			expect(model.info.contextWindow).toBe(192_000)
+			expect(model.info.maxTokens).toBe(16_384)
+			expect(model.info.supportsPromptCache).toBe(true)
+			expect(model.info.cacheWritesPrice).toBe(0.375)
+			expect(model.info.cacheReadsPrice).toBe(0.03)
 		})
 	})
 
@@ -90,21 +108,21 @@ describe("MiniMaxHandler", () => {
 		beforeEach(() => {
 			handler = new MiniMaxHandler({
 				minimaxApiKey: "test-minimax-api-key",
-				minimaxBaseUrl: "https://api.minimaxi.com/v1",
+				minimaxBaseUrl: "https://api.minimaxi.com/anthropic", // kilocode_change: anthropic
 			})
 		})
 
 		it("should use the correct China MiniMax base URL", () => {
 			new MiniMaxHandler({
 				minimaxApiKey: "test-minimax-api-key",
-				minimaxBaseUrl: "https://api.minimaxi.com/v1",
+				minimaxBaseUrl: "https://api.minimaxi.com/anthropic", // kilocode_change: anthropic
 			})
 			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ baseURL: "https://api.minimaxi.com/v1" }))
 		})
 
 		it("should use the provided API key for China", () => {
 			const minimaxApiKey = "test-minimax-api-key"
-			new MiniMaxHandler({ minimaxApiKey, minimaxBaseUrl: "https://api.minimaxi.com/v1" })
+			new MiniMaxHandler({ minimaxApiKey, minimaxBaseUrl: "https://api.minimaxi.com/anthropic" }) // kilocode_change: anthropic
 			expect(OpenAI).toHaveBeenCalledWith(expect.objectContaining({ apiKey: minimaxApiKey }))
 		})
 
@@ -261,6 +279,34 @@ describe("MiniMaxHandler", () => {
 				undefined,
 			)
 		})
+
+		it("should handle streaming chunks with null choices array", async () => {
+			const testContent = "Content after null choices"
+
+			mockCreate.mockImplementationOnce(() => {
+				return {
+					[Symbol.asyncIterator]: () => ({
+						next: vitest
+							.fn()
+							.mockResolvedValueOnce({
+								done: false,
+								value: { choices: null },
+							})
+							.mockResolvedValueOnce({
+								done: false,
+								value: { choices: [{ delta: { content: testContent } }] },
+							})
+							.mockResolvedValueOnce({ done: true }),
+					}),
+				}
+			})
+
+			const stream = handler.createMessage("system prompt", [])
+			const firstChunk = await stream.next()
+
+			expect(firstChunk.done).toBe(false)
+			expect(firstChunk.value).toEqual({ type: "text", text: testContent })
+		})
 	})
 
 	describe("Model Configuration", () => {
@@ -269,9 +315,23 @@ describe("MiniMaxHandler", () => {
 			expect(model.maxTokens).toBe(16_384)
 			expect(model.contextWindow).toBe(192_000)
 			expect(model.supportsImages).toBe(false)
-			expect(model.supportsPromptCache).toBe(false)
+			expect(model.supportsPromptCache).toBe(true)
 			expect(model.inputPrice).toBe(0.3)
 			expect(model.outputPrice).toBe(1.2)
+			expect(model.cacheWritesPrice).toBe(0.375)
+			expect(model.cacheReadsPrice).toBe(0.03)
+		})
+
+		it("should correctly configure MiniMax-M2-Stable model properties", () => {
+			const model = minimaxModels["MiniMax-M2-Stable"]
+			expect(model.maxTokens).toBe(16_384)
+			expect(model.contextWindow).toBe(192_000)
+			expect(model.supportsImages).toBe(false)
+			expect(model.supportsPromptCache).toBe(true)
+			expect(model.inputPrice).toBe(0.3)
+			expect(model.outputPrice).toBe(1.2)
+			expect(model.cacheWritesPrice).toBe(0.375)
+			expect(model.cacheReadsPrice).toBe(0.03)
 		})
 	})
 })
