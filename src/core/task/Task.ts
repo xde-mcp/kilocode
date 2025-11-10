@@ -2101,7 +2101,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								await this.say("reasoning", formattedReasoning, undefined, true)
 								break
 							}
-							// for openrouter providers
 							case "usage":
 								inputTokens += chunk.inputTokens
 								outputTokens += chunk.outputTokens

@@ -11,6 +11,7 @@ import {
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions, ModelRecord } from "../../shared/api"
+
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStreamChunk } from "../transform/stream"
 import { convertToR1Format } from "../transform/r1-format"

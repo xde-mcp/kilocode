@@ -30,11 +30,12 @@ export interface ApiStreamReasoningChunk {
 	text: string
 }
 
+// kilocode_change start
 export interface ApiStreamReasoningDetailsChunk {
 	type: "reasoning_details"
 	reasoning_details: ReasoningDetail
 }
-// kilocode_change start
+// kilocode_change end
 
 export interface ApiStreamUsageChunk {
 	type: "usage"
