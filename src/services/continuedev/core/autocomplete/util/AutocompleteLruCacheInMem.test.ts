@@ -124,8 +124,8 @@ describe("AutoCompleteLruCacheInMem", () => {
 			// Create a fresh cache for this test
 			const testCache = await AutocompleteLruCacheInMem.get()
 
-			// Fill cache to capacity (1000 entries)
-			for (let i = 0; i < 1000; i++) {
+			// Fill cache to capacity (100 entries)
+			for (let i = 0; i < 100; i++) {
 				await testCache.put(`key${i}`, `value${i}`)
 			}
 
@@ -146,7 +146,7 @@ describe("AutoCompleteLruCacheInMem", () => {
 			const testCache = await AutocompleteLruCacheInMem.get()
 
 			// Fill to capacity
-			for (let i = 0; i < 1000; i++) {
+			for (let i = 0; i < 100; i++) {
 				await testCache.put(`key${i}`, `value${i}`)
 			}
 
