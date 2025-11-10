@@ -48,9 +48,7 @@ export async function evaluateGatekeeperApproval(
 		}
 
 		// Build the approval prompt
-		const prompt = buildGatekeeperPrompt(toolName, toolParams)
-
-		console.log({ prompt })
+		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams)
 
 		// Create API handler for gatekeeper
 		const gatekeeperApi = buildApiHandler(profile)
@@ -61,8 +59,8 @@ export async function evaluateGatekeeperApproval(
 			return true
 		}
 
-		// Make the request to the gatekeeper model
-		const response = await gatekeeperApi.completePrompt(prompt)
+		// Make the request to the gatekeeper model with system prompt
+		const response = await gatekeeperApi.completePrompt(userPrompt, systemPrompt)
 
 		// Parse the response - look for "yes", "approve", "allowed" vs "no", "deny", "block"
 		const normalizedResponse = response.toLowerCase().trim()
@@ -86,9 +84,12 @@ export async function evaluateGatekeeperApproval(
  *
  * @param toolName - The name of the tool being used
  * @param toolParams - The parameters for the tool
- * @returns string - The prompt for the gatekeeper model
+ * @returns Object with systemPrompt and userPrompt
  */
-function buildGatekeeperPrompt(toolName: string, toolParams: Record<string, any>): string {
+function buildGatekeeperPrompt(
+	toolName: string,
+	toolParams: Record<string, any>,
+): { systemPrompt: string; userPrompt: string } {
 	// Build a concise description of the action
 	let actionDescription = `Tool: ${toolName}\n`
 
@@ -128,14 +129,18 @@ function buildGatekeeperPrompt(toolName: string, toolParams: Record<string, any>
 		}
 	}
 
-	return `You are a safety gatekeeper for an AI coding assistant running in YOLO mode. Your job is to quickly evaluate whether the following action should be allowed.
+	const systemPrompt = `You are a safety gatekeeper for an independent AI coding assistant. Your job is to evaluate whether actions should be allowed.
 
-${actionDescription}
-
-Evaluate if this action is safe and should be approved. Consider:
+Evaluate if actions are safe and should be approved. Consider:
 - Is this modifying or deleting important files?
 - Is this executing potentially dangerous commands?
 - Could this cause data loss or system damage?
 
 Respond with ONLY "yes" to approve or "no" to deny. Be concise.`
+
+	const userPrompt = `Evaluate this action:
+
+${actionDescription}`
+
+	return { systemPrompt, userPrompt }
 }
