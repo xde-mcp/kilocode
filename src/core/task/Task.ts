@@ -124,6 +124,7 @@ import { MessageQueueService } from "../message-queue/MessageQueueService"
 import { AutoApprovalHandler } from "./AutoApprovalHandler"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
 import { getAppUrl } from "@roo-code/types"
+import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api/transform/kilocode/reasoning-details"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -2062,7 +2063,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				// limit error, which gets thrown on the first chunk).
 				const stream = this.attemptApiRequest()
 				let assistantMessage = ""
-				let assistantToolUses = new Array<Anthropic.Messages.ToolUseBlockParam>() // kilocode_change
 				let reasoningMessage = ""
 				let pendingGroundingSources: GroundingSource[] = []
 				this.isStreaming = true
@@ -2070,6 +2070,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					| Anthropic.Messages.RedactedThinkingBlock
 					| Anthropic.Messages.ThinkingBlock
 				)[] = []
+
+				// kilocode_change start
+				const assistantToolUses = new Array<Anthropic.Messages.ToolUseBlockParam>()
+				const reasoningDetails = new Array<ReasoningDetail>()
+				// kilocode_change end
 
 				try {
 					const iterator = stream[Symbol.asyncIterator]()
@@ -2115,7 +2120,15 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 									pendingGroundingSources.push(...chunk.sources)
 								}
 								break
-							//kilocode_change start
+							// kilocode_change start
+							case "reasoning_details":
+								// reasoning_details may be an array of 0 or 1 items depending on how openrouter returns it
+								if (Array.isArray(chunk.reasoning_details)) {
+									reasoningDetails.push(...chunk.reasoning_details)
+								} else {
+									reasoningDetails.push(chunk.reasoning_details)
+								}
+								break
 							case "native_tool_calls": {
 								// Handle native OpenAI-format tool calls
 								// Process native tool calls through the parser
@@ -2138,7 +2151,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								presentAssistantMessage(this)
 								break
 							}
-							//kilocode_change end
+							// kilocode_change end
 							case "text": {
 								assistantMessage += chunk.text
 
@@ -2498,13 +2511,16 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						})
 					}
 
-					// kilocode_change start: also add tool calls to history
+					// kilocode_change start: also add tool calls, reasoning_details to history
 					const assistantMessageContent = new Array<Anthropic.Messages.ContentBlockParam>()
-					if (antThinkingContent.length > 0) {
-						assistantMessageContent.push(...antThinkingContent)
-					}
-					if (assistantMessage) {
-						assistantMessageContent.push({ type: "text", text: assistantMessage })
+					assistantMessageContent.push(...antThinkingContent)
+					if (assistantMessage || reasoningDetails.length > 0) {
+						assistantMessageContent.push({
+							type: "text",
+							text: assistantMessage,
+							// @ts-ignore-next-line OpenRouter-specific property
+							reasoning_details: reasoningDetails.length > 0 ? reasoningDetails : undefined,
+						})
 					}
 					assistantMessageContent.push(...assistantToolUses)
 					await this.addToApiConversationHistory({
@@ -2966,8 +2982,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		const messagesSinceLastSummary = getMessagesSinceLastSummary(this.apiConversationHistory)
-		let cleanConversationHistory = maybeRemoveImageBlocks(messagesSinceLastSummary, this.api).map(
-			({ role, content }) => ({ role, content }),
+		let cleanConversationHistory = maybeRemoveReasoningDetails_kilocode(
+			maybeRemoveImageBlocks(messagesSinceLastSummary, this.api).map(({ role, content }) => ({ role, content })),
+			apiConfiguration?.apiProvider,
 		)
 
 		// kilocode_change start
