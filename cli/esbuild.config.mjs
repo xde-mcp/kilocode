@@ -136,7 +136,7 @@ const __dirname = __dirname__(__filename);
 		"pkce-challenge",
 		"pretty-bytes",
 		"proper-lockfile",
-		"ps-tree",
+		"ps-list",
 		"puppeteer-chromium-resolver",
 		"puppeteer-core",
 		"react",
