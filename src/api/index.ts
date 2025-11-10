@@ -199,6 +199,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new InceptionLabsHandler(options)
 		case "ovhcloud":
 			return new OVHcloudAIEndpointsHandler(options)
+		case "minimax":
+			return new MiniMaxHandler(options)
 		// kilocode_change end
 		case "io-intelligence":
 			return new IOIntelligenceHandler(options)
@@ -210,8 +212,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new FeatherlessHandler(options)
 		case "vercel-ai-gateway":
 			return new VercelAiGatewayHandler(options)
-		case "minimax":
-			return new MiniMaxHandler(options)
 		default:
 			apiProvider satisfies "gemini-cli" | undefined
 			return new AnthropicHandler(options)
