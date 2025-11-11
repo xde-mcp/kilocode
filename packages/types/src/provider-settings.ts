@@ -14,6 +14,7 @@ import {
 	fireworksModels,
 	// kilocode_change start
 	syntheticModels,
+	minimaxModels,
 	// geminiModels,
 	// kilocode_change end
 	groqModels,
@@ -147,6 +148,7 @@ export const providerNames = [
 	"roo",
 	// kilocode_change start
 	"kilocode",
+	"minimax",
 	"gemini-cli",
 	"virtual-quota-fallback",
 	"synthetic",
@@ -415,6 +417,13 @@ const sambaNovaSchema = apiModelIdProviderModelSchema.extend({
 })
 
 // kilocode_change start
+const minimaxSchema = apiModelIdProviderModelSchema.extend({
+	minimaxBaseUrl: z
+		.union([z.literal("https://api.minimax.io/anthropic"), z.literal("https://api.minimaxi.com/anthropic")])
+		.optional(),
+	minimaxApiKey: z.string().optional(),
+})
+
 const inceptionSchema = apiModelIdProviderModelSchema.extend({
 	inceptionLabsBaseUrl: z.string().optional(),
 	inceptionLabsApiKey: z.string().optional(),
@@ -528,6 +537,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	fakeAiSchema.merge(z.object({ apiProvider: z.literal("fake-ai") })),
 	xaiSchema.merge(z.object({ apiProvider: z.literal("xai") })),
 	// kilocode_change start
+	minimaxSchema.merge(z.object({ apiProvider: z.literal("minimax") })),
 	geminiCliSchema.merge(z.object({ apiProvider: z.literal("gemini-cli") })),
 	kilocodeSchema.merge(z.object({ apiProvider: z.literal("kilocode") })),
 	virtualQuotaFallbackSchema.merge(z.object({ apiProvider: z.literal("virtual-quota-fallback") })),
@@ -570,6 +580,7 @@ export const providerSettingsSchema = z.object({
 	...syntheticSchema.shape,
 	...ovhcloudSchema.shape,
 	...inceptionSchema.shape,
+	...minimaxSchema.shape,
 	// kilocode_change end
 	...openAiNativeSchema.shape,
 	...mistralSchema.shape,
@@ -672,6 +683,12 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	unbound: "unboundModelId",
 	requesty: "requestyModelId",
 	xai: "apiModelId",
+	// kilocode_change start
+	minimax: "apiModelId",
+	synthetic: "apiModelId",
+	ovhcloud: "ovhCloudAiEndpointsModelId",
+	inception: "inceptionLabsModelId",
+	// kilocode_change end
 	groq: "apiModelId",
 	chutes: "apiModelId",
 	litellm: "litellmModelId",
@@ -680,15 +697,12 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	sambanova: "apiModelId",
 	zai: "apiModelId",
 	fireworks: "apiModelId",
-	synthetic: "apiModelId", // kilocode_change
 	featherless: "apiModelId",
 	"io-intelligence": "ioIntelligenceModelId",
 	roo: "apiModelId",
 	"vercel-ai-gateway": "vercelAiGatewayModelId",
 	kilocode: "kilocodeModel",
 	"virtual-quota-fallback": "apiModelId",
-	ovhcloud: "ovhCloudAiEndpointsModelId", // kilocode_change
-	inception: "inceptionLabsModelId", // kilocode_change
 }
 
 /**
@@ -822,6 +836,11 @@ export const MODELS_BY_PROVIDER: Record<
 	unbound: { id: "unbound", label: "Unbound", models: [] },
 
 	// kilocode_change start
+	minimax: {
+		id: "minimax",
+		label: "MiniMax",
+		models: Object.keys(minimaxModels),
+	},
 	ovhcloud: { id: "ovhcloud", label: "OVHcloud AI Endpoints", models: [] },
 	inception: { id: "inception", label: "Inception", models: [] },
 	kilocode: { id: "kilocode", label: "Kilocode", models: [] },
