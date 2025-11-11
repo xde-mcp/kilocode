@@ -497,7 +497,7 @@ export const AutoApproveSettings = ({
 							<div className="text-sm text-vscode-descriptionForeground mt-1">
 								Select a model to evaluate each action before auto-approving. The gatekeeper will decide
 								if risky operations should be allowed. We suggest using a small, fast model. This will
-								incur additional costs.
+								incur additional costs, as well as additional latency.
 							</div>
 						</div>
 					)}
