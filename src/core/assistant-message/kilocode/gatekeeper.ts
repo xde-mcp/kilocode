@@ -52,8 +52,8 @@ export async function evaluateGatekeeperApproval(
 			return true
 		}
 
-		// Build the approval prompt
-		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams)
+		// Build the approval prompt using the task's workspace directory
+		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams, cline.cwd)
 
 		// Make the request to the gatekeeper model using singleCompletionHandler
 		const result = await singleCompletionHandler(profile, userPrompt, systemPrompt)
@@ -216,8 +216,8 @@ function extractFilePathsFromCommand(command: string, workspaceDir: string): str
 function buildGatekeeperPrompt(
 	toolName: string,
 	toolParams: Record<string, any>,
+	workspaceDir: string,
 ): { systemPrompt: string; userPrompt: string } {
-	const workspaceDir = process.cwd()
 	const isGitRepo = isGitRepository(workspaceDir)
 	// Build a concise description of the action
 	let actionDescription = `Tool: ${toolName}\n`

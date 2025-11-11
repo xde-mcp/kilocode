@@ -72,6 +72,7 @@ describe("gatekeeper", () => {
 		mockTask = {
 			providerRef: mockProviderRef,
 			say: vi.fn().mockResolvedValue(undefined),
+			cwd: "/test/workspace",
 		}
 	})
 
