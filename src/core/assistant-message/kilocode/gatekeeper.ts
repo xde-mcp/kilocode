@@ -174,6 +174,22 @@ function extractFilePathsFromCommand(command: string, workspaceDir: string): str
 		// Skip flags (starting with -)
 		if (part.startsWith("-")) continue
 
+		// Heuristic: Skip tokens that look like commands rather than file paths
+		// Commands typically:
+		// - Have no path separators (/, \)
+		// - Don't start with . (relative paths)
+		// - Don't have file extensions
+		// - Are short (< 20 chars typically)
+		const hasPathSeparator = part.includes("/") || part.includes("\\")
+		const startsWithDot = part.startsWith(".")
+		const hasExtension = part.includes(".") && !part.startsWith(".")
+		const isShort = part.length < 20
+
+		// If it looks like a command (no path indicators, short, no extension), skip it
+		if (!hasPathSeparator && !startsWithDot && !hasExtension && isShort) {
+			continue
+		}
+
 		try {
 			// Resolve path relative to workspace
 			const resolvedPath = isAbsolute(part) ? part : join(workspaceDir, part)
@@ -216,13 +232,6 @@ function buildGatekeeperPrompt(
 		case "edit_file": {
 			const filePath = toolParams.path || toolParams.target_file || "unknown"
 			actionDescription += `File: ${filePath}\n`
-
-			// TODO: is this needed?
-			// For file operations in git repos, check if file is tracked
-			if (isGitRepo && filePath !== "unknown") {
-				const isTracked = isFileTrackedByGit(filePath, workspaceDir)
-				actionDescription += `Git tracked: ${isTracked ? "YES (recoverable)" : "NO (untracked)"}\n`
-			}
 
 			if (toolParams.content) {
 				const contentPreview = toolParams.content.substring(0, 200)
