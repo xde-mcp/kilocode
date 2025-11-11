@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import {
 	GhostInlineCompletionProvider,
 	findMatchingSuggestion,
+	stringToInlineCompletions,
 	CostTrackingCallback,
 } from "../GhostInlineCompletionProvider"
 import { FillInAtCursorSuggestion } from "../HoleFiller"
@@ -282,6 +283,42 @@ describe("findMatchingSuggestion", () => {
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
 			expect(result).toBe("exact match")
 		})
+	})
+})
+
+describe("stringToInlineCompletions", () => {
+	it("should return empty array when text is empty string", () => {
+		const position = new vscode.Position(0, 10)
+		const result = stringToInlineCompletions("", position)
+
+		expect(result).toEqual([])
+	})
+
+	it("should return inline completion item when text is non-empty", () => {
+		const position = new vscode.Position(0, 10)
+		const text = "console.log('test');"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result).toHaveLength(1)
+		expect(result[0].insertText).toBe(text)
+		expect(result[0].range).toEqual(new vscode.Range(position, position))
+	})
+
+	it("should create range at the specified position", () => {
+		const position = new vscode.Position(5, 20)
+		const text = "some code"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result[0].range).toEqual(new vscode.Range(position, position))
+	})
+
+	it("should handle multi-line text", () => {
+		const position = new vscode.Position(0, 0)
+		const text = "line1\nline2\nline3"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result).toHaveLength(1)
+		expect(result[0].insertText).toBe(text)
 	})
 })
 

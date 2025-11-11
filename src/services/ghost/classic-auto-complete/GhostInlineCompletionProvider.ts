@@ -61,6 +61,24 @@ export function findMatchingSuggestion(
 	return null
 }
 
+/**
+ * Convert a suggestion text to inline completion items
+ * @param text - The suggestion text (empty string means no suggestion)
+ * @param position - The position where the completion should be inserted
+ * @returns Array of inline completion items (empty if text is empty)
+ */
+export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
+	if (text === "") {
+		return []
+	}
+
+	const item: vscode.InlineCompletionItem = {
+		insertText: text,
+		range: new vscode.Range(position, position),
+	}
+	return [item]
+}
+
 export interface LLMRetrievalResult {
 	suggestion: FillInAtCursorSuggestion
 	cost: number
@@ -227,15 +245,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 		if (matchingText !== null) {
-			if (matchingText === "") {
-				return []
-			}
-
-			const item: vscode.InlineCompletionItem = {
-				insertText: matchingText,
-				range: new vscode.Range(position, position),
-			}
-			return [item]
+			return stringToInlineCompletions(matchingText, position)
 		}
 
 		// Build complete context with all tracking data
@@ -265,16 +275,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			// Always update suggestions, even if text is empty (for caching)
 			this.updateSuggestions(result.suggestion)
 
-			if (result.suggestion.text) {
-				const item: vscode.InlineCompletionItem = {
-					insertText: result.suggestion.text,
-					range: new vscode.Range(position, position),
-				}
-				return [item]
-			} else {
-				// Empty text means no suggestion to show
-				return []
-			}
+			return stringToInlineCompletions(result.suggestion.text, position)
 		} catch (error) {
 			console.error("Error getting inline completion from LLM:", error)
 			return []
