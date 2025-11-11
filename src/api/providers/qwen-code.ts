@@ -21,6 +21,7 @@ import { BaseProvider } from "./base-provider"
 import type {
 	ApiHandlerCreateMessageMetadata, // kilocode_change
 	SingleCompletionHandler,
+	SingleCompletionResult, // kilocode_change
 } from "../index"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 
@@ -308,7 +309,8 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 		return { id, info }
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		await this.ensureAuthenticated()
 		const client = this.ensureClient()
 		const model = this.getModel()
@@ -321,6 +323,16 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 
 		const response = await this.callApiWithRetry(() => client.chat.completions.create(requestOptions))
 
-		return response.choices[0]?.message.content || ""
+		// kilocode_change start
+		return {
+			text: response.choices[0]?.message.content || "",
+			usage: response.usage
+				? {
+						inputTokens: response.usage.prompt_tokens || 0,
+						outputTokens: response.usage.completion_tokens || 0,
+					}
+				: undefined,
+		}
+		// kilocode_change end
 	}
 }

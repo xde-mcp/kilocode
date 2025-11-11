@@ -10,7 +10,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToVsCodeLmMessages, extractTextCountFromMessage } from "../transform/vscode-lm-format"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 /**
  * Handles interaction with VS Code's Language Model API for chat-based operations.
@@ -536,7 +536,8 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			const client = await this.getClient()
 			const response = await client.sendRequest(
@@ -550,7 +551,7 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 					result += chunk.value
 				}
 			}
-			return result
+			return { text: result, usage: undefined } // kilocode_change
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`VSCode LM completion error: ${error.message}`)

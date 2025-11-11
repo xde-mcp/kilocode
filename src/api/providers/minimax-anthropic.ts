@@ -17,7 +17,7 @@ import { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { calculateApiCostAnthropic } from "../../shared/cost"
 import { convertOpenAIToolsToAnthropic } from "./kilocode/nativeToolCallHelpers"
 
@@ -235,7 +235,8 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		}
 	}
 
-	async completePrompt(prompt: string) {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		let { id: model } = this.getModel()
 
 		const message = await this.client.messages.create({
@@ -248,6 +249,19 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		})
 
 		const content = message.content.find(({ type }) => type === "text")
-		return content?.type === "text" ? content.text : ""
+
+		// kilocode_change start
+		const text = content?.type === "text" ? content.text : ""
+
+		return {
+			text,
+			usage: message.usage
+				? {
+						inputTokens: message.usage.input_tokens || 0,
+						outputTokens: message.usage.output_tokens || 0,
+					}
+				: undefined,
+		}
+		// kilocode_change end
 	}
 }

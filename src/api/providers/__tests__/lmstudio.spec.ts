@@ -130,7 +130,7 @@ describe("LmStudioHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: mockOptions.lmStudioModelId,
 				messages: [{ role: "user", content: "Test prompt" }],
@@ -151,7 +151,7 @@ describe("LmStudioHandler", () => {
 				choices: [{ message: { content: "" } }],
 			})
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 	})
 

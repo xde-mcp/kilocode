@@ -55,6 +55,7 @@ import { InceptionLabsHandler } from "./providers/inception"
 // kilocode_change end
 import { NativeOllamaHandler } from "./providers/native-ollama"
 
+// kilocode_change start
 export interface SingleCompletionResult {
 	text: string
 	usage?: {
@@ -65,6 +66,7 @@ export interface SingleCompletionResult {
 		totalCost?: number
 	}
 }
+// kilocode_change end
 
 export interface SingleCompletionHandler {
 	// kilocode_change start: Add systemPrompt parameter for gatekeeper and always return object

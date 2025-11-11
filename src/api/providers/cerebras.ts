@@ -8,7 +8,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { XmlMatcher } from "../../utils/xml-matcher"
 
-import type { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from "../index"
+import type { ApiHandlerCreateMessageMetadata, SingleCompletionHandler, SingleCompletionResult } from "../index" // kilocode_change
 import { BaseProvider } from "./base-provider"
 import { DEFAULT_HEADERS } from "./constants"
 import { t } from "../../i18n"
@@ -277,7 +277,8 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const { id: model } = this.getModel()
 
 		// Prepare request body for non-streaming completion
@@ -318,7 +319,17 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 			}
 
 			const result = await response.json()
-			return result.choices?.[0]?.message?.content || ""
+			// kilocode_change start
+			return {
+				text: result.choices?.[0]?.message?.content || "",
+				usage: result.usage
+					? {
+							inputTokens: result.usage.prompt_tokens || 0,
+							outputTokens: result.usage.completion_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.cerebras.completionError", { error: error.message }))

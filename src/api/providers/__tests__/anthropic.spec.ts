@@ -183,7 +183,7 @@ describe("AnthropicHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(typeof result === "string" ? result : result.text).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 			// Verify usage is returned
 			if (typeof result === "object") {
 				expect(result.usage).toBeDefined()
@@ -211,7 +211,7 @@ describe("AnthropicHandler", () => {
 				usage: { input_tokens: 5, output_tokens: 0 },
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			const text = typeof result === "string" ? result : result.text
+			const text = result.text // kilocode_change
 			expect(text).toBe("")
 		})
 
@@ -221,7 +221,7 @@ describe("AnthropicHandler", () => {
 				usage: { input_tokens: 5, output_tokens: 0 },
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			const text = typeof result === "string" ? result : result.text
+			const text = result.text // kilocode_change
 			expect(text).toBe("")
 		})
 	})

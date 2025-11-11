@@ -3,7 +3,7 @@ import { ovhCloudAiEndpointsDefaultModelId, ovhCloudAiEndpointsDefaultModelInfo 
 import type { ApiHandlerOptions } from "../../shared/api"
 
 import { RouterProvider } from "./router-provider"
-import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from ".."
+import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler, SingleCompletionResult } from ".." // kilocode_change
 import OpenAI from "openai"
 import Anthropic from "@anthropic-ai/sdk"
 import { ApiStream } from "../transform/stream"
@@ -75,7 +75,8 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const { id: modelId } = await this.fetchModel()
 
 		try {
@@ -89,7 +90,17 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 			}
 
 			const response = await this.client.chat.completions.create(requestOptions)
-			return response.choices[0]?.message.content || ""
+			// kilocode_change start
+			return {
+				text: response.choices[0]?.message.content || "",
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`OVHcloud AI Endpoints completion error: ${error.message}`)

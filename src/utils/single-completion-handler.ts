@@ -40,7 +40,7 @@ export async function singleCompletionHandler(
 
 	const result = await (handler as SingleCompletionHandler).completePrompt(promptText, systemPrompt)
 
-	return result
+	return result // kilocode_change
 }
 
 // kilocode_change start - Stream responses using createMessage

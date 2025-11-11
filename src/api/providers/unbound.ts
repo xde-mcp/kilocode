@@ -11,7 +11,7 @@ import { addCacheBreakpoints as addAnthropicCacheBreakpoints } from "../transfor
 import { addCacheBreakpoints as addGeminiCacheBreakpoints } from "../transform/caching/gemini"
 import { addCacheBreakpoints as addVertexCacheBreakpoints } from "../transform/caching/vertex"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { RouterProvider } from "./router-provider"
 
 const ORIGIN_APP = "roo-code"
@@ -132,7 +132,8 @@ export class UnboundHandler extends RouterProvider implements SingleCompletionHa
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
@@ -153,7 +154,17 @@ export class UnboundHandler extends RouterProvider implements SingleCompletionHa
 			}
 
 			const response = await this.client.chat.completions.create(requestOptions, { headers: DEFAULT_HEADERS })
-			return response.choices[0]?.message.content || ""
+			// kilocode_change start
+			return {
+				text: response.choices[0]?.message.content || "",
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Unbound completion error: ${error.message}`)

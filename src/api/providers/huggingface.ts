@@ -4,7 +4,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import type { ApiHandlerOptions, ModelRecord } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import { getHuggingFaceModels, getCachedHuggingFaceModels } from "./fetchers/huggingface"
@@ -93,7 +93,8 @@ export class HuggingFaceHandler extends BaseProvider implements SingleCompletion
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const modelId = this.options.huggingFaceModelId || "meta-llama/Llama-3.3-70B-Instruct"
 
 		try {
@@ -102,7 +103,17 @@ export class HuggingFaceHandler extends BaseProvider implements SingleCompletion
 				messages: [{ role: "user", content: prompt }],
 			})
 
-			return response.choices[0]?.message.content || ""
+			// kilocode_change start
+			return {
+				text: response.choices[0]?.message.content || "",
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}

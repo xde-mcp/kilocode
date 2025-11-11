@@ -28,6 +28,7 @@ import { BaseProvider } from "./base-provider"
 import type {
 	ApiHandlerCreateMessageMetadata, // kilocode_change
 	SingleCompletionHandler,
+	SingleCompletionResult, // kilocode_change
 } from "../index"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
@@ -359,12 +360,8 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		return { id, info, topP: isDeepSeekR1 ? 0.95 : undefined, ...params }
 	}
 
-	// kilocode_change start: Add systemPrompt parameter for gatekeeper and return usage
-	async completePrompt(
-		prompt: string,
-		systemPrompt?: string,
-	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number; totalCost?: number } }> {
-		// kilocode_change end
+	// kilocode_change
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		let { id: modelId, maxTokens, temperature, reasoning } = await this.fetchModel()
 
 		// kilocode_change start: Support system prompt
@@ -406,20 +403,16 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		// kilocode_change start
 		const text = completion.choices[0]?.message?.content || ""
 
-		// Return usage information if available
-		if (completion.usage) {
-			const usage = completion.usage as CompletionUsage
-			return {
-				text,
-				usage: {
-					inputTokens: usage.prompt_tokens || 0,
-					outputTokens: usage.completion_tokens || 0,
-					totalCost: this.getTotalCost(usage),
-				},
-			}
+		return {
+			text,
+			usage: completion.usage
+				? {
+						inputTokens: completion.usage.prompt_tokens || 0,
+						outputTokens: completion.usage.completion_tokens || 0,
+						totalCost: this.getTotalCost(completion.usage),
+					}
+				: undefined,
 		}
-
-		return text
 		// kilocode_change end
 	}
 

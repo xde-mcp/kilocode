@@ -14,7 +14,7 @@ import { AnthropicReasoningParams } from "../transform/reasoning"
 import { DEFAULT_HEADERS } from "./constants"
 import { getModels } from "./fetchers/modelCache"
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { toRequestyServiceUrl } from "../../shared/utils/requesty"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 
@@ -159,7 +159,8 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const { id: model, maxTokens: max_tokens, temperature } = await this.fetchModel()
 
 		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [{ role: "system", content: prompt }]
@@ -177,6 +178,16 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}
-		return response.choices[0]?.message.content || ""
+		// kilocode_change start
+		return {
+			text: response.choices[0]?.message.content || "",
+			usage: response.usage
+				? {
+						inputTokens: response.usage.prompt_tokens || 0,
+						outputTokens: response.usage.completion_tokens || 0,
+					}
+				: undefined,
+		}
+		// kilocode_change end
 	}
 }

@@ -33,7 +33,7 @@ import { ModelInfo as CacheModelInfo } from "../transform/cache-strategy/types"
 import { convertToBedrockConverseMessages as sharedConverter } from "../transform/bedrock-converse-format"
 import { getModelParams } from "../transform/model-params"
 import { shouldUseReasoningBudget } from "../../shared/api"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 /************************************************************************************
  *
@@ -631,7 +631,8 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			const modelConfig = this.getModel()
 
@@ -677,7 +678,17 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 				response.output.message.content[0].text.trim().length > 0
 			) {
 				try {
-					return response.output.message.content[0].text
+					// kilocode_change start
+					return {
+						text: response.output.message.content[0].text,
+						usage: response.usage
+							? {
+									inputTokens: response.usage.inputTokens || 0,
+									outputTokens: response.usage.outputTokens || 0,
+								}
+							: undefined,
+					}
+					// kilocode_change end
 				} catch (parseError) {
 					logger.error("Failed to parse Bedrock response", {
 						ctx: "bedrock",
@@ -685,7 +696,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 					})
 				}
 			}
-			return ""
+			return { text: "", usage: undefined } // kilocode_change
 		} catch (error) {
 			// Use the extracted error handling method for all errors
 			const errorResult = this.handleBedrockError(error, false) // false for non-streaming context

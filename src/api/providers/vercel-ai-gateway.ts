@@ -14,7 +14,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { addCacheBreakpoints } from "../transform/caching/vercel-ai-gateway"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { RouterProvider } from "./router-provider"
 
 // Extend OpenAI's CompletionUsage to include Vercel AI Gateway specific fields
@@ -87,7 +87,8 @@ export class VercelAiGatewayHandler extends RouterProvider implements SingleComp
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
@@ -104,7 +105,17 @@ export class VercelAiGatewayHandler extends RouterProvider implements SingleComp
 			requestOptions.max_completion_tokens = info.maxTokens
 
 			const response = await this.client.chat.completions.create(requestOptions)
-			return response.choices[0]?.message.content || ""
+			// kilocode_change start
+			return {
+				text: response.choices[0]?.message.content || "",
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Vercel AI Gateway completion error: ${error.message}`)

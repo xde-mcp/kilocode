@@ -24,7 +24,7 @@ describe("enhancePrompt", () => {
 
 		// Mock the API handler with a completePrompt method
 		;(buildApiHandler as any).mockReturnValue({
-			completePrompt: vi.fn().mockResolvedValue("Enhanced prompt"),
+			completePrompt: vi.fn().mockResolvedValue({ text: "Enhanced prompt", usage: undefined }), // kilocode_change
 			createMessage: vi.fn(),
 			getModel: vi.fn().mockReturnValue({
 				id: "test-model",
@@ -148,7 +148,7 @@ describe("enhancePrompt", () => {
 
 		// Mock successful enhancement
 		;(buildApiHandler as any).mockReturnValue({
-			completePrompt: vi.fn().mockResolvedValue("Enhanced prompt"),
+			completePrompt: vi.fn().mockResolvedValue({ text: "Enhanced prompt", usage: undefined }), // kilocode_change
 			createMessage: vi.fn(),
 			getModel: vi.fn().mockReturnValue({
 				id: "test-model",

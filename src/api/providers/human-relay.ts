@@ -6,7 +6,12 @@ import type { ModelInfo } from "@roo-code/types"
 import { getCommand } from "../../utils/commands"
 import { ApiStream } from "../transform/stream"
 
-import type { ApiHandler, SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type {
+	ApiHandler,
+	SingleCompletionHandler,
+	ApiHandlerCreateMessageMetadata,
+	SingleCompletionResult, // kilocode_change
+} from "../index"
 
 /**
  * Human Relay API processor
@@ -82,7 +87,8 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
 	 * Implementation of a single prompt
 	 * @param prompt Prompt content
 	 */
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		// Copy to clipboard
 		await vscode.env.clipboard.writeText(prompt)
 
@@ -93,7 +99,7 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
 			throw new Error("Human relay operation cancelled")
 		}
 
-		return response
+		return { text: response, usage: undefined } // kilocode_change
 	}
 }
 

@@ -117,7 +117,7 @@ describe("SyntheticHandler", () => {
 		const expectedResponse = "This is a test response from synthetic"
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result).toBe(expectedResponse)
+		expect(result.text).toBe(expectedResponse) // kilocode_change
 	})
 
 	it("should handle errors in completePrompt", async () => {
@@ -214,13 +214,13 @@ describe("SyntheticHandler", () => {
 	it("should handle empty response in completePrompt", async () => {
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: null } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result).toBe("")
+		expect(result.text).toBe("") // kilocode_change
 	})
 
 	it("should handle missing choices in completePrompt", async () => {
 		mockCreate.mockResolvedValueOnce({ choices: [] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result).toBe("")
+		expect(result.text).toBe("") // kilocode_change
 	})
 
 	it("createMessage should handle stream with multiple chunks", async () => {

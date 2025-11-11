@@ -174,7 +174,7 @@ describe("NativeOllamaHandler", () => {
 					temperature: 0,
 				},
 			})
-			expect(result).toBe("This is the response")
+			expect(result.text).toBe("This is the response") // kilocode_change
 		})
 
 		it("should not include num_ctx in completePrompt by default", async () => {

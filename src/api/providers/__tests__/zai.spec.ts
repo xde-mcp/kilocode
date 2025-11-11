@@ -172,7 +172,7 @@ describe("ZAiHandler", () => {
 			const expectedResponse = "This is a test response from Z AI"
 			mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
 			const result = await handler.completePrompt("test prompt")
-			expect(result).toBe(expectedResponse)
+			expect(result.text).toBe(expectedResponse) // kilocode_change
 		})
 
 		it("should handle errors in completePrompt", async () => {

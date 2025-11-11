@@ -13,7 +13,7 @@ import { calculateApiCostOpenAI } from "../../shared/cost"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index"
 import { RouterProvider } from "./router-provider"
 import { getModelParams } from "../transform/model-params"
 import { getModels } from "./fetchers/modelCache"
@@ -117,7 +117,8 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		await this.fetchModel()
 		const { id: modelId, info } = this.getModel()
 
@@ -133,7 +134,17 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 		}
 
 		const resp = await this.client.chat.completions.create(requestOptions)
-		return resp.choices[0]?.message?.content || ""
+		// kilocode_change start
+		return {
+			text: resp.choices[0]?.message?.content || "",
+			usage: resp.usage
+				? {
+						inputTokens: resp.usage.prompt_tokens || 0,
+						outputTokens: resp.usage.completion_tokens || 0,
+					}
+				: undefined,
+		}
+		// kilocode_change end
 	}
 
 	protected processUsageMetrics(usage: any, modelInfo?: any): ApiStreamUsageChunk {

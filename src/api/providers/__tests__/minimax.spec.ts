@@ -206,7 +206,7 @@ describe("MiniMaxHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("Test response from MiniMax")
+			expect(result.text).toBe("Test response from MiniMax") // kilocode_change
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: minimaxDefaultModelId,
 				messages: [{ role: "user", content: "Test prompt" }],
@@ -227,7 +227,7 @@ describe("MiniMaxHandler", () => {
 				content: [{ type: "image" }],
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 
 		it("should handle empty response", async () => {
@@ -235,7 +235,7 @@ describe("MiniMaxHandler", () => {
 				content: [{ type: "text", text: "" }],
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 	})
 

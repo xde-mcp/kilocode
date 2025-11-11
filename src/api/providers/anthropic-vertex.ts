@@ -18,7 +18,7 @@ import { addCacheBreakpoints } from "../transform/caching/vertex"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 // https://docs.anthropic.com/en/api/claude-on-vertex-ai
 export class AnthropicVertexHandler extends BaseProvider implements SingleCompletionHandler {
@@ -177,7 +177,8 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 		return { id: id.endsWith(":thinking") ? id.replace(":thinking", "") : id, info, ...params }
 	}
 
-	async completePrompt(prompt: string) {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			let {
 				id,
@@ -206,11 +207,19 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			const response = await this.client.messages.create(params)
 			const content = response.content[0]
 
-			if (content.type === "text") {
-				return content.text
-			}
+			// kilocode_change start
+			const text = content.type === "text" ? content.text : ""
 
-			return ""
+			return {
+				text,
+				usage: response.usage
+					? {
+							inputTokens: response.usage.input_tokens || 0,
+							outputTokens: response.usage.output_tokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Vertex completion error: ${error.message}`)

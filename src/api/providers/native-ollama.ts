@@ -6,7 +6,7 @@ import { BaseProvider } from "./base-provider"
 import type { ApiHandlerOptions } from "../../shared/api"
 import { getOllamaModels } from "./fetchers/ollama"
 import { XmlMatcher } from "../../utils/xml-matcher"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 // kilocode_change start
 import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
@@ -346,7 +346,8 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			// kilocode_change start
 			if (!this.isInitialized) {
@@ -375,7 +376,18 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 				options: chatOptions,
 			})
 
-			return response.message?.content || ""
+			// kilocode_change start
+			return {
+				text: response.message?.content || "",
+				usage:
+					response.prompt_eval_count || response.eval_count
+						? {
+								inputTokens: response.prompt_eval_count || 0,
+								outputTokens: response.eval_count || 0,
+							}
+						: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Ollama completion error: ${error.message}`)

@@ -234,7 +234,7 @@ describe("MistralHandler", () => {
 				temperature: 0,
 			})
 
-			expect(result).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 		})
 
 		it("should filter out thinking content in completePrompt", async () => {
@@ -257,7 +257,7 @@ describe("MistralHandler", () => {
 			const prompt = "Test prompt"
 			const result = await handler.completePrompt(prompt)
 
-			expect(result).toBe("Answer part 1Answer part 2")
+			expect(result.text).toBe("Answer part 1Answer part 2") // kilocode_change
 		})
 
 		it("should handle errors in completePrompt", async () => {

@@ -362,7 +362,7 @@ describe("OpenAiHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(typeof result === "string" ? result : result.text).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 			// Verify usage is returned
 			if (typeof result === "object") {
 				expect(result.usage).toBeDefined()
@@ -389,7 +389,7 @@ describe("OpenAiHandler", () => {
 				usage: { prompt_tokens: 5, completion_tokens: 0 },
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			const text = typeof result === "string" ? result : result.text
+			const text = result.text // kilocode_change
 			expect(text).toBe("")
 		})
 	})
@@ -518,7 +518,7 @@ describe("OpenAiHandler", () => {
 		it("should handle completePrompt with Azure AI Inference Service", async () => {
 			const azureHandler = new OpenAiHandler(azureOptions)
 			const result = await azureHandler.completePrompt("Test prompt")
-			expect(typeof result === "string" ? result : result.text).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 			// Verify usage is returned
 			if (typeof result === "object") {
 				expect(result.usage).toBeDefined()

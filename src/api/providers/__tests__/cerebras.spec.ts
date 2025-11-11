@@ -159,7 +159,7 @@ describe("CerebrasHandler", () => {
 			vi.mocked(fetch).mockResolvedValueOnce(mockResponse as any)
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 		})
 	})
 

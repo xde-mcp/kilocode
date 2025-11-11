@@ -23,7 +23,7 @@ import { getModelParams } from "../transform/model-params"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 
@@ -312,12 +312,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		return { id, info, ...params }
 	}
 
-	// kilocode_change start
-	async completePrompt(
-		prompt: string,
-		systemPrompt?: string,
-	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number } }> {
-		// kilocode_change end
+	// kilocode_change
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const isAzureAiInference = this._isAzureAiInference(this.options.openAiBaseUrl)
 			const model = this.getModel()
@@ -353,18 +349,15 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			// kilocode_change start
 			const text = response.choices[0]?.message.content || ""
 
-			// Return usage information if available
-			if (response.usage) {
-				return {
-					text,
-					usage: {
-						inputTokens: response.usage.prompt_tokens || 0,
-						outputTokens: response.usage.completion_tokens || 0,
-					},
-				}
+			return {
+				text,
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
 			}
-
-			return text
 			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {

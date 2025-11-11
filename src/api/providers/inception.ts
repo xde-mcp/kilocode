@@ -1,6 +1,6 @@
 // kilocode_change - file added
 
-import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from ".."
+import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler, SingleCompletionResult } from ".." // kilocode_change
 import { ApiHandlerOptions } from "../../shared/api"
 import { calculateApiCostOpenAI } from "../../shared/cost"
 import { RouterProvider } from "./router-provider"
@@ -106,7 +106,8 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 		}
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		await this.fetchModel()
 		const { id: modelId, info } = this.getModel()
 
@@ -122,7 +123,17 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 		}
 
 		const resp = await this.client.chat.completions.create(requestOptions)
-		return resp.choices[0]?.message?.content || ""
+		// kilocode_change start
+		return {
+			text: resp.choices[0]?.message?.content || "",
+			usage: resp.usage
+				? {
+						inputTokens: resp.usage.prompt_tokens || 0,
+						outputTokens: resp.usage.completion_tokens || 0,
+					}
+				: undefined,
+		}
+		// kilocode_change end
 	}
 
 	protected processUsageMetrics(usage: any, modelInfo?: any): ApiStreamUsageChunk {

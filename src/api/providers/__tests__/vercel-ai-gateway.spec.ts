@@ -306,7 +306,7 @@ describe("VercelAiGatewayHandler", () => {
 
 			const result = await handler.completePrompt(prompt)
 
-			expect(result).toBe("Test completion response")
+			expect(result.text).toBe("Test completion response") // kilocode_change
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
 					model: "anthropic/claude-sonnet-4",
@@ -361,7 +361,7 @@ describe("VercelAiGatewayHandler", () => {
 			}))
 
 			const result = await handler.completePrompt("Test")
-			expect(result).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 	})
 

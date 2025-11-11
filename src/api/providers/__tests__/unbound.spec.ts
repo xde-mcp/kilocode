@@ -222,7 +222,7 @@ describe("UnboundHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("Test response")
+			expect(result.text).toBe("Test response") // kilocode_change
 
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -247,7 +247,7 @@ describe("UnboundHandler", () => {
 		it("should handle empty response", async () => {
 			mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: "" } }] })
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 
 		it("should not set max_tokens for non-Anthropic models", async () => {

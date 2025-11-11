@@ -22,7 +22,7 @@ import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler["getModel"]>
 
@@ -1286,7 +1286,8 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 		this.lastResponseId = responseId
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			const model = this.getModel()
 			const { verbosity, reasoning } = model
@@ -1350,7 +1351,21 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 					if (outputItem.type === "message" && outputItem.content) {
 						for (const content of outputItem.content) {
 							if (content.type === "output_text" && content.text) {
-								return content.text
+								// kilocode_change start
+								return {
+									text: content.text,
+									usage: response.usage
+										? {
+												inputTokens:
+													response.usage.input_tokens || response.usage.prompt_tokens || 0,
+												outputTokens:
+													response.usage.output_tokens ||
+													response.usage.completion_tokens ||
+													0,
+											}
+										: undefined,
+								}
+								// kilocode_change end
 							}
 						}
 					}
@@ -1358,11 +1373,21 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 			}
 
 			// Fallback: check for direct text in response
+			// kilocode_change start
 			if (response?.text) {
-				return response.text
+				return {
+					text: response.text,
+					usage: response.usage
+						? {
+								inputTokens: response.usage.input_tokens || response.usage.prompt_tokens || 0,
+								outputTokens: response.usage.output_tokens || response.usage.completion_tokens || 0,
+							}
+						: undefined,
+				}
 			}
 
-			return ""
+			return { text: "", usage: undefined }
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`OpenAI Native completion error: ${error.message}`)

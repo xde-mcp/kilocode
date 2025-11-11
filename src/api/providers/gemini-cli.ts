@@ -15,7 +15,7 @@ import { convertAnthropicContentToGemini, convertAnthropicMessageToGemini } from
 import type { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { BaseProvider } from "./base-provider"
 import { getExtensionConfigUrl } from "@roo-code/types"
 
@@ -405,7 +405,8 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 		return { id, info, ...params }
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		await this.ensureAuthenticated()
 		const projectId = await this.discoverProjectId()
 
@@ -443,11 +444,11 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 						.filter((part: any) => part.text && !part.thought)
 						.map((part: any) => part.text)
 						.join("")
-					return textParts
+					return { text: textParts, usage: undefined } // kilocode_change
 				}
 			}
 
-			return ""
+			return { text: "", usage: undefined } // kilocode_change
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.geminiCli.completionError", { error: error.message }))

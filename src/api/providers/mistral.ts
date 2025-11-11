@@ -9,7 +9,7 @@ import { convertToMistralMessages } from "../transform/mistral-format"
 import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
@@ -104,7 +104,8 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		return { id, info, maxTokens, temperature }
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	// kilocode_change
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		try {
 			const { id: model, temperature } = this.getModel()
 
@@ -115,16 +116,29 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 			})
 
 			const content = response.choices?.[0]?.message.content
+			let text = "" // kilocode_change
 
 			if (Array.isArray(content)) {
 				// Only return text content, filter out thinking content for non-streaming
-				return (content as ContentChunkWithThinking[])
+				text = (content as ContentChunkWithThinking[])
 					.filter((c) => c.type === "text" && c.text)
 					.map((c) => c.text || "")
 					.join("")
+				// kilocode_change start
+			} else {
+				text = content || ""
 			}
 
-			return content || ""
+			return {
+				text,
+				usage: response.usage
+					? {
+							inputTokens: response.usage.promptTokens || 0,
+							outputTokens: response.usage.completionTokens || 0,
+						}
+					: undefined,
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Mistral completion error: ${error.message}`)

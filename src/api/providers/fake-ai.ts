@@ -2,7 +2,12 @@ import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ModelInfo } from "@roo-code/types"
 
-import type { ApiHandler, SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type {
+	ApiHandler,
+	SingleCompletionHandler,
+	ApiHandlerCreateMessageMetadata,
+	SingleCompletionResult,
+} from "../index"
 import type { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
 
@@ -75,7 +80,11 @@ export class FakeAIHandler implements ApiHandler, SingleCompletionHandler {
 		return this.ai.countTokens(content)
 	}
 
-	completePrompt(prompt: string): Promise<string> {
-		return this.ai.completePrompt(prompt)
+	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+		const result = await this.ai.completePrompt(prompt)
+
+		return {
+			text: result,
+		}
 	}
 }

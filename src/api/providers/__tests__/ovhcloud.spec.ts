@@ -100,7 +100,7 @@ describe("OVHcloudAIEndpointsHandler", () => {
 			})
 
 			const result = await handler.completePrompt("test prompt")
-			expect(result).toBe(mockResponse)
+			expect(result.text).toBe(mockResponse) // kilocode_change
 		})
 
 		it("should handle API errors gracefully during completion", async () => {

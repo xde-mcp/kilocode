@@ -10,7 +10,7 @@ import type { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
@@ -137,11 +137,8 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
-	// kilocode_change start: Add systemPrompt parameter for gatekeeper and return usage
-	async completePrompt(
-		prompt: string,
-		systemPrompt?: string,
-	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number } }> {
+	// kilocode_change
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		// kilocode_change end
 		const { id: modelId } = this.getModel()
 
@@ -164,18 +161,15 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			// kilocode_change start
 			const text = response.choices[0]?.message.content || ""
 
-			// Return usage information if available
-			if (response.usage) {
-				return {
-					text,
-					usage: {
-						inputTokens: response.usage.prompt_tokens || 0,
-						outputTokens: response.usage.completion_tokens || 0,
-					},
-				}
+			return {
+				text,
+				usage: response.usage
+					? {
+							inputTokens: response.usage.prompt_tokens || 0,
+							outputTokens: response.usage.completion_tokens || 0,
+						}
+					: undefined,
 			}
-
-			return text
 			// kilocode_change end
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
