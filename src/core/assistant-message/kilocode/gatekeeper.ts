@@ -1,10 +1,11 @@
 import { buildApiHandler } from "../../../api"
 import { Task } from "../../task/Task"
-import { calculateApiCostAnthropic } from "../../../shared/cost"
+import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../../shared/cost"
 import { singleCompletionHandler } from "../../../utils/single-completion-handler"
 import { execSync } from "child_process"
 import { existsSync } from "fs"
 import { isAbsolute, join } from "path"
+import { getApiProtocol } from "@roo-code/types"
 
 /**
  * Evaluates whether an action should be approved using an AI gatekeeper model.
@@ -80,14 +81,29 @@ export async function evaluateGatekeeperApproval(
 			if (cost === undefined) {
 				// Build handler temporarily to get model info for cost calculation
 				const gatekeeperApi = buildApiHandler(profile)
-				const modelInfo = gatekeeperApi.getModel().info
-				cost = calculateApiCostAnthropic(
-					modelInfo,
-					usage.inputTokens,
-					usage.outputTokens,
-					usage.cacheWriteTokens,
-					usage.cacheReadTokens,
-				)
+				const model = gatekeeperApi.getModel()
+				const modelInfo = model.info
+
+				// Determine which cost calculation function to use based on the provider's API protocol
+				const apiProtocol = getApiProtocol(profile.apiProvider, model.id)
+
+				if (apiProtocol === "anthropic") {
+					cost = calculateApiCostAnthropic(
+						modelInfo,
+						usage.inputTokens,
+						usage.outputTokens,
+						usage.cacheWriteTokens,
+						usage.cacheReadTokens,
+					)
+				} else {
+					cost = calculateApiCostOpenAI(
+						modelInfo,
+						usage.inputTokens,
+						usage.outputTokens,
+						usage.cacheWriteTokens,
+						usage.cacheReadTokens,
+					)
+				}
 			}
 
 			let formattedCost: string
