@@ -55,12 +55,20 @@ import { InceptionLabsHandler } from "./providers/inception"
 // kilocode_change end
 import { NativeOllamaHandler } from "./providers/native-ollama"
 
+export interface SingleCompletionResult {
+	text: string
+	usage?: {
+		inputTokens: number
+		outputTokens: number
+		cacheWriteTokens?: number
+		cacheReadTokens?: number
+		totalCost?: number
+	}
+}
+
 export interface SingleCompletionHandler {
-	// kilocode_change start: Add systemPrompt parameter for gatekeeper and optional usage return
-	completePrompt(
-		prompt: string,
-		systemPrompt?: string,
-	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number } }>
+	// kilocode_change start: Add systemPrompt parameter for gatekeeper and always return object
+	completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult>
 	// kilocode_change end
 }
 

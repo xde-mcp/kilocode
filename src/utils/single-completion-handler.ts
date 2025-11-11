@@ -1,19 +1,5 @@
 import type { ProviderSettings } from "@roo-code/types"
-import { buildApiHandler, SingleCompletionHandler, ApiHandler } from "../api" //kilocode_change
-
-/**
- * Result from single completion handler with optional usage information
- */
-export interface SingleCompletionResult {
-	text: string
-	usage?: {
-		inputTokens: number
-		outputTokens: number
-		cacheWriteTokens?: number
-		cacheReadTokens?: number
-		totalCost?: number
-	}
-}
+import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionResult } from "../api" //kilocode_change
 
 /**
  * Enhances a prompt using the configured API without creating a full Cline instance or task history.
@@ -54,15 +40,7 @@ export async function singleCompletionHandler(
 
 	const result = await (handler as SingleCompletionHandler).completePrompt(promptText, systemPrompt)
 
-	// Handle both string and object responses
-	if (typeof result === "string") {
-		return { text: result }
-	}
-
-	return {
-		text: result.text,
-		usage: result.usage,
-	}
+	return result
 }
 
 // kilocode_change start - Stream responses using createMessage
