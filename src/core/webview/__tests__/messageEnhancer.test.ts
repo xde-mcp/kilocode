@@ -39,7 +39,7 @@ describe("MessageEnhancer", () => {
 		} as any
 
 		// Mock single completion handler
-		mockSingleCompletionHandler = vi.fn().mockResolvedValue("Enhanced prompt text")
+		mockSingleCompletionHandler = vi.fn().mockResolvedValue({ text: "Enhanced prompt text" })
 		vi.mocked(singleCompletionHandlerModule).singleCompletionHandler = mockSingleCompletionHandler
 
 		// Mock TelemetryService
