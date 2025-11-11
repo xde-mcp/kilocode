@@ -138,12 +138,10 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 
 			return {
 				text,
-				usage: response.usage
-					? {
-							inputTokens: response.usage.promptTokens || 0,
-							outputTokens: response.usage.completionTokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: response.usage.promptTokens || 0,
+					outputTokens: response.usage.completionTokens || 0,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

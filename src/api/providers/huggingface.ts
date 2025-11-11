@@ -115,12 +115,11 @@ export class HuggingFaceHandler extends BaseProvider implements SingleCompletion
 			// kilocode_change start
 			return {
 				text: response.choices[0]?.message.content || "",
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: response.usage?.prompt_tokens || 0,
+					outputTokens: response.usage?.completion_tokens || 0,
+					cacheReadTokens: response.usage?.prompt_tokens_details?.cached_tokens,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

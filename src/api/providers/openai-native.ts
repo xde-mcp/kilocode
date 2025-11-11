@@ -1306,7 +1306,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 				],
 				stream: false, // Non-streaming for completePrompt
 				store: false, // Don't store prompt completions
-				...(systemPrompt && { instructions: systemPrompt }),
+				...(systemPrompt && { instructions: systemPrompt }), // kilocode_change
 			}
 
 			// Include service tier if selected and supported

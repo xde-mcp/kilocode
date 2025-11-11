@@ -4,16 +4,11 @@ import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionR
 /**
  * Enhances a prompt using the configured API without creating a full Cline instance or task history.
  * This is a lightweight alternative that only uses the API's completion functionality.
- *
- * @param apiConfiguration - The API provider configuration
- * @param promptText - The user prompt text
- * @param systemPrompt - Optional system prompt for the completion
- * @returns Promise resolving to completion result with text and optional usage information
  */
 export async function singleCompletionHandler(
 	apiConfiguration: ProviderSettings,
 	promptText: string,
-	systemPrompt: string = "",
+	systemPrompt: string = "", // kilocode_change
 ): Promise<SingleCompletionResult> {
 	if (!promptText) {
 		throw new Error("No prompt text provided")
@@ -29,18 +24,18 @@ export async function singleCompletionHandler(
 		await handler.initialize()
 	}
 
+	// kilocode_change start - stream responses for handlers without completePrompt
 	// Check if handler supports single completions
 	if (!("completePrompt" in handler)) {
-		// kilocode_change start - stream responses for handlers without completePrompt
 		// throw new Error("The selected API provider does not support prompt enhancement")
 		const text = await streamResponseFromHandler(handler, promptText, systemPrompt)
 		return { text }
-		// kilocode_change end
 	}
 
 	const result = await (handler as SingleCompletionHandler).completePrompt(promptText, systemPrompt)
 
-	return result // kilocode_change
+	return result
+	// kilocode_change end
 }
 
 // kilocode_change start - Stream responses using createMessage

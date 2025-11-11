@@ -135,12 +135,11 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 		// kilocode_change start
 		return {
 			text: resp.choices[0]?.message?.content || "",
-			usage: resp.usage
-				? {
-						inputTokens: resp.usage.prompt_tokens || 0,
-						outputTokens: resp.usage.completion_tokens || 0,
-					}
-				: undefined,
+			usage: {
+				inputTokens: resp.usage?.prompt_tokens || 0,
+				outputTokens: resp.usage?.completion_tokens || 0,
+				cacheReadTokens: resp.usage?.prompt_tokens_details?.cached_tokens,
+			},
 		}
 		// kilocode_change end
 	}

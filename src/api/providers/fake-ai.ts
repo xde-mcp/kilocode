@@ -33,7 +33,7 @@ interface FakeAI {
 	): ApiStream
 	getModel(): { id: string; info: ModelInfo }
 	countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number>
-	completePrompt(prompt: string, systemPrompt?: string): Promise<string>
+	completePrompt(prompt: string, systemPrompt?: string): Promise<string> // kilocode_change
 }
 
 /**
