@@ -253,8 +253,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			recentlyEditedRanges,
 		}
 
+		const prompt = await this.getPromptForContext(context)
+
 		try {
-			const prompt = await this.getPromptForContext(context)
 			const result = await this.getFromLLM(prompt, this.model)
 
 			if (this.costTrackingCallback && result.cost > 0) {
