@@ -3,9 +3,13 @@ import { evaluateGatekeeperApproval } from "../gatekeeper"
 import type { Task } from "../../../task/Task"
 import type { ProviderSettings } from "@roo-code/types"
 import { execSync } from "child_process"
+import { existsSync } from "fs"
 
 // Mock dependencies
 vi.mock("child_process")
+vi.mock("fs", () => ({
+	existsSync: vi.fn(),
+}))
 vi.mock("../../../../api", () => ({
 	buildApiHandler: vi.fn().mockReturnValue({
 		getModel: vi.fn().mockReturnValue({
@@ -36,6 +40,9 @@ describe("gatekeeper", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		originalCwd = process.cwd()
+
+		// Mock existsSync to return true by default
+		vi.mocked(existsSync).mockReturnValue(true)
 
 		// Setup mock state
 		mockState = {
@@ -300,6 +307,80 @@ describe("gatekeeper", () => {
 			)
 		})
 
+		it("should remove trailing zeroes from cost display", async () => {
+			const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+			const { calculateApiCostAnthropic } = await import("../../../../shared/cost")
+			vi.mocked(calculateApiCostAnthropic).mockReturnValue(0.0012)
+			vi.mocked(singleCompletionHandler).mockResolvedValue({
+				text: "yes",
+				usage: {
+					inputTokens: 100,
+					outputTokens: 10,
+				},
+			})
+
+			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+
+			expect(mockTask.say).toHaveBeenCalledWith(
+				"text",
+				expect.stringContaining("$0.0012"),
+				undefined,
+				false,
+				undefined,
+				undefined,
+				{ isNonInteractive: true },
+			)
+		})
+
+		it("should remove all trailing zeroes including decimal point", async () => {
+			const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+			const { calculateApiCostAnthropic } = await import("../../../../shared/cost")
+			vi.mocked(calculateApiCostAnthropic).mockReturnValue(0.001)
+			vi.mocked(singleCompletionHandler).mockResolvedValue({
+				text: "yes",
+				usage: {
+					inputTokens: 100,
+					outputTokens: 10,
+				},
+			})
+
+			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+
+			expect(mockTask.say).toHaveBeenCalledWith(
+				"text",
+				expect.stringContaining("$0.001"),
+				undefined,
+				false,
+				undefined,
+				undefined,
+				{ isNonInteractive: true },
+			)
+		})
+
+		it("should handle whole dollar amounts without decimal", async () => {
+			const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+			vi.mocked(singleCompletionHandler).mockResolvedValue({
+				text: "yes",
+				usage: {
+					inputTokens: 100,
+					outputTokens: 10,
+					totalCost: 1.0,
+				},
+			})
+
+			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+
+			expect(mockTask.say).toHaveBeenCalledWith(
+				"text",
+				expect.stringContaining("$1"),
+				undefined,
+				false,
+				undefined,
+				undefined,
+				{ isNonInteractive: true },
+			)
+		})
+
 		it("should return true on error to avoid blocking workflow", async () => {
 			const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
 			vi.mocked(singleCompletionHandler).mockRejectedValue(new Error("API error"))
@@ -517,6 +598,118 @@ describe("gatekeeper", () => {
 					expect.any(Object),
 					expect.any(String),
 					expect.stringContaining("Workspace directory:"),
+				)
+			})
+			it("should include git tracking status for file operations in git repos", async () => {
+				const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+				vi.mocked(execSync)
+					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockReturnValueOnce(Buffer.from("test.ts")) // isFileTrackedByGit check
+				vi.mocked(singleCompletionHandler).mockResolvedValue({
+					text: "yes",
+					usage: { inputTokens: 100, outputTokens: 10 },
+				})
+
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "test.ts",
+					content: "const x = 1;",
+				})
+
+				expect(singleCompletionHandler).toHaveBeenCalledWith(
+					expect.any(Object),
+					expect.stringContaining("Git tracked: YES (recoverable)"),
+					expect.any(String),
+				)
+			})
+
+			it("should indicate untracked files in git repos", async () => {
+				const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+				vi.mocked(execSync)
+					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockImplementationOnce(() => {
+						// isFileTrackedByGit check - throw error for untracked file
+						throw new Error("File not tracked")
+					})
+				vi.mocked(singleCompletionHandler).mockResolvedValue({
+					text: "yes",
+					usage: { inputTokens: 100, outputTokens: 10 },
+				})
+
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "untracked.ts",
+					content: "const x = 1;",
+				})
+
+				expect(singleCompletionHandler).toHaveBeenCalledWith(
+					expect.any(Object),
+					expect.stringContaining("Git tracked: NO (untracked)"),
+					expect.any(String),
+				)
+			})
+
+			it("should include git tracking status for rm commands", async () => {
+				const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+				vi.mocked(execSync)
+					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockReturnValueOnce(Buffer.from("test.ts")) // isFileTrackedByGit check
+				vi.mocked(existsSync).mockReturnValue(true) // File exists check
+				vi.mocked(singleCompletionHandler).mockResolvedValue({
+					text: "yes",
+					usage: { inputTokens: 100, outputTokens: 10 },
+				})
+
+				await evaluateGatekeeperApproval(mockTask as Task, "execute_command", {
+					command: "rm test.ts",
+				})
+
+				expect(singleCompletionHandler).toHaveBeenCalledWith(
+					expect.any(Object),
+					expect.stringContaining('Target file "test.ts" git tracked: YES (recoverable)'),
+					expect.any(String),
+				)
+			})
+
+			it("should handle rm commands with flags", async () => {
+				const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+				vi.mocked(execSync)
+					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockReturnValueOnce(Buffer.from("test.ts")) // isFileTrackedByGit check
+				vi.mocked(existsSync).mockReturnValue(true) // File exists check
+				vi.mocked(singleCompletionHandler).mockResolvedValue({
+					text: "yes",
+					usage: { inputTokens: 100, outputTokens: 10 },
+				})
+
+				await evaluateGatekeeperApproval(mockTask as Task, "execute_command", {
+					command: "rm -f test.ts",
+				})
+
+				expect(singleCompletionHandler).toHaveBeenCalledWith(
+					expect.any(Object),
+					expect.stringContaining('Target file "test.ts" git tracked: YES (recoverable)'),
+					expect.any(String),
+				)
+			})
+
+			it("should not include git tracking for non-git repos", async () => {
+				const { singleCompletionHandler } = await import("../../../../utils/single-completion-handler")
+				vi.mocked(execSync).mockImplementation(() => {
+					throw new Error("Not a git repository")
+				})
+				vi.mocked(singleCompletionHandler).mockResolvedValue({
+					text: "yes",
+					usage: { inputTokens: 100, outputTokens: 10 },
+				})
+
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "test.ts",
+					content: "const x = 1;",
+				})
+
+				expect(singleCompletionHandler).toHaveBeenCalledWith(
+					expect.any(Object),
+					expect.not.stringContaining("Git tracked:"),
+					expect.any(String),
 				)
 			})
 		})

@@ -3,6 +3,8 @@ import { Task } from "../../task/Task"
 import { calculateApiCostAnthropic } from "../../../shared/cost"
 import { singleCompletionHandler } from "../../../utils/single-completion-handler"
 import { execSync } from "child_process"
+import { existsSync } from "fs"
+import { isAbsolute, join } from "path"
 
 /**
  * Evaluates whether an action should be approved using an AI gatekeeper model.
@@ -89,10 +91,12 @@ export async function evaluateGatekeeperApproval(
 				)
 			}
 
-			let formattedCost = `$${cost.toFixed(4)}`
-
+			let formattedCost: string
 			if (cost < 0.0001) {
 				formattedCost = "<$0.0001"
+			} else {
+				// Format with up to 4 decimal places, removing trailing zeroes
+				formattedCost = `$${cost.toFixed(4).replace(/\.?0+$/, "")}`
 			}
 
 			await cline.say(
@@ -132,6 +136,62 @@ function isGitRepository(workspaceDir: string): boolean {
 }
 
 /**
+ * Checks if a file is tracked by git
+ * @param filePath - The path to the file relative to workspace
+ * @param workspaceDir - The workspace directory
+ * @returns true if file is tracked, false otherwise
+ */
+function isFileTrackedByGit(filePath: string, workspaceDir: string): boolean {
+	try {
+		// Use git ls-files to check if file is tracked
+		// This command returns the file path if tracked, empty if not
+		const result = execSync(`git ls-files --error-unmatch "${filePath}"`, {
+			cwd: workspaceDir,
+			stdio: "pipe",
+			timeout: 1000,
+		})
+		return result.toString().trim().length > 0
+	} catch {
+		// File is not tracked or git command failed
+		return false
+	}
+}
+
+/**
+ * Extracts file/directory paths from a command string
+ * @param command - The command string to parse
+ * @param workspaceDir - The workspace directory to check paths against
+ * @returns Array of file/directory paths found in the command
+ */
+function extractFilePathsFromCommand(command: string, workspaceDir: string): string[] {
+	// Split by space and remove leading/trailing quotes
+	const parts = command.split(" ").map((part) => part.replace(/^["']|["']$/g, ""))
+
+	const filePaths: string[] = []
+	for (const part of parts) {
+		if (!part) continue
+
+		// Skip flags (starting with -)
+		if (part.startsWith("-")) continue
+
+		try {
+			// Resolve path relative to workspace
+			const resolvedPath = isAbsolute(part) ? part : join(workspaceDir, part)
+
+			// Check if it's a file or directory
+			if (existsSync(resolvedPath)) {
+				filePaths.push(part)
+			}
+		} catch {
+			// Skip if path resolution fails
+			continue
+		}
+	}
+
+	return filePaths
+}
+
+/**
  * Builds a concise prompt for the gatekeeper model to evaluate an action.
  *
  * @param toolName - The name of the tool being used
@@ -153,19 +213,42 @@ function buildGatekeeperPrompt(
 		case "apply_diff":
 		case "insert_content":
 		case "search_and_replace":
-		case "edit_file":
-			actionDescription += `File: ${toolParams.path || toolParams.target_file || "unknown"}\n`
+		case "edit_file": {
+			const filePath = toolParams.path || toolParams.target_file || "unknown"
+			actionDescription += `File: ${filePath}\n`
+
+			// TODO: is this needed?
+			// For file operations in git repos, check if file is tracked
+			if (isGitRepo && filePath !== "unknown") {
+				const isTracked = isFileTrackedByGit(filePath, workspaceDir)
+				actionDescription += `Git tracked: ${isTracked ? "YES (recoverable)" : "NO (untracked)"}\n`
+			}
+
 			if (toolParams.content) {
 				const contentPreview = toolParams.content.substring(0, 200)
 				actionDescription += `Content preview: ${contentPreview}${toolParams.content.length > 200 ? "..." : ""}\n`
 			}
 			break
-		case "execute_command":
-			actionDescription += `Command: ${toolParams.command || "unknown"}\n`
+		}
+		case "execute_command": {
+			const command = toolParams.command || "unknown"
+			actionDescription += `Command: ${command}\n`
 			if (toolParams.cwd) {
 				actionDescription += `Working directory: ${toolParams.cwd}\n`
 			}
+
+			if (isGitRepo) {
+				// Extract file paths from the command
+				const filePaths = extractFilePathsFromCommand(command, workspaceDir)
+
+				// Check git tracking status for each file found
+				for (const filePath of filePaths) {
+					const isTracked = isFileTrackedByGit(filePath, workspaceDir)
+					actionDescription += `Target file "${filePath}" git tracked: ${isTracked ? "YES (recoverable)" : "NO (untracked)"}\n`
+				}
+			}
 			break
+		}
 		case "read_file": {
 			const paths = toolParams.path ? [toolParams.path] : (toolParams.args?.file || []).map((f: any) => f.path)
 			actionDescription += `Files: ${paths.join(", ")}\n`
@@ -216,10 +299,10 @@ CORE PRINCIPLES:
    - Exception: Be cautious with critical config files (.git/config, etc.)
 
 4. DELETION DEPENDS ON RECOVERABILITY
-	  - In git repos: Tracked files can be recovered → SAFER
+	  - In git repos: Tracked files can be recovered via git → ALLOW
 	  - Without git: Deletions are permanent → DANGEROUS
 	  - Temporary/test files: Always safe to delete
-	  - Multiple files or recursive deletion: HIGH RISK
+	  - Multiple files or recursive deletion: HIGH RISK (evaluate carefully)
 
 5. COMMANDS SHOULD BE EVALUATED BY INTENT AND SCOPE
 	  - Read-only commands (ls, cat, grep, git status): SAFE
@@ -255,10 +338,10 @@ EXAMPLES OF GOOD DECISIONS:
 ✓ Approve: Running tests, building projects, starting dev servers
 ✓ Approve: Git operations that don't lose data (add, commit, status, log)
 ✓ Approve: Deleting temp/test files, even without git
+✓ Approve: Deleting tracked files in git repos (recoverable via git)
 ✓ Approve: MCP tools for reading documentation, searching GitHub
-✓ Conditional: Deleting workspace files in git repo (recoverable)
 ✗ Deny: Recursive deletion (rm -rf, find -delete, etc.)
-✗ Deny: Deleting files without git safety net
+✗ Deny: Deleting untracked files without git safety net
 ✗ Deny: Commands with sudo or system modifications
 ✗ Deny: Operations outside workspace
 ✗ Deny: MCP tools that delete external resources (repos, databases, etc.)
