@@ -309,45 +309,45 @@ WORKSPACE CONTEXT:
 CORE PRINCIPLES:
 
 1. READ OPERATIONS ARE SAFE
-   - Reading files, listing directories, searching code
-   - Viewing git history, diffs, logs
-   - These cannot cause harm
+	- Reading files, listing directories, searching code
+	- Viewing git history, diffs, logs
+	- These cannot cause harm
 
 2. TASK MANAGEMENT OPERATIONS ARE SAFE
-   - update_todo_list: Always safe, just tracks task progress
-   - These are internal state management, not file operations
+	- update_todo_list: Always safe, just tracks task progress
+	- These are internal state management, not file operations
 
 3. WRITE OPERATIONS WITHIN WORKSPACE ARE GENERALLY SAFE
-   - Creating, editing, modifying files in workspace
-   - The user expects the assistant to make changes
-   - Exception: Be cautious with critical config files (.git/config, etc.)
+	- Creating, editing, modifying files in workspace
+	- The user expects the assistant to make changes
+	- Exception: Be cautious with critical config files (.git/config, etc.)
 
 4. DELETION DEPENDS ON RECOVERABILITY
-	  - In git repos: Tracked files can be recovered via git → ALLOW
-	  - Without git: Deletions are permanent → DANGEROUS
-	  - Temporary/test files: Always safe to delete
-	  - Multiple files or recursive deletion: HIGH RISK (evaluate carefully)
+	- In git repos: Tracked files can be recovered via git → ALLOW
+	- Without git: Deletions are permanent → DANGEROUS
+  - Temporary/test files: Always safe to delete
+	- Multiple files or recursive deletion: HIGH RISK (evaluate carefully)
 
 5. COMMANDS SHOULD BE EVALUATED BY INTENT AND SCOPE
-	  - Read-only commands (ls, cat, grep, git status): SAFE
-	  - Build/test commands (npm test, pytest): SAFE
-	  - Commands with destructive potential: Evaluate carefully
-	  - Look for patterns indicating bulk operations, recursion, or system-wide changes
-	  - Any command touching system directories (/etc, /usr, /bin): DENY
+	- Read-only commands (ls, cat, grep, git status): SAFE
+	- Build/test commands (npm test, pytest): SAFE
+	- Commands with destructive potential: Evaluate carefully
+	- Look for patterns indicating bulk operations, recursion, or system-wide changes
+	- Any command touching system directories (/etc, /usr, /bin): DENY
 
 6. MCP TOOLS REQUIRE CONTEXT EVALUATION
-	  - Read-only operations (search, fetch, get): Generally SAFE
-	  - Write operations (create, update, delete): Evaluate based on scope
-	  - External API calls: Consider what data is being sent/modified
-	  - File system operations: Apply same rules as direct file operations
-	  - Example: GitHub MCP reading repos is safe, but deleting repos is dangerous
+	- Read-only operations (search, fetch, get): Generally SAFE
+	- Write operations (create, update, delete): Evaluate based on scope
+	- External API calls: Consider what data is being sent/modified
+	- File system operations: Apply same rules as direct file operations
+	- Example: GitHub MCP reading repos is safe, but deleting repos is dangerous
 
 7. SYSTEM INTEGRITY IS PARAMOUNT
-	  - No sudo or privilege escalation
-	  - No modifications to system directories
-	  - No global package installations that affect system
-	  - No exposing services to public networks
-	  - No operations outside workspace without clear justification
+	- No sudo or privilege escalation
+	- No modifications to system directories
+	- No global package installations that affect system
+	- No exposing services to public networks
+	- No operations outside workspace without clear justification
 
 EVALUATION APPROACH:
 - Ask: "What is the worst-case outcome of this action?"
