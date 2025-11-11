@@ -435,11 +435,6 @@
 				"when": "true"
 			},
 			{
-				"command": "kilo-code.ghost.cancelRequest",
-				"key": "escape",
-				"when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.ghost.isProcessing"
-			},
-			{
 				"command": "kilo-code.ghost.cancelSuggestions",
 				"key": "escape",
 				"when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.ghost.hasSuggestions"
@@ -748,7 +743,7 @@
 		"nock": "^14.0.4",
 		"npm-run-all2": "^8.0.1",
 		"ovsx": "0.10.4",
-		"rimraf": "^6.0.1",
+		"rimraf": "^6.1.0",
 		"tsup": "^8.4.0",
 		"tsx": "^4.19.3",
 		"typescript": "5.8.3",
