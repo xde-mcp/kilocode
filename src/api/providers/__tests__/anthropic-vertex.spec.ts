@@ -652,10 +652,12 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "image" }],
+				// kilocode_change start
 				usage: {
 					input_tokens: 10,
 					output_tokens: 5,
 				},
+				// kilocode_change end
 			})
 			;(handler["client"].messages as any).create = mockCreate
 
@@ -672,10 +674,12 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "text", text: "" }],
+				// kilocode_change start
 				usage: {
 					input_tokens: 10,
 					output_tokens: 0,
 				},
+				// kilocode_change end
 			})
 			;(handler["client"].messages as any).create = mockCreate
 

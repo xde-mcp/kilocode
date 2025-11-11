@@ -31,10 +31,12 @@ vi.mock("@mistralai/mistralai", () => {
 								},
 							},
 						],
+						// kilocode_change start
 						usage: {
 							promptTokens: 10,
 							completionTokens: 5,
 						},
+						// kilocode_change end
 					}
 				}),
 			},
@@ -255,10 +257,12 @@ describe("MistralHandler", () => {
 							},
 						},
 					],
+					// kilocode_change start
 					usage: {
 						promptTokens: 10,
 						completionTokens: 5,
 					},
+					// kilocode_change end
 				}
 			})
 

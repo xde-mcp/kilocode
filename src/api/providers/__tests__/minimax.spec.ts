@@ -225,10 +225,12 @@ describe("MiniMaxHandler", () => {
 		it("should handle non-text content", async () => {
 			mockCreate.mockImplementationOnce(async () => ({
 				content: [{ type: "image" }],
+				// kilocode_change start
 				usage: {
 					input_tokens: 10,
 					output_tokens: 5,
 				},
+				// kilocode_change end
 			}))
 			const result = await handler.completePrompt("Test prompt")
 			expect(result.text).toBe("") // kilocode_change
@@ -237,10 +239,12 @@ describe("MiniMaxHandler", () => {
 		it("should handle empty response", async () => {
 			mockCreate.mockImplementationOnce(async () => ({
 				content: [{ type: "text", text: "" }],
+				// kilocode_change start
 				usage: {
 					input_tokens: 10,
 					output_tokens: 0,
 				},
+				// kilocode_change end
 			}))
 			const result = await handler.completePrompt("Test prompt")
 			expect(result.text).toBe("") // kilocode_change
