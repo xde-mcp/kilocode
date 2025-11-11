@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, AutocompleteInput, vscodePositionToPosition } from "../types"
+import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
 import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion } from "./HoleFiller"
 import { GhostModel } from "../GhostModel"
@@ -8,7 +8,6 @@ import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
 import { refuseUselessSuggestion } from "./uselessSuggestionFilter"
-import crypto from "crypto"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -125,21 +124,18 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 	/**
 	 * Retrieve suggestions from LLM
-	 * @param autocompleteInput - The autocomplete input with all context
-	 * @param prefix - Text before cursor
-	 * @param suffix - Text after cursor
-	 * @param languageId - Language of the document
+	 * @param context - The suggestion context (should already include recentlyVisitedRanges and recentlyEditedRanges)
 	 * @param model - The Ghost model to use for generation
 	 * @returns LLM retrieval result with suggestions and usage info
 	 */
-	public async getFromLLM(
-		autocompleteInput: AutocompleteInput,
-		prefix: string,
-		suffix: string,
-		languageId: string,
-		model: GhostModel,
-	): Promise<LLMRetrievalResult> {
+	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
 		this.isRequestCancelled = false
+
+		const autocompleteInput = contextToAutocompleteInput(context)
+
+		const position = context.range?.start ?? context.document.positionAt(0)
+		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
+		const languageId = context.document.languageId
 
 		// Check cache before making API call (includes both successful and failed lookups)
 		const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
@@ -272,25 +268,19 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		// No cached suggestion available - invoke LLM
 		if (this.model) {
-			// Build autocomplete input directly with all tracking data
+			// Build complete context with all tracking data
 			const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
 			const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
 
-			const autocompleteInput: AutocompleteInput = {
-				isUntitledFile: document.isUntitled,
-				completionId: crypto.randomUUID(),
-				filepath: document.uri.fsPath,
-				pos: vscodePositionToPosition(position),
+			const context: GhostSuggestionContext = {
+				document,
+				range: new vscode.Range(position, position),
 				recentlyVisitedRanges,
 				recentlyEditedRanges,
-				manuallyPassFileContents: undefined,
-				manuallyPassPrefix: prefix,
 			}
 
-			const languageId = document.languageId
-
 			try {
-				const result = await this.getFromLLM(autocompleteInput, prefix, suffix, languageId, this.model)
+				const result = await this.getFromLLM(context, this.model)
 
 				if (this.costTrackingCallback && result.cost > 0) {
 					this.costTrackingCallback(
