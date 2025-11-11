@@ -73,7 +73,6 @@ export interface LLMRetrievalResult {
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
-	private isRequestCancelled: boolean = false
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -129,8 +128,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 * @returns LLM retrieval result with suggestions and usage info
 	 */
 	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
-		this.isRequestCancelled = false
-
 		const autocompleteInput = contextToAutocompleteInput(context)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
@@ -158,25 +155,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			languageId,
 		)
 
-		if (this.isRequestCancelled) {
-			return {
-				suggestion: { text: "", prefix, suffix },
-				cost: 0,
-				inputTokens: 0,
-				outputTokens: 0,
-				cacheWriteTokens: 0,
-				cacheReadTokens: 0,
-			}
-		}
-
 		let response = ""
 
 		// Create streaming callback
 		const onChunk = (chunk: ApiStreamChunk) => {
-			if (this.isRequestCancelled) {
-				return
-			}
-
 			if (chunk.type === "text") {
 				response += chunk.text
 			}
@@ -186,17 +168,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
 
 		console.log("response", response)
-
-		if (this.isRequestCancelled) {
-			return {
-				suggestion: { text: "", prefix, suffix },
-				cost: usageInfo.cost,
-				inputTokens: usageInfo.inputTokens,
-				outputTokens: usageInfo.outputTokens,
-				cacheWriteTokens: usageInfo.cacheWriteTokens,
-				cacheReadTokens: usageInfo.cacheReadTokens,
-			}
-		}
 
 		// Parse the response using the standalone function
 		let fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
@@ -217,10 +188,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			cacheWriteTokens: usageInfo.cacheWriteTokens,
 			cacheReadTokens: usageInfo.cacheReadTokens,
 		}
-	}
-
-	public cancelRequest(): void {
-		this.isRequestCancelled = true
 	}
 
 	public dispose(): void {
