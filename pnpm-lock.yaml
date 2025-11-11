@@ -1299,8 +1299,8 @@ importers:
         specifier: ^3.1.5
         version: 3.1.7
       lazy.js:
-        specifier: ^0.4.2
-        version: 0.4.3
+        specifier: ^0.5.1
+        version: 0.5.1
       merge-options:
         specifier: ^1.0.1
         version: 1.0.1
@@ -13387,8 +13387,8 @@ packages:
   layout-base@2.0.1:
     resolution: {integrity: sha512-dp3s92+uNI1hWIpPGH3jK2kxE2lMjdXdr+DH8ynZHpd6PUlH6x6cbuXnoMmiNumznqaNO31xu9e79F0uuZ0JFg==}
 
-  lazy.js@0.4.3:
-    resolution: {integrity: sha512-kHcnVaCZzhv6P+YgC4iRZFw62+biYIcBYU8qqKzJysC7cdKwPgb3WRtcBPyINTSLZwsjyFdBtd97sHbkseTZKw==}
+  lazy.js@0.5.1:
+    resolution: {integrity: sha512-p9v24vaKrzS2mEx3yuzva/3M6I3+HwvXd0pB1Xf/IvsFIMdhQgmym7JBO0e7c0OZmKTo07sCuiCIm6jazSWFNw==}
 
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
@@ -33636,7 +33636,7 @@ snapshots:
 
   layout-base@2.0.1: {}
 
-  lazy.js@0.4.3: {}
+  lazy.js@0.5.1: {}
 
   lazystream@1.0.1:
     dependencies:
