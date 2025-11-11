@@ -274,11 +274,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			// Always update suggestions, even if text is empty (for caching)
 			this.updateSuggestions(result.suggestion)
-
-			return stringToInlineCompletions(result.suggestion.text, position)
 		} catch (error) {
 			console.error("Error getting inline completion from LLM:", error)
 			return []
 		}
+
+		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+		return stringToInlineCompletions(cachedText ?? "", position)
 	}
 }
