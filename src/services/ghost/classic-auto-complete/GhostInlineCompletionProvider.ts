@@ -248,6 +248,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return stringToInlineCompletions(matchingText, position)
 		}
 
+		await this.fetchAndCacheSuggestion(document, position)
+
+		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+		return stringToInlineCompletions(cachedText ?? "", position)
+	}
+
+	private async fetchAndCacheSuggestion(document: vscode.TextDocument, position: vscode.Position): Promise<void> {
 		// Build complete context with all tracking data
 		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
 		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
@@ -276,10 +283,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
 			console.error("Error getting inline completion from LLM:", error)
-			return []
 		}
-
-		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
-		return stringToInlineCompletions(cachedText ?? "", position)
 	}
 }
