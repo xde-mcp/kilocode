@@ -279,7 +279,5 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			console.error("Error getting inline completion from LLM:", error)
 			return []
 		}
-
-		return []
 	}
 }
