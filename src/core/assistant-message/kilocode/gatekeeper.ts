@@ -66,9 +66,9 @@ export async function evaluateGatekeeperApproval(
 		// Parse the response - look for "yes", "approve", "allowed" vs "no", "deny", "block"
 		const normalizedResponse = response.toLowerCase().trim()
 		const approved =
-			normalizedResponse.includes("yes") ||
-			normalizedResponse.includes("approve") ||
-			normalizedResponse.includes("allow")
+			normalizedResponse.startsWith("yes") ||
+			normalizedResponse.startsWith("approve") ||
+			normalizedResponse.startsWith("allow")
 
 		console.log(`[Gatekeeper] Tool: ${toolName}, Decision: ${approved ? "APPROVED" : "DENIED"}`)
 

@@ -541,12 +541,11 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 		try {
 			const client = await this.getClient()
 			// kilocode_change start
-			const messages = systemPrompt
-				? [
-						vscode.LanguageModelChatMessage.Assistant(systemPrompt),
-						vscode.LanguageModelChatMessage.User(prompt),
-					]
-				: [vscode.LanguageModelChatMessage.User(prompt)]
+			const messages = [vscode.LanguageModelChatMessage.User(prompt)]
+
+			if (systemPrompt) {
+				messages.unshift(vscode.LanguageModelChatMessage.User(systemPrompt))
+			}
 
 			const response = await client.sendRequest(messages, {}, new vscode.CancellationTokenSource().token)
 			// kilocode_change end

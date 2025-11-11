@@ -31,6 +31,10 @@ vi.mock("@mistralai/mistralai", () => {
 								},
 							},
 						],
+						usage: {
+							promptTokens: 10,
+							completionTokens: 5,
+						},
 					}
 				}),
 			},
@@ -251,6 +255,10 @@ describe("MistralHandler", () => {
 							},
 						},
 					],
+					usage: {
+						promptTokens: 10,
+						completionTokens: 5,
+					},
 				}
 			})
 

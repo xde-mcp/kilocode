@@ -8,7 +8,7 @@ import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionR
 export async function singleCompletionHandler(
 	apiConfiguration: ProviderSettings,
 	promptText: string,
-	systemPrompt: string = "", // kilocode_change
+	systemPrompt?: string, // kilocode_change
 ): Promise<SingleCompletionResult> {
 	if (!promptText) {
 		throw new Error("No prompt text provided")
@@ -42,9 +42,9 @@ export async function singleCompletionHandler(
 async function streamResponseFromHandler(
 	handler: ApiHandler,
 	promptText: string,
-	systemPrompt: string,
+	systemPrompt?: string,
 ): Promise<string> {
-	const stream = handler.createMessage(systemPrompt, [
+	const stream = handler.createMessage(systemPrompt || "", [
 		{ role: "user", content: [{ type: "text", text: promptText }] },
 	])
 

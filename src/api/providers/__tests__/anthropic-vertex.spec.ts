@@ -652,6 +652,10 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "image" }],
+				usage: {
+					input_tokens: 10,
+					output_tokens: 5,
+				},
 			})
 			;(handler["client"].messages as any).create = mockCreate
 
@@ -668,6 +672,10 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "text", text: "" }],
+				usage: {
+					input_tokens: 10,
+					output_tokens: 0,
+				},
 			})
 			;(handler["client"].messages as any).create = mockCreate
 
