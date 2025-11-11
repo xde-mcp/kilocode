@@ -91,9 +91,9 @@ async function executeCommandGeneration(
 				customSupportPrompts,
 			)
 
-			const generatedCommand = await singleCompletionHandler(apiConfiguration, prompt)
+			const result = await singleCompletionHandler(apiConfiguration, prompt) // kilocode_change
 
-			const cleanCommand = generatedCommand
+			const cleanCommand = result.text // kilocode_change
 				.trim()
 				.replace(/^```[\w]*\n?|```$/g, "")
 				.trim()

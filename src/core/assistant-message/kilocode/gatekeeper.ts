@@ -1,6 +1,7 @@
 import { buildApiHandler } from "../../../api"
 import { Task } from "../../task/Task"
 import { calculateApiCostAnthropic } from "../../../shared/cost"
+import { singleCompletionHandler } from "../../../utils/single-completion-handler"
 
 /**
  * Evaluates whether an action should be approved using an AI gatekeeper model.
@@ -51,21 +52,15 @@ export async function evaluateGatekeeperApproval(
 		// Build the approval prompt
 		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams)
 
-		// Create API handler for gatekeeper
-		const gatekeeperApi = buildApiHandler(profile)
-
-		// Check if the handler supports single completion (some handlers may not)
-		if (!("completePrompt" in gatekeeperApi) || typeof gatekeeperApi.completePrompt !== "function") {
-			console.warn("[Gatekeeper] Handler does not support completePrompt, defaulting to approve")
-			return true
-		}
-
-		// Make the request to the gatekeeper model with system prompt
-		const result = await gatekeeperApi.completePrompt(userPrompt, systemPrompt)
+		// Make the request to the gatekeeper model using singleCompletionHandler
+		const result = await singleCompletionHandler(profile, userPrompt, systemPrompt)
 
 		// Extract response text and usage information
-		const response = typeof result === "string" ? result : result.text
-		const usage = typeof result === "object" && result.usage ? result.usage : undefined
+		const response = result.text
+		const usage = result.usage
+
+		// TODO: remove
+		console.log("[Gatekeeper] Response", response)
 
 		// Parse the response - look for "yes", "approve", "allowed" vs "no", "deny", "block"
 		const normalizedResponse = response.toLowerCase().trim()
@@ -79,28 +74,41 @@ export async function evaluateGatekeeperApproval(
 		// Display cost if usage information is available
 		if (usage) {
 			// Use totalCost if provided (e.g., from OpenRouter), otherwise calculate it
-			const cost =
-				"totalCost" in usage && typeof usage.totalCost === "number"
-					? usage.totalCost
-					: calculateApiCostAnthropic(
-							gatekeeperApi.getModel().info,
-							usage.inputTokens,
-							usage.outputTokens,
-							"cacheWriteTokens" in usage ? usage.cacheWriteTokens : undefined,
-							"cacheReadTokens" in usage ? usage.cacheReadTokens : undefined,
-						)
+			// let cost = usage.totalCost !== undefined ? usage.totalCost : 0
+			let cost = usage.totalCost
 
-			if (cost > 0) {
-				await cline.say(
-					"text",
-					`🛡️ Gatekeeper ${approved ? "approved" : "denied"} **${toolName}** ($${cost.toFixed(4)})`,
-					undefined,
-					false,
-					undefined,
-					undefined,
-					{ isNonInteractive: true },
+			// If totalCost is not provided, calculate it using model info
+			if (cost === undefined) {
+				// Build handler temporarily to get model info for cost calculation
+				const gatekeeperApi = buildApiHandler(profile)
+				const modelInfo = gatekeeperApi.getModel().info
+				cost = calculateApiCostAnthropic(
+					modelInfo,
+					usage.inputTokens,
+					usage.outputTokens,
+					usage.cacheWriteTokens,
+					usage.cacheReadTokens,
 				)
 			}
+
+			let formattedCost = `$${cost.toFixed(4)}`
+
+			if (cost < 0.0001) {
+				formattedCost = "<$0.0001"
+			}
+
+			// TODO: remove
+			console.log("[Gatekeeper]", { cost })
+
+			await cline.say(
+				"text",
+				`🛡️ Gatekeeper ${approved ? "approved" : "denied"} **${toolName}** (${formattedCost})`,
+				undefined,
+				false,
+				undefined,
+				undefined,
+				{ isNonInteractive: true },
+			)
 		}
 
 		return approved
@@ -160,6 +168,9 @@ function buildGatekeeperPrompt(
 			actionDescription += `Parameters: ${paramsStr}${JSON.stringify(toolParams).length > 300 ? "..." : ""}\n`
 		}
 	}
+
+	// TODO: remove
+	console.log("[Gatekeeper] Action Description:", actionDescription)
 
 	const systemPrompt = `You are a safety gatekeeper for an independent AI coding assistant. Your job is to evaluate whether actions should be allowed.
 

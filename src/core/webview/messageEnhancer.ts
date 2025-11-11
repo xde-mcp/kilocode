@@ -77,11 +77,11 @@ export class MessageEnhancer {
 			)
 
 			// Call the single completion handler to get the enhanced prompt
-			const enhancedText = await singleCompletionHandler(configToUse, enhancementPrompt)
+			const result = await singleCompletionHandler(configToUse, enhancementPrompt) // kilocode_change
 
 			return {
 				success: true,
-				enhancedText,
+				enhancedText: result.text, // kilocode_change
 			}
 		} catch (error) {
 			return {
