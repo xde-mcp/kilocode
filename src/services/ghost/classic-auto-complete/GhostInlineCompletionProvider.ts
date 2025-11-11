@@ -61,12 +61,6 @@ export function findMatchingSuggestion(
 	return null
 }
 
-/**
- * Convert a suggestion text to inline completion items
- * @param text - The suggestion text (empty string means no suggestion)
- * @param position - The position where the completion should be inserted
- * @returns Array of inline completion items (empty if text is empty)
- */
 export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
 	if (text === "") {
 		return []
