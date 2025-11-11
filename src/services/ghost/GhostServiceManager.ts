@@ -53,10 +53,6 @@ export class GhostServiceManager {
 			this.ghostContextProvider,
 		)
 
-		// Register workspace event handlers
-		vscode.workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders, this, context.subscriptions)
-		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, context.subscriptions)
-
 		void this.load()
 	}
 
@@ -157,18 +153,6 @@ export class GhostServiceManager {
 			delete this.ignoreController
 			;(await ignoreController).dispose()
 		}
-	}
-
-	private onDidChangeWorkspaceFolders() {
-		this.disposeIgnoreController()
-	}
-
-	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-		if (!editor) {
-			return
-		}
-		// Update global context when switching editors
-		await this.updateGlobalContext()
 	}
 
 	private async hasAccess(document: vscode.TextDocument) {
