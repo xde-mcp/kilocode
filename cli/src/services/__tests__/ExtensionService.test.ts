@@ -265,6 +265,9 @@ describe("ExtensionService", () => {
 		it("should emit stateChange event when state changes", async () => {
 			await service.initialize()
 
+			// Mark webview as ready to allow messages to be processed
+			service.getExtensionHost().markWebviewReady()
+
 			const stateChangeHandler = vi.fn()
 			service.on("stateChange", stateChangeHandler)
 
@@ -283,6 +286,9 @@ describe("ExtensionService", () => {
 
 		it("should emit message event for extension messages", async () => {
 			await service.initialize()
+
+			// Mark webview as ready to allow messages to be processed
+			service.getExtensionHost().markWebviewReady()
 
 			const messageHandler = vi.fn()
 			service.on("message", messageHandler)
