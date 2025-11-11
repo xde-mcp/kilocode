@@ -193,16 +193,22 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		const { id: modelId, info } = await this.fetchModel()
 
-		// Check if this is a GPT-5 model that requires max_completion_tokens instead of max_tokens
-		const isGPT5Model = this.isGpt5(modelId)
-
+		// kilocode_change start
 		try {
+			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+				? [
+						{ role: "system", content: systemPrompt },
+						{ role: "user", content: prompt },
+					]
+				: [{ role: "user", content: prompt }]
+			// kilocode_change end
+
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: modelId,
-				messages: [{ role: "user", content: prompt }],
+				messages, // kilocode_change
 			}
 
 			if (this.supportsTemperature(modelId)) {

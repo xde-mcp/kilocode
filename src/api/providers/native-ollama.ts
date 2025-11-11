@@ -347,7 +347,7 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			// kilocode_change start
 			if (!this.isInitialized) {
@@ -369,9 +369,18 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 				chatOptions.num_ctx = this.options.ollamaNumCtx
 			}
 
+			// kilocode_change start
+			const messages: Message[] = systemPrompt
+				? [
+						{ role: "system", content: systemPrompt },
+						{ role: "user", content: prompt },
+					]
+				: [{ role: "user", content: prompt }]
+			// kilocode_change end
+
 			const response = await client.chat({
 				model: modelId,
-				messages: [{ role: "user", content: prompt }],
+				messages, // kilocode_change
 				stream: false,
 				options: chatOptions,
 			})

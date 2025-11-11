@@ -179,12 +179,21 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			// Create params object with optional draft model
+			// kilocode_change start
+			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+				? [
+						{ role: "system", content: systemPrompt },
+						{ role: "user", content: prompt },
+					]
+				: [{ role: "user", content: prompt }]
+			// kilocode_change end
+
 			const params: any = {
 				model: this.getModel().id,
-				messages: [{ role: "user", content: prompt }],
+				messages, // kilocode_change
 				temperature: this.options.modelTemperature ?? LMSTUDIO_DEFAULT_TEMPERATURE,
 				stream: false,
 			}

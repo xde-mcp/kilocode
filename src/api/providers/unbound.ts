@@ -133,13 +133,22 @@ export class UnboundHandler extends RouterProvider implements SingleCompletionHa
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
+			// kilocode_change start
+			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+				? [
+						{ role: "system", content: systemPrompt },
+						{ role: "user", content: prompt },
+					]
+				: [{ role: "user", content: prompt }]
+			// kilocode_change end
+
 			const requestOptions: UnboundChatCompletionCreateParamsNonStreaming = {
 				model: modelId.split("/")[1],
-				messages: [{ role: "user", content: prompt }],
+				messages, // kilocode_change
 				unbound_metadata: {
 					originApp: ORIGIN_APP,
 				},

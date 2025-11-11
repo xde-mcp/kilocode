@@ -107,13 +107,22 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		await this.fetchModel()
 		const { id: modelId, info } = this.getModel()
 
+		// kilocode_change start
+		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+			? [
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: prompt },
+				]
+			: [{ role: "user", content: prompt }]
+		// kilocode_change end
+
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 			model: modelId,
-			messages: [{ role: "user", content: prompt }],
+			messages, // kilocode_change
 		}
 		if (this.supportsTemperature(modelId)) {
 			requestOptions.temperature = this.options.modelTemperature ?? 0

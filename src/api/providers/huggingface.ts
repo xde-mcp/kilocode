@@ -94,13 +94,22 @@ export class HuggingFaceHandler extends BaseProvider implements SingleCompletion
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		const modelId = this.options.huggingFaceModelId || "meta-llama/Llama-3.3-70B-Instruct"
 
 		try {
+			// kilocode_change start
+			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+				? [
+						{ role: "system", content: systemPrompt },
+						{ role: "user", content: prompt },
+					]
+				: [{ role: "user", content: prompt }]
+			// kilocode_change end
+
 			const response = await this.client.chat.completions.create({
 				model: modelId,
-				messages: [{ role: "user", content: prompt }],
+				messages, // kilocode_change
 			})
 
 			// kilocode_change start

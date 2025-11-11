@@ -70,7 +70,7 @@ export interface SingleCompletionResult {
 
 export interface SingleCompletionHandler {
 	// kilocode_change start
-	completePrompt(prompt: string, systemPrompt: string): Promise<SingleCompletionResult>
+	completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult>
 	// kilocode_change end
 }
 

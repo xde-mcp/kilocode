@@ -537,14 +537,20 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const client = await this.getClient()
-			const response = await client.sendRequest(
-				[vscode.LanguageModelChatMessage.User(prompt)],
-				{},
-				new vscode.CancellationTokenSource().token,
-			)
+			// kilocode_change start
+			const messages = systemPrompt
+				? [
+						vscode.LanguageModelChatMessage.Assistant(systemPrompt),
+						vscode.LanguageModelChatMessage.User(prompt),
+					]
+				: [vscode.LanguageModelChatMessage.User(prompt)]
+
+			const response = await client.sendRequest(messages, {}, new vscode.CancellationTokenSource().token)
+			// kilocode_change end
+
 			let result = ""
 			for await (const chunk of response.stream) {
 				if (chunk instanceof vscode.LanguageModelTextPart) {

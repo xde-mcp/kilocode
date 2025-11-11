@@ -221,7 +221,7 @@ describe("RequestyHandler", () => {
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: mockOptions.requestyModelId,
 				max_tokens: 8192,
-				messages: [{ role: "system", content: "test prompt" }],
+				messages: [{ role: "user", content: "test prompt" }], // kilocode_change
 				temperature: 0,
 			})
 		})

@@ -87,13 +87,17 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
 	 * Implementation of a single prompt
 	 * @param prompt Prompt content
 	 */
-	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	// kilocode_change start
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+		// Combine system prompt with user prompt if provided
+		const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt
+
 		// Copy to clipboard
-		await vscode.env.clipboard.writeText(prompt)
+		await vscode.env.clipboard.writeText(fullPrompt)
 
 		// A dialog box pops up to request user action
-		const response = await showHumanRelayDialog(prompt)
+		const response = await showHumanRelayDialog(fullPrompt)
+		// kilocode_change end
 
 		if (!response) {
 			throw new Error("Human relay operation cancelled")

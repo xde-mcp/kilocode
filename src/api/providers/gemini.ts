@@ -278,7 +278,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			await this.ensureModelsLoaded() // kilocode_change
 			const { id: model } = this.getModel()
@@ -295,6 +295,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 					? { baseUrl: this.options.googleGeminiBaseUrl }
 					: undefined,
 				temperature: this.options.modelTemperature ?? 0,
+				systemInstruction: systemPrompt, // kilocode_change
 				...(tools.length > 0 ? { tools } : {}),
 			}
 

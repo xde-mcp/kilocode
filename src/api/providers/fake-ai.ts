@@ -33,7 +33,7 @@ interface FakeAI {
 	): ApiStream
 	getModel(): { id: string; info: ModelInfo }
 	countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number>
-	completePrompt(prompt: string): Promise<string>
+	completePrompt(prompt: string, systemPrompt?: string): Promise<string>
 }
 
 /**
@@ -81,8 +81,8 @@ export class FakeAIHandler implements ApiHandler, SingleCompletionHandler {
 	}
 
 	// kilocode_change start
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
-		const result = await this.ai.completePrompt(prompt)
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+		const result = await this.ai.completePrompt(prompt, systemPrompt)
 
 		return {
 			text: result,

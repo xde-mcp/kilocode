@@ -1287,7 +1287,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const model = this.getModel()
 			const { verbosity, reasoning } = model
@@ -1306,6 +1306,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 				],
 				stream: false, // Non-streaming for completePrompt
 				store: false, // Don't store prompt completions
+				...(systemPrompt && { instructions: systemPrompt }),
 			}
 
 			// Include service tier if selected and supported

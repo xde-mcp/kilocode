@@ -110,7 +110,7 @@ export class OllamaHandler extends BaseProvider implements SingleCompletionHandl
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const modelId = this.getModel().id
 			const useR1Format = modelId.toLowerCase().includes("deepseek-r1")
@@ -119,8 +119,22 @@ export class OllamaHandler extends BaseProvider implements SingleCompletionHandl
 				response = await this.client.chat.completions.create({
 					model: this.getModel().id,
 					messages: useR1Format
-						? convertToR1Format([{ role: "user", content: prompt }])
-						: [{ role: "user", content: prompt }],
+						? // kilocode_change start
+							convertToR1Format(
+								systemPrompt
+									? [
+											{ role: "user", content: systemPrompt },
+											{ role: "user", content: prompt },
+										]
+									: [{ role: "user", content: prompt }],
+							)
+						: systemPrompt
+							? [
+									{ role: "system", content: systemPrompt },
+									{ role: "user", content: prompt },
+								]
+							: [{ role: "user", content: prompt }],
+					// kilocode_change end
 					temperature: this.options.modelTemperature ?? (useR1Format ? DEEP_SEEK_DEFAULT_TEMPERATURE : 0),
 					stream: false,
 				})

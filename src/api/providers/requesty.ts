@@ -160,10 +160,17 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		const { id: model, maxTokens: max_tokens, temperature } = await this.fetchModel()
 
-		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [{ role: "system", content: prompt }]
+		// kilocode_change start
+		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+			? [
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: prompt },
+				]
+			: [{ role: "user", content: prompt }]
+		// kilocode_change end
 
 		const completionParams: RequestyChatCompletionParams = {
 			model,

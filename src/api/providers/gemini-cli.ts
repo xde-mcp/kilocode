@@ -406,18 +406,27 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		await this.ensureAuthenticated()
 		const projectId = await this.discoverProjectId()
 
 		try {
 			const { id: model } = this.getModel()
 
+			// kilocode_change start
+			const contents = systemPrompt
+				? [
+						{ role: "user", parts: [{ text: systemPrompt }] },
+						{ role: "user", parts: [{ text: prompt }] },
+					]
+				: [{ role: "user", parts: [{ text: prompt }] }]
+			// kilocode_change end
+
 			const requestBody = {
 				model: model,
 				project: projectId,
 				request: {
-					contents: [{ role: "user", parts: [{ text: prompt }] }],
+					contents, // kilocode_change
 					generationConfig: {
 						temperature: this.options.modelTemperature ?? 0.7,
 					},

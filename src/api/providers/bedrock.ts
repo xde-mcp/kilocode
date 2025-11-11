@@ -632,7 +632,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const modelConfig = this.getModel()
 
@@ -660,7 +660,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 							content: prompt,
 						},
 					],
-					undefined,
+					systemPrompt, // kilocode_change
 					false,
 					modelConfig.info,
 					conversationId,

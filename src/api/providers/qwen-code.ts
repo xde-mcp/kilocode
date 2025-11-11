@@ -310,14 +310,23 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		await this.ensureAuthenticated()
 		const client = this.ensureClient()
 		const model = this.getModel()
 
+		// kilocode_change start
+		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
+			? [
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: prompt },
+				]
+			: [{ role: "user", content: prompt }]
+		// kilocode_change end
+
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 			model: model.id,
-			messages: [{ role: "user", content: prompt }],
+			messages, // kilocode_change
 			max_completion_tokens: model.info.maxTokens,
 		}
 

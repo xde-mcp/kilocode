@@ -236,7 +236,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		let { id: model } = this.getModel()
 
 		const message = await this.client.messages.create({
@@ -244,6 +244,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 			max_tokens: MINIMAX_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
 			temperature: MINIMAX_DEFAULT_TEMPERATURE,
+			system: systemPrompt, // kilocode_change
 			messages: [{ role: "user", content: prompt }],
 			stream: false,
 		})

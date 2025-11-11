@@ -278,13 +278,22 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		const { id: model } = this.getModel()
 
 		// Prepare request body for non-streaming completion
+		// kilocode_change start
+		const messages = systemPrompt
+			? [
+					{ role: "system", content: systemPrompt },
+					{ role: "user", content: prompt },
+				]
+			: [{ role: "user", content: prompt }]
+		// kilocode_change end
+
 		const requestBody = {
 			model,
-			messages: [{ role: "user", content: prompt }],
+			messages, // kilocode_change
 			stream: false,
 		}
 

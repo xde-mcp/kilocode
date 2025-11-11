@@ -178,7 +178,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			let {
 				id,
@@ -193,6 +193,13 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 				max_tokens: maxTokens,
 				temperature,
 				thinking,
+				// kilocode_change start
+				...(systemPrompt && {
+					system: supportsPromptCache
+						? [{ text: systemPrompt, type: "text" as const, cache_control: { type: "ephemeral" } }]
+						: systemPrompt,
+				}),
+				// kilocode_change end
 				messages: [
 					{
 						role: "user",

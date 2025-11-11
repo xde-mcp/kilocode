@@ -105,13 +105,20 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 	}
 
 	// kilocode_change
-	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
 		try {
 			const { id: model, temperature } = this.getModel()
 
 			const response = await this.client.chat.complete({
 				model,
-				messages: [{ role: "user", content: prompt }],
+				// kilocode_change start
+				messages: systemPrompt
+					? [
+							{ role: "system" as const, content: systemPrompt },
+							{ role: "user" as const, content: prompt },
+						]
+					: [{ role: "user" as const, content: prompt }],
+				// kilocode_change end
 				temperature,
 			})
 
