@@ -3,7 +3,6 @@ import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput
 import { GhostContextProvider } from "./GhostContextProvider"
 import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion } from "./HoleFiller"
 import { GhostModel } from "../GhostModel"
-import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
@@ -77,7 +76,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private isRequestCancelled: boolean = false
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
-	private ghostContext: GhostContext
 	private getSettings: () => GhostServiceSettings | null
 	private recentlyVisitedRangesService: RecentlyVisitedRangesService
 	private recentlyEditedTracker: RecentlyEditedTracker
@@ -85,13 +83,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	constructor(
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
-		ghostContext: GhostContext,
 		getSettings: () => GhostServiceSettings | null,
 		contextProvider?: GhostContextProvider,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
-		this.ghostContext = ghostContext
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
 
@@ -128,23 +124,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 	/**
 	 * Retrieve suggestions from LLM
-	 * @param context - The suggestion context
+	 * @param context - The suggestion context (should already include recentlyVisitedRanges and recentlyEditedRanges)
 	 * @param model - The Ghost model to use for generation
 	 * @returns LLM retrieval result with suggestions and usage info
 	 */
 	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
 		this.isRequestCancelled = false
 
-		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
-		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
-
-		const enrichedContext: GhostSuggestionContext = {
-			...context,
-			recentlyVisitedRanges,
-			recentlyEditedRanges,
-		}
-
-		const autocompleteInput = contextToAutocompleteInput(enrichedContext)
+		const autocompleteInput = contextToAutocompleteInput(context)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
@@ -280,15 +267,20 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 
 		// No cached suggestion available - invoke LLM
-		if (this.model && this.ghostContext) {
+		if (this.model) {
+			// Build complete context with all tracking data
+			const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+			const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
+
 			const context: GhostSuggestionContext = {
 				document,
 				range: new vscode.Range(position, position),
+				recentlyVisitedRanges,
+				recentlyEditedRanges,
 			}
 
-			const fullContext = await this.ghostContext.generate(context)
 			try {
-				const result = await this.getFromLLM(fullContext, this.model)
+				const result = await this.getFromLLM(context, this.model)
 
 				if (this.costTrackingCallback && result.cost > 0) {
 					this.costTrackingCallback(
