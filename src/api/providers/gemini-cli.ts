@@ -444,11 +444,11 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 						.filter((part: any) => part.text && !part.thought)
 						.map((part: any) => part.text)
 						.join("")
-					return { text: textParts, usage: undefined } // kilocode_change
+					return { text: textParts } // kilocode_change
 				}
 			}
 
-			return { text: "", usage: undefined } // kilocode_change
+			return { text: "" } // kilocode_change
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.geminiCli.completionError", { error: error.message }))

@@ -213,14 +213,15 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 
 			const response = await this.client.chat.completions.create(requestOptions)
 			// kilocode_change start
+			const usage = response.usage as LiteLLMUsage | undefined
 			return {
 				text: response.choices[0]?.message.content || "",
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: usage?.prompt_tokens || 0,
+					outputTokens: usage?.completion_tokens || 0,
+					cacheWriteTokens: usage?.cache_creation_input_tokens,
+					cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

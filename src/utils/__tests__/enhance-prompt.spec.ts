@@ -40,9 +40,9 @@ describe("enhancePrompt", () => {
 	it("enhances prompt using default enhancement prompt when no custom prompt provided", async () => {
 		const result = await singleCompletionHandler(mockApiConfig, "Test prompt")
 
-		expect(result.text).toBe("Enhanced prompt")
+		expect(result.text).toBe("Enhanced prompt") // kilocode_change
 		const handler = buildApiHandler(mockApiConfig)
-		expect((handler as any).completePrompt).toHaveBeenCalledWith(`Test prompt`, undefined)
+		expect((handler as any).completePrompt).toHaveBeenCalledWith(`Test prompt`, undefined) // kilocode_change
 	})
 
 	it("enhances prompt using custom enhancement prompt when provided", async () => {
@@ -62,9 +62,9 @@ describe("enhancePrompt", () => {
 			),
 		)
 
-		expect(result.text).toBe("Enhanced prompt")
+		expect(result.text).toBe("Enhanced prompt") // kilocode_change
 		const handler = buildApiHandler(mockApiConfig)
-		expect((handler as any).completePrompt).toHaveBeenCalledWith(`${customEnhancePrompt}\n\nTest prompt`, undefined)
+		expect((handler as any).completePrompt).toHaveBeenCalledWith(`${customEnhancePrompt}\n\nTest prompt`, undefined) // kilocode_change
 	})
 
 	it("throws error for empty prompt input", async () => {
@@ -101,7 +101,7 @@ describe("enhancePrompt", () => {
 
 		const result = await singleCompletionHandler(mockApiConfig, "Test prompt")
 
-		expect(result.text).toBe("Fallback response")
+		expect(result.text).toBe("Fallback response") // kilocode_change
 		const handler = buildApiHandler(mockApiConfig)
 		expect((handler as any).createMessage).toHaveBeenCalledWith("", [
 			{ role: "user", content: [{ type: "text", text: "Test prompt" }] },
@@ -163,7 +163,7 @@ describe("enhancePrompt", () => {
 		const result = await singleCompletionHandler(openRouterConfig, "Test prompt")
 
 		expect(buildApiHandler).toHaveBeenCalledWith(openRouterConfig)
-		expect(result.text).toBe("Enhanced prompt")
+		expect(result.text).toBe("Enhanced prompt") // kilocode_change
 	})
 
 	it("propagates API errors", async () => {

@@ -6,7 +6,7 @@ import type {
 	ApiHandler,
 	SingleCompletionHandler,
 	ApiHandlerCreateMessageMetadata,
-	SingleCompletionResult,
+	SingleCompletionResult, // kilocode_change
 } from "../index"
 import type { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
@@ -80,6 +80,7 @@ export class FakeAIHandler implements ApiHandler, SingleCompletionHandler {
 		return this.ai.countTokens(content)
 	}
 
+	// kilocode_change start
 	async completePrompt(prompt: string): Promise<SingleCompletionResult> {
 		const result = await this.ai.completePrompt(prompt)
 
@@ -87,4 +88,5 @@ export class FakeAIHandler implements ApiHandler, SingleCompletionHandler {
 			text: result,
 		}
 	}
+	// kilocode_change end
 }

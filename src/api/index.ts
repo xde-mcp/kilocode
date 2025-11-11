@@ -69,8 +69,8 @@ export interface SingleCompletionResult {
 // kilocode_change end
 
 export interface SingleCompletionHandler {
-	// kilocode_change start: Add systemPrompt parameter for gatekeeper and always return object
-	completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult>
+	// kilocode_change start
+	completePrompt(prompt: string, systemPrompt: string): Promise<SingleCompletionResult>
 	// kilocode_change end
 }
 

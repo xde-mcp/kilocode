@@ -551,7 +551,7 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 					result += chunk.value
 				}
 			}
-			return { text: result, usage: undefined } // kilocode_change
+			return { text: result } // kilocode_change
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`VSCode LM completion error: ${error.message}`)

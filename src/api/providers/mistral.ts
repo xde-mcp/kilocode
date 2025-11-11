@@ -120,7 +120,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 
 			if (Array.isArray(content)) {
 				// Only return text content, filter out thinking content for non-streaming
-				text = (content as ContentChunkWithThinking[])
+				text = (content as ContentChunkWithThinking[]) // kilocode_change
 					.filter((c) => c.type === "text" && c.text)
 					.map((c) => c.text || "")
 					.join("")

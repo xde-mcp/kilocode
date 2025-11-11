@@ -685,6 +685,8 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 							? {
 									inputTokens: response.usage.inputTokens || 0,
 									outputTokens: response.usage.outputTokens || 0,
+									cacheReadTokens: response.usage.cacheReadInputTokens,
+									cacheWriteTokens: response.usage.cacheWriteInputTokens,
 								}
 							: undefined,
 					}

@@ -99,7 +99,7 @@ export class HumanRelayHandler implements ApiHandler, SingleCompletionHandler {
 			throw new Error("Human relay operation cancelled")
 		}
 
-		return { text: response, usage: undefined } // kilocode_change
+		return { text: response } // kilocode_change
 	}
 }
 

@@ -382,25 +382,25 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
 			temperature,
-			...(systemPrompt && { system: systemPrompt }), // kilocode_change: Support system prompt
+			...(systemPrompt && { system: systemPrompt }), // kilocode_change
 			messages: [{ role: "user", content: prompt }],
 			stream: false,
 		})
 
 		const content = message.content.find(({ type }) => type === "text")
-		// kilocode_change start: Always return object with usage
+		// kilocode_change start
 		const text = content?.type === "text" ? content.text : ""
+
+		const usage = message.usage
 
 		return {
 			text,
-			usage: message.usage
-				? {
-						inputTokens: message.usage.input_tokens || 0,
-						outputTokens: message.usage.output_tokens || 0,
-						cacheWriteTokens: message.usage.cache_creation_input_tokens || undefined,
-						cacheReadTokens: message.usage.cache_read_input_tokens || undefined,
-					}
-				: undefined,
+			usage: {
+				inputTokens: usage.input_tokens,
+				outputTokens: usage.output_tokens,
+				cacheWriteTokens: usage.cache_creation_input_tokens || undefined,
+				cacheReadTokens: usage.cache_read_input_tokens || undefined,
+			},
 		}
 		// kilocode_change end
 	}

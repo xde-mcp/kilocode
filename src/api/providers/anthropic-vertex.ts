@@ -210,14 +210,16 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			// kilocode_change start
 			const text = content.type === "text" ? content.text : ""
 
+			const usage = response.usage
+
 			return {
 				text,
-				usage: response.usage
-					? {
-							inputTokens: response.usage.input_tokens || 0,
-							outputTokens: response.usage.output_tokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: usage.input_tokens,
+					outputTokens: usage.output_tokens,
+					cacheReadTokens: usage.cache_read_input_tokens || undefined,
+					cacheWriteTokens: usage.cache_creation_input_tokens || undefined,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

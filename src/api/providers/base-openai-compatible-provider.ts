@@ -139,7 +139,6 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
 	// kilocode_change
 	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
-		// kilocode_change end
 		const { id: modelId } = this.getModel()
 
 		try {
@@ -160,15 +159,15 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 
 			// kilocode_change start
 			const text = response.choices[0]?.message.content || ""
+			const usage = response.usage
 
 			return {
 				text,
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: usage?.prompt_tokens || 0,
+					outputTokens: usage?.completion_tokens || 0,
+					cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

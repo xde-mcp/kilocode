@@ -351,12 +351,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 
 			return {
 				text,
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
+				usage: {
+					inputTokens: response.usage?.prompt_tokens || 0,
+					outputTokens: response.usage?.completion_tokens || 0,
+				},
 			}
 			// kilocode_change end
 		} catch (error) {

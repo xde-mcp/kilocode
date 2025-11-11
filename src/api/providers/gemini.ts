@@ -314,7 +314,16 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				}
 			}
 
-			return { text, usage: undefined } // kilocode_change
+			// kilocode_change start
+			return {
+				text,
+				usage: {
+					inputTokens: result.usageMetadata?.promptTokenCount ?? 0,
+					outputTokens: result.usageMetadata?.candidatesTokenCount ?? 0,
+					cacheReadTokens: result.usageMetadata?.cachedContentTokenCount,
+				},
+			}
+			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_complete_prompt", { error: error.message }))

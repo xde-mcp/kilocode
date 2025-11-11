@@ -1,5 +1,5 @@
 import type { ProviderSettings } from "@roo-code/types"
-import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionResult } from "../api" //kilocode_change
+import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionResult } from "../api" // kilocode_change
 
 /**
  * Enhances a prompt using the configured API without creating a full Cline instance or task history.
@@ -13,7 +13,7 @@ import { buildApiHandler, SingleCompletionHandler, ApiHandler, SingleCompletionR
 export async function singleCompletionHandler(
 	apiConfiguration: ProviderSettings,
 	promptText: string,
-	systemPrompt?: string,
+	systemPrompt: string = "",
 ): Promise<SingleCompletionResult> {
 	if (!promptText) {
 		throw new Error("No prompt text provided")
@@ -47,9 +47,9 @@ export async function singleCompletionHandler(
 async function streamResponseFromHandler(
 	handler: ApiHandler,
 	promptText: string,
-	systemPrompt?: string,
+	systemPrompt: string,
 ): Promise<string> {
-	const stream = handler.createMessage(systemPrompt || "", [
+	const stream = handler.createMessage(systemPrompt, [
 		{ role: "user", content: [{ type: "text", text: promptText }] },
 	])
 

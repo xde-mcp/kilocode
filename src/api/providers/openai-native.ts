@@ -1362,6 +1362,15 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 													response.usage.output_tokens ||
 													response.usage.completion_tokens ||
 													0,
+												cacheWriteTokens:
+													response.usage.cache_creation_input_tokens ||
+													response.usage.cache_write_tokens ||
+													undefined,
+												cacheReadTokens:
+													response.usage.cache_read_input_tokens ||
+													response.usage.cache_read_tokens ||
+													response.usage.cached_tokens ||
+													undefined,
 											}
 										: undefined,
 								}
@@ -1381,12 +1390,18 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 						? {
 								inputTokens: response.usage.input_tokens || response.usage.prompt_tokens || 0,
 								outputTokens: response.usage.output_tokens || response.usage.completion_tokens || 0,
+								cacheWriteTokens:
+									response.usage.cache_creation_input_tokens || response.usage.cache_write_tokens,
+								cacheReadTokens:
+									response.usage.cache_read_input_tokens ||
+									response.usage.cache_read_tokens ||
+									response.usage.cached_tokens,
 							}
 						: undefined,
 				}
 			}
 
-			return { text: "", usage: undefined }
+			return { text: "" }
 			// kilocode_change end
 		} catch (error) {
 			if (error instanceof Error) {
