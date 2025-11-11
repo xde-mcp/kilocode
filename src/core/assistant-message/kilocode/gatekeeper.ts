@@ -74,7 +74,6 @@ export async function evaluateGatekeeperApproval(
 		// Display cost if usage information is available
 		if (usage) {
 			// Use totalCost if provided (e.g., from OpenRouter), otherwise calculate it
-			// let cost = usage.totalCost !== undefined ? usage.totalCost : 0
 			let cost = usage.totalCost
 
 			// If totalCost is not provided, calculate it using model info
