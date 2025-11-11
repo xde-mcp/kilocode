@@ -140,12 +140,22 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private async getPromptForContext(context: GhostSuggestionContext): Promise<GhostPrompt> {
+	private async getPrompt(document: vscode.TextDocument, position: vscode.Position): Promise<GhostPrompt> {
+		// Build complete context with all tracking data
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
+
+		const context: GhostSuggestionContext = {
+			document,
+			range: new vscode.Range(position, position),
+			recentlyVisitedRanges,
+			recentlyEditedRanges,
+		}
+
 		const autocompleteInput = contextToAutocompleteInput(context)
 
-		const position = context.range?.start ?? context.document.positionAt(0)
-		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
-		const languageId = context.document.languageId
+		const { prefix, suffix } = extractPrefixSuffix(document, position)
+		const languageId = document.languageId
 
 		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(
 			autocompleteInput,
@@ -235,26 +245,15 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return stringToInlineCompletions(matchingText, position)
 		}
 
-		await this.fetchAndCacheSuggestion(document, position)
+		const prompt = await this.getPrompt(document, position)
+		await this.fetchAndCacheSuggestion(prompt)
 
 		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 		return stringToInlineCompletions(cachedText ?? "", position)
 	}
 
-	private async fetchAndCacheSuggestion(document: vscode.TextDocument, position: vscode.Position): Promise<void> {
-		// Build complete context with all tracking data
-		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
-		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
-
-		const context: GhostSuggestionContext = {
-			document,
-			range: new vscode.Range(position, position),
-			recentlyVisitedRanges,
-			recentlyEditedRanges,
-		}
-
+	private async fetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
 		try {
-			const prompt = await this.getPromptForContext(context)
 			const result = await this.getFromLLM(prompt, this.model)
 
 			if (this.costTrackingCallback && result.cost > 0) {
