@@ -13,7 +13,7 @@ import { calculateApiCostOpenAI } from "../../shared/cost"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index"
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
 import { RouterProvider } from "./router-provider"
 import { getModelParams } from "../transform/model-params"
 import { getModels } from "./fetchers/modelCache"
