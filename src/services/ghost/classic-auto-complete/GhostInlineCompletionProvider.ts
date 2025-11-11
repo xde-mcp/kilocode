@@ -19,6 +19,13 @@ export type CostTrackingCallback = (
 	cacheReadTokens: number,
 ) => void
 
+export interface GhostPrompt {
+	systemPrompt: string
+	userPrompt: string
+	prefix: string
+	suffix: string
+}
+
 /**
  * Find a matching suggestion from the history based on current prefix and suffix
  * @param prefix - The text before the cursor position
@@ -133,32 +140,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	/**
-	 * Retrieve suggestions from LLM
-	 * @param context - The suggestion context (should already include recentlyVisitedRanges and recentlyEditedRanges)
-	 * @param model - The Ghost model to use for generation
-	 * @returns LLM retrieval result with suggestions and usage info
-	 */
-	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
+	private async getPromptForContext(context: GhostSuggestionContext): Promise<GhostPrompt> {
 		const autocompleteInput = contextToAutocompleteInput(context)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 		const languageId = context.document.languageId
-
-		// Check cache before making API call (includes both successful and failed lookups)
-		const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
-		if (cachedResult !== null) {
-			// Return cached result (either success with text or failure with empty string)
-			return {
-				suggestion: { text: cachedResult, prefix, suffix },
-				cost: 0,
-				inputTokens: 0,
-				outputTokens: 0,
-				cacheWriteTokens: 0,
-				cacheReadTokens: 0,
-			}
-		}
 
 		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(
 			autocompleteInput,
@@ -166,6 +153,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			suffix,
 			languageId,
 		)
+
+		return { systemPrompt, userPrompt, prefix, suffix }
+	}
+
+	public async getFromLLM(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
+		const { systemPrompt, userPrompt, prefix, suffix } = prompt
 
 		let response = ""
 
@@ -261,7 +254,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 
 		try {
-			const result = await this.getFromLLM(context, this.model)
+			const prompt = await this.getPromptForContext(context)
+			const result = await this.getFromLLM(prompt, this.model)
 
 			if (this.costTrackingCallback && result.cost > 0) {
 				this.costTrackingCallback(
