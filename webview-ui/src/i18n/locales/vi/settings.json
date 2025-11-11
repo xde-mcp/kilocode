@@ -714,11 +714,11 @@
 		},
 		"outputLineLimit": {
 			"label": "Giới hạn đầu ra của terminal",
-			"description": "Giữ lại các dòng đầu tiên và cuối cùng và loại bỏ các dòng ở giữa để ở dưới giới hạn. Giảm xuống để tiết kiệm token; tăng lên để cung cấp cho Roo thêm chi tiết ở giữa. Roo thấy một trình giữ chỗ nơi nội dung bị bỏ qua.<0>Tìm hiểu thêm</0>"
+			"description": "Giữ lại các dòng đầu tiên và cuối cùng và loại bỏ các dòng ở giữa để ở dưới giới hạn. Giảm xuống để tiết kiệm token; tăng lên để cung cấp cho Kilo thêm chi tiết ở giữa. Kilo thấy một trình giữ chỗ nơi nội dung bị bỏ qua.<0>Tìm hiểu thêm</0>"
 		},
 		"outputCharacterLimit": {
 			"label": "Giới hạn ký tự terminal",
-			"description": "Ghi đè giới hạn dòng để tránh vấn đề bộ nhớ bằng cách áp đặt giới hạn cứng cho kích thước đầu ra. Nếu vượt quá, giữ đầu và cuối, hiển thị placeholder cho Roo nơi nội dung bị bỏ qua. <0>Tìm hiểu thêm</0>"
+			"description": "Ghi đè giới hạn dòng để tránh vấn đề bộ nhớ bằng cách áp đặt giới hạn cứng cho kích thước đầu ra. Nếu vượt quá, giữ đầu và cuối, hiển thị placeholder cho Kilo nơi nội dung bị bỏ qua. <0>Tìm hiểu thêm</0>"
 		},
 		"shellIntegrationTimeout": {
 			"label": "Timeout tích hợp shell terminal",
@@ -726,7 +726,7 @@
 		},
 		"shellIntegrationDisabled": {
 			"label": "Sử dụng Terminal nội tuyến (được khuyến nghị)",
-			"description": "Chạy lệnh trong Terminal nội tuyến (trò chuyện) để bỏ qua hồ sơ/tích hợp shell để chạy nhanh hơn, đáng tin cậy hơn. Khi bị tắt, Roo sử dụng terminal VS Code với hồ sơ shell, lời nhắc và plugin của bạn. <0>Tìm hiểu thêm</0>"
+			"description": "Chạy lệnh trong Terminal nội tuyến (trò chuyện) để bỏ qua hồ sơ/tích hợp shell để chạy nhanh hơn, đáng tin cậy hơn. Khi bị tắt, Kilo sử dụng terminal VS Code với hồ sơ shell, lời nhắc và plugin của bạn. <0>Tìm hiểu thêm</0>"
 		},
 		"commandDelay": {
 			"label": "Delay lệnh terminal",
@@ -767,7 +767,7 @@
 	"advanced": {
 		"diff": {
 			"label": "Bật chỉnh sửa qua diff",
-			"description": "Khi được bật, Roo sẽ có thể chỉnh sửa tệp nhanh hơn và sẽ tự động từ chối ghi toàn bộ tệp bị cắt ngắn",
+			"description": "Khi được bật, Kilo sẽ có thể chỉnh sửa tệp nhanh hơn và sẽ tự động từ chối ghi toàn bộ tệp bị cắt ngắn",
 			"strategy": {
 				"label": "Chiến lược diff",
 				"options": {

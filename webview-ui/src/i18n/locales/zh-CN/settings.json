@@ -718,11 +718,11 @@
 		},
 		"outputLineLimit": {
 			"label": "终端输出限制",
-			"description": "保留首尾行并丢弃中间行以保持在限制内。降低可节省 token；提高可为 Roo 提供更多中间细节。Roo 看到内容被跳过的占位符。<0>了解更多</0>"
+			"description": "保留首尾行并丢弃中间行以保持在限制内。降低可节省 token；提高可为 Kilo 提供更多中间细节。Kilo 看到内容被跳过的占位符。<0>了解更多</0>"
 		},
 		"outputCharacterLimit": {
 			"label": "终端字符限制",
-			"description": "通过强制限制输出大小来覆盖行限制以防止内存问题。如果超出，保留开头和结尾并向 Roo 显示内容被跳过的占位符。<0>了解更多</0>"
+			"description": "通过强制限制输出大小来覆盖行限制以防止内存问题。如果超出，保留开头和结尾并向 Kilo 显示内容被跳过的占位符。<0>了解更多</0>"
 		},
 		"shellIntegrationTimeout": {
 			"label": "终端 shell 集成超时",
@@ -730,7 +730,7 @@
 		},
 		"shellIntegrationDisabled": {
 			"label": "使用内联终端（推荐）",
-			"description": "在内联终端（聊天）中运行命令以绕过 shell 配置文件/集成，实现更快、更可靠的运行。禁用时，Roo 使用 VS Code 终端及您的 shell 配置文件、提示和插件。<0>了解更多</0>"
+			"description": "在内联终端（聊天）中运行命令以绕过 shell 配置文件/集成，实现更快、更可靠的运行。禁用时，Kilo 使用 VS Code 终端及您的 shell 配置文件、提示和插件。<0>了解更多</0>"
 		},
 		"commandDelay": {
 			"label": "终端命令延迟",

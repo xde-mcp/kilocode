@@ -714,11 +714,11 @@
 		},
 		"outputLineLimit": {
 			"label": "Limite de saída do terminal",
-			"description": "Mantém as primeiras e últimas linhas e descarta as do meio para ficar abaixo do limite. Diminua para economizar tokens; aumente para dar ao Roo mais detalhes do meio. O Roo vê um placeholder onde o conteúdo é pulado.<0>Saiba mais</0>"
+			"description": "Mantém as primeiras e últimas linhas e descarta as do meio para ficar abaixo do limite. Diminua para economizar tokens; aumente para dar ao Kilo mais detalhes do meio. O Kilo vê um placeholder onde o conteúdo é pulado.<0>Saiba mais</0>"
 		},
 		"outputCharacterLimit": {
 			"label": "Limite de caracteres do terminal",
-			"description": "Substitui o limite de linhas para evitar problemas de memória, impondo um limite rígido no tamanho da saída. Se excedido, mantém o início e o fim e mostra um placeholder para o Roo onde o conteúdo é pulado. <0>Saiba mais</0>"
+			"description": "Substitui o limite de linhas para evitar problemas de memória, impondo um limite rígido no tamanho da saída. Se excedido, mantém o início e o fim e mostra um placeholder para o Kilo onde o conteúdo é pulado. <0>Saiba mais</0>"
 		},
 		"shellIntegrationTimeout": {
 			"label": "Tempo limite de integração do shell do terminal",
@@ -726,7 +726,7 @@
 		},
 		"shellIntegrationDisabled": {
 			"label": "Usar Terminal Inline (recomendado)",
-			"description": "Execute comandos no Terminal Inline (chat) para contornar perfis/integração de shell para execuções mais rápidas e confiáveis. Quando desativado, o Roo usa o terminal do VS Code com seu perfil de shell, prompts e plugins. <0>Saiba mais</0>"
+			"description": "Execute comandos no Terminal Inline (chat) para contornar perfis/integração de shell para execuções mais rápidas e confiáveis. Quando desativado, o Kilo usa o terminal do VS Code com seu perfil de shell, prompts e plugins. <0>Saiba mais</0>"
 		},
 		"commandDelay": {
 			"label": "Atraso de comando do terminal",
