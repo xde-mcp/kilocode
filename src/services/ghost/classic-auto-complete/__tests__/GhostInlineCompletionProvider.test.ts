@@ -2,15 +2,14 @@ import * as vscode from "vscode"
 import {
 	GhostInlineCompletionProvider,
 	findMatchingSuggestion,
+	stringToInlineCompletions,
 	CostTrackingCallback,
 } from "../GhostInlineCompletionProvider"
-import { FillInAtCursorSuggestion } from "../GhostSuggestions"
+import { FillInAtCursorSuggestion } from "../HoleFiller"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
-import { GhostContext } from "../../GhostContext"
-import { GhostGutterAnimation } from "../../GhostGutterAnimation"
 
-// Mock vscode InlineCompletionTriggerKind enum
+// Mock vscode InlineCompletionTriggerKind enum and event listeners
 vi.mock("vscode", async () => {
 	const actual = await vi.importActual<typeof vscode>("vscode")
 	return {
@@ -18,6 +17,14 @@ vi.mock("vscode", async () => {
 		InlineCompletionTriggerKind: {
 			Invoke: 0,
 			Automatic: 1,
+		},
+		window: {
+			...actual.window,
+			onDidChangeTextEditorSelection: vi.fn(() => ({ dispose: vi.fn() })),
+		},
+		workspace: {
+			...actual.workspace,
+			onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
 		},
 	}
 })
@@ -279,6 +286,42 @@ describe("findMatchingSuggestion", () => {
 	})
 })
 
+describe("stringToInlineCompletions", () => {
+	it("should return empty array when text is empty string", () => {
+		const position = new vscode.Position(0, 10)
+		const result = stringToInlineCompletions("", position)
+
+		expect(result).toEqual([])
+	})
+
+	it("should return inline completion item when text is non-empty", () => {
+		const position = new vscode.Position(0, 10)
+		const text = "console.log('test');"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result).toHaveLength(1)
+		expect(result[0].insertText).toBe(text)
+		expect(result[0].range).toEqual(new vscode.Range(position, position))
+	})
+
+	it("should create range at the specified position", () => {
+		const position = new vscode.Position(5, 20)
+		const text = "some code"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result[0].range).toEqual(new vscode.Range(position, position))
+	})
+
+	it("should handle multi-line text", () => {
+		const position = new vscode.Position(0, 0)
+		const text = "line1\nline2\nline3"
+		const result = stringToInlineCompletions(text, position)
+
+		expect(result).toHaveLength(1)
+		expect(result[0].insertText).toBe(text)
+	})
+})
+
 describe("GhostInlineCompletionProvider", () => {
 	let provider: GhostInlineCompletionProvider
 	let mockDocument: vscode.TextDocument
@@ -287,9 +330,8 @@ describe("GhostInlineCompletionProvider", () => {
 	let mockToken: vscode.CancellationToken
 	let mockModel: GhostModel
 	let mockCostTrackingCallback: CostTrackingCallback
-	let mockGhostContext: GhostContext
-	let mockCursorAnimation: GhostGutterAnimation
 	let mockSettings: { enableAutoTrigger: boolean } | null
+	let mockContextProvider: any
 
 	beforeEach(() => {
 		mockDocument = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1\nconst y = 2")
@@ -300,6 +342,20 @@ describe("GhostInlineCompletionProvider", () => {
 		} as vscode.InlineCompletionContext
 		mockToken = {} as vscode.CancellationToken
 		mockSettings = { enableAutoTrigger: true }
+
+		// Create mock IDE for tracking services
+		const mockIde = {
+			getWorkspaceDirs: vi.fn().mockResolvedValue([]),
+			getOpenFiles: vi.fn().mockResolvedValue([]),
+			readFile: vi.fn().mockResolvedValue(""),
+			// Add other methods as needed by RecentlyVisitedRangesService and RecentlyEditedTracker
+		}
+
+		// Create mock context provider with IDE
+		mockContextProvider = {
+			getIde: vi.fn().mockReturnValue(mockIde),
+			getFormattedContext: vi.fn().mockResolvedValue(""),
+		}
 
 		// Create mock dependencies
 		mockModel = {
@@ -312,27 +368,12 @@ describe("GhostInlineCompletionProvider", () => {
 			}),
 		} as unknown as GhostModel
 		mockCostTrackingCallback = vi.fn() as CostTrackingCallback
-		mockGhostContext = {
-			generate: vi.fn().mockImplementation(async (ctx) => ({
-				...ctx,
-				document: ctx.document,
-				range: ctx.range,
-			})),
-		} as unknown as GhostContext
-		mockCursorAnimation = {
-			active: vi.fn(),
-			hide: vi.fn(),
-			update: vi.fn(),
-			dispose: vi.fn(),
-			updateSettings: vi.fn(),
-		} as unknown as GhostGutterAnimation
 
 		provider = new GhostInlineCompletionProvider(
 			mockModel,
 			mockCostTrackingCallback,
-			mockGhostContext,
-			mockCursorAnimation,
 			() => mockSettings,
+			mockContextProvider,
 		)
 	})
 
@@ -1161,6 +1202,137 @@ describe("GhostInlineCompletionProvider", () => {
 			vi.mocked(mockCostTrackingCallback).mockClear()
 			await provider.provideInlineCompletionItems(mockDocument, mockPosition, mockContext, mockToken)
 			expect(mockCostTrackingCallback).not.toHaveBeenCalled()
+		})
+	})
+
+	describe("useless suggestion filtering", () => {
+		it("should refuse suggestions that match the end of prefix", async () => {
+			// Mock the model to return a suggestion that matches the end of prefix
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "= 1" }) // This matches the end of "const x = 1"
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return empty array because the suggestion is useless
+			expect(result).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should refuse suggestions that match the start of suffix", async () => {
+			// Mock the model to return a suggestion that matches the start of suffix
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "\nconst" }) // This matches the start of "\nconst y = 2"
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return empty array because the suggestion is useless
+			expect(result).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should accept useful suggestions that don't match prefix end or suffix start", async () => {
+			// Mock the model to return a useful suggestion
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "\nconsole.log('useful');" }) // Useful suggestion
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			const result = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			// Should return the suggestion because it's useful
+			expect(result).toHaveLength(1)
+			expect(result[0].insertText).toBe("\nconsole.log('useful');")
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+		})
+
+		it("should cache refused suggestions as empty to avoid repeated LLM calls", async () => {
+			// Mock the model to return a useless suggestion
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "= 1" }) // Matches end of prefix
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			// First call - should invoke LLM and refuse the suggestion
+			const result1 = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			expect(result1).toHaveLength(0)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+
+			// Second call with same prefix/suffix - should use cache, not call LLM
+			vi.mocked(mockModel.generateResponse).mockClear()
+			const result2 = (await provider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			expect(result2).toHaveLength(0)
+			expect(mockModel.generateResponse).not.toHaveBeenCalled()
 		})
 	})
 })

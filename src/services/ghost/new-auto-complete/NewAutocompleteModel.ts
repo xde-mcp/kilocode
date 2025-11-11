@@ -1,6 +1,4 @@
 import {
-	AutocompleteProviderKey,
-	defaultProviderUsabilityChecker,
 	getKiloBaseUriFromToken,
 	modelIdKeysByProvider,
 	ProviderSettings,
@@ -15,14 +13,7 @@ import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameter
 import Mistral from "../../continuedev/core/llm/llms/Mistral"
 import OpenRouter from "../../continuedev/core/llm/llms/OpenRouter"
 import KiloCode from "../../continuedev/core/llm/llms/KiloCode"
-import { ContextProxy } from "../../../core/config/ContextProxy"
-
-export const AUTOCOMPLETE_PROVIDER_MODELS = {
-	mistral: "codestral-2501",
-	kilocode: "codestral-2501",
-	openrouter: "mistralai/codestral-2501",
-	bedrock: "mistral.codestral-2501-v1:0",
-} as const
+import { AUTOCOMPLETE_PROVIDER_MODELS, AutocompleteProviderKey, checkKilocodeBalance } from "../utils/kilocode-utils"
 
 export class NewAutocompleteModel {
 	private apiHandler: ApiHandler | null = null
@@ -43,48 +34,32 @@ export class NewAutocompleteModel {
 
 	public async reload(providerSettingsManager: ProviderSettingsManager): Promise<boolean> {
 		const profiles = await providerSettingsManager.listConfig()
-		const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS) as Array<
-			keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-		>
 
 		this.cleanup()
 
 		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
-		for (const provider of supportedProviders) {
-			const selectedProfile = profiles.find(
-				(x): x is typeof x & { apiProvider: string } => x?.apiProvider === provider,
-			)
-			if (selectedProfile) {
-				const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
-				if (!isUsable) continue
+		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
+			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
+			if (!selectedProfile) continue
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
-				this.loadProfile(providerSettingsManager, selectedProfile, provider)
-				this.loaded = true
-				return true
+			if (provider === "kilocode") {
+				// For all other providers, assume they are usable
+				if (!profile.kilocodeToken) continue
+				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
+
+			this.apiHandler = buildApiHandler({ ...profile, [modelIdKeysByProvider[provider]]: model })
+
+			if (this.apiHandler instanceof OpenRouterHandler) {
+				await this.apiHandler.fetchModel()
+			}
+			this.loaded = true
+			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
-	}
-
-	public async loadProfile(
-		providerSettingsManager: ProviderSettingsManager,
-		selectedProfile: ProviderSettingsEntry,
-		provider: keyof typeof AUTOCOMPLETE_PROVIDER_MODELS,
-	): Promise<void> {
-		this.profile = await providerSettingsManager.getProfile({
-			id: selectedProfile.id,
-		})
-
-		this.apiHandler = buildApiHandler({
-			...this.profile,
-			[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
-		})
-
-		if (this.apiHandler instanceof OpenRouterHandler) {
-			await this.apiHandler.fetchModel()
-		}
 	}
 
 	/**
@@ -126,21 +101,10 @@ export class NewAutocompleteModel {
 					useCache: false, // Disable caching for autocomplete
 				},
 				uniqueId: `autocomplete-${provider}-${Date.now()}`,
-				// Add env for KiloCode metadata (organizationId, tester suppression) and live token provider
+				// Add env for KiloCode metadata (organizationId and tester suppression)
 				env: {
 					kilocodeTesterWarningsDisabledUntil: this.profile.kilocodeTesterWarningsDisabledUntil,
 					kilocodeOrganizationId: config.organizationId,
-					// Provide live token via ContextProxy when available; fall back to this.profile
-					kilocodeTokenProvider: () => {
-						try {
-							// ContextProxy.instance throws if not initialized
-							// Read from in-memory cache (no async) for hot path safety
-							const live = ContextProxy.instance?.getValue?.("kilocodeToken")
-							return typeof live === "string" && live ? live : (this.profile?.kilocodeToken ?? "")
-						} catch {
-							return this.profile?.kilocodeToken ?? ""
-						}
-					},
 				},
 			}
 
@@ -166,7 +130,11 @@ export class NewAutocompleteModel {
 		}
 
 		const provider = this.profile.apiProvider as AutocompleteProviderKey
-		const model = AUTOCOMPLETE_PROVIDER_MODELS[provider]
+		const model = AUTOCOMPLETE_PROVIDER_MODELS.get(provider)
+		if (!model) {
+			console.warn(`[NewAutocompleteModel] Unsupported provider: ${provider}`)
+			return null
+		}
 
 		switch (provider) {
 			case "mistral":
@@ -225,7 +193,11 @@ export class NewAutocompleteModel {
 
 			case "kilocode":
 				// Use dedicated KiloCode class with custom headers and routing
-				return new KiloCode(options)
+				// Pass the existing apiHandler as fimProvider if available
+				return new KiloCode({
+					...options,
+					fimProvider: this.apiHandler || undefined,
+				})
 
 			case "openrouter":
 				// Use standard OpenRouter
