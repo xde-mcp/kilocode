@@ -1,5 +1,6 @@
-import { buildApiHandler } from "../../api"
-import { Task } from "../task/Task"
+import { buildApiHandler } from "../../../api"
+import { Task } from "../../task/Task"
+import { calculateApiCostAnthropic } from "../../../shared/cost"
 
 /**
  * Evaluates whether an action should be approved using an AI gatekeeper model.
@@ -60,7 +61,11 @@ export async function evaluateGatekeeperApproval(
 		}
 
 		// Make the request to the gatekeeper model with system prompt
-		const response = await gatekeeperApi.completePrompt(userPrompt, systemPrompt)
+		const result = await gatekeeperApi.completePrompt(userPrompt, systemPrompt)
+
+		// Extract response text and usage information
+		const response = typeof result === "string" ? result : result.text
+		const usage = typeof result === "object" && result.usage ? result.usage : undefined
 
 		// Parse the response - look for "yes", "approve", "allowed" vs "no", "deny", "block"
 		const normalizedResponse = response.toLowerCase().trim()
@@ -70,6 +75,34 @@ export async function evaluateGatekeeperApproval(
 			normalizedResponse.includes("allow")
 
 		console.log(`[Gatekeeper] Tool: ${toolName}, Decision: ${approved ? "APPROVED" : "DENIED"}`)
+
+		// Display cost if usage information is available
+		if (usage) {
+			// Use totalCost if provided (e.g., from OpenRouter), otherwise calculate it
+			const cost =
+				"totalCost" in usage && typeof usage.totalCost === "number"
+					? usage.totalCost
+					: calculateApiCostAnthropic(
+							gatekeeperApi.getModel().info,
+							usage.inputTokens,
+							usage.outputTokens,
+							"cacheWriteTokens" in usage ? usage.cacheWriteTokens : undefined,
+							"cacheReadTokens" in usage ? usage.cacheReadTokens : undefined,
+						)
+
+			if (cost > 0) {
+				await cline.say(
+					"text",
+					`🛡️ Gatekeeper ${approved ? "approved" : "denied"} **${toolName}** ($${cost.toFixed(4)})`,
+					undefined,
+					false,
+					undefined,
+					undefined,
+					{ isNonInteractive: true },
+				)
+			}
+		}
+
 		return approved
 	} catch (error) {
 		// On any error, default to approve to avoid blocking the workflow

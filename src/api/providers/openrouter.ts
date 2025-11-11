@@ -359,8 +359,12 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		return { id, info, topP: isDeepSeekR1 ? 0.95 : undefined, ...params }
 	}
 
-	// kilocode_change: Add systemPrompt parameter for gatekeeper
-	async completePrompt(prompt: string, systemPrompt?: string) {
+	// kilocode_change start: Add systemPrompt parameter for gatekeeper and return usage
+	async completePrompt(
+		prompt: string,
+		systemPrompt?: string,
+	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number; totalCost?: number } }> {
+		// kilocode_change end
 		let { id: modelId, maxTokens, temperature, reasoning } = await this.fetchModel()
 
 		// kilocode_change start: Support system prompt
@@ -399,7 +403,24 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		}
 
 		const completion = response as OpenAI.Chat.ChatCompletion
-		return completion.choices[0]?.message?.content || ""
+		// kilocode_change start
+		const text = completion.choices[0]?.message?.content || ""
+
+		// Return usage information if available
+		if (completion.usage) {
+			const usage = completion.usage as CompletionUsage
+			return {
+				text,
+				usage: {
+					inputTokens: usage.prompt_tokens || 0,
+					outputTokens: usage.completion_tokens || 0,
+					totalCost: this.getTotalCost(usage),
+				},
+			}
+		}
+
+		return text
+		// kilocode_change end
 	}
 
 	/**

@@ -6,7 +6,7 @@ import { TelemetryService } from "@roo-code/telemetry"
 
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import type { ToolParamName, ToolResponse } from "../../shared/tools"
-import { evaluateGatekeeperApproval } from "./gatekeeperApproval" // kilocode_change: AI gatekeeper for YOLO mode
+import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper" // kilocode_change: AI gatekeeper for YOLO mode
 
 import { fetchInstructionsTool } from "../tools/fetchInstructionsTool"
 import { listFilesTool } from "../tools/listFilesTool"

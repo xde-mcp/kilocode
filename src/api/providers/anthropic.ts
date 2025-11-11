@@ -373,8 +373,23 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		}
 	}
 
-	// kilocode_change: Add systemPrompt parameter for gatekeeper
-	async completePrompt(prompt: string, systemPrompt?: string) {
+	// kilocode_change start: Add systemPrompt parameter for gatekeeper and return usage
+	async completePrompt(
+		prompt: string,
+		systemPrompt?: string,
+	): Promise<
+		| string
+		| {
+				text: string
+				usage?: {
+					inputTokens: number
+					outputTokens: number
+					cacheWriteTokens?: number
+					cacheReadTokens?: number
+				}
+		  }
+	> {
+		// kilocode_change end
 		let { id: model, temperature } = this.getModel()
 
 		const message = await this.client.messages.create({
@@ -388,7 +403,24 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		})
 
 		const content = message.content.find(({ type }) => type === "text")
-		return content?.type === "text" ? content.text : ""
+		// kilocode_change start
+		const text = content?.type === "text" ? content.text : ""
+
+		// Return usage information if available
+		if (message.usage) {
+			return {
+				text,
+				usage: {
+					inputTokens: message.usage.input_tokens || 0,
+					outputTokens: message.usage.output_tokens || 0,
+					cacheWriteTokens: message.usage.cache_creation_input_tokens || undefined,
+					cacheReadTokens: message.usage.cache_read_input_tokens || undefined,
+				},
+			}
+		}
+
+		return text
+		// kilocode_change end
 	}
 
 	/**

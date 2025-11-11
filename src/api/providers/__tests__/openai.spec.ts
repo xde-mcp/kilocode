@@ -362,7 +362,13 @@ describe("OpenAiHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("Test response")
+			expect(typeof result === "string" ? result : result.text).toBe("Test response")
+			// Verify usage is returned
+			if (typeof result === "object") {
+				expect(result.usage).toBeDefined()
+				expect(result.usage?.inputTokens).toBe(10)
+				expect(result.usage?.outputTokens).toBe(5)
+			}
 			expect(mockCreate).toHaveBeenCalledWith(
 				{
 					model: mockOptions.openAiModelId,
@@ -380,9 +386,11 @@ describe("OpenAiHandler", () => {
 		it("should handle empty response", async () => {
 			mockCreate.mockImplementationOnce(() => ({
 				choices: [{ message: { content: "" } }],
+				usage: { prompt_tokens: 5, completion_tokens: 0 },
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			expect(result).toBe("")
+			const text = typeof result === "string" ? result : result.text
+			expect(text).toBe("")
 		})
 	})
 
@@ -510,7 +518,13 @@ describe("OpenAiHandler", () => {
 		it("should handle completePrompt with Azure AI Inference Service", async () => {
 			const azureHandler = new OpenAiHandler(azureOptions)
 			const result = await azureHandler.completePrompt("Test prompt")
-			expect(result).toBe("Test response")
+			expect(typeof result === "string" ? result : result.text).toBe("Test response")
+			// Verify usage is returned
+			if (typeof result === "object") {
+				expect(result.usage).toBeDefined()
+				expect(result.usage?.inputTokens).toBe(10)
+				expect(result.usage?.outputTokens).toBe(5)
+			}
 			expect(mockCreate).toHaveBeenCalledWith(
 				{
 					model: azureOptions.openAiModelId,

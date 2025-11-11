@@ -137,8 +137,12 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
-	// kilocode_change: Add systemPrompt parameter for gatekeeper
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<string> {
+	// kilocode_change start: Add systemPrompt parameter for gatekeeper and return usage
+	async completePrompt(
+		prompt: string,
+		systemPrompt?: string,
+	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number } }> {
+		// kilocode_change end
 		const { id: modelId } = this.getModel()
 
 		try {
@@ -157,7 +161,22 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				messages, // kilocode_change
 			})
 
-			return response.choices[0]?.message.content || ""
+			// kilocode_change start
+			const text = response.choices[0]?.message.content || ""
+
+			// Return usage information if available
+			if (response.usage) {
+				return {
+					text,
+					usage: {
+						inputTokens: response.usage.prompt_tokens || 0,
+						outputTokens: response.usage.completion_tokens || 0,
+					},
+				}
+			}
+
+			return text
+			// kilocode_change end
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}

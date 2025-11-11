@@ -56,7 +56,12 @@ import { InceptionLabsHandler } from "./providers/inception"
 import { NativeOllamaHandler } from "./providers/native-ollama"
 
 export interface SingleCompletionHandler {
-	completePrompt(prompt: string, systemPrompt?: string): Promise<string> // kilocode_change: Add systemPrompt parameter for gatekeeper
+	// kilocode_change start: Add systemPrompt parameter for gatekeeper and optional usage return
+	completePrompt(
+		prompt: string,
+		systemPrompt?: string,
+	): Promise<string | { text: string; usage?: { inputTokens: number; outputTokens: number } }>
+	// kilocode_change end
 }
 
 export interface ApiHandlerCreateMessageMetadata {
