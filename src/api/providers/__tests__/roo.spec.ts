@@ -261,13 +261,12 @@ describe("RooHandler", () => {
 
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("Test response") // kilocode_change
-			// Verify usage is returned
-			if (typeof result === "object") {
-				expect(result.usage).toBeDefined()
-				expect(result.usage?.inputTokens).toBe(10)
-				expect(result.usage?.outputTokens).toBe(5)
-			}
+			// kilocode_change start
+			expect(result.text).toBe("Test response")
+			expect(result.usage).toBeDefined()
+			expect(result.usage?.inputTokens).toBe(10)
+			expect(result.usage?.outputTokens).toBe(5)
+			// kilocode_change end
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: mockOptions.apiModelId,
 				messages: [{ role: "user", content: "Test prompt" }],
@@ -284,21 +283,19 @@ describe("RooHandler", () => {
 		it("should handle empty response", async () => {
 			mockCreate.mockResolvedValueOnce({
 				choices: [{ message: { content: "" } }],
-				usage: { prompt_tokens: 5, completion_tokens: 0 },
+				usage: { prompt_tokens: 5, completion_tokens: 0 }, // kilocode_change
 			})
 			const result = await handler.completePrompt("Test prompt")
-			const text = result.text // kilocode_change
-			expect(text).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 
 		it("should handle missing response content", async () => {
 			mockCreate.mockResolvedValueOnce({
 				choices: [{ message: {} }],
-				usage: { prompt_tokens: 5, completion_tokens: 0 },
+				usage: { prompt_tokens: 5, completion_tokens: 0 }, // kilocode_change
 			})
 			const result = await handler.completePrompt("Test prompt")
-			const text = result.text // kilocode_change
-			expect(text).toBe("")
+			expect(result.text).toBe("") // kilocode_change
 		})
 	})
 
