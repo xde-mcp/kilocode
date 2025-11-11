@@ -3,7 +3,6 @@ import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput
 import { GhostContextProvider } from "./GhostContextProvider"
 import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion } from "./HoleFiller"
 import { GhostModel } from "../GhostModel"
-import { GhostContext } from "../GhostContext"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
@@ -62,6 +61,18 @@ export function findMatchingSuggestion(
 	return null
 }
 
+export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
+	if (text === "") {
+		return []
+	}
+
+	const item: vscode.InlineCompletionItem = {
+		insertText: text,
+		range: new vscode.Range(position, position),
+	}
+	return [item]
+}
+
 export interface LLMRetrievalResult {
 	suggestion: FillInAtCursorSuggestion
 	cost: number
@@ -74,10 +85,8 @@ export interface LLMRetrievalResult {
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
-	private isRequestCancelled: boolean = false
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
-	private ghostContext: GhostContext
 	private getSettings: () => GhostServiceSettings | null
 	private recentlyVisitedRangesService: RecentlyVisitedRangesService
 	private recentlyEditedTracker: RecentlyEditedTracker
@@ -85,13 +94,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	constructor(
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
-		ghostContext: GhostContext,
 		getSettings: () => GhostServiceSettings | null,
 		contextProvider?: GhostContextProvider,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
-		this.ghostContext = ghostContext
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
 
@@ -128,23 +135,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 	/**
 	 * Retrieve suggestions from LLM
-	 * @param context - The suggestion context
+	 * @param context - The suggestion context (should already include recentlyVisitedRanges and recentlyEditedRanges)
 	 * @param model - The Ghost model to use for generation
 	 * @returns LLM retrieval result with suggestions and usage info
 	 */
 	public async getFromLLM(context: GhostSuggestionContext, model: GhostModel): Promise<LLMRetrievalResult> {
-		this.isRequestCancelled = false
-
-		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
-		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
-
-		const enrichedContext: GhostSuggestionContext = {
-			...context,
-			recentlyVisitedRanges,
-			recentlyEditedRanges,
-		}
-
-		const autocompleteInput = contextToAutocompleteInput(enrichedContext)
+		const autocompleteInput = contextToAutocompleteInput(context)
 
 		const position = context.range?.start ?? context.document.positionAt(0)
 		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
@@ -171,25 +167,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			languageId,
 		)
 
-		if (this.isRequestCancelled) {
-			return {
-				suggestion: { text: "", prefix, suffix },
-				cost: 0,
-				inputTokens: 0,
-				outputTokens: 0,
-				cacheWriteTokens: 0,
-				cacheReadTokens: 0,
-			}
-		}
-
 		let response = ""
 
 		// Create streaming callback
 		const onChunk = (chunk: ApiStreamChunk) => {
-			if (this.isRequestCancelled) {
-				return
-			}
-
 			if (chunk.type === "text") {
 				response += chunk.text
 			}
@@ -199,17 +180,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
 
 		console.log("response", response)
-
-		if (this.isRequestCancelled) {
-			return {
-				suggestion: { text: "", prefix, suffix },
-				cost: usageInfo.cost,
-				inputTokens: usageInfo.inputTokens,
-				outputTokens: usageInfo.outputTokens,
-				cacheWriteTokens: usageInfo.cacheWriteTokens,
-				cacheReadTokens: usageInfo.cacheReadTokens,
-			}
-		}
 
 		// Parse the response using the standalone function
 		let fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
@@ -230,10 +200,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			cacheWriteTokens: usageInfo.cacheWriteTokens,
 			cacheReadTokens: usageInfo.cacheReadTokens,
 		}
-	}
-
-	public cancelRequest(): void {
-		this.isRequestCancelled = true
 	}
 
 	public dispose(): void {
@@ -263,62 +229,54 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+		if (!this.model) {
+			// bail if no model is available, because if there is none, we also have no cache
+			return []
+		}
+
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 
 		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 		if (matchingText !== null) {
-			if (matchingText === "") {
-				return []
-			}
-
-			const item: vscode.InlineCompletionItem = {
-				insertText: matchingText,
-				range: new vscode.Range(position, position),
-			}
-			return [item]
+			return stringToInlineCompletions(matchingText, position)
 		}
 
-		// No cached suggestion available - invoke LLM
-		if (this.model && this.ghostContext) {
-			const context: GhostSuggestionContext = {
-				document,
-				range: new vscode.Range(position, position),
-			}
+		await this.fetchAndCacheSuggestion(document, position)
 
-			const fullContext = await this.ghostContext.generate(context)
-			try {
-				const result = await this.getFromLLM(fullContext, this.model)
+		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+		return stringToInlineCompletions(cachedText ?? "", position)
+	}
 
-				if (this.costTrackingCallback && result.cost > 0) {
-					this.costTrackingCallback(
-						result.cost,
-						result.inputTokens,
-						result.outputTokens,
-						result.cacheWriteTokens,
-						result.cacheReadTokens,
-					)
-				}
+	private async fetchAndCacheSuggestion(document: vscode.TextDocument, position: vscode.Position): Promise<void> {
+		// Build complete context with all tracking data
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
 
-				// Always update suggestions, even if text is empty (for caching)
-				this.updateSuggestions(result.suggestion)
-
-				if (result.suggestion.text) {
-					const item: vscode.InlineCompletionItem = {
-						insertText: result.suggestion.text,
-						range: new vscode.Range(position, position),
-					}
-					return [item]
-				} else {
-					// Empty text means no suggestion to show
-					return []
-				}
-			} catch (error) {
-				console.error("Error getting inline completion from LLM:", error)
-				return []
-			}
+		const context: GhostSuggestionContext = {
+			document,
+			range: new vscode.Range(position, position),
+			recentlyVisitedRanges,
+			recentlyEditedRanges,
 		}
 
-		return []
+		try {
+			const result = await this.getFromLLM(context, this.model)
+
+			if (this.costTrackingCallback && result.cost > 0) {
+				this.costTrackingCallback(
+					result.cost,
+					result.inputTokens,
+					result.outputTokens,
+					result.cacheWriteTokens,
+					result.cacheReadTokens,
+				)
+			}
+
+			// Always update suggestions, even if text is empty (for caching)
+			this.updateSuggestions(result.suggestion)
+		} catch (error) {
+			console.error("Error getting inline completion from LLM:", error)
+		}
 	}
 }

@@ -51,10 +51,6 @@ export class StrategyTester {
 		return {
 			document: document as any,
 			range: range as any,
-			recentOperations: [],
-			diagnostics: [],
-			openFiles: [],
-			userInput: undefined,
 		}
 	}
 

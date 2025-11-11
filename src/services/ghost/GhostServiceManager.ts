@@ -1,7 +1,6 @@
 import crypto from "crypto"
 import * as vscode from "vscode"
 import { t } from "../../i18n"
-import { GhostDocumentStore } from "./GhostDocumentStore"
 import { GhostModel } from "./GhostModel"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
@@ -10,23 +9,19 @@ import { GhostContextProvider } from "./classic-auto-complete/GhostContextProvid
 //import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
-import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 
 export class GhostServiceManager {
 	private static instance: GhostServiceManager | null = null
-	private readonly documentStore: GhostDocumentStore
 	private readonly model: GhostModel
 	private readonly cline: ClineProvider
 	private readonly context: vscode.ExtensionContext
 	private settings: GhostServiceSettings | null = null
-	private readonly ghostContext: GhostContext
 	private readonly ghostContextProvider: GhostContextProvider
 
 	private taskId: string | null = null
-	private isProcessing: boolean = false
 
 	// Status bar integration
 	private statusBar: GhostStatusBar | null = null
@@ -46,9 +41,7 @@ export class GhostServiceManager {
 		this.cline = cline
 
 		// Register Internal Components
-		this.documentStore = new GhostDocumentStore()
 		this.model = new GhostModel()
-		this.ghostContext = new GhostContext(this.documentStore)
 		this.ghostContextProvider = new GhostContextProvider(context, this.model)
 
 		// Register the providers
@@ -56,18 +49,9 @@ export class GhostServiceManager {
 		this.inlineCompletionProvider = new GhostInlineCompletionProvider(
 			this.model,
 			this.updateCostTracking.bind(this),
-			this.ghostContext,
 			() => this.settings,
 			this.ghostContextProvider,
 		)
-
-		// Register document event handlers
-		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidOpenTextDocument(this.onDidOpenTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidCloseTextDocument(this.onDidCloseTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders, this, context.subscriptions)
-		vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection, this, context.subscriptions)
-		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, context.subscriptions)
 
 		void this.load()
 	}
@@ -152,13 +136,6 @@ export class GhostServiceManager {
 	}
 
 	// VsCode Event Handlers
-	private onDidCloseTextDocument(document: vscode.TextDocument): void {
-		if (document.uri.scheme !== "file") {
-			return
-		}
-		this.documentStore.removeDocument(document.uri)
-	}
-
 	private initializeIgnoreController() {
 		if (!this.ignoreController) {
 			this.ignoreController = (async () => {
@@ -176,69 +153,6 @@ export class GhostServiceManager {
 			delete this.ignoreController
 			;(await ignoreController).dispose()
 		}
-	}
-
-	private onDidChangeWorkspaceFolders() {
-		this.disposeIgnoreController()
-	}
-
-	private async onDidOpenTextDocument(document: vscode.TextDocument): Promise<void> {
-		if (document.uri.scheme !== "file") {
-			return
-		}
-		await this.documentStore.storeDocument({
-			document,
-		})
-	}
-
-	private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-		if (event.document.uri.scheme !== "file") {
-			return
-		}
-
-		// Filter out undo/redo operations
-		if (event.reason !== undefined) {
-			return
-		}
-
-		if (event.contentChanges.length === 0) {
-			return
-		}
-
-		// Heuristic to filter out bulk changes (git operations, external edits)
-		const isBulkChange = event.contentChanges.some((change) => change.rangeLength > 100 || change.text.length > 100)
-		if (isBulkChange) {
-			return
-		}
-
-		// Heuristic to filter out changes far from cursor (likely external or LLM edits)
-		const editor = vscode.window.activeTextEditor
-		if (!editor || editor.document !== event.document) {
-			return
-		}
-
-		const cursorPos = editor.selection.active
-		const isNearCursor = event.contentChanges.some((change) => {
-			const distance = Math.abs(cursorPos.line - change.range.start.line)
-			return distance <= 2
-		})
-		if (!isNearCursor) {
-			return
-		}
-
-		await this.documentStore.storeDocument({ document: event.document })
-	}
-
-	private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
-		// No longer needed - gutter animation removed
-	}
-
-	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-		if (!editor) {
-			return
-		}
-		// Update global context when switching editors
-		await this.updateGlobalContext()
 	}
 
 	private async hasAccess(document: vscode.TextDocument) {
@@ -313,7 +227,6 @@ export class GhostServiceManager {
 	}
 
 	private async updateGlobalContext() {
-		await vscode.commands.executeCommand("setContext", "kilocode.ghost.isProcessing", this.isProcessing)
 		await vscode.commands.executeCommand(
 			"setContext",
 			"kilocode.ghost.enableQuickInlineTaskKeybinding",
@@ -406,28 +319,10 @@ export class GhostServiceManager {
 		}
 	}
 
-	private stopProcessing() {
-		this.isProcessing = false
-		this.updateGlobalContext()
-	}
-
-	public cancelRequest() {
-		this.stopProcessing()
-		// Check which provider is active and cancel appropriately
-		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
-		if (useNewAutocomplete) {
-			// New autocomplete doesn't have a cancel method yet
-		} else {
-			this.inlineCompletionProvider.cancelRequest()
-		}
-	}
-
 	/**
 	 * Dispose of all resources used by the GhostServiceManager
 	 */
 	public dispose(): void {
-		this.cancelRequest()
-
 		this.statusBar?.dispose()
 
 		// Dispose inline completion provider registration
