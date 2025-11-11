@@ -319,22 +319,10 @@ export class GhostServiceManager {
 		}
 	}
 
-	public cancelRequest() {
-		// Check which provider is active and cancel appropriately
-		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
-		if (useNewAutocomplete) {
-			// New autocomplete doesn't have a cancel method yet
-		} else {
-			this.inlineCompletionProvider.cancelRequest()
-		}
-	}
-
 	/**
 	 * Dispose of all resources used by the GhostServiceManager
 	 */
 	public dispose(): void {
-		this.cancelRequest()
-
 		this.statusBar?.dispose()
 
 		// Dispose inline completion provider registration
