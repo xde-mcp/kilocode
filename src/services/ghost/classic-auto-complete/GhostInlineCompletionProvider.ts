@@ -217,6 +217,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+		if (!this.model) {
+			// bail if no model is available, because if there is none, we also have no cache
+			return []
+		}
+
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 
 		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
@@ -233,49 +238,46 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return [item]
 		}
 
-		// No cached suggestion available - invoke LLM
-		if (this.model) {
-			// Build complete context with all tracking data
-			const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
-			const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
+		// Build complete context with all tracking data
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
 
-			const context: GhostSuggestionContext = {
-				document,
-				range: new vscode.Range(position, position),
-				recentlyVisitedRanges,
-				recentlyEditedRanges,
+		const context: GhostSuggestionContext = {
+			document,
+			range: new vscode.Range(position, position),
+			recentlyVisitedRanges,
+			recentlyEditedRanges,
+		}
+
+		try {
+			const result = await this.getFromLLM(context, this.model)
+
+			if (this.costTrackingCallback && result.cost > 0) {
+				this.costTrackingCallback(
+					result.cost,
+					result.inputTokens,
+					result.outputTokens,
+					result.cacheWriteTokens,
+					result.cacheReadTokens,
+				)
 			}
 
-			try {
-				const result = await this.getFromLLM(context, this.model)
+			// Always update suggestions, even if text is empty (for caching)
+			this.updateSuggestions(result.suggestion)
 
-				if (this.costTrackingCallback && result.cost > 0) {
-					this.costTrackingCallback(
-						result.cost,
-						result.inputTokens,
-						result.outputTokens,
-						result.cacheWriteTokens,
-						result.cacheReadTokens,
-					)
+			if (result.suggestion.text) {
+				const item: vscode.InlineCompletionItem = {
+					insertText: result.suggestion.text,
+					range: new vscode.Range(position, position),
 				}
-
-				// Always update suggestions, even if text is empty (for caching)
-				this.updateSuggestions(result.suggestion)
-
-				if (result.suggestion.text) {
-					const item: vscode.InlineCompletionItem = {
-						insertText: result.suggestion.text,
-						range: new vscode.Range(position, position),
-					}
-					return [item]
-				} else {
-					// Empty text means no suggestion to show
-					return []
-				}
-			} catch (error) {
-				console.error("Error getting inline completion from LLM:", error)
+				return [item]
+			} else {
+				// Empty text means no suggestion to show
 				return []
 			}
+		} catch (error) {
+			console.error("Error getting inline completion from LLM:", error)
+			return []
 		}
 
 		return []
