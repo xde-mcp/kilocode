@@ -6,7 +6,7 @@ import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
 import { GhostContextProvider } from "./classic-auto-complete/GhostContextProvider"
-//import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
+import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { TelemetryService } from "@roo-code/telemetry"
@@ -31,7 +31,7 @@ export class GhostServiceManager {
 	// VSCode Providers
 	public readonly codeActionProvider: GhostCodeActionProvider
 	public readonly inlineCompletionProvider: GhostInlineCompletionProvider
-	//private newAutocompleteProvider: NewAutocompleteProvider | null = null
+	private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	private ignoreController?: Promise<RooIgnoreController>
@@ -88,36 +88,32 @@ export class GhostServiceManager {
 
 	private async updateInlineCompletionProviderRegistration() {
 		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
-		const useNewAutocomplete = false // this.settings?.useNewAutocomplete ?? false
 
 		// First, dispose any existing registration
 		if (this.inlineCompletionProviderDisposable) {
 			this.inlineCompletionProviderDisposable.dispose()
 			this.inlineCompletionProviderDisposable = null
 		}
+		if (this.newAutocompleteProvider && (!shouldBeRegistered || !this.settings?.useNewAutocomplete)) {
+			// Dispose new autocomplete provider if registration is disabled
+			this.newAutocompleteProvider.dispose()
+			this.newAutocompleteProvider = null
+		}
 
-		// Dispose new autocomplete provider if switching away from it
-		//if (!useNewAutocomplete && this.newAutocompleteProvider) {
-		//	this.newAutocompleteProvider.dispose()
-		//	this.newAutocompleteProvider = null
-		//}
+		if (!shouldBeRegistered) return
 
-		if (shouldBeRegistered) {
-			if (useNewAutocomplete) {
-				// Initialize new autocomplete provider if not already created
-				//if (!this.newAutocompleteProvider) {
-				//	this.newAutocompleteProvider = new NewAutocompleteProvider(this.context, this.cline)
-				//	await this.newAutocompleteProvider.load()
-				//}
-				// New autocomplete provider registers itself internally
-			} else {
-				// Register classic provider
-				this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
-					"*",
-					this.inlineCompletionProvider,
-				)
-				this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
-			}
+		if (this.settings?.useNewAutocomplete) {
+			// Initialize new autocomplete provider if not already created, otherwise reload
+			this.newAutocompleteProvider ??= new NewAutocompleteProvider(this.context, this.cline)
+			await this.newAutocompleteProvider.load()
+			// New autocomplete provider registers itself internally
+		} else {
+			// Register classic provider
+			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
+				"*",
+				this.inlineCompletionProvider,
+			)
+			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
 		}
 	}
 
@@ -176,9 +172,7 @@ export class GhostServiceManager {
 		}
 
 		// Check if using new autocomplete
-		const useNewAutocomplete = this.settings?.useNewAutocomplete ?? false
-
-		if (useNewAutocomplete) {
+		if (this.settings?.useNewAutocomplete) {
 			// New autocomplete doesn't support manual code suggestion yet
 			// Just return for now
 			return
@@ -334,10 +328,10 @@ export class GhostServiceManager {
 		// Dispose inline completion provider resources
 		this.inlineCompletionProvider.dispose()
 		// Dispose new autocomplete provider if it exists
-		//if (this.newAutocompleteProvider) {
-		//	this.newAutocompleteProvider.dispose()
-		//	this.newAutocompleteProvider = null
-		//}
+		if (this.newAutocompleteProvider) {
+			this.newAutocompleteProvider.dispose()
+			this.newAutocompleteProvider = null
+		}
 
 		this.disposeIgnoreController()
 
