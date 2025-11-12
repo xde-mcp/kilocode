@@ -479,6 +479,7 @@ export interface ClineSayTool {
 		| "generateImage"
 		| "imageGenerated"
 		| "runSlashCommand"
+		| "deleteFile"
 	path?: string
 	diff?: string
 	content?: string

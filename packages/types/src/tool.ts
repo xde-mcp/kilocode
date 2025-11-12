@@ -18,6 +18,7 @@ export const toolNames = [
 	"execute_command",
 	"read_file",
 	"write_to_file",
+	"delete_file",
 	"apply_diff",
 	"insert_content",
 	"search_and_replace",

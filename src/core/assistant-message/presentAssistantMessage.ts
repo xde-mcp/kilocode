@@ -13,6 +13,7 @@ import { getReadFileToolDescription, readFileTool } from "../tools/readFileTool"
 import { getSimpleReadFileToolDescription, simpleReadFileTool } from "../tools/simpleReadFileTool"
 import { shouldUseSingleFileRead } from "@roo-code/types"
 import { writeToFileTool } from "../tools/writeToFileTool"
+import { deleteFileTool } from "../tools/deleteFileTool"
 import { applyDiffTool } from "../tools/multiApplyDiffTool"
 import { insertContentTool } from "../tools/insertContentTool"
 import { searchAndReplaceTool } from "../tools/searchAndReplaceTool"
@@ -467,6 +468,9 @@ export async function presentAssistantMessage(cline: Task) {
 				case "write_to_file":
 					// await checkpointSaveAndMark(cline) // kilocode_change
 					await writeToFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				case "delete_file":
+					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				case "update_todo_list":
 					await updateTodoListTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
