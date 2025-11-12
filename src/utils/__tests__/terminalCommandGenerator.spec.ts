@@ -107,7 +107,7 @@ describe("generateTerminalCommand", () => {
 			configurable: true,
 		})
 
-		vi.mocked(singleCompletionHandler).mockResolvedValue({ text: "ls -la" })
+		vi.mocked(singleCompletionHandler).mockResolvedValue("ls -la")
 	})
 
 	it("should generate and place terminal command without executing", async () => {

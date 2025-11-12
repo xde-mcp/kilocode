@@ -24,7 +24,7 @@ describe("enhancePrompt", () => {
 
 		// Mock the API handler with a completePrompt method
 		;(buildApiHandler as any).mockReturnValue({
-			completePrompt: vi.fn().mockResolvedValue({ text: "Enhanced prompt", usage: undefined }), // kilocode_change
+			completePrompt: vi.fn().mockResolvedValue("Enhanced prompt"),
 			createMessage: vi.fn(),
 			getModel: vi.fn().mockReturnValue({
 				id: "test-model",
@@ -40,9 +40,9 @@ describe("enhancePrompt", () => {
 	it("enhances prompt using default enhancement prompt when no custom prompt provided", async () => {
 		const result = await singleCompletionHandler(mockApiConfig, "Test prompt")
 
-		expect(result.text).toBe("Enhanced prompt") // kilocode_change
+		expect(result).toBe("Enhanced prompt")
 		const handler = buildApiHandler(mockApiConfig)
-		expect((handler as any).completePrompt).toHaveBeenCalledWith(`Test prompt`, undefined) // kilocode_change
+		expect((handler as any).completePrompt).toHaveBeenCalledWith(`Test prompt`)
 	})
 
 	it("enhances prompt using custom enhancement prompt when provided", async () => {
@@ -62,9 +62,9 @@ describe("enhancePrompt", () => {
 			),
 		)
 
-		expect(result.text).toBe("Enhanced prompt") // kilocode_change
+		expect(result).toBe("Enhanced prompt")
 		const handler = buildApiHandler(mockApiConfig)
-		expect((handler as any).completePrompt).toHaveBeenCalledWith(`${customEnhancePrompt}\n\nTest prompt`, undefined) // kilocode_change
+		expect((handler as any).completePrompt).toHaveBeenCalledWith(`${customEnhancePrompt}\n\nTest prompt`)
 	})
 
 	it("throws error for empty prompt input", async () => {
@@ -101,7 +101,7 @@ describe("enhancePrompt", () => {
 
 		const result = await singleCompletionHandler(mockApiConfig, "Test prompt")
 
-		expect(result.text).toBe("Fallback response") // kilocode_change
+		expect(result).toBe("Fallback response")
 		const handler = buildApiHandler(mockApiConfig)
 		expect((handler as any).createMessage).toHaveBeenCalledWith("", [
 			{ role: "user", content: [{ type: "text", text: "Test prompt" }] },
@@ -148,7 +148,7 @@ describe("enhancePrompt", () => {
 
 		// Mock successful enhancement
 		;(buildApiHandler as any).mockReturnValue({
-			completePrompt: vi.fn().mockResolvedValue({ text: "Enhanced prompt", usage: undefined }), // kilocode_change
+			completePrompt: vi.fn().mockResolvedValue("Enhanced prompt"),
 			createMessage: vi.fn(),
 			getModel: vi.fn().mockReturnValue({
 				id: "test-model",
@@ -163,7 +163,7 @@ describe("enhancePrompt", () => {
 		const result = await singleCompletionHandler(openRouterConfig, "Test prompt")
 
 		expect(buildApiHandler).toHaveBeenCalledWith(openRouterConfig)
-		expect(result.text).toBe("Enhanced prompt") // kilocode_change
+		expect(result).toBe("Enhanced prompt")
 	})
 
 	it("propagates API errors", async () => {

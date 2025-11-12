@@ -157,7 +157,7 @@ FINAL REMINDER: Your message MUST be COMPLETELY DIFFERENT from the previous mess
 			increment: 10,
 		})
 
-		return this.extractCommitMessage(response.text)
+		return this.extractCommitMessage(response)
 	}
 
 	private extractCommitMessage(response: string): string {
