@@ -7,7 +7,7 @@ import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
-import { refuseUselessSuggestion } from "./uselessSuggestionFilter"
+import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -187,13 +187,26 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		console.log("response", response)
 
 		// Parse the response using the standalone function
-		let fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
+		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
 
-		// Check if the suggestion is useless and clear it if so
-		if (fillInAtCursorSuggestion.text && refuseUselessSuggestion(fillInAtCursorSuggestion.text, prefix, suffix)) {
+		// Process the suggestion through the postprocessing pipeline
+		let fillInAtCursorSuggestion: FillInAtCursorSuggestion
+		if (parsedSuggestion.text) {
+			const processedText = postprocessGhostSuggestion({
+				suggestion: parsedSuggestion.text,
+				prefix,
+				suffix,
+				model: model.getModelName() || "",
+			})
+
+			if (processedText) {
+				fillInAtCursorSuggestion = { text: processedText, prefix, suffix }
+				console.info("Final suggestion:", fillInAtCursorSuggestion)
+			} else {
+				fillInAtCursorSuggestion = { text: "", prefix, suffix }
+			}
+		} else {
 			fillInAtCursorSuggestion = { text: "", prefix, suffix }
-		} else if (fillInAtCursorSuggestion.text) {
-			console.info("Final suggestion:", fillInAtCursorSuggestion)
 		}
 
 		// Always return a FillInAtCursorSuggestion, even if text is empty

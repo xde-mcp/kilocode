@@ -379,6 +379,7 @@ describe("GhostInlineCompletionProvider", () => {
 				cacheWriteTokens: 0,
 				cacheReadTokens: 0,
 			}),
+			getModelName: vi.fn().mockReturnValue("test-model"),
 		} as unknown as GhostModel
 		mockCostTrackingCallback = vi.fn() as CostTrackingCallback
 
