@@ -2,4 +2,4 @@
 "@roo-code/types": patch
 ---
 
-Use json tool style as default for minimax m2
+MiniMax M2 now uses JSON-style tools by default
