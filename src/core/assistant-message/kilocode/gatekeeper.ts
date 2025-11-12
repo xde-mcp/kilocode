@@ -54,7 +54,13 @@ export async function evaluateGatekeeperApproval(
 		}
 
 		// Build the approval prompt using the task's workspace directory
-		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams, cline.cwd)
+		const { systemPrompt, userPrompt, preApproved } = buildGatekeeperPrompt(toolName, toolParams, cline.cwd)
+
+		if (preApproved) {
+			console.log(`[Gatekeeper] Tool: ${toolName}, Decision: PRE-APPROVED`)
+
+			return true
+		}
 
 		const handler = buildApiHandler(profile)
 
@@ -136,17 +142,18 @@ export async function evaluateGatekeeperApproval(
 /**
  * Checks if the current workspace is within a git repository
  * Uses git command to properly detect repos even in subdirectories
+ * @returns The git repository root directory path, or empty string if not in a git repo
  */
-function isGitRepository(workspaceDir: string): boolean {
+function getGitRepository(workspaceDir: string): string {
 	try {
-		execSync("git rev-parse --git-dir", {
+		const result = execSync("git rev-parse --show-toplevel", {
 			cwd: workspaceDir,
 			stdio: "pipe",
 			timeout: 1000,
 		})
-		return true
+		return result.toString().trim()
 	} catch {
-		return false
+		return ""
 	}
 }
 
@@ -233,8 +240,10 @@ function buildGatekeeperPrompt(
 	toolName: string,
 	toolParams: Record<string, any>,
 	workspaceDir: string,
-): { systemPrompt: string; userPrompt: string } {
-	const isGitRepo = isGitRepository(workspaceDir)
+): { systemPrompt: string; userPrompt: string; preApproved: boolean } {
+	const gitRepoPath = getGitRepository(workspaceDir)
+	const isGitRepo = !!gitRepoPath
+
 	// Build a concise description of the action
 	let actionDescription = `Tool: ${toolName}\n`
 
@@ -273,10 +282,12 @@ function buildGatekeeperPrompt(
 			}
 			break
 		}
+		case "update_todo_list":
+		case "list_code_definition_names":
+		case "list_files":
+		case "search_files":
 		case "read_file": {
-			const paths = toolParams.path ? [toolParams.path] : (toolParams.args?.file || []).map((f: any) => f.path)
-			actionDescription += `Files: ${paths.join(", ")}\n`
-			break
+			return { preApproved: true, systemPrompt: "", userPrompt: "" }
 		}
 		case "browser_action":
 			actionDescription += `Action: ${toolParams.action}\n`
@@ -285,9 +296,6 @@ function buildGatekeeperPrompt(
 		case "use_mcp_tool":
 			actionDescription += `Server: ${toolParams.server_name}\n`
 			actionDescription += `Tool: ${toolParams.tool_name}\n`
-			break
-		case "update_todo_list":
-			actionDescription += `Updating task todo list\n`
 			break
 		default: {
 			// For other tools, include all params (truncated)
@@ -302,7 +310,7 @@ function buildGatekeeperPrompt(
 
 WORKSPACE CONTEXT:
 - Workspace directory: ${workspaceDir}
-- Git repository: ${isGitRepo ? "YES (files can be recovered via git)" : "NO (deletions are permanent)"}
+- Git repository: ${isGitRepo ? "YES (" + gitRepoPath + ") - files can be recovered via git" : "NO (deletions are permanent)"}
 - All file operations are relative to this workspace
 - The assistant needs to read, write, and modify files within the workspace to function
 
@@ -377,5 +385,5 @@ Respond with ONLY "yes" to approve or "no" to deny. Be concise.`
 
 ${actionDescription}`
 
-	return { systemPrompt, userPrompt }
+	return { systemPrompt, userPrompt, preApproved: false }
 }

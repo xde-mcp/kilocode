@@ -21,6 +21,7 @@ vi.mock("../../../../api", () => ({
 				cacheReadsPrice: 0.0003,
 			},
 		}),
+		initialize: vi.fn().mockResolvedValue(undefined),
 	}),
 }))
 
@@ -53,6 +54,12 @@ describe("gatekeeper", () => {
 
 		// Mock existsSync to return true by default
 		vi.mocked(existsSync).mockReturnValue(true)
+
+		// Mock execSync to throw by default (not a git repo)
+		// Individual tests can override this
+		vi.mocked(execSync).mockImplementation(() => {
+			throw new Error("Not a git repository")
+		})
 
 		// Setup mock state
 		mockState = {
@@ -160,7 +167,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			const result = await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			const result = await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(result).toBe(true)
 			expect(mockTask.say).toHaveBeenCalledWith(
@@ -262,7 +272,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -292,7 +305,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -317,7 +333,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -347,7 +366,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -377,7 +399,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -402,7 +427,10 @@ describe("gatekeeper", () => {
 				},
 			})
 
-			await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(mockTask.say).toHaveBeenCalledWith(
 				"text",
@@ -421,7 +449,10 @@ describe("gatekeeper", () => {
 
 			const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 
-			const result = await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+			const result = await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+				path: "test.ts",
+				content: "test",
+			})
 
 			expect(result).toBe(true)
 			expect(consoleSpy).toHaveBeenCalledWith(
@@ -471,42 +502,28 @@ describe("gatekeeper", () => {
 				)
 			})
 
-			it("should build prompt for read_file tool with single path", async () => {
-				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
-				vi.mocked(streamResponseFromHandler).mockResolvedValue({
-					text: "yes",
-					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
-				})
-
-				await evaluateGatekeeperApproval(mockTask as Task, "read_file", {
+			it("should pre-approve read_file tool", async () => {
+				const result = await evaluateGatekeeperApproval(mockTask as Task, "read_file", {
 					path: "test.ts",
 				})
 
-				expect(streamResponseFromHandler).toHaveBeenCalledWith(
-					expect.any(Object),
-					expect.stringContaining("Files: test.ts"),
-					expect.any(String),
-				)
+				expect(result).toBe(true)
+				// read_file is pre-approved, so streamResponseFromHandler should not be called
+				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
+				expect(streamResponseFromHandler).not.toHaveBeenCalled()
 			})
 
-			it("should build prompt for read_file tool with multiple paths", async () => {
-				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
-				vi.mocked(streamResponseFromHandler).mockResolvedValue({
-					text: "yes",
-					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
-				})
-
-				await evaluateGatekeeperApproval(mockTask as Task, "read_file", {
+			it("should pre-approve read_file tool with multiple paths", async () => {
+				const result = await evaluateGatekeeperApproval(mockTask as Task, "read_file", {
 					args: {
 						file: [{ path: "test1.ts" }, { path: "test2.ts" }],
 					},
 				})
 
-				expect(streamResponseFromHandler).toHaveBeenCalledWith(
-					expect.any(Object),
-					expect.stringContaining("Files: test1.ts, test2.ts"),
-					expect.any(String),
-				)
+				expect(result).toBe(true)
+				// read_file is pre-approved, so streamResponseFromHandler should not be called
+				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
+				expect(streamResponseFromHandler).not.toHaveBeenCalled()
 			})
 
 			it("should build prompt for browser_action tool", async () => {
@@ -547,20 +564,13 @@ describe("gatekeeper", () => {
 				)
 			})
 
-			it("should build prompt for update_todo_list", async () => {
+			it("should pre-approve update_todo_list", async () => {
+				const result = await evaluateGatekeeperApproval(mockTask as Task, "update_todo_list", {})
+
+				expect(result).toBe(true)
+				// update_todo_list is pre-approved, so streamResponseFromHandler should not be called
 				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
-				vi.mocked(streamResponseFromHandler).mockResolvedValue({
-					text: "yes",
-					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
-				})
-
-				await evaluateGatekeeperApproval(mockTask as Task, "update_todo_list", {})
-
-				expect(streamResponseFromHandler).toHaveBeenCalledWith(
-					expect.any(Object),
-					expect.stringContaining("Updating task todo list"),
-					expect.any(String),
-				)
+				expect(streamResponseFromHandler).not.toHaveBeenCalled()
 			})
 
 			it("should truncate long content previews", async () => {
@@ -585,13 +595,16 @@ describe("gatekeeper", () => {
 
 			it("should include git repository status in prompt", async () => {
 				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
-				vi.mocked(execSync).mockReturnValue(Buffer.from(""))
+				vi.mocked(execSync).mockReturnValue(Buffer.from("/test/workspace"))
 				vi.mocked(streamResponseFromHandler).mockResolvedValue({
 					text: "yes",
 					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
 				})
 
-				await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "test.ts",
+					content: "test",
+				})
 
 				expect(streamResponseFromHandler).toHaveBeenCalledWith(
 					expect.any(Object),
@@ -610,7 +623,10 @@ describe("gatekeeper", () => {
 					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
 				})
 
-				await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "test.ts",
+					content: "test",
+				})
 
 				expect(streamResponseFromHandler).toHaveBeenCalledWith(
 					expect.any(Object),
@@ -626,7 +642,10 @@ describe("gatekeeper", () => {
 					usage: { type: "usage", inputTokens: 100, outputTokens: 10 },
 				})
 
-				await evaluateGatekeeperApproval(mockTask as Task, "read_file", { path: "test.ts" })
+				await evaluateGatekeeperApproval(mockTask as Task, "write_to_file", {
+					path: "test.ts",
+					content: "test",
+				})
 
 				expect(streamResponseFromHandler).toHaveBeenCalledWith(
 					expect.any(Object),
@@ -638,7 +657,7 @@ describe("gatekeeper", () => {
 			it("should include git tracking status for rm commands", async () => {
 				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
 				vi.mocked(execSync)
-					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockReturnValueOnce(Buffer.from("/test/workspace")) // isGitRepository check
 					.mockReturnValueOnce(Buffer.from("test.ts")) // isFileTrackedByGit check
 				vi.mocked(existsSync).mockReturnValue(true) // File exists check
 				vi.mocked(streamResponseFromHandler).mockResolvedValue({
@@ -660,7 +679,7 @@ describe("gatekeeper", () => {
 			it("should handle rm commands with flags", async () => {
 				const { streamResponseFromHandler } = await import("../../../../utils/single-completion-handler")
 				vi.mocked(execSync)
-					.mockReturnValueOnce(Buffer.from("")) // isGitRepository check
+					.mockReturnValueOnce(Buffer.from("/test/workspace")) // isGitRepository check
 					.mockReturnValueOnce(Buffer.from("test.ts")) // isFileTrackedByGit check
 				vi.mocked(existsSync).mockReturnValue(true) // File exists check
 				vi.mocked(streamResponseFromHandler).mockResolvedValue({
