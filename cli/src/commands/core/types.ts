@@ -2,9 +2,10 @@
  * Command system type definitions
  */
 
-import type { RouterModels } from "../../types/messages.js"
-import type { ProviderConfig } from "../../config/types.js"
+import type { ExtensionMessage, RouterModels } from "../../types/messages.js"
+import type { CLIConfig, ProviderConfig } from "../../config/types.js"
 import type { ProfileData, BalanceData } from "../../state/atoms/profile.js"
+import type { TaskHistoryData, TaskHistoryFilters } from "../../state/atoms/taskHistory.js"
 
 export interface Command {
 	name: string
@@ -32,6 +33,7 @@ export interface CommandContext {
 	input: string
 	args: string[]
 	options: Record<string, any>
+	config: CLIConfig
 	sendMessage: (message: any) => Promise<void>
 	addMessage: (message: any) => void
 	clearMessages: () => void
@@ -39,6 +41,7 @@ export interface CommandContext {
 	setMessageCutoffTimestamp: (timestamp: number) => void
 	clearTask: () => Promise<void>
 	setMode: (mode: string) => void
+	setTheme: (theme: string) => Promise<void>
 	exit: () => void
 	setCommittingParallelMode: (isCommitting: boolean) => void
 	isParallelMode: boolean
@@ -55,6 +58,19 @@ export interface CommandContext {
 	balanceData: BalanceData | null
 	profileLoading: boolean
 	balanceLoading: boolean
+	// Task history context
+	taskHistoryData: TaskHistoryData | null
+	taskHistoryFilters: TaskHistoryFilters
+	taskHistoryLoading: boolean
+	taskHistoryError: string | null
+	fetchTaskHistory: () => Promise<void>
+	updateTaskHistoryFilters: (filters: Partial<TaskHistoryFilters>) => Promise<TaskHistoryData>
+	changeTaskHistoryPage: (pageIndex: number) => Promise<TaskHistoryData>
+	nextTaskHistoryPage: () => Promise<TaskHistoryData>
+	previousTaskHistoryPage: () => Promise<TaskHistoryData>
+	sendWebviewMessage: (message: any) => Promise<void>
+	refreshTerminal: () => Promise<void>
+	chatMessages: ExtensionMessage[]
 }
 
 export type CommandHandler = (context: CommandContext) => Promise<void> | void
@@ -108,6 +124,7 @@ export interface ArgumentProviderContext {
 
 	// CommandContext properties for providers that need them
 	commandContext?: {
+		config: CLIConfig
 		routerModels: RouterModels | null
 		currentProvider: ProviderConfig | null
 		kilocodeDefaultModel: string
@@ -115,6 +132,8 @@ export interface ArgumentProviderContext {
 		profileLoading: boolean
 		updateProviderModel: (modelId: string) => Promise<void>
 		refreshRouterModels: () => Promise<void>
+		taskHistoryData: TaskHistoryData | null
+		chatMessages: ExtensionMessage[]
 	}
 }
 

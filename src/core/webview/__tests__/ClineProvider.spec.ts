@@ -7,9 +7,10 @@ import axios from "axios"
 import {
 	type ProviderSettingsEntry,
 	type ClineMessage,
-	openRouterDefaultModelId,
+	openRouterDefaultModelId, // kilocode_change: openRouterDefaultModelId
 	ORGANIZATION_ALLOW_ALL,
-} from "@roo-code/types" // kilocode_change: openRouterDefaultModelId
+	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+} from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
 import { ExtensionMessage, ExtensionState } from "../../../shared/ExtensionMessage"
@@ -306,7 +307,6 @@ vi.mock("../../../api", () => ({
 	buildApiHandler: vi.fn().mockReturnValue({
 		getModel: vi.fn().mockReturnValue({
 			id: "claude-3-sonnet",
-			info: { supportsComputerUse: false },
 		}),
 	}),
 }))
@@ -586,6 +586,7 @@ describe("ClineProvider", () => {
 			remoteControlEnabled: false,
 			taskSyncEnabled: false,
 			featureRoomoteControlEnabled: false,
+			checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 		}
 
 		const message: ExtensionMessage = {
@@ -2704,10 +2705,11 @@ describe("ClineProvider - Router Models", () => {
 				litellmApiKey: "litellm-key",
 				litellmBaseUrl: "http://localhost:4000",
 				// kilocode_change start
-				chutesApiKey: "chutes-key",
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
+				inceptionLabsApiKey: "inception-key",
+				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",
 				// kilocode_change end
 			},
 		} as any)
@@ -2740,18 +2742,30 @@ describe("ClineProvider - Router Models", () => {
 			apiKey: "gemini-key",
 			baseUrl: "https://gemini.example.com",
 		})
+		expect(getModels).toHaveBeenCalledWith({ provider: "ovhcloud", apiKey: "ovhcloud-key" })
+		expect(getModels).toHaveBeenCalledWith({
+			provider: "inception",
+			apiKey: "inception-key",
+			baseUrl: "https://api.inceptionlabs.ai/v1/",
+		})
 		// kilocode_change end
 		expect(getModels).toHaveBeenCalledWith({ provider: "requesty", apiKey: "requesty-key" })
 		expect(getModels).toHaveBeenCalledWith({ provider: "glama" })
 		expect(getModels).toHaveBeenCalledWith({ provider: "unbound", apiKey: "unbound-key" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "chutes", apiKey: "chutes-key" }) // kilocode_change
 		expect(getModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "ovhcloud", apiKey: "ovhcloud-key" }) // kilocode_change
+		expect(getModels).toHaveBeenCalledWith({ provider: "deepinfra" })
+		expect(getModels).toHaveBeenCalledWith(
+			expect.objectContaining({
+				provider: "roo",
+				baseUrl: expect.any(String),
+			}),
+		)
 		expect(getModels).toHaveBeenCalledWith({
 			provider: "litellm",
 			apiKey: "litellm-key",
 			baseUrl: "http://localhost:4000",
 		})
+		expect(getModels).toHaveBeenCalledWith({ provider: "chutes" })
 
 		// Verify response was sent
 		expect(mockPostMessage).toHaveBeenCalledWith({
@@ -2763,16 +2777,19 @@ describe("ClineProvider - Router Models", () => {
 				requesty: mockModels,
 				glama: mockModels,
 				unbound: mockModels,
-				chutes: mockModels, // kilocode_change
+				roo: mockModels,
+				chutes: mockModels,
 				litellm: mockModels,
-				"kilocode-openrouter": mockModels,
+				kilocode: mockModels,
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
 				ovhcloud: mockModels, // kilocode_change
+				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
 			},
+			values: undefined,
 		})
 	})
 
@@ -2793,6 +2810,8 @@ describe("ClineProvider - Router Models", () => {
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
+				inceptionLabsApiKey: "inception-key",
+				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",
 				// kilocode_change end
 			},
 		} as any)
@@ -2809,12 +2828,14 @@ describe("ClineProvider - Router Models", () => {
 			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty fail
 			.mockResolvedValueOnce(mockModels) // glama success
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound fail
-			.mockRejectedValueOnce(new Error("Chutes API error")) // kilocode_change: chutes fail
 			.mockRejectedValueOnce(new Error("Kilocode-OpenRouter API error")) // kilocode-openrouter fail
 			.mockRejectedValueOnce(new Error("Ollama API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway success
-			.mockResolvedValueOnce(mockModels) // kilocode_change: ovhcloud
 			.mockResolvedValueOnce(mockModels) // deepinfra success
+			.mockResolvedValueOnce(mockModels) // kilocode_change: ovhcloud
+			.mockResolvedValueOnce(mockModels) // kilocode_change: inception success
+			.mockResolvedValueOnce(mockModels) // roo success
+			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes fail
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm fail
 
 		await messageHandler({ type: "requestRouterModels" })
@@ -2829,16 +2850,19 @@ describe("ClineProvider - Router Models", () => {
 				requesty: {},
 				glama: mockModels,
 				unbound: {},
-				chutes: {}, // kilocode_change
+				roo: mockModels,
+				chutes: {},
 				ollama: {},
 				lmstudio: {},
 				litellm: {},
-				"kilocode-openrouter": {},
+				kilocode: {},
 				"vercel-ai-gateway": mockModels,
 				ovhcloud: mockModels, // kilocode_change
+				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
 			},
+			values: undefined,
 		})
 
 		// Verify error messages were sent for failed providers
@@ -2869,7 +2893,7 @@ describe("ClineProvider - Router Models", () => {
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Kilocode-OpenRouter API error",
-			values: { provider: "kilocode-openrouter" },
+			values: { provider: "kilocode" },
 		})
 
 		expect(mockPostMessage).toHaveBeenCalledWith({
@@ -2877,6 +2901,13 @@ describe("ClineProvider - Router Models", () => {
 			success: false,
 			error: "Unbound API error",
 			values: { provider: "unbound" },
+		})
+
+		expect(mockPostMessage).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Chutes API error",
+			values: { provider: "chutes" },
 		})
 
 		expect(mockPostMessage).toHaveBeenCalledWith({
@@ -2971,16 +3002,19 @@ describe("ClineProvider - Router Models", () => {
 				requesty: mockModels,
 				glama: mockModels,
 				unbound: mockModels,
-				chutes: mockModels, // kilocode_change
+				roo: mockModels,
+				chutes: mockModels,
 				litellm: {},
-				"kilocode-openrouter": mockModels,
+				kilocode: mockModels,
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
 				ovhcloud: mockModels, // kilocode_change
+				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
 			},
+			values: undefined,
 		})
 	})
 

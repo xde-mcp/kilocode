@@ -1,5 +1,89 @@
 # @kilocode/cli
 
+## 0.3.0
+
+### Minor Changes
+
+- [#3623](https://github.com/Kilo-Org/kilocode/pull/3623) [`ef6bcac`](https://github.com/Kilo-Org/kilocode/commit/ef6bcac79ed5708996e80c0c943d52f12c0fe3b2) Thanks [@Sureshkumars](https://github.com/Sureshkumars)! - # Checkpoint Restore
+
+    Allows users to restore their conversation to a previous point in time.
+
+    ## What do we have here?
+
+    ### View your checkpoints
+
+    `/checkpoint list`
+
+    This shows all available restore points with:
+    Hash for the checkpoint
+    When it was created
+
+    ### Restore to a checkpoint
+
+    `/checkpoint restore abc123...`
+
+    You'll see a confirmation showing:
+    Which checkpoint you're going back to
+    How many messages will be removed
+    What will happen to your current work
+
+    Choose `Restore` to go back, or `Cancel` to keep working.
+
+    ### Example
+
+    Let's say you asked Kilo CLI to refactor some code, but you don't like the result:
+
+    Run `/checkpoint list` to see earlier save points
+
+    Find the checkpoint from before the refactoring
+
+    Run `/checkpoint restore <hash>` with that checkpoint's hash
+
+    Confirm the restore
+    Your conversation is now back to before the refactoring happened
+
+    ### Why use checkpoints?
+
+    1. Undo mistakes - Go back if something went wrong
+    2. Try different approaches - Restore and try a different solution
+    3. Keep working states - Return to a point where everything was working
+
+### Patch Changes
+
+- [#3500](https://github.com/Kilo-Org/kilocode/pull/3500) [`2e1a536`](https://github.com/Kilo-Org/kilocode/commit/2e1a53678fc1c331d98a63f0ab15b02b53fc1625) Thanks [@iscekic](https://github.com/iscekic)! - improves windows support
+
+- [#3641](https://github.com/Kilo-Org/kilocode/pull/3641) [`94bc43a`](https://github.com/Kilo-Org/kilocode/commit/94bc43af224fed36023d0f3571d39c04d21aa660) Thanks [@KrtinShet](https://github.com/KrtinShet)! - Fix workspace path resolution when using relative paths with --workspace flag. Bash commands now execute in the correct directory.
+
+## 0.2.0
+
+### Minor Changes
+
+- [#3528](https://github.com/Kilo-Org/kilocode/pull/3528) [`77438f1`](https://github.com/Kilo-Org/kilocode/commit/77438f1dfe2e9b5cfc5faccc314130d82c299842) Thanks [@KrtinShet](https://github.com/KrtinShet) [@iscekic](https://github.com/iscekic)! - add shell mode
+
+- [#3556](https://github.com/Kilo-Org/kilocode/pull/3556) [`0fd4e8f`](https://github.com/Kilo-Org/kilocode/commit/0fd4e8f3b130f86ae5932c33ab647a2a08742c55) Thanks [@iscekic](https://github.com/iscekic)! - adds support for overriding config with env vars
+
+## 0.1.2
+
+### Patch Changes
+
+- [#3259](https://github.com/Kilo-Org/kilocode/pull/3259) [`9e50bca`](https://github.com/Kilo-Org/kilocode/commit/9e50bcaebb93383eca1dac8e23ff02339c910ed9) Thanks [@stennkool](https://github.com/stennkool)! - Continue the last task conversation in the workspace (-c argument)
+
+- [#3491](https://github.com/Kilo-Org/kilocode/pull/3491) [`b884c9e`](https://github.com/Kilo-Org/kilocode/commit/b884c9ea220f3c4c3a9c147f0fece64a26c830b4) Thanks [@catrielmuller](https://github.com/catrielmuller)! - File mention suggestion - @my/file
+
+## 0.1.1
+
+### Patch Changes
+
+- [#3475](https://github.com/Kilo-Org/kilocode/pull/3475) [`623f8b7`](https://github.com/Kilo-Org/kilocode/commit/623f8b7583cd98cafd3b3a49563ffe05b87f2818) Thanks [@iscekic](https://github.com/iscekic)! - logs version on boot
+
+- [#3474](https://github.com/Kilo-Org/kilocode/pull/3474) [`e04b81a`](https://github.com/Kilo-Org/kilocode/commit/e04b81a258bac18abb640d265258a9551494c21d) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Streaming message typewriter rendering
+
+- [#3263](https://github.com/Kilo-Org/kilocode/pull/3263) [`97afc88`](https://github.com/Kilo-Org/kilocode/commit/97afc884060d8c9a15fd084bd8be6b1048ba9852) Thanks [@oliver-14203](https://github.com/oliver-14203)! - /theme command - Enjoy the colors! by: oliver-14203
+
+- [#3289](https://github.com/Kilo-Org/kilocode/pull/3289) [`6a64388`](https://github.com/Kilo-Org/kilocode/commit/6a64388f090f44c2b58c3e418da596413f59ef32) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Tasks history support
+
+- [#3497](https://github.com/Kilo-Org/kilocode/pull/3497) [`bb917a2`](https://github.com/Kilo-Org/kilocode/commit/bb917a2962093a54db7ac82f8d8561f87278e5be) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Fix Wellcome Message regression
+
 ## 0.1.0
 
 ### Minor Changes

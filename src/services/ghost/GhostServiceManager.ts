@@ -1,33 +1,27 @@
 import crypto from "crypto"
 import * as vscode from "vscode"
 import { t } from "../../i18n"
-import { GhostDocumentStore } from "./GhostDocumentStore"
 import { GhostModel } from "./GhostModel"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
+import { GhostContextProvider } from "./classic-auto-complete/GhostContextProvider"
+import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
-import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
-import { GhostContext } from "./GhostContext"
 import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
-import { GhostGutterAnimation } from "./GhostGutterAnimation"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 
 export class GhostServiceManager {
 	private static instance: GhostServiceManager | null = null
-	private documentStore: GhostDocumentStore
-	private model: GhostModel
-	private cline: ClineProvider
-	private context: vscode.ExtensionContext
-	private providerSettingsManager: ProviderSettingsManager
+	private readonly model: GhostModel
+	private readonly cline: ClineProvider
+	private readonly context: vscode.ExtensionContext
 	private settings: GhostServiceSettings | null = null
-	private ghostContext: GhostContext
-	private cursorAnimation: GhostGutterAnimation
+	private readonly ghostContextProvider: GhostContextProvider
 
 	private taskId: string | null = null
-	private isProcessing: boolean = false
 
 	// Status bar integration
 	private statusBar: GhostStatusBar | null = null
@@ -35,8 +29,9 @@ export class GhostServiceManager {
 	private lastCompletionCost: number = 0
 
 	// VSCode Providers
-	public codeActionProvider: GhostCodeActionProvider
-	public inlineCompletionProvider: GhostInlineCompletionProvider
+	public readonly codeActionProvider: GhostCodeActionProvider
+	public readonly inlineCompletionProvider: GhostInlineCompletionProvider
+	private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	private ignoreController?: Promise<RooIgnoreController>
@@ -46,62 +41,42 @@ export class GhostServiceManager {
 		this.cline = cline
 
 		// Register Internal Components
-		this.documentStore = new GhostDocumentStore()
-		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new GhostModel()
-		this.ghostContext = new GhostContext(this.documentStore)
-		this.cursorAnimation = new GhostGutterAnimation(context)
+		this.ghostContextProvider = new GhostContextProvider(context, this.model)
 
 		// Register the providers
 		this.codeActionProvider = new GhostCodeActionProvider()
 		this.inlineCompletionProvider = new GhostInlineCompletionProvider(
 			this.model,
 			this.updateCostTracking.bind(this),
-			this.ghostContext,
-			this.cursorAnimation,
 			() => this.settings,
+			this.ghostContextProvider,
 		)
 
-		// Register document event handlers
-		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidOpenTextDocument(this.onDidOpenTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidCloseTextDocument(this.onDidCloseTextDocument, this, context.subscriptions)
-		vscode.workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders, this, context.subscriptions)
-		vscode.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection, this, context.subscriptions)
-		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, context.subscriptions)
-
 		void this.load()
-
-		// Initialize cursor animation with settings after load
-		this.cursorAnimation.updateSettings(this.settings || undefined)
 	}
 
 	// Singleton Management
 	public static initialize(context: vscode.ExtensionContext, cline: ClineProvider): GhostServiceManager {
 		if (GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is already initialized. Use getInstance() instead.")
+			throw new Error(
+				"GhostServiceManager is already initialized. Restart VS code, or change this to return the cached instance.",
+			)
 		}
 		GhostServiceManager.instance = new GhostServiceManager(context, cline)
 		return GhostServiceManager.instance
 	}
 
-	public static getInstance(): GhostServiceManager {
-		if (!GhostServiceManager.instance) {
-			throw new Error("GhostServiceManager is not initialized. Call initialize() first.")
+	public async load() {
+		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
+			enableQuickInlineTaskKeybinding: true,
+			enableSmartInlineTaskKeybinding: true,
 		}
-		return GhostServiceManager.instance
-	}
-
-	// Settings Management
-	private loadSettings() {
-		const state = ContextProxy.instance.getValues()
-		return state.ghostServiceSettings
-	}
-
-	private async saveSettings() {
-		if (!this.settings) {
-			return
-		}
+		await this.cline.providerSettingsManager.initialize() // avoid race condition with settings migrations
+		await this.model.reload(this.cline.providerSettingsManager)
+		await this.updateGlobalContext()
+		this.updateStatusBar()
+		await this.updateInlineCompletionProviderRegistration()
 		const settingsWithModelInfo = {
 			...this.settings,
 			provider: this.getCurrentProviderName(),
@@ -111,65 +86,52 @@ export class GhostServiceManager {
 		await this.cline.postStateToWebview()
 	}
 
-	public async load() {
-		this.settings = this.loadSettings()
-		await this.model.reload(this.providerSettingsManager)
-		this.cursorAnimation.updateSettings(this.settings || undefined)
-		await this.updateGlobalContext()
-		this.updateStatusBar()
-		await this.updateInlineCompletionProviderRegistration()
-		await this.saveSettings()
-	}
-
 	private async updateInlineCompletionProviderRegistration() {
 		const shouldBeRegistered = this.settings?.enableAutoTrigger ?? false
 
-		if (shouldBeRegistered && !this.inlineCompletionProviderDisposable) {
-			// Register the provider
+		// First, dispose any existing registration
+		if (this.inlineCompletionProviderDisposable) {
+			this.inlineCompletionProviderDisposable.dispose()
+			this.inlineCompletionProviderDisposable = null
+		}
+		if (this.newAutocompleteProvider && (!shouldBeRegistered || !this.settings?.useNewAutocomplete)) {
+			// Dispose new autocomplete provider if registration is disabled
+			this.newAutocompleteProvider.dispose()
+			this.newAutocompleteProvider = null
+		}
+
+		if (!shouldBeRegistered) return
+
+		if (this.settings?.useNewAutocomplete) {
+			// Initialize new autocomplete provider if not already created, otherwise reload
+			this.newAutocompleteProvider ??= new NewAutocompleteProvider(this.context, this.cline)
+			await this.newAutocompleteProvider.load()
+			// New autocomplete provider registers itself internally
+		} else {
+			// Register classic provider
 			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
 				"*",
 				this.inlineCompletionProvider,
 			)
 			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
-		} else if (!shouldBeRegistered && this.inlineCompletionProviderDisposable) {
-			// Deregister the provider
-			this.inlineCompletionProviderDisposable.dispose()
-			this.inlineCompletionProviderDisposable = null
 		}
 	}
 
 	public async disable() {
-		this.settings = {
-			...this.settings,
-			enableAutoTrigger: false,
-			enableSmartInlineTaskKeybinding: false,
-			enableQuickInlineTaskKeybinding: false,
-			showGutterAnimation: true,
-		}
-		await this.saveSettings()
-		await this.load()
-	}
+		const settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {}
+		await ContextProxy.instance.setValues({
+			ghostServiceSettings: {
+				...settings,
+				enableAutoTrigger: false,
+				enableSmartInlineTaskKeybinding: false,
+				enableQuickInlineTaskKeybinding: false,
+			},
+		})
 
-	public async enable() {
-		this.settings = {
-			...this.settings,
-			enableAutoTrigger: true,
-			enableSmartInlineTaskKeybinding: true,
-			enableQuickInlineTaskKeybinding: true,
-			showGutterAnimation: true,
-		}
-		await this.saveSettings()
 		await this.load()
 	}
 
 	// VsCode Event Handlers
-	private onDidCloseTextDocument(document: vscode.TextDocument): void {
-		if (document.uri.scheme !== "file") {
-			return
-		}
-		this.documentStore.removeDocument(document.uri)
-	}
-
 	private initializeIgnoreController() {
 		if (!this.ignoreController) {
 			this.ignoreController = (async () => {
@@ -189,69 +151,6 @@ export class GhostServiceManager {
 		}
 	}
 
-	private onDidChangeWorkspaceFolders() {
-		this.disposeIgnoreController()
-	}
-
-	private async onDidOpenTextDocument(document: vscode.TextDocument): Promise<void> {
-		if (document.uri.scheme !== "file") {
-			return
-		}
-		await this.documentStore.storeDocument({
-			document,
-		})
-	}
-
-	private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-		if (event.document.uri.scheme !== "file") {
-			return
-		}
-
-		// Filter out undo/redo operations
-		if (event.reason !== undefined) {
-			return
-		}
-
-		if (event.contentChanges.length === 0) {
-			return
-		}
-
-		// Heuristic to filter out bulk changes (git operations, external edits)
-		const isBulkChange = event.contentChanges.some((change) => change.rangeLength > 100 || change.text.length > 100)
-		if (isBulkChange) {
-			return
-		}
-
-		// Heuristic to filter out changes far from cursor (likely external or LLM edits)
-		const editor = vscode.window.activeTextEditor
-		if (!editor || editor.document !== event.document) {
-			return
-		}
-
-		const cursorPos = editor.selection.active
-		const isNearCursor = event.contentChanges.some((change) => {
-			const distance = Math.abs(cursorPos.line - change.range.start.line)
-			return distance <= 2
-		})
-		if (!isNearCursor) {
-			return
-		}
-
-		await this.documentStore.storeDocument({ document: event.document })
-	}
-
-	private async onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): Promise<void> {
-		this.cursorAnimation.update()
-	}
-
-	private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-		if (!editor) {
-			return
-		}
-		// Update global context when switching editors
-		await this.updateGlobalContext()
-	}
-
 	private async hasAccess(document: vscode.TextDocument) {
 		return document.isUntitled || (await this.initializeIgnoreController()).validateAccess(document.fileName)
 	}
@@ -269,6 +168,13 @@ export class GhostServiceManager {
 
 		const document = editor.document
 		if (!(await this.hasAccess(document))) {
+			return
+		}
+
+		// Check if using new autocomplete
+		if (this.settings?.useNewAutocomplete) {
+			// New autocomplete doesn't support manual code suggestion yet
+			// Just return for now
 			return
 		}
 
@@ -315,7 +221,6 @@ export class GhostServiceManager {
 	}
 
 	private async updateGlobalContext() {
-		await vscode.commands.executeCommand("setContext", "kilocode.ghost.isProcessing", this.isProcessing)
 		await vscode.commands.executeCommand(
 			"setContext",
 			"kilocode.ghost.enableQuickInlineTaskKeybinding",
@@ -339,18 +244,18 @@ export class GhostServiceManager {
 		})
 	}
 
-	private getCurrentModelName(): string {
+	private getCurrentModelName(): string | undefined {
 		if (!this.model.loaded) {
-			return "loading..."
+			return
 		}
-		return this.model.getModelName() ?? "unknown"
+		return this.model.getModelName()
 	}
 
-	private getCurrentProviderName(): string {
+	private getCurrentProviderName(): string | undefined {
 		if (!this.model.loaded) {
-			return "loading..."
+			return
 		}
-		return this.model.getProviderDisplayName() ?? "unknown"
+		return this.model.getProviderDisplayName()
 	}
 
 	private hasValidApiToken(): boolean {
@@ -408,30 +313,24 @@ export class GhostServiceManager {
 		}
 	}
 
-	private stopProcessing() {
-		this.cursorAnimation.hide()
-		this.isProcessing = false
-		this.updateGlobalContext()
-	}
-
-	public cancelRequest() {
-		this.stopProcessing()
-		this.inlineCompletionProvider.cancelRequest()
-	}
-
 	/**
 	 * Dispose of all resources used by the GhostServiceManager
 	 */
 	public dispose(): void {
-		this.cancelRequest()
-
 		this.statusBar?.dispose()
-		this.cursorAnimation.dispose()
 
 		// Dispose inline completion provider registration
 		if (this.inlineCompletionProviderDisposable) {
 			this.inlineCompletionProviderDisposable.dispose()
 			this.inlineCompletionProviderDisposable = null
+		}
+
+		// Dispose inline completion provider resources
+		this.inlineCompletionProvider.dispose()
+		// Dispose new autocomplete provider if it exists
+		if (this.newAutocompleteProvider) {
+			this.newAutocompleteProvider.dispose()
+			this.newAutocompleteProvider = null
 		}
 
 		this.disposeIgnoreController()
