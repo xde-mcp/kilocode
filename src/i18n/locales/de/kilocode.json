@@ -101,7 +101,6 @@
 			"enabled": "$(sparkle) Kilo Code Autocomplete",
 			"disabled": "$(circle-slash) Kilo Code Autocomplete",
 			"warning": "$(warning) Kilo Code Autocomplete",
-			"autocompletePrefix": "Autovervollständigung: ",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (deaktiviert)",
@@ -111,8 +110,7 @@
 				"provider": "Anbieter:",
 				"model": "Modell:",
 				"profile": "Profil: ",
-				"defaultProfile": "Standard",
-				"autocompleteLabel": "(Autovervollständigung)"
+				"defaultProfile": "Standard"
 			},
 			"cost": {
 				"zero": "$0.00",

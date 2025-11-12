@@ -6,7 +6,6 @@ interface GhostStatusBarStateProps {
 	model?: string
 	provider?: string
 	profileName?: string | null
-	isAutocompleteProfile?: boolean
 	hasValidToken?: boolean
 	totalSessionCost?: number
 	lastCompletionCost?: number
@@ -18,7 +17,6 @@ export class GhostStatusBar {
 	model: string
 	provider: string
 	profileName: string | null
-	isAutocompleteProfile: boolean
 	hasValidToken: boolean
 	totalSessionCost?: number
 	lastCompletionCost?: number
@@ -29,7 +27,6 @@ export class GhostStatusBar {
 		this.model = params.model || "default"
 		this.provider = params.provider || "default"
 		this.profileName = params.profileName || null
-		this.isAutocompleteProfile = params.isAutocompleteProfile || false
 		this.hasValidToken = params.hasValidToken || false
 		this.totalSessionCost = params.totalSessionCost
 		this.lastCompletionCost = params.lastCompletionCost
@@ -66,8 +63,6 @@ export class GhostStatusBar {
 		this.model = params.model !== undefined ? params.model : this.model
 		this.provider = params.provider !== undefined ? params.provider : this.provider
 		this.profileName = params.profileName !== undefined ? params.profileName : this.profileName
-		this.isAutocompleteProfile =
-			params.isAutocompleteProfile !== undefined ? params.isAutocompleteProfile : this.isAutocompleteProfile
 		this.hasValidToken = params.hasValidToken !== undefined ? params.hasValidToken : this.hasValidToken
 		this.totalSessionCost = params.totalSessionCost !== undefined ? params.totalSessionCost : this.totalSessionCost
 		this.lastCompletionCost =
@@ -87,20 +82,14 @@ export class GhostStatusBar {
 		const lastCompletionCostFormatted = this.lastCompletionCost?.toFixed(5) || 0
 
 		let statusText = t("kilocode:ghost.statusBar.enabled")
-		if (this.isAutocompleteProfile && this.profileName) {
-			statusText = `$(sparkle) ${t("kilocode:ghost.statusBar.autocompletePrefix")}${this.profileName}`
-		} else if (this.profileName) {
+		if (this.profileName) {
 			statusText = `$(sparkle) ${this.profileName}`
 		}
 		this.statusBar.text = `${statusText} (${totalCostFormatted})`
 
 		let tooltipLines = [t("kilocode:ghost.statusBar.tooltip.basic")]
 
-		if (this.isAutocompleteProfile) {
-			tooltipLines.push(
-				`• ${t("kilocode:ghost.statusBar.tooltip.profile")}${this.profileName || t("kilocode:ghost.statusBar.tooltip.defaultProfile")} ${t("kilocode:ghost.statusBar.tooltip.autocompleteLabel")}`,
-			)
-		} else if (this.profileName) {
+		if (this.profileName) {
 			tooltipLines.push(`• ${t("kilocode:ghost.statusBar.tooltip.profile")}${this.profileName}`)
 		}
 

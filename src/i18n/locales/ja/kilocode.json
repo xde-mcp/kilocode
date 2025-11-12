@@ -101,7 +101,6 @@
 			"enabled": "$(sparkle) Kilo Code Autocomplete",
 			"disabled": "$(circle-slash) Kilo Code Autocomplete",
 			"warning": "$(warning) Kilo Code Autocomplete",
-			"autocompletePrefix": "オートコンプリート: ",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete（無効）",
@@ -111,8 +110,7 @@
 				"provider": "プロバイダー:",
 				"model": "モデル:",
 				"profile": "プロファイル: ",
-				"defaultProfile": "デフォルト",
-				"autocompleteLabel": "(オートコンプリート)"
+				"defaultProfile": "デフォルト"
 			},
 			"cost": {
 				"zero": "$0.00",

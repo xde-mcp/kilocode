@@ -347,11 +347,6 @@ describe("GhostModel", () => {
 				expect(model.getProfileType()).toBeNull()
 			})
 
-			it("returns false for isAutocompleteProfile when no profile is loaded", () => {
-				const model = new GhostModel()
-				expect(model.isAutocompleteProfile()).toBe(false)
-			})
-
 			it("stores and returns profile name after loading", async () => {
 				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
 				const profiles = [
@@ -397,48 +392,6 @@ describe("GhostModel", () => {
 				await model.reload(mockProviderSettingsManager)
 
 				expect(model.getProfileType()).toBe("autocomplete")
-			})
-
-			it("returns true for isAutocompleteProfile when autocomplete profile is loaded", async () => {
-				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
-				const profiles = [
-					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "autocomplete" },
-				] as any
-
-				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
-				vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
-					id: "1",
-					name: "My Profile",
-					apiProvider: supportedProviders[0],
-					profileType: "autocomplete",
-					mistralApiKey: "test-key",
-				} as any)
-
-				const model = new GhostModel()
-				await model.reload(mockProviderSettingsManager)
-
-				expect(model.isAutocompleteProfile()).toBe(true)
-			})
-
-			it("returns false for isAutocompleteProfile when non-autocomplete profile is loaded", async () => {
-				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
-				const profiles = [
-					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "chat" },
-				] as any
-
-				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
-				vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
-					id: "1",
-					name: "My Profile",
-					apiProvider: supportedProviders[0],
-					profileType: "chat",
-					mistralApiKey: "test-key",
-				} as any)
-
-				const model = new GhostModel()
-				await model.reload(mockProviderSettingsManager)
-
-				expect(model.isAutocompleteProfile()).toBe(false)
 			})
 
 			it("clears profile information on cleanup", async () => {

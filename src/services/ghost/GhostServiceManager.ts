@@ -295,7 +295,6 @@ export class GhostServiceManager {
 			model: this.getCurrentModelName(),
 			provider: this.getCurrentProviderName(),
 			profileName: this.model.getProfileName(),
-			isAutocompleteProfile: this.model.isAutocompleteProfile(),
 			hasValidToken: this.hasValidApiToken(),
 			totalSessionCost: this.sessionCost,
 			lastCompletionCost: this.lastCompletionCost,

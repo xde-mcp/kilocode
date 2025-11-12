@@ -160,8 +160,4 @@ export class GhostModel {
 	public getProfileType(): string | null {
 		return this.profileType
 	}
-
-	public isAutocompleteProfile(): boolean {
-		return this.profileType === "autocomplete"
-	}
 }
