@@ -46,6 +46,13 @@ describe("postprocessGhostSuggestion", () => {
 			expect(shouldFilter("  hello  ", "const x = ", "hello world")).toBe(true)
 			expect(shouldFilter("\nhello\t", "test hello", "")).toBe(true)
 		})
+
+		it("should filter suggestions that rewrite the line above", () => {
+			// This is a new behavior from postprocessCompletion
+			const prefix = "function test() {\n  return true\n  "
+			const suggestion = "return true"
+			expect(shouldFilter(suggestion, prefix, "")).toBe(true)
+		})
 	})
 
 	describe("should accept useful suggestions", () => {
@@ -99,15 +106,59 @@ describe("postprocessGhostSuggestion", () => {
 		})
 	})
 
-	describe("returns the original suggestion when accepted", () => {
-		it("should return the original suggestion, not the trimmed version", () => {
+	describe("model-specific postprocessing", () => {
+		it("should remove markdown code fences", () => {
+			const suggestion = "```javascript\nconst x = 1\n```"
 			const result = postprocessGhostSuggestion({
-				suggestion: "  hello world  ",
+				suggestion,
+				prefix: "",
+				suffix: "",
+				model: "gpt-4",
+			})
+			expect(result).toBe("const x = 1")
+		})
+
+		it("should handle Codestral-specific quirks", () => {
+			// Codestral sometimes adds extra leading space
+			const result = postprocessGhostSuggestion({
+				suggestion: " test",
+				prefix: "const x = ",
+				suffix: "\n",
+				model: "codestral",
+			})
+			expect(result).toBe("test")
+		})
+
+		it("should handle Mercury/Granite prefix duplication", () => {
+			const result = postprocessGhostSuggestion({
+				suggestion: "const x = 42",
 				prefix: "const x = ",
 				suffix: "",
-				model: "",
+				model: "granite-20b",
 			})
-			expect(result).toBe("  hello world  ")
+			expect(result).toBe("42")
+		})
+
+		it("should handle Gemini/Gemma file separator", () => {
+			const result = postprocessGhostSuggestion({
+				suggestion: "const x = 1<|file_separator|>",
+				prefix: "",
+				suffix: "",
+				model: "gemini-pro",
+			})
+			expect(result).toBe("const x = 1")
+		})
+	})
+
+	describe("extreme repetition filtering", () => {
+		it("should filter extreme repetition", () => {
+			const repetitive = "test\ntest\ntest\ntest\ntest\ntest\ntest\ntest\ntest\n"
+			expect(shouldFilter(repetitive, "", "")).toBe(true)
+		})
+
+		it("should allow normal repetition", () => {
+			const normal = "test1\ntest2\ntest3\ntest4\n"
+			expect(shouldAccept(normal, "", "")).toBe(true)
 		})
 	})
 })
