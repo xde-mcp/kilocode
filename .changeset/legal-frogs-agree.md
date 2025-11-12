@@ -1,5 +1,4 @@
 ---
-"@kilocode/cli": minor
 "kilo-code": minor
 ---
 
