@@ -10,6 +10,7 @@ export type FireworksModelId =
 	| "accounts/fireworks/models/deepseek-v3p1"
 	| "accounts/fireworks/models/glm-4p5"
 	| "accounts/fireworks/models/glm-4p5-air"
+	| "accounts/fireworks/models/glm-4p6" // kilocode_change
 	| "accounts/fireworks/models/gpt-oss-20b"
 	| "accounts/fireworks/models/gpt-oss-120b"
 
@@ -105,6 +106,18 @@ export const fireworksModels = {
 		description:
 			"Z.ai GLM-4.5-Air with 106B total parameters and 12B active parameters. Features unified reasoning, coding, and intelligent agent capabilities.",
 	},
+	// kilocode_change start
+	"accounts/fireworks/models/glm-4p6": {
+		maxTokens: 25344,
+		contextWindow: 198000,
+		supportsImages: false,
+		supportsPromptCache: false,
+		inputPrice: 0.55,
+		outputPrice: 2.19,
+		description:
+			"Z.ai's GLM-4.6 model achieves SOTA among open-source models! Context window expanded to 200K. Brings you superior performance in real-world coding, reasoning, tool using and role-playing.",
+	},
+	// kilocode_change end
 	"accounts/fireworks/models/gpt-oss-20b": {
 		maxTokens: 16384,
 		contextWindow: 128000,
