@@ -31,7 +31,7 @@ export class GhostModel {
 
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
 			const selectedProfile = profiles.find(
-				(x) => x?.apiProvider === provider && true === (x.profileType === "autocomplete"),
+				(x) => x?.apiProvider === provider && x.profileType === "autocomplete",
 			)
 			if (!selectedProfile) continue
 			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
@@ -44,7 +44,7 @@ export class GhostModel {
 
 			this.profileName = selectedProfile.name || null
 			this.profileType = selectedProfile.profileType || null
-			const modelIdSpec = true ? {} : { [modelIdKeysByProvider[provider]]: model }
+			const modelIdSpec = {}
 			this.apiHandler = buildApiHandler({ ...profile, ...modelIdSpec })
 			if (this.apiHandler instanceof OpenRouterHandler) {
 				await this.apiHandler.fetchModel()
@@ -56,7 +56,7 @@ export class GhostModel {
 
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
 			const selectedProfile = profiles.find(
-				(x) => x?.apiProvider === provider && false === (x.profileType === "autocomplete"),
+				(x) => x?.apiProvider === provider && !(x.profileType === "autocomplete"),
 			)
 			if (!selectedProfile) continue
 			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
@@ -69,7 +69,7 @@ export class GhostModel {
 
 			this.profileName = selectedProfile.name || null
 			this.profileType = selectedProfile.profileType || null
-			const modelIdSpec = false ? {} : { [modelIdKeysByProvider[provider]]: model }
+			const modelIdSpec = { [modelIdKeysByProvider[provider]]: model }
 			this.apiHandler = buildApiHandler({ ...profile, ...modelIdSpec })
 			if (this.apiHandler instanceof OpenRouterHandler) {
 				await this.apiHandler.fetchModel()
