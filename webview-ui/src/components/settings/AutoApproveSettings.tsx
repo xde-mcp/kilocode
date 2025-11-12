@@ -6,7 +6,7 @@ import { Package } from "@roo/package"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { vscode } from "@/utils/vscode"
-import { Button, Input, Slider, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui"
+import { Button, Input, Slider, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui" // kilocode_change
 
 import { SetCachedStateField } from "./types"
 import { SectionHeader } from "./SectionHeader"
