@@ -3,8 +3,7 @@ import { loadConfig, saveConfig, CLIConfig } from "../config"
 import openConfigFile from "../config/openConfig"
 import wait from "../utils/wait"
 import { getKilocodeDefaultModel } from "./getKilocodeDefaultModel.js"
-import { getKilocodeProfile, type KilocodeProfileData } from "./getKilocodeProfile.js"
-import { logs } from "../services/logs"
+import { getKilocodeProfile, INVALID_TOKEN_ERROR, type KilocodeProfileData } from "./getKilocodeProfile.js"
 
 export default async function authWizard() {
 	const config = await loadConfig()
@@ -53,7 +52,7 @@ export default async function authWizard() {
 					profileData = await getKilocodeProfile(kilocodeToken)
 					isValidToken = true
 				} catch (error) {
-					if (error instanceof Error && error.message === "INVALID_TOKEN") {
+					if (error instanceof Error && error.message === INVALID_TOKEN_ERROR) {
 						console.error("\n❌ Invalid API key. Please check your key and try again.\n")
 						// Loop will continue, prompting for token again
 					} else {

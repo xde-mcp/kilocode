@@ -6,6 +6,8 @@ import { logs } from "../services/logs.js"
 type KilocodeToken = string
 type OrganizationId = string
 
+const API_TIMEOUT_MS = 5000
+
 const defaultsSchema = z.object({
 	defaultModel: z.string().nullish(),
 })
@@ -53,7 +55,7 @@ export async function getKilocodeDefaultModel(
 			Authorization: `Bearer ${kilocodeToken}`,
 		}
 
-		const response = await fetchWithTimeout(url, { headers }, 5000)
+		const response = await fetchWithTimeout(url, { headers }, API_TIMEOUT_MS)
 
 		if (!response.ok) {
 			throw new Error(`Fetching default model from ${url} failed: ${response.status}`)

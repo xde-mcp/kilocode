@@ -21,6 +21,8 @@ export interface KilocodeProfileData {
 	organizations?: KilocodeOrganization[]
 }
 
+export const INVALID_TOKEN_ERROR = "INVALID_TOKEN"
+
 /**
  * Fetch user profile data from Kilocode API
  * @param kilocodeToken - The Kilocode API token
@@ -42,7 +44,7 @@ export async function getKilocodeProfile(kilocodeToken: string): Promise<Kilocod
 		if (!response.ok) {
 			// Invalid token - authentication failed
 			if (response.status === 401 || response.status === 403) {
-				throw new Error("INVALID_TOKEN")
+				throw new Error(INVALID_TOKEN_ERROR)
 			}
 			throw new Error(`Failed to fetch profile: ${response.status}`)
 		}
@@ -51,7 +53,7 @@ export async function getKilocodeProfile(kilocodeToken: string): Promise<Kilocod
 		return data as KilocodeProfileData
 	} catch (error) {
 		// Re-throw our custom errors
-		if (error instanceof Error && error.message === "INVALID_TOKEN") {
+		if (error instanceof Error && error.message === INVALID_TOKEN_ERROR) {
 			throw error
 		}
 		// Wrap other errors
