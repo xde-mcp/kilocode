@@ -110,7 +110,7 @@ export class GhostServiceManager {
 		} else {
 			// Register classic provider
 			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
-				"*",
+				{ scheme: "file" },
 				this.inlineCompletionProvider,
 			)
 			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
