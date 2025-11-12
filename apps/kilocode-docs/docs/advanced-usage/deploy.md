@@ -6,6 +6,10 @@ sidebar_label: Deploy
 
 Deploy your Next.js applications directly from Kilo Code with automatic builds and continuous deployment from GitHub.
 
+:::info Organizations Only
+Kilo Code Deploy is currently only available for organizations.
+:::
+
 :::tip Quick Start
 
 1. Connect your GitHub account via the GitHub App integration
