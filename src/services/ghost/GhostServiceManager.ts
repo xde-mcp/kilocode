@@ -294,8 +294,8 @@ export class GhostServiceManager {
 			enabled: this.settings?.enableAutoTrigger,
 			model: this.getCurrentModelName(),
 			provider: this.getCurrentProviderName(),
-			profileName: this.model.getProfileName(), // kilocode_change - autocomplete profile type system
-			isAutocompleteProfile: this.model.isAutocompleteProfile(), // kilocode_change - autocomplete profile type system
+			profileName: this.model.getProfileName(),
+			isAutocompleteProfile: this.model.isAutocompleteProfile(),
 			hasValidToken: this.hasValidApiToken(),
 			totalSessionCost: this.sessionCost,
 			lastCompletionCost: this.lastCompletionCost,
