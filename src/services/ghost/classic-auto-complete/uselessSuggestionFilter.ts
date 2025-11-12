@@ -39,18 +39,3 @@ export function postprocessGhostSuggestion(params: {
 	// The suggestion appears to be useful - return the original (not trimmed) suggestion
 	return suggestion
 }
-
-/**
- * @deprecated Use postprocessGhostSuggestion instead
- * Filters out useless autocomplete suggestions that don't provide value to the user
- *
- * @param suggestion - The suggested text to insert
- * @param prefix - The text before the cursor position
- * @param suffix - The text after the cursor position
- * @returns true if the suggestion should be refused (is useless), false if it should be kept
- */
-export function refuseUselessSuggestion(suggestion: string, prefix: string, suffix: string): boolean {
-	// Delegate to the new API for backward compatibility
-	const result = postprocessGhostSuggestion({ suggestion, prefix, suffix, model: "" })
-	return result === undefined
-}

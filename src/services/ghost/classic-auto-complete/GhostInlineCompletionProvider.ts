@@ -192,31 +192,20 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// Process the suggestion through the postprocessing pipeline
 		let fillInAtCursorSuggestion: FillInAtCursorSuggestion
 		if (parsedSuggestion.text) {
-			// Get model name, defaulting to empty string if not available
-			let modelName = ""
-			try {
-				modelName = model.getModelName() || ""
-			} catch (error) {
-				// If getModelName is not available or throws, use empty string
-				console.debug("Could not get model name for postprocessing:", error)
-			}
-
 			const processedText = postprocessGhostSuggestion({
 				suggestion: parsedSuggestion.text,
 				prefix,
 				suffix,
-				model: modelName,
+				model: model.getModelName() || "",
 			})
 
 			if (processedText) {
 				fillInAtCursorSuggestion = { text: processedText, prefix, suffix }
 				console.info("Final suggestion:", fillInAtCursorSuggestion)
 			} else {
-				// Suggestion was filtered out
 				fillInAtCursorSuggestion = { text: "", prefix, suffix }
 			}
 		} else {
-			// No suggestion from parsing
 			fillInAtCursorSuggestion = { text: "", prefix, suffix }
 		}
 
