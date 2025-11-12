@@ -8,6 +8,7 @@ import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
+import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -99,17 +100,20 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private recentlyVisitedRangesService: RecentlyVisitedRangesService
 	private recentlyEditedTracker: RecentlyEditedTracker
 	private debounceTimer: NodeJS.Timeout | null = null
+	private ignoreController?: Promise<RooIgnoreController>
 
 	constructor(
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
 		contextProvider?: GhostContextProvider,
+		ignoreController?: Promise<RooIgnoreController>,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
+		this.ignoreController = ignoreController
 
 		// Get IDE from context provider if available
 		const ide = contextProvider?.getIde()
@@ -256,6 +260,31 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		if (!this.model) {
 			// bail if no model is available, because if there is none, we also have no cache
 			return []
+		}
+
+		// Check if file is ignored (for manual trigger via codeSuggestion)
+		if (!document.isUntitled && this.ignoreController) {
+			try {
+				// Try to get the controller with a short timeout
+				const controller = await Promise.race([
+					this.ignoreController,
+					new Promise<null>((resolve) => setTimeout(() => resolve(null), 50)),
+				])
+
+				if (!controller) {
+					// If promise hasn't resolved yet, assume file is ignored
+					return []
+				}
+
+				const isAccessible = controller.validateAccess(document.fileName)
+				if (!isAccessible) {
+					return []
+				}
+			} catch (error) {
+				console.error("[GhostInlineCompletionProvider] Error checking file access:", error)
+				// On error, assume file is ignored
+				return []
+			}
 		}
 
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
