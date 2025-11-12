@@ -3447,13 +3447,13 @@ export const webviewMessageHandler = async (
 
 					const prompt = mermaidFixPrompt(message.values?.error || "Unknown syntax error", message.text)
 
-					const result = await singleCompletionHandler(apiConfiguration, prompt) // kilocode_change
+					const result = await singleCompletionHandler(apiConfiguration, prompt)
 
 					provider.postMessageToWebview({
 						type: "mermaidFixResponse",
 						requestId: message.requestId,
 						success: true,
-						fixedCode: result.text?.trim() || null, // kilocode_change
+						fixedCode: result?.trim() || null,
 					})
 				} catch (error) {
 					const errorMessage = error instanceof Error ? error.message : "Failed to fix Mermaid syntax"
