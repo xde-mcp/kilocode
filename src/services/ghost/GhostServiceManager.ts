@@ -294,7 +294,7 @@ export class GhostServiceManager {
 			enabled: this.settings?.enableAutoTrigger,
 			model: this.getCurrentModelName(),
 			provider: this.getCurrentProviderName(),
-			profileName: this.model.getProfileName(),
+			profileName: this.model.profileName,
 			hasValidToken: this.hasValidApiToken(),
 			totalSessionCost: this.sessionCost,
 			lastCompletionCost: this.lastCompletionCost,

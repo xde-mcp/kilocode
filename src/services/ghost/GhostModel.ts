@@ -7,8 +7,8 @@ import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilo
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null
-	private profileName: string | null = null
-	private profileType: string | null = null
+	public profileName: string | null = null
+	public profileType: string | null = null
 	public loaded = false
 
 	constructor(apiHandler: ApiHandler | null = null) {
@@ -151,13 +151,5 @@ export class GhostModel {
 
 	public hasValidCredentials(): boolean {
 		return this.apiHandler !== null && this.loaded
-	}
-
-	public getProfileName(): string | null {
-		return this.profileName
-	}
-
-	public getProfileType(): string | null {
-		return this.profileType
 	}
 }

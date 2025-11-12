@@ -339,12 +339,12 @@ describe("GhostModel", () => {
 		describe("profile information", () => {
 			it("returns null for profile name when no profile is loaded", () => {
 				const model = new GhostModel()
-				expect(model.getProfileName()).toBeNull()
+				expect(model.profileName).toBeNull()
 			})
 
 			it("returns null for profile type when no profile is loaded", () => {
 				const model = new GhostModel()
-				expect(model.getProfileType()).toBeNull()
+				expect(model.profileType).toBeNull()
 			})
 
 			it("stores and returns profile name after loading", async () => {
@@ -370,7 +370,7 @@ describe("GhostModel", () => {
 				const model = new GhostModel()
 				await model.reload(mockProviderSettingsManager)
 
-				expect(model.getProfileName()).toBe("My Autocomplete Profile")
+				expect(model.profileName).toBe("My Autocomplete Profile")
 			})
 
 			it("stores and returns profile type after loading", async () => {
@@ -391,7 +391,7 @@ describe("GhostModel", () => {
 				const model = new GhostModel()
 				await model.reload(mockProviderSettingsManager)
 
-				expect(model.getProfileType()).toBe("autocomplete")
+				expect(model.profileType).toBe("autocomplete")
 			})
 
 			it("clears profile information on cleanup", async () => {
@@ -412,15 +412,15 @@ describe("GhostModel", () => {
 				const model = new GhostModel()
 				await model.reload(mockProviderSettingsManager)
 
-				expect(model.getProfileName()).toBe("My Profile")
-				expect(model.getProfileType()).toBe("autocomplete")
+				expect(model.profileName).toBe("My Profile")
+				expect(model.profileType).toBe("autocomplete")
 
 				// Reload with empty profiles to trigger cleanup
 				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue([])
 				await model.reload(mockProviderSettingsManager)
 
-				expect(model.getProfileName()).toBeNull()
-				expect(model.getProfileType()).toBeNull()
+				expect(model.profileName).toBeNull()
+				expect(model.profileType).toBeNull()
 			})
 		})
 	})
