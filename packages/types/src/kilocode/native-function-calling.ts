@@ -22,6 +22,9 @@ export const nativeFunctionCallingProviders = [
 	"qwen-code",
 	"inception",
 	"litellm",
+	"minimax",
+	"anthropic",
+	"moonshot",
 ] satisfies ProviderName[] as ProviderName[]
 
 const modelsDefaultingToJsonKeywords = ["claude-haiku-4.5", "claude-haiku-4-5"]
