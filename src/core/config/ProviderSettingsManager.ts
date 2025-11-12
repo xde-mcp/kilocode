@@ -11,13 +11,13 @@ import {
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	getModelId,
 	type ProviderName,
-	type RooModelId,
 	type ProfileType, // kilocode_change - autocomplete profile type system
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
 import { Mode, modes } from "../../shared/modes"
 import { migrateMorphApiKey } from "./kilocode/migrateMorphApiKey"
+import { buildApiHandler } from "../../api"
 import { t } from "../../i18n" // kilocode_change - autocomplete profile type system
 
 // Type-safe model migrations mapping
@@ -27,7 +27,7 @@ type ModelMigrations = {
 
 const MODEL_MIGRATIONS: ModelMigrations = {
 	roo: {
-		"roo/code-supernova": "roo/code-supernova-1-million" as RooModelId,
+		"roo/code-supernova": "roo/code-supernova-1-million",
 	},
 } as const satisfies ModelMigrations
 
@@ -83,8 +83,23 @@ export class ProviderSettingsManager {
 		this.context = context
 
 		// TODO: We really shouldn't have async methods in the constructor.
-		this.initialize().catch(console.error)
+		// kilocode_change start
+		// only initialize ONCE, and save the promise in case somebody needs to wait.
+		this.initialization = this.init_runMigrations()
+		this.initialization.catch(console.error)
+		// kilocode_change end
 	}
+
+	// kilocode_change start
+	private readonly initialization: Promise<void>
+	/**
+	 * Wait for initialization migrations to complete.  These were started during construction.
+	 * The odd active-verb name is retained to simplify roo-merged.
+	 */
+	public initialize(): Promise<void> {
+		return this.initialization
+	}
+	// kilocode_change end
 
 	public generateId() {
 		return Math.random().toString(36).substring(2, 15)
@@ -98,10 +113,8 @@ export class ProviderSettingsManager {
 		return next
 	}
 
-	/**
-	 * Initialize config if it doesn't exist and run migrations.
-	 */
-	public async initialize() {
+	// kilocode_change: private & renamed:
+	async init_runMigrations() {
 		try {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
@@ -570,6 +583,31 @@ export class ProviderSettingsManager {
 				for (const name in configs) {
 					// Avoid leaking properties from other providers.
 					configs[name] = discriminatedProviderSettingsWithIdSchema.parse(configs[name])
+
+					// If it has no apiProvider, skip filtering
+					if (!configs[name].apiProvider) {
+						continue
+					}
+
+					// Try to build an API handler to get model information
+					try {
+						const apiHandler = buildApiHandler(configs[name])
+						const modelInfo = apiHandler.getModel().info
+
+						// Check if the model supports reasoning budgets
+						const supportsReasoningBudget =
+							modelInfo.supportsReasoningBudget || modelInfo.requiredReasoningBudget
+
+						// If the model doesn't support reasoning budgets, remove the token fields
+						if (!supportsReasoningBudget) {
+							delete configs[name].modelMaxTokens
+							delete configs[name].modelMaxThinkingTokens
+						}
+					} catch (error) {
+						// If we can't build the API handler or get model info, skip filtering
+						// to avoid accidental data loss from incomplete configurations
+						console.warn(`Skipping token field filtering for config '${name}': ${error}`)
+					}
 				}
 				return profiles
 			})

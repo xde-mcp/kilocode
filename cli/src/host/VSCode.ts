@@ -1082,7 +1082,13 @@ export class WorkspaceAPI {
 		// In CLI mode, we need to apply the edits to the actual files
 		try {
 			for (const [uri, edits] of edit.entries()) {
-				const filePath = uri.fsPath
+				let filePath = uri.fsPath
+
+				// On Windows, strip leading slash if present (e.g., /C:/path becomes C:/path)
+				if (process.platform === "win32" && filePath.startsWith("/")) {
+					filePath = filePath.slice(1)
+				}
+
 				let content = ""
 
 				// Read existing content if file exists
@@ -1598,7 +1604,8 @@ export class WindowAPI {
 	registerWebviewViewProvider(viewId: string, provider: any, _options?: any): Disposable {
 		// Store the provider for later use by ExtensionHost
 		if ((global as any).__extensionHost) {
-			;(global as any).__extensionHost.registerWebviewProvider(viewId, provider)
+			const extensionHost = (global as any).__extensionHost
+			extensionHost.registerWebviewProvider(viewId, provider)
 
 			// Set up webview mock that captures messages from the extension
 			const mockWebview = {
@@ -1640,14 +1647,31 @@ export class WindowAPI {
 					visible: true,
 				}
 
-				// Call the provider's resolveWebviewView method
-				setTimeout(() => {
+				// Call resolveWebviewView immediately with initialization context
+				// No setTimeout needed - use event-based synchronization instead
+				;(async () => {
 					try {
-						provider.resolveWebviewView(mockWebviewView, { preserveFocus: false }, {})
+						// Pass isInitialSetup flag in context to prevent task abortion
+						const context = {
+							preserveFocus: false,
+							isInitialSetup: extensionHost.isInInitialSetup(),
+						}
+
+						logs.debug(
+							`Calling resolveWebviewView with isInitialSetup=${context.isInitialSetup}`,
+							"VSCode.Window",
+						)
+
+						// Await the result to ensure webview is fully initialized before marking ready
+						await provider.resolveWebviewView(mockWebviewView, context, {})
+
+						// Mark webview as ready after resolution completes
+						extensionHost.markWebviewReady()
+						logs.debug("Webview resolution complete, marked as ready", "VSCode.Window")
 					} catch (error) {
 						logs.error("Error resolving webview view", "VSCode.Window", { error })
 					}
-				}, 100)
+				})()
 			}
 		}
 		return {

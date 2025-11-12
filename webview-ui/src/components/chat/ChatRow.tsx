@@ -87,6 +87,7 @@ interface ChatRowProps {
 	onFollowUpUnmount?: () => void
 	isFollowUpAnswered?: boolean
 	editable?: boolean
+	hasCheckpoint?: boolean
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -479,39 +480,6 @@ export const ChatRowContent = ({
 											: t("chat:fileOperations.wantsToInsertWithLineNumber", {
 													lineNumber: tool.lineNumber,
 												})}
-							</span>
-						</div>
-						<div className="pl-6">
-							<CodeAccordian
-								path={tool.path}
-								code={tool.diff}
-								language="diff"
-								progressStatus={message.progressStatus}
-								isLoading={message.partial}
-								isExpanded={isExpanded}
-								onToggleExpand={handleToggleExpand}
-							/>
-						</div>
-					</>
-				)
-			case "searchAndReplace":
-				return (
-					<>
-						<div style={headerStyle}>
-							{tool.isProtected ? (
-								<span
-									className="codicon codicon-lock"
-									style={{ color: "var(--vscode-editorWarning-foreground)", marginBottom: "-1.5px" }}
-								/>
-							) : (
-								toolIcon("replace")
-							)}
-							<span style={{ fontWeight: "bold" }}>
-								{tool.isProtected && message.type === "ask"
-									? t("chat:fileOperations.wantsToEditProtected")
-									: message.type === "ask"
-										? t("chat:fileOperations.wantsToSearchReplace")
-										: t("chat:fileOperations.didSearchReplace")}
 							</span>
 						</div>
 						<div className="pl-6">
@@ -1191,7 +1159,8 @@ export const ChatRowContent = ({
 							</div>
 							<div
 								className={cn(
-									"ml-6 border rounded-sm overflow-hidden whitespace-pre-wrap",
+									"ml-6 border rounded-sm whitespace-pre-wrap",
+									isEditing ? "overflow-visible" : "overflow-hidden", // kilocode_change
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
 										: "cursor-text p-1 bg-vscode-editor-foreground/70 text-vscode-editor-background",
@@ -1629,7 +1598,12 @@ export const ChatRowContent = ({
 					)
 
 				case "payment_required_prompt": {
-					return <LowCreditWarning message={message} />
+					return (
+						<LowCreditWarning
+							message={message}
+							isOrganization={!!apiConfiguration.kilocodeOrganizationId}
+						/>
+					)
 				}
 				case "invalid_model": {
 					return <InvalidModelWarning message={message} isLast={isLast} />

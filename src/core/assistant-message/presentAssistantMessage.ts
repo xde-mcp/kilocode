@@ -15,7 +15,6 @@ import { shouldUseSingleFileRead } from "@roo-code/types"
 import { writeToFileTool } from "../tools/writeToFileTool"
 import { applyDiffTool } from "../tools/multiApplyDiffTool"
 import { insertContentTool } from "../tools/insertContentTool"
-import { searchAndReplaceTool } from "../tools/searchAndReplaceTool"
 import { editFileTool } from "../tools/editFileTool" // kilocode_change: Morph fast apply
 import { listCodeDefinitionNamesTool } from "../tools/listCodeDefinitionNamesTool"
 import { searchFilesTool } from "../tools/searchFilesTool"
@@ -200,8 +199,6 @@ export async function presentAssistantMessage(cline: Task) {
 							block.params.file_pattern ? ` in '${block.params.file_pattern}'` : ""
 						}]`
 					case "insert_content":
-						return `[${block.name} for '${block.params.path}']`
-					case "search_and_replace":
 						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change start: Morph fast apply
 					case "edit_file":
@@ -503,10 +500,6 @@ export async function presentAssistantMessage(cline: Task) {
 				case "insert_content":
 					// await checkpointSaveAndMark(cline) // kilocode_change
 					await insertContentTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "search_and_replace":
-					// await checkpointSaveAndMark(cline) // kilocode_change
-					await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change start: Morph fast apply
 				case "edit_file":

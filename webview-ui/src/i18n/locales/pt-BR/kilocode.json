@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Adicionar crédito",
-		"lowBalance": "Seu saldo do Kilo Code está baixo"
+		"lowBalance": "Seu saldo do Kilo Code está baixo",
+		"newOrganization": "Usando o Kilo para trabalho?"
 	},
 	"pagination": {
 		"previous": "Anterior",
@@ -28,7 +29,6 @@
 	"pricing": {
 		"costUnknown": "custo desconhecido",
 		"costUnknownDescription": "O Provedor de API não forneceu dados de custo ou a solicitação foi cancelada.",
-		"freeModelsDescription": "Modelos gratuitos podem ter limites de taxa. Use o link abaixo para otimizar seu uso de modelos gratuitos!",
 		"freeModelsLink": "Descubra opções de modelos gratuitos e econômicos"
 	},
 	"notifications": {

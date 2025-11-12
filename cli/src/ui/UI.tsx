@@ -9,6 +9,7 @@ import { useAtomValue, useSetAtom } from "jotai"
 import { isStreamingAtom, errorAtom, addMessageAtom, messageResetCounterAtom } from "../state/atoms/ui.js"
 import { setCIModeAtom } from "../state/atoms/ci.js"
 import { configValidationAtom } from "../state/atoms/config.js"
+import { isParallelModeAtom } from "../state/atoms/index.js"
 import { addToHistoryAtom, resetHistoryNavigationAtom, exitHistoryModeAtom } from "../state/atoms/history.js"
 import { MessageDisplay } from "./messages/MessageDisplay.js"
 import { JsonRenderer } from "./JsonRenderer.js"
@@ -22,6 +23,7 @@ import { useMessageHandler } from "../state/hooks/useMessageHandler.js"
 import { useFollowupHandler } from "../state/hooks/useFollowupHandler.js"
 import { useApprovalMonitor } from "../state/hooks/useApprovalMonitor.js"
 import { useProfile } from "../state/hooks/useProfile.js"
+import { useTaskHistory } from "../state/hooks/useTaskHistory.js"
 import { useCIMode } from "../state/hooks/useCIMode.js"
 import { useTheme } from "../state/hooks/useTheme.js"
 import { AppOptions } from "./App.js"
@@ -30,6 +32,7 @@ import { createConfigErrorInstructions, createWelcomeMessage } from "./utils/wel
 import { generateUpdateAvailableMessage, getAutoUpdateStatus } from "../utils/auto-update.js"
 import { generateNotificationMessage } from "../utils/notifications.js"
 import { notificationsAtom } from "../state/atoms/notifications.js"
+import { workspacePathAtom } from "../state/atoms/shell.js"
 import { useTerminal } from "../state/hooks/useTerminal.js"
 
 // Initialize commands on module load
@@ -55,6 +58,8 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	const addToHistory = useSetAtom(addToHistoryAtom)
 	const resetHistoryNavigation = useSetAtom(resetHistoryNavigationAtom)
 	const exitHistoryMode = useSetAtom(exitHistoryModeAtom)
+	const setIsParallelMode = useSetAtom(isParallelModeAtom)
+	const setWorkspacePath = useSetAtom(workspacePathAtom)
 
 	// Use specialized hooks for command and message handling
 	const { executeCommand, isExecuting: isExecutingCommand } = useCommandHandler()
@@ -70,6 +75,9 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 
 	// Profile hook for handling profile/balance data responses
 	useProfile()
+
+	// Task history hook for fetching task history
+	const { fetchTaskHistory } = useTaskHistory()
 
 	// This clears the terminal and forces re-render of static components
 	useTerminal()
@@ -96,6 +104,20 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 			})
 		}
 	}, [options.ci, options.timeout, setCIMode])
+
+	// Set parallel mode flag
+	useEffect(() => {
+		if (options.parallel) {
+			setIsParallelMode(true)
+		}
+	}, [options.parallel, setIsParallelMode])
+
+	// Initialize workspace path for shell commands
+	useEffect(() => {
+		if (options.workspace) {
+			setWorkspacePath(options.workspace)
+		}
+	}, [options.workspace, setWorkspacePath])
 
 	// Handle CI mode exit
 	useEffect(() => {
@@ -164,10 +186,15 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 					clearScreen: !options.ci && configValidation.valid,
 					showInstructions: !options.ci || !options.prompt,
 					instructions: createConfigErrorInstructions(configValidation),
+					...(options.parallel &&
+						options.worktreeBranch && {
+							worktreeBranch: options.worktreeBranch,
+							workspace: options.workspace,
+						}),
 				}),
 			)
 		}
-	}, [options.ci, options.prompt, addMessage, configValidation])
+	}, [addMessage, options.ci, configValidation, options.prompt, options.parallel, options.worktreeBranch])
 
 	useEffect(() => {
 		const checkVersion = async () => {
@@ -180,6 +207,7 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 		}
 	}, [])
 
+	// Show update or notification messages
 	useEffect(() => {
 		if (!versionStatus) return
 
@@ -190,6 +218,15 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 			addMessage(generateNotificationMessage(notifications[0]))
 		}
 	}, [notifications, versionStatus])
+
+	// Fetch task history on mount if not in CI mode
+	const taskHistoryFetchedRef = useRef(false)
+	useEffect(() => {
+		if (!taskHistoryFetchedRef.current && !options.ci && configValidation.valid) {
+			taskHistoryFetchedRef.current = true
+			fetchTaskHistory()
+		}
+	}, [options.ci, configValidation.valid, fetchTaskHistory])
 
 	// Exit if provider configuration is invalid
 	useEffect(() => {

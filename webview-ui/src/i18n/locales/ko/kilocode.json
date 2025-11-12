@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "크레딧 추가",
-		"lowBalance": "Kilo Code 잔액이 부족합니다"
+		"lowBalance": "Kilo Code 잔액이 부족합니다",
+		"newOrganization": "업무용으로 Kilo를 사용하시나요?"
 	},
 	"pagination": {
 		"previous": "이전",
@@ -28,7 +29,6 @@
 	"pricing": {
 		"costUnknown": "비용 알 수 없음",
 		"costUnknownDescription": "API 제공자가 비용 데이터를 제공하지 않았거나 요청이 취소되었습니다.",
-		"freeModelsDescription": "무료 모델에는 사용 제한이 있을 수 있습니다. 아래 링크를 사용하여 무료 모델 사용을 최적화하세요!",
 		"freeModelsLink": "무료 및 저비용 모델 옵션 알아보기"
 	},
 	"notifications": {

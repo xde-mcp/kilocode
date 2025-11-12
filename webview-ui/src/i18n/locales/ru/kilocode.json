@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Добавить кредит",
-		"lowBalance": "Ваш баланс Kilo Code низкий"
+		"lowBalance": "Ваш баланс Kilo Code низкий",
+		"newOrganization": "Используете Kilo для работы?"
 	},
 	"pagination": {
 		"previous": "Предыдущая",
@@ -28,7 +29,6 @@
 	"pricing": {
 		"costUnknown": "стоимость неизвестна",
 		"costUnknownDescription": "API-провайдер не предоставил данные о стоимости или запрос был отменен.",
-		"freeModelsDescription": "Бесплатные модели могут иметь ограничения по скорости. Используйте ссылку ниже, чтобы оптимизировать использование бесплатных моделей!",
 		"freeModelsLink": "Узнать о бесплатных и бюджетных моделях"
 	},
 	"notifications": {

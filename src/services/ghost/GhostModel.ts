@@ -1,13 +1,9 @@
-import {
-	AUTOCOMPLETE_PROVIDER_MODELS,
-	defaultProviderUsabilityChecker,
-	modelIdKeysByProvider,
-	ProviderSettingsEntry,
-} from "@roo-code/types"
+import { modelIdKeysByProvider } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
 import { ApiStreamChunk } from "../../api/transform/stream"
+import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null
@@ -30,68 +26,37 @@ export class GhostModel {
 
 	public async reload(providerSettingsManager: ProviderSettingsManager): Promise<boolean> {
 		const profiles = await providerSettingsManager.listConfig()
-		const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS) as Array<
-			keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-		>
 
 		this.cleanup()
+		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
+		for (const isAutocompleteType of [true, false]) // check specifically targetted profiles first
+			for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
+				const selectedProfile = profiles.find(
+					(x) => x?.apiProvider === provider && isAutocompleteType === (x.profileType === "autocomplete"),
+				)
+				if (!selectedProfile) continue
+				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
-		// First, try to find a profile specifically marked as autocomplete
-		const autocompleteProfile = profiles.find((x) => x.profileType === "autocomplete")
-		if (autocompleteProfile && autocompleteProfile.apiProvider) {
-			const provider = autocompleteProfile.apiProvider as keyof typeof AUTOCOMPLETE_PROVIDER_MODELS
-			if (supportedProviders.includes(provider)) {
-				await this.loadProfile(providerSettingsManager, autocompleteProfile, provider)
+				if (provider === "kilocode") {
+					// For all other providers, assume they are usable
+					if (!profile.kilocodeToken) continue
+					if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
+				}
+
+				this.profileName = selectedProfile.name || null
+				this.profileType = selectedProfile.profileType || null
+				const modelIdSpec = isAutocompleteType ? {} : { [modelIdKeysByProvider[provider]]: model }
+				this.apiHandler = buildApiHandler({ ...profile, ...modelIdSpec })
+				if (this.apiHandler instanceof OpenRouterHandler) {
+					await this.apiHandler.fetchModel()
+				}
+
 				this.loaded = true
 				return true
 			}
-		}
-
-		// Fallback: Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
-		for (const provider of supportedProviders) {
-			const selectedProfile = profiles.find(
-				(x): x is typeof x & { apiProvider: string } => x?.apiProvider === provider,
-			)
-			if (selectedProfile) {
-				const isUsable = await defaultProviderUsabilityChecker(provider, providerSettingsManager)
-				if (!isUsable) continue
-
-				await this.loadProfile(providerSettingsManager, selectedProfile, provider)
-				this.loaded = true
-				return true
-			}
-		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
-	}
-
-	public async loadProfile(
-		providerSettingsManager: ProviderSettingsManager,
-		selectedProfile: ProviderSettingsEntry,
-		provider: keyof typeof AUTOCOMPLETE_PROVIDER_MODELS,
-	): Promise<void> {
-		const profile = await providerSettingsManager.getProfile({
-			id: selectedProfile.id,
-		})
-
-		this.profileName = selectedProfile.name || null
-		this.profileType = selectedProfile.profileType || null
-
-		const isExplicitAutocompleteProfile = selectedProfile.profileType === "autocomplete"
-
-		this.apiHandler = buildApiHandler(
-			isExplicitAutocompleteProfile
-				? profile
-				: {
-						...profile,
-						[modelIdKeysByProvider[provider]]: AUTOCOMPLETE_PROVIDER_MODELS[provider],
-					},
-		)
-
-		if (this.apiHandler instanceof OpenRouterHandler) {
-			await this.apiHandler.fetchModel()
-		}
 	}
 
 	/**
@@ -153,20 +118,20 @@ export class GhostModel {
 		}
 	}
 
-	public getModelName(): string | null {
-		if (!this.apiHandler) return null
+	public getModelName(): string | undefined {
+		if (!this.apiHandler) return undefined
 
-		return this.apiHandler.getModel().id ?? "unknown"
+		return this.apiHandler.getModel().id ?? undefined
 	}
 
-	public getProviderDisplayName(): string | null {
-		if (!this.apiHandler) return null
+	public getProviderDisplayName(): string | undefined {
+		if (!this.apiHandler) return undefined
 
 		const handler = this.apiHandler as any
 		if (handler.providerName && typeof handler.providerName === "string") {
 			return handler.providerName
 		} else {
-			return "unknown"
+			return undefined
 		}
 	}
 
