@@ -1,7 +1,7 @@
 import { buildApiHandler } from "../../../api"
 import { Task } from "../../task/Task"
 import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../../shared/cost"
-import { singleCompletionHandler } from "../../../utils/single-completion-handler"
+import { singleCompletionHandler, streamResponseFromHandler } from "../../../utils/single-completion-handler"
 import { execSync } from "child_process"
 import { existsSync } from "fs"
 import { isAbsolute, join } from "path"
@@ -56,15 +56,17 @@ export async function evaluateGatekeeperApproval(
 		// Build the approval prompt using the task's workspace directory
 		const { systemPrompt, userPrompt } = buildGatekeeperPrompt(toolName, toolParams, cline.cwd)
 
-		// Make the request to the gatekeeper model using singleCompletionHandler
-		const result = await singleCompletionHandler(profile, userPrompt, systemPrompt)
+		const handler = buildApiHandler(profile)
 
-		// Extract response text and usage information
-		const response = result.text
-		const usage = result.usage
+		// Initialize handler if it has an initialize method
+		if ("initialize" in handler && typeof handler.initialize === "function") {
+			await handler.initialize()
+		}
+
+		const { text, usage } = await streamResponseFromHandler(handler, userPrompt, systemPrompt)
 
 		// Parse the response - look for "yes", "approve", "allowed" vs "no", "deny", "block"
-		const normalizedResponse = response.toLowerCase().trim()
+		const normalizedResponse = text.toLowerCase().trim()
 		const approved =
 			normalizedResponse.startsWith("yes") ||
 			normalizedResponse.startsWith("approve") ||
@@ -79,9 +81,7 @@ export async function evaluateGatekeeperApproval(
 
 			// If totalCost is not provided, calculate it using model info
 			if (cost === undefined) {
-				// Build handler temporarily to get model info for cost calculation
-				const gatekeeperApi = buildApiHandler(profile)
-				const model = gatekeeperApi.getModel()
+				const model = handler.getModel()
 				const modelInfo = model.info
 
 				// Determine which cost calculation function to use based on the provider's API protocol
@@ -94,7 +94,7 @@ export async function evaluateGatekeeperApproval(
 						usage.outputTokens,
 						usage.cacheWriteTokens,
 						usage.cacheReadTokens,
-					)
+					).totalCost
 				} else {
 					cost = calculateApiCostOpenAI(
 						modelInfo,
@@ -102,7 +102,7 @@ export async function evaluateGatekeeperApproval(
 						usage.outputTokens,
 						usage.cacheWriteTokens,
 						usage.cacheReadTokens,
-					)
+					).totalCost
 				}
 			}
 
