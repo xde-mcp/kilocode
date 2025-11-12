@@ -1,7 +1,8 @@
+import { postprocessCompletion } from "../../continuedev/core/autocomplete/postprocessing/index.js"
+
 /**
- * Postprocesses a Ghost autocomplete suggestion.
- * This will eventually use the continuedev postprocessing pipeline,
- * but for now reimplements the existing Ghost-specific checks.
+ * Postprocesses a Ghost autocomplete suggestion using the continuedev postprocessing pipeline
+ * and applies some of our own duplicate checks.
  *
  * @param params - Object containing suggestion parameters
  * @param params.suggestion - The suggested text to insert
@@ -16,26 +17,35 @@ export function postprocessGhostSuggestion(params: {
 	suffix: string
 	model: string
 }): string | undefined {
-	const { suggestion, prefix, suffix } = params
-	// Note: model parameter will be used when we integrate with postprocessCompletion
+	const { suggestion, prefix, suffix, model } = params
 
-	// For now, reimplement the existing logic with the new API shape
-	const trimmedSuggestion = suggestion.trim()
+	// First, run through the continuedev postprocessing pipeline
+	const processed = postprocessCompletion({
+		completion: suggestion,
+		llm: { model },
+		prefix,
+		suffix,
+	})
 
-	if (!trimmedSuggestion) {
+	if (processed === undefined) {
+		return undefined
+	}
+
+	const trimmed = processed.trim()
+
+	if (trimmed.length === 0) {
 		return undefined
 	}
 
 	const trimmedPrefixEnd = prefix.trimEnd()
-	if (trimmedPrefixEnd.endsWith(trimmedSuggestion)) {
+	if (trimmedPrefixEnd.endsWith(trimmed)) {
 		return undefined
 	}
 
 	const trimmedSuffix = suffix.trimStart()
-	if (trimmedSuffix.startsWith(trimmedSuggestion)) {
+	if (trimmedSuffix.startsWith(trimmed)) {
 		return undefined
 	}
 
-	// The suggestion appears to be useful - return the original (not trimmed) suggestion
-	return suggestion
+	return processed
 }

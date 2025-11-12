@@ -203,9 +203,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				fillInAtCursorSuggestion = { text: processedText, prefix, suffix }
 				console.info("Final suggestion:", fillInAtCursorSuggestion)
 			} else {
+				// Suggestion was filtered out
 				fillInAtCursorSuggestion = { text: "", prefix, suffix }
 			}
 		} else {
+			// No suggestion from parsing
 			fillInAtCursorSuggestion = { text: "", prefix, suffix }
 		}
 
