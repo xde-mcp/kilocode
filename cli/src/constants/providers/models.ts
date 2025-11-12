@@ -58,7 +58,7 @@ export type RouterName =
 	| "glama"
 	| "unbound"
 	| "litellm"
-	| "kilocode-openrouter"
+	| "kilocode"
 	| "ollama"
 	| "lmstudio"
 	| "io-intelligence"
@@ -96,7 +96,7 @@ export type RouterModels = Record<RouterName, ModelRecord>
  * Mapping from ProviderName to RouterName for model fetching
  */
 export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = {
-	kilocode: "kilocode-openrouter",
+	kilocode: "kilocode",
 	openrouter: "openrouter",
 	ollama: "ollama",
 	lmstudio: "lmstudio",

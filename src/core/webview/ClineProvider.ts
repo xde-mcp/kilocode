@@ -42,6 +42,7 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_MODES,
 	getActiveToolUseStyle, // kilocode_change
+	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { CloudService, BridgeOrchestrator, getRooCodeApiUrl } from "@roo-code/cloud"
@@ -96,6 +97,7 @@ import type { ClineMessage } from "@roo-code/types"
 import { readApiMessages, saveApiMessages, saveTaskMessages } from "../task-persistence"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
+import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
 
 //kilocode_change start
 import { McpDownloadResponse, McpMarketplaceCatalog } from "../../shared/kilocode/mcp"
@@ -161,7 +163,7 @@ export class ClineProvider
 
 	public isViewLaunched = false
 	public settingsImportedAt?: number
-	public readonly latestAnnouncementId = "sep-2025-code-supernova-1m" // Code Supernova 1M context window announcement
+	public readonly latestAnnouncementId = "nov-2025-v3.30.0-pr-fixer" // v3.30.0 PR Fixer announcement
 	public readonly providerSettingsManager: ProviderSettingsManager
 	public readonly customModesManager: CustomModesManager
 
@@ -749,7 +751,12 @@ export class ClineProvider
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "addToContext") {
-			await visibleProvider.postMessageToWebview({ type: "invoke", invoke: "setChatBoxMessage", text: prompt })
+			await visibleProvider.postMessageToWebview({
+				type: "invoke",
+				invoke: "setChatBoxMessage",
+				text: `${prompt}\n\n`,
+			})
+			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			return
 		}
 
@@ -806,7 +813,12 @@ ${prompt}
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "terminalAddToContext") {
-			await visibleProvider.postMessageToWebview({ type: "invoke", invoke: "setChatBoxMessage", text: prompt })
+			await visibleProvider.postMessageToWebview({
+				type: "invoke",
+				invoke: "setChatBoxMessage",
+				text: `${prompt}\n\n`,
+			})
+			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			return
 		}
 
@@ -1005,6 +1017,7 @@ ${prompt}
 			apiConfiguration,
 			diffEnabled: enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			experiments,
 			cloudUserInfo,
@@ -1017,6 +1030,7 @@ ${prompt}
 			apiConfiguration,
 			enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			consecutiveMistakeLimit: apiConfiguration.consecutiveMistakeLimit,
 			historyItem,
@@ -1591,8 +1605,8 @@ ${prompt}
 
 	// Requesty
 
-	async handleRequestyCallback(code: string) {
-		let { apiConfiguration, currentApiConfigName = "default" } = await this.getState()
+	async handleRequestyCallback(code: string, baseUrl: string | null) {
+		let { apiConfiguration } = await this.getState()
 
 		const newConfiguration: ProviderSettings = {
 			...apiConfiguration,
@@ -1601,7 +1615,16 @@ ${prompt}
 			requestyModelId: apiConfiguration?.requestyModelId || requestyDefaultModelId,
 		}
 
-		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
+		// set baseUrl as undefined if we don't provide one
+		// or if it is the default requesty url
+		if (!baseUrl || baseUrl === REQUESTY_BASE_URL) {
+			newConfiguration.requestyBaseUrl = undefined
+		} else {
+			newConfiguration.requestyBaseUrl = baseUrl
+		}
+
+		const profileName = `Requesty (${new Date().toLocaleString()})`
+		await this.upsertProviderProfile(profileName, newConfiguration)
 	}
 
 	// kilocode_change:
@@ -1931,6 +1954,7 @@ ${prompt}
 			ttsSpeed,
 			diffEnabled,
 			enableCheckpoints,
+			checkpointTimeout,
 			// taskHistory, // kilocode_change
 			soundVolume,
 			browserViewportSize,
@@ -2005,6 +2029,8 @@ ${prompt}
 			includeDiagnosticMessages,
 			maxDiagnosticMessages,
 			includeTaskHistoryInEnhance,
+			includeCurrentTime,
+			includeCurrentCost,
 			taskSyncEnabled,
 			remoteControlEnabled,
 			openRouterImageApiKey,
@@ -2026,11 +2052,11 @@ ${prompt}
 		let cloudOrganizations: CloudOrganizationMembership[] = []
 
 		try {
-			cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+			if (!CloudService.instance.isCloudAgent) {
+				cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+			}
 		} catch (error) {
-			console.error(
-				`[getStateToPostToWebview] failed to get cloud organizations: ${error instanceof Error ? error.message : String(error)}`,
-			)
+			// Ignore this error.
 		}
 
 		const telemetryKey = process.env.KILOCODE_POSTHOG_API_KEY
@@ -2090,6 +2116,7 @@ ${prompt}
 			ttsSpeed: ttsSpeed ?? 1.0,
 			diffEnabled: diffEnabled ?? true,
 			enableCheckpoints: enableCheckpoints ?? true,
+			checkpointTimeout: checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 			shouldShowAnnouncement: false, // kilocode_change
 			allowedCommands: mergedAllowedCommands,
 			deniedCommands: mergedDeniedCommands,
@@ -2192,6 +2219,8 @@ ${prompt}
 			includeDiagnosticMessages: includeDiagnosticMessages ?? true,
 			maxDiagnosticMessages: maxDiagnosticMessages ?? 50,
 			includeTaskHistoryInEnhance: includeTaskHistoryInEnhance ?? true,
+			includeCurrentTime: includeCurrentTime ?? true,
+			includeCurrentCost: includeCurrentCost ?? true,
 			taskSyncEnabled,
 			remoteControlEnabled,
 			openRouterImageApiKey,
@@ -2352,6 +2381,7 @@ ${prompt}
 			ttsSpeed: stateValues.ttsSpeed ?? 1.0,
 			diffEnabled: stateValues.diffEnabled ?? true,
 			enableCheckpoints: stateValues.enableCheckpoints ?? true,
+			checkpointTimeout: stateValues.checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 			soundVolume: stateValues.soundVolume,
 			browserViewportSize: stateValues.browserViewportSize ?? "900x600",
 			screenshotQuality: stateValues.screenshotQuality ?? 75,
@@ -2452,6 +2482,8 @@ ${prompt}
 			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,
 			maxDiagnosticMessages: stateValues.maxDiagnosticMessages ?? 50,
 			includeTaskHistoryInEnhance: stateValues.includeTaskHistoryInEnhance ?? true,
+			includeCurrentTime: stateValues.includeCurrentTime ?? true,
+			includeCurrentCost: stateValues.includeCurrentCost ?? true,
 			taskSyncEnabled,
 			remoteControlEnabled: (() => {
 				try {
@@ -2819,6 +2851,7 @@ ${prompt}
 			organizationAllowList,
 			diffEnabled: enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			experiments,
 			cloudUserInfo,
@@ -2835,6 +2868,7 @@ ${prompt}
 			apiConfiguration,
 			enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			consecutiveMistakeLimit: apiConfiguration.consecutiveMistakeLimit,
 			task: text,

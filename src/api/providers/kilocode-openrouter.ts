@@ -113,7 +113,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 
 		const [models, endpoints, defaultModel] = await Promise.all([
 			getModels({
-				provider: "kilocode-openrouter",
+				provider: "kilocode",
 				kilocodeToken: this.options.kilocodeToken,
 				kilocodeOrganizationId: this.options.kilocodeOrganizationId,
 			}),
