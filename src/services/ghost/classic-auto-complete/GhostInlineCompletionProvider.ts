@@ -265,11 +265,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		return new Promise<void>((resolve) => {
 			this.debounceTimer = setTimeout(async () => {
-				// Check if timer was cleared (e.g., by dispose)
-				if (this.debounceTimer === null) {
-					resolve()
-					return
-				}
 				this.debounceTimer = null
 				await this.fetchAndCacheSuggestion(prompt)
 				resolve()
