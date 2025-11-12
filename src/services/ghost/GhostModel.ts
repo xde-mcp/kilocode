@@ -71,6 +71,7 @@ export class GhostModel {
 		prefix: string,
 		suffix: string,
 		onChunk: (text: string) => void,
+		taskId?: string,
 	): Promise<{
 		cost: number
 		inputTokens: number
@@ -96,7 +97,7 @@ export class GhostModel {
 		let usage: CompletionUsage | undefined
 
 		try {
-			for await (const chunk of this.apiHandler.streamFim(prefix, suffix)) {
+			for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId)) {
 				if (chunk.type === "content") {
 					onChunk(chunk.content)
 				} else if (chunk.type === "usage") {

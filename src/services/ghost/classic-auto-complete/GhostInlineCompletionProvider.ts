@@ -260,7 +260,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			response += text
 		}
 
-		const usageInfo = await model.generateFimResponse(formattedPrefix, suffix, onChunk)
+		const usageInfo = await model.generateFimResponse(
+			formattedPrefix,
+			suffix,
+			onChunk,
+			autocompleteInput.completionId, // Pass completionId as taskId for tracking
+		)
 
 		console.log("FIM response", response)
 
