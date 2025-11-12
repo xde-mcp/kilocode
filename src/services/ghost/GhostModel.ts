@@ -29,30 +29,19 @@ export class GhostModel {
 
 		this.cleanup()
 
-		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
-			const selectedProfile = profiles.find(
-				(x) => x?.apiProvider === provider && x.profileType === "autocomplete",
-			)
-			if (selectedProfile) {
-				const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
+		const selectedProfile = profiles.find((x) => x.profileType === "autocomplete")
+		if (selectedProfile) {
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
-				if (provider === "kilocode") {
-					// For all other providers, assume they are usable
-					if (!profile.kilocodeToken) continue
-					if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
-				}
-
-				this.profileName = selectedProfile.name || null
-				this.profileType = selectedProfile.profileType || null
-				const modelIdSpec = {}
-				this.apiHandler = buildApiHandler({ ...profile, ...modelIdSpec })
-				if (this.apiHandler instanceof OpenRouterHandler) {
-					await this.apiHandler.fetchModel()
-				}
-
-				this.loaded = true
-				return true
+			this.profileName = selectedProfile.name || null
+			this.profileType = selectedProfile.profileType || null
+			this.apiHandler = buildApiHandler(profile)
+			if (this.apiHandler instanceof OpenRouterHandler) {
+				await this.apiHandler.fetchModel()
 			}
+
+			this.loaded = true
+			return true
 		}
 
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
