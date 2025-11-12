@@ -13,7 +13,7 @@ import { calculateApiCostOpenAI } from "../../shared/cost"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
 import { getModelParams } from "../transform/model-params"
 import { getModels } from "./fetchers/modelCache"
@@ -117,23 +117,13 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		await this.fetchModel()
 		const { id: modelId, info } = this.getModel()
 
-		// kilocode_change start
-		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-			? [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: prompt },
-				]
-			: [{ role: "user", content: prompt }]
-		// kilocode_change end
-
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 			model: modelId,
-			messages, // kilocode_change
+			messages: [{ role: "user", content: prompt }],
 		}
 		if (this.supportsTemperature(modelId)) {
 			requestOptions.temperature = this.options.modelTemperature ?? 0
@@ -143,16 +133,7 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 		}
 
 		const resp = await this.client.chat.completions.create(requestOptions)
-		// kilocode_change start
-		return {
-			text: resp.choices[0]?.message?.content || "",
-			usage: {
-				inputTokens: resp.usage?.prompt_tokens || 0,
-				outputTokens: resp.usage?.completion_tokens || 0,
-				cacheReadTokens: resp.usage?.prompt_tokens_details?.cached_tokens,
-			},
-		}
-		// kilocode_change end
+		return resp.choices[0]?.message?.content || ""
 	}
 
 	protected processUsageMetrics(usage: any, modelInfo?: any): ApiStreamUsageChunk {

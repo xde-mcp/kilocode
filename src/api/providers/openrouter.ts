@@ -28,7 +28,6 @@ import { BaseProvider } from "./base-provider"
 import type {
 	ApiHandlerCreateMessageMetadata, // kilocode_change
 	SingleCompletionHandler,
-	SingleCompletionResult, // kilocode_change
 } from "../index"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
@@ -360,25 +359,14 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		return { id, info, topP: isDeepSeekR1 ? 0.95 : undefined, ...params }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string) {
 		let { id: modelId, maxTokens, temperature, reasoning } = await this.fetchModel()
-
-		// kilocode_change start: Support system prompt
-		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
-
-		if (systemPrompt) {
-			messages.push({ role: "system", content: systemPrompt })
-		}
-
-		messages.push({ role: "user", content: prompt })
-		// kilocode_change end
 
 		const completionParams: OpenRouterChatCompletionParams = {
 			model: modelId,
 			max_tokens: maxTokens,
 			temperature,
-			messages, // kilocode_change
+			messages: [{ role: "user", content: prompt }],
 			stream: false,
 			...this.getProviderParams(), // kilocode_change: original expression was moved into function
 			...(reasoning && { reasoning }),
@@ -400,20 +388,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		}
 
 		const completion = response as OpenAI.Chat.ChatCompletion
-		// kilocode_change start
-		const text = completion.choices[0]?.message?.content || ""
-
-		return {
-			text,
-			usage: completion.usage
-				? {
-						inputTokens: completion.usage.prompt_tokens || 0,
-						outputTokens: completion.usage.completion_tokens || 0,
-						totalCost: this.getTotalCost(completion.usage),
-					}
-				: undefined,
-		}
-		// kilocode_change end
+		return completion.choices[0]?.message?.content || ""
 	}
 
 	/**

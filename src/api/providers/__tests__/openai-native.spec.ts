@@ -146,7 +146,7 @@ describe("OpenAiNativeHandler", () => {
 
 			const result = await handler.completePrompt("Test prompt")
 
-			expect(result.text).toBe("This is the completion response") // kilocode_change
+			expect(result).toBe("This is the completion response")
 			expect(mockResponsesCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
 					model: "gpt-4.1",
@@ -184,7 +184,7 @@ describe("OpenAiNativeHandler", () => {
 
 			const result = await handler.completePrompt("Test prompt")
 
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 	})
 
@@ -1507,7 +1507,7 @@ describe("GPT-5 streaming event coverage (additional)", () => {
 
 			const result = await handler.completePrompt("Write a hello world function in Python")
 
-			expect(result.text).toBe("def hello_world():\n    print('Hello, World!')") // kilocode_change
+			expect(result).toBe("def hello_world():\n    print('Hello, World!')")
 			expect(mockResponsesCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
 					model: "codex-mini-latest",

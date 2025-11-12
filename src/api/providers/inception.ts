@@ -1,6 +1,6 @@
 // kilocode_change - file added
 
-import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler, SingleCompletionResult } from ".." // kilocode_change
+import { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from ".."
 import { ApiHandlerOptions } from "../../shared/api"
 import { calculateApiCostOpenAI } from "../../shared/cost"
 import { RouterProvider } from "./router-provider"
@@ -106,23 +106,13 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		await this.fetchModel()
 		const { id: modelId, info } = this.getModel()
 
-		// kilocode_change start
-		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-			? [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: prompt },
-				]
-			: [{ role: "user", content: prompt }]
-		// kilocode_change end
-
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 			model: modelId,
-			messages, // kilocode_change
+			messages: [{ role: "user", content: prompt }],
 		}
 		if (this.supportsTemperature(modelId)) {
 			requestOptions.temperature = this.options.modelTemperature ?? 0
@@ -132,16 +122,7 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 		}
 
 		const resp = await this.client.chat.completions.create(requestOptions)
-		// kilocode_change start
-		return {
-			text: resp.choices[0]?.message?.content || "",
-			usage: {
-				inputTokens: resp.usage?.prompt_tokens || 0,
-				outputTokens: resp.usage?.completion_tokens || 0,
-				cacheReadTokens: resp.usage?.prompt_tokens_details?.cached_tokens,
-			},
-		}
-		// kilocode_change end
+		return resp.choices[0]?.message?.content || ""
 	}
 
 	protected processUsageMetrics(usage: any, modelInfo?: any): ApiStreamUsageChunk {

@@ -27,7 +27,7 @@ import { t } from "i18next"
 import type { ApiStream, GroundingSource } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { BaseProvider } from "./base-provider"
 import { throwMaxCompletionTokensReachedError } from "./kilocode/verifyFinishReason"
 import { getGeminiModels } from "./fetchers/gemini" // kilocode_change
@@ -277,8 +277,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 		return citationLinks.join(", ")
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			await this.ensureModelsLoaded() // kilocode_change
 			const { id: model } = this.getModel()
@@ -295,7 +294,6 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 					? { baseUrl: this.options.googleGeminiBaseUrl }
 					: undefined,
 				temperature: this.options.modelTemperature ?? 0,
-				systemInstruction: systemPrompt, // kilocode_change
 				...(tools.length > 0 ? { tools } : {}),
 			}
 
@@ -315,16 +313,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				}
 			}
 
-			// kilocode_change start
-			return {
-				text,
-				usage: {
-					inputTokens: result.usageMetadata?.promptTokenCount ?? 0,
-					outputTokens: result.usageMetadata?.candidatesTokenCount ?? 0,
-					cacheReadTokens: result.usageMetadata?.cachedContentTokenCount,
-				},
-			}
-			// kilocode_change end
+			return text
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_complete_prompt", { error: error.message }))

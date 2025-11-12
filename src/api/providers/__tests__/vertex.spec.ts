@@ -87,7 +87,7 @@ describe("VertexHandler", () => {
 			})
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("Test Gemini response") // kilocode_change
+			expect(result).toBe("Test Gemini response")
 
 			// Verify the call to generateContent
 			expect(handler["client"].models.generateContent).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe("VertexHandler", () => {
 			})
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 	})
 

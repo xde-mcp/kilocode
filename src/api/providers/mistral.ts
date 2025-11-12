@@ -9,7 +9,7 @@ import { convertToMistralMessages } from "../transform/mistral-format"
 import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
@@ -104,46 +104,27 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		return { id, info, maxTokens, temperature }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			const { id: model, temperature } = this.getModel()
 
 			const response = await this.client.chat.complete({
 				model,
-				// kilocode_change start
-				messages: systemPrompt
-					? [
-							{ role: "system" as const, content: systemPrompt },
-							{ role: "user" as const, content: prompt },
-						]
-					: [{ role: "user" as const, content: prompt }],
-				// kilocode_change end
+				messages: [{ role: "user", content: prompt }],
 				temperature,
 			})
 
 			const content = response.choices?.[0]?.message.content
-			let text = "" // kilocode_change
 
 			if (Array.isArray(content)) {
 				// Only return text content, filter out thinking content for non-streaming
-				text = (content as ContentChunkWithThinking[]) // kilocode_change
+				return (content as ContentChunkWithThinking[])
 					.filter((c) => c.type === "text" && c.text)
 					.map((c) => c.text || "")
 					.join("")
-				// kilocode_change start
-			} else {
-				text = content || ""
 			}
 
-			return {
-				text,
-				usage: {
-					inputTokens: response.usage.promptTokens || 0,
-					outputTokens: response.usage.completionTokens || 0,
-				},
-			}
-			// kilocode_change end
+			return content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Mistral completion error: ${error.message}`)

@@ -55,23 +55,8 @@ import { InceptionLabsHandler } from "./providers/inception"
 // kilocode_change end
 import { NativeOllamaHandler } from "./providers/native-ollama"
 
-// kilocode_change start
-export interface SingleCompletionResult {
-	text: string
-	usage?: {
-		inputTokens: number
-		outputTokens: number
-		cacheWriteTokens?: number
-		cacheReadTokens?: number
-		totalCost?: number
-	}
-}
-// kilocode_change end
-
 export interface SingleCompletionHandler {
-	// kilocode_change start
-	completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult>
-	// kilocode_change end
+	completePrompt(prompt: string): Promise<string>
 }
 
 export interface ApiHandlerCreateMessageMetadata {

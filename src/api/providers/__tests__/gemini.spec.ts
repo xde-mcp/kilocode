@@ -136,7 +136,7 @@ describe("GeminiHandler", () => {
 			})
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("Test response") // kilocode_change
+			expect(result).toBe("Test response")
 
 			// Verify the call to generateContent
 			expect(handler["client"].models.generateContent).toHaveBeenCalledWith({
@@ -165,7 +165,7 @@ describe("GeminiHandler", () => {
 			})
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 	})
 

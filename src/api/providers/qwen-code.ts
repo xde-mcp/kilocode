@@ -21,7 +21,6 @@ import { BaseProvider } from "./base-provider"
 import type {
 	ApiHandlerCreateMessageMetadata, // kilocode_change
 	SingleCompletionHandler,
-	SingleCompletionResult, // kilocode_change
 } from "../index"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 
@@ -309,39 +308,19 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 		return { id, info }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		await this.ensureAuthenticated()
 		const client = this.ensureClient()
 		const model = this.getModel()
 
-		// kilocode_change start
-		const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-			? [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: prompt },
-				]
-			: [{ role: "user", content: prompt }]
-		// kilocode_change end
-
 		const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 			model: model.id,
-			messages, // kilocode_change
+			messages: [{ role: "user", content: prompt }],
 			max_completion_tokens: model.info.maxTokens,
 		}
 
 		const response = await this.callApiWithRetry(() => client.chat.completions.create(requestOptions))
 
-		// kilocode_change start
-		return {
-			text: response.choices[0]?.message.content || "",
-			usage: response.usage
-				? {
-						inputTokens: response.usage.prompt_tokens || 0,
-						outputTokens: response.usage.completion_tokens || 0,
-					}
-				: undefined,
-		}
-		// kilocode_change end
+		return response.choices[0]?.message.content || ""
 	}
 }

@@ -30,7 +30,7 @@ describe("GeminiHandler backend support", () => {
 		// @ts-ignore access private client
 		handler["client"].models.generateContent = stub
 		const res = await handler.completePrompt("hi")
-		expect(res.text).toBe("ok") // kilocode_change
+		expect(res).toBe("ok")
 		const promptConfig = stub.mock.calls[0][0].config
 		expect(promptConfig.tools).toBeUndefined()
 	})

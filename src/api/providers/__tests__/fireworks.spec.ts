@@ -288,7 +288,7 @@ describe("FireworksHandler", () => {
 		const expectedResponse = "This is a test response from Fireworks"
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result.text).toBe(expectedResponse) // kilocode_change
+		expect(result).toBe(expectedResponse)
 	})
 
 	it("should handle errors in completePrompt", async () => {
@@ -397,13 +397,13 @@ describe("FireworksHandler", () => {
 	it("should handle empty response in completePrompt", async () => {
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: null } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result.text).toBe("") // kilocode_change
+		expect(result).toBe("")
 	})
 
 	it("should handle missing choices in completePrompt", async () => {
 		mockCreate.mockResolvedValueOnce({ choices: [] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result.text).toBe("") // kilocode_change
+		expect(result).toBe("")
 	})
 
 	it("createMessage should handle stream with multiple chunks", async () => {

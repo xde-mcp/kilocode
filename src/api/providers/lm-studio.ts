@@ -17,7 +17,7 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 import { getModels, getModelsFromCache } from "./fetchers/modelCache"
@@ -178,22 +178,12 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			// Create params object with optional draft model
-			// kilocode_change start
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const params: any = {
 				model: this.getModel().id,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 				temperature: this.options.modelTemperature ?? LMSTUDIO_DEFAULT_TEMPERATURE,
 				stream: false,
 			}
@@ -209,17 +199,7 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 			} catch (error) {
 				throw handleOpenAIError(error, this.providerName)
 			}
-			// kilocode_change start
-			return {
-				text: response.choices[0]?.message.content || "",
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			throw new Error(
 				"Please check the LM Studio developer logs to debug what went wrong. You may need to load the model with a larger context length to work with Kilo Code's prompts.",

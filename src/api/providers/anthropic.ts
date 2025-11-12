@@ -16,7 +16,7 @@ import { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { calculateApiCostAnthropic } from "../../shared/cost"
 import { convertOpenAIToolsToAnthropic } from "./kilocode/nativeToolCallHelpers"
 
@@ -373,8 +373,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string) {
 		let { id: model, temperature } = this.getModel()
 
 		const message = await this.client.messages.create({
@@ -382,27 +381,12 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
 			temperature,
-			...(systemPrompt && { system: systemPrompt }), // kilocode_change
 			messages: [{ role: "user", content: prompt }],
 			stream: false,
 		})
 
 		const content = message.content.find(({ type }) => type === "text")
-		// kilocode_change start
-		const text = content?.type === "text" ? content.text : ""
-
-		const usage = message.usage
-
-		return {
-			text,
-			usage: {
-				inputTokens: usage.input_tokens,
-				outputTokens: usage.output_tokens,
-				cacheWriteTokens: usage.cache_creation_input_tokens || undefined,
-				cacheReadTokens: usage.cache_read_input_tokens || undefined,
-			},
-		}
-		// kilocode_change end
+		return content?.type === "text" ? content.text : ""
 	}
 
 	/**

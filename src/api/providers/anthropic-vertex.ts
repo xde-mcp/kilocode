@@ -18,7 +18,7 @@ import { addCacheBreakpoints } from "../transform/caching/vertex"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 // https://docs.anthropic.com/en/api/claude-on-vertex-ai
 export class AnthropicVertexHandler extends BaseProvider implements SingleCompletionHandler {
@@ -177,8 +177,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 		return { id: id.endsWith(":thinking") ? id.replace(":thinking", "") : id, info, ...params }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string) {
 		try {
 			let {
 				id,
@@ -193,13 +192,6 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 				max_tokens: maxTokens,
 				temperature,
 				thinking,
-				// kilocode_change start
-				...(systemPrompt && {
-					system: supportsPromptCache
-						? [{ text: systemPrompt, type: "text" as const, cache_control: { type: "ephemeral" } }]
-						: systemPrompt,
-				}),
-				// kilocode_change end
 				messages: [
 					{
 						role: "user",
@@ -214,21 +206,11 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			const response = await this.client.messages.create(params)
 			const content = response.content[0]
 
-			// kilocode_change start
-			const text = content.type === "text" ? content.text : ""
-
-			const usage = response.usage
-
-			return {
-				text,
-				usage: {
-					inputTokens: usage.input_tokens,
-					outputTokens: usage.output_tokens,
-					cacheReadTokens: usage.cache_read_input_tokens || undefined,
-					cacheWriteTokens: usage.cache_creation_input_tokens || undefined,
-				},
+			if (content.type === "text") {
+				return content.text
 			}
-			// kilocode_change end
+
+			return ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Vertex completion error: ${error.message}`)

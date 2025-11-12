@@ -283,7 +283,7 @@ describe("VsCodeLmHandler", () => {
 			handler["client"] = mockLanguageModelChat
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe(responseText) // kilocode_change
+			expect(result).toBe(responseText)
 			expect(mockLanguageModelChat.sendRequest).toHaveBeenCalled()
 		})
 

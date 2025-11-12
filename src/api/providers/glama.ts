@@ -11,7 +11,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { addCacheBreakpoints } from "../transform/caching/anthropic"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
 
 const DEFAULT_HEADERS = {
@@ -116,23 +116,13 @@ export class GlamaHandler extends RouterProvider implements SingleCompletionHand
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
-			// kilocode_change start
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: modelId,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 			}
 
 			if (this.supportsTemperature(modelId)) {
@@ -144,17 +134,7 @@ export class GlamaHandler extends RouterProvider implements SingleCompletionHand
 			}
 
 			const response = await this.client.chat.completions.create(requestOptions)
-			// kilocode_change start
-			return {
-				text: response.choices[0]?.message.content || "",
-				usage: response.usage
-					? {
-							inputTokens: response.usage.prompt_tokens || 0,
-							outputTokens: response.usage.completion_tokens || 0,
-						}
-					: undefined,
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Glama completion error: ${error.message}`)

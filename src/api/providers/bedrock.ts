@@ -33,7 +33,7 @@ import { ModelInfo as CacheModelInfo } from "../transform/cache-strategy/types"
 import { convertToBedrockConverseMessages as sharedConverter } from "../transform/bedrock-converse-format"
 import { getModelParams } from "../transform/model-params"
 import { shouldUseReasoningBudget } from "../../shared/api"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 /************************************************************************************
  *
@@ -631,8 +631,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			const modelConfig = this.getModel()
 
@@ -660,7 +659,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 							content: prompt,
 						},
 					],
-					systemPrompt, // kilocode_change
+					undefined,
 					false,
 					modelConfig.info,
 					conversationId,
@@ -678,19 +677,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 				response.output.message.content[0].text.trim().length > 0
 			) {
 				try {
-					// kilocode_change start
-					return {
-						text: response.output.message.content[0].text,
-						usage: response.usage
-							? {
-									inputTokens: response.usage.inputTokens || 0,
-									outputTokens: response.usage.outputTokens || 0,
-									cacheReadTokens: response.usage.cacheReadInputTokens,
-									cacheWriteTokens: response.usage.cacheWriteInputTokens,
-								}
-							: undefined,
-					}
-					// kilocode_change end
+					return response.output.message.content[0].text
 				} catch (parseError) {
 					logger.error("Failed to parse Bedrock response", {
 						ctx: "bedrock",
@@ -698,7 +685,7 @@ export class AwsBedrockHandler extends BaseProvider implements SingleCompletionH
 					})
 				}
 			}
-			return { text: "", usage: undefined } // kilocode_change
+			return ""
 		} catch (error) {
 			// Use the extracted error handling method for all errors
 			const errorResult = this.handleBedrockError(error, false) // false for non-streaming context

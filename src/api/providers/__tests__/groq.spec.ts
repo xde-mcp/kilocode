@@ -63,7 +63,7 @@ describe("GroqHandler", () => {
 		const expectedResponse = "This is a test response from Groq"
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result.text).toBe(expectedResponse) // kilocode_change
+		expect(result).toBe(expectedResponse)
 	})
 
 	it("should handle errors in completePrompt", async () => {

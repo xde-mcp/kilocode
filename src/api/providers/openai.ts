@@ -23,7 +23,7 @@ import { getModelParams } from "../transform/model-params"
 import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 
@@ -312,25 +312,15 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		return { id, info, ...params }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			const isAzureAiInference = this._isAzureAiInference(this.options.openAiBaseUrl)
 			const model = this.getModel()
 			const modelInfo = model.info
 
-			// kilocode_change start
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: model.id,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 			}
 
 			// Add max_tokens if needed
@@ -346,17 +336,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				throw handleOpenAIError(error, this.providerName)
 			}
 
-			// kilocode_change start
-			const text = response.choices[0]?.message.content || ""
-
-			return {
-				text,
-				usage: {
-					inputTokens: response.usage?.prompt_tokens || 0,
-					outputTokens: response.usage?.completion_tokens || 0,
-				},
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`${this.providerName} completion error: ${error.message}`)

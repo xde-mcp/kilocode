@@ -31,12 +31,6 @@ vi.mock("@mistralai/mistralai", () => {
 								},
 							},
 						],
-						// kilocode_change start
-						usage: {
-							promptTokens: 10,
-							completionTokens: 5,
-						},
-						// kilocode_change end
 					}
 				}),
 			},
@@ -240,7 +234,7 @@ describe("MistralHandler", () => {
 				temperature: 0,
 			})
 
-			expect(result.text).toBe("Test response") // kilocode_change
+			expect(result).toBe("Test response")
 		})
 
 		it("should filter out thinking content in completePrompt", async () => {
@@ -257,19 +251,13 @@ describe("MistralHandler", () => {
 							},
 						},
 					],
-					// kilocode_change start
-					usage: {
-						promptTokens: 10,
-						completionTokens: 5,
-					},
-					// kilocode_change end
 				}
 			})
 
 			const prompt = "Test prompt"
 			const result = await handler.completePrompt(prompt)
 
-			expect(result.text).toBe("Answer part 1Answer part 2") // kilocode_change
+			expect(result).toBe("Answer part 1Answer part 2")
 		})
 
 		it("should handle errors in completePrompt", async () => {

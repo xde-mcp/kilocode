@@ -167,7 +167,7 @@ describe("GlamaHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("Test response") // kilocode_change
+			expect(result).toBe("Test response")
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({
 					model: mockOptions.glamaModelId,
@@ -188,7 +188,7 @@ describe("GlamaHandler", () => {
 				choices: [{ message: { content: "" } }],
 			})
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 
 		it("should not set max_tokens for non-Anthropic models", async () => {

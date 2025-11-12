@@ -287,7 +287,7 @@ describe("OpenRouterHandler", () => {
 
 			const result = await handler.completePrompt("test prompt")
 
-			expect(result.text).toBe("test completion") // kilocode_change
+			expect(result).toBe("test completion")
 
 			expect(mockCreate).toHaveBeenCalledWith(
 				{

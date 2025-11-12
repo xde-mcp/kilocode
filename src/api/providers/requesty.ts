@@ -14,7 +14,7 @@ import { AnthropicReasoningParams } from "../transform/reasoning"
 import { DEFAULT_HEADERS } from "./constants"
 import { getModels } from "./fetchers/modelCache"
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { toRequestyServiceUrl } from "../../shared/utils/requesty"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 
@@ -159,18 +159,10 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: model, maxTokens: max_tokens, temperature } = await this.fetchModel()
 
-		// kilocode_change start
-		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-			? [
-					{ role: "system", content: systemPrompt },
-					{ role: "user", content: prompt },
-				]
-			: [{ role: "user", content: prompt }]
-		// kilocode_change end
+		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [{ role: "system", content: prompt }]
 
 		const completionParams: RequestyChatCompletionParams = {
 			model,
@@ -185,15 +177,6 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}
-		// kilocode_change start
-		return {
-			text: response.choices[0]?.message.content || "",
-			usage: {
-				inputTokens: response.usage?.prompt_tokens || 0,
-				outputTokens: response.usage?.completion_tokens || 0,
-				cacheReadTokens: response.usage?.prompt_tokens_details?.cached_tokens,
-			},
-		}
-		// kilocode_change end
+		return response.choices[0]?.message.content || ""
 	}
 }

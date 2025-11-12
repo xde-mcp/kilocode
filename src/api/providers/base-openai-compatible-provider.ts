@@ -10,7 +10,7 @@ import type { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
@@ -137,39 +137,16 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: modelId } = this.getModel()
 
 		try {
-			// kilocode_change start: Support system prompt
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = []
-
-			if (systemPrompt) {
-				messages.push({ role: "system", content: systemPrompt })
-			}
-
-			messages.push({ role: "user", content: prompt })
-			// kilocode_change end
-
 			const response = await this.client.chat.completions.create({
 				model: modelId,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 			})
 
-			// kilocode_change start
-			const text = response.choices[0]?.message.content || ""
-			const usage = response.usage
-
-			return {
-				text,
-				usage: {
-					inputTokens: usage?.prompt_tokens || 0,
-					outputTokens: usage?.completion_tokens || 0,
-					cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens,
-				},
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}

@@ -10,7 +10,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToVsCodeLmMessages, extractTextCountFromMessage } from "../transform/vscode-lm-format"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 /**
  * Handles interaction with VS Code's Language Model API for chat-based operations.
@@ -536,27 +536,21 @@ export class VsCodeLmHandler extends BaseProvider implements SingleCompletionHan
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			const client = await this.getClient()
-			// kilocode_change start
-			const messages = [vscode.LanguageModelChatMessage.User(prompt)]
-
-			if (systemPrompt) {
-				messages.unshift(vscode.LanguageModelChatMessage.User(systemPrompt))
-			}
-
-			const response = await client.sendRequest(messages, {}, new vscode.CancellationTokenSource().token)
-			// kilocode_change end
-
+			const response = await client.sendRequest(
+				[vscode.LanguageModelChatMessage.User(prompt)],
+				{},
+				new vscode.CancellationTokenSource().token,
+			)
 			let result = ""
 			for await (const chunk of response.stream) {
 				if (chunk instanceof vscode.LanguageModelTextPart) {
 					result += chunk.value
 				}
 			}
-			return { text: result } // kilocode_change
+			return result
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`VSCode LM completion error: ${error.message}`)

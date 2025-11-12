@@ -189,7 +189,7 @@ describe("IOIntelligenceHandler", () => {
 		const expectedResponse = "This is a test response from IO Intelligence"
 		mockCreate.mockResolvedValueOnce({ choices: [{ message: { content: expectedResponse } }] })
 		const result = await handler.completePrompt("test prompt")
-		expect(result.text).toBe(expectedResponse) // kilocode_change
+		expect(result).toBe(expectedResponse)
 	})
 
 	it("should handle errors in completePrompt", async () => {
@@ -289,7 +289,7 @@ describe("IOIntelligenceHandler", () => {
 		})
 
 		const result = await handler.completePrompt("Test prompt")
-		expect(result.text).toBe("") // kilocode_change
+		expect(result).toBe("")
 	})
 
 	it("should handle missing choices in completePrompt response", async () => {
@@ -298,6 +298,6 @@ describe("IOIntelligenceHandler", () => {
 		})
 
 		const result = await handler.completePrompt("Test prompt")
-		expect(result.text).toBe("") // kilocode_change
+		expect(result).toBe("")
 	})
 })

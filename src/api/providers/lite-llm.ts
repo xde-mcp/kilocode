@@ -10,7 +10,7 @@ import { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
 
 /**
@@ -192,23 +192,16 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: modelId, info } = await this.fetchModel()
 
-		// kilocode_change start
-		try {
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
+		// Check if this is a GPT-5 model that requires max_completion_tokens instead of max_tokens
+		const isGPT5Model = this.isGpt5(modelId)
 
+		try {
 			const requestOptions: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming = {
 				model: modelId,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 			}
 
 			if (this.supportsTemperature(modelId)) {
@@ -218,18 +211,7 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 			requestOptions.max_completion_tokens = info.maxTokens // kilocode_change
 
 			const response = await this.client.chat.completions.create(requestOptions)
-			// kilocode_change start
-			const usage = response.usage as LiteLLMUsage | undefined
-			return {
-				text: response.choices[0]?.message.content || "",
-				usage: {
-					inputTokens: usage?.prompt_tokens || 0,
-					outputTokens: usage?.completion_tokens || 0,
-					cacheWriteTokens: usage?.cache_creation_input_tokens,
-					cacheReadTokens: usage?.prompt_tokens_details?.cached_tokens,
-				},
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`LiteLLM completion error: ${error.message}`)

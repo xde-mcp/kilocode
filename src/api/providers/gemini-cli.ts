@@ -15,7 +15,7 @@ import { convertAnthropicContentToGemini, convertAnthropicMessageToGemini } from
 import type { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { BaseProvider } from "./base-provider"
 import { getExtensionConfigUrl } from "@roo-code/types"
 
@@ -405,28 +405,18 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 		return { id, info, ...params }
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		await this.ensureAuthenticated()
 		const projectId = await this.discoverProjectId()
 
 		try {
 			const { id: model } = this.getModel()
 
-			// kilocode_change start
-			const contents = systemPrompt
-				? [
-						{ role: "user", parts: [{ text: systemPrompt }] },
-						{ role: "user", parts: [{ text: prompt }] },
-					]
-				: [{ role: "user", parts: [{ text: prompt }] }]
-			// kilocode_change end
-
 			const requestBody = {
 				model: model,
 				project: projectId,
 				request: {
-					contents, // kilocode_change
+					contents: [{ role: "user", parts: [{ text: prompt }] }],
 					generationConfig: {
 						temperature: this.options.modelTemperature ?? 0.7,
 					},
@@ -453,11 +443,11 @@ export class GeminiCliHandler extends BaseProvider implements SingleCompletionHa
 						.filter((part: any) => part.text && !part.thought)
 						.map((part: any) => part.text)
 						.join("")
-					return { text: textParts } // kilocode_change
+					return textParts
 				}
 			}
 
-			return { text: "" } // kilocode_change
+			return ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.geminiCli.completionError", { error: error.message }))

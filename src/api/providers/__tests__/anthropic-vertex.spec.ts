@@ -612,7 +612,7 @@ describe("VertexHandler", () => {
 			})
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("Test response") // kilocode_change
+			expect(result).toBe("Test response")
 			expect(handler["client"].messages.create).toHaveBeenCalledWith({
 				model: "claude-3-5-sonnet-v2@20241022",
 				max_tokens: 8192,
@@ -652,17 +652,11 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "image" }],
-				// kilocode_change start
-				usage: {
-					input_tokens: 10,
-					output_tokens: 5,
-				},
-				// kilocode_change end
 			})
 			;(handler["client"].messages as any).create = mockCreate
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 
 		it("should handle empty response for Claude", async () => {
@@ -674,17 +668,11 @@ describe("VertexHandler", () => {
 
 			const mockCreate = vitest.fn().mockResolvedValue({
 				content: [{ type: "text", text: "" }],
-				// kilocode_change start
-				usage: {
-					input_tokens: 10,
-					output_tokens: 0,
-				},
-				// kilocode_change end
 			})
 			;(handler["client"].messages as any).create = mockCreate
 
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 	})
 

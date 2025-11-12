@@ -6,7 +6,7 @@ import { BaseProvider } from "./base-provider"
 import type { ApiHandlerOptions } from "../../shared/api"
 import { getOllamaModels } from "./fetchers/ollama"
 import { XmlMatcher } from "../../utils/xml-matcher"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 // kilocode_change start
 import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
@@ -346,8 +346,7 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			// kilocode_change start
 			if (!this.isInitialized) {
@@ -369,34 +368,14 @@ export class NativeOllamaHandler extends BaseProvider implements SingleCompletio
 				chatOptions.num_ctx = this.options.ollamaNumCtx
 			}
 
-			// kilocode_change start
-			const messages: Message[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const response = await client.chat({
 				model: modelId,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 				stream: false,
 				options: chatOptions,
 			})
 
-			// kilocode_change start
-			return {
-				text: response.message?.content || "",
-				usage:
-					response.prompt_eval_count || response.eval_count
-						? {
-								inputTokens: response.prompt_eval_count || 0,
-								outputTokens: response.eval_count || 0,
-							}
-						: undefined,
-			}
-			// kilocode_change end
+			return response.message?.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Ollama completion error: ${error.message}`)

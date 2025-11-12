@@ -14,7 +14,7 @@ import { ApiStream } from "../transform/stream"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { addCacheBreakpoints } from "../transform/caching/vercel-ai-gateway"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
 
 // Extend OpenAI's CompletionUsage to include Vercel AI Gateway specific fields
@@ -87,23 +87,13 @@ export class VercelAiGatewayHandler extends RouterProvider implements SingleComp
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
-			// kilocode_change start
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const requestOptions: OpenAI.Chat.ChatCompletionCreateParams = {
 				model: modelId,
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 				stream: false,
 			}
 
@@ -114,16 +104,7 @@ export class VercelAiGatewayHandler extends RouterProvider implements SingleComp
 			requestOptions.max_completion_tokens = info.maxTokens
 
 			const response = await this.client.chat.completions.create(requestOptions)
-			// kilocode_change start
-			return {
-				text: response.choices[0]?.message.content || "",
-				usage: {
-					inputTokens: response.usage?.prompt_tokens || 0,
-					outputTokens: response.usage?.completion_tokens || 0,
-					cacheReadTokens: response.usage?.prompt_tokens_details?.cached_tokens,
-				},
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Vercel AI Gateway completion error: ${error.message}`)

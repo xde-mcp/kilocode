@@ -11,7 +11,7 @@ import { addCacheBreakpoints as addAnthropicCacheBreakpoints } from "../transfor
 import { addCacheBreakpoints as addGeminiCacheBreakpoints } from "../transform/caching/gemini"
 import { addCacheBreakpoints as addVertexCacheBreakpoints } from "../transform/caching/vertex"
 
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
 
 const ORIGIN_APP = "roo-code"
@@ -132,23 +132,13 @@ export class UnboundHandler extends RouterProvider implements SingleCompletionHa
 		}
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		const { id: modelId, info } = await this.fetchModel()
 
 		try {
-			// kilocode_change start
-			const messages: OpenAI.Chat.ChatCompletionMessageParam[] = systemPrompt
-				? [
-						{ role: "system", content: systemPrompt },
-						{ role: "user", content: prompt },
-					]
-				: [{ role: "user", content: prompt }]
-			// kilocode_change end
-
 			const requestOptions: UnboundChatCompletionCreateParamsNonStreaming = {
 				model: modelId.split("/")[1],
-				messages, // kilocode_change
+				messages: [{ role: "user", content: prompt }],
 				unbound_metadata: {
 					originApp: ORIGIN_APP,
 				},
@@ -163,16 +153,7 @@ export class UnboundHandler extends RouterProvider implements SingleCompletionHa
 			}
 
 			const response = await this.client.chat.completions.create(requestOptions, { headers: DEFAULT_HEADERS })
-			// kilocode_change start
-			return {
-				text: response.choices[0]?.message.content || "",
-				usage: {
-					inputTokens: response.usage?.prompt_tokens || 0,
-					outputTokens: response.usage?.completion_tokens || 0,
-					cacheReadTokens: response.usage?.prompt_tokens_details?.cached_tokens,
-				},
-			}
-			// kilocode_change end
+			return response.choices[0]?.message.content || ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`Unbound completion error: ${error.message}`)

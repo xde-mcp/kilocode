@@ -22,7 +22,7 @@ import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
 
 import { BaseProvider } from "./base-provider"
-import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata, SingleCompletionResult } from "../index" // kilocode_change
+import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler["getModel"]>
 
@@ -1286,8 +1286,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 		this.lastResponseId = responseId
 	}
 
-	// kilocode_change
-	async completePrompt(prompt: string, systemPrompt?: string): Promise<SingleCompletionResult> {
+	async completePrompt(prompt: string): Promise<string> {
 		try {
 			const model = this.getModel()
 			const { verbosity, reasoning } = model
@@ -1306,7 +1305,6 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 				],
 				stream: false, // Non-streaming for completePrompt
 				store: false, // Don't store prompt completions
-				...(systemPrompt && { instructions: systemPrompt }), // kilocode_change
 			}
 
 			// Include service tier if selected and supported
@@ -1352,30 +1350,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 					if (outputItem.type === "message" && outputItem.content) {
 						for (const content of outputItem.content) {
 							if (content.type === "output_text" && content.text) {
-								// kilocode_change start
-								return {
-									text: content.text,
-									usage: response.usage
-										? {
-												inputTokens:
-													response.usage.input_tokens || response.usage.prompt_tokens || 0,
-												outputTokens:
-													response.usage.output_tokens ||
-													response.usage.completion_tokens ||
-													0,
-												cacheWriteTokens:
-													response.usage.cache_creation_input_tokens ||
-													response.usage.cache_write_tokens ||
-													undefined,
-												cacheReadTokens:
-													response.usage.cache_read_input_tokens ||
-													response.usage.cache_read_tokens ||
-													response.usage.cached_tokens ||
-													undefined,
-											}
-										: undefined,
-								}
-								// kilocode_change end
+								return content.text
 							}
 						}
 					}
@@ -1383,27 +1358,11 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 			}
 
 			// Fallback: check for direct text in response
-			// kilocode_change start
 			if (response?.text) {
-				return {
-					text: response.text,
-					usage: response.usage
-						? {
-								inputTokens: response.usage.input_tokens || response.usage.prompt_tokens || 0,
-								outputTokens: response.usage.output_tokens || response.usage.completion_tokens || 0,
-								cacheWriteTokens:
-									response.usage.cache_creation_input_tokens || response.usage.cache_write_tokens,
-								cacheReadTokens:
-									response.usage.cache_read_input_tokens ||
-									response.usage.cache_read_tokens ||
-									response.usage.cached_tokens,
-							}
-						: undefined,
-				}
+				return response.text
 			}
 
-			return { text: "" }
-			// kilocode_change end
+			return ""
 		} catch (error) {
 			if (error instanceof Error) {
 				throw new Error(`OpenAI Native completion error: ${error.message}`)

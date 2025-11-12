@@ -362,12 +362,7 @@ describe("OpenAiHandler", () => {
 	describe("completePrompt", () => {
 		it("should complete prompt successfully", async () => {
 			const result = await handler.completePrompt("Test prompt")
-			// kilocode_change start
-			expect(result.text).toBe("Test response")
-			expect(result.usage).toBeDefined()
-			expect(result.usage?.inputTokens).toBe(10)
-			expect(result.usage?.outputTokens).toBe(5)
-			// kilocode_change end
+			expect(result).toBe("Test response")
 			expect(mockCreate).toHaveBeenCalledWith(
 				{
 					model: mockOptions.openAiModelId,
@@ -385,10 +380,9 @@ describe("OpenAiHandler", () => {
 		it("should handle empty response", async () => {
 			mockCreate.mockImplementationOnce(() => ({
 				choices: [{ message: { content: "" } }],
-				usage: { prompt_tokens: 5, completion_tokens: 0 }, // kilocode_change
 			}))
 			const result = await handler.completePrompt("Test prompt")
-			expect(result.text).toBe("") // kilocode_change
+			expect(result).toBe("")
 		})
 	})
 
@@ -516,12 +510,7 @@ describe("OpenAiHandler", () => {
 		it("should handle completePrompt with Azure AI Inference Service", async () => {
 			const azureHandler = new OpenAiHandler(azureOptions)
 			const result = await azureHandler.completePrompt("Test prompt")
-			// kilocode_change start
-			expect(result.text).toBe("Test response")
-			expect(result.usage).toBeDefined()
-			expect(result.usage?.inputTokens).toBe(10)
-			expect(result.usage?.outputTokens).toBe(5)
-			// kilocode_change end
+			expect(result).toBe("Test response")
 			expect(mockCreate).toHaveBeenCalledWith(
 				{
 					model: azureOptions.openAiModelId,

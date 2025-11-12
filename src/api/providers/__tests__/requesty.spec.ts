@@ -216,12 +216,12 @@ describe("RequestyHandler", () => {
 
 			const result = await handler.completePrompt("test prompt")
 
-			expect(result.text).toBe("test completion") // kilocode_change
+			expect(result).toBe("test completion")
 
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: mockOptions.requestyModelId,
 				max_tokens: 8192,
-				messages: [{ role: "user", content: "test prompt" }], // kilocode_change
+				messages: [{ role: "system", content: "test prompt" }],
 				temperature: 0,
 			})
 		})
