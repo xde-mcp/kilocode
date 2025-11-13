@@ -143,8 +143,6 @@ export class GhostContextProvider {
 
 		const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
-		console.log("[GhostContextProvider] - formattedContext:", formattedContext)
-
 		return formattedContext
 	}
 

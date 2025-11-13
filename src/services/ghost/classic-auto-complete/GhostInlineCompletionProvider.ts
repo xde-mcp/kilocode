@@ -211,6 +211,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 		}
 
+		console.log("[HoleFiller] userPrompt:", userPrompt)
+
 		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
 
 		console.log("response", response)
@@ -245,6 +247,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			suffix,
 		)
 
+		console.log("[FIM] formattedPrefix:", formattedPrefix)
+
 		let response = ""
 		const onChunk = (text: string) => {
 			response += text
@@ -257,7 +261,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			autocompleteInput.completionId, // Pass completionId as taskId for tracking
 		)
 
-		console.log("FIM response", response)
+		console.log("[FIM] response:", response)
 
 		const fillInAtCursorSuggestion = this.processSuggestion(response, prefix, suffix, model)
 
