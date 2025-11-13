@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.119.2
-
-### Patch Changes
+## [v4.119.2]
 
 - [#3740](https://github.com/Kilo-Org/kilocode/pull/3740) [`61c6c9a`](https://github.com/Kilo-Org/kilocode/commit/61c6c9abf2b81f2eedf29aec074c1028abdee0ad) Thanks [@jrf0110](https://github.com/jrf0110)! - Managed codebase indexing is a new experimental feature that should be disabled by default. It is disabled on the backend, but the extension defaults to true. This change disables the feature by default.
 
