@@ -2,6 +2,7 @@ import { appendFileSync } from "fs"
 import * as fs from "fs-extra"
 import * as path from "path"
 import { KiloCodePaths } from "../utils/paths.js"
+import { safeStringify } from "../utils/safe-stringify.js"
 
 export type LogLevel = "info" | "debug" | "error" | "warn"
 
@@ -68,82 +69,6 @@ export class LogsService {
 	}
 
 	/**
-	 * Serialize an error object to a plain object with all relevant properties
-	 */
-	private serializeError(error: unknown): unknown {
-		if (error instanceof Error) {
-			return {
-				message: error.message,
-				name: error.name,
-				stack: error.stack,
-				// Include any additional enumerable properties
-				...Object.getOwnPropertyNames(error)
-					.filter((key) => key !== "message" && key !== "name" && key !== "stack")
-					.reduce(
-						(acc, key) => {
-							acc[key] = (error as unknown as Record<string, unknown>)[key]
-							return acc
-						},
-						{} as Record<string, unknown>,
-					),
-			}
-		}
-		return error
-	}
-
-	/**
-	 * Safe JSON stringify that handles circular references
-	 */
-	private safeStringify(obj: unknown, seen = new WeakSet()): unknown {
-		// Handle primitives
-		if (obj === null || typeof obj !== "object") {
-			return obj
-		}
-
-		// Handle circular references
-		if (seen.has(obj as object)) {
-			return "[Circular]"
-		}
-
-		// Handle Error objects
-		if (obj instanceof Error) {
-			return this.serializeError(obj)
-		}
-
-		// Handle arrays
-		if (Array.isArray(obj)) {
-			seen.add(obj)
-			const result = obj.map((item) => this.safeStringify(item, seen))
-			seen.delete(obj)
-			return result
-		}
-
-		// Handle Date objects
-		if (obj instanceof Date) {
-			return obj.toISOString()
-		}
-
-		// Handle RegExp objects
-		if (obj instanceof RegExp) {
-			return obj.toString()
-		}
-
-		// Handle plain objects
-		seen.add(obj)
-		const result: Record<string, unknown> = {}
-		for (const [key, value] of Object.entries(obj)) {
-			try {
-				result[key] = this.safeStringify(value, seen)
-			} catch (_error) {
-				// If serialization fails for a property, mark it
-				result[key] = "[Serialization Error]"
-			}
-		}
-		seen.delete(obj)
-		return result
-	}
-
-	/**
 	 * Serialize context object, handling Error objects and circular references
 	 */
 	private serializeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
@@ -151,7 +76,7 @@ export class LogsService {
 			return undefined
 		}
 
-		return this.safeStringify(context) as Record<string, unknown>
+		return safeStringify(context) as Record<string, unknown>
 	}
 
 	/**
@@ -271,7 +196,7 @@ export class LogsService {
 		let contextStr = ""
 		if (entry.context) {
 			try {
-				const safeContext = this.safeStringify(entry.context)
+				const safeContext = safeStringify(entry.context)
 				contextStr = ` ${JSON.stringify(safeContext)}`
 			} catch (_error) {
 				// Fallback if even safe stringify fails
