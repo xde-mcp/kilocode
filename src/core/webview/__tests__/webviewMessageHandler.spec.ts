@@ -270,7 +270,6 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		})
 
 		// Verify getModels was called for each provider
-		expect(mockGetModels).toHaveBeenCalledWith({ provider: "deepinfra" })
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "openrouter", apiKey: "openrouter-key" }) // kilocode_change: apiKey
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "requesty", apiKey: "requesty-key" })
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "glama" })
@@ -289,6 +288,13 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		})
 		// kilocode_change end
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
+		expect(mockGetModels).toHaveBeenCalledWith({ provider: "deepinfra" })
+		expect(mockGetModels).toHaveBeenCalledWith(
+			expect.objectContaining({
+				provider: "roo",
+				baseUrl: expect.any(String),
+			}),
+		)
 		expect(mockGetModels).toHaveBeenCalledWith({
 			provider: "litellm",
 			apiKey: "litellm-key",
@@ -316,6 +322,11 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				litellm: mockModels,
 				"kilocode-openrouter": mockModels,
 				ollama: mockModels,
+				litellm: mockModels,
+				kilocode: mockModels,
+				roo: mockModels,
+				chutes: mockModels,
+				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
 				huggingface: {},
@@ -324,6 +335,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				inception: mockModels,
 				synthetic: mockModels,
 			},
+			values: undefined,
 		})
 	})
 	test.each(routerProviders)("successfully fetches models from %s", async (provider) => {

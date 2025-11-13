@@ -38,6 +38,7 @@ This guide provides detailed information on how to configure each provider in Ki
     - [Qwen Code](#qwen-code)
     - [Gemini CLI](#gemini-cli)
     - [ZAI](#zai)
+    - [Minimax](#minimax)
     - [Unbound](#unbound)
     - [Requesty](#requesty)
     - [Roo](#roo)
@@ -45,6 +46,9 @@ This guide provides detailed information on how to configure each provider in Ki
     - [Virtual Quota Fallback](#virtual-quota-fallback)
     - [Human Relay](#human-relay)
     - [Fake AI](#fake-ai)
+    - [OVHcloud AI Endpoints](#ovhcloud-ai-endpoints)
+    - [Inception](#inception)
+    - [Synthetic](#synthetic)
 
 ## Introduction
 
@@ -633,7 +637,7 @@ OpenAI API integration (alternative configuration).
 **Required Fields**:
 
 - `openAiApiKey` (password): Your OpenAI API key
-- `apiModelId` (text): The model to use (default: `gpt-4o`)
+- `openAiModelId` (text): The model to use (default: `gpt-4o`)
 
 **Optional Fields**:
 
@@ -646,7 +650,7 @@ OpenAI API integration (alternative configuration).
 	"id": "default",
 	"provider": "openai",
 	"openAiApiKey": "sk-...",
-	"apiModelId": "gpt-4o",
+	"openAiModelId": "gpt-4o",
 	"openAiBaseUrl": ""
 }
 ```
@@ -1319,6 +1323,136 @@ Fake AI provider for testing and development.
 - Used for testing and development
 - Returns mock responses without calling any actual AI service
 - Useful for integration testing
+
+---
+
+### OVHcloud AI Endpoints
+
+OVHcloud AI Endpoints inference provider.
+
+**Description**: Use OVHcloud leading cloud computing for accessing various open-source models, with GDPR compliance and data sovreignty.
+
+**Required Field**:
+
+- `ovhCloudAiEndpointsModelId` (text): Model identifier (default: `gpt-oss-120b`)
+
+**Optional Field**:
+
+- `ovhCloudAiEndpointsApiKey` (password): Your OVHcloud AI Endpoints API key
+  If you do not provide the API key, you can use our service for free with a rate limit.
+
+**Example Configuration**:
+
+```json
+{
+	"id": "default",
+	"provider": "ovhcloud",
+	"ovhCloudAiEndpointsApiKey": "your-api-key", // optional
+	"ovhCloudAiEndpointsModelId": "gpt-oss-120b"
+}
+```
+
+**Default Model**: `gpt-oss-120b`
+
+**Notes**:
+
+- Get your API key from https://ovh.com/manager in `Public Cloud > AI & Machine Learning` section, then in `AI Endpoints`.
+- You can browse our [catalog](https://www.ovhcloud.com/en/public-cloud/ai-endpoints/catalog/) to discover all of our models.
+
+---
+
+### inception
+
+Inception Labs AI platform.
+
+**Description**: Access AI models through the Inception Labs platform.
+
+**Required Fields**:
+
+- `inceptionLabsApiKey` (password): Your Inception Labs API key
+- `inceptionLabsModelId` (text): Model identifier (default: `gpt-4o`)
+
+**Optional Fields**:
+
+- `inceptionLabsBaseUrl` (text): Custom base URL (leave empty for default)
+
+**Example Configuration**:
+
+```json
+{
+	"id": "default",
+	"provider": "inception",
+	"inceptionLabsApiKey": "...",
+	"inceptionLabsModelId": "gpt-4o",
+	"inceptionLabsBaseUrl": ""
+}
+```
+
+**Default Model**: `gpt-4o`
+
+**Notes**:
+
+- Get your API key from Inception Labs platform
+- Supports various AI models
+
+---
+
+### synthetic
+
+Synthetic AI provider.
+
+**Description**: Access AI models through the Synthetic platform.
+
+**Required Fields**:
+
+- `syntheticApiKey` (password): Your Synthetic API key
+- `apiModelId` (text): Model identifier (default: `synthetic-model`)
+
+**Example Configuration**:
+
+```json
+{
+	"id": "default",
+	"provider": "synthetic",
+	"syntheticApiKey": "...",
+	"apiModelId": "synthetic-model"
+}
+```
+
+**Default Model**: `synthetic-model`
+
+---
+
+### minimax
+
+MiniMax AI platform.
+
+**Description**: Access MiniMax's AI models.
+
+**Required Fields**:
+
+- `minimaxApiKey` (password): Your MiniMax API key
+- `minimaxBaseUrl` (text): MiniMax API base URL (default: `https://api.minimax.io/anthropic`)
+- `apiModelId` (text): The model to use (default: `MiniMax-M2`)
+
+**Example Configuration**:
+
+```json
+{
+	"id": "default",
+	"provider": "minimax",
+	"minimaxBaseUrl": "https://api.minimax.io/anthropic",
+	"minimaxApiKey": "...",
+	"apiModelId": "MiniMax-M2"
+}
+```
+
+**Default Model**: `MiniMax-M2`
+
+**Notes**:
+
+- Supports both `.io` and `.com` domains
+- Uses Anthropic-compatible API format
 
 ---
 
