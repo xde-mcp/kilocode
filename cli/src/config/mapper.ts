@@ -51,7 +51,8 @@ function mapProviderToApiConfig(provider: ProviderConfig): ProviderSettings {
 	// Copy all provider-specific fields
 	Object.keys(provider).forEach((key) => {
 		if (key !== "id" && key !== "provider") {
-			config[key] = provider[key]
+			// Type assertion needed because we're dynamically accessing keys
+			;(config as Record<string, unknown>)[key] = (provider as Record<string, unknown>)[key]
 		}
 	})
 
@@ -90,8 +91,41 @@ function getModelIdForProvider(provider: ProviderConfig): string {
 			return provider.ioIntelligenceModelId || ""
 		case "ovhcloud":
 			return provider.ovhCloudAiEndpointsModelId || ""
-		default:
-			return provider.apiModelId || provider.modelId || ""
+		case "inception":
+			return provider.inceptionLabsModelId || ""
+		case "bedrock":
+		case "vertex":
+		case "gemini":
+		case "gemini-cli":
+		case "mistral":
+		case "moonshot":
+		case "minimax":
+		case "deepseek":
+		case "doubao":
+		case "qwen-code":
+		case "xai":
+		case "groq":
+		case "chutes":
+		case "cerebras":
+		case "sambanova":
+		case "zai":
+		case "fireworks":
+		case "featherless":
+		case "roo":
+		case "claude-code":
+		case "synthetic":
+		case "virtual-quota-fallback":
+			return provider.apiModelId || ""
+		case "vscode-lm":
+			if (provider.vsCodeLmModelSelector) {
+				return `${provider.vsCodeLmModelSelector.vendor}/${provider.vsCodeLmModelSelector.family}`
+			}
+			return ""
+		case "huggingface":
+			return provider.huggingFaceModelId || ""
+		case "human-relay":
+		case "fake-ai":
+			return ""
 	}
 }
 
@@ -111,11 +145,11 @@ export function mapExtensionStateToConfig(state: ExtensionState, currentConfig?:
 		const existingProvider = config.providers.find((p) => p.id === providerId)
 
 		if (!existingProvider) {
-			const newProvider: ProviderConfig = {
+			const newProvider = {
 				id: providerId,
 				provider: state.apiConfiguration.apiProvider || "kilocode",
 				...state.apiConfiguration,
-			}
+			} as ProviderConfig
 			config.providers.push(newProvider)
 		} else {
 			// Update existing provider
