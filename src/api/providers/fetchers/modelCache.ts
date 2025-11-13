@@ -154,9 +154,6 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 				models = await getRooModels(rooBaseUrl, options.apiKey)
 				break
 			}
-			case "chutes":
-				models = await getChutesModels(options.apiKey)
-				break
 			default: {
 				// Ensures router is exhaustively checked if RouterName is a strict union.
 				const exhaustiveCheck: never = provider

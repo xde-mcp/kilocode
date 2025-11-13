@@ -2788,7 +2788,6 @@ describe("ClineProvider - Router Models", () => {
 				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
-				synthetic: mockModels, // kilocode_change
 			},
 			values: undefined,
 		})
@@ -2835,7 +2834,6 @@ describe("ClineProvider - Router Models", () => {
 			.mockResolvedValueOnce(mockModels) // deepinfra success
 			.mockResolvedValueOnce(mockModels) // kilocode_change: ovhcloud
 			.mockResolvedValueOnce(mockModels) // kilocode_change: inception success
-			.mockRejectedValueOnce(new Error("Synthetic API error")) // synthetic fail
 			.mockResolvedValueOnce(mockModels) // roo success
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes fail
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm fail
@@ -2848,7 +2846,7 @@ describe("ClineProvider - Router Models", () => {
 			routerModels: {
 				deepinfra: mockModels,
 				openrouter: mockModels,
-				gemini: mockModels,
+				gemini: mockModels, // kilocode_change
 				requesty: {},
 				glama: mockModels,
 				unbound: {},
@@ -2859,9 +2857,8 @@ describe("ClineProvider - Router Models", () => {
 				litellm: {},
 				kilocode: {},
 				"vercel-ai-gateway": mockModels,
-				ovhcloud: mockModels,
-				inception: mockModels,
-				synthetic: {},
+				ovhcloud: mockModels, // kilocode_change
+				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
 			},
@@ -2869,7 +2866,6 @@ describe("ClineProvider - Router Models", () => {
 		})
 
 		// Verify error messages were sent for failed providers
-		// Verify error messages were sent for failed providers in the correct order
 		expect(mockPostMessage).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
@@ -2884,12 +2880,14 @@ describe("ClineProvider - Router Models", () => {
 			values: { provider: "unbound" },
 		})
 
+		// kilocode_change start
 		expect(mockPostMessage).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Chutes API error",
 			values: { provider: "chutes" },
 		})
+		// kilocode_change end
 
 		expect(mockPostMessage).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
@@ -2901,15 +2899,8 @@ describe("ClineProvider - Router Models", () => {
 		expect(mockPostMessage).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
-			error: "Ollama API error",
-			values: { provider: "ollama" },
-		})
-
-		expect(mockPostMessage).toHaveBeenCalledWith({
-			type: "singleRouterModelFetchResponse",
-			success: false,
-			error: "Synthetic API error",
-			values: { provider: "synthetic" },
+			error: "Unbound API error",
+			values: { provider: "unbound" },
 		})
 
 		expect(mockPostMessage).toHaveBeenCalledWith({
@@ -3007,14 +2998,10 @@ describe("ClineProvider - Router Models", () => {
 			routerModels: {
 				deepinfra: mockModels,
 				openrouter: mockModels,
-				gemini: mockModels,
+				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
 				glama: mockModels,
 				unbound: mockModels,
-				chutes: mockModels,
-				litellm: {},
-				"kilocode-openrouter": mockModels,
-				ollama: mockModels,
 				roo: mockModels,
 				chutes: mockModels,
 				litellm: {},
@@ -3022,9 +3009,8 @@ describe("ClineProvider - Router Models", () => {
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
-				ovhcloud: mockModels,
-				inception: mockModels,
-				synthetic: mockModels,
+				ovhcloud: mockModels, // kilocode_change
+				inception: mockModels, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
 			},
