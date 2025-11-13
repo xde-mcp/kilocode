@@ -1,7 +1,11 @@
 import OpenAI from "openai"
 import { Anthropic } from "@anthropic-ai/sdk" // Keep for type usage only
 
-import { litellmDefaultModelId, litellmDefaultModelInfo, getActiveToolUseStyle } from "@roo-code/types"
+import {
+	 litellmDefaultModelId,
+	 litellmDefaultModelInfo,
+	 getActiveToolUseStyle, // kilocode_change
+} from "@roo-code/types"
 
 import { calculateApiCostOpenAI } from "../../shared/cost"
 
@@ -213,11 +217,13 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 				requestOptions.temperature = this.options.modelTemperature ?? 0
 			}
 
+			// kilocode_change start
 			if (isGPT5Model && info.maxTokens) {
 				requestOptions.max_completion_tokens = info.maxTokens
 			} else if (info.maxTokens) {
 				requestOptions.max_tokens = info.maxTokens
 			}
+			// kilocode_change end
 
 			const response = await this.client.chat.completions.create(requestOptions)
 			return response.choices[0]?.message.content || ""
