@@ -26,23 +26,40 @@ export const nativeFunctionCallingProviders = [
 	"moonshot",
 ] satisfies ProviderName[] as ProviderName[]
 
-const modelsDefaultingToJsonKeywords = ["claude-haiku-4.5", "claude-haiku-4-5", "minimax-m2"]
+//Specific models, regardless of provider, that need JSON tool use.
+const modelsDefaultingToJsonKeywords = [
+	"claude-haiku-4.5",
+	"claude-haiku-4-5", //Haiku struggles with XML
+	"minimax-m2", // minimax needs the JSON calls to maintain reasoning coherance.
+]
+
+//Specific providers that default to JSON tool use, regardless of model.
+const providersDefaultingToJsonKeywords = [
+	"synthetic", //All synthetic models support JSON tools, and their pricing model strongly encourages their use
+]
 
 export function getActiveToolUseStyle(settings: ProviderSettings | undefined): ToolUseStyle {
 	if (!settings) {
 		console.error("getActiveToolUseStyle: settings missing, returning xml")
 		return "xml"
 	}
-	if (settings.apiProvider && !nativeFunctionCallingProviders.includes(settings.apiProvider as ProviderName)) {
-		return "xml"
+
+	const provider = settings.apiProvider as ProviderName
+
+	if (!nativeFunctionCallingProviders.includes(provider)) {
+		return "xml" //default to xml for providers that don't support native function calling
 	}
 	if (settings.toolStyle) {
-		return settings.toolStyle
+		return settings.toolStyle //use explicitly set style if available.
 	}
 	const model = getModelId(settings)?.toLowerCase()
 	if (!model) {
 		console.error("getActiveToolUseStyle: model missing, returning xml")
-		return "xml"
+		return "xml" //default to xml if model is missing
 	}
+	if (providersDefaultingToJsonKeywords.includes(provider)) {
+		return "json" //providers that always use json
+	}
+	// models that specifically need json, otherwise default to XML.
 	return modelsDefaultingToJsonKeywords.some((keyword) => model.includes(keyword)) ? "json" : "xml"
 }
