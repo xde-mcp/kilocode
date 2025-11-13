@@ -14,7 +14,7 @@ vi.mock("../../services/logs.js", () => ({
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch as any
+global.fetch = mockFetch as typeof fetch
 
 describe("getKilocodeDefaultModel", () => {
 	beforeEach(() => {

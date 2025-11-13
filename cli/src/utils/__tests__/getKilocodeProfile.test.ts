@@ -3,7 +3,7 @@ import { getKilocodeProfile, type KilocodeProfileData } from "../getKilocodeProf
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch as any
+global.fetch = mockFetch as typeof fetch
 
 describe("getKilocodeProfile", () => {
 	beforeEach(() => {
