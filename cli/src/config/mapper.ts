@@ -62,37 +62,70 @@ function mapProviderToApiConfig(provider: ProviderConfig): ProviderSettings {
 function getModelIdForProvider(provider: ProviderConfig): string {
 	switch (provider.provider) {
 		case "kilocode":
-			return (provider.kilocodeModel as string | undefined) || ""
+			return provider.kilocodeModel || ""
 		case "anthropic":
-			return (provider.apiModelId as string | undefined) || ""
+			return provider.apiModelId || ""
 		case "openai-native":
-			return (provider.apiModelId as string | undefined) || ""
+			return provider.apiModelId || ""
 		case "openrouter":
-			return (provider.openRouterModelId as string | undefined) || ""
+			return provider.openRouterModelId || ""
 		case "ollama":
-			return (provider.ollamaModelId as string | undefined) || ""
+			return provider.ollamaModelId || ""
 		case "lmstudio":
-			return (provider.lmStudioModelId as string | undefined) || ""
+			return provider.lmStudioModelId || ""
 		case "openai":
-			return (provider.apiModelId as string | undefined) || ""
+			return provider.apiModelId || ""
 		case "glama":
-			return (provider.glamaModelId as string | undefined) || ""
+			return provider.glamaModelId || ""
 		case "litellm":
-			return (provider.litellmModelId as string | undefined) || ""
+			return provider.litellmModelId || ""
 		case "deepinfra":
-			return (provider.deepInfraModelId as string | undefined) || ""
+			return provider.deepInfraModelId || ""
 		case "unbound":
-			return (provider.unboundModelId as string | undefined) || ""
+			return provider.unboundModelId || ""
 		case "requesty":
-			return (provider.requestyModelId as string | undefined) || ""
+			return provider.requestyModelId || ""
 		case "vercel-ai-gateway":
-			return (provider.vercelAiGatewayModelId as string | undefined) || ""
+			return provider.vercelAiGatewayModelId || ""
 		case "io-intelligence":
-			return (provider.ioIntelligenceModelId as string | undefined) || ""
+			return provider.ioIntelligenceModelId || ""
 		case "ovhcloud":
-			return (provider.ovhCloudAiEndpointsModelId as string | undefined) || ""
-		default:
-			return (provider.apiModelId as string | undefined) || (provider.modelId as string | undefined) || ""
+			return provider.ovhCloudAiEndpointsModelId || ""
+		case "inception":
+			return provider.inceptionLabsModelId || ""
+		case "bedrock":
+		case "vertex":
+		case "gemini":
+		case "gemini-cli":
+		case "mistral":
+		case "moonshot":
+		case "minimax":
+		case "deepseek":
+		case "doubao":
+		case "qwen-code":
+		case "xai":
+		case "groq":
+		case "chutes":
+		case "cerebras":
+		case "sambanova":
+		case "zai":
+		case "fireworks":
+		case "featherless":
+		case "roo":
+		case "claude-code":
+		case "synthetic":
+		case "virtual-quota-fallback":
+			return provider.apiModelId || ""
+		case "vscode-lm":
+			if (provider.vsCodeLmModelSelector) {
+				return `${provider.vsCodeLmModelSelector.vendor}/${provider.vsCodeLmModelSelector.family}`
+			}
+			return ""
+		case "huggingface":
+			return provider.huggingFaceModelId || ""
+		case "human-relay":
+		case "fake-ai":
+			return ""
 	}
 }
 
@@ -112,11 +145,11 @@ export function mapExtensionStateToConfig(state: ExtensionState, currentConfig?:
 		const existingProvider = config.providers.find((p) => p.id === providerId)
 
 		if (!existingProvider) {
-			const newProvider: ProviderConfig = {
+			const newProvider = {
 				id: providerId,
 				provider: state.apiConfiguration.apiProvider || "kilocode",
 				...state.apiConfiguration,
-			}
+			} as ProviderConfig
 			config.providers.push(newProvider)
 		} else {
 			// Update existing provider

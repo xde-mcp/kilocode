@@ -1,4 +1,3 @@
-import type { ProviderName } from "../types/messages.js"
 import type { ThemeId, Theme } from "../types/theme.js"
 
 /**
@@ -106,12 +105,274 @@ export interface CLIConfig {
 	customThemes?: Record<string, Theme>
 }
 
-export interface ProviderConfig {
+// Base provider config with common fields
+interface BaseProviderConfig {
 	id: string
-	provider: ProviderName
-	// Provider-specific fields
-	[key: string]: unknown
+	[key: string]: unknown // Allow additional fields for flexibility
 }
+
+// Provider-specific configurations with discriminated unions
+type KilocodeProviderConfig = BaseProviderConfig & {
+	provider: "kilocode"
+	kilocodeModel?: string
+	kilocodeToken?: string
+	kilocodeOrganizationId?: string
+}
+
+type AnthropicProviderConfig = BaseProviderConfig & {
+	provider: "anthropic"
+	apiModelId?: string
+}
+
+type OpenAINativeProviderConfig = BaseProviderConfig & {
+	provider: "openai-native"
+	apiModelId?: string
+}
+
+type OpenAIProviderConfig = BaseProviderConfig & {
+	provider: "openai"
+	apiModelId?: string
+}
+
+type OpenRouterProviderConfig = BaseProviderConfig & {
+	provider: "openrouter"
+	openRouterModelId?: string
+}
+
+type OllamaProviderConfig = BaseProviderConfig & {
+	provider: "ollama"
+	ollamaModelId?: string
+}
+
+type LMStudioProviderConfig = BaseProviderConfig & {
+	provider: "lmstudio"
+	lmStudioModelId?: string
+}
+
+type GlamaProviderConfig = BaseProviderConfig & {
+	provider: "glama"
+	glamaModelId?: string
+}
+
+type LiteLLMProviderConfig = BaseProviderConfig & {
+	provider: "litellm"
+	litellmModelId?: string
+}
+
+type DeepInfraProviderConfig = BaseProviderConfig & {
+	provider: "deepinfra"
+	deepInfraModelId?: string
+}
+
+type UnboundProviderConfig = BaseProviderConfig & {
+	provider: "unbound"
+	unboundModelId?: string
+}
+
+type RequestyProviderConfig = BaseProviderConfig & {
+	provider: "requesty"
+	requestyModelId?: string
+}
+
+type VercelAiGatewayProviderConfig = BaseProviderConfig & {
+	provider: "vercel-ai-gateway"
+	vercelAiGatewayModelId?: string
+}
+
+type IOIntelligenceProviderConfig = BaseProviderConfig & {
+	provider: "io-intelligence"
+	ioIntelligenceModelId?: string
+}
+
+type OVHCloudProviderConfig = BaseProviderConfig & {
+	provider: "ovhcloud"
+	ovhCloudAiEndpointsModelId?: string
+}
+
+type InceptionProviderConfig = BaseProviderConfig & {
+	provider: "inception"
+	inceptionLabsModelId?: string
+}
+
+type BedrockProviderConfig = BaseProviderConfig & {
+	provider: "bedrock"
+	apiModelId?: string
+}
+
+type VertexProviderConfig = BaseProviderConfig & {
+	provider: "vertex"
+	apiModelId?: string
+}
+
+type GeminiProviderConfig = BaseProviderConfig & {
+	provider: "gemini"
+	apiModelId?: string
+}
+
+type GeminiCliProviderConfig = BaseProviderConfig & {
+	provider: "gemini-cli"
+	apiModelId?: string
+}
+
+type MistralProviderConfig = BaseProviderConfig & {
+	provider: "mistral"
+	apiModelId?: string
+}
+
+type MoonshotProviderConfig = BaseProviderConfig & {
+	provider: "moonshot"
+	apiModelId?: string
+}
+
+type MinimaxProviderConfig = BaseProviderConfig & {
+	provider: "minimax"
+	apiModelId?: string
+}
+
+type DeepSeekProviderConfig = BaseProviderConfig & {
+	provider: "deepseek"
+	apiModelId?: string
+}
+
+type DoubaoProviderConfig = BaseProviderConfig & {
+	provider: "doubao"
+	apiModelId?: string
+}
+
+type QwenCodeProviderConfig = BaseProviderConfig & {
+	provider: "qwen-code"
+	apiModelId?: string
+}
+
+type XAIProviderConfig = BaseProviderConfig & {
+	provider: "xai"
+	apiModelId?: string
+}
+
+type GroqProviderConfig = BaseProviderConfig & {
+	provider: "groq"
+	apiModelId?: string
+}
+
+type ChutesProviderConfig = BaseProviderConfig & {
+	provider: "chutes"
+	apiModelId?: string
+}
+
+type CerebrasProviderConfig = BaseProviderConfig & {
+	provider: "cerebras"
+	apiModelId?: string
+}
+
+type SambaNovaProviderConfig = BaseProviderConfig & {
+	provider: "sambanova"
+	apiModelId?: string
+}
+
+type ZAIProviderConfig = BaseProviderConfig & {
+	provider: "zai"
+	apiModelId?: string
+}
+
+type FireworksProviderConfig = BaseProviderConfig & {
+	provider: "fireworks"
+	apiModelId?: string
+}
+
+type FeatherlessProviderConfig = BaseProviderConfig & {
+	provider: "featherless"
+	apiModelId?: string
+}
+
+type RooProviderConfig = BaseProviderConfig & {
+	provider: "roo"
+	apiModelId?: string
+}
+
+type ClaudeCodeProviderConfig = BaseProviderConfig & {
+	provider: "claude-code"
+	apiModelId?: string
+}
+
+type VSCodeLMProviderConfig = BaseProviderConfig & {
+	provider: "vscode-lm"
+	vsCodeLmModelSelector?: {
+		vendor?: string
+		family?: string
+		version?: string
+		id?: string
+	}
+}
+
+type HuggingFaceProviderConfig = BaseProviderConfig & {
+	provider: "huggingface"
+	huggingFaceModelId?: string
+}
+
+type SyntheticProviderConfig = BaseProviderConfig & {
+	provider: "synthetic"
+	apiModelId?: string
+}
+
+type VirtualQuotaFallbackProviderConfig = BaseProviderConfig & {
+	provider: "virtual-quota-fallback"
+	apiModelId?: string
+}
+
+type HumanRelayProviderConfig = BaseProviderConfig & {
+	provider: "human-relay"
+	// No model ID field
+}
+
+type FakeAIProviderConfig = BaseProviderConfig & {
+	provider: "fake-ai"
+	// No model ID field
+}
+
+// Discriminated union of all provider configs
+export type ProviderConfig =
+	| KilocodeProviderConfig
+	| AnthropicProviderConfig
+	| OpenAINativeProviderConfig
+	| OpenAIProviderConfig
+	| OpenRouterProviderConfig
+	| OllamaProviderConfig
+	| LMStudioProviderConfig
+	| GlamaProviderConfig
+	| LiteLLMProviderConfig
+	| DeepInfraProviderConfig
+	| UnboundProviderConfig
+	| RequestyProviderConfig
+	| VercelAiGatewayProviderConfig
+	| IOIntelligenceProviderConfig
+	| OVHCloudProviderConfig
+	| InceptionProviderConfig
+	| BedrockProviderConfig
+	| VertexProviderConfig
+	| GeminiProviderConfig
+	| GeminiCliProviderConfig
+	| MistralProviderConfig
+	| MoonshotProviderConfig
+	| MinimaxProviderConfig
+	| DeepSeekProviderConfig
+	| DoubaoProviderConfig
+	| QwenCodeProviderConfig
+	| XAIProviderConfig
+	| GroqProviderConfig
+	| ChutesProviderConfig
+	| CerebrasProviderConfig
+	| SambaNovaProviderConfig
+	| ZAIProviderConfig
+	| FireworksProviderConfig
+	| FeatherlessProviderConfig
+	| RooProviderConfig
+	| ClaudeCodeProviderConfig
+	| VSCodeLMProviderConfig
+	| HuggingFaceProviderConfig
+	| SyntheticProviderConfig
+	| VirtualQuotaFallbackProviderConfig
+	| HumanRelayProviderConfig
+	| FakeAIProviderConfig
 
 // Type guards
 export function isValidConfig(config: unknown): config is CLIConfig {
