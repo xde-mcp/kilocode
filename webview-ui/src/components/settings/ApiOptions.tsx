@@ -282,7 +282,7 @@ const ApiOptions = ({
 				selectedProvider === "litellm" ||
 				selectedProvider === "deepinfra" ||
 				selectedProvider === "chutes" || // kilocode_change
-				selectedProvider === "synthetic" // kilocode_change
+				selectedProvider === "synthetic" || // kilocode_change
 				selectedProvider === "roo"
 			) {
 				vscode.postMessage({ type: "requestRouterModels" })

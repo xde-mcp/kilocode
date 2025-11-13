@@ -98,17 +98,6 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 	const lmStudioModelId = provider === "lmstudio" ? apiConfiguration?.lmStudioModelId : undefined
 	const ollamaModelId = provider === "ollama" ? apiConfiguration?.ollamaModelId : undefined
 
-	const routerModels = useRouterModels({
-		openRouterBaseUrl: apiConfiguration?.openRouterBaseUrl,
-		openRouterApiKey: apiConfiguration?.apiKey,
-		kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId,
-		geminiApiKey: apiConfiguration?.geminiApiKey,
-		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
-		syntheticApiKey: apiConfiguration?.syntheticApiKey, // kilocode_change
-	})
-	const openRouterModelProviders = useModelProviders(kilocodeDefaultModel, apiConfiguration)
-	// kilocode_change end
-
 	// Only fetch router models for dynamic providers
 	const shouldFetchRouterModels = isDynamicProvider(provider)
 	const routerModels = useRouterModels(
@@ -119,6 +108,7 @@ export const useSelectedModel = (apiConfiguration?: ProviderSettings) => {
 			kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId,
 			geminiApiKey: apiConfiguration?.geminiApiKey,
 			googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
+			syntheticApiKey: apiConfiguration?.syntheticApiKey, // kilocode_change
 		},
 		// kilocode_change end
 		{
