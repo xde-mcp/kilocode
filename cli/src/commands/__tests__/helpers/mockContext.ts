@@ -68,6 +68,7 @@ export function createMockContext(overrides: Partial<CommandContext> = {}): Comm
 		nextTaskHistoryPage: vi.fn().mockResolvedValue(null),
 		previousTaskHistoryPage: vi.fn().mockResolvedValue(null),
 		sendWebviewMessage: vi.fn().mockResolvedValue(undefined),
+		chatMessages: [],
 	}
 
 	return {

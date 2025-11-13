@@ -8,6 +8,7 @@ import { useCallback } from "react"
 import type { CommandContext } from "../../commands/core/types.js"
 import type { CliMessage } from "../../types/cli.js"
 import type { ProviderConfig } from "../../config/types.js"
+import type { ExtensionMessage } from "../../types/messages.js"
 import {
 	addMessageAtom,
 	clearMessagesAtom,
@@ -199,7 +200,7 @@ export function useCommandContext(): UseCommandContextReturn {
 				nextTaskHistoryPage,
 				previousTaskHistoryPage,
 				sendWebviewMessage: sendMessage,
-				chatMessages,
+				chatMessages: chatMessages as unknown as ExtensionMessage[],
 			}
 		},
 		[

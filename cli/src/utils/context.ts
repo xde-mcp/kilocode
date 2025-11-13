@@ -4,6 +4,7 @@
 
 import type { ExtensionChatMessage, ProviderSettings } from "../types/messages.js"
 import type { RouterModels } from "../constants/providers/models.js"
+import type { ProviderConfig } from "../config/types.js"
 import { getCurrentModelId, getModelsByProvider } from "../constants/providers/models.js"
 import { logs } from "../services/logs.js"
 
@@ -42,7 +43,7 @@ function getContextWindowFromModel(apiConfig: ProviderSettings | null, routerMod
 				id: "default",
 				provider: apiConfig.apiProvider || "",
 				...apiConfig,
-			},
+			} as ProviderConfig,
 			routerModels,
 			kilocodeDefaultModel: apiConfig.kilocodeModel || "",
 		})

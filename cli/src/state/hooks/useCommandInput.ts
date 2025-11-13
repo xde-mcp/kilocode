@@ -11,6 +11,7 @@ import type {
 	FileMentionSuggestion,
 	FileMentionContext,
 } from "../../services/autocomplete.js"
+import type { ExtensionMessage } from "../../types/messages.js"
 import {
 	getSuggestions,
 	getArgumentSuggestions,
@@ -274,6 +275,7 @@ export function useCommandInput(): UseCommandInputReturn {
 				profileData,
 				profileLoading,
 				taskHistoryData,
+				chatMessages: [] as ExtensionMessage[],
 				updateProviderModel: async (modelId: string) => {
 					if (!currentProvider) {
 						throw new Error("No provider configured")
