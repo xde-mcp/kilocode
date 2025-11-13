@@ -95,7 +95,7 @@ export interface LLMRetrievalResult {
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
-	private contextProvider?: GhostContextProvider
+	private contextProvider: GhostContextProvider
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -108,7 +108,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
-		contextProvider?: GhostContextProvider,
+		contextProvider: GhostContextProvider,
 		ignoreController?: Promise<RooIgnoreController>,
 	) {
 		this.model = model
@@ -118,14 +118,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.contextProvider = contextProvider
 		this.ignoreController = ignoreController
 
-		// Get IDE from context provider if available
-		const ide = contextProvider?.getIde()
-		if (ide) {
-			this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
-			this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
-		} else {
-			throw new Error("GhostContextProvider with IDE is required for tracking services")
-		}
+		// Initialize tracking services with IDE from context provider
+		const ide = contextProvider.getIde()
+		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
+		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -246,14 +242,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		const formattedPrefix = this.contextProvider
-			? await this.contextProvider.getFimCompiledPrefix(
-					autocompleteInput,
-					autocompleteInput.filepath,
-					prefix,
-					suffix,
-				)
-			: prefix
+		const formattedPrefix = await this.contextProvider.getFimCompiledPrefix(
+			autocompleteInput,
+			autocompleteInput.filepath,
+			prefix,
+			suffix,
+		)
 
 		let response = ""
 		const onChunk = (text: string) => {
