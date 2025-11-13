@@ -14,6 +14,7 @@ import openConfigFile from "./config/openConfig.js"
 import authWizard from "./utils/authWizard.js"
 import { configExists } from "./config/persistence.js"
 import { getParallelModeParams } from "./parallel/parallel.js"
+import { DEBUG_MODES, DEBUG_FUNCTIONS } from "./debug/index.js"
 
 const program = new Command()
 let cli: CLI | null = null
@@ -29,6 +30,7 @@ program
 	.option("-w, --workspace <path>", "Path to the workspace directory", process.cwd())
 	.option("-a, --auto", "Run in autonomous mode (non-interactive)", false)
 	.option("-j, --json", "Output messages as JSON (requires --auto)", false)
+	.option("-c, --continue", "Resume the last conversation from this workspace", false)
 	.option("-t, --timeout <seconds>", "Timeout in seconds for autonomous mode (requires --auto)", parseInt)
 	.option(
 		"-p, --parallel",
@@ -98,6 +100,18 @@ program
 			process.exit(1)
 		}
 
+		// Validate that continue mode is not used with autonomous mode
+		if (options.continue && options.auto) {
+			console.error("Error: --continue option cannot be used with --auto flag")
+			process.exit(1)
+		}
+
+		// Validate that continue mode is not used with a prompt
+		if (options.continue && finalPrompt) {
+			console.error("Error: --continue option cannot be used with a prompt argument")
+			process.exit(1)
+		}
+
 		// Track autonomous mode start if applicable
 		if (options.auto && finalPrompt) {
 			getTelemetryService().trackCIModeStarted(finalPrompt.length, options.timeout)
@@ -139,6 +153,7 @@ program
 			timeout: options.timeout,
 			parallel: options.parallel,
 			worktreeBranch,
+			continue: options.continue,
 		})
 		await cli.start()
 		await cli.dispose()
@@ -157,6 +172,26 @@ program
 	.description("Open the configuration file in your default editor")
 	.action(async () => {
 		await openConfigFile()
+	})
+
+// Debug command - checks hardware and OS compatibility
+program
+	.command("debug")
+	.description("Run a system compatibility check for the Kilo Code CLI")
+	.argument("[mode]", `The mode to debug (${DEBUG_MODES.join(", ")})`, "")
+	.action(async (mode: string) => {
+		if (!mode || !DEBUG_MODES.includes(mode)) {
+			console.error(`Error: Invalid debug mode. Valid modes are: ${DEBUG_MODES.join(", ")}`)
+			process.exit(1)
+		}
+
+		const debugFunction = DEBUG_FUNCTIONS[mode as keyof typeof DEBUG_FUNCTIONS]
+		if (!debugFunction) {
+			console.error(`Error: Debug function not implemented for mode: ${mode}`)
+			process.exit(1)
+		}
+
+		await debugFunction()
 	})
 
 // Handle process termination signals

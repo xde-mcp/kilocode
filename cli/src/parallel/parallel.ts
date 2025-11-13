@@ -124,7 +124,7 @@ export async function finishParallelMode(cli: CLI, worktreePath: string, worktre
 
 					await service.sendWebviewMessage({
 						type: "askResponse",
-						askResponse: agentCommitInstruction,
+						askResponse: "messageResponse",
 						text: agentCommitInstruction,
 					})
 

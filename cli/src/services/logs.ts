@@ -11,7 +11,7 @@ export interface LogEntry {
 	level: LogLevel
 	message: string
 	source?: string
-	context?: Record<string, any>
+	context?: Record<string, unknown>
 }
 
 export interface LogFilter {
@@ -70,7 +70,7 @@ export class LogsService {
 	/**
 	 * Serialize an error object to a plain object with all relevant properties
 	 */
-	private serializeError(error: any): any {
+	private serializeError(error: unknown): unknown {
 		if (error instanceof Error) {
 			return {
 				message: error.message,
@@ -81,10 +81,10 @@ export class LogsService {
 					.filter((key) => key !== "message" && key !== "name" && key !== "stack")
 					.reduce(
 						(acc, key) => {
-							acc[key] = (error as any)[key]
+							acc[key] = (error as unknown as Record<string, unknown>)[key]
 							return acc
 						},
-						{} as Record<string, any>,
+						{} as Record<string, unknown>,
 					),
 			}
 		}
@@ -94,18 +94,18 @@ export class LogsService {
 	/**
 	 * Serialize context object, handling Error objects specially
 	 */
-	private serializeContext(context?: Record<string, any>): Record<string, any> | undefined {
+	private serializeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
 		if (!context) {
 			return undefined
 		}
 
-		const serialized: Record<string, any> = {}
+		const serialized: Record<string, unknown> = {}
 		for (const [key, value] of Object.entries(context)) {
 			if (value instanceof Error) {
 				serialized[key] = this.serializeError(value)
 			} else if (typeof value === "object" && value !== null) {
 				// Recursively handle nested objects that might contain errors
-				serialized[key] = this.serializeContext(value as Record<string, any>) || value
+				serialized[key] = this.serializeContext(value as Record<string, unknown>) || value
 			} else {
 				serialized[key] = value
 			}
@@ -116,7 +116,7 @@ export class LogsService {
 	/**
 	 * Add a log entry with the specified level
 	 */
-	private addLog(level: LogLevel, message: string, source?: string, context?: Record<string, any>): void {
+	private addLog(level: LogLevel, message: string, source?: string, context?: Record<string, unknown>): void {
 		// Serialize context to handle Error objects properly
 		const serializedContext = this.serializeContext(context)
 
@@ -155,7 +155,7 @@ export class LogsService {
 	 */
 	private outputToConsole(entry: LogEntry): void {
 		// GUARD: Prevent recursive logging by checking if we're already in a logging call
-		if ((this as any)._isLogging) {
+		if ((this as { _isLogging?: boolean })._isLogging) {
 			return
 		}
 
@@ -166,7 +166,7 @@ export class LogsService {
 		}
 
 		// Set flag to prevent recursion
-		;(this as any)._isLogging = true
+		;(this as { _isLogging?: boolean })._isLogging = true
 
 		try {
 			const ts = new Date(entry.ts).toISOString()
@@ -197,7 +197,7 @@ export class LogsService {
 			}
 		} finally {
 			// Always clear the flag
-			;(this as any)._isLogging = false
+			;(this as { _isLogging?: boolean })._isLogging = false
 		}
 	}
 
@@ -268,28 +268,28 @@ export class LogsService {
 	/**
 	 * Log an info message
 	 */
-	public info(message: string, source?: string, context?: Record<string, any>): void {
+	public info(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("info", message, source, context)
 	}
 
 	/**
 	 * Log a debug message
 	 */
-	public debug(message: string, source?: string, context?: Record<string, any>): void {
+	public debug(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("debug", message, source, context)
 	}
 
 	/**
 	 * Log an error message
 	 */
-	public error(message: string, source?: string, context?: Record<string, any>): void {
+	public error(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("error", message, source, context)
 	}
 
 	/**
 	 * Log a warning message
 	 */
-	public warn(message: string, source?: string, context?: Record<string, any>): void {
+	public warn(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("warn", message, source, context)
 	}
 

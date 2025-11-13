@@ -10,25 +10,16 @@ import { ContinueCompletionProvider } from "../../continuedev/core/vscode-test-h
 
 export class NewAutocompleteProvider {
 	private completionProviderDisposable: vscode.Disposable | null = null
-	private model: NewAutocompleteModel
-	private providerSettingsManager: ProviderSettingsManager
+	private readonly model: NewAutocompleteModel
+	private readonly providerSettingsManager: ProviderSettingsManager
 	private settings: GhostServiceSettings | null = null
 
 	constructor(
 		private context: vscode.ExtensionContext,
 		private cline: ClineProvider,
 	) {
-		// Register Internal Components
 		this.providerSettingsManager = new ProviderSettingsManager(context)
 		this.model = new NewAutocompleteModel()
-
-		void this.load()
-	}
-
-	// Settings Management
-	private loadSettings() {
-		const state = ContextProxy.instance.getValues()
-		return state.ghostServiceSettings
 	}
 
 	private async saveSettings() {
@@ -84,7 +75,7 @@ export class NewAutocompleteProvider {
 	}
 
 	public async load() {
-		this.settings = this.loadSettings()
+		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings")
 		await this.model.reload(this.providerSettingsManager)
 		await this.saveSettings()
 		this.loadCodeCompletion()
@@ -96,7 +87,6 @@ export class NewAutocompleteProvider {
 			enableAutoTrigger: false,
 			enableSmartInlineTaskKeybinding: false,
 			enableQuickInlineTaskKeybinding: false,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()
@@ -108,7 +98,6 @@ export class NewAutocompleteProvider {
 			enableAutoTrigger: true,
 			enableSmartInlineTaskKeybinding: true,
 			enableQuickInlineTaskKeybinding: true,
-			showGutterAnimation: true,
 		}
 		await this.saveSettings()
 		await this.load()

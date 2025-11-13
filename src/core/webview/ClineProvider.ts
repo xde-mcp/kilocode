@@ -42,6 +42,7 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_MODES,
 	getActiveToolUseStyle, // kilocode_change
+	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { CloudService, BridgeOrchestrator, getRooCodeApiUrl } from "@roo-code/cloud"
@@ -92,10 +93,9 @@ import { Task } from "../task/Task"
 import { getSystemPromptFilePath } from "../prompts/sections/custom-system-prompt"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
-import type { ClineMessage } from "@roo-code/types"
-import { readApiMessages, saveApiMessages, saveTaskMessages } from "../task-persistence"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
+import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
 
 //kilocode_change start
 import { McpDownloadResponse, McpMarketplaceCatalog } from "../../shared/kilocode/mcp"
@@ -105,8 +105,8 @@ import { stringifyError } from "../../shared/kilocode/errorUtils"
 import isWsl from "is-wsl"
 import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocodeDefaultModel"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
-import { getKiloUrlFromToken } from "@roo-code/types" // kilocode_change
-import { getKilocodeConfig, getWorkspaceProjectId, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
+import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
+import { updateCodeIndexWithKiloProps } from "../../services/code-index/managed/webview" // kilocode_change
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
@@ -161,7 +161,7 @@ export class ClineProvider
 
 	public isViewLaunched = false
 	public settingsImportedAt?: number
-	public readonly latestAnnouncementId = "sep-2025-code-supernova-1m" // Code Supernova 1M context window announcement
+	public readonly latestAnnouncementId = "nov-2025-v3.30.0-pr-fixer" // v3.30.0 PR Fixer announcement
 	public readonly providerSettingsManager: ProviderSettingsManager
 	public readonly customModesManager: CustomModesManager
 
@@ -749,7 +749,12 @@ export class ClineProvider
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "addToContext") {
-			await visibleProvider.postMessageToWebview({ type: "invoke", invoke: "setChatBoxMessage", text: prompt })
+			await visibleProvider.postMessageToWebview({
+				type: "invoke",
+				invoke: "setChatBoxMessage",
+				text: `${prompt}\n\n`,
+			})
+			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			return
 		}
 
@@ -806,7 +811,12 @@ ${prompt}
 		const prompt = supportPrompt.create(promptType, params, customSupportPrompts)
 
 		if (command === "terminalAddToContext") {
-			await visibleProvider.postMessageToWebview({ type: "invoke", invoke: "setChatBoxMessage", text: prompt })
+			await visibleProvider.postMessageToWebview({
+				type: "invoke",
+				invoke: "setChatBoxMessage",
+				text: `${prompt}\n\n`,
+			})
+			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			return
 		}
 
@@ -1005,6 +1015,7 @@ ${prompt}
 			apiConfiguration,
 			diffEnabled: enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			experiments,
 			cloudUserInfo,
@@ -1017,6 +1028,7 @@ ${prompt}
 			apiConfiguration,
 			enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			consecutiveMistakeLimit: apiConfiguration.consecutiveMistakeLimit,
 			historyItem,
@@ -1168,7 +1180,6 @@ ${prompt}
 					<link href="${codiconsUri}" rel="stylesheet" />
 					<script nonce="${nonce}">
 						window.IMAGES_BASE_URI = "${imagesUri}"
-						window.ICONS_BASE_URI = "${iconsUri}" // kilocode_change
 						window.AUDIO_BASE_URI = "${audioUri}"
 						window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 						window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1245,7 +1256,6 @@ ${prompt}
 			<link href="${codiconsUri}" rel="stylesheet" />
 			<script nonce="${nonce}">
 				window.IMAGES_BASE_URI = "${imagesUri}"
-				window.ICONS_BASE_URI = "${iconsUri}" // kilocode_change
 				window.AUDIO_BASE_URI = "${audioUri}"
 				window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 				window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1415,6 +1425,7 @@ ${prompt}
 				}
 
 				await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
+				await updateCodeIndexWithKiloProps(this) // kilocode_change
 			} else {
 				await this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig())
 			}
@@ -1479,6 +1490,7 @@ ${prompt}
 
 		await this.postStateToWebview()
 		await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
+		await updateCodeIndexWithKiloProps(this) // kilocode_change
 
 		if (providerSettings.apiProvider) {
 			this.emit(RooCodeEventName.ProviderProfileChanged, { name, provider: providerSettings.apiProvider })
@@ -1593,8 +1605,8 @@ ${prompt}
 
 	// Requesty
 
-	async handleRequestyCallback(code: string) {
-		let { apiConfiguration, currentApiConfigName = "default" } = await this.getState()
+	async handleRequestyCallback(code: string, baseUrl: string | null) {
+		let { apiConfiguration } = await this.getState()
 
 		const newConfiguration: ProviderSettings = {
 			...apiConfiguration,
@@ -1603,7 +1615,16 @@ ${prompt}
 			requestyModelId: apiConfiguration?.requestyModelId || requestyDefaultModelId,
 		}
 
-		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
+		// set baseUrl as undefined if we don't provide one
+		// or if it is the default requesty url
+		if (!baseUrl || baseUrl === REQUESTY_BASE_URL) {
+			newConfiguration.requestyBaseUrl = undefined
+		} else {
+			newConfiguration.requestyBaseUrl = baseUrl
+		}
+
+		const profileName = `Requesty (${new Date().toLocaleString()})`
+		await this.upsertProviderProfile(profileName, newConfiguration)
 	}
 
 	// kilocode_change:
@@ -1933,6 +1954,7 @@ ${prompt}
 			ttsSpeed,
 			diffEnabled,
 			enableCheckpoints,
+			checkpointTimeout,
 			// taskHistory, // kilocode_change
 			soundVolume,
 			browserViewportSize,
@@ -2007,6 +2029,8 @@ ${prompt}
 			includeDiagnosticMessages,
 			maxDiagnosticMessages,
 			includeTaskHistoryInEnhance,
+			includeCurrentTime,
+			includeCurrentCost,
 			taskSyncEnabled,
 			remoteControlEnabled,
 			openRouterImageApiKey,
@@ -2015,6 +2039,7 @@ ${prompt}
 			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
 			yoloMode, // kilocode_change
+			yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 		} = await this.getState()
 
 		// kilocode_change start: Get active model for virtual quota fallback UI display
@@ -2027,11 +2052,11 @@ ${prompt}
 		let cloudOrganizations: CloudOrganizationMembership[] = []
 
 		try {
-			cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+			if (!CloudService.instance.isCloudAgent) {
+				cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+			}
 		} catch (error) {
-			console.error(
-				`[getStateToPostToWebview] failed to get cloud organizations: ${error instanceof Error ? error.message : String(error)}`,
-			)
+			// Ignore this error.
 		}
 
 		const telemetryKey = process.env.KILOCODE_POSTHOG_API_KEY
@@ -2091,6 +2116,7 @@ ${prompt}
 			ttsSpeed: ttsSpeed ?? 1.0,
 			diffEnabled: diffEnabled ?? true,
 			enableCheckpoints: enableCheckpoints ?? true,
+			checkpointTimeout: checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 			shouldShowAnnouncement: false, // kilocode_change
 			allowedCommands: mergedAllowedCommands,
 			deniedCommands: mergedDeniedCommands,
@@ -2160,14 +2186,12 @@ ${prompt}
 			sharingEnabled: sharingEnabled ?? false,
 			organizationAllowList,
 			// kilocode_change start
-			ghostServiceSettings: ghostServiceSettings ?? {
-				enableQuickInlineTaskKeybinding: true,
-				enableSmartInlineTaskKeybinding: true,
-			},
+			ghostServiceSettings: ghostServiceSettings,
 			// kilocode_change end
 			organizationSettingsVersion,
 			condensingApiConfigId,
 			customCondensingPrompt,
+			yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 			codebaseIndexModels: codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
 			codebaseIndexConfig: {
 				codebaseIndexEnabled: codebaseIndexConfig?.codebaseIndexEnabled ?? true,
@@ -2195,6 +2219,8 @@ ${prompt}
 			includeDiagnosticMessages: includeDiagnosticMessages ?? true,
 			maxDiagnosticMessages: maxDiagnosticMessages ?? 50,
 			includeTaskHistoryInEnhance: includeTaskHistoryInEnhance ?? true,
+			includeCurrentTime: includeCurrentTime ?? true,
+			includeCurrentCost: includeCurrentCost ?? true,
 			taskSyncEnabled,
 			remoteControlEnabled,
 			openRouterImageApiKey,
@@ -2355,6 +2381,7 @@ ${prompt}
 			ttsSpeed: stateValues.ttsSpeed ?? 1.0,
 			diffEnabled: stateValues.diffEnabled ?? true,
 			enableCheckpoints: stateValues.enableCheckpoints ?? true,
+			checkpointTimeout: stateValues.checkpointTimeout ?? DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 			soundVolume: stateValues.soundVolume,
 			browserViewportSize: stateValues.browserViewportSize ?? "900x600",
 			screenshotQuality: stateValues.screenshotQuality ?? 75,
@@ -2392,10 +2419,7 @@ ${prompt}
 			commitMessageApiConfigId: stateValues.commitMessageApiConfigId, // kilocode_change
 			terminalCommandApiConfigId: stateValues.terminalCommandApiConfigId, // kilocode_change
 			// kilocode_change start
-			ghostServiceSettings: stateValues.ghostServiceSettings ?? {
-				enableQuickInlineTaskKeybinding: true,
-				enableSmartInlineTaskKeybinding: true,
-			},
+			ghostServiceSettings: stateValues.ghostServiceSettings,
 			// kilocode_change end
 			// kilocode_change start - Auto-purge settings
 			autoPurgeEnabled: stateValues.autoPurgeEnabled ?? false,
@@ -2437,6 +2461,7 @@ ${prompt}
 			organizationSettingsVersion,
 			condensingApiConfigId: stateValues.condensingApiConfigId,
 			customCondensingPrompt: stateValues.customCondensingPrompt,
+			yoloGatekeeperApiConfigId: stateValues.yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
 			codebaseIndexConfig: {
 				codebaseIndexEnabled: stateValues.codebaseIndexConfig?.codebaseIndexEnabled ?? true,
@@ -2457,6 +2482,8 @@ ${prompt}
 			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,
 			maxDiagnosticMessages: stateValues.maxDiagnosticMessages ?? 50,
 			includeTaskHistoryInEnhance: stateValues.includeTaskHistoryInEnhance ?? true,
+			includeCurrentTime: stateValues.includeCurrentTime ?? true,
+			includeCurrentCost: stateValues.includeCurrentCost ?? true,
 			taskSyncEnabled,
 			remoteControlEnabled: (() => {
 				try {
@@ -2824,6 +2851,7 @@ ${prompt}
 			organizationAllowList,
 			diffEnabled: enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			experiments,
 			cloudUserInfo,
@@ -2840,6 +2868,7 @@ ${prompt}
 			apiConfiguration,
 			enableDiff,
 			enableCheckpoints,
+			checkpointTimeout,
 			fuzzyMatchThreshold,
 			consecutiveMistakeLimit: apiConfiguration.consecutiveMistakeLimit,
 			task: text,
