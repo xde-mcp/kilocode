@@ -92,25 +92,66 @@ export class LogsService {
 	}
 
 	/**
-	 * Serialize context object, handling Error objects specially
+	 * Safe JSON stringify that handles circular references
+	 */
+	private safeStringify(obj: unknown, seen = new WeakSet()): unknown {
+		// Handle primitives
+		if (obj === null || typeof obj !== "object") {
+			return obj
+		}
+
+		// Handle circular references
+		if (seen.has(obj as object)) {
+			return "[Circular]"
+		}
+
+		// Handle Error objects
+		if (obj instanceof Error) {
+			return this.serializeError(obj)
+		}
+
+		// Handle arrays
+		if (Array.isArray(obj)) {
+			seen.add(obj)
+			const result = obj.map((item) => this.safeStringify(item, seen))
+			seen.delete(obj)
+			return result
+		}
+
+		// Handle Date objects
+		if (obj instanceof Date) {
+			return obj.toISOString()
+		}
+
+		// Handle RegExp objects
+		if (obj instanceof RegExp) {
+			return obj.toString()
+		}
+
+		// Handle plain objects
+		seen.add(obj)
+		const result: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(obj)) {
+			try {
+				result[key] = this.safeStringify(value, seen)
+			} catch (_error) {
+				// If serialization fails for a property, mark it
+				result[key] = "[Serialization Error]"
+			}
+		}
+		seen.delete(obj)
+		return result
+	}
+
+	/**
+	 * Serialize context object, handling Error objects and circular references
 	 */
 	private serializeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
 		if (!context) {
 			return undefined
 		}
 
-		const serialized: Record<string, unknown> = {}
-		for (const [key, value] of Object.entries(context)) {
-			if (value instanceof Error) {
-				serialized[key] = this.serializeError(value)
-			} else if (typeof value === "object" && value !== null) {
-				// Recursively handle nested objects that might contain errors
-				serialized[key] = this.serializeContext(value as Record<string, unknown>) || value
-			} else {
-				serialized[key] = value
-			}
-		}
-		return serialized
+		return this.safeStringify(context) as Record<string, unknown>
 	}
 
 	/**
@@ -225,7 +266,18 @@ export class LogsService {
 		const ts = new Date(entry.ts).toISOString()
 		const source = entry.source ? `[${entry.source}]` : ""
 		const prefix = `${ts} ${source}`
-		const contextStr = entry.context ? ` ${JSON.stringify(entry.context)}` : ""
+
+		// Use safe stringify to handle circular references
+		let contextStr = ""
+		if (entry.context) {
+			try {
+				const safeContext = this.safeStringify(entry.context)
+				contextStr = ` ${JSON.stringify(safeContext)}`
+			} catch (_error) {
+				// Fallback if even safe stringify fails
+				contextStr = " [Context serialization failed]"
+			}
+		}
 
 		switch (entry.level) {
 			case "error":
