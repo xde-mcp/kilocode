@@ -2,4 +2,4 @@
 "@kilocode/cli": patch
 ---
 
-Fix "/teams list" command
+fix diff command

@@ -2,7 +2,7 @@
  * /teams command - Manage team/organization selection
  */
 
-import type { Command, ArgumentProviderContext, ArgumentSuggestion } from "./core/types.js"
+import type { Command, ArgumentProviderContext, ArgumentSuggestion, CommandContext } from "./core/types.js"
 import type { UserOrganization } from "../state/atoms/profile.js"
 
 /**
@@ -22,7 +22,7 @@ function normalizeTeamName(name: string): string {
 /**
  * List all available teams
  */
-async function listTeams(context: any): Promise<void> {
+async function listTeams(context: CommandContext): Promise<void> {
 	const { currentProvider, addMessage, profileData, profileLoading } = context
 
 	// Check if user is authenticated with Kilocode
@@ -57,7 +57,7 @@ async function listTeams(context: any): Promise<void> {
 		return
 	}
 
-	const organizations = profileData.organizations || []
+	const organizations = profileData?.organizations || []
 	const currentOrgId = currentProvider.kilocodeOrganizationId
 
 	if (organizations.length < 1) {
@@ -81,7 +81,9 @@ async function listTeams(context: any): Promise<void> {
 		const isCurrent = org.id === currentOrgId
 		content += `${isCurrent ? "→ " : "  "}${normalizeTeamName(org.name)}${isCurrent ? " (current)" : ""}\n`
 	}
-	content += `\nUse \`/teams select ${normalizeTeamName(organizations[0].name)}\` select the ${organizations[0].name} profile\n`
+	if (organizations.length > 0) {
+		content += `\nUse \`/teams select ${normalizeTeamName(organizations[0]!.name)}\` to select a team profile\n`
+	}
 	content += `Use \`/teams select personal\` to switch to personal account\n`
 
 	addMessage({
@@ -95,7 +97,7 @@ async function listTeams(context: any): Promise<void> {
 /**
  * Select a team
  */
-async function selectTeam(context: any, teamId: string): Promise<void> {
+async function selectTeam(context: CommandContext, teamId: string): Promise<void> {
 	const { currentProvider, addMessage, updateProvider, profileData } = context
 
 	// Check if user is authenticated with Kilocode
@@ -198,7 +200,7 @@ async function teamAutocompleteProvider(context: ArgumentProviderContext): Promi
 		return []
 	}
 
-	const { currentProvider, profileData, profileLoading } = context.commandContext as any
+	const { currentProvider, profileData, profileLoading } = context.commandContext
 
 	// Check if user is authenticated with Kilocode
 	if (!currentProvider || currentProvider.provider !== "kilocode") {
