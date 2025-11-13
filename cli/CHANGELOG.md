@@ -1,5 +1,11 @@
 # @kilocode/cli
 
+## 0.4.1
+
+### Patch Changes
+
+- [#3703](https://github.com/Kilo-Org/kilocode/pull/3703) [`4d4d3da`](https://github.com/Kilo-Org/kilocode/commit/4d4d3dad367bf02a9766d0369cd90176097deeb4) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Fix "/teams list" command
+
 ## 0.4.0
 
 ### Minor Changes
