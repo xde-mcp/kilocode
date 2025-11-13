@@ -205,19 +205,16 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		let response = ""
 
-		// Create streaming callback
 		const onChunk = (chunk: ApiStreamChunk) => {
 			if (chunk.type === "text") {
 				response += chunk.text
 			}
 		}
 
-		// Start streaming generation
 		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
 
 		console.log("response", response)
 
-		// Parse the response using the standalone function
 		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
 		const fillInAtCursorSuggestion = this.processSuggestion(parsedSuggestion.text, prefix, suffix, model)
 
@@ -225,7 +222,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
 		}
 
-		// Always return a FillInAtCursorSuggestion, even if text is empty
 		return {
 			suggestion: fillInAtCursorSuggestion,
 			cost: usageInfo.cost,
@@ -269,7 +265,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)
 		}
 
-		// Always return a FillInAtCursorSuggestion, even if text is empty
 		return {
 			suggestion: fillInAtCursorSuggestion,
 			cost: usageInfo.cost,
