@@ -1,8 +1,8 @@
-# Cloud Agent
+# Cloud agent
 
 Run Kilo Code from anywhere.
 
-Cloud Agent runs your Kilo Code tasks in cloud-based sandbox environments, handles multiple tasks in parallel, and integrates seamlessly with your GitHub repositories—all through a simple web interface. When you're ready, pick up on the cli or in the extension where you left off.
+Cloud agent runs your Kilo Code tasks in a cloud-based sandbox environment, handles multiple tasks in parallel, and integrates seamlessly with your GitHub repositories—all through a simple web interface.
 
 ## Perfect for
 
@@ -23,7 +23,7 @@ Cloud Agent runs your Kilo Code tasks in cloud-based sandbox environments, handl
 
 ## How it works
 
-Your Kilo Code cloud agent runs in an Ubuntu based container. You can work on multiple tasks simultaneously without interference—each session maintains its own isolated workspace. Set up custom environment variables, install dependencies with pre-execution commands, and connect MCP servers to replicate your local development environment in the cloud.
+Your Kilo Code cloud agent runs in an Ubuntu based container provisioned for you. You can work on multiple tasks simultaneously without interference—each session maintains its own isolated workspace. Set up custom environment variables, install dependencies with pre-execution commands, and connect MCP servers to replicate your local development environment in the cloud.
 
 Cloud agent handles cloning, commits, and branch management automatically. When you're ready, Kilo Code will send a pull request for you to review.
 
