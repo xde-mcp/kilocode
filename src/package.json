@@ -3,7 +3,7 @@
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
 	"publisher": "kilocode",
-	"version": "4.118.0",
+	"version": "4.119.0",
 	"icon": "assets/icons/logo-outline-black.png",
 	"galleryBanner": {
 		"color": "#FFFFFF",
@@ -458,10 +458,10 @@
 			},
 			{
 				"command": "kilo-code.addToContext",
-				"key": "cmd+y",
-				"mac": "cmd+y",
-				"win": "ctrl+y",
-				"linux": "ctrl+y",
+				"key": "cmd+k cmd+a",
+				"mac": "cmd+k cmd+a",
+				"win": "ctrl+k ctrl+a",
+				"linux": "ctrl+k ctrl+a",
 				"when": "editorTextFocus && editorHasSelection"
 			},
 			{
@@ -567,6 +567,13 @@
 					"type": "string",
 					"default": "",
 					"description": "%settings.autoImportSettingsPath.description%"
+				},
+				"kilo-code.maximumIndexedFilesForFileSearch": {
+					"type": "number",
+					"default": 10000,
+					"minimum": 5000,
+					"maximum": 500000,
+					"description": "%settings.maximumIndexedFilesForFileSearch.description%"
 				},
 				"kilo-code.useAgentRules": {
 					"type": "boolean",

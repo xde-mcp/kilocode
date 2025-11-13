@@ -47,6 +47,7 @@ import {
 	geminiCliDefaultModelId,
 	minimaxModels,
 	minimaxDefaultModelId,
+	ovhCloudAiEndpointsDefaultModelId,
 } from "@roo-code/types"
 
 /**
@@ -58,12 +59,13 @@ export type RouterName =
 	| "glama"
 	| "unbound"
 	| "litellm"
-	| "kilocode-openrouter"
+	| "kilocode"
 	| "ollama"
 	| "lmstudio"
 	| "io-intelligence"
 	| "deepinfra"
 	| "vercel-ai-gateway"
+	| "ovhcloud"
 
 /**
  * ModelInfo interface - mirrors the one from packages/types/src/model.ts
@@ -96,7 +98,7 @@ export type RouterModels = Record<RouterName, ModelRecord>
  * Mapping from ProviderName to RouterName for model fetching
  */
 export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = {
-	kilocode: "kilocode-openrouter",
+	kilocode: "kilocode",
 	openrouter: "openrouter",
 	ollama: "ollama",
 	lmstudio: "lmstudio",
@@ -107,6 +109,7 @@ export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = 
 	deepinfra: "deepinfra",
 	"io-intelligence": "io-intelligence",
 	"vercel-ai-gateway": "vercel-ai-gateway",
+	ovhcloud: "ovhcloud",
 	// Providers without dynamic model support
 	anthropic: null,
 	bedrock: null,
@@ -153,6 +156,7 @@ export const PROVIDER_MODEL_FIELD: Record<ProviderName, string | null> = {
 	deepinfra: "deepInfraModelId",
 	"io-intelligence": "ioIntelligenceModelId",
 	"vercel-ai-gateway": "vercelAiGatewayModelId",
+	ovhcloud: "ovhCloudAiEndpointsModelId",
 	// Providers without dynamic model support
 	anthropic: null,
 	bedrock: null,
@@ -247,6 +251,7 @@ export const DEFAULT_MODEL_IDS: Partial<Record<ProviderName, string>> = {
 	zai: internationalZAiDefaultModelId,
 	roo: rooDefaultModelId,
 	"gemini-cli": geminiCliDefaultModelId,
+	ovhcloud: ovhCloudAiEndpointsDefaultModelId,
 }
 
 /**
@@ -423,6 +428,8 @@ export function getModelIdKey(provider: ProviderName): string {
 			return "ioIntelligenceModelId"
 		case "vercel-ai-gateway":
 			return "vercelAiGatewayModelId"
+		case "ovhcloud":
+			return "ovhCloudAiEndpointsModelId"
 		default:
 			return "apiModelId"
 	}

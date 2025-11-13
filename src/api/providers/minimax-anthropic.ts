@@ -207,7 +207,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 					outputTokens,
 					cacheWriteTokens,
 					cacheReadTokens,
-				),
+				).totalCost || undefined,
 			}
 		}
 	}

@@ -3,6 +3,7 @@ import type { ModelInfo } from "../model.js"
 export type FireworksModelId =
 	| "accounts/fireworks/models/kimi-k2-instruct"
 	| "accounts/fireworks/models/kimi-k2-instruct-0905"
+	| "accounts/fireworks/models/minimax-m2"
 	| "accounts/fireworks/models/qwen3-235b-a22b-instruct-2507"
 	| "accounts/fireworks/models/qwen3-coder-480b-a35b-instruct"
 	| "accounts/fireworks/models/deepseek-r1-0528"
@@ -10,7 +11,7 @@ export type FireworksModelId =
 	| "accounts/fireworks/models/deepseek-v3p1"
 	| "accounts/fireworks/models/glm-4p5"
 	| "accounts/fireworks/models/glm-4p5-air"
-	| "accounts/fireworks/models/glm-4p6" // kilocode_change
+	| "accounts/fireworks/models/glm-4p6"
 	| "accounts/fireworks/models/gpt-oss-20b"
 	| "accounts/fireworks/models/gpt-oss-120b"
 
@@ -37,6 +38,16 @@ export const fireworksModels = {
 		outputPrice: 2.5,
 		description:
 			"Kimi K2 is a state-of-the-art mixture-of-experts (MoE) language model with 32 billion activated parameters and 1 trillion total parameters. Trained with the Muon optimizer, Kimi K2 achieves exceptional performance across frontier knowledge, reasoning, and coding tasks while being meticulously optimized for agentic capabilities.",
+	},
+	"accounts/fireworks/models/minimax-m2": {
+		maxTokens: 4096,
+		contextWindow: 204800,
+		supportsImages: false,
+		supportsPromptCache: false,
+		inputPrice: 0.3,
+		outputPrice: 1.2,
+		description:
+			"MiniMax M2 is a high-performance language model with 204.8K context window, optimized for long-context understanding and generation tasks.",
 	},
 	"accounts/fireworks/models/qwen3-235b-a22b-instruct-2507": {
 		maxTokens: 32768,
@@ -106,7 +117,6 @@ export const fireworksModels = {
 		description:
 			"Z.ai GLM-4.5-Air with 106B total parameters and 12B active parameters. Features unified reasoning, coding, and intelligent agent capabilities.",
 	},
-	// kilocode_change start
 	"accounts/fireworks/models/glm-4p6": {
 		maxTokens: 25344,
 		contextWindow: 198000,
@@ -115,9 +125,8 @@ export const fireworksModels = {
 		inputPrice: 0.55,
 		outputPrice: 2.19,
 		description:
-			"Z.ai's GLM-4.6 model achieves SOTA among open-source models! Context window expanded to 200K. Brings you superior performance in real-world coding, reasoning, tool using and role-playing.",
+			"Z.ai GLM-4.6 is an advanced coding model with exceptional performance on complex programming tasks. Features improved reasoning capabilities and enhanced code generation quality, making it ideal for software development workflows.",
 	},
-	// kilocode_change end
 	"accounts/fireworks/models/gpt-oss-20b": {
 		maxTokens: 16384,
 		contextWindow: 128000,
