@@ -246,14 +246,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		const { prefix: formattedPrefix } = this.contextProvider
-			? await this.contextProvider.getFimFormattedContext(
+		const formattedPrefix = this.contextProvider
+			? await this.contextProvider.getFimCompiledPrefix(
 					autocompleteInput,
 					autocompleteInput.filepath,
 					prefix,
 					suffix,
 				)
-			: { prefix }
+			: prefix
 
 		let response = ""
 		const onChunk = (text: string) => {

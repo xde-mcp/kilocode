@@ -8,10 +8,10 @@ import { getDefinitionsFromLsp } from "../../continuedev/core/vscode-test-harnes
 import { DEFAULT_AUTOCOMPLETE_OPTS } from "../../continuedev/core/util/parameters"
 import { getSnippets } from "../../continuedev/core/autocomplete/templating/filtering"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
+import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 import { GhostModel } from "../GhostModel"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { AutocompleteSnippet, AutocompleteSnippetType } from "../../continuedev/core/autocomplete/snippets/types"
-import { getLastNUriRelativePathParts, getShortestUniqueRelativeUriPaths } from "../../continuedev/core/util/uri"
 
 export class GhostContextProvider {
 	private contextService: ContextRetrievalService
@@ -149,63 +149,34 @@ export class GhostContextProvider {
 	}
 
 	/**
-	 * Get FIM-formatted context for codestral models
+	 * Get FIM-formatted context into compiled prefix for FIM-compatible models
 	 */
-	async getFimFormattedContext(
+	async getFimCompiledPrefix(
 		autocompleteInput: AutocompleteInput,
 		filepath: string,
 		prefix: string,
 		suffix: string,
-	): Promise<{ prefix: string }> {
+	): Promise<string> {
 		const { filepathUri, snippetsWithUris, workspaceDirs } = await this.getProcessedSnippets(
 			autocompleteInput,
 			filepath,
 		)
 
-		// Format with +++++ markers (codestral FIM format)
-		return this.formatFimContext(prefix, suffix, filepathUri, snippetsWithUris, workspaceDirs)
-	}
+		const modelName = this.model.getModelName() ?? "codestral"
+		const template = getTemplateForModel(modelName)
 
-	private formatFimContext(
-		prefix: string,
-		suffix: string,
-		filepath: string,
-		snippets: AutocompleteSnippet[],
-		workspaceUris: string[],
-	): { prefix: string } {
-		function getFileName(snippet: { uri: string; uniquePath: string }) {
-			return snippet.uri.startsWith("file://") ? snippet.uniquePath : snippet.uri
+		if (template.compilePrefixSuffix) {
+			const [compiledPrefix] = template.compilePrefixSuffix(
+				prefix,
+				suffix,
+				filepathUri,
+				"", // reponame not used in our context
+				snippetsWithUris,
+				workspaceDirs,
+			)
+			return compiledPrefix
 		}
 
-		if (snippets.length === 0) {
-			if (suffix.trim().length === 0 && prefix.trim().length === 0) {
-				return {
-					prefix: `+++++ ${getLastNUriRelativePathParts(workspaceUris, filepath, 2)}\n${prefix}`,
-				}
-			}
-			return { prefix }
-		}
-
-		const relativePaths = getShortestUniqueRelativeUriPaths(
-			[
-				...snippets.map((snippet) => ("filepath" in snippet ? snippet.filepath : "file:///Untitled.txt")),
-				filepath,
-			],
-			workspaceUris,
-		)
-
-		const otherFiles = snippets
-			.map((snippet, i) => {
-				if (snippet.type === AutocompleteSnippetType.Diff) {
-					return snippet.content
-				}
-
-				return `+++++ ${getFileName(relativePaths[i])} \n${snippet.content}`
-			})
-			.join("\n\n")
-
-		return {
-			prefix: `${otherFiles}\n\n+++++ ${getFileName(relativePaths[relativePaths.length - 1])}\n${prefix}`,
-		}
+		return prefix
 	}
 }
