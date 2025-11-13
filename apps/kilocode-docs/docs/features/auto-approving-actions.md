@@ -300,6 +300,8 @@ This is particularly useful when combined with the Subtasks permission, as it al
 
 **"You Only Live Once"** mode enables _all_ auto-approve permissions at once using the master toggle. This gives Kilo Code complete autonomy to read files, write code, execute commands, and perform any operation without asking for permission.
 
+You can optinoally enable an AI Safety Gatekeeper, which reviews every intended change in YOLO mode and intelligently approves or blocks actions before they execute.
+
 **When to use:**
 
 - Rapid prototyping in isolated environments
