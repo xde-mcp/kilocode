@@ -1,7 +1,11 @@
 import OpenAI from "openai"
 import { Anthropic } from "@anthropic-ai/sdk" // Keep for type usage only
 
-import { litellmDefaultModelId, litellmDefaultModelInfo, getActiveToolUseStyle } from "@roo-code/types"
+import {
+	 litellmDefaultModelId,
+	 litellmDefaultModelInfo,
+	 getActiveToolUseStyle, // kilocode_change
+} from "@roo-code/types"
 
 import { calculateApiCostOpenAI } from "../../shared/cost"
 
@@ -170,21 +174,22 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 					(lastUsage as any).prompt_cache_hit_tokens ||
 					0
 
+				const { totalCost } = calculateApiCostOpenAI(
+					info,
+					lastUsage.prompt_tokens || 0,
+					lastUsage.completion_tokens || 0,
+					cacheWriteTokens,
+					cacheReadTokens,
+				)
+
 				const usageData: ApiStreamUsageChunk = {
 					type: "usage",
 					inputTokens: lastUsage.prompt_tokens || 0,
 					outputTokens: lastUsage.completion_tokens || 0,
 					cacheWriteTokens: cacheWriteTokens > 0 ? cacheWriteTokens : undefined,
 					cacheReadTokens: cacheReadTokens > 0 ? cacheReadTokens : undefined,
+					totalCost,
 				}
-
-				usageData.totalCost = calculateApiCostOpenAI(
-					info,
-					usageData.inputTokens,
-					usageData.outputTokens,
-					usageData.cacheWriteTokens || 0,
-					usageData.cacheReadTokens || 0,
-				)
 
 				yield usageData
 			}
@@ -212,11 +217,13 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 				requestOptions.temperature = this.options.modelTemperature ?? 0
 			}
 
+			// kilocode_change start
 			if (isGPT5Model && info.maxTokens) {
 				requestOptions.max_completion_tokens = info.maxTokens
 			} else if (info.maxTokens) {
 				requestOptions.max_tokens = info.maxTokens
 			}
+			// kilocode_change end
 
 			const response = await this.client.chat.completions.create(requestOptions)
 			return response.choices[0]?.message.content || ""

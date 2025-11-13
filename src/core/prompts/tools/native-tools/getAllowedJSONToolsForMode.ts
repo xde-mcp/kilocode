@@ -95,7 +95,7 @@ export async function getAllowedJSONToolsForMode(
 
 	if (isFastApplyAvailable(providerState)) {
 		// When Fast Apply is enabled, disable traditional editing tools
-		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content", "search_and_replace"]
+		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content"]
 		traditionalEditingTools.forEach((tool) => tools.delete(tool))
 	} else {
 		tools.delete("edit_file")
