@@ -286,6 +286,7 @@ function buildGatekeeperPrompt(
 		case "list_code_definition_names":
 		case "list_files":
 		case "search_files":
+		case "codebase_search":
 		case "read_file": {
 			return { preApproved: true, systemPrompt: "", userPrompt: "" }
 		}
