@@ -37,6 +37,8 @@ program
 		"Run in parallel mode - the agent will create a separate git branch, unless you provide the --existing-branch option",
 	)
 	.option("-eb, --existing-branch <branch>", "(Parallel mode only) Instructs the agent to work on an existing branch")
+	.option("-pv, --provider <id>", "Select provider by ID (e.g., 'kilocode-1')")
+	.option("-mo, --model <model>", "Override model for the selected provider")
 	.argument("[prompt]", "The prompt or command to execute")
 	.action(async (prompt, options) => {
 		// Validate mode if provided
@@ -112,6 +114,19 @@ program
 			process.exit(1)
 		}
 
+		// Validate provider if specified
+		if (options.provider) {
+			// Load config to check if provider exists
+			const { loadConfig } = await import("./config/persistence.js")
+			const { config } = await loadConfig()
+			const providerExists = config.providers.some((p) => p.id === options.provider)
+			if (!providerExists) {
+				const availableIds = config.providers.map((p) => p.id).join(", ")
+				console.error(`Error: Provider "${options.provider}" not found. Available providers: ${availableIds}`)
+				process.exit(1)
+			}
+		}
+
 		// Track autonomous mode start if applicable
 		if (options.auto && finalPrompt) {
 			getTelemetryService().trackCIModeStarted(finalPrompt.length, options.timeout)
@@ -154,6 +169,8 @@ program
 			parallel: options.parallel,
 			worktreeBranch,
 			continue: options.continue,
+			provider: options.provider,
+			model: options.model,
 		})
 		await cli.start()
 		await cli.dispose()
