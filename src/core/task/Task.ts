@@ -123,11 +123,13 @@ import { ensureLocalKilorulesDirExists } from "../context/instructions/kilo-rule
 import { getMessagesSinceLastSummary, summarizeConversation } from "../condense"
 import { Gpt5Metadata, ClineMessageWithMetadata } from "./types"
 import { MessageQueueService } from "../message-queue/MessageQueueService"
+import { findPartialAskMessage, findPartialSayMessage, MessageInsertionGuard } from "../kilocode/task/message-utils" // kilocode_change
 
 import { AutoApprovalHandler } from "./AutoApprovalHandler"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
 import { getAppUrl } from "@roo-code/types"
 import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api/transform/kilocode/reasoning-details"
+import { mergeApiMessages } from "./kilocode"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -225,6 +227,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	providerRef: WeakRef<ClineProvider>
 	private readonly globalStoragePath: string
 	abort: boolean = false
+
+	// kilocode_change start: Message insertion guard to prevent race conditions with checkpoint messages
+	private readonly messageInsertionGuard = new MessageInsertionGuard()
+	// kilocode_change end
 
 	// TaskStatus
 	idleAsk?: ClineMessage
@@ -640,6 +646,15 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	private async addToApiConversationHistory(message: Anthropic.MessageParam) {
+		// kilocode_change start: prevent consecutive same-role messages, this happens when returning from subtask
+		const lastMessage = this.apiConversationHistory.at(-1)
+		if (lastMessage && lastMessage.role === message.role) {
+			this.apiConversationHistory[this.apiConversationHistory.length - 1] = mergeApiMessages(lastMessage, message)
+			await this.saveApiConversationHistory()
+			return
+		}
+		// kilocode_change end
+
 		const messageWithTs = { ...message, ts: Date.now() }
 		this.apiConversationHistory.push(messageWithTs)
 		await this.saveApiConversationHistory()
@@ -669,24 +684,32 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return readTaskMessages({ taskId: this.taskId, globalStoragePath: this.globalStoragePath })
 	}
 
+	// kilocode_change start: Guard against concurrent message insertions to prevent
 	private async addToClineMessages(message: ClineMessage) {
-		this.clineMessages.push(message)
-		const provider = this.providerRef.deref()
-		await provider?.postStateToWebview()
-		this.emit(RooCodeEventName.Message, { action: "created", message })
-		await this.saveClineMessages()
+		await this.messageInsertionGuard.waitForClearance()
+		this.messageInsertionGuard.acquire()
 
-		// kilocode_change start: no cloud service
-		// const shouldCaptureMessage = message.partial !== true && CloudService.isEnabled()
+		try {
+			this.clineMessages.push(message)
+			const provider = this.providerRef.deref()
+			await provider?.postStateToWebview()
+			this.emit(RooCodeEventName.Message, { action: "created", message })
+			await this.saveClineMessages()
 
-		// if (shouldCaptureMessage) {
-		// 	CloudService.instance.captureEvent({
-		// 		event: TelemetryEventName.TASK_MESSAGE,
-		// 		properties: { taskId: this.taskId, message },
-		// 	})
-		// }
-		// kilocode_change end
+			// kilocode_change start: no cloud service
+			// const shouldCaptureMessage = message.partial !== true && CloudService.isEnabled()
+			// if (shouldCaptureMessage) {
+			// 	CloudService.instance.captureEvent({
+			// 		event: TelemetryEventName.TASK_MESSAGE,
+			// 		properties: { taskId: this.taskId, message },
+			// 	})
+			// }
+			// kilocode_change end
+		} finally {
+			this.messageInsertionGuard.release()
+		}
 	}
+	// kilocode_change end
 
 	public async overwriteClineMessages(newMessages: ClineMessage[]) {
 		this.clineMessages = newMessages
@@ -799,10 +822,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		let askTs: number
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
-
-			const isUpdatingPreviousPartial =
-				lastMessage && lastMessage.partial && lastMessage.type === "ask" && lastMessage.ask === type
+			// kilocode_change start: Fix orphaned partial asks by searching backwards
+			// Search for the most recent partial ask of this type, handling cases where
+			// non-interactive messages (like checkpoint_saved) are inserted during streaming
+			const partialResult = findPartialAskMessage(this.clineMessages, type)
+			const lastMessage = partialResult?.message
+			const isUpdatingPreviousPartial = lastMessage !== undefined
+			// kilocode_change end
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {
@@ -1194,10 +1220,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		if (partial !== undefined) {
-			const lastMessage = this.clineMessages.at(-1)
-
-			const isUpdatingPreviousPartial =
-				lastMessage && lastMessage.partial && lastMessage.type === "say" && lastMessage.say === type
+			// kilocode_change start: Fix orphaned partial says by searching backwards
+			// Search for the most recent partial say of this type
+			const partialResult = findPartialSayMessage(this.clineMessages, type)
+			const lastMessage = partialResult?.message
+			const isUpdatingPreviousPartial = lastMessage !== undefined
+			// kilocode_change end
 
 			if (partial) {
 				if (isUpdatingPreviousPartial) {
@@ -1472,39 +1500,41 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		let existingApiConversationHistory: ApiMessage[] = await this.getSavedApiConversationHistory()
 
 		// v2.0 xml tags refactor caveat: since we don't use tools anymore, we need to replace all tool use blocks with a text block since the API disallows conversations with tool uses and no tool schema
-		const conversationWithoutToolBlocks = existingApiConversationHistory.map((message) => {
-			if (Array.isArray(message.content)) {
-				const newContent = message.content.map((block) => {
-					if (block.type === "tool_use") {
-						// It's important we convert to the new tool schema
-						// format so the model doesn't get confused about how to
-						// invoke tools.
-						const inputAsXml = Object.entries(block.input as Record<string, string>)
-							.map(([key, value]) => `<${key}>\n${value}\n</${key}>`)
-							.join("\n")
-						return {
-							type: "text",
-							text: `<${block.name}>\n${inputAsXml}\n</${block.name}>`,
-						} as Anthropic.Messages.TextBlockParam
-					} else if (block.type === "tool_result") {
-						// Convert block.content to text block array, removing images
-						const contentAsTextBlocks = Array.isArray(block.content)
-							? block.content.filter((item) => item.type === "text")
-							: [{ type: "text", text: block.content }]
-						const textContent = contentAsTextBlocks.map((item) => item.text).join("\n\n")
-						const toolName = findToolName(block.tool_use_id, existingApiConversationHistory)
-						return {
-							type: "text",
-							text: `[${toolName} Result]\n\n${textContent}`,
-						} as Anthropic.Messages.TextBlockParam
-					}
-					return block
-				})
-				return { ...message, content: newContent }
-			}
-			return message
-		})
-		existingApiConversationHistory = conversationWithoutToolBlocks
+		// kilocode_change start
+		//const conversationWithoutToolBlocks = existingApiConversationHistory.map((message) => {
+		//	if (Array.isArray(message.content)) {
+		//		const newContent = message.content.map((block) => {
+		//			if (block.type === "tool_use") {
+		//				// It's important we convert to the new tool schema
+		//				// format so the model doesn't get confused about how to
+		//				// invoke tools.
+		//				const inputAsXml = Object.entries(block.input as Record<string, string>)
+		//					.map(([key, value]) => `<${key}>\n${value}\n</${key}>`)
+		//					.join("\n")
+		//				return {
+		//					type: "text",
+		//					text: `<${block.name}>\n${inputAsXml}\n</${block.name}>`,
+		//				} as Anthropic.Messages.TextBlockParam
+		//			} else if (block.type === "tool_result") {
+		//				// Convert block.content to text block array, removing images
+		//				const contentAsTextBlocks = Array.isArray(block.content)
+		//					? block.content.filter((item) => item.type === "text")
+		//					: [{ type: "text", text: block.content }]
+		//				const textContent = contentAsTextBlocks.map((item) => item.text).join("\n\n")
+		//				const toolName = findToolName(block.tool_use_id, existingApiConversationHistory)
+		//				return {
+		//					type: "text",
+		//					text: `[${toolName} Result]\n\n${textContent}`,
+		//				} as Anthropic.Messages.TextBlockParam
+		//			}
+		//			return block
+		//		})
+		//		return { ...message, content: newContent }
+		//	}
+		//	return message
+		//})
+		//existingApiConversationHistory = conversationWithoutToolBlocks
+		// kilocode_change end
 
 		// FIXME: remove tool use blocks altogether
 
