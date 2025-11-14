@@ -8,7 +8,7 @@ import { addCustomTheme, removeCustomTheme, updateCustomTheme } from "../../cons
 import type { Theme } from "../../types/theme.js"
 import { logs } from "../../services/logs.js"
 import { getTelemetryService } from "../../services/telemetry/index.js"
-import { applyEnvOverrides } from "../../config/env-overrides.js"
+import { applyEnvOverrides } from "../../config/env-config.js"
 
 // Core config atom - holds the current configuration
 export const configAtom = atom<CLIConfig>(DEFAULT_CONFIG)

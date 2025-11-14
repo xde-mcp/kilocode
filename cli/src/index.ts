@@ -13,6 +13,7 @@ import { Package } from "./constants/package.js"
 import openConfigFile from "./config/openConfig.js"
 import authWizard from "./utils/authWizard.js"
 import { configExists } from "./config/persistence.js"
+import { envConfigExists, getMissingEnvVars } from "./config/env-config.js"
 import { getParallelModeParams } from "./parallel/parallel.js"
 import { DEBUG_MODES, DEBUG_FUNCTIONS } from "./debug/index.js"
 import { logs } from "./services/logs.js"
@@ -134,10 +135,36 @@ program
 			getTelemetryService().trackCIModeStarted(finalPrompt.length, options.timeout)
 		}
 
-		if (!(await configExists())) {
+		// Check if config exists or if we have minimal env config
+		const hasConfig = await configExists()
+
+		// Check if we have env config with all required fields
+		const hasEnvConfig = envConfigExists()
+
+		if (!hasConfig && !hasEnvConfig) {
+			// No config file and no env config - show auth wizard
 			console.info("Welcome to the Kilo Code CLI! 🎉\n")
 			console.info("To get you started, please fill out these following questions.")
 			await authWizard()
+		} else if (!hasConfig && hasEnvConfig) {
+			// Running with env config only
+			logs.info("Running in ephemeral mode with environment variable configuration", "Index")
+
+			const providerType = process.env.KILO_PROVIDER_TYPE
+			if (providerType) {
+				const missing = getMissingEnvVars(providerType)
+				if (missing.length > 0) {
+					console.error(`\nError: Missing required environment variables for provider "${providerType}":`)
+					console.error(`  ${missing.join("\n  ")}`)
+					console.error(
+						`\nPlease set these environment variables or run 'kilocode auth' to configure via wizard.\n`,
+					)
+					process.exit(1)
+				}
+			}
+		} else if (hasConfig && hasEnvConfig) {
+			// Both exist - env vars will override config file values
+			logs.debug("Using config file with environment variable overrides", "Index")
 		}
 
 		let finalWorkspace = options.workspace
