@@ -7,6 +7,7 @@ import { ApiHandler } from "../../api"
 import { ApiMessage } from "../task-persistence/apiMessages"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
 import { maybeRemoveReasoningDetails_kilocode } from "../../api/transform/kilocode/reasoning-details"
+import { flattenToolResult } from "./kilocode"
 
 export const N_MESSAGES_TO_KEEP = 3
 export const MIN_CONDENSE_THRESHOLD = 5 // Minimum percentage of context window to trigger condensing
@@ -122,6 +123,15 @@ export async function summarizeConversation(
 	}
 
 	const keepMessages = messages.slice(-N_MESSAGES_TO_KEEP)
+
+	// kilocode_change start
+	if (keepMessages[0]) {
+		// if the first message is a tool result we have to get rid of it,
+		// because the corresponding tool use will have been removed by summarizing
+		keepMessages[0] = flattenToolResult(keepMessages[0])
+	}
+	// kilocode_change end
+
 	// Check if there's a recent summary in the messages we're keeping
 	const recentSummaryExists = keepMessages.some((message) => message.isSummary)
 
