@@ -115,6 +115,7 @@ export interface WebviewMessage {
 		| "autoCondenseContextPercent"
 		| "condensingApiConfigId"
 		| "updateCondensingPrompt"
+		| "yoloGatekeeperApiConfigId" // kilocode_change: AI gatekeeper for YOLO mode
 		| "playSound"
 		| "playTts"
 		| "stopTts"
@@ -533,6 +534,7 @@ export type WebViewMessagePayload =
 	| SeeNewChangesPayload
 	| TasksByIdRequestPayload
 	| TaskHistoryRequestPayload
+	| RequestCheckpointRestoreApprovalPayload
 	// kilocode_change end
 	| CheckpointDiffPayload
 	| CheckpointRestorePayload
