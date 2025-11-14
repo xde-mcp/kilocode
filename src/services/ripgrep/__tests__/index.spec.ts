@@ -54,7 +54,7 @@ describe("Ripgrep line truncation", () => {
 		expect(truncated).toContain("[truncated...]")
 	})
 })
-
+// kilocode_change start
 describe("getBinPath", () => {
 	const mockFileExists = fileExistsAtPath as ReturnType<typeof vi.fn>
 	const isWindows = process.platform.startsWith("win")
