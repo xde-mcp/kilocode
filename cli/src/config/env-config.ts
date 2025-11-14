@@ -358,7 +358,10 @@ export function buildConfigFromEnv(): CLIConfig | null {
 		return null
 	}
 
-	const providerType = process.env[ENV_VARS.PROVIDER_TYPE]!
+	const providerType = process.env[ENV_VARS.PROVIDER_TYPE]
+	if (!providerType) {
+		return null
+	}
 	const provider = buildProviderFromEnv(providerType)
 
 	const config: CLIConfig = {

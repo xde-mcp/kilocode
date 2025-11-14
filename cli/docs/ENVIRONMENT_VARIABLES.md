@@ -165,6 +165,7 @@ To run the CLI in an ephemeral environment without a config.json file, you need 
 ```bash
 export KILO_PROVIDER_TYPE=kilocode
 export KILOCODE_TOKEN=your-api-token
+export KILOCODE_MODEL=your-model-name
 kilocode
 ```
 

@@ -63,6 +63,7 @@ services:
 docker run -it \
   -e KILO_PROVIDER_TYPE=kilocode \
   -e KILOCODE_TOKEN=your-api-token \
+  -e KILOCODE_MODEL=your-model-name \
   -e KILO_MODE=code \
   -e KILO_TELEMETRY=false \
   -v $(pwd):/workspace \
@@ -156,6 +157,7 @@ jobs:
               env:
                   KILO_PROVIDER_TYPE: kilocode
                   KILOCODE_TOKEN: ${{ secrets.KILOCODE_TOKEN }}
+                  KILOCODE_MODEL: x-ai/grok-code-fast-1
                   KILO_MODE: code
                   KILO_TELEMETRY: false
                   KILO_AUTO_APPROVAL_ENABLED: true
@@ -197,6 +199,7 @@ pipeline {
     environment {
         KILO_PROVIDER_TYPE = 'kilocode'
         KILOCODE_TOKEN = credentials('kilocode-token')
+        KILOCODE_MODEL = 'x-ai/grok-code-fast-1'
         KILO_MODE = 'code'
         KILO_TELEMETRY = 'false'
         KILO_AUTO_APPROVAL_ENABLED = 'true'
@@ -231,6 +234,7 @@ rm -rf ~/.kilocode/cli/config.json
 # 2. Set environment variables
 export KILO_PROVIDER_TYPE=kilocode
 export KILOCODE_TOKEN=your-token-here
+export KILOCODE_MODEL=your-model-name
 export KILO_MODE=code
 
 # 3. Run the CLI
@@ -299,6 +303,7 @@ docker build -t kilocode-ephemeral .
 docker run -it --rm \
   -e KILO_PROVIDER_TYPE=kilocode \
   -e KILOCODE_TOKEN=${KILOCODE_TOKEN} \
+  -e KILOCODE_MODEL=your-model-name \
   -e KILO_MODE=code \
   -e KILO_TELEMETRY=false \
   -e KILO_THEME=dark \
