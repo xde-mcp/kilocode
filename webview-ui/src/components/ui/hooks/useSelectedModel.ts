@@ -221,9 +221,9 @@ function getSelectedModel({
 		}
 		case "litellm": {
 			const id = apiConfiguration.litellmModelId ?? litellmDefaultModelId
-			const info = routerModels.litellm[id]
+			const info = routerModels.litellm?.[id]
 			return { id, info }
-		}
+		} // kilocode_change
 		case "deepinfra": {
 			const id = apiConfiguration.deepInfraModelId ?? deepInfraDefaultModelId
 			const info = routerModels.deepinfra[id]
