@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.119.4
-
-### Patch Changes
+## [v4.119.4]
 
 - [#3788](https://github.com/Kilo-Org/kilocode/pull/3788) [`49131b7`](https://github.com/Kilo-Org/kilocode/commit/49131b78bef98e1a24b6bf9457e072c9acc1230f) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix hang when model wants to write JSON file with native tool calls enabled
 
