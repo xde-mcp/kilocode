@@ -89,7 +89,6 @@ The official Kilo Code provider for accessing Kilo Code's managed AI services.
     - `throughput`: Sort by throughput (highest first)
     - `latency`: Sort by latency (lowest first)
 - `openRouterZdr` (boolean): Enable OpenRouter Zero Data Retention for enhanced privacy
-- `kilocodeTesterWarningsDisabledUntil` (number): Unix timestamp until which tester warnings are disabled
 
 **Example Configuration**:
 
@@ -99,12 +98,7 @@ The official Kilo Code provider for accessing Kilo Code's managed AI services.
 	"provider": "kilocode",
 	"kilocodeToken": "your-token-here",
 	"kilocodeModel": "anthropic/claude-sonnet-4",
-	"kilocodeOrganizationId": "org-123456",
-	"openRouterSpecificProvider": "anthropic",
-	"openRouterProviderDataCollection": "deny",
-	"openRouterProviderSort": "latency",
-	"openRouterZdr": true,
-	"kilocodeTesterWarningsDisabledUntil": 1735689600
+	"kilocodeOrganizationId": "org-123456"
 }
 ```
 
