@@ -2,7 +2,7 @@
 
 import * as path from "path" // kilocode_change
 import { getBinPath, truncateLine } from "../index" // kilocode_change
-import { fileExistsAtPath } from "../../../utils/fs"
+import { fileExistsAtPath } from "../../../utils/fs" // kilocode_change
 
 vi.mock("../../../utils/fs", () => ({
 	fileExistsAtPath: vi.fn(),
