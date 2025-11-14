@@ -365,9 +365,7 @@ EVALUATION APPROACH:
 - Ask: "Does this affect only the workspace or broader system?"
 
 EXAMPLES OF GOOD DECISIONS:
-✓ Approve: Reading any file, searching code, listing directories
-✓ Approve: update_todo_list (task management, always safe)
-✓ Approve: Editing workspace files, creating new files
+✓ Approve: Editing workspace files, creating new files, editing new files
 ✓ Approve: Running tests, building projects, starting dev servers
 ✓ Approve: Git operations that don't lose data (add, commit, status, log)
 ✓ Approve: Deleting temp/test files, even without git
