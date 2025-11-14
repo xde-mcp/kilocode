@@ -140,3 +140,4 @@ describe("getBinPath", () => {
 		expect(result).toBe(traditionalPath)
 	})
 })
+// kilocode_change end
