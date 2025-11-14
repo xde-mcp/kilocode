@@ -173,12 +173,9 @@ program
 			parallel: options.parallel,
 			worktreeBranch,
 			continue: options.continue,
-<<<<<<< HEAD
 			provider: options.provider,
 			model: options.model,
-=======
 			noSplash: options.nosplash,
->>>>>>> 3c9970f210 (feat: --nosplash argument to hide welcome screen and notifications)
 		})
 		await cli.start()
 		await cli.dispose()
