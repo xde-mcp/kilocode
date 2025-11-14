@@ -54,7 +54,7 @@ export class OrganizationService {
 					organizationId,
 					errors: validationResult.error.errors,
 				})
-				return null
+				return response.data
 			}
 
 			logger.info("[OrganizationService] Successfully fetched organization", {
