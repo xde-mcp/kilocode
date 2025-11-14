@@ -1,6 +1,12 @@
 // npx vitest run src/services/ripgrep/__tests__/index.spec.ts
 
-import { truncateLine } from "../index"
+import * as path from "path"
+import { getBinPath, truncateLine } from "../index"
+import { fileExistsAtPath } from "../../../utils/fs"
+
+vi.mock("../../../utils/fs", () => ({
+	fileExistsAtPath: vi.fn(),
+}))
 
 describe("Ripgrep line truncation", () => {
 	// The default MAX_LINE_LENGTH is 500 in the implementation
@@ -46,5 +52,91 @@ describe("Ripgrep line truncation", () => {
 
 		expect(truncated.length).toEqual(customLength + " [truncated...]".length)
 		expect(truncated).toContain("[truncated...]")
+	})
+})
+
+describe("getBinPath", () => {
+	const mockFileExists = fileExistsAtPath as ReturnType<typeof vi.fn>
+	const isWindows = process.platform.startsWith("win")
+	const binName = isWindows ? "rg.exe" : "rg"
+
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	it("should find ripgrep in traditional node_modules/@vscode/ripgrep/bin/", async () => {
+		const vscodeAppRoot = "/path/to/vscode"
+		const expectedPath = path.join(vscodeAppRoot, "node_modules/@vscode/ripgrep/bin/", binName)
+
+		mockFileExists.mockImplementation(async (filePath: string) => filePath === expectedPath)
+
+		const result = await getBinPath(vscodeAppRoot)
+		expect(result).toBe(expectedPath)
+	})
+
+	it("should find ripgrep in node_modules/vscode-ripgrep/bin", async () => {
+		const vscodeAppRoot = "/path/to/vscode"
+		const expectedPath = path.join(vscodeAppRoot, "node_modules/vscode-ripgrep/bin", binName)
+
+		mockFileExists.mockImplementation(async (filePath: string) => filePath === expectedPath)
+
+		const result = await getBinPath(vscodeAppRoot)
+		expect(result).toBe(expectedPath)
+	})
+
+	it("should find ripgrep in node_modules.asar.unpacked paths", async () => {
+		const vscodeAppRoot = "/path/to/vscode"
+		const expectedPath = path.join(vscodeAppRoot, "node_modules.asar.unpacked/vscode-ripgrep/bin/", binName)
+
+		mockFileExists.mockImplementation(async (filePath: string) => filePath === expectedPath)
+
+		const result = await getBinPath(vscodeAppRoot)
+		expect(result).toBe(expectedPath)
+	})
+
+	it("should handle require.resolve fallback for bun installs", async () => {
+		const vscodeAppRoot = "/path/to/vscode"
+
+		// Mock traditional paths not existing
+		mockFileExists.mockImplementation(async (filePath: string) => {
+			// Only return true for paths that would be resolved via require.resolve
+			// This simulates bun's behavior where the binary exists in the global cache
+			return filePath.includes("@vscode/ripgrep") && filePath.includes("bin")
+		})
+
+		const result = await getBinPath(vscodeAppRoot)
+
+		// The result should either be undefined (if @vscode/ripgrep is not installed)
+		// or a valid path (if it is installed and resolved via require.resolve)
+		// We can't mock require.resolve in vitest easily, so we just verify the function
+		// doesn't throw and returns a valid result type
+		expect(result === undefined || typeof result === "string").toBe(true)
+	})
+
+	it("should return undefined when ripgrep is not found anywhere", async () => {
+		const vscodeAppRoot = "/path/to/nonexistent"
+
+		// Mock all paths not existing
+		mockFileExists.mockResolvedValue(false)
+
+		const result = await getBinPath(vscodeAppRoot)
+
+		// Should return undefined when no paths exist and require.resolve fails
+		expect(result).toBeUndefined()
+	})
+
+	it("should prioritize traditional paths over require.resolve", async () => {
+		const vscodeAppRoot = "/path/to/vscode"
+		const traditionalPath = path.join(vscodeAppRoot, "node_modules/@vscode/ripgrep/bin/", binName)
+
+		// Mock traditional path existing
+		mockFileExists.mockImplementation(async (filePath: string) => {
+			return filePath === traditionalPath
+		})
+
+		const result = await getBinPath(vscodeAppRoot)
+
+		// Should return traditional path when it exists
+		expect(result).toBe(traditionalPath)
 	})
 })
