@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.32.0
+
+### Minor Changes
+
+- ![3.32.0 Release - GPT-5.1 models and OpenAI prompt caching](/releases/3.32.0-release.png)
+
 ## [3.31.3] - 2025-11-13
 
 ![3.31.3 Release - Kangaroo Decrypting a Message](/releases/3.31.3-release.png)
