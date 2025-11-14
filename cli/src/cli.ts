@@ -20,10 +20,26 @@ import { fetchKilocodeNotifications } from "./utils/notifications.js"
 import { finishParallelMode } from "./parallel/parallel.js"
 import { isGitWorktree } from "./utils/git.js"
 import { Package } from "./constants/package.js"
+<<<<<<< HEAD
 import type { CLIOptions } from "./types/cli.js"
 import type { CLIConfig, ProviderConfig } from "./config/types.js"
 import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
+=======
+
+export interface CLIOptions {
+	mode?: string
+	workspace?: string
+	ci?: boolean
+	json?: boolean
+	prompt?: string
+	timeout?: number
+	parallel?: boolean
+	worktreeBranch?: string | undefined
+	continue?: boolean
+	noSplash?: boolean
+}
+>>>>>>> 3c9970f210 (feat: --nosplash argument to hide welcome screen and notifications)
 
 /**
  * Main application class that orchestrates the CLI lifecycle
@@ -190,6 +206,7 @@ export class CLI {
 					...(this.options.timeout !== undefined && { timeout: this.options.timeout }),
 					parallel: this.options.parallel || false,
 					worktreeBranch: this.options.worktreeBranch || undefined,
+					noSplash: this.options.noSplash || false,
 				},
 				onExit: () => this.dispose(),
 			}),
@@ -395,9 +412,7 @@ export class CLI {
 			}
 
 			this.store.set(notificationsLoadingAtom, true)
-
 			const notifications = await fetchKilocodeNotifications(provider)
-
 			this.store.set(notificationsAtom, notifications)
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error))
