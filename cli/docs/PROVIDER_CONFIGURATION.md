@@ -108,7 +108,6 @@ The official Kilo Code provider for accessing Kilo Code's managed AI services.
 
 - OpenRouter-related fields are used when Kilocode routes requests through OpenRouter
 - Zero Data Retention (ZDR) ensures that no request data is stored by OpenRouter
-- Tester warnings can be temporarily disabled by setting a future timestamp
 
 ---
 
