@@ -35,4 +35,5 @@ export interface CLIOptions {
 	continue?: boolean
 	provider?: string
 	model?: string
+	noSplash?: boolean
 }

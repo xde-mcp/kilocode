@@ -190,6 +190,7 @@ export class CLI {
 					...(this.options.timeout !== undefined && { timeout: this.options.timeout }),
 					parallel: this.options.parallel || false,
 					worktreeBranch: this.options.worktreeBranch || undefined,
+					noSplash: this.options.noSplash || false,
 				},
 				onExit: () => this.dispose(),
 			}),
@@ -395,9 +396,7 @@ export class CLI {
 			}
 
 			this.store.set(notificationsLoadingAtom, true)
-
 			const notifications = await fetchKilocodeNotifications(provider)
-
 			this.store.set(notificationsAtom, notifications)
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error))

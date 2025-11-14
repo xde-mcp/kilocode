@@ -15,6 +15,7 @@ import authWizard from "./utils/authWizard.js"
 import { configExists } from "./config/persistence.js"
 import { getParallelModeParams } from "./parallel/parallel.js"
 import { DEBUG_MODES, DEBUG_FUNCTIONS } from "./debug/index.js"
+import { logs } from "./services/logs.js"
 
 const program = new Command()
 let cli: CLI | null = null
@@ -39,6 +40,7 @@ program
 	.option("-eb, --existing-branch <branch>", "(Parallel mode only) Instructs the agent to work on an existing branch")
 	.option("-pv, --provider <id>", "Select provider by ID (e.g., 'kilocode-1')")
 	.option("-mo, --model <model>", "Override model for the selected provider")
+	.option("--nosplash", "Disable the welcome message and update notifications", false)
 	.argument("[prompt]", "The prompt or command to execute")
 	.action(async (prompt, options) => {
 		// Validate mode if provided
@@ -159,6 +161,8 @@ program
 			)
 		}
 
+		logs.debug("Starting Kilo Code CLI", "Index", { options })
+
 		cli = new CLI({
 			mode: options.mode,
 			workspace: finalWorkspace,
@@ -171,6 +175,7 @@ program
 			continue: options.continue,
 			provider: options.provider,
 			model: options.model,
+			noSplash: options.nosplash,
 		})
 		await cli.start()
 		await cli.dispose()
