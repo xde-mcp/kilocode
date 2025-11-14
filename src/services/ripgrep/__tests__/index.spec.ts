@@ -7,7 +7,7 @@ import { fileExistsAtPath } from "../../../utils/fs" // kilocode_change
 vi.mock("../../../utils/fs", () => ({
 	fileExistsAtPath: vi.fn(),
 }))
-
+// kilocode_change end
 describe("Ripgrep line truncation", () => {
 	// The default MAX_LINE_LENGTH is 500 in the implementation
 	const MAX_LINE_LENGTH = 500
