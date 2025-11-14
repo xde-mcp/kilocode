@@ -227,7 +227,7 @@ export class CLI {
 
 			if (providerIndex !== -1) {
 				const provider = updatedConfig.providers[providerIndex]
-				if (provider && "provider" in provider) {
+				if (provider) {
 					const modelField = getModelIdKey(provider.provider as ProviderName)
 
 					// Update the provider's model field
