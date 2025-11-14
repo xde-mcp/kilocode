@@ -1,6 +1,6 @@
 // npx vitest run src/services/ripgrep/__tests__/index.spec.ts
 
-import * as path from "path"
+import * as path from "path" // kilocode_change
 import { getBinPath, truncateLine } from "../index"
 import { fileExistsAtPath } from "../../../utils/fs"
 
