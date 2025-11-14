@@ -1,5 +1,9 @@
 # kilo-code
 
+## [v4.119.4]
+
+- [#3788](https://github.com/Kilo-Org/kilocode/pull/3788) [`49131b7`](https://github.com/Kilo-Org/kilocode/commit/49131b78bef98e1a24b6bf9457e072c9acc1230f) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix hang when model wants to write JSON file with native tool calls enabled
+
 ## [v4.119.3]
 
 - [#3766](https://github.com/Kilo-Org/kilocode/pull/3766) [`e2fb2a5`](https://github.com/Kilo-Org/kilocode/commit/e2fb2a57703c19b5ee9c10d6c35ccc68d3cdcfe7) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix Z.ai provider not working with JSON-style tool calls (thanks @mcowger for reporting)
