@@ -6,6 +6,7 @@ import * as vscode from "vscode"
 
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { fileExistsAtPath } from "../../utils/fs"
+import { checkBunPath } from "./index.kilocode" // kilocode_change
 /*
 This file provides functionality to perform regex searches on files using ripgrep.
 Inspired by: https://github.com/DiscreteTom/vscode-ripgrep-utils
@@ -89,32 +90,13 @@ export async function getBinPath(vscodeAppRoot: string): Promise<string | undefi
 		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined
 	}
 
-	/* kilocode_change start support bun installs where ripgrep isn't placed relative to current bin path (CLI) */
-	// Try traditional node_modules paths (npm, pnpm, yarn)
-	const traditionalPath =
+	return (
 		(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
 		(await checkPath("node_modules/vscode-ripgrep/bin")) ||
 		(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
-		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/"))
-
-	if (traditionalPath) {
-		return traditionalPath
-	}
-
-	// For bun: resolve package and find binary (bun uses symlinks to global cache)
-	try {
-		const ripgrepPkg = require.resolve("@vscode/ripgrep/package.json", { paths: [vscodeAppRoot] })
-		const ripgrepRoot = path.dirname(ripgrepPkg)
-		const bunPath = path.join(ripgrepRoot, "bin", binName)
-		if (await fileExistsAtPath(bunPath)) {
-			return bunPath
-		}
-	} catch (error) {
-		// Package not found via require.resolve
-	}
-
-	return undefined
-	/* kilocode_change end */
+		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/")) ||
+		(await checkBunPath(vscodeAppRoot, binName)) // kilocode_change
+	)
 }
 
 async function execRipgrep(bin: string, args: string[]): Promise<string> {
