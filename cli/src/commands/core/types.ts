@@ -2,10 +2,10 @@
  * Command system type definitions
  */
 
-import type { RouterModels, ModeConfig } from "../../types/messages.js";
-import type { CLIConfig, ProviderConfig } from "../../config/types.js";
-import type { ProfileData, BalanceData } from "../../state/atoms/profile.js";
-import type { TaskHistoryData, TaskHistoryFilters } from "../../state/atoms/taskHistory.js";
+import type { RouterModels, ModeConfig } from "../../types/messages.js"
+import type { CLIConfig, ProviderConfig } from "../../config/types.js"
+import type { ProfileData, BalanceData } from "../../state/atoms/profile.js"
+import type { TaskHistoryData, TaskHistoryFilters } from "../../state/atoms/taskHistory.js"
 
 export interface Command {
 	name: string
@@ -17,7 +17,7 @@ export interface Command {
 	handler: CommandHandler
 	options?: CommandOption[]
 	arguments?: ArgumentDefinition[]
-	priority?: number; // 1-10 scale, default 5. Higher = appears first in suggestions
+	priority?: number // 1-10 scale, default 5. Higher = appears first in suggestions
 }
 
 export interface CommandOption {
@@ -74,7 +74,7 @@ export interface CommandContext {
 	refreshTerminal: () => Promise<void>
 }
 
-export type CommandHandler = (context: CommandContext) => Promise<void> | void;
+export type CommandHandler = (context: CommandContext) => Promise<void> | void
 
 export interface ParsedCommand {
 	command: string
@@ -118,7 +118,7 @@ export interface ArgumentProviderContext {
 	parsedValues: {
 		args: Record<string, string>
 		options: Record<string, any>
-	};
+	}
 
 	// Metadata about the command
 	command: Command
@@ -134,7 +134,7 @@ export interface ArgumentProviderContext {
 		updateProviderModel: (modelId: string) => Promise<void>
 		refreshRouterModels: () => Promise<void>
 		taskHistoryData: TaskHistoryData | null
-	};
+	}
 }
 
 /**
@@ -142,7 +142,7 @@ export interface ArgumentProviderContext {
  */
 export type ArgumentProvider = (
 	context: ArgumentProviderContext,
-) => Promise<ArgumentSuggestion[]> | ArgumentSuggestion[] | Promise<string[]> | string[];
+) => Promise<ArgumentSuggestion[]> | ArgumentSuggestion[] | Promise<string[]> | string[]
 
 /**
  * Validation result
@@ -229,16 +229,16 @@ export interface InputState {
 		definition: ArgumentDefinition
 		index: number
 		partialValue: string
-	};
+	}
 
 	validation?: {
 		valid: boolean
 		errors: string[]
 		warnings: string[]
-	};
+	}
 
 	dependencies?: {
 		satisfied: boolean
 		missing: string[]
-	};
+	}
 }

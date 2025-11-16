@@ -3,10 +3,10 @@
  * Encapsulates all dependencies needed for command execution
  */
 
-import { useSetAtom, useAtomValue } from "jotai";
-import { useCallback } from "react";
-import type { CommandContext } from "../../commands/core/types.js";
-import type { CliMessage } from "../../types/cli.js";
+import { useSetAtom, useAtomValue } from "jotai"
+import { useCallback } from "react"
+import type { CommandContext } from "../../commands/core/types.js"
+import type { CliMessage } from "../../types/cli.js"
 import {
 	addMessageAtom,
 	clearMessagesAtom,
@@ -14,22 +14,22 @@ import {
 	setMessageCutoffTimestampAtom,
 	isCommittingParallelModeAtom,
 	refreshTerminalAtom,
-} from "../atoms/ui.js";
-import { setModeAtom, setThemeAtom, providerAtom, updateProviderAtom, configAtom } from "../atoms/config.js";
-import { routerModelsAtom, extensionStateAtom, isParallelModeAtom } from "../atoms/extension.js";
-import { requestRouterModelsAtom } from "../atoms/actions.js";
-import { profileDataAtom, balanceDataAtom, profileLoadingAtom, balanceLoadingAtom } from "../atoms/profile.js";
+} from "../atoms/ui.js"
+import { setModeAtom, setThemeAtom, providerAtom, updateProviderAtom, configAtom } from "../atoms/config.js"
+import { routerModelsAtom, extensionStateAtom, isParallelModeAtom } from "../atoms/extension.js"
+import { requestRouterModelsAtom } from "../atoms/actions.js"
+import { profileDataAtom, balanceDataAtom, profileLoadingAtom, balanceLoadingAtom } from "../atoms/profile.js"
 import {
 	taskHistoryDataAtom,
 	taskHistoryFiltersAtom,
 	taskHistoryLoadingAtom,
 	taskHistoryErrorAtom,
-} from "../atoms/taskHistory.js";
-import { useWebviewMessage } from "./useWebviewMessage.js";
-import { useTaskHistory } from "./useTaskHistory.js";
-import { getModelIdKey } from "../../constants/providers/models.js";
+} from "../atoms/taskHistory.js"
+import { useWebviewMessage } from "./useWebviewMessage.js"
+import { useTaskHistory } from "./useTaskHistory.js"
+import { getModelIdKey } from "../../constants/providers/models.js"
 
-const TERMINAL_CLEAR_DELAY_MS = 500;
+const TERMINAL_CLEAR_DELAY_MS = 500
 
 /**
  * Factory function type for creating CommandContext
@@ -39,14 +39,14 @@ export type CommandContextFactory = (
 	args: string[],
 	options: Record<string, any>,
 	onExit: () => void,
-) => CommandContext;
+) => CommandContext
 
 /**
  * Return type for useCommandContext hook
  */
 export interface UseCommandContextReturn {
 	/** Factory function to create CommandContext objects */
-	createContext: CommandContextFactory;
+	createContext: CommandContextFactory
 }
 
 /**
@@ -58,56 +58,56 @@ export interface UseCommandContextReturn {
  * @example
  * ```tsx
  * function MyComponent() {
- *   const { createContext } = useCommandContext();
+ *   const { createContext } = useCommandContext()
  *
  *   const handleCommand = (input: string, args: string[], options: Record<string, any>) => {
- *     const context = createContext(input, args, options, onExit);
- *     await command.handler(context);
- *   };
+ *     const context = createContext(input, args, options, onExit)
+ *     await command.handler(context)
+ *   }
  * }
  * ```
  */
 export function useCommandContext(): UseCommandContextReturn {
 	// Get atoms and hooks
-	const addMessage = useSetAtom(addMessageAtom);
-	const clearMessages = useSetAtom(clearMessagesAtom);
-	const replaceMessages = useSetAtom(replaceMessagesAtom);
-	const setMode = useSetAtom(setModeAtom);
-	const setTheme = useSetAtom(setThemeAtom);
-	const updateProvider = useSetAtom(updateProviderAtom);
-	const refreshRouterModels = useSetAtom(requestRouterModelsAtom);
-	const setMessageCutoffTimestamp = useSetAtom(setMessageCutoffTimestampAtom);
-	const setCommittingParallelMode = useSetAtom(isCommittingParallelModeAtom);
-	const refreshTerminal = useSetAtom(refreshTerminalAtom);
-	const { sendMessage, clearTask } = useWebviewMessage();
+	const addMessage = useSetAtom(addMessageAtom)
+	const clearMessages = useSetAtom(clearMessagesAtom)
+	const replaceMessages = useSetAtom(replaceMessagesAtom)
+	const setMode = useSetAtom(setModeAtom)
+	const setTheme = useSetAtom(setThemeAtom)
+	const updateProvider = useSetAtom(updateProviderAtom)
+	const refreshRouterModels = useSetAtom(requestRouterModelsAtom)
+	const setMessageCutoffTimestamp = useSetAtom(setMessageCutoffTimestampAtom)
+	const setCommittingParallelMode = useSetAtom(isCommittingParallelModeAtom)
+	const refreshTerminal = useSetAtom(refreshTerminalAtom)
+	const { sendMessage, clearTask } = useWebviewMessage()
 
 	// Get read-only state
-	const routerModels = useAtomValue(routerModelsAtom);
-	const currentProvider = useAtomValue(providerAtom);
-	const extensionState = useAtomValue(extensionStateAtom);
-	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || "";
-	const customModes = extensionState?.customModes || [];
-	const isParallelMode = useAtomValue(isParallelModeAtom);
-	const config = useAtomValue(configAtom);
+	const routerModels = useAtomValue(routerModelsAtom)
+	const currentProvider = useAtomValue(providerAtom)
+	const extensionState = useAtomValue(extensionStateAtom)
+	const kilocodeDefaultModel = extensionState?.kilocodeDefaultModel || ""
+	const customModes = extensionState?.customModes || []
+	const isParallelMode = useAtomValue(isParallelModeAtom)
+	const config = useAtomValue(configAtom)
 
 	// Get profile state
-	const profileData = useAtomValue(profileDataAtom);
-	const balanceData = useAtomValue(balanceDataAtom);
-	const profileLoading = useAtomValue(profileLoadingAtom);
-	const balanceLoading = useAtomValue(balanceLoadingAtom);
+	const profileData = useAtomValue(profileDataAtom)
+	const balanceData = useAtomValue(balanceDataAtom)
+	const profileLoading = useAtomValue(profileLoadingAtom)
+	const balanceLoading = useAtomValue(balanceLoadingAtom)
 
 	// Get task history state and functions
-	const taskHistoryData = useAtomValue(taskHistoryDataAtom);
-	const taskHistoryFilters = useAtomValue(taskHistoryFiltersAtom);
-	const taskHistoryLoading = useAtomValue(taskHistoryLoadingAtom);
-	const taskHistoryError = useAtomValue(taskHistoryErrorAtom);
+	const taskHistoryData = useAtomValue(taskHistoryDataAtom)
+	const taskHistoryFilters = useAtomValue(taskHistoryFiltersAtom)
+	const taskHistoryLoading = useAtomValue(taskHistoryLoadingAtom)
+	const taskHistoryError = useAtomValue(taskHistoryErrorAtom)
 	const {
 		fetchTaskHistory,
 		updateFilters: updateTaskHistoryFiltersAndFetch,
 		changePage: changeTaskHistoryPageAndFetch,
 		nextPage: nextTaskHistoryPage,
 		previousPage: previousTaskHistoryPage,
-	} = useTaskHistory();
+	} = useTaskHistory()
 
 	// Create the factory function
 	const createContext = useCallback<CommandContextFactory>(
@@ -118,42 +118,42 @@ export function useCommandContext(): UseCommandContextReturn {
 				options,
 				config,
 				sendMessage: async (message: any) => {
-					await sendMessage(message);
+					await sendMessage(message)
 				},
 				addMessage: (message: CliMessage) => {
-					addMessage(message);
+					addMessage(message)
 				},
 				clearMessages: () => {
-					clearMessages();
+					clearMessages()
 				},
 				refreshTerminal: () => {
 					return new Promise<void>((resolve) => {
-						refreshTerminal();
+						refreshTerminal()
 						setTimeout(() => {
-							resolve();
-						}, TERMINAL_CLEAR_DELAY_MS);
-					});
+							resolve()
+						}, TERMINAL_CLEAR_DELAY_MS)
+					})
 				},
 				replaceMessages: (messages: CliMessage[]) => {
-					replaceMessages(messages);
+					replaceMessages(messages)
 				},
 				setMessageCutoffTimestamp: (timestamp: number) => {
-					setMessageCutoffTimestamp(timestamp);
+					setMessageCutoffTimestamp(timestamp)
 				},
 				clearTask: async () => {
-					await clearTask();
+					await clearTask()
 				},
 				setMode: async (mode: string) => {
-					await setMode(mode);
+					await setMode(mode)
 				},
 				setTheme: async (theme: string) => {
-					await setTheme(theme);
+					await setTheme(theme)
 				},
 				exit: () => {
-					onExit();
+					onExit()
 				},
 				setCommittingParallelMode: (isCommitting: boolean) => {
-					setCommittingParallelMode(isCommitting);
+					setCommittingParallelMode(isCommitting)
 				},
 				isParallelMode,
 				// Model-related context
@@ -162,20 +162,20 @@ export function useCommandContext(): UseCommandContextReturn {
 				kilocodeDefaultModel,
 				updateProviderModel: async (modelId: string) => {
 					if (!currentProvider) {
-						throw new Error("No provider configured");
+						throw new Error("No provider configured")
 					}
 
-					const modelIdKey = getModelIdKey(currentProvider.provider);
+					const modelIdKey = getModelIdKey(currentProvider.provider)
 					await updateProvider(currentProvider.id, {
 						[modelIdKey]: modelId,
-					});
+					})
 				},
 				refreshRouterModels: async () => {
-					await refreshRouterModels();
+					await refreshRouterModels()
 				},
 				// Provider update function for teams command
 				updateProvider: async (providerId: string, updates: any) => {
-					await updateProvider(providerId, updates);
+					await updateProvider(providerId, updates)
 				},
 				// Profile data context
 				profileData,
@@ -195,7 +195,7 @@ export function useCommandContext(): UseCommandContextReturn {
 				nextTaskHistoryPage,
 				previousTaskHistoryPage,
 				sendWebviewMessage: sendMessage,
-			};
+			}
 		},
 		[
 			config,
@@ -217,9 +217,9 @@ export function useCommandContext(): UseCommandContextReturn {
 			balanceData,
 			profileLoading,
 			balanceLoading,
-			customModes,
 			setCommittingParallelMode,
 			isParallelMode,
+			customModes,
 			taskHistoryData,
 			taskHistoryFilters,
 			taskHistoryLoading,
@@ -230,7 +230,7 @@ export function useCommandContext(): UseCommandContextReturn {
 			nextTaskHistoryPage,
 			previousTaskHistoryPage,
 		],
-	);
+	)
 
-	return { createContext };
+	return { createContext }
 }
