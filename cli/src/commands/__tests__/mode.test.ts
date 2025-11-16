@@ -20,7 +20,7 @@ describe("modeCommand", () => {
 			input: "/mode",
 			args: [],
 			options: {},
-			config: {} as any,
+			config: {} as CommandContext["config"],
 			sendMessage: vi.fn().mockResolvedValue(undefined),
 			addMessage: mockAddMessage,
 			clearMessages: vi.fn(),
@@ -38,6 +38,7 @@ describe("modeCommand", () => {
 			updateProviderModel: vi.fn().mockResolvedValue(undefined),
 			refreshRouterModels: vi.fn().mockResolvedValue(undefined),
 			updateProvider: vi.fn().mockResolvedValue(undefined),
+			selectProvider: vi.fn().mockResolvedValue(undefined),
 			profileData: null,
 			balanceData: null,
 			profileLoading: false,
@@ -58,6 +59,7 @@ describe("modeCommand", () => {
 			previousTaskHistoryPage: vi.fn().mockResolvedValue(null),
 			sendWebviewMessage: vi.fn().mockResolvedValue(undefined),
 			refreshTerminal: vi.fn().mockResolvedValue(undefined),
+			chatMessages: [],
 		}
 	})
 

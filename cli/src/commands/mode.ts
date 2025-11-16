@@ -2,8 +2,8 @@
  * /mode command - Switch between different modes
  */
 
-import type { Command, ArgumentValue } from "./core/types.js"
-import { DEFAULT_MODES, getAllModes } from "../constants/modes/defaults.js"
+import type { Command } from "./core/types.js"
+import { getAllModes } from "../constants/modes/defaults.js"
 
 export const modeCommand: Command = {
 	name: "mode",
@@ -32,7 +32,9 @@ export const modeCommand: Command = {
 		if (args.length === 0 || !args[0]) {
 			// Show current mode and available modes
 			const modesList = allModes.map((mode) => {
-				const source = mode.source === "project" ? " (project)" : mode.source === "global" ? " (global)" : ""
+				// Treat undefined source as "global" (for built-in modes from @roo-code/types)
+				const source =
+					mode.source === "project" ? " (project)" : mode.source === "global" || !mode.source ? " (global)" : ""
 				return `  - **${mode.name}** (${mode.slug})${source}: ${mode.description || "No description"}`
 			})
 

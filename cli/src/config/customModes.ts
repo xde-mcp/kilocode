@@ -93,19 +93,25 @@ function parseCustomModes(content: string, source: "global" | "project"): ModeCo
 
 		// Validate and normalize mode configs
 		return modes
-			.filter((mode: any) => {
+			.filter((mode: unknown) => {
 				// Must have at least slug and name
-				return mode && typeof mode === "object" && mode.slug && mode.name
+				const m = mode as Record<string, unknown>
+				return m && typeof m === "object" && m.slug && m.name
 			})
-			.map((mode: any) => ({
-				slug: mode.slug,
-				name: mode.name,
-				roleDefinition: mode.roleDefinition || mode.systemPrompt || "",
-				groups: mode.groups || ["read", "edit", "browser", "command", "mcp"],
-				customInstructions: mode.customInstructions || (mode.rules ? mode.rules.join("\n") : undefined),
-				source: mode.source || source,
-			}))
-	} catch (error) {
+			.map((mode: unknown) => {
+				const m = mode as Record<string, unknown>
+				return {
+					slug: m.slug as string,
+					name: m.name as string,
+					roleDefinition: (m.roleDefinition as string) || (m.systemPrompt as string) || "",
+					groups: (m.groups as ModeConfig["groups"]) || ["read", "edit", "browser", "command", "mcp"],
+					customInstructions:
+						(m.customInstructions as string) ||
+						(m.rules ? (m.rules as string[]).join("\n") : undefined),
+					source: (m.source as ModeConfig["source"]) || source,
+				}
+			})
+	} catch (_error) {
 		// Silent fail - return empty array if parsing fails
 		return []
 	}
@@ -125,7 +131,7 @@ async function loadGlobalCustomModes(): Promise<ModeConfig[]> {
 	try {
 		const content = await readFile(globalPath, "utf-8")
 		return parseCustomModes(content, "global")
-	} catch (error) {
+	} catch (_error) {
 		// Silent fail - return empty array if reading fails
 		return []
 	}
@@ -146,7 +152,7 @@ async function loadProjectCustomModes(workspace: string): Promise<ModeConfig[]> 
 	try {
 		const content = await readFile(projectPath, "utf-8")
 		return parseCustomModes(content, "project")
-	} catch (error) {
+	} catch (_error) {
 		// Silent fail - return empty array if reading fails
 		return []
 	}
