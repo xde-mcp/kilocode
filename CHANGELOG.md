@@ -1,5 +1,15 @@
 # kilo-code
 
+## [v4.119.5]
+
+- [#3794](https://github.com/Kilo-Org/kilocode/pull/3794) [`180998d`](https://github.com/Kilo-Org/kilocode/commit/180998d889e08258950ed1aa9eb220d9daf302e9) Thanks [@mcowger](https://github.com/mcowger)! - Fix LiteLLM Provider Config crash when uninitialized.
+
+- [#3792](https://github.com/Kilo-Org/kilocode/pull/3792) [`b8c85fe`](https://github.com/Kilo-Org/kilocode/commit/b8c85fed3c1060b724157523a7f1e03e59efbf54) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Prevent MiniMax provider from using ANTHROPIC_AUTH_TOKEN environment variable
+
+- [#3801](https://github.com/Kilo-Org/kilocode/pull/3801) [`cfc1ab8`](https://github.com/Kilo-Org/kilocode/commit/cfc1ab8b22327cdf079a0191af8fdb988ad5efca) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Potential fix for hanging chat
+
+- [#3613](https://github.com/Kilo-Org/kilocode/pull/3613) [`feda236`](https://github.com/Kilo-Org/kilocode/commit/feda2361b66a11cb2d5766dc2f0fd56e716de03e) Thanks [@mcowger](https://github.com/mcowger)! - Enable native tool calling for LiteLLM provider
+
 ## [v4.119.4]
 
 - [#3788](https://github.com/Kilo-Org/kilocode/pull/3788) [`49131b7`](https://github.com/Kilo-Org/kilocode/commit/49131b78bef98e1a24b6bf9457e072c9acc1230f) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fix hang when model wants to write JSON file with native tool calls enabled
