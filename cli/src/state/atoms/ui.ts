@@ -287,7 +287,14 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 	const messages = get(chatMessagesAtom)
 
 	// Ask types that require user approval
-	const approvalAskTypes = ["tool", "command", "browser_action_launch", "use_mcp_server", "payment_required_prompt"]
+	const approvalAskTypes = [
+		"tool",
+		"command",
+		"browser_action_launch",
+		"use_mcp_server",
+		"payment_required_prompt",
+		"checkpoint_restore",
+	]
 
 	const lastMessage = messages[messages.length - 1]
 	if (
@@ -479,7 +486,7 @@ export const hideAutocompleteAtom = atom(null, (get, set) => {
  * This atom is kept for backward compatibility but has no effect
  * @deprecated This atom is kept for backward compatibility but may be removed
  */
-export const showAutocompleteMenuAtom = atom(null, (get, set) => {
+export const showAutocompleteMenuAtom = atom(null, (_get, _set) => {
 	// No-op: autocomplete visibility is now derived from text buffer
 	// Kept for backward compatibility
 })

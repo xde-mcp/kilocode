@@ -100,9 +100,9 @@ function parseCustomModes(content: string, source: "global" | "project"): ModeCo
 			.map((mode: any) => ({
 				slug: mode.slug,
 				name: mode.name,
-				description: mode.description,
-				systemPrompt: mode.roleDefinition || mode.systemPrompt,
-				rules: mode.customInstructions ? [mode.customInstructions] : mode.rules || [],
+				roleDefinition: mode.roleDefinition || mode.systemPrompt || "",
+				groups: mode.groups || ["read", "edit", "browser", "command", "mcp"],
+				customInstructions: mode.customInstructions || (mode.rules ? mode.rules.join("\n") : undefined),
 				source: mode.source || source,
 			}))
 	} catch (error) {
