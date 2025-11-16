@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.119.5
-
-### Patch Changes
+## [v4.119.5]
 
 - [#3794](https://github.com/Kilo-Org/kilocode/pull/3794) [`180998d`](https://github.com/Kilo-Org/kilocode/commit/180998d889e08258950ed1aa9eb220d9daf302e9) Thanks [@mcowger](https://github.com/mcowger)! - Fix LiteLLM Provider Config crash when uninitialized.
 
