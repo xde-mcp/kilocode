@@ -455,6 +455,7 @@ describe("useSelectedModel", () => {
 		})
 	})
 
+	// kilocode_change start
 	describe("litellm provider", () => {
 		beforeEach(() => {
 			mockUseRouterModels.mockReturnValue({
@@ -553,6 +554,7 @@ describe("useSelectedModel", () => {
 			expect(result.current.info).toBeUndefined()
 		})
 	})
+	// kilocode_change end
 
 	describe("bedrock provider with 1M context", () => {
 		beforeEach(() => {
