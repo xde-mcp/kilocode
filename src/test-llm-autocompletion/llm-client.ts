@@ -99,16 +99,17 @@ export class LLMClient {
 			const baseUrl = getKiloBaseUriFromToken(apiKey)
 			const url = `${baseUrl}/api/fim/completions`
 
-			// Match the exact format from KilocodeOpenrouterHandler.streamFim
-			// Note: KilocodeOpenrouterHandler uses model.temperature and model.topP from fetchModel()
-			// Using defaults since we don't fetch model config in test
+			// Match the format from new autocomplete (continuedev)
+			// NewAutocompleteModel.ts sets completionOptions: { temperature: 0.2, maxTokens: 256 }
+			// These are now passed through KiloCode._streamFim() to KilocodeOpenrouterHandler.streamFim()
+			// See: KiloCode.ts line 119-123, kilocode-openrouter.ts line 169-177
 			const body = {
 				model: this.model,
 				prompt: prefix,
 				suffix,
-				max_tokens: 1000, // Match max_max_tokens in KilocodeOpenrouterHandler
-				temperature: 0, // Default for non-DeepSeekR1 models
-				// top_p is undefined for most models (only 0.95 for DeepSeekR1)
+				max_tokens: 256, // Match new autocomplete maxTokens (NewAutocompleteModel.ts:98)
+				temperature: 0.2, // Match new autocomplete temperature (NewAutocompleteModel.ts:97)
+				// top_p is undefined for Codestral (only 0.95 for DeepSeekR1)
 				stream: true,
 			}
 

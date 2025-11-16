@@ -163,16 +163,23 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 			Authorization: `Bearer ${this.options.kilocodeToken}`,
 			...this.customRequestOptions(taskId ? { taskId, mode: "code" } : undefined)?.headers,
 		}
-		const max_max_tokens = 1000
+
+		// Hardcoded values to match new autocomplete settings (NewAutocompleteModel.ts:97-98)
+		// temperature: 0.2 for more deterministic autocomplete
+		// max_tokens: 256 for reasonable code completion length
+		const temperature = 0.2
+		const maxTokens = 256
+		const topP = model.topP // Keep topP from model (undefined for Codestral, 0.95 for DeepSeekR1)
+
 		const response = await fetch(endpoint, {
 			method: "POST",
 			body: JSON.stringify({
 				model: model.id,
 				prompt: prefix,
 				suffix,
-				max_tokens: Math.min(max_max_tokens, model.maxTokens ?? max_max_tokens),
-				temperature: model.temperature,
-				top_p: model.topP,
+				max_tokens: Math.min(maxTokens, model.maxTokens ?? maxTokens),
+				temperature,
+				top_p: topP,
 				stream: true,
 			}),
 			headers,
