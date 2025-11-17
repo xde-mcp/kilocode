@@ -4,15 +4,15 @@ import fs from "fs/promises"
 import delay from "delay"
 
 // Internal imports
-import { Task } from "../task/Task"
-import { AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolUse } from "../../shared/tools"
-import { formatResponse } from "../prompts/responses"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
-import { getReadablePath } from "../../utils/path"
-import { fileExistsAtPath } from "../../utils/fs"
-import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
+import { Task } from "../../task/Task"
+import { AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolUse } from "../../../shared/tools"
+import { formatResponse } from "../../prompts/responses"
+import { ClineSayTool } from "../../../shared/ExtensionMessage"
+import { getReadablePath } from "../../../utils/path"
+import { fileExistsAtPath } from "../../../utils/fs"
+import { RecordSource } from "../../context-tracking/FileContextTrackerTypes"
 import { DEFAULT_WRITE_DELAY_MS } from "@roo-code/types"
-import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
+import { EXPERIMENT_IDS, experiments } from "../../../shared/experiments"
 
 /**
  * Tool for performing search and replace operations on files
@@ -31,22 +31,22 @@ async function validateParams(
 ): Promise<boolean> {
 	if (!relPath) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "path"))
+		cline.recordToolError("apply_diff")
+		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "path"))
 		return false
 	}
 
 	if (!search) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "search"))
+		cline.recordToolError("apply_diff")
+		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "search"))
 		return false
 	}
 
 	if (replace === undefined) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("search_and_replace")
-		pushToolResult(await cline.sayAndCreateMissingParamError("search_and_replace", "replace"))
+		cline.recordToolError("apply_diff")
+		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "replace"))
 		return false
 	}
 
@@ -107,14 +107,8 @@ export async function searchAndReplaceTool(
 		const validReplace = replace as string
 
 		const sharedMessageProps: ClineSayTool = {
-			tool: "searchAndReplace",
+			tool: "appliedDiff",
 			path: getReadablePath(cline.cwd, validRelPath),
-			search: validSearch,
-			replace: validReplace,
-			useRegex: useRegex,
-			ignoreCase: ignoreCase,
-			startLine: startLine,
-			endLine: endLine,
 		}
 
 		const accessAllowed = cline.rooIgnoreController?.validateAccess(validRelPath)
@@ -133,7 +127,7 @@ export async function searchAndReplaceTool(
 
 		if (!fileExists) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("search_and_replace")
+			cline.recordToolError("apply_diff")
 			const formattedError = formatResponse.toolError(
 				`File does not exist at path: ${absolutePath}\nThe specified file could not be found. Please verify the file path and try again.`,
 			)
@@ -151,7 +145,7 @@ export async function searchAndReplaceTool(
 			fileContent = await fs.readFile(absolutePath, "utf-8")
 		} catch (error) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("search_and_replace")
+			cline.recordToolError("apply_diff")
 			const errorMessage = `Error reading file: ${absolutePath}\nFailed to read the file content: ${
 				error instanceof Error ? error.message : String(error)
 			}\nPlease verify file permissions and try again.`
@@ -261,7 +255,7 @@ export async function searchAndReplaceTool(
 		pushToolResult(message)
 
 		// Record successful tool usage and cleanup
-		cline.recordToolUsage("search_and_replace")
+		cline.recordToolUsage("apply_diff")
 		await cline.diffViewProvider.reset()
 
 		// Process any queued messages after file edit completes
