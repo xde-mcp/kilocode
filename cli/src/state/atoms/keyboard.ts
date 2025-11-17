@@ -903,12 +903,9 @@ const isKeyModifyBuffer = (key: Key): boolean => {
 	return (
 		!key.ctrl &&
 		!key.meta &&
-		!key.shift &&
 		!key.paste &&
 		key.name !== "return" &&
 		key.name !== "escape" &&
-		key.name !== "backspace" &&
-		key.name !== "delete" &&
 		key.sequence.length === 1
 	)
 }
