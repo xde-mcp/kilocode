@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.119.6
-
-### Patch Changes
+## [v4.119.6]
 
 - [#3836](https://github.com/Kilo-Org/kilocode/pull/3836) [`b5cf145`](https://github.com/Kilo-Org/kilocode/commit/b5cf145c1542af1f317a51fb4f55d79960aad711) Thanks [@mcowger](https://github.com/mcowger)! - Add GPT-5.1 models for OpenAI provider
 
