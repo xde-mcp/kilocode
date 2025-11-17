@@ -248,8 +248,8 @@ async function processFiles(
 
 				// Check if file is already indexed on server with matching file hash
 				if (manifest) {
-					const manifestEntry = manifest.files.find((f) => f.filePath === relativeFilePath)
-					if (manifestEntry && manifestEntry.fileHash === fileHash) {
+					// Check if the fileHash exists in the map and points to this filePath
+					if (manifest.files[fileHash] === relativeFilePath) {
 						// File already indexed on server with same content - skip
 						filesSkipped++
 						logger.info(`[Scanner] Skipping ${relativeFilePath} - already indexed on server`)

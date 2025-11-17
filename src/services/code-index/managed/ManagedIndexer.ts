@@ -1,51 +1,22 @@
-/**
- * When extension activates, we need to instantiate the ManagedIndexer and then
- * fetch the api configuration deets and then fetch the organization to see
- * if the feature is enabled for the organization. If it is, then we will
- * instantiate a git-watcher for every folder in the workspace. We will also
- * want to initiate a scan of every folder in the workspace. git-watcher's
- * responsibility is to to alert the ManagedIndexer on branch/commit changes
- * for a given workspace folder. The ManagedIndexer can then run a new scan
- * for that workspace folder. If there is an on-going scan for that particular
- * workspace folder, then we will cancel the on-going scan and start a new one.
- *
- * Scans should be cancellable. The ManagedIndexer should track ongoing scans
- * so that they can be cancelled when the ManagedIndexer is disposed or if the
- * workspace folder is removed, or if the git-watcher detects a change.
- *
- * Git Watchers too can be disposed in the case of the ManagedIndexer being
- * disposed or the workspace folder being removed.
- *
- * Questions:
- *   - How do we communicate state to the webview?
- *   - Should we pass in an instance of ClineProvider or should we pass
- *     ManagedIndexer into ClineProvider?
- *   - How do we populate prompts and provide the tool definitions?
- *   - How do we translate a codebase_search tool call to ManagedIndexer?
- *   - If we're supporting multiple workspace folders, how do we represent
- *     that in the webview UI?
- *
- *
- * The current git watcher implementation is too tied to the managed indexing
- * concept and should be abstracted to be a regular ol' dispoable object that
- * can be instantiated based on a cwd.
- *
- * The scanner implementation should be updated to be able to introspect
- *
- *
- * -----------------------------------------------------------------------------
- *
- * We can think of ManagedIndexer as a few components:
- *
- * 1. Inputs - Workspace Folders and Profile/Organization
- * 2. Derived values - Project Config and Organization/Profile (is feature enabled)
- * 3. Git Watchers
- */
+// kilocode_change new file
 
 import * as vscode from "vscode"
-import type { ClineProvider } from "../../../core/webview/ClineProvider"
+import * as path from "path"
+import { promises as fs } from "fs"
+import pMap from "p-map"
+import pLimit from "p-limit"
+import { ContextProxy } from "../../../core/config/ContextProxy"
 import { KiloOrganization } from "../../../shared/kilocode/organization"
 import { OrganizationService } from "../../kilocode/OrganizationService"
+import { GitWatcher, GitWatcherEvent } from "../../../shared/GitWatcher"
+import { getCurrentBranch, isGitRepository } from "./git-utils"
+import { getKilocodeConfig } from "../../../utils/kilo-config-file"
+import { getGitRepositoryInfo } from "../../../utils/git"
+import { getServerManifest, upsertFile } from "./api-client"
+import { logger } from "../../../utils/logging"
+import { MANAGED_MAX_CONCURRENT_FILES } from "../constants"
+import { ServerManifest } from "./types"
+import { scannerExtensions } from "../shared/supported-extensions"
 
 interface ManagedIndexerConfig {
 	kilocodeToken: string | null
@@ -53,64 +24,633 @@ interface ManagedIndexerConfig {
 	kilocodeTesterWarningsDisabledUntil: number | null
 }
 
+/**
+ * Serializable error information for managed indexing operations
+ */
+interface ManagedIndexerError {
+	/** Error type for categorization */
+	type: "setup" | "scan" | "file-upsert" | "git" | "manifest" | "config"
+	/** Human-readable error message */
+	message: string
+	/** ISO timestamp when error occurred */
+	timestamp: string
+	/** Optional context about what was being attempted */
+	context?: {
+		filePath?: string
+		branch?: string
+		operation?: string
+	}
+	/** Original error details if available */
+	details?: string
+}
+
+interface ManagedIndexerWorkspaceFolderState {
+	workspaceFolder: vscode.WorkspaceFolder
+	gitBranch: string | null
+	projectId: string | null
+	manifest: ServerManifest | null
+	isIndexing: boolean
+	watcher: GitWatcher | null
+	repositoryUrl?: string
+	error?: ManagedIndexerError
+	/** In-flight manifest fetch promise - reused if already fetching */
+	manifestFetchPromise: Promise<ServerManifest> | null
+	/** AbortController for the current indexing operation */
+	currentAbortController?: AbortController
+}
+
 export class ManagedIndexer implements vscode.Disposable {
 	// Handle changes to vscode workspace folder changes
-	workspaceFoldersListener = vscode.workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders)
+	workspaceFoldersListener: vscode.Disposable | null = null
+	// kilocode_change: Listen to configuration changes from ContextProxy
+	configChangeListener: vscode.Disposable | null = null
+	config: ManagedIndexerConfig | null = null
+	organization: KiloOrganization | null = null
+	isActive = false
 
-	// config: ManagedIndexerConfig = {
-	// 	kilocodeOrganizationId: null,
-	// 	kilocodeToken: null,
-	// }
+	/**
+	 * Tracks state that depends on workspace folders
+	 */
+	workspaceFolderState: ManagedIndexerWorkspaceFolderState[] = []
 
-	// organization: KiloOrganization | null = null
+	// Concurrency limiter for file upserts
+	private readonly fileUpsertLimit = pLimit(MANAGED_MAX_CONCURRENT_FILES)
 
-	constructor(
-		/**
-		 * We need to pass through the main ClineProvider for access to global state
-		 * and to react to changes in organizations/profiles
-		 */
-		public provider: ClineProvider,
-	) {}
+	constructor(public contextProxy: ContextProxy) {
+		console.log("[ManagedIndexer] Constructor called")
+	}
+
+	private async onConfigurationChange(config: ManagedIndexerConfig): Promise<void> {
+		console.info("[ManagedIndexer] Configuration changed, restarting...", {
+			hasToken: !!config.kilocodeToken,
+			hasOrgId: !!config.kilocodeOrganizationId,
+			testerWarningsDisabled: config.kilocodeTesterWarningsDisabledUntil,
+		})
+		this.config = config
+		this.dispose()
+		await this.start()
+	}
+
+	// TODO: The fetchConfig, fetchOrganization, and isEnabled functions are sort of spaghetti
+	// code right now. We need to clean this up to be more stateless or better rely
+	// on proper memoization/invalidation techniques
 
 	async fetchConfig(): Promise<ManagedIndexerConfig> {
-		const {
-			apiConfiguration: {
-				kilocodeOrganizationId = null,
-				kilocodeToken = null,
-				kilocodeTesterWarningsDisabledUntil = null,
-			},
-		} = await this.provider.getState()
+		console.log("[ManagedIndexer] Fetching configuration from ContextProxy")
+		// kilocode_change: Read directly from ContextProxy instead of ClineProvider
+		const kilocodeToken = this.contextProxy.getSecret("kilocodeToken")
+		const kilocodeOrganizationId = this.contextProxy.getValue("kilocodeOrganizationId")
+		const kilocodeTesterWarningsDisabledUntil = this.contextProxy.getValue("kilocodeTesterWarningsDisabledUntil")
 
-		return { kilocodeOrganizationId, kilocodeToken, kilocodeTesterWarningsDisabledUntil }
+		this.config = {
+			kilocodeToken: kilocodeToken ?? null,
+			kilocodeOrganizationId: kilocodeOrganizationId ?? null,
+			kilocodeTesterWarningsDisabledUntil: kilocodeTesterWarningsDisabledUntil ?? null,
+		}
+
+		console.log("[ManagedIndexer] Configuration fetched", {
+			hasToken: !!kilocodeToken,
+			hasOrgId: !!kilocodeOrganizationId,
+			testerWarningsDisabled: kilocodeTesterWarningsDisabledUntil,
+		})
+
+		return this.config
 	}
 
 	async fetchOrganization(): Promise<KiloOrganization | null> {
+		console.log("[ManagedIndexer] Fetching organization")
 		const config = await this.fetchConfig()
 
 		if (config.kilocodeToken && config.kilocodeOrganizationId) {
-			return await OrganizationService.fetchOrganization(
+			console.log("[ManagedIndexer] Fetching organization from service", {
+				orgId: config.kilocodeOrganizationId,
+			})
+			this.organization = await OrganizationService.fetchOrganization(
 				config.kilocodeToken,
 				config.kilocodeOrganizationId,
 				config.kilocodeTesterWarningsDisabledUntil ?? undefined,
 			)
+
+			console.log("[ManagedIndexer] Organization fetched", {
+				hasOrganization: !!this.organization,
+				orgName: this.organization?.name,
+			})
+
+			return this.organization
 		}
 
-		return null
+		console.log("[ManagedIndexer] No token or organization ID, skipping organization fetch")
+		this.organization = null
+
+		return this.organization
+	}
+
+	async isEnabled(): Promise<boolean> {
+		console.log("[ManagedIndexer] Checking if managed indexing is enabled")
+		const organization = await this.fetchOrganization()
+
+		if (!organization) {
+			console.log("[ManagedIndexer] No organization found, managed indexing disabled")
+			return false
+		}
+
+		const isEnabled = OrganizationService.isCodeIndexingEnabled(organization)
+		console.log("[ManagedIndexer] Code indexing enabled status", { isEnabled })
+
+		if (!isEnabled) {
+			console.log("[ManagedIndexer] Code indexing not enabled for organization")
+			return false
+		}
+
+		console.log("[ManagedIndexer] Managed indexing is enabled")
+		return true
+	}
+
+	async start() {
+		console.log("[ManagedIndexer] Starting ManagedIndexer")
+
+		console.log("[ManagedIndexer] Registering configuration change listener")
+		this.configChangeListener = this.contextProxy.onManagedIndexerConfigChange(
+			this.onConfigurationChange.bind(this),
+		)
+
+		console.log("[ManagedIndexer] Registering workspace folders change listener")
+		vscode.workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders.bind(this))
+
+		const workspaceFolderCount = vscode.workspace.workspaceFolders?.length ?? 0
+		console.log("[ManagedIndexer] Workspace folders count", { count: workspaceFolderCount })
+
+		if (!workspaceFolderCount) {
+			console.log("[ManagedIndexer] No workspace folders found, skipping managed indexing")
+			return
+		}
+
+		console.log("[ManagedIndexer] Checking if managed indexing is enabled")
+		if (!(await this.isEnabled())) {
+			console.log("[ManagedIndexer] Managed indexing is not enabled, stopping")
+			return
+		}
+
+		// TODO: Plumb kilocodeTesterWarningsDisabledUntil through
+		const { kilocodeOrganizationId, kilocodeToken } = this.config ?? {}
+
+		console.log("[ManagedIndexer] Validating configuration", {
+			hasOrgId: !!kilocodeOrganizationId,
+			hasToken: !!kilocodeToken,
+		})
+
+		if (!kilocodeOrganizationId || !kilocodeToken) {
+			console.log("[ManagedIndexer] No organization ID or token found, skipping managed indexing")
+			return
+		}
+
+		console.log("[ManagedIndexer] Setting active state to true")
+		this.isActive = true
+
+		if (!vscode.workspace.workspaceFolders) {
+			return
+		}
+
+		// Build workspaceFolderState for each workspace folder
+		const states = await Promise.all(
+			vscode.workspace.workspaceFolders.map(async (workspaceFolder) => {
+				const cwd = workspaceFolder.uri.fsPath
+
+				// Initialize state with workspace folder
+				const state: ManagedIndexerWorkspaceFolderState = {
+					workspaceFolder,
+					gitBranch: null,
+					projectId: null,
+					manifest: null,
+					isIndexing: false,
+					watcher: null,
+					repositoryUrl: undefined,
+					manifestFetchPromise: null,
+				}
+
+				// Check if it's a git repository
+				if (!(await isGitRepository(cwd))) {
+					return null
+				}
+
+				// Step 1: Get git information
+				try {
+					const [{ repositoryUrl }, gitBranch] = await Promise.all([
+						getGitRepositoryInfo(cwd),
+						getCurrentBranch(cwd),
+					])
+					state.gitBranch = gitBranch
+					state.repositoryUrl = repositoryUrl
+
+					// Step 2: Get project configuration
+					const config = await getKilocodeConfig(cwd, repositoryUrl)
+					const projectId = config?.project?.id
+
+					if (!projectId) {
+						console.log("[ManagedIndexer] No project ID found for workspace folder", cwd)
+						return null
+					}
+					state.projectId = projectId
+
+					// Step 3: Fetch server manifest
+					try {
+						state.manifest = await getServerManifest(
+							kilocodeOrganizationId,
+							projectId,
+							gitBranch,
+							kilocodeToken,
+						)
+					} catch (error) {
+						const errorMessage = error instanceof Error ? error.message : String(error)
+						console.error(`[ManagedIndexer] Failed to fetch manifest for ${cwd}: ${errorMessage}`)
+						state.error = {
+							type: "manifest",
+							message: `Failed to fetch server manifest: ${errorMessage}`,
+							timestamp: new Date().toISOString(),
+							context: {
+								operation: "fetch-manifest",
+								branch: gitBranch,
+							},
+							details: error instanceof Error ? error.stack : undefined,
+						}
+						return state
+					}
+
+					// Step 4: Create git watcher
+					try {
+						const watcher = new GitWatcher({ cwd })
+						state.watcher = watcher
+
+						// Register event handler
+						watcher.onEvent(this.onEvent.bind(this))
+					} catch (error) {
+						const errorMessage = error instanceof Error ? error.message : String(error)
+						console.error(`[ManagedIndexer] Failed to start watcher for ${cwd}: ${errorMessage}`)
+						state.error = {
+							type: "scan",
+							message: `Failed to start file watcher: ${errorMessage}`,
+							timestamp: new Date().toISOString(),
+							context: {
+								operation: "start-watcher",
+								branch: gitBranch,
+							},
+							details: error instanceof Error ? error.stack : undefined,
+						}
+						return state
+					}
+
+					return state
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error)
+					console.error(`[ManagedIndexer] Failed to get git info for ${cwd}: ${errorMessage}`)
+					state.error = {
+						type: "git",
+						message: `Failed to get git information: ${errorMessage}`,
+						timestamp: new Date().toISOString(),
+						context: {
+							operation: "get-git-info",
+						},
+						details: error instanceof Error ? error.stack : undefined,
+					}
+					return state
+				}
+			}),
+		)
+
+		this.workspaceFolderState = states.filter((s) => s !== null)
+
+		// Start watchers
+		await Promise.all(
+			this.workspaceFolderState.map(async (state) => {
+				await state.watcher?.start()
+			}),
+		)
 	}
 
 	dispose() {
-		this.workspaceFoldersListener.dispose()
+		// kilocode_change: Dispose configuration change listener
+		this.configChangeListener?.dispose()
+		this.configChangeListener = null
+
+		this.workspaceFoldersListener?.dispose()
+		this.workspaceFoldersListener = null
+
+		// Dispose all watchers from workspaceFolderState
+		this.workspaceFolderState.forEach((state) => state.watcher?.dispose())
+		this.workspaceFolderState = []
+
+		this.isActive = false
 	}
 
-	// onConfigChange(config: ManagedIndexerConfig) {
-	// 	if (config.kilocodeToken !== this.config.kilocodeToken) {
-	// 		this.config = config
-	// 		this.organization = null
-	// 	}
-	// }
+	/**
+	 * Get or fetch the manifest for a workspace state.
+	 * If a fetch is already in progress, returns the same promise.
+	 * This prevents duplicate fetches and ensures all callers wait for the same result.
+	 */
+	private async getManifest(state: ManagedIndexerWorkspaceFolderState, branch: string): Promise<ServerManifest> {
+		// If we're already fetching for this branch, return the existing promise
+		if (state.manifestFetchPromise && state.gitBranch === branch) {
+			console.info(`[ManagedIndexer] Reusing in-flight manifest fetch for branch ${branch}`)
+			return state.manifestFetchPromise
+		}
 
-	onDidChangeWorkspaceFolders(e: vscode.WorkspaceFoldersChangeEvent) {
-		// Cleanup any watchers and ongoing scans for removed folders
-		// Instantiate watchers and start scans for new folders
+		// If manifest is already cached for this branch, return it
+		if (state.manifest && state.gitBranch === branch) {
+			return state.manifest
+		}
+
+		// Update branch BEFORE starting fetch so concurrent calls know we're fetching for this branch
+		state.gitBranch = branch
+
+		// Start a new fetch and cache the promise
+		state.manifestFetchPromise = (async () => {
+			try {
+				// Recalculate projectId as it might have changed with the branch
+				const config = await getKilocodeConfig(state.workspaceFolder.uri.fsPath, state.repositoryUrl)
+				const projectId = config?.project?.id
+
+				if (!projectId) {
+					throw new Error(`No project ID found for workspace folder ${state.workspaceFolder.uri.fsPath}`)
+				}
+				state.projectId = projectId
+
+				// Ensure we have the necessary configuration
+				if (!this.config?.kilocodeToken || !this.config?.kilocodeOrganizationId) {
+					throw new Error("Missing required configuration for manifest fetch")
+				}
+
+				console.info(`[ManagedIndexer] Fetching manifest for branch ${branch}`)
+				const manifest = await getServerManifest(
+					this.config.kilocodeOrganizationId,
+					state.projectId,
+					branch,
+					this.config.kilocodeToken,
+				)
+
+				state.manifest = manifest
+				console.info(
+					`[ManagedIndexer] Successfully fetched manifest for branch ${branch} (${Object.keys(manifest.files).length} files)`,
+				)
+
+				// Clear any previous manifest errors
+				if (state.error?.type === "manifest") {
+					state.error = undefined
+				}
+
+				return manifest
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				console.error(`[ManagedIndexer] Failed to fetch manifest for branch ${branch}: ${errorMessage}`)
+
+				state.error = {
+					type: "manifest",
+					message: `Failed to fetch manifest: ${errorMessage}`,
+					timestamp: new Date().toISOString(),
+					context: {
+						operation: "fetch-manifest",
+						branch,
+					},
+					details: error instanceof Error ? error.stack : undefined,
+				}
+
+				throw error
+			} finally {
+				// Clear the promise cache after completion (success or failure)
+				state.manifestFetchPromise = null
+			}
+		})()
+
+		return state.manifestFetchPromise
+	}
+
+	async onEvent(event: GitWatcherEvent): Promise<void> {
+		console.log("[ManagedIndexer] event", event.type, event.branch)
+
+		if (!this.isActive) {
+			return
+		}
+
+		const state = this.workspaceFolderState.find((s) => s.watcher === event.watcher)
+
+		if (!state || !state.watcher) {
+			console.warn("[ManagedIndexer] Received event for unknown watcher")
+			return
+		}
+
+		// Skip processing if state is not fully initialized
+		if (!state.projectId || !state.gitBranch) {
+			console.warn("[ManagedIndexer] Received event for incompletely initialized workspace folder")
+			return
+		}
+
+		// Cancel any previous indexing operation
+		if (state.currentAbortController) {
+			console.info("[ManagedIndexer] Aborting previous indexing operation")
+			state.currentAbortController.abort()
+		}
+
+		// Create new AbortController for this operation
+		const controller = new AbortController()
+		state.currentAbortController = controller
+
+		try {
+			// Handle different event types
+			switch (event.type) {
+				case "branch-changed": {
+					console.info(`[ManagedIndexer] Branch changed from ${event.previousBranch} to ${event.newBranch}`)
+
+					try {
+						// Fetch manifest for the new branch (will reuse if already fetching)
+						await this.getManifest(state, event.newBranch)
+					} catch (error) {
+						// Error already logged and stored in getManifest
+						console.warn(`[ManagedIndexer] Continuing despite manifest fetch error`)
+					}
+
+					// Process files from the async iterable
+					await this.processFiles(state, event, controller.signal)
+					break
+				}
+
+				case "commit": {
+					console.info(`[ManagedIndexer] Commit detected from ${event.previousCommit} to ${event.newCommit}`)
+
+					// Process files from the async iterable
+					await this.processFiles(state, event, controller.signal)
+					break
+				}
+			}
+		} catch (error) {
+			// Check if this was an abort
+			if (error instanceof Error && (error.name === "AbortError" || error.message === "AbortError")) {
+				console.info("[ManagedIndexer] Indexing operation was aborted")
+				return
+			}
+			// Re-throw other errors
+			throw error
+		}
+	}
+
+	/**
+	 * Process files from an event's async iterable
+	 */
+	private async processFiles(
+		state: ManagedIndexerWorkspaceFolderState,
+		event: GitWatcherEvent,
+		signal: AbortSignal,
+	): Promise<void> {
+		// Set indexing state
+		state.isIndexing = true
+		state.error = undefined
+
+		try {
+			// Ensure we have the manifest (wait if it's being fetched)
+			let manifest: ServerManifest
+			try {
+				manifest = await this.getManifest(state, event.branch)
+			} catch (error) {
+				console.warn(`[ManagedIndexer] Cannot process files without manifest, skipping`)
+				state.isIndexing = false
+				return
+			}
+
+			await pMap(
+				event.files,
+				async (file) => {
+					// Check if operation was aborted
+					if (signal.aborted) {
+						throw new Error("AbortError")
+					}
+
+					if (file.type === "file-deleted") {
+						console.info(`[ManagedIndexer] File deleted: ${file.filePath} on branch ${event.branch}`)
+						// TODO: Implement file deletion handling if needed
+						return
+					}
+
+					const { filePath, fileHash } = file
+
+					// Check if file extension is supported
+					const ext = path.extname(filePath).toLowerCase()
+					if (!scannerExtensions.includes(ext)) {
+						return
+					}
+
+					// Already indexed - check if fileHash exists in the map and matches the filePath
+					if (manifest.files[fileHash] === filePath) {
+						return
+					}
+
+					{
+						// Check if operation was aborted before processing
+						if (signal.aborted) {
+							throw new Error("AbortError")
+						}
+
+						try {
+							// Ensure we have the necessary configuration
+							if (
+								!this.config?.kilocodeToken ||
+								!this.config?.kilocodeOrganizationId ||
+								!state.projectId
+							) {
+								console.warn(
+									"[ManagedIndexer] Missing token, organization ID, or project ID, skipping file upsert",
+								)
+								return
+							}
+							const projectId = state.projectId
+
+							const absoluteFilePath = path.isAbsolute(filePath)
+								? filePath
+								: path.join(event.watcher.config.cwd, filePath)
+							const fileBuffer = await fs.readFile(absoluteFilePath)
+							const relativeFilePath = path.relative(event.watcher.config.cwd, absoluteFilePath)
+
+							// Call the upsertFile API with abort signal
+							await upsertFile(
+								{
+									fileBuffer,
+									fileHash,
+									filePath: relativeFilePath,
+									gitBranch: event.branch,
+									isBaseBranch: event.isBaseBranch,
+									organizationId: this.config.kilocodeOrganizationId,
+									projectId,
+									kilocodeToken: this.config.kilocodeToken,
+								},
+								signal,
+							)
+
+							console.info(
+								`[ManagedIndexer] Successfully upserted file: ${relativeFilePath} (branch: ${event.branch})`,
+							)
+
+							// Clear any previous file-upsert errors on success
+							if (state.error?.type === "file-upsert") {
+								state.error = undefined
+							}
+						} catch (error) {
+							// Don't log abort errors as failures
+							if (error instanceof Error && error.message === "AbortError") {
+								throw error
+							}
+
+							const errorMessage = error instanceof Error ? error.message : String(error)
+							console.error(`[ManagedIndexer] Failed to upsert file ${filePath}: ${errorMessage}`)
+
+							// Store the error in state
+							state.error = {
+								type: "file-upsert",
+								message: `Failed to upsert file: ${errorMessage}`,
+								timestamp: new Date().toISOString(),
+								context: {
+									filePath,
+									branch: event.branch,
+									operation: "file-upsert",
+								},
+								details: error instanceof Error ? error.stack : undefined,
+							}
+						}
+					}
+				},
+				{ concurrency: 20 },
+			)
+		} finally {
+			// Always clear indexing state when done
+			state.isIndexing = false
+			console.log("[ManagedIndexer] Indexing complete", this)
+		}
+	}
+
+	async onDidChangeWorkspaceFolders(e: vscode.WorkspaceFoldersChangeEvent) {
+		// TODO we could more intelligently handle this instead of going scorched earth
+		this.dispose()
+		await this.start()
+	}
+
+	/**
+	 * Get a serializable representation of the current workspace folder state
+	 * for debugging and introspection purposes
+	 */
+	getWorkspaceFolderStateSnapshot() {
+		return this.workspaceFolderState.map((state) => ({
+			workspaceFolderPath: state.workspaceFolder.uri.fsPath,
+			workspaceFolderName: state.workspaceFolder.name,
+			gitBranch: state.gitBranch,
+			projectId: state.projectId,
+			isIndexing: state.isIndexing,
+			hasManifest: !!state.manifest,
+			manifestFileCount: state.manifest ? Object.keys(state.manifest.files).length : 0,
+			hasWatcher: !!state.watcher,
+			error: state.error
+				? {
+						type: state.error.type,
+						message: state.error.message,
+						timestamp: state.error.timestamp,
+						context: state.error.context,
+					}
+				: undefined,
+		}))
 	}
 }

@@ -1,84 +1,63 @@
 // kilocode_change - new file
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { Trans } from "react-i18next"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
-import type { IndexingStatus } from "@roo/ExtensionMessage"
-
 import { vscode } from "@src/utils/vscode"
-import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { buildDocLink } from "@src/utils/docLinks"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
-import { OrganizationIndexingTab } from "./OrganizationIndexingTab"
+import { ManagedIndexerStatus } from "./ManagedIndexerStatus"
 
-interface CodeIndexPopoverProps {
-	indexingStatus: IndexingStatus
+interface WorkspaceFolderState {
+	workspaceFolderPath: string
+	workspaceFolderName: string
+	gitBranch: string | null
+	projectId: string | null
+	isIndexing: boolean
+	hasManifest: boolean
+	manifestFileCount: number
+	hasWatcher: boolean
+	error?: {
+		type: string
+		message: string
+		timestamp: string
+		context?: {
+			filePath?: string
+			branch?: string
+			operation?: string
+		}
+	}
 }
 
-export const ManagedCodeIndexPopoverContent: React.FC<CodeIndexPopoverProps> = ({
-	indexingStatus: externalIndexingStatus,
-}) => {
+interface CodeIndexPopoverProps {}
+
+export const ManagedCodeIndexPopoverContent: React.FC<CodeIndexPopoverProps> = () => {
 	const { t } = useAppTranslation()
-	const { cwd } = useExtensionState()
 	const [open, setOpen] = useState(false)
+	const [workspaceFolders, setWorkspaceFolders] = useState<WorkspaceFolderState[]>([])
 
-	const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>(externalIndexingStatus)
-
-	// Update indexing status from parent
-	useEffect(() => {
-		setIndexingStatus(externalIndexingStatus)
-	}, [externalIndexingStatus])
-
-	// Request initial indexing status
+	// Request initial state when popover opens
 	useEffect(() => {
 		if (open) {
-			vscode.postMessage({ type: "requestIndexingStatus" })
+			vscode.postMessage({ type: "requestManagedIndexerState" })
 		}
-		const handleMessage = (event: MessageEvent) => {
-			if (event.data.type === "workspaceUpdated") {
-				// When workspace changes, request updated indexing status
-				if (open) {
-					vscode.postMessage({ type: "requestIndexingStatus" })
-				}
-			}
-		}
-
-		window.addEventListener("message", handleMessage)
-		return () => window.removeEventListener("message", handleMessage)
 	}, [open])
 
-	// Listen for indexing status updates
+	// Listen for managed indexer state updates
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent<any>) => {
-			if (event.data.type === "indexingStatusUpdate") {
-				if (!event.data.values.workspacePath || event.data.values.workspacePath === cwd) {
-					setIndexingStatus({
-						systemStatus: event.data.values.systemStatus,
-						message: event.data.values.message || "",
-						processedItems: event.data.values.processedItems,
-						totalItems: event.data.values.totalItems,
-						currentItemUnit: event.data.values.currentItemUnit || "items",
-					})
-				}
+			if (event.data.type === "managedIndexerState") {
+				setWorkspaceFolders(event.data.managedIndexerState || [])
 			}
 		}
 
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
-	}, [cwd])
+	}, [])
 
 	// Use the shared ESC key handler hook
 	useEscapeKey(open, () => setOpen(false))
-
-	const handleCancelIndexing = useCallback(() => {
-		// Optimistically update UI while backend cancels
-		setIndexingStatus((prev) => ({
-			...prev,
-			message: t("settings:codeIndex.cancelling"),
-		}))
-		vscode.postMessage({ type: "cancelIndexing" })
-	}, [t])
 
 	return (
 		<>
@@ -97,7 +76,7 @@ export const ManagedCodeIndexPopoverContent: React.FC<CodeIndexPopoverProps> = (
 			</div>
 
 			<div className="p-4">
-				<OrganizationIndexingTab indexingStatus={indexingStatus} onCancelIndexing={handleCancelIndexing} />
+				<ManagedIndexerStatus workspaceFolders={workspaceFolders} />
 			</div>
 		</>
 	)
