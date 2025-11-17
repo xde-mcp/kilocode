@@ -1,5 +1,5 @@
 ---
-sidebar_label: Additional Features
+sidebar_label: 附加功能
 ---
 
 
