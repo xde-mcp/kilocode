@@ -12,7 +12,7 @@
 
 ### Patch Changes
 
-- [#3776](https://github.com/Kilo-Org/kilocode/pull/3776) [`81afb3f`](https://github.com/Kilo-Org/kilocode/commit/81afb3f88a719de403cc0fc4f97e66773201f528) Thanks [@RSO](https://github.com/RSO)! - Support installing CLI with bun
+- [#3776](https://github.com/Kilo-Org/kilocode/pull/3776) [`81afb3f`](https://github.com/Kilo-Org/kilocode/commit/81afb3f88a719de403cc0fc4f97e66773201f528) Thanks [@Eldevia](https://github.com/Eldevia)! - Support installing CLI with bun
 
 - [#3769](https://github.com/Kilo-Org/kilocode/pull/3769) [`eff6f2b`](https://github.com/Kilo-Org/kilocode/commit/eff6f2b9e8161f4016a378a28cd0b9a4df9d5ee0) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Update providers configurations
 
