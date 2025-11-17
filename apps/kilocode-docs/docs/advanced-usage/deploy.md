@@ -1,32 +1,90 @@
 ---
+title: Deploy
 sidebar_label: Deploy
 ---
 
 # Deploy
 
-Deploy your Next.js applications directly from Kilo Code with automatic builds and continuous deployment from GitHub.
+Kilo Code Deploy lets you ship **Next.js** applications directly from Kilo Code with automatic builds, real-time logs, and continuous deployment from GitHub. It automatically detects your stack, configures your project for hosting, and manages the full deployment lifecycle.
 
-:::info Organizations Only
-Kilo Code Deploy is currently only available for organizations.
-:::
+## What Deploy Does
 
-:::tip Quick Start
+Deploy streamlines the full process of getting an app live:
 
-1. Connect your GitHub account via the GitHub App integration
-2. Select a repository and branch to deploy
-3. Kilo Code handles the build and assigns a random subdomain
-4. Push new commits to trigger automatic redeployments
+- **One-click deployment** from the Kilo Code dashboard  
+- **No manual configuration** — deployment settings are generated for you  
+- **Deployment history** with logs and build details  
+- **Automatic rebuilds** on every GitHub push  
 
-:::
+---
 
-## Package Manager Support
+## Prerequisites
 
-Kilo Code Deploy supports all major package managers including npm, pnpm, yarn, and bun. The deployment system automatically detects which package manager your project uses and runs the appropriate build commands.
+- Your project must use **Next.js 15** (all minor/patch versions) or the **latest minor of Next.js 14**
+- You must enable the **GitHub Integration**
+  - Go to **Integrations → GitHub**
+  - Click **Configure** and follow the prompts to connect GitHub to Kilo Code
 
-## Supported Next.js Versions
+Deploy supports all major package managers: **npm, pnpm, yarn, bun**. Kilo Code automatically detects which one your project uses and runs the correct build command.
 
-All minor and patch versions of Next.js 15 and the latest minor of Next.js 14 are supported.
+---
+
+## Deploying Your App
+
+### 1. Open the Deploy Tab
+
+- Navigate to your [Organization dashboard](https://app.kilocode.ai/organizations) or [Profile](https://app.kilocode.ai/profile)
+- Select the **Deploy** tab
+
+### 2. Select Your Project
+
+- Click **New Deployment**
+- Choose **GitHub** in the Integration dropdown
+- Select your repository and branch
+
+<img width="600" height="443" alt="DeploySelection" src="https://github.com/user-attachments/assets/e592a7c1-a2dd-42e3-ba5d-d86d9b61001f" />
+
+### 3. Click **Deploy**
+
+Kilo Code will:
+
+- Build your project  
+- Upload artifacts  
+- Provision your deployment  
+- Stream logs in real time  
+
+Once complete, you’ll receive a **deployment URL** you can open or share.
+
+<img width="800" height="824" alt="DeploySuccess" src="https://github.com/user-attachments/assets/4a01ad52-1783-443f-9f9e-bfc2d4b77b43" />
+
+---
+
+## Deployment History & Rollbacks
+
+Each deployment is saved automatically with:
+
+- Timestamp  
+- Build logs  
+- Deployment URL (Preview/Production)  
+
+From the deployment details, you can:
+
+- Inspect previous builds  
+- Redeploy  
+- Delete deployments  
+
+---
 
 ## Database Support
 
-Kilo Code Deploy does not include built-in database hosting. However, you can connect to external database services.
+Kilo Code Deploy does **not** include built-in database hosting, but you can connect to any external database service.
+
+---
+
+## Common Use Cases
+
+Deploy is ideal for:
+
+1. **Quick prototypes** — instantly push an idea live  
+2. **Staging environments** — share a preview environment  
+3. **Rapid iteration** — push commits and get automatic rebuilds  
