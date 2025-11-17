@@ -167,7 +167,6 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		// temperature: 0.2 is mentioned as a sane example in mistral's docs and is what continue uses.
 		const temperature = 0.2
 		const maxTokens = 256
-		const topP = model.topP // Keep topP from model (undefined for Codestral, 0.95 for DeepSeekR1)
 
 		const response = await fetch(endpoint, {
 			method: "POST",
@@ -177,7 +176,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 				suffix,
 				max_tokens: Math.min(maxTokens, model.maxTokens ?? maxTokens),
 				temperature,
-				top_p: topP,
+				top_p: model.topP,
 				stream: true,
 			}),
 			headers,
