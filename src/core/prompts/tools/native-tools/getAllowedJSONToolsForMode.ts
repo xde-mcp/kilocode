@@ -164,8 +164,8 @@ export async function getAllowedJSONToolsForMode(
 
 	// Handle the "apply_diff" logic separately because the same tool has different
 	// implementations depending on whether multi-file diffs are enabled, but the same name is used.
-	if (isApplyDiffToolAllowedForMode && diffEnabled) {
-		if (model?.id && shouldUseSearchAndReplaceInsteadOfApplyDiff(model?.id)) {
+	if (isApplyDiffToolAllowedForMode) {
+		if (!diffEnabled || (model?.id && shouldUseSearchAndReplaceInsteadOfApplyDiff(model?.id))) {
 			allowedTools.push(search_and_replace)
 		} else if (providerState?.experiments.multiFileApplyDiff) {
 			allowedTools.push(apply_diff_multi_file)
