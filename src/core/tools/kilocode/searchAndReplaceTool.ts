@@ -80,19 +80,7 @@ export async function searchAndReplaceTool(
 	const endLine: number | undefined = block.params.end_line ? parseInt(block.params.end_line, 10) : undefined
 
 	try {
-		// Handle partial tool use
 		if (block.partial) {
-			const partialMessageProps = {
-				tool: "searchAndReplace" as const,
-				path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
-				search: removeClosingTag("search", search),
-				replace: removeClosingTag("replace", replace),
-				useRegex: block.params.use_regex === "true",
-				ignoreCase: block.params.ignore_case === "true",
-				startLine,
-				endLine,
-			}
-			await cline.ask("tool", JSON.stringify(partialMessageProps), block.partial).catch(() => {})
 			return
 		}
 
