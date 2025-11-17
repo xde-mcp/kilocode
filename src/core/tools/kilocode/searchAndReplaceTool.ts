@@ -34,7 +34,7 @@ async function validateParams(
 	const args = SearchAndReplaceParametersSchema.safeParse(block.params)
 	if (!args.success) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("apply_diff")
+		cline.recordToolError("apply_diff", "schema_violation")
 		pushToolResult(
 			formatResponse.toolError("Tool arguments do not follow the schema:\n" + z.prettifyError(args.error)),
 		)
@@ -42,7 +42,7 @@ async function validateParams(
 	}
 	if (args.data.old_str === args.data.new_str) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("apply_diff")
+		cline.recordToolError("apply_diff", "strings_identical")
 		pushToolResult(formatResponse.toolError("old_str and new_str are identical"))
 		return null
 	}
@@ -102,7 +102,7 @@ export async function searchAndReplaceTool(
 
 		if (!fileExists) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("apply_diff")
+			cline.recordToolError("apply_diff", "file_does_not_exist")
 			const formattedError = formatResponse.toolError(
 				`File does not exist at path: ${absolutePath}\nThe specified file could not be found. Please verify the file path and try again.`,
 			)
@@ -120,7 +120,7 @@ export async function searchAndReplaceTool(
 			fileContent = await fs.readFile(absolutePath, "utf-8")
 		} catch (error) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("apply_diff")
+			cline.recordToolError("apply_diff", "exception")
 			const errorMessage = `Error reading file: ${absolutePath}\nFailed to read the file content: ${
 				error instanceof Error ? error.message : String(error)
 			}\nPlease verify file permissions and try again.`
@@ -130,7 +130,21 @@ export async function searchAndReplaceTool(
 			return
 		}
 
-		const newContent = fileContent.replace(validSearch, validReplace)
+		// Create search pattern and perform replacement
+		const searchPattern = new RegExp(escapeRegExp(validSearch), "g")
+
+		const matchCount = fileContent.match(searchPattern)?.length ?? 0
+		if (matchCount > 1) {
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("apply_diff", "multiple_matches")
+			pushToolResult(
+				formatResponse.toolError(
+					`Found ${matchCount} matches for replacement text. Please provide more context to make a unique match.`,
+				),
+			)
+		}
+
+		const newContent = fileContent.replace(searchPattern, validReplace)
 
 		// Initialize diff view
 		cline.diffViewProvider.editType = "modify"
@@ -140,8 +154,12 @@ export async function searchAndReplaceTool(
 		const diff = formatResponse.createPrettyPatch(validRelPath, fileContent, newContent)
 		if (!diff) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("apply_diff")
-			pushToolResult(formatResponse.toolError(`old_str was not found in '${validRelPath}'`))
+			cline.recordToolError("apply_diff", "no_match")
+			pushToolResult(
+				formatResponse.toolError(
+					`No match found for replacement in '${validRelPath}'. Please check your text and try again.`,
+				),
+			)
 			await cline.diffViewProvider.reset()
 			return
 		}
@@ -216,4 +234,13 @@ export async function searchAndReplaceTool(
 		handleError("applying diff", error)
 		await cline.diffViewProvider.reset()
 	}
+}
+
+/**
+ * Escapes special regex characters in a string
+ * @param input String to escape regex characters in
+ * @returns Escaped string safe for regex pattern matching
+ */
+function escapeRegExp(input: string): string {
+	return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
