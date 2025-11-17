@@ -7,7 +7,6 @@ import { CodeIndexManager } from "../../../../../services/code-index/manager"
 import { McpServerManager } from "../../../../../services/mcp/McpServerManager"
 import { ContextProxy } from "../../../../config/ContextProxy"
 import * as vscode from "vscode"
-import search_and_replace from "../search_and_replace"
 
 vi.mock("vscode")
 vi.mock("../../../../../services/code-index/manager")
@@ -119,7 +118,7 @@ describe("getAllowedJSONToolsForMode", () => {
 			)
 
 			const applyDiffTool = tools.find((tool) => "function" in tool && tool.function.name === "apply_diff")
-			expect(applyDiffTool).toBe(search_and_replace)
+			expect(applyDiffTool).toBeUndefined()
 		})
 	})
 

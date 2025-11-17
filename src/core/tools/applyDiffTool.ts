@@ -33,9 +33,10 @@ export async function applyDiffToolLegacy(
 ) {
 	// kilocode_change start
 	if (
-		!cline.diffEnabled ||
-		(getActiveToolUseStyle(cline.apiConfiguration) &&
-			shouldUseSearchAndReplaceInsteadOfApplyDiff(getModelId(cline.apiConfiguration) ?? ""))
+		shouldUseSearchAndReplaceInsteadOfApplyDiff(
+			getActiveToolUseStyle(cline.apiConfiguration),
+			getModelId(cline.apiConfiguration) ?? "",
+		)
 	) {
 		await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
 		return
