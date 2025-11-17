@@ -165,7 +165,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		}
 
 		// Hardcoded values to match new autocomplete settings (NewAutocompleteModel.ts:97-98)
-		// temperature: 0.2 for more deterministic autocomplete
+		// temperature: 0.2 is mentioned as a sane example in mistral's docs and is what continue uses.
 		// max_tokens: 256 for reasonable code completion length
 		const temperature = 0.2
 		const maxTokens = 256
