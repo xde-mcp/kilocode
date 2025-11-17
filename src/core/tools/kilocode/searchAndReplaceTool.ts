@@ -1,11 +1,11 @@
 // Core Node.js imports
 import path from "path"
 import fs from "fs/promises"
-import delay from "delay"
+import z from "zod/v4"
 
 // Internal imports
 import { Task } from "../../task/Task"
-import { AskApproval, HandleError, PushToolResult, RemoveClosingTag, ToolUse } from "../../../shared/tools"
+import { AskApproval, HandleError, PushToolResult, ToolUse } from "../../../shared/tools"
 import { formatResponse } from "../../prompts/responses"
 import { ClineSayTool } from "../../../shared/ExtensionMessage"
 import { getReadablePath } from "../../../utils/path"
@@ -13,6 +13,10 @@ import { fileExistsAtPath } from "../../../utils/fs"
 import { RecordSource } from "../../context-tracking/FileContextTrackerTypes"
 import { DEFAULT_WRITE_DELAY_MS } from "@roo-code/types"
 import { EXPERIMENT_IDS, experiments } from "../../../shared/experiments"
+import {
+	SearchAndReplaceParameters,
+	SearchAndReplaceParametersSchema,
+} from "../../prompts/tools/native-tools/search_and_replace"
 
 /**
  * Tool for performing search and replace operations on files
@@ -24,33 +28,25 @@ import { EXPERIMENT_IDS, experiments } from "../../../shared/experiments"
  */
 async function validateParams(
 	cline: Task,
-	relPath: string | undefined,
-	search: string | undefined,
-	replace: string | undefined,
+	block: ToolUse,
 	pushToolResult: PushToolResult,
-): Promise<boolean> {
-	if (!relPath) {
+): Promise<SearchAndReplaceParameters | null> {
+	const args = SearchAndReplaceParametersSchema.safeParse(block.params)
+	if (!args.success) {
 		cline.consecutiveMistakeCount++
 		cline.recordToolError("apply_diff")
-		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "path"))
-		return false
+		pushToolResult(
+			formatResponse.toolError("Tool arguments do not follow the schema:\n" + z.prettifyError(args.error)),
+		)
+		return null
 	}
-
-	if (!search) {
+	if (args.data.old_str === args.data.new_str) {
 		cline.consecutiveMistakeCount++
 		cline.recordToolError("apply_diff")
-		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "search"))
-		return false
+		pushToolResult(formatResponse.toolError("old_str and new_str are identical"))
+		return null
 	}
-
-	if (replace === undefined) {
-		cline.consecutiveMistakeCount++
-		cline.recordToolError("apply_diff")
-		pushToolResult(await cline.sayAndCreateMissingParamError("apply_diff", "replace"))
-		return false
-	}
-
-	return true
+	return args.data
 }
 
 /**
@@ -68,31 +64,22 @@ export async function searchAndReplaceTool(
 	askApproval: AskApproval,
 	handleError: HandleError,
 	pushToolResult: PushToolResult,
-	removeClosingTag: RemoveClosingTag,
 ): Promise<void> {
-	// Extract and validate parameters
-	const relPath: string | undefined = block.params.path
-	const search: string | undefined = block.params.search
-	const replace: string | undefined = block.params.replace
-	const useRegex: boolean = block.params.use_regex === "true"
-	const ignoreCase: boolean = block.params.ignore_case === "true"
-	const startLine: number | undefined = block.params.start_line ? parseInt(block.params.start_line, 10) : undefined
-	const endLine: number | undefined = block.params.end_line ? parseInt(block.params.end_line, 10) : undefined
-
 	try {
 		if (block.partial) {
 			return
 		}
 
 		// Validate required parameters
-		if (!(await validateParams(cline, relPath, search, replace, pushToolResult))) {
+		const params = await validateParams(cline, block, pushToolResult)
+		if (!params) {
 			return
 		}
 
 		// At this point we know relPath, search and replace are defined
-		const validRelPath = relPath as string
-		const validSearch = search as string
-		const validReplace = replace as string
+		const validRelPath = params.path
+		const validSearch = params.old_str
+		const validReplace = params.new_str
 
 		const sharedMessageProps: ClineSayTool = {
 			tool: "appliedDiff",
@@ -143,32 +130,7 @@ export async function searchAndReplaceTool(
 			return
 		}
 
-		// Create search pattern and perform replacement
-		const flags = ignoreCase ? "gi" : "g"
-		const searchPattern = useRegex ? new RegExp(validSearch, flags) : new RegExp(escapeRegExp(validSearch), flags)
-
-		let newContent: string
-		if (startLine !== undefined || endLine !== undefined) {
-			// Handle line-specific replacement
-			const lines = fileContent.split("\n")
-			const start = Math.max((startLine ?? 1) - 1, 0)
-			const end = Math.min((endLine ?? lines.length) - 1, lines.length - 1)
-
-			// Get content before and after target section
-			const beforeLines = lines.slice(0, start)
-			const afterLines = lines.slice(end + 1)
-
-			// Get and modify target section
-			const targetContent = lines.slice(start, end + 1).join("\n")
-			const modifiedContent = targetContent.replace(searchPattern, validReplace)
-			const modifiedLines = modifiedContent.split("\n")
-
-			// Reconstruct full content
-			newContent = [...beforeLines, ...modifiedLines, ...afterLines].join("\n")
-		} else {
-			// Global replacement
-			newContent = fileContent.replace(searchPattern, validReplace)
-		}
+		const newContent = fileContent.replace(validSearch, validReplace)
 
 		// Initialize diff view
 		cline.diffViewProvider.editType = "modify"
@@ -177,7 +139,9 @@ export async function searchAndReplaceTool(
 		// Generate and validate diff
 		const diff = formatResponse.createPrettyPatch(validRelPath, fileContent, newContent)
 		if (!diff) {
-			pushToolResult(`No changes needed for '${relPath}'`)
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("apply_diff")
+			pushToolResult(formatResponse.toolError(`old_str was not found in '${validRelPath}'`))
 			await cline.diffViewProvider.reset()
 			return
 		}
@@ -227,8 +191,8 @@ export async function searchAndReplaceTool(
 		}
 
 		// Track file edit operation
-		if (relPath) {
-			await cline.fileContextTracker.trackFileContext(relPath, "roo_edited" as RecordSource)
+		if (validRelPath) {
+			await cline.fileContextTracker.trackFileContext(validRelPath, "roo_edited" as RecordSource)
 		}
 
 		cline.didEditFile = true
@@ -249,16 +213,7 @@ export async function searchAndReplaceTool(
 		// Process any queued messages after file edit completes
 		cline.processQueuedMessages()
 	} catch (error) {
-		handleError("search and replace", error)
+		handleError("applying diff", error)
 		await cline.diffViewProvider.reset()
 	}
-}
-
-/**
- * Escapes special regex characters in a string
- * @param input String to escape regex characters in
- * @returns Escaped string safe for regex pattern matching
- */
-function escapeRegExp(input: string): string {
-	return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
