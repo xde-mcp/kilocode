@@ -3,9 +3,10 @@ import type { ModelInfo } from "../model.js"
 // https://openai.com/api/pricing/
 export type OpenAiNativeModelId = keyof typeof openAiNativeModels
 
-export const openAiNativeDefaultModelId: OpenAiNativeModelId = "gpt-5.1"
+export const openAiNativeDefaultModelId: OpenAiNativeModelId = "gpt-5.1" // kilocode_change
 
 export const openAiNativeModels = {
+	// kilocode_change start
 	"gpt-5.1": {
 		maxTokens: 128000,
 		contextWindow: 400000,
@@ -57,6 +58,7 @@ export const openAiNativeModels = {
 		description: "GPT-5.1 Chat Latest: Optimized for conversational AI and non-reasoning tasks",
 		supportsVerbosity: true,
 	},
+	// kilocode_change end
 	"gpt-5-chat-latest": {
 		maxTokens: 128000,
 		contextWindow: 400000,
