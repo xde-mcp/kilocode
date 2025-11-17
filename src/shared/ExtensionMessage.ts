@@ -57,6 +57,12 @@ export interface IndexingStatus {
 	totalItems: number
 	currentItemUnit?: string
 	workspacePath?: string
+	gitBranch?: string // Current git branch being indexed
+	manifest?: {
+		totalFiles: number
+		totalChunks: number
+		lastUpdated: string
+	}
 }
 
 export interface IndexingStatusUpdateMessage {
@@ -131,6 +137,7 @@ export interface ExtensionMessage {
 		| "profileDataResponse" // kilocode_change
 		| "balanceDataResponse" // kilocode_change
 		| "updateProfileData" // kilocode_change
+		| "profileConfigurationForEditing" // kilocode_change: Response with profile config for editing
 		| "authenticatedUser"
 		| "condenseTaskContextResponse"
 		| "singleRouterModelFetchResponse"
@@ -225,6 +232,7 @@ export interface ExtensionMessage {
 	mcpServers?: McpServer[]
 	commits?: GitCommit[]
 	listApiConfig?: ProviderSettingsEntry[]
+	apiConfiguration?: ProviderSettings // kilocode_change: For profileConfigurationForEditing response
 	mode?: Mode
 	customMode?: ModeConfig
 	slug?: string
