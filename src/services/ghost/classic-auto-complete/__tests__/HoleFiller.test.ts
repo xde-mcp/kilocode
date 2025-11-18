@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from "vitest"
 import { HoleFiller, parseGhostResponse } from "../HoleFiller"
 import { AutocompleteInput } from "../../types"
 import crypto from "crypto"
-import { formatSnippets } from "../../../continuedev/core/autocomplete/templating/formatting"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 
 function createAutocompleteInput(
@@ -80,14 +79,22 @@ Return the COMPLETION tags`
 				"typescript",
 			)
 
-			// Verify the prompt contains the expected parts
-			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
-			expect(userPrompt).toContain("{{FILL_HERE}}")
-			expect(userPrompt).toContain("function calculate() {")
-			expect(userPrompt).toContain("TASK: Fill the {{FILL_HERE}} hole")
-			// Context should include the utils.ts snippet
-			expect(userPrompt).toContain("utils.ts")
-			expect(userPrompt).toContain("export function sum")
+			const expected = `<LANGUAGE>typescript</LANGUAGE>
+
+<QUERY>
+// Path: utils.ts
+// export function sum(a: number, b: number) {
+//   return a + b
+// }
+// app.tsfunction calculate() {
+  {{FILL_HERE}}
+}
+</QUERY>
+
+TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
+Return the COMPLETION tags`
+
+			expect(userPrompt).toBe(expected)
 		})
 	})
 
