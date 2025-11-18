@@ -304,14 +304,13 @@ export async function presentAssistantMessage(cline: Task) {
 			// Track if we've already pushed a tool result for this tool call (native protocol only)
 			let hasToolResult = false
 
+			// Determine protocol by checking if this tool call has an ID.
+			// Native protocol tool calls ALWAYS have an ID (set when parsed from tool_call chunks).
+			// XML protocol tool calls NEVER have an ID (parsed from XML text).
+			const toolCallId = (block as any).id
+			const isNative = !!toolCallId
+
 			const pushToolResult = (content: ToolResponse) => {
-				// Check if we're using native tool protocol
-				const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration) // kilocode_change
-				const isNative = isNativeProtocol(toolProtocol)
-
-				// Get the tool call ID if this is a native tool call
-				const toolCallId = (block as any).id
-
 				if (isNative && toolCallId) {
 					// For native protocol, only allow ONE tool_result per tool call
 					if (hasToolResult) {
@@ -554,8 +553,7 @@ export async function presentAssistantMessage(cline: Task) {
 					await checkpointSaveAndMark(cline)
 
 					// kilocode_change start: use search and replace tool
-					const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration)
-					if (isNativeProtocol(toolProtocol)) {
+					if (isNative) {
 						await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
 						break
 					}
