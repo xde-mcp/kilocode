@@ -158,10 +158,4 @@ export type TaskEvents = {
 	// Task Analytics
 	[RooCodeEventName.TaskToolFailed]: [taskId: string, tool: ToolName, error: string]
 	[RooCodeEventName.TaskTokenUsageUpdated]: [taskId: string, tokenUsage: TokenUsage]
-
-	// kilocode_change start
-	[RooCodeEventName.ApiMessagesSaved]: [taskId: string, filePath: string]
-	[RooCodeEventName.TaskMessagesSaved]: [taskId: string, filePath: string]
-	[RooCodeEventName.TaskMetadataSaved]: [taskId: string, filePath: string]
-	// kilocode_change end
 }
