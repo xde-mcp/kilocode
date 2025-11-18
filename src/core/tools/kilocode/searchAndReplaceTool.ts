@@ -129,8 +129,8 @@ export async function searchAndReplaceTool(
 		}
 
 		const useCrLf = fileContent.includes("\r\n")
-		const validSearch = params.old_str.replaceAll(/\r*\n/, useCrLf ? "\r\n" : "\n")
-		const validReplace = params.new_str.replaceAll(/\r*\n/, useCrLf ? "\r\n" : "\n")
+		const validSearch = params.old_str.replaceAll(/\r*\n/g, useCrLf ? "\r\n" : "\n")
+		const validReplace = params.new_str.replaceAll(/\r*\n/g, useCrLf ? "\r\n" : "\n")
 
 		// Create search pattern and perform replacement
 		const searchPattern = new RegExp(escapeRegExp(validSearch), "g")
