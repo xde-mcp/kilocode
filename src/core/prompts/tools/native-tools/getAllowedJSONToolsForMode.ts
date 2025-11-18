@@ -15,6 +15,7 @@ import { ClineProvider } from "../../../webview/ClineProvider"
 import { ContextProxy } from "../../../config/ContextProxy"
 import * as vscode from "vscode"
 import { read_file_multi, read_file_single } from "./read_file"
+import search_and_replace, { shouldUseSearchAndReplaceInsteadOfApplyDiff } from "./search_and_replace"
 
 export async function getAllowedJSONToolsForMode(
 	mode: Mode,
@@ -164,7 +165,9 @@ export async function getAllowedJSONToolsForMode(
 	// Handle the "apply_diff" logic separately because the same tool has different
 	// implementations depending on whether multi-file diffs are enabled, but the same name is used.
 	if (isApplyDiffToolAllowedForMode && diffEnabled) {
-		if (providerState?.experiments.multiFileApplyDiff) {
+		if (shouldUseSearchAndReplaceInsteadOfApplyDiff("json", model?.id ?? "")) {
+			allowedTools.push(search_and_replace)
+		} else if (providerState?.experiments.multiFileApplyDiff) {
 			allowedTools.push(apply_diff_multi_file)
 		} else {
 			allowedTools.push(apply_diff_single_file)
