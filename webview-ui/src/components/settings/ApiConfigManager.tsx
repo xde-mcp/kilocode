@@ -376,27 +376,29 @@ const ApiConfigManager = ({
 								}}
 							/>
 						</div>
-						<div>
-							<label className="block text-sm font-medium mb-1">
-								{t("settings:providers.profileType")}
-							</label>
-							<Select
-								value={newProfileType}
-								onValueChange={(value) => setNewProfileType(value as ProfileType)}>
-								<SelectTrigger className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="chat">{t("settings:providers.profileTypeChat")}</SelectItem>
-									<SelectItem value="autocomplete">
-										{t("settings:providers.profileTypeAutocomplete")}
-									</SelectItem>
-								</SelectContent>
-							</Select>
-							<p className="text-vscode-descriptionForeground text-xs mt-1">
-								{t("settings:providers.profileTypeDescription")}
-							</p>
-						</div>
+						{process.env.NODE_ENV === "development" && (
+							<div>
+								<label className="block text-sm font-medium mb-1">
+									{t("settings:providers.profileType")}
+								</label>
+								<Select
+									value={newProfileType}
+									onValueChange={(value) => setNewProfileType(value as ProfileType)}>
+									<SelectTrigger className="w-full">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="chat">{t("settings:providers.profileTypeChat")}</SelectItem>
+										<SelectItem value="autocomplete">
+											{t("settings:providers.profileTypeAutocomplete")}
+										</SelectItem>
+									</SelectContent>
+								</Select>
+								<p className="text-vscode-descriptionForeground text-xs mt-1">
+									{t("settings:providers.profileTypeDescription")}
+								</p>
+							</div>
+						)}
 					</div>
 					{/* kilocode_change end */}
 					{error && (

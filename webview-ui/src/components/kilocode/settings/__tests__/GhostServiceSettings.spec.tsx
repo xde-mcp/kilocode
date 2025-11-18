@@ -193,7 +193,6 @@ describe("GhostServiceSettingsView", () => {
 		expect(screen.getByText(/openrouter/)).toBeInTheDocument()
 		expect(screen.getAllByText(/kilocode:ghost.settings.model/).length).toBeGreaterThan(0)
 		expect(screen.getByText(/openai\/gpt-4o-mini/)).toBeInTheDocument()
-		expect(screen.getByText(/kilocode:ghost.settings.configureAutocompleteProfile/)).toBeInTheDocument()
 	})
 
 	it("displays error message when provider and model are not configured", () => {
@@ -206,7 +205,6 @@ describe("GhostServiceSettingsView", () => {
 		})
 
 		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
-		expect(screen.getByText(/kilocode:ghost.settings.configureAutocompleteProfile/)).toBeInTheDocument()
 	})
 
 	it("displays error message when only provider is missing", () => {
@@ -219,7 +217,6 @@ describe("GhostServiceSettingsView", () => {
 		})
 
 		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
-		expect(screen.getByText(/kilocode:ghost.settings.configureAutocompleteProfile/)).toBeInTheDocument()
 	})
 
 	it("displays error message when only model is missing", () => {
@@ -232,6 +229,5 @@ describe("GhostServiceSettingsView", () => {
 		})
 
 		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
-		expect(screen.getByText(/kilocode:ghost.settings.configureAutocompleteProfile/)).toBeInTheDocument()
 	})
 })
