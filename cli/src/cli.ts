@@ -25,6 +25,7 @@ import type { CLIConfig, ProviderConfig } from "./config/types.js"
 import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
 import { TrpcClient } from "./services/trpcClient.js"
+import { SessionService } from "./services/session.js"
 
 /**
  * Main application class that orchestrates the CLI lifecycle
@@ -81,6 +82,8 @@ export class CLI {
 			if (config.kiloToken) {
 				TrpcClient.getInstance(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
+
+				SessionService.getInstance()
 			}
 
 			const telemetryService = getTelemetryService()

@@ -26,6 +26,7 @@ import {
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
 import { logs } from "../../services/logs.js"
+import { SessionService } from "src/services/session.js"
 
 /**
  * Message buffer to handle race conditions during initialization
@@ -258,6 +259,8 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [taskId, filePath] = payload
 					logs.info(`API messages saved for task ${taskId}`, "effects", { filePath })
+
+					SessionService.getInstance().setPath("apiConversationHistoryPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
 				}
@@ -270,6 +273,8 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [taskId, filePath] = payload
 					logs.info(`Task messages saved for task ${taskId}`, "effects", { filePath })
+
+					SessionService.getInstance().setPath("uiMessagesPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
 				}
@@ -281,6 +286,8 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [taskId, filePath] = payload
 					logs.info(`Task metadata saved for task ${taskId}`, "effects", { filePath })
+
+					SessionService.getInstance().setPath("taskMetadataPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
 				}
