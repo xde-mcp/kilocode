@@ -220,7 +220,7 @@ function getSelectedModel({
 		}
 		case "litellm": {
 			const id = apiConfiguration.litellmModelId ?? litellmDefaultModelId
-			const info = routerModels.litellm[id]
+			const info = routerModels.litellm?.[id]
 			return { id, info }
 		}
 		case "deepinfra": {
