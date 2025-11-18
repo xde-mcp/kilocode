@@ -246,6 +246,10 @@ export async function presentAssistantMessage(cline: Task) {
 						return `[${block.name} for '${block.params.command}'${block.params.args ? ` with args: ${block.params.args}` : ""}]`
 					case "generate_image":
 						return `[${block.name} for '${block.params.path}']`
+					case "delete_file":
+						return `[${block.name} for '${block.params.path}']`
+					default:
+						return `[${block.name}]`
 				}
 			}
 
