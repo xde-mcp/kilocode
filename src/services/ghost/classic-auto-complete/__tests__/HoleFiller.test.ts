@@ -86,7 +86,8 @@ Return the COMPLETION tags`
 // export function sum(a: number, b: number) {
 //   return a + b
 // }
-// app.tsfunction calculate() {
+// app.ts
+function calculate() {
   {{FILL_HERE}}
 }
 </QUERY>

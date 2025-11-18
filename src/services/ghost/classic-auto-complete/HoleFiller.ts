@@ -185,7 +185,7 @@ Provide a subtle, non-intrusive completion after a typing pause.
 		}
 
 		prompt += `<QUERY>
-${formattedContext}${prefix}{{FILL_HERE}}${suffix}
+${formattedContext}${formattedContext ? "\n" : ""}${prefix}{{FILL_HERE}}${suffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
