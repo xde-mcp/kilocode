@@ -140,13 +140,6 @@ export const initializeServiceEffectAtom = atom(null, async (get, set, store?: {
  */
 export const messageHandlerEffectAtom = atom(null, (get, set, message: ExtensionMessage) => {
 	try {
-		// [DEBUG] Log ALL incoming messages to understand the structure
-		logs.debug(`[DEBUG] Received message with type: ${message.type}`, "effects", {
-			messageType: message.type,
-			messageKeys: Object.keys(message),
-			fullMessage: message,
-		})
-
 		// Check if service is ready
 		const service = get(extensionServiceAtom)
 		if (!service) {
