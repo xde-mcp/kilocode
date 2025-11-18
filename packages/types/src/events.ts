@@ -41,6 +41,12 @@ export enum RooCodeEventName {
 	ModeChanged = "modeChanged",
 	ProviderProfileChanged = "providerProfileChanged",
 
+	// kilocode_change start
+	ApiMessagesSaved = "apiMessagesSaved",
+	TaskMessagesSaved = "taskMessagesSaved",
+	TaskMetadataSaved = "taskMetadataSaved",
+	// kilocode_change end
+
 	// Evals
 	EvalPass = "evalPass",
 	EvalFail = "evalFail",
@@ -90,6 +96,12 @@ export const rooCodeEventsSchema = z.object({
 
 	[RooCodeEventName.ModeChanged]: z.tuple([z.string()]),
 	[RooCodeEventName.ProviderProfileChanged]: z.tuple([z.object({ name: z.string(), provider: z.string() })]),
+
+	// kilocode_change start
+	[RooCodeEventName.ApiMessagesSaved]: z.tuple([z.string(), z.string()]), // taskId, filePath
+	[RooCodeEventName.TaskMessagesSaved]: z.tuple([z.string(), z.string()]), // taskId, filePath
+	[RooCodeEventName.TaskMetadataSaved]: z.tuple([z.string(), z.string()]), // taskId, filePath
+	// kilocode_change end
 })
 
 export type RooCodeEvents = z.infer<typeof rooCodeEventsSchema>
@@ -198,6 +210,24 @@ export const taskEventSchema = z.discriminatedUnion("eventName", [
 		payload: rooCodeEventsSchema.shape[RooCodeEventName.TaskTokenUsageUpdated],
 		taskId: z.number().optional(),
 	}),
+
+	// kilocode_change start
+	z.object({
+		eventName: z.literal(RooCodeEventName.ApiMessagesSaved),
+		payload: rooCodeEventsSchema.shape[RooCodeEventName.ApiMessagesSaved],
+		taskId: z.number().optional(),
+	}),
+	z.object({
+		eventName: z.literal(RooCodeEventName.TaskMessagesSaved),
+		payload: rooCodeEventsSchema.shape[RooCodeEventName.TaskMessagesSaved],
+		taskId: z.number().optional(),
+	}),
+	z.object({
+		eventName: z.literal(RooCodeEventName.TaskMetadataSaved),
+		payload: rooCodeEventsSchema.shape[RooCodeEventName.TaskMetadataSaved],
+		taskId: z.number().optional(),
+	}),
+	// kilocode_change end
 
 	// Evals
 	z.object({

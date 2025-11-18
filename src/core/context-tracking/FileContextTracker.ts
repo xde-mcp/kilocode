@@ -8,6 +8,7 @@ import fs from "fs/promises"
 import { ContextProxy } from "../config/ContextProxy"
 import type { FileMetadataEntry, RecordSource, TaskMetadata } from "./FileContextTrackerTypes"
 import { ClineProvider } from "../webview/ClineProvider"
+import { RooCodeEventName } from "@roo-code/types"
 
 // This class is responsible for tracking file operations that may result in stale context.
 // If a user modifies a file outside of Roo, the context may become stale and need to be updated.
@@ -132,6 +133,15 @@ export class FileContextTracker {
 			const taskDir = await getTaskDirectoryPath(globalStoragePath, taskId)
 			const filePath = path.join(taskDir, GlobalFileNames.taskMetadata)
 			await safeWriteJson(filePath, metadata)
+
+			// kilocode_change start
+			// Emit event for CLI to react to file save
+			const provider = this.providerRef.deref()
+			const task = provider?.getCurrentTask()
+			if (task && typeof task.emit === "function") {
+				;(task as any).emit(RooCodeEventName.TaskMetadataSaved, taskId, filePath)
+			}
+			// kilocode_change end
 		} catch (error) {
 			console.error("Failed to save task metadata:", error)
 		}
