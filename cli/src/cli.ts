@@ -24,6 +24,7 @@ import type { CLIOptions } from "./types/cli.js"
 import type { CLIConfig, ProviderConfig } from "./config/types.js"
 import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
+import { TrpcClient } from "./services/trpcClient.js"
 
 /**
  * Main application class that orchestrates the CLI lifecycle
@@ -74,6 +75,12 @@ export class CLI {
 				// Save the updated config to persist changes
 				await this.store.set(saveConfigAtom, config)
 				logs.info("Provider/model overrides applied and saved", "CLI")
+			}
+
+			// Initialize TrpcClient if kiloToken is available
+			if (config.kiloToken) {
+				TrpcClient.getInstance(config.kiloToken)
+				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 			}
 
 			const telemetryService = getTelemetryService()
