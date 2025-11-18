@@ -8,9 +8,18 @@ vi.mock("fs", () => ({
 }))
 
 vi.mock("../sessionClient.js")
+vi.mock("../logs.js", () => ({
+	logs: {
+		debug: vi.fn(),
+		info: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+	},
+}))
 
 // Import after mocking
 import { readFileSync } from "fs"
+import { logs } from "../logs.js"
 
 describe("SessionService", () => {
 	let service: SessionService
@@ -451,6 +460,304 @@ describe("SessionService", () => {
 
 			await vi.advanceTimersByTimeAsync(1000)
 			expect(mockUpdate).toHaveBeenCalledTimes(1)
+		})
+	})
+
+	describe("error handling", () => {
+		it("should handle API errors gracefully and continue syncing", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// First call fails
+			mockCreate.mockRejectedValueOnce(new Error("Network error"))
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// First sync attempt - should fail but not throw
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(1)
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to sync session",
+				"SessionService",
+				expect.objectContaining({
+					error: "Network error",
+				}),
+			)
+
+			// Second call succeeds
+			mockCreate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			// Trigger new save event to force new sync
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// Second sync attempt - should succeed
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(2)
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Session created successfully",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-id",
+				}),
+			)
+		})
+
+		it("should handle update failures gracefully", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			mockCreate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// First sync - creates session
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(1)
+
+			// Update fails
+			mockUpdate.mockRejectedValueOnce(new Error("Update failed"))
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// Second sync - update fails but doesn't throw
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockUpdate).toHaveBeenCalledTimes(1)
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to sync session",
+				"SessionService",
+				expect.objectContaining({
+					error: "Update failed",
+					sessionId: "session-id",
+				}),
+			)
+		})
+
+		it("should complete destroy even when final sync fails", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// Wait for initial sync to complete
+			await vi.advanceTimersByTimeAsync(1000)
+
+			// Clear mocks to isolate destroy behavior
+			vi.clearAllMocks()
+
+			// Set a new path to trigger sync during destroy
+			service.setPath("apiConversationHistoryPath", "/path/to/api2.json")
+
+			// Make the update during destroy fail
+			mockUpdate.mockRejectedValueOnce(new Error("Sync failed during destroy"))
+
+			// Destroy should complete without throwing, even though sync fails
+			await expect(service.destroy()).resolves.not.toThrow()
+
+			// syncSession logs the error (not destroy, since syncSession catches internally)
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to sync session",
+				"SessionService",
+				expect.objectContaining({
+					error: "Sync failed during destroy",
+					sessionId: "session-id",
+				}),
+			)
+
+			// Verify destroy completed successfully
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
+		})
+	})
+
+	describe("concurrency protection", () => {
+		it("should prevent concurrent sync operations", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Make the first sync take a long time
+			let resolveFirst: () => void
+			const firstSyncPromise = new Promise<{
+				id: string
+				title: string
+				created_at: string
+				updated_at: string
+			}>((resolve) => {
+				resolveFirst = () =>
+					resolve({
+						id: "session-id",
+						title: "",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+					})
+			})
+
+			mockCreate.mockReturnValueOnce(firstSyncPromise)
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// Start first sync (but don't await - it's already running via timer)
+			const firstTick = vi.advanceTimersByTimeAsync(1000)
+
+			// Try to trigger another sync while first is in progress
+			service.setPath("apiConversationHistoryPath", "/path/to/api2.json")
+			const secondTick = vi.advanceTimersByTimeAsync(1000)
+
+			// Both ticks run but second should skip due to lock
+			await Promise.all([firstTick, secondTick])
+
+			// Should have logged that sync was skipped
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Sync already in progress, skipping", "SessionService")
+
+			// Now resolve the first sync
+			resolveFirst!()
+			await firstSyncPromise
+
+			// Only one create call should have been made
+			expect(mockCreate).toHaveBeenCalledTimes(1)
+		})
+
+		it("should release lock even if sync fails", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// First sync fails
+			mockCreate.mockRejectedValueOnce(new Error("Sync failed"))
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(1)
+
+			// Second sync should work (lock was released)
+			mockCreate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(2)
+		})
+	})
+
+	describe("logging", () => {
+		it("should log debug messages for successful operations", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			mockCreate.mockResolvedValueOnce({
+				id: "new-session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Creating new session", "SessionService")
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Session created successfully",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "new-session-id",
+				}),
+			)
+		})
+
+		it("should log debug messages for updates", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			mockCreate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			vi.clearAllMocks()
+
+			mockUpdate.mockResolvedValueOnce({
+				id: "session-id",
+				title: "",
+				updated_at: "2025-01-01T00:01:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
+				"Updating existing session",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-id",
+				}),
+			)
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
+				"Session updated successfully",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-id",
+				}),
+			)
+		})
+
+		it("should log when no valid content to sync", async () => {
+			vi.mocked(readFileSync).mockImplementation(() => {
+				throw new Error("File not found")
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/nonexistent.json")
+
+			await vi.advanceTimersByTimeAsync(1000)
+
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("No valid content to sync", "SessionService")
+		})
+
+		it("should log during destroy", async () => {
+			await service.destroy()
+
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
+				"Destroying SessionService",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: null,
+				}),
+			)
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
 		})
 	})
 })

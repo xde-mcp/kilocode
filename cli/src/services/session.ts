@@ -1,5 +1,6 @@
 import { readFileSync } from "fs"
 import { SessionClient } from "./sessionClient"
+import { logs } from "./logs.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -23,6 +24,7 @@ export class SessionService {
 	private timer: NodeJS.Timeout | null = null
 	private lastSaveEvent: string = ""
 	private lastSyncEvent: string = ""
+	private isSyncing: boolean = false
 
 	private constructor() {
 		this.startTimer()
@@ -65,37 +67,63 @@ export class SessionService {
 	}
 
 	private async syncSession() {
+		if (this.isSyncing) {
+			return
+		}
+
 		if (Object.values(this.paths).every((item) => !item) || this.lastSaveEvent === this.lastSyncEvent) {
 			return
 		}
 
-		const rawPayload = this.readPaths()
+		this.isSyncing = true
 
-		if (Object.values(rawPayload).every((item) => !item)) {
-			return
-		}
+		try {
+			const rawPayload = this.readPaths()
 
-		const currentLastSaveEvent = this.lastSaveEvent
+			if (Object.values(rawPayload).every((item) => !item)) {
+				return
+			}
 
-		const sessionClient = SessionClient.getInstance()
+			const currentLastSaveEvent = this.lastSaveEvent
+			const sessionClient = SessionClient.getInstance()
 
-		const payload = {
-			api_conversation_history: rawPayload.apiConversationHistoryPath,
-			ui_messages: rawPayload.uiMessagesPath,
-			task_metadata: rawPayload.taskMetadataPath,
-		}
+			const payload: Partial<Parameters<typeof sessionClient.update>[0]> = {
+				api_conversation_history: rawPayload.apiConversationHistoryPath,
+				ui_messages: rawPayload.uiMessagesPath,
+				task_metadata: rawPayload.taskMetadataPath,
+			}
 
-		if (this.sessionId) {
-			await sessionClient.update({
+			if (this.sessionId) {
+				logs.debug("Updating existing session", "SessionService", { sessionId: this.sessionId })
+
+				await sessionClient.update({
+					sessionId: this.sessionId,
+					...payload,
+				})
+
+				logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
+			} else {
+				logs.debug("Creating new session", "SessionService")
+
+				const session = await sessionClient.create(payload)
+
+				this.sessionId = session.id
+
+				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
+			}
+
+			this.lastSyncEvent = currentLastSaveEvent
+		} catch (error) {
+			logs.error("Failed to sync session", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
 				sessionId: this.sessionId,
-				...payload,
+				hasApiHistory: !!this.paths.apiConversationHistoryPath,
+				hasUiMessages: !!this.paths.uiMessagesPath,
+				hasTaskMetadata: !!this.paths.taskMetadataPath,
 			})
-		} else {
-			const session = await sessionClient.create(payload)
-			this.sessionId = session.id
+		} finally {
+			this.isSyncing = false
 		}
-
-		this.lastSyncEvent = currentLastSaveEvent
 	}
 
 	setPath(key: keyof typeof defaultPaths, value: string) {
@@ -105,15 +133,19 @@ export class SessionService {
 	}
 
 	async destroy() {
+		logs.debug("Destroying SessionService", "SessionService", { sessionId: this.sessionId })
+
 		if (this.timer) {
 			clearInterval(this.timer)
 			this.timer = null
 		}
 
-		// flush if possible
 		await this.syncSession()
 
 		this.paths = { ...defaultPaths }
 		this.sessionId = null
+		this.isSyncing = false
+
+		logs.debug("SessionService destroyed", "SessionService")
 	}
 }
