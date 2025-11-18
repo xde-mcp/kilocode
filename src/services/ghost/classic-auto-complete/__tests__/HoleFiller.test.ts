@@ -90,13 +90,23 @@ Return the COMPLETION tags`
 				"typescript",
 			)
 
-			// Just verify the key parts are present since formatting may vary
-			expect(userPrompt).toContain("<LANGUAGE>typescript</LANGUAGE>")
-			expect(userPrompt).toContain("// Path: file:///utils.ts")
-			expect(userPrompt).toContain("export function sum(a: number, b: number)")
-			expect(userPrompt).toContain("function calculate() {")
-			expect(userPrompt).toContain("{{FILL_HERE}}")
-			expect(userPrompt).toContain("TASK: Fill the {{FILL_HERE}} hole")
+			const expected = `<LANGUAGE>typescript</LANGUAGE>
+
+<QUERY>
+// Path: file:///utils.ts
+// export function sum(a: number, b: number) {
+//   return a + b
+// }
+// Path: app.ts
+function calculate() {
+  {{FILL_HERE}}
+}
+</QUERY>
+
+TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
+Return the COMPLETION tags`
+
+			expect(userPrompt).toBe(expected)
 		})
 	})
 
