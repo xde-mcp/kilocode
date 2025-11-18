@@ -7,29 +7,6 @@ export type GeminiCliModelId = keyof typeof geminiCliModels
 export const geminiCliDefaultModelId: GeminiCliModelId = "gemini-2.0-flash-001"
 
 export const geminiCliModels = {
-	"gemini-3-pro-preview": {
-		maxTokens: 65_536,
-		contextWindow: 1_048_576,
-		supportsImages: true,
-		supportsPromptCache: true,
-		supportsReasoningEffort: true,
-		reasoningEffort: "low",
-		supportsTemperature: true,
-		inputPrice: 4.0,
-		outputPrice: 18.0,
-		tiers: [
-			{
-				contextWindow: 200_000,
-				inputPrice: 2.0,
-				outputPrice: 12.0,
-			},
-			{
-				contextWindow: Infinity,
-				inputPrice: 4.0,
-				outputPrice: 18.0,
-			},
-		],
-	},
 	"gemini-2.0-flash-001": {
 		maxTokens: 8192,
 		contextWindow: 1_048_576,
