@@ -32,6 +32,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		this.client = new Anthropic({
 			baseURL: this.options.minimaxBaseUrl || "https://api.minimax.io/anthropic",
 			apiKey: this.options.minimaxApiKey,
+			authToken: null,
 		})
 	}
 
