@@ -6,6 +6,7 @@ import { GhostModel } from "../../GhostModel"
 import { RooIgnoreController } from "../../../../core/ignore/RooIgnoreController"
 import * as vscode from "vscode"
 import crypto from "crypto"
+import { formatSnippets } from "../../../continuedev/core/autocomplete/templating/formatting"
 
 vi.mock("vscode", () => ({
 	Uri: {
@@ -115,15 +116,19 @@ describe("GhostContextProvider", () => {
 		contextProvider = new GhostContextProvider(mockContext, mockModel, mockIgnoreController)
 	})
 
-	describe("getFormattedContext", () => {
-		it("should return empty string when no snippets available", async () => {
+	describe("getProcessedSnippets", () => {
+		it("should return empty snippets when no snippets available", async () => {
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			expect(formatted).toBe("")
 		})
 
-		it("should return formatted context when snippets are available", async () => {
+		it("should return processed snippets when snippets are available", async () => {
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
 			)
@@ -147,13 +152,17 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			const expected = "// Path: file:///recent.ts\nconst recent = 1;"
 			expect(formatted).toBe(expected)
 		})
 
-		it("should format multiple snippets correctly", async () => {
+		it("should process multiple snippets correctly", async () => {
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
 			)
@@ -183,7 +192,11 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			const expected = "// Path: file:///file1.ts\nconst first = 1;\n// Path: file:///file2.ts\nconst second = 2;"
 			expect(formatted).toBe(expected)
@@ -198,7 +211,7 @@ describe("GhostContextProvider", () => {
 
 			const input = createAutocompleteInput("/test.ts")
 
-			await expect(contextProvider.getFormattedContext(input, "/test.ts")).rejects.toThrow("Test error")
+			await expect(contextProvider.getProcessedSnippets(input, "/test.ts")).rejects.toThrow("Test error")
 		})
 	})
 
@@ -252,7 +265,11 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			// Should only contain the allowed file
 			expect(formatted).toContain("allowed.ts")
@@ -305,7 +322,11 @@ describe("GhostContextProvider", () => {
 			])
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			// Should not contain blocked file
 			expect(formatted).not.toContain("blocked.ts")
@@ -341,7 +362,11 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const formatted = await contextProvider.getFormattedContext(input, "/test.ts")
+			const { helper, snippetsWithUris, workspaceDirs } = await contextProvider.getProcessedSnippets(
+				input,
+				"/test.ts",
+			)
+			const formatted = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 
 			// Should contain all files when no controller
 			expect(formatted).toContain("any-file.ts")
