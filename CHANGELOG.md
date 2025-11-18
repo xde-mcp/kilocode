@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.120.0
-
-### Minor Changes
+## [v4.120.0]
 
 - [#3778](https://github.com/Kilo-Org/kilocode/pull/3778) [`b9a9f70`](https://github.com/Kilo-Org/kilocode/commit/b9a9f70bc5963aa2a2d1cae4ef551c22b725a330) Thanks [@markijbema](https://github.com/markijbema)! - Made the dropdown searches more intuitive, search like vscode does
 
