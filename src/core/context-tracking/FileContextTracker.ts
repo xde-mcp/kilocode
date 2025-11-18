@@ -135,11 +135,13 @@ export class FileContextTracker {
 			await safeWriteJson(filePath, metadata)
 
 			// kilocode_change start
-			// Emit event for CLI to react to file save
+			// Post directly to webview for CLI to react to file save
 			const provider = this.providerRef.deref()
-			const task = provider?.getCurrentTask()
-			if (task && typeof task.emit === "function") {
-				;(task as any).emit(RooCodeEventName.TaskMetadataSaved, taskId, filePath)
+			if (provider) {
+				await provider.postMessageToWebview({
+					type: "taskMetadataSaved",
+					payload: [taskId, filePath],
+				})
 			}
 			// kilocode_change end
 		} catch (error) {

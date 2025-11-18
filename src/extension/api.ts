@@ -294,20 +294,6 @@ export class API extends EventEmitter<RooCodeEvents> implements RooCodeAPI {
 				this.emit(RooCodeEventName.TaskTokenUsageUpdated, task.taskId, usage)
 			})
 
-			// kilocode_change start
-			task.on(RooCodeEventName.ApiMessagesSaved, (taskId, filePath) => {
-				this.emit(RooCodeEventName.ApiMessagesSaved, taskId, filePath)
-			})
-
-			task.on(RooCodeEventName.TaskMessagesSaved, (taskId, filePath) => {
-				this.emit(RooCodeEventName.TaskMessagesSaved, taskId, filePath)
-			})
-
-			task.on(RooCodeEventName.TaskMetadataSaved, (taskId, filePath) => {
-				this.emit(RooCodeEventName.TaskMetadataSaved, taskId, filePath)
-			})
-			// kilocode_change end
-
 			// Let's go!
 
 			this.emit(RooCodeEventName.TaskCreated, task.taskId)

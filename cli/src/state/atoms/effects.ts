@@ -140,6 +140,13 @@ export const initializeServiceEffectAtom = atom(null, async (get, set, store?: {
  */
 export const messageHandlerEffectAtom = atom(null, (get, set, message: ExtensionMessage) => {
 	try {
+		// [DEBUG] Log ALL incoming messages to understand the structure
+		logs.debug(`[DEBUG] Received message with type: ${message.type}`, "effects", {
+			messageType: message.type,
+			messageKeys: Object.keys(message),
+			fullMessage: message,
+		})
+
 		// Check if service is ready
 		const service = get(extensionServiceAtom)
 		if (!service) {
@@ -249,6 +256,41 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			case "indexingStatusUpdate": {
 				// this message fires rapidly as the scanner is progressing and we don't have a UI for it in the
 				// CLI at this point, so just quietly ignore it. Eventually we can add more CLI info about indexing.
+				break
+			}
+
+			case "apiMessagesSaved": {
+				const payload = message.payload as [string, string] | undefined
+
+				if (payload && Array.isArray(payload) && payload.length === 2) {
+					const [taskId, filePath] = payload
+					logs.info(`API messages saved for task ${taskId}`, "effects", { filePath })
+				} else {
+					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
+				}
+				break
+			}
+
+			case "taskMessagesSaved": {
+				const payload = message.payload as [string, string] | undefined
+
+				if (payload && Array.isArray(payload) && payload.length === 2) {
+					const [taskId, filePath] = payload
+					logs.info(`Task messages saved for task ${taskId}`, "effects", { filePath })
+				} else {
+					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
+				}
+				break
+			}
+
+			case "taskMetadataSaved": {
+				const payload = message.payload as [string, string] | undefined
+				if (payload && Array.isArray(payload) && payload.length === 2) {
+					const [taskId, filePath] = payload
+					logs.info(`Task metadata saved for task ${taskId}`, "effects", { filePath })
+				} else {
+					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
+				}
 				break
 			}
 
