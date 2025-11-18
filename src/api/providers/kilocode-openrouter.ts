@@ -139,9 +139,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	async completeFim(prefix: string, suffix: string, taskId?: string): Promise<string> {
 		let result = ""
 		for await (const chunk of this.streamFim(prefix, suffix, taskId)) {
-			if (chunk.type === "content") {
-				result += chunk.content
-			}
+			result += chunk
 		}
 		return result
 	}
@@ -150,7 +148,8 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		prefix: string,
 		suffix: string,
 		taskId?: string,
-	): AsyncGenerator<{ type: "content"; content: string } | { type: "usage"; usage: CompletionUsage }> {
+		onUsage?: (usage: CompletionUsage) => void,
+	): AsyncGenerator<string> {
 		const model = await this.fetchModel()
 		const endpoint = new URL("fim/completions", this.apiFIMBase)
 
@@ -190,12 +189,12 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		for await (const data of streamSse(response)) {
 			const content = data.choices?.[0]?.delta?.content
 			if (content) {
-				yield { type: "content", content }
+				yield content
 			}
 
-			// Yield usage information when available
-			if (data.usage) {
-				yield { type: "usage", usage: data.usage }
+			// Call usage callback when available
+			if (data.usage && onUsage) {
+				onUsage(data.usage)
 			}
 		}
 	}

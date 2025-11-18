@@ -96,20 +96,12 @@ export class GhostModel {
 
 		let usage: CompletionUsage | undefined
 
-		try {
-			for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId)) {
-				if (chunk.type === "content") {
-					onChunk(chunk.content)
-				} else if (chunk.type === "usage") {
-					usage = chunk.usage
-				}
-			}
-		} catch (error) {
-			console.error("Error streaming FIM completion:", error)
-			throw error
+		for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId, (u) => {
+			usage = u
+		})) {
+			onChunk(chunk)
 		}
 
-		// Calculate cost from usage information
 		const cost = usage ? this.apiHandler.getTotalCost(usage) : 0
 		const inputTokens = usage?.prompt_tokens ?? 0
 		const outputTokens = usage?.completion_tokens ?? 0
