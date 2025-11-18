@@ -1,3 +1,5 @@
+import { logs } from "./logs"
+
 type HttpMethod = "GET" | "POST"
 
 export class TrpcClient {
@@ -10,6 +12,8 @@ export class TrpcClient {
 
 		if (token && !TrpcClient.instance) {
 			TrpcClient.instance = new TrpcClient(token)
+
+			logs.debug("Initiated TrpcClient", "TrpcClient")
 		}
 
 		return TrpcClient.instance!

@@ -257,8 +257,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				const payload = message.payload as [string, string] | undefined
 
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-					logs.info(`API messages saved for task ${taskId}`, "effects", { filePath })
+					const [, filePath] = payload
 
 					SessionService.getInstance().setPath("apiConversationHistoryPath", filePath)
 				} else {
@@ -271,8 +270,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				const payload = message.payload as [string, string] | undefined
 
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-					logs.info(`Task messages saved for task ${taskId}`, "effects", { filePath })
+					const [, filePath] = payload
 
 					SessionService.getInstance().setPath("uiMessagesPath", filePath)
 				} else {
@@ -284,8 +282,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			case "taskMetadataSaved": {
 				const payload = message.payload as [string, string] | undefined
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-					logs.info(`Task metadata saved for task ${taskId}`, "effects", { filePath })
+					const [, filePath] = payload
 
 					SessionService.getInstance().setPath("taskMetadataPath", filePath)
 				} else {
