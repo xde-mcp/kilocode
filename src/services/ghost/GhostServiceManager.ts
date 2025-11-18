@@ -83,6 +83,15 @@ export class GhostServiceManager {
 			enableQuickInlineTaskKeybinding: true,
 			enableSmartInlineTaskKeybinding: true,
 		}
+		// 1% rollout: auto-enable autocomplete for a small subset of logged-in KiloCode users
+		// who have never explicitly toggled enableAutoTrigger.
+		if (this.settings.enableAutoTrigger == undefined) {
+			const rolloutHash = this.model.getRolloutHash_IfLoggedInToKilo()
+			if (rolloutHash != undefined && rolloutHash % 100 === 0) {
+				this.settings.enableAutoTrigger = true
+			}
+		}
+
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
