@@ -3,6 +3,7 @@ import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { AlertTriangle } from "lucide-react"
 
 import type { ProviderSettingsEntry, OrganizationAllowList, ProfileType } from "@roo-code/types" // kilocode_change - autocomplete profile type system
+import { MODEL_SELECTION_ENABLED } from "@roo-code/types"
 
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import {
@@ -376,7 +377,7 @@ const ApiConfigManager = ({
 								}}
 							/>
 						</div>
-						{process.env.NODE_ENV === "development" && (
+						{MODEL_SELECTION_ENABLED && (
 							<div>
 								<label className="block text-sm font-medium mb-1">
 									{t("settings:providers.profileType")}
