@@ -269,23 +269,21 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
-			const chunks: any[] = []
-			for await (const chunk of handler.streamFim("prefix", "suffix")) {
+			const chunks: string[] = []
+			let receivedUsage: any = null
+
+			for await (const chunk of handler.streamFim("prefix", "suffix", undefined, (usage) => {
+				receivedUsage = usage
+			})) {
 				chunks.push(chunk)
 			}
 
-			expect(chunks).toEqual([
-				{ type: "content", content: "chunk1" },
-				{ type: "content", content: "chunk2" },
-				{
-					type: "usage",
-					usage: {
-						prompt_tokens: 10,
-						completion_tokens: 5,
-						total_tokens: 15,
-					},
-				},
-			])
+			expect(chunks).toEqual(["chunk1", "chunk2"])
+			expect(receivedUsage).toEqual({
+				prompt_tokens: 10,
+				completion_tokens: 5,
+				total_tokens: 15,
+			})
 			expect(streamSse).toHaveBeenCalledWith(mockResponse)
 		})
 

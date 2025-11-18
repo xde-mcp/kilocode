@@ -78,8 +78,6 @@ export async function searchAndReplaceTool(
 
 		// At this point we know relPath, search and replace are defined
 		const validRelPath = params.path
-		const validSearch = params.old_str
-		const validReplace = params.new_str
 
 		const sharedMessageProps: ClineSayTool = {
 			tool: "appliedDiff",
@@ -129,6 +127,10 @@ export async function searchAndReplaceTool(
 			pushToolResult(formattedError)
 			return
 		}
+
+		const useCrLf = fileContent.includes("\r\n")
+		const validSearch = params.old_str.replaceAll(/\r*\n/g, useCrLf ? "\r\n" : "\n")
+		const validReplace = params.new_str.replaceAll(/\r*\n/g, useCrLf ? "\r\n" : "\n")
 
 		// Create search pattern and perform replacement
 		const searchPattern = new RegExp(escapeRegExp(validSearch), "g")
