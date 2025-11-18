@@ -3,7 +3,7 @@ import { HoleFiller, parseGhostResponse } from "../HoleFiller"
 import { AutocompleteInput } from "../../types"
 import crypto from "crypto"
 
-// Mock formatSnippets to return the expected format
+// Mock formatSnippets since HoleFiller now calls it directly
 vi.mock("../../../continuedev/core/autocomplete/templating/formatting", () => ({
 	formatSnippets: vi.fn((helper, snippets) => {
 		if (snippets.length === 0) return ""
