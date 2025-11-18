@@ -76,12 +76,13 @@ export class GhostServiceManager {
 	}
 
 	public async load() {
+		await this.cline.providerSettingsManager.initialize() // avoid race condition with settings migrations
+		await this.model.reload(this.cline.providerSettingsManager)
+
 		this.settings = ContextProxy.instance.getGlobalState("ghostServiceSettings") ?? {
 			enableQuickInlineTaskKeybinding: true,
 			enableSmartInlineTaskKeybinding: true,
 		}
-		await this.cline.providerSettingsManager.initialize() // avoid race condition with settings migrations
-		await this.model.reload(this.cline.providerSettingsManager)
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
