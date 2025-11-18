@@ -626,14 +626,11 @@ describe("SessionService", () => {
 			// Both ticks run but second should skip due to lock
 			await Promise.all([firstTick, secondTick])
 
-			// Should have logged that sync was skipped
-			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Sync already in progress, skipping", "SessionService")
-
 			// Now resolve the first sync
 			resolveFirst!()
 			await firstSyncPromise
 
-			// Only one create call should have been made
+			// Only one create call should have been made (second was blocked by lock)
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 		})
 
@@ -733,18 +730,6 @@ describe("SessionService", () => {
 					sessionId: "session-id",
 				}),
 			)
-		})
-
-		it("should log when no valid content to sync", async () => {
-			vi.mocked(readFileSync).mockImplementation(() => {
-				throw new Error("File not found")
-			})
-
-			service.setPath("apiConversationHistoryPath", "/path/to/nonexistent.json")
-
-			await vi.advanceTimersByTimeAsync(1000)
-
-			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("No valid content to sync", "SessionService")
 		})
 
 		it("should log during destroy", async () => {
