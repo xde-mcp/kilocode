@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
-import { SessionService } from "../session.js"
+import { SessionClient } from "../sessionClient.js"
 import { TrpcClient } from "../trpcClient.js"
 
-describe("SessionService", () => {
-	let service: SessionService
+describe("SessionClient", () => {
+	let service: SessionClient
 	let mockTrpcClient: TrpcClient
 	let requestMock: ReturnType<typeof vi.fn>
 
 	beforeEach(() => {
 		// Reset the singleton instance before each test
 		// @ts-expect-error - Accessing private static property for testing
-		SessionService.instance = null
+		SessionClient.instance = null
 
 		// Mock TrpcClient
 		requestMock = vi.fn()
@@ -21,7 +21,7 @@ describe("SessionService", () => {
 		// Mock TrpcClient.getInstance to return our mock
 		vi.spyOn(TrpcClient, "getInstance").mockReturnValue(mockTrpcClient)
 
-		service = SessionService.getInstance()
+		service = SessionClient.getInstance()
 	})
 
 	afterEach(() => {
@@ -30,14 +30,14 @@ describe("SessionService", () => {
 
 	describe("getInstance", () => {
 		it("should return same instance on multiple calls", () => {
-			const instance1 = SessionService.getInstance()
-			const instance2 = SessionService.getInstance()
+			const instance1 = SessionClient.getInstance()
+			const instance2 = SessionClient.getInstance()
 			expect(instance1).toBe(instance2)
 		})
 
 		it("should be a singleton", () => {
 			// @ts-expect-error - Accessing private static property for testing
-			expect(SessionService.instance).not.toBeNull()
+			expect(SessionClient.instance).not.toBeNull()
 		})
 	})
 

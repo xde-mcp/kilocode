@@ -47,15 +47,15 @@ export interface UpdateSessionOutput {
 	updated_at: string
 }
 
-export class SessionService {
-	private static instance: SessionService | null = null
+export class SessionClient {
+	private static instance: SessionClient | null = null
 
 	static getInstance() {
-		if (!SessionService.instance) {
-			SessionService.instance = new SessionService()
+		if (!SessionClient.instance) {
+			SessionClient.instance = new SessionClient()
 		}
 
-		return SessionService.instance!
+		return SessionClient.instance!
 	}
 
 	private constructor() {}
