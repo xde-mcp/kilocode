@@ -244,7 +244,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
 			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
 
-		// Use pruned prefix/suffix from HelperVars (token-limited based on GHOST_AUTOCOMPLETE_OPTS)
+		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
 		const prunedPrefix = helper.prunedPrefix
 		const prunedSuffix = helper.prunedSuffix
 

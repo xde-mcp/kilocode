@@ -181,7 +181,7 @@ Provide a subtle, non-intrusive completion after a typing pause.
 					autocompleteInput.filepath,
 				)
 				formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
-				// Use pruned prefix/suffix from HelperVars (token-limited based on GHOST_AUTOCOMPLETE_OPTS)
+				// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
 				prunedPrefix = helper.prunedPrefix
 				prunedSuffix = helper.prunedSuffix
 			} catch (error) {
