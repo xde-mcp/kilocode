@@ -9,6 +9,7 @@ import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harnes
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
+import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -240,12 +241,26 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		const formattedPrefix = await this.contextProvider.getFimCompiledPrefix(
+		const { filepathUri, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
 			autocompleteInput,
 			autocompleteInput.filepath,
-			prefix,
-			suffix,
 		)
+
+		const modelName = model.getModelName() ?? "codestral"
+		const template = getTemplateForModel(modelName)
+
+		let formattedPrefix = prefix
+		if (template.compilePrefixSuffix) {
+			const [compiledPrefix] = template.compilePrefixSuffix(
+				prefix,
+				suffix,
+				filepathUri,
+				"", // reponame not used in our context
+				snippetsWithUris,
+				workspaceDirs,
+			)
+			formattedPrefix = compiledPrefix
+		}
 
 		console.log("[FIM] formattedPrefix:", formattedPrefix)
 
