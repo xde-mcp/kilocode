@@ -147,7 +147,7 @@ async function main() {
 		plugins,
 		entryPoints: ["extension.ts"],
 		outfile: "dist/extension.js",
-		external: ["vscode"], // kilocode_change - removed sqlite3
+		external: ["vscode"],
 	}
 
 	/**
