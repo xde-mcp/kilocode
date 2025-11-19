@@ -130,7 +130,7 @@ export class CLI {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				const sessionService = SessionService.init(this.service)
+				const sessionService = SessionService.init(this.service, this.store)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
 				if (this.options.session) {

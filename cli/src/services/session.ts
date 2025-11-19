@@ -6,6 +6,9 @@ import path from "path"
 import { ensureDirSync } from "fs-extra"
 import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
+import { createStore } from "jotai"
+import { addMessageAtom } from "../state/atoms/ui.js"
+import { generateMessage } from "../ui/utils/messages.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -16,13 +19,13 @@ const defaultPaths = {
 export class SessionService {
 	private static instance: SessionService | null = null
 
-	static init(extensionService?: ExtensionService) {
-		if (!extensionService && !SessionService.instance) {
-			throw new Error("extensionService required to init SessionService service")
+	static init(extensionService?: ExtensionService, store?: ReturnType<typeof createStore>) {
+		if ((!extensionService || !store) && !SessionService.instance) {
+			throw new Error("extensionService and store required to init SessionService")
 		}
 
-		if (extensionService && !SessionService.instance) {
-			SessionService.instance = new SessionService(extensionService)
+		if (extensionService && store && !SessionService.instance) {
+			SessionService.instance = new SessionService(extensionService, store)
 
 			logs.debug("Initiated SessionService", "SessionService")
 		}
@@ -37,7 +40,10 @@ export class SessionService {
 	private lastSyncEvent: string = ""
 	private isSyncing: boolean = false
 
-	private constructor(private extensionService: ExtensionService) {
+	private constructor(
+		private extensionService: ExtensionService,
+		private store: ReturnType<typeof createStore>,
+	) {
 		this.startTimer()
 	}
 
@@ -144,6 +150,13 @@ export class SessionService {
 			})
 
 			logs.info("Switched to restored task", "SessionService", { sessionId })
+
+			// Display user-facing message
+			this.store.set(addMessageAtom, {
+				...generateMessage(),
+				type: "system",
+				content: `Session resumed: ${sessionId}`,
+			})
 		} catch (error) {
 			logs.error("Failed to restore session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),
@@ -198,6 +211,13 @@ export class SessionService {
 				this.sessionId = session.id
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
+
+				// Display user-facing message for new session
+				this.store.set(addMessageAtom, {
+					...generateMessage(),
+					type: "system",
+					content: `Session started: ${this.sessionId}`,
+				})
 			}
 
 			this.lastSyncEvent = currentLastSaveEvent
