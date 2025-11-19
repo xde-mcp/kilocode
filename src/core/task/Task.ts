@@ -35,6 +35,7 @@ import {
 	isInteractiveAsk,
 	isResumableAsk,
 	QueuedMessage,
+	isInterleavedThinkingNeeded,
 	getActiveToolUseStyle, // kilocode_change
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
@@ -1990,8 +1991,24 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			// Add environment details as its own text block, separate from tool
 			// results.
-			const finalUserContent = [...parsedUserContent, { type: "text" as const, text: environmentDetails }]
-
+			// kilocode_change start: support interleaved thinking for environment details
+			let finalUserContent = [...parsedUserContent, { type: "text" as const, text: environmentDetails }]
+			if (isInterleavedThinkingNeeded(this.apiConfiguration)) {
+				// Safely get the last item if it exists
+				const lastIndex = parsedUserContent.length - 1
+				if (lastIndex >= 0) {
+					const lastParsedItem = parsedUserContent[lastIndex]
+					// Verify it's a tool_result with a valid content array
+					if (lastParsedItem?.type === "tool_result" && Array.isArray(lastParsedItem.content)) {
+						lastParsedItem.content = [
+							...lastParsedItem.content,
+							{ type: "text" as const, text: environmentDetails },
+						]
+					}
+				}
+				finalUserContent = [...parsedUserContent]
+			}
+			// kilocode_change end
 			await this.addToApiConversationHistory({ role: "user", content: finalUserContent })
 			TelemetryService.instance.captureConversationMessage(this.taskId, "user")
 
