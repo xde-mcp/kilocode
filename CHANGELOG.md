@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.121.0
-
-### Minor Changes
+## [v4.121.0]
 
 - [#3886](https://github.com/Kilo-Org/kilocode/pull/3886) [`00e6fb5`](https://github.com/Kilo-Org/kilocode/commit/00e6fb59a42dcf827f7cfe72516052c561723cd0) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Improve XLSX support
 
