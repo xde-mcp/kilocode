@@ -169,6 +169,22 @@ Provide a subtle, non-intrusive completion after a typing pause.
 		suffix: string,
 		languageId: string,
 	): Promise<string> {
+		// Token limits based on DEFAULT_AUTOCOMPLETE_OPTS (maxPromptTokens: 1024)
+		// Using ~4 chars per token as rough estimate
+		const MAX_PREFIX_CHARS = Math.floor(1024 * 0.3 * 4) // ~1228 chars (30%)
+		const MAX_SUFFIX_CHARS = Math.floor(1024 * 0.2 * 4) // ~819 chars (20%)
+		const MAX_CONTEXT_CHARS = Math.floor(1024 * 0.5 * 4) // ~2048 chars (50%)
+
+		// Truncate prefix from the start (keep end near cursor)
+		const truncatedPrefix = prefix.length > MAX_PREFIX_CHARS
+			? prefix.slice(-MAX_PREFIX_CHARS)
+			: prefix
+
+		// Truncate suffix from the end (keep start near cursor)
+		const truncatedSuffix = suffix.length > MAX_SUFFIX_CHARS
+			? suffix.slice(0, MAX_SUFFIX_CHARS)
+			: suffix
+
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
 
 		let formattedContext = ""
@@ -179,13 +195,18 @@ Provide a subtle, non-intrusive completion after a typing pause.
 					autocompleteInput.filepath,
 				)
 				formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
+				
+				// Truncate context if too long
+				if (formattedContext.length > MAX_CONTEXT_CHARS) {
+					formattedContext = formattedContext.slice(0, MAX_CONTEXT_CHARS)
+				}
 			} catch (error) {
 				console.warn("Failed to get formatted context:", error)
 			}
 		}
 
 		prompt += `<QUERY>
-${formattedContext}${formattedContext ? "\n" : ""}${prefix}{{FILL_HERE}}${suffix}
+${formattedContext}${formattedContext ? "\n" : ""}${truncatedPrefix}{{FILL_HERE}}${truncatedSuffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
