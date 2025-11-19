@@ -33,16 +33,7 @@ export class GhostModel {
 
 		const selectedProfile = profiles.find((x) => x.profileType === "autocomplete")
 		if (selectedProfile) {
-			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
-
-			this.profileName = selectedProfile.name || null
-			this.profileType = selectedProfile.profileType || null
-			this.apiHandler = buildApiHandler(profile)
-			if (this.apiHandler instanceof OpenRouterHandler) {
-				await this.apiHandler.fetchModel()
-			}
-
-			this.loaded = true
+			await useProfile(this, await providerSettingsManager.getProfile({ id: selectedProfile.id }))
 			return true
 		}
 
@@ -58,21 +49,21 @@ export class GhostModel {
 				if (!profile.kilocodeToken) continue
 				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
 			}
-
-			this.profileName = selectedProfile.name || null
-			this.profileType = selectedProfile.profileType || null
-			const modelIdSpec = { [modelIdKeysByProvider[provider]]: model }
-			this.apiHandler = buildApiHandler({ ...profile, ...modelIdSpec })
-			if (this.apiHandler instanceof OpenRouterHandler) {
-				await this.apiHandler.fetchModel()
-			}
-
-			this.loaded = true
+			await useProfile(this, { ...profile, [modelIdKeysByProvider[provider]]: model })
 			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
+
+		type ProfileWithIdAndName = Awaited<ReturnType<typeof providerSettingsManager.getProfile>>
+		async function useProfile(self: GhostModel, profile: ProfileWithIdAndName) {
+			self.profileName = profile.name || null
+			self.profileType = profile.profileType || null
+			self.apiHandler = buildApiHandler(profile)
+			if (self.apiHandler instanceof OpenRouterHandler) await self.apiHandler.fetchModel()
+			self.loaded = true
+		}
 	}
 
 	public supportsFim(): boolean {
