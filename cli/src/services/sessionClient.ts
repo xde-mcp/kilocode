@@ -50,7 +50,7 @@ export interface ListSessionsInput {
 }
 
 export interface ListSessionsOutput {
-	sessions: Session[]
+	cliSessions: Session[]
 	nextCursor: string | null
 }
 
@@ -73,7 +73,7 @@ export class SessionClient {
 	async get(input: GetSessionInput): Promise<GetSessionOutput> {
 		const client = TrpcClient.init()
 		const response = await client.request<GetSessionInput, TrpcResponse<GetSessionOutput>>(
-			"sessions.get",
+			"cliSessions.get",
 			"GET",
 			input,
 		)
@@ -86,7 +86,7 @@ export class SessionClient {
 	async create(input: CreateSessionInput): Promise<CreateSessionOutput> {
 		const client = TrpcClient.init()
 		const response = await client.request<CreateSessionInput, TrpcResponse<CreateSessionOutput>>(
-			"sessions.create",
+			"cliSessions.create",
 			"POST",
 			input,
 		)
@@ -99,7 +99,7 @@ export class SessionClient {
 	async update(input: UpdateSessionInput): Promise<UpdateSessionOutput> {
 		const client = TrpcClient.init()
 		const response = await client.request<UpdateSessionInput, TrpcResponse<UpdateSessionOutput>>(
-			"sessions.update",
+			"cliSessions.update",
 			"POST",
 			input,
 		)
@@ -112,7 +112,7 @@ export class SessionClient {
 	async list(input?: ListSessionsInput): Promise<ListSessionsOutput> {
 		const client = TrpcClient.init()
 		const response = await client.request<ListSessionsInput, TrpcResponse<ListSessionsOutput>>(
-			"sessions.list",
+			"cliSessions.list",
 			"GET",
 			input || {},
 		)

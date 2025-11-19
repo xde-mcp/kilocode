@@ -59,9 +59,9 @@ async function listSessions(context: CommandContext): Promise<void> {
 
 	try {
 		const result = await sessionClient.list({ limit: 50 })
-		const { sessions } = result
+		const { cliSessions } = result
 
-		if (sessions.length === 0) {
+		if (cliSessions.length === 0) {
 			addMessage({
 				...generateMessage(),
 				type: "system",
@@ -72,7 +72,7 @@ async function listSessions(context: CommandContext): Promise<void> {
 
 		// Format and display sessions
 		let content = `**Available Sessions:**\n\n`
-		sessions.forEach((session, index) => {
+		cliSessions.forEach((session, index) => {
 			const isActive = session.id === sessionService.sessionId ? " 🟢 [Active]" : ""
 			const title = session.title || "Untitled"
 			const createdTime = formatRelativeTime(new Date(session.created_at).getTime())
@@ -83,7 +83,7 @@ async function listSessions(context: CommandContext): Promise<void> {
 		})
 
 		if (result.nextCursor) {
-			content += `\n_Showing first ${sessions.length} sessions. More available._`
+			content += `\n_Showing first ${cliSessions.length} sessions. More available._`
 		}
 
 		addMessage({
@@ -155,7 +155,7 @@ async function sessionIdAutocompleteProvider(_context: ArgumentProviderContext):
 
 	try {
 		const result = await sessionClient.list({ limit: 20 })
-		return result.sessions.map((session, index) => ({
+		return result.cliSessions.map((session, index) => ({
 			value: session.id,
 			title: session.title || "Untitled",
 			description: `Created: ${new Date(session.created_at).toLocaleDateString()}`,
