@@ -59,6 +59,8 @@ Return the COMPLETION tags`
 					helper: {
 						filepath: "file:///app.ts",
 						lang: { name: "typescript", singleLineComment: "//" },
+						prunedPrefix: "function calculate() {\n  ",
+						prunedSuffix: "\n}",
 					},
 					snippetsWithUris: [
 						{
