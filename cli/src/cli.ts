@@ -113,7 +113,19 @@ export class CLI {
 			this.store.set(extensionServiceAtom, this.service)
 			logs.debug("ExtensionService set in store", "CLI")
 
-			// Initialize services if kiloToken is available
+			// Track extension initialization
+			telemetryService.trackExtensionInitialized(false) // Will be updated after actual initialization
+
+			// Initialize service through effect atom
+			// This sets up all event listeners and activates the extension
+			await this.store.set(initializeServiceEffectAtom, this.store)
+			logs.info("ExtensionService initialized through effects", "CLI")
+
+			// Track successful extension initialization
+			telemetryService.trackExtensionInitialized(true)
+
+			// Initialize services and restore session if kiloToken is available
+			// This must happen AFTER ExtensionService initialization to allow webview messages
 			if (config.kiloToken) {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
@@ -125,17 +137,6 @@ export class CLI {
 					await sessionService.restoreSession(this.options.session)
 				}
 			}
-
-			// Track extension initialization
-			telemetryService.trackExtensionInitialized(false) // Will be updated after actual initialization
-
-			// Initialize service through effect atom
-			// This sets up all event listeners and activates the extension
-			await this.store.set(initializeServiceEffectAtom, this.store)
-			logs.info("ExtensionService initialized through effects", "CLI")
-
-			// Track successful extension initialization
-			telemetryService.trackExtensionInitialized(true)
 
 			// Load command history
 			await this.store.set(loadHistoryAtom)
