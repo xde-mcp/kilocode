@@ -172,6 +172,8 @@ Provide a subtle, non-intrusive completion after a typing pause.
 		let prompt = `<LANGUAGE>${languageId}</LANGUAGE>\n\n`
 
 		let formattedContext = ""
+		let prunedPrefix = prefix
+		let prunedSuffix = suffix
 		if (this.contextProvider && autocompleteInput.filepath) {
 			try {
 				const { helper, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
@@ -179,13 +181,16 @@ Provide a subtle, non-intrusive completion after a typing pause.
 					autocompleteInput.filepath,
 				)
 				formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
+				// Use pruned prefix/suffix from HelperVars (token-limited based on GHOST_AUTOCOMPLETE_OPTS)
+				prunedPrefix = helper.prunedPrefix
+				prunedSuffix = helper.prunedSuffix
 			} catch (error) {
 				console.warn("Failed to get formatted context:", error)
 			}
 		}
 
 		prompt += `<QUERY>
-${formattedContext}${formattedContext ? "\n" : ""}${prefix}{{FILL_HERE}}${suffix}
+${formattedContext}${formattedContext ? "\n" : ""}${prunedPrefix}{{FILL_HERE}}${prunedSuffix}
 </QUERY>
 
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.

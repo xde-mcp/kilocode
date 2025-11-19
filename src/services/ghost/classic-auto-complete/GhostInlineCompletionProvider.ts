@@ -241,19 +241,21 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		const { filepathUri, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-		)
+		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+
+		// Use pruned prefix/suffix from HelperVars (token-limited based on GHOST_AUTOCOMPLETE_OPTS)
+		const prunedPrefix = helper.prunedPrefix
+		const prunedSuffix = helper.prunedSuffix
 
 		const modelName = model.getModelName() ?? "codestral"
 		const template = getTemplateForModel(modelName)
 
-		let formattedPrefix = prefix
+		let formattedPrefix = prunedPrefix
 		if (template.compilePrefixSuffix) {
 			const [compiledPrefix] = template.compilePrefixSuffix(
-				prefix,
-				suffix,
+				prunedPrefix,
+				prunedSuffix,
 				filepathUri,
 				"", // reponame not used in our context
 				snippetsWithUris,
@@ -271,7 +273,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		const usageInfo = await model.generateFimResponse(
 			formattedPrefix,
-			suffix,
+			prunedSuffix,
 			onChunk,
 			autocompleteInput.completionId, // Pass completionId as taskId for tracking
 		)
