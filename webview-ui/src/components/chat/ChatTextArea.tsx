@@ -126,8 +126,6 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			)
 		}, [listApiConfigMeta_unfilteredByKiloCodeProfileType])
 		// kilocode_change end
-
-		// kilocode_change start - autocomplete profile type system
 		// Find the ID and display text for the currently selected API configuration
 		const { currentConfigId, displayName } = useMemo(() => {
 			const currentConfig = listApiConfigMeta?.find((config) => config.name === currentApiConfigName)
@@ -136,7 +134,6 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				displayName: currentApiConfigName || "", // Use the name directly for display
 			}
 		}, [listApiConfigMeta, currentApiConfigName])
-		// kilocode_change end
 
 		const [gitCommits, setGitCommits] = useState<any[]>([])
 		const [showDropdown, setShowDropdown] = useState(false)
@@ -1130,7 +1127,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		// Helper function to get API config dropdown options
 		// kilocode_change: unused
 		const _getApiConfigOptions = useMemo(() => {
-			const pinnedConfigs = (listApiConfigMeta || []) // kilocode_change - autocomplete profile type system
+			const pinnedConfigs = (listApiConfigMeta || [])
 				.filter((config) => pinnedApiConfigs && pinnedApiConfigs[config.id])
 				.map((config) => ({
 					value: config.id,
@@ -1141,7 +1138,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				}))
 				.sort((a, b) => a.label.localeCompare(b.label))
 
-			const unpinnedConfigs = (listApiConfigMeta || []) // kilocode_change - autocomplete profile type system
+			const unpinnedConfigs = (listApiConfigMeta || [])
 				.filter((config) => !pinnedApiConfigs || !pinnedApiConfigs[config.id])
 				.map((config) => ({
 					value: config.id,
@@ -1177,7 +1174,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					type: DropdownOptionType.ACTION,
 				},
 			]
-		}, [listApiConfigMeta, pinnedApiConfigs, t]) // kilocode_change - autocomplete profile type system
+		}, [listApiConfigMeta, pinnedApiConfigs, t])
 
 		// Helper function to handle API config change
 		// kilocode_change: unused
@@ -1201,7 +1198,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					return label
 				}
 
-				const config = listApiConfigMeta?.find((c) => c.id === value) // kilocode_change - autocomplete profile type system
+				const config = listApiConfigMeta?.find((c) => c.id === value)
 				const isCurrentConfig = config?.name === currentApiConfigName
 
 				return (
@@ -1243,7 +1240,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					</div>
 				)
 			},
-			[listApiConfigMeta, currentApiConfigName, t, togglePinnedApiConfig], // kilocode_change - autocomplete profile type system
+			[listApiConfigMeta, currentApiConfigName, t, togglePinnedApiConfig],
 		)
 
 		// Helper function to render the text area section
@@ -1625,7 +1622,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 									currentConfigId={currentConfigId}
 									currentApiConfigName={currentApiConfigName}
 									displayName={displayName}
-									listApiConfigMeta={listApiConfigMeta} // kilocode_change - autocomplete profile type system
+									listApiConfigMeta={listApiConfigMeta}
 									pinnedApiConfigs={pinnedApiConfigs}
 									togglePinnedApiConfig={togglePinnedApiConfig}
 									selectApiConfigDisabled={selectApiConfigDisabled}
