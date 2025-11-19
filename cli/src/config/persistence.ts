@@ -115,6 +115,20 @@ function mergeWithDefaults(loadedConfig: Partial<CLIConfig>): CLIConfig {
 		merged.customThemes = {}
 	}
 
+	// CLI-specific: Apply kiloToken fallback from provider configuration
+	// If config.kiloToken is not set, but the active provider is "kilocode",
+	// use the kilocodeToken from the provider configuration as fallback
+	if (!merged.kiloToken) {
+		const activeProvider = merged.providers.find((p) => p.id === merged.provider)
+		if (activeProvider && activeProvider.provider === "kilocode" && "kilocodeToken" in activeProvider) {
+			const kilocodeProvider = activeProvider as { kilocodeToken?: string }
+			if (kilocodeProvider.kilocodeToken) {
+				merged.kiloToken = kilocodeProvider.kilocodeToken
+				logs.debug("Using kilocodeToken from provider configuration as kiloToken fallback", "ConfigPersistence")
+			}
+		}
+	}
+
 	return merged
 }
 

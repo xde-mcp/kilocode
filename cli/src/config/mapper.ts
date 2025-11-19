@@ -29,10 +29,6 @@ export function mapConfigToExtensionState(
 			modelId: getModelIdForProvider(p),
 		}))
 
-		// TODO: we need the token present regardless of which provider the user is using
-		const kiloToken =
-			provider.provider === "kilocode" && "kilocodeToken" in provider ? provider.kilocodeToken : undefined
-
 		return {
 			...currentState,
 			apiConfiguration,
@@ -40,7 +36,6 @@ export function mapConfigToExtensionState(
 			listApiConfigMeta,
 			telemetrySetting: config.telemetry ? "enabled" : "disabled",
 			mode: config.mode,
-			...(kiloToken && { kiloToken }),
 		}
 	} catch (error) {
 		logs.error("Failed to map config to extension state", "ConfigMapper", { error })
