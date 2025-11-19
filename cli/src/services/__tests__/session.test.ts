@@ -716,6 +716,344 @@ describe("SessionService", () => {
 		})
 	})
 
+	describe("restoreSession", () => {
+		beforeEach(() => {
+			// Mock global fetch
+			global.fetch = vi.fn()
+		})
+
+		afterEach(() => {
+			// Restore global fetch
+			vi.restoreAllMocks()
+		})
+
+		it("should restore session from signed URLs and write files to disk", async () => {
+			const mockSessionData = {
+				id: "restored-session-id",
+				title: "Restored Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: "https://signed-url.com/api_conversation_history",
+				ui_messages: "https://signed-url.com/ui_messages",
+				task_metadata: "https://signed-url.com/task_metadata",
+			}
+
+			const apiConversationData = { messages: [{ role: "user", content: "test" }] }
+			const uiMessagesData = [
+				{ say: "text", text: "message 1", ts: 1000 },
+				{ say: "checkpoint_saved", text: "", ts: 2000 }, // Should be filtered out
+				{ say: "text", text: "message 2", ts: 3000 },
+			] as ClineMessage[]
+			const taskMetadataData = { task: "test task" }
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			// Mock fetch responses for each signed URL
+			vi.mocked(global.fetch)
+				.mockResolvedValueOnce({
+					ok: true,
+					headers: new Headers({ "content-type": "application/json" }),
+					json: async () => apiConversationData,
+				} as unknown as Response)
+				.mockResolvedValueOnce({
+					ok: true,
+					headers: new Headers({ "content-type": "application/json" }),
+					json: async () => uiMessagesData,
+				} as unknown as Response)
+				.mockResolvedValueOnce({
+					ok: true,
+					headers: new Headers({ "content-type": "application/json" }),
+					json: async () => taskMetadataData,
+				} as unknown as Response)
+
+			await service.restoreSession("restored-session-id")
+
+			// Verify SessionClient.get was called with includeBlobs
+			expect(mockGet).toHaveBeenCalledWith({
+				sessionId: "restored-session-id",
+				includeBlobs: true,
+			})
+
+			// Verify fetch was called for each signed URL
+			expect(global.fetch).toHaveBeenCalledWith("https://signed-url.com/api_conversation_history")
+			expect(global.fetch).toHaveBeenCalledWith("https://signed-url.com/ui_messages")
+			expect(global.fetch).toHaveBeenCalledWith("https://signed-url.com/task_metadata")
+
+			// Verify directory was created
+			expect(vi.mocked(ensureDirSync)).toHaveBeenCalledWith("/mock/tasks/dir/restored-session-id")
+
+			// Verify files were written
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(3)
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+				"/mock/tasks/dir/restored-session-id/api_conversation_history.json",
+				JSON.stringify(apiConversationData, null, 2),
+			)
+
+			// Verify checkpoint messages were filtered out
+			const uiMessagesCall = vi
+				.mocked(writeFileSync)
+				.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages.json")
+			expect(uiMessagesCall?.[1]).toContain("message 1")
+			expect(uiMessagesCall?.[1]).toContain("message 2")
+			expect(uiMessagesCall?.[1]).not.toContain("checkpoint_saved")
+
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+				"/mock/tasks/dir/restored-session-id/task_metadata.json",
+				JSON.stringify(taskMetadataData, null, 2),
+			)
+		})
+
+		it("should send messages to extension to register task", async () => {
+			const mockSessionData = {
+				id: "restored-session-id",
+				title: "Restored Session",
+				created_at: "2025-01-01T12:00:00Z",
+				updated_at: "2025-01-01T12:00:00Z",
+				api_conversation_history: null,
+				ui_messages: null,
+				task_metadata: null,
+			}
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			await service.restoreSession("restored-session-id")
+
+			// Verify addTaskToHistory message was sent
+			expect(mockSendWebviewMessage).toHaveBeenCalledWith({
+				type: "addTaskToHistory",
+				historyItem: {
+					id: "restored-session-id",
+					number: 1,
+					task: "Restored Session",
+					ts: new Date("2025-01-01T12:00:00Z").getTime(),
+					tokensIn: 0,
+					tokensOut: 0,
+					totalCost: 0,
+				},
+			})
+
+			// Verify showTaskWithId message was sent
+			expect(mockSendWebviewMessage).toHaveBeenCalledWith({
+				type: "showTaskWithId",
+				text: "restored-session-id",
+			})
+		})
+
+		it("should set session ID in atom", async () => {
+			const mockSessionData = {
+				id: "restored-session-id",
+				title: "Restored Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: null,
+				ui_messages: null,
+				task_metadata: null,
+			}
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			await service.restoreSession("restored-session-id")
+
+			// Verify session ID was set in atom
+			expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "restored-session-id")
+		})
+
+		it("should handle missing session gracefully", async () => {
+			mockGet.mockResolvedValueOnce(null)
+
+			await service.restoreSession("non-existent-id")
+
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to obtain session",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "non-existent-id",
+				}),
+			)
+
+			// Should not write any files
+			expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+		})
+
+		it("should handle restore errors gracefully", async () => {
+			mockGet.mockRejectedValueOnce(new Error("Network error"))
+
+			await service.restoreSession("error-session-id")
+
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to restore session",
+				"SessionService",
+				expect.objectContaining({
+					error: "Network error",
+					sessionId: "error-session-id",
+				}),
+			)
+
+			// SessionId should be reset to null on error
+			// @ts-expect-error - Accessing private property for testing
+			expect(service.sessionId).toBeNull()
+		})
+
+		it("should skip fetching blobs when signed URLs are null", async () => {
+			const mockSessionData = {
+				id: "partial-session-id",
+				title: "Partial Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: "https://signed-url.com/api_conversation_history",
+				ui_messages: null,
+				task_metadata: null,
+			}
+
+			const apiConversationData = { messages: [] }
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			vi.mocked(global.fetch).mockResolvedValueOnce({
+				ok: true,
+				headers: new Headers({ "content-type": "application/json" }),
+				json: async () => apiConversationData,
+			} as unknown as Response)
+
+			await service.restoreSession("partial-session-id")
+
+			// Only one fetch call should be made
+			expect(global.fetch).toHaveBeenCalledTimes(1)
+			expect(global.fetch).toHaveBeenCalledWith("https://signed-url.com/api_conversation_history")
+
+			// Only one file should be written
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(1)
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+				"/mock/tasks/dir/partial-session-id/api_conversation_history.json",
+				JSON.stringify(apiConversationData, null, 2),
+			)
+		})
+
+		it("should handle fetch errors gracefully and continue processing other blobs", async () => {
+			const mockSessionData = {
+				id: "error-session-id",
+				title: "Error Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: "https://signed-url.com/api_conversation_history",
+				ui_messages: "https://signed-url.com/ui_messages",
+				task_metadata: "https://signed-url.com/task_metadata",
+			}
+
+			const uiMessagesData = [{ say: "text", text: "message", ts: 1000 }] as ClineMessage[]
+			const taskMetadataData = { task: "test" }
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			// First fetch fails, others succeed
+			vi.mocked(global.fetch)
+				.mockResolvedValueOnce({
+					ok: false,
+					status: 403,
+					statusText: "Forbidden",
+					headers: new Headers({ "content-type": "application/json" }),
+				} as unknown as Response)
+				.mockResolvedValueOnce({
+					ok: true,
+					headers: new Headers({ "content-type": "application/json" }),
+					json: async () => uiMessagesData,
+				} as unknown as Response)
+				.mockResolvedValueOnce({
+					ok: true,
+					headers: new Headers({ "content-type": "application/json" }),
+					json: async () => taskMetadataData,
+				} as unknown as Response)
+
+			await service.restoreSession("error-session-id")
+
+			// Should log error for failed blob fetch
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to process blob",
+				"SessionService",
+				expect.objectContaining({
+					fileName: "api_conversation_history",
+				}),
+			)
+
+			// Should still write the successful blobs
+			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(2)
+		})
+
+		it("should handle non-JSON responses", async () => {
+			const mockSessionData = {
+				id: "invalid-json-session",
+				title: "Invalid JSON Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: "https://signed-url.com/api_conversation_history",
+				ui_messages: null,
+				task_metadata: null,
+			}
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			vi.mocked(global.fetch).mockResolvedValueOnce({
+				ok: true,
+				headers: new Headers({ "content-type": "text/html" }),
+			} as unknown as Response)
+
+			await service.restoreSession("invalid-json-session")
+
+			// Should log error for invalid content type
+			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+				"Failed to process blob",
+				"SessionService",
+				expect.objectContaining({
+					fileName: "api_conversation_history",
+				}),
+			)
+
+			// Should not write any files
+			expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+		})
+
+		it("should log info messages during restoration", async () => {
+			const mockSessionData = {
+				id: "session-with-logs",
+				title: "Test Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+				api_conversation_history: null,
+				ui_messages: null,
+				task_metadata: null,
+			}
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			await service.restoreSession("session-with-logs")
+
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Restoring session",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-with-logs",
+				}),
+			)
+
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Task registered with extension",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-with-logs",
+					taskId: "session-with-logs",
+				}),
+			)
+
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Switched to restored task",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-with-logs",
+				}),
+			)
+		})
+	})
+
 	describe("logging", () => {
 		it("should log debug messages for successful operations", async () => {
 			const mockData = { messages: [] }

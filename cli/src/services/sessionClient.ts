@@ -8,10 +8,10 @@ export interface Session {
 	updated_at: string
 }
 
-export interface SessionWithBlobs extends Session {
-	api_conversation_history?: unknown
-	task_metadata?: unknown
-	ui_messages?: unknown
+export interface SessionWithSignedUrls extends Session {
+	api_conversation_history: string | null
+	task_metadata: string | null
+	ui_messages: string | null
 }
 
 export interface GetSessionInput {
@@ -19,7 +19,7 @@ export interface GetSessionInput {
 	includeBlobs?: boolean
 }
 
-export type GetSessionOutput = Session | SessionWithBlobs
+export type GetSessionOutput = Session | SessionWithSignedUrls
 
 export interface CreateSessionInput {
 	title?: string

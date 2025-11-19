@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
-import { SessionClient, SessionWithBlobs } from "./sessionClient"
+import { SessionClient, SessionWithSignedUrls } from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
@@ -35,11 +35,11 @@ export class SessionService {
 	private paths = { ...defaultPaths }
 	private _sessionId: string | null = null
 
-	get sessionId() {
+	private get sessionId() {
 		return this._sessionId
 	}
 
-	set sessionId(sessionId: string | null) {
+	private set sessionId(sessionId: string | null) {
 		this._sessionId = sessionId
 
 		// Set the session ID in the atom for UI display
@@ -94,6 +94,33 @@ export class SessionService {
 		return contents
 	}
 
+	/**
+	 * Fetch and parse content from a signed URL
+	 */
+	private async fetchBlobFromSignedUrl(url: string, blobType: string): Promise<unknown> {
+		try {
+			logs.debug(`Fetching blob from signed URL`, "SessionService", { blobType })
+
+			const response = await fetch(url)
+
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+			}
+
+			const data = await response.json()
+
+			logs.debug(`Successfully fetched blob`, "SessionService", { blobType })
+
+			return data
+		} catch (error) {
+			logs.error(`Failed to fetch blob from signed URL`, "SessionService", {
+				blobType,
+				error: error instanceof Error ? error.message : String(error),
+			})
+			throw error
+		}
+	}
+
 	async restoreSession(sessionId: string, rethrowError = false) {
 		try {
 			logs.info("Restoring session", "SessionService", { sessionId })
@@ -102,7 +129,7 @@ export class SessionService {
 			const session = (await sessionClient.get({
 				sessionId,
 				includeBlobs: true,
-			})) as SessionWithBlobs
+			})) as SessionWithSignedUrls
 
 			if (!session) {
 				logs.error("Failed to obtain session", "SessionService", { sessionId })
@@ -112,22 +139,64 @@ export class SessionService {
 			const sessionDirectoryPath = path.join(KiloCodePaths.getTasksDir(), sessionId)
 
 			ensureDirSync(sessionDirectoryPath)
-			;["api_conversation_history", "ui_messages", "task_metadata"].forEach((fileName) => {
-				let fileContent = session[fileName as keyof typeof session]
 
-				if (!fileContent) {
-					return
+			// Fetch and write each blob type from signed URLs
+			const blobTypes = ["api_conversation_history", "ui_messages", "task_metadata"] as const
+
+			// Fetch all blobs concurrently with error handling
+			const fetchPromises = blobTypes
+				.filter((blobType) => {
+					const signedUrl = session[blobType]
+					if (!signedUrl) {
+						logs.debug(`No signed URL for ${blobType}`, "SessionService")
+						return false
+					}
+					return true
+				})
+				.map(async (blobType) => {
+					const url = session[blobType]!
+					return {
+						fileName: blobType,
+						result: await this.fetchBlobFromSignedUrl(url, blobType)
+							.then((content) => ({ success: true as const, content }))
+							.catch((error) => ({
+								success: false as const,
+								error: error instanceof Error ? error.message : String(error),
+							})),
+					}
+				})
+
+			const results = await Promise.allSettled(fetchPromises)
+
+			// Process settled results and write files for successful fetches
+			for (const result of results) {
+				if (result.status === "fulfilled") {
+					const { fileName, result: fetchResult } = result.value
+
+					if (fetchResult.success) {
+						let fileContent = fetchResult.content
+
+						if (fileName === "ui_messages") {
+							// eliminate checkpoints for now
+							fileContent = (fileContent as ClineMessage[]).filter(
+								(message) => message.say !== "checkpoint_saved",
+							)
+						}
+
+						writeFileSync(
+							path.join(sessionDirectoryPath, `${fileName}.json`),
+							JSON.stringify(fileContent, null, 2),
+						)
+
+						logs.debug(`Wrote blob to file`, "SessionService", { fileName })
+					} else {
+						logs.error(`Failed to process blob`, "SessionService", {
+							fileName,
+							error: fetchResult.error,
+						})
+					}
 				}
-
-				if (fileName === "ui_messages") {
-					// eliminate checkpoints for now
-					fileContent = (fileContent as ClineMessage[]).filter(
-						(message) => message.say !== "checkpoint_saved",
-					)
-				}
-
-				writeFileSync(path.join(sessionDirectoryPath, `${fileName}.json`), JSON.stringify(fileContent, null, 2))
-			})
+			}
 
 			this.sessionId = session.id
 			this.lastSaveEvent = crypto.randomUUID()
