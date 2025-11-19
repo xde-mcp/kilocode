@@ -169,6 +169,7 @@ export interface ExtensionMessage {
 		| "dismissedUpsells"
 		| "showTimestamps" // kilocode_change
 		| "organizationSwitchResult"
+		| "interactionRequired"
 	text?: string
 	// kilocode_change start
 	payload?:
@@ -294,9 +295,7 @@ export type ExtensionState = Pick<
 	| "currentApiConfigName"
 	| "listApiConfigMeta"
 	| "pinnedApiConfigs"
-	// | "lastShownAnnouncementId"
 	| "customInstructions"
-	// | "taskHistory" // Optional in GlobalSettings, required here.
 	| "dismissedUpsells"
 	| "autoApprovalEnabled"
 	| "yoloMode" // kilocode_change
@@ -305,10 +304,8 @@ export type ExtensionState = Pick<
 	| "alwaysAllowWrite"
 	| "alwaysAllowWriteOutsideWorkspace"
 	| "alwaysAllowWriteProtected"
-	// | "writeDelayMs" // Optional in GlobalSettings, required here.
 	| "alwaysAllowBrowser"
 	| "alwaysApproveResubmit"
-	// | "requestDelaySeconds" // Optional in GlobalSettings, required here.
 	| "alwaysAllowMcp"
 	| "alwaysAllowModeSwitch"
 	| "alwaysAllowSubtasks"
@@ -328,16 +325,11 @@ export type ExtensionState = Pick<
 	| "remoteBrowserEnabled"
 	| "cachedChromeHostUrl"
 	| "remoteBrowserHost"
-	// | "enableCheckpoints" // Optional in GlobalSettings, required here.
 	| "ttsEnabled"
 	| "ttsSpeed"
 	| "soundEnabled"
 	| "soundVolume"
-	// | "maxOpenTabsContext" // Optional in GlobalSettings, required here.
-	// | "maxWorkspaceFiles" // Optional in GlobalSettings, required here.
-	// | "showRooIgnoredFiles" // Optional in GlobalSettings, required here.
-	// | "maxReadFileLine" // Optional in GlobalSettings, required here.
-	| "maxConcurrentFileReads" // Optional in GlobalSettings, required here.
+	| "maxConcurrentFileReads"
 	| "allowVeryLargeReads" // kilocode_change
 	| "terminalOutputLineLimit"
 	| "terminalOutputCharacterLimit"
@@ -355,14 +347,8 @@ export type ExtensionState = Pick<
 	| "fuzzyMatchThreshold"
 	| "morphApiKey" // kilocode_change: Morph fast apply - global setting
 	| "fastApplyModel" // kilocode_change: Fast Apply model selection
-	// | "experiments" // Optional in GlobalSettings, required here.
 	| "language"
-	// | "telemetrySetting" // Optional in GlobalSettings, required here.
-	// | "mcpEnabled" // Optional in GlobalSettings, required here.
-	// | "enableMcpServerCreation" // Optional in GlobalSettings, required here.
-	// | "mode" // Optional in GlobalSettings, required here.
 	| "modeApiConfigs"
-	// | "customModes" // Optional in GlobalSettings, required here.
 	| "customModePrompts"
 	| "customSupportPrompts"
 	| "enhancementApiConfigId"
@@ -494,9 +480,12 @@ export interface ClineSayTool {
 		| "generateImage"
 		| "imageGenerated"
 		| "runSlashCommand"
+		| "updateTodoList"
 	path?: string
 	diff?: string
 	content?: string
+	// Unified diff statistics computed by the extension
+	diffStats?: { added: number; removed: number }
 	regex?: string
 	filePattern?: string
 	mode?: string
@@ -518,6 +507,8 @@ export interface ClineSayTool {
 		changeCount: number
 		key: string
 		content: string
+		// Per-file unified diff statistics computed by the extension
+		diffStats?: { added: number; removed: number }
 		diffs?: Array<{
 			content: string
 			startLine?: number
