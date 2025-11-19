@@ -7,8 +7,7 @@ import { ensureDirSync } from "fs-extra"
 import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { createStore } from "jotai"
-import { addMessageAtom } from "../state/atoms/ui.js"
-import { generateMessage } from "../ui/utils/messages.js"
+import { sessionIdAtom } from "../state/atoms/session.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -34,7 +33,19 @@ export class SessionService {
 	}
 
 	private paths = { ...defaultPaths }
-	private sessionId: string | null = null
+	private _sessionId: string | null = null
+
+	get sessionId() {
+		return this._sessionId
+	}
+
+	set sessionId(sessionId: string | null) {
+		this._sessionId = sessionId
+
+		// Set the session ID in the atom for UI display
+		this.store.set(sessionIdAtom, sessionId)
+	}
+
 	private timer: NodeJS.Timeout | null = null
 	private lastSaveEvent: string = ""
 	private lastSyncEvent: string = ""
@@ -150,13 +161,6 @@ export class SessionService {
 			})
 
 			logs.info("Switched to restored task", "SessionService", { sessionId })
-
-			// Display user-facing message
-			this.store.set(addMessageAtom, {
-				...generateMessage(),
-				type: "system",
-				content: `Session resumed: ${sessionId}`,
-			})
 		} catch (error) {
 			logs.error("Failed to restore session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),
@@ -211,13 +215,6 @@ export class SessionService {
 				this.sessionId = session.id
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
-
-				// Display user-facing message for new session
-				this.store.set(addMessageAtom, {
-					...generateMessage(),
-					type: "system",
-					content: `Session started: ${this.sessionId}`,
-				})
 			}
 
 			this.lastSyncEvent = currentLastSaveEvent

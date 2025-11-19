@@ -4,6 +4,7 @@ import { SessionClient } from "../sessionClient.js"
 import type { ExtensionService } from "../extension.js"
 import type { ClineMessage } from "@roo-code/types"
 import { createStore } from "jotai"
+import { sessionIdAtom } from "../../state/atoms/session.js"
 
 // Mock fs module
 vi.mock("fs", () => ({
@@ -880,7 +881,7 @@ describe("SessionService", () => {
 					})
 				})
 
-				it("should display session resumed message via Ink", async () => {
+				it("should set session ID in atom", async () => {
 					const mockSessionData = {
 						id: "restored-session-id",
 						title: "Restored Session",
@@ -892,14 +893,8 @@ describe("SessionService", () => {
 
 					await service.restoreSession("restored-session-id")
 
-					// Verify Ink message was displayed
-					expect(mockStore.set).toHaveBeenCalledWith(
-						expect.anything(), // addMessageAtom
-						expect.objectContaining({
-							type: "system",
-							content: "Session resumed: restored-session-id",
-						}),
-					)
+					// Verify session ID was set in atom
+					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "restored-session-id")
 				})
 
 				it("should handle missing session gracefully", async () => {
@@ -999,8 +994,8 @@ describe("SessionService", () => {
 				})
 			})
 
-			describe("Ink message display", () => {
-				it("should display session started message when creating new session", async () => {
+			describe("Session ID atom management", () => {
+				it("should set session ID in atom when creating new session", async () => {
 					const mockData = { messages: [] }
 					vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(mockData))
 
@@ -1016,19 +1011,11 @@ describe("SessionService", () => {
 					// Trigger sync via timer
 					await vi.advanceTimersByTimeAsync(1000)
 
-					// Verify Ink message was displayed
-					expect(mockStore.set).toHaveBeenCalledWith(
-						expect.anything(), // addMessageAtom
-						expect.objectContaining({
-							type: "system",
-							content: "Session started: new-session-id",
-							id: expect.stringMatching(/^msg-\d+-\d+$/),
-							ts: expect.any(Number),
-						}),
-					)
+					// Verify session ID was set in atom
+					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "new-session-id")
 				})
 
-				it("should not display message for session updates", async () => {
+				it("should not update atom for session updates", async () => {
 					const mockData = { messages: [] }
 					vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
@@ -1059,6 +1046,13 @@ describe("SessionService", () => {
 
 					// Should not call store.set for updates (only for create and restore)
 					expect(mockStore.set).not.toHaveBeenCalled()
+				})
+
+				it("should clear session ID in atom on destroy", async () => {
+					await service.destroy()
+
+					// Verify session ID was cleared in atom
+					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, null)
 				})
 			})
 		})
