@@ -1,7 +1,7 @@
 import type {
 	ToolName,
 	ModeConfig,
-	ToolUseStyle, // kilocode_change
+	ToolProtocol, // kilocode_change
 } from "@roo-code/types"
 
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, DiffStrategy } from "../../../shared/tools"

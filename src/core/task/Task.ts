@@ -3370,8 +3370,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		}
 
 		// kilocode_change start
-		// Add allowed tools for JSON tool style
-		if (getActiveToolUseStyle(apiConfiguration) === "json" && mode) {
+		// Add allowed tools for native tool protocol
+		if (getActiveToolUseStyle(apiConfiguration) === "native" && mode) {
 			try {
 				const provider = this.providerRef.deref()
 				metadata.allowedTools = await getAllowedJSONToolsForMode(

@@ -15,7 +15,7 @@ import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelec
 import { DiffStrategy } from "../../shared/tools"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
-import { ToolUseStyle } from "../../../packages/types/src" // kilocode_change
+import { ToolProtocol } from "../../../packages/types/src" // kilocode_change
 import { McpHub } from "../../services/mcp/McpHub"
 import { CodeIndexManager } from "../../services/code-index/manager"
 
@@ -70,7 +70,7 @@ async function generatePrompt(
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
-	toolUseStyle?: ToolUseStyle, // kilocode_change
+	toolUseStyle?: ToolProtocol, // kilocode_change
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> {
 	if (!context) {
@@ -176,7 +176,7 @@ export const SYSTEM_PROMPT = async (
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
-	toolUseStyle?: ToolUseStyle, // kilocode_change
+	toolUseStyle?: ToolProtocol, // kilocode_change
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> => {
 	if (!context) {

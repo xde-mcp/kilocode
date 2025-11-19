@@ -276,7 +276,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 						text: message.content || "",
 					}
 				}
-				if (toolStyle === "json" && message.tool_calls) {
+				if (toolStyle === "native" && message.tool_calls) {
 					yield {
 						type: "native_tool_calls",
 						toolCalls: message.tool_calls,
