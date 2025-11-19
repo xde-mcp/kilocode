@@ -241,34 +241,32 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		// Token limits based on DEFAULT_AUTOCOMPLETE_OPTS (maxPromptTokens: 1024)
-		// Using ~4 chars per token as rough estimate
-		const MAX_PREFIX_CHARS = Math.floor(1024 * 0.3 * 4) // ~1228 chars (30%)
-		const MAX_SUFFIX_CHARS = Math.floor(1024 * 0.2 * 4) // ~819 chars (20%)
+		let perflog = ""
+		const logtime = (() => {
+			let timestamp = performance.now()
+			return (msg: string) => {
+				const baseline = timestamp
+				timestamp = performance.now()
+				perflog += `${msg}: ${timestamp - baseline}\n`
+			}
+		})()
 
-		// Truncate prefix from the start (keep end near cursor)
-		const truncatedPrefix = prefix.length > MAX_PREFIX_CHARS
-			? prefix.slice(-MAX_PREFIX_CHARS)
-			: prefix
+		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+		logtime("snippets")
 
-		// Truncate suffix from the end (keep start near cursor)
-		const truncatedSuffix = suffix.length > MAX_SUFFIX_CHARS
-			? suffix.slice(0, MAX_SUFFIX_CHARS)
-			: suffix
-
-		const { filepathUri, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-		)
+		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
+		const prunedPrefix = helper.prunedPrefix
+		const prunedSuffix = helper.prunedSuffix
 
 		const modelName = model.getModelName() ?? "codestral"
 		const template = getTemplateForModel(modelName)
 
-		let formattedPrefix = truncatedPrefix
+		let formattedPrefix = prunedPrefix
 		if (template.compilePrefixSuffix) {
 			const [compiledPrefix] = template.compilePrefixSuffix(
-				truncatedPrefix,
-				truncatedSuffix,
+				prunedPrefix,
+				prunedSuffix,
 				filepathUri,
 				"", // reponame not used in our context
 				snippetsWithUris,
@@ -283,14 +281,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const onChunk = (text: string) => {
 			response += text
 		}
-
+		logtime("prep fim")
 		const usageInfo = await model.generateFimResponse(
 			formattedPrefix,
-			truncatedSuffix,
+			prunedSuffix,
 			onChunk,
 			autocompleteInput.completionId, // Pass completionId as taskId for tracking
 		)
-
+		logtime("fim network")
 		console.log("[FIM] response:", response)
 
 		const fillInAtCursorSuggestion = this.processSuggestion(response, prefix, suffix, model)
@@ -298,7 +296,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)
 		}
-
+		logtime("processSuggestion")
+		console.log(perflog + `lengths: ${formattedPrefix.length + prunedSuffix.length}\n`)
 		return {
 			suggestion: fillInAtCursorSuggestion,
 			cost: usageInfo.cost,
