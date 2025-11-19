@@ -1,7 +1,4 @@
-import { TrpcClient } from "./trpcClient.js"
-
-// Generic tRPC response wrapper
-type TrpcResponse<T> = { result: { data: T } }
+import { TrpcClient, TrpcResponse } from "./trpcClient.js"
 
 // Type definitions matching backend schema
 export interface Session {

@@ -2,6 +2,9 @@ import { logs } from "./logs"
 
 type HttpMethod = "GET" | "POST"
 
+// Generic tRPC response wrapper
+export type TrpcResponse<T> = { result: { data: T } }
+
 export class TrpcClient {
 	private static instance: TrpcClient | null = null
 

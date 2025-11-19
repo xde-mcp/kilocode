@@ -1,15 +1,15 @@
-import { readFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
+import { KiloCodePaths } from "../utils/paths"
 import { SessionClient, SessionWithBlobs } from "./sessionClient"
 import { logs } from "./logs.js"
+import path from "path"
+import { ensureDirSync } from "fs-extra"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
 	uiMessagesPath: null as null | string,
 	taskMetadataPath: null as null | string,
 }
-
-// FIXME
-export const basePath = ""
 
 export class SessionService {
 	private static instance: SessionService | null = null
@@ -84,21 +84,18 @@ export class SessionService {
 				return
 			}
 
-			// Restore blobs to files
-			// if (this.paths.apiConversationHistoryPath && session.api_conversation_history) {
-			// 	writeFileSync(
-			// 		this.paths.apiConversationHistoryPath,
-			// 		JSON.stringify(session.api_conversation_history, null, 2),
-			// 	)
-			// }
+			const sessionDirectoryPath = path.join(KiloCodePaths.getTasksDir(), sessionId)
 
-			// if (this.paths.uiMessagesPath && session.ui_messages) {
-			// 	writeFileSync(this.paths.uiMessagesPath, JSON.stringify(session.ui_messages, null, 2))
-			// }
+			ensureDirSync(sessionDirectoryPath)
+			;["api_conversation_history", "ui_messages", "task_metadata"].forEach((fileName) => {
+				const fileContent = session[fileName as keyof typeof session]
 
-			// if (this.paths.taskMetadataPath && session.task_metadata) {
-			// 	writeFileSync(this.paths.taskMetadataPath, JSON.stringify(session.task_metadata, null, 2))
-			// }
+				if (!fileContent) {
+					return
+				}
+
+				writeFileSync(path.join(sessionDirectoryPath, `${fileName}.json`), JSON.stringify(fileContent, null, 2))
+			})
 
 			this.sessionId = session.id
 			this.lastSaveEvent = crypto.randomUUID()
