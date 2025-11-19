@@ -241,6 +241,21 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
+		// Token limits based on DEFAULT_AUTOCOMPLETE_OPTS (maxPromptTokens: 1024)
+		// Using ~4 chars per token as rough estimate
+		const MAX_PREFIX_CHARS = Math.floor(1024 * 0.3 * 4) // ~1228 chars (30%)
+		const MAX_SUFFIX_CHARS = Math.floor(1024 * 0.2 * 4) // ~819 chars (20%)
+
+		// Truncate prefix from the start (keep end near cursor)
+		const truncatedPrefix = prefix.length > MAX_PREFIX_CHARS
+			? prefix.slice(-MAX_PREFIX_CHARS)
+			: prefix
+
+		// Truncate suffix from the end (keep start near cursor)
+		const truncatedSuffix = suffix.length > MAX_SUFFIX_CHARS
+			? suffix.slice(0, MAX_SUFFIX_CHARS)
+			: suffix
+
 		const { filepathUri, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
 			autocompleteInput,
 			autocompleteInput.filepath,
@@ -249,11 +264,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const modelName = model.getModelName() ?? "codestral"
 		const template = getTemplateForModel(modelName)
 
-		let formattedPrefix = prefix
+		let formattedPrefix = truncatedPrefix
 		if (template.compilePrefixSuffix) {
 			const [compiledPrefix] = template.compilePrefixSuffix(
-				prefix,
-				suffix,
+				truncatedPrefix,
+				truncatedSuffix,
 				filepathUri,
 				"", // reponame not used in our context
 				snippetsWithUris,
@@ -271,7 +286,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		const usageInfo = await model.generateFimResponse(
 			formattedPrefix,
-			suffix,
+			truncatedSuffix,
 			onChunk,
 			autocompleteInput.completionId, // Pass completionId as taskId for tracking
 		)
