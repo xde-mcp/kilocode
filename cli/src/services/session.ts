@@ -137,7 +137,13 @@ export class SessionService {
 				taskId: historyItem.id,
 			})
 
-			logs.info("Session restored successfully", "SessionService", { sessionId })
+			// Automatically switch to the restored task
+			await this.extensionService.sendWebviewMessage({
+				type: "showTaskWithId",
+				text: sessionId,
+			})
+
+			logs.info("Switched to restored task", "SessionService", { sessionId })
 		} catch (error) {
 			logs.error("Failed to restore session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),
