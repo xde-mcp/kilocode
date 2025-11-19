@@ -760,8 +760,8 @@ importers:
         specifier: ^5.1.2
         version: 5.1.2
       node-ipc:
-        specifier: ^12.0.0
-        version: 12.0.0
+        specifier: npm:catrielmuller-node-ipc@12.0.1
+        version: catrielmuller-node-ipc@12.0.1
       ollama:
         specifier: ^0.5.17
         version: 0.5.17
@@ -9034,6 +9034,14 @@ packages:
 
   caniuse-lite@1.0.30001737:
     resolution: {integrity: sha512-BiloLiXtQNrY5UyF0+1nSJLXUENuhka2pzy2Fx5pGxqavdrxSCW4U6Pn/PoG3Efspi2frRbHpBV2XsrPE6EDlw==}
+
+  catrielmuller-event-pubsub@5.0.4:
+    resolution: {integrity: sha512-RHjdKaQhsC9ks/OGoukkabZZbrCR15aL2BLN94Gi+vVYkE1KYqSxGcixm+0RJylnHjxP0xVTLlA/dbiN1B87vQ==}
+    engines: {node: '>=13.0.0'}
+
+  catrielmuller-node-ipc@12.0.1:
+    resolution: {integrity: sha512-BoE0c6fWTTsveKSctE9MJh/yYI5wRZU0rRbFt0eGYIIVq1KXz0CvWrKwKf7sI+u8/IOEGH2HsodkKNhgKdC3Mw==}
+    engines: {node: '>=14'}
 
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
@@ -28316,6 +28324,17 @@ snapshots:
   caniuse-lite@1.0.30001718: {}
 
   caniuse-lite@1.0.30001737: {}
+
+  catrielmuller-event-pubsub@5.0.4:
+    dependencies:
+      strong-type: 0.1.6
+
+  catrielmuller-node-ipc@12.0.1:
+    dependencies:
+      catrielmuller-event-pubsub: 5.0.4
+      js-message: 1.0.7
+      js-queue: 2.0.2
+      strong-type: 1.1.0
 
   ccount@2.0.1: {}
 
