@@ -82,6 +82,28 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 				throw new Error("Code Indexing is not configured (Missing OpenAI Key or Qdrant URL).")
 			}
 
+			// Check if indexing is still in progress
+			const status = manager.getCurrentStatus()
+			if (status.systemStatus === "Indexing") {
+				const progressInfo =
+					"processedItems" in status && "totalItems" in status && "currentItemUnit" in status
+						? ` (Progress: ${status.processedItems}/${status.totalItems} ${status.currentItemUnit})`
+						: ""
+				const errorMessage = `${status.message || "Indexing in progress"}${progressInfo}. Semantic search is unavailable until indexing completes. Please try again later.`
+
+				const payload = {
+					tool: "codebaseSearch",
+					content: {
+						query,
+						results: [],
+						status,
+					},
+				}
+				await task.say("codebase_search_result", JSON.stringify(payload))
+				pushToolResult(formatResponse.toolError(errorMessage))
+				return
+			}
+
 			const searchResults: VectorStoreSearchResult[] = await manager.searchIndex(query, directoryPrefix)
 
 			if (!searchResults || searchResults.length === 0) {

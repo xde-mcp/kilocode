@@ -1,4 +1,4 @@
-import { applyDiffTool } from "../../multiApplyDiffTool"
+import { applyDiffTool } from "../../MultiApplyDiffTool"
 import { EXPERIMENT_IDS } from "../../../../shared/experiments"
 
 // Mock the applyDiffTool module
@@ -7,7 +7,7 @@ vi.mock("../../applyDiffTool", () => ({
 }))
 
 // Import after mocking to get the mocked version
-import { applyDiffToolLegacy } from "../../applyDiffTool"
+import { ApplyDiffTool } from "../../ApplyDiffTool"
 
 describe("applyDiffTool experiment routing - JSON toolStyle", () => {
 	let mockCline: any
@@ -87,7 +87,7 @@ describe("applyDiffTool experiment routing - JSON toolStyle", () => {
 			mockRemoveClosingTag,
 		)
 
-		expect(applyDiffToolLegacy).not.toHaveBeenCalled()
+		expect(ApplyDiffTool).not.toHaveBeenCalled()
 	})
 
 	it("should use new tool when provider is not available", async () => {
@@ -103,6 +103,6 @@ describe("applyDiffTool experiment routing - JSON toolStyle", () => {
 		)
 
 		// When provider is null, it should continue with new implementation (not call legacy)
-		expect(applyDiffToolLegacy).not.toHaveBeenCalled()
+		expect(ApplyDiffTool).not.toHaveBeenCalled()
 	})
 })

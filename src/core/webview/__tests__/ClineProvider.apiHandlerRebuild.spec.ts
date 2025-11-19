@@ -53,6 +53,10 @@ vi.mock("vscode", () => ({
 		showWarningMessage: vi.fn(),
 		showErrorMessage: vi.fn(),
 		onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+		createTextEditorDecorationType: vi.fn(() => ({
+			key: "mock-decoration",
+			dispose: vi.fn(),
+		})),
 	},
 	workspace: {
 		getConfiguration: vi.fn().mockReturnValue({
@@ -67,6 +71,11 @@ vi.mock("vscode", () => ({
 		uriScheme: "vscode",
 		language: "en",
 		appName: "Visual Studio Code",
+		uiKind: 1,
+	},
+	UIKind: {
+		Desktop: 1,
+		Web: 2,
 	},
 	ExtensionMode: {
 		Production: 1,
@@ -239,6 +248,7 @@ describe("ClineProvider - API Handler Rebuild Guard", () => {
 		})
 
 		defaultTaskOptions = {
+			context: mockContext,
 			provider,
 			apiConfiguration: {
 				apiProvider: "openrouter",

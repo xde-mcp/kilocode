@@ -20,7 +20,7 @@ import * as vscode from "vscode"
 import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
 import { Package } from "../../shared/package"
 
-interface DiffOperation {
+export interface DiffOperation {
 	path: string
 	diff: Array<{
 		content: string
@@ -29,7 +29,7 @@ interface DiffOperation {
 }
 
 // Track operation status
-interface OperationResult {
+export interface OperationResult {
 	path: string
 	status: "pending" | "approved" | "denied" | "blocked" | "error"
 	error?: string
