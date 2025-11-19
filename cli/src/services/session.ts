@@ -4,6 +4,8 @@ import { SessionClient, SessionWithBlobs } from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
+import type { ExtensionService } from "./extension.js"
+import type { HistoryItem } from "@roo-code/types"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -14,9 +16,15 @@ const defaultPaths = {
 export class SessionService {
 	private static instance: SessionService | null = null
 
-	static getInstance() {
-		if (!SessionService.instance) {
-			SessionService.instance = new SessionService()
+	static init(extensionService?: ExtensionService) {
+		if (!extensionService && !SessionService.instance) {
+			throw new Error("extensionService required to init SessionService service")
+		}
+
+		if (extensionService && !SessionService.instance) {
+			SessionService.instance = new SessionService(extensionService)
+
+			logs.debug("Initiated SessionService", "SessionService")
 		}
 
 		return SessionService.instance!
@@ -29,7 +37,7 @@ export class SessionService {
 	private lastSyncEvent: string = ""
 	private isSyncing: boolean = false
 
-	private constructor() {
+	private constructor(private extensionService: ExtensionService) {
 		this.startTimer()
 	}
 
@@ -100,6 +108,36 @@ export class SessionService {
 			this.sessionId = session.id
 			this.lastSaveEvent = crypto.randomUUID()
 			this.lastSyncEvent = this.lastSaveEvent
+
+			// Register the task with the extension after restoring session files
+			const metadata = session.task_metadata as any
+
+			// Construct HistoryItem from metadata
+			const historyItem: HistoryItem = {
+				id: metadata.id || sessionId,
+				ts: metadata.ts || Date.now(),
+				task: metadata.task || "",
+				tokensIn: metadata.tokensIn || 0,
+				tokensOut: metadata.tokensOut || 0,
+				cacheWrites: metadata.cacheWrites,
+				cacheReads: metadata.cacheReads,
+				totalCost: metadata.totalCost || 0,
+				workspace: metadata.workspace,
+				mode: metadata.mode,
+				number: metadata.number || 1,
+				isFavorited: metadata.isFavorited,
+			}
+
+			// Send message to register the task in extension history
+			await this.extensionService.sendWebviewMessage({
+				type: "addTaskToHistory",
+				historyItem,
+			})
+
+			logs.info("Task registered with extension", "SessionService", {
+				sessionId,
+				taskId: historyItem.id,
+			})
 
 			logs.info("Session restored successfully", "SessionService", { sessionId })
 		} catch (error) {

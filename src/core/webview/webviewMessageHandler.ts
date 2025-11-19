@@ -3996,5 +3996,12 @@ export const webviewMessageHandler = async (
 			})
 			break
 		}
+		case "addTaskToHistory": {
+			if (message.historyItem) {
+				await provider.updateTaskHistory(message.historyItem)
+				await provider.postStateToWebview()
+			}
+			break
+		}
 	}
 }

@@ -8,7 +8,7 @@ export type TrpcResponse<T> = { result: { data: T } }
 export class TrpcClient {
 	private static instance: TrpcClient | null = null
 
-	static getInstance(token?: string) {
+	static init(token?: string) {
 		if (!token && !TrpcClient.instance) {
 			throw new Error("token required to init TrpcClient service")
 		}

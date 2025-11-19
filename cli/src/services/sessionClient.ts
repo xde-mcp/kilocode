@@ -61,7 +61,7 @@ export class SessionClient {
 	 * Get a specific session by ID
 	 */
 	async get(input: GetSessionInput): Promise<GetSessionOutput> {
-		const client = TrpcClient.getInstance()
+		const client = TrpcClient.init()
 		const response = await client.request<GetSessionInput, TrpcResponse<GetSessionOutput>>(
 			"sessions.get",
 			"GET",
@@ -74,7 +74,7 @@ export class SessionClient {
 	 * Create a new session
 	 */
 	async create(input: CreateSessionInput): Promise<CreateSessionOutput> {
-		const client = TrpcClient.getInstance()
+		const client = TrpcClient.init()
 		const response = await client.request<CreateSessionInput, TrpcResponse<CreateSessionOutput>>(
 			"sessions.create",
 			"POST",
@@ -87,7 +87,7 @@ export class SessionClient {
 	 * Update an existing session
 	 */
 	async update(input: UpdateSessionInput): Promise<UpdateSessionOutput> {
-		const client = TrpcClient.getInstance()
+		const client = TrpcClient.init()
 		const response = await client.request<UpdateSessionInput, TrpcResponse<UpdateSessionOutput>>(
 			"sessions.update",
 			"POST",

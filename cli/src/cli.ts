@@ -78,19 +78,6 @@ export class CLI {
 				logs.info("Provider/model overrides applied and saved", "CLI")
 			}
 
-			// Initialize services if kiloToken is available
-			if (config.kiloToken) {
-				TrpcClient.getInstance(config.kiloToken)
-				logs.debug("TrpcClient initialized with kiloToken", "CLI")
-
-				const sessionService = SessionService.getInstance()
-				logs.debug("SessionService initialized", "CLI")
-
-				if (this.options.session) {
-					await sessionService.restoreSession(this.options.session)
-				}
-			}
-
 			const telemetryService = getTelemetryService()
 			await telemetryService.initialize(config, {
 				workspace: this.options.workspace || process.cwd(),
@@ -125,6 +112,19 @@ export class CLI {
 			// Set service in store
 			this.store.set(extensionServiceAtom, this.service)
 			logs.debug("ExtensionService set in store", "CLI")
+
+			// Initialize services if kiloToken is available
+			if (config.kiloToken) {
+				TrpcClient.init(config.kiloToken)
+				logs.debug("TrpcClient initialized with kiloToken", "CLI")
+
+				const sessionService = SessionService.init(this.service)
+				logs.debug("SessionService initialized with ExtensionService", "CLI")
+
+				if (this.options.session) {
+					await sessionService.restoreSession(this.options.session)
+				}
+			}
 
 			// Track extension initialization
 			telemetryService.trackExtensionInitialized(false) // Will be updated after actual initialization
