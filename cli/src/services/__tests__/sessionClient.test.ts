@@ -292,7 +292,7 @@ describe("SessionClient", () => {
 			const result = await service.list()
 
 			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", {})
-			expect(result.sessions).toEqual(mockSessions)
+			expect(result.cliSessions).toEqual(mockSessions)
 			expect(result.nextCursor).toBeNull()
 		})
 
@@ -318,7 +318,7 @@ describe("SessionClient", () => {
 			const result = await service.list({ limit: 1 })
 
 			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 1 })
-			expect(result.sessions).toHaveLength(1)
+			expect(result.cliSessions).toHaveLength(1)
 			expect(result.nextCursor).toBe("cursor-abc")
 		})
 
@@ -344,7 +344,7 @@ describe("SessionClient", () => {
 			const result = await service.list({ cursor: "cursor-xyz" })
 
 			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { cursor: "cursor-xyz" })
-			expect(result.sessions).toEqual(mockSessions)
+			expect(result.cliSessions).toEqual(mockSessions)
 			expect(result.nextCursor).toBeNull()
 		})
 
@@ -376,7 +376,7 @@ describe("SessionClient", () => {
 			const result = await service.list({ limit: 2, cursor: "cursor-prev" })
 
 			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 2, cursor: "cursor-prev" })
-			expect(result.sessions).toHaveLength(2)
+			expect(result.cliSessions).toHaveLength(2)
 			expect(result.nextCursor).toBe("cursor-next")
 		})
 
@@ -392,7 +392,7 @@ describe("SessionClient", () => {
 
 			const result = await service.list()
 
-			expect(result.sessions).toEqual([])
+			expect(result.cliSessions).toEqual([])
 			expect(result.nextCursor).toBeNull()
 		})
 

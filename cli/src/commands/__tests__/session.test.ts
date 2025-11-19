@@ -42,7 +42,7 @@ describe("sessionCommand", () => {
 		// Create a mock session client instance
 		mockSessionClient = {
 			list: vi.fn().mockResolvedValue({
-				sessions: [],
+				cliSessions: [],
 				nextCursor: null,
 			}),
 		}
@@ -177,7 +177,7 @@ describe("sessionCommand", () => {
 	describe("handler - list subcommand", () => {
 		it("should display empty sessions list", async () => {
 			mockSessionClient.list = vi.fn().mockResolvedValue({
-				sessions: [],
+				cliSessions: [],
 				nextCursor: null,
 			})
 			mockContext.args = ["list"]
@@ -209,7 +209,7 @@ describe("sessionCommand", () => {
 			]
 
 			mockSessionClient.list = vi.fn().mockResolvedValue({
-				sessions: mockSessions,
+				cliSessions: mockSessions,
 				nextCursor: null,
 			})
 			mockContext.args = ["list"]
@@ -245,7 +245,7 @@ describe("sessionCommand", () => {
 			]
 
 			mockSessionClient.list = vi.fn().mockResolvedValue({
-				sessions: mockSessions,
+				cliSessions: mockSessions,
 				nextCursor: null,
 			})
 			mockContext.args = ["list"]
@@ -265,7 +265,7 @@ describe("sessionCommand", () => {
 			}))
 
 			mockSessionClient.list = vi.fn().mockResolvedValue({
-				sessions: mockSessions,
+				cliSessions: mockSessions,
 				nextCursor: "cursor-next",
 			})
 			mockContext.args = ["list"]
@@ -300,7 +300,7 @@ describe("sessionCommand", () => {
 			]
 
 			mockSessionClient.list = vi.fn().mockResolvedValue({
-				sessions: mockSessions,
+				cliSessions: mockSessions,
 				nextCursor: null,
 			})
 			mockContext.args = ["list"]
@@ -321,7 +321,7 @@ describe("sessionCommand", () => {
 			expect(SessionService.init).toHaveBeenCalled()
 			expect(mockContext.replaceMessages).toHaveBeenCalledTimes(1)
 			expect(mockContext.refreshTerminal).toHaveBeenCalled()
-			expect(mockSessionService.restoreSession).toHaveBeenCalledWith("session-123")
+			expect(mockSessionService.restoreSession).toHaveBeenCalledWith("session-123", true)
 
 			const replacedMessages = (mockContext.replaceMessages as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(replacedMessages).toHaveLength(2)
@@ -374,7 +374,7 @@ describe("sessionCommand", () => {
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionService.restoreSession).toHaveBeenCalledWith("session-123")
+			expect(mockSessionService.restoreSession).toHaveBeenCalledWith("session-123", true)
 		})
 	})
 
