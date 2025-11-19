@@ -5,7 +5,7 @@ import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
 import type { ExtensionService } from "./extension.js"
-import type { HistoryItem } from "@roo-code/types"
+import type { ClineMessage, HistoryItem } from "@roo-code/types"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -96,10 +96,17 @@ export class SessionService {
 
 			ensureDirSync(sessionDirectoryPath)
 			;["api_conversation_history", "ui_messages", "task_metadata"].forEach((fileName) => {
-				const fileContent = session[fileName as keyof typeof session]
+				let fileContent = session[fileName as keyof typeof session]
 
 				if (!fileContent) {
 					return
+				}
+
+				if (fileName === "ui_messages") {
+					// eliminate checkpoints for now
+					fileContent = (fileContent as ClineMessage[]).filter(
+						(message) => message.say !== "checkpoint_saved",
+					)
 				}
 
 				writeFileSync(path.join(sessionDirectoryPath, `${fileName}.json`), JSON.stringify(fileContent, null, 2))
