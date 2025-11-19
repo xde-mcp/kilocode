@@ -109,23 +109,14 @@ export class SessionService {
 			this.lastSaveEvent = crypto.randomUUID()
 			this.lastSyncEvent = this.lastSaveEvent
 
-			// Register the task with the extension after restoring session files
-			const metadata = session.task_metadata as any
-
-			// Construct HistoryItem from metadata
 			const historyItem: HistoryItem = {
-				id: metadata.id || sessionId,
-				ts: metadata.ts || Date.now(),
-				task: metadata.task || "",
-				tokensIn: metadata.tokensIn || 0,
-				tokensOut: metadata.tokensOut || 0,
-				cacheWrites: metadata.cacheWrites,
-				cacheReads: metadata.cacheReads,
-				totalCost: metadata.totalCost || 0,
-				workspace: metadata.workspace,
-				mode: metadata.mode,
-				number: metadata.number || 1,
-				isFavorited: metadata.isFavorited,
+				id: sessionId,
+				number: 1,
+				task: session.title,
+				ts: new Date(session.created_at).getTime(),
+				tokensIn: 0,
+				tokensOut: 0,
+				totalCost: 0,
 			}
 
 			// Send message to register the task in extension history
@@ -145,6 +136,8 @@ export class SessionService {
 				error: error instanceof Error ? error.message : String(error),
 				sessionId,
 			})
+
+			this.sessionId = null
 		}
 	}
 
