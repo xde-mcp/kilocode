@@ -263,6 +263,152 @@ describe("SessionClient", () => {
 		})
 	})
 
+	describe("list", () => {
+		it("should list sessions without parameters", async () => {
+			const mockSessions = [
+				{
+					id: "session-1",
+					title: "First Session",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				},
+				{
+					id: "session-2",
+					title: "Second Session",
+					created_at: "2025-01-02T00:00:00Z",
+					updated_at: "2025-01-02T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						sessions: mockSessions,
+						nextCursor: null,
+					},
+				},
+			})
+
+			const result = await service.list()
+
+			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", {})
+			expect(result.sessions).toEqual(mockSessions)
+			expect(result.nextCursor).toBeNull()
+		})
+
+		it("should list sessions with limit parameter", async () => {
+			const mockSessions = [
+				{
+					id: "session-1",
+					title: "Session 1",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						sessions: mockSessions,
+						nextCursor: "cursor-abc",
+					},
+				},
+			})
+
+			const result = await service.list({ limit: 1 })
+
+			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 1 })
+			expect(result.sessions).toHaveLength(1)
+			expect(result.nextCursor).toBe("cursor-abc")
+		})
+
+		it("should list sessions with cursor parameter", async () => {
+			const mockSessions = [
+				{
+					id: "session-3",
+					title: "Third Session",
+					created_at: "2025-01-03T00:00:00Z",
+					updated_at: "2025-01-03T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						sessions: mockSessions,
+						nextCursor: null,
+					},
+				},
+			})
+
+			const result = await service.list({ cursor: "cursor-xyz" })
+
+			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { cursor: "cursor-xyz" })
+			expect(result.sessions).toEqual(mockSessions)
+			expect(result.nextCursor).toBeNull()
+		})
+
+		it("should list sessions with both limit and cursor", async () => {
+			const mockSessions = [
+				{
+					id: "session-4",
+					title: "Fourth Session",
+					created_at: "2025-01-04T00:00:00Z",
+					updated_at: "2025-01-04T00:00:00Z",
+				},
+				{
+					id: "session-5",
+					title: "Fifth Session",
+					created_at: "2025-01-05T00:00:00Z",
+					updated_at: "2025-01-05T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						sessions: mockSessions,
+						nextCursor: "cursor-next",
+					},
+				},
+			})
+
+			const result = await service.list({ limit: 2, cursor: "cursor-prev" })
+
+			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 2, cursor: "cursor-prev" })
+			expect(result.sessions).toHaveLength(2)
+			expect(result.nextCursor).toBe("cursor-next")
+		})
+
+		it("should handle empty sessions list", async () => {
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						sessions: [],
+						nextCursor: null,
+					},
+				},
+			})
+
+			const result = await service.list()
+
+			expect(result.sessions).toEqual([])
+			expect(result.nextCursor).toBeNull()
+		})
+
+		it("should handle error when listing sessions", async () => {
+			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 500 Internal Server Error"))
+
+			await expect(service.list()).rejects.toThrow("Internal Server Error")
+		})
+
+		it("should handle authorization error", async () => {
+			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
+
+			await expect(service.list()).rejects.toThrow("Invalid token")
+		})
+	})
+
 	describe("type safety", () => {
 		it("should handle typed responses correctly", async () => {
 			const mockSession = {

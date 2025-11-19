@@ -44,6 +44,16 @@ export interface UpdateSessionOutput {
 	updated_at: string
 }
 
+export interface ListSessionsInput {
+	cursor?: string
+	limit?: number
+}
+
+export interface ListSessionsOutput {
+	sessions: Session[]
+	nextCursor: string | null
+}
+
 export class SessionClient {
 	private static instance: SessionClient | null = null
 
@@ -92,6 +102,19 @@ export class SessionClient {
 			"sessions.update",
 			"POST",
 			input,
+		)
+		return response.result.data
+	}
+
+	/**
+	 * List sessions with pagination support
+	 */
+	async list(input?: ListSessionsInput): Promise<ListSessionsOutput> {
+		const client = TrpcClient.init()
+		const response = await client.request<ListSessionsInput, TrpcResponse<ListSessionsOutput>>(
+			"sessions.list",
+			"GET",
+			input || {},
 		)
 		return response.result.data
 	}

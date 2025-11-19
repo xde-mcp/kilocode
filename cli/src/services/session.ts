@@ -94,7 +94,7 @@ export class SessionService {
 		return contents
 	}
 
-	async restoreSession(sessionId: string) {
+	async restoreSession(sessionId: string, rethrowError = false) {
 		try {
 			logs.info("Restoring session", "SessionService", { sessionId })
 
@@ -168,6 +168,10 @@ export class SessionService {
 			})
 
 			this.sessionId = null
+
+			if (rethrowError) {
+				throw error
+			}
 		}
 	}
 
