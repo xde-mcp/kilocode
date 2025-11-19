@@ -5,11 +5,7 @@ sidebar_label: Deploy
 
 # Deploy
 
-Kilo Deploy lets you ship **Next.js** applications directly from Kilo Code with automatic builds, real-time logs, and continuous deployment from GitHub. It automatically detects your stack, configures your project for hosting, and manages the full deployment lifecycle.
-
-## What Deploy Does
-
-Deploy streamlines the full process of getting an app live:
+Kilo Deploy lets you ship **Next.js** applications directly from Kilo Code, with:
 
 - **One-click deployment** from the Kilo Code dashboard  
 - **No manual configuration** — deployment settings are generated for you  
@@ -77,9 +73,13 @@ From the deployment details, you can:
 
 ## Database Support
 
-Kilo Code Deploy does **not** include built-in database hosting, but you can connect to any external database service.
+Kilo Deploy does **not** include built-in database hosting, but you can connect to any external database service.
 
 ---
+
+## Environment Variables
+
+Kilo Deploy supports Environment Variables and Secrets. Add the variable **key** and **value** during the **Create New Deployment** step, and toggle to mark as secrets.
 
 ## Common Use Cases
 
