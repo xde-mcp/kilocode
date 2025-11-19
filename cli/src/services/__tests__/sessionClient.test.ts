@@ -58,7 +58,7 @@ describe("SessionClient", () => {
 				sessionId: "session-1",
 			})
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.get", "GET", {
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
 				sessionId: "session-1",
 			})
 			expect(result).toEqual(mockSession)
@@ -84,7 +84,7 @@ describe("SessionClient", () => {
 				includeBlobs: true,
 			})
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.get", "GET", {
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
 				sessionId: "session-1",
 				includeBlobs: true,
 			})
@@ -117,7 +117,7 @@ describe("SessionClient", () => {
 
 			const result = await service.create({})
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.create", "POST", {})
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.create", "POST", {})
 			expect(result).toEqual(mockSession)
 		})
 
@@ -137,7 +137,7 @@ describe("SessionClient", () => {
 				title: "My Session",
 			})
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.create", "POST", {
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.create", "POST", {
 				title: "My Session",
 			})
 			expect(result).toEqual(mockSession)
@@ -164,7 +164,7 @@ describe("SessionClient", () => {
 
 			const result = await service.create(input)
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.create", "POST", input)
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.create", "POST", input)
 			expect(result).toEqual(mockSession)
 		})
 	})
@@ -186,7 +186,7 @@ describe("SessionClient", () => {
 				title: "Updated Title",
 			})
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.update", "POST", {
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.update", "POST", {
 				sessionId: "session-1",
 				title: "Updated Title",
 			})
@@ -213,7 +213,7 @@ describe("SessionClient", () => {
 
 			const result = await service.update(input)
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.update", "POST", input)
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.update", "POST", input)
 			expect(result).toEqual(mockSession)
 		})
 
@@ -283,7 +283,7 @@ describe("SessionClient", () => {
 			requestMock.mockResolvedValueOnce({
 				result: {
 					data: {
-						sessions: mockSessions,
+						cliSessions: mockSessions,
 						nextCursor: null,
 					},
 				},
@@ -291,7 +291,7 @@ describe("SessionClient", () => {
 
 			const result = await service.list()
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", {})
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.list", "GET", {})
 			expect(result.cliSessions).toEqual(mockSessions)
 			expect(result.nextCursor).toBeNull()
 		})
@@ -309,7 +309,7 @@ describe("SessionClient", () => {
 			requestMock.mockResolvedValueOnce({
 				result: {
 					data: {
-						sessions: mockSessions,
+						cliSessions: mockSessions,
 						nextCursor: "cursor-abc",
 					},
 				},
@@ -317,7 +317,7 @@ describe("SessionClient", () => {
 
 			const result = await service.list({ limit: 1 })
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 1 })
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.list", "GET", { limit: 1 })
 			expect(result.cliSessions).toHaveLength(1)
 			expect(result.nextCursor).toBe("cursor-abc")
 		})
@@ -335,7 +335,7 @@ describe("SessionClient", () => {
 			requestMock.mockResolvedValueOnce({
 				result: {
 					data: {
-						sessions: mockSessions,
+						cliSessions: mockSessions,
 						nextCursor: null,
 					},
 				},
@@ -343,7 +343,7 @@ describe("SessionClient", () => {
 
 			const result = await service.list({ cursor: "cursor-xyz" })
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { cursor: "cursor-xyz" })
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.list", "GET", { cursor: "cursor-xyz" })
 			expect(result.cliSessions).toEqual(mockSessions)
 			expect(result.nextCursor).toBeNull()
 		})
@@ -367,7 +367,7 @@ describe("SessionClient", () => {
 			requestMock.mockResolvedValueOnce({
 				result: {
 					data: {
-						sessions: mockSessions,
+						cliSessions: mockSessions,
 						nextCursor: "cursor-next",
 					},
 				},
@@ -375,7 +375,7 @@ describe("SessionClient", () => {
 
 			const result = await service.list({ limit: 2, cursor: "cursor-prev" })
 
-			expect(requestMock).toHaveBeenCalledWith("sessions.list", "GET", { limit: 2, cursor: "cursor-prev" })
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.list", "GET", { limit: 2, cursor: "cursor-prev" })
 			expect(result.cliSessions).toHaveLength(2)
 			expect(result.nextCursor).toBe("cursor-next")
 		})
@@ -384,7 +384,7 @@ describe("SessionClient", () => {
 			requestMock.mockResolvedValueOnce({
 				result: {
 					data: {
-						sessions: [],
+						cliSessions: [],
 						nextCursor: null,
 					},
 				},
