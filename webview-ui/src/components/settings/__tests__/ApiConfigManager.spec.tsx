@@ -205,9 +205,11 @@ describe("ApiConfigManager", () => {
 		const renameButton = screen.getByTestId("rename-profile-button")
 		fireEvent.click(renameButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		// Find input in rename form specifically
 		const renameForm = getRenameForm()
 		const input = within(renameForm).getByDisplayValue("Default Config")
+		// kilocode_change end
 		fireEvent.input(input, { target: { value: "New Name" } })
 
 		// Save
@@ -224,17 +226,21 @@ describe("ApiConfigManager", () => {
 		const renameButton = screen.getByTestId("rename-profile-button")
 		fireEvent.click(renameButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		// Find input in rename form and enter existing name
 		const renameForm = getRenameForm()
 		const input = within(renameForm).getByDisplayValue("Default Config")
+		// kilocode_change end
 		fireEvent.input(input, { target: { value: "Another Config" } })
 
 		// Save to trigger validation
 		const saveButton = screen.getByTestId("save-rename-button")
 		fireEvent.click(saveButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		// Verify error message
 		const errorMessage = within(renameForm).getByTestId("error-message")
+		// kilocode_change end
 		expect(errorMessage).toHaveTextContent("settings:providers.nameExists")
 		expect(mockOnRenameConfig).not.toHaveBeenCalled()
 	})
@@ -246,9 +252,11 @@ describe("ApiConfigManager", () => {
 		const renameButton = screen.getByTestId("rename-profile-button")
 		fireEvent.click(renameButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		// Find input in rename form and enter empty name
 		const renameForm = getRenameForm()
 		const input = within(renameForm).getByDisplayValue("Default Config")
+		// kilocode_change end
 		fireEvent.input(input, { target: { value: "   " } })
 
 		// Verify save button is disabled
@@ -293,9 +301,11 @@ describe("ApiConfigManager", () => {
 		const renameButton = screen.getByTestId("rename-profile-button")
 		fireEvent.click(renameButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		// Find input in rename form and enter new name
 		const renameForm = getRenameForm()
 		const input = within(renameForm).getByDisplayValue("Default Config")
+		// kilocode_change end
 		fireEvent.input(input, { target: { value: "New Name" } })
 
 		// Cancel
@@ -335,8 +345,10 @@ describe("ApiConfigManager", () => {
 		const renameButton = screen.getByTestId("rename-profile-button")
 		fireEvent.click(renameButton)
 
+		// kilocode_change start - use rename form for scoped queries
 		const renameForm = getRenameForm()
 		const input = within(renameForm).getByDisplayValue("Default Config")
+		// kilocode_change end
 
 		// Test Enter key
 		fireEvent.input(input, { target: { value: "New Name" } })
