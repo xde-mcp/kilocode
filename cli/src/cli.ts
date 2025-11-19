@@ -78,12 +78,17 @@ export class CLI {
 				logs.info("Provider/model overrides applied and saved", "CLI")
 			}
 
-			// Initialize TrpcClient if kiloToken is available
+			// Initialize services if kiloToken is available
 			if (config.kiloToken) {
 				TrpcClient.getInstance(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				SessionService.getInstance()
+				const sessionService = SessionService.getInstance()
+				logs.debug("SessionService initialized", "CLI")
+
+				if (this.options.session) {
+					await sessionService.restoreSession(this.options.session)
+				}
 			}
 
 			const telemetryService = getTelemetryService()

@@ -1,5 +1,5 @@
 import { readFileSync } from "fs"
-import { SessionClient } from "./sessionClient"
+import { SessionClient, SessionWithBlobs } from "./sessionClient"
 import { logs } from "./logs.js"
 
 const defaultPaths = {
@@ -7,6 +7,9 @@ const defaultPaths = {
 	uiMessagesPath: null as null | string,
 	taskMetadataPath: null as null | string,
 }
+
+// FIXME
+export const basePath = ""
 
 export class SessionService {
 	private static instance: SessionService | null = null
@@ -64,6 +67,50 @@ export class SessionService {
 		}
 
 		return contents
+	}
+
+	async restoreSession(sessionId: string) {
+		try {
+			logs.info("Restoring session", "SessionService", { sessionId })
+
+			const sessionClient = SessionClient.getInstance()
+			const session = (await sessionClient.get({
+				sessionId,
+				includeBlobs: true,
+			})) as SessionWithBlobs
+
+			if (!session) {
+				logs.error("Failed to obtain session", "SessionService", { sessionId })
+				return
+			}
+
+			// Restore blobs to files
+			// if (this.paths.apiConversationHistoryPath && session.api_conversation_history) {
+			// 	writeFileSync(
+			// 		this.paths.apiConversationHistoryPath,
+			// 		JSON.stringify(session.api_conversation_history, null, 2),
+			// 	)
+			// }
+
+			// if (this.paths.uiMessagesPath && session.ui_messages) {
+			// 	writeFileSync(this.paths.uiMessagesPath, JSON.stringify(session.ui_messages, null, 2))
+			// }
+
+			// if (this.paths.taskMetadataPath && session.task_metadata) {
+			// 	writeFileSync(this.paths.taskMetadataPath, JSON.stringify(session.task_metadata, null, 2))
+			// }
+
+			this.sessionId = session.id
+			this.lastSaveEvent = crypto.randomUUID()
+			this.lastSyncEvent = this.lastSaveEvent
+
+			logs.info("Session restored successfully", "SessionService", { sessionId })
+		} catch (error) {
+			logs.error("Failed to restore session", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+				sessionId,
+			})
+		}
 	}
 
 	private async syncSession() {
