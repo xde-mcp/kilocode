@@ -35,7 +35,7 @@ export class SessionService {
 	private paths = { ...defaultPaths }
 	private _sessionId: string | null = null
 
-	private get sessionId() {
+	get sessionId() {
 		return this._sessionId
 	}
 
@@ -125,6 +125,12 @@ export class SessionService {
 		try {
 			logs.info("Restoring session", "SessionService", { sessionId })
 
+			// Set sessionId immediately to prevent race condition with syncSession timer
+			// If restoration fails, we'll reset it in the catch block
+			this.sessionId = sessionId
+			this.lastSaveEvent = crypto.randomUUID()
+			this.lastSyncEvent = this.lastSaveEvent
+
 			const sessionClient = SessionClient.getInstance()
 			const session = (await sessionClient.get({
 				sessionId,
@@ -197,10 +203,6 @@ export class SessionService {
 					}
 				}
 			}
-
-			this.sessionId = session.id
-			this.lastSaveEvent = crypto.randomUUID()
-			this.lastSyncEvent = this.lastSaveEvent
 
 			const historyItem: HistoryItem = {
 				id: sessionId,
