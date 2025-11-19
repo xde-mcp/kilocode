@@ -80,27 +80,15 @@ export class GhostStatusBar {
 	private renderDefault() {
 		const totalCostFormatted = this.humanFormatCost(this.totalSessionCost || 0)
 		const lastCompletionCostFormatted = this.lastCompletionCost?.toFixed(5) || 0
-
-		let statusText = t("kilocode:ghost.statusBar.enabled")
-		if (this.profileName) {
-			statusText = `$(sparkle) ${this.profileName}`
-		}
-		this.statusBar.text = `${statusText} (${totalCostFormatted})`
-
-		let tooltipLines = [t("kilocode:ghost.statusBar.tooltip.basic")]
-
-		if (this.profileName) {
-			tooltipLines.push(`• ${t("kilocode:ghost.statusBar.tooltip.profile")}${this.profileName}`)
-		}
-
-		tooltipLines.push(
-			`• ${t("kilocode:ghost.statusBar.tooltip.lastCompletion")} $${lastCompletionCostFormatted}`,
-			`• ${t("kilocode:ghost.statusBar.tooltip.sessionTotal")} ${totalCostFormatted}`,
-			`• ${t("kilocode:ghost.statusBar.tooltip.provider")} ${this.provider}`,
-			`• ${t("kilocode:ghost.statusBar.tooltip.model")} ${this.model}`,
-		)
-
-		this.statusBar.tooltip = tooltipLines.join("\n")
+		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} (${totalCostFormatted})`
+		this.statusBar.tooltip = `\
+${t("kilocode:ghost.statusBar.tooltip.basic")}
+• ${t("kilocode:ghost.statusBar.tooltip.lastCompletion")} $${lastCompletionCostFormatted}
+• ${t("kilocode:ghost.statusBar.tooltip.sessionTotal")} ${totalCostFormatted}
+• ${t("kilocode:ghost.statusBar.tooltip.profile")}${this.profileName}
+• ${t("kilocode:ghost.statusBar.tooltip.provider")} ${this.provider}
+• ${t("kilocode:ghost.statusBar.tooltip.model")} ${this.model}\
+`
 	}
 
 	public render() {
