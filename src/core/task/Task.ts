@@ -2004,9 +2004,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 							...lastParsedItem.content,
 							{ type: "text" as const, text: environmentDetails },
 						]
+						finalUserContent = [...parsedUserContent] // rewrite finalUserContent
 					}
 				}
-				finalUserContent = [...parsedUserContent]
 			}
 			// kilocode_change end
 			await this.addToApiConversationHistory({ role: "user", content: finalUserContent })
