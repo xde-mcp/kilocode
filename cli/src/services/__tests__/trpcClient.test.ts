@@ -22,25 +22,25 @@ describe("TrpcClient", () => {
 		vi.restoreAllMocks()
 	})
 
-	describe("getInstance", () => {
+	describe("init", () => {
 		it("should throw error when no token provided and no instance exists", () => {
-			expect(() => TrpcClient.getInstance()).toThrow("token required to init TrpcClient service")
+			expect(() => TrpcClient.init()).toThrow("token required to init TrpcClient service")
 		})
 
 		it("should create new instance with token", () => {
-			const instance = TrpcClient.getInstance("test-token")
+			const instance = TrpcClient.init("test-token")
 			expect(instance).toBeInstanceOf(TrpcClient)
 		})
 
 		it("should return same instance on subsequent calls", () => {
-			const instance1 = TrpcClient.getInstance("test-token")
-			const instance2 = TrpcClient.getInstance()
+			const instance1 = TrpcClient.init("test-token")
+			const instance2 = TrpcClient.init()
 			expect(instance1).toBe(instance2)
 		})
 
 		it("should not create new instance if one already exists, even with new token", () => {
-			const instance1 = TrpcClient.getInstance("token1")
-			const instance2 = TrpcClient.getInstance("token2")
+			const instance1 = TrpcClient.init("token1")
+			const instance2 = TrpcClient.init("token2")
 			expect(instance1).toBe(instance2)
 		})
 	})
@@ -49,7 +49,7 @@ describe("TrpcClient", () => {
 		let client: TrpcClient
 
 		beforeEach(() => {
-			client = TrpcClient.getInstance("test-token")
+			client = TrpcClient.init("test-token")
 		})
 
 		describe("GET requests", () => {
@@ -109,7 +109,7 @@ describe("TrpcClient", () => {
 				// Need to create new client instance to pick up env var
 				// @ts-expect-error - Accessing private static property for testing
 				TrpcClient.instance = null
-				const customClient = TrpcClient.getInstance("test-token")
+				const customClient = TrpcClient.init("test-token")
 
 				fetchMock.mockResolvedValueOnce({
 					ok: true,
@@ -131,7 +131,7 @@ describe("TrpcClient", () => {
 
 				// @ts-expect-error - Accessing private static property for testing
 				TrpcClient.instance = null
-				const defaultClient = TrpcClient.getInstance("test-token")!
+				const defaultClient = TrpcClient.init("test-token")!
 
 				fetchMock.mockResolvedValueOnce({
 					ok: true,
@@ -305,10 +305,10 @@ describe("TrpcClient", () => {
 				expect(headers?.Authorization).toBe("Bearer test-token")
 			})
 
-			it("should use token from getInstance call", async () => {
+			it("should use token from init call", async () => {
 				// @ts-expect-error - Accessing private static property for testing
 				TrpcClient.instance = null
-				const clientWithToken = TrpcClient.getInstance("custom-token-123")
+				const clientWithToken = TrpcClient.init("custom-token-123")
 
 				fetchMock.mockResolvedValueOnce({
 					ok: true,

@@ -1,10 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { SessionService } from "../session.js"
 import { SessionClient } from "../sessionClient.js"
+import type { ExtensionService } from "../extension.js"
+import type { ClineMessage } from "@roo-code/types"
+import { createStore } from "jotai"
 
 // Mock fs module
 vi.mock("fs", () => ({
 	readFileSync: vi.fn(),
+	writeFileSync: vi.fn(),
+}))
+
+// Mock fs-extra module
+vi.mock("fs-extra", () => ({
+	ensureDirSync: vi.fn(),
 }))
 
 vi.mock("../sessionClient.js")
@@ -17,8 +26,16 @@ vi.mock("../logs.js", () => ({
 	},
 }))
 
+// Mock KiloCodePaths
+vi.mock("../../utils/paths.js", () => ({
+	KiloCodePaths: {
+		getTasksDir: vi.fn(() => "/mock/tasks/dir"),
+	},
+}))
+
 // Import after mocking
-import { readFileSync } from "fs"
+import { readFileSync, writeFileSync } from "fs"
+import { ensureDirSync } from "fs-extra"
 import { logs } from "../logs.js"
 
 describe("SessionService", () => {
@@ -26,6 +43,10 @@ describe("SessionService", () => {
 	let mockSessionClient: SessionClient
 	let mockCreate: ReturnType<typeof vi.fn>
 	let mockUpdate: ReturnType<typeof vi.fn>
+	let mockGet: ReturnType<typeof vi.fn>
+	let mockExtensionService: ExtensionService
+	let mockSendWebviewMessage: ReturnType<typeof vi.fn>
+	let mockStore: ReturnType<typeof createStore>
 
 	beforeEach(() => {
 		vi.useFakeTimers()
@@ -35,18 +56,33 @@ describe("SessionService", () => {
 		// @ts-expect-error - Accessing private static property for testing
 		SessionService.instance = null
 
+		// Mock ExtensionService
+		mockSendWebviewMessage = vi.fn().mockResolvedValue(undefined)
+		mockExtensionService = {
+			sendWebviewMessage: mockSendWebviewMessage,
+		} as unknown as ExtensionService
+
+		// Mock Jotai store
+		mockStore = {
+			set: vi.fn(),
+			get: vi.fn(),
+			sub: vi.fn(),
+		} as ReturnType<typeof createStore>
+
 		// Mock SessionClient methods
 		mockCreate = vi.fn()
 		mockUpdate = vi.fn()
+		mockGet = vi.fn()
 		mockSessionClient = {
 			create: mockCreate,
 			update: mockUpdate,
+			get: mockGet,
 		} as unknown as SessionClient
 
 		// Mock SessionClient.getInstance to return our mock
 		vi.spyOn(SessionClient, "getInstance").mockReturnValue(mockSessionClient)
 
-		service = SessionService.getInstance()
+		service = SessionService.init(mockExtensionService, mockStore)
 	})
 
 	afterEach(async () => {
@@ -55,16 +91,32 @@ describe("SessionService", () => {
 		vi.useRealTimers()
 	})
 
-	describe("getInstance", () => {
+	describe("init", () => {
+		it("should throw error when called without extensionService and store on first init", () => {
+			// @ts-expect-error - Accessing private static property for testing
+			SessionService.instance = null
+
+			expect(() => SessionService.init()).toThrow("extensionService and store required to init SessionService")
+		})
+
 		it("should return same instance on multiple calls", () => {
-			const instance1 = SessionService.getInstance()
-			const instance2 = SessionService.getInstance()
+			const instance1 = SessionService.init(mockExtensionService, mockStore)
+			const instance2 = SessionService.init()
 			expect(instance1).toBe(instance2)
 		})
 
 		it("should be a singleton", () => {
 			// @ts-expect-error - Accessing private static property for testing
 			expect(SessionService.instance).not.toBeNull()
+		})
+
+		it("should accept extensionService and store parameters", () => {
+			// @ts-expect-error - Accessing private static property for testing
+			SessionService.instance = null
+
+			const instance = SessionService.init(mockExtensionService, mockStore)
+			expect(instance).toBeInstanceOf(SessionService)
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Initiated SessionService", "SessionService")
 		})
 	})
 
@@ -426,7 +478,7 @@ describe("SessionService", () => {
 			// Create new instance to test construction
 			// @ts-expect-error - Reset for testing
 			SessionService.instance = null
-			SessionService.getInstance()
+			SessionService.init(mockExtensionService, mockStore)
 
 			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 1000)
 		})
@@ -743,6 +795,272 @@ describe("SessionService", () => {
 				}),
 			)
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
+
+			describe("restoreSession", () => {
+				it("should restore session from remote and write files to disk", async () => {
+					const mockSessionData = {
+						id: "restored-session-id",
+						title: "Restored Session",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+						api_conversation_history: { messages: [{ role: "user", content: "test" }] },
+						ui_messages: [
+							{ say: "text", text: "message 1", ts: 1000 },
+							{ say: "checkpoint_saved", text: "", ts: 2000 }, // Should be filtered out
+							{ say: "text", text: "message 2", ts: 3000 },
+						] as ClineMessage[],
+						task_metadata: { task: "test task" },
+					}
+
+					mockGet.mockResolvedValueOnce(mockSessionData)
+
+					await service.restoreSession("restored-session-id")
+
+					// Verify SessionClient.get was called with includeBlobs
+					expect(mockGet).toHaveBeenCalledWith({
+						sessionId: "restored-session-id",
+						includeBlobs: true,
+					})
+
+					// Verify directory was created
+					expect(vi.mocked(ensureDirSync)).toHaveBeenCalledWith("/mock/tasks/dir/restored-session-id")
+
+					// Verify files were written
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(3)
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+						"/mock/tasks/dir/restored-session-id/api_conversation_history.json",
+						JSON.stringify(mockSessionData.api_conversation_history, null, 2),
+					)
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+						"/mock/tasks/dir/restored-session-id/ui_messages.json",
+						expect.stringContaining("message 1"),
+					)
+					// Verify checkpoint messages were filtered out
+					const uiMessagesCall = vi
+						.mocked(writeFileSync)
+						.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages.json")
+					expect(uiMessagesCall?.[1]).not.toContain("checkpoint_saved")
+
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+						"/mock/tasks/dir/restored-session-id/task_metadata.json",
+						JSON.stringify(mockSessionData.task_metadata, null, 2),
+					)
+				})
+
+				it("should send messages to extension to register task", async () => {
+					const mockSessionData = {
+						id: "restored-session-id",
+						title: "Restored Session",
+						created_at: "2025-01-01T12:00:00Z",
+						updated_at: "2025-01-01T12:00:00Z",
+					}
+
+					mockGet.mockResolvedValueOnce(mockSessionData)
+
+					await service.restoreSession("restored-session-id")
+
+					// Verify addTaskToHistory message was sent
+					expect(mockSendWebviewMessage).toHaveBeenCalledWith({
+						type: "addTaskToHistory",
+						historyItem: {
+							id: "restored-session-id",
+							number: 1,
+							task: "Restored Session",
+							ts: new Date("2025-01-01T12:00:00Z").getTime(),
+							tokensIn: 0,
+							tokensOut: 0,
+							totalCost: 0,
+						},
+					})
+
+					// Verify showTaskWithId message was sent
+					expect(mockSendWebviewMessage).toHaveBeenCalledWith({
+						type: "showTaskWithId",
+						text: "restored-session-id",
+					})
+				})
+
+				it("should display session resumed message via Ink", async () => {
+					const mockSessionData = {
+						id: "restored-session-id",
+						title: "Restored Session",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+					}
+
+					mockGet.mockResolvedValueOnce(mockSessionData)
+
+					await service.restoreSession("restored-session-id")
+
+					// Verify Ink message was displayed
+					expect(mockStore.set).toHaveBeenCalledWith(
+						expect.anything(), // addMessageAtom
+						expect.objectContaining({
+							type: "system",
+							content: "Session resumed: restored-session-id",
+						}),
+					)
+				})
+
+				it("should handle missing session gracefully", async () => {
+					mockGet.mockResolvedValueOnce(null)
+
+					await service.restoreSession("non-existent-id")
+
+					expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+						"Failed to obtain session",
+						"SessionService",
+						expect.objectContaining({
+							sessionId: "non-existent-id",
+						}),
+					)
+
+					// Should not write any files
+					expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
+				})
+
+				it("should handle restore errors gracefully", async () => {
+					mockGet.mockRejectedValueOnce(new Error("Network error"))
+
+					await service.restoreSession("error-session-id")
+
+					expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
+						"Failed to restore session",
+						"SessionService",
+						expect.objectContaining({
+							error: "Network error",
+							sessionId: "error-session-id",
+						}),
+					)
+
+					// SessionId should be reset to null on error
+					// @ts-expect-error - Accessing private property for testing
+					expect(service.sessionId).toBeNull()
+				})
+
+				it("should skip writing files that are not present in session data", async () => {
+					const mockSessionData = {
+						id: "partial-session-id",
+						title: "Partial Session",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+						api_conversation_history: { messages: [] },
+						// ui_messages and task_metadata are missing
+					}
+
+					mockGet.mockResolvedValueOnce(mockSessionData)
+
+					await service.restoreSession("partial-session-id")
+
+					// Only one file should be written (api_conversation_history)
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(1)
+					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
+						"/mock/tasks/dir/partial-session-id/api_conversation_history.json",
+						JSON.stringify(mockSessionData.api_conversation_history, null, 2),
+					)
+				})
+
+				it("should log info messages during restoration", async () => {
+					const mockSessionData = {
+						id: "session-with-logs",
+						title: "Test Session",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+					}
+
+					mockGet.mockResolvedValueOnce(mockSessionData)
+
+					await service.restoreSession("session-with-logs")
+
+					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+						"Restoring session",
+						"SessionService",
+						expect.objectContaining({
+							sessionId: "session-with-logs",
+						}),
+					)
+
+					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+						"Task registered with extension",
+						"SessionService",
+						expect.objectContaining({
+							sessionId: "session-with-logs",
+							taskId: "session-with-logs",
+						}),
+					)
+
+					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+						"Switched to restored task",
+						"SessionService",
+						expect.objectContaining({
+							sessionId: "session-with-logs",
+						}),
+					)
+				})
+			})
+
+			describe("Ink message display", () => {
+				it("should display session started message when creating new session", async () => {
+					const mockData = { messages: [] }
+					vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(mockData))
+
+					mockCreate.mockResolvedValueOnce({
+						id: "new-session-id",
+						title: "",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+					})
+
+					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+					// Trigger sync via timer
+					await vi.advanceTimersByTimeAsync(1000)
+
+					// Verify Ink message was displayed
+					expect(mockStore.set).toHaveBeenCalledWith(
+						expect.anything(), // addMessageAtom
+						expect.objectContaining({
+							type: "system",
+							content: "Session started: new-session-id",
+							id: expect.stringMatching(/^msg-\d+-\d+$/),
+							ts: expect.any(Number),
+						}),
+					)
+				})
+
+				it("should not display message for session updates", async () => {
+					const mockData = { messages: [] }
+					vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+					mockCreate.mockResolvedValueOnce({
+						id: "session-id",
+						title: "",
+						created_at: "2025-01-01T00:00:00Z",
+						updated_at: "2025-01-01T00:00:00Z",
+					})
+
+					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+					// First sync - creates session
+					await vi.advanceTimersByTimeAsync(1000)
+
+					// Clear mock calls
+					vi.mocked(mockStore.set).mockClear()
+
+					mockUpdate.mockResolvedValueOnce({
+						id: "session-id",
+						title: "",
+						updated_at: "2025-01-01T00:01:00Z",
+					})
+
+					// Trigger update
+					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+					await vi.advanceTimersByTimeAsync(1000)
+
+					// Should not call store.set for updates (only for create and restore)
+					expect(mockStore.set).not.toHaveBeenCalled()
+				})
+			})
 		})
 	})
 })

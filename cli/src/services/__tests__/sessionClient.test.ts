@@ -18,8 +18,8 @@ describe("SessionClient", () => {
 			request: requestMock,
 		} as unknown as TrpcClient
 
-		// Mock TrpcClient.getInstance to return our mock
-		vi.spyOn(TrpcClient, "getInstance").mockReturnValue(mockTrpcClient)
+		// Mock TrpcClient.init to return our mock
+		vi.spyOn(TrpcClient, "init").mockReturnValue(mockTrpcClient)
 
 		service = SessionClient.getInstance()
 	})
