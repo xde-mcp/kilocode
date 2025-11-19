@@ -5,7 +5,7 @@ sidebar_label: Deploy
 
 # Deploy
 
-Kilo Code Deploy lets you ship **Next.js** applications directly from Kilo Code with automatic builds, real-time logs, and continuous deployment from GitHub. It automatically detects your stack, configures your project for hosting, and manages the full deployment lifecycle.
+Kilo Deploy lets you ship **Next.js** applications directly from Kilo Code with automatic builds, real-time logs, and continuous deployment from GitHub. It automatically detects your stack, configures your project for hosting, and manages the full deployment lifecycle.
 
 ## What Deploy Does
 
