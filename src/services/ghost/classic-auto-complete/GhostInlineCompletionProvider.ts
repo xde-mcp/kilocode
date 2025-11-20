@@ -214,99 +214,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return { text: "", prefix, suffix }
 	}
 
-	public async getFromChat(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
-		const { systemPrompt, userPrompt, prefix, suffix } = prompt
-
-		let response = ""
-
-		const onChunk = (chunk: ApiStreamChunk) => {
-			if (chunk.type === "text") {
-				response += chunk.text
-			}
-		}
-
-		console.log("[HoleFiller] userPrompt:", userPrompt)
-
-		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
-
-		console.log("response", response)
-
-		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
-		const fillInAtCursorSuggestion = this.processSuggestion(parsedSuggestion.text, prefix, suffix, model)
-
-		if (fillInAtCursorSuggestion.text) {
-			console.info("Final suggestion:", fillInAtCursorSuggestion)
-		}
-
-		return {
-			suggestion: fillInAtCursorSuggestion,
-			cost: usageInfo.cost,
-			inputTokens: usageInfo.inputTokens,
-			outputTokens: usageInfo.outputTokens,
-			cacheWriteTokens: usageInfo.cacheWriteTokens,
-			cacheReadTokens: usageInfo.cacheReadTokens,
-		}
-	}
-
-	private async getFromFIM(
-		model: GhostModel,
-		prompt: GhostPrompt,
-		autocompleteInput: AutocompleteInput,
-	): Promise<LLMRetrievalResult> {
-		let perflog = ""
-		const logtime = (() => {
-			let timestamp = performance.now()
-			return (msg: string) => {
-				const baseline = timestamp
-				timestamp = performance.now()
-				perflog += `${msg}: ${timestamp - baseline}\n`
-			}
-		})()
-
-		// Get helper for full prefix/suffix (needed for processSuggestion)
-		const { helper } = await this.contextProvider.getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-		)
-		logtime("snippets")
-
-		// Use pre-formatted prefix and pruned suffix from prompt
-		const formattedPrefix = prompt.formattedPrefix!
-		const prunedSuffix = prompt.prunedSuffix!
-
-		console.log("[FIM] formattedPrefix:", formattedPrefix)
-
-		let response = ""
-		const onChunk = (text: string) => {
-			response += text
-		}
-		logtime("prep fim")
-		const usageInfo = await model.generateFimResponse(
-			formattedPrefix,
-			prunedSuffix,
-			onChunk,
-			autocompleteInput.completionId, // Pass completionId as taskId for tracking
-		)
-		logtime("fim network")
-		console.log("[FIM] response:", response)
-
-		const fillInAtCursorSuggestion = this.processSuggestion(response, helper.fullPrefix, helper.fullSuffix, model)
-
-		if (fillInAtCursorSuggestion.text) {
-			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)
-		}
-		logtime("processSuggestion")
-		console.log(perflog + `lengths: ${formattedPrefix.length + prunedSuffix.length}\n`)
-		return {
-			suggestion: fillInAtCursorSuggestion,
-			cost: usageInfo.cost,
-			inputTokens: usageInfo.inputTokens,
-			outputTokens: usageInfo.outputTokens,
-			cacheWriteTokens: usageInfo.cacheWriteTokens,
-			cacheReadTokens: usageInfo.cacheReadTokens,
-		}
-	}
-
 	public dispose(): void {
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
@@ -413,8 +320,21 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		try {
 			const result =
 				prompt.strategy === "fim"
-					? await this.getFromFIM(this.model, prompt, prompt.autocompleteInput)
-					: await this.getFromChat(prompt, this.model)
+					? await this.fimPromptBuilder.getFromFIM(
+							this.model,
+							prompt.formattedPrefix!,
+							prompt.prunedSuffix!,
+							prompt.autocompleteInput,
+							this.processSuggestion.bind(this),
+						)
+					: await this.holeFiller.getFromChat(
+							prompt.systemPrompt,
+							prompt.userPrompt,
+							prompt.prefix,
+							prompt.suffix,
+							this.model,
+							this.processSuggestion.bind(this),
+						)
 
 			if (this.costTrackingCallback && result.cost > 0) {
 				this.costTrackingCallback(
