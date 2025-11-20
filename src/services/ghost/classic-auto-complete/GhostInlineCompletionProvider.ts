@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, AutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
 import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion } from "./HoleFiller"
+import { FimPromptBuilder } from "./fim"
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
@@ -101,6 +102,7 @@ export interface LLMRetrievalResult {
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
+	private fimPromptBuilder: FimPromptBuilder
 	private contextProvider: GhostContextProvider
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
@@ -121,6 +123,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
+		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 		this.contextProvider = contextProvider
 		this.ignoreController = ignoreController
 
@@ -179,7 +182,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		if (strategy === "fim") {
 			const modelName = this.model.getModelName() ?? "codestral"
-			const fimPrompts = await this.holeFiller.getFimPrompts(autocompleteInput, modelName)
+			const fimPrompts = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
 			formattedPrefix = fimPrompts.formattedPrefix
 			prunedSuffix = fimPrompts.prunedSuffix
 		}
