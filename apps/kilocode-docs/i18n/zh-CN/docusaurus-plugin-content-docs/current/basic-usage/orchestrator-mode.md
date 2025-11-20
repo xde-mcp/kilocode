@@ -42,5 +42,7 @@ import YouTubeEmbed from '@site/src/components/YouTubeEmbed';
 :::
 
 [^1]: 此上下文通过 [`new_task`](/features/tools/new-task) 工具的 `message` 参数传递。
+
 [^2]: 子任务的模式通过 [`new_task`](/features/tools/new-task) 工具的 `mode` 参数在启动时指定。
+
 [^3]: 此摘要通过 [`attempt_completion`](/features/tools/attempt-completion) 工具的 `result` 参数在子任务完成时传递。

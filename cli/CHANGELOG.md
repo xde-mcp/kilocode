@@ -1,5 +1,17 @@
 # @kilocode/cli
 
+## 0.6.0
+
+### Minor Changes
+
+- [#3886](https://github.com/Kilo-Org/kilocode/pull/3886) [`00e6fb5`](https://github.com/Kilo-Org/kilocode/commit/00e6fb59a42dcf827f7cfe72516052c561723cd0) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Update Dependencies
+
+## 0.5.1
+
+### Patch Changes
+
+- [#3826](https://github.com/Kilo-Org/kilocode/pull/3826) [`70b956f`](https://github.com/Kilo-Org/kilocode/commit/70b956f79b9878e32f36c827faa490bcdcb889e7) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Allow the user to type any custom follow up suggestion
+
 ## 0.5.0
 
 ### Minor Changes
