@@ -10,17 +10,12 @@ import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
+import * as telemetry from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
 
-export type CostTrackingCallback = (
-	cost: number,
-	inputTokens: number,
-	outputTokens: number,
-	cacheWriteTokens: number,
-	cacheReadTokens: number,
-) => void
+export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
 
 export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
 
@@ -76,15 +71,21 @@ export function findMatchingSuggestion(
 	return null
 }
 
+/**
+ * Command ID for tracking inline completion acceptance.
+ * This command is executed after the user accepts an inline completion.
+ */
+export const INLINE_COMPLETION_ACCEPTED_COMMAND = "kilocode.ghost.inline-completion.accepted"
+
 export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
 	if (text === "") {
 		return []
 	}
 
-	const item: vscode.InlineCompletionItem = {
-		insertText: text,
-		range: new vscode.Range(position, position),
-	}
+	const item = new vscode.InlineCompletionItem(text, new vscode.Range(position, position), {
+		command: INLINE_COMPLETION_ACCEPTED_COMMAND,
+		title: "Autocomplete Accepted",
+	})
 	return [item]
 }
 
@@ -124,6 +125,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private debounceTimer: NodeJS.Timeout | null = null
 	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
+	private acceptedCommand: vscode.Disposable | null = null
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -150,6 +152,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const ide = contextProvider.getIde()
 		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
+
+		// Register command for tracking acceptance - this command is attached to each InlineCompletionItem
+		// and is executed by VS Code after the user accepts the completion
+		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
+			telemetry.captureAcceptSuggestion(),
+		)
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -208,6 +216,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 	): FillInAtCursorSuggestion {
 		if (!suggestionText) {
+			telemetry.captureSuggestionFiltered("empty_response")
 			return { text: "", prefix, suffix }
 		}
 
@@ -222,6 +231,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return { text: processedText, prefix, suffix }
 		}
 
+		telemetry.captureSuggestionFiltered("filtered_by_postprocessing")
 		return { text: "", prefix, suffix }
 	}
 
@@ -241,6 +251,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.recentlyVisitedRangesService.dispose()
 		this.recentlyEditedTracker.dispose()
 		void this.disposeIgnoreController()
+		if (this.acceptedCommand) {
+			this.acceptedCommand.dispose()
+			this.acceptedCommand = null
+		}
 	}
 
 	public async provideInlineCompletionItems(
@@ -265,6 +279,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
+		telemetry.captureSuggestionRequested()
+
 		if (!this.model) {
 			// bail if no model is available, because if there is none, we also have no cache
 			return []
@@ -306,6 +322,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 			if (matchingText !== null) {
+				telemetry.captureCacheHit()
 				return stringToInlineCompletions(matchingText, position)
 			}
 
@@ -313,6 +330,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix)
 
 			const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+			if (cachedText) {
+				telemetry.captureLlmSuggestionReturned()
+			}
+
 			return stringToInlineCompletions(cachedText ?? "", position)
 		} catch (error) {
 			// only big catch at the top of the call-chain, if anything goes wrong at a lower level
@@ -410,6 +431,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	}
 
 	private async fetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
+		const startTime = performance.now()
 		try {
 			// Curry processSuggestion with prefix, suffix, and model - only text needs to be provided
 			const curriedProcessSuggestion = (text: string) => this.processSuggestion(text, prefix, suffix, this.model)
@@ -419,17 +441,25 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 					? await this.fimPromptBuilder.getFromFIM(this.model, prompt, curriedProcessSuggestion)
 					: await this.holeFiller.getFromChat(this.model, prompt, curriedProcessSuggestion)
 
-			this.costTrackingCallback(
-				result.cost,
-				result.inputTokens,
-				result.outputTokens,
-				result.cacheWriteTokens,
-				result.cacheReadTokens,
-			)
+			const latencyMs = performance.now() - startTime
+
+			telemetry.captureLlmRequestCompleted({
+				latencyMs,
+				cost: result.cost,
+				inputTokens: result.inputTokens,
+				outputTokens: result.outputTokens,
+			})
+
+			this.costTrackingCallback(result.cost, result.inputTokens, result.outputTokens)
 
 			// Always update suggestions, even if text is empty (for caching)
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
+			const latencyMs = performance.now() - startTime
+			telemetry.captureLlmRequestFailed({
+				latencyMs,
+				error: error instanceof Error ? error.message : String(error),
+			})
 			console.error("Error getting inline completion from LLM:", error)
 		}
 	}
