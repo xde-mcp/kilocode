@@ -54,6 +54,11 @@ export class Fzf<T> {
 
 		const results: FzfResult<T>[] = []
 
+		// If no words after splitting (e.g., query was just punctuation), return all items
+		if (queryWords.length === 0) {
+			return this.items.map((item) => ({ item }))
+		}
+
 		for (const item of this.items) {
 			const text = this.selector(item).toLowerCase()
 
@@ -65,8 +70,9 @@ export class Fzf<T> {
 					results.push({ item })
 				}
 			} else {
-				// Single word query - use acronym matching
-				if (this.matchAcronym(text, normalizedQuery)) {
+				// Single word query - use the filtered word, not the original query
+				// This handles cases like "gpt-" which becomes ["gpt"]
+				if (this.matchAcronym(text, queryWords[0])) {
 					results.push({ item })
 				}
 			}
