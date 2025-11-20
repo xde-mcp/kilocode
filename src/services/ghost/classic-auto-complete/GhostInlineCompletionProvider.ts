@@ -9,6 +9,7 @@ import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harnes
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
+import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -240,12 +241,39 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		model: GhostModel,
 		autocompleteInput: AutocompleteInput,
 	): Promise<LLMRetrievalResult> {
-		const formattedPrefix = await this.contextProvider.getFimCompiledPrefix(
-			autocompleteInput,
-			autocompleteInput.filepath,
-			prefix,
-			suffix,
-		)
+		let perflog = ""
+		const logtime = (() => {
+			let timestamp = performance.now()
+			return (msg: string) => {
+				const baseline = timestamp
+				timestamp = performance.now()
+				perflog += `${msg}: ${timestamp - baseline}\n`
+			}
+		})()
+
+		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+		logtime("snippets")
+
+		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
+		const prunedPrefix = helper.prunedPrefix
+		const prunedSuffix = helper.prunedSuffix
+
+		const modelName = model.getModelName() ?? "codestral"
+		const template = getTemplateForModel(modelName)
+
+		let formattedPrefix = prunedPrefix
+		if (template.compilePrefixSuffix) {
+			const [compiledPrefix] = template.compilePrefixSuffix(
+				prunedPrefix,
+				prunedSuffix,
+				filepathUri,
+				"", // reponame not used in our context
+				snippetsWithUris,
+				workspaceDirs,
+			)
+			formattedPrefix = compiledPrefix
+		}
 
 		console.log("[FIM] formattedPrefix:", formattedPrefix)
 
@@ -253,14 +281,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const onChunk = (text: string) => {
 			response += text
 		}
-
+		logtime("prep fim")
 		const usageInfo = await model.generateFimResponse(
 			formattedPrefix,
-			suffix,
+			prunedSuffix,
 			onChunk,
 			autocompleteInput.completionId, // Pass completionId as taskId for tracking
 		)
-
+		logtime("fim network")
 		console.log("[FIM] response:", response)
 
 		const fillInAtCursorSuggestion = this.processSuggestion(response, prefix, suffix, model)
@@ -268,7 +296,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)
 		}
-
+		logtime("processSuggestion")
+		console.log(perflog + `lengths: ${formattedPrefix.length + prunedSuffix.length}\n`)
 		return {
 			suggestion: fillInAtCursorSuggestion,
 			cost: usageInfo.cost,
