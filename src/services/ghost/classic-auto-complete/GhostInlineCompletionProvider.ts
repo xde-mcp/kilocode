@@ -31,6 +31,9 @@ export interface GhostPrompt {
 	prefix: string
 	suffix: string
 	autocompleteInput: AutocompleteInput
+	// FIM-specific fields
+	formattedPrefix?: string
+	prunedSuffix?: string
 }
 
 /**
@@ -171,7 +174,36 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(autocompleteInput, languageId)
 
-		return { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput }
+		// For FIM strategy, prepare formatted prefix and pruned suffix
+		let formattedPrefix: string | undefined
+		let prunedSuffix: string | undefined
+
+		if (strategy === "fim") {
+			const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+				await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+
+			// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
+			const prunedPrefixRaw = helper.prunedPrefix
+			prunedSuffix = helper.prunedSuffix
+
+			const modelName = this.model.getModelName() ?? "codestral"
+			const template = getTemplateForModel(modelName)
+
+			formattedPrefix = prunedPrefixRaw
+			if (template.compilePrefixSuffix && prunedSuffix) {
+				const [compiledPrefix] = template.compilePrefixSuffix(
+					prunedPrefixRaw,
+					prunedSuffix,
+					filepathUri,
+					"", // reponame not used in our context
+					snippetsWithUris,
+					workspaceDirs,
+				)
+				formattedPrefix = compiledPrefix
+			}
+		}
+
+		return { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput, formattedPrefix, prunedSuffix }
 	}
 
 	private processSuggestion(
@@ -202,7 +234,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput } = prompt
 
 		if (strategy === "fim") {
-			return this.getFromFIM(model, autocompleteInput)
+			return this.getFromFIM(model, prompt, autocompleteInput)
 		}
 
 		let response = ""
@@ -236,7 +268,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private async getFromFIM(model: GhostModel, autocompleteInput: AutocompleteInput): Promise<LLMRetrievalResult> {
+	private async getFromFIM(
+		model: GhostModel,
+		prompt: GhostPrompt,
+		autocompleteInput: AutocompleteInput,
+	): Promise<LLMRetrievalResult> {
 		let perflog = ""
 		const logtime = (() => {
 			let timestamp = performance.now()
@@ -247,29 +283,16 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 		})()
 
-		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
-			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+		// Get helper for full prefix/suffix (needed for processSuggestion)
+		const { helper } = await this.contextProvider.getProcessedSnippets(
+			autocompleteInput,
+			autocompleteInput.filepath,
+		)
 		logtime("snippets")
 
-		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
-		const prunedPrefix = helper.prunedPrefix
-		const prunedSuffix = helper.prunedSuffix
-
-		const modelName = model.getModelName() ?? "codestral"
-		const template = getTemplateForModel(modelName)
-
-		let formattedPrefix = prunedPrefix
-		if (template.compilePrefixSuffix) {
-			const [compiledPrefix] = template.compilePrefixSuffix(
-				prunedPrefix,
-				prunedSuffix,
-				filepathUri,
-				"", // reponame not used in our context
-				snippetsWithUris,
-				workspaceDirs,
-			)
-			formattedPrefix = compiledPrefix
-		}
+		// Use pre-formatted prefix and pruned suffix from prompt
+		const formattedPrefix = prompt.formattedPrefix!
+		const prunedSuffix = prompt.prunedSuffix!
 
 		console.log("[FIM] formattedPrefix:", formattedPrefix)
 
