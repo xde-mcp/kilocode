@@ -259,6 +259,7 @@ export class ManagedIndexer implements vscode.Disposable {
 							projectId,
 							gitBranch,
 							kilocodeToken,
+							state.currentAbortController?.signal,
 						)
 					} catch (error) {
 						const errorMessage = error instanceof Error ? error.message : String(error)
