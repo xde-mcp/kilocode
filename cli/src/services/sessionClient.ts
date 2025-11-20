@@ -9,9 +9,9 @@ export interface Session {
 }
 
 export interface SessionWithSignedUrls extends Session {
-	api_conversation_history: string | null
-	task_metadata: string | null
-	ui_messages: string | null
+	api_conversation_history_blob_url: string | null
+	task_metadata_blob_url: string | null
+	ui_messages_blob_url: string | null
 }
 
 export interface GetSessionInput {

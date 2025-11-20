@@ -147,23 +147,27 @@ export class SessionService {
 			ensureDirSync(sessionDirectoryPath)
 
 			// Fetch and write each blob type from signed URLs
-			const blobTypes = ["api_conversation_history", "ui_messages", "task_metadata"] as const
+			const blobUrlFields = [
+				"api_conversation_history_blob_url",
+				"ui_messages_blob_url",
+				"task_metadata_blob_url",
+			] as const
 
 			// Fetch all blobs concurrently with error handling
-			const fetchPromises = blobTypes
-				.filter((blobType) => {
-					const signedUrl = session[blobType]
+			const fetchPromises = blobUrlFields
+				.filter((blobUrlField) => {
+					const signedUrl = session[blobUrlField]
 					if (!signedUrl) {
-						logs.debug(`No signed URL for ${blobType}`, "SessionService")
+						logs.debug(`No signed URL for ${blobUrlField}`, "SessionService")
 						return false
 					}
 					return true
 				})
-				.map(async (blobType) => {
-					const url = session[blobType]!
+				.map(async (blobUrlField) => {
+					const url = session[blobUrlField]!
 					return {
-						fileName: blobType,
-						result: await this.fetchBlobFromSignedUrl(url, blobType)
+						fieldName: blobUrlField,
+						result: await this.fetchBlobFromSignedUrl(url, blobUrlField)
 							.then((content) => ({ success: true as const, content }))
 							.catch((error) => ({
 								success: false as const,
@@ -177,12 +181,12 @@ export class SessionService {
 			// Process settled results and write files for successful fetches
 			for (const result of results) {
 				if (result.status === "fulfilled") {
-					const { fileName, result: fetchResult } = result.value
+					const { fieldName, result: fetchResult } = result.value
 
 					if (fetchResult.success) {
 						let fileContent = fetchResult.content
 
-						if (fileName === "ui_messages") {
+						if (fieldName === "ui_messages_blob_url") {
 							// eliminate checkpoints for now
 							fileContent = (fileContent as ClineMessage[]).filter(
 								(message) => message.say !== "checkpoint_saved",
@@ -190,14 +194,14 @@ export class SessionService {
 						}
 
 						writeFileSync(
-							path.join(sessionDirectoryPath, `${fileName}.json`),
+							path.join(sessionDirectoryPath, `${fieldName}.json`),
 							JSON.stringify(fileContent, null, 2),
 						)
 
-						logs.debug(`Wrote blob to file`, "SessionService", { fileName })
+						logs.debug(`Wrote blob to file`, "SessionService", { fileName: fieldName })
 					} else {
 						logs.error(`Failed to process blob`, "SessionService", {
-							fileName,
+							fileName: fieldName,
 							error: fetchResult.error,
 						})
 					}
