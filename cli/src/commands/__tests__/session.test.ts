@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest"
 import { sessionCommand } from "../session.js"
-import type { CommandContext } from "../core/types.js"
+import type { CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "../core/types.js"
 import { createMockContext } from "./helpers/mockContext.js"
 import { SessionService } from "../../services/session.js"
 import { SessionClient } from "../../services/sessionClient.js"
@@ -45,6 +45,7 @@ describe("sessionCommand", () => {
 				cliSessions: [],
 				nextCursor: null,
 			}),
+			autocomplete: vi.fn().mockResolvedValue([]),
 		}
 
 		// Mock SessionService.init to return our mock instance
@@ -438,6 +439,183 @@ describe("sessionCommand", () => {
 			expect(message).toHaveProperty("type")
 			expect(message).toHaveProperty("content")
 			expect(message).toHaveProperty("ts")
+		})
+	})
+
+	describe("sessionIdAutocompleteProvider", () => {
+		// Helper to create minimal ArgumentProviderContext for testing
+		const createProviderContext = (partialInput: string): ArgumentProviderContext => ({
+			commandName: "session",
+			argumentIndex: 1,
+			argumentName: "sessionId",
+			currentArgs: [],
+			currentOptions: {},
+			partialInput,
+			getArgument: () => undefined,
+			parsedValues: { args: {}, options: {} },
+			command: sessionCommand,
+		})
+
+		it("should return empty array for empty prefix", async () => {
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("")
+
+			const result = await provider(context)
+
+			expect(result).toEqual([])
+			expect(mockSessionClient.autocomplete).not.toHaveBeenCalled()
+		})
+
+		it("should return empty array for whitespace-only prefix", async () => {
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("   ")
+
+			const result = await provider(context)
+
+			expect(result).toEqual([])
+			expect(mockSessionClient.autocomplete).not.toHaveBeenCalled()
+		})
+
+		it("should call sessionClient.autocomplete with prefix", async () => {
+			const mockSessions = [
+				{
+					id: "session-abc123",
+					title: "ABC Session",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				},
+				{
+					id: "session-abc456",
+					title: "Another ABC",
+					created_at: "2025-01-02T00:00:00Z",
+					updated_at: "2025-01-02T00:00:00Z",
+				},
+			]
+
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue(mockSessions)
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("abc")
+
+			const result = await provider(context)
+
+			expect(mockSessionClient.autocomplete).toHaveBeenCalledWith({ prefix: "abc", limit: 20 })
+			expect(result).toHaveLength(2)
+		})
+
+		it("should map results correctly to suggestion format", async () => {
+			const mockSessions = [
+				{
+					id: "session-test123",
+					title: "Test Session",
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue(mockSessions)
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("test")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			expect(result).toHaveLength(1)
+			expect(result[0]).toMatchObject({
+				value: "session-test123",
+				title: "Test Session",
+				highlightedValue: "session-test123",
+			})
+			expect(result[0].description).toContain("Created:")
+			expect(result[0].matchScore).toBe(100) // First item gets score of 100
+		})
+
+		it("should handle Untitled sessions", async () => {
+			const mockSessions = [
+				{
+					id: "session-untitled",
+					title: "",
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue(mockSessions)
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("untitled")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			expect(result[0].title).toBe("Untitled")
+		})
+
+		it("should preserve backend ordering with matchScore", async () => {
+			const mockSessions = [
+				{
+					id: "session-1",
+					title: "Most Recent",
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+				{
+					id: "session-2",
+					title: "Second",
+					created_at: "2025-01-14T10:30:00Z",
+					updated_at: "2025-01-14T10:30:00Z",
+				},
+				{
+					id: "session-3",
+					title: "Third",
+					created_at: "2025-01-13T10:30:00Z",
+					updated_at: "2025-01-13T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue(mockSessions)
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("session")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			// Verify descending matchScore to preserve backend ordering
+			expect(result[0].matchScore).toBe(100)
+			expect(result[1].matchScore).toBe(99)
+			expect(result[2].matchScore).toBe(98)
+		})
+
+		it("should handle errors gracefully", async () => {
+			mockSessionClient.autocomplete = vi.fn().mockRejectedValue(new Error("Network error"))
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("test")
+
+			const result = await provider(context)
+
+			expect(result).toEqual([])
+		})
+
+		it("should handle empty results from backend", async () => {
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue([])
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("nonexistent")
+
+			const result = await provider(context)
+
+			expect(result).toEqual([])
+		})
+
+		it("should pass limit parameter to autocomplete", async () => {
+			mockSessionClient.autocomplete = vi.fn().mockResolvedValue([])
+
+			const provider = sessionCommand.arguments![1].provider!
+			const context = createProviderContext("test")
+
+			await provider(context)
+
+			expect(mockSessionClient.autocomplete).toHaveBeenCalledWith({ prefix: "test", limit: 20 })
 		})
 	})
 })

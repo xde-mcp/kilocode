@@ -150,16 +150,24 @@ async function selectSession(context: CommandContext, sessionId: string): Promis
 /**
  * Autocomplete provider for session IDs
  */
-async function sessionIdAutocompleteProvider(_context: ArgumentProviderContext): Promise<ArgumentSuggestion[]> {
+async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): Promise<ArgumentSuggestion[]> {
 	const sessionClient = SessionClient.getInstance()
 
+	// Extract prefix from user input
+	const prefix = context.partialInput.trim()
+
+	// Return empty array if no input
+	if (!prefix) {
+		return []
+	}
+
 	try {
-		const result = await sessionClient.list({ limit: 20 })
-		return result.cliSessions.map((session, index) => ({
+		const sessions = await sessionClient.autocomplete({ prefix, limit: 20 })
+		return sessions.map((session, index) => ({
 			value: session.id,
 			title: session.title || "Untitled",
 			description: `Created: ${new Date(session.created_at).toLocaleDateString()}`,
-			matchScore: 100 - index,
+			matchScore: 100 - index, // Backend orders by updated_at DESC, preserve order
 			highlightedValue: session.id,
 		}))
 	} catch (_error) {

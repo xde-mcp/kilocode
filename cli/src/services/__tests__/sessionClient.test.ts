@@ -409,6 +409,90 @@ describe("SessionClient", () => {
 		})
 	})
 
+	describe("autocomplete", () => {
+		it("should autocomplete sessions with prefix", async () => {
+			const mockSessions = [
+				{
+					id: "session-abc123",
+					title: "ABC Session",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				},
+				{
+					id: "session-abc456",
+					title: "Another ABC",
+					created_at: "2025-01-02T00:00:00Z",
+					updated_at: "2025-01-02T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: { data: mockSessions },
+			})
+
+			const result = await service.autocomplete({ prefix: "abc" })
+
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", { prefix: "abc" })
+			expect(result).toEqual(mockSessions)
+			expect(result).toHaveLength(2)
+		})
+
+		it("should autocomplete sessions with prefix and limit", async () => {
+			const mockSessions = [
+				{
+					id: "session-test1",
+					title: "Test 1",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: { data: mockSessions },
+			})
+
+			const result = await service.autocomplete({ prefix: "test", limit: 5 })
+
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", { prefix: "test", limit: 5 })
+			expect(result).toEqual(mockSessions)
+		})
+
+		it("should return empty array when no sessions match", async () => {
+			requestMock.mockResolvedValueOnce({
+				result: { data: [] },
+			})
+
+			const result = await service.autocomplete({ prefix: "nonexistent" })
+
+			expect(result).toEqual([])
+		})
+
+		it("should handle autocomplete error", async () => {
+			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 500 Internal Server Error"))
+
+			await expect(service.autocomplete({ prefix: "test" })).rejects.toThrow("Internal Server Error")
+		})
+
+		it("should handle authorization error", async () => {
+			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
+
+			await expect(service.autocomplete({ prefix: "test" })).rejects.toThrow("Invalid token")
+		})
+
+		it("should pass through the limit parameter correctly", async () => {
+			requestMock.mockResolvedValueOnce({
+				result: { data: [] },
+			})
+
+			await service.autocomplete({ prefix: "test", limit: 20 })
+
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", {
+				prefix: "test",
+				limit: 20,
+			})
+		})
+	})
+
 	describe("type safety", () => {
 		it("should handle typed responses correctly", async () => {
 			const mockSession = {
