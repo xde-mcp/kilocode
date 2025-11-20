@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
+import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, AutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
 import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion } from "./HoleFiller"
 import { GhostModel } from "../GhostModel"
@@ -7,9 +7,12 @@ import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
-import { refuseUselessSuggestion } from "./uselessSuggestionFilter"
+import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
+import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
+import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 
 const MAX_SUGGESTIONS_HISTORY = 20
+const DEBOUNCE_DELAY_MS = 300
 
 export type CostTrackingCallback = (
 	cost: number,
@@ -24,6 +27,7 @@ export interface GhostPrompt {
 	userPrompt: string
 	prefix: string
 	suffix: string
+	autocompleteInput: AutocompleteInput
 }
 
 /**
@@ -92,31 +96,33 @@ export interface LLMRetrievalResult {
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
+	private contextProvider: GhostContextProvider
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
 	private recentlyVisitedRangesService: RecentlyVisitedRangesService
 	private recentlyEditedTracker: RecentlyEditedTracker
+	private debounceTimer: NodeJS.Timeout | null = null
+	private ignoreController?: Promise<RooIgnoreController>
 
 	constructor(
 		model: GhostModel,
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
-		contextProvider?: GhostContextProvider,
+		contextProvider: GhostContextProvider,
+		ignoreController?: Promise<RooIgnoreController>,
 	) {
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
+		this.contextProvider = contextProvider
+		this.ignoreController = ignoreController
 
-		// Get IDE from context provider if available
-		const ide = contextProvider?.getIde()
-		if (ide) {
-			this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
-			this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
-		} else {
-			throw new Error("GhostContextProvider with IDE is required for tracking services")
-		}
+		// Initialize tracking services with IDE from context provider
+		const ide = contextProvider.getIde()
+		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
+		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
@@ -164,37 +170,134 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			languageId,
 		)
 
-		return { systemPrompt, userPrompt, prefix, suffix }
+		return { systemPrompt, userPrompt, prefix, suffix, autocompleteInput }
+	}
+
+	private processSuggestion(
+		suggestionText: string,
+		prefix: string,
+		suffix: string,
+		model: GhostModel,
+	): FillInAtCursorSuggestion {
+		if (!suggestionText) {
+			return { text: "", prefix, suffix }
+		}
+
+		const processedText = postprocessGhostSuggestion({
+			suggestion: suggestionText,
+			prefix,
+			suffix,
+			model: model.getModelName() || "",
+		})
+
+		if (processedText) {
+			return { text: processedText, prefix, suffix }
+		}
+
+		return { text: "", prefix, suffix }
 	}
 
 	public async getFromLLM(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
-		const { systemPrompt, userPrompt, prefix, suffix } = prompt
+		const { systemPrompt, userPrompt, prefix, suffix, autocompleteInput } = prompt
+
+		if (model.supportsFim()) {
+			return this.getFromFIM(prefix, suffix, model, autocompleteInput)
+		}
 
 		let response = ""
 
-		// Create streaming callback
 		const onChunk = (chunk: ApiStreamChunk) => {
 			if (chunk.type === "text") {
 				response += chunk.text
 			}
 		}
 
-		// Start streaming generation
+		console.log("[HoleFiller] userPrompt:", userPrompt)
+
 		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
 
 		console.log("response", response)
 
-		// Parse the response using the standalone function
-		let fillInAtCursorSuggestion = parseGhostResponse(response, prefix, suffix)
+		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
+		const fillInAtCursorSuggestion = this.processSuggestion(parsedSuggestion.text, prefix, suffix, model)
 
-		// Check if the suggestion is useless and clear it if so
-		if (fillInAtCursorSuggestion.text && refuseUselessSuggestion(fillInAtCursorSuggestion.text, prefix, suffix)) {
-			fillInAtCursorSuggestion = { text: "", prefix, suffix }
-		} else if (fillInAtCursorSuggestion.text) {
+		if (fillInAtCursorSuggestion.text) {
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
 		}
 
-		// Always return a FillInAtCursorSuggestion, even if text is empty
+		return {
+			suggestion: fillInAtCursorSuggestion,
+			cost: usageInfo.cost,
+			inputTokens: usageInfo.inputTokens,
+			outputTokens: usageInfo.outputTokens,
+			cacheWriteTokens: usageInfo.cacheWriteTokens,
+			cacheReadTokens: usageInfo.cacheReadTokens,
+		}
+	}
+
+	private async getFromFIM(
+		prefix: string,
+		suffix: string,
+		model: GhostModel,
+		autocompleteInput: AutocompleteInput,
+	): Promise<LLMRetrievalResult> {
+		let perflog = ""
+		const logtime = (() => {
+			let timestamp = performance.now()
+			return (msg: string) => {
+				const baseline = timestamp
+				timestamp = performance.now()
+				perflog += `${msg}: ${timestamp - baseline}\n`
+			}
+		})()
+
+		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
+		logtime("snippets")
+
+		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
+		const prunedPrefix = helper.prunedPrefix
+		const prunedSuffix = helper.prunedSuffix
+
+		const modelName = model.getModelName() ?? "codestral"
+		const template = getTemplateForModel(modelName)
+
+		let formattedPrefix = prunedPrefix
+		if (template.compilePrefixSuffix) {
+			const [compiledPrefix] = template.compilePrefixSuffix(
+				prunedPrefix,
+				prunedSuffix,
+				filepathUri,
+				"", // reponame not used in our context
+				snippetsWithUris,
+				workspaceDirs,
+			)
+			formattedPrefix = compiledPrefix
+		}
+
+		console.log("[FIM] formattedPrefix:", formattedPrefix)
+
+		let response = ""
+		const onChunk = (text: string) => {
+			response += text
+		}
+		logtime("prep fim")
+		const usageInfo = await model.generateFimResponse(
+			formattedPrefix,
+			prunedSuffix,
+			onChunk,
+			autocompleteInput.completionId, // Pass completionId as taskId for tracking
+		)
+		logtime("fim network")
+		console.log("[FIM] response:", response)
+
+		const fillInAtCursorSuggestion = this.processSuggestion(response, prefix, suffix, model)
+
+		if (fillInAtCursorSuggestion.text) {
+			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)
+		}
+		logtime("processSuggestion")
+		console.log(perflog + `lengths: ${formattedPrefix.length + prunedSuffix.length}\n`)
 		return {
 			suggestion: fillInAtCursorSuggestion,
 			cost: usageInfo.cost,
@@ -206,6 +309,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	}
 
 	public dispose(): void {
+		if (this.debounceTimer !== null) {
+			clearTimeout(this.debounceTimer)
+			this.debounceTimer = null
+		}
 		this.recentlyVisitedRangesService.dispose()
 		this.recentlyEditedTracker.dispose()
 	}
@@ -237,6 +344,31 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return []
 		}
 
+		// Check if file is ignored (for manual trigger via codeSuggestion)
+		if (!document.isUntitled && this.ignoreController) {
+			try {
+				// Try to get the controller with a short timeout
+				const controller = await Promise.race([
+					this.ignoreController,
+					new Promise<null>((resolve) => setTimeout(() => resolve(null), 50)),
+				])
+
+				if (!controller) {
+					// If promise hasn't resolved yet, assume file is ignored
+					return []
+				}
+
+				const isAccessible = controller.validateAccess(document.fileName)
+				if (!isAccessible) {
+					return []
+				}
+			} catch (error) {
+				console.error("[GhostInlineCompletionProvider] Error checking file access:", error)
+				// On error, assume file is ignored
+				return []
+			}
+		}
+
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 
 		const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
@@ -246,10 +378,24 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 
 		const prompt = await this.getPrompt(document, position)
-		await this.fetchAndCacheSuggestion(prompt)
+		await this.debouncedFetchAndCacheSuggestion(prompt)
 
 		const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 		return stringToInlineCompletions(cachedText ?? "", position)
+	}
+
+	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
+		if (this.debounceTimer !== null) {
+			clearTimeout(this.debounceTimer)
+		}
+
+		return new Promise<void>((resolve) => {
+			this.debounceTimer = setTimeout(async () => {
+				this.debounceTimer = null
+				await this.fetchAndCacheSuggestion(prompt)
+				resolve()
+			}, DEBOUNCE_DELAY_MS)
+		})
 	}
 
 	private async fetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
