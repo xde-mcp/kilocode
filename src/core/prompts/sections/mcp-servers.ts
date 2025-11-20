@@ -1,6 +1,5 @@
 import { DiffStrategy } from "../../../shared/tools"
 import { McpHub } from "../../../services/mcp/McpHub"
-import type { ToolProtocol } from "@roo-code/types" // kilocode_change
 
 export async function getMcpServersSection(
 	mcpHub?: McpHub,

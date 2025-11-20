@@ -3064,14 +3064,16 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					newTaskRequireTodos: vscode.workspace
 						.getConfiguration(Package.name)
 						.get<boolean>("newTaskRequireTodos", false),
-					toolProtocol: vscode.workspace
-						.getConfiguration(Package.name)
-						.get<ToolProtocol>("toolProtocol", "xml"),
+					// kilocode_change start
+					// toolProtocol: vscode.workspace
+					// 	.getConfiguration(Package.name)
+					// 	.get<ToolProtocol>("toolProtocol", "xml"),
+					toolProtocol: getActiveToolUseStyle(apiConfiguration),
+					// kilocode_change end
 				},
 				undefined, // todoList
 				this.api.getModel().id,
 				// kilocode_change start
-				getActiveToolUseStyle(apiConfiguration),
 				state,
 				// kilocode_change end
 			)

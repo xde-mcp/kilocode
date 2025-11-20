@@ -20,7 +20,10 @@ export function getCapabilitiesSection(
 	diffStrategy?: DiffStrategy,
 	codeIndexManager?: CodeIndexManager,
 	settings?: SystemPromptSettings,
+	clineProviderState?: ClineProviderState, // kilocode_change
 ): string {
+	const kiloCodeUseMorph = isFastApplyAvailable(clineProviderState) // kilocode_change
+
 	// Get available tools from relevant groups
 	const availableEditTools = getAvailableToolsInGroup(
 		"edit",
@@ -45,12 +48,19 @@ export function getCapabilitiesSection(
 		return availableEditTools.includes(tool as ToolName)
 	})
 
-	const editingToolsText =
+	// kilocode_change: let instead of const
+	let editingToolsText =
 		editingToolsExample.length === 1
 			? `the ${editingToolsExample[0]}`
 			: editingToolsExample.length === 2
 				? `the ${editingToolsExample[0]} or ${editingToolsExample[1]}`
 				: `the ${editingToolsExample.slice(0, -1).join(", ")}, or ${editingToolsExample[editingToolsExample.length - 1]}`
+
+	// kilocode_change start: morph fast apply
+	if (kiloCodeUseMorph) {
+		editingToolsText = "the edit_file"
+	}
+	// kilocode_change end
 
 	const hasBrowserAction = supportsComputerUse && availableBrowserTools.includes("browser_action")
 

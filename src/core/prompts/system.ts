@@ -15,7 +15,6 @@ import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelec
 import { DiffStrategy } from "../../shared/tools"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
-import { ToolProtocol } from "../../../packages/types/src" // kilocode_change
 import { McpHub } from "../../services/mcp/McpHub"
 import { CodeIndexManager } from "../../services/code-index/manager"
 
@@ -70,7 +69,6 @@ async function generatePrompt(
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
-	toolUseStyle?: ToolProtocol, // kilocode_change
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> {
 	if (!context) {
@@ -95,7 +93,7 @@ async function generatePrompt(
 	const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol)
 
 	const [modesSection, mcpServersSection] = await Promise.all([
-		getModesSection(context, toolUseStyle /*kilocode_change*/),
+		getModesSection(context),
 		shouldIncludeMcp
 			? getMcpServersSection(
 					mcpHub,
@@ -127,7 +125,7 @@ async function generatePrompt(
 
 	const basePrompt = `${roleDefinition}
 
-${markdownFormattingSection(toolUseStyle ?? "xml" /*kilocode_change*/)}
+${markdownFormattingSection()}
 
 ${getSharedToolUseSection(effectiveProtocol)}${toolsCatalog}
 
@@ -135,11 +133,11 @@ ${getToolUseGuidelinesSection(codeIndexManager, effectiveProtocol)}
 
 ${mcpServersSection}
 
-${getCapabilitiesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, shouldIncludeMcp ? mcpHub : undefined, effectiveDiffStrategy, codeIndexManager, settings)}
+${getCapabilitiesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, shouldIncludeMcp ? mcpHub : undefined, effectiveDiffStrategy, codeIndexManager, settings, clineProviderState /* kilocode_change */)}
 
 ${modesSection}
 
-${getRulesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, effectiveDiffStrategy, codeIndexManager, settings)}
+${getRulesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, effectiveDiffStrategy, codeIndexManager, settings, clineProviderState /* kilocode_change */)}
 
 ${getSystemInfoSection(cwd)}
 
@@ -176,7 +174,6 @@ export const SYSTEM_PROMPT = async (
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
-	toolUseStyle?: ToolProtocol, // kilocode_change
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> => {
 	if (!context) {
@@ -253,7 +250,6 @@ ${customInstructions}`
 		settings,
 		todoList,
 		modelId,
-		toolUseStyle, // kilocode_change
 		clineProviderState, // kilocode_change
 	)
 }

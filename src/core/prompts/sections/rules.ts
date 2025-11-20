@@ -5,6 +5,13 @@ import { getEffectiveProtocol, isNativeProtocol } from "@roo-code/types"
 import type { ModeConfig, ToolName } from "@roo-code/types"
 import { getAvailableToolsInGroup } from "../tools/filter-tools-for-mode"
 
+// kilocode_change start
+import { getFastApplyEditingInstructions } from "../tools/edit-file"
+import { type ClineProviderState } from "../../webview/ClineProvider"
+import { getFastApplyModelType, isFastApplyAvailable } from "../../tools/editFileTool"
+import { ToolUseStyle } from "../../../../packages/types/src/kilocode/native-function-calling"
+// kilocode_change end
+
 function getEditingInstructions(
 	mode: string,
 	customModes: ModeConfig[] | undefined,
@@ -12,6 +19,7 @@ function getEditingInstructions(
 	codeIndexManager: CodeIndexManager | undefined,
 	settings: SystemPromptSettings | undefined,
 	diffStrategy?: DiffStrategy,
+	clineProviderState?: ClineProviderState, // kilocode_change
 ): string {
 	// Get available editing tools from the edit group
 	const availableEditTools = getAvailableToolsInGroup(
@@ -85,17 +93,22 @@ export function getRulesSection(
 	diffStrategy?: DiffStrategy,
 	codeIndexManager?: CodeIndexManager,
 	settings?: SystemPromptSettings,
+	clineProviderState?: ClineProviderState, // kilocode_change
 ): string {
 	const isCodebaseSearchAvailable =
-		codeIndexManager &&
-		codeIndexManager.isFeatureEnabled &&
-		codeIndexManager.isFeatureConfigured &&
-		codeIndexManager.isInitialized
+		// kilocode_change start
+		codeIndexManager?.isManagedIndexingAvailable ||
+		(codeIndexManager &&
+			codeIndexManager.isFeatureEnabled &&
+			codeIndexManager.isFeatureConfigured &&
+			codeIndexManager.isInitialized)
+	// kilocode_change end
 
 	const codebaseSearchRule = isCodebaseSearchAvailable
 		? "- **CRITICAL: For ANY exploration of code you haven't examined yet in this conversation, you MUST use the `codebase_search` tool FIRST before using search_files or other file exploration tools.** This requirement applies throughout the entire conversation, not just when starting a task. The codebase_search tool uses semantic search to find relevant code based on meaning, not just keywords, making it much more effective for understanding how features are implemented. Even if you've already explored some parts of the codebase, any new area or functionality you need to understand requires using codebase_search first.\n"
 		: ""
 
+	const kiloCodeUseMorph = isFastApplyAvailable(clineProviderState)
 	// Get available tools from relevant groups
 	const availableEditTools = getAvailableToolsInGroup(
 		"edit",
@@ -149,11 +162,11 @@ ${codebaseSearchRule}${
 `
 	}${
 		hasWriteToFile
-			? `- When creating a new project (such as an app, website, or any software project), organize all new files within a dedicated project directory unless the user specifies otherwise. Use appropriate file paths when writing files, as the write_to_file tool will automatically create any necessary directories. Structure the project logically, adhering to best practices for the specific type of project being created. Unless otherwise specified, new projects should be easily run without additional setup, for example most projects can be built in HTML, CSS, and JavaScript - which you can open in a browser.
+			? `- When creating a new project (such as an app, website, or any software project), organize all new files within a dedicated project directory unless the user specifies otherwise. Use appropriate file paths when writing files, as the ${kiloCodeUseMorph ? "edit_file" : "write_to_file"} tool will automatically create any necessary directories. Structure the project logically, adhering to best practices for the specific type of project being created. Unless otherwise specified, new projects should be easily run without additional setup, for example most projects can be built in HTML, CSS, and JavaScript - which you can open in a browser.
 `
 			: ""
 	}
-${getEditingInstructions(mode, customModes, experiments, codeIndexManager, settings, diffStrategy)}
+${kiloCodeUseMorph ? getFastApplyEditingInstructions(getFastApplyModelType(clineProviderState)) : getEditingInstructions(mode, customModes, experiments, codeIndexManager, settings, diffStrategy)}
 - Some modes have restrictions on which files they can edit. If you attempt to edit a restricted file, the operation will be rejected with a FileRestrictionError that will specify which file patterns are allowed for the current mode.
 - Be sure to consider the type of project (e.g. Python, JavaScript, web application) when determining the appropriate structure and files to include. Also consider what files may be most relevant to accomplishing the task, for example looking at a project's manifest file would help you understand the project's dependencies, which you could incorporate into any code you write.
   * For example, in architect mode trying to edit app.js would be rejected because architect mode can only edit files matching "\\.md$"
