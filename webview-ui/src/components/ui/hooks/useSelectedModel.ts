@@ -38,7 +38,6 @@ import {
 	ioIntelligenceModels,
 	qwenCodeModels,
 	BEDROCK_1M_CONTEXT_MODEL_IDS,
-	deepInfraDefaultModelId,
 	isDynamicProvider,
 	getProviderDefaultModelId,
 } from "@roo-code/types"
@@ -217,11 +216,6 @@ function getSelectedModel({
 		case "litellm": {
 			const id = getValidatedModelId(apiConfiguration.litellmModelId, routerModels.litellm, defaultModelId)
 			const info = routerModels.litellm?.[id]
-			return { id, info }
-		}
-		case "deepinfra": {
-			const id = apiConfiguration.deepInfraModelId ?? deepInfraDefaultModelId
-			const info = routerModels.deepinfra[id]
 			return { id, info }
 		}
 		case "xai": {

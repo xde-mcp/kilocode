@@ -31,8 +31,6 @@ import { useSelectedModel } from "@src/components/ui/hooks/useSelectedModel"
 // import RooHero from "@src/components/welcome/RooHero" // kilocode_change: unused
 // import RooTips from "@src/components/welcome/RooTips" // kilocode_change: unused
 import { StandardTooltip } from "@src/components/ui"
-import { useAutoApprovalState } from "@src/hooks/useAutoApprovalState"
-import { useAutoApprovalToggles } from "@src/hooks/useAutoApprovalToggles"
 
 // import VersionIndicator from "../common/VersionIndicator" // kilocode_change: unused
 import { OrganizationSelector } from "../kilocode/common/OrganizationSelector"
@@ -40,7 +38,6 @@ import { OrganizationSelector } from "../kilocode/common/OrganizationSelector"
 // import { CloudUpsellDialog } from "@src/components/cloud/CloudUpsellDialog" // kilocode_change: unused
 
 import TelemetryBanner from "../common/TelemetryBanner"
-import VersionIndicator from "../common/VersionIndicator"
 import HistoryPreview from "../history/HistoryPreview"
 import Announcement from "./Announcement"
 import BrowserSessionRow from "./BrowserSessionRow"
@@ -51,7 +48,6 @@ import KiloTaskHeader from "../kilocode/KiloTaskHeader" // kilocode_change
 import AutoApproveMenu from "./AutoApproveMenu"
 import BottomControls from "../kilocode/BottomControls" // kilocode_change
 import SystemPromptWarning from "./SystemPromptWarning"
-import { showSystemNotification } from "@/kilocode/helpers" // kilocode_change
 // import ProfileViolationWarning from "./ProfileViolationWarning" kilocode_change: unused
 import { CheckpointWarning } from "./CheckpointWarning"
 import { IdeaSuggestionsBox } from "../kilocode/chat/IdeaSuggestionsBox" // kilocode_change
@@ -104,8 +100,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		alwaysAllowModeSwitch,
 		showAutoApproveMenu, // kilocode_change
 		enableCheckpoints, // kilocode_change
-		alwaysAllowSubtasks,
-		alwaysAllowFollowupQuestions,
 		alwaysAllowUpdateTodoList,
 		customModes,
 		telemetrySetting,

@@ -7,7 +7,6 @@ import { vscode } from "@/utils/vscode"
 import { useCopyToClipboard } from "@/utils/clipboard"
 
 import { DeleteTaskDialog } from "../history/DeleteTaskDialog"
-import { IconButton } from "./IconButton"
 // import { ShareButton } from "./ShareButton" // kilocode_change unused
 // import { CloudTaskButton } from "./CloudTaskButton" // kilocode_change: unused
 import { CopyIcon, DownloadIcon, Trash2Icon } from "lucide-react"
