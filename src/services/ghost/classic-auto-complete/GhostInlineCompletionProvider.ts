@@ -214,12 +214,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return { text: "", prefix, suffix }
 	}
 
-	public async getFromLLM(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
-		const { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput } = prompt
-
-		if (strategy === "fim") {
-			return this.getFromFIM(model, prompt, autocompleteInput)
-		}
+	public async getFromChat(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
+		const { systemPrompt, userPrompt, prefix, suffix } = prompt
 
 		let response = ""
 
@@ -415,7 +411,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 	private async fetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
 		try {
-			const result = await this.getFromLLM(prompt, this.model)
+			const result =
+				prompt.strategy === "fim"
+					? await this.getFromFIM(this.model, prompt, prompt.autocompleteInput)
+					: await this.getFromChat(prompt, this.model)
 
 			if (this.costTrackingCallback && result.cost > 0) {
 				this.costTrackingCallback(
