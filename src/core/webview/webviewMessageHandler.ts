@@ -3996,6 +3996,7 @@ export const webviewMessageHandler = async (
 			})
 			break
 		}
+		// kilocode_change start
 		case "addTaskToHistory": {
 			if (message.historyItem) {
 				await provider.updateTaskHistory(message.historyItem)
@@ -4003,5 +4004,6 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		// kilocode_change end
 	}
 }
