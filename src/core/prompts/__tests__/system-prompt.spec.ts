@@ -805,7 +805,8 @@ describe("SYSTEM_PROMPT", () => {
 		expect(prompt).not.toContain("Examples:")
 
 		// Should still contain role definition and other non-XML sections
-		expect(prompt).toContain(modes[0].roleDefinition)
+		const codeMode = modes.find((m) => m.slug === defaultModeSlug)
+		expect(prompt).toContain(codeMode!.roleDefinition)
 		expect(prompt).toContain("CAPABILITIES")
 		expect(prompt).toContain("RULES")
 		expect(prompt).toContain("SYSTEM INFORMATION")

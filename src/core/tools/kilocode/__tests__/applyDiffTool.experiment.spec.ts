@@ -6,6 +6,11 @@ vi.mock("../../applyDiffTool", () => ({
 	applyDiffToolLegacy: vi.fn(),
 }))
 
+// Mock ApplyDiffTool separately
+vi.mock("../../ApplyDiffTool", () => ({
+	ApplyDiffTool: vi.fn(),
+}))
+
 // Import after mocking to get the mocked version
 import { ApplyDiffTool } from "../../ApplyDiffTool"
 
@@ -44,6 +49,9 @@ describe("applyDiffTool experiment routing - JSON toolStyle", () => {
 				getModel: vi.fn().mockReturnValue({ id: "test-model" }),
 			},
 			processQueuedMessages: vi.fn(),
+			recordToolError: vi.fn(),
+			sayAndCreateMissingParamError: vi.fn().mockResolvedValue("Missing parameter error"),
+			consecutiveMistakeCount: 0,
 		} as any
 
 		mockBlock = {
