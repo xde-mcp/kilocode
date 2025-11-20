@@ -47,8 +47,10 @@ export class Fzf<T> {
 
 		const normalizedQuery = query.toLowerCase().trim()
 
-		// Split query into words for multi-word matching
-		const queryWords = normalizedQuery.split(/\s+/).filter((word) => word.length > 0)
+		// Split query into words using the same word boundary regex as text
+		// This ensures "gpt-5" becomes ["gpt", "5"] just like in the text
+		const wordBoundaryRegex = /[\s\-_./\\:]+/
+		const queryWords = normalizedQuery.split(wordBoundaryRegex).filter((word) => word.length > 0)
 
 		const results: FzfResult<T>[] = []
 
@@ -79,7 +81,7 @@ export class Fzf<T> {
 	 * Each character in the query should match the start of a word in the text.
 	 */
 	private matchAcronym(text: string, query: string): boolean {
-		const wordBoundaryRegex = /[\s\-_./\\]+/
+		const wordBoundaryRegex = /[\s\-_./\\:]+/
 		const words = text.split(wordBoundaryRegex).filter((w) => w.length > 0)
 
 		// Build word start positions in the original text
