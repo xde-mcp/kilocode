@@ -1,8 +1,6 @@
 # kilo-code
 
-## 4.121.1
-
-### Patch Changes
+## [v4.121.1]
 
 - [#3601](https://github.com/Kilo-Org/kilocode/pull/3601) [`eaf1f5a`](https://github.com/Kilo-Org/kilocode/commit/eaf1f5ab7d2916c4845093d605e54301938d8383) Thanks [@hassoncs](https://github.com/hassoncs)! - Now items in the Chat context menu will not be auto selected if your cursor is already on the row when the items change
 
