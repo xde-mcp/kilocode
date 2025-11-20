@@ -409,8 +409,8 @@ describe("SessionClient", () => {
 		})
 	})
 
-	describe("autocomplete", () => {
-		it("should autocomplete sessions with prefix", async () => {
+	describe("search", () => {
+		it("should search sessions with searchString", async () => {
 			const mockSessions = [
 				{
 					id: "session-abc123",
@@ -427,17 +427,27 @@ describe("SessionClient", () => {
 			]
 
 			requestMock.mockResolvedValueOnce({
-				result: { data: mockSessions },
+				result: {
+					data: {
+						results: mockSessions,
+						total: 2,
+						limit: 10,
+						offset: 0,
+					},
+				},
 			})
 
-			const result = await service.autocomplete({ prefix: "abc" })
+			const result = await service.search({ searchString: "abc" })
 
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", { prefix: "abc" })
-			expect(result).toEqual(mockSessions)
-			expect(result).toHaveLength(2)
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { searchString: "abc" })
+			expect(result.results).toEqual(mockSessions)
+			expect(result.results).toHaveLength(2)
+			expect(result.total).toBe(2)
+			expect(result.limit).toBe(10)
+			expect(result.offset).toBe(0)
 		})
 
-		it("should autocomplete sessions with prefix and limit", async () => {
+		it("should search sessions with searchString and limit", async () => {
 			const mockSessions = [
 				{
 					id: "session-test1",
@@ -448,48 +458,105 @@ describe("SessionClient", () => {
 			]
 
 			requestMock.mockResolvedValueOnce({
-				result: { data: mockSessions },
+				result: {
+					data: {
+						results: mockSessions,
+						total: 1,
+						limit: 5,
+						offset: 0,
+					},
+				},
 			})
 
-			const result = await service.autocomplete({ prefix: "test", limit: 5 })
+			const result = await service.search({ searchString: "test", limit: 5 })
 
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", { prefix: "test", limit: 5 })
-			expect(result).toEqual(mockSessions)
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { searchString: "test", limit: 5 })
+			expect(result.results).toEqual(mockSessions)
+			expect(result.total).toBe(1)
+			expect(result.limit).toBe(5)
 		})
 
-		it("should return empty array when no sessions match", async () => {
+		it("should return empty results when no sessions match", async () => {
 			requestMock.mockResolvedValueOnce({
-				result: { data: [] },
+				result: {
+					data: {
+						results: [],
+						total: 0,
+						limit: 10,
+						offset: 0,
+					},
+				},
 			})
 
-			const result = await service.autocomplete({ prefix: "nonexistent" })
+			const result = await service.search({ searchString: "nonexistent" })
 
-			expect(result).toEqual([])
+			expect(result.results).toEqual([])
+			expect(result.total).toBe(0)
 		})
 
-		it("should handle autocomplete error", async () => {
+		it("should handle search error", async () => {
 			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 500 Internal Server Error"))
 
-			await expect(service.autocomplete({ prefix: "test" })).rejects.toThrow("Internal Server Error")
+			await expect(service.search({ searchString: "test" })).rejects.toThrow("Internal Server Error")
 		})
 
 		it("should handle authorization error", async () => {
 			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
 
-			await expect(service.autocomplete({ prefix: "test" })).rejects.toThrow("Invalid token")
+			await expect(service.search({ searchString: "test" })).rejects.toThrow("Invalid token")
 		})
 
 		it("should pass through the limit parameter correctly", async () => {
 			requestMock.mockResolvedValueOnce({
-				result: { data: [] },
+				result: {
+					data: {
+						results: [],
+						total: 0,
+						limit: 20,
+						offset: 0,
+					},
+				},
 			})
 
-			await service.autocomplete({ prefix: "test", limit: 20 })
+			await service.search({ searchString: "test", limit: 20 })
 
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.autocomplete", "GET", {
-				prefix: "test",
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", {
+				searchString: "test",
 				limit: 20,
 			})
+		})
+
+		it("should support offset parameter for pagination", async () => {
+			const mockSessions = [
+				{
+					id: "session-page2",
+					title: "Page 2 Session",
+					created_at: "2025-01-03T00:00:00Z",
+					updated_at: "2025-01-03T00:00:00Z",
+				},
+			]
+
+			requestMock.mockResolvedValueOnce({
+				result: {
+					data: {
+						results: mockSessions,
+						total: 15,
+						limit: 10,
+						offset: 10,
+					},
+				},
+			})
+
+			const result = await service.search({ searchString: "test", limit: 10, offset: 10 })
+
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", {
+				searchString: "test",
+				limit: 10,
+				offset: 10,
+			})
+			expect(result.results).toHaveLength(1)
+			expect(result.total).toBe(15)
+			expect(result.offset).toBe(10)
 		})
 	})
 

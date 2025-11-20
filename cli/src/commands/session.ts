@@ -162,8 +162,8 @@ async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): 
 	}
 
 	try {
-		const sessions = await sessionClient.autocomplete({ prefix, limit: 20 })
-		return sessions.map((session, index) => ({
+		const response = await sessionClient.search({ searchString: prefix, limit: 20 })
+		return response.results.map((session, index) => ({
 			value: session.id,
 			title: session.title || "Untitled",
 			description: `Created: ${new Date(session.created_at).toLocaleDateString()}`,

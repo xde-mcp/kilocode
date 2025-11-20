@@ -54,12 +54,18 @@ export interface ListSessionsOutput {
 	nextCursor: string | null
 }
 
-export interface AutocompleteSessionInput {
-	prefix: string
+export interface SearchSessionInput {
+	searchString: string
 	limit?: number
+	offset?: number
 }
 
-export type AutocompleteSessionOutput = Session[]
+export interface SearchSessionOutput {
+	results: Session[]
+	total: number
+	limit: number
+	offset: number
+}
 
 export class SessionClient {
 	private static instance: SessionClient | null = null
@@ -127,12 +133,12 @@ export class SessionClient {
 	}
 
 	/**
-	 * Autocomplete sessions by prefix
+	 * Search sessions
 	 */
-	async autocomplete(input: AutocompleteSessionInput): Promise<AutocompleteSessionOutput> {
+	async search(input: SearchSessionInput): Promise<SearchSessionOutput> {
 		const client = TrpcClient.init()
-		const response = await client.request<AutocompleteSessionInput, TrpcResponse<AutocompleteSessionOutput>>(
-			"cliSessions.autocomplete",
+		const response = await client.request<SearchSessionInput, TrpcResponse<SearchSessionOutput>>(
+			"cliSessions.search",
 			"GET",
 			input,
 		)
