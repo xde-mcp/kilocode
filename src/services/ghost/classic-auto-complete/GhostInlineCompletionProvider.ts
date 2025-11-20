@@ -9,7 +9,6 @@ import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harnes
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
-import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -179,28 +178,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		let prunedSuffix: string | undefined
 
 		if (strategy === "fim") {
-			const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
-				await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
-
-			// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
-			const prunedPrefixRaw = helper.prunedPrefix
-			prunedSuffix = helper.prunedSuffix
-
 			const modelName = this.model.getModelName() ?? "codestral"
-			const template = getTemplateForModel(modelName)
-
-			formattedPrefix = prunedPrefixRaw
-			if (template.compilePrefixSuffix && prunedSuffix) {
-				const [compiledPrefix] = template.compilePrefixSuffix(
-					prunedPrefixRaw,
-					prunedSuffix,
-					filepathUri,
-					"", // reponame not used in our context
-					snippetsWithUris,
-					workspaceDirs,
-				)
-				formattedPrefix = compiledPrefix
-			}
+			const fimPrompts = await this.holeFiller.getFimPrompts(autocompleteInput, modelName)
+			formattedPrefix = fimPrompts.formattedPrefix
+			prunedSuffix = fimPrompts.prunedSuffix
 		}
 
 		return { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput, formattedPrefix, prunedSuffix }
