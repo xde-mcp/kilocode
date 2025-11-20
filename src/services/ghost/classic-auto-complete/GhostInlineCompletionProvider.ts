@@ -22,7 +22,10 @@ export type CostTrackingCallback = (
 	cacheReadTokens: number,
 ) => void
 
+export type CompletionStrategy = "fim" | "chat"
+
 export interface GhostPrompt {
+	strategy: CompletionStrategy
 	systemPrompt: string
 	userPrompt: string
 	prefix: string
@@ -163,9 +166,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 		const languageId = document.languageId
 
+		// Determine strategy based on model capabilities
+		const strategy: CompletionStrategy = this.model.supportsFim() ? "fim" : "chat"
+
 		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(autocompleteInput, languageId)
 
-		return { systemPrompt, userPrompt, prefix, suffix, autocompleteInput }
+		return { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput }
 	}
 
 	private processSuggestion(
@@ -193,9 +199,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	}
 
 	public async getFromLLM(prompt: GhostPrompt, model: GhostModel): Promise<LLMRetrievalResult> {
-		const { systemPrompt, userPrompt, prefix, suffix, autocompleteInput } = prompt
+		const { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput } = prompt
 
-		if (model.supportsFim()) {
+		if (strategy === "fim") {
 			return this.getFromFIM(model, autocompleteInput)
 		}
 
