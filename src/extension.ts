@@ -439,7 +439,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	await checkAndRunAutoLaunchingTask(context) // kilocode_change
 	// await initManagedCodeIndexing // kilocode_change
-	await managedIndexer.start().catch((error) => {
+	void managedIndexer.start().catch((error) => {
 		outputChannel.appendLine(
 			`Failed to start ManagedIndexer: ${error instanceof Error ? error.message : String(error)}`,
 		)

@@ -1,4 +1,4 @@
-import pRetry from 'p-retry'
+import pRetry from "p-retry"
 
 let factor: number | undefined
 
@@ -55,12 +55,13 @@ export async function fetchWithRetries({
 				})
 
 				if (shouldRetry(res) && attemptCount < retries) {
+					console.log("got bad response for", url, "status", res.status, "retrying attempt", attemptCount)
 					throw new ResponseNotOkayError(url, res)
 				}
 
 				return res
 			},
-			{ retries, randomize: true, factor }
+			{ retries, randomize: true, factor },
 		)
 	} catch (e) {
 		if (e instanceof DOMException) {
@@ -74,7 +75,7 @@ export async function fetchWithRetries({
 export class ResponseNotOkayError extends Error {
 	constructor(
 		public url: string,
-		public res: Response
+		public res: Response,
 	) {
 		super(`Request to ${url} was not okay`)
 	}
@@ -84,7 +85,7 @@ export class RequestTimedOutError extends Error {
 	constructor(
 		public url: string,
 		public timeout: number,
-		public retries: number
+		public retries: number,
 	) {
 		super(`Request to ${url} timed out ${retries} times each after ${timeout}ms`)
 	}

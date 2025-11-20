@@ -103,10 +103,14 @@ export interface GitWatcherCommitEvent extends GitWatcherBaseEvent {
 	newCommit: string
 }
 
+export interface GitWatcherStartEvent extends GitWatcherBaseEvent {
+	type: "start"
+}
+
 /**
  * Discriminated union of all GitWatcher event types
  */
-export type GitWatcherEvent = GitWatcherBranchChangedEvent | GitWatcherCommitEvent
+export type GitWatcherEvent = GitWatcherBranchChangedEvent | GitWatcherCommitEvent | GitWatcherStartEvent
 
 /**
  * @deprecated Use GitWatcherEvent instead. This type alias is provided for backward compatibility.
@@ -182,7 +186,7 @@ export class GitWatcher implements vscode.Disposable {
 	 * - On default/main branch: Yields all tracked files
 	 * - On feature branch: Yields only files that differ from default branch
 	 */
-	private async *getFiles(branch: string, isBaseBranch: boolean): AsyncIterable<GitWatcherFile> {
+	public async *getFiles(branch: string, isBaseBranch: boolean): AsyncIterable<GitWatcherFile> {
 		console.log("[GitWatcher] getFiles called", { branch, isBaseBranch })
 		try {
 			if (isBaseBranch) {
@@ -244,6 +248,18 @@ export class GitWatcher implements vscode.Disposable {
 
 			// Set up file system watchers for git state changes
 			await this.setupGitWatchers()
+			if (!this.currentState) {
+				return
+			}
+			const defaultBranch = await this.getDefaultBranch()
+			const isBaseBranch = this.currentState.branch === defaultBranch
+			this.emitEvent({
+				type: "start",
+				branch: this.currentState.branch,
+				isBaseBranch,
+				watcher: this,
+				files: this.getFiles(this.currentState.branch, isBaseBranch),
+			})
 			console.log("[GitWatcher] Watcher started successfully")
 		} catch (error) {
 			console.error("[GitWatcher] Failed to initialize watcher:", error)

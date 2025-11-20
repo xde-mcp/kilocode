@@ -479,6 +479,16 @@ export class ManagedIndexer implements vscode.Disposable {
 					await this.processFiles(state, event, controller.signal)
 					break
 				}
+
+				case "start": {
+					console.info(
+						`[ManagedIndexer] Watcher started on branch ${event.branch} ${event.isBaseBranch ? `(base)` : `(feature)`} - doing initial indexing`,
+					)
+
+					// Process files from the async iterable
+					await this.processFiles(state, event, controller.signal)
+					break
+				}
 			}
 		} catch (error) {
 			// Check if this was an abort
@@ -567,7 +577,12 @@ export class ManagedIndexer implements vscode.Disposable {
 							const fileBuffer = await fs.readFile(absoluteFilePath)
 							const relativeFilePath = path.relative(event.watcher.config.cwd, absoluteFilePath)
 
+							// TODO: (bmc) - do not upsert files larger than 1 megabyte
+
 							// Call the upsertFile API with abort signal
+							console.log(
+								`[ManagedIndexer] Upserting file: ${relativeFilePath} (branch: ${event.branch})`,
+							)
 							await upsertFile(
 								{
 									fileBuffer,
@@ -619,7 +634,7 @@ export class ManagedIndexer implements vscode.Disposable {
 		} finally {
 			// Always clear indexing state when done
 			state.isIndexing = false
-			console.log("[ManagedIndexer] Indexing complete", this)
+			console.log("[ManagedIndexer] Indexing complete")
 		}
 	}
 
