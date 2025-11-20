@@ -14,10 +14,10 @@ import { getReadFileToolDescription, readFileTool } from "../tools/readFileTool"
 import { getSimpleReadFileToolDescription, simpleReadFileTool } from "../tools/simpleReadFileTool"
 import { shouldUseSingleFileRead } from "@roo-code/types"
 import { writeToFileTool } from "../tools/writeToFileTool"
-import { deleteFileTool } from "../tools/deleteFileTool"
 import { applyDiffTool } from "../tools/multiApplyDiffTool"
 import { insertContentTool } from "../tools/insertContentTool"
 import { editFileTool } from "../tools/editFileTool" // kilocode_change: Morph fast apply
+import { deleteFileTool } from "../tools/deleteFileTool" // kilocode_change
 import { listCodeDefinitionNamesTool } from "../tools/listCodeDefinitionNamesTool"
 import { searchFilesTool } from "../tools/searchFilesTool"
 import { browserActionTool } from "../tools/browserActionTool"
@@ -205,6 +205,8 @@ export async function presentAssistantMessage(cline: Task) {
 					// kilocode_change start: Morph fast apply
 					case "edit_file":
 						return `[${block.name} for '${block.params.target_file}']`
+					case "delete_file":
+						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change end
 					case "list_files":
 						return `[${block.name} for '${block.params.path}']`
@@ -244,10 +246,6 @@ export async function presentAssistantMessage(cline: Task) {
 						return `[${block.name} for '${block.params.command}'${block.params.args ? ` with args: ${block.params.args}` : ""}]`
 					case "generate_image":
 						return `[${block.name} for '${block.params.path}']`
-					case "delete_file":
-						return `[${block.name} for '${block.params.path}']`
-					default:
-						return `[${block.name}]`
 				}
 			}
 
@@ -491,9 +489,6 @@ export async function presentAssistantMessage(cline: Task) {
 					// await checkpointSaveAndMark(cline) // kilocode_change
 					await writeToFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
-				case "delete_file":
-					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
 				case "update_todo_list":
 					await updateTodoListTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
@@ -533,6 +528,9 @@ export async function presentAssistantMessage(cline: Task) {
 				// kilocode_change start: Morph fast apply
 				case "edit_file":
 					await editFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				case "delete_file":
+					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change end
 				case "read_file":

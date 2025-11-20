@@ -30,7 +30,7 @@ import { getCodebaseSearchDescription } from "./codebase-search"
 import { getUpdateTodoListDescription } from "./update-todo-list"
 import { getRunSlashCommandDescription } from "./run-slash-command"
 import { getGenerateImageDescription } from "./generate-image"
-import { getDeleteFileDescription } from "./delete-file"
+import { getDeleteFileDescription } from "./delete-file" // kilocode_change
 import { CodeIndexManager } from "../../../services/code-index/manager"
 
 // kilocode_change start: Morph fast apply
@@ -52,7 +52,6 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 	},
 	fetch_instructions: (args) => getFetchInstructionsDescription(args.settings?.enableMcpServerCreation),
 	write_to_file: (args) => getWriteToFileDescription(args),
-	delete_file: (args) => getDeleteFileDescription(args),
 	search_files: (args) => getSearchFilesDescription(args),
 	list_files: (args) => getListFilesDescription(args),
 	list_code_definition_names: (args) => getListCodeDefinitionNamesDescription(args),
@@ -66,6 +65,7 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 	new_task: (args) => getNewTaskDescription(args),
 	insert_content: (args) => getInsertContentDescription(args),
 	edit_file: () => getEditFileDescription(), // kilocode_change: Morph fast apply
+	delete_file: (args) => getDeleteFileDescription(args), // kilocode_change
 	apply_diff: (args) =>
 		args.diffStrategy ? args.diffStrategy.getToolDescription({ cwd: args.cwd, toolOptions: args.toolOptions }) : "",
 	update_todo_list: (args) => getUpdateTodoListDescription(args),
