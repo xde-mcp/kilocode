@@ -203,6 +203,7 @@ export interface WebviewMessage {
 		| "openGlobalKeybindings" // kilocode_change
 		| "getKeybindings" // kilocode_change
 		| "setReasoningBlockCollapsed"
+		| "setHistoryPreviewCollapsed" // kilocode_change
 		| "openExternal"
 		| "filterMarketplaceItems"
 		| "mcpButtonClicked"
