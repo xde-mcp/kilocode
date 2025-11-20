@@ -462,7 +462,6 @@ describe("SessionService", () => {
 
 			await service.destroy()
 
-			// @ts-expect-error - Accessing private property for testing
 			expect(service.sessionId).toBeNull()
 		})
 
@@ -733,9 +732,9 @@ describe("SessionService", () => {
 				title: "Restored Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
-				api_conversation_history: "https://signed-url.com/api_conversation_history",
-				ui_messages: "https://signed-url.com/ui_messages",
-				task_metadata: "https://signed-url.com/task_metadata",
+				api_conversation_history_blob_url: "https://signed-url.com/api_conversation_history",
+				ui_messages_blob_url: "https://signed-url.com/ui_messages",
+				task_metadata_blob_url: "https://signed-url.com/task_metadata",
 			}
 
 			const apiConversationData = { messages: [{ role: "user", content: "test" }] }
@@ -785,20 +784,20 @@ describe("SessionService", () => {
 			// Verify files were written
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(3)
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/restored-session-id/api_conversation_history.json",
+				"/mock/tasks/dir/restored-session-id/api_conversation_history_blob_url.json",
 				JSON.stringify(apiConversationData, null, 2),
 			)
 
 			// Verify checkpoint messages were filtered out
 			const uiMessagesCall = vi
 				.mocked(writeFileSync)
-				.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages.json")
+				.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages_blob_url.json")
 			expect(uiMessagesCall?.[1]).toContain("message 1")
 			expect(uiMessagesCall?.[1]).toContain("message 2")
 			expect(uiMessagesCall?.[1]).not.toContain("checkpoint_saved")
 
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/restored-session-id/task_metadata.json",
+				"/mock/tasks/dir/restored-session-id/task_metadata_blob_url.json",
 				JSON.stringify(taskMetadataData, null, 2),
 			)
 		})
@@ -890,7 +889,6 @@ describe("SessionService", () => {
 			)
 
 			// SessionId should be reset to null on error
-			// @ts-expect-error - Accessing private property for testing
 			expect(service.sessionId).toBeNull()
 		})
 
@@ -900,9 +898,9 @@ describe("SessionService", () => {
 				title: "Partial Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
-				api_conversation_history: "https://signed-url.com/api_conversation_history",
-				ui_messages: null,
-				task_metadata: null,
+				api_conversation_history_blob_url: "https://signed-url.com/api_conversation_history",
+				ui_messages_blob_url: null,
+				task_metadata_blob_url: null,
 			}
 
 			const apiConversationData = { messages: [] }
@@ -924,7 +922,7 @@ describe("SessionService", () => {
 			// Only one file should be written
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/partial-session-id/api_conversation_history.json",
+				"/mock/tasks/dir/partial-session-id/api_conversation_history_blob_url.json",
 				JSON.stringify(apiConversationData, null, 2),
 			)
 		})
@@ -935,9 +933,9 @@ describe("SessionService", () => {
 				title: "Error Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
-				api_conversation_history: "https://signed-url.com/api_conversation_history",
-				ui_messages: "https://signed-url.com/ui_messages",
-				task_metadata: "https://signed-url.com/task_metadata",
+				api_conversation_history_blob_url: "https://signed-url.com/api_conversation_history",
+				ui_messages_blob_url: "https://signed-url.com/ui_messages",
+				task_metadata_blob_url: "https://signed-url.com/task_metadata",
 			}
 
 			const uiMessagesData = [{ say: "text", text: "message", ts: 1000 }] as ClineMessage[]
@@ -971,7 +969,7 @@ describe("SessionService", () => {
 				"Failed to process blob",
 				"SessionService",
 				expect.objectContaining({
-					fileName: "api_conversation_history",
+					fileName: "api_conversation_history_blob_url",
 				}),
 			)
 
@@ -985,9 +983,9 @@ describe("SessionService", () => {
 				title: "Invalid JSON Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
-				api_conversation_history: "https://signed-url.com/api_conversation_history",
-				ui_messages: null,
-				task_metadata: null,
+				api_conversation_history_blob_url: "https://signed-url.com/api_conversation_history",
+				ui_messages_blob_url: null,
+				task_metadata_blob_url: null,
 			}
 
 			mockGet.mockResolvedValueOnce(mockSessionData)
@@ -1004,7 +1002,7 @@ describe("SessionService", () => {
 				"Failed to process blob",
 				"SessionService",
 				expect.objectContaining({
-					fileName: "api_conversation_history",
+					fileName: "api_conversation_history_blob_url",
 				}),
 			)
 
@@ -1134,265 +1132,6 @@ describe("SessionService", () => {
 				}),
 			)
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
-
-			describe("restoreSession", () => {
-				it("should restore session from remote and write files to disk", async () => {
-					const mockSessionData = {
-						id: "restored-session-id",
-						title: "Restored Session",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-						api_conversation_history: { messages: [{ role: "user", content: "test" }] },
-						ui_messages: [
-							{ say: "text", text: "message 1", ts: 1000 },
-							{ say: "checkpoint_saved", text: "", ts: 2000 }, // Should be filtered out
-							{ say: "text", text: "message 2", ts: 3000 },
-						] as ClineMessage[],
-						task_metadata: { task: "test task" },
-					}
-
-					mockGet.mockResolvedValueOnce(mockSessionData)
-
-					await service.restoreSession("restored-session-id")
-
-					// Verify SessionClient.get was called with includeBlobs
-					expect(mockGet).toHaveBeenCalledWith({
-						sessionId: "restored-session-id",
-						includeBlobs: true,
-					})
-
-					// Verify directory was created
-					expect(vi.mocked(ensureDirSync)).toHaveBeenCalledWith("/mock/tasks/dir/restored-session-id")
-
-					// Verify files were written
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(3)
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-						"/mock/tasks/dir/restored-session-id/api_conversation_history.json",
-						JSON.stringify(mockSessionData.api_conversation_history, null, 2),
-					)
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-						"/mock/tasks/dir/restored-session-id/ui_messages.json",
-						expect.stringContaining("message 1"),
-					)
-					// Verify checkpoint messages were filtered out
-					const uiMessagesCall = vi
-						.mocked(writeFileSync)
-						.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages.json")
-					expect(uiMessagesCall?.[1]).not.toContain("checkpoint_saved")
-
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-						"/mock/tasks/dir/restored-session-id/task_metadata.json",
-						JSON.stringify(mockSessionData.task_metadata, null, 2),
-					)
-				})
-
-				it("should send messages to extension to register task", async () => {
-					const mockSessionData = {
-						id: "restored-session-id",
-						title: "Restored Session",
-						created_at: "2025-01-01T12:00:00Z",
-						updated_at: "2025-01-01T12:00:00Z",
-					}
-
-					mockGet.mockResolvedValueOnce(mockSessionData)
-
-					await service.restoreSession("restored-session-id")
-
-					// Verify addTaskToHistory message was sent
-					expect(mockSendWebviewMessage).toHaveBeenCalledWith({
-						type: "addTaskToHistory",
-						historyItem: {
-							id: "restored-session-id",
-							number: 1,
-							task: "Restored Session",
-							ts: new Date("2025-01-01T12:00:00Z").getTime(),
-							tokensIn: 0,
-							tokensOut: 0,
-							totalCost: 0,
-						},
-					})
-
-					// Verify showTaskWithId message was sent
-					expect(mockSendWebviewMessage).toHaveBeenCalledWith({
-						type: "showTaskWithId",
-						text: "restored-session-id",
-					})
-				})
-
-				it("should set session ID in atom", async () => {
-					const mockSessionData = {
-						id: "restored-session-id",
-						title: "Restored Session",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-					}
-
-					mockGet.mockResolvedValueOnce(mockSessionData)
-
-					await service.restoreSession("restored-session-id")
-
-					// Verify session ID was set in atom
-					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "restored-session-id")
-				})
-
-				it("should handle missing session gracefully", async () => {
-					mockGet.mockResolvedValueOnce(null)
-
-					await service.restoreSession("non-existent-id")
-
-					expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
-						"Failed to obtain session",
-						"SessionService",
-						expect.objectContaining({
-							sessionId: "non-existent-id",
-						}),
-					)
-
-					// Should not write any files
-					expect(vi.mocked(writeFileSync)).not.toHaveBeenCalled()
-				})
-
-				it("should handle restore errors gracefully", async () => {
-					mockGet.mockRejectedValueOnce(new Error("Network error"))
-
-					await service.restoreSession("error-session-id")
-
-					expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
-						"Failed to restore session",
-						"SessionService",
-						expect.objectContaining({
-							error: "Network error",
-							sessionId: "error-session-id",
-						}),
-					)
-
-					// SessionId should be reset to null on error
-					// @ts-expect-error - Accessing private property for testing
-					expect(service.sessionId).toBeNull()
-				})
-
-				it("should skip writing files that are not present in session data", async () => {
-					const mockSessionData = {
-						id: "partial-session-id",
-						title: "Partial Session",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-						api_conversation_history: { messages: [] },
-						// ui_messages and task_metadata are missing
-					}
-
-					mockGet.mockResolvedValueOnce(mockSessionData)
-
-					await service.restoreSession("partial-session-id")
-
-					// Only one file should be written (api_conversation_history)
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(1)
-					expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-						"/mock/tasks/dir/partial-session-id/api_conversation_history.json",
-						JSON.stringify(mockSessionData.api_conversation_history, null, 2),
-					)
-				})
-
-				it("should log info messages during restoration", async () => {
-					const mockSessionData = {
-						id: "session-with-logs",
-						title: "Test Session",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-					}
-
-					mockGet.mockResolvedValueOnce(mockSessionData)
-
-					await service.restoreSession("session-with-logs")
-
-					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
-						"Restoring session",
-						"SessionService",
-						expect.objectContaining({
-							sessionId: "session-with-logs",
-						}),
-					)
-
-					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
-						"Task registered with extension",
-						"SessionService",
-						expect.objectContaining({
-							sessionId: "session-with-logs",
-							taskId: "session-with-logs",
-						}),
-					)
-
-					expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
-						"Switched to restored task",
-						"SessionService",
-						expect.objectContaining({
-							sessionId: "session-with-logs",
-						}),
-					)
-				})
-			})
-
-			describe("Session ID atom management", () => {
-				it("should set session ID in atom when creating new session", async () => {
-					const mockData = { messages: [] }
-					vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(mockData))
-
-					mockCreate.mockResolvedValueOnce({
-						id: "new-session-id",
-						title: "",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-					})
-
-					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-
-					// Trigger sync via timer
-					await vi.advanceTimersByTimeAsync(1000)
-
-					// Verify session ID was set in atom
-					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "new-session-id")
-				})
-
-				it("should not update atom for session updates", async () => {
-					const mockData = { messages: [] }
-					vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
-
-					mockCreate.mockResolvedValueOnce({
-						id: "session-id",
-						title: "",
-						created_at: "2025-01-01T00:00:00Z",
-						updated_at: "2025-01-01T00:00:00Z",
-					})
-
-					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-
-					// First sync - creates session
-					await vi.advanceTimersByTimeAsync(1000)
-
-					// Clear mock calls
-					vi.mocked(mockStore.set).mockClear()
-
-					mockUpdate.mockResolvedValueOnce({
-						id: "session-id",
-						title: "",
-						updated_at: "2025-01-01T00:01:00Z",
-					})
-
-					// Trigger update
-					service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-					await vi.advanceTimersByTimeAsync(1000)
-
-					// Should not call store.set for updates (only for create and restore)
-					expect(mockStore.set).not.toHaveBeenCalled()
-				})
-
-				it("should clear session ID in atom on destroy", async () => {
-					await service.destroy()
-
-					// Verify session ID was cleared in atom
-					expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, null)
-				})
-			})
 		})
 	})
 })
