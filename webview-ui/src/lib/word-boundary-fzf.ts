@@ -15,7 +15,6 @@ interface FzfOptions<T> {
 
 interface FzfResult<T> {
 	item: T
-	positions: Set<number>
 }
 
 export class Fzf<T> {
@@ -43,10 +42,7 @@ export class Fzf<T> {
 	 */
 	find(query: string): FzfResult<T>[] {
 		if (!query || query.trim() === "") {
-			return this.items.map((item) => ({
-				item,
-				positions: new Set<number>(),
-			}))
+			return this.items.map((item) => ({ item }))
 		}
 
 		const normalizedQuery = query.toLowerCase().trim()
@@ -61,32 +57,15 @@ export class Fzf<T> {
 
 			// For multi-word queries, all words must match
 			if (queryWords.length > 1) {
-				const matches = queryWords.map((word) => this.matchAcronym(text, word))
+				const allMatch = queryWords.every((word) => this.matchAcronym(text, word))
 
-				// All query words must match
-				if (matches.every((match) => match !== null)) {
-					// Combine positions from all matches
-					const allPositions = new Set<number>()
-					matches.forEach((match) => {
-						if (match) {
-							match.positions.forEach((pos) => allPositions.add(pos))
-						}
-					})
-
-					results.push({
-						item,
-						positions: allPositions,
-					})
+				if (allMatch) {
+					results.push({ item })
 				}
 			} else {
 				// Single word query - use acronym matching
-				const match = this.matchAcronym(text, normalizedQuery)
-
-				if (match) {
-					results.push({
-						item,
-						positions: match.positions,
-					})
+				if (this.matchAcronym(text, normalizedQuery)) {
+					results.push({ item })
 				}
 			}
 		}
@@ -99,41 +78,57 @@ export class Fzf<T> {
 	 * For example, "clso" matches "Claude Sonnet" (Cl + So)
 	 * Each character in the query should match the start of a word in the text.
 	 */
-	private matchAcronym(text: string, query: string): { positions: Set<number> } | null {
+	private matchAcronym(text: string, query: string): boolean {
 		const wordBoundaryRegex = /[\s\-_./\\]+/
 		const words = text.split(wordBoundaryRegex).filter((w) => w.length > 0)
 
-		let queryIndex = 0
-		let currentPos = 0
-		const positions = new Set<number>()
+		// Build word start positions in the original text
+		const wordStartPositions: number[] = []
+		let searchPos = 0
+		for (const word of words) {
+			const wordPos = text.indexOf(word, searchPos)
+			wordStartPositions.push(wordPos)
+			searchPos = wordPos + word.length
+		}
 
-		for (let wordIdx = 0; wordIdx < words.length && queryIndex < query.length; wordIdx++) {
+		// Recursive helper function to try matching from a given word index
+		const tryMatch = (wordIdx: number, queryIdx: number): boolean => {
+			// Base case: we've consumed the entire query
+			if (queryIdx === query.length) {
+				return true
+			}
+
+			// Base case: no more words to try
+			if (wordIdx >= words.length) {
+				return false
+			}
+
 			const word = words[wordIdx]
 
 			// Try to match as many consecutive characters as possible from this word
 			let matchedInWord = 0
+
 			while (
-				queryIndex < query.length &&
+				queryIdx + matchedInWord < query.length &&
 				matchedInWord < word.length &&
-				word[matchedInWord] === query[queryIndex]
+				word[matchedInWord] === query[queryIdx + matchedInWord]
 			) {
-				positions.add(currentPos + matchedInWord)
-				queryIndex++
 				matchedInWord++
 			}
 
-			// Move to next word position
-			if (wordIdx < words.length - 1) {
-				const nextWordIndex = text.indexOf(words[wordIdx + 1], currentPos + word.length)
-				currentPos = nextWordIndex
+			// If we matched something, try to continue from the next word
+			if (matchedInWord > 0) {
+				if (tryMatch(wordIdx + 1, queryIdx + matchedInWord)) {
+					return true
+				}
+				// If continuing didn't work, fall through to try skipping this word
 			}
+
+			// Try skipping this word and continuing with the next
+			// This allows backtracking when a partial match doesn't lead to a full match
+			return tryMatch(wordIdx + 1, queryIdx)
 		}
 
-		// Only match if we consumed the entire query
-		if (queryIndex === query.length) {
-			return { positions }
-		}
-
-		return null
+		return tryMatch(0, 0)
 	}
 }
