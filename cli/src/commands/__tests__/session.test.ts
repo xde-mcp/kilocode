@@ -424,7 +424,7 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			expect(SessionService.init).toHaveBeenCalled()
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private, process.cwd())
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private)
 
 			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
@@ -439,14 +439,11 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			expect(SessionService.init).toHaveBeenCalled()
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public, process.cwd())
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public)
 
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(message.type).toBe("system")
-			expect(message.content).toContain("Session is now publicly shareable")
-			expect(message.content).toContain("git clone")
-			expect(message.content).toContain("git checkout")
-			expect(message.content).toContain("git apply")
+			expect(message.content).toContain("Session shared at: https://kilo.ai/session/")
 		})
 
 		it("should default to public when no state arg provided", async () => {
@@ -455,7 +452,7 @@ describe("sessionCommand", () => {
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public, process.cwd())
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public)
 		})
 
 		it("should handle case-insensitive state argument", async () => {
@@ -464,7 +461,7 @@ describe("sessionCommand", () => {
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private, process.cwd())
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private)
 		})
 
 		it("should show error for invalid state value", async () => {

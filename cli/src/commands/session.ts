@@ -182,7 +182,7 @@ async function shareSession(context: CommandContext): Promise<void> {
 	}
 
 	try {
-		await sessionService.setSharedState(stateArg, process.cwd())
+		const { id: sessionId } = await sessionService.setSharedState(stateArg)
 
 		if (stateArg === CliSessionSharedState.Private) {
 			addMessage({
@@ -194,16 +194,7 @@ async function shareSession(context: CommandContext): Promise<void> {
 			addMessage({
 				...generateMessage(),
 				type: "system",
-				content: `Session is now publicly shareable
-
-To reproduce the session on another machine:
-
-\`\`\`bash
-git clone <REPO_URL>
-cd <REPO_NAME>
-git checkout <COMMIT_SHA>
-git apply session.patch
-\`\`\``,
+				content: `Session shared at: https://kilo.ai/session/${sessionId}`,
 			})
 		}
 	} catch (error) {
