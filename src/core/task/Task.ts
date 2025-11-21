@@ -35,7 +35,6 @@ import {
 	isInteractiveAsk,
 	isResumableAsk,
 	QueuedMessage,
-	isInterleavedThinkingNeeded,
 	getActiveToolUseStyle, // kilocode_change
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
@@ -130,6 +129,7 @@ import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shar
 import { getAppUrl } from "@roo-code/types"
 import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api/transform/kilocode/reasoning-details"
 import { mergeApiMessages } from "./kilocode"
+import { mergeEnvironmentDetailsIntoUserContent } from "../environment/kilocode/mergeEnvironmentDetailsIntoUserContent"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -1991,24 +1991,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			// Add environment details as its own text block, separate from tool
 			// results.
-			// kilocode_change start: support interleaved thinking for environment details
-			let finalUserContent = [...parsedUserContent, { type: "text" as const, text: environmentDetails }]
-			if (isInterleavedThinkingNeeded(this.apiConfiguration)) {
-				// Safely get the last item if it exists
-				const lastIndex = parsedUserContent.length - 1
-				if (lastIndex >= 0) {
-					const lastParsedItem = parsedUserContent[lastIndex]
-					// Verify it's a tool_result with a valid content array
-					if (lastParsedItem?.type === "tool_result" && Array.isArray(lastParsedItem.content)) {
-						lastParsedItem.content = [
-							...lastParsedItem.content,
-							{ type: "text" as const, text: environmentDetails },
-						]
-						finalUserContent = [...parsedUserContent] // rewrite finalUserContent
-					}
-				}
-			}
-			// kilocode_change end
+			const finalUserContent = mergeEnvironmentDetailsIntoUserContent(parsedUserContent, environmentDetails) // kilocode_change: support interleaved thinking for environment details
 			await this.addToApiConversationHistory({ role: "user", content: finalUserContent })
 			TelemetryService.instance.captureConversationMessage(this.taskId, "user")
 

@@ -41,9 +41,6 @@ const providersDefaultingToJsonKeywords = [
 	"inception",
 ]
 
-// Models that support or need interleaved thinking
-const modelsNeedingInterleavedThinkingKeywords = ["minimax-m2"]
-
 export function getActiveToolUseStyle(settings: ProviderSettings | undefined): ToolUseStyle {
 	if (!settings) {
 		console.error("getActiveToolUseStyle: settings missing, returning xml")
@@ -64,15 +61,4 @@ export function getActiveToolUseStyle(settings: ProviderSettings | undefined): T
 		return "json" //providers that always use json
 	}
 	return modelsDefaultingToJsonKeywords.some((keyword) => model.includes(keyword)) ? "json" : "xml"
-}
-
-export function isInterleavedThinkingNeeded(settings: ProviderSettings | undefined): boolean {
-	if (!settings) {
-		return false
-	}
-	const model = getModelId(settings)?.toLowerCase()
-	if (!model) {
-		return false
-	}
-	return modelsNeedingInterleavedThinkingKeywords.some((keyword) => model.includes(keyword))
 }
