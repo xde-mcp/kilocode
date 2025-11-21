@@ -76,7 +76,7 @@ export async function codebaseSearchTool(
 		}
 
 		// kilcode_change start
-		if (!manager.isManagedIndexingAvailable) {
+		if (!(await manager.managedIndexer.isEnabled())) {
 			if (!manager.isFeatureEnabled) {
 				throw new Error("Code Indexing is disabled in the settings.")
 			}
@@ -139,7 +139,11 @@ export async function codebaseSearchTool(
 		}
 		// kilocode_change end
 
-		const searchResults: VectorStoreSearchResult[] = await manager.searchIndex(query, directoryPrefix)
+		// kilocode_change start - search managed indexer
+		const searchResults: VectorStoreSearchResult[] = (await manager.managedIndexer.isEnabled())
+			? await manager.managedIndexer.searchManagedIndex(query, directoryPrefix)
+			: await manager.searchIndex(query, directoryPrefix)
+		// kilocode_change end - search managed indexer
 
 		// 3. Format and push results
 		if (!searchResults || searchResults.length === 0) {

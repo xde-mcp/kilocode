@@ -12,11 +12,12 @@ import { GitWatcher, GitWatcherEvent } from "../../../shared/GitWatcher"
 import { getCurrentBranch, isGitRepository, getCurrentCommitSha, getBaseBranch } from "./git-utils"
 import { getKilocodeConfig } from "../../../utils/kilo-config-file"
 import { getGitRepositoryInfo } from "../../../utils/git"
-import { getServerManifest, upsertFile } from "./api-client"
+import { getServerManifest, searchCode, upsertFile } from "./api-client"
 import { logger } from "../../../utils/logging"
 import { MANAGED_MAX_CONCURRENT_FILES } from "../constants"
 import { ServerManifest } from "./types"
 import { scannerExtensions } from "../shared/supported-extensions"
+import { VectorStoreSearchResult } from "../interfaces/vector-store"
 
 interface ManagedIndexerConfig {
 	kilocodeToken: string | null
@@ -60,6 +61,15 @@ interface ManagedIndexerWorkspaceFolderState {
 }
 
 export class ManagedIndexer implements vscode.Disposable {
+	static prevInstance: ManagedIndexer | null = null
+	static getInstance(): ManagedIndexer {
+		if (!ManagedIndexer.prevInstance) {
+			throw new Error("[ManagedIndexer.getInstance()] no available instance")
+		}
+
+		return ManagedIndexer.prevInstance
+	}
+
 	// Handle changes to vscode workspace folder changes
 	workspaceFoldersListener: vscode.Disposable | null = null
 	// kilocode_change: Listen to configuration changes from ContextProxy
@@ -78,6 +88,7 @@ export class ManagedIndexer implements vscode.Disposable {
 
 	constructor(public contextProxy: ContextProxy) {
 		console.log("[ManagedIndexer] Constructor called")
+		ManagedIndexer.prevInstance = this
 	}
 
 	private async onConfigurationChange(config: ManagedIndexerConfig): Promise<void> {
@@ -147,7 +158,7 @@ export class ManagedIndexer implements vscode.Disposable {
 
 	async isEnabled(): Promise<boolean> {
 		console.log("[ManagedIndexer] Checking if managed indexing is enabled")
-		const organization = await this.fetchOrganization()
+		const organization = this.organization ?? (await this.fetchOrganization())
 
 		if (!organization) {
 			console.log("[ManagedIndexer] No organization found, managed indexing disabled")
@@ -675,6 +686,50 @@ export class ManagedIndexer implements vscode.Disposable {
 					}
 				: undefined,
 		}))
+	}
+
+	public async searchManagedIndex(query: string, directoryPrefix?: string): Promise<VectorStoreSearchResult[]> {
+		const { kilocodeOrganizationId, kilocodeToken } = this.config ?? {}
+
+		if (!kilocodeOrganizationId || !kilocodeToken) {
+			throw new Error("Kilocode organization ID and token are required for managed index search")
+		}
+
+		const results = await Promise.all(
+			this.workspaceFolderState.map(async (state) => {
+				if (!state.projectId || !state.gitBranch) {
+					return []
+				}
+
+				return await searchCode(
+					{
+						query,
+						organizationId: kilocodeOrganizationId,
+						projectId: state.projectId,
+						preferBranch: state.gitBranch,
+						fallbackBranch: "main",
+						// TODO: Exclude deleted files for the branch
+						excludeFiles: [],
+						path: directoryPrefix,
+					},
+					kilocodeToken,
+				)
+			}),
+		)
+
+		return results
+			.flat()
+			.map((result) => ({
+				id: result.id,
+				score: result.score,
+				payload: {
+					filePath: result.filePath,
+					codeChunk: "", // Managed indexing doesn't return code chunks
+					startLine: result.startLine,
+					endLine: result.endLine,
+				},
+			}))
+			.sort((a, b) => b.score - a.score)
 	}
 
 	/**

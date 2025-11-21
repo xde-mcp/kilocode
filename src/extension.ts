@@ -133,6 +133,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	const contextProxy = await ContextProxy.getInstance(context)
+	// kilocode_change start: Initialize ManagedIndexer
+	const managedIndexer = new ManagedIndexer(contextProxy)
+	context.subscriptions.push(managedIndexer)
+	// kilocode_change end
 
 	// Initialize code index managers for all workspace folders.
 	const codeIndexManagers: CodeIndexManager[] = []
@@ -158,11 +162,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Initialize the provider *before* the Roo Code Cloud service.
-
-	// kilocode_change start: Initialize ManagedIndexer
-	const managedIndexer = new ManagedIndexer(contextProxy)
-	context.subscriptions.push(managedIndexer)
-	// kilocode_change end
 	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService, managedIndexer)
 	// const initManagedCodeIndexing = updateCodeIndexWithKiloProps(provider) // kilocode_change
 

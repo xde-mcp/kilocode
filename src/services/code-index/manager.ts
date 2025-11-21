@@ -17,6 +17,7 @@ import { TelemetryEventName } from "@roo-code/types"
 // kilocode_change start: Managed indexing (new standalone system)
 import { startIndexing as startManagedIndexing, search as searchManaged, createManagedIndexingConfig } from "./managed"
 import type { IndexerState as ManagedIndexerState } from "./managed"
+import { ManagedIndexer } from "./managed/ManagedIndexer"
 // kilocode_change end
 
 export class CodeIndexManager {
@@ -32,6 +33,7 @@ export class CodeIndexManager {
 	private _cacheManager: CacheManager | undefined
 
 	// kilocode_change start: Managed indexing (new standalone system)
+	public managedIndexer = ManagedIndexer.getInstance()
 	private _managedIndexerDisposable: vscode.Disposable | undefined
 	private _managedIndexerState: ManagedIndexerState | undefined
 	// kilocode_change end
@@ -102,11 +104,11 @@ export class CodeIndexManager {
 	}
 
 	public get isFeatureEnabled(): boolean {
-		return this._configManager?.isFeatureEnabled ?? false
+		return (this._configManager?.isFeatureEnabled || !!this.managedIndexer.organization) ?? false
 	}
 
 	public get isFeatureConfigured(): boolean {
-		return this._configManager?.isFeatureConfigured ?? false
+		return (this._configManager?.isFeatureConfigured || !!this.managedIndexer.organization) ?? false
 	}
 
 	public get isInitialized(): boolean {
@@ -321,6 +323,12 @@ export class CodeIndexManager {
 	}
 
 	public async searchIndex(query: string, directoryPrefix?: string): Promise<VectorStoreSearchResult[]> {
+		// kilocode_change start - proxy out to managed indexing if available
+		if (await this.managedIndexer.isEnabled()) {
+			return await this.managedIndexer.searchManagedIndex(query, directoryPrefix)
+		}
+		// kilocode_change start - proxy out to managed indexing if available
+
 		// kilocode_change start: Route to managed indexing if available
 		if (this.isManagedIndexingAvailable) {
 			return this.searchManagedIndex(query, directoryPrefix)
