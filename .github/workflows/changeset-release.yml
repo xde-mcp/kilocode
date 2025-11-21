@@ -1,5 +1,4 @@
 name: Changeset Release
-run-name: Changeset Release ${{ github.actor != 'kilocode-bot' && '- Create PR' || '- Update Changelog' }}
 
 on:
     push:
