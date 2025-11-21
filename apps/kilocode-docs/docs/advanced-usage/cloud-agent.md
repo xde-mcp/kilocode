@@ -110,9 +110,3 @@ Cloud Agents are great for:
 - **Saved sessions** in the sidebar are not yet shared between logins or restorable locally.
 - **MCP support is coming**, but **Docker-based MCP servers will *not* be supported**.
 
----
-
-## Related Docs
-
-- [Kilo Integrations](./integrations.md)  
-- [Kilo Deploy](./deploy.md)
