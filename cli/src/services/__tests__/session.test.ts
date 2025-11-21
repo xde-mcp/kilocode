@@ -250,7 +250,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "new-session-id",
+				session_id: "new-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -275,14 +275,14 @@ describe("SessionService", () => {
 				.mockReturnValueOnce(JSON.stringify({ messages: ["first", "second"] }))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
 			mockUpdate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				updated_at: "2025-01-01T00:01:00Z",
 			})
@@ -313,7 +313,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -357,7 +357,7 @@ describe("SessionService", () => {
 				.mockReturnValueOnce(JSON.stringify(mockData3))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -414,7 +414,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -450,7 +450,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -489,7 +489,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValue({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -540,7 +540,7 @@ describe("SessionService", () => {
 
 			// Second call succeeds
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -567,7 +567,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -605,7 +605,7 @@ describe("SessionService", () => {
 
 			// Create a session first
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -651,14 +651,14 @@ describe("SessionService", () => {
 			// Make the first sync take a long time
 			let resolveFirst: () => void
 			const firstSyncPromise = new Promise<{
-				id: string
+				session_id: string
 				title: string
 				created_at: string
 				updated_at: string
 			}>((resolve) => {
 				resolveFirst = () =>
 					resolve({
-						id: "session-id",
+						session_id: "session-id",
 						title: "",
 						created_at: "2025-01-01T00:00:00Z",
 						updated_at: "2025-01-01T00:00:00Z",
@@ -702,7 +702,7 @@ describe("SessionService", () => {
 
 			// Second sync should work (lock was released)
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -729,7 +729,7 @@ describe("SessionService", () => {
 
 		it("should restore session from signed URLs and write files to disk", async () => {
 			const mockSessionData = {
-				id: "restored-session-id",
+				session_id: "restored-session-id",
 				title: "Restored Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -805,7 +805,7 @@ describe("SessionService", () => {
 
 		it("should send messages to extension to register task", async () => {
 			const mockSessionData = {
-				id: "restored-session-id",
+				session_id: "restored-session-id",
 				title: "Restored Session",
 				created_at: "2025-01-01T12:00:00Z",
 				updated_at: "2025-01-01T12:00:00Z",
@@ -841,7 +841,7 @@ describe("SessionService", () => {
 
 		it("should set session ID in atom", async () => {
 			const mockSessionData = {
-				id: "restored-session-id",
+				session_id: "restored-session-id",
 				title: "Restored Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -895,7 +895,7 @@ describe("SessionService", () => {
 
 		it("should skip fetching blobs when signed URLs are null", async () => {
 			const mockSessionData = {
-				id: "partial-session-id",
+				session_id: "partial-session-id",
 				title: "Partial Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -930,7 +930,7 @@ describe("SessionService", () => {
 
 		it("should handle fetch errors gracefully and continue processing other blobs", async () => {
 			const mockSessionData = {
-				id: "error-session-id",
+				session_id: "error-session-id",
 				title: "Error Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -980,7 +980,7 @@ describe("SessionService", () => {
 
 		it("should handle non-JSON responses", async () => {
 			const mockSessionData = {
-				id: "invalid-json-session",
+				session_id: "invalid-json-session",
 				title: "Invalid JSON Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1013,7 +1013,7 @@ describe("SessionService", () => {
 
 		it("should log info messages during restoration", async () => {
 			const mockSessionData = {
-				id: "session-with-logs",
+				session_id: "session-with-logs",
 				title: "Test Session",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1070,7 +1070,7 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 			mockCreate.mockResolvedValueOnce({
-				id: "test-session-id",
+				session_id: "test-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1080,9 +1080,11 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(1000)
 
 			mockSetSharedState.mockResolvedValueOnce({
-				id: "test-session-id",
-				shared_state: "private",
-				updated_at: "2025-01-01T00:00:00Z",
+				success: true,
+				session: {
+					session_id: "test-session-id",
+					shared_state: "private",
+				},
 			})
 
 			const result = await service.setSharedState(CliSessionSharedState.Private)
@@ -1092,9 +1094,11 @@ describe("SessionService", () => {
 				sharedState: "private",
 			})
 			expect(result).toEqual({
-				id: "test-session-id",
-				shared_state: "private",
-				updated_at: "2025-01-01T00:00:00Z",
+				success: true,
+				session: {
+					session_id: "test-session-id",
+					shared_state: "private",
+				},
 			})
 		})
 
@@ -1103,7 +1107,7 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 			mockCreate.mockResolvedValueOnce({
-				id: "test-session-id",
+				session_id: "test-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1135,9 +1139,11 @@ describe("SessionService", () => {
 			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
 
 			mockSetSharedState.mockResolvedValueOnce({
-				id: "test-session-id",
-				shared_state: "public",
-				updated_at: "2025-01-01T00:00:00Z",
+				success: true,
+				session: {
+					session_id: "test-session-id",
+					shared_state: "public",
+				},
 			})
 
 			// Set workspace directory before calling setSharedState
@@ -1159,9 +1165,11 @@ describe("SessionService", () => {
 				},
 			})
 			expect(result).toEqual({
-				id: "test-session-id",
-				shared_state: "public",
-				updated_at: "2025-01-01T00:00:00Z",
+				success: true,
+				session: {
+					session_id: "test-session-id",
+					shared_state: "public",
+				},
 			})
 		})
 
@@ -1170,7 +1178,7 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 			mockCreate.mockResolvedValueOnce({
-				id: "test-session-id",
+				session_id: "test-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1199,7 +1207,7 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 			mockCreate.mockResolvedValueOnce({
-				id: "test-session-id",
+				session_id: "test-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1226,9 +1234,11 @@ describe("SessionService", () => {
 			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
 
 			mockSetSharedState.mockResolvedValueOnce({
-				id: "test-session-id",
-				shared_state: "public",
-				updated_at: "2025-01-01T00:00:00Z",
+				success: true,
+				session: {
+					session_id: "test-session-id",
+					shared_state: "public",
+				},
 			})
 
 			service.setWorkspaceDirectory("/test/repo")
@@ -1253,7 +1263,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "new-session-id",
+				session_id: "new-session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1278,7 +1288,7 @@ describe("SessionService", () => {
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
 			mockCreate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				created_at: "2025-01-01T00:00:00Z",
 				updated_at: "2025-01-01T00:00:00Z",
@@ -1291,7 +1301,7 @@ describe("SessionService", () => {
 			vi.clearAllMocks()
 
 			mockUpdate.mockResolvedValueOnce({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				updated_at: "2025-01-01T00:01:00Z",
 			})

@@ -224,13 +224,13 @@ describe("sessionCommand", () => {
 		it("should display sessions list with results", async () => {
 			const mockSessions = [
 				{
-					id: "session-1",
+					session_id: "session-1",
 					title: "Test Session 1",
 					created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
 					updated_at: new Date().toISOString(),
 				},
 				{
-					id: "session-2",
+					session_id: "session-2",
 					title: "Test Session 2",
 					created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
 					updated_at: new Date().toISOString(),
@@ -260,13 +260,13 @@ describe("sessionCommand", () => {
 			mockSessionService.sessionId = "session-active"
 			const mockSessions = [
 				{
-					id: "session-active",
+					session_id: "session-active",
 					title: "Active Session",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
 				},
 				{
-					id: "session-inactive",
+					session_id: "session-inactive",
 					title: "Inactive Session",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
@@ -287,7 +287,7 @@ describe("sessionCommand", () => {
 
 		it("should display pagination cursor when available", async () => {
 			const mockSessions = Array.from({ length: 50 }, (_, i) => ({
-				id: `session-${i}`,
+				session_id: `session-${i}`,
 				title: `Session ${i}`,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
@@ -321,7 +321,7 @@ describe("sessionCommand", () => {
 		it("should format relative time correctly", async () => {
 			const mockSessions = [
 				{
-					id: "session-1",
+					session_id: "session-1",
 					title: "Just created",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
@@ -411,9 +411,11 @@ describe("sessionCommand", () => {
 		beforeEach(() => {
 			// Setup setSharedState mock on service
 			mockSessionService.setSharedState = vi.fn().mockResolvedValue({
-				id: "test-session",
-				shared_state: "public",
-				updated_at: new Date().toISOString(),
+				success: true,
+				session: {
+					session_id: "test-session",
+					shared_state: "public",
+				},
 			})
 		})
 
@@ -584,13 +586,13 @@ describe("sessionCommand", () => {
 		it("should call sessionClient.search with searchString", async () => {
 			const mockSessions = [
 				{
-					id: "session-abc123",
+					session_id: "session-abc123",
 					title: "ABC Session",
 					created_at: "2025-01-01T00:00:00Z",
 					updated_at: "2025-01-01T00:00:00Z",
 				},
 				{
-					id: "session-abc456",
+					session_id: "session-abc456",
 					title: "Another ABC",
 					created_at: "2025-01-02T00:00:00Z",
 					updated_at: "2025-01-02T00:00:00Z",
@@ -616,7 +618,7 @@ describe("sessionCommand", () => {
 		it("should map results correctly to suggestion format", async () => {
 			const mockSessions = [
 				{
-					id: "session-test123",
+					session_id: "session-test123",
 					title: "Test Session",
 					created_at: "2025-01-15T10:30:00Z",
 					updated_at: "2025-01-15T10:30:00Z",
@@ -648,7 +650,7 @@ describe("sessionCommand", () => {
 		it("should handle Untitled sessions", async () => {
 			const mockSessions = [
 				{
-					id: "session-untitled",
+					session_id: "session-untitled",
 					title: "",
 					created_at: "2025-01-15T10:30:00Z",
 					updated_at: "2025-01-15T10:30:00Z",
@@ -673,19 +675,19 @@ describe("sessionCommand", () => {
 		it("should preserve backend ordering with matchScore", async () => {
 			const mockSessions = [
 				{
-					id: "session-1",
+					session_id: "session-1",
 					title: "Most Recent",
 					created_at: "2025-01-15T10:30:00Z",
 					updated_at: "2025-01-15T10:30:00Z",
 				},
 				{
-					id: "session-2",
+					session_id: "session-2",
 					title: "Second",
 					created_at: "2025-01-14T10:30:00Z",
 					updated_at: "2025-01-14T10:30:00Z",
 				},
 				{
-					id: "session-3",
+					session_id: "session-3",
 					title: "Third",
 					created_at: "2025-01-13T10:30:00Z",
 					updated_at: "2025-01-13T10:30:00Z",

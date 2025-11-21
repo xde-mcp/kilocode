@@ -87,12 +87,12 @@ async function listSessions(context: CommandContext): Promise<void> {
 		// Format and display sessions
 		let content = `**Available Sessions:**\n\n`
 		cliSessions.forEach((session, index) => {
-			const isActive = session.id === sessionService.sessionId ? " 🟢 [Active]" : ""
+			const isActive = session.session_id === sessionService.sessionId ? " 🟢 [Active]" : ""
 			const title = session.title || "Untitled"
 			const createdTime = formatRelativeTime(new Date(session.created_at).getTime())
 
 			content += `${index + 1}. **${title}**${isActive}\n`
-			content += `   ID: \`${session.id}\`\n`
+			content += `   ID: \`${session.session_id}\`\n`
 			content += `   Created: ${createdTime}\n\n`
 		})
 
@@ -182,7 +182,8 @@ async function shareSession(context: CommandContext): Promise<void> {
 	}
 
 	try {
-		const { id: sessionId } = await sessionService.setSharedState(stateArg)
+		const result = await sessionService.setSharedState(stateArg)
+		const sessionId = result.session.session_id
 
 		if (stateArg === CliSessionSharedState.Private) {
 			addMessage({
@@ -223,11 +224,11 @@ async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): 
 	try {
 		const response = await sessionClient.search({ searchString: prefix, limit: 20 })
 		return response.results.map((session, index) => ({
-			value: session.id,
+			value: session.session_id,
 			title: session.title || "Untitled",
 			description: `Created: ${new Date(session.created_at).toLocaleDateString()}`,
 			matchScore: 100 - index, // Backend orders by updated_at DESC, preserve order
-			highlightedValue: session.id,
+			highlightedValue: session.session_id,
 		}))
 	} catch (_error) {
 		return []

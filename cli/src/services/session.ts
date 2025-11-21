@@ -293,7 +293,7 @@ export class SessionService {
 
 				const session = await sessionClient.create(payload)
 
-				this.sessionId = session.id
+				this.sessionId = session.session_id
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
 			}

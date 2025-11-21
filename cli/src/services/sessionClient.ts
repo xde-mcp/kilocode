@@ -2,7 +2,7 @@ import { TrpcClient, TrpcResponse } from "./trpcClient.js"
 
 // Type definitions matching backend schema
 export interface Session {
-	id: string
+	session_id: string
 	title: string
 	created_at: string
 	updated_at: string
@@ -42,7 +42,7 @@ export interface UpdateSessionInput {
 }
 
 export interface UpdateSessionOutput {
-	id: string
+	session_id: string
 	title: string
 	updated_at: string
 }
@@ -93,9 +93,11 @@ export type SetSharedStateInput =
 	  }
 
 export interface SetSharedStateOutput {
-	id: string
-	shared_state: string
-	updated_at: string
+	success: boolean
+	session: {
+		session_id: string
+		shared_state: string
+	}
 }
 
 export interface ForkSessionInput {
