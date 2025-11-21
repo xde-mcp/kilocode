@@ -1,11 +1,22 @@
 import { AutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
+import { GhostModel } from "../GhostModel"
+import { ApiStreamChunk } from "../../../api/transform/stream"
 
 export interface FillInAtCursorSuggestion {
 	text: string
 	prefix: string
 	suffix: string
+}
+
+export interface ChatCompletionResult {
+	suggestion: FillInAtCursorSuggestion
+	cost: number
+	inputTokens: number
+	outputTokens: number
+	cacheWriteTokens: number
+	cacheReadTokens: number
 }
 
 /**
@@ -169,5 +180,52 @@ ${formattedContext}${formattedContext ? "\n" : ""}${helper.prunedPrefix}{{FILL_H
 TASK: Fill the {{FILL_HERE}} hole. Answer only with the CORRECT completion, and NOTHING ELSE. Do it now.
 Return the COMPLETION tags`
 		)
+	}
+
+	/**
+	 * Execute chat-based completion using the model
+	 */
+	async getFromChat(
+		systemPrompt: string,
+		userPrompt: string,
+		prefix: string,
+		suffix: string,
+		model: GhostModel,
+		processSuggestion: (
+			text: string,
+			prefix: string,
+			suffix: string,
+			model: GhostModel,
+		) => FillInAtCursorSuggestion,
+	): Promise<ChatCompletionResult> {
+		let response = ""
+
+		const onChunk = (chunk: ApiStreamChunk) => {
+			if (chunk.type === "text") {
+				response += chunk.text
+			}
+		}
+
+		console.log("[HoleFiller] userPrompt:", userPrompt)
+
+		const usageInfo = await model.generateResponse(systemPrompt, userPrompt, onChunk)
+
+		console.log("response", response)
+
+		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
+		const fillInAtCursorSuggestion = processSuggestion(parsedSuggestion.text, prefix, suffix, model)
+
+		if (fillInAtCursorSuggestion.text) {
+			console.info("Final suggestion:", fillInAtCursorSuggestion)
+		}
+
+		return {
+			suggestion: fillInAtCursorSuggestion,
+			cost: usageInfo.cost,
+			inputTokens: usageInfo.inputTokens,
+			outputTokens: usageInfo.outputTokens,
+			cacheWriteTokens: usageInfo.cacheWriteTokens,
+			cacheReadTokens: usageInfo.cacheReadTokens,
+		}
 	}
 }
