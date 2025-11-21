@@ -107,7 +107,6 @@ import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocod
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
 import { updateCodeIndexWithKiloProps } from "../../services/code-index/managed/webview" // kilocode_change
-import { ManagedIndexer } from "../../services/code-index/managed/ManagedIndexer"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
