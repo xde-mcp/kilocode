@@ -247,8 +247,8 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 		tools: [
 			"apply_diff",
 			"edit_file", // kilocode_change: Morph fast apply
-			"delete_file", // kilocode_change
 			"write_to_file",
+			"delete_file", // kilocode_change
 			"insert_content",
 			"new_rule", // kilocode_change
 			"generate_image",
