@@ -101,15 +101,15 @@ export function getAppUrl(path: string = ""): string {
 /**
  * Gets the API URL for the current environment.
  * Respects KILOCODE_BACKEND_BASE_URL environment variable for local development.
- * In development: http://localhost:3000/api
+ * In development: http://localhost:3000
  * In production: https://api.kilocode.ai
  */
 export function getApiUrl(path: string = ""): string {
 	const backend = getGlobalKilocodeBackendUrl()
 
-	// In development (localhost), API is served from the same origin
+	// In development (localhost), API is served from the same origin (no /api prefix needed)
 	if (backend.includes("localhost")) {
-		return new URL(`/api${path}`, backend).toString()
+		return new URL(path, backend).toString()
 	}
 
 	// In production, use the api subdomain
