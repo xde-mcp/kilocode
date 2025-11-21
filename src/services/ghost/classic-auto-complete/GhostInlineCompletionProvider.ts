@@ -22,7 +22,7 @@ export type CostTrackingCallback = (
 	cacheReadTokens: number,
 ) => void
 
-export type CompletionStrategy = "fim" | "chat"
+export type CompletionStrategy = "fim" | "hole_filler"
 
 export interface GhostPrompt {
 	strategy: CompletionStrategy
@@ -172,7 +172,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const languageId = document.languageId
 
 		// Determine strategy based on model capabilities
-		const strategy: CompletionStrategy = this.model.supportsFim() ? "fim" : "chat"
+		const strategy: CompletionStrategy = this.model.supportsFim() ? "fim" : "hole_filler"
 
 		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(autocompleteInput, languageId)
 
