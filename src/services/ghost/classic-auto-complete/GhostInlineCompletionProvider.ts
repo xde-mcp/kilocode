@@ -209,23 +209,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const { prefix, suffix } = extractPrefixSuffix(document, position)
 		const languageId = document.languageId
 
-		// Determine strategy based on model capabilities
-		const strategy: CompletionStrategy = this.model.supportsFim() ? "fim" : "hole_filler"
-
-		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(autocompleteInput, languageId)
-
-		// For FIM strategy, prepare formatted prefix and pruned suffix
-		let formattedPrefix: string | undefined
-		let prunedSuffix: string | undefined
-
-		if (strategy === "fim") {
-			const modelName = this.model.getModelName() ?? "codestral"
-			const fimPrompts = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
-			formattedPrefix = fimPrompts.formattedPrefix
-			prunedSuffix = fimPrompts.prunedSuffix
+		// Determine strategy based on model capabilities and call only the appropriate prompt builder
+		if (this.model.supportsFim()) {
+			return this.getFimPrompt(autocompleteInput, prefix, suffix)
+		} else {
+			return this.getHoleFillerPrompt(autocompleteInput, languageId, prefix, suffix)
 		}
-
-		return { strategy, systemPrompt, userPrompt, prefix, suffix, autocompleteInput, formattedPrefix, prunedSuffix }
 	}
 
 	private processSuggestion(
