@@ -98,7 +98,7 @@ export async function deleteFileTool(
 		if (stats.isDirectory()) {
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("delete_file")
-			const errorMsg = `Cannot delete directories yet. Path: ${relativePath}`
+			const errorMsg = `Cannot delete a directory`
 			await cline.say("error", errorMsg)
 			pushToolResult(formatResponse.toolError(errorMsg))
 			return

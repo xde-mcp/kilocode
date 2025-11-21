@@ -155,7 +155,7 @@ describe("deleteFileTool", () => {
 		it("should reject files in .kilocodeignore", async () => {
 			await executeDeleteFileTool({}, { accessAllowed: false })
 
-			expect(mockCline.say).toHaveBeenCalledWith("rooignore_error", testFilePath)
+			expect(mockCline.say).toHaveBeenCalledWith("error", "Access denied: test/file.txt")
 			expect(mockPushToolResult).toHaveBeenCalled()
 			expect(mockedFsUnlink).not.toHaveBeenCalled()
 		})
@@ -186,13 +186,13 @@ describe("deleteFileTool", () => {
 			expect(mockCline.consecutiveMistakeCount).toBe(0)
 			expect(mockAskApproval).toHaveBeenCalled()
 			expect(mockedFsUnlink).toHaveBeenCalled()
-			expect(mockCline.say).toHaveBeenCalledWith("text", expect.stringContaining("Deleted file"))
+			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted file"))
 		})
 
 		it("should reject directory deletion", async () => {
 			await executeDeleteFileTool({}, { isDirectory: true })
 
-			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("Cannot delete directories"))
+			expect(mockCline.say).toHaveBeenCalledWith("error", "Cannot delete a directory")
 			expect(mockCline.recordToolError).toHaveBeenCalledWith("delete_file")
 			expect(mockedFsUnlink).not.toHaveBeenCalled()
 		})
