@@ -1,47 +1,119 @@
-# Cloud agent
+---
+title: Cloud Agents
+sidebar_label: Cloud Agents
+---
 
-Run Kilo Code from anywhere.
+# Cloud Agents
 
-## Requirements
+Cloud Agents let you run Kilo Code in the cloud from any device, without relying on your local machine. They provide a remote development environment that can read and modify your GitHub repositories, run commands, and auto-commit changes as work progresses.
 
-- Configure the GitHub App integration for your personal account or organization before starting a session.
+---
+
+## What Cloud Agents Enable
+
+- Run Kilo Code remotely from a browser  
+- Offload compute-heavy tasks to the cloud  
+- Auto-create branches and push work continuously  
+- Use env vars + startup commands to shape the workspace  
+- Work from anywhere while keeping your repo in sync
+
+---
+
+## Prerequisites
+
+Before using Cloud Agents:
+
+- **GitHub Integration must be configured**  
+  Connect your account via the [Integrations tab](https://app.kilo.ai/integrations) so that Cloud Agents can access your repositories.
+
+---
 
 ## Cost
 
-- During the beta compute usage is free.
-- Kilo Code in your cloud sessions still use credits to perform work.
+- **Compute is free during limited beta**
+  - Please provide any feedback in our Cloud Agents beta Discord channel:
+    - [Kilo Discord](https://discord.gg/D2ExdEcq)
+- **Kilo Code credits are still used** when the agent performs work (model usage, operations, etc.).
 
-:::info Quick Start
+---
 
-1. Connect your GitHub account via the GitHub App integration
-2. Select a repository
-3. Configure custom env vars and define setup commands to prep the workspace
-4. Send messages to your remote kilo code session, it will auto commit as work progresses.
+## How to Use
 
-:::
+1. **Connect your GitHub account** in the [Integrations](https://app.kilo.ai/integrations) tab of your personal or organization dashboard.  
+2. **Select a repository** to use as your workspace.  
+3. **Add environment variables** (secrets supported) and set optional startup commands.  
+4. **Start chatting with Kilo Code.**   
 
-## How cloud agents work
+Your work is always pushed to GitHub, ensuring nothing is lost.
 
-- Every user gets access to a small isolated Linux container with Python, Node.js, and other common development tools pre-installed.
-- All of your cloud sessions share a single container instance but get their own workspace within; Note that instance cpu/memory/disk size may change during the beta.
-- Each session contains a clone of your repo and creates a unique branch where it stores its work.
-- After every message the agent looks for changes to commit and pushes the branch. Sandboxes are ephemeral and can be interrupted/restarted/etc, so its important to save work as you go by pushing your branch.
-- You can define env vars that will be set for each chat session.
-- You can define startup scripts/commands that run after the repo is cloned and the branch is checked out.
-- The sandbox will spin down after inactivity; expect slightly longer setup after idle periods.
-- During the beta, inactive sessions are deleted after 7 days.
+---
 
-## Perfect for
+## How Cloud Agents Work
 
-- Offloading bug fixes and troubleshooting to Kilo Code debug mode
-- Answering ad hoc questions about code bases you don't work on every day
-- Brainstorming with Kilo Code architect mode while away from your desk
-- Orchestrating the tech debt cleanup you've been wanting to tackle
+- Each user receives an **isolated Linux container** with common dev tools preinstalled (Python, Node.js, git, etc.).
+- All Cloud Agent chats share a **single container instance**, while each session gets its own workspace directory.
+- When a session begins:
+  1. Your repo is cloned  
+  2. A unique branch is created  
+  3. Your startup commands run  
+  4. Env vars are injected  
 
-## Limitations
+- After every message, the agent:
+  - Looks for file changes  
+  - Commits them  
+  - Pushes to the session’s branch  
 
-- Each message to Kilo Code can run for up to 10 minutes; break work into smaller tasks and keep a `plan.md` or `todo.md`.
-- Context is not shared between messages yet; use a persistent `plan.md`/`todo.md` to keep Kilo Code on track.
-- Kilo Code is running in auto/yolo mode - so be aware that it will not prompt you for permission.
-- Sessions saved in the sidebar are not yet shared across logins or resumable locally.
-- MCP support is coming soon, but Docker-based MCP servers will not be supported.
+- Containers are **ephemeral**:
+  - Spindown occurs after inactivity  
+  - Expect slightly longer setup after idle periods  
+  - Inactive sessions are deleted after **7 days** during the beta
+
+---
+
+## Environment Variables & Startup Commands
+
+You can customize each Cloud Agent session by defining:
+
+### Environment Variables
+- Add key/value pairs or secrets  
+- Injected into the container before the session starts  
+- Useful for API keys or config flags
+
+### Startup Commands
+- Commands run immediately after cloning the repo and checking out the session branch  
+- Great for:
+  - Installing dependencies  
+  - Bootstrapping tooling  
+  - Running setup scripts  
+
+---
+
+## Perfect For
+
+Cloud Agents are great for:
+
+- **Remote debugging** using Kilo Code debug mode  
+- **Exploration of unfamiliar codebases** without touching your local machine  
+- **Architect-mode brainstorming** while on the go  
+- **Automated refactors or tech debt cleanup** driven by Kilo Code  
+- **Offloading CI-like tasks**, experiments, or batch updates  
+
+---
+
+## Limitations and Guidance
+
+- Each message can run for **up to 10 minutes**.  
+  Break large tasks into smaller steps; use a `plan.md` or `todo.md` file to keep scope clear.
+- **Context is not persistent across messages yet.**  
+  Kilo Code does not remember previous turns; persistent in-repo notes help keep it aligned.
+- **Auto/YOLO mode is always on.**  
+  The agent will modify code without prompting for confirmation.
+- **Saved sessions** in the sidebar are not yet shared between logins or restorable locally.
+- **MCP support is coming**, but **Docker-based MCP servers will *not* be supported**.
+
+---
+
+## Related Docs
+
+- [Kilo Integrations](./integrations.md)  
+- [Kilo Deploy](./deploy.md)
