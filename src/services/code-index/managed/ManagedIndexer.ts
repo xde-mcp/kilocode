@@ -352,6 +352,7 @@ export class ManagedIndexer implements vscode.Disposable {
 		this.workspaceFolderState = []
 
 		this.isActive = false
+		this.organization = null
 	}
 
 	/**

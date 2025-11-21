@@ -88,6 +88,7 @@ import { seeNewChanges } from "../checkpoints/kilocode/seeNewChanges" // kilocod
 import { getTaskHistory } from "../../shared/kilocode/getTaskHistory" // kilocode_change
 import { fetchAndRefreshOrganizationModesOnStartup, refreshOrganizationModes } from "./kiloWebviewMessgeHandlerHelpers"
 import { AutoPurgeScheduler } from "../../services/auto-purge" // kilocode_change
+import { ManagedIndexer } from "../../services/code-index/managed/ManagedIndexer"
 
 export const webviewMessageHandler = async (
 	provider: ClineProvider,
@@ -4000,7 +4001,7 @@ export const webviewMessageHandler = async (
 		// kilocode_change start - ManagedIndexer state
 		case "requestManagedIndexerState": {
 			try {
-				const state = provider.getManagedIndexerState()
+				const state = ManagedIndexer.getInstance()?.getWorkspaceFolderStateSnapshot() || []
 				await provider.postMessageToWebview({
 					type: "managedIndexerState",
 					managedIndexerState: state,
@@ -4015,6 +4016,22 @@ export const webviewMessageHandler = async (
 				})
 			}
 			break
+		}
+
+		// we're going to delete this message at some point and use apiConfiguration
+		// probably. So casting as any as to not define a more permanent type
+		case "requestManagedIndexerEnabled" as any: {
+			try {
+				const managedIndexerEnabled = (await ManagedIndexer.getInstance()?.isEnabled()) || false
+				await provider.postMessageToWebview({
+					type: "managedIndexerEnabled",
+					managedIndexerEnabled,
+				} as any)
+			} catch (error) {
+				provider.log(
+					`Error getting managed indexer state: ${error instanceof Error ? error.message : String(error)}`,
+				)
+			}
 		}
 		// kilocode_change end
 	}

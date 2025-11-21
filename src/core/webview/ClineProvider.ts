@@ -107,6 +107,7 @@ import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocod
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
 import { updateCodeIndexWithKiloProps } from "../../services/code-index/managed/webview" // kilocode_change
+import { ManagedIndexer } from "../../services/code-index/managed/ManagedIndexer"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
@@ -154,7 +155,6 @@ export class ClineProvider
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
-	private managedIndexer?: any // kilocode_change - Reference to ManagedIndexer
 
 	private recentTasksCache?: string[]
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
@@ -172,7 +172,6 @@ export class ClineProvider
 		private readonly renderContext: "sidebar" | "editor" = "sidebar",
 		public readonly contextProxy: ContextProxy,
 		mdmService?: MdmService,
-		managedIndexer?: any, // kilocode_change - Accept ManagedIndexer instance
 	) {
 		super()
 		this.currentWorkspacePath = getWorkspacePath()
@@ -180,7 +179,6 @@ export class ClineProvider
 		ClineProvider.activeInstances.add(this)
 
 		this.mdmService = mdmService
-		this.managedIndexer = managedIndexer // kilocode_change - Store ManagedIndexer reference
 		this.updateGlobalState("codebaseIndexModels", EMBEDDING_MODEL_PROFILES)
 
 		// Start configuration loading (which might trigger indexing) in the background.
@@ -3433,15 +3431,6 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 	public get cwd() {
 		return this.currentWorkspacePath || getWorkspacePath()
 	}
-
-	// kilocode_change start - ManagedIndexer state access
-	/**
-	 * Get the current state snapshot from the ManagedIndexer
-	 */
-	public getManagedIndexerState() {
-		return this.managedIndexer?.getWorkspaceFolderStateSnapshot() || []
-	}
-	// kilocode_change end
 
 	/**
 	 * Convert a file path to a webview-accessible URI
