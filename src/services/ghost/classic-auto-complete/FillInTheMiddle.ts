@@ -4,6 +4,14 @@ import { getTemplateForModel } from "../../continuedev/core/autocomplete/templat
 import { GhostModel } from "../GhostModel"
 import { FillInAtCursorSuggestion } from "./HoleFiller"
 
+export interface FimPrompt {
+	formattedPrefix: string
+	prunedSuffix: string
+	prefix: string
+	suffix: string
+	autocompleteInput: AutocompleteInput
+}
+
 export interface FimCompletionResult {
 	suggestion: FillInAtCursorSuggestion
 	cost: number
@@ -15,6 +23,26 @@ export interface FimCompletionResult {
 
 export class FimPromptBuilder {
 	constructor(private contextProvider: GhostContextProvider) {}
+
+	/**
+	 * Build complete FIM prompt with all necessary data
+	 */
+	async buildPrompt(
+		autocompleteInput: AutocompleteInput,
+		modelName: string,
+		prefix: string,
+		suffix: string,
+	): Promise<FimPrompt> {
+		const fimPrompts = await this.getFimPrompts(autocompleteInput, modelName)
+
+		return {
+			formattedPrefix: fimPrompts.formattedPrefix,
+			prunedSuffix: fimPrompts.prunedSuffix,
+			prefix,
+			suffix,
+			autocompleteInput,
+		}
+	}
 
 	/**
 	 * Build FIM (Fill-In-the-Middle) prompts with formatted prefix and pruned suffix

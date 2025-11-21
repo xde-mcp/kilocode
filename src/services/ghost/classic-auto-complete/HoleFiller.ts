@@ -4,6 +4,14 @@ import { formatSnippets } from "../../continuedev/core/autocomplete/templating/f
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 
+export interface HoleFillerPrompt {
+	systemPrompt: string
+	userPrompt: string
+	prefix: string
+	suffix: string
+	autocompleteInput: AutocompleteInput
+}
+
 export interface FillInAtCursorSuggestion {
 	text: string
 	prefix: string
@@ -57,6 +65,23 @@ export class HoleFiller {
 		return {
 			systemPrompt: this.getSystemInstructions(),
 			userPrompt: await this.getUserPrompt(autocompleteInput, languageId),
+		}
+	}
+
+	async buildPrompt(
+		autocompleteInput: AutocompleteInput,
+		languageId: string,
+		prefix: string,
+		suffix: string,
+	): Promise<HoleFillerPrompt> {
+		const { systemPrompt, userPrompt } = await this.getPrompts(autocompleteInput, languageId)
+
+		return {
+			systemPrompt,
+			userPrompt,
+			prefix,
+			suffix,
+			autocompleteInput,
 		}
 	}
 
