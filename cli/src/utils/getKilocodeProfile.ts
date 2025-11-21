@@ -1,4 +1,4 @@
-import { getKiloUrlFromToken } from "@roo-code/types"
+import { getApiUrl } from "@roo-code/types"
 
 /**
  * Organization data from Kilocode API
@@ -32,7 +32,7 @@ export const INVALID_TOKEN_ERROR = "INVALID_TOKEN"
  */
 export async function getKilocodeProfile(kilocodeToken: string): Promise<KilocodeProfileData> {
 	try {
-		const url = getKiloUrlFromToken("https://api.kilocode.ai/api/profile", kilocodeToken)
+		const url = getApiUrl("/api/profile")
 
 		const response = await fetch(url, {
 			headers: {

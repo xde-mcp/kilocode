@@ -1,5 +1,4 @@
-import { openRouterDefaultModelId } from "@roo-code/types"
-import { getKiloUrlFromToken } from "@roo-code/types"
+import { openRouterDefaultModelId, getApiUrl } from "@roo-code/types"
 import { z } from "zod"
 import { logs } from "../services/logs.js"
 
@@ -47,8 +46,8 @@ export async function getKilocodeDefaultModel(
 	organizationId?: OrganizationId,
 ): Promise<string> {
 	try {
-		const path = organizationId ? `/organizations/${organizationId}/defaults` : `/defaults`
-		const url = getKiloUrlFromToken(`https://api.kilocode.ai/api${path}`, kilocodeToken)
+		const path = organizationId ? `/api/organizations/${organizationId}/defaults` : `/api/defaults`
+		const url = getApiUrl(path)
 
 		const headers: Record<string, string> = {
 			...DEFAULT_HEADERS,
