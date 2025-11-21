@@ -64,6 +64,7 @@ const sidebars: SidebarsConfig = {
 								"providers/groq",
 								"providers/human-relay",
 								"providers/lmstudio",
+								"providers/minimax",
 								"providers/mistral",
 								"providers/ollama",
 								"providers/openai",
@@ -126,6 +127,7 @@ const sidebars: SidebarsConfig = {
 					items: [
 						"advanced-usage/custom-rules",
 						"advanced-usage/custom-instructions",
+						"advanced-usage/migrating-from-cursor-windsurf",
 						"features/slash-commands/workflows",
 					],
 				},
@@ -152,6 +154,7 @@ const sidebars: SidebarsConfig = {
 				"features/auto-launch-configuration",
 				"advanced-usage/auto-cleanup",
 				"advanced-usage/cloud-agent",
+				"advanced-usage/deploy",
 				"features/experimental/experimental-features",
 			],
 		},
