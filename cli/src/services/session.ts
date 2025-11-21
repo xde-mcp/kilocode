@@ -35,6 +35,7 @@ export class SessionService {
 
 	private paths = { ...defaultPaths }
 	private _sessionId: string | null = null
+	private workspaceDir: string | null = null
 
 	get sessionId() {
 		return this._sessionId
@@ -317,7 +318,16 @@ export class SessionService {
 		this.lastSaveEvent = crypto.randomUUID()
 	}
 
-	async setSharedState(sharedState: CliSessionSharedState, cwd: string): Promise<SetSharedStateOutput> {
+	/**
+	 * Set the workspace directory for git operations.
+	 * This should be called when the extension knows the workspace path,
+	 * particularly important for parallel mode (git worktrees) compatibility.
+	 */
+	setWorkspaceDirectory(dir: string): void {
+		this.workspaceDir = dir
+	}
+
+	async setSharedState(sharedState: CliSessionSharedState): Promise<SetSharedStateOutput> {
 		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
@@ -332,6 +342,8 @@ export class SessionService {
 			})
 		}
 
+		// Use stored workspace directory, fallback to process.cwd() if not set
+		const cwd = this.workspaceDir || process.cwd()
 		const git = simpleGit(cwd)
 
 		const remotes = await git.getRemotes(true)

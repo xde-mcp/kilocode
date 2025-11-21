@@ -133,6 +133,11 @@ export class CLI {
 				const sessionService = SessionService.init(this.service, this.store)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
+				// Set workspace directory for git operations (important for parallel mode/worktrees)
+				const workspace = this.options.workspace || process.cwd()
+				sessionService.setWorkspaceDirectory(workspace)
+				logs.debug("SessionService workspace directory set", "CLI", { workspace })
+
 				if (this.options.session) {
 					await sessionService.restoreSession(this.options.session)
 				}

@@ -1062,9 +1062,7 @@ describe("SessionService", () => {
 		})
 
 		it("should throw error when no active session", async () => {
-			await expect(service.setSharedState(CliSessionSharedState.Private, "/test/path")).rejects.toThrow(
-				"No active session",
-			)
+			await expect(service.setSharedState(CliSessionSharedState.Private)).rejects.toThrow("No active session")
 		})
 
 		it("should set session to private", async () => {
@@ -1087,7 +1085,7 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
-			const result = await service.setSharedState(CliSessionSharedState.Private, "/test/path")
+			const result = await service.setSharedState(CliSessionSharedState.Private)
 
 			expect(mockSetSharedState).toHaveBeenCalledWith({
 				sessionId: "test-session-id",
@@ -1142,7 +1140,10 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
-			const result = await service.setSharedState(CliSessionSharedState.Public, "/test/repo")
+			// Set workspace directory before calling setSharedState
+			service.setWorkspaceDirectory("/test/repo")
+
+			const result = await service.setSharedState(CliSessionSharedState.Public)
 
 			expect(mockGit.getRemotes).toHaveBeenCalledWith(true)
 			expect(mockGit.revparse).toHaveBeenCalledWith(["HEAD"])
@@ -1186,7 +1187,9 @@ describe("SessionService", () => {
 			const simpleGit = (await import("simple-git")).default
 			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
 
-			await expect(service.setSharedState(CliSessionSharedState.Public, "/test/path")).rejects.toThrow(
+			service.setWorkspaceDirectory("/test/path")
+
+			await expect(service.setSharedState(CliSessionSharedState.Public)).rejects.toThrow(
 				"Not in a git repository or no remote configured",
 			)
 		})
@@ -1228,7 +1231,9 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
-			await service.setSharedState(CliSessionSharedState.Public, "/test/repo")
+			service.setWorkspaceDirectory("/test/repo")
+
+			await service.setSharedState(CliSessionSharedState.Public)
 
 			expect(mockSetSharedState).toHaveBeenCalledWith({
 				sessionId: "test-session-id",
