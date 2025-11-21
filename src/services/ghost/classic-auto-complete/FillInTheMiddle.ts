@@ -10,6 +10,13 @@ export interface FimPrompt {
 	autocompleteInput: AutocompleteInput
 }
 
+export interface FimGhostPrompt {
+	strategy: "fim"
+	autocompleteInput: AutocompleteInput
+	formattedPrefix: string
+	prunedSuffix: string
+}
+
 export interface FimCompletionResult {
 	suggestion: FillInAtCursorSuggestion
 	cost: number

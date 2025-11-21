@@ -10,6 +10,15 @@ export interface HoleFillerPrompt {
 	autocompleteInput: AutocompleteInput
 }
 
+export interface HoleFillerGhostPrompt {
+	strategy: "hole_filler"
+	prefix: string
+	suffix: string
+	autocompleteInput: AutocompleteInput
+	systemPrompt: string
+	userPrompt: string
+}
+
 export interface FillInAtCursorSuggestion {
 	text: string
 	prefix: string

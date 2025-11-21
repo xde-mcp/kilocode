@@ -1,8 +1,14 @@
 import * as vscode from "vscode"
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, AutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
-import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion, HoleFillerPrompt } from "./HoleFiller"
-import { FimPromptBuilder, FimPrompt } from "./FillInTheMiddle"
+import {
+	parseGhostResponse,
+	HoleFiller,
+	FillInAtCursorSuggestion,
+	HoleFillerPrompt,
+	HoleFillerGhostPrompt,
+} from "./HoleFiller"
+import { FimPromptBuilder, FimPrompt, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
@@ -22,19 +28,7 @@ export type CostTrackingCallback = (
 	cacheReadTokens: number,
 ) => void
 
-export type CompletionStrategy = "fim" | "hole_filler"
-
-export interface GhostPrompt {
-	strategy: CompletionStrategy
-	systemPrompt: string
-	userPrompt: string
-	prefix: string
-	suffix: string
-	autocompleteInput: AutocompleteInput
-	// FIM-specific fields
-	formattedPrefix?: string
-	prunedSuffix?: string
-}
+export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix
@@ -177,10 +171,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const fimPrompt = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
 			return {
 				strategy: "fim",
-				systemPrompt: "",
-				userPrompt: "",
-				prefix,
-				suffix,
 				autocompleteInput: fimPrompt.autocompleteInput,
 				formattedPrefix: fimPrompt.formattedPrefix,
 				prunedSuffix: fimPrompt.prunedSuffix,
@@ -189,11 +179,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const holeFillerPrompt = await this.holeFiller.getPrompts(autocompleteInput, languageId)
 			return {
 				strategy: "hole_filler",
-				systemPrompt: holeFillerPrompt.systemPrompt,
-				userPrompt: holeFillerPrompt.userPrompt,
 				prefix,
 				suffix,
 				autocompleteInput: holeFillerPrompt.autocompleteInput,
+				systemPrompt: holeFillerPrompt.systemPrompt,
+				userPrompt: holeFillerPrompt.userPrompt,
 			}
 		}
 	}
@@ -330,8 +320,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				prompt.strategy === "fim"
 					? await this.fimPromptBuilder.getFromFIM(
 							this.model,
-							prompt.formattedPrefix!,
-							prompt.prunedSuffix!,
+							prompt.formattedPrefix,
+							prompt.prunedSuffix,
 							prompt.autocompleteInput,
 							this.processSuggestion.bind(this),
 						)
