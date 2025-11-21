@@ -4,12 +4,6 @@ import { formatSnippets } from "../../continuedev/core/autocomplete/templating/f
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 
-export interface HoleFillerPrompt {
-	systemPrompt: string
-	userPrompt: string
-	autocompleteInput: AutocompleteInput
-}
-
 export interface HoleFillerGhostPrompt {
 	strategy: "hole_filler"
 	prefix: string
@@ -62,8 +56,16 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 export class HoleFiller {
 	constructor(private contextProvider: GhostContextProvider) {}
 
-	async getPrompts(autocompleteInput: AutocompleteInput, languageId: string): Promise<HoleFillerPrompt> {
+	async getPrompts(
+		autocompleteInput: AutocompleteInput,
+		languageId: string,
+		prefix: string,
+		suffix: string,
+	): Promise<HoleFillerGhostPrompt> {
 		return {
+			strategy: "hole_filler",
+			prefix,
+			suffix,
 			systemPrompt: this.getSystemInstructions(),
 			userPrompt: await this.getUserPrompt(autocompleteInput, languageId),
 			autocompleteInput,

@@ -4,12 +4,6 @@ import { getTemplateForModel } from "../../continuedev/core/autocomplete/templat
 import { GhostModel } from "../GhostModel"
 import { FillInAtCursorSuggestion } from "./HoleFiller"
 
-export interface FimPrompt {
-	formattedPrefix: string
-	prunedSuffix: string
-	autocompleteInput: AutocompleteInput
-}
-
 export interface FimGhostPrompt {
 	strategy: "fim"
 	autocompleteInput: AutocompleteInput
@@ -32,7 +26,7 @@ export class FimPromptBuilder {
 	/**
 	 * Build complete FIM prompt with all necessary data
 	 */
-	async getFimPrompts(autocompleteInput: AutocompleteInput, modelName: string): Promise<FimPrompt> {
+	async getFimPrompts(autocompleteInput: AutocompleteInput, modelName: string): Promise<FimGhostPrompt> {
 		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
 			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
 
@@ -56,6 +50,7 @@ export class FimPromptBuilder {
 		}
 
 		return {
+			strategy: "fim",
 			formattedPrefix,
 			prunedSuffix,
 			autocompleteInput,

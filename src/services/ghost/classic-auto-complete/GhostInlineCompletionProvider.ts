@@ -1,14 +1,8 @@
 import * as vscode from "vscode"
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, AutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
-import {
-	parseGhostResponse,
-	HoleFiller,
-	FillInAtCursorSuggestion,
-	HoleFillerPrompt,
-	HoleFillerGhostPrompt,
-} from "./HoleFiller"
-import { FimPromptBuilder, FimPrompt, FimGhostPrompt } from "./FillInTheMiddle"
+import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
+import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
@@ -168,23 +162,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// Determine strategy based on model capabilities and call only the appropriate prompt builder
 		if (this.model.supportsFim()) {
 			const modelName = this.model.getModelName() ?? "codestral"
-			const fimPrompt = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
-			return {
-				strategy: "fim",
-				autocompleteInput: fimPrompt.autocompleteInput,
-				formattedPrefix: fimPrompt.formattedPrefix,
-				prunedSuffix: fimPrompt.prunedSuffix,
-			}
+			return await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
 		} else {
-			const holeFillerPrompt = await this.holeFiller.getPrompts(autocompleteInput, languageId)
-			return {
-				strategy: "hole_filler",
-				prefix,
-				suffix,
-				autocompleteInput: holeFillerPrompt.autocompleteInput,
-				systemPrompt: holeFillerPrompt.systemPrompt,
-				userPrompt: holeFillerPrompt.userPrompt,
-			}
+			return await this.holeFiller.getPrompts(autocompleteInput, languageId, prefix, suffix)
 		}
 	}
 
