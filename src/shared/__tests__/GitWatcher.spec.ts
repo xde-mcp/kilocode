@@ -263,6 +263,7 @@ describe("GitWatcher", () => {
 
 		it("should dispose all file system watchers", async () => {
 			const mockClose = vi.fn()
+			// Mock fs.watch to return a new watcher each time
 			vi.mocked(fs.watch).mockReturnValue({
 				close: mockClose,
 			} as any)
@@ -272,8 +273,10 @@ describe("GitWatcher", () => {
 			await watcher.start()
 			watcher.dispose()
 
-			// Should have disposed watchers (HEAD, refs, packed-refs)
-			expect(mockClose).toHaveBeenCalledTimes(3)
+			// Should have disposed watchers
+			// Note: GitWatcher uses fs.watchFile for HEAD and packed-refs (via unwatchFile)
+			// and fs.watch for refs directory, so we expect 1 call to close (for refs watcher)
+			expect(mockClose).toHaveBeenCalledTimes(1)
 		})
 	})
 
