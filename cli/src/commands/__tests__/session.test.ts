@@ -107,7 +107,7 @@ describe("sessionCommand", () => {
 
 		it("should have subcommand argument defined", () => {
 			expect(sessionCommand.arguments).toBeDefined()
-			expect(sessionCommand.arguments).toHaveLength(3)
+			expect(sessionCommand.arguments).toHaveLength(2)
 			expect(sessionCommand.arguments![0].name).toBe("subcommand")
 			expect(sessionCommand.arguments![0].required).toBe(false)
 		})
@@ -119,21 +119,18 @@ describe("sessionCommand", () => {
 			expect(subcommandArg.values!.map((v) => v.value)).toEqual(["show", "list", "select", "share"])
 		})
 
-		it("should have state argument with all enum values", () => {
-			const stateArg = sessionCommand.arguments![2]
-			expect(stateArg.name).toBe("state")
-			expect(stateArg.required).toBe(false)
-			expect(stateArg.values).toBeDefined()
-			const enumValues = Object.values(CliSessionSharedState)
-			expect(stateArg.values).toHaveLength(enumValues.length)
-			expect(stateArg.values!.map((v) => v.value)).toEqual(enumValues)
-		})
+		it("should have argument with conditional providers", () => {
+			const argumentArg = sessionCommand.arguments![1]
+			expect(argumentArg.name).toBe("argument")
+			expect(argumentArg.required).toBe(false)
+			expect(argumentArg.conditionalProviders).toBeDefined()
+			expect(argumentArg.conditionalProviders).toHaveLength(2)
 
-		it("should have sessionId argument with autocomplete provider", () => {
-			const sessionIdArg = sessionCommand.arguments![1]
-			expect(sessionIdArg.name).toBe("sessionId")
-			expect(sessionIdArg.required).toBe(false)
-			expect(sessionIdArg.provider).toBeDefined()
+			// Check both conditional providers exist
+			expect(argumentArg.conditionalProviders![0].condition).toBeDefined()
+			expect(argumentArg.conditionalProviders![0].provider).toBeDefined()
+			expect(argumentArg.conditionalProviders![1].condition).toBeDefined()
+			expect(argumentArg.conditionalProviders![1].provider).toBeDefined()
 		})
 	})
 
@@ -549,23 +546,138 @@ describe("sessionCommand", () => {
 		})
 	})
 
-	describe("sessionIdAutocompleteProvider", () => {
+	describe("stateAutocompleteProvider", () => {
 		// Helper to create minimal ArgumentProviderContext for testing
-		const createProviderContext = (partialInput: string): ArgumentProviderContext => ({
+		const createProviderContext = (partialInput: string, subcommand?: string): ArgumentProviderContext => ({
 			commandName: "session",
 			argumentIndex: 1,
-			argumentName: "sessionId",
+			argumentName: "argument",
 			currentArgs: [],
 			currentOptions: {},
 			partialInput,
-			getArgument: () => undefined,
+			getArgument: (name: string) => (name === "subcommand" ? subcommand : undefined),
 			parsedValues: { args: {}, options: {} },
 			command: sessionCommand,
 		})
 
+		it("should run provider when subcommand is 'share'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("", "share")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(true)
+		})
+
+		it("should NOT run provider when subcommand is 'select'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("", "select")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(false)
+		})
+
+		it("should NOT run provider when subcommand is 'list'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("", "list")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(false)
+		})
+
+		it("should return all valid share states", async () => {
+			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
+			const context = createProviderContext("", "share")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			const enumValues = Object.values(CliSessionSharedState)
+			expect(result).toHaveLength(enumValues.length)
+			expect(result.map((r) => r.value)).toEqual(enumValues)
+		})
+
+		it("should return suggestions with correct format", async () => {
+			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
+			const context = createProviderContext("", "share")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			expect(result.length).toBeGreaterThan(0)
+			result.forEach((suggestion) => {
+				expect(suggestion).toHaveProperty("value")
+				expect(suggestion).toHaveProperty("description")
+				expect(suggestion).toHaveProperty("matchScore", 100)
+				expect(suggestion).toHaveProperty("highlightedValue")
+				expect(suggestion.description).toContain("Make session")
+				expect(suggestion.description).toContain(suggestion.value)
+			})
+		})
+
+		it("should include 'private' state", async () => {
+			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
+			const context = createProviderContext("", "share")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			const privateState = result.find((r) => r.value === CliSessionSharedState.Private)
+			expect(privateState).toBeDefined()
+			expect(privateState?.description).toContain("Make session private")
+		})
+
+		it("should include 'public' state", async () => {
+			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
+			const context = createProviderContext("", "share")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			const publicState = result.find((r) => r.value === CliSessionSharedState.Public)
+			expect(publicState).toBeDefined()
+			expect(publicState?.description).toContain("Make session public")
+		})
+	})
+
+	describe("sessionIdAutocompleteProvider", () => {
+		// Helper to create minimal ArgumentProviderContext for testing
+		const createProviderContext = (partialInput: string, subcommand?: string): ArgumentProviderContext => ({
+			commandName: "session",
+			argumentIndex: 1,
+			argumentName: "argument",
+			currentArgs: [],
+			currentOptions: {},
+			partialInput,
+			getArgument: (name: string) => (name === "subcommand" ? subcommand : undefined),
+			parsedValues: { args: {}, options: {} },
+			command: sessionCommand,
+		})
+
+		it("should NOT run provider when subcommand is 'share'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![0]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("test", "share")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(false)
+		})
+
+		it("should run provider when subcommand is 'select'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![0]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("test", "select")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(true)
+		})
+
 		it("should return empty array for empty prefix", async () => {
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("", "select")
 
 			const result = await provider(context)
 
@@ -574,8 +686,8 @@ describe("sessionCommand", () => {
 		})
 
 		it("should return empty array for whitespace-only prefix", async () => {
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("   ")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("   ", "select")
 
 			const result = await provider(context)
 
@@ -606,8 +718,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("abc")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("abc", "select")
 
 			const result = await provider(context)
 
@@ -632,8 +744,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("test")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("test", "select")
 
 			const result = (await provider(context)) as ArgumentSuggestion[]
 
@@ -664,8 +776,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("untitled")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("untitled", "select")
 
 			const result = (await provider(context)) as ArgumentSuggestion[]
 
@@ -701,8 +813,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("session")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("session", "select")
 
 			const result = (await provider(context)) as ArgumentSuggestion[]
 
@@ -715,8 +827,8 @@ describe("sessionCommand", () => {
 		it("should handle errors gracefully", async () => {
 			mockSessionClient.search = vi.fn().mockRejectedValue(new Error("Network error"))
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("test")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("test", "select")
 
 			const result = await provider(context)
 
@@ -731,8 +843,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("nonexistent")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("nonexistent", "select")
 
 			const result = await provider(context)
 
@@ -747,8 +859,8 @@ describe("sessionCommand", () => {
 				offset: 0,
 			})
 
-			const provider = sessionCommand.arguments![1].provider!
-			const context = createProviderContext("test")
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("test", "select")
 
 			await provider(context)
 

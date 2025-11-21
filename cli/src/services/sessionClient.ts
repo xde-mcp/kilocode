@@ -72,25 +72,18 @@ export interface SearchSessionOutput {
 
 // Shared state enum
 export enum CliSessionSharedState {
-	Private = "private",
 	Public = "public",
 }
 
-// Discriminated union for set shared state input
-export type SetSharedStateInput =
-	| {
-			sessionId: string
-			sharedState: CliSessionSharedState.Private
-	  }
-	| {
-			sessionId: string
-			sharedState: CliSessionSharedState.Public
-			gitState: {
-				repoUrl: string
-				head: string
-				patch: string
-			}
-	  }
+export type SetSharedStateInput = {
+	sessionId: string
+	sharedState: CliSessionSharedState
+	gitState: {
+		repoUrl: string
+		head: string
+		patch: string
+	}
+}
 
 export interface SetSharedStateOutput {
 	success: boolean

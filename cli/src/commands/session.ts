@@ -185,19 +185,11 @@ async function shareSession(context: CommandContext): Promise<void> {
 		const result = await sessionService.setSharedState(stateArg)
 		const sessionId = result.session.session_id
 
-		if (stateArg === CliSessionSharedState.Private) {
-			addMessage({
-				...generateMessage(),
-				type: "system",
-				content: "Session set to private",
-			})
-		} else {
-			addMessage({
-				...generateMessage(),
-				type: "system",
-				content: `Session shared at: https://kilo.ai/session/${sessionId}`,
-			})
-		}
+		addMessage({
+			...generateMessage(),
+			type: "system",
+			content: `Session shared at: https://kilo.ai/session/${sessionId}`,
+		})
 	} catch (error) {
 		addMessage({
 			...generateMessage(),
@@ -259,23 +251,29 @@ export const sessionCommand: Command = {
 				{ value: "show", description: "Display current session ID" },
 				{ value: "list", description: "List all sessions" },
 				{ value: "select", description: "Restore a session" },
-				{ value: "share", description: "Share session (public/private)" },
+				{ value: "share", description: "Share session" },
 			],
 		},
 		{
-			name: "sessionId",
-			description: "Session ID to restore (for 'select' subcommand)",
+			name: "argument",
+			description: "Argument for the subcommand",
 			required: false,
-			provider: sessionIdAutocompleteProvider,
-		},
-		{
-			name: "state",
-			description: "Share state: private or public (default: public)",
-			required: false,
-			values: getValidShareStates().map((value) => ({
-				value,
-				description: `Make session ${value}`,
-			})),
+			conditionalProviders: [
+				{
+					condition: (context) => context.getArgument("subcommand") === "select",
+					provider: sessionIdAutocompleteProvider,
+				},
+				{
+					condition: (context) => context.getArgument("subcommand") === "share",
+					provider: async () =>
+						getValidShareStates().map((value) => ({
+							value,
+							description: `Make session ${value}`,
+							matchScore: 100,
+							highlightedValue: value,
+						})),
+				},
+			],
 		},
 	],
 	handler: async (context) => {
