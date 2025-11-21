@@ -4,6 +4,13 @@ import { formatSnippets } from "../../continuedev/core/autocomplete/templating/f
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
 
+export interface HoleFillerGhostPrompt {
+	strategy: "hole_filler"
+	autocompleteInput: AutocompleteInput
+	systemPrompt: string
+	userPrompt: string
+}
+
 export interface FillInAtCursorSuggestion {
 	text: string
 	prefix: string
@@ -47,16 +54,12 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 export class HoleFiller {
 	constructor(private contextProvider: GhostContextProvider) {}
 
-	async getPrompts(
-		autocompleteInput: AutocompleteInput,
-		languageId: string,
-	): Promise<{
-		systemPrompt: string
-		userPrompt: string
-	}> {
+	async getPrompts(autocompleteInput: AutocompleteInput, languageId: string): Promise<HoleFillerGhostPrompt> {
 		return {
+			strategy: "hole_filler",
 			systemPrompt: this.getSystemInstructions(),
 			userPrompt: await this.getUserPrompt(autocompleteInput, languageId),
+			autocompleteInput,
 		}
 	}
 
@@ -186,18 +189,11 @@ Return the COMPLETION tags`
 	 * Execute chat-based completion using the model
 	 */
 	async getFromChat(
-		systemPrompt: string,
-		userPrompt: string,
-		prefix: string,
-		suffix: string,
 		model: GhostModel,
-		processSuggestion: (
-			text: string,
-			prefix: string,
-			suffix: string,
-			model: GhostModel,
-		) => FillInAtCursorSuggestion,
+		prompt: HoleFillerGhostPrompt,
+		processSuggestion: (text: string) => FillInAtCursorSuggestion,
 	): Promise<ChatCompletionResult> {
+		const { systemPrompt, userPrompt } = prompt
 		let response = ""
 
 		const onChunk = (chunk: ApiStreamChunk) => {
@@ -212,8 +208,11 @@ Return the COMPLETION tags`
 
 		console.log("response", response)
 
-		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
-		const fillInAtCursorSuggestion = processSuggestion(parsedSuggestion.text, prefix, suffix, model)
+		// Extract just the text from the response - prefix/suffix are handled by the caller
+		const completionMatch = response.match(/<COMPLETION>([\s\S]*?)<\/COMPLETION>/i)
+		const suggestionText = completionMatch ? (completionMatch[1] || "").replace(/<\/?COMPLETION>/gi, "") : ""
+
+		const fillInAtCursorSuggestion = processSuggestion(suggestionText)
 
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
