@@ -12,6 +12,7 @@ export interface SessionWithSignedUrls extends Session {
 	api_conversation_history_blob_url: string | null
 	task_metadata_blob_url: string | null
 	ui_messages_blob_url: string | null
+	git_state_blob_url: string | null
 }
 
 export interface GetSessionInput {
@@ -26,6 +27,7 @@ export interface CreateSessionInput {
 	api_conversation_history?: unknown
 	task_metadata?: unknown
 	ui_messages?: unknown
+	git_state?: unknown
 }
 
 export type CreateSessionOutput = Session
@@ -36,6 +38,7 @@ export interface UpdateSessionInput {
 	api_conversation_history?: unknown
 	task_metadata?: unknown
 	ui_messages?: unknown
+	git_state?: unknown
 }
 
 export interface UpdateSessionOutput {
@@ -66,6 +69,40 @@ export interface SearchSessionOutput {
 	limit: number
 	offset: number
 }
+
+// Shared state enum
+export enum CliSessionSharedState {
+	Private = "Private",
+	Public = "Public",
+}
+
+// Discriminated union for set shared state input
+export type SetSharedStateInput =
+	| {
+			sessionId: string
+			sharedState: "Private"
+	  }
+	| {
+			sessionId: string
+			sharedState: "Public"
+			gitState: {
+				repoUrl: string
+				head: string
+				patch: string
+			}
+	  }
+
+export interface SetSharedStateOutput {
+	id: string
+	shared_state: string
+	updated_at: string
+}
+
+export interface ForkSessionInput {
+	sessionId: string
+}
+
+export type ForkSessionOutput = SessionWithSignedUrls
 
 export class SessionClient {
 	private static instance: SessionClient | null = null
@@ -140,6 +177,32 @@ export class SessionClient {
 		const response = await client.request<SearchSessionInput, TrpcResponse<SearchSessionOutput>>(
 			"cliSessions.search",
 			"GET",
+			input,
+		)
+		return response.result.data
+	}
+
+	/**
+	 * Set session sharing state
+	 */
+	async setSharedState(input: SetSharedStateInput): Promise<SetSharedStateOutput> {
+		const client = TrpcClient.init()
+		const response = await client.request<SetSharedStateInput, TrpcResponse<SetSharedStateOutput>>(
+			"cliSessions.setSharedState",
+			"POST",
+			input,
+		)
+		return response.result.data
+	}
+
+	/**
+	 * Fork an existing session
+	 */
+	async fork(input: ForkSessionInput): Promise<ForkSessionOutput> {
+		const client = TrpcClient.init()
+		const response = await client.request<ForkSessionInput, TrpcResponse<ForkSessionOutput>>(
+			"cliSessions.fork",
+			"POST",
 			input,
 		)
 		return response.result.data
