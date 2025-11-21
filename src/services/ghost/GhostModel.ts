@@ -192,6 +192,10 @@ export class GhostModel {
 		}
 	}
 
+	public getRolloutHash_IfLoggedInToKilo(): number | undefined {
+		return this.apiHandler instanceof KilocodeOpenrouterHandler ? this.apiHandler.getRolloutHash() : undefined
+	}
+
 	public hasValidCredentials(): boolean {
 		return this.apiHandler !== null && this.loaded
 	}
