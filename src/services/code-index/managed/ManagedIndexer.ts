@@ -688,7 +688,7 @@ export class ManagedIndexer implements vscode.Disposable {
 		}))
 	}
 
-	public async searchManagedIndex(query: string, directoryPrefix?: string): Promise<VectorStoreSearchResult[]> {
+	public async search(query: string, directoryPrefix?: string): Promise<VectorStoreSearchResult[]> {
 		const { kilocodeOrganizationId, kilocodeToken } = this.config ?? {}
 
 		if (!kilocodeOrganizationId || !kilocodeToken) {

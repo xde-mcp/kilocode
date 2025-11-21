@@ -325,7 +325,7 @@ export class CodeIndexManager {
 	public async searchIndex(query: string, directoryPrefix?: string): Promise<VectorStoreSearchResult[]> {
 		// kilocode_change start - proxy out to managed indexing if available
 		if (await this.managedIndexer.isEnabled()) {
-			return await this.managedIndexer.searchManagedIndex(query, directoryPrefix)
+			return await this.managedIndexer.search(query, directoryPrefix)
 		}
 		// kilocode_change start - proxy out to managed indexing if available
 
