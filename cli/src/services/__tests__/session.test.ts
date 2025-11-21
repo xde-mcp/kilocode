@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { SessionService } from "../session.js"
-import { SessionClient } from "../sessionClient.js"
+import { SessionClient, CliSessionSharedState } from "../sessionClient.js"
 import type { ExtensionService } from "../extension.js"
 import type { ClineMessage } from "@roo-code/types"
 import { createStore } from "jotai"
 import { sessionIdAtom } from "../../state/atoms/session.js"
+import type { SimpleGit } from "simple-git"
 
 // Mock fs module
 vi.mock("fs", () => ({
@@ -1049,6 +1050,195 @@ describe("SessionService", () => {
 					sessionId: "session-with-logs",
 				}),
 			)
+		})
+	})
+
+	describe("setSharedState", () => {
+		let mockSetSharedState: ReturnType<typeof vi.fn>
+
+		beforeEach(() => {
+			mockSetSharedState = vi.fn()
+			mockSessionClient.setSharedState = mockSetSharedState
+		})
+
+		it("should throw error when no active session", async () => {
+			await expect(service.setSharedState(CliSessionSharedState.Private, "/test/path")).rejects.toThrow(
+				"No active session",
+			)
+		})
+
+		it("should set session to private", async () => {
+			// Create a session first
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+			mockCreate.mockResolvedValueOnce({
+				id: "test-session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+			await vi.advanceTimersByTimeAsync(1000)
+
+			mockSetSharedState.mockResolvedValueOnce({
+				id: "test-session-id",
+				shared_state: "private",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			const result = await service.setSharedState(CliSessionSharedState.Private, "/test/path")
+
+			expect(mockSetSharedState).toHaveBeenCalledWith({
+				sessionId: "test-session-id",
+				sharedState: "private",
+			})
+			expect(result).toEqual({
+				id: "test-session-id",
+				shared_state: "private",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+		})
+
+		it("should set session to public with git state", async () => {
+			// Create a session first
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+			mockCreate.mockResolvedValueOnce({
+				id: "test-session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+			await vi.advanceTimersByTimeAsync(1000)
+
+			// Mock simple-git
+			const mockGit = {
+				getRemotes: vi.fn().mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "https://github.com/user/repo.git",
+						},
+					},
+				]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				diff: vi.fn().mockResolvedValue("diff content"),
+			}
+
+			vi.mock("simple-git", () => ({
+				default: vi.fn(() => mockGit),
+			}))
+
+			const simpleGit = (await import("simple-git")).default
+			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
+
+			mockSetSharedState.mockResolvedValueOnce({
+				id: "test-session-id",
+				shared_state: "public",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			const result = await service.setSharedState(CliSessionSharedState.Public, "/test/repo")
+
+			expect(mockGit.getRemotes).toHaveBeenCalledWith(true)
+			expect(mockGit.revparse).toHaveBeenCalledWith(["HEAD"])
+			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
+
+			expect(mockSetSharedState).toHaveBeenCalledWith({
+				sessionId: "test-session-id",
+				sharedState: "public",
+				gitState: {
+					repoUrl: "https://github.com/user/repo.git",
+					head: "abc123def456",
+					patch: "diff content",
+				},
+			})
+			expect(result).toEqual({
+				id: "test-session-id",
+				shared_state: "public",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+		})
+
+		it("should throw error when not in git repository", async () => {
+			// Create a session first
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+			mockCreate.mockResolvedValueOnce({
+				id: "test-session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+			await vi.advanceTimersByTimeAsync(1000)
+
+			// Mock simple-git with no remotes
+			const mockGit = {
+				getRemotes: vi.fn().mockResolvedValue([]),
+			}
+
+			const simpleGit = (await import("simple-git")).default
+			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
+
+			await expect(service.setSharedState(CliSessionSharedState.Public, "/test/path")).rejects.toThrow(
+				"Not in a git repository or no remote configured",
+			)
+		})
+
+		it("should use push URL when fetch URL not available", async () => {
+			// Create a session first
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+			mockCreate.mockResolvedValueOnce({
+				id: "test-session-id",
+				title: "",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+			await vi.advanceTimersByTimeAsync(1000)
+
+			// Mock simple-git with only push URL
+			const mockGit = {
+				getRemotes: vi.fn().mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							push: "https://github.com/user/repo.git",
+						},
+					},
+				]),
+				revparse: vi.fn().mockResolvedValue("abc123"),
+				diff: vi.fn().mockResolvedValue(""),
+			}
+
+			const simpleGit = (await import("simple-git")).default
+			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
+
+			mockSetSharedState.mockResolvedValueOnce({
+				id: "test-session-id",
+				shared_state: "public",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			await service.setSharedState(CliSessionSharedState.Public, "/test/repo")
+
+			expect(mockSetSharedState).toHaveBeenCalledWith({
+				sessionId: "test-session-id",
+				sharedState: "public",
+				gitState: {
+					repoUrl: "https://github.com/user/repo.git",
+					head: "abc123",
+					patch: "",
+				},
+			})
 		})
 	})
 

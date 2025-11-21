@@ -5,7 +5,21 @@
 import { generateMessage } from "../ui/utils/messages.js"
 import type { Command, CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "./core/types.js"
 import { SessionService } from "../services/session.js"
-import { SessionClient } from "../services/sessionClient.js"
+import { SessionClient, CliSessionSharedState } from "../services/sessionClient.js"
+
+/**
+ * Get all valid share state values from the enum
+ */
+function getValidShareStates(): string[] {
+	return Object.values(CliSessionSharedState)
+}
+
+/**
+ * Check if a value is a valid share state
+ */
+function isValidShareState(value: string): value is CliSessionSharedState {
+	return getValidShareStates().includes(value)
+}
 
 /**
  * Format a timestamp as a relative time string
@@ -148,6 +162,60 @@ async function selectSession(context: CommandContext, sessionId: string): Promis
 }
 
 /**
+ * Share a session (make it public or private)
+ */
+async function shareSession(context: CommandContext): Promise<void> {
+	const { addMessage, args } = context
+	const sessionService = SessionService.init()
+
+	// Parse the share state argument (default to "public")
+	const stateArg = args[1]?.toLowerCase() || CliSessionSharedState.Public
+
+	// Validate the state value
+	if (!isValidShareState(stateArg)) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Invalid share state "${stateArg}". Must be one of: ${getValidShareStates().join(", ")}.`,
+		})
+		return
+	}
+
+	try {
+		await sessionService.setSharedState(stateArg, process.cwd())
+
+		if (stateArg === CliSessionSharedState.Private) {
+			addMessage({
+				...generateMessage(),
+				type: "system",
+				content: "Session set to private",
+			})
+		} else {
+			addMessage({
+				...generateMessage(),
+				type: "system",
+				content: `Session is now publicly shareable
+
+To reproduce the session on another machine:
+
+\`\`\`bash
+git clone <REPO_URL>
+cd <REPO_NAME>
+git checkout <COMMIT_SHA>
+git apply session.patch
+\`\`\``,
+			})
+		}
+	} catch (error) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Failed to set share state: ${error instanceof Error ? error.message : String(error)}`,
+		})
+	}
+}
+
+/**
  * Autocomplete provider for session IDs
  */
 async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): Promise<ArgumentSuggestion[]> {
@@ -180,18 +248,26 @@ export const sessionCommand: Command = {
 	aliases: [],
 	description: "Manage sessions",
 	usage: "/session [subcommand] [args]",
-	examples: ["/session show", "/session list", "/session select <sessionId>"],
+	examples: [
+		"/session show",
+		"/session list",
+		"/session select <sessionId>",
+		"/session share",
+		"/session share public",
+		"/session share private",
+	],
 	category: "system",
 	priority: 5,
 	arguments: [
 		{
 			name: "subcommand",
-			description: "Subcommand: show, list, select",
+			description: "Subcommand: show, list, select, share",
 			required: false,
 			values: [
 				{ value: "show", description: "Display current session ID" },
 				{ value: "list", description: "List all sessions" },
 				{ value: "select", description: "Restore a session" },
+				{ value: "share", description: "Share session (public/private)" },
 			],
 		},
 		{
@@ -199,6 +275,15 @@ export const sessionCommand: Command = {
 			description: "Session ID to restore (for 'select' subcommand)",
 			required: false,
 			provider: sessionIdAutocompleteProvider,
+		},
+		{
+			name: "state",
+			description: "Share state: private or public (default: public)",
+			required: false,
+			values: getValidShareStates().map((value) => ({
+				value,
+				description: `Make session ${value}`,
+			})),
 		},
 	],
 	handler: async (context) => {
@@ -208,7 +293,7 @@ export const sessionCommand: Command = {
 			addMessage({
 				...generateMessage(),
 				type: "system",
-				content: "Usage: /session [show|list|select] [sessionId]",
+				content: "Usage: /session [show|list|select|share] [args]",
 			})
 			return
 		}
@@ -225,11 +310,14 @@ export const sessionCommand: Command = {
 			case "select":
 				await selectSession(context, args[1] || "")
 				break
+			case "share":
+				await shareSession(context)
+				break
 			default:
 				addMessage({
 					...generateMessage(),
 					type: "error",
-					content: `Unknown subcommand "${subcommand}". Available: show, list, select`,
+					content: `Unknown subcommand "${subcommand}". Available: show, list, select, share`,
 				})
 		}
 	},

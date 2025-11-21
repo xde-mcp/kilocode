@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
-import { SessionClient, SessionWithSignedUrls } from "./sessionClient"
+import { SessionClient, SessionWithSignedUrls, CliSessionSharedState, SetSharedStateOutput } from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
@@ -8,6 +8,7 @@ import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { createStore } from "jotai"
 import { sessionIdAtom } from "../state/atoms/session.js"
+import simpleGit from "simple-git"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -314,6 +315,45 @@ export class SessionService {
 		this.paths[key] = value
 
 		this.lastSaveEvent = crypto.randomUUID()
+	}
+
+	async setSharedState(sharedState: CliSessionSharedState, cwd: string): Promise<SetSharedStateOutput> {
+		const sessionId = this.sessionId
+		if (!sessionId) {
+			throw new Error("No active session")
+		}
+
+		const sessionClient = SessionClient.getInstance()
+
+		if (sharedState === CliSessionSharedState.Private) {
+			return await sessionClient.setSharedState({
+				sessionId,
+				sharedState: CliSessionSharedState.Private,
+			})
+		}
+
+		const git = simpleGit(cwd)
+
+		const remotes = await git.getRemotes(true)
+		const repoUrl = remotes[0]?.refs?.fetch || remotes[0]?.refs?.push
+
+		if (!repoUrl) {
+			throw new Error("Not in a git repository or no remote configured")
+		}
+
+		const head = await git.revparse(["HEAD"])
+
+		const patch = await git.diff(["HEAD"])
+
+		return await sessionClient.setSharedState({
+			sessionId,
+			sharedState: CliSessionSharedState.Public,
+			gitState: {
+				repoUrl,
+				head,
+				patch,
+			},
+		})
 	}
 
 	async destroy() {

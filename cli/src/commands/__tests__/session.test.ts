@@ -7,7 +7,7 @@ import { sessionCommand } from "../session.js"
 import type { CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "../core/types.js"
 import { createMockContext } from "./helpers/mockContext.js"
 import { SessionService } from "../../services/session.js"
-import { SessionClient } from "../../services/sessionClient.js"
+import { SessionClient, CliSessionSharedState } from "../../services/sessionClient.js"
 
 // Mock the SessionService
 vi.mock("../../services/session.js", () => ({
@@ -21,6 +21,15 @@ vi.mock("../../services/sessionClient.js", () => ({
 	SessionClient: {
 		getInstance: vi.fn(),
 	},
+	CliSessionSharedState: {
+		Private: "private",
+		Public: "public",
+	},
+}))
+
+// Mock simple-git
+vi.mock("simple-git", () => ({
+	default: vi.fn(),
 }))
 
 describe("sessionCommand", () => {
@@ -87,15 +96,18 @@ describe("sessionCommand", () => {
 		})
 
 		it("should have usage examples", () => {
-			expect(sessionCommand.examples).toHaveLength(3)
+			expect(sessionCommand.examples).toHaveLength(6)
 			expect(sessionCommand.examples).toContain("/session show")
 			expect(sessionCommand.examples).toContain("/session list")
 			expect(sessionCommand.examples).toContain("/session select <sessionId>")
+			expect(sessionCommand.examples).toContain("/session share")
+			expect(sessionCommand.examples).toContain("/session share public")
+			expect(sessionCommand.examples).toContain("/session share private")
 		})
 
 		it("should have subcommand argument defined", () => {
 			expect(sessionCommand.arguments).toBeDefined()
-			expect(sessionCommand.arguments).toHaveLength(2)
+			expect(sessionCommand.arguments).toHaveLength(3)
 			expect(sessionCommand.arguments![0].name).toBe("subcommand")
 			expect(sessionCommand.arguments![0].required).toBe(false)
 		})
@@ -103,8 +115,18 @@ describe("sessionCommand", () => {
 		it("should have all subcommand values defined", () => {
 			const subcommandArg = sessionCommand.arguments![0]
 			expect(subcommandArg.values).toBeDefined()
-			expect(subcommandArg.values).toHaveLength(3)
-			expect(subcommandArg.values!.map((v) => v.value)).toEqual(["show", "list", "select"])
+			expect(subcommandArg.values).toHaveLength(4)
+			expect(subcommandArg.values!.map((v) => v.value)).toEqual(["show", "list", "select", "share"])
+		})
+
+		it("should have state argument with all enum values", () => {
+			const stateArg = sessionCommand.arguments![2]
+			expect(stateArg.name).toBe("state")
+			expect(stateArg.required).toBe(false)
+			expect(stateArg.values).toBeDefined()
+			const enumValues = Object.values(CliSessionSharedState)
+			expect(stateArg.values).toHaveLength(enumValues.length)
+			expect(stateArg.values!.map((v) => v.value)).toEqual(enumValues)
 		})
 
 		it("should have sessionId argument with autocomplete provider", () => {
@@ -128,6 +150,7 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("show")
 			expect(message.content).toContain("list")
 			expect(message.content).toContain("select")
+			expect(message.content).toContain("share")
 		})
 
 		it("should not call SessionService when showing usage", async () => {
@@ -384,6 +407,85 @@ describe("sessionCommand", () => {
 		})
 	})
 
+	describe("handler - share subcommand", () => {
+		beforeEach(() => {
+			// Setup setSharedState mock on service
+			mockSessionService.setSharedState = vi.fn().mockResolvedValue({
+				id: "test-session",
+				shared_state: "public",
+				updated_at: new Date().toISOString(),
+			})
+		})
+
+		it("should set session to private", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["share", "private"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionService.init).toHaveBeenCalled()
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private, process.cwd())
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Session set to private")
+		})
+
+		it("should set session to public", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["share", "public"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionService.init).toHaveBeenCalled()
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public, process.cwd())
+
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Session is now publicly shareable")
+			expect(message.content).toContain("git clone")
+			expect(message.content).toContain("git checkout")
+			expect(message.content).toContain("git apply")
+		})
+
+		it("should default to public when no state arg provided", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["share"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public, process.cwd())
+		})
+
+		it("should handle case-insensitive state argument", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["share", "PRIVATE"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private, process.cwd())
+		})
+
+		it("should show error for invalid state value", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["share", "invalid"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain('Invalid share state "invalid"')
+			expect(message.content).toContain("Must be one of:")
+			// Verify error message includes all valid enum values
+			Object.values(CliSessionSharedState).forEach((value) => {
+				expect(message.content).toContain(value)
+			})
+			expect(mockSessionService.setSharedState).not.toHaveBeenCalled()
+		})
+	})
+
 	describe("handler - invalid subcommand", () => {
 		it("should show error for unknown subcommand", async () => {
 			mockContext.args = ["invalid"]
@@ -398,6 +500,7 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("show")
 			expect(message.content).toContain("list")
 			expect(message.content).toContain("select")
+			expect(message.content).toContain("share")
 		})
 
 		it("should not call SessionService for invalid subcommand", async () => {
