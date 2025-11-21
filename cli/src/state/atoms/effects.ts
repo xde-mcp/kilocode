@@ -5,7 +5,7 @@
 
 import { atom } from "jotai"
 import type { ExtensionMessage, ExtensionChatMessage, RouterModels } from "../../types/messages.js"
-import type { HistoryItem } from "@roo-code/types"
+import type { HistoryItem, CommandExecutionStatus } from "@roo-code/types"
 import { extensionServiceAtom, setServiceReadyAtom, setServiceErrorAtom, setIsInitializingAtom } from "./service.js"
 import { updateExtensionStateAtom, updateChatMessageByTsAtom, updateRouterModelsAtom } from "./extension.js"
 import { ciCompletionDetectedAtom } from "./ci.js"
@@ -37,6 +37,15 @@ const messageBufferAtom = atom<ExtensionMessage[]>([])
  * Flag to track if we're currently processing buffered messages
  */
 const isProcessingBufferAtom = atom<boolean>(false)
+
+/**
+ * Map to store pending output updates for command_output asks
+ * Key: executionId, Value: latest output data
+ * Exported so extension.ts can apply pending updates when asks appear
+ */
+export const pendingOutputUpdatesAtom = atom<Map<string, { output: string; command?: string; completed?: boolean }>>(
+	new Map<string, { output: string; command?: string; completed?: boolean }>(),
+)
 
 // Indexing status types
 export interface IndexingStatus {
@@ -252,6 +261,54 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				break
 			}
 
+			case "commandExecutionStatus": {
+				// Handle command execution status messages
+				// Store output updates and apply them when the ask appears
+				try {
+					const statusData = JSON.parse(message.text || "{}") as CommandExecutionStatus
+					const pendingUpdates = get(pendingOutputUpdatesAtom)
+					const newPendingUpdates = new Map(pendingUpdates)
+
+					if (statusData.status === "started") {
+						// Initialize with command info
+						const command = "command" in statusData ? (statusData.command as string) : undefined
+						const updateData: { output: string; command?: string; completed?: boolean } = {
+							output: "",
+						}
+						if (command) {
+							updateData.command = command
+						}
+						newPendingUpdates.set(statusData.executionId, updateData)
+					} else if (statusData.status === "output") {
+						// Update with new output
+						const existing = newPendingUpdates.get(statusData.executionId) || { output: "" }
+						const command = "command" in statusData ? (statusData.command as string) : existing.command
+						const updateData: { output: string; command?: string; completed?: boolean } = {
+							output: statusData.output || "",
+						}
+						if (command) {
+							updateData.command = command
+						}
+						if (existing.completed !== undefined) {
+							updateData.completed = existing.completed
+						}
+						newPendingUpdates.set(statusData.executionId, updateData)
+					} else if (statusData.status === "exited" || statusData.status === "timeout") {
+						// Mark as completed
+						const existing = newPendingUpdates.get(statusData.executionId) || { output: "" }
+						newPendingUpdates.set(statusData.executionId, {
+							...existing,
+							completed: true,
+						})
+					}
+
+					set(pendingOutputUpdatesAtom, newPendingUpdates)
+				} catch (error) {
+					logs.error("Error handling commandExecutionStatus", "effects", { error })
+				}
+				break
+			}
+
 			default:
 				logs.debug(`Unhandled message type: ${message.type}`, "effects")
 		}
@@ -320,6 +377,9 @@ export const disposeServiceEffectAtom = atom(null, async (get, set) => {
 
 		// Clear any buffered messages
 		set(messageBufferAtom, [])
+
+		// Clear pending output updates
+		set(pendingOutputUpdatesAtom, new Map<string, { output: string; command?: string; completed?: boolean }>())
 
 		// Dispose the service
 		await service.dispose()

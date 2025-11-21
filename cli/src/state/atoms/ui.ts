@@ -290,6 +290,7 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 	const approvalAskTypes = [
 		"tool",
 		"command",
+		"command_output",
 		"browser_action_launch",
 		"use_mcp_server",
 		"payment_required_prompt",
@@ -302,10 +303,13 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 		lastMessage.type === "ask" &&
 		!lastMessage.isAnswered &&
 		lastMessage.ask &&
-		approvalAskTypes.includes(lastMessage.ask) &&
-		!lastMessage.partial
+		approvalAskTypes.includes(lastMessage.ask)
 	) {
-		return lastMessage
+		// command_output asks can be partial (while command is running)
+		// All other asks must be complete (not partial) to show approval
+		if (lastMessage.ask === "command_output" || !lastMessage.partial) {
+			return lastMessage
+		}
 	}
 	return null
 })
