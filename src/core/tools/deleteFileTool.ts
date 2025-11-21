@@ -12,13 +12,6 @@ import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } f
  * Implements the delete_file tool.
  */
 
-function isDangerousPath(absolutePath: string): boolean {
-	// Basic safety check - prevent deleting system directories
-	// TODO: maybe add more patterns later
-	const normalizedPath = path.normalize(absolutePath)
-	return normalizedPath === "/" || normalizedPath.includes("..")
-}
-
 export async function deleteFileTool(
 	cline: Task,
 	block: ToolUse,
@@ -30,12 +23,16 @@ export async function deleteFileTool(
 	const relPath: string | undefined = block.params.path
 
 	try {
-		if (block.partial) {
+		if (relPath && relPath.trim() != "") {
 			const partialMessage = JSON.stringify({
 				tool: "deleteFile",
-				path: getReadablePath(cline.cwd, removeClosingTag("path", relPath)),
+				path: getReadablePath(cline.cwd, relPath),
 			} satisfies ClineSayTool)
-			await cline.ask("tool", partialMessage, block.partial).catch(() => {})
+			await cline.ask("tool", partialMessage, true).catch(() => {})
+		}
+
+		// Wait for the final path
+		if (block.partial) {
 			return
 		}
 
@@ -46,8 +43,33 @@ export async function deleteFileTool(
 			return
 		}
 
+		// Resolve paths
 		const absolutePath = path.resolve(cline.cwd, relPath)
 		const relativePath = path.relative(cline.cwd, absolutePath)
+
+		// Validate access
+		const accessAllowed = cline.rooIgnoreController?.validateAccess(relativePath)
+
+		if (!accessAllowed) {
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("delete_file")
+			const errorMsg = formatResponse.rooIgnoreError(relativePath)
+			await cline.say("error", errorMsg)
+			pushToolResult(formatResponse.toolError(errorMsg))
+			return
+		}
+
+		// Check if file is write-protected
+		const isWriteProtected = cline.rooProtectedController?.isWriteProtected(relativePath) || false
+
+		if (isWriteProtected) {
+			cline.consecutiveMistakeCount++
+			cline.recordToolError("delete_file")
+			const errorMsg = `Cannot delete write-protected file: ${relativePath}`
+			await cline.say("error", errorMsg)
+			pushToolResult(formatResponse.toolError(errorMsg))
+			return
+		}
 
 		// Check workspace boundary
 		const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
@@ -55,16 +77,6 @@ export async function deleteFileTool(
 			cline.consecutiveMistakeCount++
 			cline.recordToolError("delete_file")
 			const errorMsg = `Cannot delete files outside workspace. Path: ${relativePath}`
-			await cline.say("error", errorMsg)
-			pushToolResult(formatResponse.toolError(errorMsg))
-			return
-		}
-
-		// Check for dangerous paths
-		if (isDangerousPath(absolutePath)) {
-			cline.consecutiveMistakeCount++
-			cline.recordToolError("delete_file")
-			const errorMsg = `Cannot delete system files. Path: ${relativePath}`
 			await cline.say("error", errorMsg)
 			pushToolResult(formatResponse.toolError(errorMsg))
 			return
@@ -97,7 +109,7 @@ export async function deleteFileTool(
 		const approvalMessage = JSON.stringify({
 			tool: "deleteFile",
 			path: getReadablePath(cline.cwd, relativePath),
-			isOutsideWorkspace: false,
+			isOutsideWorkspace: isOutsideWorkspace,
 		} satisfies ClineSayTool)
 
 		const didApprove = await askApproval("tool", approvalMessage)
@@ -108,7 +120,6 @@ export async function deleteFileTool(
 		await fs.unlink(absolutePath)
 
 		const successMsg = `Deleted file: ${relativePath}`
-		await cline.say("text", successMsg)
 		pushToolResult(formatResponse.toolResult(successMsg))
 	} catch (error) {
 		await handleError("deleting file", error)
