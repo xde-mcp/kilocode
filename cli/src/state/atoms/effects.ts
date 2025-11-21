@@ -56,8 +56,9 @@ export const pendingOutputUpdatesAtom = atom<Map<string, { output: string; comma
 /**
  * Map to track which commands have shown a command_output ask
  * Key: executionId, Value: true if ask was shown
+ * Exported for testing
  */
-const commandOutputAskShownAtom = atom<Map<string, boolean>>(new Map<string, boolean>())
+export const commandOutputAskShownAtom = atom<Map<string, boolean>>(new Map<string, boolean>())
 
 // Indexing status types
 export interface IndexingStatus {
@@ -177,21 +178,39 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				// Skip processing here to avoid duplication
 
 				// Track command_output asks that appear in state updates
+				// Also filter out duplicate asks that conflict with our synthetic ones
 				if (message.state?.chatMessages) {
 					const askShownMap = get(commandOutputAskShownAtom)
 					const newAskShownMap = new Map(askShownMap)
+					const filteredMessages: typeof message.state.chatMessages = []
 
 					for (const msg of message.state.chatMessages) {
 						if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
 							try {
 								const data = JSON.parse(msg.text)
-								if (data.executionId) {
-									newAskShownMap.set(data.executionId, true)
+								const executionId = data.executionId
+
+								if (executionId) {
+									// Check if we already have a synthetic ask for this execution
+									if (askShownMap.has(executionId) && !msg.isAnswered) {
+										// Skip this message - we already have a synthetic ask
+										continue
+									}
+
+									// Track this ask
+									newAskShownMap.set(executionId, true)
 								}
 							} catch {
 								// Ignore parse errors
 							}
 						}
+
+						filteredMessages.push(msg)
+					}
+
+					// Update the state with filtered messages
+					if (filteredMessages.length !== message.state.chatMessages.length) {
+						message.state.chatMessages = filteredMessages
 					}
 
 					if (newAskShownMap.size !== askShownMap.size) {
@@ -203,22 +222,62 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			case "messageUpdated": {
 				const chatMessage = message.chatMessage as ExtensionChatMessage | undefined
 				if (chatMessage) {
-					set(updateChatMessageByTsAtom, chatMessage)
+					// Special handling for command_output asks to prevent conflicts
+					if (chatMessage.type === "ask" && chatMessage.ask === "command_output") {
+						logs.info(
+							`[messageUpdated] Received command_output ask, ts: ${chatMessage.ts}, isAnswered: ${chatMessage.isAnswered}`,
+							"effects",
+						)
 
-					// Track command_output asks that appear via messageUpdated
-					if (chatMessage.type === "ask" && chatMessage.ask === "command_output" && chatMessage.text) {
+						// Check if we already have a synthetic ask for this execution
+						const currentMessages = get(chatMessagesAtom)
+						const askShownMap = get(commandOutputAskShownAtom)
+
+						logs.info(
+							`[messageUpdated] Current tracking map has ${askShownMap.size} entries, current messages: ${currentMessages.length}`,
+							"effects",
+						)
+
+						// Try to extract executionId from the incoming message
+						let incomingExecutionId: string | undefined
 						try {
-							const data = JSON.parse(chatMessage.text)
-							if (data.executionId) {
-								const askShownMap = get(commandOutputAskShownAtom)
-								const newAskShownMap = new Map(askShownMap)
-								newAskShownMap.set(data.executionId, true)
-								set(commandOutputAskShownAtom, newAskShownMap)
+							if (chatMessage.text) {
+								const data = JSON.parse(chatMessage.text)
+								incomingExecutionId = data.executionId
+								logs.info(`[messageUpdated] Extracted executionId: ${incomingExecutionId}`, "effects")
 							}
-						} catch {
-							// Ignore parse errors
+						} catch (error) {
+							logs.warn(`[messageUpdated] Failed to parse command_output ask text: ${error}`, "effects")
+						}
+
+						// Check if we already have a synthetic ask for this executionId
+						const hasSyntheticAsk = incomingExecutionId && askShownMap.has(incomingExecutionId)
+
+						if (hasSyntheticAsk) {
+							// We already have a synthetic ask for this execution
+							// The backend is trying to create its own ask, but we should ignore it
+							// since our synthetic ask is already handling user interaction
+							logs.info(
+								`[messageUpdated] IGNORING duplicate command_output ask for executionId: ${incomingExecutionId}`,
+								"effects",
+							)
+							// Don't update the message - keep our synthetic one
+							break
+						}
+
+						// Track this ask if it has an executionId
+						if (incomingExecutionId) {
+							logs.info(
+								`[messageUpdated] Tracking new command_output ask for executionId: ${incomingExecutionId}`,
+								"effects",
+							)
+							const newAskShownMap = new Map(askShownMap)
+							newAskShownMap.set(incomingExecutionId, true)
+							set(commandOutputAskShownAtom, newAskShownMap)
 						}
 					}
+
+					set(updateChatMessageByTsAtom, chatMessage)
 				}
 				break
 			}
@@ -320,6 +379,11 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 					const newPendingUpdates = new Map(pendingUpdates)
 
 					if (statusData.status === "started") {
+						logs.info(
+							`[commandExecutionStatus] Command started: ${statusData.executionId}, command: ${statusData.command}`,
+							"effects",
+						)
+
 						// Initialize with command info
 						// IMPORTANT: Store the command immediately so it's available even if no output is produced
 						const command = "command" in statusData ? (statusData.command as string) : undefined
@@ -348,12 +412,27 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 						const currentMessages = get(chatMessagesAtom)
 						set(updateChatMessagesAtom, [...currentMessages, syntheticAsk])
 
+						logs.info(
+							`[commandExecutionStatus] Created synthetic ask for ${statusData.executionId}, ts: ${syntheticAsk.ts}`,
+							"effects",
+						)
+
 						// Mark that we've shown an ask for this execution
 						const askShownMap = get(commandOutputAskShownAtom)
 						const newAskShownMap = new Map(askShownMap)
 						newAskShownMap.set(statusData.executionId, true)
 						set(commandOutputAskShownAtom, newAskShownMap)
+
+						logs.info(
+							`[commandExecutionStatus] Tracking map now has ${newAskShownMap.size} entries`,
+							"effects",
+						)
 					} else if (statusData.status === "output") {
+						logs.debug(
+							`[commandExecutionStatus] Output received for ${statusData.executionId}, length: ${statusData.output?.length || 0}`,
+							"effects",
+						)
+
 						// Update with new output
 						const existing = newPendingUpdates.get(statusData.executionId) || { output: "" }
 						const command = "command" in statusData ? (statusData.command as string) : existing.command
@@ -397,8 +476,27 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 							const newMessages = [...currentMessages]
 							newMessages[messageIndex] = updatedAsk
 							set(updateChatMessagesAtom, newMessages)
+
+							logs.debug(
+								`[commandExecutionStatus] Updated synthetic ask at index ${messageIndex}`,
+								"effects",
+							)
+						} else {
+							logs.warn(
+								`[commandExecutionStatus] Could not find synthetic ask for ${statusData.executionId}`,
+								"effects",
+							)
 						}
 					} else if (statusData.status === "exited" || statusData.status === "timeout") {
+						const exitCodeInfo =
+							statusData.status === "exited" && "exitCode" in statusData
+								? `, exitCode: ${statusData.exitCode}`
+								: ""
+						logs.info(
+							`[commandExecutionStatus] Command ${statusData.status} for ${statusData.executionId}${exitCodeInfo}`,
+							"effects",
+						)
+
 						// Mark as completed and ensure command is preserved
 						const existing = newPendingUpdates.get(statusData.executionId) || { output: "", command: "" }
 						// If command wasn't set yet (shouldn't happen but defensive), try to get it from statusData
@@ -418,6 +516,12 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 					if (statusData.status === "exited" || statusData.status === "timeout") {
 						// Find and update the synthetic ask to mark it as complete
 						const currentMessages = get(chatMessagesAtom)
+
+						logs.info(
+							`[commandExecutionStatus] Looking for synthetic ask among ${currentMessages.length} messages`,
+							"effects",
+						)
+
 						const messageIndex = currentMessages.findIndex((msg) => {
 							if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
 								try {
@@ -446,6 +550,16 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 							const newMessages = [...currentMessages]
 							newMessages[messageIndex] = updatedAsk
 							set(updateChatMessagesAtom, newMessages)
+
+							logs.info(
+								`[commandExecutionStatus] Marked synthetic ask as complete at index ${messageIndex}`,
+								"effects",
+							)
+						} else {
+							logs.warn(
+								`[commandExecutionStatus] Could not find synthetic ask to mark complete for ${statusData.executionId}`,
+								"effects",
+							)
 						}
 					}
 				} catch (error) {

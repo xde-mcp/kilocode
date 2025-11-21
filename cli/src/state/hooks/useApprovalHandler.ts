@@ -342,28 +342,13 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 				}
 				store.set(updateChatMessageByTsAtom, answeredMessage)
 
-				// For continue operation, we need to send BOTH:
-				// 1. The terminal operation message (to call handleTerminalOperation)
-				// 2. An ask response with "messageResponse" (to unblock the task.ask() call)
-				if (operation === "continue") {
-					// Send terminal operation first
-					await sendMessage({
-						type: "terminalOperation",
-						terminalOperation: "continue",
-					})
-
-					// Then send ask response to unblock the waiting ask() call
-					await sendAskResponse({
-						response: "messageResponse",
-					})
-				} else {
-					// For abort, just send the terminal operation
-					// The task will handle the abortion and won't wait for a response
-					await sendMessage({
-						type: "terminalOperation",
-						terminalOperation: "abort",
-					})
-				}
+				// For terminal operations, we only need to send the terminal operation message
+				// DO NOT send askResponse - that would resolve the wrong ask (completion_result instead of command_output)
+				// The backend's onLine callback handles the command_output ask internally
+				await sendMessage({
+					type: "terminalOperation",
+					terminalOperation: operation,
+				})
 
 				logs.debug("Terminal operation sent successfully", "useApprovalHandler", {
 					operation,

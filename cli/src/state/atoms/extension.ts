@@ -552,6 +552,27 @@ function reconcileMessages(
 		currentMap.set(msg.ts, msg)
 	})
 
+	// Identify synthetic command_output asks (CLI-created, not from extension)
+	// These have executionId in their text and don't exist in incoming messages
+	const syntheticAsks: ExtensionChatMessage[] = []
+	current.forEach((msg) => {
+		if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
+			try {
+				const data = JSON.parse(msg.text)
+				if (data.executionId) {
+					// Check if this message exists in incoming
+					const existsInIncoming = incoming.some((incomingMsg) => incomingMsg.ts === msg.ts)
+					if (!existsInIncoming) {
+						// This is a synthetic ask created by CLI
+						syntheticAsks.push(msg)
+					}
+				}
+			} catch {
+				// Ignore parse errors
+			}
+		}
+	})
+
 	// First, deduplicate command_output asks
 	// Since extension creates asks with empty text, we keep only the first unanswered one
 	const deduplicatedIncoming = deduplicateCommandOutputAsks(incoming, pendingUpdates)
@@ -601,8 +622,12 @@ function reconcileMessages(
 		return incomingMsg
 	})
 
+	// Add synthetic asks back to the result
+	// These are CLI-created asks that the extension doesn't know about
+	const finalMessages = [...resultMessages, ...syntheticAsks]
+
 	// Return sorted array by timestamp
-	return resultMessages.sort((a, b) => a.ts - b.ts)
+	return finalMessages.sort((a, b) => a.ts - b.ts)
 }
 
 /**
