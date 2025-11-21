@@ -9,7 +9,7 @@ import { ContextProxy } from "../../../core/config/ContextProxy"
 import { KiloOrganization } from "../../../shared/kilocode/organization"
 import { OrganizationService } from "../../kilocode/OrganizationService"
 import { GitWatcher, GitWatcherEvent } from "../../../shared/GitWatcher"
-import { getCurrentBranch, isGitRepository } from "./git-utils"
+import { getCurrentBranch, isGitRepository, getCurrentCommitSha, getBaseBranch } from "./git-utils"
 import { getKilocodeConfig } from "../../../utils/kilo-config-file"
 import { getGitRepositoryInfo } from "../../../utils/git"
 import { getServerManifest, upsertFile } from "./api-client"
@@ -348,15 +348,19 @@ export class ManagedIndexer implements vscode.Disposable {
 	 * If a fetch is already in progress, returns the same promise.
 	 * This prevents duplicate fetches and ensures all callers wait for the same result.
 	 */
-	private async getManifest(state: ManagedIndexerWorkspaceFolderState, branch: string): Promise<ServerManifest> {
+	private async getManifest(
+		state: ManagedIndexerWorkspaceFolderState,
+		branch: string,
+		force = false,
+	): Promise<ServerManifest> {
 		// If we're already fetching for this branch, return the existing promise
-		if (state.manifestFetchPromise && state.gitBranch === branch) {
+		if (state.manifestFetchPromise && state.gitBranch === branch && !force) {
 			console.info(`[ManagedIndexer] Reusing in-flight manifest fetch for branch ${branch}`)
 			return state.manifestFetchPromise
 		}
 
 		// If manifest is already cached for this branch, return it
-		if (state.manifest && state.gitBranch === branch) {
+		if (state.manifest && state.gitBranch === branch && !force) {
 			return state.manifest
 		}
 
@@ -632,6 +636,9 @@ export class ManagedIndexer implements vscode.Disposable {
 				},
 				{ concurrency: 20 },
 			)
+
+			// Force a re-fetch of the manifest
+			await this.getManifest(state, event.branch, true)
 		} finally {
 			// Always clear indexing state when done
 			state.isIndexing = false
@@ -668,5 +675,100 @@ export class ManagedIndexer implements vscode.Disposable {
 					}
 				: undefined,
 		}))
+	}
+
+	/**
+	 * Manually trigger a scan for a specific workspace folder
+	 * This is useful for forcing a rescan from the UI
+	 *
+	 * @param workspaceFolderPath The path of the workspace folder to scan
+	 * @throws Error if the workspace folder is not found or not properly initialized
+	 */
+	async startScanForWorkspaceFolder(workspaceFolderPath: string): Promise<void> {
+		console.log("[ManagedIndexer] Manual scan requested for workspace folder", { workspaceFolderPath })
+
+		if (!this.isActive) {
+			throw new Error("ManagedIndexer is not active")
+		}
+
+		// Find the workspace folder state
+		const state = this.workspaceFolderState.find((s) => s.workspaceFolder.uri.fsPath === workspaceFolderPath)
+
+		if (!state) {
+			throw new Error(`Workspace folder not found: ${workspaceFolderPath}`)
+		}
+
+		if (!state.watcher) {
+			throw new Error(`Watcher not initialized for workspace folder: ${workspaceFolderPath}`)
+		}
+
+		if (!state.projectId || !state.gitBranch) {
+			throw new Error(`Workspace folder not fully initialized: ${workspaceFolderPath}`)
+		}
+
+		// Cancel any previous indexing operation
+		if (state.currentAbortController) {
+			console.info("[ManagedIndexer] Aborting previous indexing operation for manual scan")
+			state.currentAbortController.abort()
+		}
+
+		// Create new AbortController for this operation
+		const controller = new AbortController()
+		state.currentAbortController = controller
+
+		try {
+			console.info(
+				`[ManagedIndexer] Starting manual scan for ${workspaceFolderPath} on branch ${state.gitBranch}`,
+			)
+
+			// Determine if this is the base branch
+			const defaultBranch = await getBaseBranch(state.workspaceFolder.uri.fsPath)
+			const isBaseBranch = state.gitBranch.toLowerCase() === defaultBranch.toLowerCase()
+
+			// Create a synthetic event to trigger file processing using GitWatcher's getFiles method
+			const syntheticEvent: GitWatcherEvent = {
+				type: "commit",
+				previousCommit: "",
+				newCommit: await getCurrentCommitSha(state.workspaceFolder.uri.fsPath),
+				branch: state.gitBranch,
+				isBaseBranch,
+				watcher: state.watcher,
+				files: state.watcher.getFiles(state.gitBranch, isBaseBranch),
+			}
+
+			// Refresh the manifest before scanning
+			try {
+				await this.getManifest(state, state.gitBranch)
+			} catch (error) {
+				console.warn(`[ManagedIndexer] Failed to refresh manifest, continuing with cached version`)
+			}
+
+			// Process files using the existing logic
+			await this.processFiles(state, syntheticEvent, controller.signal)
+
+			console.info(`[ManagedIndexer] Manual scan completed for ${workspaceFolderPath}`)
+		} catch (error) {
+			// Check if this was an abort
+			if (error instanceof Error && (error.name === "AbortError" || error.message === "AbortError")) {
+				console.info("[ManagedIndexer] Manual scan was aborted")
+				return
+			}
+
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			console.error(`[ManagedIndexer] Manual scan failed for ${workspaceFolderPath}: ${errorMessage}`)
+
+			state.error = {
+				type: "scan",
+				message: `Manual scan failed: ${errorMessage}`,
+				timestamp: new Date().toISOString(),
+				context: {
+					operation: "manual-scan",
+					branch: state.gitBranch,
+				},
+				details: error instanceof Error ? error.stack : undefined,
+			}
+
+			throw error
+		}
 	}
 }

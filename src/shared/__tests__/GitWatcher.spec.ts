@@ -474,7 +474,8 @@ describe("GitWatcher", () => {
 
 	describe("error handling", () => {
 		it("should handle errors during file iteration", async () => {
-			mockExecGetLines.mockImplementation(async function* () {
+			// eslint-disable-next-line require-yield
+			mockExecGetLines.mockImplementation(async function* (): AsyncGenerator<string> {
 				throw new Error("Git command failed")
 			})
 

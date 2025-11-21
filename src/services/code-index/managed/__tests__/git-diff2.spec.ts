@@ -118,7 +118,8 @@ describe("getGitDiff2", () => {
 	})
 
 	it("should throw error if merge-base fails", async () => {
-		mockExecGetLines.mockImplementationOnce(async function* () {
+		// eslint-disable-next-line require-yield
+		mockExecGetLines.mockImplementationOnce(async function* (): AsyncGenerator<string> {
 			throw new Error("Not a git repository")
 		})
 
@@ -136,7 +137,8 @@ describe("getGitDiff2", () => {
 		})
 
 		// Mock failing diff command
-		mockExecGetLines.mockImplementationOnce(async function* () {
+		// eslint-disable-next-line require-yield
+		mockExecGetLines.mockImplementationOnce(async function* (): AsyncGenerator<string> {
 			throw new Error("Invalid branch name")
 		})
 
