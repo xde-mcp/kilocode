@@ -30,10 +30,7 @@ interface WorkspaceFolderState {
 	}
 }
 
-interface CodeIndexPopoverProps {}
-
-export const ManagedCodeIndexPopoverContent: React.FC<CodeIndexPopoverProps> = () => {
-	const { t } = useAppTranslation()
+export const ManagedCodeIndexPopoverContent: React.FC = () => {
 	const [open, setOpen] = useState(false)
 	const [workspaceFolders, setWorkspaceFolders] = useState<WorkspaceFolderState[]>([])
 
@@ -61,21 +58,15 @@ export const ManagedCodeIndexPopoverContent: React.FC<CodeIndexPopoverProps> = (
 
 	return (
 		<>
-			<div className="p-3 border-b border-vscode-dropdown-border cursor-default">
-				<div className="flex flex-row items-center gap-1 p-0 mt-0 mb-1 w-full">
-					<h4 className="m-0 pb-2 flex-1">{t("settings:codeIndex.title")}</h4>
-				</div>
-				<p className="my-0 pr-4 text-sm w-full">
-					<Trans i18nKey="settings:codeIndex.description">
-						<VSCodeLink
-							href={buildDocLink("features/codebase-indexing", "settings")}
-							style={{ display: "inline" }}
-						/>
-					</Trans>
-				</p>
-			</div>
-
 			<div className="p-4">
+				<div>This is ManagedCodeIndexPopover.tsx - we can do whatever we want here</div>
+				<div>we should</div>
+				<ul>
+					<li>have links to backend for docs & setup guide</li>
+					<li>show status of each workspace folder</li>
+					<li>show errors/warnings if any</li>
+					<li>show indexing progress if possible</li>
+				</ul>
 				<ManagedIndexerStatus workspaceFolders={workspaceFolders} />
 			</div>
 		</>
