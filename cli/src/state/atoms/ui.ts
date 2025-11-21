@@ -298,6 +298,7 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 	]
 
 	const lastMessage = messages[messages.length - 1]
+
 	if (
 		lastMessage &&
 		lastMessage.type === "ask" &&

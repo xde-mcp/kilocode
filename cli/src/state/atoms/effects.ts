@@ -7,7 +7,13 @@ import { atom } from "jotai"
 import type { ExtensionMessage, ExtensionChatMessage, RouterModels } from "../../types/messages.js"
 import type { HistoryItem, CommandExecutionStatus } from "@roo-code/types"
 import { extensionServiceAtom, setServiceReadyAtom, setServiceErrorAtom, setIsInitializingAtom } from "./service.js"
-import { updateExtensionStateAtom, updateChatMessageByTsAtom, updateRouterModelsAtom } from "./extension.js"
+import {
+	updateExtensionStateAtom,
+	updateChatMessageByTsAtom,
+	updateRouterModelsAtom,
+	chatMessagesAtom,
+	updateChatMessagesAtom,
+} from "./extension.js"
 import { ciCompletionDetectedAtom } from "./ci.js"
 import {
 	updateProfileDataAtom,
@@ -46,6 +52,12 @@ const isProcessingBufferAtom = atom<boolean>(false)
 export const pendingOutputUpdatesAtom = atom<Map<string, { output: string; command?: string; completed?: boolean }>>(
 	new Map<string, { output: string; command?: string; completed?: boolean }>(),
 )
+
+/**
+ * Map to track which commands have shown a command_output ask
+ * Key: executionId, Value: true if ask was shown
+ */
+const commandOutputAskShownAtom = atom<Map<string, boolean>>(new Map<string, boolean>())
 
 // Indexing status types
 export interface IndexingStatus {
@@ -163,12 +175,50 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			case "state":
 				// State messages are handled by the stateChange event listener
 				// Skip processing here to avoid duplication
+
+				// Track command_output asks that appear in state updates
+				if (message.state?.chatMessages) {
+					const askShownMap = get(commandOutputAskShownAtom)
+					const newAskShownMap = new Map(askShownMap)
+
+					for (const msg of message.state.chatMessages) {
+						if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
+							try {
+								const data = JSON.parse(msg.text)
+								if (data.executionId) {
+									newAskShownMap.set(data.executionId, true)
+								}
+							} catch {
+								// Ignore parse errors
+							}
+						}
+					}
+
+					if (newAskShownMap.size !== askShownMap.size) {
+						set(commandOutputAskShownAtom, newAskShownMap)
+					}
+				}
 				break
 
 			case "messageUpdated": {
 				const chatMessage = message.chatMessage as ExtensionChatMessage | undefined
 				if (chatMessage) {
 					set(updateChatMessageByTsAtom, chatMessage)
+
+					// Track command_output asks that appear via messageUpdated
+					if (chatMessage.type === "ask" && chatMessage.ask === "command_output" && chatMessage.text) {
+						try {
+							const data = JSON.parse(chatMessage.text)
+							if (data.executionId) {
+								const askShownMap = get(commandOutputAskShownAtom)
+								const newAskShownMap = new Map(askShownMap)
+								newAskShownMap.set(data.executionId, true)
+								set(commandOutputAskShownAtom, newAskShownMap)
+							}
+						} catch {
+							// Ignore parse errors
+						}
+					}
 				}
 				break
 			}
@@ -271,14 +321,38 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 
 					if (statusData.status === "started") {
 						// Initialize with command info
+						// IMPORTANT: Store the command immediately so it's available even if no output is produced
 						const command = "command" in statusData ? (statusData.command as string) : undefined
 						const updateData: { output: string; command?: string; completed?: boolean } = {
 							output: "",
-						}
-						if (command) {
-							updateData.command = command
+							command: command || "", // Always set command, even if empty
 						}
 						newPendingUpdates.set(statusData.executionId, updateData)
+
+						// CLI-ONLY WORKAROUND: Immediately create a synthetic command_output ask
+						// This allows users to abort the command even before any output is produced
+						const syntheticAsk: ExtensionChatMessage = {
+							ts: Date.now(),
+							type: "ask",
+							ask: "command_output",
+							text: JSON.stringify({
+								executionId: statusData.executionId,
+								command: command || "",
+								output: "",
+							}),
+							partial: true, // Mark as partial since command is still running
+							isAnswered: false,
+						}
+
+						// Add the synthetic message to chat messages
+						const currentMessages = get(chatMessagesAtom)
+						set(updateChatMessagesAtom, [...currentMessages, syntheticAsk])
+
+						// Mark that we've shown an ask for this execution
+						const askShownMap = get(commandOutputAskShownAtom)
+						const newAskShownMap = new Map(askShownMap)
+						newAskShownMap.set(statusData.executionId, true)
+						set(commandOutputAskShownAtom, newAskShownMap)
 					} else if (statusData.status === "output") {
 						// Update with new output
 						const existing = newPendingUpdates.get(statusData.executionId) || { output: "" }
@@ -293,16 +367,87 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 							updateData.completed = existing.completed
 						}
 						newPendingUpdates.set(statusData.executionId, updateData)
-					} else if (statusData.status === "exited" || statusData.status === "timeout") {
-						// Mark as completed
-						const existing = newPendingUpdates.get(statusData.executionId) || { output: "" }
-						newPendingUpdates.set(statusData.executionId, {
-							...existing,
-							completed: true,
+
+						// Update the synthetic ask with the new output
+						// Find and update the synthetic message we created
+						const currentMessages = get(chatMessagesAtom)
+						const messageIndex = currentMessages.findIndex((msg) => {
+							if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
+								try {
+									const data = JSON.parse(msg.text)
+									return data.executionId === statusData.executionId
+								} catch {
+									return false
+								}
+							}
+							return false
 						})
+
+						if (messageIndex !== -1) {
+							const updatedAsk: ExtensionChatMessage = {
+								...currentMessages[messageIndex]!,
+								text: JSON.stringify({
+									executionId: statusData.executionId,
+									command: command || "",
+									output: statusData.output || "",
+								}),
+								partial: true, // Still running
+							}
+
+							const newMessages = [...currentMessages]
+							newMessages[messageIndex] = updatedAsk
+							set(updateChatMessagesAtom, newMessages)
+						}
+					} else if (statusData.status === "exited" || statusData.status === "timeout") {
+						// Mark as completed and ensure command is preserved
+						const existing = newPendingUpdates.get(statusData.executionId) || { output: "", command: "" }
+						// If command wasn't set yet (shouldn't happen but defensive), try to get it from statusData
+						const command =
+							existing.command || ("command" in statusData ? (statusData.command as string) : "")
+						const finalUpdate = {
+							...existing,
+							command: command,
+							completed: true,
+						}
+						newPendingUpdates.set(statusData.executionId, finalUpdate)
 					}
 
 					set(pendingOutputUpdatesAtom, newPendingUpdates)
+
+					// CLI-ONLY WORKAROUND: Mark synthetic ask as complete when command exits
+					if (statusData.status === "exited" || statusData.status === "timeout") {
+						// Find and update the synthetic ask to mark it as complete
+						const currentMessages = get(chatMessagesAtom)
+						const messageIndex = currentMessages.findIndex((msg) => {
+							if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
+								try {
+									const data = JSON.parse(msg.text)
+									return data.executionId === statusData.executionId
+								} catch {
+									return false
+								}
+							}
+							return false
+						})
+
+						if (messageIndex !== -1) {
+							const pendingUpdate = newPendingUpdates.get(statusData.executionId)
+							const updatedAsk: ExtensionChatMessage = {
+								...currentMessages[messageIndex]!,
+								text: JSON.stringify({
+									executionId: statusData.executionId,
+									command: pendingUpdate?.command || "",
+									output: pendingUpdate?.output || "",
+								}),
+								partial: false, // Command completed
+								isAnswered: false, // Still needs user response
+							}
+
+							const newMessages = [...currentMessages]
+							newMessages[messageIndex] = updatedAsk
+							set(updateChatMessagesAtom, newMessages)
+						}
+					}
 				} catch (error) {
 					logs.error("Error handling commandExecutionStatus", "effects", { error })
 				}
@@ -380,6 +525,9 @@ export const disposeServiceEffectAtom = atom(null, async (get, set) => {
 
 		// Clear pending output updates
 		set(pendingOutputUpdatesAtom, new Map<string, { output: string; command?: string; completed?: boolean }>())
+
+		// Clear command output ask tracking
+		set(commandOutputAskShownAtom, new Map<string, boolean>())
 
 		// Dispose the service
 		await service.dispose()

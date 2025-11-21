@@ -23,9 +23,6 @@ export const ApprovalMenu: React.FC<ApprovalMenuProps> = ({ options, selectedInd
 
 	return (
 		<Box flexDirection="column" borderStyle="round" borderColor={theme.actions.pending} paddingX={1}>
-			<Text bold color={theme.actions.pending}>
-				[!] Actions:
-			</Text>
 			{options.map((option, index) => (
 				<ApprovalOptionRow
 					key={option.key || `${option.action}-${index}`}

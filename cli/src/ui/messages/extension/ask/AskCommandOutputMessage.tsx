@@ -62,13 +62,7 @@ export const AskCommandOutputMessage: React.FC<MessageComponentProps> = ({ messa
 						{output.trim().length > 500 ? output.trim().slice(0, 500) + "\n..." : output.trim()}
 					</Text>
 				</Box>
-			) : (
-				<Box marginLeft={2} marginTop={1}>
-					<Text color={theme.ui.text.dimmed} dimColor>
-						Waiting for output...
-					</Text>
-				</Box>
-			)}
+			) : null}
 		</Box>
 	)
 }
