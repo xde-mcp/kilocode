@@ -56,7 +56,7 @@ export class HoleFillerTester {
 			recentlyEditedRanges: [],
 		}
 
-		const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId, prefix, suffix)
+		const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId)
 
 		const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
 

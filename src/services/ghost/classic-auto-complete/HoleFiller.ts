@@ -54,12 +54,7 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 export class HoleFiller {
 	constructor(private contextProvider: GhostContextProvider) {}
 
-	async getPrompts(
-		autocompleteInput: AutocompleteInput,
-		languageId: string,
-		_prefix: string,
-		_suffix: string,
-	): Promise<HoleFillerGhostPrompt> {
+	async getPrompts(autocompleteInput: AutocompleteInput, languageId: string): Promise<HoleFillerGhostPrompt> {
 		return {
 			strategy: "hole_filler",
 			systemPrompt: this.getSystemInstructions(),

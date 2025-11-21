@@ -45,8 +45,6 @@ describe("HoleFiller", () => {
 			const { systemPrompt, userPrompt } = await holeFiller.getPrompts(
 				createAutocompleteInput("/test.ts", 0, 13),
 				"typescript",
-				"const x = 1;\n",
-				"",
 			)
 
 			// Verify system prompt contains auto-trigger keywords
@@ -93,8 +91,6 @@ Return the COMPLETION tags`
 			const { userPrompt } = await holeFillerWithContext.getPrompts(
 				createAutocompleteInput("/app.ts", 5, 0),
 				"typescript",
-				"function calculate() {\n  ",
-				"\n}",
 			)
 
 			const expected = `<LANGUAGE>typescript</LANGUAGE>
