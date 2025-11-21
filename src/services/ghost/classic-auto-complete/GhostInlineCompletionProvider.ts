@@ -174,25 +174,25 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// Determine strategy based on model capabilities and call only the appropriate prompt builder
 		if (this.model.supportsFim()) {
 			const modelName = this.model.getModelName() ?? "codestral"
-			const fimPrompt = await this.fimPromptBuilder.buildPrompt(autocompleteInput, modelName, prefix, suffix)
+			const fimPrompt = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
 			return {
 				strategy: "fim",
 				systemPrompt: "",
 				userPrompt: "",
-				prefix: fimPrompt.prefix,
-				suffix: fimPrompt.suffix,
+				prefix,
+				suffix,
 				autocompleteInput: fimPrompt.autocompleteInput,
 				formattedPrefix: fimPrompt.formattedPrefix,
 				prunedSuffix: fimPrompt.prunedSuffix,
 			}
 		} else {
-			const holeFillerPrompt = await this.holeFiller.buildPrompt(autocompleteInput, languageId, prefix, suffix)
+			const holeFillerPrompt = await this.holeFiller.getPrompts(autocompleteInput, languageId)
 			return {
 				strategy: "hole_filler",
 				systemPrompt: holeFillerPrompt.systemPrompt,
 				userPrompt: holeFillerPrompt.userPrompt,
-				prefix: holeFillerPrompt.prefix,
-				suffix: holeFillerPrompt.suffix,
+				prefix,
+				suffix,
 				autocompleteInput: holeFillerPrompt.autocompleteInput,
 			}
 		}

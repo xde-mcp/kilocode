@@ -7,8 +7,6 @@ import { ApiStreamChunk } from "../../../api/transform/stream"
 export interface HoleFillerPrompt {
 	systemPrompt: string
 	userPrompt: string
-	prefix: string
-	suffix: string
 	autocompleteInput: AutocompleteInput
 }
 
@@ -55,32 +53,10 @@ export function parseGhostResponse(fullResponse: string, prefix: string, suffix:
 export class HoleFiller {
 	constructor(private contextProvider: GhostContextProvider) {}
 
-	async getPrompts(
-		autocompleteInput: AutocompleteInput,
-		languageId: string,
-	): Promise<{
-		systemPrompt: string
-		userPrompt: string
-	}> {
+	async getPrompts(autocompleteInput: AutocompleteInput, languageId: string): Promise<HoleFillerPrompt> {
 		return {
 			systemPrompt: this.getSystemInstructions(),
 			userPrompt: await this.getUserPrompt(autocompleteInput, languageId),
-		}
-	}
-
-	async buildPrompt(
-		autocompleteInput: AutocompleteInput,
-		languageId: string,
-		prefix: string,
-		suffix: string,
-	): Promise<HoleFillerPrompt> {
-		const { systemPrompt, userPrompt } = await this.getPrompts(autocompleteInput, languageId)
-
-		return {
-			systemPrompt,
-			userPrompt,
-			prefix,
-			suffix,
 			autocompleteInput,
 		}
 	}

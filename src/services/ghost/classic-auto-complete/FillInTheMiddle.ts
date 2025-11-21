@@ -7,8 +7,6 @@ import { FillInAtCursorSuggestion } from "./HoleFiller"
 export interface FimPrompt {
 	formattedPrefix: string
 	prunedSuffix: string
-	prefix: string
-	suffix: string
 	autocompleteInput: AutocompleteInput
 }
 
@@ -27,33 +25,7 @@ export class FimPromptBuilder {
 	/**
 	 * Build complete FIM prompt with all necessary data
 	 */
-	async buildPrompt(
-		autocompleteInput: AutocompleteInput,
-		modelName: string,
-		prefix: string,
-		suffix: string,
-	): Promise<FimPrompt> {
-		const fimPrompts = await this.getFimPrompts(autocompleteInput, modelName)
-
-		return {
-			formattedPrefix: fimPrompts.formattedPrefix,
-			prunedSuffix: fimPrompts.prunedSuffix,
-			prefix,
-			suffix,
-			autocompleteInput,
-		}
-	}
-
-	/**
-	 * Build FIM (Fill-In-the-Middle) prompts with formatted prefix and pruned suffix
-	 */
-	async getFimPrompts(
-		autocompleteInput: AutocompleteInput,
-		modelName: string,
-	): Promise<{
-		formattedPrefix: string
-		prunedSuffix: string
-	}> {
+	async getFimPrompts(autocompleteInput: AutocompleteInput, modelName: string): Promise<FimPrompt> {
 		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
 			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
 
@@ -76,7 +48,11 @@ export class FimPromptBuilder {
 			formattedPrefix = compiledPrefix
 		}
 
-		return { formattedPrefix, prunedSuffix }
+		return {
+			formattedPrefix,
+			prunedSuffix,
+			autocompleteInput,
+		}
 	}
 
 	/**
