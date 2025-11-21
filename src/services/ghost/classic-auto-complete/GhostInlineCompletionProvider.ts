@@ -139,7 +139,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private async getPrompt(document: vscode.TextDocument, position: vscode.Position): Promise<GhostPrompt> {
+	private async getPrompt(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+	): Promise<{ prompt: GhostPrompt; prefix: string; suffix: string }> {
 		// Build complete context with all tracking data
 		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
 		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
@@ -157,12 +160,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const languageId = document.languageId
 
 		// Determine strategy based on model capabilities and call only the appropriate prompt builder
-		if (this.model.supportsFim()) {
-			const modelName = this.model.getModelName() ?? "codestral"
-			return await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
-		} else {
-			return await this.holeFiller.getPrompts(autocompleteInput, languageId, prefix, suffix)
-		}
+		const prompt = this.model.supportsFim()
+			? await this.fimPromptBuilder.getFimPrompts(autocompleteInput, this.model.getModelName() ?? "codestral")
+			: await this.holeFiller.getPrompts(autocompleteInput, languageId, prefix, suffix)
+
+		return { prompt, prefix, suffix }
 	}
 
 	private processSuggestion(
@@ -264,8 +266,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				return stringToInlineCompletions(matchingText, position)
 			}
 
-			const prompt = await this.getPrompt(document, position)
-			await this.debouncedFetchAndCacheSuggestion(prompt)
+			const { prompt, prefix: promptPrefix, suffix: promptSuffix } = await this.getPrompt(document, position)
+			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix)
 
 			const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 			return stringToInlineCompletions(cachedText ?? "", position)
@@ -277,7 +279,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
+	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 		}
@@ -285,20 +287,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return new Promise<void>((resolve) => {
 			this.debounceTimer = setTimeout(async () => {
 				this.debounceTimer = null
-				await this.fetchAndCacheSuggestion(prompt)
+				await this.fetchAndCacheSuggestion(prompt, prefix, suffix)
 				resolve()
 			}, DEBOUNCE_DELAY_MS)
 		})
 	}
 
-	private async fetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
+	private async fetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
 		try {
-			// Extract prefix and suffix based on strategy
-			const { prefix, suffix } =
-				prompt.strategy === "fim"
-					? { prefix: prompt.autocompleteInput.manuallyPassPrefix || "", suffix: "" }
-					: { prefix: prompt.prefix, suffix: prompt.suffix }
-
 			// Curry processSuggestion with prefix, suffix, and model - only text needs to be provided
 			const curriedProcessSuggestion = (text: string) => this.processSuggestion(text, prefix, suffix, this.model)
 
