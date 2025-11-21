@@ -1,10 +1,9 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, AutocompleteInput } from "../types"
+import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
 import { GhostContextProvider } from "./GhostContextProvider"
-import { parseGhostResponse, HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
+import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
 import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
-import { ApiStreamChunk } from "../../../api/transform/stream"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
@@ -91,7 +90,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	private holeFiller: HoleFiller
 	private fimPromptBuilder: FimPromptBuilder
-	private contextProvider: GhostContextProvider
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -112,7 +110,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.getSettings = getSettings
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
-		this.contextProvider = contextProvider
 		this.ignoreController = ignoreController
 
 		// Initialize tracking services with IDE from context provider
