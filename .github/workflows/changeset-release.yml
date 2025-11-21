@@ -128,7 +128,7 @@ jobs:
 
             # Add label to indicate changelog has been formatted
             - name: Add changelog-ready label
-              if: ${{ steps.changesets.outputs.pullRequestNumber && !contains(github.event.pull_request.labels.*.name, 'changelog-ready') }}
+              if: steps.changesets.outputs.pullRequestNumber
               uses: actions/github-script@v7
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
