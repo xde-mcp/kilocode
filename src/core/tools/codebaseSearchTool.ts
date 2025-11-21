@@ -218,6 +218,7 @@ async function tryManagedSearch(
 		// 3. Format and push results
 		if (!searchResults || searchResults.length === 0) {
 			pushToolResult(`No relevant code snippets found for the query: "${query}"`) // Use simple string for no results
+			return true
 		}
 
 		const jsonResult = {
@@ -269,6 +270,7 @@ ${result.codeChunk ? `Code Chunk: ${result.codeChunk}\n` : ""}`, // kilocode_cha
 		pushToolResult(output)
 		return true
 	} catch (e) {
+		console.log(`[codebaseSearchTool]: Managed search failed with error: ${e}`)
 		return false
 	}
 }
