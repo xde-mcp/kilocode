@@ -16,7 +16,6 @@ env:
 jobs:
     # Job 1: Create version bump PR when changesets are merged to main
     changeset-pr-version-bump:
-        if: github.repository == 'Kilo-Org/kilocode'
         runs-on: ubuntu-latest
         permissions:
             contents: write
