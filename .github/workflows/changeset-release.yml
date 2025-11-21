@@ -41,17 +41,8 @@ jobs:
             - name: Install Dependencies
               run: pnpm install
 
-            # Check if there are any new changesets to process
-            - name: Check for changesets
-              id: check-changesets
-              run: |
-                  NEW_CHANGESETS=$(find .changeset -name "*.md" ! -name "README.md" | wc -l | tr -d ' ')
-                  echo "Changesets diff with previous version: $NEW_CHANGESETS"
-                  echo "new_changesets=$NEW_CHANGESETS" >> $GITHUB_OUTPUT
-
-            # Create version bump PR using changesets/action if there are new changesets
+            # Create version bump PR using changesets/action
             - name: Changeset Pull Request
-              if: steps.check-changesets.outputs.new_changesets != '0'
               id: changesets
               uses: changesets/action@v1
               with:
