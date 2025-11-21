@@ -198,11 +198,8 @@ Return the COMPLETION tags`
 	 * Execute chat-based completion using the model
 	 */
 	async getFromChat(
-		systemPrompt: string,
-		userPrompt: string,
-		prefix: string,
-		suffix: string,
 		model: GhostModel,
+		prompt: HoleFillerGhostPrompt,
 		processSuggestion: (
 			text: string,
 			prefix: string,
@@ -210,6 +207,7 @@ Return the COMPLETION tags`
 			model: GhostModel,
 		) => FillInAtCursorSuggestion,
 	): Promise<ChatCompletionResult> {
+		const { systemPrompt, userPrompt, prefix, suffix } = prompt
 		let response = ""
 
 		const onChunk = (chunk: ApiStreamChunk) => {

@@ -295,21 +295,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		try {
 			const result =
 				prompt.strategy === "fim"
-					? await this.fimPromptBuilder.getFromFIM(
-							this.model,
-							prompt.formattedPrefix,
-							prompt.prunedSuffix,
-							prompt.autocompleteInput,
-							this.processSuggestion.bind(this),
-						)
-					: await this.holeFiller.getFromChat(
-							prompt.systemPrompt,
-							prompt.userPrompt,
-							prompt.prefix,
-							prompt.suffix,
-							this.model,
-							this.processSuggestion.bind(this),
-						)
+					? await this.fimPromptBuilder.getFromFIM(this.model, prompt, this.processSuggestion.bind(this))
+					: await this.holeFiller.getFromChat(this.model, prompt, this.processSuggestion.bind(this))
 
 			if (this.costTrackingCallback && result.cost > 0) {
 				this.costTrackingCallback(

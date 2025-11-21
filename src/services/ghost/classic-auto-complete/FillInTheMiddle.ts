@@ -62,9 +62,7 @@ export class FimPromptBuilder {
 	 */
 	async getFromFIM(
 		model: GhostModel,
-		formattedPrefix: string,
-		prunedSuffix: string,
-		autocompleteInput: AutocompleteInput,
+		prompt: FimGhostPrompt,
 		processSuggestion: (
 			text: string,
 			prefix: string,
@@ -72,6 +70,7 @@ export class FimPromptBuilder {
 			model: GhostModel,
 		) => FillInAtCursorSuggestion,
 	): Promise<FimCompletionResult> {
+		const { formattedPrefix, prunedSuffix, autocompleteInput } = prompt
 		let perflog = ""
 		const logtime = (() => {
 			let timestamp = performance.now()
