@@ -154,6 +154,44 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
+	private async getHoleFillerPrompt(
+		autocompleteInput: AutocompleteInput,
+		languageId: string,
+		prefix: string,
+		suffix: string,
+	): Promise<GhostPrompt> {
+		const { systemPrompt, userPrompt } = await this.holeFiller.getPrompts(autocompleteInput, languageId)
+
+		return {
+			strategy: "hole_filler",
+			systemPrompt,
+			userPrompt,
+			prefix,
+			suffix,
+			autocompleteInput,
+		}
+	}
+
+	private async getFimPrompt(
+		autocompleteInput: AutocompleteInput,
+		prefix: string,
+		suffix: string,
+	): Promise<GhostPrompt> {
+		const modelName = this.model.getModelName() ?? "codestral"
+		const fimPrompts = await this.fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
+
+		return {
+			strategy: "fim",
+			systemPrompt: "",
+			userPrompt: "",
+			prefix,
+			suffix,
+			autocompleteInput,
+			formattedPrefix: fimPrompts.formattedPrefix,
+			prunedSuffix: fimPrompts.prunedSuffix,
+		}
+	}
+
 	private async getPrompt(document: vscode.TextDocument, position: vscode.Position): Promise<GhostPrompt> {
 		// Build complete context with all tracking data
 		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
