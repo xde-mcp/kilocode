@@ -146,6 +146,8 @@ export class GhostServiceManager {
 			},
 		})
 
+		TelemetryService.instance.captureEvent(TelemetryEventName.GHOST_SERVICE_DISABLED)
+
 		await this.load()
 	}
 
