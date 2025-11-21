@@ -63,12 +63,7 @@ export class FimPromptBuilder {
 	async getFromFIM(
 		model: GhostModel,
 		prompt: FimGhostPrompt,
-		processSuggestion: (
-			text: string,
-			prefix: string,
-			suffix: string,
-			model: GhostModel,
-		) => FillInAtCursorSuggestion,
+		processSuggestion: (text: string) => FillInAtCursorSuggestion,
 	): Promise<FimCompletionResult> {
 		const { formattedPrefix, prunedSuffix, autocompleteInput } = prompt
 		let perflog = ""
@@ -81,11 +76,6 @@ export class FimPromptBuilder {
 			}
 		})()
 
-		// Get helper for full prefix/suffix (needed for processSuggestion)
-		const { helper } = await this.contextProvider.getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-		)
 		logtime("snippets")
 
 		console.log("[FIM] formattedPrefix:", formattedPrefix)
@@ -104,7 +94,7 @@ export class FimPromptBuilder {
 		logtime("fim network")
 		console.log("[FIM] response:", response)
 
-		const fillInAtCursorSuggestion = processSuggestion(response, helper.fullPrefix, helper.fullSuffix, model)
+		const fillInAtCursorSuggestion = processSuggestion(response)
 
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final FIM suggestion:", fillInAtCursorSuggestion)

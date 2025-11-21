@@ -293,10 +293,19 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 	private async fetchAndCacheSuggestion(prompt: GhostPrompt): Promise<void> {
 		try {
+			// Extract prefix and suffix based on strategy
+			const { prefix, suffix } =
+				prompt.strategy === "fim"
+					? { prefix: prompt.autocompleteInput.manuallyPassPrefix || "", suffix: "" }
+					: { prefix: prompt.prefix, suffix: prompt.suffix }
+
+			// Curry processSuggestion with prefix, suffix, and model - only text needs to be provided
+			const curriedProcessSuggestion = (text: string) => this.processSuggestion(text, prefix, suffix, this.model)
+
 			const result =
 				prompt.strategy === "fim"
-					? await this.fimPromptBuilder.getFromFIM(this.model, prompt, this.processSuggestion.bind(this))
-					: await this.holeFiller.getFromChat(this.model, prompt, this.processSuggestion.bind(this))
+					? await this.fimPromptBuilder.getFromFIM(this.model, prompt, curriedProcessSuggestion)
+					: await this.holeFiller.getFromChat(this.model, prompt, curriedProcessSuggestion)
 
 			if (this.costTrackingCallback && result.cost > 0) {
 				this.costTrackingCallback(

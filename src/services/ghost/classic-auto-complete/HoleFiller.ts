@@ -200,12 +200,7 @@ Return the COMPLETION tags`
 	async getFromChat(
 		model: GhostModel,
 		prompt: HoleFillerGhostPrompt,
-		processSuggestion: (
-			text: string,
-			prefix: string,
-			suffix: string,
-			model: GhostModel,
-		) => FillInAtCursorSuggestion,
+		processSuggestion: (text: string) => FillInAtCursorSuggestion,
 	): Promise<ChatCompletionResult> {
 		const { systemPrompt, userPrompt, prefix, suffix } = prompt
 		let response = ""
@@ -223,7 +218,7 @@ Return the COMPLETION tags`
 		console.log("response", response)
 
 		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
-		const fillInAtCursorSuggestion = processSuggestion(parsedSuggestion.text, prefix, suffix, model)
+		const fillInAtCursorSuggestion = processSuggestion(parsedSuggestion.text)
 
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
