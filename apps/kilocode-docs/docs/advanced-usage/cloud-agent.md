@@ -12,7 +12,6 @@ Cloud Agents let you run Kilo Code in the cloud from any device, without relying
 ## What Cloud Agents Enable
 
 - Run Kilo Code remotely from a browser  
-- Offload compute-heavy tasks to the cloud  
 - Auto-create branches and push work continuously  
 - Use env vars + startup commands to shape the workspace  
 - Work from anywhere while keeping your repo in sync
