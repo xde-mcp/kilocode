@@ -6,8 +6,6 @@ import { ApiStreamChunk } from "../../../api/transform/stream"
 
 export interface HoleFillerGhostPrompt {
 	strategy: "hole_filler"
-	prefix: string
-	suffix: string
 	autocompleteInput: AutocompleteInput
 	systemPrompt: string
 	userPrompt: string
@@ -59,13 +57,11 @@ export class HoleFiller {
 	async getPrompts(
 		autocompleteInput: AutocompleteInput,
 		languageId: string,
-		prefix: string,
-		suffix: string,
+		_prefix: string,
+		_suffix: string,
 	): Promise<HoleFillerGhostPrompt> {
 		return {
 			strategy: "hole_filler",
-			prefix,
-			suffix,
 			systemPrompt: this.getSystemInstructions(),
 			userPrompt: await this.getUserPrompt(autocompleteInput, languageId),
 			autocompleteInput,
@@ -202,7 +198,7 @@ Return the COMPLETION tags`
 		prompt: HoleFillerGhostPrompt,
 		processSuggestion: (text: string) => FillInAtCursorSuggestion,
 	): Promise<ChatCompletionResult> {
-		const { systemPrompt, userPrompt, prefix, suffix } = prompt
+		const { systemPrompt, userPrompt } = prompt
 		let response = ""
 
 		const onChunk = (chunk: ApiStreamChunk) => {
@@ -217,8 +213,11 @@ Return the COMPLETION tags`
 
 		console.log("response", response)
 
-		const parsedSuggestion = parseGhostResponse(response, prefix, suffix)
-		const fillInAtCursorSuggestion = processSuggestion(parsedSuggestion.text)
+		// Extract just the text from the response - prefix/suffix are handled by the caller
+		const completionMatch = response.match(/<COMPLETION>([\s\S]*?)<\/COMPLETION>/i)
+		const suggestionText = completionMatch ? (completionMatch[1] || "").replace(/<\/?COMPLETION>/gi, "") : ""
+
+		const fillInAtCursorSuggestion = processSuggestion(suggestionText)
 
 		if (fillInAtCursorSuggestion.text) {
 			console.info("Final suggestion:", fillInAtCursorSuggestion)
