@@ -207,6 +207,49 @@ describe("Fzf - Word Boundary Matching", () => {
 			expect(results[0].item.value).toBe("code")
 		})
 
+		it("should find model names with hyphens when query contains hyphen", () => {
+			const items = [
+				{ id: 1, name: "OpenAI: gpt-5 mini" },
+				{ id: 2, name: "OpenAI: gpt-4" },
+				{ id: 3, name: "Anthropic: claude-3" },
+			]
+			const fzf = new Fzf(items, { selector: (item) => item.name })
+
+			const results = fzf.find("gpt-5")
+			// Should match "OpenAI: gpt-5 mini"
+			expect(results).toHaveLength(1)
+			expect(results[0].item.id).toBe(1)
+		})
+
+		it("should find model names with hyphens when query omits hyphen", () => {
+			const items = [
+				{ id: 1, name: "OpenAI: gpt-5 mini" },
+				{ id: 2, name: "OpenAI: gpt-4" },
+				{ id: 3, name: "Anthropic: claude-3" },
+			]
+			const fzf = new Fzf(items, { selector: (item) => item.name })
+
+			const results = fzf.find("gpt5")
+			// Should match "OpenAI: gpt-5 mini" (gpt + 5)
+			expect(results).toHaveLength(1)
+			expect(results[0].item.id).toBe(1)
+		})
+
+		it("should find model names when query has trailing hyphen", () => {
+			const items = [
+				{ id: 1, name: "OpenAI: gpt-5 mini" },
+				{ id: 2, name: "OpenAI: gpt-4" },
+				{ id: 3, name: "Anthropic: claude-3" },
+			]
+			const fzf = new Fzf(items, { selector: (item) => item.name })
+
+			const results = fzf.find("gpt-")
+			// Should match all gpt models
+			expect(results).toHaveLength(2)
+			expect(results.map((r) => r.item.id)).toContain(1)
+			expect(results.map((r) => r.item.id)).toContain(2)
+		})
+
 		it("should work with file paths", () => {
 			const items = [
 				{ path: "src/components/ui/select-dropdown.tsx" },
