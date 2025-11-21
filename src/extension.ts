@@ -162,7 +162,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	// Initialize the provider *before* the Roo Code Cloud service.
-	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService, managedIndexer)
+	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService)
 	// const initManagedCodeIndexing = updateCodeIndexWithKiloProps(provider) // kilocode_change
 
 	// Initialize Roo Code Cloud service.
