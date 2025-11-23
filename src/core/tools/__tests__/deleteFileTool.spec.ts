@@ -13,6 +13,8 @@ vi.mock("fs/promises", () => ({
 	default: {
 		stat: vi.fn(),
 		unlink: vi.fn(),
+		readdir: vi.fn(),
+		rm: vi.fn(),
 	},
 }))
 
@@ -37,6 +39,8 @@ describe("deleteFileTool", () => {
 
 	const mockedFsStat = fs.stat as MockedFunction<typeof fs.stat>
 	const mockedFsUnlink = fs.unlink as MockedFunction<typeof fs.unlink>
+	const mockedFsReaddir = fs.readdir as any
+	const mockedFsRm = fs.rm as any
 	const mockedIsPathOutsideWorkspace = isPathOutsideWorkspace as MockedFunction<typeof isPathOutsideWorkspace>
 	const mockedGetReadablePath = getReadablePath as MockedFunction<typeof getReadablePath>
 
@@ -54,6 +58,8 @@ describe("deleteFileTool", () => {
 			isDirectory: () => false,
 		} as any)
 		mockedFsUnlink.mockResolvedValue(undefined)
+		mockedFsReaddir.mockResolvedValue([])
+		mockedFsRm.mockResolvedValue(undefined)
 		mockedIsPathOutsideWorkspace.mockReturnValue(false)
 		mockedGetReadablePath.mockImplementation((cwd, path) => path || "")
 
@@ -189,12 +195,126 @@ describe("deleteFileTool", () => {
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted file"))
 		})
 
-		it("should reject directory deletion", async () => {
+		it("should successfully delete an empty directory", async () => {
+			mockedFsReaddir.mockResolvedValue([])
+
 			await executeDeleteFileTool({}, { isDirectory: true })
 
-			expect(mockCline.say).toHaveBeenCalledWith("error", "Cannot delete a directory")
+			expect(mockCline.consecutiveMistakeCount).toBe(0)
+			expect(mockAskApproval).toHaveBeenCalled()
+			expect(mockedFsRm).toHaveBeenCalledWith(expect.stringContaining(testFilePath), {
+				recursive: true,
+				force: false,
+			})
+			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted directory"))
+		})
+
+		it("should successfully delete a directory with files", async () => {
+			// Mock directory with files
+			mockedFsReaddir.mockResolvedValue([
+				{ name: "file1.txt", isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false } as any,
+				{ name: "file2.txt", isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false } as any,
+			])
+			mockedFsStat.mockResolvedValue({
+				isDirectory: () => true,
+				size: 1024,
+			} as any)
+
+			await executeDeleteFileTool({}, { isDirectory: true })
+
+			expect(mockCline.consecutiveMistakeCount).toBe(0)
+			expect(mockAskApproval).toHaveBeenCalled()
+			expect(mockedFsRm).toHaveBeenCalledWith(expect.stringContaining(testFilePath), {
+				recursive: true,
+				force: false,
+			})
+			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted directory"))
+		})
+
+		it("should reject directory with protected files", async () => {
+			const testDirPath = "test/dir"
+
+			// Mock directory with a protected file
+			mockedFsReaddir.mockResolvedValue([
+				{
+					name: "protected.txt",
+					isFile: () => true,
+					isDirectory: () => false,
+					isSymbolicLink: () => false,
+				} as any,
+			])
+
+			// Mock stat - first call is for the directory itself
+			mockedFsStat.mockResolvedValue({
+				isDirectory: () => true,
+				size: 100,
+			} as any)
+
+			// THIS is the key: configure the mock BEFORE executeDeleteFileTool overwrites it
+			// The executeDeleteFileTool helper sets isWriteProtected based on the 'isWriteProtected' option,
+			// but that only affects the directory itself, not files inside it.
+			// We need to set up a mock that returns true for files inside the directory.
+			mockCline.rooProtectedController.isWriteProtected.mockImplementation((path: string) => {
+				// Return true only for files inside the directory (containing "protected")
+				return path.includes("protected")
+			})
+
+			const toolUse: ToolUse = {
+				type: "tool_use",
+				name: "delete_file",
+				params: { path: testDirPath },
+				partial: false,
+			}
+
+			await deleteFileTool(
+				mockCline,
+				toolUse,
+				mockAskApproval,
+				mockHandleError,
+				mockPushToolResult,
+				mockRemoveClosingTag,
+			)
+
+			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("protected file"))
 			expect(mockCline.recordToolError).toHaveBeenCalledWith("delete_file")
-			expect(mockedFsUnlink).not.toHaveBeenCalled()
+			expect(mockedFsRm).not.toHaveBeenCalled()
+		})
+
+		it("should reject .git directory (protected by RooProtectedController)", async () => {
+			// Mock .git directory with typical Git files
+			mockedFsReaddir.mockResolvedValue([
+				{ name: "HEAD", isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false } as any,
+				{ name: "config", isFile: () => true, isDirectory: () => false, isSymbolicLink: () => false } as any,
+			])
+			mockedFsStat.mockResolvedValue({
+				isDirectory: () => true,
+				size: 100,
+			} as any)
+
+			// Configure protection controller to protect files in .git
+			mockCline.rooProtectedController.isWriteProtected.mockImplementation((path: string) => {
+				return path.startsWith(".git/") || path === ".git"
+			})
+
+			const toolUse: ToolUse = {
+				type: "tool_use",
+				name: "delete_file",
+				params: { path: ".git" },
+				partial: false,
+			}
+
+			await deleteFileTool(
+				mockCline,
+				toolUse,
+				mockAskApproval,
+				mockHandleError,
+				mockPushToolResult,
+				mockRemoveClosingTag,
+			)
+
+			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("protected file"))
+			expect(mockCline.recordToolError).toHaveBeenCalledWith("delete_file")
+			expect(mockedFsRm).not.toHaveBeenCalled()
 		})
 
 		it("should handle non-existent files", async () => {
@@ -237,9 +357,10 @@ describe("deleteFileTool", () => {
 		})
 
 		it("should pass relPath (not relativePath) to getReadablePath for partial message", async () => {
-			await executeDeleteFileTool({ path: ".gitignore" }, { isPartial: true })
+			await executeDeleteFileTool({ path: ".gitignore" })
 
-			// Same check for partial (streaming) messages
+			// The partial message is sent regardless of the block.partial flag
+			// getReadablePath should be called with relPath for this message
 			expect(mockedGetReadablePath).toHaveBeenCalledWith(mockCline.cwd, ".gitignore")
 		})
 

@@ -135,6 +135,15 @@ const ChatRow = memo(
 
 export default ChatRow
 
+// Helper function to format bytes into human-readable size
+function formatFileSize(bytes: number): string {
+	if (bytes === 0) return "0 B"
+	const k = 1024
+	const sizes = ["B", "KB", "MB", "GB"]
+	const i = Math.floor(Math.log(bytes) / Math.log(k))
+	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+}
+
 export const ChatRowContent = ({
 	message,
 	lastModifiedMessage,
@@ -573,8 +582,12 @@ export const ChatRowContent = ({
 				return (
 					<>
 						<div style={headerStyle}>
-							<Trash2 className="w-4 shrink-0" aria-label="Delete file icon" />
-							<span style={{ fontWeight: "bold" }}>{t("chat:fileOperations.wantsToDelete")}</span>
+							<Trash2 className="w-4 shrink-0" aria-label="Delete icon" />
+							<span style={{ fontWeight: "bold" }}>
+								{tool.stats
+									? t("chat:fileOperations.wantsToDeleteDirectory")
+									: t("chat:fileOperations.wantsToDelete")}
+							</span>
 						</div>
 						<div className="pl-6">
 							<ToolUseBlock>
@@ -584,6 +597,28 @@ export const ChatRowContent = ({
 										{removeLeadingNonAlphanumeric(tool.path ?? "") + "\u200E"}
 									</span>
 								</ToolUseBlockHeader>
+								{tool.stats && tool.stats.isComplete === true && (
+									<div
+										className="py-1.5 text-xs text-vscode-descriptionForeground"
+										style={{
+											borderTop: "1px solid var(--vscode-editorGroup-border)",
+										}}>
+										<div className="flex items-center gap-3 flex-wrap">
+											<span className="flex items-center gap-1">
+												<span>📁</span>
+												<span>{tool.stats.directories}</span>
+											</span>
+											<span className="flex items-center gap-1">
+												<span>📄</span>
+												<span>{tool.stats.files}</span>
+											</span>
+											<span className="flex items-center gap-1">
+												<span>💾</span>
+												<span>{formatFileSize(tool.stats.size)}</span>
+											</span>
+										</div>
+									</div>
+								)}
 							</ToolUseBlock>
 						</div>
 					</>
