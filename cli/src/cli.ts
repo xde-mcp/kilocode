@@ -140,6 +140,10 @@ export class CLI {
 
 				if (this.options.session) {
 					await sessionService.restoreSession(this.options.session)
+				} else if (this.options.fork) {
+					logs.info("Forking session from share ID", "CLI", { shareId: this.options.fork })
+					const forkedSession = await sessionService.forkSession(this.options.fork)
+					await sessionService.restoreSession(forkedSession.session_id)
 				}
 			}
 

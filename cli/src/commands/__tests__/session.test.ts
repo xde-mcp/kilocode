@@ -7,7 +7,7 @@ import { sessionCommand } from "../session.js"
 import type { CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "../core/types.js"
 import { createMockContext } from "./helpers/mockContext.js"
 import { SessionService } from "../../services/session.js"
-import { SessionClient, CliSessionSharedState } from "../../services/sessionClient.js"
+import { SessionClient } from "../../services/sessionClient.js"
 
 // Mock the SessionService
 vi.mock("../../services/session.js", () => ({
@@ -96,13 +96,14 @@ describe("sessionCommand", () => {
 		})
 
 		it("should have usage examples", () => {
-			expect(sessionCommand.examples).toHaveLength(6)
+			expect(sessionCommand.examples).toHaveLength(7)
 			expect(sessionCommand.examples).toContain("/session show")
 			expect(sessionCommand.examples).toContain("/session list")
+			expect(sessionCommand.examples).toContain("/session search <query>")
 			expect(sessionCommand.examples).toContain("/session select <sessionId>")
 			expect(sessionCommand.examples).toContain("/session share")
-			expect(sessionCommand.examples).toContain("/session share public")
-			expect(sessionCommand.examples).toContain("/session share private")
+			expect(sessionCommand.examples).toContain("/session fork <shareId>")
+			expect(sessionCommand.examples).toContain("/session delete <sessionId>")
 		})
 
 		it("should have subcommand argument defined", () => {
@@ -115,8 +116,16 @@ describe("sessionCommand", () => {
 		it("should have all subcommand values defined", () => {
 			const subcommandArg = sessionCommand.arguments![0]
 			expect(subcommandArg.values).toBeDefined()
-			expect(subcommandArg.values).toHaveLength(4)
-			expect(subcommandArg.values!.map((v) => v.value)).toEqual(["show", "list", "select", "share"])
+			expect(subcommandArg.values).toHaveLength(7)
+			expect(subcommandArg.values!.map((v) => v.value)).toEqual([
+				"show",
+				"list",
+				"search",
+				"select",
+				"share",
+				"fork",
+				"delete",
+			])
 		})
 
 		it("should have argument with conditional providers", () => {
@@ -124,13 +133,11 @@ describe("sessionCommand", () => {
 			expect(argumentArg.name).toBe("argument")
 			expect(argumentArg.required).toBe(false)
 			expect(argumentArg.conditionalProviders).toBeDefined()
-			expect(argumentArg.conditionalProviders).toHaveLength(2)
+			expect(argumentArg.conditionalProviders).toHaveLength(1)
 
-			// Check both conditional providers exist
+			// Check conditional provider exists
 			expect(argumentArg.conditionalProviders![0].condition).toBeDefined()
 			expect(argumentArg.conditionalProviders![0].provider).toBeDefined()
-			expect(argumentArg.conditionalProviders![1].condition).toBeDefined()
-			expect(argumentArg.conditionalProviders![1].provider).toBeDefined()
 		})
 	})
 
@@ -146,8 +153,11 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("Usage: /session")
 			expect(message.content).toContain("show")
 			expect(message.content).toContain("list")
+			expect(message.content).toContain("search")
 			expect(message.content).toContain("select")
 			expect(message.content).toContain("share")
+			expect(message.content).toContain("fork")
+			expect(message.content).toContain("delete")
 		})
 
 		it("should not call SessionService when showing usage", async () => {
@@ -406,79 +416,326 @@ describe("sessionCommand", () => {
 
 	describe("handler - share subcommand", () => {
 		beforeEach(() => {
-			// Setup setSharedState mock on service
-			mockSessionService.setSharedState = vi.fn().mockResolvedValue({
-				success: true,
-				session: {
-					session_id: "test-session",
-					shared_state: "public",
-				},
+			// Setup shareSession mock on service
+			mockSessionService.shareSession = vi.fn().mockResolvedValue({
+				shareId: "share-123",
+				shareUrl: "https://kilo.ai/shared/share-123",
 			})
 		})
 
-		it("should set session to private", async () => {
-			mockSessionService.sessionId = "test-session-123"
-			mockContext.args = ["share", "private"]
-
-			await sessionCommand.handler(mockContext)
-
-			expect(SessionService.init).toHaveBeenCalled()
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private)
-
-			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
-			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-			expect(message.type).toBe("system")
-			expect(message.content).toContain("Session set to private")
-		})
-
-		it("should set session to public", async () => {
-			mockSessionService.sessionId = "test-session-123"
-			mockContext.args = ["share", "public"]
-
-			await sessionCommand.handler(mockContext)
-
-			expect(SessionService.init).toHaveBeenCalled()
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public)
-
-			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-			expect(message.type).toBe("system")
-			expect(message.content).toContain("Session shared at: https://kilo.ai/session/")
-		})
-
-		it("should default to public when no state arg provided", async () => {
+		it("should share current session", async () => {
 			mockSessionService.sessionId = "test-session-123"
 			mockContext.args = ["share"]
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Public)
+			expect(SessionService.init).toHaveBeenCalled()
+			expect(mockSessionService.shareSession).toHaveBeenCalled()
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Session shared successfully")
+			expect(message.content).toContain("https://kilo.ai/shared/share-123")
+			expect(message.content).toContain("share-123")
 		})
 
-		it("should handle case-insensitive state argument", async () => {
+		it("should handle share error gracefully", async () => {
 			mockSessionService.sessionId = "test-session-123"
-			mockContext.args = ["share", "PRIVATE"]
-
-			await sessionCommand.handler(mockContext)
-
-			expect(mockSessionService.setSharedState).toHaveBeenCalledWith(CliSessionSharedState.Private)
-		})
-
-		it("should show error for invalid state value", async () => {
-			mockSessionService.sessionId = "test-session-123"
-			mockContext.args = ["share", "invalid"]
+			mockSessionService.shareSession = vi.fn().mockRejectedValue(new Error("Not in a git repository"))
+			mockContext.args = ["share"]
 
 			await sessionCommand.handler(mockContext)
 
 			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(message.type).toBe("error")
-			expect(message.content).toContain('Invalid share state "invalid"')
-			expect(message.content).toContain("Must be one of:")
-			// Verify error message includes all valid enum values
-			Object.values(CliSessionSharedState).forEach((value) => {
-				expect(message.content).toContain(value)
+			expect(message.content).toContain("Failed to share session")
+			expect(message.content).toContain("Not in a git repository")
+		})
+	})
+
+	describe("handler - search subcommand", () => {
+		it("should search sessions and display results", async () => {
+			const mockSearchResults = [
+				{
+					session_id: "session-search-1",
+					title: "Search Result 1",
+					created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+					updated_at: new Date().toISOString(),
+				},
+				{
+					session_id: "session-search-2",
+					title: "Search Result 2",
+					created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+					updated_at: new Date().toISOString(),
+				},
+			]
+
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: mockSearchResults,
+				total: 2,
+				limit: 20,
+				offset: 0,
 			})
-			expect(mockSessionService.setSharedState).not.toHaveBeenCalled()
+			mockContext.args = ["search", "test-query"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionClient.getInstance).toHaveBeenCalled()
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "test-query", limit: 20 })
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Search Results")
+			expect(message.content).toContain("2 of 2")
+			expect(message.content).toContain("Search Result 1")
+			expect(message.content).toContain("Search Result 2")
+			expect(message.content).toContain("session-search-1")
+			expect(message.content).toContain("session-search-2")
+		})
+
+		it("should show error when query is missing", async () => {
+			mockContext.args = ["search"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session search <query>")
+			expect(mockSessionClient.search).not.toHaveBeenCalled()
+		})
+
+		it("should show error when query is empty string", async () => {
+			mockContext.args = ["search", ""]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session search <query>")
+		})
+
+		it("should handle empty search results", async () => {
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: [],
+				total: 0,
+				limit: 20,
+				offset: 0,
+			})
+			mockContext.args = ["search", "nonexistent"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain('No sessions found matching "nonexistent"')
+		})
+
+		it("should indicate active session in search results", async () => {
+			mockSessionService.sessionId = "session-active"
+			const mockSearchResults = [
+				{
+					session_id: "session-active",
+					title: "Active Session",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+				},
+				{
+					session_id: "session-inactive",
+					title: "Inactive Session",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+				},
+			]
+
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: mockSearchResults,
+				total: 2,
+				limit: 20,
+				offset: 0,
+			})
+			mockContext.args = ["search", "query"]
+
+			await sessionCommand.handler(mockContext)
+
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.content).toContain("🟢 [Active]")
+		})
+
+		it("should handle search error gracefully", async () => {
+			mockSessionClient.search = vi.fn().mockRejectedValue(new Error("Database error"))
+			mockContext.args = ["search", "test"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Failed to search sessions")
+			expect(message.content).toContain("Database error")
+		})
+
+		it("should handle 'search' subcommand case-insensitively", async () => {
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: [],
+				total: 0,
+				limit: 20,
+				offset: 0,
+			})
+			mockContext.args = ["SEARCH", "test"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "test", limit: 20 })
+		})
+	})
+
+	describe("handler - fork subcommand", () => {
+		beforeEach(() => {
+			// Setup forkSession mock on service
+			mockSessionService.forkSession = vi.fn().mockResolvedValue({
+				session_id: "forked-session-123",
+				title: "Forked Session",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				api_conversation_history_blob_url: null,
+				task_metadata_blob_url: null,
+				ui_messages_blob_url: null,
+				git_state_blob_url: null,
+			})
+		})
+
+		it("should fork a session successfully", async () => {
+			mockContext.args = ["fork", "share-123"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionService.init).toHaveBeenCalled()
+			expect(mockContext.replaceMessages).toHaveBeenCalledTimes(1)
+			expect(mockContext.refreshTerminal).toHaveBeenCalled()
+			expect(mockSessionService.forkSession).toHaveBeenCalledWith("share-123")
+			expect(mockSessionService.restoreSession).toHaveBeenCalledWith("forked-session-123", true)
+
+			const replacedMessages = (mockContext.replaceMessages as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(replacedMessages).toHaveLength(2)
+			expect(replacedMessages[1].content).toContain("Forking session from share ID")
+			expect(replacedMessages[1].content).toContain("share-123")
+		})
+
+		it("should show error when shareId is missing", async () => {
+			mockContext.args = ["fork"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session fork <shareId>")
+			expect(mockSessionService.forkSession).not.toHaveBeenCalled()
+		})
+
+		it("should show error when shareId is empty string", async () => {
+			mockContext.args = ["fork", ""]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session fork <shareId>")
+		})
+
+		it("should handle fork error gracefully", async () => {
+			mockSessionService.forkSession = vi.fn().mockRejectedValue(new Error("Share ID not found"))
+			mockContext.args = ["fork", "invalid-share-id"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalled()
+			const errorMessage = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls.find(
+				(call) => call[0].type === "error",
+			)
+			expect(errorMessage).toBeDefined()
+			if (errorMessage) {
+				expect(errorMessage[0].content).toContain("Failed to fork session")
+				expect(errorMessage[0].content).toContain("Share ID not found")
+			}
+		})
+
+		it("should handle 'fork' subcommand case-insensitively", async () => {
+			mockContext.args = ["FORK", "share-123"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionService.forkSession).toHaveBeenCalledWith("share-123")
+		})
+	})
+
+	describe("handler - delete subcommand", () => {
+		beforeEach(() => {
+			// Setup delete mock on client
+			mockSessionClient.delete = vi.fn().mockResolvedValue({ success: true })
+		})
+
+		it("should delete a session successfully", async () => {
+			mockContext.args = ["delete", "session-123"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionClient.getInstance).toHaveBeenCalled()
+			expect(mockSessionClient.delete).toHaveBeenCalledWith({ sessionId: "session-123" })
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Session `session-123` deleted successfully")
+		})
+
+		it("should show error when sessionId is missing", async () => {
+			mockContext.args = ["delete"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session delete <sessionId>")
+			expect(mockSessionClient.delete).not.toHaveBeenCalled()
+		})
+
+		it("should show error when sessionId is empty string", async () => {
+			mockContext.args = ["delete", ""]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session delete <sessionId>")
+		})
+
+		it("should handle delete error gracefully", async () => {
+			mockSessionClient.delete = vi.fn().mockRejectedValue(new Error("Session not found"))
+			mockContext.args = ["delete", "nonexistent-session"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Failed to delete session")
+			expect(message.content).toContain("Session not found")
+		})
+
+		it("should handle 'delete' subcommand case-insensitively", async () => {
+			mockContext.args = ["DELETE", "session-123"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionClient.delete).toHaveBeenCalledWith({ sessionId: "session-123" })
 		})
 	})
 
@@ -495,8 +752,11 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("invalid")
 			expect(message.content).toContain("show")
 			expect(message.content).toContain("list")
+			expect(message.content).toContain("search")
 			expect(message.content).toContain("select")
 			expect(message.content).toContain("share")
+			expect(message.content).toContain("fork")
+			expect(message.content).toContain("delete")
 		})
 
 		it("should not call SessionService for invalid subcommand", async () => {
@@ -546,101 +806,6 @@ describe("sessionCommand", () => {
 		})
 	})
 
-	describe("stateAutocompleteProvider", () => {
-		// Helper to create minimal ArgumentProviderContext for testing
-		const createProviderContext = (partialInput: string, subcommand?: string): ArgumentProviderContext => ({
-			commandName: "session",
-			argumentIndex: 1,
-			argumentName: "argument",
-			currentArgs: [],
-			currentOptions: {},
-			partialInput,
-			getArgument: (name: string) => (name === "subcommand" ? subcommand : undefined),
-			parsedValues: { args: {}, options: {} },
-			command: sessionCommand,
-		})
-
-		it("should run provider when subcommand is 'share'", async () => {
-			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
-			const condition = conditionalProvider.condition
-			const context = createProviderContext("", "share")
-
-			const shouldRun = condition(context)
-
-			expect(shouldRun).toBe(true)
-		})
-
-		it("should NOT run provider when subcommand is 'select'", async () => {
-			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
-			const condition = conditionalProvider.condition
-			const context = createProviderContext("", "select")
-
-			const shouldRun = condition(context)
-
-			expect(shouldRun).toBe(false)
-		})
-
-		it("should NOT run provider when subcommand is 'list'", async () => {
-			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![1]
-			const condition = conditionalProvider.condition
-			const context = createProviderContext("", "list")
-
-			const shouldRun = condition(context)
-
-			expect(shouldRun).toBe(false)
-		})
-
-		it("should return all valid share states", async () => {
-			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
-			const context = createProviderContext("", "share")
-
-			const result = (await provider(context)) as ArgumentSuggestion[]
-
-			const enumValues = Object.values(CliSessionSharedState)
-			expect(result).toHaveLength(enumValues.length)
-			expect(result.map((r) => r.value)).toEqual(enumValues)
-		})
-
-		it("should return suggestions with correct format", async () => {
-			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
-			const context = createProviderContext("", "share")
-
-			const result = (await provider(context)) as ArgumentSuggestion[]
-
-			expect(result.length).toBeGreaterThan(0)
-			result.forEach((suggestion) => {
-				expect(suggestion).toHaveProperty("value")
-				expect(suggestion).toHaveProperty("description")
-				expect(suggestion).toHaveProperty("matchScore", 100)
-				expect(suggestion).toHaveProperty("highlightedValue")
-				expect(suggestion.description).toContain("Make session")
-				expect(suggestion.description).toContain(suggestion.value)
-			})
-		})
-
-		it("should include 'private' state", async () => {
-			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
-			const context = createProviderContext("", "share")
-
-			const result = (await provider(context)) as ArgumentSuggestion[]
-
-			const privateState = result.find((r) => r.value === CliSessionSharedState.Private)
-			expect(privateState).toBeDefined()
-			expect(privateState?.description).toContain("Make session private")
-		})
-
-		it("should include 'public' state", async () => {
-			const provider = sessionCommand.arguments![1].conditionalProviders![1].provider
-			const context = createProviderContext("", "share")
-
-			const result = (await provider(context)) as ArgumentSuggestion[]
-
-			const publicState = result.find((r) => r.value === CliSessionSharedState.Public)
-			expect(publicState).toBeDefined()
-			expect(publicState?.description).toContain("Make session public")
-		})
-	})
-
 	describe("sessionIdAutocompleteProvider", () => {
 		// Helper to create minimal ArgumentProviderContext for testing
 		const createProviderContext = (partialInput: string, subcommand?: string): ArgumentProviderContext => ({
@@ -673,6 +838,26 @@ describe("sessionCommand", () => {
 			const shouldRun = condition(context)
 
 			expect(shouldRun).toBe(true)
+		})
+
+		it("should run provider when subcommand is 'delete'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![0]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("test", "delete")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(true)
+		})
+
+		it("should NOT run provider when subcommand is 'fork'", async () => {
+			const conditionalProvider = sessionCommand.arguments![1].conditionalProviders![0]
+			const condition = conditionalProvider.condition
+			const context = createProviderContext("test", "fork")
+
+			const shouldRun = condition(context)
+
+			expect(shouldRun).toBe(false)
 		})
 
 		it("should return empty array for empty prefix", async () => {

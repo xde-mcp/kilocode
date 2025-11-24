@@ -5,21 +5,7 @@
 import { generateMessage } from "../ui/utils/messages.js"
 import type { Command, CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "./core/types.js"
 import { SessionService } from "../services/session.js"
-import { SessionClient, CliSessionSharedState } from "../services/sessionClient.js"
-
-/**
- * Get all valid share state values from the enum
- */
-function getValidShareStates(): string[] {
-	return Object.values(CliSessionSharedState)
-}
-
-/**
- * Check if a value is a valid share state
- */
-function isValidShareState(value: string): value is CliSessionSharedState {
-	return getValidShareStates().includes(value)
-}
+import { SessionClient } from "../services/sessionClient.js"
 
 /**
  * Format a timestamp as a relative time string
@@ -162,39 +148,164 @@ async function selectSession(context: CommandContext, sessionId: string): Promis
 }
 
 /**
- * Share a session (make it public or private)
+ * Search sessions by title or ID
  */
-async function shareSession(context: CommandContext): Promise<void> {
-	const { addMessage, args } = context
+async function searchSessions(context: CommandContext, query: string): Promise<void> {
+	const { addMessage } = context
 	const sessionService = SessionService.init()
+	const sessionClient = SessionClient.getInstance()
 
-	// Parse the share state argument (default to "public")
-	const stateArg = args[1]?.toLowerCase() || CliSessionSharedState.Public
-
-	// Validate the state value
-	if (!isValidShareState(stateArg)) {
+	if (!query) {
 		addMessage({
 			...generateMessage(),
 			type: "error",
-			content: `Invalid share state "${stateArg}". Must be one of: ${getValidShareStates().join(", ")}.`,
+			content: "Usage: /session search <query>",
 		})
 		return
 	}
 
 	try {
-		const result = await sessionService.setSharedState(stateArg)
-		const sessionId = result.session.session_id
+		const result = await sessionClient.search({ searchString: query, limit: 20 })
+		const { results, total } = result
+
+		if (results.length === 0) {
+			addMessage({
+				...generateMessage(),
+				type: "system",
+				content: `No sessions found matching "${query}".`,
+			})
+			return
+		}
+
+		let content = `**Search Results** (${results.length} of ${total}):\n\n`
+		results.forEach((session, index) => {
+			const isActive = session.session_id === sessionService.sessionId ? " 🟢 [Active]" : ""
+			const title = session.title || "Untitled"
+			const createdTime = formatRelativeTime(new Date(session.created_at).getTime())
+
+			content += `${index + 1}. **${title}**${isActive}\n`
+			content += `   ID: \`${session.session_id}\`\n`
+			content += `   Created: ${createdTime}\n\n`
+		})
 
 		addMessage({
 			...generateMessage(),
 			type: "system",
-			content: `Session shared at: https://kilo.ai/session/${sessionId}`,
+			content,
 		})
 	} catch (error) {
 		addMessage({
 			...generateMessage(),
 			type: "error",
-			content: `Failed to set share state: ${error instanceof Error ? error.message : String(error)}`,
+			content: `Failed to search sessions: ${error instanceof Error ? error.message : String(error)}`,
+		})
+	}
+}
+
+/**
+ * Share the current session publicly with git state
+ */
+async function shareSession(context: CommandContext): Promise<void> {
+	const { addMessage } = context
+	const sessionService = SessionService.init()
+
+	try {
+		const result = await sessionService.shareSession()
+
+		addMessage({
+			...generateMessage(),
+			type: "system",
+			content: `✅ Session shared successfully!\n\n**Share URL:** ${result.shareUrl}\n\nShare ID: \`${result.shareId}\``,
+		})
+	} catch (error) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Failed to share session: ${error instanceof Error ? error.message : String(error)}`,
+		})
+	}
+}
+
+/**
+ * Fork a shared session by share ID
+ */
+async function forkSession(context: CommandContext, shareId: string): Promise<void> {
+	const { addMessage, replaceMessages, refreshTerminal } = context
+	const sessionService = SessionService.init()
+
+	if (!shareId) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: "Usage: /session fork <shareId>",
+		})
+		return
+	}
+
+	try {
+		// Clear messages and show loading state
+		const now = Date.now()
+		replaceMessages([
+			{
+				id: `empty-${now}`,
+				type: "empty",
+				content: "",
+				ts: 1,
+			},
+			{
+				id: `system-${now + 1}`,
+				type: "system",
+				content: `Forking session from share ID \`${shareId}\`...`,
+				ts: 2,
+			},
+		])
+
+		await refreshTerminal()
+
+		const forkedSession = await sessionService.forkSession(shareId)
+
+		// Restore the forked session
+		await sessionService.restoreSession(forkedSession.session_id, true)
+
+		// Success message handled by restoreSession via extension messages
+	} catch (error) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Failed to fork session: ${error instanceof Error ? error.message : String(error)}`,
+		})
+	}
+}
+
+/**
+ * Delete a session by ID
+ */
+async function deleteSession(context: CommandContext, sessionId: string): Promise<void> {
+	const { addMessage } = context
+	const sessionClient = SessionClient.getInstance()
+
+	if (!sessionId) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: "Usage: /session delete <sessionId>",
+		})
+		return
+	}
+
+	try {
+		await sessionClient.delete({ sessionId })
+
+		addMessage({
+			...generateMessage(),
+			type: "system",
+			content: `✅ Session \`${sessionId}\` deleted successfully.`,
+		})
+	} catch (error) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Failed to delete session: ${error instanceof Error ? error.message : String(error)}`,
 		})
 	}
 }
@@ -235,23 +346,27 @@ export const sessionCommand: Command = {
 	examples: [
 		"/session show",
 		"/session list",
+		"/session search <query>",
 		"/session select <sessionId>",
 		"/session share",
-		"/session share public",
-		"/session share private",
+		"/session fork <shareId>",
+		"/session delete <sessionId>",
 	],
 	category: "system",
 	priority: 5,
 	arguments: [
 		{
 			name: "subcommand",
-			description: "Subcommand: show, list, select, share",
+			description: "Subcommand: show, list, search, select, share, fork, delete",
 			required: false,
 			values: [
 				{ value: "show", description: "Display current session ID" },
 				{ value: "list", description: "List all sessions" },
+				{ value: "search", description: "Search sessions by title or ID" },
 				{ value: "select", description: "Restore a session" },
-				{ value: "share", description: "Share session" },
+				{ value: "share", description: "Share current session publicly" },
+				{ value: "fork", description: "Fork a shared session" },
+				{ value: "delete", description: "Delete a session" },
 			],
 		},
 		{
@@ -260,18 +375,11 @@ export const sessionCommand: Command = {
 			required: false,
 			conditionalProviders: [
 				{
-					condition: (context) => context.getArgument("subcommand") === "select",
+					condition: (context) => {
+						const subcommand = context.getArgument("subcommand")
+						return subcommand === "select" || subcommand === "delete"
+					},
 					provider: sessionIdAutocompleteProvider,
-				},
-				{
-					condition: (context) => context.getArgument("subcommand") === "share",
-					provider: async () =>
-						getValidShareStates().map((value) => ({
-							value,
-							description: `Make session ${value}`,
-							matchScore: 100,
-							highlightedValue: value,
-						})),
 				},
 			],
 		},
@@ -283,7 +391,7 @@ export const sessionCommand: Command = {
 			addMessage({
 				...generateMessage(),
 				type: "system",
-				content: "Usage: /session [show|list|select|share] [args]",
+				content: "Usage: /session [show|list|search|select|share|fork|delete] [args]",
 			})
 			return
 		}
@@ -297,17 +405,26 @@ export const sessionCommand: Command = {
 			case "list":
 				await listSessions(context)
 				break
+			case "search":
+				await searchSessions(context, args[1] || "")
+				break
 			case "select":
 				await selectSession(context, args[1] || "")
 				break
 			case "share":
 				await shareSession(context)
 				break
+			case "fork":
+				await forkSession(context, args[1] || "")
+				break
+			case "delete":
+				await deleteSession(context, args[1] || "")
+				break
 			default:
 				addMessage({
 					...generateMessage(),
 					type: "error",
-					content: `Unknown subcommand "${subcommand}". Available: show, list, select, share`,
+					content: `Unknown subcommand "${subcommand}". Available: show, list, search, select, share, fork, delete`,
 				})
 		}
 	},

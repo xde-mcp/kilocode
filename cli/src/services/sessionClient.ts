@@ -75,9 +75,8 @@ export enum CliSessionSharedState {
 	Public = "public",
 }
 
-export type SetSharedStateInput = {
+export type ShareSessionInput = {
 	sessionId: string
-	sharedState: CliSessionSharedState
 	gitState: {
 		repoUrl: string
 		head: string
@@ -85,19 +84,24 @@ export type SetSharedStateInput = {
 	}
 }
 
-export interface SetSharedStateOutput {
-	success: boolean
-	session: {
-		session_id: string
-		shared_state: string
-	}
+export interface ShareSessionOutput {
+	shareId: string
+	shareUrl: string
 }
 
 export interface ForkSessionInput {
-	sessionId: string
+	shareId: string
 }
 
 export type ForkSessionOutput = SessionWithSignedUrls
+
+export interface DeleteSessionInput {
+	sessionId: string
+}
+
+export interface DeleteSessionOutput {
+	success: boolean
+}
 
 export class SessionClient {
 	private static instance: SessionClient | null = null
@@ -178,12 +182,12 @@ export class SessionClient {
 	}
 
 	/**
-	 * Set session sharing state
+	 * Share a session
 	 */
-	async setSharedState(input: SetSharedStateInput): Promise<SetSharedStateOutput> {
+	async share(input: ShareSessionInput): Promise<ShareSessionOutput> {
 		const client = TrpcClient.init()
-		const response = await client.request<SetSharedStateInput, TrpcResponse<SetSharedStateOutput>>(
-			"cliSessions.setSharedState",
+		const response = await client.request<ShareSessionInput, TrpcResponse<ShareSessionOutput>>(
+			"cliSessions.share",
 			"POST",
 			input,
 		)
@@ -191,12 +195,25 @@ export class SessionClient {
 	}
 
 	/**
-	 * Fork an existing session
+	 * Fork a shared session by share ID
 	 */
 	async fork(input: ForkSessionInput): Promise<ForkSessionOutput> {
 		const client = TrpcClient.init()
 		const response = await client.request<ForkSessionInput, TrpcResponse<ForkSessionOutput>>(
 			"cliSessions.fork",
+			"POST",
+			input,
+		)
+		return response.result.data
+	}
+
+	/**
+	 * Delete a session
+	 */
+	async delete(input: DeleteSessionInput): Promise<DeleteSessionOutput> {
+		const client = TrpcClient.init()
+		const response = await client.request<DeleteSessionInput, TrpcResponse<DeleteSessionOutput>>(
+			"cliSessions.delete",
 			"POST",
 			input,
 		)

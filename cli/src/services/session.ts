@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
-import { SessionClient, SessionWithSignedUrls, CliSessionSharedState, SetSharedStateOutput } from "./sessionClient"
+import { SessionClient, SessionWithSignedUrls, ShareSessionOutput } from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
@@ -327,20 +327,13 @@ export class SessionService {
 		this.workspaceDir = dir
 	}
 
-	async setSharedState(sharedState: CliSessionSharedState): Promise<SetSharedStateOutput> {
+	async shareSession(): Promise<ShareSessionOutput> {
 		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
 		}
 
 		const sessionClient = SessionClient.getInstance()
-
-		if (sharedState === CliSessionSharedState.Private) {
-			return await sessionClient.setSharedState({
-				sessionId,
-				sharedState: CliSessionSharedState.Private,
-			})
-		}
 
 		// Use stored workspace directory, fallback to process.cwd() if not set
 		const cwd = this.workspaceDir || process.cwd()
@@ -357,15 +350,19 @@ export class SessionService {
 
 		const patch = await git.diff(["HEAD"])
 
-		return await sessionClient.setSharedState({
+		return await sessionClient.share({
 			sessionId,
-			sharedState: CliSessionSharedState.Public,
 			gitState: {
 				repoUrl,
 				head,
 				patch,
 			},
 		})
+	}
+
+	async forkSession(shareId: string): Promise<SessionWithSignedUrls> {
+		const sessionClient = SessionClient.getInstance()
+		return await sessionClient.fork({ shareId })
 	}
 
 	async destroy() {
