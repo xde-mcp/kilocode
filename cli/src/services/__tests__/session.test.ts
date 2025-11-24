@@ -768,10 +768,10 @@ describe("SessionService", () => {
 
 			await service.restoreSession("restored-session-id")
 
-			// Verify SessionClient.get was called with includeBlobs
+			// Verify SessionClient.get was called with includeBlobUrls
 			expect(mockGet).toHaveBeenCalledWith({
 				sessionId: "restored-session-id",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 
 			// Verify fetch was called for each signed URL

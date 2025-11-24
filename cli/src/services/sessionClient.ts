@@ -17,7 +17,7 @@ export interface SessionWithSignedUrls extends Session {
 
 export interface GetSessionInput {
 	sessionId: string
-	includeBlobs?: boolean
+	includeBlobUrls?: boolean
 }
 
 export type GetSessionOutput = Session | SessionWithSignedUrls
@@ -77,23 +77,27 @@ export enum CliSessionSharedState {
 
 export type ShareSessionInput = {
 	sessionId: string
+	sharedState: CliSessionSharedState
 	gitState: {
-		repoUrl: string
 		head: string
 		patch: string
 	}
+	gitUrl: string
 }
 
 export interface ShareSessionOutput {
-	shareId: string
-	shareUrl: string
+	share_id: string
+	session_id: string
 }
 
 export interface ForkSessionInput {
 	shareId: string
 }
 
-export type ForkSessionOutput = SessionWithSignedUrls
+export interface ForkSessionOutput {
+	session_id: string
+	git_state_url: string
+}
 
 export interface DeleteSessionInput {
 	sessionId: string

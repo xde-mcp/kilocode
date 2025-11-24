@@ -81,12 +81,12 @@ describe("SessionClient", () => {
 
 			const result = await service.get({
 				sessionId: "session-1",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
 				sessionId: "session-1",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 			expect(result).toEqual(mockSession)
 		})
@@ -109,12 +109,12 @@ describe("SessionClient", () => {
 
 			const result = await service.get({
 				sessionId: "session-1",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
 				sessionId: "session-1",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 			expect(result).toEqual(mockSession)
 			// Verify git_state_blob_url is present
@@ -689,10 +689,10 @@ describe("SessionClient", () => {
 
 			const result = await service.get({
 				sessionId: "uuid-string",
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})
 
-			// Result should have blob fields when includeBlobs is true
+			// Result should have blob fields when includeBlobUrls is true
 			expect("api_conversation_history" in result).toBe(true)
 			expect("task_metadata" in result).toBe(true)
 			expect("ui_messages" in result).toBe(true)

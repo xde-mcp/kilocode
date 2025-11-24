@@ -1,6 +1,12 @@
 import { readFileSync, writeFileSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
-import { SessionClient, SessionWithSignedUrls, ShareSessionOutput } from "./sessionClient"
+import {
+	SessionClient,
+	SessionWithSignedUrls,
+	ShareSessionOutput,
+	CliSessionSharedState,
+	ForkSessionOutput,
+} from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
@@ -136,7 +142,7 @@ export class SessionService {
 			const sessionClient = SessionClient.getInstance()
 			const session = (await sessionClient.get({
 				sessionId,
-				includeBlobs: true,
+				includeBlobUrls: true,
 			})) as SessionWithSignedUrls
 
 			if (!session) {
@@ -327,14 +333,7 @@ export class SessionService {
 		this.workspaceDir = dir
 	}
 
-	async shareSession(): Promise<ShareSessionOutput> {
-		const sessionId = this.sessionId
-		if (!sessionId) {
-			throw new Error("No active session")
-		}
-
-		const sessionClient = SessionClient.getInstance()
-
+	private async getGitState() {
 		// Use stored workspace directory, fallback to process.cwd() if not set
 		const cwd = this.workspaceDir || process.cwd()
 		const git = simpleGit(cwd)
@@ -350,17 +349,35 @@ export class SessionService {
 
 		const patch = await git.diff(["HEAD"])
 
+		return {
+			repoUrl,
+			head,
+			patch,
+		}
+	}
+
+	async shareSession(): Promise<ShareSessionOutput> {
+		const sessionId = this.sessionId
+		if (!sessionId) {
+			throw new Error("No active session")
+		}
+
+		const sessionClient = SessionClient.getInstance()
+
+		const { head, patch, repoUrl } = await this.getGitState()
+
 		return await sessionClient.share({
 			sessionId,
+			sharedState: CliSessionSharedState.Public,
 			gitState: {
-				repoUrl,
 				head,
 				patch,
 			},
+			gitUrl: repoUrl,
 		})
 	}
 
-	async forkSession(shareId: string): Promise<SessionWithSignedUrls> {
+	async forkSession(shareId: string): Promise<ForkSessionOutput> {
 		const sessionClient = SessionClient.getInstance()
 		return await sessionClient.fork({ shareId })
 	}

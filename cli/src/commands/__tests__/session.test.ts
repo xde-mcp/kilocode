@@ -418,8 +418,8 @@ describe("sessionCommand", () => {
 		beforeEach(() => {
 			// Setup shareSession mock on service
 			mockSessionService.shareSession = vi.fn().mockResolvedValue({
-				shareId: "share-123",
-				shareUrl: "https://kilo.ai/shared/share-123",
+				share_id: "share-123",
+				session_id: "test-session-123",
 			})
 		})
 
@@ -436,7 +436,6 @@ describe("sessionCommand", () => {
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(message.type).toBe("system")
 			expect(message.content).toContain("Session shared successfully")
-			expect(message.content).toContain("https://kilo.ai/shared/share-123")
 			expect(message.content).toContain("share-123")
 		})
 

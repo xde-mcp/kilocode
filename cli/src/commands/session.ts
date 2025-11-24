@@ -215,7 +215,7 @@ async function shareSession(context: CommandContext): Promise<void> {
 		addMessage({
 			...generateMessage(),
 			type: "system",
-			content: `✅ Session shared successfully!\n\n**Share URL:** ${result.shareUrl}\n\nShare ID: \`${result.shareId}\``,
+			content: `✅ Session shared successfully!\n\nShare ID: \`${result.share_id}\``,
 		})
 	} catch (error) {
 		addMessage({
