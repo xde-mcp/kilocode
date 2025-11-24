@@ -438,7 +438,6 @@ export class SessionService {
 	}
 
 	private async getGitState() {
-		// Use stored workspace directory, fallback to process.cwd() if not set
 		const cwd = this.workspaceDir || process.cwd()
 		const git = simpleGit(cwd)
 
@@ -447,7 +446,22 @@ export class SessionService {
 
 		const head = await git.revparse(["HEAD"])
 
-		const patch = await git.diff(["HEAD"])
+		// Try standard diff first to capture uncommitted changes
+		let patch = await git.diff(["HEAD"])
+
+		// If patch is empty, check if this is the first commit
+		if (!patch || patch.trim().length === 0) {
+			// Check if HEAD is the first commit (has no parent)
+			const parents = await git.raw(["rev-list", "--parents", "-n", "1", "HEAD"])
+			const isFirstCommit = parents.trim().split(" ").length === 1
+
+			if (isFirstCommit) {
+				// For first commit, generate Git's universal empty tree hash to diff against
+				// This represents an empty repository state and allows capturing the entire initial commit
+				const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", "/dev/null"])).trim()
+				patch = await git.diff([emptyTreeHash, "HEAD"])
+			}
+		}
 
 		return {
 			repoUrl,

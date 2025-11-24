@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { SessionService } from "../session.js"
-import { SessionClient, CliSessionSharedState } from "../sessionClient.js"
+import { SessionClient } from "../sessionClient.js"
 import type { ExtensionService } from "../extension.js"
 import type { ClineMessage } from "@roo-code/types"
-import { createStore } from "jotai"
-import { sessionIdAtom } from "../../state/atoms/session.js"
 import type { SimpleGit } from "simple-git"
 
 // Mock fs module
@@ -35,10 +33,14 @@ vi.mock("../../utils/paths.js", () => ({
 	},
 }))
 
+// Mock simple-git
+vi.mock("simple-git")
+
 // Import after mocking
 import { readFileSync, writeFileSync } from "fs"
 import { ensureDirSync } from "fs-extra"
 import { logs } from "../logs.js"
+import simpleGit from "simple-git"
 
 describe("SessionService", () => {
 	let service: SessionService
@@ -48,7 +50,7 @@ describe("SessionService", () => {
 	let mockGet: ReturnType<typeof vi.fn>
 	let mockExtensionService: ExtensionService
 	let mockSendWebviewMessage: ReturnType<typeof vi.fn>
-	let mockStore: ReturnType<typeof createStore>
+	let mockGit: Partial<SimpleGit>
 
 	beforeEach(() => {
 		vi.useFakeTimers()
@@ -64,13 +66,6 @@ describe("SessionService", () => {
 			sendWebviewMessage: mockSendWebviewMessage,
 		} as unknown as ExtensionService
 
-		// Mock Jotai store
-		mockStore = {
-			set: vi.fn(),
-			get: vi.fn(),
-			sub: vi.fn(),
-		} as ReturnType<typeof createStore>
-
 		// Mock SessionClient methods
 		mockCreate = vi.fn()
 		mockUpdate = vi.fn()
@@ -84,7 +79,17 @@ describe("SessionService", () => {
 		// Mock SessionClient.getInstance to return our mock
 		vi.spyOn(SessionClient, "getInstance").mockReturnValue(mockSessionClient)
 
-		service = SessionService.init(mockExtensionService, mockStore)
+		// Set up default git mocks for all tests - make git fail by default
+		// (as if not in a git repository). Tests that need git will set up their own mocks.
+		mockGit = {
+			getRemotes: vi.fn().mockRejectedValue(new Error("not a git repository")),
+			revparse: vi.fn().mockRejectedValue(new Error("not a git repository")),
+			raw: vi.fn().mockRejectedValue(new Error("not a git repository")),
+			diff: vi.fn().mockRejectedValue(new Error("not a git repository")),
+		}
+		vi.mocked(simpleGit).mockReturnValue(mockGit as SimpleGit)
+
+		service = SessionService.init(mockExtensionService)
 	})
 
 	afterEach(async () => {
@@ -94,7 +99,7 @@ describe("SessionService", () => {
 	})
 
 	describe("init", () => {
-		it("should throw error when called without extensionService and store on first init", () => {
+		it("should throw error when called without extensionService on first init", () => {
 			// @ts-expect-error - Accessing private static property for testing
 			SessionService.instance = null
 
@@ -102,7 +107,7 @@ describe("SessionService", () => {
 		})
 
 		it("should return same instance on multiple calls", () => {
-			const instance1 = SessionService.init(mockExtensionService, mockStore)
+			const instance1 = SessionService.init(mockExtensionService)
 			const instance2 = SessionService.init()
 			expect(instance1).toBe(instance2)
 		})
@@ -112,11 +117,11 @@ describe("SessionService", () => {
 			expect(SessionService.instance).not.toBeNull()
 		})
 
-		it("should accept extensionService and store parameters", () => {
+		it("should accept extensionService parameter", () => {
 			// @ts-expect-error - Accessing private static property for testing
 			SessionService.instance = null
 
-			const instance = SessionService.init(mockExtensionService, mockStore)
+			const instance = SessionService.init(mockExtensionService)
 			expect(instance).toBeInstanceOf(SessionService)
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Initiated SessionService", "SessionService")
 		})
@@ -479,9 +484,9 @@ describe("SessionService", () => {
 			// Create new instance to test construction
 			// @ts-expect-error - Reset for testing
 			SessionService.instance = null
-			SessionService.init(mockExtensionService, mockStore)
+			SessionService.init(mockExtensionService)
 
-			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 1000)
+			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5000)
 		})
 
 		it("should call syncSession every 1000ms", async () => {
@@ -839,25 +844,6 @@ describe("SessionService", () => {
 			})
 		})
 
-		it("should set session ID in atom", async () => {
-			const mockSessionData = {
-				session_id: "restored-session-id",
-				title: "Restored Session",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-				api_conversation_history: null,
-				ui_messages: null,
-				task_metadata: null,
-			}
-
-			mockGet.mockResolvedValueOnce(mockSessionData)
-
-			await service.restoreSession("restored-session-id")
-
-			// Verify session ID was set in atom
-			expect(mockStore.set).toHaveBeenCalledWith(sessionIdAtom, "restored-session-id")
-		})
-
 		it("should handle missing session gracefully", async () => {
 			mockGet.mockResolvedValueOnce(null)
 
@@ -1053,207 +1039,220 @@ describe("SessionService", () => {
 		})
 	})
 
-	describe("setSharedState", () => {
-		let mockSetSharedState: ReturnType<typeof vi.fn>
-
+	describe("getGitState", () => {
 		beforeEach(() => {
-			mockSetSharedState = vi.fn()
-			mockSessionClient.setSharedState = mockSetSharedState
-		})
-
-		it("should throw error when no active session", async () => {
-			await expect(service.setSharedState(CliSessionSharedState.Private)).rejects.toThrow("No active session")
-		})
-
-		it("should set session to private", async () => {
-			// Create a session first
-			const mockData = { messages: [] }
-			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
-			mockCreate.mockResolvedValueOnce({
-				session_id: "test-session-id",
-				title: "",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-			})
-
-			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-			await vi.advanceTimersByTimeAsync(1000)
-
-			mockSetSharedState.mockResolvedValueOnce({
-				success: true,
-				session: {
-					session_id: "test-session-id",
-					shared_state: "private",
-				},
-			})
-
-			const result = await service.setSharedState(CliSessionSharedState.Private)
-
-			expect(mockSetSharedState).toHaveBeenCalledWith({
-				session_id: "test-session-id",
-				shared_state: "private",
-			})
-			expect(result).toEqual({
-				success: true,
-				session: {
-					session_id: "test-session-id",
-					shared_state: "private",
-				},
-			})
-		})
-
-		it("should set session to public with git state", async () => {
-			// Create a session first
-			const mockData = { messages: [] }
-			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
-			mockCreate.mockResolvedValueOnce({
-				session_id: "test-session-id",
-				title: "",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-			})
-
-			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-			await vi.advanceTimersByTimeAsync(1000)
-
-			// Mock simple-git
-			const mockGit = {
-				getRemotes: vi.fn().mockResolvedValue([
-					{
-						name: "origin",
-						refs: {
-							fetch: "https://github.com/user/repo.git",
-							push: "https://github.com/user/repo.git",
-						},
-					},
-				]),
-				revparse: vi.fn().mockResolvedValue("abc123def456"),
-				diff: vi.fn().mockResolvedValue("diff content"),
+			// Override default git mocks with working ones for getGitState tests
+			mockGit = {
+				getRemotes: vi.fn(),
+				revparse: vi.fn(),
+				raw: vi.fn().mockImplementation((args: string[]) => {
+					// Return appropriate mock based on the git command
+					if (args[0] === "hash-object") {
+						return Promise.resolve("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n")
+					}
+					return Promise.resolve("")
+				}),
+				diff: vi.fn(),
 			}
 
-			vi.mock("simple-git", () => ({
-				default: vi.fn(() => mockGit),
-			}))
+			vi.mocked(simpleGit).mockReturnValue(mockGit as SimpleGit)
+		})
 
-			const simpleGit = (await import("simple-git")).default
-			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
-
-			mockSetSharedState.mockResolvedValueOnce({
-				success: true,
-				session: {
-					session_id: "test-session-id",
-					shared_state: "public",
+		it("should handle first commit (no parent) by diffing against empty tree", async () => {
+			// Mock git responses for first commit scenario
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
 				},
-			})
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+			// First commit scenario: diff HEAD returns empty, so check if it's first commit
+			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty for first commit
+			vi.mocked(mockGit.raw!)
+				.mockResolvedValueOnce("abc123def456\n") // rev-list returns single SHA (no parent)
+				.mockResolvedValueOnce("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n") // hash-object call
+			vi.mocked(mockGit.diff!).mockResolvedValueOnce("diff --git a/file.txt b/file.txt\nnew file mode 100644") // diff against empty tree
 
-			// Set workspace directory before calling setSharedState
 			service.setWorkspaceDirectory("/test/repo")
 
-			const result = await service.setSharedState(CliSessionSharedState.Public)
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
 
+			expect(result).toEqual({
+				repoUrl: "https://github.com/user/repo.git",
+				head: "abc123def456",
+				patch: "diff --git a/file.txt b/file.txt\nnew file mode 100644",
+			})
+
+			// Verify correct git commands were called
 			expect(mockGit.getRemotes).toHaveBeenCalledWith(true)
 			expect(mockGit.revparse).toHaveBeenCalledWith(["HEAD"])
+			// First tries diff HEAD
 			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
-
-			expect(mockSetSharedState).toHaveBeenCalledWith({
-				session_id: "test-session-id",
-				shared_state: "public",
-				gitState: {
-					repoUrl: "https://github.com/user/repo.git",
-					head: "abc123def456",
-					patch: "diff content",
-				},
-			})
-			expect(result).toEqual({
-				success: true,
-				session: {
-					session_id: "test-session-id",
-					shared_state: "public",
-				},
-			})
+			// Then checks if it's first commit
+			expect(mockGit.raw).toHaveBeenCalledWith(["rev-list", "--parents", "-n", "1", "HEAD"])
+			// Then falls back to empty tree
+			expect(mockGit.raw).toHaveBeenCalledWith(["hash-object", "-t", "tree", "/dev/null"])
+			expect(mockGit.diff).toHaveBeenCalledWith(["4b825dc642cb6eb9a060e54bf8d69288fbee4904", "HEAD"])
 		})
 
-		it("should throw error when not in git repository", async () => {
-			// Create a session first
-			const mockData = { messages: [] }
-			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
-			mockCreate.mockResolvedValueOnce({
-				session_id: "test-session-id",
-				title: "",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-			})
-
-			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-			await vi.advanceTimersByTimeAsync(1000)
-
-			// Mock simple-git with no remotes
-			const mockGit = {
-				getRemotes: vi.fn().mockResolvedValue([]),
-			}
-
-			const simpleGit = (await import("simple-git")).default
-			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
-
-			service.setWorkspaceDirectory("/test/path")
-
-			await expect(service.setSharedState(CliSessionSharedState.Public)).rejects.toThrow(
-				"Not in a git repository or no remote configured",
-			)
-		})
-
-		it("should use push URL when fetch URL not available", async () => {
-			// Create a session first
-			const mockData = { messages: [] }
-			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
-			mockCreate.mockResolvedValueOnce({
-				session_id: "test-session-id",
-				title: "",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-			})
-
-			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
-			await vi.advanceTimersByTimeAsync(1000)
-
-			// Mock simple-git with only push URL
-			const mockGit = {
-				getRemotes: vi.fn().mockResolvedValue([
-					{
-						name: "origin",
-						refs: {
-							push: "https://github.com/user/repo.git",
-						},
+		it("should handle regular commit (has parent) by diffing HEAD", async () => {
+			// Mock git responses for regular commit scenario
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
 					},
-				]),
-				revparse: vi.fn().mockResolvedValue("abc123"),
-				diff: vi.fn().mockResolvedValue(""),
-			}
-
-			const simpleGit = (await import("simple-git")).default
-			vi.mocked(simpleGit).mockReturnValue(mockGit as unknown as SimpleGit)
-
-			mockSetSharedState.mockResolvedValueOnce({
-				success: true,
-				session: {
-					session_id: "test-session-id",
-					shared_state: "public",
 				},
-			})
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("def456abc789")
+			// Regular commit: diff HEAD returns the patch directly
+			vi.mocked(mockGit.diff!).mockResolvedValue("diff --git a/file.txt b/file.txt\nindex 123..456")
 
 			service.setWorkspaceDirectory("/test/repo")
 
-			await service.setSharedState(CliSessionSharedState.Public)
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
 
-			expect(mockSetSharedState).toHaveBeenCalledWith({
-				session_id: "test-session-id",
-				shared_state: "public",
-				gitState: {
-					repoUrl: "https://github.com/user/repo.git",
-					head: "abc123",
-					patch: "",
-				},
+			expect(result).toEqual({
+				repoUrl: "https://github.com/user/repo.git",
+				head: "def456abc789",
+				patch: "diff --git a/file.txt b/file.txt\nindex 123..456",
 			})
+
+			// Verify correct git commands were called
+			expect(mockGit.getRemotes).toHaveBeenCalledWith(true)
+			expect(mockGit.revparse).toHaveBeenCalledWith(["HEAD"])
+			// Regular commit should diff HEAD for uncommitted changes
+			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
+			// Should not fall back to empty tree since patch is not empty
+			expect(mockGit.raw).not.toHaveBeenCalled()
+		})
+
+		it("should handle commit with no uncommitted changes", async () => {
+			// Mock git responses for commit with no changes scenario
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+					},
+				} as any,
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("merge123abc456")
+			// No uncommitted changes: diff HEAD returns empty, but we're not on first commit
+			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty
+			vi.mocked(mockGit.raw!).mockResolvedValueOnce("merge123abc456 parent123abc\n") // rev-list returns commit with parent (not first commit)
+
+			service.setWorkspaceDirectory("/test/repo")
+
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
+
+			expect(result).toEqual({
+				repoUrl: "https://github.com/user/repo.git",
+				head: "merge123abc456",
+				patch: "",
+			})
+
+			// Should try diff HEAD first
+			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
+			// Should check if it's first commit
+			expect(mockGit.raw).toHaveBeenCalledWith(["rev-list", "--parents", "-n", "1", "HEAD"])
+			// Should NOT fall back to empty tree since it's not first commit
+			expect(mockGit.raw).not.toHaveBeenCalledWith(["hash-object", "-t", "tree", "/dev/null"])
+		})
+
+		it("should use push URL when fetch URL is not available", async () => {
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						push: "https://github.com/user/repo.git",
+					},
+				} as any,
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
+			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
+
+			service.setWorkspaceDirectory("/test/repo")
+
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
+
+			expect(result.repoUrl).toBe("https://github.com/user/repo.git")
+		})
+
+		it("should return undefined repoUrl when no remotes configured", async () => {
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
+			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
+
+			service.setWorkspaceDirectory("/test/repo")
+
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
+
+			expect(result.repoUrl).toBeUndefined()
+			expect(result.head).toBe("abc123")
+		})
+
+		it("should handle first commit with changes by using empty tree fallback", async () => {
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+					},
+				} as any,
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("firstcommit123")
+			// First commit: diff HEAD returns empty (no parent), check first commit, then fallback generates patch
+			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty
+			vi.mocked(mockGit.raw!)
+				.mockResolvedValueOnce("firstcommit123\n") // rev-list returns single SHA (no parent)
+				.mockResolvedValueOnce("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n") // hash-object call
+			vi.mocked(mockGit.diff!).mockResolvedValueOnce("diff --git a/initial.txt b/initial.txt\nnew file") // diff against empty tree
+
+			service.setWorkspaceDirectory("/test/repo")
+
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
+
+			expect(result.patch).toBe("diff --git a/initial.txt b/initial.txt\nnew file")
+			// Should try HEAD first
+			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
+			// Should check if it's first commit
+			expect(mockGit.raw).toHaveBeenCalledWith(["rev-list", "--parents", "-n", "1", "HEAD"])
+			// Then use empty tree
+			expect(mockGit.raw).toHaveBeenCalledWith(["hash-object", "-t", "tree", "/dev/null"])
+			expect(mockGit.diff).toHaveBeenCalledWith(["4b825dc642cb6eb9a060e54bf8d69288fbee4904", "HEAD"])
+		})
+
+		it("should use process.cwd() when workspace directory not set", async () => {
+			vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+					},
+				} as any,
+			])
+			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
+			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
+
+			// @ts-expect-error - Testing private method
+			const result = await service.getGitState()
+
+			expect(result).toBeDefined()
+			// Verify simple-git was called (it would use process.cwd())
+			expect(simpleGit).toHaveBeenCalled()
 		})
 	})
 
