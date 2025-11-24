@@ -26,7 +26,7 @@ import {
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
 import { logs } from "../../services/logs.js"
-import { SessionService } from "src/services/session.js"
+import { SessionService } from "../../services/session.js"
 
 /**
  * Message buffer to handle race conditions during initialization

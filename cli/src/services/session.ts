@@ -458,7 +458,8 @@ export class SessionService {
 			if (isFirstCommit) {
 				// For first commit, generate Git's universal empty tree hash to diff against
 				// This represents an empty repository state and allows capturing the entire initial commit
-				const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", "/dev/null"])).trim()
+				const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null"
+				const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", nullDevice])).trim()
 				patch = await git.diff([emptyTreeHash, "HEAD"])
 			}
 		}
