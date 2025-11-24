@@ -58,12 +58,15 @@ export type ClineAsk = z.infer<typeof clineAskSchema>
  */
 
 export const idleAsks = [
+	// kilocode_change start
+	"payment_required_prompt",
+	"invalid_model",
+	// kilocode_change end
 	"completion_result",
 	"api_req_failed",
 	"resume_completed_task",
 	"mistake_limit_reached",
 	"auto_approval_max_req_reached",
-	"payment_required_prompt", // kilocode_change
 ] as const satisfies readonly ClineAsk[]
 
 export type IdleAsk = (typeof idleAsks)[number]
@@ -93,6 +96,11 @@ export function isResumableAsk(ask: ClineAsk): ask is ResumableAsk {
  */
 
 export const interactiveAsks = [
+	// kilocode_change start
+	"report_bug",
+	"condense",
+	"checkpoint_restore",
+	// kilocode_change end
 	"followup",
 	"command",
 	"tool",
