@@ -363,11 +363,26 @@ export class SessionService {
 			const cwd = this.workspaceDir || process.cwd()
 			const git = simpleGit(cwd)
 
+			let shouldPop = false
+
 			// Step 1: Stash current work
 			try {
+				// Get stash count before stashing to detect if something was actually stashed
+				const stashListBefore = await git.stashList()
+				const stashCountBefore = stashListBefore.total
+
 				await git.stash()
 
-				logs.debug(`Stashed current work`, "SessionService")
+				const stashListAfter = await git.stashList()
+				const stashCountAfter = stashListAfter.total
+
+				// Only set shouldPop if a new stash entry was actually created
+				if (stashCountAfter > stashCountBefore) {
+					shouldPop = true
+					logs.debug(`Stashed current work`, "SessionService")
+				} else {
+					logs.debug(`No changes to stash`, "SessionService")
+				}
 			} catch (error) {
 				logs.warn(`Failed to stash current work`, "SessionService", {
 					error: error instanceof Error ? error.message : String(error),
@@ -418,9 +433,11 @@ export class SessionService {
 
 			// Step 4: Pop the stash to restore original work
 			try {
-				await git.stash(["pop"])
+				if (shouldPop) {
+					await git.stash(["pop"])
 
-				logs.debug(`Popped stash`, "SessionService")
+					logs.debug(`Popped stash`, "SessionService")
+				}
 			} catch (error) {
 				logs.warn(`Failed to pop stash`, "SessionService", {
 					error: error instanceof Error ? error.message : String(error),
