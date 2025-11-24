@@ -220,7 +220,12 @@ program
 	.command("config")
 	.description("Open the configuration file in your default editor")
 	.action(async () => {
-		await openConfigFile()
+		try {
+			await openConfigFile()
+		} catch (_error) {
+			// Error already logged by openConfigFile
+			process.exit(1)
+		}
 	})
 
 // Debug command - checks hardware and OS compatibility

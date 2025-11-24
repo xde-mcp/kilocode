@@ -12,11 +12,18 @@ async function authenticateManually(): Promise<AuthResult> {
 		"Check out https://github.com/Kilo-Org/kilocode/blob/main/cli/docs/PROVIDER_CONFIGURATION.md to see potential configuration options",
 	)
 	await wait(1500)
-	await openConfigFile()
 
-	// This will never return a config since the user needs to manually edit
-	// The process will exit after opening the config file
-	throw new Error("Manual configuration - please restart after editing config file")
+	try {
+		await openConfigFile()
+	} catch (_error) {
+		// Error already logged by openConfigFile
+		console.log("\nPlease manually edit the config file and restart the CLI.")
+	}
+
+	// Manual configuration complete - show success message and exit
+	console.log("\n✓ Config file opened successfully!")
+	console.log("Please restart the CLI after editing the configuration file.\n")
+	process.exit(0)
 }
 
 /**
