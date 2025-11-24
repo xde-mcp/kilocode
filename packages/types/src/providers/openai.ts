@@ -3,67 +3,10 @@ import type { ModelInfo } from "../model.js"
 // https://openai.com/api/pricing/
 export type OpenAiNativeModelId = keyof typeof openAiNativeModels
 
-export const openAiNativeDefaultModelId: OpenAiNativeModelId = "gpt-5.1" // kilocode_change
+export const openAiNativeDefaultModelId: OpenAiNativeModelId = "gpt-5.1"
 
 export const openAiNativeModels = {
-	// kilocode_change start
 	"gpt-5.1": {
-		maxTokens: 128000,
-		contextWindow: 400000,
-		supportsImages: true,
-		supportsPromptCache: true,
-		supportsReasoningEffort: true,
-		inputPrice: 1.25,
-		outputPrice: 10.0,
-		cacheReadsPrice: 0.125,
-		description:
-			"GPT-5.1 is our flagship model for coding and agentic tasks with configurable reasoning and non-reasoning effort.",
-		supportsVerbosity: true,
-		tiers: [
-			{ name: "flex", contextWindow: 400000, inputPrice: 0.625, outputPrice: 5.0, cacheReadsPrice: 0.0625 },
-			{ name: "priority", contextWindow: 400000, inputPrice: 2.5, outputPrice: 20.0, cacheReadsPrice: 0.25 },
-		],
-	},
-	"gpt-5.1-codex": {
-		maxTokens: 128000,
-		contextWindow: 400000,
-		supportsImages: true,
-		supportsPromptCache: true,
-		supportsReasoningEffort: true,
-		inputPrice: 1.25,
-		outputPrice: 10.0,
-		cacheReadsPrice: 0.125,
-		description:
-			"GPT-5.1-Codex is a version of GPT-5 optimized for agentic coding tasks in Codex or similar environments.",
-		supportsVerbosity: true,
-	},
-	"gpt-5.1-codex-mini": {
-		maxTokens: 128000,
-		contextWindow: 400000,
-		supportsImages: true,
-		supportsPromptCache: true,
-		supportsReasoningEffort: true,
-		inputPrice: 1.25,
-		outputPrice: 10.0,
-		cacheReadsPrice: 0.125,
-		description:
-			"GPT-5.1-Codex Mini is a version of GPT-5 optimized for agentic coding tasks in Codex or similar environments.",
-		supportsVerbosity: true,
-	},
-	"gpt-5.1-chat-latest": {
-		maxTokens: 128000,
-		contextWindow: 400000,
-		supportsImages: true,
-		supportsPromptCache: true,
-		supportsReasoningEffort: false,
-		inputPrice: 1.25,
-		outputPrice: 10.0,
-		cacheReadsPrice: 0.125,
-		description: "GPT-5.1 Chat Latest: Optimized for conversational AI and non-reasoning tasks",
-		supportsVerbosity: true,
-	},
-	// kilocode_change end
-	"gpt-5-chat-latest": {
 		maxTokens: 128000,
 		contextWindow: 400000,
 		supportsImages: true,
@@ -81,6 +24,35 @@ export const openAiNativeModels = {
 			{ name: "priority", contextWindow: 400000, inputPrice: 2.5, outputPrice: 20.0, cacheReadsPrice: 0.25 },
 		],
 		description: "GPT-5.1: The best model for coding and agentic tasks across domains",
+	},
+	"gpt-5.1-codex": {
+		maxTokens: 128000,
+		contextWindow: 400000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		promptCacheRetention: "24h",
+		supportsReasoningEffort: ["low", "medium", "high"],
+		reasoningEffort: "medium",
+		inputPrice: 1.25,
+		outputPrice: 10.0,
+		cacheReadsPrice: 0.125,
+		supportsTemperature: false,
+		tiers: [{ name: "priority", contextWindow: 400000, inputPrice: 2.5, outputPrice: 20.0, cacheReadsPrice: 0.25 }],
+		description: "GPT-5.1 Codex: A version of GPT-5.1 optimized for agentic coding in Codex",
+	},
+	"gpt-5.1-codex-mini": {
+		maxTokens: 128000,
+		contextWindow: 400000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		promptCacheRetention: "24h",
+		supportsReasoningEffort: ["low", "medium", "high"],
+		reasoningEffort: "medium",
+		inputPrice: 0.25,
+		outputPrice: 2.0,
+		cacheReadsPrice: 0.025,
+		supportsTemperature: false,
+		description: "GPT-5.1 Codex mini: A version of GPT-5.1 optimized for agentic coding in Codex",
 	},
 	"gpt-5": {
 		maxTokens: 128000,
@@ -146,6 +118,16 @@ export const openAiNativeModels = {
 		supportsTemperature: false,
 		tiers: [{ name: "flex", contextWindow: 400000, inputPrice: 0.025, outputPrice: 0.2, cacheReadsPrice: 0.0025 }],
 		description: "GPT-5 Nano: Fastest, most cost-efficient version of GPT-5",
+	},
+	"gpt-5-chat-latest": {
+		maxTokens: 128000,
+		contextWindow: 400000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		inputPrice: 1.25,
+		outputPrice: 10.0,
+		cacheReadsPrice: 0.125,
+		description: "GPT-5 Chat: Optimized for conversational AI and non-reasoning tasks",
 	},
 	"gpt-4.1": {
 		maxTokens: 32_768,
