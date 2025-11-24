@@ -482,7 +482,7 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			expect(SessionClient.getInstance).toHaveBeenCalled()
-			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "test-query", limit: 20 })
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ search_string: "test-query", limit: 20 })
 			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(message.type).toBe("system")
@@ -589,7 +589,7 @@ describe("sessionCommand", () => {
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "test", limit: 20 })
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ search_string: "test", limit: 20 })
 		})
 	})
 
@@ -686,7 +686,7 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			expect(SessionClient.getInstance).toHaveBeenCalled()
-			expect(mockSessionClient.delete).toHaveBeenCalledWith({ sessionId: "session-123" })
+			expect(mockSessionClient.delete).toHaveBeenCalledWith({ session_id: "session-123" })
 			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(message.type).toBe("system")
@@ -734,7 +734,7 @@ describe("sessionCommand", () => {
 
 			await sessionCommand.handler(mockContext)
 
-			expect(mockSessionClient.delete).toHaveBeenCalledWith({ sessionId: "session-123" })
+			expect(mockSessionClient.delete).toHaveBeenCalledWith({ session_id: "session-123" })
 		})
 	})
 
@@ -907,7 +907,7 @@ describe("sessionCommand", () => {
 
 			const result = await provider(context)
 
-			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "abc", limit: 20 })
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ search_string: "abc", limit: 20 })
 			expect(result).toHaveLength(2)
 		})
 
@@ -1048,7 +1048,7 @@ describe("sessionCommand", () => {
 
 			await provider(context)
 
-			expect(mockSessionClient.search).toHaveBeenCalledWith({ searchString: "test", limit: 20 })
+			expect(mockSessionClient.search).toHaveBeenCalledWith({ search_string: "test", limit: 20 })
 		})
 	})
 })

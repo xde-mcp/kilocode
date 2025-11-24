@@ -1,12 +1,6 @@
 import { readFileSync, writeFileSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
-import {
-	SessionClient,
-	SessionWithSignedUrls,
-	ShareSessionOutput,
-	CliSessionSharedState,
-	ForkSessionOutput,
-} from "./sessionClient"
+import { SessionClient, SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./sessionClient"
 import { logs } from "./logs.js"
 import path from "path"
 import { ensureDirSync } from "fs-extra"
@@ -105,9 +99,11 @@ export class SessionService {
 	/**
 	 * Fetch and parse content from a signed URL
 	 */
-	private async fetchBlobFromSignedUrl(url: string, blobType: string): Promise<unknown> {
+	private async fetchBlobFromSignedUrl(url: string, urlType: string): Promise<unknown> {
 		try {
-			logs.debug(`Fetching blob from signed URL`, "SessionService", { blobType })
+			const baseUrl = new URL(url).origin
+
+			logs.debug(`Fetching blob from signed URL`, "SessionService", { baseUrl, urlType })
 
 			const response = await fetch(url)
 
@@ -117,12 +113,13 @@ export class SessionService {
 
 			const data = await response.json()
 
-			logs.debug(`Successfully fetched blob`, "SessionService", { blobType })
+			logs.debug(`Successfully fetched blob`, "SessionService", { baseUrl, urlType })
 
 			return data
 		} catch (error) {
 			logs.error(`Failed to fetch blob from signed URL`, "SessionService", {
-				blobType,
+				baseUrl: new URL(url).origin,
+				urlType,
 				error: error instanceof Error ? error.message : String(error),
 			})
 			throw error
@@ -141,8 +138,8 @@ export class SessionService {
 
 			const sessionClient = SessionClient.getInstance()
 			const session = (await sessionClient.get({
-				sessionId,
-				includeBlobUrls: true,
+				session_id: sessionId,
+				include_blob_urls: true,
 			})) as SessionWithSignedUrls
 
 			if (!session) {
@@ -159,9 +156,9 @@ export class SessionService {
 				"api_conversation_history_blob_url",
 				"ui_messages_blob_url",
 				"task_metadata_blob_url",
+				"git_state_blob_url",
 			] as const
 
-			// Fetch all blobs concurrently with error handling
 			const fetchPromises = blobUrlFields
 				.filter((blobUrlField) => {
 					const signedUrl = session[blobUrlField]
@@ -172,10 +169,11 @@ export class SessionService {
 					return true
 				})
 				.map(async (blobUrlField) => {
-					const url = session[blobUrlField]!
+					const signedUrl = session[blobUrlField]!
+
 					return {
-						fieldName: blobUrlField,
-						result: await this.fetchBlobFromSignedUrl(url, blobUrlField)
+						filename: blobUrlField.replace("_blob_url", ""),
+						result: await this.fetchBlobFromSignedUrl(signedUrl, blobUrlField)
 							.then((content) => ({ success: true as const, content }))
 							.catch((error) => ({
 								success: false as const,
@@ -186,30 +184,33 @@ export class SessionService {
 
 			const results = await Promise.allSettled(fetchPromises)
 
-			// Process settled results and write files for successful fetches
 			for (const result of results) {
 				if (result.status === "fulfilled") {
-					const { fieldName, result: fetchResult } = result.value
+					const { filename, result: fetchResult } = result.value
 
 					if (fetchResult.success) {
 						let fileContent = fetchResult.content
 
-						if (fieldName === "ui_messages_blob_url") {
+						if (filename === "git_state") {
+							// TODO: restore git state
+							continue
+						}
+
+						if (filename === "ui_messages") {
 							// eliminate checkpoints for now
 							fileContent = (fileContent as ClineMessage[]).filter(
 								(message) => message.say !== "checkpoint_saved",
 							)
 						}
 
-						writeFileSync(
-							path.join(sessionDirectoryPath, `${fieldName}.json`),
-							JSON.stringify(fileContent, null, 2),
-						)
+						const fullPath = path.join(sessionDirectoryPath, `${filename}.json`)
 
-						logs.debug(`Wrote blob to file`, "SessionService", { fileName: fieldName })
+						writeFileSync(fullPath, JSON.stringify(fileContent, null, 2))
+
+						logs.debug(`Wrote blob to file`, "SessionService", { fullPath })
 					} else {
 						logs.error(`Failed to process blob`, "SessionService", {
-							fileName: fieldName,
+							fileName: filename,
 							error: fetchResult.error,
 						})
 					}
@@ -279,25 +280,42 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
-			const payload: Partial<Parameters<typeof sessionClient.update>[0]> = {
+			const basePayload: Record<string, unknown> = {
 				api_conversation_history: rawPayload.apiConversationHistoryPath,
-				ui_messages: rawPayload.uiMessagesPath,
 				task_metadata: rawPayload.taskMetadataPath,
+				ui_messages: rawPayload.uiMessagesPath,
+			}
+
+			try {
+				const gitInfo = await this.getGitState()
+
+				if (gitInfo) {
+					basePayload.git_state = {
+						head: gitInfo.head,
+						patch: gitInfo.patch,
+					}
+
+					basePayload.git_url = gitInfo.repoUrl
+				}
+			} catch (error) {
+				logs.debug("Could not get git state", "SessionService", {
+					error: error instanceof Error ? error.message : String(error),
+				})
 			}
 
 			if (this.sessionId) {
 				logs.debug("Updating existing session", "SessionService", { sessionId: this.sessionId })
 
 				await sessionClient.update({
-					sessionId: this.sessionId,
-					...payload,
+					session_id: this.sessionId,
+					...basePayload,
 				})
 
 				logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
 			} else {
 				logs.debug("Creating new session", "SessionService")
 
-				const session = await sessionClient.create(payload)
+				const session = await sessionClient.create(basePayload)
 
 				this.sessionId = session.session_id
 
@@ -364,31 +382,21 @@ export class SessionService {
 
 		const sessionClient = SessionClient.getInstance()
 
-		const { head, patch, repoUrl } = await this.getGitState()
-
 		return await sessionClient.share({
-			sessionId,
-			sharedState: CliSessionSharedState.Public,
-			gitState: {
-				head,
-				patch,
-			},
-			gitUrl: repoUrl,
+			session_id: sessionId,
+			shared_state: CliSessionSharedState.Public,
 		})
 	}
 
-	async forkSession(shareId: string): Promise<ForkSessionOutput> {
+	async forkSession(shareId: string, rethrowError = false) {
 		const sessionClient = SessionClient.getInstance()
-		return await sessionClient.fork({ shareId })
+		const { session_id } = await sessionClient.fork({ share_id: shareId })
+
+		await this.restoreSession(session_id, rethrowError)
 	}
 
 	async destroy() {
 		logs.debug("Destroying SessionService", "SessionService", { sessionId: this.sessionId })
-
-		if (this.timer) {
-			clearInterval(this.timer)
-			this.timer = null
-		}
 
 		await this.syncSession()
 
@@ -396,6 +404,6 @@ export class SessionService {
 		this.sessionId = null
 		this.isSyncing = false
 
-		logs.debug("SessionService destroyed", "SessionService")
+		logs.debug("SessionService flushed", "SessionService")
 	}
 }

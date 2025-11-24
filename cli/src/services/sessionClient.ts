@@ -16,8 +16,8 @@ export interface SessionWithSignedUrls extends Session {
 }
 
 export interface GetSessionInput {
-	sessionId: string
-	includeBlobUrls?: boolean
+	session_id: string
+	include_blob_urls?: boolean
 }
 
 export type GetSessionOutput = Session | SessionWithSignedUrls
@@ -27,18 +27,26 @@ export interface CreateSessionInput {
 	api_conversation_history?: unknown
 	task_metadata?: unknown
 	ui_messages?: unknown
-	git_state?: unknown
+	git_state?: {
+		head: string
+		patch: string
+	}
+	git_url?: string
 }
 
 export type CreateSessionOutput = Session
 
 export interface UpdateSessionInput {
-	sessionId: string
+	session_id: string
 	title?: string
 	api_conversation_history?: unknown
 	task_metadata?: unknown
 	ui_messages?: unknown
-	git_state?: unknown
+	git_state?: {
+		head: string
+		patch: string
+	}
+	git_url?: string
 }
 
 export interface UpdateSessionOutput {
@@ -58,7 +66,7 @@ export interface ListSessionsOutput {
 }
 
 export interface SearchSessionInput {
-	searchString: string
+	search_string: string
 	limit?: number
 	offset?: number
 }
@@ -76,13 +84,8 @@ export enum CliSessionSharedState {
 }
 
 export type ShareSessionInput = {
-	sessionId: string
-	sharedState: CliSessionSharedState
-	gitState: {
-		head: string
-		patch: string
-	}
-	gitUrl: string
+	session_id: string
+	shared_state: CliSessionSharedState
 }
 
 export interface ShareSessionOutput {
@@ -91,16 +94,15 @@ export interface ShareSessionOutput {
 }
 
 export interface ForkSessionInput {
-	shareId: string
+	share_id: string
 }
 
 export interface ForkSessionOutput {
 	session_id: string
-	git_state_url: string
 }
 
 export interface DeleteSessionInput {
-	sessionId: string
+	session_id: string
 }
 
 export interface DeleteSessionOutput {

@@ -165,7 +165,7 @@ async function searchSessions(context: CommandContext, query: string): Promise<v
 	}
 
 	try {
-		const result = await sessionClient.search({ searchString: query, limit: 20 })
+		const result = await sessionClient.search({ search_string: query, limit: 20 })
 		const { results, total } = result
 
 		if (results.length === 0) {
@@ -215,7 +215,7 @@ async function shareSession(context: CommandContext): Promise<void> {
 		addMessage({
 			...generateMessage(),
 			type: "system",
-			content: `✅ Session shared successfully!\n\nShare ID: \`${result.share_id}\``,
+			content: `✅ Session shared successfully!\n\n\`https://kilo.ai/share/${result.share_id}\``,
 		})
 	} catch (error) {
 		addMessage({
@@ -262,10 +262,7 @@ async function forkSession(context: CommandContext, shareId: string): Promise<vo
 
 		await refreshTerminal()
 
-		const forkedSession = await sessionService.forkSession(shareId)
-
-		// Restore the forked session
-		await sessionService.restoreSession(forkedSession.session_id, true)
+		await sessionService.forkSession(shareId, true)
 
 		// Success message handled by restoreSession via extension messages
 	} catch (error) {
@@ -294,7 +291,7 @@ async function deleteSession(context: CommandContext, sessionId: string): Promis
 	}
 
 	try {
-		await sessionClient.delete({ sessionId })
+		await sessionClient.delete({ session_id: sessionId })
 
 		addMessage({
 			...generateMessage(),
@@ -325,7 +322,7 @@ async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): 
 	}
 
 	try {
-		const response = await sessionClient.search({ searchString: prefix, limit: 20 })
+		const response = await sessionClient.search({ search_string: prefix, limit: 20 })
 		return response.results.map((session, index) => ({
 			value: session.session_id,
 			title: session.title || "Untitled",

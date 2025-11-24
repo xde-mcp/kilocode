@@ -55,11 +55,11 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.get({
-				sessionId: "session-1",
+				session_id: "session-1",
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
-				sessionId: "session-1",
+				session_id: "session-1",
 			})
 			expect(result).toEqual(mockSession)
 		})
@@ -80,13 +80,13 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.get({
-				sessionId: "session-1",
-				includeBlobUrls: true,
+				session_id: "session-1",
+				include_blob_urls: true,
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
-				sessionId: "session-1",
-				includeBlobUrls: true,
+				session_id: "session-1",
+				include_blob_urls: true,
 			})
 			expect(result).toEqual(mockSession)
 		})
@@ -108,13 +108,13 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.get({
-				sessionId: "session-1",
-				includeBlobUrls: true,
+				session_id: "session-1",
+				include_blob_urls: true,
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.get", "GET", {
-				sessionId: "session-1",
-				includeBlobUrls: true,
+				session_id: "session-1",
+				include_blob_urls: true,
 			})
 			expect(result).toEqual(mockSession)
 			// Verify git_state_blob_url is present
@@ -128,7 +128,7 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.get({
-					sessionId: "non-existent",
+					session_id: "non-existent",
 				}),
 			).rejects.toThrow("Session not found")
 		})
@@ -244,12 +244,12 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.update({
-				sessionId: "session-1",
+				session_id: "session-1",
 				title: "Updated Title",
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.update", "POST", {
-				sessionId: "session-1",
+				session_id: "session-1",
 				title: "Updated Title",
 			})
 			expect(result).toEqual(mockSession)
@@ -263,7 +263,7 @@ describe("SessionClient", () => {
 			}
 
 			const input = {
-				sessionId: "session-1",
+				session_id: "session-1",
 				title: "Updated Session",
 				api_conversation_history: { messages: [] },
 				task_metadata: { updated: true },
@@ -287,7 +287,7 @@ describe("SessionClient", () => {
 			}
 
 			const input = {
-				sessionId: "session-1",
+				session_id: "session-1",
 				title: "Updated Session",
 				git_state: {
 					repoUrl: "https://github.com/user/repo",
@@ -311,7 +311,7 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.update({
-					sessionId: "non-existent",
+					session_id: "non-existent",
 					title: "New Title",
 				}),
 			).rejects.toThrow("Session not found")
@@ -322,7 +322,7 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.update({
-					sessionId: "session-1",
+					session_id: "session-1",
 				}),
 			).rejects.toThrow("No fields to update")
 		})
@@ -332,13 +332,13 @@ describe("SessionClient", () => {
 		it("should propagate network errors", async () => {
 			requestMock.mockRejectedValueOnce(new Error("Network error"))
 
-			await expect(service.get({ sessionId: "session-1" })).rejects.toThrow("Network error")
+			await expect(service.get({ session_id: "session-1" })).rejects.toThrow("Network error")
 		})
 
 		it("should propagate authorization errors", async () => {
 			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
 
-			await expect(service.get({ sessionId: "session-1" })).rejects.toThrow("Invalid token")
+			await expect(service.get({ session_id: "session-1" })).rejects.toThrow("Invalid token")
 		})
 
 		it("should propagate validation errors", async () => {
@@ -526,9 +526,9 @@ describe("SessionClient", () => {
 				},
 			})
 
-			const result = await service.search({ searchString: "abc" })
+			const result = await service.search({ search_string: "abc" })
 
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { searchString: "abc" })
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { search_string: "abc" })
 			expect(result.results).toEqual(mockSessions)
 			expect(result.results).toHaveLength(2)
 			expect(result.total).toBe(2)
@@ -557,9 +557,9 @@ describe("SessionClient", () => {
 				},
 			})
 
-			const result = await service.search({ searchString: "test", limit: 5 })
+			const result = await service.search({ search_string: "test", limit: 5 })
 
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { searchString: "test", limit: 5 })
+			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", { search_string: "test", limit: 5 })
 			expect(result.results).toEqual(mockSessions)
 			expect(result.total).toBe(1)
 			expect(result.limit).toBe(5)
@@ -577,7 +577,7 @@ describe("SessionClient", () => {
 				},
 			})
 
-			const result = await service.search({ searchString: "nonexistent" })
+			const result = await service.search({ search_string: "nonexistent" })
 
 			expect(result.results).toEqual([])
 			expect(result.total).toBe(0)
@@ -586,13 +586,13 @@ describe("SessionClient", () => {
 		it("should handle search error", async () => {
 			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 500 Internal Server Error"))
 
-			await expect(service.search({ searchString: "test" })).rejects.toThrow("Internal Server Error")
+			await expect(service.search({ search_string: "test" })).rejects.toThrow("Internal Server Error")
 		})
 
 		it("should handle authorization error", async () => {
 			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
 
-			await expect(service.search({ searchString: "test" })).rejects.toThrow("Invalid token")
+			await expect(service.search({ search_string: "test" })).rejects.toThrow("Invalid token")
 		})
 
 		it("should pass through the limit parameter correctly", async () => {
@@ -607,10 +607,10 @@ describe("SessionClient", () => {
 				},
 			})
 
-			await service.search({ searchString: "test", limit: 20 })
+			await service.search({ search_string: "test", limit: 20 })
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", {
-				searchString: "test",
+				search_string: "test",
 				limit: 20,
 			})
 		})
@@ -636,10 +636,10 @@ describe("SessionClient", () => {
 				},
 			})
 
-			const result = await service.search({ searchString: "test", limit: 10, offset: 10 })
+			const result = await service.search({ search_string: "test", limit: 10, offset: 10 })
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.search", "GET", {
-				searchString: "test",
+				search_string: "test",
 				limit: 10,
 				offset: 10,
 			})
@@ -663,7 +663,7 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.get({
-				sessionId: "uuid-string",
+				session_id: "uuid-string",
 			})
 
 			expect(typeof result.id).toBe("string")
@@ -688,8 +688,8 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.get({
-				sessionId: "uuid-string",
-				includeBlobUrls: true,
+				session_id: "uuid-string",
+				include_blob_urls: true,
 			})
 
 			// Result should have blob fields when includeBlobUrls is true
@@ -712,13 +712,13 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.setSharedState({
-				sessionId: "session-1",
-				sharedState: "Private",
+				session_id: "session-1",
+				shared_state: "Private",
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				sessionId: "session-1",
-				sharedState: "Private",
+				session_id: "session-1",
+				shared_state: "Private",
 			})
 			expect(result).toEqual(mockResponse)
 			expect(result.shared_state).toBe("Private")
@@ -742,14 +742,14 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.setSharedState({
-				sessionId: "session-1",
-				sharedState: "Public",
+				session_id: "session-1",
+				shared_state: "Public",
 				gitState,
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				sessionId: "session-1",
-				sharedState: "Public",
+				session_id: "session-1",
+				shared_state: "Public",
 				gitState,
 			})
 			expect(result).toEqual(mockResponse)
@@ -768,8 +768,8 @@ describe("SessionClient", () => {
 			})
 
 			const input = {
-				sessionId: "session-1",
-				sharedState: "Private" as const,
+				session_id: "session-1",
+				shared_state: "Private" as const,
 			}
 
 			const result = await service.setSharedState(input)
@@ -796,8 +796,8 @@ describe("SessionClient", () => {
 			})
 
 			const input = {
-				sessionId: "session-1",
-				sharedState: "Public" as const,
+				session_id: "session-1",
+				shared_state: "Public" as const,
 				gitState,
 			}
 
@@ -812,8 +812,8 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.setSharedState({
-					sessionId: "non-existent",
-					sharedState: "Private",
+					session_id: "non-existent",
+					shared_state: "Private",
 				}),
 			).rejects.toThrow("Session not found")
 		})
@@ -823,8 +823,8 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.setSharedState({
-					sessionId: "session-1",
-					sharedState: "Private",
+					session_id: "session-1",
+					shared_state: "Private",
 				}),
 			).rejects.toThrow("Invalid token")
 		})
@@ -847,15 +847,15 @@ describe("SessionClient", () => {
 			})
 
 			await service.setSharedState({
-				sessionId: "session-1",
-				sharedState: "Public",
+				session_id: "session-1",
+				shared_state: "Public",
 				gitState,
 			})
 
 			// Verify the exact parameters sent
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				sessionId: "session-1",
-				sharedState: "Public",
+				session_id: "session-1",
+				shared_state: "Public",
 				gitState: {
 					repoUrl: "https://github.com/org/project",
 					head: "develop",
@@ -883,11 +883,11 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				sessionId: "session-1",
+				session_id: "session-1",
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.fork", "POST", {
-				sessionId: "session-1",
+				session_id: "session-1",
 			})
 			expect(result).toEqual(mockForkedSession)
 		})
@@ -909,7 +909,7 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				sessionId: "session-original",
+				session_id: "session-original",
 			})
 
 			expect(result.id).toBe("forked-session-2")
@@ -924,7 +924,7 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.fork({
-					sessionId: "non-existent",
+					session_id: "non-existent",
 				}),
 			).rejects.toThrow("Session not found")
 		})
@@ -934,7 +934,7 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.fork({
-					sessionId: "session-1",
+					session_id: "session-1",
 				}),
 			).rejects.toThrow("Invalid token")
 		})
@@ -956,12 +956,12 @@ describe("SessionClient", () => {
 			})
 
 			await service.fork({
-				sessionId: "session-original",
+				session_id: "session-original",
 			})
 
 			// Verify the exact parameters sent
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.fork", "POST", {
-				sessionId: "session-original",
+				session_id: "session-original",
 			})
 		})
 
@@ -982,7 +982,7 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				sessionId: "empty-session",
+				session_id: "empty-session",
 			})
 
 			expect(result.api_conversation_history_blob_url).toBeNull()

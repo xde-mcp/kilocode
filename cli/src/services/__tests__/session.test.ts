@@ -301,7 +301,7 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(1000)
 
 			expect(mockUpdate).toHaveBeenCalledWith({
-				sessionId: "session-id",
+				session_id: "session-id",
 				api_conversation_history: { messages: ["first", "second"] },
 				ui_messages: undefined,
 				task_metadata: undefined,
@@ -768,10 +768,10 @@ describe("SessionService", () => {
 
 			await service.restoreSession("restored-session-id")
 
-			// Verify SessionClient.get was called with includeBlobUrls
+			// Verify SessionClient.get was called with include_blob_urls
 			expect(mockGet).toHaveBeenCalledWith({
-				sessionId: "restored-session-id",
-				includeBlobUrls: true,
+				session_id: "restored-session-id",
+				include_blob_urls: true,
 			})
 
 			// Verify fetch was called for each signed URL
@@ -1090,8 +1090,8 @@ describe("SessionService", () => {
 			const result = await service.setSharedState(CliSessionSharedState.Private)
 
 			expect(mockSetSharedState).toHaveBeenCalledWith({
-				sessionId: "test-session-id",
-				sharedState: "private",
+				session_id: "test-session-id",
+				shared_state: "private",
 			})
 			expect(result).toEqual({
 				success: true,
@@ -1156,8 +1156,8 @@ describe("SessionService", () => {
 			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
 
 			expect(mockSetSharedState).toHaveBeenCalledWith({
-				sessionId: "test-session-id",
-				sharedState: "public",
+				session_id: "test-session-id",
+				shared_state: "public",
 				gitState: {
 					repoUrl: "https://github.com/user/repo.git",
 					head: "abc123def456",
@@ -1246,8 +1246,8 @@ describe("SessionService", () => {
 			await service.setSharedState(CliSessionSharedState.Public)
 
 			expect(mockSetSharedState).toHaveBeenCalledWith({
-				sessionId: "test-session-id",
-				sharedState: "public",
+				session_id: "test-session-id",
+				shared_state: "public",
 				gitState: {
 					repoUrl: "https://github.com/user/repo.git",
 					head: "abc123",
