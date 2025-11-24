@@ -1,6 +1,6 @@
 # kilo-code
 
-## 4.121.2
+## [v4.121.2]
 
 ### Patch Changes
 
