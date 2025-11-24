@@ -413,14 +413,14 @@ export class SessionService {
 					writeFileSync(patchFile, gitState.patch)
 
 					await git.raw(["apply", "--3way", patchFile])
+					await git.reset() // Unstage changes while keeping them in working directory
 
 					logs.debug(`Applied patch`, "SessionService", {
 						patchSize: gitState.patch.length,
 					})
 				} finally {
-					// Clean up temp directory
 					try {
-						rmSync(tempDir, { recursive: true, force: true })
+						rmSync(patchFile, { recursive: true, force: true })
 					} catch {
 						// Ignore cleanup errors
 					}
