@@ -118,12 +118,13 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		// kilocode_change start - autocomplete profile type system
 		// Filter out autocomplete profiles - only show chat profiles in the chat interface
 		const listApiConfigMeta = useMemo(() => {
-			return (
-				listApiConfigMeta_unfilteredByKiloCodeProfileType?.filter((config) => {
-					const profileType = (config as { profileType?: ProfileType }).profileType
-					return profileType !== "autocomplete"
-				}) ?? []
-			)
+			if (!listApiConfigMeta_unfilteredByKiloCodeProfileType) {
+				return []
+			}
+			return listApiConfigMeta_unfilteredByKiloCodeProfileType.filter((config) => {
+				const profileType = (config as { profileType?: ProfileType }).profileType
+				return profileType !== "autocomplete"
+			})
 		}, [listApiConfigMeta_unfilteredByKiloCodeProfileType])
 		// kilocode_change end
 		// Find the ID and display text for the currently selected API configuration

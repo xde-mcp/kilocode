@@ -2,6 +2,7 @@ import { defaultModeSlug } from "@roo/modes"
 
 import { render, screen } from "@src/utils/test-utils"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
+import { useQuery } from "@tanstack/react-query"
 
 import { ChatTextArea } from "../ChatTextArea"
 
@@ -17,9 +18,8 @@ vi.mock("@src/components/common/MarkdownBlock")
 // Mock ExtensionStateContext
 vi.mock("@src/context/ExtensionStateContext")
 
-vi.mock("@tanstack/react-query", () => ({
-	useQuery: vi.fn(() => ({ data: { historyItems: [] } })),
-}))
+// Mock react-query - use auto-mock and configure in beforeEach
+vi.mock("@tanstack/react-query")
 
 vi.mock("@src/components/ui/hooks/useSelectedModel", () => ({
 	useSelectedModel: vi.fn(() => ({
@@ -48,6 +48,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
+		// Configure useQuery mock to return empty history
+		;(useQuery as ReturnType<typeof vi.fn>).mockReturnValue({ data: { historyItems: [] } })
 	})
 
 	it("should filter out autocomplete profiles from the profile list", () => {
@@ -64,6 +66,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 			listApiConfigMeta: mockListApiConfigMeta,
 			currentApiConfigName: "Chat Profile 1",
 			taskHistory: [],
+			taskHistoryVersion: 0,
+			clineMessages: [],
 			cwd: "/test/workspace",
 		})
 
@@ -89,6 +93,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 			currentApiConfigName: "Chat Profile 1",
 			pinnedApiConfigs: {},
 			taskHistory: [],
+			taskHistoryVersion: 0,
+			clineMessages: [],
 			cwd: "/test/workspace",
 		})
 
@@ -106,6 +112,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 			listApiConfigMeta: [],
 			currentApiConfigName: "",
 			taskHistory: [],
+			taskHistoryVersion: 0,
+			clineMessages: [],
 			cwd: "/test/workspace",
 		})
 
@@ -121,6 +129,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 			listApiConfigMeta: undefined,
 			currentApiConfigName: "",
 			taskHistory: [],
+			taskHistoryVersion: 0,
+			clineMessages: [],
 			cwd: "/test/workspace",
 		})
 
@@ -141,6 +151,8 @@ describe("ChatTextArea - autocomplete profile filtering", () => {
 			listApiConfigMeta: mockListApiConfigMeta,
 			currentApiConfigName: "Autocomplete Profile 1",
 			taskHistory: [],
+			taskHistoryVersion: 0,
+			clineMessages: [],
 			cwd: "/test/workspace",
 		})
 
