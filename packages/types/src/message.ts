@@ -63,6 +63,7 @@ export const idleAsks = [
 	"resume_completed_task",
 	"mistake_limit_reached",
 	"auto_approval_max_req_reached",
+	"payment_required_prompt", // kilocode_change
 ] as const satisfies readonly ClineAsk[]
 
 export type IdleAsk = (typeof idleAsks)[number]

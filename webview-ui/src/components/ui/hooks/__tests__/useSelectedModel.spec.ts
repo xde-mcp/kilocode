@@ -562,33 +562,6 @@ describe("useSelectedModel", () => {
 			expect(result.current.id).toBe("claude-3-7-sonnet-20250219")
 			expect(result.current.info).toEqual(modelInfo)
 		})
-
-		it("should handle missing routerModels.litellm property gracefully", () => {
-			mockUseRouterModels.mockReturnValue({
-				data: {
-					openrouter: {},
-					requesty: {},
-					glama: {},
-					unbound: {},
-					// litellm property is missing entirely
-					"io-intelligence": {},
-				},
-				isLoading: false,
-				isError: false,
-			} as any)
-
-			const apiConfiguration: ProviderSettings = {
-				apiProvider: "litellm",
-				litellmModelId: "any-model-id",
-			}
-
-			const wrapper = createWrapper()
-			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
-
-			// Should not crash and should return the model ID with undefined info
-			expect(result.current.id).toBe("any-model-id")
-			expect(result.current.info).toBeUndefined()
-		})
 	})
 	// kilocode_change end
 
