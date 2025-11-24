@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs"
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
 import { SessionClient, SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./sessionClient"
 import { logs } from "./logs.js"
@@ -7,6 +7,7 @@ import { ensureDirSync } from "fs-extra"
 import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import simpleGit from "simple-git"
+import { tmpdir } from "os"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -60,7 +61,7 @@ export class SessionService {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
 				this.syncSession()
-			}, 1000)
+			}, 5000)
 		}
 	}
 
@@ -99,9 +100,10 @@ export class SessionService {
 	 */
 	private async fetchBlobFromSignedUrl(url: string, urlType: string): Promise<unknown> {
 		try {
-			const baseUrl = new URL(url).origin
+			const logUrl = new URL(url)
+			logUrl.searchParams.forEach((_, key) => logUrl.searchParams.delete(key))
 
-			logs.debug(`Fetching blob from signed URL`, "SessionService", { baseUrl, urlType })
+			logs.debug(`Fetching blob from signed URL`, "SessionService", { logUrl, urlType })
 
 			const response = await fetch(url)
 
@@ -111,12 +113,12 @@ export class SessionService {
 
 			const data = await response.json()
 
-			logs.debug(`Successfully fetched blob`, "SessionService", { baseUrl, urlType })
+			logs.debug(`Successfully fetched blob`, "SessionService", { logUrl, urlType })
 
 			return data
 		} catch (error) {
 			logs.error(`Failed to fetch blob from signed URL`, "SessionService", {
-				baseUrl: new URL(url).origin,
+				url,
 				urlType,
 				error: error instanceof Error ? error.message : String(error),
 			})
@@ -190,7 +192,10 @@ export class SessionService {
 						let fileContent = fetchResult.content
 
 						if (filename === "git_state") {
-							// TODO: restore git state
+							const gitState = fileContent as Parameters<typeof this.executeGitRestore>[0]
+
+							await this.executeGitRestore(gitState)
+
 							continue
 						}
 
@@ -349,6 +354,89 @@ export class SessionService {
 		this.workspaceDir = dir
 	}
 
+	/**
+	 * Execute git commands to restore repository state.
+	 * Never throws errors - all operations are wrapped in try-catch blocks.
+	 */
+	private async executeGitRestore(gitState: { head: string; patch: string }): Promise<void> {
+		try {
+			const cwd = this.workspaceDir || process.cwd()
+			const git = simpleGit(cwd)
+
+			// Step 1: Stash current work
+			try {
+				await git.stash()
+
+				logs.debug(`Stashed current work`, "SessionService")
+			} catch (error) {
+				logs.warn(`Failed to stash current work`, "SessionService", {
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+
+			// Step 2: Checkout to the saved commit
+			try {
+				await git.checkout(gitState.head)
+
+				logs.debug(`Checked out to commit`, "SessionService", {
+					head: gitState.head.substring(0, 8),
+				})
+			} catch (error) {
+				logs.warn(`Failed to checkout commit`, "SessionService", {
+					head: gitState.head.substring(0, 8),
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+
+			// Step 3: Apply the patch with uncommitted changes
+			try {
+				// Write patch to a temporary file and apply it
+				const tempDir = mkdtempSync(path.join(tmpdir(), "kilocode-git-patches"))
+				const patchFile = path.join(tempDir, `${Date.now()}.patch`)
+
+				try {
+					writeFileSync(patchFile, gitState.patch)
+
+					await git.raw(["apply", patchFile])
+
+					logs.debug(`Applied patch`, "SessionService", {
+						patchSize: gitState.patch.length,
+					})
+				} finally {
+					// Clean up temp directory
+					try {
+						rmSync(tempDir, { recursive: true, force: true })
+					} catch {
+						// Ignore cleanup errors
+					}
+				}
+			} catch (error) {
+				logs.warn(`Failed to apply patch`, "SessionService", {
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+
+			// Step 4: Pop the stash to restore original work
+			try {
+				await git.stash(["pop"])
+
+				logs.debug(`Popped stash`, "SessionService")
+			} catch (error) {
+				logs.warn(`Failed to pop stash`, "SessionService", {
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+
+			logs.info(`Git state restored successfully`, "SessionService", {
+				head: gitState.head.substring(0, 8),
+			})
+		} catch (error) {
+			logs.error(`Failed to restore git state`, "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+			})
+		}
+	}
+
 	private async getGitState() {
 		// Use stored workspace directory, fallback to process.cwd() if not set
 		const cwd = this.workspaceDir || process.cwd()
@@ -356,10 +444,6 @@ export class SessionService {
 
 		const remotes = await git.getRemotes(true)
 		const repoUrl = remotes[0]?.refs?.fetch || remotes[0]?.refs?.push
-
-		if (!repoUrl) {
-			throw new Error("Not in a git repository or no remote configured")
-		}
 
 		const head = await git.revparse(["HEAD"])
 
