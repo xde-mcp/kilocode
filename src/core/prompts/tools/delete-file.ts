@@ -1,3 +1,5 @@
+// kilocode_change - file added
+
 import { ToolArgs } from "./types"
 
 export function getDeleteFileDescription(args: ToolArgs): string {

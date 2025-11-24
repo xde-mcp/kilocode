@@ -1,3 +1,5 @@
+// kilocode_change - file added
+
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { MockedFunction } from "vitest"
 import fs from "fs/promises"

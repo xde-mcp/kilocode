@@ -1,3 +1,5 @@
+// kilocode_change - file added
+
 import path from "path"
 import fs from "fs/promises"
 
