@@ -31,7 +31,6 @@ import McpResourceRow from "../mcp/McpResourceRow"
 import { Mention } from "./Mention"
 import { CheckpointSaved } from "./checkpoints/CheckpointSaved"
 import { FollowUpSuggest } from "./FollowUpSuggest"
-import { LowCreditWarning } from "../kilocode/chat/LowCreditWarning" // kilocode_change
 import { BatchFilePermission } from "./BatchFilePermission"
 import { BatchDiffApproval } from "./BatchDiffApproval"
 import { ProgressIndicator } from "./ProgressIndicator"
@@ -40,18 +39,13 @@ import { CommandExecution } from "./CommandExecution"
 import { CommandExecutionError } from "./CommandExecutionError"
 import ReportBugPreview from "./ReportBugPreview"
 
-import { NewTaskPreview } from "../kilocode/chat/NewTaskPreview" // kilocode_change
-import { KiloChatRowGutterBar } from "../kilocode/chat/KiloChatRowGutterBar" // kilocode_change
 import { AutoApprovedRequestLimitWarning } from "./AutoApprovedRequestLimitWarning"
 import { CondenseContextErrorRow, CondensingContextRow, ContextCondenseRow } from "./ContextCondenseRow"
 import CodebaseSearchResultsDisplay from "./CodebaseSearchResultsDisplay"
-import { StandardTooltip } from "../ui" // kilocode_change
-import { FastApplyChatDisplay } from "./kilocode/FastApplyChatDisplay" // kilocode_change
 import { appendImages } from "@src/utils/imageUtils"
 import { McpExecution } from "./McpExecution"
 import { ChatTextArea } from "./ChatTextArea"
 import { MAX_IMAGES_PER_MESSAGE } from "./ChatView"
-import { InvalidModelWarning } from "../kilocode/chat/InvalidModelWarning" // kilocode_change
 import { useSelectedModel } from "../ui/hooks/useSelectedModel"
 import {
 	Eye,
@@ -69,10 +63,20 @@ import {
 	MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatFileSize } from "@/lib/formatting-utils" // kilocode_change
 import { SeeNewChangesButtons } from "./kilocode/SeeNewChangesButtons"
-import ChatTimestamps from "./ChatTimestamps" // kilocode_change
 import { PathTooltip } from "../ui/PathTooltip"
+
+// kilocode_change start
+import { LowCreditWarning } from "../kilocode/chat/LowCreditWarning"
+import { NewTaskPreview } from "../kilocode/chat/NewTaskPreview"
+import { KiloChatRowGutterBar } from "../kilocode/chat/KiloChatRowGutterBar"
+import { StandardTooltip } from "../ui"
+import { FastApplyChatDisplay } from "./kilocode/FastApplyChatDisplay"
+import { InvalidModelWarning } from "../kilocode/chat/InvalidModelWarning"
+import { formatFileSize } from "@/lib/formatting-utils"
+import ChatTimestamps from "./ChatTimestamps"
+import { removeLeadingNonAlphanumeric } from "@/utils/removeLeadingNonAlphanumeric"
+// kilocode_change end
 
 // Helper function to get previous todos before a specific message
 function getPreviousTodos(messages: ClineMessage[], currentMessageTs: number): any[] {
