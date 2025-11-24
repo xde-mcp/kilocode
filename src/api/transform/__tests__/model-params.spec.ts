@@ -866,6 +866,7 @@ describe("getModelParams", () => {
 		it("should include verbosity when specified in settings", () => {
 			const model: ModelInfo = {
 				...baseModel,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({
@@ -880,6 +881,7 @@ describe("getModelParams", () => {
 		it("should handle medium verbosity", () => {
 			const model: ModelInfo = {
 				...baseModel,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({
@@ -894,6 +896,7 @@ describe("getModelParams", () => {
 		it("should handle high verbosity", () => {
 			const model: ModelInfo = {
 				...baseModel,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({
@@ -908,6 +911,7 @@ describe("getModelParams", () => {
 		it("should return undefined verbosity when not specified", () => {
 			const model: ModelInfo = {
 				...baseModel,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({
@@ -923,6 +927,7 @@ describe("getModelParams", () => {
 			const model: ModelInfo = {
 				...baseModel,
 				supportsReasoningEffort: true,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({
@@ -943,6 +948,7 @@ describe("getModelParams", () => {
 			const model: ModelInfo = {
 				...baseModel,
 				supportsReasoningBudget: true,
+				supportsVerbosity: true, // kilocode_change
 			}
 
 			const result = getModelParams({

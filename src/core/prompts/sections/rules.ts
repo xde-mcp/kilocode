@@ -9,6 +9,7 @@ import { getAvailableToolsInGroup } from "../tools/filter-tools-for-mode"
 import { getFastApplyEditingInstructions } from "../tools/edit-file"
 import { type ClineProviderState } from "../../webview/ClineProvider"
 import { getFastApplyModelType, isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
+import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
 // kilocode_change end
 
 function getEditingInstructions(
@@ -96,7 +97,7 @@ export function getRulesSection(
 ): string {
 	const isCodebaseSearchAvailable =
 		// kilocode_change start
-		codeIndexManager?.isManagedIndexingAvailable ||
+		ManagedIndexer.getInstance().isEnabled() ||
 		(codeIndexManager &&
 			codeIndexManager.isFeatureEnabled &&
 			codeIndexManager.isFeatureConfigured &&

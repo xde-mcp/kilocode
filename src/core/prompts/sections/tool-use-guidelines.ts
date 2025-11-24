@@ -1,4 +1,5 @@
 import { ToolProtocol, TOOL_PROTOCOL } from "@roo-code/types"
+import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer" // kilocode_change
 import { CodeIndexManager } from "../../../services/code-index/manager"
 import { isNativeProtocol } from "@roo-code/types"
 
@@ -8,7 +9,7 @@ export function getToolUseGuidelinesSection(
 ): string {
 	const isCodebaseSearchAvailable =
 		// kilocode_change start
-		codeIndexManager?.isManagedIndexingAvailable ||
+		ManagedIndexer.getInstance().isEnabled() ||
 		(codeIndexManager &&
 			codeIndexManager.isFeatureEnabled &&
 			codeIndexManager.isFeatureConfigured &&

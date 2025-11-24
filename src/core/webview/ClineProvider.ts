@@ -105,8 +105,7 @@ import { stringifyError } from "../../shared/kilocode/errorUtils"
 import isWsl from "is-wsl"
 import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocodeDefaultModel"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
-import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
-import { updateCodeIndexWithKiloProps } from "../../services/code-index/managed/webview" // kilocode_change
+import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
 import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
@@ -1517,7 +1516,6 @@ ${prompt}
 				}
 
 				await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
-				await updateCodeIndexWithKiloProps(this) // kilocode_change
 
 				this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
 			} else {
@@ -1579,7 +1577,6 @@ ${prompt}
 
 		await this.postStateToWebview()
 		await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
-		await updateCodeIndexWithKiloProps(this) // kilocode_change
 
 		if (providerSettings.apiProvider) {
 			this.emit(RooCodeEventName.ProviderProfileChanged, { name, provider: providerSettings.apiProvider })
