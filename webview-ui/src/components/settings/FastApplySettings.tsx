@@ -22,8 +22,10 @@ export const FastApplySettings = ({
 					{t("settings:experimental.MORPH_FAST_APPLY.apiProvider")}
 				</label>
 				<VSCodeDropdown
-					value={fastApplyApiProvider || "-"}
-					onChange={(e: any) => setCachedStateField("fastApplyApiProvider", (e.target as any)?.value || "-")}
+					value={fastApplyApiProvider || "current"}
+					onChange={(e: any) =>
+						setCachedStateField("fastApplyApiProvider", (e.target as any)?.value || "current")
+					}
 					className="w-full">
 					<VSCodeOption className="py-2 px-3" value="kilocode">
 						Kilo Code
@@ -34,8 +36,8 @@ export const FastApplySettings = ({
 					<VSCodeOption className="py-2 px-3" value="morph">
 						Morph
 					</VSCodeOption>
-					<VSCodeOption className="py-2 px-3" value="-">
-						Use Current Configuration
+					<VSCodeOption className="py-2 px-3" value="current">
+						{t("settings:experimental.MORPH_FAST_APPLY.apiProviderList.current")}
 					</VSCodeOption>
 				</VSCodeDropdown>
 			</div>
@@ -63,7 +65,7 @@ export const FastApplySettings = ({
 				</p>
 			</div>
 
-			{fastApplyApiProvider !== "-" && (
+			{fastApplyApiProvider !== "current" && (
 				<VSCodeTextField
 					type="password"
 					value={morphApiKey || ""}

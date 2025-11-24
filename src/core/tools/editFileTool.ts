@@ -9,7 +9,7 @@ import { formatResponse } from "../prompts/responses"
 import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
 import { fileExistsAtPath } from "../../utils/fs"
 import { getReadablePath } from "../../utils/path"
-import { getKiloUrlFromToken } from "@roo-code/types"
+import { FastApplyApiProvider, fastApplyApiProviderSchema, getKiloUrlFromToken } from "@roo-code/types"
 import { DEFAULT_HEADERS } from "../../api/providers/constants"
 import { TelemetryService } from "@roo-code/telemetry"
 import { type ClineProviderState } from "../webview/ClineProvider"
@@ -342,22 +342,23 @@ function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfigur
 	// Read the selected model from state
 	const selectedModel = state.fastApplyModel || "auto"
 
-	// Read fastApplyApiProvider from state when use current Api Configuration
-	let fastApplyApiProvider: string | undefined = state.apiConfiguration?.apiProvider
-
-	const useCurrentApiConfiguration = state.fastApplyApiProvider === "-"
-
-	if (!useCurrentApiConfiguration) {
-		// Read fastApplyApiProvider provider from fast apply setting
-		fastApplyApiProvider = state.fastApplyApiProvider
+	let apiProvider: FastApplyApiProvider | undefined
+	if (state.fastApplyApiProvider === "current") {
+		const provider = fastApplyApiProviderSchema.safeParse(state.apiConfiguration?.apiProvider)
+		if (provider.success) {
+			apiProvider = provider.data
+		} else {
+			apiProvider = undefined
+		}
+	} else {
+		apiProvider = state.fastApplyApiProvider
 	}
+
+	const useCurrentApiConfiguration = state.fastApplyApiProvider === "current"
 
 	// Priority 1: Use direct Morph API key if available
 	// Allow human-relay for debugging
-	if (
-		(fastApplyApiProvider === "morph" && state.morphApiKey) ||
-		state.apiConfiguration?.apiProvider === "human-relay"
-	) {
+	if ((apiProvider === "morph" && state.morphApiKey) || state.apiConfiguration?.apiProvider === "human-relay") {
 		const [org, model] = selectedModel.split("/")
 		return {
 			available: true,
@@ -368,7 +369,7 @@ function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfigur
 	}
 
 	// Priority 2: Use KiloCode provider
-	if (fastApplyApiProvider === "kilocode") {
+	if (apiProvider === "kilocode") {
 		const token = useCurrentApiConfiguration ? state.apiConfiguration.kilocodeToken : state.morphApiKey
 		if (!token) {
 			return { available: false, error: "No KiloCode token available to use Fast Apply" }
@@ -385,7 +386,7 @@ function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfigur
 	}
 
 	// Priority 3: Use OpenRouter provider
-	if (fastApplyApiProvider === "openrouter") {
+	if (apiProvider === "openrouter") {
 		const token = useCurrentApiConfiguration ? state.apiConfiguration.openRouterApiKey : state.morphApiKey
 		if (!token) {
 			return { available: false, error: "No OpenRouter API token available to use Fast Apply" }
