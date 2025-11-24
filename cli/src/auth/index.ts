@@ -23,6 +23,7 @@ export default async function authWizard(): Promise<void> {
 				name: "selectedProvider",
 				message: "Please select which provider you would like to use:",
 				choices: providerChoices,
+				loop: false,
 			},
 		])
 

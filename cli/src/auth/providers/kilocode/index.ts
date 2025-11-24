@@ -15,7 +15,7 @@ export const kilocodeDeviceAuthProvider: AuthProvider = {
  * Kilocode provider with manual token entry (advanced)
  */
 export const kilocodeTokenAuthProvider: AuthProvider = {
-	name: "Kilo Code (Advanced - Manual token entry)",
+	name: "Kilo Code (Manual)",
 	value: "kilocode-token",
 	authenticate: authenticateWithToken,
 }

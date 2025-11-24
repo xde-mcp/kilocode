@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { authenticateWithDeviceAuth } from "../providers/kilocode/device-auth.js"
+import { poll } from "../utils/polling.js"
 
 // Mock dependencies
 vi.mock("@roo-code/types", () => ({
@@ -23,6 +24,24 @@ vi.mock("../../../services/logs.js", () => ({
 		error: vi.fn(),
 	},
 }))
+
+vi.mock("../providers/kilocode/shared.js", () => ({
+	getKilocodeProfile: vi.fn().mockResolvedValue({
+		user: { email: "test@example.com" },
+		organizations: [],
+	}),
+	getKilocodeDefaultModel: vi.fn().mockResolvedValue("anthropic/claude-sonnet-4"),
+	promptOrganizationSelection: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock("../utils/polling.js", async () => {
+	const actual = await vi.importActual<typeof import("../utils/polling.js")>("../utils/polling.js")
+	return {
+		...actual,
+		poll: vi.fn(),
+		formatTimeRemaining: actual.formatTimeRemaining,
+	}
+})
 
 describe("Device Auth Flow", () => {
 	beforeEach(() => {
@@ -53,19 +72,6 @@ describe("Device Auth Flow", () => {
 			userEmail: "test@example.com",
 		}
 
-		// Mock fetch for profile
-		const mockProfileResponse = {
-			user: {
-				email: "test@example.com",
-			},
-			organizations: [],
-		}
-
-		// Mock fetch for defaults
-		const mockDefaultsResponse = {
-			defaultModel: "anthropic/claude-sonnet-4",
-		}
-
 		global.fetch = vi.fn((url: string) => {
 			if (url.includes("/api/device-auth/initiate")) {
 				return Promise.resolve({
@@ -80,20 +86,11 @@ describe("Device Auth Flow", () => {
 					json: () => Promise.resolve(mockPollResponse),
 				} as Response)
 			}
-			if (url.includes("/api/profile")) {
-				return Promise.resolve({
-					ok: true,
-					json: () => Promise.resolve(mockProfileResponse),
-				} as Response)
-			}
-			if (url.includes("/api/defaults")) {
-				return Promise.resolve({
-					ok: true,
-					json: () => Promise.resolve(mockDefaultsResponse),
-				} as Response)
-			}
 			return Promise.reject(new Error("Unexpected URL"))
 		}) as unknown as typeof fetch
+
+		// Mock poll to immediately return success
+		vi.mocked(poll).mockResolvedValueOnce(mockPollResponse)
 
 		const result = await authenticateWithDeviceAuth()
 
@@ -153,6 +150,9 @@ describe("Device Auth Flow", () => {
 			return Promise.reject(new Error("Unexpected URL"))
 		}) as unknown as typeof fetch
 
+		// Mock poll to immediately return the error
+		vi.mocked(poll).mockRejectedValueOnce(new Error("Authorization denied by user"))
+
 		await expect(authenticateWithDeviceAuth()).rejects.toThrow("Authorization denied by user")
 	})
 
@@ -179,6 +179,9 @@ describe("Device Auth Flow", () => {
 			}
 			return Promise.reject(new Error("Unexpected URL"))
 		}) as unknown as typeof fetch
+
+		// Mock poll to immediately return the error
+		vi.mocked(poll).mockRejectedValueOnce(new Error("Authorization code expired"))
 
 		await expect(authenticateWithDeviceAuth()).rejects.toThrow("Authorization code expired")
 	})

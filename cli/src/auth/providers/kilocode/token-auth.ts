@@ -27,6 +27,7 @@ export async function authenticateWithToken(): Promise<AuthResult> {
 				type: "password",
 				name: "token",
 				message: "API Key:",
+				mask: true,
 			},
 		])
 
