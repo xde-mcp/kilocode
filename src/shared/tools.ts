@@ -155,6 +155,13 @@ export interface WriteToFileToolUse extends ToolUse<"write_to_file"> {
 	params: Partial<Pick<Record<ToolParamName, string>, "path" | "content" | "line_count">>
 }
 
+// kilocode_change start
+export interface DeleteFileToolUse extends ToolUse {
+	name: "delete_file"
+	params: Partial<Pick<Record<ToolParamName, string>, "path">>
+}
+// kilocode_change end
+
 export interface InsertCodeBlockToolUse extends ToolUse<"insert_content"> {
 	name: "insert_content"
 	params: Partial<Pick<Record<ToolParamName, string>, "path" | "line" | "content">>
@@ -245,6 +252,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	write_to_file: "write files",
 	apply_diff: "apply changes",
 	edit_file: "edit file", // kilocode_change: Morph fast apply
+	delete_file: "delete files", // kilocode_change
 	search_files: "search files",
 	list_files: "list files",
 	list_code_definition_names: "list definitions",
@@ -282,6 +290,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 			"apply_diff",
 			"edit_file", // kilocode_change: Morph fast apply
 			"write_to_file",
+			"delete_file", // kilocode_change
 			"insert_content",
 			"new_rule", // kilocode_change
 			"generate_image",
