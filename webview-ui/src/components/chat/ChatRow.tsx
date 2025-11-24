@@ -69,6 +69,7 @@ import {
 	MessageCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatFileSize } from "@/lib/formatting-utils" // kilocode_change
 import { SeeNewChangesButtons } from "./kilocode/SeeNewChangesButtons"
 import ChatTimestamps from "./ChatTimestamps" // kilocode_change
 
@@ -134,15 +135,6 @@ const ChatRow = memo(
 )
 
 export default ChatRow
-
-// Helper function to format bytes into human-readable size
-function formatFileSize(bytes: number): string {
-	if (bytes === 0) return "0 B"
-	const k = 1024
-	const sizes = ["B", "KB", "MB", "GB"]
-	const i = Math.floor(Math.log(bytes) / Math.log(k))
-	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
-}
 
 export const ChatRowContent = ({
 	message,
