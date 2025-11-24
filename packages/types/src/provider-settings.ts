@@ -53,13 +53,13 @@ export const dynamicProviders = [
 	"chutes",
 	"gemini",
 	"inception",
+	"synthetic",
 	// kilocode_change end
 	"deepinfra",
 	"io-intelligence",
 	"requesty",
 	"unbound",
 	"glama",
-	"synthetic",
 	"roo",
 	"chutes",
 ] as const

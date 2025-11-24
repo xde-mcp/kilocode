@@ -826,7 +826,7 @@ export const webviewMessageHandler = async (
 						ollama: {},
 						lmstudio: {},
 						roo: {},
-          	synthetic: {}, // kilocode_change
+						synthetic: {}, // kilocode_change
 						chutes: {},
 					}
 

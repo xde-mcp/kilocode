@@ -229,6 +229,7 @@ const ApiOptions = ({
 		deepInfraApiKey: apiConfiguration?.deepInfraApiKey,
 		geminiApiKey: apiConfiguration?.geminiApiKey,
 		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
+		chutesApiKey: apiConfiguration?.chutesApiKey,
 		syntheticApiKey: apiConfiguration?.syntheticApiKey,
 	})
 
