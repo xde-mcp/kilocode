@@ -462,5 +462,12 @@
 	"feedback": {
 		"youSaid": "قلت"
 	},
-	"generateCommitMessage": "إنشاء رسالة الالتزام"
+	"generateCommitMessage": "إنشاء رسالة الالتزام",
+	"todo": {
+		"partial": "{{completed}} من {{total}} مهام مكتملة",
+		"complete": "{{total}} مهام مكتملة",
+		"updated": "تم تحديث قائمة المهام",
+		"completed": "مكتملة",
+		"started": "بدأت"
+	}
 }

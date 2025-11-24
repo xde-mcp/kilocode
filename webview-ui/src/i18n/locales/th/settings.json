@@ -320,9 +320,6 @@
 		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"zaiEntrypoint": "จุดเข้าใช้งาน Z AI",
 		"zaiEntrypointDescription": "โปรดเลือกจุดเข้าใช้งาน API ที่เหมาะสมตามตำแหน่งของคุณ หากคุณอยู่ในจีน ให้เลือก open.bigmodel.cn มิฉะนั้น ให้เลือก api.z.ai",
-		"minimaxApiKey": "คีย์ API ของ MiniMax",
-		"getMiniMaxApiKey": "รับคีย์ API ของ MiniMax",
-		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"geminiApiKey": "คีย์ API ของ Gemini",
 		"geminiParameters": {
 			"urlContext": {
@@ -375,6 +372,7 @@
 		"awsSessionToken": "โทเค็นเซสชัน AWS",
 		"awsRegion": "ภูมิภาค AWS",
 		"awsCrossRegion": "ใช้การอนุมานข้ามภูมิภาค",
+		"awsGlobalInference": "ใช้การอนุมานแบบ Global (เลือกภูมิภาค AWS ที่เหมาะสมโดยอัตโนมัติ)",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "ใช้ปลายทาง VPC ที่กำหนดเอง",
 			"vpcEndpointUrlPlaceholder": "ป้อน URL ปลายทาง VPC (ไม่บังคับ)",

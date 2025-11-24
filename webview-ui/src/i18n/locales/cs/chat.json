@@ -439,9 +439,6 @@
 		"title": "Zprávy ve frontě:",
 		"clickToEdit": "Klikni pro úpravu zprávy"
 	},
-	"editMessage": {
-		"placeholder": "Upravit tvou zprávu..."
-	},
 	"generateCommitMessage": "Vygenerovat commit zprávu",
 	"slashCommand": {
 		"wantsToRun": "Kilo Code chce spustit slash příkaz:",
@@ -452,5 +449,12 @@
 		"problems": "Problémy",
 		"terminal": "Terminál",
 		"url": "Vložit URL pro získání obsahu"
+	},
+	"todo": {
+		"partial": "{{completed}} z {{total}} úkolů hotovo",
+		"complete": "{{total}} úkolů hotovo",
+		"updated": "Aktualizován seznam úkolů",
+		"completed": "Dokončeno",
+		"started": "Zahájeno"
 	}
 }
