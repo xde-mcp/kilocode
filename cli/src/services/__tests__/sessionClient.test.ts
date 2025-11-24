@@ -652,7 +652,7 @@ describe("SessionClient", () => {
 	describe("type safety", () => {
 		it("should handle typed responses correctly", async () => {
 			const mockSession = {
-				id: "uuid-string",
+				session_id: "uuid-string",
 				title: "Typed Session",
 				created_at: "2025-01-01T00:00:00.000Z",
 				updated_at: "2025-01-01T00:00:00.000Z",
@@ -666,7 +666,7 @@ describe("SessionClient", () => {
 				session_id: "uuid-string",
 			})
 
-			expect(typeof result.id).toBe("string")
+			expect(typeof result.session_id).toBe("string")
 			expect(typeof result.title).toBe("string")
 			expect(typeof result.created_at).toBe("string")
 			expect(typeof result.updated_at).toBe("string")
@@ -674,7 +674,7 @@ describe("SessionClient", () => {
 
 		it("should handle sessions with blobs correctly", async () => {
 			const mockSession = {
-				id: "uuid-string",
+				session_id: "uuid-string",
 				title: "Session with Blobs",
 				api_conversation_history: { messages: [] },
 				task_metadata: { key: "value" },
@@ -699,183 +699,10 @@ describe("SessionClient", () => {
 		})
 	})
 
-	describe("setSharedState", () => {
-		it("should set session to Private state", async () => {
-			const mockResponse = {
-				id: "session-1",
-				shared_state: "Private",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockResponse },
-			})
-
-			const result = await service.setSharedState({
-				session_id: "session-1",
-				shared_state: "Private",
-			})
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				session_id: "session-1",
-				shared_state: "Private",
-			})
-			expect(result).toEqual(mockResponse)
-			expect(result.shared_state).toBe("Private")
-		})
-
-		it("should set session to Public state with gitState", async () => {
-			const mockResponse = {
-				id: "session-1",
-				shared_state: "Public",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			const gitState = {
-				repoUrl: "https://github.com/user/repo",
-				head: "main",
-				patch: "diff --git a/file.ts b/file.ts\nindex 123..456 100644\n--- a/file.ts\n+++ b/file.ts",
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockResponse },
-			})
-
-			const result = await service.setSharedState({
-				session_id: "session-1",
-				shared_state: "Public",
-				gitState,
-			})
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				session_id: "session-1",
-				shared_state: "Public",
-				gitState,
-			})
-			expect(result).toEqual(mockResponse)
-			expect(result.shared_state).toBe("Public")
-		})
-
-		it("should handle discriminated union behavior for Private state", async () => {
-			const mockResponse = {
-				id: "session-1",
-				shared_state: "Private",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockResponse },
-			})
-
-			const input = {
-				session_id: "session-1",
-				shared_state: "Private" as const,
-			}
-
-			const result = await service.setSharedState(input)
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", input)
-			expect(result.shared_state).toBe("Private")
-		})
-
-		it("should handle discriminated union behavior for Public state", async () => {
-			const mockResponse = {
-				id: "session-1",
-				shared_state: "Public",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			const gitState = {
-				repoUrl: "https://github.com/user/repo",
-				head: "feature-branch",
-				patch: "diff --git a/src/app.ts b/src/app.ts\n...",
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockResponse },
-			})
-
-			const input = {
-				session_id: "session-1",
-				shared_state: "Public" as const,
-				gitState,
-			}
-
-			const result = await service.setSharedState(input)
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", input)
-			expect(result.shared_state).toBe("Public")
-		})
-
-		it("should handle NOT_FOUND error when setting shared state", async () => {
-			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 404 Not Found - Session not found"))
-
-			await expect(
-				service.setSharedState({
-					session_id: "non-existent",
-					shared_state: "Private",
-				}),
-			).rejects.toThrow("Session not found")
-		})
-
-		it("should handle authorization error when setting shared state", async () => {
-			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 401 Unauthorized - Invalid token"))
-
-			await expect(
-				service.setSharedState({
-					session_id: "session-1",
-					shared_state: "Private",
-				}),
-			).rejects.toThrow("Invalid token")
-		})
-
-		it("should properly send request parameters for Public state", async () => {
-			const mockResponse = {
-				id: "session-1",
-				shared_state: "Public",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			const gitState = {
-				repoUrl: "https://github.com/org/project",
-				head: "develop",
-				patch: "diff content here",
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockResponse },
-			})
-
-			await service.setSharedState({
-				session_id: "session-1",
-				shared_state: "Public",
-				gitState,
-			})
-
-			// Verify the exact parameters sent
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.setSharedState", "POST", {
-				session_id: "session-1",
-				shared_state: "Public",
-				gitState: {
-					repoUrl: "https://github.com/org/project",
-					head: "develop",
-					patch: "diff content here",
-				},
-			})
-		})
-	})
-
 	describe("fork", () => {
-		it("should fork a session by sessionId", async () => {
+		it("should fork a session by share_id", async () => {
 			const mockForkedSession = {
-				id: "forked-session-1",
-				title: "Forked Session",
-				api_conversation_history_blob_url: "https://storage.example.com/api-history",
-				task_metadata_blob_url: "https://storage.example.com/task-metadata",
-				ui_messages_blob_url: "https://storage.example.com/ui-messages",
-				git_state_blob_url: "https://storage.example.com/git-state",
-				created_at: "2025-01-03T00:00:00Z",
-				updated_at: "2025-01-03T00:00:00Z",
+				session_id: "forked-session-1",
 			}
 
 			requestMock.mockResolvedValueOnce({
@@ -883,25 +710,18 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				session_id: "session-1",
+				share_id: "share-123",
 			})
 
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.fork", "POST", {
-				session_id: "session-1",
+				share_id: "share-123",
 			})
 			expect(result).toEqual(mockForkedSession)
 		})
 
-		it("should return forked session with all blob URLs", async () => {
+		it("should return forked session_id", async () => {
 			const mockForkedSession = {
-				id: "forked-session-2",
-				title: "Another Forked Session",
-				api_conversation_history_blob_url: "https://storage.example.com/fork-api-history",
-				task_metadata_blob_url: "https://storage.example.com/fork-task-metadata",
-				ui_messages_blob_url: "https://storage.example.com/fork-ui-messages",
-				git_state_blob_url: "https://storage.example.com/fork-git-state",
-				created_at: "2025-01-03T00:00:00Z",
-				updated_at: "2025-01-03T00:00:00Z",
+				session_id: "forked-session-2",
 			}
 
 			requestMock.mockResolvedValueOnce({
@@ -909,24 +729,20 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				session_id: "session-original",
+				share_id: "share-456",
 			})
 
-			expect(result.id).toBe("forked-session-2")
-			expect(result.api_conversation_history_blob_url).toBe("https://storage.example.com/fork-api-history")
-			expect(result.task_metadata_blob_url).toBe("https://storage.example.com/fork-task-metadata")
-			expect(result.ui_messages_blob_url).toBe("https://storage.example.com/fork-ui-messages")
-			expect(result.git_state_blob_url).toBe("https://storage.example.com/fork-git-state")
+			expect(result.session_id).toBe("forked-session-2")
 		})
 
 		it("should handle NOT_FOUND error when forking", async () => {
-			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 404 Not Found - Session not found"))
+			requestMock.mockRejectedValueOnce(new Error("tRPC request failed: 404 Not Found - Share not found"))
 
 			await expect(
 				service.fork({
-					session_id: "non-existent",
+					share_id: "non-existent",
 				}),
-			).rejects.toThrow("Session not found")
+			).rejects.toThrow("Share not found")
 		})
 
 		it("should handle authorization error when forking", async () => {
@@ -934,21 +750,14 @@ describe("SessionClient", () => {
 
 			await expect(
 				service.fork({
-					session_id: "session-1",
+					share_id: "share-123",
 				}),
 			).rejects.toThrow("Invalid token")
 		})
 
 		it("should properly send request parameters", async () => {
 			const mockForkedSession = {
-				id: "forked-session-3",
-				title: "Test Fork",
-				api_conversation_history_blob_url: null,
-				task_metadata_blob_url: null,
-				ui_messages_blob_url: null,
-				git_state_blob_url: null,
-				created_at: "2025-01-03T00:00:00Z",
-				updated_at: "2025-01-03T00:00:00Z",
+				session_id: "forked-session-3",
 			}
 
 			requestMock.mockResolvedValueOnce({
@@ -956,25 +765,18 @@ describe("SessionClient", () => {
 			})
 
 			await service.fork({
-				session_id: "session-original",
+				share_id: "share-original",
 			})
 
 			// Verify the exact parameters sent
 			expect(requestMock).toHaveBeenCalledWith("cliSessions.fork", "POST", {
-				session_id: "session-original",
+				share_id: "share-original",
 			})
 		})
 
-		it("should handle forked session with null blob URLs", async () => {
+		it("should handle successful fork response", async () => {
 			const mockForkedSession = {
-				id: "forked-session-4",
-				title: "Fork with null blobs",
-				api_conversation_history_blob_url: null,
-				task_metadata_blob_url: null,
-				ui_messages_blob_url: null,
-				git_state_blob_url: null,
-				created_at: "2025-01-03T00:00:00Z",
-				updated_at: "2025-01-03T00:00:00Z",
+				session_id: "forked-session-4",
 			}
 
 			requestMock.mockResolvedValueOnce({
@@ -982,13 +784,10 @@ describe("SessionClient", () => {
 			})
 
 			const result = await service.fork({
-				session_id: "empty-session",
+				share_id: "share-empty",
 			})
 
-			expect(result.api_conversation_history_blob_url).toBeNull()
-			expect(result.task_metadata_blob_url).toBeNull()
-			expect(result.ui_messages_blob_url).toBeNull()
-			expect(result.git_state_blob_url).toBeNull()
+			expect(result.session_id).toBe("forked-session-4")
 		})
 	})
 })

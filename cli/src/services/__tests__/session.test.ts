@@ -3,7 +3,7 @@ import { SessionService } from "../session.js"
 import { SessionClient } from "../sessionClient.js"
 import type { ExtensionService } from "../extension.js"
 import type { ClineMessage } from "@roo-code/types"
-import type { SimpleGit } from "simple-git"
+import type { SimpleGit, RemoteWithRefs } from "simple-git"
 
 // Mock fs module
 vi.mock("fs", () => ({
@@ -263,8 +263,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Trigger sync via timer
-			await vi.advanceTimersByTimeAsync(1000)
+			// Trigger sync via timer (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledWith({
 				api_conversation_history: mockData,
@@ -294,16 +294,16 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync - creates session
-			await vi.advanceTimersByTimeAsync(1000)
+			// First sync - creates session (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
 			// Modify path to trigger new sync
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync - updates session
-			await vi.advanceTimersByTimeAsync(1000)
+			// Second sync - updates session (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
@@ -326,13 +326,13 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync
-			await vi.advanceTimersByTimeAsync(1000)
+			// First sync (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
-			// Second timer tick without setPath - should not sync
-			await vi.advanceTimersByTimeAsync(1000)
+			// Second timer tick without setPath - should not sync (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 			expect(mockUpdate).not.toHaveBeenCalled()
@@ -372,7 +372,7 @@ describe("SessionService", () => {
 			service.setPath("uiMessagesPath", "/path/to/ui.json")
 			service.setPath("taskMetadataPath", "/path/to/metadata.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledWith({
 				api_conversation_history: mockData1,
@@ -464,7 +464,7 @@ describe("SessionService", () => {
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for session creation
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			await service.destroy()
 
@@ -489,7 +489,7 @@ describe("SessionService", () => {
 			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5000)
 		})
 
-		it("should call syncSession every 1000ms", async () => {
+		it("should call syncSession every 5000ms", async () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
@@ -502,21 +502,21 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First tick
-			await vi.advanceTimersByTimeAsync(1000)
+			// First tick (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
 			// Trigger new save event
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second tick - should call update
+			// Second tick - should call update (5000ms interval)
 			mockUpdate.mockResolvedValue({
-				id: "session-id",
+				session_id: "session-id",
 				title: "",
 				updated_at: "2025-01-01T00:01:00Z",
 			})
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 			expect(mockUpdate).toHaveBeenCalledTimes(1)
 		})
 	})
@@ -531,8 +531,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync attempt - should fail but not throw
-			await vi.advanceTimersByTimeAsync(1000)
+			// First sync attempt - should fail but not throw (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
@@ -554,8 +554,8 @@ describe("SessionService", () => {
 			// Trigger new save event to force new sync
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync attempt - should succeed
-			await vi.advanceTimersByTimeAsync(1000)
+			// Second sync attempt - should succeed (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(2)
 			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
@@ -580,8 +580,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync - creates session
-			await vi.advanceTimersByTimeAsync(1000)
+			// First sync - creates session (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
@@ -590,8 +590,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync - update fails but doesn't throw
-			await vi.advanceTimersByTimeAsync(1000)
+			// Second sync - update fails but doesn't throw (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockUpdate).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
@@ -618,8 +618,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Wait for initial sync to complete
-			await vi.advanceTimersByTimeAsync(1000)
+			// Wait for initial sync to complete (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			// Clear mocks to isolate destroy behavior
 			vi.clearAllMocks()
@@ -643,8 +643,8 @@ describe("SessionService", () => {
 				}),
 			)
 
-			// Verify destroy completed successfully
-			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
+			// Verify destroy completed successfully - check for flushed message instead
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService flushed", "SessionService")
 		})
 	})
 
@@ -674,12 +674,12 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Start first sync (but don't await - it's already running via timer)
-			const firstTick = vi.advanceTimersByTimeAsync(1000)
+			// Start first sync (but don't await - it's already running via timer) (5000ms interval)
+			const firstTick = vi.advanceTimersByTimeAsync(5000)
 
-			// Try to trigger another sync while first is in progress
+			// Try to trigger another sync while first is in progress (5000ms interval)
 			service.setPath("apiConversationHistoryPath", "/path/to/api2.json")
-			const secondTick = vi.advanceTimersByTimeAsync(1000)
+			const secondTick = vi.advanceTimersByTimeAsync(5000)
 
 			// Both ticks run but second should skip due to lock
 			await Promise.all([firstTick, secondTick])
@@ -701,7 +701,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
@@ -715,7 +715,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(mockCreate).toHaveBeenCalledTimes(2)
 		})
@@ -790,20 +790,20 @@ describe("SessionService", () => {
 			// Verify files were written
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(3)
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/restored-session-id/api_conversation_history_blob_url.json",
+				"/mock/tasks/dir/restored-session-id/api_conversation_history.json",
 				JSON.stringify(apiConversationData, null, 2),
 			)
 
 			// Verify checkpoint messages were filtered out
 			const uiMessagesCall = vi
 				.mocked(writeFileSync)
-				.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages_blob_url.json")
+				.mock.calls.find((call) => call[0] === "/mock/tasks/dir/restored-session-id/ui_messages.json")
 			expect(uiMessagesCall?.[1]).toContain("message 1")
 			expect(uiMessagesCall?.[1]).toContain("message 2")
 			expect(uiMessagesCall?.[1]).not.toContain("checkpoint_saved")
 
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/restored-session-id/task_metadata_blob_url.json",
+				"/mock/tasks/dir/restored-session-id/task_metadata.json",
 				JSON.stringify(taskMetadataData, null, 2),
 			)
 		})
@@ -909,7 +909,7 @@ describe("SessionService", () => {
 			// Only one file should be written
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(writeFileSync)).toHaveBeenCalledWith(
-				"/mock/tasks/dir/partial-session-id/api_conversation_history_blob_url.json",
+				"/mock/tasks/dir/partial-session-id/api_conversation_history.json",
 				JSON.stringify(apiConversationData, null, 2),
 			)
 		})
@@ -956,7 +956,7 @@ describe("SessionService", () => {
 				"Failed to process blob",
 				"SessionService",
 				expect.objectContaining({
-					fileName: "api_conversation_history_blob_url",
+					filename: "api_conversation_history",
 				}),
 			)
 
@@ -989,7 +989,7 @@ describe("SessionService", () => {
 				"Failed to process blob",
 				"SessionService",
 				expect.objectContaining({
-					fileName: "api_conversation_history_blob_url",
+					filename: "api_conversation_history",
 				}),
 			)
 
@@ -1142,8 +1142,9 @@ describe("SessionService", () => {
 					name: "origin",
 					refs: {
 						fetch: "https://github.com/user/repo.git",
+						push: "",
 					},
-				} as any,
+				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("merge123abc456")
 			// No uncommitted changes: diff HEAD returns empty, but we're not on first commit
@@ -1174,9 +1175,10 @@ describe("SessionService", () => {
 				{
 					name: "origin",
 					refs: {
+						fetch: "",
 						push: "https://github.com/user/repo.git",
 					},
-				} as any,
+				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
 			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
@@ -1209,8 +1211,9 @@ describe("SessionService", () => {
 					name: "origin",
 					refs: {
 						fetch: "https://github.com/user/repo.git",
+						push: "",
 					},
-				} as any,
+				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("firstcommit123")
 			// First commit: diff HEAD returns empty (no parent), check first commit, then fallback generates patch
@@ -1241,8 +1244,9 @@ describe("SessionService", () => {
 					name: "origin",
 					refs: {
 						fetch: "https://github.com/user/repo.git",
+						push: "",
 					},
-				} as any,
+				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
 			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
@@ -1270,7 +1274,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Creating new session", "SessionService")
 			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
@@ -1295,7 +1299,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			vi.clearAllMocks()
 
@@ -1307,7 +1311,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(1000)
+			await vi.advanceTimersByTimeAsync(5000)
 
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
 				"Updating existing session",
@@ -1335,7 +1339,7 @@ describe("SessionService", () => {
 					sessionId: null,
 				}),
 			)
-			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService destroyed", "SessionService")
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService flushed", "SessionService")
 		})
 	})
 })

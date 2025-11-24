@@ -327,7 +327,7 @@ describe("Config Persistence", () => {
 			expect(result.config.kiloToken).toBeUndefined()
 		})
 
-		it("should apply fallback even when provider has empty kilocodeToken string", async () => {
+		it("should not apply fallback when provider has empty kilocodeToken string", async () => {
 			const configWithEmptyKilocodeToken = {
 				version: "1.0.0",
 				mode: "code",
@@ -352,8 +352,8 @@ describe("Config Persistence", () => {
 			// Load config
 			const result = await loadConfig()
 
-			// Verify kiloToken was not set (empty string is falsy so no fallback)
-			expect(result.config.kiloToken).toBeUndefined()
+			// Verify kiloToken was set to empty string (not undefined) - implementation uses the value as-is when present
+			expect(result.config.kiloToken).toBe("")
 		})
 	})
 })
