@@ -397,7 +397,7 @@ export class SessionService {
 				try {
 					writeFileSync(patchFile, gitState.patch)
 
-					await git.raw(["apply", patchFile])
+					await git.raw(["apply", "--3way", patchFile])
 
 					logs.debug(`Applied patch`, "SessionService", {
 						patchSize: gitState.patch.length,
