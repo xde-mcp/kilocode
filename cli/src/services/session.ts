@@ -283,7 +283,7 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
-			const basePayload: Record<string, unknown> = {
+			const basePayload: Parameters<typeof sessionClient.create>[0] = {
 				api_conversation_history: rawPayload.apiConversationHistoryPath,
 				task_metadata: rawPayload.taskMetadataPath,
 				ui_messages: rawPayload.uiMessagesPath,
@@ -298,7 +298,13 @@ export class SessionService {
 						patch: gitInfo.patch,
 					}
 
-					basePayload.git_url = gitInfo.repoUrl
+					if (gitInfo.branch) {
+						basePayload.git_state.branch = gitInfo.branch
+					}
+
+					if (gitInfo.repoUrl) {
+						basePayload.git_url = gitInfo.repoUrl
+					}
 				}
 			} catch (error) {
 				logs.debug("Could not get git state", "SessionService", {
@@ -358,7 +364,7 @@ export class SessionService {
 	 * Execute git commands to restore repository state.
 	 * Never throws errors - all operations are wrapped in try-catch blocks.
 	 */
-	private async executeGitRestore(gitState: { head: string; patch: string }): Promise<void> {
+	private async executeGitRestore(gitState: { head: string; patch: string; branch: string }): Promise<void> {
 		try {
 			const cwd = this.workspaceDir || process.cwd()
 			const git = simpleGit(cwd)
@@ -389,15 +395,61 @@ export class SessionService {
 				})
 			}
 
-			// Step 2: Checkout to the saved commit
+			// Step 2: Checkout to the saved commit/branch
 			try {
-				await git.checkout(gitState.head)
+				// Check if we're already at the correct commit
+				const currentHead = await git.revparse(["HEAD"])
 
-				logs.debug(`Checked out to commit`, "SessionService", {
-					head: gitState.head.substring(0, 8),
-				})
+				if (currentHead.trim() === gitState.head.trim()) {
+					logs.debug(`Already at target commit, skipping checkout`, "SessionService", {
+						head: gitState.head.substring(0, 8),
+					})
+				} else {
+					// Not at the correct commit, need to checkout
+					// Try to checkout branch if available to avoid detached HEAD
+					if (gitState.branch) {
+						try {
+							// Check if branch exists and points to the same commit
+							const branchCommit = await git.revparse([gitState.branch])
+
+							if (branchCommit.trim() === gitState.head.trim()) {
+								// Branch exists and points to correct commit, checkout branch
+								await git.checkout(gitState.branch)
+
+								logs.debug(`Checked out to branch`, "SessionService", {
+									branch: gitState.branch,
+									head: gitState.head.substring(0, 8),
+								})
+							} else {
+								// Branch exists but points to different commit, checkout SHA (detached HEAD)
+								await git.checkout(gitState.head)
+
+								logs.debug(`Branch moved, checked out to commit (detached HEAD)`, "SessionService", {
+									branch: gitState.branch,
+									head: gitState.head.substring(0, 8),
+								})
+							}
+						} catch {
+							// Branch doesn't exist or revparse failed, checkout SHA (detached HEAD)
+							await git.checkout(gitState.head)
+
+							logs.debug(`Branch not found, checked out to commit (detached HEAD)`, "SessionService", {
+								branch: gitState.branch,
+								head: gitState.head.substring(0, 8),
+							})
+						}
+					} else {
+						// No branch info saved, checkout SHA (detached HEAD)
+						await git.checkout(gitState.head)
+
+						logs.debug(`No branch info, checked out to commit (detached HEAD)`, "SessionService", {
+							head: gitState.head.substring(0, 8),
+						})
+					}
+				}
 			} catch (error) {
-				logs.warn(`Failed to checkout commit`, "SessionService", {
+				logs.warn(`Failed to checkout`, "SessionService", {
+					branch: gitState.branch,
 					head: gitState.head.substring(0, 8),
 					error: error instanceof Error ? error.message : String(error),
 				})
@@ -463,6 +515,17 @@ export class SessionService {
 
 		const head = await git.revparse(["HEAD"])
 
+		// Capture current branch name to avoid detached HEAD on restore
+		let branch: string | undefined
+		try {
+			const symbolicRef = await git.raw(["symbolic-ref", "-q", "HEAD"])
+			// symbolic-ref returns refs/heads/branch-name, extract just the branch name
+			branch = symbolicRef.trim().replace(/^refs\/heads\//, "")
+		} catch {
+			// Not on a branch (already detached HEAD or no symbolic ref)
+			branch = undefined
+		}
+
 		// Try standard diff first to capture uncommitted changes
 		let patch = await git.diff(["HEAD"])
 
@@ -484,6 +547,7 @@ export class SessionService {
 		return {
 			repoUrl,
 			head,
+			branch,
 			patch,
 		}
 	}

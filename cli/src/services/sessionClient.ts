@@ -29,6 +29,7 @@ export interface CreateSessionInput {
 	ui_messages?: unknown
 	git_state?: {
 		head: string
+		branch?: string
 		patch: string
 	}
 	git_url?: string
@@ -44,6 +45,7 @@ export interface UpdateSessionInput {
 	ui_messages?: unknown
 	git_state?: {
 		head: string
+		branch?: string
 		patch: string
 	}
 	git_url?: string
