@@ -4022,17 +4022,7 @@ export const webviewMessageHandler = async (
 		// we're going to delete this message at some point and use apiConfiguration
 		// probably. So casting as any as to not define a more permanent type
 		case "requestManagedIndexerEnabled" as any: {
-			try {
-				const managedIndexerEnabled = ManagedIndexer.getInstance()?.isEnabled() || false
-				await provider.postMessageToWebview({
-					type: "managedIndexerEnabled",
-					managedIndexerEnabled,
-				} as any)
-			} catch (error) {
-				provider.log(
-					`Error getting managed indexer state: ${error instanceof Error ? error.message : String(error)}`,
-				)
-			}
+			ManagedIndexer.getInstance()?.sendEnabledStateToWebview()
 		}
 		// kilocode_change end
 	}

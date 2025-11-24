@@ -17,6 +17,7 @@ import { MANAGED_MAX_CONCURRENT_FILES } from "../constants"
 import { ServerManifest } from "./types"
 import { scannerExtensions } from "../shared/supported-extensions"
 import { VectorStoreSearchResult } from "../interfaces/vector-store"
+import { ClineProvider } from "../../../core/webview/ClineProvider"
 
 interface ManagedIndexerConfig {
 	kilocodeToken: string | null
@@ -153,6 +154,18 @@ export class ManagedIndexer implements vscode.Disposable {
 		return true
 	}
 
+	sendEnabledStateToWebview() {
+		const isEnabled = this.isEnabled()
+		ClineProvider.getInstance().then((provider) => {
+			if (provider) {
+				provider.postMessageToWebview({
+					type: "managedIndexerEnabled",
+					managedIndexerEnabled: isEnabled,
+				})
+			}
+		})
+	}
+
 	async start() {
 		console.log("[ManagedIndexer] Starting ManagedIndexer")
 
@@ -170,7 +183,9 @@ export class ManagedIndexer implements vscode.Disposable {
 
 		this.organization = await this.fetchOrganization()
 
-		if (!this.isEnabled()) {
+		const isEnabled = this.isEnabled()
+		this.sendEnabledStateToWebview()
+		if (!isEnabled) {
 			return
 		}
 
