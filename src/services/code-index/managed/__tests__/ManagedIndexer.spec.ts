@@ -215,7 +215,10 @@ describe("ManagedIndexer", () => {
 
 	describe("isEnabled", () => {
 		it("should return true when organization exists and feature is enabled", async () => {
-			const enabled = await indexer.isEnabled()
+			// Must fetch organization first to populate indexer.organization
+			await indexer.fetchOrganization()
+
+			const enabled = indexer.isEnabled()
 
 			expect(enabled).toBe(true)
 		})
@@ -223,7 +226,10 @@ describe("ManagedIndexer", () => {
 		it("should return false when organization does not exist", async () => {
 			vi.mocked(OrganizationService.fetchOrganization).mockResolvedValue(null)
 
-			const enabled = await indexer.isEnabled()
+			// Must fetch organization first
+			await indexer.fetchOrganization()
+
+			const enabled = indexer.isEnabled()
 
 			expect(enabled).toBe(false)
 		})
@@ -231,7 +237,10 @@ describe("ManagedIndexer", () => {
 		it("should return false when code indexing is not enabled", async () => {
 			vi.mocked(OrganizationService.isCodeIndexingEnabled).mockReturnValue(false)
 
-			const enabled = await indexer.isEnabled()
+			// Must fetch organization first
+			await indexer.fetchOrganization()
+
+			const enabled = indexer.isEnabled()
 
 			expect(enabled).toBe(false)
 		})
