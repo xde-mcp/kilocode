@@ -1,11 +1,9 @@
-import { ApiStreamNativeToolCallsChunk } from "./kilocode/api-stream-native-tool-calls-chunk"
 import { ReasoningDetail } from "./kilocode/reasoning-details"
 
 export type ApiStream = AsyncGenerator<ApiStreamChunk>
 
 export type ApiStreamChunk =
 	// kilocode_change start
-	| ApiStreamNativeToolCallsChunk
 	| ApiStreamReasoningDetailsChunk
 	| ApiStreamAnthropicThinkingChunk
 	| ApiStreamAnthropicRedactedThinkingChunk

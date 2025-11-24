@@ -19,7 +19,7 @@ import { getModelParams } from "../transform/model-params"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { calculateApiCostAnthropic } from "../../shared/cost"
-import { convertOpenAIToolsToAnthropic } from "./kilocode/nativeToolCallHelpers"
+import { convertOpenAIToolsToAnthropic, ToolCallAccumulatorAnthropic } from "./kilocode/nativeToolCallHelpers"
 
 export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompletionHandler {
 	private options: ApiHandlerOptions
@@ -68,8 +68,9 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		let thinkingDeltaAccumulator = ""
 		let thinkText = ""
 		let thinkSignature = ""
-		const lastStartedToolCall = { id: "", name: "", arguments: "" }
+		const toolCallAccumulator = new ToolCallAccumulatorAnthropic()
 		for await (const chunk of stream) {
+			toolCallAccumulator.processChunk(chunk)
 			switch (chunk.type) {
 				case "message_start": {
 					// Tells us cache reads/writes/input/output.
@@ -138,13 +139,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 								data: chunk.content_block.data,
 							}
 							break
-						case "tool_use":
-							if (chunk.content_block.id && chunk.content_block.name) {
-								lastStartedToolCall.id = chunk.content_block.id
-								lastStartedToolCall.name = chunk.content_block.name
-								lastStartedToolCall.arguments = ""
-							}
-							break
 						case "text":
 							// We may receive multiple text blocks, in which
 							// case just insert a line break between them.
@@ -174,21 +168,6 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 						case "text_delta":
 							yield { type: "text", text: chunk.delta.text }
 							break
-						case "input_json_delta":
-							if (lastStartedToolCall.id && lastStartedToolCall.name && chunk.delta.partial_json) {
-								yield {
-									type: "native_tool_calls",
-									toolCalls: [
-										{
-											id: lastStartedToolCall?.id,
-											function: {
-												name: lastStartedToolCall?.name,
-												arguments: chunk.delta.partial_json,
-											},
-										},
-									],
-								}
-							}
 					}
 
 					break

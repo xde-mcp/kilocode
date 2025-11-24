@@ -2210,28 +2210,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 									reasoningDetails.push(chunk.reasoning_details)
 								}
 								break
-							case "native_tool_calls": {
-								// Handle native OpenAI-format tool calls
-								// Process native tool calls through the parser
-								for (const toolUse of this.assistantMessageParser.processNativeToolCalls(
-									chunk.toolCalls,
-								)) {
-									assistantToolUses.push(toolUse)
-								}
-
-								// Update content blocks after processing native tool calls
-								const prevLength = this.assistantMessageContent.length
-								this.assistantMessageContent = this.assistantMessageParser.getContentBlocks()
-
-								if (this.assistantMessageContent.length > prevLength) {
-									// New content we need to present
-									this.userMessageContentReady = false
-								}
-
-								// Present content to user
-								presentAssistantMessage(this)
-								break
-							}
 							case "ant_thinking":
 								antThinkingContent.push({
 									type: "thinking",
@@ -3307,7 +3285,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// 2. Model supports native tools
 		const toolProtocol = getActiveToolUseStyle(apiConfiguration)
 		//const modelInfo = this.api.getModel().info
-		const shouldIncludeTools = getActiveToolUseStyle(apiConfiguration) === "native"
+		const shouldIncludeTools = toolProtocol === "native"
 		// kilocode_change end
 
 		// Build complete tools array: native tools + dynamic MCP tools, filtered by mode restrictions

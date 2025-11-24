@@ -22,7 +22,7 @@ import { getModelParams } from "../transform/model-params"
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
@@ -197,13 +197,12 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			)
 
 			let lastUsage
+			const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 
 			for await (const chunk of stream) {
 				const delta = chunk.choices?.[0]?.delta ?? {}
 
-				// kilocode_change start: Handle native tool calls when toolStyle is "json"
-				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options))
-				// kilocode_change end
+				yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 				if (delta.content) {
 					for (const chunk of matcher.update(delta.content)) {
@@ -264,7 +263,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			}
 
 			// kilocode_change start: reasoning & tool calls.
-			const toolStyle = getActiveToolUseStyle(this.options)
 			const message = response.choices[0]?.message
 			if (message) {
 				if ("reasoning" in message && typeof message.reasoning === "string") {
@@ -279,10 +277,16 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 						text: message.content || "",
 					}
 				}
-				if (toolStyle === "native" && message.tool_calls) {
-					yield {
-						type: "native_tool_calls",
-						toolCalls: message.tool_calls,
+				if (message.tool_calls) {
+					for (const toolCall of message.tool_calls) {
+						if (toolCall.type === "function") {
+							yield {
+								type: "tool_call",
+								id: toolCall.id,
+								name: toolCall.function.name,
+								arguments: toolCall.function.arguments,
+							}
+						}
 					}
 				}
 			}

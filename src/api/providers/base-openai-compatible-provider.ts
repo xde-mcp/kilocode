@@ -15,11 +15,7 @@ import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { fetchWithTimeout } from "./kilocode/fetchWithTimeout"
 import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change
-import {
-	addNativeToolCallsToParams,
-	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
-} from "./kilocode/nativeToolCallHelpers"
+import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 
 type BaseOpenAiCompatibleProviderOptions<ModelName extends string> = ApiHandlerOptions & {
 	providerName: string
@@ -131,12 +127,14 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				}) as const,
 		)
 
+		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 		for await (const chunk of stream) {
 			verifyFinishReason(chunk.choices?.[0]) // kilocode_change
 
 			const delta = chunk.choices?.[0]?.delta
 
-			yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
+			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
+
 			// Check for provider-specific error responses (e.g., MiniMax base_resp)
 			const chunkAny = chunk as any
 			if (chunkAny.base_resp?.status_code && chunkAny.base_resp.status_code !== 0) {

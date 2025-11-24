@@ -16,7 +16,7 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 
 export class InceptionLabsHandler extends RouterProvider implements SingleCompletionHandler {
@@ -87,12 +87,10 @@ export class InceptionLabsHandler extends RouterProvider implements SingleComple
 			.withResponse()
 
 		let lastUsage: OpenAI.CompletionUsage | undefined
+		const toolCallAccumulator = new ToolCallAccumulator()
 		for await (const chunk of stream) {
 			const delta = chunk.choices[0]?.delta
-			yield* processNativeToolCallsFromDelta(
-				delta,
-				getActiveToolUseStyle({ ...this.options, apiProvider: this.name }),
-			)
+			yield* toolCallAccumulator.processChunk(chunk)
 
 			if (delta?.content) {
 				yield { type: "text", text: delta.content }

@@ -19,7 +19,7 @@ import type {
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 
 const QWEN_OAUTH_BASE_URL = "https://chat.qwen.ai"
@@ -239,6 +239,7 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 		const stream = await this.callApiWithRetry(() => client.chat.completions.create(requestOptions))
 
 		let fullContent = ""
+		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 
 		for await (const apiChunk of stream) {
 			const delta = apiChunk.choices[0]?.delta ?? {}
@@ -288,7 +289,7 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 				}
 			}
 
-			yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
+			yield* toolCallAccumulator.processChunk(apiChunk) // kilocode_change
 
 			if (apiChunk.usage) {
 				yield {

@@ -15,7 +15,7 @@ import { RouterProvider } from "./router-provider"
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 
 /**
@@ -148,11 +148,12 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 
 			let lastUsage
 
+			const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 			for await (const chunk of completion) {
 				const delta = chunk.choices[0]?.delta
 				const usage = chunk.usage as LiteLLMUsage
 
-				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
+				yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 				if (delta?.content) {
 					yield { type: "text", text: delta.content }

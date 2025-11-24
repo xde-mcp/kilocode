@@ -16,7 +16,7 @@ import { getModels } from "./fetchers/modelCache"
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 
 export class DeepInfraHandler extends RouterProvider implements SingleCompletionHandler {
@@ -94,10 +94,11 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 			.withResponse()
 
 		let lastUsage: OpenAI.CompletionUsage | undefined
+		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 		for await (const chunk of stream) {
 			const delta = chunk.choices[0]?.delta
 
-			yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options)) // kilocode_change
+			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 			if (delta?.content) {
 				yield { type: "text", text: delta.content }

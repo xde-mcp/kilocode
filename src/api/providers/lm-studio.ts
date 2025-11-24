@@ -17,7 +17,7 @@ import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeo
 import {
 	addNativeToolCallsToParams,
 	getActiveToolUseStyle,
-	processNativeToolCallsFromDelta,
+	ToolCallAccumulator,
 } from "./kilocode/nativeToolCallHelpers"
 import { getModels, getModelsFromCache } from "./fetchers/modelCache"
 import { handleOpenAIError } from "./utils/openai-error-handler"
@@ -118,12 +118,11 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 					}) as const,
 			)
 
+			const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 			for await (const chunk of results) {
 				const delta = chunk.choices[0]?.delta
 
-				// kilocode_change start: Handle native tool calls when toolStyle is "json"
-				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options))
-				// kilocode_change end
+				yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 				if (delta?.content) {
 					assistantText += delta.content

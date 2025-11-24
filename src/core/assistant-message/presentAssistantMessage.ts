@@ -273,39 +273,16 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 			}
 
-			let hasToolResult_kilocode = false
-
-			const pushToolResult_withToolUseId_kilocode = (
-				...items: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[]
-			) => {
-				if (block.toolUseId) {
-					if (!hasToolResult_kilocode) {
-						cline.userMessageContent.push({
-							type: "tool_result",
-							tool_use_id: block.toolUseId,
-							content: items,
-						})
-						hasToolResult_kilocode = true
-					} else {
-						console.warn(
-							`[presentAssistantMessage] Skipping duplicate tool_result for tool_use_id: ${block.toolUseId}`,
-						)
-					}
-				} else {
-					cline.userMessageContent.push(...items)
-				}
-			}
-
 			if (cline.didRejectTool) {
 				// Ignore any tool content after user has rejected tool once.
 				if (!block.partial) {
-					pushToolResult_withToolUseId_kilocode({
+					cline.userMessageContent.push({
 						type: "text",
 						text: `Skipping tool ${toolDescription()} due to user rejecting a previous tool.`,
 					})
 				} else {
 					// Partial tool after user rejected a previous tool.
-					pushToolResult_withToolUseId_kilocode({
+					cline.userMessageContent.push({
 						type: "text",
 						text: `Tool ${toolDescription()} was interrupted and not executed due to user rejecting a previous tool.`,
 					})
@@ -316,7 +293,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 			if (cline.didAlreadyUseTool) {
 				// Ignore any content after a tool has already been used.
-				pushToolResult_withToolUseId_kilocode({
+				cline.userMessageContent.push({
 					type: "text",
 					text: `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`,
 				})
@@ -326,9 +303,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 			const pushToolResult = (content: ToolResponse) => {
 				// Check if we're using native tool protocol
-				const toolProtocol = vscode.workspace
-					.getConfiguration(Package.name)
-					.get<ToolProtocol>("toolProtocol", "xml")
+				const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration) // kilocode_change
 				const isNative = isNativeProtocol(toolProtocol)
 
 				// Get the tool call ID if this is a native tool call
@@ -372,8 +347,6 @@ export async function presentAssistantMessage(cline: Task) {
 						cline.userMessageContent.push(...content)
 					}
 				}
-				// pushToolResult_withToolUseId_kilocode(...items)
-				// kilocode_change end
 
 				// Once a tool result has been collected, ignore all other tool
 				// uses since we should only ever present one tool result per
@@ -520,7 +493,7 @@ export async function presentAssistantMessage(cline: Task) {
 
 					if (response === "messageResponse") {
 						// Add user feedback to userContent.
-						pushToolResult_withToolUseId_kilocode(
+						cline.userMessageContent.push(
 							{
 								type: "text" as const,
 								text: `Tool repetition limit reached. User feedback: ${text}`,
