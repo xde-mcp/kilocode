@@ -6,8 +6,6 @@ import path from "path"
 import { ensureDirSync } from "fs-extra"
 import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
-import { createStore } from "jotai"
-import { sessionIdAtom } from "../state/atoms/session.js"
 import simpleGit from "simple-git"
 
 const defaultPaths = {
@@ -19,16 +17,20 @@ const defaultPaths = {
 export class SessionService {
 	private static instance: SessionService | null = null
 
-	static init(extensionService?: ExtensionService, store?: ReturnType<typeof createStore>) {
-		if ((!extensionService || !store) && !SessionService.instance) {
+	static init(extensionService?: ExtensionService) {
+		if (!extensionService && !SessionService.instance) {
 			throw new Error("extensionService and store required to init SessionService")
 		}
 
-		if (extensionService && store && !SessionService.instance) {
-			SessionService.instance = new SessionService(extensionService, store)
+		if (extensionService && !SessionService.instance) {
+			SessionService.instance = new SessionService(extensionService)
 
 			logs.debug("Initiated SessionService", "SessionService")
 		}
+
+		const instance = SessionService.instance
+
+		instance!.startTimer()
 
 		return SessionService.instance!
 	}
@@ -43,9 +45,6 @@ export class SessionService {
 
 	private set sessionId(sessionId: string | null) {
 		this._sessionId = sessionId
-
-		// Set the session ID in the atom for UI display
-		this.store.set(sessionIdAtom, sessionId)
 	}
 
 	private timer: NodeJS.Timeout | null = null
@@ -53,17 +52,16 @@ export class SessionService {
 	private lastSyncEvent: string = ""
 	private isSyncing: boolean = false
 
-	private constructor(
-		private extensionService: ExtensionService,
-		private store: ReturnType<typeof createStore>,
-	) {
+	private constructor(private extensionService: ExtensionService) {
 		this.startTimer()
 	}
 
-	private startTimer() {
-		this.timer = setInterval(() => {
-			this.syncSession()
-		}, 1000)
+	startTimer() {
+		if (!this.timer) {
+			this.timer = setInterval(() => {
+				this.syncSession()
+			}, 1000)
+		}
 	}
 
 	private readPath(path: string) {
@@ -210,7 +208,7 @@ export class SessionService {
 						logs.debug(`Wrote blob to file`, "SessionService", { fullPath })
 					} else {
 						logs.error(`Failed to process blob`, "SessionService", {
-							fileName: filename,
+							filename,
 							error: fetchResult.error,
 						})
 					}
@@ -397,6 +395,11 @@ export class SessionService {
 
 	async destroy() {
 		logs.debug("Destroying SessionService", "SessionService", { sessionId: this.sessionId })
+
+		if (this.timer) {
+			clearInterval(this.timer)
+			this.timer = null
+		}
 
 		await this.syncSession()
 

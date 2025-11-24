@@ -130,7 +130,7 @@ export class CLI {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				const sessionService = SessionService.init(this.service, this.store)
+				const sessionService = SessionService.init(this.service)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
 				// Set workspace directory for git operations (important for parallel mode/worktrees)
