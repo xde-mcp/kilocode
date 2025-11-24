@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import type { MockedFunction } from "vitest"
 import fs from "fs/promises"
+import * as path from "path"
 
 import { deleteFileTool } from "../deleteFileTool"
 import { Task } from "../../task/Task"
@@ -154,14 +155,18 @@ describe("deleteFileTool", () => {
 		it("validates and allows access when rooIgnoreController permits", async () => {
 			await executeDeleteFileTool({}, { accessAllowed: true })
 
-			expect(mockCline.rooIgnoreController.validateAccess).toHaveBeenCalledWith(testFilePath)
+			// Normalize path for cross-platform compatibility
+			const normalizedPath = path.normalize(testFilePath)
+			expect(mockCline.rooIgnoreController.validateAccess).toHaveBeenCalledWith(normalizedPath)
 			expect(mockedFsUnlink).toHaveBeenCalled()
 		})
 
 		it("should reject files in .kilocodeignore", async () => {
 			await executeDeleteFileTool({}, { accessAllowed: false })
 
-			expect(mockCline.say).toHaveBeenCalledWith("error", "Access denied: test/file.txt")
+			// Normalize path for cross-platform compatibility
+			const normalizedPath = path.normalize(testFilePath)
+			expect(mockCline.say).toHaveBeenCalledWith("error", `Access denied: ${normalizedPath}`)
 			expect(mockPushToolResult).toHaveBeenCalled()
 			expect(mockedFsUnlink).not.toHaveBeenCalled()
 		})
@@ -202,10 +207,14 @@ describe("deleteFileTool", () => {
 
 			expect(mockCline.consecutiveMistakeCount).toBe(0)
 			expect(mockAskApproval).toHaveBeenCalled()
-			expect(mockedFsRm).toHaveBeenCalledWith(expect.stringContaining(testFilePath), {
-				recursive: true,
-				force: false,
-			})
+			// Use expect.any(String) and custom matcher to handle cross-platform paths
+			expect(mockedFsRm).toHaveBeenCalledWith(
+				expect.stringMatching(new RegExp(path.normalize(testFilePath).replace(/\\/g, "\\\\"))),
+				{
+					recursive: true,
+					force: false,
+				},
+			)
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted directory"))
 		})
 
@@ -224,10 +233,14 @@ describe("deleteFileTool", () => {
 
 			expect(mockCline.consecutiveMistakeCount).toBe(0)
 			expect(mockAskApproval).toHaveBeenCalled()
-			expect(mockedFsRm).toHaveBeenCalledWith(expect.stringContaining(testFilePath), {
-				recursive: true,
-				force: false,
-			})
+			// Use expect.any(String) and custom matcher to handle cross-platform paths
+			expect(mockedFsRm).toHaveBeenCalledWith(
+				expect.stringMatching(new RegExp(path.normalize(testFilePath).replace(/\\/g, "\\\\"))),
+				{
+					recursive: true,
+					force: false,
+				},
+			)
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Deleted directory"))
 		})
 
