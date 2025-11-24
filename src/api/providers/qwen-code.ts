@@ -4,13 +4,7 @@ import OpenAI from "openai"
 import * as os from "os"
 import * as path from "path"
 
-import {
-	type ModelInfo,
-	type QwenCodeModelId,
-	qwenCodeModels,
-	qwenCodeDefaultModelId,
-	getActiveToolUseStyle, // kilocode_change (returns ToolProtocol)
-} from "@roo-code/types"
+import { type ModelInfo, type QwenCodeModelId, qwenCodeModels, qwenCodeDefaultModelId } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 
@@ -22,7 +16,11 @@ import type {
 	ApiHandlerCreateMessageMetadata, // kilocode_change
 	SingleCompletionHandler,
 } from "../index"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
+import {
+	addNativeToolCallsToParams,
+	getActiveToolUseStyle,
+	processNativeToolCallsFromDelta,
+} from "./kilocode/nativeToolCallHelpers"
 
 const QWEN_OAUTH_BASE_URL = "https://chat.qwen.ai"
 const QWEN_OAUTH_TOKEN_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v1/oauth2/token`

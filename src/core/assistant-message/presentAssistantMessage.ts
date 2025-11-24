@@ -1,7 +1,6 @@
 import cloneDeep from "clone-deep"
 import { serializeError } from "serialize-error"
-// import { Anthropic } from "@anthropic-ai/sdk"
-import Anthropic from "@anthropic-ai/sdk" // kilocode_change
+import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
@@ -9,7 +8,6 @@ import { TelemetryService } from "@roo-code/telemetry"
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import type { ToolParamName, ToolResponse, ToolUse } from "../../shared/tools"
 import { Package } from "../../shared/package"
-import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper" // kilocode_change: AI gatekeeper for YOLO mode
 
 import { fetchInstructionsTool } from "../tools/FetchInstructionsTool"
 import { listFilesTool } from "../tools/ListFilesTool"
@@ -19,8 +17,6 @@ import { shouldUseSingleFileRead } from "@roo-code/types"
 import { writeToFileTool } from "../tools/WriteToFileTool"
 import { applyDiffTool } from "../tools/MultiApplyDiffTool"
 import { insertContentTool } from "../tools/InsertContentTool"
-import { editFileTool } from "../tools/editFileTool" // kilocode_change: Morph fast apply
-import { deleteFileTool } from "../tools/deleteFileTool" // kilocode_change
 import { listCodeDefinitionNamesTool } from "../tools/ListCodeDefinitionNamesTool"
 import { searchFilesTool } from "../tools/SearchFilesTool"
 import { browserActionTool } from "../tools/BrowserActionTool"
@@ -39,15 +35,21 @@ import { generateImageTool } from "../tools/GenerateImageTool"
 import { formatResponse } from "../prompts/responses"
 import { validateToolUse } from "../tools/validateToolUse"
 import { Task } from "../task/Task"
-import { newRuleTool } from "../tools/newRuleTool" // kilocode_change
-import { reportBugTool } from "../tools/reportBugTool" // kilocode_change
-import { condenseTool } from "../tools/condenseTool" // kilocode_change
 import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
 import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
 import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
-import { yieldPromise } from "../kilocode"
 import * as vscode from "vscode"
 import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
+
+import { yieldPromise } from "../kilocode"
+import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
+import { editFileTool } from "../tools/kilocode/editFileTool"
+import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
+import { newRuleTool } from "../tools/kilocode/newRuleTool"
+import { reportBugTool } from "../tools/kilocode/reportBugTool"
+import { condenseTool } from "../tools/kilocode/condenseTool"
+import { searchAndReplaceTool } from "../tools/kilocode/searchAndReplaceTool"
+import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 /**
  * Processes and presents assistant message content to the user interface.
@@ -222,7 +224,7 @@ export async function presentAssistantMessage(cline: Task) {
 						}]`
 					case "insert_content":
 						return `[${block.name} for '${block.params.path}']`
-					// kilocode_change start: Morph fast apply
+					// kilocode_change start
 					case "edit_file":
 						return `[${block.name} for '${block.params.target_file}']`
 					case "delete_file":
@@ -565,19 +567,13 @@ export async function presentAssistantMessage(cline: Task) {
 				case "apply_diff": {
 					await checkpointSaveAndMark(cline)
 
-					// Check if native protocol is enabled - if so, always use single-file class-based tool
-					const toolProtocol = vscode.workspace
-						.getConfiguration(Package.name)
-						.get<ToolProtocol>("toolProtocol", "xml")
+					// kilocode_change start: use search and replace tool
+					const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration)
 					if (isNativeProtocol(toolProtocol)) {
-						await applyDiffToolClass.handle(cline, block as ToolUse<"apply_diff">, {
-							askApproval,
-							handleError,
-							pushToolResult,
-							removeClosingTag,
-						})
+						await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
 						break
 					}
+					// kilocode_change end
 
 					// Get the provider and state to check experiment settings
 					const provider = cline.providerRef.deref()

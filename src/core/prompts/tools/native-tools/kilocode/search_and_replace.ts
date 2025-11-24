@@ -1,10 +1,5 @@
-import { ToolUseStyle } from "@roo-code/types"
 import type OpenAI from "openai"
 import z from "zod/v4"
-
-export function shouldUseSearchAndReplaceInsteadOfApplyDiff(toolStyle: ToolUseStyle, modelId: string) {
-	return toolStyle === "native" && !modelId.toLowerCase().includes("claude")
-}
 
 export const SearchAndReplaceParametersSchema = z.object({
 	path: z.string().describe("The path to the file to modify (relative to the current workspace directory)."),

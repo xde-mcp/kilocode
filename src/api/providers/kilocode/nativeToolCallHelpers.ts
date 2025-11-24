@@ -72,8 +72,52 @@
 import OpenAI from "openai"
 import type { ApiHandlerCreateMessageMetadata } from "../../index"
 import type { ApiStreamNativeToolCallsChunk } from "../../transform/kilocode/api-stream-native-tool-calls-chunk"
-import { getActiveToolUseStyle, ProviderSettings, ToolProtocol } from "@roo-code/types"
+import {
+	getModelId,
+	nativeFunctionCallingProviders, // kilocode_change
+	ProviderName,
+	ProviderSettings,
+	TOOL_PROTOCOL,
+	ToolProtocol,
+} from "@roo-code/types"
 import Anthropic from "@anthropic-ai/sdk"
+import { Package } from "../../../shared/package"
+import * as vscode from "vscode"
+
+const modelsDefaultingToNativeKeywords = [
+	"claude-haiku-4.5",
+	"claude-haiku-4-5",
+	"gpt-5-codex",
+	"gpt-5.1-codex",
+	"minimax-m2",
+]
+
+const providersDefaultingToNativeKeywords = ["synthetic", "inception"]
+
+export function getActiveToolUseStyle(settings: ProviderSettings | undefined): ToolProtocol {
+	if (!settings) {
+		console.error("getActiveToolUseStyle: settings missing, returning xml")
+		return TOOL_PROTOCOL.XML
+	}
+	if (settings.apiProvider && !nativeFunctionCallingProviders.includes(settings.apiProvider as ProviderName)) {
+		return TOOL_PROTOCOL.XML
+	}
+	if (settings.toolStyle) {
+		return settings.toolStyle
+	}
+	const model = getModelId(settings)?.toLowerCase()
+	if (!model) {
+		console.error("getActiveToolUseStyle: model missing, returning xml")
+		return TOOL_PROTOCOL.XML
+	}
+	if (
+		providersDefaultingToNativeKeywords.includes(settings.apiProvider as ProviderName) ||
+		modelsDefaultingToNativeKeywords.some((keyword) => model.includes(keyword))
+	) {
+		return TOOL_PROTOCOL.NATIVE
+	}
+	return vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", TOOL_PROTOCOL.XML)
+}
 
 /**
  * Adds native tool call parameters to OpenAI chat completion params when toolStyle is "json"

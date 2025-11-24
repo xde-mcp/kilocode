@@ -1,15 +1,15 @@
 import path from "path"
 import delay from "delay"
 
-import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
-import { formatResponse } from "../prompts/responses"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
-import { fileExistsAtPath } from "../../utils/fs"
-import { addLineNumbers, stripLineNumbers, everyLineHasLineNumbers } from "../../integrations/misc/extract-text"
-import { getReadablePath } from "../../utils/path"
-import { isPathOutsideWorkspace } from "../../utils/pathUtils"
-import { unescapeHtmlEntities } from "../../utils/text-normalization"
+import { Task } from "../../task/Task"
+import { ClineSayTool } from "../../../shared/ExtensionMessage"
+import { formatResponse } from "../../prompts/responses"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../../shared/tools"
+import { fileExistsAtPath } from "../../../utils/fs"
+import { addLineNumbers, stripLineNumbers, everyLineHasLineNumbers } from "../../../integrations/misc/extract-text"
+import { getReadablePath } from "../../../utils/path"
+import { isPathOutsideWorkspace } from "../../../utils/pathUtils"
+import { unescapeHtmlEntities } from "../../../utils/text-normalization"
 
 export async function newRuleTool(
 	cline: Task,

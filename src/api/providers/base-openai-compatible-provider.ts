@@ -1,10 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
-import {
-	getActiveToolUseStyle, // kilocode_change
-	type ModelInfo,
-} from "@roo-code/types"
+import { type ModelInfo } from "@roo-code/types"
 
 import { type ApiHandlerOptions, getModelMaxOutputTokens } from "../../shared/api"
 import { XmlMatcher } from "../../utils/xml-matcher"
@@ -18,7 +15,11 @@ import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { fetchWithTimeout } from "./kilocode/fetchWithTimeout"
 import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
+import {
+	addNativeToolCallsToParams,
+	getActiveToolUseStyle,
+	processNativeToolCallsFromDelta,
+} from "./kilocode/nativeToolCallHelpers"
 
 type BaseOpenAiCompatibleProviderOptions<ModelName extends string> = ApiHandlerOptions & {
 	providerName: string

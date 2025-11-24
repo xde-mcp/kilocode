@@ -251,8 +251,12 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	fetch_instructions: "fetch instructions",
 	write_to_file: "write files",
 	apply_diff: "apply changes",
-	edit_file: "edit file", // kilocode_change: Morph fast apply
-	delete_file: "delete files", // kilocode_change
+	// kilocode_change start
+	edit_file: "edit file",
+	delete_file: "delete files",
+	report_bug: "report bug",
+	condense: "condense the current context window",
+	// kilocode_change start
 	search_files: "search files",
 	list_files: "list files",
 	list_code_definition_names: "list definitions",
@@ -265,8 +269,6 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	new_task: "create new task",
 	insert_content: "insert content",
 	new_rule: "create new rule",
-	report_bug: "report bug", // kilocode_change
-	condense: "condense the current context window", // kilocode_change
 	codebase_search: "codebase search",
 	update_todo_list: "update todo list",
 	run_slash_command: "run slash command",

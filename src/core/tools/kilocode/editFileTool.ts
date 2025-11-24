@@ -1,20 +1,18 @@
-// kilocode_change: Fast Apply -- file added
-
 import path from "path"
 import { promises as fs } from "fs"
 import OpenAI from "openai"
 
-import { Task } from "../task/Task"
-import { formatResponse } from "../prompts/responses"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
-import { fileExistsAtPath } from "../../utils/fs"
-import { getReadablePath } from "../../utils/path"
+import { Task } from "../../task/Task"
+import { formatResponse } from "../../prompts/responses"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../../shared/tools"
+import { fileExistsAtPath } from "../../../utils/fs"
+import { getReadablePath } from "../../../utils/path"
 import { getKiloUrlFromToken } from "@roo-code/types"
-import { DEFAULT_HEADERS } from "../../api/providers/constants"
+import { DEFAULT_HEADERS } from "../../../api/providers/constants"
 import { TelemetryService } from "@roo-code/telemetry"
-import { type ClineProviderState } from "../webview/ClineProvider"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
-import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TASKID, X_KILOCODE_TESTER } from "../../shared/kilocode/headers"
+import { type ClineProviderState } from "../../webview/ClineProvider"
+import { ClineSayTool } from "../../../shared/ExtensionMessage"
+import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TASKID, X_KILOCODE_TESTER } from "../../../shared/kilocode/headers"
 
 const FAST_APPLY_MODEL_PRICING = {
 	"morph-v3-fast": {

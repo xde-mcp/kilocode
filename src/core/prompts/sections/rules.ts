@@ -8,8 +8,7 @@ import { getAvailableToolsInGroup } from "../tools/filter-tools-for-mode"
 // kilocode_change start
 import { getFastApplyEditingInstructions } from "../tools/edit-file"
 import { type ClineProviderState } from "../../webview/ClineProvider"
-import { getFastApplyModelType, isFastApplyAvailable } from "../../tools/editFileTool"
-import { ToolUseStyle } from "../../../../packages/types/src/kilocode/native-function-calling"
+import { getFastApplyModelType, isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 // kilocode_change end
 
 function getEditingInstructions(

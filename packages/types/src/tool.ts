@@ -76,6 +76,8 @@ export const TOOL_PROTOCOL = {
  */
 export type ToolProtocol = (typeof TOOL_PROTOCOL)[keyof typeof TOOL_PROTOCOL]
 
+export const toolProtocolSchema = z.enum([TOOL_PROTOCOL.XML, TOOL_PROTOCOL.NATIVE]) // kilocode_change
+
 /**
  * Checks if the protocol is native (non-XML).
  *

@@ -1,9 +1,4 @@
-import {
-	DEEP_SEEK_DEFAULT_TEMPERATURE,
-	chutesDefaultModelId,
-	chutesDefaultModelInfo,
-	getActiveToolUseStyle, // kilocode_change
-} from "@roo-code/types"
+import { DEEP_SEEK_DEFAULT_TEMPERATURE, chutesDefaultModelId, chutesDefaultModelInfo } from "@roo-code/types"
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
@@ -16,7 +11,11 @@ import { ApiStream } from "../transform/stream"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 import { RouterProvider } from "./router-provider"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
+import {
+	addNativeToolCallsToParams,
+	getActiveToolUseStyle,
+	processNativeToolCallsFromDelta,
+} from "./kilocode/nativeToolCallHelpers"
 
 export class ChutesHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {

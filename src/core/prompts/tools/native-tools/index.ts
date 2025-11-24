@@ -3,8 +3,6 @@ import askFollowupQuestion from "./ask_followup_question"
 import attemptCompletion from "./attempt_completion"
 import browserAction from "./browser_action"
 import codebaseSearch from "./codebase_search"
-import deleteFile from "./delete_file"
-import editFile from "./edit_file"
 import executeCommand from "./execute_command"
 import fetchInstructions from "./fetch_instructions"
 import generateImage from "./generate_image"
@@ -18,19 +16,29 @@ import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
-import { apply_diff_single_file } from "./apply_diff"
+// import { apply_diff_single_file } from "./apply_diff" // kilocode_change
+
+import searchAndReplace from "./kilocode/search_and_replace"
+import deleteFile from "./kilocode/delete_file"
+import editFile from "./kilocode/edit_file"
 
 export { getMcpServerTools } from "./mcp_server"
 export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./converters"
 
 export const nativeTools = [
-	apply_diff_single_file,
+	// kilocode_change start
+	searchAndReplace,
+	deleteFile,
+	editFile,
+	// todo:
+	// condenseTool,
+	// newRuleTool,
+	// reportBugTool,
+	// kilocode_change end
 	askFollowupQuestion,
 	attemptCompletion,
 	browserAction,
 	codebaseSearch,
-	deleteFile,
-	editFile,
 	executeCommand,
 	fetchInstructions,
 	generateImage,

@@ -16,7 +16,7 @@ import { EXPERIMENT_IDS, experiments } from "../../../shared/experiments"
 import {
 	SearchAndReplaceParameters,
 	SearchAndReplaceParametersSchema,
-} from "../../prompts/tools/native-tools/search_and_replace"
+} from "../../prompts/tools/native-tools/kilocode/search_and_replace"
 
 /**
  * Tool for performing search and replace operations on files

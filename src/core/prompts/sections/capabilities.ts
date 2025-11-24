@@ -7,7 +7,7 @@ import type { SystemPromptSettings } from "../types"
 
 // kilocode_change start
 import { ClineProviderState } from "../../webview/ClineProvider"
-import { isFastApplyAvailable } from "../../tools/editFileTool"
+import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 // kilocode_change end
 
 export function getCapabilitiesSection(

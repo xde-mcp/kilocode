@@ -1,12 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
-import {
-	type XAIModelId,
-	getActiveToolUseStyle, // kilocode_change
-	xaiDefaultModelId,
-	xaiModels,
-} from "@roo-code/types"
+import { type XAIModelId, xaiDefaultModelId, xaiModels } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 
@@ -19,7 +14,11 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
+import {
+	addNativeToolCallsToParams,
+	getActiveToolUseStyle,
+	processNativeToolCallsFromDelta,
+} from "./kilocode/nativeToolCallHelpers"
 
 const XAI_DEFAULT_TEMPERATURE = 0
 

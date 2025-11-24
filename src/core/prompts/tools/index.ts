@@ -1,8 +1,4 @@
-import type {
-	ToolName,
-	ModeConfig,
-	ToolProtocol, // kilocode_change
-} from "@roo-code/types"
+import type { ToolName, ModeConfig } from "@roo-code/types"
 
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS, DiffStrategy } from "../../../shared/tools"
 import { McpHub } from "../../../services/mcp/McpHub"
@@ -34,7 +30,7 @@ import { getDeleteFileDescription } from "./delete-file" // kilocode_change
 import { CodeIndexManager } from "../../../services/code-index/manager"
 
 // kilocode_change start: Morph fast apply
-import { isFastApplyAvailable } from "../../tools/editFileTool"
+import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 import { getEditFileDescription } from "./edit-file"
 import { type ClineProviderState } from "../../webview/ClineProvider"
 // kilocode_change end

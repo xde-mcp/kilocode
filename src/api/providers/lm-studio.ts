@@ -2,12 +2,7 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 import axios from "axios"
 
-import {
-	type ModelInfo,
-	openAiModelInfoSaneDefaults,
-	LMSTUDIO_DEFAULT_TEMPERATURE,
-	getActiveToolUseStyle, // kilocode_change
-} from "@roo-code/types"
+import { type ModelInfo, openAiModelInfoSaneDefaults, LMSTUDIO_DEFAULT_TEMPERATURE } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 
@@ -19,7 +14,11 @@ import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
+import {
+	addNativeToolCallsToParams,
+	getActiveToolUseStyle,
+	processNativeToolCallsFromDelta,
+} from "./kilocode/nativeToolCallHelpers"
 import { getModels, getModelsFromCache } from "./fetchers/modelCache"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change

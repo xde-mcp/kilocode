@@ -36,7 +36,6 @@ import {
 	isInteractiveAsk,
 	isResumableAsk,
 	QueuedMessage,
-	getActiveToolUseStyle, // kilocode_change
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	MAX_CHECKPOINT_TIMEOUT_SECONDS,
@@ -86,7 +85,6 @@ import { getWorkspacePath } from "../../utils/path"
 // prompts
 import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
-import { getAllowedJSONToolsForMode } from "../prompts/tools/native-tools/getAllowedJSONToolsForMode" // kilocode_change
 import { nativeTools, getMcpServerTools } from "../prompts/tools/native-tools"
 import { filterNativeToolsForMode, filterMcpToolsForMode } from "../prompts/tools/filter-tools-for-mode"
 
@@ -136,6 +134,7 @@ import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api
 import { mergeApiMessages } from "./kilocode"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
 import { mergeEnvironmentDetailsIntoUserContent } from "../environment/kilocode/mergeEnvironmentDetailsIntoUserContent"
+import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
 const DEFAULT_USAGE_COLLECTION_TIMEOUT_MS = 5000 // 5 seconds
@@ -3302,12 +3301,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			throw new Error("Auto-approval limit reached and user did not approve continuation")
 		}
 
+		// kilocode_change start
 		// Determine if we should include native tools based on:
 		// 1. Tool protocol is set to NATIVE
 		// 2. Model supports native tools
-		const toolProtocol = vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", "xml")
-		const modelInfo = this.api.getModel().info
-		const shouldIncludeTools = toolProtocol === TOOL_PROTOCOL.NATIVE && (modelInfo.supportsNativeTools ?? false)
+		const toolProtocol = getActiveToolUseStyle(apiConfiguration)
+		//const modelInfo = this.api.getModel().info
+		const shouldIncludeTools = getActiveToolUseStyle(apiConfiguration) === "native"
+		// kilocode_change end
 
 		// Build complete tools array: native tools + dynamic MCP tools, filtered by mode restrictions
 		let allTools: OpenAI.Chat.ChatCompletionTool[] = []
@@ -3348,29 +3349,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			taskId: this.taskId,
 			// Include tools and tool protocol when using native protocol and model supports it
 			...(shouldIncludeTools ? { tools: allTools, tool_choice: "auto", toolProtocol } : {}),
-			// kilocode_change start
-			// KiloCode-specific: pass projectId for backend tracking (ignored by other providers)
-			projectId: (await kiloConfig)?.project?.id,
-			// kilocode_change end
+			projectId: (await kiloConfig)?.project?.id, // kilocode_change: pass projectId for backend tracking (ignored by other providers)
 		}
-
-		// kilocode_change start
-		// Add allowed tools for native tool protocol
-		if (getActiveToolUseStyle(apiConfiguration) === "native" && mode) {
-			try {
-				const provider = this.providerRef.deref()
-				metadata.allowedTools = await getAllowedJSONToolsForMode(
-					mode,
-					provider,
-					this.diffEnabled,
-					this.api?.getModel(),
-				)
-			} catch (error) {
-				console.error("[Task] Error getting allowed tools for mode:", error)
-				// Continue without allowedTools - will fall back to default behavior
-			}
-		}
-		// kilocode_change end
 
 		// The provider accepts reasoning items alongside standard messages; cast to the expected parameter type.
 		const stream = this.api.createMessage(

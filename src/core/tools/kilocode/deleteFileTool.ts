@@ -1,14 +1,12 @@
-// kilocode_change - file added
-
 import path from "path"
 import fs from "fs/promises"
 
-import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
-import { formatResponse } from "../prompts/responses"
-import { getReadablePath } from "../../utils/path"
-import { isPathOutsideWorkspace } from "../../utils/pathUtils"
-import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../shared/tools"
+import { Task } from "../../task/Task"
+import { ClineSayTool } from "../../../shared/ExtensionMessage"
+import { formatResponse } from "../../prompts/responses"
+import { getReadablePath } from "../../../utils/path"
+import { isPathOutsideWorkspace } from "../../../utils/pathUtils"
+import { ToolUse, AskApproval, HandleError, PushToolResult, RemoveClosingTag } from "../../../shared/tools"
 
 interface DirectoryStats {
 	totalFiles: number

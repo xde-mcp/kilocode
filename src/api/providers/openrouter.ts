@@ -7,7 +7,6 @@ import {
 	OPENROUTER_DEFAULT_PROVIDER_NAME,
 	OPEN_ROUTER_PROMPT_CACHING_MODELS,
 	DEEP_SEEK_DEFAULT_TEMPERATURE,
-	getActiveToolUseStyle,
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions, ModelRecord } from "../../shared/api"
@@ -26,7 +25,6 @@ import { getModelEndpoints } from "./fetchers/modelEndpointCache"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
 
 // kilocode_change start
 type OpenRouterProviderParams = {
@@ -252,10 +250,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
 		}
 
-		// kilocode_change start: Add native tool call support when toolStyle is "json"
-		addNativeToolCallsToParams(completionParams, this.options, metadata)
-		// kilocode_change end
-
 		let stream
 		try {
 			stream = await this.client.chat.completions.create(
@@ -311,9 +305,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 				if (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string") {
 					yield { type: "reasoning", text: delta.reasoning_content }
 				}
-
-				// Handle native tool calls when toolStyle is "json"
-				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options))
 				// kilocode_change end
 
 				// Check for tool calls in delta
