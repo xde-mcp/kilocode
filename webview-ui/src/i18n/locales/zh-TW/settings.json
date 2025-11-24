@@ -826,8 +826,12 @@
 		"MORPH_FAST_APPLY": {
 			"name": "啟用 Fast Apply",
 			"description": "啟用後，Kilo Code 可使用專為程式碼修改最佳化的特殊模型進行 Fast Apply 編輯檔案。需要 Kilo Gateway Provider、OpenRouter 或 Morph API 金鑰。",
-			"apiKey": "Morph API 金鑰（選用）",
-			"placeholder": "輸入您的 Morph API 金鑰（選用）",
+			"apiProvider": "API 供應商",
+			"apiProviderList": {
+				"current": "目前"
+			},
+			"apiKey": "API 金鑰（選用）",
+			"placeholder": "輸入您的 API 金鑰（選用）",
 			"modelLabel": "模型選擇",
 			"modelDescription": "選擇用於檔案編輯的快速套用模型",
 			"models": {

@@ -886,8 +886,12 @@
 		"MORPH_FAST_APPLY": {
 			"name": "Povolit Fast Apply",
 			"description": "Pokud je povoleno, Kilo Code může upravovat soubory pomocí Fast Apply se specializovanými modely optimalizovanými pro úpravy kódu. Vyžaduje Kilo Gateway Provider, OpenRouter nebo klíč API Morph.",
-			"apiKey": "Klíč API Morph (volitelné)",
-			"placeholder": "Zadejte svůj klíč API Morph (volitelné)",
+			"apiProvider": "Poskytovatel API",
+			"apiProviderList": {
+				"current": "Aktuální"
+			},
+			"apiKey": "Klíč API (volitelné)",
+			"placeholder": "Zadejte svůj klíč API (volitelné)",
 			"modelLabel": "Výběr modelu",
 			"modelDescription": "Vyberte, který model rychlého aplikování použít pro úpravy souborů",
 			"models": {
