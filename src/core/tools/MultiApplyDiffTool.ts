@@ -19,6 +19,8 @@ import { computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
 import * as vscode from "vscode"
 import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
 import { Package } from "../../shared/package"
+import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
+import { searchAndReplaceTool } from "./kilocode/searchAndReplaceTool"
 
 export interface DiffOperation {
 	path: string
@@ -63,14 +65,9 @@ export async function applyDiffTool(
 	removeClosingTag: RemoveClosingTag,
 ) {
 	// Check if native protocol is enabled - if so, always use single-file class-based tool
-	const toolProtocol = vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", "xml")
+	const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration) // kilocode_change
 	if (isNativeProtocol(toolProtocol)) {
-		return applyDiffToolClass.handle(cline, block as ToolUse<"apply_diff">, {
-			askApproval,
-			handleError,
-			pushToolResult,
-			removeClosingTag,
-		})
+		return searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult) // kilocode_change
 	}
 
 	// Check if MULTI_FILE_APPLY_DIFF experiment is enabled

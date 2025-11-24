@@ -2757,9 +2757,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					// apiConversationHistory at line 1876. Since the assistant failed to respond,
 					// we need to remove that message before retrying to avoid having two consecutive
 					// user messages (which would cause tool_result validation errors).
-					const toolProtocol = vscode.workspace
-						.getConfiguration(Package.name)
-						.get<ToolProtocol>("toolProtocol", "xml")
+					const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
 					const isNativeProtocol = toolProtocol === TOOL_PROTOCOL.NATIVE
 
 					if (isNativeProtocol && this.apiConversationHistory.length > 0) {
@@ -3024,12 +3022,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					newTaskRequireTodos: vscode.workspace
 						.getConfiguration(Package.name)
 						.get<boolean>("newTaskRequireTodos", false),
-					// kilocode_change start
-					// toolProtocol: vscode.workspace
-					// 	.getConfiguration(Package.name)
-					// 	.get<ToolProtocol>("toolProtocol", "xml"),
-					toolProtocol: getActiveToolUseStyle(apiConfiguration),
-					// kilocode_change end
+					toolProtocol: getActiveToolUseStyle(apiConfiguration), // kilocode_change
 				},
 				undefined, // todoList
 				this.api.getModel().id,

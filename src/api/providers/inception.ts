@@ -13,11 +13,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import OpenAI from "openai"
 import { convertToOpenAiMessages } from "../transform/openai-format"
-import {
-	addNativeToolCallsToParams,
-	getActiveToolUseStyle,
-	ToolCallAccumulator,
-} from "./kilocode/nativeToolCallHelpers"
+import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 
 export class InceptionLabsHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {

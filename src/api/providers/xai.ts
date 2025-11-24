@@ -14,11 +14,7 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import {
-	addNativeToolCallsToParams,
-	getActiveToolUseStyle,
-	ToolCallAccumulator,
-} from "./kilocode/nativeToolCallHelpers"
+import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 
 const XAI_DEFAULT_TEMPERATURE = 0
 

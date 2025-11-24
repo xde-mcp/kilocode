@@ -4,7 +4,11 @@ import * as diff from "diff"
 import { RooIgnoreController, LOCK_TEXT_SYMBOL } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
 import * as vscode from "vscode"
-import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
+import {
+	TOOL_PROTOCOL, // kilocode_change
+	ToolProtocol,
+	isNativeProtocol,
+} from "@roo-code/types"
 import { Package } from "../../shared/package"
 
 export const formatResponse = {
@@ -259,7 +263,6 @@ Always ensure you provide all required parameters for the tool you wish to use.`
  * @returns The tool use instructions reminder text
  */
 function getToolInstructionsReminder(protocol?: ToolProtocol): string {
-	const effectiveProtocol =
-		protocol ?? vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", "xml")
+	const effectiveProtocol = protocol ?? TOOL_PROTOCOL.XML // kilocode_change
 	return isNativeProtocol(effectiveProtocol) ? toolUseInstructionsReminderNative : toolUseInstructionsReminder
 }

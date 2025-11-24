@@ -14,11 +14,7 @@ import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
-import {
-	addNativeToolCallsToParams,
-	getActiveToolUseStyle,
-	ToolCallAccumulator,
-} from "./kilocode/nativeToolCallHelpers"
+import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 import { getModels, getModelsFromCache } from "./fetchers/modelCache"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change

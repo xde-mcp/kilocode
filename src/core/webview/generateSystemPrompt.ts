@@ -95,10 +95,7 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 			newTaskRequireTodos: vscode.workspace
 				.getConfiguration(Package.name)
 				.get<boolean>("newTaskRequireTodos", false),
-			// kilocode_change start
-			// toolProtocol: vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", "xml"),
-			toolProtocol: getActiveToolUseStyle(apiConfiguration),
-			// kilocode_change end
+			toolProtocol: getActiveToolUseStyle(apiConfiguration), // kilocode_change
 		},
 		// kilocode_change start
 		undefined,

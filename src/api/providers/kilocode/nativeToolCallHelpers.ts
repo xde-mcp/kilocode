@@ -32,8 +32,7 @@ export function getActiveToolUseStyle(settings: ProviderSettings | undefined): T
 		return TOOL_PROTOCOL.XML
 	}
 	if (settings.toolStyle) {
-		if ((settings.toolStyle as string) === "json") return "native"
-		return settings.toolStyle
+		return settings.toolStyle === "json" ? TOOL_PROTOCOL.NATIVE : settings.toolStyle
 	}
 	const model = getModelId(settings)?.toLowerCase()
 	if (!model) {
@@ -46,7 +45,7 @@ export function getActiveToolUseStyle(settings: ProviderSettings | undefined): T
 	) {
 		return TOOL_PROTOCOL.NATIVE
 	}
-	return vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", TOOL_PROTOCOL.XML)
+	return TOOL_PROTOCOL.XML
 }
 
 /**
