@@ -44,10 +44,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		let stream: AnthropicStream<Anthropic.Messages.RawMessageStreamEvent>
 		let { id: modelId, maxTokens } = this.getModel()
 
-		const tools =
-			(metadata?.allowedTools ?? []).length > 0
-				? convertOpenAIToolsToAnthropic(metadata?.allowedTools)
-				: undefined
+		const tools = (metadata?.tools ?? []).length > 0 ? convertOpenAIToolsToAnthropic(metadata?.tools) : undefined
 		const tool_choice = (tools ?? []).length > 0 ? { type: "any" as const } : undefined
 
 		stream = await this.client.messages.create({
@@ -70,7 +67,7 @@ export class MiniMaxAnthropicHandler extends BaseProvider implements SingleCompl
 		let thinkSignature = ""
 		const toolCallAccumulator = new ToolCallAccumulatorAnthropic()
 		for await (const chunk of stream) {
-			toolCallAccumulator.processChunk(chunk)
+			yield* toolCallAccumulator.processChunk(chunk)
 			switch (chunk.type) {
 				case "message_start": {
 					// Tells us cache reads/writes/input/output.

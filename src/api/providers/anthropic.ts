@@ -65,10 +65,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		if (verbosity) {
 			betas.push("effort-2025-11-24")
 		}
-		const tools =
-			(metadata?.allowedTools ?? []).length > 0
-				? convertOpenAIToolsToAnthropic(metadata?.allowedTools)
-				: undefined
+		const tools = (metadata?.tools ?? []).length > 0 ? convertOpenAIToolsToAnthropic(metadata?.tools) : undefined
 		const tool_choice = (tools ?? []).length > 0 ? { type: "auto" as const } : undefined
 		// kilocode_change end
 
@@ -196,7 +193,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		// kilocode_change end
 
 		for await (const chunk of stream) {
-			toolCallAccumulator.processChunk(chunk) // kilocode_change
+			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 			switch (chunk.type) {
 				case "message_start": {
