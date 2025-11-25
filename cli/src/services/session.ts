@@ -540,29 +540,45 @@ export class SessionService {
 			branch = undefined
 		}
 
-		// Try standard diff first to capture uncommitted changes
-		let patch = await git.diff(["HEAD"])
+		// Get list of untracked files (excluding ignored files)
+		const untrackedOutput = await git.raw(["ls-files", "--others", "--exclude-standard"])
+		const untrackedFiles = untrackedOutput.trim().split("\n").filter(Boolean)
 
-		// If patch is empty, check if this is the first commit
-		if (!patch || patch.trim().length === 0) {
-			// Check if HEAD is the first commit (has no parent)
-			const parents = await git.raw(["rev-list", "--parents", "-n", "1", "HEAD"])
-			const isFirstCommit = parents.trim().split(" ").length === 1
-
-			if (isFirstCommit) {
-				// For first commit, generate Git's universal empty tree hash to diff against
-				// This represents an empty repository state and allows capturing the entire initial commit
-				const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null"
-				const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", nullDevice])).trim()
-				patch = await git.diff([emptyTreeHash, "HEAD"])
-			}
+		// Mark untracked files with intent-to-add so they appear in diff
+		if (untrackedFiles.length > 0) {
+			await git.raw(["add", "--intent-to-add", "--", ...untrackedFiles])
 		}
 
-		return {
-			repoUrl,
-			head,
-			branch,
-			patch,
+		try {
+			// Try standard diff first to capture uncommitted changes (now includes untracked files)
+			let patch = await git.diff(["HEAD"])
+
+			// If patch is empty, check if this is the first commit
+			if (!patch || patch.trim().length === 0) {
+				// Check if HEAD is the first commit (has no parent)
+				const parents = await git.raw(["rev-list", "--parents", "-n", "1", "HEAD"])
+				const isFirstCommit = parents.trim().split(" ").length === 1
+
+				if (isFirstCommit) {
+					// For first commit, generate Git's universal empty tree hash to diff against
+					// This represents an empty repository state and allows capturing the entire initial commit
+					const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null"
+					const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", nullDevice])).trim()
+					patch = await git.diff([emptyTreeHash, "HEAD"])
+				}
+			}
+
+			return {
+				repoUrl,
+				head,
+				branch,
+				patch,
+			}
+		} finally {
+			// Reset the intent-to-add to restore original state
+			if (untrackedFiles.length > 0) {
+				await git.raw(["reset", "HEAD", "--", ...untrackedFiles])
+			}
 		}
 	}
 

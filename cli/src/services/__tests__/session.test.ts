@@ -427,10 +427,28 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
+			// Wait for initial sync to create the session (5000ms interval)
+			await vi.advanceTimersByTimeAsync(5000)
+
+			expect(mockCreate).toHaveBeenCalledTimes(1)
+
+			// Clear mocks to isolate destroy behavior
+			vi.clearAllMocks()
+
+			// Set a new path to trigger sync during destroy
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			mockUpdate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "",
+				updated_at: "2025-01-01T00:01:00Z",
+			})
+
 			await service.destroy()
 
-			// Should have called create to flush the session
-			expect(mockCreate).toHaveBeenCalledWith({
+			// Should have called update to flush the session (since session already exists)
+			expect(mockUpdate).toHaveBeenCalledWith({
+				session_id: "session-id",
 				api_conversation_history: mockData,
 				ui_messages: undefined,
 				task_metadata: undefined,
@@ -1045,9 +1063,10 @@ describe("SessionService", () => {
 			mockGit = {
 				getRemotes: vi.fn(),
 				revparse: vi.fn(),
-				raw: vi.fn().mockImplementation((args: string[]) => {
+				raw: vi.fn().mockImplementation((...args: unknown[]) => {
 					// Return appropriate mock based on the git command
-					if (args[0] === "hash-object") {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					if (cmd[0] === "hash-object") {
 						return Promise.resolve("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n")
 					}
 					return Promise.resolve("")
@@ -1072,9 +1091,22 @@ describe("SessionService", () => {
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
 			// First commit scenario: diff HEAD returns empty, so check if it's first commit
 			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty for first commit
-			vi.mocked(mockGit.raw!)
-				.mockResolvedValueOnce("abc123def456\n") // rev-list returns single SHA (no parent)
-				.mockResolvedValueOnce("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n") // hash-object call
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("") // No untracked files
+				}
+				if (cmd[0] === "rev-list") {
+					return Promise.resolve("abc123def456\n") // Single SHA (no parent)
+				}
+				if (cmd[0] === "hash-object") {
+					return Promise.resolve("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n")
+				}
+				return Promise.resolve("")
+			})
 			vi.mocked(mockGit.diff!).mockResolvedValueOnce("diff --git a/file.txt b/file.txt\nnew file mode 100644") // diff against empty tree
 
 			service.setWorkspaceDirectory("/test/repo")
@@ -1085,6 +1117,7 @@ describe("SessionService", () => {
 			expect(result).toEqual({
 				repoUrl: "https://github.com/user/repo.git",
 				head: "abc123def456",
+				branch: "main",
 				patch: "diff --git a/file.txt b/file.txt\nnew file mode 100644",
 			})
 
@@ -1112,6 +1145,16 @@ describe("SessionService", () => {
 				},
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("def456abc789")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/feature-branch")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("") // No untracked files
+				}
+				return Promise.resolve("")
+			})
 			// Regular commit: diff HEAD returns the patch directly
 			vi.mocked(mockGit.diff!).mockResolvedValue("diff --git a/file.txt b/file.txt\nindex 123..456")
 
@@ -1123,6 +1166,7 @@ describe("SessionService", () => {
 			expect(result).toEqual({
 				repoUrl: "https://github.com/user/repo.git",
 				head: "def456abc789",
+				branch: "feature-branch",
 				patch: "diff --git a/file.txt b/file.txt\nindex 123..456",
 			})
 
@@ -1131,8 +1175,6 @@ describe("SessionService", () => {
 			expect(mockGit.revparse).toHaveBeenCalledWith(["HEAD"])
 			// Regular commit should diff HEAD for uncommitted changes
 			expect(mockGit.diff).toHaveBeenCalledWith(["HEAD"])
-			// Should not fall back to empty tree since patch is not empty
-			expect(mockGit.raw).not.toHaveBeenCalled()
 		})
 
 		it("should handle commit with no uncommitted changes", async () => {
@@ -1147,9 +1189,21 @@ describe("SessionService", () => {
 				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("merge123abc456")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("") // No untracked files
+				}
+				if (cmd[0] === "rev-list") {
+					return Promise.resolve("merge123abc456 parent123abc\n") // Has parent (not first commit)
+				}
+				return Promise.resolve("")
+			})
 			// No uncommitted changes: diff HEAD returns empty, but we're not on first commit
 			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty
-			vi.mocked(mockGit.raw!).mockResolvedValueOnce("merge123abc456 parent123abc\n") // rev-list returns commit with parent (not first commit)
 
 			service.setWorkspaceDirectory("/test/repo")
 
@@ -1159,6 +1213,7 @@ describe("SessionService", () => {
 			expect(result).toEqual({
 				repoUrl: "https://github.com/user/repo.git",
 				head: "merge123abc456",
+				branch: "main",
 				patch: "",
 			})
 
@@ -1181,6 +1236,16 @@ describe("SessionService", () => {
 				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				return Promise.resolve("")
+			})
 			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
 
 			service.setWorkspaceDirectory("/test/repo")
@@ -1194,6 +1259,16 @@ describe("SessionService", () => {
 		it("should return undefined repoUrl when no remotes configured", async () => {
 			vi.mocked(mockGit.getRemotes!).mockResolvedValue([])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				return Promise.resolve("")
+			})
 			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
 
 			service.setWorkspaceDirectory("/test/repo")
@@ -1216,11 +1291,24 @@ describe("SessionService", () => {
 				} as RemoteWithRefs,
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("firstcommit123")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("") // No untracked files
+				}
+				if (cmd[0] === "rev-list") {
+					return Promise.resolve("firstcommit123\n") // Single SHA (no parent)
+				}
+				if (cmd[0] === "hash-object") {
+					return Promise.resolve("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n")
+				}
+				return Promise.resolve("")
+			})
 			// First commit: diff HEAD returns empty (no parent), check first commit, then fallback generates patch
 			vi.mocked(mockGit.diff!).mockResolvedValueOnce("") // diff HEAD returns empty
-			vi.mocked(mockGit.raw!)
-				.mockResolvedValueOnce("firstcommit123\n") // rev-list returns single SHA (no parent)
-				.mockResolvedValueOnce("4b825dc642cb6eb9a060e54bf8d69288fbee4904\n") // hash-object call
 			vi.mocked(mockGit.diff!).mockResolvedValueOnce("diff --git a/initial.txt b/initial.txt\nnew file") // diff against empty tree
 
 			service.setWorkspaceDirectory("/test/repo")
@@ -1250,6 +1338,16 @@ describe("SessionService", () => {
 			])
 			vi.mocked(mockGit.revparse!).mockResolvedValue("abc123")
 			vi.mocked(mockGit.diff!).mockResolvedValue("some diff")
+			;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
 
 			// @ts-expect-error - Testing private method
 			const result = await service.getGitState()
@@ -1257,6 +1355,305 @@ describe("SessionService", () => {
 			expect(result).toBeDefined()
 			// Verify simple-git was called (it would use process.cwd())
 			expect(simpleGit).toHaveBeenCalled()
+		})
+
+		describe("untracked files handling", () => {
+			it("should include untracked files in the patch", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+
+				// Track the order of git.raw calls
+				const rawCalls: unknown[][] = []
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					rawCalls.push(cmd as unknown[])
+					if (cmd[0] === "ls-files" && cmd[1] === "--others") {
+						// Return untracked files
+						return Promise.resolve("new-file.txt\nanother-new-file.js\n")
+					}
+					if (cmd[0] === "add" && cmd[1] === "--intent-to-add") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "reset") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				// Diff includes the untracked files after intent-to-add
+				vi.mocked(mockGit.diff!).mockResolvedValue(
+					"diff --git a/new-file.txt b/new-file.txt\nnew file mode 100644\n+content",
+				)
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				const result = await service.getGitState()
+
+				// Verify untracked files were fetched
+				expect(mockGit.raw).toHaveBeenCalledWith(["ls-files", "--others", "--exclude-standard"])
+
+				// Verify intent-to-add was called with the untracked files
+				expect(mockGit.raw).toHaveBeenCalledWith([
+					"add",
+					"--intent-to-add",
+					"--",
+					"new-file.txt",
+					"another-new-file.js",
+				])
+
+				// Verify the patch includes the untracked file content
+				expect(result.patch).toContain("new-file.txt")
+			})
+
+			it("should restore repository state after getGitState completes", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+
+				const rawCalls: unknown[][] = []
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					rawCalls.push(cmd as unknown[])
+					if (cmd[0] === "ls-files" && cmd[1] === "--others") {
+						return Promise.resolve("untracked.txt\n")
+					}
+					if (cmd[0] === "add" && cmd[1] === "--intent-to-add") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "reset") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				vi.mocked(mockGit.diff!).mockResolvedValue("diff content")
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				await service.getGitState()
+
+				// Verify reset was called to restore the untracked state
+				expect(mockGit.raw).toHaveBeenCalledWith(["reset", "HEAD", "--", "untracked.txt"])
+
+				// Verify the order: ls-files -> add --intent-to-add -> ... -> reset
+				const lsFilesIndex = rawCalls.findIndex((args) => args[0] === "ls-files")
+				const addIndex = rawCalls.findIndex((args) => args[0] === "add" && args[1] === "--intent-to-add")
+				const resetIndex = rawCalls.findIndex((args) => args[0] === "reset")
+
+				expect(lsFilesIndex).toBeLessThan(addIndex)
+				expect(addIndex).toBeLessThan(resetIndex)
+			})
+
+			it("should restore repository state even when diff throws an error", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					if (cmd[0] === "ls-files" && cmd[1] === "--others") {
+						return Promise.resolve("untracked-file.txt\n")
+					}
+					if (cmd[0] === "add" && cmd[1] === "--intent-to-add") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "reset") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				// Make diff throw an error
+				vi.mocked(mockGit.diff!).mockRejectedValue(new Error("Diff failed"))
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				await expect(service.getGitState()).rejects.toThrow("Diff failed")
+
+				// Verify reset was still called in the finally block
+				expect(mockGit.raw).toHaveBeenCalledWith(["reset", "HEAD", "--", "untracked-file.txt"])
+			})
+
+			it("should handle empty untracked files list without errors", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					if (cmd[0] === "ls-files" && cmd[1] === "--others") {
+						// No untracked files
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				vi.mocked(mockGit.diff!).mockResolvedValue("diff --git a/tracked.txt b/tracked.txt\nmodified content")
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				const result = await service.getGitState()
+
+				// Should not call add --intent-to-add when there are no untracked files
+				expect(mockGit.raw).not.toHaveBeenCalledWith(expect.arrayContaining(["add", "--intent-to-add"]))
+
+				// Should not call reset when there are no untracked files
+				expect(mockGit.raw).not.toHaveBeenCalledWith(expect.arrayContaining(["reset", "HEAD"]))
+
+				// Should still return the diff for tracked files
+				expect(result.patch).toContain("tracked.txt")
+			})
+
+			it("should exclude ignored files from untracked files list", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					if (cmd[0] === "ls-files" && cmd[1] === "--others" && cmd[2] === "--exclude-standard") {
+						// --exclude-standard flag ensures .gitignore patterns are respected
+						// Only return files that are NOT in .gitignore
+						return Promise.resolve("valid-untracked.txt\n")
+					}
+					if (cmd[0] === "add" && cmd[1] === "--intent-to-add") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "reset") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				vi.mocked(mockGit.diff!).mockResolvedValue("diff content with valid-untracked.txt")
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				await service.getGitState()
+
+				// Verify ls-files was called with --exclude-standard to respect .gitignore
+				expect(mockGit.raw).toHaveBeenCalledWith(["ls-files", "--others", "--exclude-standard"])
+
+				// Verify only the non-ignored file was added with intent-to-add
+				expect(mockGit.raw).toHaveBeenCalledWith(["add", "--intent-to-add", "--", "valid-untracked.txt"])
+
+				// Verify ignored files like node_modules/* are NOT included
+				expect(mockGit.raw).not.toHaveBeenCalledWith(
+					expect.arrayContaining(["add", "--intent-to-add", "--", expect.stringContaining("node_modules")]),
+				)
+			})
+
+			it("should handle multiple untracked files correctly", async () => {
+				vi.mocked(mockGit.getRemotes!).mockResolvedValue([
+					{
+						name: "origin",
+						refs: {
+							fetch: "https://github.com/user/repo.git",
+							push: "",
+						},
+					} as RemoteWithRefs,
+				])
+				vi.mocked(mockGit.revparse!).mockResolvedValue("abc123def456")
+
+				const untrackedFiles = ["file1.txt", "src/file2.js", "docs/readme.md"]
+
+				;(mockGit.raw as ReturnType<typeof vi.fn>).mockImplementation((...args: unknown[]) => {
+					const cmd = Array.isArray(args[0]) ? args[0] : args
+					if (cmd[0] === "ls-files" && cmd[1] === "--others") {
+						return Promise.resolve(untrackedFiles.join("\n") + "\n")
+					}
+					if (cmd[0] === "add" && cmd[1] === "--intent-to-add") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "reset") {
+						return Promise.resolve("")
+					}
+					if (cmd[0] === "symbolic-ref") {
+						return Promise.resolve("refs/heads/main")
+					}
+					return Promise.resolve("")
+				})
+
+				vi.mocked(mockGit.diff!).mockResolvedValue("diff with multiple files")
+
+				service.setWorkspaceDirectory("/test/repo")
+
+				// @ts-expect-error - Testing private method
+				await service.getGitState()
+
+				// Verify all untracked files were added with intent-to-add
+				expect(mockGit.raw).toHaveBeenCalledWith([
+					"add",
+					"--intent-to-add",
+					"--",
+					"file1.txt",
+					"src/file2.js",
+					"docs/readme.md",
+				])
+
+				// Verify all untracked files were reset
+				expect(mockGit.raw).toHaveBeenCalledWith([
+					"reset",
+					"HEAD",
+					"--",
+					"file1.txt",
+					"src/file2.js",
+					"docs/readme.md",
+				])
+			})
 		})
 	})
 
