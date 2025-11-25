@@ -944,10 +944,10 @@ const ApiOptions = ({
 							// kilocode_change start
 							nativeFunctionCallingProviders.includes(selectedProvider) && (
 								<ToolUseControl
-									toolStyle={
-										apiConfiguration.toolStyle === "json" ? "native" : apiConfiguration.toolStyle
+									toolStyle={apiConfiguration.toolStyle === "json" ? "native" : "xml"}
+									onChange={(field, value) =>
+										setApiConfigurationField(field, value === "native" ? "json" : "xml")
 									}
-									onChange={(field, value) => setApiConfigurationField(field, value)}
 								/>
 							)
 							// kilocode_change end

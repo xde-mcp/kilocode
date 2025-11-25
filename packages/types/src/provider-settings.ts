@@ -28,7 +28,6 @@ import {
 	internationalZAiModels,
 	minimaxModels,
 } from "./providers/index.js"
-import { TOOL_PROTOCOL } from "./tool.js" // kilocode_change
 
 /**
  * constants
@@ -204,11 +203,7 @@ const baseProviderSettingsSchema = z.object({
 	// Model verbosity.
 	verbosity: verbosityLevelsSchema.optional(),
 
-	// kilocode_change start
-	// Tool protocol - xml (legacy) or native (modern).
-	// Default to XML for anywhere not specified.
-	toolStyle: z.enum([TOOL_PROTOCOL.XML, TOOL_PROTOCOL.NATIVE, "json" /*deprecated*/]).optional(),
-	// kilocode_change end
+	toolStyle: z.enum(["xml", "json"]).optional(), // kilocode_change
 })
 
 // Several of the providers share common model config properties.

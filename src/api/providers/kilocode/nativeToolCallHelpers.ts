@@ -32,7 +32,7 @@ export function getActiveToolUseStyle(settings: ProviderSettings | undefined): T
 		return TOOL_PROTOCOL.XML
 	}
 	if (settings.toolStyle) {
-		return settings.toolStyle === "json" ? TOOL_PROTOCOL.NATIVE : settings.toolStyle
+		return settings.toolStyle === "json" ? TOOL_PROTOCOL.NATIVE : TOOL_PROTOCOL.XML
 	}
 	const model = getModelId(settings)?.toLowerCase()
 	if (!model) {
