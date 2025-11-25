@@ -40,6 +40,7 @@ vi.mock("../../../../utils/logging", () => ({
 vi.mock("fs", () => ({
 	promises: {
 		readFile: vi.fn(),
+		stat: vi.fn(),
 	},
 }))
 
@@ -552,6 +553,8 @@ describe("ManagedIndexer", () => {
 			it("should fetch new manifest and process files", async () => {
 				const fs = await import("fs")
 				vi.mocked(fs.promises.readFile).mockResolvedValue(Buffer.from("file content"))
+				vi.mocked(fs.promises.stat).mockResolvedValue({ size: 1000 } as any)
+				vi.mocked(apiClient.upsertFile).mockResolvedValue(undefined)
 
 				const newManifest = {
 					files: {},
@@ -588,7 +591,7 @@ describe("ManagedIndexer", () => {
 				expect(state.gitBranch).toBe("feature/test")
 
 				// Wait for async file processing
-				await new Promise((resolve) => setTimeout(resolve, 10))
+				await new Promise((resolve) => setTimeout(resolve, 50))
 
 				expect(apiClient.upsertFile).toHaveBeenCalled()
 			})
@@ -669,6 +672,8 @@ describe("ManagedIndexer", () => {
 			it("should process files from commit", async () => {
 				const fs = await import("fs")
 				vi.mocked(fs.promises.readFile).mockResolvedValue(Buffer.from("file content"))
+				vi.mocked(fs.promises.stat).mockResolvedValue({ size: 1000 } as any)
+				vi.mocked(apiClient.upsertFile).mockResolvedValue(undefined)
 
 				state.manifest = { files: {} }
 
@@ -688,7 +693,7 @@ describe("ManagedIndexer", () => {
 
 				await indexer.onEvent(event)
 
-				await new Promise((resolve) => setTimeout(resolve, 10))
+				await new Promise((resolve) => setTimeout(resolve, 50))
 
 				expect(apiClient.upsertFile).toHaveBeenCalledWith(
 					expect.objectContaining({
@@ -794,6 +799,8 @@ describe("ManagedIndexer", () => {
 
 			const fs = await import("fs")
 			vi.mocked(fs.promises.readFile).mockResolvedValue(Buffer.from("file content"))
+			vi.mocked(fs.promises.stat).mockResolvedValue({ size: 1000 } as any)
+			vi.mocked(apiClient.upsertFile).mockResolvedValue(undefined)
 
 			const mockFiles = async function* (): AsyncIterable<GitWatcherFile> {
 				yield { type: "file", filePath: "test.ts", fileHash: "abc123" }
@@ -812,7 +819,7 @@ describe("ManagedIndexer", () => {
 			await indexer.onEvent(event)
 
 			// Wait for async processing
-			await new Promise((resolve) => setTimeout(resolve, 10))
+			await new Promise((resolve) => setTimeout(resolve, 50))
 
 			// Verify upsertFile was called with signal as second argument
 			expect(apiClient.upsertFile).toHaveBeenCalledWith(
@@ -833,6 +840,7 @@ describe("ManagedIndexer", () => {
 
 			const fs = await import("fs")
 			vi.mocked(fs.promises.readFile).mockResolvedValue(Buffer.from("file content"))
+			vi.mocked(fs.promises.stat).mockResolvedValue({ size: 1000 } as any)
 
 			// Make upsertFile throw an AbortError
 			const abortError = new Error("AbortError")
@@ -857,7 +865,7 @@ describe("ManagedIndexer", () => {
 			await expect(indexer.onEvent(event)).resolves.not.toThrow()
 
 			// Wait for async processing
-			await new Promise((resolve) => setTimeout(resolve, 10))
+			await new Promise((resolve) => setTimeout(resolve, 50))
 
 			// Should not set error state for abort errors
 			expect(state.error).toBeUndefined()
