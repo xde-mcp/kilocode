@@ -145,7 +145,7 @@ vi.mock("../../../utils/shell", () => ({
 }))
 
 // Mock the isFastApplyAvailable function
-vi.mock("../../../tools/editFileTool", () => ({
+vi.mock("../../../tools/kilocode/editFileTool", () => ({
 	isFastApplyAvailable: vi.fn(),
 	getFastApplyModelType: vi.fn(),
 }))

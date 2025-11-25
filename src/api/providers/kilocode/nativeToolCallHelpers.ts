@@ -24,9 +24,13 @@ const modelsDefaultingToNativeKeywords = [
 const providersDefaultingToNativeKeywords = ["synthetic", "inception"]
 
 export function getActiveToolUseStyle(settings: ProviderSettings | undefined): ToolProtocol {
+	const workspaceSetting =
+		"workspace" in vscode
+			? vscode.workspace.getConfiguration(Package.name).get<ToolProtocol>("toolProtocol", TOOL_PROTOCOL.XML)
+			: TOOL_PROTOCOL.XML
 	if (!settings) {
-		console.error("getActiveToolUseStyle: settings missing, returning xml")
-		return TOOL_PROTOCOL.XML
+		console.error("getActiveToolUseStyle: settings missing, returning", workspaceSetting)
+		return workspaceSetting
 	}
 	if (settings.apiProvider && !nativeFunctionCallingProviders.includes(settings.apiProvider as ProviderName)) {
 		return TOOL_PROTOCOL.XML
@@ -45,7 +49,7 @@ export function getActiveToolUseStyle(settings: ProviderSettings | undefined): T
 	) {
 		return TOOL_PROTOCOL.NATIVE
 	}
-	return TOOL_PROTOCOL.XML
+	return workspaceSetting
 }
 
 /**
