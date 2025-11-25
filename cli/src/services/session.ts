@@ -15,6 +15,32 @@ const defaultPaths = {
 	taskMetadataPath: null as null | string,
 }
 
+/**
+ * Extract the title from the first user message in ui_messages.
+ * Returns null if no suitable message is found.
+ * Exported for testing purposes.
+ */
+export function extractTitleFromFirstUserMessage(uiMessages: ClineMessage[]): string | null {
+	if (!Array.isArray(uiMessages) || uiMessages.length === 0) {
+		return null
+	}
+
+	// Find the first message with text
+	const firstMessageWithText = uiMessages.find((msg) => msg.text)
+
+	if (!firstMessageWithText?.text) {
+		return null
+	}
+
+	// Clean up the title - trim and collapse whitespace
+	let title = firstMessageWithText.text.trim()
+
+	// Remove newlines and extra whitespace
+	title = title.replace(/\s+/g, " ")
+
+	return title || null
+}
+
 export class SessionService {
 	private static instance: SessionService | null = null
 
@@ -39,6 +65,7 @@ export class SessionService {
 	private paths = { ...defaultPaths }
 	private _sessionId: string | null = null
 	private workspaceDir: string | null = null
+	private sessionTitle: string | null = null
 
 	get sessionId() {
 		return this._sessionId
@@ -288,10 +315,24 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
+			// Extract title from first user message if not already set
+			let titleToSet: string | undefined
+			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
+				const extractedTitle = extractTitleFromFirstUserMessage(rawPayload.uiMessagesPath as ClineMessage[])
+				if (extractedTitle) {
+					titleToSet = extractedTitle
+					this.sessionTitle = extractedTitle
+					logs.debug("Extracted session title from first user message", "SessionService", {
+						title: extractedTitle,
+					})
+				}
+			}
+
 			const basePayload: Parameters<typeof sessionClient.create>[0] = {
 				api_conversation_history: rawPayload.apiConversationHistoryPath,
 				task_metadata: rawPayload.taskMetadataPath,
 				ui_messages: rawPayload.uiMessagesPath,
+				...(titleToSet && { title: titleToSet }),
 			}
 
 			try {
@@ -624,6 +665,7 @@ export class SessionService {
 
 		this.paths = { ...defaultPaths }
 		this.sessionId = null
+		this.sessionTitle = null
 		this.isSyncing = false
 
 		logs.debug("SessionService flushed", "SessionService")
