@@ -348,7 +348,7 @@ describe("GhostModel", () => {
 			})
 
 			it("stores and returns profile name after loading", async () => {
-				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 				const profiles = [
 					{
 						id: "1",
@@ -374,7 +374,7 @@ describe("GhostModel", () => {
 			})
 
 			it("stores and returns profile type after loading", async () => {
-				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 				const profiles = [
 					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "autocomplete" },
 				] as any
@@ -395,7 +395,7 @@ describe("GhostModel", () => {
 			})
 
 			it("clears profile information on cleanup", async () => {
-				const supportedProviders = Object.keys(AUTOCOMPLETE_PROVIDER_MODELS)
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
 				const profiles = [
 					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "autocomplete" },
 				] as any

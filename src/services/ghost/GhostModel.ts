@@ -42,8 +42,11 @@ export class GhostModel {
 
 		const selectedProfile = profiles.find((x) => x.profileType === "autocomplete")
 		if (selectedProfile) {
-			await useProfile(this, await providerSettingsManager.getProfile({ id: selectedProfile.id }))
-			return true
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
+			if (profile.apiProvider) {
+				await useProfile(this, profile, profile.apiProvider)
+				return true
+			}
 		}
 
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
