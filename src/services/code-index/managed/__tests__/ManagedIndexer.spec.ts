@@ -15,6 +15,18 @@ vi.mock("vscode", () => ({
 		workspaceFolders: [],
 		onDidChangeWorkspaceFolders: vi.fn(),
 	},
+	window: {
+		createTextEditorDecorationType: vi.fn(() => ({
+			dispose: vi.fn(),
+		})),
+		showInformationMessage: vi.fn(),
+		showErrorMessage: vi.fn(),
+		showWarningMessage: vi.fn(),
+	},
+	commands: {
+		executeCommand: vi.fn().mockResolvedValue(undefined),
+		registerCommand: vi.fn(),
+	},
 	Uri: {
 		file: (path: string) => ({ fsPath: path }),
 	},
