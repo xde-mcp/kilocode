@@ -110,9 +110,16 @@ export class NativeToolCallParser {
 					}
 					break
 
+				// kilocode_change start
+				case "condense":
+				case "edit_file":
+				case "delete_file":
+				case "new_rule":
+				case "report_bug":
 				case "apply_diff":
-					nativeArgs = args // kilocode_change
+					nativeArgs = args
 					break
+				// kilocode_change end
 
 				case "ask_followup_question":
 					if (args.question !== undefined && args.follow_up !== undefined) {
