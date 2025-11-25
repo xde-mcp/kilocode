@@ -3882,17 +3882,14 @@ export const webviewMessageHandler = async (
 		// kilocode_change start - ManagedIndexer state
 		case "requestManagedIndexerState": {
 			try {
-				const state = ManagedIndexer.getInstance()?.getWorkspaceFolderStateSnapshot() || []
-				await provider.postMessageToWebview({
-					type: "managedIndexerState",
-					managedIndexerState: state,
-				})
+				ManagedIndexer.getInstance()?.sendStateToWebview()
 			} catch (error) {
 				provider.log(
 					`Error getting managed indexer state: ${error instanceof Error ? error.message : String(error)}`,
 				)
 				await provider.postMessageToWebview({
 					type: "managedIndexerState",
+					managedIndexerEnabled: false,
 					managedIndexerState: [],
 				})
 			}

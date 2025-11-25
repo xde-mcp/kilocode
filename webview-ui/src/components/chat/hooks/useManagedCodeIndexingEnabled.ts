@@ -8,7 +8,8 @@ export function useManagedCodeIndexingEnabled() {
 		vscode.postMessage({ type: "requestManagedIndexerEnabled" as any })
 
 		const handleMessage = (event: MessageEvent<any>) => {
-			if (event.data.type === "managedIndexerEnabled") {
+			// Listen for both legacy and new message types
+			if (event.data.type === "managedIndexerEnabled" || event.data.type === "managedIndexerState") {
 				setEnabled(event.data.managedIndexerEnabled === true)
 			}
 		}

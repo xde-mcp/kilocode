@@ -3,27 +3,7 @@ import React, { useState, useEffect } from "react"
 
 import { vscode } from "@src/utils/vscode"
 import { ManagedIndexerStatus } from "./ManagedIndexerStatus"
-
-interface WorkspaceFolderState {
-	workspaceFolderPath: string
-	workspaceFolderName: string
-	gitBranch: string | null
-	projectId: string | null
-	isIndexing: boolean
-	hasManifest: boolean
-	manifestFileCount: number
-	hasWatcher: boolean
-	error?: {
-		type: string
-		message: string
-		timestamp: string
-		context?: {
-			filePath?: string
-			branch?: string
-			operation?: string
-		}
-	}
-}
+import { type WorkspaceFolderState } from "./managedIndexerSchema"
 
 export const ManagedCodeIndexPopoverContent: React.FC = () => {
 	const [workspaceFolders, setWorkspaceFolders] = useState<WorkspaceFolderState[]>([])

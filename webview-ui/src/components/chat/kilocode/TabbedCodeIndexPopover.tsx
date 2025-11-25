@@ -90,30 +90,12 @@ export const TabbedCodeIndexPopoverTabs = ({
 						/>
 					</Trans>
 				</p>
-
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="managed">Managed</TabsTrigger>
-					<TabsTrigger value="local">Local</TabsTrigger>
-				</TabsList>
 			</div>
 
 			<div className="border-t border-vscode-dropdown-border" />
 
 			<div className="p-4">
-				<TabsContent value="managed" className="mt-0">
-					<ManagedCodeIndexPopoverContent />
-				</TabsContent>
-
-				<TabsContent value="local" className="mt-0">
-					<CodeIndexPopover
-						contentOnly
-						indexingStatus={indexingStatus}
-						open={activeTab === "local"}
-						onOpenChange={setOpen}
-						onRegisterCloseHandler={onRegisterCloseHandler}>
-						<></>
-					</CodeIndexPopover>
-				</TabsContent>
+				<ManagedCodeIndexPopoverContent />
 			</div>
 		</Tabs>
 	)
