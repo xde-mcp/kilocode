@@ -65,8 +65,10 @@ interface LocalCodeIndexSettings {
 	codebaseIndexEnabled: boolean
 	codebaseIndexQdrantUrl: string
 	codebaseIndexEmbedderProvider: EmbedderProvider
+	// kilocode_change - start
 	codebaseIndexVectorStoreProvider: "lancedb" | "qdrant"
 	codebaseIndexLancedbVectorStoreDirectory?: string
+	// kilocode_change - end
 	codebaseIndexEmbedderBaseUrl?: string
 	codebaseIndexEmbedderModelId: string
 	codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
@@ -216,8 +218,10 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexEnabled: true,
 		codebaseIndexQdrantUrl: "",
 		codebaseIndexEmbedderProvider: "openai",
+		// kilocode_change - start
 		codebaseIndexVectorStoreProvider: "qdrant",
 		codebaseIndexLancedbVectorStoreDirectory: undefined,
+		// kilocode_change - end
 		codebaseIndexEmbedderBaseUrl: "",
 		codebaseIndexEmbedderModelId: "",
 		codebaseIndexEmbedderModelDimension: undefined,
@@ -251,8 +255,10 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				codebaseIndexEnabled: codebaseIndexConfig.codebaseIndexEnabled ?? true,
 				codebaseIndexQdrantUrl: codebaseIndexConfig.codebaseIndexQdrantUrl || "",
 				codebaseIndexEmbedderProvider: codebaseIndexConfig.codebaseIndexEmbedderProvider || "openai",
+				// kilocode_change - start
 				codebaseIndexVectorStoreProvider: codebaseIndexConfig.codebaseIndexVectorStoreProvider || "qdrant",
 				codebaseIndexLancedbVectorStoreDirectory: codebaseIndexConfig.codebaseIndexLancedbVectorStoreDirectory,
+				// kilocode_change - end
 				codebaseIndexEmbedderBaseUrl: codebaseIndexConfig.codebaseIndexEmbedderBaseUrl || "",
 				codebaseIndexEmbedderModelId: codebaseIndexConfig.codebaseIndexEmbedderModelId || "",
 				codebaseIndexEmbedderModelDimension:
@@ -1163,6 +1169,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 									)}
 
 									{/* vectorStoreProviderLabel */}
+									{/* kilocode_change start */}
 									<div className="space-y-2">
 										<label className="text-sm font-medium">
 											{t("settings:codeIndex.vectorStoreProviderLabel")}
@@ -1181,6 +1188,8 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 											</SelectContent>
 										</Select>
 									</div>
+									{/* kilocode_change end */}
+
 									{currentSettings.codebaseIndexEmbedderProvider === "vercel-ai-gateway" && (
 										<>
 											<div className="space-y-2">
@@ -1371,6 +1380,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										</>
 									)}
 
+									{/* kilocode_change start */}
 									{/* LanceDB Vector Store Settings */}
 									{currentSettings.codebaseIndexVectorStoreProvider === "lancedb" && (
 										<div className="space-y-2">
@@ -1395,6 +1405,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 											</p>
 										</div>
 									)}
+									{/* kilocode_change end */}
 								</div>
 							)}
 						</div>

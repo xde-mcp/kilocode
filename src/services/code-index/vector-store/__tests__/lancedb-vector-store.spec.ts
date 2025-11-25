@@ -1,3 +1,5 @@
+// kilocode_change - new file
+
 // npx vitest run services/code-index/vector-store/__tests__/local-vector-store.spec.ts
 
 /**

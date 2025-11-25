@@ -18,6 +18,8 @@ import { Ignore } from "ignore"
 import { t } from "../../i18n"
 import { TelemetryService } from "@roo-code/telemetry"
 import { TelemetryEventName } from "@roo-code/types"
+import { Package } from "../../shared/package"
+import { BATCH_SEGMENT_THRESHOLD } from "./constants"
 import { getLancedbVectorStoreDirectoryPath } from "../../utils/storage"
 import { LanceDBManager } from "../../utils/lancedb-manager"
 
@@ -147,7 +149,9 @@ export class CodeIndexServiceFactory {
 				throw new Error(t("embeddings:serviceFactory.vectorDimensionNotDetermined", { modelId, provider }))
 			}
 		}
-		// Use LacneDB
+
+		// kilocode_change - start
+		// Use LanceDB
 		if (config.vectorStoreProvider === "lancedb") {
 			const { workspacePath } = this
 			const globalStorageUri = this.configManager.getContextProxy().globalStorageUri.fsPath
@@ -160,6 +164,8 @@ export class CodeIndexServiceFactory {
 				new LanceDBManager(globalStorageUri),
 			)
 		}
+		// kilocode_change - end
+
 		// Use Qdrant
 		if (!config.qdrantUrl) {
 			throw new Error(t("embeddings:serviceFactory.qdrantUrlMissing"))
@@ -178,7 +184,17 @@ export class CodeIndexServiceFactory {
 		parser: ICodeParser,
 		ignoreInstance: Ignore,
 	): DirectoryScanner {
-		return new DirectoryScanner(embedder, vectorStore, parser, this.cacheManager, ignoreInstance)
+		// Get the configurable batch size from VSCode settings
+		let batchSize: number
+		try {
+			batchSize = vscode.workspace
+				.getConfiguration(Package.name)
+				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
+		} catch {
+			// In test environment, vscode.workspace might not be available
+			batchSize = BATCH_SEGMENT_THRESHOLD
+		}
+		return new DirectoryScanner(embedder, vectorStore, parser, this.cacheManager, ignoreInstance, batchSize)
 	}
 
 	/**
@@ -192,6 +208,16 @@ export class CodeIndexServiceFactory {
 		ignoreInstance: Ignore,
 		rooIgnoreController?: RooIgnoreController,
 	): IFileWatcher {
+		// Get the configurable batch size from VSCode settings
+		let batchSize: number
+		try {
+			batchSize = vscode.workspace
+				.getConfiguration(Package.name)
+				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
+		} catch {
+			// In test environment, vscode.workspace might not be available
+			batchSize = BATCH_SEGMENT_THRESHOLD
+		}
 		return new FileWatcher(
 			this.workspacePath,
 			context,
@@ -200,6 +226,7 @@ export class CodeIndexServiceFactory {
 			vectorStore,
 			ignoreInstance,
 			rooIgnoreController,
+			batchSize,
 		)
 	}
 
