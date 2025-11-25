@@ -525,6 +525,48 @@ describe("ApiOptions", () => {
 		})
 	})
 
+	describe("Anthropic provider deployment name settings", () => {
+		it("shows deployment name checkbox and input when deployment name is set", () => {
+			const mockSetApiConfigurationField = vi.fn()
+			const initialConfig: ProviderSettings = {
+				apiProvider: "anthropic",
+				anthropicDeploymentName: "my-deployment",
+			}
+
+			renderApiOptions({
+				apiConfiguration: initialConfig,
+				setApiConfigurationField: mockSetApiConfigurationField,
+			})
+
+			const checkbox = screen.getByTestId("checkbox-input-use-azure-deployment-name")
+			expect(checkbox).toBeInTheDocument()
+			expect(checkbox).toBeChecked()
+
+			const input = screen.getByDisplayValue("my-deployment")
+			expect(input).toBeInTheDocument()
+		})
+
+		it("clears deployment name when checkbox is unchecked", () => {
+			const mockSetApiConfigurationField = vi.fn()
+			const initialConfig: ProviderSettings = {
+				apiProvider: "anthropic",
+				anthropicDeploymentName: "should-clear",
+			}
+
+			renderApiOptions({
+				apiConfiguration: initialConfig,
+				setApiConfigurationField: mockSetApiConfigurationField,
+			})
+
+			const checkbox = screen.getByTestId("checkbox-input-use-azure-deployment-name")
+			expect(checkbox).toBeChecked()
+
+			fireEvent.click(checkbox)
+
+			expect(mockSetApiConfigurationField).toHaveBeenCalledWith("anthropicDeploymentName", "")
+		})
+	})
+
 	describe("LiteLLM provider tests", () => {
 		it("renders LiteLLM component when provider is selected", () => {
 			renderApiOptions({

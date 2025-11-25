@@ -4,6 +4,7 @@ import { AnthropicHandler } from "../anthropic"
 import { ApiHandlerOptions } from "../../../shared/api"
 
 const mockCreate = vitest.fn()
+const mockCountTokens = vitest.fn()
 
 vitest.mock("@anthropic-ai/sdk", () => {
 	const mockAnthropicConstructor = vitest.fn().mockImplementation(() => ({
@@ -52,6 +53,7 @@ vitest.mock("@anthropic-ai/sdk", () => {
 					},
 				}
 			}),
+			countTokens: mockCountTokens,
 		},
 	}))
 
@@ -178,6 +180,29 @@ describe("AnthropicHandler", () => {
 			// Verify API
 			expect(mockCreate).toHaveBeenCalled()
 		})
+
+		it("uses anthropicDeploymentName as the model for streaming calls when provided", async () => {
+			const handlerWithDeployment = new AnthropicHandler({
+				...mockOptions,
+				anthropicDeploymentName: "custom-deployment-model",
+			})
+
+			const stream = handlerWithDeployment.createMessage(systemPrompt, [
+				{
+					role: "user",
+					content: [{ type: "text" as const, text: "Message" }],
+				},
+			])
+
+			// Consume the stream to trigger the API call
+			for await (const _chunk of stream) {
+				// no-op
+			}
+
+			expect(mockCreate).toHaveBeenCalled()
+			const lastCall = mockCreate.mock.calls[mockCreate.mock.calls.length - 1]?.[0]
+			expect(lastCall?.model).toBe("custom-deployment-model")
+		})
 	})
 
 	describe("completePrompt", () => {
@@ -186,6 +211,24 @@ describe("AnthropicHandler", () => {
 			expect(result).toBe("Test response")
 			expect(mockCreate).toHaveBeenCalledWith({
 				model: mockOptions.apiModelId,
+				messages: [{ role: "user", content: "Test prompt" }],
+				max_tokens: 8192,
+				temperature: 0,
+				thinking: undefined,
+				stream: false,
+			})
+		})
+
+		it("uses anthropicDeploymentName as the model for non-streaming calls when provided", async () => {
+			const handlerWithDeployment = new AnthropicHandler({
+				...mockOptions,
+				anthropicDeploymentName: "deployment-complete",
+			})
+
+			const result = await handlerWithDeployment.completePrompt("Test prompt")
+			expect(result).toBe("Test response")
+			expect(mockCreate).toHaveBeenCalledWith({
+				model: "deployment-complete",
 				messages: [{ role: "user", content: "Test prompt" }],
 				max_tokens: 8192,
 				temperature: 0,
@@ -287,6 +330,39 @@ describe("AnthropicHandler", () => {
 			expect(model.info.contextWindow).toBe(1000000)
 			expect(model.info.inputPrice).toBe(6.0)
 			expect(model.info.outputPrice).toBe(22.5)
+		})
+	})
+
+	describe("countTokens", () => {
+		it("uses the internal model ID when no deployment name is provided", async () => {
+			mockCountTokens.mockResolvedValueOnce({ input_tokens: 123 })
+
+			const content = [{ type: "text" as const, text: "Hello tokens" }]
+			const result = await handler.countTokens(content as any)
+
+			expect(mockCountTokens).toHaveBeenCalledWith({
+				model: mockOptions.apiModelId,
+				messages: [{ role: "user", content }],
+			})
+			expect(result).toBe(123)
+		})
+
+		it("uses anthropicDeploymentName as the model for token counting when provided", async () => {
+			mockCountTokens.mockResolvedValueOnce({ input_tokens: 456 })
+
+			const handlerWithDeployment = new AnthropicHandler({
+				...mockOptions,
+				anthropicDeploymentName: "deployment-token-counter",
+			})
+
+			const content = [{ type: "text" as const, text: "Hello tokens" }]
+			const result = await handlerWithDeployment.countTokens(content as any)
+
+			expect(mockCountTokens).toHaveBeenCalledWith({
+				model: "deployment-token-counter",
+				messages: [{ role: "user", content }],
+			})
+			expect(result).toBe(456)
 		})
 	})
 })

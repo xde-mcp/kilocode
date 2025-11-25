@@ -20,6 +20,9 @@ export const Anthropic = ({ apiConfiguration, setApiConfigurationField }: Anthro
 	const selectedModel = useSelectedModel(apiConfiguration)
 
 	const [anthropicBaseUrlSelected, setAnthropicBaseUrlSelected] = useState(!!apiConfiguration?.anthropicBaseUrl)
+	const [anthropicDeploymentSelected, setAnthropicDeploymentSelected] = useState(
+		!!apiConfiguration?.anthropicDeploymentName,
+	)
 
 	// Check if the current model supports 1M context beta
 	const supports1MContextBeta =
@@ -83,6 +86,27 @@ export const Anthropic = ({ apiConfiguration, setApiConfigurationField }: Anthro
 							{t("settings:providers.anthropicUseAuthToken")}
 						</Checkbox>
 					</>
+				)}
+			</div>
+			<div className="mt-2">
+				<Checkbox
+					checked={anthropicDeploymentSelected}
+					onChange={(checked: boolean) => {
+						setAnthropicDeploymentSelected(checked)
+
+						if (!checked) {
+							setApiConfigurationField("anthropicDeploymentName", "")
+						}
+					}}>
+					Use Azure deployment name
+				</Checkbox>
+				{anthropicDeploymentSelected && (
+					<VSCodeTextField
+						value={apiConfiguration?.anthropicDeploymentName || ""}
+						onInput={handleInputChange("anthropicDeploymentName")}
+						placeholder="Enter deployment name..."
+						className="w-full mt-1"
+					/>
 				)}
 			</div>
 			{supports1MContextBeta && (
