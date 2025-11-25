@@ -2,6 +2,16 @@ import { getCapabilitiesSection } from "../sections/capabilities"
 import { getRulesSection } from "../sections/rules"
 import type { DiffStrategy, DiffResult, DiffItem } from "../../../shared/tools"
 
+// kilocode_change start
+vi.mock("../../../services/code-index/managed/ManagedIndexer", () => ({
+	ManagedIndexer: {
+		getInstance: () => ({
+			isEnabled: () => false,
+		}),
+	},
+}))
+// kilocode_change end
+
 describe("Mode-aware system prompt sections", () => {
 	const cwd = "/test/path"
 	const mcpHub = undefined
