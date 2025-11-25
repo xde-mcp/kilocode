@@ -1,6 +1,6 @@
 # kilo-code
 
-## v[4.122.1]
+## [v4.122.1]
 
 ### Patch Changes
 
