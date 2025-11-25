@@ -130,7 +130,7 @@ export class CLI {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				const sessionService = SessionService.init(this.service)
+				const sessionService = SessionService.init(this.service, this.options.json)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
 				// Set workspace directory for git operations (important for parallel mode/worktrees)
@@ -293,6 +293,10 @@ export class CLI {
 
 		try {
 			logs.info("Disposing Kilo Code CLI...", "CLI")
+
+			const sessionService = SessionService.init()
+
+			await sessionService.destroy()
 
 			if (this.options.ci && this.store) {
 				// Check exit reason from CI atoms

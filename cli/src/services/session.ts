@@ -18,13 +18,13 @@ const defaultPaths = {
 export class SessionService {
 	private static instance: SessionService | null = null
 
-	static init(extensionService?: ExtensionService) {
+	static init(extensionService?: ExtensionService, json?: boolean) {
 		if (!extensionService && !SessionService.instance) {
 			throw new Error("extensionService and store required to init SessionService")
 		}
 
 		if (extensionService && !SessionService.instance) {
-			SessionService.instance = new SessionService(extensionService)
+			SessionService.instance = new SessionService(extensionService, json || false)
 
 			logs.debug("Initiated SessionService", "SessionService")
 		}
@@ -53,7 +53,10 @@ export class SessionService {
 	private lastSyncEvent: string = ""
 	private isSyncing: boolean = false
 
-	private constructor(private extensionService: ExtensionService) {
+	private constructor(
+		private extensionService: ExtensionService,
+		private jsonMode: boolean,
+	) {
 		this.startTimer()
 	}
 
@@ -262,13 +265,15 @@ export class SessionService {
 		}
 	}
 
-	private async syncSession() {
-		if (this.isSyncing) {
-			return
-		}
+	private async syncSession(force = false) {
+		if (!force) {
+			if (this.isSyncing) {
+				return
+			}
 
-		if (Object.values(this.paths).every((item) => !item) || this.lastSaveEvent === this.lastSyncEvent) {
-			return
+			if (Object.values(this.paths).every((item) => !item) || this.lastSaveEvent === this.lastSyncEvent) {
+				return
+			}
 		}
 
 		this.isSyncing = true
@@ -329,6 +334,16 @@ export class SessionService {
 				this.sessionId = session.session_id
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
+
+				if (this.jsonMode) {
+					console.log(
+						JSON.stringify({
+							timestamp: Date.now(),
+							event: "session_created",
+							sessionId: this.sessionId,
+						}),
+					)
+				}
 			}
 
 			this.lastSyncEvent = currentLastSaveEvent
@@ -573,14 +588,23 @@ export class SessionService {
 	}
 
 	async destroy() {
-		logs.debug("Destroying SessionService", "SessionService", { sessionId: this.sessionId })
+		logs.debug("Destroying SessionService", "SessionService", {
+			sessionId: this.sessionId,
+			isSyncing: this.isSyncing,
+		})
 
 		if (this.timer) {
 			clearInterval(this.timer)
 			this.timer = null
 		}
 
-		await this.syncSession()
+		if (this.sessionId) {
+			if (this.isSyncing) {
+				await new Promise((r) => setTimeout(r, 2000))
+			} else {
+				await this.syncSession(true)
+			}
+		}
 
 		this.paths = { ...defaultPaths }
 		this.sessionId = null
