@@ -121,6 +121,7 @@ async function generatePrompt(
 				settings,
 				enableMcpServerCreation,
 				modelId,
+				clineProviderState, // kilocode_change
 			)}`
 
 	const basePrompt = `${roleDefinition}
