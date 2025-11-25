@@ -96,7 +96,7 @@ describe("sessionCommand", () => {
 		})
 
 		it("should have usage examples", () => {
-			expect(sessionCommand.examples).toHaveLength(7)
+			expect(sessionCommand.examples).toHaveLength(8)
 			expect(sessionCommand.examples).toContain("/session show")
 			expect(sessionCommand.examples).toContain("/session list")
 			expect(sessionCommand.examples).toContain("/session search <query>")
@@ -104,6 +104,7 @@ describe("sessionCommand", () => {
 			expect(sessionCommand.examples).toContain("/session share")
 			expect(sessionCommand.examples).toContain("/session fork <shareId>")
 			expect(sessionCommand.examples).toContain("/session delete <sessionId>")
+			expect(sessionCommand.examples).toContain("/session rename <new name>")
 		})
 
 		it("should have subcommand argument defined", () => {
@@ -116,7 +117,7 @@ describe("sessionCommand", () => {
 		it("should have all subcommand values defined", () => {
 			const subcommandArg = sessionCommand.arguments![0]
 			expect(subcommandArg.values).toBeDefined()
-			expect(subcommandArg.values).toHaveLength(7)
+			expect(subcommandArg.values).toHaveLength(8)
 			expect(subcommandArg.values!.map((v) => v.value)).toEqual([
 				"show",
 				"list",
@@ -125,6 +126,7 @@ describe("sessionCommand", () => {
 				"share",
 				"fork",
 				"delete",
+				"rename",
 			])
 		})
 
@@ -158,6 +160,7 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("share")
 			expect(message.content).toContain("fork")
 			expect(message.content).toContain("delete")
+			expect(message.content).toContain("rename")
 		})
 
 		it("should not call SessionService when showing usage", async () => {
@@ -674,6 +677,99 @@ describe("sessionCommand", () => {
 		})
 	})
 
+	describe("handler - rename subcommand", () => {
+		beforeEach(() => {
+			// Setup renameSession mock on service
+			mockSessionService.renameSession = vi.fn().mockResolvedValue(undefined)
+		})
+
+		it("should rename session successfully", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["rename", "My", "New", "Session", "Name"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(SessionService.init).toHaveBeenCalled()
+			expect(mockSessionService.renameSession).toHaveBeenCalledWith("My New Session Name")
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("Session renamed to")
+			expect(message.content).toContain("My New Session Name")
+		})
+
+		it("should rename session with single word name", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["rename", "SingleWord"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionService.renameSession).toHaveBeenCalledWith("SingleWord")
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("system")
+			expect(message.content).toContain("SingleWord")
+		})
+
+		it("should show error when name is missing", async () => {
+			mockContext.args = ["rename"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Usage: /session rename <new name>")
+			expect(mockSessionService.renameSession).not.toHaveBeenCalled()
+		})
+
+		it("should handle rename error when no active session", async () => {
+			mockSessionService.renameSession = vi.fn().mockRejectedValue(new Error("No active session"))
+			mockContext.args = ["rename", "New", "Name"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Failed to rename session")
+			expect(message.content).toContain("No active session")
+		})
+
+		it("should handle rename error when title is empty", async () => {
+			mockSessionService.renameSession = vi.fn().mockRejectedValue(new Error("Session title cannot be empty"))
+			mockContext.args = ["rename", "   "]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Failed to rename session")
+		})
+
+		it("should handle 'rename' subcommand case-insensitively", async () => {
+			mockSessionService.sessionId = "test-session-123"
+			mockContext.args = ["RENAME", "New", "Name"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockSessionService.renameSession).toHaveBeenCalledWith("New Name")
+		})
+
+		it("should handle backend error gracefully", async () => {
+			mockSessionService.renameSession = vi.fn().mockRejectedValue(new Error("Network error"))
+			mockContext.args = ["rename", "New", "Name"]
+
+			await sessionCommand.handler(mockContext)
+
+			expect(mockContext.addMessage).toHaveBeenCalledTimes(1)
+			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
+			expect(message.type).toBe("error")
+			expect(message.content).toContain("Failed to rename session")
+			expect(message.content).toContain("Network error")
+		})
+	})
+
 	describe("handler - delete subcommand", () => {
 		beforeEach(() => {
 			// Setup delete mock on client
@@ -756,6 +852,7 @@ describe("sessionCommand", () => {
 			expect(message.content).toContain("share")
 			expect(message.content).toContain("fork")
 			expect(message.content).toContain("delete")
+			expect(message.content).toContain("rename")
 		})
 
 		it("should not call SessionService for invalid subcommand", async () => {

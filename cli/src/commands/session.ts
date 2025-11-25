@@ -308,6 +308,39 @@ async function deleteSession(context: CommandContext, sessionId: string): Promis
 }
 
 /**
+ * Rename the current session
+ */
+async function renameSession(context: CommandContext, newName: string): Promise<void> {
+	const { addMessage } = context
+	const sessionService = SessionService.init()
+
+	if (!newName) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: "Usage: /session rename <new name>",
+		})
+		return
+	}
+
+	try {
+		await sessionService.renameSession(newName)
+
+		addMessage({
+			...generateMessage(),
+			type: "system",
+			content: `✅ Session renamed to "${newName}".`,
+		})
+	} catch (error) {
+		addMessage({
+			...generateMessage(),
+			type: "error",
+			content: `Failed to rename session: ${error instanceof Error ? error.message : String(error)}`,
+		})
+	}
+}
+
+/**
  * Autocomplete provider for session IDs
  */
 async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): Promise<ArgumentSuggestion[]> {
@@ -348,13 +381,14 @@ export const sessionCommand: Command = {
 		"/session share",
 		"/session fork <shareId>",
 		"/session delete <sessionId>",
+		"/session rename <new name>",
 	],
 	category: "system",
 	priority: 5,
 	arguments: [
 		{
 			name: "subcommand",
-			description: "Subcommand: show, list, search, select, share, fork, delete",
+			description: "Subcommand: show, list, search, select, share, fork, delete, rename",
 			required: false,
 			values: [
 				{ value: "show", description: "Display current session ID" },
@@ -364,6 +398,7 @@ export const sessionCommand: Command = {
 				{ value: "share", description: "Share current session publicly" },
 				{ value: "fork", description: "Fork a shared session" },
 				{ value: "delete", description: "Delete a session" },
+				{ value: "rename", description: "Rename the current session" },
 			],
 		},
 		{
@@ -388,7 +423,7 @@ export const sessionCommand: Command = {
 			addMessage({
 				...generateMessage(),
 				type: "system",
-				content: "Usage: /session [show|list|search|select|share|fork|delete] [args]",
+				content: "Usage: /session [show|list|search|select|share|fork|delete|rename] [args]",
 			})
 			return
 		}
@@ -417,11 +452,14 @@ export const sessionCommand: Command = {
 			case "delete":
 				await deleteSession(context, args[1] || "")
 				break
+			case "rename":
+				await renameSession(context, args.slice(1).join(" "))
+				break
 			default:
 				addMessage({
 					...generateMessage(),
 					type: "error",
-					content: `Unknown subcommand "${subcommand}". Available: show, list, search, select, share, fork, delete`,
+					content: `Unknown subcommand "${subcommand}". Available: show, list, search, select, share, fork, delete, rename`,
 				})
 		}
 	},

@@ -1657,6 +1657,181 @@ describe("SessionService", () => {
 		})
 	})
 
+	describe("renameSession", () => {
+		it("should rename session successfully", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-to-rename",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			// Wait for session creation
+			await vi.advanceTimersByTimeAsync(5000)
+
+			expect(service.sessionId).toBe("session-to-rename")
+
+			// Now rename the session
+			mockUpdate.mockResolvedValueOnce({
+				session_id: "session-to-rename",
+				title: "New Title",
+				updated_at: "2025-01-01T00:01:00Z",
+			})
+
+			await service.renameSession("New Title")
+
+			expect(mockUpdate).toHaveBeenCalledWith({
+				session_id: "session-to-rename",
+				title: "New Title",
+			})
+
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Session renamed successfully",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "session-to-rename",
+					newTitle: "New Title",
+				}),
+			)
+		})
+
+		it("should throw error when no active session", async () => {
+			// No session created, sessionId is null
+			expect(service.sessionId).toBeNull()
+
+			await expect(service.renameSession("New Title")).rejects.toThrow("No active session")
+
+			expect(mockUpdate).not.toHaveBeenCalled()
+		})
+
+		it("should throw error when title is empty", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(5000)
+
+			await expect(service.renameSession("")).rejects.toThrow("Session title cannot be empty")
+
+			expect(mockUpdate).not.toHaveBeenCalled()
+		})
+
+		it("should throw error when title is only whitespace", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(5000)
+
+			await expect(service.renameSession("   ")).rejects.toThrow("Session title cannot be empty")
+
+			expect(mockUpdate).not.toHaveBeenCalled()
+		})
+
+		it("should trim whitespace from title", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(5000)
+
+			mockUpdate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Trimmed Title",
+				updated_at: "2025-01-01T00:01:00Z",
+			})
+
+			await service.renameSession("  Trimmed Title  ")
+
+			expect(mockUpdate).toHaveBeenCalledWith({
+				session_id: "session-id",
+				title: "Trimmed Title",
+			})
+		})
+
+		it("should propagate backend errors", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(5000)
+
+			mockUpdate.mockRejectedValueOnce(new Error("Network error"))
+
+			await expect(service.renameSession("New Title")).rejects.toThrow("Network error")
+		})
+
+		it("should update local sessionTitle after successful rename", async () => {
+			const mockData = { messages: [] }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+			// Create a session first
+			mockCreate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "Original Title",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+			await vi.advanceTimersByTimeAsync(5000)
+
+			mockUpdate.mockResolvedValueOnce({
+				session_id: "session-id",
+				title: "New Title",
+				updated_at: "2025-01-01T00:01:00Z",
+			})
+
+			await service.renameSession("New Title")
+
+			// @ts-expect-error - Accessing private property for testing
+			expect(service.sessionTitle).toBe("New Title")
+		})
+	})
+
 	describe("logging", () => {
 		it("should log debug messages for successful operations", async () => {
 			const mockData = { messages: [] }

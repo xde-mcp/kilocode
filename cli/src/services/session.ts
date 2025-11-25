@@ -637,6 +637,34 @@ export class SessionService {
 		})
 	}
 
+	async renameSession(newTitle: string): Promise<void> {
+		const sessionId = this.sessionId
+		if (!sessionId) {
+			throw new Error("No active session")
+		}
+
+		const trimmedTitle = newTitle.trim()
+		if (!trimmedTitle) {
+			throw new Error("Session title cannot be empty")
+		}
+
+		const sessionClient = SessionClient.getInstance()
+
+		// Update the session title on the backend
+		await sessionClient.update({
+			session_id: sessionId,
+			title: trimmedTitle,
+		})
+
+		// Update the local session title
+		this.sessionTitle = trimmedTitle
+
+		logs.info("Session renamed successfully", "SessionService", {
+			sessionId,
+			newTitle: trimmedTitle,
+		})
+	}
+
 	async forkSession(shareId: string, rethrowError = false) {
 		const sessionClient = SessionClient.getInstance()
 		const { session_id } = await sessionClient.fork({ share_id: shareId })
