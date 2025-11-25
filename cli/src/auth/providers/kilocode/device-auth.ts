@@ -5,7 +5,6 @@ import { openBrowser } from "../../utils/browser.js"
 import { getKilocodeProfile, getKilocodeDefaultModel, promptOrganizationSelection } from "./shared.js"
 
 const POLL_INTERVAL_MS = 2000 // 2 seconds
-const API_BASE_URL = getApiUrl("")
 
 /**
  * Initiate device authorization flow
@@ -13,7 +12,7 @@ const API_BASE_URL = getApiUrl("")
  * @throws Error if initiation fails
  */
 async function initiateDeviceAuth(): Promise<DeviceAuthInitiateResponse> {
-	const response = await fetch(`${API_BASE_URL}/api/device-auth/initiate`, {
+	const response = await fetch(getApiUrl(`/api/device-auth/codes`), {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -38,7 +37,7 @@ async function initiateDeviceAuth(): Promise<DeviceAuthInitiateResponse> {
  * @throws Error if polling fails
  */
 async function pollDeviceAuth(code: string): Promise<DeviceAuthPollResponse> {
-	const response = await fetch(`${API_BASE_URL}/api/device-auth/poll?code=${code}`)
+	const response = await fetch(getApiUrl(`/api/device-auth/codes/${code}`))
 
 	if (response.status === 202) {
 		// Still pending

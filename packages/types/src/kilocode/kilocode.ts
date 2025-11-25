@@ -42,13 +42,13 @@ export const fastApplyModelSchema = z.enum([
 
 export type FastApplyModel = z.infer<typeof fastApplyModelSchema>
 
-export const DEFAULT_KILOCODE_BACKEND_URL = "https://kilocode.ai"
+export const DEFAULT_KILOCODE_BACKEND_URL = "https://kilo.ai"
 
 export function getKiloBaseUriFromToken(kilocodeToken?: string) {
 	if (kilocodeToken) {
 		try {
 			const payload_string = kilocodeToken.split(".")[1]
-			if (!payload_string) return "https://api.kilocode.ai"
+			if (!payload_string) return "https://api.kilo.ai"
 
 			const payload_json =
 				typeof atob !== "undefined" ? atob(payload_string) : Buffer.from(payload_string, "base64").toString()
@@ -59,7 +59,7 @@ export function getKiloBaseUriFromToken(kilocodeToken?: string) {
 			console.warn("Failed to get base URL from Kilo Code token")
 		}
 	}
-	return "https://api.kilocode.ai"
+	return "https://api.kilo.ai"
 }
 
 /**
@@ -113,7 +113,7 @@ export function getApiUrl(path: string = ""): string {
 	}
 
 	// In production, use the api subdomain
-	return new URL(path, "https://api.kilocode.ai").toString()
+	return new URL(path, "https://api.kilo.ai").toString()
 }
 
 /**
@@ -127,10 +127,10 @@ export function getExtensionConfigUrl(): string {
 		if (backend.includes("localhost")) {
 			return getAppUrl("/extension-config.json")
 		} else {
-			return "https://api.kilocode.ai/extension-config.json"
+			return "https://api.kilo.ai/extension-config.json"
 		}
 	} catch (error) {
 		console.warn("Failed to build extension config URL:", error)
-		return "https://api.kilocode.ai/extension-config.json"
+		return "https://api.kilo.ai/extension-config.json"
 	}
 }

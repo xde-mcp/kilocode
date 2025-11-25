@@ -73,13 +73,13 @@ describe("Device Auth Flow", () => {
 		}
 
 		global.fetch = vi.fn((url: string) => {
-			if (url.includes("/api/device-auth/initiate")) {
+			if (url.includes("/api/device-auth/codes") && !url.match(/\/codes\/[^/]+$/)) {
 				return Promise.resolve({
 					ok: true,
 					json: () => Promise.resolve(mockInitiateResponse),
 				} as Response)
 			}
-			if (url.includes("/api/device-auth/poll")) {
+			if (url.includes("/api/device-auth/codes/")) {
 				return Promise.resolve({
 					ok: true,
 					status: 200,
@@ -134,13 +134,13 @@ describe("Device Auth Flow", () => {
 		}
 
 		global.fetch = vi.fn((url: string) => {
-			if (url.includes("/api/device-auth/initiate")) {
+			if (url.includes("/api/device-auth/codes") && !url.match(/\/codes\/[^/]+$/)) {
 				return Promise.resolve({
 					ok: true,
 					json: () => Promise.resolve(mockInitiateResponse),
 				} as Response)
 			}
-			if (url.includes("/api/device-auth/poll")) {
+			if (url.includes("/api/device-auth/codes/")) {
 				return Promise.resolve({
 					ok: false,
 					status: 403,
@@ -164,13 +164,13 @@ describe("Device Auth Flow", () => {
 		}
 
 		global.fetch = vi.fn((url: string) => {
-			if (url.includes("/api/device-auth/initiate")) {
+			if (url.includes("/api/device-auth/codes") && !url.match(/\/codes\/[^/]+$/)) {
 				return Promise.resolve({
 					ok: true,
 					json: () => Promise.resolve(mockInitiateResponse),
 				} as Response)
 			}
-			if (url.includes("/api/device-auth/poll")) {
+			if (url.includes("/api/device-auth/codes/")) {
 				return Promise.resolve({
 					ok: false,
 					status: 410,
