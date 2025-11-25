@@ -3277,7 +3277,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// 1. Tool protocol is set to NATIVE
 		// 2. Model supports native tools
 		const toolProtocol = getActiveToolUseStyle(apiConfiguration)
-		//const modelInfo = this.api.getModel().info
+		const modelInfo = this.api.getModel().info
 		const shouldIncludeTools = toolProtocol === "native"
 		// kilocode_change end
 
@@ -3306,6 +3306,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				state?.experiments,
 				codeIndexManager,
 				filterSettings,
+				// kilocode_change start
+				state,
+				modelInfo,
+				// kilocode_change end
 			)
 
 			// Filter MCP tools based on mode restrictions

@@ -1,9 +1,19 @@
 import type OpenAI from "openai"
-import type { ModeConfig, ToolName, ToolGroup } from "@roo-code/types"
+import type {
+	ModeConfig,
+	ToolName,
+	ToolGroup,
+	ModelInfo, // kilocode_change
+} from "@roo-code/types"
 import { getModeBySlug, getToolsForMode, isToolAllowedForMode } from "../../../shared/modes"
 import { TOOL_GROUPS, ALWAYS_AVAILABLE_TOOLS } from "../../../shared/tools"
 import { defaultModeSlug } from "../../../shared/modes"
 import type { CodeIndexManager } from "../../../services/code-index/manager"
+
+// kilocode_change start
+import { ClineProviderState } from "../../webview/ClineProvider"
+import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
+// kilocode_change end
 
 /**
  * Filters native tools based on mode restrictions.
@@ -24,6 +34,10 @@ export function filterNativeToolsForMode(
 	experiments: Record<string, boolean> | undefined,
 	codeIndexManager?: CodeIndexManager,
 	settings?: Record<string, any>,
+	// kilocode_change start
+	state?: ClineProviderState,
+	modelInfo?: ModelInfo,
+	// kilocode_change end
 ): OpenAI.Chat.ChatCompletionTool[] {
 	// Get mode configuration and all tools for this mode
 	const modeSlug = mode ?? defaultModeSlug
@@ -77,9 +91,22 @@ export function filterNativeToolsForMode(
 	}
 
 	// Conditionally exclude browser_action if disabled in settings
-	if (settings?.browserToolEnabled === false) {
+	if (
+		settings?.browserToolEnabled === false ||
+		!modelInfo?.supportsImages // kilocode_change
+	) {
 		allowedToolNames.delete("browser_action")
 	}
+
+	// kilocode_change start
+	if (state && isFastApplyAvailable(state)) {
+		// When Fast Apply is enabled, disable traditional editing tools
+		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content"]
+		traditionalEditingTools.forEach((tool) => allowedToolNames.delete(tool))
+	} else {
+		allowedToolNames.delete("edit_file")
+	}
+	// kilocode_change end
 
 	// Filter native tools based on allowed tool names
 	return nativeTools.filter((tool) => {
