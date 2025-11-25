@@ -555,6 +555,13 @@ export class ManagedIndexer implements vscode.Disposable {
 							const absoluteFilePath = path.isAbsolute(filePath)
 								? filePath
 								: path.join(event.watcher.config.cwd, filePath)
+							
+							// if file is larger than 1 megabyte, skip it
+							const stats = await fs.stat(absoluteFilePath)
+							if (stats.size > 1 * 1024 * 1024) {
+								return
+							}
+
 							const fileBuffer = await fs.readFile(absoluteFilePath)
 							const relativeFilePath = path.relative(event.watcher.config.cwd, absoluteFilePath)
 
