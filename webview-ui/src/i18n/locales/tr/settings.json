@@ -826,8 +826,12 @@
 		"MORPH_FAST_APPLY": {
 			"name": "Fast Apply'ı etkinleştir",
 			"description": "Etkinleştirildiğinde, Kilo Code dosyaları kod değişiklikleri için optimize edilmiş özel modellerle Fast Apply kullanarak düzenleyebilir. Kilo Gateway Provider, OpenRouter veya bir Morph API anahtarı gerektirir.",
-			"apiKey": "Morph API anahtarı (isteğe bağlı)",
-			"placeholder": "Morph API anahtarınızı girin (isteğe bağlı)",
+			"apiProvider": "API Sağlayıcı",
+			"apiProviderList": {
+				"current": "Mevcut"
+			},
+			"apiKey": "API anahtarı (isteğe bağlı)",
+			"placeholder": "API anahtarınızı girin (isteğe bağlı)",
 			"modelLabel": "Model Seçimi",
 			"modelDescription": "Dosya düzenlemeleri için hangi Hızlı Uygulama modelinin kullanılacağını seçin",
 			"models": {
