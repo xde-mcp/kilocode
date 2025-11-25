@@ -37,16 +37,15 @@ export async function parseKiloSlashCommands(
 
 	// this currently allows matching prepended whitespace prior to /slash-command
 	const tagPatterns = [
-		{ tag: "task", regex: /<task>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/task>/is },
-		{ tag: "feedback", regex: /<feedback>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/feedback>/is },
-		{ tag: "answer", regex: /<answer>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/answer>/is },
-		{ tag: "user_message", regex: /<user_message>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/user_message>/is },
+		/<task>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/task>/is,
+		/<feedback>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/feedback>/is,
+		/<answer>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/answer>/is,
+		/<user_message>(\s*\/([a-zA-Z0-9_.-]+))(\s+.+?)?\s*<\/user_message>/is,
 	]
 
 	// if we find a valid match, we will return inside that block
-	for (const { regex } of tagPatterns) {
-		const regexObj = new RegExp(regex.source, regex.flags)
-		const match = regexObj.exec(text)
+	for (const regex of tagPatterns) {
+		const match = regex.exec(text)
 
 		if (match) {
 			// match[1] is the command with any leading whitespace (e.g. " /newtask")
