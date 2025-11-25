@@ -261,7 +261,8 @@ export class LanceDBVectorStore implements IVectorStore {
 			// Delete existing points with same IDs first
 			const existingIds = lanceData.map((d) => d.id)
 			if (existingIds.length > 0) {
-				const idFilter = existingIds.map((id) => `id = '${id}'`).join(" OR ")
+				const escapedIds = existingIds.map((id) => `'${this.escapeSqlString(id)}'`).join(", ")
+				const idFilter = `id IN (${escapedIds})`
 				await table.delete(idFilter)
 			}
 
@@ -271,6 +272,20 @@ export class LanceDBVectorStore implements IVectorStore {
 			console.error("Failed to upsert points:", error)
 			throw error
 		}
+	}
+
+	// Temporary till lancedb implements parameter support
+	// https://github.com/lance-format/lance/issues/2160
+	private escapeSqlString(value: string): string {
+		return value.replace(/'/g, "''")
+	}
+
+	private escapeSqlLikePattern(pattern: string): string {
+		let escaped = this.escapeSqlString(pattern)
+		escaped = escaped.replace(/\\/g, "\\\\")
+		escaped = escaped.replace(/%/g, "\\%").replace(/_/g, "\\_")
+
+		return escaped
 	}
 
 	private isPayloadValid(payload: Record<string, unknown> | null | undefined): payload is Payload {
@@ -296,37 +311,32 @@ export class LanceDBVectorStore implements IVectorStore {
 			// Build filter condition
 			let filter = ""
 			if (directoryPrefix) {
-				// Use backticks for column name and escape single quotes in directoryPrefix
-				const filterDirectoryPrefix = directoryPrefix.replace(/\\/g, "\\\\")
-				filter = `\`filePath\` LIKE '${filterDirectoryPrefix}%'`
+				const escapedPrefix = this.escapeSqlLikePattern(directoryPrefix)
+				filter = `\`filePath\` LIKE '${escapedPrefix}%'`
 			}
-			// Perform vector search
+
+			// Perform vector search with distance range filtering
 			let searchQuery = (await table.search(queryVector)) as VectorQuery
 			if (filter !== "") {
 				searchQuery = searchQuery.where(filter)
 			}
-			searchQuery = searchQuery.limit(actualMaxResults).distanceType("cosine")
+			searchQuery = searchQuery
+				.distanceType("cosine")
+				.distanceRange(0, 1 - actualMinScore)
+				.limit(actualMaxResults)
 
 			const list = await searchQuery.toArray()
-			const results = list
-				.map((i) => {
-					i._distance = 1 - i._distance
-					return i
-				})
-				.filter((i) => i._distance >= actualMinScore)
-				.sort((a: any, b: any) => b._distance - a._distance)
-				.slice(0, actualMaxResults)
-				.map((result: any) => ({
-					id: result.id,
-					score: result._distance,
-					payload: {
-						filePath: result.filePath,
-						codeChunk: result.codeChunk,
-						startLine: result.startLine,
-						endLine: result.endLine,
-					} as Payload,
-				}))
-			// Filter by minimum score and convert to expected format
+			const results = list.map((result: any) => ({
+				id: result.id,
+				score: 1 - result._distance, // Convert distance to similarity score
+				payload: {
+					filePath: result.filePath,
+					codeChunk: result.codeChunk,
+					startLine: result.startLine,
+					endLine: result.endLine,
+				} as Payload,
+			}))
+
 			return results
 		} catch (error) {
 			console.error("Failed to search points:", error)
@@ -351,12 +361,8 @@ export class LanceDBVectorStore implements IVectorStore {
 			)
 
 			// Create filter condition for multiple file paths
-			const filterCondition = normalizedPaths
-				.map((fp) => {
-					// Escape single quotes in file path
-					return `\`filePath\` = '${fp}'`
-				})
-				.join(" OR ")
+			const escapedPaths = normalizedPaths.map((fp) => `'${this.escapeSqlString(fp)}'`).join(", ")
+			const filterCondition = `\`filePath\` IN (${escapedPaths})`
 			await table.delete(filterCondition)
 		} catch (error) {
 			console.error("Failed to delete points by file paths:", error)

@@ -179,35 +179,47 @@ describe("LocalVectorStore", () => {
 	})
 
 	describe("search", () => {
-		it("should return filtered results", async () => {
+		it("should return filtered results using distanceRange", async () => {
+			const distanceRangeSpy = vi.fn().mockReturnThis()
 			mockTable.search.mockResolvedValue({
 				where: vi.fn().mockReturnThis(),
-				limit: vi.fn().mockReturnThis(),
 				distanceType: vi.fn().mockReturnThis(),
-				toArray: vi.fn().mockResolvedValue([
-					{ id: "1", _distance: 0.8, filePath: "a", codeChunk: "b", startLine: 1, endLine: 2 },
-					{ id: "2", _distance: 0.6, filePath: "a", codeChunk: "c", startLine: 3, endLine: 4 },
-				]),
+				distanceRange: distanceRangeSpy,
+				limit: vi.fn().mockReturnThis(),
+				toArray: vi
+					.fn()
+					.mockResolvedValue([
+						{ id: "2", _distance: 0.2, filePath: "a", codeChunk: "c", startLine: 3, endLine: 4 },
+					]),
 			})
-			const results = await store.search([1, 2, 3], "a", 0.1, 1)
+			const results = await store.search([1, 2, 3], "a", 0.7, 1)
 			expect(results.length).toBe(1)
 			expect(results[0].id).toBe("2")
-			expect(results[0].score).toBeCloseTo(1 - 0.6)
+			expect(results[0].score).toBeCloseTo(1 - 0.2)
+			// Verify distanceRange was called with correct parameters (0 to 1 - minScore)
+			const calls = distanceRangeSpy.mock.calls[0]
+			expect(calls[0]).toBe(0)
+			expect(calls[1]).toBeCloseTo(0.3) // Handle floating point precision: 1 - 0.7
 		})
 
-		it("should filter by minScore", async () => {
+		it("should filter by minScore at database level", async () => {
+			const distanceRangeSpy = vi.fn().mockReturnThis()
 			mockTable.search.mockResolvedValue({
 				where: vi.fn().mockReturnThis(),
-				limit: vi.fn().mockReturnThis(),
 				distanceType: vi.fn().mockReturnThis(),
-				toArray: vi.fn().mockResolvedValue([
-					{ id: "1", _distance: 0.99, filePath: "a", codeChunk: "b", startLine: 1, endLine: 2 },
-					{ id: "2", _distance: 0.2, filePath: "a", codeChunk: "c", startLine: 3, endLine: 4 },
-				]),
+				distanceRange: distanceRangeSpy,
+				limit: vi.fn().mockReturnThis(),
+				toArray: vi
+					.fn()
+					.mockResolvedValue([
+						{ id: "2", _distance: 0.2, filePath: "a", codeChunk: "c", startLine: 3, endLine: 4 },
+					]),
 			})
 			const results = await store.search([1, 2, 3], "a", 0.1, 2)
 			expect(results.length).toBe(1)
 			expect(results[0].id).toBe("2")
+			// Verify distanceRange was called with 0 to 0.9 (1 - 0.1)
+			expect(distanceRangeSpy).toHaveBeenCalledWith(0, 0.9)
 		})
 
 		it("should throw error on search failure", async () => {
@@ -317,6 +329,205 @@ describe("LocalVectorStore", () => {
 		it("should return true for valid payload", () => {
 			const payload: Payload = { filePath: "a", codeChunk: "b", startLine: 1, endLine: 2 }
 			expect(store["isPayloadValid"](payload)).toBe(true)
+		})
+	})
+
+	describe("escapeSqlString", () => {
+		it("should double single quotes", () => {
+			expect(store["escapeSqlString"]("O'Reilly")).toBe("O''Reilly")
+		})
+
+		it("should handle SQL injection attempts", () => {
+			expect(store["escapeSqlString"]("' OR '1'='1")).toBe("'' OR ''1''=''1")
+		})
+
+		it("should handle multiple consecutive quotes", () => {
+			expect(store["escapeSqlString"]("''")).toBe("''''")
+		})
+
+		it("should handle empty strings", () => {
+			expect(store["escapeSqlString"]("")).toBe("")
+		})
+
+		it("should preserve backslashes", () => {
+			expect(store["escapeSqlString"]("C:\\Users\\test")).toBe("C:\\Users\\test")
+		})
+
+		it("should handle strings with no special characters", () => {
+			expect(store["escapeSqlString"]("normalstring")).toBe("normalstring")
+		})
+
+		it("should handle unicode characters", () => {
+			expect(store["escapeSqlString"]("test's 文件")).toBe("test''s 文件")
+		})
+
+		it("should prevent comment injection attempts", () => {
+			expect(store["escapeSqlString"]("test' --")).toBe("test'' --")
+		})
+	})
+
+	describe("escapeSqlLikePattern", () => {
+		it("should escape percent signs", () => {
+			expect(store["escapeSqlLikePattern"]("50%")).toBe("50\\%")
+		})
+
+		it("should escape underscores", () => {
+			expect(store["escapeSqlLikePattern"]("test_file")).toBe("test\\_file")
+		})
+
+		it("should escape both quotes and wildcards", () => {
+			expect(store["escapeSqlLikePattern"]("test'_%")).toBe("test''\\_\\%")
+		})
+
+		it("should handle empty strings", () => {
+			expect(store["escapeSqlLikePattern"]("")).toBe("")
+		})
+
+		it("should handle multiple wildcards", () => {
+			expect(store["escapeSqlLikePattern"]("%%__")).toBe("\\%\\%\\_\\_")
+		})
+
+		it("should escape quotes before wildcards", () => {
+			const result = store["escapeSqlLikePattern"]("path's%file_name")
+			expect(result).toBe("path''s\\%file\\_name")
+		})
+
+		it("should escape backslashes in Windows paths", () => {
+			expect(store["escapeSqlLikePattern"]("C:\\Users\\test")).toBe("C:\\\\Users\\\\test")
+		})
+
+		it("should escape backslashes before wildcards", () => {
+			expect(store["escapeSqlLikePattern"]("C:\\test_file%")).toBe("C:\\\\test\\_file\\%")
+		})
+
+		it("should handle backslash at end", () => {
+			expect(store["escapeSqlLikePattern"]("path\\")).toBe("path\\\\")
+		})
+	})
+
+	describe("SQL Injection Prevention", () => {
+		it("should prevent injection via IDs in upsertPoints", async () => {
+			const maliciousId = "test' OR id != '"
+			const points = [
+				{
+					id: maliciousId,
+					vector: [1, 2, 3],
+					payload: {
+						filePath: "test.ts",
+						codeChunk: "code",
+						startLine: 1,
+						endLine: 2,
+					},
+				},
+			]
+
+			mockTable.delete.mockResolvedValue(undefined)
+			mockTable.add.mockResolvedValue(undefined)
+			await store.upsertPoints(points)
+
+			// Verify the delete call used properly escaped ID with IN clause
+			expect(mockTable.delete).toHaveBeenCalledWith("id IN ('test'' OR id != ''')")
+		})
+
+		it("should prevent injection via multiple IDs", async () => {
+			const points = [
+				{
+					id: "normal",
+					vector: [1, 2, 3],
+					payload: { filePath: "a", codeChunk: "b", startLine: 1, endLine: 2 },
+				},
+				{
+					id: "' OR '1'='1",
+					vector: [4, 5, 6],
+					payload: { filePath: "c", codeChunk: "d", startLine: 3, endLine: 4 },
+				},
+			]
+
+			mockTable.delete.mockResolvedValue(undefined)
+			mockTable.add.mockResolvedValue(undefined)
+			await store.upsertPoints(points)
+
+			expect(mockTable.delete).toHaveBeenCalledWith("id IN ('normal', ''' OR ''1''=''1')")
+		})
+
+		it("should prevent injection via directory prefix in search", async () => {
+			const maliciousPrefix = "src' OR '1'='1"
+			const whereSpy = vi.fn().mockReturnThis()
+			mockTable.search.mockResolvedValue({
+				where: whereSpy,
+				distanceType: vi.fn().mockReturnThis(),
+				distanceRange: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockReturnThis(),
+				toArray: vi.fn().mockResolvedValue([]),
+			})
+
+			await store.search([1, 2, 3], maliciousPrefix)
+
+			// Verify proper escaping in the where clause
+			expect(whereSpy).toHaveBeenCalledWith("`filePath` LIKE 'src'' OR ''1''=''1%'")
+		})
+
+		it("should prevent injection with wildcards in directory prefix", async () => {
+			const maliciousPrefix = "50%_test"
+			const whereSpy = vi.fn().mockReturnThis()
+			mockTable.search.mockResolvedValue({
+				where: whereSpy,
+				distanceType: vi.fn().mockReturnThis(),
+				distanceRange: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockReturnThis(),
+				toArray: vi.fn().mockResolvedValue([]),
+			})
+
+			await store.search([1, 2, 3], maliciousPrefix)
+
+			expect(whereSpy).toHaveBeenCalledWith("`filePath` LIKE '50\\%\\_test%'")
+		})
+
+		it("should handle Windows paths with backslashes in search", async () => {
+			const windowsPrefix = "C:\\Users\\test"
+			const whereSpy = vi.fn().mockReturnThis()
+			mockTable.search.mockResolvedValue({
+				where: whereSpy,
+				distanceType: vi.fn().mockReturnThis(),
+				distanceRange: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockReturnThis(),
+				toArray: vi.fn().mockResolvedValue([]),
+			})
+
+			await store.search([1, 2, 3], windowsPrefix)
+
+			// Backslashes should be escaped in LIKE patterns
+			expect(whereSpy).toHaveBeenCalledWith("`filePath` LIKE 'C:\\\\Users\\\\test%'")
+		})
+
+		it("should prevent injection via file paths in deletePointsByFilePath", async () => {
+			const maliciousPath = "file.ts' OR '1'='1"
+			mockTable.delete.mockResolvedValue(undefined)
+
+			await store.deletePointsByFilePath(maliciousPath)
+
+			expect(mockTable.delete).toHaveBeenCalledWith("`filePath` IN ('file.ts'' OR ''1''=''1')")
+		})
+
+		it("should prevent injection via multiple file paths in deletePointsByMultipleFilePaths", async () => {
+			const paths = ["normal.ts", "file' OR '1'='1.ts", "another.ts"]
+			mockTable.delete.mockResolvedValue(undefined)
+
+			await store.deletePointsByMultipleFilePaths(paths)
+
+			expect(mockTable.delete).toHaveBeenCalledWith(
+				"`filePath` IN ('normal.ts', 'file'' OR ''1''=''1.ts', 'another.ts')",
+			)
+		})
+
+		it("should handle paths with backslashes safely", async () => {
+			const windowsPath = "C:\\Users\\test\\file.ts"
+			mockTable.delete.mockResolvedValue(undefined)
+
+			await store.deletePointsByFilePath(windowsPath)
+
+			// Backslashes should be preserved, only quotes escaped
+			expect(mockTable.delete).toHaveBeenCalledWith(`\`filePath\` IN ('C:\\Users\\test\\file.ts')`)
 		})
 	})
 })
