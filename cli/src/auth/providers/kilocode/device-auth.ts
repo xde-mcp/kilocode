@@ -4,7 +4,7 @@ import { poll, formatTimeRemaining } from "../../utils/polling.js"
 import { openBrowser } from "../../utils/browser.js"
 import { getKilocodeProfile, getKilocodeDefaultModel, promptOrganizationSelection } from "./shared.js"
 
-const POLL_INTERVAL_MS = 2000 // 2 seconds
+const POLL_INTERVAL_MS = 2000
 
 /**
  * Initiate device authorization flow
