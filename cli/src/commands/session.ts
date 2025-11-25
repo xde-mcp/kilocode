@@ -356,13 +356,22 @@ async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): 
 
 	try {
 		const response = await sessionClient.search({ search_string: prefix, limit: 20 })
-		return response.results.map((session, index) => ({
-			value: session.session_id,
-			title: session.title || "Untitled",
-			description: `Created: ${new Date(session.created_at).toLocaleDateString()}`,
-			matchScore: 100 - index, // Backend orders by updated_at DESC, preserve order
-			highlightedValue: session.session_id,
-		}))
+
+		return response.results.map((session, index) => {
+			const title = session.title || "Untitled"
+			const truncatedTitle = title.length > 50 ? `${title.slice(0, 47)}...` : title
+
+			const description = session.title
+				? `${truncatedTitle} | Created: ${new Date(session.created_at).toLocaleDateString()}`
+				: `Created: ${new Date(session.created_at).toLocaleDateString()}`
+
+			return {
+				value: session.session_id,
+				description,
+				matchScore: 100 - index, // Backend orders by updated_at DESC, preserve order
+				highlightedValue: session.session_id,
+			}
+		})
 	} catch (_error) {
 		return []
 	}

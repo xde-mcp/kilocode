@@ -1033,9 +1033,10 @@ describe("sessionCommand", () => {
 			expect(result).toHaveLength(1)
 			expect(result[0]).toMatchObject({
 				value: "session-test123",
-				title: "Test Session",
 				highlightedValue: "session-test123",
 			})
+			// Description should include title and created date
+			expect(result[0].description).toContain("Test Session")
 			expect(result[0].description).toContain("Created:")
 			expect(result[0].matchScore).toBe(100) // First item gets score of 100
 		})
@@ -1058,11 +1059,15 @@ describe("sessionCommand", () => {
 			})
 
 			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
-			const context = createProviderContext("untitled", "select")
+			const context = createProviderContext("session-untitled", "select")
 
 			const result = (await provider(context)) as ArgumentSuggestion[]
 
-			expect(result[0].title).toBe("Untitled")
+			// When no title, description should only show created date
+			expect(result[0].value).toBe("session-untitled")
+			expect(result[0].highlightedValue).toBe("session-untitled")
+			expect(result[0].description).toContain("Created:")
+			expect(result[0].description).not.toContain("|") // No title separator
 		})
 
 		it("should preserve backend ordering with matchScore", async () => {
@@ -1103,6 +1108,52 @@ describe("sessionCommand", () => {
 			expect(result[0].matchScore).toBe(100)
 			expect(result[1].matchScore).toBe(99)
 			expect(result[2].matchScore).toBe(98)
+
+			// Verify description format includes title
+			expect(result[0].description).toContain("Most Recent")
+			expect(result[1].description).toContain("Second")
+			expect(result[2].description).toContain("Third")
+		})
+
+		it("should return all backend results without client-side filtering", async () => {
+			const mockSessions = [
+				{
+					session_id: "session-abc123",
+					title: "My Project",
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+				{
+					session_id: "session-xyz789",
+					title: "ABC Task",
+					created_at: "2025-01-14T10:30:00Z",
+					updated_at: "2025-01-14T10:30:00Z",
+				},
+				{
+					session_id: "session-def456",
+					title: "Other Task",
+					created_at: "2025-01-13T10:30:00Z",
+					updated_at: "2025-01-13T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: mockSessions,
+				total: 3,
+				limit: 20,
+				offset: 0,
+			})
+
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("abc", "select")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			// Backend handles filtering, so all results should be returned
+			expect(result).toHaveLength(3)
+			expect(result[0].value).toBe("session-abc123")
+			expect(result[1].value).toBe("session-xyz789")
+			expect(result[2].value).toBe("session-def456")
 		})
 
 		it("should handle errors gracefully", async () => {
@@ -1146,6 +1197,67 @@ describe("sessionCommand", () => {
 			await provider(context)
 
 			expect(mockSessionClient.search).toHaveBeenCalledWith({ search_string: "test", limit: 20 })
+		})
+
+		it("should truncate long titles in description", async () => {
+			const longTitle = "This is a very long session title that exceeds fifty characters and should be truncated"
+			const mockSessions = [
+				{
+					session_id: "session-long-title",
+					title: longTitle,
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: mockSessions,
+				total: 1,
+				limit: 20,
+				offset: 0,
+			})
+
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("test", "select")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			expect(result).toHaveLength(1)
+			// Title should be truncated to 50 chars with "..."
+			expect(result[0].description).not.toContain(longTitle)
+			expect(result[0].description).toContain("...")
+			// The truncated title should be 50 chars (47 chars + "...")
+			const titlePart = result[0].description!.split(" | ")[0]
+			expect(titlePart.length).toBe(50)
+		})
+
+		it("should not truncate short titles", async () => {
+			const shortTitle = "Short Title"
+			const mockSessions = [
+				{
+					session_id: "session-short-title",
+					title: shortTitle,
+					created_at: "2025-01-15T10:30:00Z",
+					updated_at: "2025-01-15T10:30:00Z",
+				},
+			]
+
+			mockSessionClient.search = vi.fn().mockResolvedValue({
+				results: mockSessions,
+				total: 1,
+				limit: 20,
+				offset: 0,
+			})
+
+			const provider = sessionCommand.arguments![1].conditionalProviders![0].provider
+			const context = createProviderContext("test", "select")
+
+			const result = (await provider(context)) as ArgumentSuggestion[]
+
+			expect(result).toHaveLength(1)
+			// Short title should not be truncated
+			expect(result[0].description).toContain(shortTitle)
+			expect(result[0].description).not.toContain("...")
 		})
 	})
 })
