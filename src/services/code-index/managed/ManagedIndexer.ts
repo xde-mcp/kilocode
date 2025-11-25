@@ -567,7 +567,8 @@ export class ManagedIndexer implements vscode.Disposable {
 							const fileBuffer = await fs.readFile(absoluteFilePath)
 							const relativeFilePath = path.relative(event.watcher.config.cwd, absoluteFilePath)
 
-							if (!state.ignoreController?.validateAccess(relativeFilePath)) {
+							const ignore = state.ignoreController
+							if (ignore && !ignore.validateAccess(relativeFilePath)) {
 								return
 							}
 
