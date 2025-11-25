@@ -2150,7 +2150,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				this.isStreaming = true
 
 				// kilocode_change start
-				const assistantToolUses = new Array<Anthropic.Messages.ToolUseBlockParam>()
 				const reasoningDetails = new Array<ReasoningDetail>()
 				const antThinkingContent = new Array<
 					Anthropic.Messages.RedactedThinkingBlock | Anthropic.Messages.ThinkingBlock
@@ -2652,26 +2651,36 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 					// Check if we should preserve reasoning in the assistant message
 					let finalAssistantMessage = assistantMessage
-					// kilocode_change start: also add tool calls, reasoning_details to history
-					const assistantMessageContent = new Array<Anthropic.Messages.ContentBlockParam>()
-					assistantMessageContent.push(...antThinkingContent)
-					if (finalAssistantMessage || reasoningDetails.length > 0) {
-						assistantMessageContent.push({
-							type: "text",
-							text: finalAssistantMessage,
-							// @ts-ignore-next-line OpenRouter-specific property
-							reasoning_details: reasoningDetails.length > 0 ? reasoningDetails : undefined,
-						})
+					if (
+						reasoningMessage &&
+						this.api.getModel().info.preserveReasoning &&
+						// kilocode_change start: skip if reasoning is preserved at the API-level
+						reasoningDetails.length === 0 &&
+						antThinkingContent.length === 0
+						// kilocode_change end
+					) {
+						// Prepend reasoning in XML tags to the assistant message so it's included in API history
+						finalAssistantMessage = `<think>${reasoningMessage}</think>\n${assistantMessage}`
 					}
 
 					// Build the assistant message content array
-					const assistantContent: Array<Anthropic.TextBlockParam | Anthropic.ToolUseBlockParam> = []
+					// kilocode_change start: preserve Anthropic reasoning
+					const assistantContent: Array<Anthropic.ContentBlockParam> = []
+					assistantContent.push(...antThinkingContent)
+					// kilocode_change end
 
 					// Add text content if present
-					if (finalAssistantMessage) {
+					if (
+						finalAssistantMessage ||
+						reasoningDetails.length > 0 // kilocode_change
+					) {
 						assistantContent.push({
 							type: "text" as const,
 							text: finalAssistantMessage,
+							// kilocode_change start: preserve OpenRouter reasoning
+							// @ts-ignore-next-line OpenRouter-specific property
+							reasoning_details: reasoningDetails.length > 0 ? reasoningDetails : undefined,
+							// kilocode_change end
 						})
 					}
 
@@ -2697,7 +2706,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						role: "assistant",
 						content: assistantContent,
 					})
-					// kilocode_change end
 
 					TelemetryService.instance.captureConversationMessage(this.taskId, "assistant")
 
