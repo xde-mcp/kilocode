@@ -73,7 +73,8 @@ export const toolParamNames = [
 	"target_file",
 	"instructions",
 	"code_edit",
-	"files",
+	"old_str",
+	"new_str",
 	// kilocode_change end
 	"query",
 	"args",
