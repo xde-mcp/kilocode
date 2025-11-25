@@ -1,6 +1,6 @@
 # kilo-code
 
-## 4.122.1
+## v[4.122.1]
 
 ### Patch Changes
 
@@ -8,7 +8,7 @@
 
 - [#4005](https://github.com/Kilo-Org/kilocode/pull/4005) [`5aa56df`](https://github.com/Kilo-Org/kilocode/commit/5aa56df5123d33ba0ecadeabb3727b57974a842e) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Add Claude Opus 4.5 support, including verbosity controls for Kilo Gateway, OpenRouter and Anthropic providers
 
-## 4.122.0
+## [v4.122.0]
 
 ### Minor Changes
 
