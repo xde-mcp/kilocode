@@ -2,20 +2,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import * as vscode from "vscode"
 import { ManagedIndexer } from "../ManagedIndexer"
-import { ContextProxy } from "../../../../core/config/ContextProxy"
 import { GitWatcher, GitWatcherEvent, GitWatcherFile } from "../../../../shared/GitWatcher"
 import { OrganizationService } from "../../../kilocode/OrganizationService"
 import * as gitUtils from "../git-utils"
 import * as kiloConfigFile from "../../../../utils/kilo-config-file"
 import * as git from "../../../../utils/git"
 import * as apiClient from "../api-client"
-import { logger } from "../../../../utils/logging"
 
 // Mock vscode
 vi.mock("vscode", () => ({
 	workspace: {
 		workspaceFolders: [],
 		onDidChangeWorkspaceFolders: vi.fn(),
+	},
+	window: {
+		createTextEditorDecorationType: vi.fn(() => ({
+			dispose: vi.fn(),
+		})),
+		showInformationMessage: vi.fn(),
+		showErrorMessage: vi.fn(),
+		showWarningMessage: vi.fn(),
+	},
+	commands: {
+		executeCommand: vi.fn().mockResolvedValue(undefined),
+		registerCommand: vi.fn(),
 	},
 	Uri: {
 		file: (path: string) => ({ fsPath: path }),
