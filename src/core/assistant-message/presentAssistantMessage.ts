@@ -17,6 +17,7 @@ import { writeToFileTool } from "../tools/writeToFileTool"
 import { applyDiffTool } from "../tools/multiApplyDiffTool"
 import { insertContentTool } from "../tools/insertContentTool"
 import { editFileTool } from "../tools/editFileTool" // kilocode_change: Morph fast apply
+import { deleteFileTool } from "../tools/deleteFileTool" // kilocode_change
 import { listCodeDefinitionNamesTool } from "../tools/listCodeDefinitionNamesTool"
 import { searchFilesTool } from "../tools/searchFilesTool"
 import { browserActionTool } from "../tools/browserActionTool"
@@ -204,6 +205,8 @@ export async function presentAssistantMessage(cline: Task) {
 					// kilocode_change start: Morph fast apply
 					case "edit_file":
 						return `[${block.name} for '${block.params.target_file}']`
+					case "delete_file":
+						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change end
 					case "list_files":
 						return `[${block.name} for '${block.params.path}']`
@@ -246,11 +249,24 @@ export async function presentAssistantMessage(cline: Task) {
 				}
 			}
 
+			let hasToolResult_kilocode = false
+
 			const pushToolResult_withToolUseId_kilocode = (
 				...items: (Anthropic.TextBlockParam | Anthropic.ImageBlockParam)[]
 			) => {
 				if (block.toolUseId) {
-					cline.userMessageContent.push({ type: "tool_result", tool_use_id: block.toolUseId, content: items })
+					if (!hasToolResult_kilocode) {
+						cline.userMessageContent.push({
+							type: "tool_result",
+							tool_use_id: block.toolUseId,
+							content: items,
+						})
+						hasToolResult_kilocode = true
+					} else {
+						console.warn(
+							`[presentAssistantMessage] Skipping duplicate tool_result for tool_use_id: ${block.toolUseId}`,
+						)
+					}
 				} else {
 					cline.userMessageContent.push(...items)
 				}
@@ -512,6 +528,9 @@ export async function presentAssistantMessage(cline: Task) {
 				// kilocode_change start: Morph fast apply
 				case "edit_file":
 					await editFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				case "delete_file":
+					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change end
 				case "read_file":

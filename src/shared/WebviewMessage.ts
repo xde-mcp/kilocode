@@ -54,6 +54,7 @@ export interface WebviewMessage {
 		| "deleteApiConfiguration"
 		| "loadApiConfiguration"
 		| "loadApiConfigurationById"
+		| "getProfileConfigurationForEditing" // kilocode_change: Request to get profile config without activating
 		| "renameApiConfiguration"
 		| "getListApiConfiguration"
 		| "customInstructions"
@@ -141,6 +142,7 @@ export interface WebviewMessage {
 		| "fuzzyMatchThreshold"
 		| "morphApiKey" // kilocode_change: Morph fast apply - global setting
 		| "fastApplyModel" // kilocode_change: Fast Apply model selection
+		| "fastApplyApiProvider" // kilocode_change: Fast Apply model api base url
 		| "writeDelayMs"
 		| "diagnosticsEnabled"
 		| "enhancePrompt"
@@ -317,6 +319,7 @@ export interface WebviewMessage {
 		| "editQueuedMessage"
 		| "dismissUpsell"
 		| "getDismissedUpsells"
+		| "requestManagedIndexerState" // kilocode_change
 	text?: string
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
@@ -536,6 +539,7 @@ export type WebViewMessagePayload =
 	| SeeNewChangesPayload
 	| TasksByIdRequestPayload
 	| TaskHistoryRequestPayload
+	| RequestCheckpointRestoreApprovalPayload
 	// kilocode_change end
 	| CheckpointDiffPayload
 	| CheckpointRestorePayload

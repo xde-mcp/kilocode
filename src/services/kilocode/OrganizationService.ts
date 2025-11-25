@@ -1,9 +1,9 @@
 // kilocode_change - new file
-import axios from "axios"
 import { getKiloUrlFromToken } from "@roo-code/types"
 import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TESTER } from "../../shared/kilocode/headers"
 import { KiloOrganization, KiloOrganizationSchema } from "../../shared/kilocode/organization"
-import { logger } from "../../utils/logging"
+import { CompactLogger } from "../../utils/logging/CompactLogger"
+import { fetchWithRetries } from "../../shared/http"
 
 /**
  * Service for fetching and managing Kilo Code organization settings
@@ -23,7 +23,7 @@ export class OrganizationService {
 	): Promise<KiloOrganization | null> {
 		try {
 			if (!organizationId || !kilocodeToken) {
-				logger.warn("[OrganizationService] Missing required parameters for fetching organization")
+				console.warn("[OrganizationService] Missing required parameters for fetching organization")
 				return null
 			}
 
@@ -44,20 +44,30 @@ export class OrganizationService {
 				kilocodeToken,
 			)
 
-			const response = await axios.get(url, { headers })
+			const response = await fetchWithRetries({
+				url,
+				method: "GET",
+				headers,
+			})
+
+			if (!response.ok) {
+				throw new Error(`Failed to fetch organization: ${response.statusText}`)
+			}
+
+			const data = await response.json()
 
 			// Validate the response against the schema
-			const validationResult = KiloOrganizationSchema.safeParse(response.data)
+			const validationResult = KiloOrganizationSchema.safeParse(data)
 
 			if (!validationResult.success) {
-				logger.error("[OrganizationService] Invalid organization response format", {
+				console.error("[OrganizationService] Invalid organization response format", {
 					organizationId,
 					errors: validationResult.error.errors,
 				})
-				return null
+				return data
 			}
 
-			logger.info("[OrganizationService] Successfully fetched organization", {
+			console.info("[OrganizationService] Successfully fetched organization", {
 				organizationId,
 				codeIndexingEnabled: validationResult.data.settings.code_indexing_enabled,
 			})
@@ -65,7 +75,7 @@ export class OrganizationService {
 			return validationResult.data
 		} catch (error) {
 			// Log error but don't throw - gracefully degrade
-			logger.error("[OrganizationService] Failed to fetch organization", {
+			console.error("[OrganizationService] Failed to fetch organization", {
 				organizationId,
 				error: error instanceof Error ? error.message : String(error),
 			})
@@ -76,10 +86,10 @@ export class OrganizationService {
 	/**
 	 * Checks if code indexing is enabled for an organization
 	 * @param organization - The organization object
-	 * @returns true if code indexing is enabled (defaults to true if not specified)
+	 * @returns true if code indexing is enabled (defaults to false if not specified)
 	 */
 	public static isCodeIndexingEnabled(organization: KiloOrganization | null): boolean {
 		// Default to true if organization is null or setting is not specified
-		return organization?.settings?.code_indexing_enabled ?? true
+		return organization?.settings?.code_indexing_enabled ?? false
 	}
 }
