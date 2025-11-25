@@ -31,7 +31,7 @@ async function validateParams(
 	block: ToolUse,
 	pushToolResult: PushToolResult,
 ): Promise<SearchAndReplaceParameters | null> {
-	const args = SearchAndReplaceParametersSchema.safeParse(block.params)
+	const args = SearchAndReplaceParametersSchema.safeParse(block.nativeArgs)
 	if (!args.success) {
 		cline.consecutiveMistakeCount++
 		cline.recordToolError("apply_diff", "schema_violation")
