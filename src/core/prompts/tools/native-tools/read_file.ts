@@ -30,7 +30,10 @@ export const read_file = {
 								},
 							},
 						},
-						required: ["path"],
+						required: [
+							"path",
+							"line_ranges", // kilocode_change
+						],
 						additionalProperties: false,
 					},
 					minItems: 1,
