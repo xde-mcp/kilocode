@@ -93,7 +93,7 @@ export function filterNativeToolsForMode(
 	// Conditionally exclude browser_action if disabled in settings
 	if (
 		settings?.browserToolEnabled === false ||
-		!modelInfo?.supportsImages // kilocode_change
+		!modelInfo?.supportsImages === false // kilocode_change
 	) {
 		allowedToolNames.delete("browser_action")
 	}
