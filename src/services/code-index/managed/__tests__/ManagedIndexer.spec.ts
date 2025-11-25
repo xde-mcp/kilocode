@@ -2,14 +2,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import * as vscode from "vscode"
 import { ManagedIndexer } from "../ManagedIndexer"
-import { ContextProxy } from "../../../../core/config/ContextProxy"
 import { GitWatcher, GitWatcherEvent, GitWatcherFile } from "../../../../shared/GitWatcher"
 import { OrganizationService } from "../../../kilocode/OrganizationService"
 import * as gitUtils from "../git-utils"
 import * as kiloConfigFile from "../../../../utils/kilo-config-file"
 import * as git from "../../../../utils/git"
 import * as apiClient from "../api-client"
-import { logger } from "../../../../utils/logging"
 
 // Mock vscode
 vi.mock("vscode", () => ({
@@ -41,6 +39,13 @@ vi.mock("fs", () => ({
 	promises: {
 		readFile: vi.fn(),
 	},
+}))
+vi.mock("../../../../core/ignore/RooIgnoreController", () => ({
+	RooIgnoreController: vi.fn().mockImplementation(() => ({
+		initialize: vi.fn().mockResolvedValue(undefined),
+		validateAccess: vi.fn().mockReturnValue(true),
+		dispose: vi.fn(),
+	})),
 }))
 
 describe("ManagedIndexer", () => {
@@ -95,18 +100,22 @@ describe("ManagedIndexer", () => {
 		} as any)
 		vi.mocked(OrganizationService.isCodeIndexingEnabled).mockReturnValue(true)
 
-		// Mock GitWatcher
+		// Mock GitWatcher - store instances for later verification
+		const mockWatcherInstances: any[] = []
 		vi.mocked(GitWatcher).mockImplementation(() => {
 			const mockWatcher = {
 				config: { cwd: "/test/workspace" },
-				onEvent: vi.fn(),
+				onEvent: vi.fn().mockReturnValue(undefined),
 				start: vi.fn().mockResolvedValue(undefined),
 				dispose: vi.fn(),
 			}
+			mockWatcherInstances.push(mockWatcher)
 			return mockWatcher as any
 		})
 
 		indexer = new ManagedIndexer(mockContextProxy)
+		// Store mock instances on indexer for test access
+		;(indexer as any).mockWatcherInstances = mockWatcherInstances
 	})
 
 	afterEach(() => {
@@ -328,7 +337,7 @@ describe("ManagedIndexer", () => {
 
 			const mockWatcher = indexer.workspaceFolderState[0].watcher
 			expect(mockWatcher).toBeDefined()
-			expect(mockWatcher!.onEvent).toHaveBeenCalled()
+			expect(mockWatcher!.onEvent).toHaveBeenCalledWith(expect.any(Function))
 		})
 
 		it("should start each watcher", async () => {

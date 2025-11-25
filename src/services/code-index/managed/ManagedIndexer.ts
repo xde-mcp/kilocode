@@ -17,6 +17,7 @@ import { MANAGED_MAX_CONCURRENT_FILES } from "../constants"
 import { ServerManifest } from "./types"
 import { scannerExtensions } from "../shared/supported-extensions"
 import { VectorStoreSearchResult } from "../interfaces/vector-store"
+import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 
 interface ManagedIndexerConfig {
 	kilocodeToken: string | null
@@ -57,6 +58,7 @@ interface ManagedIndexerWorkspaceFolderState {
 	manifestFetchPromise: Promise<ServerManifest> | null
 	/** AbortController for the current indexing operation */
 	currentAbortController?: AbortController
+	ignoreController: RooIgnoreController | null
 }
 
 export class ManagedIndexer implements vscode.Disposable {
@@ -202,6 +204,7 @@ export class ManagedIndexer implements vscode.Disposable {
 					watcher: null,
 					repositoryUrl: undefined,
 					manifestFetchPromise: null,
+					ignoreController: null,
 				}
 
 				// Check if it's a git repository
@@ -257,6 +260,9 @@ export class ManagedIndexer implements vscode.Disposable {
 					try {
 						const watcher = new GitWatcher({ cwd })
 						state.watcher = watcher
+						const ignoreController = new RooIgnoreController(cwd)
+						await ignoreController.initialize()
+						state.ignoreController = ignoreController
 
 						// Register event handler
 						watcher.onEvent(this.onEvent.bind(this))
@@ -313,7 +319,10 @@ export class ManagedIndexer implements vscode.Disposable {
 		this.workspaceFoldersListener = null
 
 		// Dispose all watchers from workspaceFolderState
-		this.workspaceFolderState.forEach((state) => state.watcher?.dispose())
+		this.workspaceFolderState.forEach((state) => {
+			state.watcher?.dispose()
+			state.ignoreController?.dispose()
+		})
 		this.workspaceFolderState = []
 
 		this.isActive = false
@@ -558,7 +567,10 @@ export class ManagedIndexer implements vscode.Disposable {
 							const fileBuffer = await fs.readFile(absoluteFilePath)
 							const relativeFilePath = path.relative(event.watcher.config.cwd, absoluteFilePath)
 
-							// TODO: (bmc) - do not upsert files larger than 1 megabyte
+							const ignore = state.ignoreController
+							if (ignore && !ignore.validateAccess(relativeFilePath)) {
+								return
+							}
 
 							// Call the upsertFile API with abort signal
 							await upsertFile(
