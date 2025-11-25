@@ -2590,9 +2590,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				const parsedBlocks = this.assistantMessageParser.getContentBlocks()
 
 				// Check if we're using native protocol
-				const toolProtocol = vscode.workspace
-					.getConfiguration(Package.name)
-					.get<ToolProtocol>("toolProtocol", "xml")
+				const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
 				const isNative = isNativeProtocol(toolProtocol)
 
 				if (isNative) {
