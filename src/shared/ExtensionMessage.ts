@@ -169,7 +169,6 @@ export interface ExtensionMessage {
 		| "insertTextIntoTextarea"
 		| "dismissedUpsells"
 		| "showTimestamps" // kilocode_change
-		| "organizationSwitchResult"
 		| "apiMessagesSaved" // kilocode_change: File save event for API messages
 		| "taskMessagesSaved" // kilocode_change: File save event for task messages
 		| "taskMetadataSaved" // kilocode_change: File save event for task metadata
@@ -177,6 +176,7 @@ export interface ExtensionMessage {
 		| "singleCompletionResult" // kilocode_change
 		| "managedIndexerState" // kilocode_change
 		| "managedIndexerEnabled" // kilocode_change
+		| "organizationSwitchResult"
 	text?: string
 	// kilocode_change start
 	completionRequestId?: string // Correlation ID from request
