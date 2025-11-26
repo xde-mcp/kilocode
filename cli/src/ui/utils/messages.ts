@@ -39,7 +39,7 @@ export const generateModeFallbackMessage = (params: {
 }) => {
 	const { previousMode, newMode, organizationName } = params
 	const orgContext = organizationName || "this organization"
-	const content = `Mode "${previousMode}" is not available for ${orgContext}. Switched to "${newMode}" mode.`
+	const content = `Mode "${previousMode}" is not available for ${orgContext}. Automatically switched to "${newMode}" mode.`
 	return {
 		...generateMessage(),
 		type: "system" as const,

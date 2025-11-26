@@ -5,7 +5,7 @@
 
 import { atom } from "jotai"
 import { validateModelAvailability } from "../../services/kilocode/modelValidation.js"
-import { routerModelsAtom } from "./extension.js"
+import { extensionStateAtom, routerModelsAtom } from "./extension.js"
 import { providerAtom, updateProviderAtom } from "./config.js"
 import { addMessageAtom } from "./ui.js"
 import { logs } from "../../services/logs.js"
@@ -19,6 +19,7 @@ import { generateModelFallbackMessage } from "../../ui/utils/messages.js"
 export const validateModelOnRouterModelsUpdateAtom = atom(null, async (get, set) => {
 	const routerModels = get(routerModelsAtom)
 	const currentProvider = get(providerAtom)
+	const extensionState = get(extensionStateAtom)
 
 	// Only validate for Kilocode provider
 	if (!currentProvider || currentProvider.provider !== "kilocode") {
@@ -49,8 +50,8 @@ export const validateModelOnRouterModelsUpdateAtom = atom(null, async (get, set)
 	// Model not available - need fallback
 	logs.warn(`Model ${currentModel} not available for current organization`, "modelValidation")
 
-	// Get default model from available models (first one as fallback)
-	const fallbackModel = Object.keys(availableModels)[0]
+	// Get default fallback model
+	const fallbackModel = (extensionState?.kilocodeDefaultModel as string) || Object.keys(availableModels)[0] || ""
 
 	if (!fallbackModel) {
 		logs.error("No models available for fallback", "modelValidation")
