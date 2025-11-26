@@ -358,6 +358,14 @@
 		"getMistralApiKey": "Obtenir la clé API Mistral / Codestral",
 		"codestralBaseUrl": "URL de base Codestral (Optionnel)",
 		"codestralBaseUrlDesc": "Définir une URL alternative pour le modèle Codestral.",
+		"nanoGptApiKey": "Clé API Nano-GPT",
+		"getNanoGptApiKey": "Obtenir la clé API Nano-GPT",
+		"nanoGptModelList": "Liste de modèles",
+		"nanoGptModelListOptions": {
+			"all": "Tous les modèles",
+			"personalized": "Modèles personnalisés",
+			"subscription": "Modèles d'abonnement"
+		},
 		"xaiApiKey": "Clé API xAI",
 		"getXaiApiKey": "Obtenir la clé API xAI",
 		"litellmApiKey": "Clé API LiteLLM",

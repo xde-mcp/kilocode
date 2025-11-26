@@ -330,6 +330,14 @@
 		"minimaxApiKey": "مفتاح MiniMax API",
 		"getMiniMaxApiKey": "احصل على مفتاح MiniMax API",
 		"minimaxBaseUrl": "نقطة دخول MiniMax",
+		"nanoGptApiKey": "مفتاح Nano-GPT",
+		"getNanoGptApiKey": "احصل على مفتاح Nano-GPT",
+		"nanoGptModelList": "قائمة النماذج",
+		"nanoGptModelListOptions": {
+			"all": "جميع النماذج",
+			"personalized": "نماذج مخصصة",
+			"subscription": "نماذج الاشتراك"
+		},
 		"geminiApiKey": "مفتاح Gemini",
 		"getGroqApiKey": "احصل على مفتاح Groq",
 		"groqApiKey": "مفتاح Groq",

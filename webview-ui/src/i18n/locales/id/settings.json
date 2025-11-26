@@ -318,6 +318,14 @@
 		"minimaxApiKey": "Kunci API MiniMax",
 		"getMiniMaxApiKey": "Dapatkan Kunci API MiniMax",
 		"minimaxBaseUrl": "Titik Masuk MiniMax",
+		"nanoGptApiKey": "Kunci API Nano-GPT",
+		"getNanoGptApiKey": "Dapatkan Kunci API Nano-GPT",
+		"nanoGptModelList": "Daftar Model",
+		"nanoGptModelListOptions": {
+			"all": "Semua Model",
+			"personalized": "Model Personal",
+			"subscription": "Model Langganan"
+		},
 		"geminiApiKey": "Gemini API Key",
 		"getGroqApiKey": "Dapatkan Groq API Key",
 		"groqApiKey": "Groq API Key",

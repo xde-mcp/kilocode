@@ -331,6 +331,14 @@
 		"getMiniMaxApiKey": "Získat klíč API MiniMax",
 		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"geminiApiKey": "Klíč API Gemini",
+		"nanoGptApiKey": "Klíč API Nano-GPT",
+		"getNanoGptApiKey": "Získat klíč API Nano-GPT",
+		"nanoGptModelList": "Seznam modelů",
+		"nanoGptModelListOptions": {
+			"all": "Všechny modely",
+			"personalized": "Personalizované modely",
+			"subscription": "Modely předplatného"
+		},
 		"getGroqApiKey": "Získat klíč API Groq",
 		"groqApiKey": "Klíč API Groq",
 		"getSambaNovaApiKey": "Získat klíč API SambaNova",

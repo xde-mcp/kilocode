@@ -259,6 +259,14 @@
 		"awsCustomArnDesc": "Đảm bảo rằng vùng trong ARN khớp với vùng AWS đã chọn ở trên.",
 		"openRouterApiKey": "Khóa API OpenRouter",
 		"getOpenRouterApiKey": "Lấy khóa API OpenRouter",
+		"nanoGptApiKey": "Khóa API Nano-GPT",
+		"getNanoGptApiKey": "Lấy khóa API Nano-GPT",
+		"nanoGptModelList": "Danh sách Mô hình",
+		"nanoGptModelListOptions": {
+			"all": "Tất cả Mô hình",
+			"personalized": "Mô hình Cá nhân hóa",
+			"subscription": "Mô hình Đăng ký"
+		},
 		"vercelAiGatewayApiKey": "Khóa API Vercel AI Gateway",
 		"getVercelAiGatewayApiKey": "Lấy khóa API Vercel AI Gateway",
 		"apiKeyStorageNotice": "Khóa API được lưu trữ an toàn trong Bộ lưu trữ bí mật của VSCode",
