@@ -31,6 +31,7 @@ import {
 	taskHistoryErrorAtom,
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
+import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -286,6 +287,8 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				const routerModels = message.routerModels as RouterModels | undefined
 				if (routerModels) {
 					set(updateRouterModelsAtom, routerModels)
+					// Trigger model validation after router models are updated
+					void set(validateModelOnRouterModelsUpdateAtom)
 				}
 				break
 			}

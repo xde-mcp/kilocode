@@ -6,3 +6,23 @@ export const generateMessage = () => {
 		ts: now,
 	}
 }
+
+/**
+ * Generate user-friendly message for model fallback
+ * @param params - Message parameters
+ * @returns Formatted message for display
+ */
+export const generateModelFallbackMessage = (params: {
+	previousModel: string
+	newModel: string
+	organizationName?: string
+}) => {
+	const { previousModel, newModel, organizationName } = params
+	const orgContext = organizationName || "this organization"
+	const content = `Model "${previousModel}" is not available for ${orgContext}. Automatically switched to "${newModel}".`
+	return {
+		...generateMessage(),
+		type: "system" as const,
+		content,
+	}
+}
