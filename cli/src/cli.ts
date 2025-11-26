@@ -7,7 +7,13 @@ import { App } from "./ui/App.js"
 import { logs } from "./services/logs.js"
 import { extensionServiceAtom } from "./state/atoms/service.js"
 import { initializeServiceEffectAtom } from "./state/atoms/effects.js"
-import { loadConfigAtom, mappedExtensionStateAtom, providersAtom, saveConfigAtom } from "./state/atoms/config.js"
+import {
+	loadConfigAtom,
+	mappedExtensionStateAtom,
+	providersAtom,
+	saveConfigAtom,
+	configAtom,
+} from "./state/atoms/config.js"
 import { ciExitReasonAtom } from "./state/atoms/ci.js"
 import { requestRouterModelsAtom } from "./state/atoms/actions.js"
 import { loadHistoryAtom } from "./state/atoms/history.js"
@@ -461,8 +467,39 @@ export class CLI {
 		try {
 			logs.info("Attempting to resume last conversation", "CLI", { workspace })
 
+			// First, try to restore from persisted session ID if kiloToken is available
+			const config = this.store.get(configAtom) as CLIConfig
+			if (config.kiloToken) {
+				const sessionService = SessionService.init()
+				const lastSessionId = sessionService.getLastSessionId()
+
+				if (lastSessionId) {
+					logs.info("Found persisted session ID, attempting to restore", "CLI", { sessionId: lastSessionId })
+
+					try {
+						await sessionService.restoreSession(lastSessionId, true)
+
+						// Mark that the task was resumed via --continue
+						this.store.set(taskResumedViaContinueAtom, true)
+
+						logs.info("Successfully restored persisted session", "CLI", { sessionId: lastSessionId })
+						return
+					} catch (error) {
+						logs.warn("Failed to restore persisted session, falling back to task history", "CLI", {
+							error: error instanceof Error ? error.message : String(error),
+							sessionId: lastSessionId,
+						})
+					}
+				} else {
+					logs.debug("No persisted session ID found, falling back to task history", "CLI")
+				}
+			}
+
+			// Fallback: Use task history approach
+			logs.debug("Using task history fallback to resume conversation", "CLI")
+
 			// Update filters to current workspace and newest sort
-			await this.store.set(updateTaskHistoryFiltersAtom, {
+			this.store.set(updateTaskHistoryFiltersAtom, {
 				workspace: "current",
 				sort: "newest",
 				favoritesOnly: false,
@@ -490,7 +527,6 @@ export class CLI {
 				logs.warn("No previous tasks found for workspace", "CLI", { workspace })
 				console.error("\nNo previous tasks found for this workspace. Please start a new conversation.\n")
 				process.exit(1)
-				return // TypeScript doesn't know process.exit stops execution
 			}
 
 			// Find the most recent task (first in the list since we sorted by newest)
@@ -500,7 +536,6 @@ export class CLI {
 				logs.warn("No valid task found in history", "CLI", { workspace })
 				console.error("\nNo valid task found to resume. Please start a new conversation.\n")
 				process.exit(1)
-				return
 			}
 
 			logs.debug("Found last task", "CLI", { taskId: lastTask.id, task: lastTask.task })

@@ -9,6 +9,7 @@ import type { SimpleGit, RemoteWithRefs } from "simple-git"
 vi.mock("fs", () => ({
 	readFileSync: vi.fn(),
 	writeFileSync: vi.fn(),
+	existsSync: vi.fn(),
 }))
 
 // Mock fs-extra module
@@ -30,6 +31,7 @@ vi.mock("../logs.js", () => ({
 vi.mock("../../utils/paths.js", () => ({
 	KiloCodePaths: {
 		getTasksDir: vi.fn(() => "/mock/tasks/dir"),
+		getLastSessionPath: vi.fn((workspace: string) => `/mock/workspace/${workspace}/last-session.json`),
 	},
 }))
 
@@ -37,7 +39,7 @@ vi.mock("../../utils/paths.js", () => ({
 vi.mock("simple-git")
 
 // Import after mocking
-import { readFileSync, writeFileSync } from "fs"
+import { readFileSync, writeFileSync, existsSync } from "fs"
 import { ensureDirSync } from "fs-extra"
 import { logs } from "../logs.js"
 import simpleGit from "simple-git"
@@ -2408,6 +2410,230 @@ describe("SessionService", () => {
 				}),
 			)
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("SessionService flushed", "SessionService")
+		})
+	})
+
+	describe("session persistence", () => {
+		beforeEach(() => {
+			vi.clearAllMocks()
+		})
+
+		describe("saveLastSessionId", () => {
+			it("should save session ID to workspace-specific file", async () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockData = { messages: [] }
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+				mockCreate.mockResolvedValueOnce({
+					session_id: "test-session-id",
+					title: "",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				})
+
+				service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+				await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
+
+				const writeCall = vi
+					.mocked(writeFileSync)
+					.mock.calls.find((call) => call[0] === "/mock/workspace//test/workspace/last-session.json")
+				expect(writeCall).toBeDefined()
+				const writtenData = JSON.parse(writeCall![1] as string)
+				expect(writtenData.sessionId).toBe("test-session-id")
+				expect(writtenData.timestamp).toBeTypeOf("number")
+			})
+
+			it("should not save when workspace directory is not set", async () => {
+				const mockData = { messages: [] }
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+				mockCreate.mockResolvedValueOnce({
+					session_id: "test-session-id",
+					title: "",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				})
+
+				service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+				await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
+
+				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
+					"Cannot save last session ID: workspace directory not set",
+					"SessionService",
+				)
+			})
+
+			it("should save session ID when restoring a session", async () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockSessionData = {
+					session_id: "restored-session-id",
+					title: "Restored Session",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+					api_conversation_history_blob_url: null,
+					ui_messages_blob_url: null,
+					task_metadata_blob_url: null,
+				}
+
+				mockGet.mockResolvedValueOnce(mockSessionData)
+
+				await service.restoreSession("restored-session-id")
+
+				const writeCall = vi
+					.mocked(writeFileSync)
+					.mock.calls.find((call) => call[0] === "/mock/workspace//test/workspace/last-session.json")
+				expect(writeCall).toBeDefined()
+				const writtenData = JSON.parse(writeCall![1] as string)
+				expect(writtenData.sessionId).toBe("restored-session-id")
+				expect(writtenData.timestamp).toBeTypeOf("number")
+			})
+
+			it("should handle write errors gracefully", async () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockData = { messages: [] }
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
+
+				vi.mocked(writeFileSync).mockImplementationOnce(() => {
+					throw new Error("Write failed")
+				})
+
+				mockCreate.mockResolvedValueOnce({
+					session_id: "test-session-id",
+					title: "",
+					created_at: "2025-01-01T00:00:00Z",
+					updated_at: "2025-01-01T00:00:00Z",
+				})
+
+				service.setPath("apiConversationHistoryPath", "/path/to/api.json")
+
+				await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
+
+				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
+					"Failed to save last session ID",
+					"SessionService",
+					expect.objectContaining({
+						error: "Write failed",
+					}),
+				)
+			})
+		})
+
+		describe("getLastSessionId", () => {
+			it("should return null when workspace directory is not set", () => {
+				const result = service.getLastSessionId()
+
+				expect(result).toBeNull()
+				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
+					"Cannot get last session ID: workspace directory not set",
+					"SessionService",
+				)
+			})
+
+			it("should return null when file does not exist", () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockExistsSync = vi.fn().mockReturnValue(false)
+				vi.doMock("fs", () => ({
+					existsSync: mockExistsSync,
+					readFileSync: vi.fn(),
+					writeFileSync: vi.fn(),
+				}))
+
+				const result = service.getLastSessionId()
+
+				expect(result).toBeNull()
+			})
+
+			it("should return session ID from valid file", () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const sessionData = {
+					sessionId: "saved-session-id",
+					timestamp: Date.now(),
+				}
+
+				vi.mocked(existsSync).mockReturnValueOnce(true)
+				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(sessionData))
+
+				const result = service.getLastSessionId()
+
+				expect(result).toBe("saved-session-id")
+				expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
+					"Retrieved last session ID",
+					"SessionService",
+					expect.objectContaining({
+						sessionId: "saved-session-id",
+					}),
+				)
+			})
+
+			it("should return null for invalid JSON", () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				vi.mocked(existsSync).mockReturnValueOnce(true)
+				vi.mocked(readFileSync).mockImplementationOnce(() => {
+					throw new Error("Parse error")
+				})
+
+				const result = service.getLastSessionId()
+
+				expect(result).toBeNull()
+				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
+					"Failed to read last session ID",
+					"SessionService",
+					expect.objectContaining({
+						error: expect.any(String),
+					}),
+				)
+			})
+
+			it("should return null when sessionId is missing from data", () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockExistsSync = vi.fn().mockReturnValue(true)
+				const invalidData = {
+					timestamp: Date.now(),
+				}
+
+				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(invalidData))
+
+				vi.doMock("fs", () => ({
+					existsSync: mockExistsSync,
+					readFileSync: vi.fn().mockReturnValue(JSON.stringify(invalidData)),
+					writeFileSync: vi.fn(),
+				}))
+
+				const result = service.getLastSessionId()
+
+				expect(result).toBeNull()
+			})
+
+			it("should return null when sessionId is not a string", () => {
+				service.setWorkspaceDirectory("/test/workspace")
+
+				const mockExistsSync = vi.fn().mockReturnValue(true)
+				const invalidData = {
+					sessionId: 12345,
+					timestamp: Date.now(),
+				}
+
+				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(invalidData))
+
+				vi.doMock("fs", () => ({
+					existsSync: mockExistsSync,
+					readFileSync: vi.fn().mockReturnValue(JSON.stringify(invalidData)),
+					writeFileSync: vi.fn(),
+				}))
+
+				const result = service.getLastSessionId()
+
+				expect(result).toBeNull()
+			})
 		})
 	})
 })

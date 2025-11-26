@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdtempSync, rmSync } from "fs"
+import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from "fs"
 import { KiloCodePaths } from "../utils/paths"
 import { SessionClient, SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./sessionClient"
 import { logs } from "./logs.js"
@@ -66,6 +66,56 @@ export class SessionService {
 
 	setWorkspaceDirectory(dir: string): void {
 		this.workspaceDir = dir
+	}
+
+	private saveLastSessionId(sessionId: string): void {
+		if (!this.workspaceDir) {
+			logs.warn("Cannot save last session ID: workspace directory not set", "SessionService")
+			return
+		}
+
+		try {
+			const lastSessionPath = KiloCodePaths.getLastSessionPath(this.workspaceDir)
+			const data = {
+				sessionId,
+				timestamp: Date.now(),
+			}
+			writeFileSync(lastSessionPath, JSON.stringify(data, null, 2))
+			logs.debug("Saved last session ID", "SessionService", { sessionId, path: lastSessionPath })
+		} catch (error) {
+			logs.warn("Failed to save last session ID", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+			})
+		}
+	}
+
+	getLastSessionId(): string | null {
+		if (!this.workspaceDir) {
+			logs.warn("Cannot get last session ID: workspace directory not set", "SessionService")
+			return null
+		}
+
+		try {
+			const lastSessionPath = KiloCodePaths.getLastSessionPath(this.workspaceDir)
+			if (!existsSync(lastSessionPath)) {
+				return null
+			}
+
+			const content = readFileSync(lastSessionPath, "utf-8")
+			const data = JSON.parse(content)
+
+			if (data.sessionId && typeof data.sessionId === "string") {
+				logs.debug("Retrieved last session ID", "SessionService", { sessionId: data.sessionId })
+				return data.sessionId
+			}
+
+			return null
+		} catch (error) {
+			logs.warn("Failed to read last session ID", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+			})
+			return null
+		}
 	}
 
 	async restoreSession(sessionId: string, rethrowError = false) {
@@ -193,6 +243,8 @@ export class SessionService {
 			})
 
 			logs.info("Switched to restored task", "SessionService", { sessionId })
+
+			this.saveLastSessionId(sessionId)
 		} catch (error) {
 			logs.error("Failed to restore session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),
@@ -370,6 +422,8 @@ export class SessionService {
 				this.sessionGitUrl = gitInfo?.repoUrl || null
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
+
+				this.saveLastSessionId(this.sessionId)
 
 				if (this.jsonMode) {
 					console.log(
