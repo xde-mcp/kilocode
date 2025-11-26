@@ -17,7 +17,7 @@ const defaultPaths = {
 }
 
 export class SessionService {
-	static readonly SYNC_INTERVAL = 3000
+	static readonly SYNC_INTERVAL = 1000
 	private static instance: SessionService | null = null
 
 	static init(extensionService?: ExtensionService, json?: boolean) {
