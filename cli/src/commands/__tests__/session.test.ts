@@ -292,7 +292,7 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-			expect(message.content).toContain("🟢 [Active]")
+			expect(message.content).toContain("* [Active]")
 		})
 
 		it("should display pagination cursor when available", async () => {
@@ -565,7 +565,7 @@ describe("sessionCommand", () => {
 			await sessionCommand.handler(mockContext)
 
 			const message = (mockContext.addMessage as ReturnType<typeof vi.fn>).mock.calls[0][0]
-			expect(message.content).toContain("🟢 [Active]")
+			expect(message.content).toContain("* [Active]")
 		})
 
 		it("should handle search error gracefully", async () => {

@@ -57,7 +57,7 @@ async function listSessions(context: CommandContext): Promise<void> {
 		// Format and display sessions
 		let content = `**Available Sessions:**\n\n`
 		cliSessions.forEach((session, index) => {
-			const isActive = session.session_id === sessionService.sessionId ? " 🟢 [Active]" : ""
+			const isActive = session.session_id === sessionService.sessionId ? " * [Active]" : ""
 			const title = session.title || "Untitled"
 			const createdTime = formatRelativeTime(new Date(session.created_at).getTime())
 
@@ -163,7 +163,7 @@ async function searchSessions(context: CommandContext, query: string): Promise<v
 
 		let content = `**Search Results** (${results.length} of ${total}):\n\n`
 		results.forEach((session, index) => {
-			const isActive = session.session_id === sessionService.sessionId ? " 🟢 [Active]" : ""
+			const isActive = session.session_id === sessionService.sessionId ? " * [Active]" : ""
 			const title = session.title || "Untitled"
 			const createdTime = formatRelativeTime(new Date(session.created_at).getTime())
 
