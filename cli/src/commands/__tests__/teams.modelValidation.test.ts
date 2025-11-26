@@ -79,26 +79,6 @@ describe("teams command - model validation", () => {
 		expect(refreshRouterModelsMock).toHaveBeenCalled()
 	})
 
-	it("should handle router models refresh failure gracefully", async () => {
-		const { teamsCommand } = await import("../teams.js")
-
-		refreshRouterModelsMock.mockRejectedValueOnce(new Error("Network error"))
-		mockContext.args = ["select", "test-org"]
-
-		await teamsCommand.handler(mockContext)
-
-		// Should still complete the team switch
-		expect(updateProviderMock).toHaveBeenCalled()
-
-		// Should show warning about model verification
-		expect(addMessageMock).toHaveBeenCalledWith(
-			expect.objectContaining({
-				type: "system",
-				content: expect.stringContaining("Could not verify model availability"),
-			}),
-		)
-	})
-
 	it("should handle personal account switch with model validation", async () => {
 		const { teamsCommand } = await import("../teams.js")
 

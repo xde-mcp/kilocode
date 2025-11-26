@@ -4,7 +4,6 @@
 
 import type { Command, ArgumentProviderContext, ArgumentSuggestion, CommandContext } from "./core/types.js"
 import type { UserOrganization } from "../state/atoms/profile.js"
-import { logs } from "../services/logs.js"
 
 /**
  * Normalize team name to lowercase with dashes
@@ -129,22 +128,7 @@ async function selectTeam(context: CommandContext, teamId: string): Promise<void
 			await updateProvider(currentProvider.id, {
 				kilocodeOrganizationId: undefined,
 			})
-
-			// Refresh router models for new organization context
-			try {
-				await refreshRouterModels()
-				// Wait for models to load
-				await new Promise((resolve) => setTimeout(resolve, 500))
-			} catch (error) {
-				logs.warn("Failed to refresh router models after team switch", "teams", { error })
-				addMessage({
-					id: Date.now().toString(),
-					type: "system",
-					content:
-						"⚠️ Could not verify model availability for the new organization. Your current model may not work.",
-					ts: Date.now(),
-				})
-			}
+			await refreshRouterModels()
 
 			addMessage({
 				id: Date.now().toString(),
@@ -184,21 +168,7 @@ async function selectTeam(context: CommandContext, teamId: string): Promise<void
 				kilocodeOrganizationId: targetOrg.id,
 			})
 
-			// Refresh router models for new organization context
-			try {
-				await refreshRouterModels()
-				// Wait for models to load
-				await new Promise((resolve) => setTimeout(resolve, 500))
-			} catch (error) {
-				logs.warn("Failed to refresh router models after team switch", "teams", { error })
-				addMessage({
-					id: Date.now().toString(),
-					type: "system",
-					content:
-						"⚠️ Could not verify model availability for the new organization. Your current model may not work.",
-					ts: Date.now(),
-				})
-			}
+			await refreshRouterModels()
 
 			addMessage({
 				id: Date.now().toString(),
