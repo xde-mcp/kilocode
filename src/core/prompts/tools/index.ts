@@ -130,16 +130,17 @@ export function getToolDescriptionsForMode(
 	ALWAYS_AVAILABLE_TOOLS.forEach((tool) => tools.add(tool))
 
 	// Conditionally exclude codebase_search if feature is disabled or not configured
-	if (
-		!codeIndexManager ||
-		!(codeIndexManager.isFeatureEnabled && codeIndexManager.isFeatureConfigured && codeIndexManager.isInitialized)
-	) {
-		// kilocode_change start
-		if (!ManagedIndexer.getInstance()?.isEnabled()) {
-			tools.delete("codebase_search")
-		}
-		// kilocode_change end
+	// kilocode_change start
+	const isCodebaseSearchAvailable =
+		ManagedIndexer.getInstance().isEnabled() ||
+		(codeIndexManager &&
+			codeIndexManager.isFeatureEnabled &&
+			codeIndexManager.isFeatureConfigured &&
+			codeIndexManager.isInitialized)
+	if (!isCodebaseSearchAvailable) {
+		tools.delete("codebase_search")
 	}
+	// kilocode_change end
 
 	// kilocode_change start: Morph fast apply
 	if (isFastApplyAvailable(clineProviderState)) {

@@ -13,6 +13,7 @@ import type { CodeIndexManager } from "../../../services/code-index/manager"
 // kilocode_change start
 import { ClineProviderState } from "../../webview/ClineProvider"
 import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
+import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
 // kilocode_change end
 
 /**
@@ -68,12 +69,18 @@ export function filterNativeToolsForMode(
 	)
 
 	// Conditionally exclude codebase_search if feature is disabled or not configured
-	if (
-		!codeIndexManager ||
-		!(codeIndexManager.isFeatureEnabled && codeIndexManager.isFeatureConfigured && codeIndexManager.isInitialized)
-	) {
+
+	// kilocode_change start
+	const isCodebaseSearchAvailable =
+		ManagedIndexer.getInstance().isEnabled() ||
+		(codeIndexManager &&
+			codeIndexManager.isFeatureEnabled &&
+			codeIndexManager.isFeatureConfigured &&
+			codeIndexManager.isInitialized)
+	if (!isCodebaseSearchAvailable) {
 		allowedToolNames.delete("codebase_search")
 	}
+	// kilocode_change end
 
 	// Conditionally exclude update_todo_list if disabled in settings
 	if (settings?.todoListEnabled === false) {
