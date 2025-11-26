@@ -357,7 +357,7 @@ export class SessionService {
 			this.lastSyncEvent = currentLastSaveEvent
 
 			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
-				// intentionally not awaiting as we don't want this to block
+				// Intentionally not awaiting as we don't want this to block
 				this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
 					.then((generatedTitle) => {
 						if (generatedTitle) {
