@@ -42,7 +42,7 @@ export class SessionService {
 	public sessionId: string | null = null
 	private workspaceDir: string | null = null
 	private sessionTitle: string | null = null
-	private sessionGitUrl: string | undefined = undefined
+	private sessionGitUrl: string | null = null
 
 	private timer: NodeJS.Timeout | null = null
 	private blobHashes = this.createDefaultBlobHashes()
@@ -86,7 +86,8 @@ export class SessionService {
 
 			if (!session) {
 				logs.error("Failed to obtain session", "SessionService", { sessionId })
-				return
+
+				throw new Error("Failed to obtain session")
 			}
 
 			this.sessionTitle = session.title
@@ -200,6 +201,7 @@ export class SessionService {
 
 			this.sessionId = null
 			this.sessionTitle = null
+			this.sessionGitUrl = null
 			this.resetBlobHashes()
 
 			if (rethrowError) {
@@ -313,6 +315,8 @@ export class SessionService {
 			const rawPayload = this.readPaths()
 
 			if (Object.values(rawPayload).every((item) => !item)) {
+				this.isSyncing = false
+
 				return
 			}
 
@@ -345,7 +349,7 @@ export class SessionService {
 						...basePayload,
 					})
 
-					this.sessionGitUrl = gitInfo?.repoUrl
+					this.sessionGitUrl = gitInfo?.repoUrl || null
 
 					logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
 				}
@@ -363,7 +367,7 @@ export class SessionService {
 				const session = await sessionClient.create(basePayload)
 
 				this.sessionId = session.session_id
-				this.sessionGitUrl = gitInfo?.repoUrl
+				this.sessionGitUrl = gitInfo?.repoUrl || null
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
 
