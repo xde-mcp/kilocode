@@ -63,7 +63,6 @@ export const dynamicProviders = [
 	"unbound",
 	"glama",
 	"roo",
-	"chutes",
 ] as const
 
 export type DynamicProvider = (typeof dynamicProviders)[number]
@@ -156,7 +155,6 @@ export const providerNames = [
 	"virtual-quota-fallback",
 	"synthetic",
 	"inception",
-	"sap-ai-core",
 	// kilocode_change end
 	"sambanova",
 	"vertex",
