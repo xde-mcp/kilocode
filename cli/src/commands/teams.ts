@@ -133,7 +133,7 @@ async function selectTeam(context: CommandContext, teamId: string): Promise<void
 			addMessage({
 				id: Date.now().toString(),
 				type: "system",
-				content: "✓ Switched to **Personal** account",
+				content: "Switched to **Personal** account",
 				ts: Date.now(),
 			})
 
@@ -173,7 +173,7 @@ async function selectTeam(context: CommandContext, teamId: string): Promise<void
 			addMessage({
 				id: Date.now().toString(),
 				type: "system",
-				content: `✓ Switched to team: **${targetOrg.name}** (${targetOrg.role})`,
+				content: `Switched to team: **${targetOrg.name}** (${targetOrg.role})`,
 				ts: Date.now(),
 			})
 		} else {
