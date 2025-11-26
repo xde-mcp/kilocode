@@ -12,9 +12,11 @@ import { McpHub } from "../../../../services/mcp/McpHub"
 import { McpServerManager } from "../../../../services/mcp/McpServerManager"
 import { getMcpServerTools } from "./mcp_server"
 import { ClineProvider } from "../../../webview/ClineProvider"
+import { ManagedIndexer } from "../../../../services/code-index/managed/ManagedIndexer" // kilocode_change
 import { ContextProxy } from "../../../config/ContextProxy"
 import * as vscode from "vscode"
 import { read_file_multi, read_file_single } from "./read_file"
+import search_and_replace, { shouldUseSearchAndReplaceInsteadOfApplyDiff } from "./search_and_replace"
 
 export async function getAllowedJSONToolsForMode(
 	mode: Mode,
@@ -90,12 +92,16 @@ export async function getAllowedJSONToolsForMode(
 		!codeIndexManager ||
 		!(codeIndexManager.isFeatureEnabled && codeIndexManager.isFeatureConfigured && codeIndexManager.isInitialized)
 	) {
-		tools.delete("codebase_search")
+		// kilocode_change start
+		if (!ManagedIndexer.getInstance()?.isEnabled()) {
+			tools.delete("codebase_search")
+		}
+		// kilocode_change end
 	}
 
 	if (isFastApplyAvailable(providerState)) {
 		// When Fast Apply is enabled, disable traditional editing tools
-		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content", "search_and_replace"]
+		const traditionalEditingTools = ["apply_diff", "write_to_file", "insert_content"]
 		traditionalEditingTools.forEach((tool) => tools.delete(tool))
 	} else {
 		tools.delete("edit_file")
@@ -159,6 +165,8 @@ export async function getAllowedJSONToolsForMode(
 	if (isApplyDiffToolAllowedForMode && diffEnabled) {
 		if (providerState?.experiments.multiFileApplyDiff) {
 			allowedTools.push(apply_diff_multi_file)
+		} else if (shouldUseSearchAndReplaceInsteadOfApplyDiff("json", model?.id ?? "")) {
+			allowedTools.push(search_and_replace)
 		} else {
 			allowedTools.push(apply_diff_single_file)
 		}

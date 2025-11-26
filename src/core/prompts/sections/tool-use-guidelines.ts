@@ -1,3 +1,4 @@
+import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer" // kilocode_change
 import { CodeIndexManager } from "../../../services/code-index/manager"
 import type { ToolUseStyle } from "@roo-code/types" // kilocode_change
 
@@ -6,10 +7,13 @@ export function getToolUseGuidelinesSection(
 	toolUseStyle?: ToolUseStyle, // kilocode_change
 ): string {
 	const isCodebaseSearchAvailable =
-		codeIndexManager &&
-		codeIndexManager.isFeatureEnabled &&
-		codeIndexManager.isFeatureConfigured &&
-		codeIndexManager.isInitialized
+		// kilocode_change start
+		ManagedIndexer.getInstance().isEnabled() ||
+		(codeIndexManager &&
+			codeIndexManager.isFeatureEnabled &&
+			codeIndexManager.isFeatureConfigured &&
+			codeIndexManager.isInitialized)
+	// kilocode_change end
 
 	// Build guidelines array with automatic numbering
 	let itemNumber = 1

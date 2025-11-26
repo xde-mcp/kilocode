@@ -58,6 +58,12 @@ export interface IndexingStatus {
 	totalItems: number
 	currentItemUnit?: string
 	workspacePath?: string
+	gitBranch?: string // Current git branch being indexed
+	manifest?: {
+		totalFiles: number
+		totalChunks: number
+		lastUpdated: string
+	}
 }
 
 export interface IndexingStatusUpdateMessage {
@@ -108,6 +114,7 @@ export interface ExtensionMessage {
 		| "checkRulesDirectoryResult"
 		| "deleteCustomModeCheck"
 		| "currentCheckpointUpdated"
+		| "checkpointInitWarning"
 		| "showHumanRelayDialog"
 		| "humanRelayResponse"
 		| "humanRelayCancel"
@@ -133,6 +140,7 @@ export interface ExtensionMessage {
 		| "profileDataResponse" // kilocode_change
 		| "balanceDataResponse" // kilocode_change
 		| "updateProfileData" // kilocode_change
+		| "profileConfigurationForEditing" // kilocode_change: Response with profile config for editing
 		| "authenticatedUser"
 		| "condenseTaskContextResponse"
 		| "singleRouterModelFetchResponse"
@@ -164,6 +172,8 @@ export interface ExtensionMessage {
 		| "insertTextIntoTextarea"
 		| "dismissedUpsells"
 		| "showTimestamps" // kilocode_change
+		| "managedIndexerState" // kilocode_change
+		| "managedIndexerEnabled" // kilocode_change
 		| "organizationSwitchResult"
 	text?: string
 	// kilocode_change start
@@ -173,6 +183,11 @@ export interface ExtensionMessage {
 		| TasksByIdResponsePayload
 		| TaskHistoryResponsePayload
 	// kilocode_change end
+	// Checkpoint warning message
+	checkpointWarning?: {
+		type: "WAIT_TIMEOUT" | "INIT_TIMEOUT"
+		timeout: number
+	}
 	action?:
 		| "chatButtonClicked"
 		| "mcpButtonClicked"
@@ -224,6 +239,7 @@ export interface ExtensionMessage {
 	mcpServers?: McpServer[]
 	commits?: GitCommit[]
 	listApiConfig?: ProviderSettingsEntry[]
+	apiConfiguration?: ProviderSettings // kilocode_change: For profileConfigurationForEditing response
 	mode?: Mode
 	customMode?: ModeConfig
 	slug?: string
@@ -280,6 +296,28 @@ export interface ExtensionMessage {
 	queuedMessages?: QueuedMessage[]
 	list?: string[] // For dismissedUpsells
 	organizationId?: string | null // For organizationSwitchResult
+	// kilocode_change start: Managed Indexer
+	managedIndexerEnabled?: boolean
+	managedIndexerState?: Array<{
+		workspaceFolderPath: string
+		workspaceFolderName: string
+		gitBranch: string | null
+		projectId: string | null
+		isIndexing: boolean
+		hasManifest: boolean
+		manifestFileCount: number
+		hasWatcher: boolean
+		error?: {
+			type: string
+			message: string
+			timestamp: string
+			context?: {
+				filePath?: string
+				branch?: string
+				operation?: string
+			}
+		}
+	}> // kilocode_change end: Managed Indexer
 }
 
 export type ExtensionState = Pick<
@@ -348,6 +386,7 @@ export type ExtensionState = Pick<
 	| "fuzzyMatchThreshold"
 	| "morphApiKey" // kilocode_change: Morph fast apply - global setting
 	| "fastApplyModel" // kilocode_change: Fast Apply model selection
+	| "fastApplyApiProvider" // kilocode_change: Fast Apply model api base url
 	// | "experiments" // Optional in GlobalSettings, required here.
 	| "language"
 	// | "telemetrySetting" // Optional in GlobalSettings, required here.
@@ -375,6 +414,7 @@ export type ExtensionState = Pick<
 	| "autoPurgeLastRunTimestamp" // kilocode_change
 	| "condensingApiConfigId"
 	| "customCondensingPrompt"
+	| "yoloGatekeeperApiConfigId" // kilocode_change: AI gatekeeper for YOLO mode
 	| "codebaseIndexConfig"
 	| "codebaseIndexModels"
 	| "profileThresholds"
@@ -384,6 +424,8 @@ export type ExtensionState = Pick<
 	| "openRouterImageGenerationSelectedModel"
 	| "includeTaskHistoryInEnhance"
 	| "reasoningBlockCollapsed"
+	| "includeCurrentTime"
+	| "includeCurrentCost"
 > & {
 	version: string
 	clineMessages: ClineMessage[]
@@ -405,6 +447,7 @@ export type ExtensionState = Pick<
 	requestDelaySeconds: number
 
 	enableCheckpoints: boolean
+	checkpointTimeout: number // Timeout for checkpoint initialization in seconds (default: 15)
 	maxOpenTabsContext: number // Maximum number of VSCode open tabs to include in context (0-500)
 	maxWorkspaceFiles: number // Maximum number of files to include in current working directory details (0-500)
 	showRooIgnoredFiles: boolean // Whether to show .kilocodeignore'd files in listings
@@ -479,11 +522,11 @@ export interface ClineSayTool {
 		| "switchMode"
 		| "newTask"
 		| "finishTask"
-		| "searchAndReplace"
 		| "insertContent"
 		| "generateImage"
 		| "imageGenerated"
 		| "runSlashCommand"
+		| "deleteFile" // kilocode_change: Handles both files and directories
 	path?: string
 	diff?: string
 	content?: string
@@ -494,14 +537,16 @@ export interface ClineSayTool {
 	isOutsideWorkspace?: boolean
 	isProtected?: boolean
 	additionalFileCount?: number // Number of additional files in the same read_file request
-	search?: string
-	replace?: string
-	useRegex?: boolean
-	ignoreCase?: boolean
-	startLine?: number
-	endLine?: number
 	lineNumber?: number
 	query?: string
+	// kilocode_change start: Directory stats - only present when deleting directories
+	stats?: {
+		files: number
+		directories: number
+		size: number
+		isComplete: boolean
+	}
+	// kilocode_change end
 	batchFiles?: Array<{
 		path: string
 		lineSnippet: string
