@@ -266,8 +266,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Trigger sync via timer (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Trigger sync via timer
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledWith({
 				api_conversation_history: mockData,
@@ -297,16 +297,16 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync - creates session (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// First sync - creates session
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
 			// Modify path to trigger new sync
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync - updates session (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Second sync - updates session
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
@@ -329,13 +329,13 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// First sync
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
-			// Second timer tick without setPath - should not sync (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Second timer tick without setPath - should not sync
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 			expect(mockUpdate).not.toHaveBeenCalled()
@@ -375,7 +375,7 @@ describe("SessionService", () => {
 			service.setPath("uiMessagesPath", "/path/to/ui.json")
 			service.setPath("taskMetadataPath", "/path/to/metadata.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledWith({
 				api_conversation_history: mockData1,
@@ -431,8 +431,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Wait for initial sync to create the session (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Wait for initial sync to create the session
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
@@ -486,7 +486,7 @@ describe("SessionService", () => {
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for session creation
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			await service.destroy()
 
@@ -508,10 +508,10 @@ describe("SessionService", () => {
 			SessionService.instance = null
 			SessionService.init(mockExtensionService)
 
-			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 5000)
+			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), SessionService.SYNC_INTERVAL)
 		})
 
-		it("should call syncSession every 5000ms", async () => {
+		it("should call syncSession at SYNC_INTERVAL", async () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
@@ -524,21 +524,21 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First tick (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// First tick
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
 			// Trigger new save event
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second tick - should call update (5000ms interval)
+			// Second tick - should call update
 			mockUpdate.mockResolvedValue({
 				session_id: "session-id",
 				title: "",
 				updated_at: "2025-01-01T00:01:00Z",
 			})
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 			expect(mockUpdate).toHaveBeenCalledTimes(1)
 		})
 	})
@@ -553,8 +553,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync attempt - should fail but not throw (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// First sync attempt - should fail but not throw
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
@@ -576,8 +576,8 @@ describe("SessionService", () => {
 			// Trigger new save event to force new sync
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync attempt - should succeed (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Second sync attempt - should succeed
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(2)
 			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
@@ -602,8 +602,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync - creates session (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// First sync - creates session
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
@@ -612,8 +612,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync - update fails but doesn't throw (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Second sync - update fails but doesn't throw
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockUpdate).toHaveBeenCalledTimes(1)
 			expect(vi.mocked(logs.error)).toHaveBeenCalledWith(
@@ -640,8 +640,8 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Wait for initial sync to complete (5000ms interval)
-			await vi.advanceTimersByTimeAsync(5000)
+			// Wait for initial sync to complete
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			// Clear mocks to isolate destroy behavior
 			vi.clearAllMocks()
@@ -696,12 +696,12 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Start first sync (but don't await - it's already running via timer) (5000ms interval)
-			const firstTick = vi.advanceTimersByTimeAsync(5000)
+			// Start first sync (but don't await - it's already running via timer)
+			const firstTick = vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
-			// Try to trigger another sync while first is in progress (5000ms interval)
+			// Try to trigger another sync while first is in progress
 			service.setPath("apiConversationHistoryPath", "/path/to/api2.json")
-			const secondTick = vi.advanceTimersByTimeAsync(5000)
+			const secondTick = vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			// Both ticks run but second should skip due to lock
 			await Promise.all([firstTick, secondTick])
@@ -723,7 +723,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
@@ -737,7 +737,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(2)
 		})
@@ -1677,7 +1677,7 @@ describe("SessionService", () => {
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for session creation
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(service.sessionId).toBe("session-to-rename")
 
@@ -1728,7 +1728,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			await expect(service.renameSession("")).rejects.toThrow("Session title cannot be empty")
 
@@ -1749,7 +1749,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			await expect(service.renameSession("   ")).rejects.toThrow("Session title cannot be empty")
 
@@ -1770,7 +1770,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			mockUpdate.mockResolvedValueOnce({
 				session_id: "session-id",
@@ -1800,7 +1800,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			mockUpdate.mockRejectedValueOnce(new Error("Network error"))
 
@@ -1821,7 +1821,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			mockUpdate.mockResolvedValueOnce({
 				session_id: "session-id",
@@ -2098,7 +2098,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Creating new session", "SessionService")
 			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
@@ -2123,7 +2123,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			vi.clearAllMocks()
 
@@ -2135,7 +2135,7 @@ describe("SessionService", () => {
 
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			await vi.advanceTimersByTimeAsync(5000)
+			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
 				"Updating existing session",

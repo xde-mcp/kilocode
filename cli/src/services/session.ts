@@ -61,11 +61,13 @@ export class SessionService {
 		this.startTimer()
 	}
 
+	static readonly SYNC_INTERVAL = 5000
+
 	startTimer() {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
 				this.syncSession()
-			}, 5000)
+			}, SessionService.SYNC_INTERVAL)
 		}
 	}
 
