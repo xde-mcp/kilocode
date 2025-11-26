@@ -37,7 +37,7 @@ export class SessionService {
 	}
 
 	private paths = { ...defaultPaths }
-	private sessionId: string | null = null
+	public sessionId: string | null = null
 	private workspaceDir: string | null = null
 	private sessionTitle: string | null = null
 
@@ -49,13 +49,11 @@ export class SessionService {
 	private constructor(
 		private extensionService: ExtensionService,
 		private jsonMode: boolean,
-	) {
-		this.startTimer()
-	}
+	) {}
 
-	static readonly SYNC_INTERVAL = 5000
+	static readonly SYNC_INTERVAL = 3000
 
-	startTimer() {
+	private startTimer() {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
 				this.syncSession()
@@ -95,10 +93,7 @@ export class SessionService {
 
 	private async fetchBlobFromSignedUrl(url: string, urlType: string): Promise<unknown> {
 		try {
-			const logUrl = new URL(url)
-			logUrl.searchParams.forEach((_, key) => logUrl.searchParams.delete(key))
-
-			logs.debug(`Fetching blob from signed URL`, "SessionService", { logUrl, urlType })
+			logs.debug(`Fetching blob from signed URL`, "SessionService", { url, urlType })
 
 			const response = await fetch(url)
 
@@ -108,7 +103,7 @@ export class SessionService {
 
 			const data = await response.json()
 
-			logs.debug(`Successfully fetched blob`, "SessionService", { logUrl, urlType })
+			logs.debug(`Successfully fetched blob`, "SessionService", { url, urlType })
 
 			return data
 		} catch (error) {
@@ -130,6 +125,7 @@ export class SessionService {
 			this.sessionId = sessionId
 			this.lastSaveEvent = crypto.randomUUID()
 			this.lastSyncEvent = this.lastSaveEvent
+			this.isSyncing = true
 
 			const sessionClient = SessionClient.getInstance()
 			const session = (await sessionClient.get({
@@ -252,10 +248,15 @@ export class SessionService {
 			})
 
 			this.sessionId = null
+			this.sessionTitle = null
+			this.lastSaveEvent = ""
+			this.lastSyncEvent = ""
 
 			if (rethrowError) {
 				throw error
 			}
+		} finally {
+			this.isSyncing = false
 		}
 	}
 
