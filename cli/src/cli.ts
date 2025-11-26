@@ -19,7 +19,7 @@ import { requestRouterModelsAtom } from "./state/atoms/actions.js"
 import { loadHistoryAtom } from "./state/atoms/history.js"
 import { taskHistoryDataAtom, updateTaskHistoryFiltersAtom } from "./state/atoms/taskHistory.js"
 import { sendWebviewMessageAtom } from "./state/atoms/actions.js"
-import { taskResumedViaContinueAtom } from "./state/atoms/extension.js"
+import { taskResumedViaContinueOrSessionAtom } from "./state/atoms/extension.js"
 import { getTelemetryService, getIdentityManager } from "./services/telemetry/index.js"
 import { notificationsAtom, notificationsErrorAtom, notificationsLoadingAtom } from "./state/atoms/notifications.js"
 import { fetchKilocodeNotifications } from "./utils/notifications.js"
@@ -140,7 +140,7 @@ export class CLI {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				const sessionService = SessionService.init(this.service, this.options.json)
+				const sessionService = SessionService.init(this.service, this.store, this.options.json)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
 				// Set workspace directory for git operations (important for parallel mode/worktrees)
@@ -479,9 +479,6 @@ export class CLI {
 					try {
 						await sessionService.restoreSession(lastSessionId, true)
 
-						// Mark that the task was resumed via --continue
-						this.store.set(taskResumedViaContinueAtom, true)
-
 						logs.info("Successfully restored persisted session", "CLI", { sessionId: lastSessionId })
 						return
 					} catch (error) {
@@ -547,7 +544,7 @@ export class CLI {
 			})
 
 			// Mark that the task was resumed via --continue to prevent showing "Task ready to resume" message
-			this.store.set(taskResumedViaContinueAtom, true)
+			this.store.set(taskResumedViaContinueOrSessionAtom, true)
 
 			logs.info("Task resume initiated", "CLI", { taskId: lastTask.id, task: lastTask.task })
 		} catch (error) {

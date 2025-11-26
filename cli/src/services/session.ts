@@ -9,6 +9,8 @@ import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import simpleGit from "simple-git"
 import { tmpdir } from "os"
 import { createHash } from "crypto"
+import type { createStore } from "jotai"
+import { taskResumedViaContinueOrSessionAtom } from "../state/atoms/extension.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -20,20 +22,20 @@ export class SessionService {
 	static readonly SYNC_INTERVAL = 1000
 	private static instance: SessionService | null = null
 
-	static init(extensionService?: ExtensionService, json?: boolean) {
-		if (!extensionService && !SessionService.instance) {
-			throw new Error("extensionService and store required to init SessionService")
-		}
+	static init(extensionService?: ExtensionService, store?: ReturnType<typeof createStore>, json?: boolean) {
+		if (extensionService && store && json !== undefined && !SessionService.instance) {
+			SessionService.instance = new SessionService(extensionService, store, json)
 
-		if (extensionService && !SessionService.instance) {
-			SessionService.instance = new SessionService(extensionService, json || false)
-
-			logs.debug("Initiated SessionService", "SessionService")
+			logs.debug("Initialized SessionService", "SessionService")
 		}
 
 		const instance = SessionService.instance
 
-		instance!.startTimer()
+		if (!instance) {
+			throw new Error("SessionService not initialized")
+		}
+
+		instance.startTimer()
 
 		return SessionService.instance!
 	}
@@ -51,6 +53,7 @@ export class SessionService {
 
 	private constructor(
 		private extensionService: ExtensionService,
+		private store: ReturnType<typeof createStore>,
 		private jsonMode: boolean,
 	) {}
 
@@ -245,6 +248,10 @@ export class SessionService {
 			logs.info("Switched to restored task", "SessionService", { sessionId })
 
 			this.saveLastSessionId(sessionId)
+
+			this.store.set(taskResumedViaContinueOrSessionAtom, true)
+
+			logs.debug("Marked task as resumed after session restoration", "SessionService", { sessionId })
 		} catch (error) {
 			logs.error("Failed to restore session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),

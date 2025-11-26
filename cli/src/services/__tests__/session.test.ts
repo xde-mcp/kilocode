@@ -43,6 +43,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs"
 import { ensureDirSync } from "fs-extra"
 import { logs } from "../logs.js"
 import simpleGit from "simple-git"
+import { createStore } from "jotai"
 
 describe("SessionService", () => {
 	let service: SessionService
@@ -54,6 +55,7 @@ describe("SessionService", () => {
 	let mockSendWebviewMessage: ReturnType<typeof vi.fn>
 	let mockRequestSingleCompletion: ReturnType<typeof vi.fn>
 	let mockGit: Partial<SimpleGit>
+	let mockStore: ReturnType<typeof createStore>
 
 	beforeEach(() => {
 		vi.useFakeTimers()
@@ -70,6 +72,13 @@ describe("SessionService", () => {
 			sendWebviewMessage: mockSendWebviewMessage,
 			requestSingleCompletion: mockRequestSingleCompletion,
 		} as unknown as ExtensionService
+
+		// Mock Jotai store
+		mockStore = {
+			get: vi.fn(),
+			set: vi.fn(),
+			sub: vi.fn(),
+		} as unknown as ReturnType<typeof createStore>
 
 		// Mock SessionClient methods
 		mockCreate = vi.fn()
@@ -94,11 +103,13 @@ describe("SessionService", () => {
 		}
 		vi.mocked(simpleGit).mockReturnValue(mockGit as SimpleGit)
 
-		service = SessionService.init(mockExtensionService)
+		service = SessionService.init(mockExtensionService, mockStore, false)
 	})
 
 	afterEach(async () => {
-		await service.destroy()
+		if (service) {
+			await service.destroy()
+		}
 		vi.restoreAllMocks()
 		vi.useRealTimers()
 	})
@@ -108,11 +119,11 @@ describe("SessionService", () => {
 			// @ts-expect-error - Accessing private static property for testing
 			SessionService.instance = null
 
-			expect(() => SessionService.init()).toThrow("extensionService and store required to init SessionService")
+			expect(() => SessionService.init()).toThrow("SessionService not initialized")
 		})
 
 		it("should return same instance on multiple calls", () => {
-			const instance1 = SessionService.init(mockExtensionService)
+			const instance1 = SessionService.init(mockExtensionService, mockStore, false)
 			const instance2 = SessionService.init()
 			expect(instance1).toBe(instance2)
 		})
@@ -126,9 +137,9 @@ describe("SessionService", () => {
 			// @ts-expect-error - Accessing private static property for testing
 			SessionService.instance = null
 
-			const instance = SessionService.init(mockExtensionService)
+			const instance = SessionService.init(mockExtensionService, mockStore, false)
 			expect(instance).toBeInstanceOf(SessionService)
-			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Initiated SessionService", "SessionService")
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("Initialized SessionService", "SessionService")
 		})
 	})
 
@@ -610,7 +621,7 @@ describe("SessionService", () => {
 			// Create new instance to test construction
 			// @ts-expect-error - Reset for testing
 			SessionService.instance = null
-			SessionService.init(mockExtensionService)
+			SessionService.init(mockExtensionService, mockStore, false)
 
 			expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), SessionService.SYNC_INTERVAL)
 		})
