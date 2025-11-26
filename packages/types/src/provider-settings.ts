@@ -245,9 +245,7 @@ const nanoGptSchema = baseProviderSettingsSchema.extend({
 	nanoGptModelId: z.string().optional(),
 	nanoGptModelList: nanoGptModelListSchema.optional(),
 })
-// kilocode_change end
 
-// kilocode_change start
 export const openRouterProviderDataCollectionSchema = z.enum(["allow", "deny"])
 export const openRouterProviderSortSchema = z.enum(["price", "throughput", "latency"])
 // kilocode_change end
