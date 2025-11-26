@@ -425,6 +425,32 @@
 			"authenticatedMessage": "Veilig geauthenticeerd via je Roo Code Cloud-account.",
 			"connectButton": "Verbinden met Roo Code Cloud"
 		},
+		"sapAiCore": {
+			"serviceKey": "AI Core Servicesleutel",
+			"serviceKeyJson": "Voer Servicesleutel JSON in...",
+			"resourceGroup": "AI Core Resourcegroep",
+			"credentialsNote": "Deze inloggegevens worden lokaal opgeslagen en alleen gebruikt om API-verzoeken vanuit deze extensie te doen.",
+			"learnMore": "Je kunt hier meer informatie vinden over SAP AI Core API-toegang.",
+			"orchestrationMode": "Orchestratiemodus",
+			"orchestrationEnabledDesc": "Indien ingeschakeld, biedt toegang tot alle beschikbare modellen zonder individuele deployments te vereisen.",
+			"orchestrationDisabledDesc": "Indien uitgeschakeld, biedt alleen toegang tot gedeployede foundation-modellen in je AI Core-service-instantie.",
+			"modelDeploymentDesc": "Je kunt alleen modellen selecteren met beschikbare deployments.",
+			"deployment": "Deployment",
+			"loading": "Laden...",
+			"modelsCount": "({{count}} modellen)",
+			"deploymentsCount": "({{count}} deployments)",
+			"selectModel": "Selecteer een model...",
+			"selectDeployment": "Selecteer een deployment...",
+			"searchModels": "Zoek modellen...",
+			"searchDeployments": "Zoek deployments...",
+			"noModelsFound": "Geen modellen gevonden",
+			"noDeploymentFound": "Geen deployment gevonden",
+			"getStarted": "Aan de slag met SAP AI Core",
+			"supportedProviders": "Ondersteunde providers",
+			"supportedProvidersDesc1": "De SAP AI Core-provider ondersteunt momenteel alleen foundation-modellen voor de volgende LLM-providers:",
+			"supportedProvidersDesc2": "Overweeg om te schakelen naar Orchestratiemodus voor toegang tot meer modellen.",
+			"supportedProvidersDesc3": "Meer informatie over Orchestratiemodus"
+		},
 		"openRouter": {
 			"providerRouting": {
 				"title": "OpenRouter-providerroutering",
@@ -956,7 +982,9 @@
 		"providerNotAllowed": "Provider '{{provider}}' is niet toegestaan door je organisatie",
 		"modelNotAllowed": "Model '{{model}}' is niet toegestaan voor provider '{{provider}}' door je organisatie",
 		"profileInvalid": "Dit profiel bevat een provider of model dat niet is toegestaan door je organisatie",
-		"qwenCodeOauthPath": "Je moet een geldig OAuth-referentiepad opgeven"
+		"qwenCodeOauthPath": "Je moet een geldig OAuth-referentiepad opgeven",
+		"sapAiCore": "Je moet een geldige SAP AI Core Servicesleutel opgeven.",
+		"sapAiCoreDeploymentId": "Je moet een actieve deployment selecteren voor model '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "Voer API-sleutel in...",

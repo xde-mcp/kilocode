@@ -413,6 +413,32 @@
 			"description": "Ollama memungkinkan kamu menjalankan model secara lokal di komputer. Untuk instruksi cara memulai, lihat panduan quickstart mereka.",
 			"warning": "Catatan: Kilo Code menggunakan prompt kompleks dan bekerja terbaik dengan model Claude. Model yang kurang mampu mungkin tidak bekerja seperti yang diharapkan."
 		},
+		"sapAiCore": {
+			"serviceKey": "AI Core Service Key",
+			"serviceKeyJson": "Masukkan Service Key JSON...",
+			"resourceGroup": "AI Core Resource Group",
+			"credentialsNote": "Kredensial ini disimpan secara lokal dan hanya digunakan untuk membuat permintaan API dari ekstensi ini.",
+			"learnMore": "Kamu dapat menemukan informasi lebih lanjut tentang akses API SAP AI Core di sini.",
+			"orchestrationMode": "Mode Orkestrasi",
+			"orchestrationEnabledDesc": "Ketika diaktifkan, menyediakan akses ke semua model yang tersedia tanpa memerlukan deployment individual.",
+			"orchestrationDisabledDesc": "Ketika dinonaktifkan, hanya menyediakan akses ke model foundation yang di-deploy di instance AI Core kamu.",
+			"modelDeploymentDesc": "Kamu hanya dapat memilih model dengan deployment yang tersedia.",
+			"deployment": "Deployment",
+			"loading": "Memuat...",
+			"modelsCount": "({{count}} model)",
+			"deploymentsCount": "({{count}} deployment)",
+			"selectModel": "Pilih model...",
+			"selectDeployment": "Pilih deployment...",
+			"searchModels": "Cari model...",
+			"searchDeployments": "Cari deployment...",
+			"noModelsFound": "Tidak ada model ditemukan",
+			"noDeploymentFound": "Tidak ada deployment ditemukan",
+			"getStarted": "Mulai dengan SAP AI Core",
+			"supportedProviders": "Provider yang Didukung",
+			"supportedProvidersDesc1": "Provider SAP AI Core saat ini hanya mendukung model foundation untuk provider LLM berikut:",
+			"supportedProvidersDesc2": "Pertimbangkan untuk beralih ke Mode Orkestrasi untuk akses ke lebih banyak model.",
+			"supportedProvidersDesc3": "Pelajari lebih lanjut tentang Mode Orkestrasi"
+		},
 		"unboundApiKey": "Unbound API Key",
 		"getUnboundApiKey": "Dapatkan Unbound API Key",
 		"unboundRefreshModelsSuccess": "Daftar model diperbarui! Kamu sekarang dapat memilih dari model terbaru.",
@@ -977,7 +1003,9 @@
 		"providerNotAllowed": "Provider '{{provider}}' tidak diizinkan oleh organisasi kamu",
 		"modelNotAllowed": "Model '{{model}}' tidak diizinkan untuk provider '{{provider}}' oleh organisasi kamu",
 		"profileInvalid": "Profil ini berisi provider atau model yang tidak diizinkan oleh organisasi kamu",
-		"qwenCodeOauthPath": "Kamu harus memberikan jalur kredensial OAuth yang valid"
+		"qwenCodeOauthPath": "Kamu harus memberikan jalur kredensial OAuth yang valid",
+		"sapAiCore": "Kamu harus menyediakan SAP AI Core Service Key yang valid.",
+		"sapAiCoreDeploymentId": "Kamu harus memilih deployment yang berjalan untuk model '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "Masukkan API Key...",
