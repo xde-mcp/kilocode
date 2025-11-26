@@ -37,17 +37,9 @@ export class SessionService {
 	}
 
 	private paths = { ...defaultPaths }
-	private _sessionId: string | null = null
+	private sessionId: string | null = null
 	private workspaceDir: string | null = null
 	private sessionTitle: string | null = null
-
-	get sessionId() {
-		return this._sessionId
-	}
-
-	private set sessionId(sessionId: string | null) {
-		this._sessionId = sessionId
-	}
 
 	private timer: NodeJS.Timeout | null = null
 	private lastSaveEvent: string = ""
