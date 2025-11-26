@@ -91,7 +91,7 @@ import {
 	LiteLLM,
 	Mistral,
 	Moonshot,
-	NanoGpt,
+	NanoGpt, // kilocode_change
 	Ollama,
 	OpenAI,
 	OpenAICompatible,
@@ -388,7 +388,7 @@ const ApiOptions = ({
 				unbound: { field: "unboundModelId", default: unboundDefaultModelId },
 				requesty: { field: "requestyModelId", default: requestyDefaultModelId },
 				litellm: { field: "litellmModelId", default: litellmDefaultModelId },
-				"nano-gpt": { field: "nanoGptModelId", default: nanoGptDefaultModelId },
+				"nano-gpt": { field: "nanoGptModelId", default: nanoGptDefaultModelId }, // kilocode_change
 				anthropic: { field: "apiModelId", default: anthropicDefaultModelId },
 				cerebras: { field: "apiModelId", default: cerebrasDefaultModelId },
 				"claude-code": { field: "apiModelId", default: claudeCodeDefaultModelId },

@@ -829,7 +829,7 @@ export const webviewMessageHandler = async (
 						roo: {},
 						synthetic: {}, // kilocode_change
 						chutes: {},
-						"nano-gpt": {}, // Added for nano-gpt provider support
+						"nano-gpt": {}, // kilocode_change
 					}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -891,6 +891,7 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.deepInfraBaseUrl,
 					},
 				},
+				// kilocode_change start
 				{
 					key: "nano-gpt",
 					options: {
@@ -899,6 +900,7 @@ export const webviewMessageHandler = async (
 						nanoGptModelList: apiConfiguration.nanoGptModelList,
 					},
 				},
+				// kilocode_change end
 				{
 					key: "ovhcloud",
 					options: {

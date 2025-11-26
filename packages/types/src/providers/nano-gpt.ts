@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import type { ModelInfo } from "../model.js"
 
 export const nanoGptDefaultModelId = "chatgpt-4o-latest"

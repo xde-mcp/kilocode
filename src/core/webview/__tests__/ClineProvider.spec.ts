@@ -2838,7 +2838,7 @@ describe("ClineProvider - Router Models", () => {
 				chutesApiKey: "chutes-key",
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
-				nanoGptApiKey: "nano-gpt-key",
+				nanoGptApiKey: "nano-gpt-key", // kilocode_change
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
 				inceptionLabsApiKey: "inception-key",
 				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",

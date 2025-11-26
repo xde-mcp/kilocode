@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { z } from "zod"
 
 import type { ModelInfo } from "@roo-code/types"
