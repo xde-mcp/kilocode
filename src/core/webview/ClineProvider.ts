@@ -2021,6 +2021,7 @@ ${prompt}
 			dismissedNotificationIds, // kilocode_change
 			morphApiKey, // kilocode_change
 			fastApplyModel, // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider, // kilocode_change: Fast Apply model api base url
 			alwaysAllowFollowupQuestions,
 			followupAutoApproveTimeoutMs,
 			includeDiagnosticMessages,
@@ -2193,6 +2194,10 @@ ${prompt}
 			codebaseIndexConfig: {
 				codebaseIndexEnabled: codebaseIndexConfig?.codebaseIndexEnabled ?? true,
 				codebaseIndexQdrantUrl: codebaseIndexConfig?.codebaseIndexQdrantUrl ?? "http://localhost:6333",
+				// kilocode_change start
+				codebaseIndexVectorStoreProvider: codebaseIndexConfig?.codebaseIndexVectorStoreProvider ?? "qdrant",
+				codebaseIndexLancedbVectorStoreDirectory: codebaseIndexConfig?.codebaseIndexLancedbVectorStoreDirectory,
+				// kilocode_change end
 				codebaseIndexEmbedderProvider: codebaseIndexConfig?.codebaseIndexEmbedderProvider ?? "openai",
 				codebaseIndexEmbedderBaseUrl: codebaseIndexConfig?.codebaseIndexEmbedderBaseUrl ?? "",
 				codebaseIndexEmbedderModelId: codebaseIndexConfig?.codebaseIndexEmbedderModelId ?? "",
@@ -2211,6 +2216,7 @@ ${prompt}
 			dismissedNotificationIds: dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey, // kilocode_change
 			fastApplyModel: fastApplyModel ?? "auto", // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider: fastApplyApiProvider ?? "current", // kilocode_change: Fast Apply model api base url
 			alwaysAllowFollowupQuestions: alwaysAllowFollowupQuestions ?? false,
 			followupAutoApproveTimeoutMs: followupAutoApproveTimeoutMs ?? 60000,
 			includeDiagnosticMessages: includeDiagnosticMessages ?? true,
@@ -2449,6 +2455,7 @@ ${prompt}
 			dismissedNotificationIds: stateValues.dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey: stateValues.morphApiKey, // kilocode_change
 			fastApplyModel: stateValues.fastApplyModel ?? "auto", // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider: stateValues.fastApplyApiProvider ?? "current", // kilocode_change: Fast Apply model api config id
 			historyPreviewCollapsed: stateValues.historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: stateValues.reasoningBlockCollapsed ?? true,
 			cloudUserInfo,
@@ -2466,6 +2473,12 @@ ${prompt}
 					stateValues.codebaseIndexConfig?.codebaseIndexQdrantUrl ?? "http://localhost:6333",
 				codebaseIndexEmbedderProvider:
 					stateValues.codebaseIndexConfig?.codebaseIndexEmbedderProvider ?? "openai",
+				// kilocode_change start
+				codebaseIndexVectorStoreProvider:
+					stateValues.codebaseIndexConfig?.codebaseIndexVectorStoreProvider ?? "qdrant",
+				codebaseIndexLancedbVectorStoreDirectory:
+					stateValues.codebaseIndexConfig?.codebaseIndexLancedbVectorStoreDirectory,
+				// kilocode_change end
 				codebaseIndexEmbedderBaseUrl: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderBaseUrl ?? "",
 				codebaseIndexEmbedderModelId: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderModelId ?? "",
 				codebaseIndexEmbedderModelDimension:
@@ -3125,7 +3138,8 @@ ${prompt}
 
 	public async getTelemetryProperties(): Promise<TelemetryProperties> {
 		// kilocode_change start
-		const { apiConfiguration, experiments } = await this.getState()
+		const state = await this.getState()
+		const { apiConfiguration, experiments } = state
 		const task = this.getCurrentTask()
 
 		async function getModelId() {
@@ -3175,11 +3189,40 @@ ${prompt}
 						morphFastApply: Boolean(experiments.morphFastApply),
 						morphApiKey: Boolean(this.contextProxy.getValue("morphApiKey")),
 						selectedModel: this.contextProxy.getValue("fastApplyModel") || "auto",
+						fastApplyApiProvider: this.contextProxy.getValue("fastApplyApiProvider") || "current",
 					},
 				}
 			} catch (error) {
 				return {
 					fastApplyException: stringifyError(error),
+				}
+			}
+		}
+
+		const getAutoApproveSettings = () => {
+			try {
+				return {
+					autoApprove: {
+						autoApprovalEnabled: !!state.autoApprovalEnabled,
+						alwaysAllowBrowser: !!state.alwaysAllowBrowser,
+						alwaysAllowExecute: !!state.alwaysAllowExecute,
+						alwaysAllowFollowupQuestions: !!state.alwaysAllowFollowupQuestions,
+						alwaysAllowMcp: !!state.alwaysAllowMcp,
+						alwaysAllowModeSwitch: !!state.alwaysAllowModeSwitch,
+						alwaysAllowReadOnly: !!state.alwaysAllowReadOnly,
+						alwaysAllowReadOnlyOutsideWorkspace: !!state.alwaysAllowReadOnlyOutsideWorkspace,
+						alwaysAllowSubtasks: !!state.alwaysAllowSubtasks,
+						alwaysAllowUpdateTodoList: !!state.alwaysAllowUpdateTodoList,
+						alwaysAllowWrite: !!state.alwaysAllowWrite,
+						alwaysAllowWriteOutsideWorkspace: !!state.alwaysAllowWriteOutsideWorkspace,
+						alwaysAllowWriteProtected: !!state.alwaysAllowWriteProtected,
+						alwaysApproveResubmit: !!state.alwaysApproveResubmit,
+						yoloModel: !!state.yoloMode,
+					},
+				}
+			} catch (error) {
+				return {
+					autoApproveException: stringifyError(error),
 				}
 			}
 		}
@@ -3193,6 +3236,7 @@ ${prompt}
 			...getMemory(),
 			...getFastApply(),
 			...getOpenRouter(),
+			...getAutoApproveSettings(),
 			// kilocode_change end
 			...(await this.getTaskProperties()),
 			...(await this.getGitProperties()),

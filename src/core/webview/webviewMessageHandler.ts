@@ -6,7 +6,7 @@ import pWaitFor from "p-wait-for"
 import * as vscode from "vscode"
 // kilocode_change start
 import axios from "axios"
-import { getKiloUrlFromToken, isGlobalStateKey } from "@roo-code/types"
+import { fastApplyApiProviderSchema, getKiloUrlFromToken, isGlobalStateKey } from "@roo-code/types"
 import { getAppUrl } from "@roo-code/types"
 import {
 	MaybeTypedWebviewMessage,
@@ -829,6 +829,7 @@ export const webviewMessageHandler = async (
 						roo: {},
 						synthetic: {}, // kilocode_change
 						chutes: {},
+						"nano-gpt": {}, // kilocode_change
 					}
 
 			const safeGetModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
@@ -890,6 +891,16 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.deepInfraBaseUrl,
 					},
 				},
+				// kilocode_change start
+				{
+					key: "nano-gpt",
+					options: {
+						provider: "nano-gpt",
+						apiKey: apiConfiguration.nanoGptApiKey,
+						nanoGptModelList: apiConfiguration.nanoGptModelList,
+					},
+				},
+				// kilocode_change end
 				{
 					key: "ovhcloud",
 					options: {
@@ -1563,6 +1574,12 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		}
+		case "fastApplyApiProvider": {
+			const nextProvider = fastApplyApiProviderSchema.safeParse(message.text).data ?? "current"
+			await updateGlobalState("fastApplyApiProvider", nextProvider)
+			await provider.postStateToWebview()
+			break
+		}
 		// kilocode_change end
 		case "updateVSCodeSetting": {
 			const { setting, value } = message
@@ -2216,6 +2233,9 @@ export const webviewMessageHandler = async (
 				if (organizationChanged) {
 					await provider.postStateToWebview()
 				}
+
+				// kilocode_change: Reload ghost model when API provider settings change
+				vscode.commands.executeCommand("kilo-code.ghost.reload")
 			}
 			// kilocode_change end: check for kilocodeToken change to remove organizationId and fetch organization modes
 			break
@@ -2240,6 +2260,9 @@ export const webviewMessageHandler = async (
 					// Re-activate to update the global settings related to the
 					// currently activated provider profile.
 					await provider.activateProviderProfile({ name: newName })
+
+					// kilocode_change: Reload ghost model when API provider settings change
+					vscode.commands.executeCommand("kilo-code.ghost.reload")
 				} catch (error) {
 					provider.log(
 						`Error rename api configuration: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
@@ -2314,6 +2337,9 @@ export const webviewMessageHandler = async (
 				try {
 					await provider.providerSettingsManager.deleteConfig(oldName)
 					await provider.activateProviderProfile({ name: newName })
+
+					// kilocode_change: Reload ghost model when API provider settings change
+					vscode.commands.executeCommand("kilo-code.ghost.reload")
 				} catch (error) {
 					provider.log(
 						`Error delete api configuration: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
@@ -3116,6 +3142,10 @@ export const webviewMessageHandler = async (
 					codebaseIndexEnabled: settings.codebaseIndexEnabled,
 					codebaseIndexQdrantUrl: settings.codebaseIndexQdrantUrl,
 					codebaseIndexEmbedderProvider: settings.codebaseIndexEmbedderProvider,
+					// kilocode_change start
+					codebaseIndexVectorStoreProvider: settings.codebaseIndexVectorStoreProvider,
+					codebaseIndexLancedbVectorStoreDirectory: settings.codebaseIndexLancedbVectorStoreDirectory,
+					// kilocode_change end
 					codebaseIndexEmbedderBaseUrl: settings.codebaseIndexEmbedderBaseUrl,
 					codebaseIndexEmbedderModelId: settings.codebaseIndexEmbedderModelId,
 					codebaseIndexEmbedderModelDimension: settings.codebaseIndexEmbedderModelDimension, // Generic dimension
@@ -4022,17 +4052,7 @@ export const webviewMessageHandler = async (
 		// we're going to delete this message at some point and use apiConfiguration
 		// probably. So casting as any as to not define a more permanent type
 		case "requestManagedIndexerEnabled" as any: {
-			try {
-				const managedIndexerEnabled = ManagedIndexer.getInstance()?.isEnabled() || false
-				await provider.postMessageToWebview({
-					type: "managedIndexerEnabled",
-					managedIndexerEnabled,
-				} as any)
-			} catch (error) {
-				provider.log(
-					`Error getting managed indexer state: ${error instanceof Error ? error.message : String(error)}`,
-				)
-			}
+			ManagedIndexer.getInstance()?.sendEnabledStateToWebview()
 		}
 		// kilocode_change end
 	}
