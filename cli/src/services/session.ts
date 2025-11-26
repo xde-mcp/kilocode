@@ -15,32 +15,6 @@ const defaultPaths = {
 	taskMetadataPath: null as null | string,
 }
 
-/**
- * Extract the title from the first user message in ui_messages.
- * Returns null if no suitable message is found.
- * Exported for testing purposes.
- */
-export function extractTitleFromFirstUserMessage(uiMessages: ClineMessage[]): string | null {
-	if (!Array.isArray(uiMessages) || uiMessages.length === 0) {
-		return null
-	}
-
-	// Find the first message with text
-	const firstMessageWithText = uiMessages.find((msg) => msg.text)
-
-	if (!firstMessageWithText?.text) {
-		return null
-	}
-
-	// Clean up the title - trim and collapse whitespace
-	let title = firstMessageWithText.text.trim()
-
-	// Remove newlines and extra whitespace
-	title = title.replace(/\s+/g, " ")
-
-	return title || null
-}
-
 export class SessionService {
 	private static instance: SessionService | null = null
 
@@ -125,9 +99,6 @@ export class SessionService {
 		return contents
 	}
 
-	/**
-	 * Fetch and parse content from a signed URL
-	 */
 	private async fetchBlobFromSignedUrl(url: string, urlType: string): Promise<unknown> {
 		try {
 			const logUrl = new URL(url)
@@ -315,15 +286,21 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
-			// Extract title from first user message if not already set
 			let titleToSet: string | undefined
 			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
-				const extractedTitle = extractTitleFromFirstUserMessage(rawPayload.uiMessagesPath as ClineMessage[])
-				if (extractedTitle) {
-					titleToSet = extractedTitle
-					this.sessionTitle = extractedTitle
-					logs.debug("Extracted session title from first user message", "SessionService", {
-						title: extractedTitle,
+				try {
+					const generatedTitle = await this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
+
+					if (generatedTitle) {
+						titleToSet = generatedTitle
+
+						logs.debug("Generated session title from first user message", "SessionService", {
+							title: generatedTitle,
+						})
+					}
+				} catch (error) {
+					logs.warn("Failed to generate session title", "SessionService", {
+						error: error instanceof Error ? error.message : String(error),
 					})
 				}
 			}
@@ -388,6 +365,10 @@ export class SessionService {
 			}
 
 			this.lastSyncEvent = currentLastSaveEvent
+
+			if (titleToSet) {
+				this.sessionTitle = titleToSet
+			}
 		} catch (error) {
 			logs.error("Failed to sync session", "SessionService", {
 				error: error instanceof Error ? error.message : String(error),
@@ -407,19 +388,66 @@ export class SessionService {
 		this.lastSaveEvent = crypto.randomUUID()
 	}
 
-	/**
-	 * Set the workspace directory for git operations.
-	 * This should be called when the extension knows the workspace path,
-	 * particularly important for parallel mode (git worktrees) compatibility.
-	 */
 	setWorkspaceDirectory(dir: string): void {
 		this.workspaceDir = dir
 	}
 
-	/**
-	 * Execute git commands to restore repository state.
-	 * Never throws errors - all operations are wrapped in try-catch blocks.
-	 */
+	async generateTitle(uiMessages: ClineMessage[]): Promise<string | null> {
+		if (uiMessages.length === 0) {
+			return null
+		}
+
+		const firstMessageWithText = uiMessages.find((msg) => msg.text)
+
+		if (!firstMessageWithText?.text) {
+			return null
+		}
+
+		// Clean up the text - trim and collapse whitespace
+		let rawText = firstMessageWithText.text.trim()
+		rawText = rawText.replace(/\s+/g, " ")
+
+		if (!rawText) {
+			return null
+		}
+
+		// If the text is already short enough, return it directly
+		if (rawText.length <= 140) {
+			return rawText
+		}
+
+		try {
+			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Your result will be used as the conversation title.
+
+User request:
+${rawText}
+
+Summary:`
+
+			const summary = await this.extensionService.requestSingleCompletion(prompt, 30000)
+
+			// Clean up the response and ensure it's within 140 characters
+			let cleanedSummary = summary.trim()
+
+			// Remove any quotes that might have been added
+			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
+
+			// Truncate if still too long
+			if (cleanedSummary.length > 140) {
+				cleanedSummary = cleanedSummary.substring(0, 137) + "..."
+			}
+
+			return cleanedSummary || rawText.substring(0, 137) + "..."
+		} catch (error) {
+			logs.warn("Failed to generate title using LLM, falling back to truncation", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+			})
+
+			// Fallback to simple truncation
+			return rawText.substring(0, 137) + "..."
+		}
+	}
+
 	private async executeGitRestore(gitState: { head: string; patch: string; branch: string }): Promise<void> {
 		try {
 			const cwd = this.workspaceDir || process.cwd()
