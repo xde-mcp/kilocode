@@ -24,14 +24,6 @@ export type GetSessionOutput = Session | SessionWithSignedUrls
 
 export interface CreateSessionInput {
 	title?: string
-	api_conversation_history?: unknown
-	task_metadata?: unknown
-	ui_messages?: unknown
-	git_state?: {
-		head: string
-		branch?: string
-		patch: string
-	}
 	git_url?: string
 }
 
@@ -40,14 +32,6 @@ export type CreateSessionOutput = Session
 export interface UpdateSessionInput {
 	session_id: string
 	title?: string
-	api_conversation_history?: unknown
-	task_metadata?: unknown
-	ui_messages?: unknown
-	git_state?: {
-		head: string
-		branch?: string
-		patch: string
-	}
 	git_url?: string
 }
 
@@ -109,6 +93,7 @@ export interface DeleteSessionInput {
 
 export interface DeleteSessionOutput {
 	success: boolean
+	session_id: string
 }
 
 export class SessionClient {
@@ -226,5 +211,41 @@ export class SessionClient {
 			input,
 		)
 		return response.result.data
+	}
+
+	/**
+	 * Upload a blob for a session
+	 */
+	async uploadBlob(
+		sessionId: string,
+		blobType: "api_conversation_history" | "task_metadata" | "ui_messages" | "git_state",
+		blobData: unknown,
+	): Promise<{ session_id: string; updated_at: string }> {
+		const client = TrpcClient.init()
+		const { endpoint, token } = client
+
+		const url = new URL(`${endpoint}/api/upload-cli-session-blob`)
+		url.searchParams.set("session_id", sessionId)
+		url.searchParams.set("blob_type", blobType)
+
+		const response = await fetch(url.toString(), {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify(blobData),
+		})
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}))
+			throw new Error(
+				`Blob upload failed: ${response.status} ${response.statusText}${
+					errorData.error ? ` - ${errorData.error}` : ""
+				}`,
+			)
+		}
+
+		return response.json()
 	}
 }

@@ -175,7 +175,7 @@ describe("SessionClient", () => {
 			expect(result).toEqual(mockSession)
 		})
 
-		it("should create session with all fields", async () => {
+		it("should create session with git_url", async () => {
 			const mockSession = {
 				id: "new-session-3",
 				title: "Full Session",
@@ -185,39 +185,7 @@ describe("SessionClient", () => {
 
 			const input = {
 				title: "Full Session",
-				api_conversation_history: { messages: [{ role: "user", content: "hello" }] },
-				task_metadata: { complexity: "high" },
-				ui_messages: [{ type: "user", text: "hello" }],
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockSession },
-			})
-
-			const result = await service.create(input)
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.create", "POST", input)
-			expect(result).toEqual(mockSession)
-		})
-
-		it("should create session with git_state", async () => {
-			const mockSession = {
-				id: "new-session-4",
-				title: "Session with Git State",
-				created_at: "2025-01-01T00:00:00Z",
-				updated_at: "2025-01-01T00:00:00Z",
-			}
-
-			const input = {
-				title: "Session with Git State",
-				api_conversation_history: { messages: [] },
-				task_metadata: { task: "test" },
-				ui_messages: [],
-				git_state: {
-					repoUrl: "https://github.com/user/repo",
-					head: "main",
-					patch: "diff --git a/file.ts b/file.ts\n...",
-				},
+				git_url: "https://github.com/user/repo",
 			}
 
 			requestMock.mockResolvedValueOnce({
@@ -255,7 +223,7 @@ describe("SessionClient", () => {
 			expect(result).toEqual(mockSession)
 		})
 
-		it("should update session with multiple fields", async () => {
+		it("should update session with git_url", async () => {
 			const mockSession = {
 				id: "session-1",
 				title: "Updated Session",
@@ -265,35 +233,7 @@ describe("SessionClient", () => {
 			const input = {
 				session_id: "session-1",
 				title: "Updated Session",
-				api_conversation_history: { messages: [] },
-				task_metadata: { updated: true },
-			}
-
-			requestMock.mockResolvedValueOnce({
-				result: { data: mockSession },
-			})
-
-			const result = await service.update(input)
-
-			expect(requestMock).toHaveBeenCalledWith("cliSessions.update", "POST", input)
-			expect(result).toEqual(mockSession)
-		})
-
-		it("should update session with git_state", async () => {
-			const mockSession = {
-				id: "session-1",
-				title: "Updated Session",
-				updated_at: "2025-01-02T00:00:00Z",
-			}
-
-			const input = {
-				session_id: "session-1",
-				title: "Updated Session",
-				git_state: {
-					repoUrl: "https://github.com/user/repo",
-					head: "feature-branch",
-					patch: "diff --git a/file.ts b/file.ts\n...",
-				},
+				git_url: "https://github.com/user/repo",
 			}
 
 			requestMock.mockResolvedValueOnce({

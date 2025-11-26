@@ -264,16 +264,19 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "new-session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Trigger sync via timer
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
-			expect(mockCreate).toHaveBeenCalledWith({
-				api_conversation_history: mockData,
-				ui_messages: undefined,
-				task_metadata: undefined,
-			})
+			expect(mockCreate).toHaveBeenCalledWith({})
+			expect(mockUploadBlob).toHaveBeenCalledWith("new-session-id", "api_conversation_history", mockData)
 			expect(mockUpdate).not.toHaveBeenCalled()
 		})
 
@@ -295,6 +298,12 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:01:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// First sync - creates session
@@ -310,9 +319,9 @@ describe("SessionService", () => {
 
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
-				api_conversation_history: { messages: ["first", "second"] },
-				ui_messages: undefined,
-				task_metadata: undefined,
+			})
+			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", {
+				messages: ["first", "second"],
 			})
 		})
 
@@ -327,18 +336,29 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// First sync
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
+			expect(mockUploadBlob).toHaveBeenCalledTimes(1)
+
+			// Clear mocks to check second sync
+			vi.clearAllMocks()
 
 			// Second timer tick without setPath - should not sync
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
-			expect(mockCreate).toHaveBeenCalledTimes(1)
+			expect(mockCreate).not.toHaveBeenCalled()
 			expect(mockUpdate).not.toHaveBeenCalled()
+			expect(mockUploadBlob).not.toHaveBeenCalled()
 		})
 
 		it("should not sync when all file reads return undefined", async () => {
@@ -371,6 +391,12 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 			service.setPath("uiMessagesPath", "/path/to/ui.json")
 			service.setPath("taskMetadataPath", "/path/to/metadata.json")
@@ -378,11 +404,11 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledWith({
-				api_conversation_history: mockData1,
-				ui_messages: mockData2,
-				task_metadata: mockData3,
 				title: "test message",
 			})
+			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", mockData1)
+			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "ui_messages", mockData2)
+			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "task_metadata", mockData3)
 		})
 	})
 
@@ -429,6 +455,12 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for initial sync to create the session
@@ -453,10 +485,8 @@ describe("SessionService", () => {
 			// Should have called update to flush the session (since session already exists)
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
-				api_conversation_history: mockData,
-				ui_messages: undefined,
-				task_metadata: undefined,
 			})
+			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", mockData)
 		})
 
 		it("should reset paths to default", async () => {

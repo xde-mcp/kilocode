@@ -22,9 +22,9 @@ export class TrpcClient {
 		return TrpcClient.instance!
 	}
 
-	private endpoint = process.env.KILOCODE_BACKEND_BASE_URL || "https://api.kilocode.ai"
+	public readonly endpoint = process.env.KILOCODE_BACKEND_BASE_URL || "https://api.kilocode.ai"
 
-	private constructor(private token: string) {}
+	private constructor(public readonly token: string) {}
 
 	async request<TInput = void, TOutput = unknown>(
 		procedure: string,

@@ -283,28 +283,15 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
-			const basePayload: Parameters<typeof sessionClient.create>[0] = {
-				api_conversation_history: rawPayload.apiConversationHistoryPath,
-				task_metadata: rawPayload.taskMetadataPath,
-				ui_messages: rawPayload.uiMessagesPath,
-			}
+			const basePayload: Parameters<typeof sessionClient.create>[0] = {}
+
+			let gitInfo: Awaited<ReturnType<typeof this.getGitState>> | null = null
 
 			try {
-				const gitInfo = await this.getGitState()
+				gitInfo = await this.getGitState()
 
-				if (gitInfo) {
-					basePayload.git_state = {
-						head: gitInfo.head,
-						patch: gitInfo.patch,
-					}
-
-					if (gitInfo.branch) {
-						basePayload.git_state.branch = gitInfo.branch
-					}
-
-					if (gitInfo.repoUrl) {
-						basePayload.git_url = gitInfo.repoUrl
-					}
+				if (gitInfo?.repoUrl) {
+					basePayload.git_url = gitInfo.repoUrl
 				}
 			} catch (error) {
 				logs.debug("Could not get git state", "SessionService", {
@@ -348,6 +335,76 @@ export class SessionService {
 					)
 				}
 			}
+
+			const blobUploads: Array<Promise<void>> = []
+
+			if (rawPayload.apiConversationHistoryPath) {
+				blobUploads.push(
+					sessionClient
+						.uploadBlob(this.sessionId, "api_conversation_history", rawPayload.apiConversationHistoryPath)
+						.then(() => {
+							logs.debug("Uploaded api_conversation_history blob", "SessionService")
+						})
+						.catch((error) => {
+							logs.error("Failed to upload api_conversation_history blob", "SessionService", {
+								error: error instanceof Error ? error.message : String(error),
+							})
+						}),
+				)
+			}
+
+			if (rawPayload.taskMetadataPath) {
+				blobUploads.push(
+					sessionClient
+						.uploadBlob(this.sessionId, "task_metadata", rawPayload.taskMetadataPath)
+						.then(() => {
+							logs.debug("Uploaded task_metadata blob", "SessionService")
+						})
+						.catch((error) => {
+							logs.error("Failed to upload task_metadata blob", "SessionService", {
+								error: error instanceof Error ? error.message : String(error),
+							})
+						}),
+				)
+			}
+
+			if (rawPayload.uiMessagesPath) {
+				blobUploads.push(
+					sessionClient
+						.uploadBlob(this.sessionId, "ui_messages", rawPayload.uiMessagesPath)
+						.then(() => {
+							logs.debug("Uploaded ui_messages blob", "SessionService")
+						})
+						.catch((error) => {
+							logs.error("Failed to upload ui_messages blob", "SessionService", {
+								error: error instanceof Error ? error.message : String(error),
+							})
+						}),
+				)
+			}
+
+			if (gitInfo) {
+				const gitStateData = {
+					head: gitInfo.head,
+					patch: gitInfo.patch,
+					...(gitInfo.branch && { branch: gitInfo.branch }),
+				}
+
+				blobUploads.push(
+					sessionClient
+						.uploadBlob(this.sessionId, "git_state", gitStateData)
+						.then(() => {
+							logs.debug("Uploaded git_state blob", "SessionService")
+						})
+						.catch((error) => {
+							logs.error("Failed to upload git_state blob", "SessionService", {
+								error: error instanceof Error ? error.message : String(error),
+							})
+						}),
+				)
+			}
+
+			await Promise.all(blobUploads)
 
 			this.lastSyncEvent = currentLastSaveEvent
 
