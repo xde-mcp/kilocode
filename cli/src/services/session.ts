@@ -300,14 +300,16 @@ export class SessionService {
 			}
 
 			if (this.sessionId) {
-				logs.debug("Updating existing session", "SessionService", { sessionId: this.sessionId })
+				if (Object.values(basePayload).length > 0) {
+					logs.debug("Updating existing session", "SessionService", { sessionId: this.sessionId })
 
-				await sessionClient.update({
-					session_id: this.sessionId,
-					...basePayload,
-				})
+					await sessionClient.update({
+						session_id: this.sessionId,
+						...basePayload,
+					})
 
-				logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
+					logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
+				}
 			} else {
 				logs.debug("Creating new session", "SessionService")
 
