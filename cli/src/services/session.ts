@@ -8,6 +8,7 @@ import type { ExtensionService } from "./extension.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import simpleGit from "simple-git"
 import { tmpdir } from "os"
+import { createHash } from "crypto"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -40,6 +41,7 @@ export class SessionService {
 	public sessionId: string | null = null
 	private workspaceDir: string | null = null
 	private sessionTitle: string | null = null
+	private sessionGitUrl: string | undefined = undefined
 
 	private timer: NodeJS.Timeout | null = null
 	private blobHashes = this.createDefaultBlobHashes()
@@ -301,13 +303,17 @@ export class SessionService {
 			}
 
 			if (this.sessionId) {
-				if (Object.values(basePayload).length > 0) {
+				const gitUrlChanged = gitInfo?.repoUrl && gitInfo.repoUrl !== this.sessionGitUrl
+
+				if (gitUrlChanged) {
 					logs.debug("Updating existing session", "SessionService", { sessionId: this.sessionId })
 
 					await sessionClient.update({
 						session_id: this.sessionId,
 						...basePayload,
 					})
+
+					this.sessionGitUrl = gitInfo?.repoUrl
 
 					logs.debug("Session updated successfully", "SessionService", { sessionId: this.sessionId })
 				}
@@ -325,6 +331,7 @@ export class SessionService {
 				const session = await sessionClient.create(basePayload)
 
 				this.sessionId = session.session_id
+				this.sessionGitUrl = gitInfo?.repoUrl
 
 				logs.info("Session created successfully", "SessionService", { sessionId: this.sessionId })
 
@@ -389,26 +396,34 @@ export class SessionService {
 				)
 			}
 
-			if (gitInfo && this.hasBlobChanged("gitState")) {
+			if (gitInfo) {
 				const gitStateData = {
 					head: gitInfo.head,
 					patch: gitInfo.patch,
-					...(gitInfo.branch && { branch: gitInfo.branch }),
+					branch: gitInfo.branch,
 				}
 
-				blobUploads.push(
-					sessionClient
-						.uploadBlob(this.sessionId, "git_state", gitStateData)
-						.then(() => {
-							this.markBlobSynced("gitState")
-							logs.debug("Uploaded git_state blob", "SessionService")
-						})
-						.catch((error) => {
-							logs.error("Failed to upload git_state blob", "SessionService", {
-								error: error instanceof Error ? error.message : String(error),
-							})
-						}),
-				)
+				const gitStateHash = this.hashGitState(gitStateData)
+
+				if (gitStateHash !== this.blobHashes.gitState) {
+					this.blobHashes.gitState = gitStateHash
+
+					if (this.hasBlobChanged("gitState")) {
+						blobUploads.push(
+							sessionClient
+								.uploadBlob(this.sessionId, "git_state", gitStateData)
+								.then(() => {
+									this.markBlobSynced("gitState")
+									logs.debug("Uploaded git_state blob", "SessionService")
+								})
+								.catch((error) => {
+									logs.error("Failed to upload git_state blob", "SessionService", {
+										error: error instanceof Error ? error.message : String(error),
+									})
+								}),
+						)
+					}
+				}
 			}
 
 			await Promise.all(blobUploads)
@@ -484,6 +499,12 @@ export class SessionService {
 
 	private markBlobSynced(blobKey: keyof typeof this.blobHashes) {
 		this.lastSyncedBlobHashes[blobKey] = this.blobHashes[blobKey]
+	}
+
+	private hashGitState(
+		gitState: Pick<NonNullable<Awaited<ReturnType<typeof this.getGitState>>>, "head" | "patch" | "branch">,
+	): string {
+		return createHash("sha256").update(JSON.stringify(gitState)).digest("hex")
 	}
 
 	private createDefaultBlobHashes() {
@@ -721,8 +742,6 @@ Summary:`
 		const repoUrl = remotes[0]?.refs?.fetch || remotes[0]?.refs?.push
 
 		const head = await git.revparse(["HEAD"])
-
-		this.updateBlobHash("gitState")
 
 		// Capture current branch name to avoid detached HEAD on restore
 		let branch: string | undefined
