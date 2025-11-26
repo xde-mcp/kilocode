@@ -50,6 +50,7 @@ describe("SessionService", () => {
 	let mockGet: ReturnType<typeof vi.fn>
 	let mockExtensionService: ExtensionService
 	let mockSendWebviewMessage: ReturnType<typeof vi.fn>
+	let mockRequestSingleCompletion: ReturnType<typeof vi.fn>
 	let mockGit: Partial<SimpleGit>
 
 	beforeEach(() => {
@@ -62,8 +63,10 @@ describe("SessionService", () => {
 
 		// Mock ExtensionService
 		mockSendWebviewMessage = vi.fn().mockResolvedValue(undefined)
+		mockRequestSingleCompletion = vi.fn()
 		mockExtensionService = {
 			sendWebviewMessage: mockSendWebviewMessage,
+			requestSingleCompletion: mockRequestSingleCompletion,
 		} as unknown as ExtensionService
 
 		// Mock SessionClient methods
@@ -1830,6 +1833,254 @@ describe("SessionService", () => {
 
 			// @ts-expect-error - Accessing private property for testing
 			expect(service.sessionTitle).toBe("New Title")
+		})
+	})
+
+	describe("generateTitle", () => {
+		describe("short messages (≤140 chars)", () => {
+			it("should return short message directly without LLM call", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "Help me write a function to calculate fibonacci numbers",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Help me write a function to calculate fibonacci numbers")
+				expect(mockRequestSingleCompletion).not.toHaveBeenCalled()
+			})
+
+			it("should trim and collapse whitespace for short messages", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "   Hello    world   ",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Hello world")
+				expect(mockRequestSingleCompletion).not.toHaveBeenCalled()
+			})
+
+			it("should replace newlines with spaces for short messages", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "Hello\nworld\ntest",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Hello world test")
+			})
+		})
+
+		describe("long messages (>140 chars)", () => {
+			it("should use LLM to summarize long messages", async () => {
+				mockRequestSingleCompletion.mockResolvedValue("Summarized title from LLM")
+
+				const longText = "a".repeat(200)
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: longText,
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Summarized title from LLM")
+				expect(mockRequestSingleCompletion).toHaveBeenCalledTimes(1)
+				expect(mockRequestSingleCompletion).toHaveBeenCalledWith(
+					expect.stringContaining("Summarize the following user request"),
+					30000,
+				)
+			})
+
+			it("should truncate LLM response if still too long", async () => {
+				mockRequestSingleCompletion.mockResolvedValue("b".repeat(200))
+
+				const longText = "a".repeat(200)
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: longText,
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title!.length).toBeLessThanOrEqual(140)
+				expect(title).toMatch(/\.\.\.$/i)
+			})
+
+			it("should remove quotes from LLM response", async () => {
+				mockRequestSingleCompletion.mockResolvedValue('"Quoted summary"')
+
+				const longText = "a".repeat(200)
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: longText,
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Quoted summary")
+			})
+
+			it("should fallback to truncation when LLM fails", async () => {
+				mockRequestSingleCompletion.mockRejectedValue(new Error("LLM error"))
+
+				const longText = "a".repeat(200)
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: longText,
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title!.length).toBeLessThanOrEqual(140)
+				expect(title).toMatch(/\.\.\.$/i)
+				expect(title).toContain("a".repeat(137))
+			})
+		})
+
+		describe("edge cases", () => {
+			it("should return null for empty array", async () => {
+				const title = await service.generateTitle([])
+
+				expect(title).toBeNull()
+			})
+
+			it("should return null when no messages have text", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "say",
+						say: "api_req_started",
+					},
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "command",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBeNull()
+			})
+
+			it("should return null when user message has empty text", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBeNull()
+			})
+
+			it("should return null when user message has only whitespace", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "   \n\t  ",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBeNull()
+			})
+
+			it("should skip messages without text and find next valid message", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+					},
+					{
+						ts: Date.now(),
+						type: "say",
+						say: "user_feedback",
+						text: "Valid user message",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("Valid user message")
+			})
+		})
+
+		describe("message type behavior", () => {
+			it("should extract from any message type with text (first message wins)", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "say",
+						say: "text",
+						text: "First message with text",
+					},
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "followup",
+						text: "Second message",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("First message with text")
+			})
+
+			it("should extract from command ask if it has text", async () => {
+				const messages: ClineMessage[] = [
+					{
+						ts: Date.now(),
+						type: "ask",
+						ask: "command",
+						text: "npm install",
+					},
+				]
+
+				const title = await service.generateTitle(messages)
+
+				expect(title).toBe("npm install")
+			})
 		})
 	})
 
