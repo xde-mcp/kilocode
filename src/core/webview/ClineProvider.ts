@@ -3128,7 +3128,8 @@ ${prompt}
 
 	public async getTelemetryProperties(): Promise<TelemetryProperties> {
 		// kilocode_change start
-		const { apiConfiguration, experiments } = await this.getState()
+		const state = await this.getState()
+		const { apiConfiguration, experiments } = state
 		const task = this.getCurrentTask()
 
 		async function getModelId() {
@@ -3187,6 +3188,34 @@ ${prompt}
 				}
 			}
 		}
+
+		const getAutoApproveSettings = () => {
+			try {
+				return {
+					autoApprove: {
+						autoApprovalEnabled: !!state.autoApprovalEnabled,
+						alwaysAllowBrowser: !!state.alwaysAllowBrowser,
+						alwaysAllowExecute: !!state.alwaysAllowExecute,
+						alwaysAllowFollowupQuestions: !!state.alwaysAllowFollowupQuestions,
+						alwaysAllowMcp: !!state.alwaysAllowMcp,
+						alwaysAllowModeSwitch: !!state.alwaysAllowModeSwitch,
+						alwaysAllowReadOnly: !!state.alwaysAllowReadOnly,
+						alwaysAllowReadOnlyOutsideWorkspace: !!state.alwaysAllowReadOnlyOutsideWorkspace,
+						alwaysAllowSubtasks: !!state.alwaysAllowSubtasks,
+						alwaysAllowUpdateTodoList: !!state.alwaysAllowUpdateTodoList,
+						alwaysAllowWrite: !!state.alwaysAllowWrite,
+						alwaysAllowWriteOutsideWorkspace: !!state.alwaysAllowWriteOutsideWorkspace,
+						alwaysAllowWriteProtected: !!state.alwaysAllowWriteProtected,
+						alwaysApproveResubmit: !!state.alwaysApproveResubmit,
+						yoloModel: !!state.yoloMode,
+					},
+				}
+			} catch (error) {
+				return {
+					autoApproveException: stringifyError(error),
+				}
+			}
+		}
 		// kilocode_change end
 
 		return {
@@ -3197,6 +3226,7 @@ ${prompt}
 			...getMemory(),
 			...getFastApply(),
 			...getOpenRouter(),
+			...getAutoApproveSettings(),
 			// kilocode_change end
 			...(await this.getTaskProperties()),
 			...(await this.getGitProperties()),
