@@ -12,7 +12,7 @@ import { z } from "zod"
 const ModelStatsSchema = z.object({
 	model: z.string(),
 	cost: z.coerce.number(),
-	costPerRequest: z.coerce.number(),
+	costPerRequest: z.number(),
 })
 
 const ModelStatsResponseSchema = z.array(ModelStatsSchema)
