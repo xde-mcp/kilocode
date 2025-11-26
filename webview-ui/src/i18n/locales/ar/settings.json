@@ -331,6 +331,14 @@
 		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"zaiEntrypoint": "نقطة دخول Z AI",
 		"zaiEntrypointDescription": "يرجى اختيار نقطة دخول API المناسبة حسب موقعك. إذا كنت في الصين، اختر open.bigmodel.cn. وإلا، اختر api.z.ai.",
+		"nanoGptApiKey": "مفتاح Nano-GPT",
+		"getNanoGptApiKey": "احصل على مفتاح Nano-GPT",
+		"nanoGptModelList": "قائمة النماذج",
+		"nanoGptModelListOptions": {
+			"all": "جميع النماذج",
+			"personalized": "نماذج مخصصة",
+			"subscription": "نماذج الاشتراك"
+		},
 		"geminiApiKey": "مفتاح Gemini",
 		"getGroqApiKey": "احصل على مفتاح Groq",
 		"groqApiKey": "مفتاح Groq",

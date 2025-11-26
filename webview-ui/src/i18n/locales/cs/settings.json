@@ -332,6 +332,14 @@
 		"zaiEntrypoint": "Vstupní bod Z AI",
 		"zaiEntrypointDescription": "Vyberte prosím vhodný vstupní bod API podle vaší polohy. Pokud jste v Číně, vyberte open.bigmodel.cn. Jinak vyberte api.z.ai.",
 		"geminiApiKey": "Klíč API Gemini",
+		"nanoGptApiKey": "Klíč API Nano-GPT",
+		"getNanoGptApiKey": "Získat klíč API Nano-GPT",
+		"nanoGptModelList": "Seznam modelů",
+		"nanoGptModelListOptions": {
+			"all": "Všechny modely",
+			"personalized": "Personalizované modely",
+			"subscription": "Modely předplatného"
+		},
 		"getGroqApiKey": "Získat klíč API Groq",
 		"groqApiKey": "Klíč API Groq",
 		"getSambaNovaApiKey": "Získat klíč API SambaNova",
