@@ -280,7 +280,7 @@ describe("SessionService", () => {
 			expect(mockUpdate).not.toHaveBeenCalled()
 		})
 
-		it("should update existing session on subsequent syncs", async () => {
+		it("should update existing session when git URL changes", async () => {
 			vi.mocked(readFileSync)
 				.mockReturnValueOnce(JSON.stringify({ messages: ["first"] }))
 				.mockReturnValueOnce(JSON.stringify({ messages: ["first", "second"] }))
@@ -304,21 +304,58 @@ describe("SessionService", () => {
 			})
 			mockSessionClient.uploadBlob = mockUploadBlob
 
+			// Set up git mocks for first sync
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// First sync - creates session
+			// First sync - creates session with git URL
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
-			expect(mockCreate).toHaveBeenCalledTimes(1)
+			expect(mockCreate).toHaveBeenCalledWith({
+				git_url: "https://github.com/user/repo.git",
+			})
+
+			// Change git URL to trigger update
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
 
 			// Modify path to trigger new sync
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second sync - updates session
+			// Second sync - updates session because git URL changed
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
+				git_url: "https://github.com/user/new-repo.git",
 			})
 			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", {
 				messages: ["first", "second"],
@@ -461,6 +498,29 @@ describe("SessionService", () => {
 			})
 			mockSessionClient.uploadBlob = mockUploadBlob
 
+			// Set up git mocks
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for initial sync to create the session
@@ -470,6 +530,17 @@ describe("SessionService", () => {
 
 			// Clear mocks to isolate destroy behavior
 			vi.clearAllMocks()
+
+			// Change git URL to trigger update during destroy
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
 
 			// Set a new path to trigger sync during destroy
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
@@ -482,9 +553,10 @@ describe("SessionService", () => {
 
 			await service.destroy()
 
-			// Should have called update to flush the session (since session already exists)
+			// Should have called update because git URL changed
 			expect(mockUpdate).toHaveBeenCalledWith({
 				session_id: "session-id",
+				git_url: "https://github.com/user/new-repo.git",
 			})
 			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", mockData)
 		})
@@ -552,16 +624,50 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			// Set up git mocks for first sync
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// First tick
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 			expect(mockCreate).toHaveBeenCalledTimes(1)
 
+			// Change git URL to trigger update
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
+
 			// Trigger new save event
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
-			// Second tick - should call update
+			// Second tick - should call update because git URL changed
 			mockUpdate.mockResolvedValue({
 				session_id: "session-id",
 				title: "",
@@ -630,12 +736,46 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			// Set up git mocks for first sync
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// First sync - creates session
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledTimes(1)
+
+			// Change git URL to trigger update
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
 
 			// Update fails
 			mockUpdate.mockRejectedValueOnce(new Error("Update failed"))
@@ -660,6 +800,29 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
+			// Set up git mocks for first sync
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			// Create a session first
 			mockCreate.mockResolvedValueOnce({
 				session_id: "session-id",
@@ -668,6 +831,12 @@ describe("SessionService", () => {
 				updated_at: "2025-01-01T00:00:00Z",
 			})
 
+			const mockUploadBlob = vi.fn().mockResolvedValue({
+				session_id: "session-id",
+				updated_at: "2025-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob = mockUploadBlob
+
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// Wait for initial sync to complete
@@ -675,6 +844,17 @@ describe("SessionService", () => {
 
 			// Clear mocks to isolate destroy behavior
 			vi.clearAllMocks()
+
+			// Change git URL to trigger update during destroy
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
 
 			// Set a new path to trigger sync during destroy
 			service.setPath("apiConversationHistoryPath", "/path/to/api2.json")
@@ -2144,6 +2324,29 @@ describe("SessionService", () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
+			// Set up git mocks for first sync
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/repo.git",
+						push: "https://github.com/user/repo.git",
+					},
+				},
+			])
+			mockGit.revparse = vi.fn().mockResolvedValue("abc123")
+			mockGit.raw = vi.fn().mockImplementation((...args: unknown[]) => {
+				const cmd = Array.isArray(args[0]) ? args[0] : args
+				if (cmd[0] === "ls-files") {
+					return Promise.resolve("")
+				}
+				if (cmd[0] === "symbolic-ref") {
+					return Promise.resolve("refs/heads/main")
+				}
+				return Promise.resolve("")
+			})
+			mockGit.diff = vi.fn().mockResolvedValue("some diff")
+
 			mockCreate.mockResolvedValueOnce({
 				session_id: "session-id",
 				title: "",
@@ -2156,6 +2359,17 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			vi.clearAllMocks()
+
+			// Change git URL to trigger update
+			mockGit.getRemotes = vi.fn().mockResolvedValue([
+				{
+					name: "origin",
+					refs: {
+						fetch: "https://github.com/user/new-repo.git",
+						push: "https://github.com/user/new-repo.git",
+					},
+				},
+			])
 
 			mockUpdate.mockResolvedValueOnce({
 				session_id: "session-id",
