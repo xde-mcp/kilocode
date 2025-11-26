@@ -26,3 +26,23 @@ export const generateModelFallbackMessage = (params: {
 		content,
 	}
 }
+
+/**
+ * Generate user-friendly message for mode fallback
+ * @param params - Message parameters
+ * @returns Formatted message for display
+ */
+export const generateModeFallbackMessage = (params: {
+	previousMode: string
+	newMode: string
+	organizationName?: string
+}) => {
+	const { previousMode, newMode, organizationName } = params
+	const orgContext = organizationName || "this organization"
+	const content = `Mode "${previousMode}" is not available for ${orgContext}. Switched to "${newMode}" mode.`
+	return {
+		...generateMessage(),
+		type: "system" as const,
+		content,
+	}
+}

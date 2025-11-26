@@ -32,6 +32,7 @@ import {
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
+import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -121,6 +122,8 @@ export const initializeServiceEffectAtom = atom(null, async (get, set, store?: {
 		service.on("stateChange", (state) => {
 			if (atomStore) {
 				atomStore.set(updateExtensionStateAtom, state)
+				// Trigger mode validation after state update (which includes customModes)
+				void atomStore.set(validateModeOnCustomModesUpdateAtom)
 			}
 		})
 
