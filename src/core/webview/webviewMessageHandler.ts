@@ -1097,6 +1097,7 @@ export const webviewMessageHandler = async (
 				provider.postMessageToWebview({ type: "huggingFaceModels", huggingFaceModels: [] })
 			}
 			break
+		// kilocode_change start
 		case "requestSapAiCoreModels": {
 			// Specific handler for SAP AI Core models only.
 			if (message?.values?.sapAiCoreServiceKey) {
@@ -1140,6 +1141,7 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		// kilocode_change end
 		case "openImage":
 			openImage(message.text!, { values: message.values })
 			break

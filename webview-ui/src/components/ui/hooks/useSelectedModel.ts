@@ -487,7 +487,6 @@ function getSelectedModel({
 			const info = routerModels.inception[id]
 			return { id, info }
 		}
-		// kilocode_change end
 		case "sap-ai-core": {
 			const id = apiConfiguration.sapAiCoreModelId ?? "gpt-5"
 			const info = {
@@ -499,6 +498,7 @@ function getSelectedModel({
 			}
 			return { id, info }
 		}
+		// kilocode_change end
 		// case "anthropic":
 		// case "human-relay":
 		// case "fake-ai":

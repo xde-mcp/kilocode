@@ -850,9 +850,11 @@ const ApiOptions = ({
 				<Featherless apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
+			{/* kilocode_change start */}
 			{selectedProvider === "sap-ai-core" && (
 				<SapAiCore apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
+			{/* kilocode_change end */}
 
 			{selectedProviderModels.length > 0 && (
 				<>

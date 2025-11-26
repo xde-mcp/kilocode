@@ -181,7 +181,6 @@ function validateModelsAndKeysProvided(apiConfiguration: ProviderSettings): stri
 				return i18next.t("settings:validation.apiKey")
 			}
 			break
-		// kilocode_change end
 		case "sap-ai-core":
 			if (!apiConfiguration.sapAiCoreServiceKey) {
 				return i18next.t("settings:validation.sapAiCore")
@@ -195,6 +194,7 @@ function validateModelsAndKeysProvided(apiConfiguration: ProviderSettings): stri
 				})
 			}
 			break
+		// kilocode_change end
 	}
 
 	return undefined

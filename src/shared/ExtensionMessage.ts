@@ -100,8 +100,8 @@ export interface ExtensionMessage {
 		| "lmStudioModels"
 		| "vsCodeLmModels"
 		| "huggingFaceModels"
-		| "sapAiCoreModels"
-		| "sapAiCoreDeployments"
+		| "sapAiCoreModels" // kilocode_change
+		| "sapAiCoreDeployments" // kilocode_change
 		| "vsCodeLmApiAvailable"
 		| "updatePrompt"
 		| "systemPrompt"
@@ -234,8 +234,8 @@ export interface ExtensionMessage {
 			}
 		}>
 	}>
-	sapAiCoreModels?: ModelRecord
-	sapAiCoreDeployments?: DeploymentRecord
+	sapAiCoreModels?: ModelRecord // kilocode_change
+	sapAiCoreDeployments?: DeploymentRecord // kilocode_change
 	mcpServers?: McpServer[]
 	commits?: GitCommit[]
 	listApiConfig?: ProviderSettingsEntry[]

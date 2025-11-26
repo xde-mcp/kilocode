@@ -137,6 +137,7 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 			case "huggingface":
 				models = await getHuggingFaceModels()
 				break
+			// kilocode_change start
 			case "sap-ai-core":
 				models = await getSapAiCoreModels(
 					options.sapAiCoreServiceKey,
@@ -144,7 +145,6 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 					options.sapAiCoreUseOrchestration,
 				)
 				break
-			// kilocode_change start
 			case "inception":
 				models = await getInceptionModels()
 				break
