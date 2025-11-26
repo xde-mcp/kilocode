@@ -42,8 +42,8 @@ export class SessionService {
 	private sessionTitle: string | null = null
 
 	private timer: NodeJS.Timeout | null = null
-	private lastSaveEvent: string = ""
-	private lastSyncEvent: string = ""
+	private blobHashes = this.createDefaultBlobHashes()
+	private lastSyncedBlobHashes = this.createDefaultBlobHashes()
 	private isSyncing: boolean = false
 
 	private constructor(
@@ -123,8 +123,7 @@ export class SessionService {
 			// Set sessionId immediately to prevent race condition with syncSession timer
 			// If restoration fails, we'll reset it in the catch block
 			this.sessionId = sessionId
-			this.lastSaveEvent = crypto.randomUUID()
-			this.lastSyncEvent = this.lastSaveEvent
+			this.resetBlobHashes()
 			this.isSyncing = true
 
 			const sessionClient = SessionClient.getInstance()
@@ -249,8 +248,7 @@ export class SessionService {
 
 			this.sessionId = null
 			this.sessionTitle = null
-			this.lastSaveEvent = ""
-			this.lastSyncEvent = ""
+			this.resetBlobHashes()
 
 			if (rethrowError) {
 				throw error
@@ -266,7 +264,11 @@ export class SessionService {
 				return
 			}
 
-			if (Object.values(this.paths).every((item) => !item) || this.lastSaveEvent === this.lastSyncEvent) {
+			if (Object.values(this.paths).every((item) => !item)) {
+				return
+			}
+
+			if (!this.hasAnyBlobChanged()) {
 				return
 			}
 		}
@@ -280,7 +282,6 @@ export class SessionService {
 				return
 			}
 
-			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
 			const basePayload: Parameters<typeof sessionClient.create>[0] = {}
@@ -340,11 +341,12 @@ export class SessionService {
 
 			const blobUploads: Array<Promise<void>> = []
 
-			if (rawPayload.apiConversationHistoryPath) {
+			if (rawPayload.apiConversationHistoryPath && this.hasBlobChanged("apiConversationHistory")) {
 				blobUploads.push(
 					sessionClient
 						.uploadBlob(this.sessionId, "api_conversation_history", rawPayload.apiConversationHistoryPath)
 						.then(() => {
+							this.markBlobSynced("apiConversationHistory")
 							logs.debug("Uploaded api_conversation_history blob", "SessionService")
 						})
 						.catch((error) => {
@@ -355,11 +357,12 @@ export class SessionService {
 				)
 			}
 
-			if (rawPayload.taskMetadataPath) {
+			if (rawPayload.taskMetadataPath && this.hasBlobChanged("taskMetadata")) {
 				blobUploads.push(
 					sessionClient
 						.uploadBlob(this.sessionId, "task_metadata", rawPayload.taskMetadataPath)
 						.then(() => {
+							this.markBlobSynced("taskMetadata")
 							logs.debug("Uploaded task_metadata blob", "SessionService")
 						})
 						.catch((error) => {
@@ -370,11 +373,12 @@ export class SessionService {
 				)
 			}
 
-			if (rawPayload.uiMessagesPath) {
+			if (rawPayload.uiMessagesPath && this.hasBlobChanged("uiMessages")) {
 				blobUploads.push(
 					sessionClient
 						.uploadBlob(this.sessionId, "ui_messages", rawPayload.uiMessagesPath)
 						.then(() => {
+							this.markBlobSynced("uiMessages")
 							logs.debug("Uploaded ui_messages blob", "SessionService")
 						})
 						.catch((error) => {
@@ -385,7 +389,7 @@ export class SessionService {
 				)
 			}
 
-			if (gitInfo) {
+			if (gitInfo && this.hasBlobChanged("gitState")) {
 				const gitStateData = {
 					head: gitInfo.head,
 					patch: gitInfo.patch,
@@ -396,6 +400,7 @@ export class SessionService {
 					sessionClient
 						.uploadBlob(this.sessionId, "git_state", gitStateData)
 						.then(() => {
+							this.markBlobSynced("gitState")
 							logs.debug("Uploaded git_state blob", "SessionService")
 						})
 						.catch((error) => {
@@ -407,8 +412,6 @@ export class SessionService {
 			}
 
 			await Promise.all(blobUploads)
-
-			this.lastSyncEvent = currentLastSaveEvent
 
 			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
 				// Intentionally not awaiting as we don't want this to block
@@ -442,7 +445,59 @@ export class SessionService {
 	setPath(key: keyof typeof defaultPaths, value: string) {
 		this.paths[key] = value
 
-		this.lastSaveEvent = crypto.randomUUID()
+		const blobKey = this.pathKeyToBlobKey(key)
+
+		if (blobKey) {
+			this.updateBlobHash(blobKey)
+		}
+	}
+
+	private pathKeyToBlobKey(pathKey: keyof typeof defaultPaths): keyof typeof this.blobHashes | null {
+		switch (pathKey) {
+			case "apiConversationHistoryPath":
+				return "apiConversationHistory"
+			case "uiMessagesPath":
+				return "uiMessages"
+			case "taskMetadataPath":
+				return "taskMetadata"
+			default:
+				return null
+		}
+	}
+
+	private updateBlobHash(blobKey: keyof typeof this.blobHashes) {
+		this.blobHashes[blobKey] = crypto.randomUUID()
+	}
+
+	private hasBlobChanged(blobKey: keyof typeof this.blobHashes): boolean {
+		return this.blobHashes[blobKey] !== this.lastSyncedBlobHashes[blobKey]
+	}
+
+	private hasAnyBlobChanged(): boolean {
+		return (
+			this.hasBlobChanged("apiConversationHistory") ||
+			this.hasBlobChanged("uiMessages") ||
+			this.hasBlobChanged("taskMetadata") ||
+			this.hasBlobChanged("gitState")
+		)
+	}
+
+	private markBlobSynced(blobKey: keyof typeof this.blobHashes) {
+		this.lastSyncedBlobHashes[blobKey] = this.blobHashes[blobKey]
+	}
+
+	private createDefaultBlobHashes() {
+		return {
+			apiConversationHistory: "",
+			uiMessages: "",
+			taskMetadata: "",
+			gitState: "",
+		}
+	}
+
+	private resetBlobHashes() {
+		this.blobHashes = this.createDefaultBlobHashes()
+		this.lastSyncedBlobHashes = this.createDefaultBlobHashes()
 	}
 
 	setWorkspaceDirectory(dir: string): void {
@@ -666,6 +721,8 @@ Summary:`
 		const repoUrl = remotes[0]?.refs?.fetch || remotes[0]?.refs?.push
 
 		const head = await git.revparse(["HEAD"])
+
+		this.updateBlobHash("gitState")
 
 		// Capture current branch name to avoid detached HEAD on restore
 		let branch: string | undefined

@@ -325,7 +325,7 @@ describe("SessionService", () => {
 			})
 		})
 
-		it("should not sync when lastSaveEvent equals lastSyncEvent", async () => {
+		it("should not sync when no blob has changed", async () => {
 			const mockData = { messages: [] }
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockData))
 
@@ -413,25 +413,25 @@ describe("SessionService", () => {
 	})
 
 	describe("setPath", () => {
-		it("should set path and trigger lastSaveEvent update", () => {
+		it("should set path and trigger blob hash update", () => {
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 
 			// @ts-expect-error - Accessing private property for testing
 			expect(service.paths.apiConversationHistoryPath).toBe("/path/to/api.json")
 			// @ts-expect-error - Accessing private property for testing
-			expect(service.lastSaveEvent).toBeTruthy()
+			expect(service.blobHashes.apiConversationHistory).toBeTruthy()
 		})
 
-		it("should update lastSaveEvent with unique values on each call", () => {
+		it("should update blob hash with unique values on each call", () => {
 			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 			// @ts-expect-error - Accessing private property for testing
-			const firstEvent = service.lastSaveEvent
+			const firstHash = service.blobHashes.apiConversationHistory
 
-			service.setPath("uiMessagesPath", "/path/to/ui.json")
+			service.setPath("apiConversationHistoryPath", "/path/to/api.json")
 			// @ts-expect-error - Accessing private property for testing
-			const secondEvent = service.lastSaveEvent
+			const secondHash = service.blobHashes.apiConversationHistory
 
-			expect(firstEvent).not.toBe(secondEvent)
+			expect(firstHash).not.toBe(secondHash)
 		})
 	})
 
