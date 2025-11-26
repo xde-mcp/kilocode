@@ -315,6 +315,14 @@
 		"moonshotApiKey": "Chave de API Moonshot",
 		"getMoonshotApiKey": "Obter chave de API Moonshot",
 		"moonshotBaseUrl": "Ponto de entrada Moonshot",
+		"nanoGptApiKey": "Chave de API Nano-GPT",
+		"getNanoGptApiKey": "Obter chave de API Nano-GPT",
+		"nanoGptModelList": "Lista de Modelos",
+		"nanoGptModelListOptions": {
+			"all": "Todos os Modelos",
+			"personalized": "Modelos Personalizados",
+			"subscription": "Modelos de Assinatura"
+		},
 		"zaiApiKey": "Chave de API Z AI",
 		"getZaiApiKey": "Obter chave de API Z AI",
 		"zaiEntrypoint": "Ponto de entrada Z AI",

@@ -315,6 +315,14 @@
 		"moonshotApiKey": "Moonshot API-sleutel",
 		"getMoonshotApiKey": "Moonshot API-sleutel ophalen",
 		"moonshotBaseUrl": "Moonshot-ingangspunt",
+		"nanoGptApiKey": "Nano-GPT API-sleutel",
+		"getNanoGptApiKey": "Nano-GPT API-sleutel ophalen",
+		"nanoGptModelList": "Modellenlijst",
+		"nanoGptModelListOptions": {
+			"all": "Alle modellen",
+			"personalized": "Gepersonaliseerde modellen",
+			"subscription": "Abonnementsmodellen"
+		},
 		"zaiApiKey": "Z AI API-sleutel",
 		"getZaiApiKey": "Z AI API-sleutel ophalen",
 		"zaiEntrypoint": "Z AI-ingangspunt",

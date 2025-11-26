@@ -438,6 +438,14 @@
 		},
 		"doubaoApiKey": "คีย์ API ของ Doubao",
 		"getDoubaoApiKey": "รับคีย์ API ของ Doubao",
+		"nanoGptApiKey": "คีย์ API ของ Nano-GPT",
+		"getNanoGptApiKey": "รับคีย์ API ของ Nano-GPT",
+		"nanoGptModelList": "รายการโมเดล",
+		"nanoGptModelListOptions": {
+			"all": "โมเดลทั้งหมด",
+			"personalized": "โมเดลส่วนตัว",
+			"subscription": "โมเดลตามการสมัครสมาชิก"
+		},
 		"zaiApiKey": "คีย์ API ของ Z.AI",
 		"getZaiApiKey": "รับคีย์ API ของ Z.AI",
 		"sambaNovaApiKey": "คีย์ API ของ SambaNova",
