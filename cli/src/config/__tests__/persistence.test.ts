@@ -128,7 +128,11 @@ describe("Config Persistence", () => {
 
 			// And we should be able to load it
 			const loadedResult = await loadConfig()
-			expect(loadedResult.config).toEqual(validConfig)
+			// loadConfig applies kiloToken fallback and auto-saves, so expect it in the loaded config
+			expect(loadedResult.config).toEqual({
+				...validConfig,
+				kiloToken: "test-token-1234567890",
+			})
 			expect(loadedResult.validation.valid).toBe(true)
 		})
 
