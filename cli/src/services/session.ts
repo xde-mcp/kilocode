@@ -148,6 +148,8 @@ export class SessionService {
 				return
 			}
 
+			this.sessionTitle = session.title
+
 			const sessionDirectoryPath = path.join(KiloCodePaths.getTasksDir(), sessionId)
 
 			ensureDirSync(sessionDirectoryPath)
@@ -286,30 +288,10 @@ export class SessionService {
 			const currentLastSaveEvent = this.lastSaveEvent
 			const sessionClient = SessionClient.getInstance()
 
-			let titleToSet: string | undefined
-			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
-				try {
-					const generatedTitle = await this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
-
-					if (generatedTitle) {
-						titleToSet = generatedTitle
-
-						logs.debug("Generated session title from first user message", "SessionService", {
-							title: generatedTitle,
-						})
-					}
-				} catch (error) {
-					logs.warn("Failed to generate session title", "SessionService", {
-						error: error instanceof Error ? error.message : String(error),
-					})
-				}
-			}
-
 			const basePayload: Parameters<typeof sessionClient.create>[0] = {
 				api_conversation_history: rawPayload.apiConversationHistoryPath,
 				task_metadata: rawPayload.taskMetadataPath,
 				ui_messages: rawPayload.uiMessagesPath,
-				...(titleToSet && { title: titleToSet }),
 			}
 
 			try {
@@ -347,6 +329,14 @@ export class SessionService {
 			} else {
 				logs.debug("Creating new session", "SessionService")
 
+				if (rawPayload.uiMessagesPath) {
+					const title = this.getFirstMessageText(rawPayload.uiMessagesPath as ClineMessage[], true)
+
+					if (title) {
+						basePayload.title = title
+					}
+				}
+
 				const session = await sessionClient.create(basePayload)
 
 				this.sessionId = session.session_id
@@ -366,8 +356,21 @@ export class SessionService {
 
 			this.lastSyncEvent = currentLastSaveEvent
 
-			if (titleToSet) {
-				this.sessionTitle = titleToSet
+			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
+				// intentionally not awaiting as we don't want this to block
+				this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
+					.then((generatedTitle) => {
+						if (generatedTitle) {
+							return this.renameSession(generatedTitle)
+						}
+
+						return null
+					})
+					.catch((error) => {
+						logs.warn("Failed to generate session title", "SessionService", {
+							error: error instanceof Error ? error.message : String(error),
+						})
+					})
 			}
 		} catch (error) {
 			logs.error("Failed to sync session", "SessionService", {
@@ -392,7 +395,7 @@ export class SessionService {
 		this.workspaceDir = dir
 	}
 
-	async generateTitle(uiMessages: ClineMessage[]): Promise<string | null> {
+	getFirstMessageText(uiMessages: ClineMessage[], truncate = false): string | null {
 		if (uiMessages.length === 0) {
 			return null
 		}
@@ -403,7 +406,6 @@ export class SessionService {
 			return null
 		}
 
-		// Clean up the text - trim and collapse whitespace
 		let rawText = firstMessageWithText.text.trim()
 		rawText = rawText.replace(/\s+/g, " ")
 
@@ -411,7 +413,20 @@ export class SessionService {
 			return null
 		}
 
-		// If the text is already short enough, return it directly
+		if (truncate && rawText.length > 140) {
+			return rawText.substring(0, 137) + "..."
+		}
+
+		return rawText
+	}
+
+	async generateTitle(uiMessages: ClineMessage[]): Promise<string | null> {
+		const rawText = this.getFirstMessageText(uiMessages)
+
+		if (!rawText) {
+			return null
+		}
+
 		if (rawText.length <= 140) {
 			return rawText
 		}
