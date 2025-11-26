@@ -3,6 +3,16 @@ import type OpenAI from "openai"
 import type { ModeConfig } from "@roo-code/types"
 import { filterNativeToolsForMode, filterMcpToolsForMode } from "../filter-tools-for-mode"
 
+// kilocode_change start
+vi.mock("../../../../services/code-index/managed/ManagedIndexer", () => ({
+	ManagedIndexer: {
+		getInstance: () => ({
+			isEnabled: () => false,
+		}),
+	},
+}))
+// kilocode_change end
+
 describe("filterNativeToolsForMode", () => {
 	const mockNativeTools: OpenAI.Chat.ChatCompletionTool[] = [
 		{
