@@ -174,8 +174,12 @@ export interface ExtensionMessage {
 		| "taskMessagesSaved" // kilocode_change: File save event for task messages
 		| "taskMetadataSaved" // kilocode_change: File save event for task metadata
 		| "managedIndexerState" // kilocode_change
+		| "singleCompletionResult" // kilocode_change
 	text?: string
 	// kilocode_change start
+	completionRequestId?: string // Correlation ID from request
+	completionText?: string // The completed text
+	completionError?: string // Error message if failed
 	payload?:
 		| ProfileDataResponsePayload
 		| BalanceDataResponsePayload

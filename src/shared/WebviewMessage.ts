@@ -320,7 +320,9 @@ export interface WebviewMessage {
 		| "getDismissedUpsells"
 		| "addTaskToHistory" // kilocode_change
 		| "requestManagedIndexerState" // kilocode_change
+		| "singleCompletion" // kilocode_change
 	text?: string
+	completionRequestId?: string // kilocode_change
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
