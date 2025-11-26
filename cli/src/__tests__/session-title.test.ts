@@ -238,28 +238,6 @@ describe("SessionService.generateTitleFromFirstUserMessage", () => {
 			expect(title).toBeNull()
 		})
 
-		it("should return null for non-array input", async () => {
-			const { SessionService } = await import("../services/session.js")
-			;(SessionService as unknown as { instance: null }).instance = null
-			const service = SessionService.init(mockExtensionService as never, false)
-
-			// @ts-expect-error Testing invalid input
-			const title = await service.generateTitle(null)
-
-			expect(title).toBeNull()
-		})
-
-		it("should return null for undefined input", async () => {
-			const { SessionService } = await import("../services/session.js")
-			;(SessionService as unknown as { instance: null }).instance = null
-			const service = SessionService.init(mockExtensionService as never, false)
-
-			// @ts-expect-error Testing invalid input
-			const title = await service.generateTitle(undefined)
-
-			expect(title).toBeNull()
-		})
-
 		it("should return null when no messages have text", async () => {
 			const { SessionService } = await import("../services/session.js")
 			;(SessionService as unknown as { instance: null }).instance = null

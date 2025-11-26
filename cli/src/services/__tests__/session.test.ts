@@ -353,7 +353,7 @@ describe("SessionService", () => {
 
 		it("should sync with multiple paths", async () => {
 			const mockData1 = { api: "data" }
-			const mockData2 = { ui: "data" }
+			const mockData2 = [{ ts: 1000, type: "say", say: "text", text: "test message" }]
 			const mockData3 = { task: "data" }
 
 			vi.mocked(readFileSync)
@@ -378,6 +378,7 @@ describe("SessionService", () => {
 				api_conversation_history: mockData1,
 				ui_messages: mockData2,
 				task_metadata: mockData3,
+				title: "test message",
 			})
 		})
 	})
