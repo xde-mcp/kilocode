@@ -1,40 +1,37 @@
 import {
 	type ModelInfo,
 	type ProviderSettings,
+	type DynamicProvider,
+	type LocalProvider,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 	CLAUDE_CODE_DEFAULT_MAX_OUTPUT_TOKENS,
+	isDynamicProvider,
+	isLocalProvider,
+	ToolProtocol, // kilocode_change
 } from "@roo-code/types"
 
 // ApiHandlerOptions
 // Extend ProviderSettings (minus apiProvider) with handler-specific toggles.
 export type ApiHandlerOptions = Omit<ProviderSettings, "apiProvider"> & {
 	/**
-	 * When true and using GPT‑5 Responses API, include reasoning.summary: "auto"
-	 * so the API returns reasoning summaries (we already parse and surface them).
-	 * Defaults to true; set to false to disable summaries.
+	 * When true and using OpenAI Responses API models that support reasoning summaries,
+	 * include reasoning.summary: "auto" so the API returns summaries (we already parse
+	 * and surface them). Defaults to true; set to false to disable summaries.
 	 */
-	enableGpt5ReasoningSummary?: boolean
+	enableResponsesReasoningSummary?: boolean
+	/**
+	 * Optional override for Ollama's num_ctx parameter.
+	 * When set, this value will be used in Ollama chat requests.
+	 * When undefined, Ollama will use the model's default num_ctx from the Modelfile.
+	 */
+	ollamaNumCtx?: number
 }
 
 // RouterName
 
-const routerNames = [
-	"openrouter",
-	"requesty",
-	"glama",
-	"unbound",
-	"litellm",
-	"kilocode-openrouter",
-	"ollama",
-	"lmstudio",
-	"io-intelligence",
-	"deepinfra",
-	"vercel-ai-gateway",
-] as const
+export type RouterName = DynamicProvider | LocalProvider
 
-export type RouterName = (typeof routerNames)[number]
-
-export const isRouterName = (value: string): value is RouterName => routerNames.includes(value as RouterName)
+export const isRouterName = (value: string): value is RouterName => isDynamicProvider(value) || isLocalProvider(value)
 
 export function toRouterName(value?: string): RouterName {
 	if (value && isRouterName(value)) {
@@ -67,15 +64,44 @@ export const shouldUseReasoningEffort = ({
 	model: ModelInfo
 	settings?: ProviderSettings
 }): boolean => {
-	// If enableReasoningEffort is explicitly set to false, reasoning should be disabled
-	if (settings?.enableReasoningEffort === false) {
-		return false
+	// Explicit off switch
+	if (settings?.enableReasoningEffort === false) return false
+
+	// Selected effort from settings or model default
+	const selectedEffort = (settings?.reasoningEffort ?? (model as any).reasoningEffort) as
+		| "disable"
+		| "none"
+		| "minimal"
+		| "low"
+		| "medium"
+		| "high"
+		| undefined
+
+	// "disable" explicitly omits reasoning
+	if (selectedEffort === "disable") return false
+
+	const cap = model.supportsReasoningEffort as unknown
+
+	// Capability array: use only if selected is included (treat "none"/"minimal" as valid)
+	if (Array.isArray(cap)) {
+		return !!selectedEffort && (cap as ReadonlyArray<string>).includes(selectedEffort as string)
 	}
 
-	// Otherwise, use reasoning if:
-	// 1. Model supports reasoning effort AND settings provide reasoning effort, OR
-	// 2. Model itself has a reasoningEffort property
-	return (!!model.supportsReasoningEffort && !!settings?.reasoningEffort) || !!model.reasoningEffort
+	// Boolean capability: true → require a selected effort
+	if (model.supportsReasoningEffort === true) {
+		return !!selectedEffort
+	}
+
+	// Not explicitly supported: only allow when the model itself defines a default effort
+	// Ignore settings-only selections when capability is absent/false
+	const modelDefaultEffort = (model as any).reasoningEffort as
+		| "none"
+		| "minimal"
+		| "low"
+		| "medium"
+		| "high"
+		| undefined
+	return !!modelDefaultEffort
 }
 
 export const DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS = 16_384
@@ -146,16 +172,47 @@ export const getModelMaxOutputTokens = ({
 
 // GetModelsOptions
 
-export type GetModelsOptions =
-	| { provider: "openrouter"; apiKey?: string; baseUrl?: string } // kilocode_change: add apiKey, baseUrl
-	| { provider: "glama" }
-	| { provider: "requesty"; apiKey?: string; baseUrl?: string }
-	| { provider: "unbound"; apiKey?: string }
-	| { provider: "litellm"; apiKey: string; baseUrl: string }
-	| { provider: "kilocode-openrouter"; kilocodeToken?: string; kilocodeOrganizationId?: string } // kilocode_change
-	| { provider: "cerebras"; cerebrasApiKey?: string } // kilocode_change
-	| { provider: "ollama"; baseUrl?: string; apiKey?: string }
-	| { provider: "lmstudio"; baseUrl?: string }
-	| { provider: "deepinfra"; apiKey?: string; baseUrl?: string }
-	| { provider: "io-intelligence"; apiKey: string }
-	| { provider: "vercel-ai-gateway" }
+// Allow callers to always pass apiKey/baseUrl without excess property errors,
+// while still enforcing required fields per provider where applicable.
+type CommonFetchParams = {
+	apiKey?: string
+	baseUrl?: string
+}
+
+// Exhaustive, value-level map for all dynamic providers.
+// If a new dynamic provider is added in packages/types, this will fail to compile
+// until a corresponding entry is added here.
+const dynamicProviderExtras = {
+	gemini: {} as { apiKey?: string; baseUrl?: string }, // kilocode_change
+	openrouter: {} as {}, // eslint-disable-line @typescript-eslint/no-empty-object-type
+	"vercel-ai-gateway": {} as {}, // eslint-disable-line @typescript-eslint/no-empty-object-type
+	huggingface: {} as {}, // eslint-disable-line @typescript-eslint/no-empty-object-type
+	litellm: {} as { apiKey: string; baseUrl: string },
+	kilocode: {} as { kilocodeToken?: string; kilocodeOrganizationId?: string }, // kilocode_change
+	deepinfra: {} as { apiKey?: string; baseUrl?: string },
+	"io-intelligence": {} as { apiKey: string },
+	requesty: {} as { apiKey?: string; baseUrl?: string },
+	unbound: {} as { apiKey?: string },
+	glama: {} as {}, // eslint-disable-line @typescript-eslint/no-empty-object-type
+	"nano-gpt": {} as { nanoGptModelList?: "all" | "personalized" | "subscription" }, // kilocode_change
+	ollama: {} as { numCtx?: number }, // kilocode_change
+	lmstudio: {} as {}, // eslint-disable-line @typescript-eslint/no-empty-object-type
+	ovhcloud: {} as { apiKey?: string }, // kilocode_change
+	inception: {} as { apiKey?: string; baseUrl?: string }, // kilocode_change
+	synthetic: {} as { apiKey?: string }, // kilocode_change
+	roo: {} as { apiKey?: string; baseUrl?: string },
+	chutes: {} as { apiKey?: string },
+	// kilocode_change start
+	"sap-ai-core": {} as {
+		sapAiCoreServiceKey?: string
+		sapAiCoreResourceGroup?: string
+		sapAiCoreUseOrchestration?: boolean
+	},
+	// kilocode_change end
+} as const satisfies Record<RouterName, object>
+
+// Build the dynamic options union from the map, intersected with CommonFetchParams
+// so extra fields are always allowed while required ones are enforced.
+export type GetModelsOptions = {
+	[P in keyof typeof dynamicProviderExtras]: ({ provider: P } & (typeof dynamicProviderExtras)[P]) & CommonFetchParams
+}[RouterName]

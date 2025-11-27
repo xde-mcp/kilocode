@@ -41,7 +41,13 @@
 		"could_not_open_file_generic": "无法打开文件！",
 		"checkpoint_timeout": "尝试恢复检查点时超时。",
 		"checkpoint_failed": "恢复检查点失败。",
-		"git_not_installed": "存档点功能需要 Git。请安装 Git 以启用存档点。",
+		"git_not_installed": "检查点功能需要 Git。请安装 Git 以启用检查点。",
+		"checkpoint_no_first": "没有第一个存档点可供比较。",
+		"checkpoint_no_previous": "没有上一个存档点可供比较。",
+		"checkpoint_no_changes": "未发现任何更改。",
+		"checkpoint_diff_with_next": "与下一个存档点比较的更改",
+		"checkpoint_diff_since_first": "自第一个存档点以来的更改",
+		"checkpoint_diff_to_current": "对当前工作区的更改",
 		"nested_git_repos_warning": "存档点已禁用，因为在 {{path}} 检测到嵌套的 git 仓库。要使用存档点，请移除或重新定位此嵌套的 git 仓库。",
 		"no_workspace": "请先打开项目文件夹",
 		"update_support_prompt": "更新支持消息失败",
@@ -187,6 +193,10 @@
 		"incomplete": "任务 #{{taskNumber}} (未完成)",
 		"no_messages": "任务 #{{taskNumber}} (无消息)"
 	},
+	"interruption": {
+		"responseInterruptedByUser": "响应被用户中断",
+		"responseInterruptedByApiError": "响应被 API 错误中断"
+	},
 	"storage": {
 		"prompt_custom_path": "输入自定义会话历史存储路径，留空以使用默认位置",
 		"path_placeholder": "D:\\KiloCodeStorage",
@@ -257,5 +267,17 @@
 		"preventCompletionWithOpenTodos": {
 			"description": "当待办事项列表中有未完成的待办事项时阻止任务完成"
 		}
+	},
+	"docsLink": {
+		"label": "Docs",
+		"url": "https://kilocode.ai/docs"
+	},
+	"errorBoundary": {
+		"title": "错误",
+		"reportText": "请报告此错误以帮助我们改进应用程序。",
+		"githubText": "在 GitHub 上报告",
+		"copyInstructions": "复制下方的错误详情:",
+		"errorStack": "错误堆栈",
+		"componentStack": "组件堆栈"
 	}
 }

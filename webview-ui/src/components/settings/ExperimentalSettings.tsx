@@ -15,7 +15,7 @@ import {
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
 import { ExperimentalFeature } from "./ExperimentalFeature"
-import { MorphSettings } from "./MorphSettings" // kilocode_change: Use global version
+import { FastApplySettings } from "./FastApplySettings" // kilocode_change: Use Fast Apply version
 import { ImageGenerationSettings } from "./ImageGenerationSettings"
 
 type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
@@ -23,7 +23,9 @@ type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	setExperimentEnabled: SetExperimentEnabled
 	// kilocode_change start
 	morphApiKey?: string
-	setCachedStateField: SetCachedStateField<"morphApiKey">
+	fastApplyModel?: string
+	fastApplyApiProvider?: string
+	setCachedStateField: SetCachedStateField<"morphApiKey" | "fastApplyModel" | "fastApplyApiProvider">
 	kiloCodeImageApiKey?: string
 	setKiloCodeImageApiKey?: (apiKey: string) => void
 	currentProfileKilocodeToken?: string
@@ -48,6 +50,8 @@ export const ExperimentalSettings = ({
 	className,
 	// kilocode_change start
 	morphApiKey,
+	fastApplyModel, // kilocode_change: Fast Apply model selection
+	fastApplyApiProvider, // kilocode_change: Fast Apply model api base url
 	setCachedStateField,
 	setKiloCodeImageApiKey,
 	kiloCodeImageApiKey,
@@ -101,9 +105,11 @@ export const ExperimentalSettings = ({
 										}
 									/>
 									{enabled && (
-										<MorphSettings
+										<FastApplySettings
 											setCachedStateField={setCachedStateField}
 											morphApiKey={morphApiKey}
+											fastApplyModel={fastApplyModel}
+											fastApplyApiProvider={fastApplyApiProvider}
 										/>
 									)}
 								</React.Fragment>

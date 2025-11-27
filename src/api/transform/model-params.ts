@@ -2,7 +2,7 @@ import {
 	type ModelInfo,
 	type ProviderSettings,
 	type VerbosityLevel,
-	type ReasoningEffortWithMinimal,
+	type ReasoningEffortExtended,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 } from "@roo-code/types"
 
@@ -39,7 +39,7 @@ type GetModelParamsOptions<T extends Format> = {
 type BaseModelParams = {
 	maxTokens: number | undefined
 	temperature: number | undefined
-	reasoningEffort: ReasoningEffortWithMinimal | undefined
+	reasoningEffort: ReasoningEffortExtended | undefined
 	reasoningBudget: number | undefined
 	verbosity: VerbosityLevel | undefined
 }
@@ -97,7 +97,7 @@ export function getModelParams({
 	let temperature = customTemperature ?? defaultTemperature
 	let reasoningBudget: ModelParams["reasoningBudget"] = undefined
 	let reasoningEffort: ModelParams["reasoningEffort"] = undefined
-	let verbosity: VerbosityLevel | undefined = customVerbosity
+	let verbosity: VerbosityLevel | undefined = model.supportsVerbosity ? customVerbosity : undefined // kilocode_change
 
 	if (shouldUseReasoningBudget({ model, settings })) {
 		// Check if this is a Gemini 2.5 Pro model
@@ -129,8 +129,17 @@ export function getModelParams({
 		temperature = 1.0
 	} else if (shouldUseReasoningEffort({ model, settings })) {
 		// "Traditional" reasoning models use the `reasoningEffort` parameter.
-		const effort = customReasoningEffort ?? model.reasoningEffort
-		reasoningEffort = effort as ReasoningEffortWithMinimal
+		const effort = (customReasoningEffort ?? model.reasoningEffort) as any
+		// Do not propagate "disable" into model params; treat as omission
+		if (effort && effort !== "disable") {
+			if (model.supportsReasoningEffort === true) {
+				// Boolean capability: accept extended efforts; UI still exposes low/medium/high by default
+				reasoningEffort = effort as ReasoningEffortExtended
+			} else {
+				// Array capability: honor exactly what's defined by the model
+				reasoningEffort = effort as ReasoningEffortExtended
+			}
+		}
 	}
 
 	const params: BaseModelParams = { maxTokens, temperature, reasoningEffort, reasoningBudget, verbosity }
@@ -172,7 +181,22 @@ export function getModelParams({
 		return {
 			format,
 			...params,
-			reasoning: getOpenRouterReasoning({ model, reasoningBudget, reasoningEffort, settings }),
+			// kilocode_change start
+			reasoning: shouldDisableReasoning(modelId, reasoningEffort)
+				? { enabled: false }
+				: getOpenRouterReasoning({ model, reasoningBudget, reasoningEffort, settings }),
+			// kilocode_change end
 		}
 	}
 }
+
+// kilocode_change start
+function shouldDisableReasoning(modelId: string, reasoningEffort: ReasoningEffortExtended | undefined) {
+	const supportsReasoningToggle =
+		modelId.startsWith("deepseek/deepseek-v3.1") ||
+		modelId.startsWith("deepseek/deepseek-chat-v3.1") ||
+		modelId.startsWith("x-ai/grok-4-fast") ||
+		modelId.startsWith("z-ai/glm-4.6")
+	return supportsReasoningToggle && reasoningEffort === "minimal"
+}
+// kilocode_change end

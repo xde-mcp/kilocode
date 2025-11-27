@@ -29,10 +29,22 @@
 		"notifications": "Oznámení",
 		"contextManagement": "Kontext",
 		"terminal": "Terminál",
-		"prompts": "Výzvy",
+		"slashCommands": "Slash příkazy",
+		"prompts": "Podpůrné výzvy",
+		"ui": "Uživatelské rozhraní",
 		"experimental": "Experimentální",
 		"language": "Jazyk",
-		"about": "O Kilo Code"
+		"about": "O Kilo Code",
+		"autoPurge": "Automatické čištění"
+	},
+	"slashCommands": {
+		"description": "Spravujte své slash příkazy pro rychlé spouštění vlastních pracovních postupů a akcí. <DocsLink>Více informací</DocsLink>"
+	},
+	"ui": {
+		"collapseThinking": {
+			"label": "Sbalit zprávy Přemýšlení ve výchozím nastavení",
+			"description": "Když je povoleno, bloky přemýšlení budou ve výchozím nastavení sbalené, dokud s nimi neinteragujete"
+		}
 	},
 	"prompts": {
 		"description": "Nakonfigurujte podpůrné výzvy, které se používají pro rychlé akce, jako je vylepšení výzev, vysvětlení kódu a oprava problémů. Tyto výzvy pomáhají Kilo Code poskytovat lepší pomoc při běžných vývojových úkolech."
@@ -59,6 +71,9 @@
 		"vercelAiGatewayProvider": "Vercel AI Gateway",
 		"vercelAiGatewayApiKeyLabel": "Klíč API",
 		"vercelAiGatewayApiKeyPlaceholder": "Zadejte svůj klíč API Vercel AI Gateway",
+		"openRouterProvider": "OpenRouter",
+		"openRouterApiKeyLabel": "Klíč API OpenRouter",
+		"openRouterApiKeyPlaceholder": "Zadejte svůj klíč API OpenRouter",
 		"openaiCompatibleProvider": "Kompatibilní s OpenAI",
 		"openAiKeyLabel": "Klíč API OpenAI",
 		"openAiKeyPlaceholder": "Zadejte svůj klíč API OpenAI",
@@ -75,10 +90,14 @@
 		"selectModelPlaceholder": "Vyberte model",
 		"ollamaUrlLabel": "URL Ollama:",
 		"ollamaBaseUrlLabel": "Základní URL Ollama",
+		"vectorStoreProviderLabel": "Poskytovatel úložiště vektorů",
 		"qdrantUrlLabel": "URL Qdrant",
 		"qdrantKeyLabel": "Klíč Qdrant:",
 		"qdrantApiKeyLabel": "Klíč API Qdrant",
 		"qdrantApiKeyPlaceholder": "Zadejte svůj klíč API Qdrant (volitelné)",
+		"lancedbVectorStoreDirectoryLabel": "Cesta k LanceDB úložišti vektorů",
+		"lancedbVectorStoreDirectoryPlaceholder": "Zadejte vlastní cestu k úložišti vektorů (volitelné)",
+		"lancedbVectorStoreDirectoryDescription": "Cesta pro uložení LanceDB databáze vektorů. Pokud je prázdná, použije se výchozí umístění v globalStorageUri/vector.",
 		"setupConfigLabel": "Nastavení",
 		"advancedConfigLabel": "Pokročilá konfigurace",
 		"searchMinScoreLabel": "Prahová hodnota skóre vyhledávání",
@@ -125,10 +144,13 @@
 			"geminiApiKeyRequired": "Klíč API Gemini je povinný",
 			"mistralApiKeyRequired": "Klíč API Mistral je povinný",
 			"vercelAiGatewayApiKeyRequired": "Je vyžadován klíč API Vercel AI Gateway",
+			"openRouterApiKeyRequired": "Klíč API OpenRouter je povinný",
 			"ollamaBaseUrlRequired": "Základní URL Ollama je povinné",
 			"baseUrlRequired": "Základní URL je povinné",
 			"modelDimensionMinValue": "Dimenze modelu musí být větší než 0"
-		}
+		},
+		"cancelling": "Probíhá rušení...",
+		"cancelIndexingButton": "Zrušit indexování"
 	},
 	"autoApproval": {
 		"title": "Automatické schválení",
@@ -136,6 +158,7 @@
 	},
 	"autoApprove": {
 		"description": "Povolit Kilo Code automaticky provádět operace bez nutnosti schválení. Povolte tato nastavení pouze v případě, že plně důvěřujete AI a rozumíte souvisejícím bezpečnostním rizikům.",
+		"toggleShortcut": "Můžete nakonfigurovat klávesovou zkratku pro toto nastavení <SettingsLink>v nastaveních vašeho IDE</SettingsLink>.",
 		"enabled": "Automatické schválení povoleno",
 		"readOnly": {
 			"label": "Číst",
@@ -223,6 +246,8 @@
 		"providerDocumentation": "Dokumentace {{provider}}",
 		"configProfile": "Konfigurační profil",
 		"description": "Uložte si různé konfigurace API pro rychlé přepínání mezi poskytovateli a nastaveními.",
+		"makeActiveProfile": "Nastavit jako aktivní profil",
+		"makeActiveTooltip": "Aktivuj tento profil pro použití v API požadavcích",
 		"apiProvider": "Poskytovatel API",
 		"model": "Model",
 		"nameEmpty": "Jméno nemůže být prázdné",
@@ -241,6 +266,8 @@
 		"noProviderMatchFound": "Nebyli nalezeni žádní poskytovatelé",
 		"noMatchFound": "Nebyly nalezeny žádné odpovídající profily",
 		"vscodeLmDescription": "API jazykového modelu VS Code vám umožňuje spouštět modely poskytované jinými rozšířeními VS Code (včetně, ale nejen, GitHub Copilot). Nejjednodušší způsob, jak začít, je nainstalovat rozšíření Copilot a Copilot Chat z VS Code Marketplace.",
+		"vscodeLmUnavailable": "Podpora jazykových modelů VS Code je dostupná pouze ve Visual Studio Code. Forky jako VSCodium a další nemusí fungovat. Dále tato funkce není dostupná v nástrojích JetBrains.",
+		"vscodeLmUnavailableInstructions": "Ujistěte se, že používáte podporovaný nástroj a že máte nainstalovaný a povolený VS Code Chat",
 		"awsCustomArnUse": "Zadejte platný Amazon Bedrock ARN pro model, který chcete použít. Příklady formátu:",
 		"awsCustomArnDesc": "Ujistěte se, že region v ARN odpovídá výše vybranému regionu AWS.",
 		"openRouterApiKey": "Klíč API OpenRouter",
@@ -292,14 +319,27 @@
 		"getFeatherlessApiKey": "Získat klíč API Featherless",
 		"fireworksApiKey": "Klíč API Fireworks",
 		"getFireworksApiKey": "Získat klíč API Fireworks",
+		"syntheticApiKey": "Klíč API Synthetic",
+		"getSyntheticApiKey": "Získat klíč API Synthetic",
 		"zaiApiKey": "Klíč API Z.AI",
 		"getZaiApiKey": "Získat klíč API Z.AI",
 		"moonshotApiKey": "Klíč API Moonshot",
 		"getMoonshotApiKey": "Získat klíč API Moonshot",
 		"moonshotBaseUrl": "Vstupní bod Moonshot",
+		"minimaxApiKey": "Klíč API MiniMax",
+		"getMiniMaxApiKey": "Získat klíč API MiniMax",
+		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"zaiEntrypoint": "Vstupní bod Z AI",
 		"zaiEntrypointDescription": "Vyberte prosím vhodný vstupní bod API podle vaší polohy. Pokud jste v Číně, vyberte open.bigmodel.cn. Jinak vyberte api.z.ai.",
 		"geminiApiKey": "Klíč API Gemini",
+		"nanoGptApiKey": "Klíč API Nano-GPT",
+		"getNanoGptApiKey": "Získat klíč API Nano-GPT",
+		"nanoGptModelList": "Seznam modelů",
+		"nanoGptModelListOptions": {
+			"all": "Všechny modely",
+			"personalized": "Personalizované modely",
+			"subscription": "Modely předplatného"
+		},
 		"getGroqApiKey": "Získat klíč API Groq",
 		"groqApiKey": "Klíč API Groq",
 		"getSambaNovaApiKey": "Získat klíč API SambaNova",
@@ -308,6 +348,10 @@
 		"openAiApiKey": "Klíč API OpenAI",
 		"getHuggingFaceApiKey": "Získat klíč API Hugging Face",
 		"huggingFaceApiKey": "Klíč API Hugging Face",
+		"getOvhCloudAiEndpointsApiKey": "Získat klíč API OVHcloud AI Endpoints",
+		"ovhCloudAiEndpointsApiKey": "Klíč API OVHcloud AI Endpoints",
+		"ovhCloudAiEndpointsBaseUrl": "Základní URL",
+		"getOvhCloudAiEndpointsBaseUrl": "Použít vlastní základní URL",
 		"huggingFaceModelId": "ID modelu",
 		"huggingFaceLoading": "Načítání...",
 		"huggingFaceModelsCount": "({{count}} modelů)",
@@ -319,6 +363,32 @@
 		"huggingFaceSelectProvider": "Vyberte poskytovatele...",
 		"huggingFaceSearchProviders": "Hledat poskytovatele...",
 		"huggingFaceNoProvidersFound": "Nenalezeni žádní poskytovatelé",
+		"sapAiCore": {
+			"serviceKey": "Klíč služby AI Core",
+			"serviceKeyJson": "Zadejte JSON klíče služby...",
+			"resourceGroup": "Skupina prostředků AI Core",
+			"credentialsNote": "Tyto přihlašovací údaje jsou uloženy lokálně a používají se pouze k provádění API požadavků z tohoto rozšíření.",
+			"learnMore": "Více informací o přístupu k SAP AI Core API naleznete zde.",
+			"orchestrationMode": "Režim orchestrace",
+			"orchestrationEnabledDesc": "Pokud je povoleno, poskytuje přístup ke všem dostupným modelům bez nutnosti jednotlivých nasazení.",
+			"orchestrationDisabledDesc": "Pokud je zakázáno, poskytuje přístup pouze k nasazeným základním modelům ve vaší instanci služby AI Core.",
+			"modelDeploymentDesc": "Můžete vybírat pouze modely s dostupnými nasazeními.",
+			"deployment": "Nasazení",
+			"loading": "Načítání...",
+			"modelsCount": "({{count}} modelů)",
+			"deploymentsCount": "({{count}} nasazení)",
+			"selectModel": "Vyberte model...",
+			"selectDeployment": "Vyberte nasazení...",
+			"searchModels": "Hledat modely...",
+			"searchDeployments": "Hledat nasazení...",
+			"noModelsFound": "Nenalezeny žádné modely",
+			"noDeploymentFound": "Nenalezeno žádné nasazení",
+			"getStarted": "Začněte se SAP AI Core",
+			"supportedProviders": "Podporovaní poskytovatelé",
+			"supportedProvidersDesc1": "Poskytovatel SAP AI Core v současnosti podporuje pouze základní modely pro následující poskytovatele LLM:",
+			"supportedProvidersDesc2": "Zvažte přepnutí do režimu orchestrace pro přístup k více modelům.",
+			"supportedProvidersDesc3": "Více informací o režimu orchestrace"
+		},
 		"awsApiKey": "Klíč API Amazon Bedrock",
 		"apiKey": "Klíč API",
 		"anthropic": {
@@ -351,6 +421,7 @@
 		"awsSessionToken": "Token relace AWS",
 		"awsRegion": "Region AWS",
 		"awsCrossRegion": "Použít meziregionální odvozování",
+		"awsGlobalInference": "Použít globální odvozování (automatický výběr optimálního regionu AWS)",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "Použít vlastní koncový bod VPC",
 			"vpcEndpointUrlPlaceholder": "Zadejte URL koncového bodu VPC (volitelné)",
@@ -397,6 +468,9 @@
 			"apiKey": "Klíč API",
 			"apiKeyPlaceholder": "Zadejte svůj klíč API",
 			"apiKeyInfo": "Klíč API bude odeslán jako Authorization hlavička",
+			"apiKeyHelp": "Volitelný klíč API pro autentizované instance Ollama nebo cloudové služby. Ponechte prázdné pro místní instalace.",
+			"numCtx": "Velikost kontextového okna (num_ctx)",
+			"numCtxHelp": "Přepsat výchozí velikost kontextového okna modelu. Ponechte prázdné pro použití konfigurace Modelfile modelu. Minimální hodnota je 128.",
 			"description": "Ollama vám umožňuje spouštět modely lokálně na vašem počítači. Pokyny k zahájení práce naleznete v jejich průvodci rychlým startem.",
 			"warning": "Poznámka: Kilo Code používá složité výzvy a nejlépe funguje s modely Claude. Méně schopné modely nemusí fungovat podle očekávání."
 		},
@@ -461,6 +535,10 @@
 			},
 			"resetDefaults": "Obnovit výchozí"
 		},
+		"rateLimitAfter": {
+			"label": "Omezení rychlosti na konci",
+			"description": "Začněte omezovat rychlost poté, co stream API skončí."
+		},
 		"rateLimitSeconds": {
 			"label": "Omezení rychlosti",
 			"description": "Minimální čas mezi požadavky API."
@@ -473,10 +551,11 @@
 		},
 		"reasoningEffort": {
 			"label": "Úsilí modelu při uvažování",
+			"none": "Žádné",
 			"minimal": "Minimální (nejrychlejší)",
-			"high": "Vysoké",
+			"low": "Nízké",
 			"medium": "Střední",
-			"low": "Nízké"
+			"high": "Vysoké"
 		},
 		"verbosity": {
 			"label": "Podrobnost výstupu",
@@ -525,6 +604,15 @@
 			"description": "Tento poskytovatel používá OAuth autentizaci ze služby Qwen a nevyžaduje klíče API.",
 			"instructions": "Postupujte prosím podle oficiální dokumentace pro získání autorizačního souboru a umístěte jej do zadané cesty.",
 			"setupLink": "Oficiální dokumentace Qwen"
+		},
+		"profileName": "Název profilu",
+		"profileType": "Typ profilu",
+		"profileTypeChat": "Chat",
+		"profileTypeAutocomplete": "Automatické dokončování",
+		"profileTypeDescription": "Profily chatu se používají pro konverzace. Je povolen pouze jeden profil automatického dokončování.",
+		"autocompleteLabel": "(Automatické dokončování)",
+		"autocomplete": {
+			"onlyOneAllowed": "Je povolen pouze jeden profil automatického dokončování. Profil \"{{existingName}}\" je již nakonfigurován pro automatické dokončování. Nejprve změň jeho typ nebo ho smaž."
 		}
 	},
 	"contextWindow": {
@@ -569,15 +657,71 @@
 		}
 	},
 	"checkpoints": {
+		"timeout": {
+			"label": "Časový limit inicializace kontrolního bodu (sekundy)",
+			"description": "Maximální doba čekání na inicializaci služby kontrolních bodů. Výchozí je 15 sekund. Rozsah: 10-60 sekund."
+		},
 		"enable": {
 			"label": "Povolit automatické kontrolní body",
 			"description": "Pokud je povoleno, Kilo Code automaticky vytvoří kontrolní body během provádění úkolu, což usnadní kontrolu změn nebo návrat do předchozích stavů. <0>Dozvědět se více</0>"
+		}
+	},
+	"autoPurge": {
+		"enable": {
+			"label": "Povolit automatické čištění úkolů",
+			"description": "Automaticky mazat staré úkoly pro uvolnění místa na disku a zlepšení výkonu. Úkoly jsou klasifikovány podle typu a stáří pro určení, kdy mají být odstraněny."
+		},
+		"defaultRetention": {
+			"label": "Výchozí doba uchovávání (dny)",
+			"description": "Počet dní pro uchovávání úkolů před tím, než jsou způsobilé k čištění"
+		},
+		"neverPurgeFavorited": {
+			"label": "Nikdy nemazat oblíbené úkoly",
+			"description": "Když je povoleno, oblíbené úkoly nebudou nikdy automaticky smazány bez ohledu na stáří"
+		},
+		"favoritedRetention": {
+			"label": "Uchovávání oblíbených úkolů (dny)",
+			"description": "Počet dní pro uchovávání oblíbených úkolů (platí pouze když je 'Nikdy nemazat oblíbené úkoly' zakázáno)"
+		},
+		"completedRetention": {
+			"label": "Uchovávání dokončených úkolů (dny)",
+			"description": "Počet dní pro uchovávání úkolů, které byly úspěšně dokončeny"
+		},
+		"incompleteRetention": {
+			"label": "Uchovávání nedokončených úkolů (dny)",
+			"description": "Počet dní pro uchovávání úkolů, které nebyly dokončeny (obvykle kratší než dokončené úkoly)"
+		},
+		"lastRun": {
+			"label": "Poslední čištění"
+		},
+		"manualPurge": {
+			"button": "Spustit čištění nyní"
 		}
 	},
 	"display": {
 		"taskTimeline": {
 			"label": "Zobrazit časovou osu úkolu",
 			"description": "Zobrazit vizuální časovou osu zpráv úkolu, barevně odlišenou podle typu, což vám umožní rychle zobrazit průběh úkolu a posunout se zpět na konkrétní body v historii úkolu."
+		},
+		"sendMessageOnEnter": {
+			"label": "Odeslat zprávu pomocí Enter",
+			"description": "Je-li povoleno, stiskněte Enter pro odeslání a Shift+Enter pro nový řádek. Vypněte pro použití Shift+Enter pro odeslání."
+		},
+		"costThreshold": {
+			"label": "Skrýt cenu pod prahem",
+			"currentValue": "Aktuální práh: ${{value}}",
+			"description": "Zobrazovat pouze náklady na požadavky převyšující tuto částku. Náklady jsou vždy viditelné, když je panel podrobností otevřený."
+		},
+		"showTimestamps": {
+			"label": "Zobrazit časová razítka",
+			"description": "Zobrazit časové razítko pro každou zprávu v zobrazení chatu"
+		}
+	},
+	"ghost": {
+		"showGutterAnimation": {
+			"label": "Zobrazit animaci v okraji při automatickém dokončování",
+			"description": "Zobrazit animovaný indikátor v okraji editoru, když běží automatické dokončování",
+			"preview": "Náhled animace"
 		}
 	},
 	"notifications": {
@@ -636,6 +780,16 @@
 			"lines": "řádky",
 			"always_full_read": "Vždy číst celý soubor"
 		},
+		"maxImageFileSize": {
+			"label": "Maximální velikost souboru obrázku",
+			"mb": "MB",
+			"description": "Maximální velikost (v MB) pro soubory obrázků, které může nástroj pro čtení souborů zpracovat."
+		},
+		"maxTotalImageSize": {
+			"label": "Maximální celková velikost obrázků",
+			"mb": "MB",
+			"description": "Maximální kumulativní limit velikosti (v MB) pro všechny obrázky zpracované v jedné operaci read_file. Při čtení více obrázků se velikost každého obrázku přičte k celkové velikosti. Pokud by zahrnutí dalšího obrázku překročilo tento limit, bude přeskočen."
+		},
 		"condensingThreshold": {
 			"label": "Prahová hodnota spouštění zhušťování",
 			"selectProfile": "Nakonfigurovat prahovou hodnotu pro profil",
@@ -661,15 +815,13 @@
 				"description": "Čas čekání po zápisu souborů před pokračováním (v milisekundách). Vyšší hodnoty mohou zlepšit přesnost, ale zpomalují detekci chyb."
 			}
 		},
-		"maxImageFileSize": {
-			"label": "Maximální velikost souboru obrázku",
-			"mb": "MB",
-			"description": "Maximální velikost (v MB) pro soubory obrázků, které mohou být zahrnuty do požadavků. Větší soubory budou automaticky změněny na menší velikost."
+		"includeCurrentTime": {
+			"label": "Zahrnout aktuální čas do kontextu",
+			"description": "Pokud je povoleno, aktuální čas a informace o časovém pásmu budou zahrnuty do systémové výzvy. Zakažte toto, pokud modely přestávají pracovat kvůli obavám o čas."
 		},
-		"maxTotalImageSize": {
-			"label": "Maximální celková velikost obrázků",
-			"mb": "MB",
-			"description": "Maximální kumulativní limit velikosti (v MB) pro všechny obrázky v jednom požadavku. Při překročení budou obrázky změněny na menší velikost, aby se vešly do tohoto limitu."
+		"includeCurrentCost": {
+			"label": "Zahrnout aktuální náklady do kontextu",
+			"description": "Pokud je povoleno, aktuální náklady na využití API budou zahrnuty do systémové výzvy. Zakažte toto, pokud modely přestávají pracovat kvůli obavám o náklady."
 		}
 	},
 	"terminal": {
@@ -695,7 +847,7 @@
 		},
 		"shellIntegrationDisabled": {
 			"label": "Zakázat integraci shellu terminálu",
-			"description": "Povolte tuto možnost, pokud příkazy terminálu nefungují správně nebo se zobrazují chyby „Integrace shellu není k dispozici“. Tímto se použije jednodušší metoda spouštění příkazů, která obejde některé pokročilé funkce terminálu. <0>Dozvědět se více</0>"
+			"description": "Povolte tuto možnost, pokud příkazy terminálu nefungují správně nebo se zobrazují chyby „Integrace shellu není k dispozici“. Tím k se použije jednodušší metoda spouštění příkazů, která obejde některé pokročilé funkce terminálu. <0>Dozvědět se více</0>"
 		},
 		"commandDelay": {
 			"label": "Zpoždění příkazu terminálu",
@@ -757,7 +909,7 @@
 				},
 				"descriptions": {
 					"standard": "Standardní strategie diff aplikuje změny na jeden blok kódu najednou.",
-					"unified": "Sjednocená strategie diff používá více přístupů k aplikaci diffů a vybírá ten nejlepší.",
+					"unified": "Sjednocená strategie diff používá více přístupů k aplikace diffů a vybírá ten nejlepší.",
 					"multiBlock": "Strategie diff s více bloky umožňuje aktualizovat více bloků kódu v souboru v jednom požadavku."
 				}
 			},
@@ -776,9 +928,23 @@
 			"name": "Použít experimentální sjednocenou strategii diff",
 			"description": "Povolit experimentální sjednocenou strategii diff. Tato strategie může snížit počet opakování způsobených chybami modelu, ale může způsobit neočekávané chování nebo nesprávné úpravy. Povolte pouze pokud rozumíte rizikům a jste ochotni pečlivě zkontrolovat všechny změny."
 		},
-		"SEARCH_AND_REPLACE": {
-			"name": "Použít experimentální nástroj hledání a nahrazování",
-			"description": "Povolit experimentální nástroj hledání a nahrazování, který umožňuje Kilo Code nahradit více výskytů hledaného výrazu v jednom požadavku."
+		"MORPH_FAST_APPLY": {
+			"name": "Povolit Fast Apply",
+			"description": "Pokud je povoleno, Kilo Code může upravovat soubory pomocí Fast Apply se specializovanými modely optimalizovanými pro úpravy kódu. Vyžaduje Kilo Gateway Provider, OpenRouter nebo klíč API Morph.",
+			"apiProvider": "Poskytovatel API",
+			"apiProviderList": {
+				"current": "Aktuální"
+			},
+			"apiKey": "Klíč API (volitelné)",
+			"placeholder": "Zadejte svůj klíč API (volitelné)",
+			"modelLabel": "Výběr modelu",
+			"modelDescription": "Vyberte, který model rychlého aplikování použít pro úpravy souborů",
+			"models": {
+				"auto": "Automaticky (výchozí - vybere nejlepší dostupný)",
+				"morphFast": "Morph v3 Fast (rychlejší, nižší náklady)",
+				"morphLarge": "Morph v3 Large (schopnější)",
+				"relace": "Relace Apply v3"
+			}
 		},
 		"INSERT_BLOCK": {
 			"name": "Použít experimentální nástroj vkládání obsahu",
@@ -803,12 +969,6 @@
 		"MULTI_FILE_APPLY_DIFF": {
 			"name": "Povolit souběžné úpravy souborů",
 			"description": "Pokud je povoleno, Kilo Code může upravovat více souborů v jednom požadavku. Pokud je zakázáno, Kilo Code musí upravovat soubory jeden po druhém. Zakázání může pomoci při práci s méně schopnými modely nebo když chcete mít větší kontrolu nad úpravami souborů."
-		},
-		"MORPH_FAST_APPLY": {
-			"name": "Povolit Morph Fast Apply",
-			"description": "Pokud je povoleno, Kilo Code může upravovat soubory pomocí Morph Fast Apply. Vyžaduje poskytovatele Kilo Code API, OpenRouter nebo klíč API Morph.",
-			"apiKey": "Klíč API Morph (volitelné)",
-			"placeholder": "Zadejte svůj klíč API Morph (volitelné)"
 		},
 		"PREVENT_FOCUS_DISRUPTION": {
 			"name": "Úpravy na pozadí",
@@ -918,7 +1078,10 @@
 		"providerNotAllowed": "Poskytovatel '{{provider}}' není povolen vaší organizací",
 		"modelNotAllowed": "Model '{{model}}' není povolen pro poskytovatele '{{provider}}' vaší organizací",
 		"profileInvalid": "Tento profil obsahuje poskytovatele nebo model, který není povolen vaší organizací",
-		"qwenCodeOauthPath": "Musíte poskytnout platnou cestu k OAuth pověřením."
+		"modelDeprecated": "Tento model již není dostupný. Prosím vyberte jiný model.",
+		"qwenCodeOauthPath": "Musíte poskytnout platnou cestu k OAuth pověřením.",
+		"sapAiCore": "Musíte zadat platný klíč služby SAP AI Core.",
+		"sapAiCoreDeploymentId": "Musíte vybrat běžící nasazení pro model '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "Zadejte klíč API...",

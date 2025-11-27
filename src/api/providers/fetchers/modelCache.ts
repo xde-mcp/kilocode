@@ -2,11 +2,14 @@ import * as path from "path"
 import fs from "fs/promises"
 
 import NodeCache from "node-cache"
+
+import type { ProviderName } from "@roo-code/types"
+
 import { safeWriteJson } from "../../../utils/safeWriteJson"
 
 import { ContextProxy } from "../../../core/config/ContextProxy"
 import { getCacheDirectoryPath } from "../../../utils/storage"
-import { RouterName, ModelRecord } from "../../../shared/api"
+import type { RouterName, ModelRecord } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
 import { getOpenRouterModels } from "./openrouter"
@@ -16,16 +19,24 @@ import { getGlamaModels } from "./glama"
 import { getUnboundModels } from "./unbound"
 import { getLiteLLMModels } from "./litellm"
 import { GetModelsOptions } from "../../../shared/api"
-import { getKiloBaseUriFromToken } from "../../../shared/kilocode/token"
+import { getKiloUrlFromToken } from "@roo-code/types"
 import { getOllamaModels } from "./ollama"
 import { getLMStudioModels } from "./lmstudio"
 import { getIOIntelligenceModels } from "./io-intelligence"
-
 // kilocode_change start
-import { cerebrasModels } from "@roo-code/types"
+import { getOvhCloudAiEndpointsModels } from "./ovhcloud"
+import { getGeminiModels } from "./gemini"
+import { getInceptionModels } from "./inception"
+import { getSyntheticModels } from "./synthetic"
+import { getSapAiCoreModels } from "./sap-ai-core"
 // kilocode_change end
 
 import { getDeepInfraModels } from "./deepinfra"
+import { getHuggingFaceModels } from "./huggingface"
+import { getRooModels } from "./roo"
+import { getChutesModels } from "./chutes"
+import { getNanoGptModels } from "./nano-gpt" //kilocode_change
+
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
 export /*kilocode_change*/ async function writeModels(router: RouterName, data: ModelRecord) {
@@ -55,7 +66,9 @@ export /*kilocode_change*/ async function readModels(router: RouterName): Promis
  */
 export const getModels = async (options: GetModelsOptions): Promise<ModelRecord> => {
 	const { provider } = options
+
 	let models = getModelsFromCache(provider)
+
 	if (models) {
 		return models
 	}
@@ -71,37 +84,44 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 				// kilocode_change end
 				break
 			case "requesty":
-				// Requesty models endpoint requires an API key for per-user custom policies
+				// Requesty models endpoint requires an API key for per-user custom policies.
 				models = await getRequestyModels(options.baseUrl, options.apiKey)
 				break
 			case "glama":
 				models = await getGlamaModels()
 				break
 			case "unbound":
-				// Unbound models endpoint requires an API key to fetch application specific models
+				// Unbound models endpoint requires an API key to fetch application specific models.
 				models = await getUnboundModels(options.apiKey)
 				break
 			case "litellm":
-				// Type safety ensures apiKey and baseUrl are always provided for litellm
+				// Type safety ensures apiKey and baseUrl are always provided for LiteLLM.
 				models = await getLiteLLMModels(options.apiKey, options.baseUrl)
 				break
 			// kilocode_change start
-			case "kilocode-openrouter":
+			case "kilocode": {
+				const backendUrl = options.kilocodeOrganizationId
+					? `https://api.kilocode.ai/api/organizations/${options.kilocodeOrganizationId}`
+					: "https://api.kilocode.ai/api/openrouter"
+				const openRouterBaseUrl = getKiloUrlFromToken(backendUrl, options.kilocodeToken ?? "")
 				models = await getOpenRouterModels({
-					openRouterBaseUrl:
-						getKiloBaseUriFromToken(options.kilocodeToken ?? "") +
-						(options.kilocodeOrganizationId
-							? `/api/organizations/${options.kilocodeOrganizationId}`
-							: "/api/openrouter"),
+					openRouterBaseUrl,
 					headers: options.kilocodeToken ? { Authorization: `Bearer ${options.kilocodeToken}` } : undefined,
 				})
 				break
-			// kilocode_change end
-			case "cerebras":
-				models = cerebrasModels
+			}
+			case "synthetic":
+				models = await getSyntheticModels(options.apiKey)
 				break
+			case "gemini":
+				models = await getGeminiModels({
+					apiKey: options.apiKey,
+					baseUrl: options.baseUrl,
+				})
+				break
+			// kilocode_change end
 			case "ollama":
-				models = await getOllamaModels(options.baseUrl, options.apiKey)
+				models = await getOllamaModels(options.baseUrl, options.apiKey, options.numCtx /*kilocode_change*/)
 				break
 			case "lmstudio":
 				models = await getLMStudioModels(options.baseUrl)
@@ -115,14 +135,50 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 			case "vercel-ai-gateway":
 				models = await getVercelAiGatewayModels()
 				break
+			case "huggingface":
+				models = await getHuggingFaceModels()
+				break
+			// kilocode_change start
+			case "sap-ai-core":
+				models = await getSapAiCoreModels(
+					options.sapAiCoreServiceKey,
+					options.sapAiCoreResourceGroup,
+					options.sapAiCoreUseOrchestration,
+				)
+				break
+			case "inception":
+				models = await getInceptionModels()
+				break
+			case "ovhcloud":
+				models = await getOvhCloudAiEndpointsModels()
+				break
+			// kilocode_change end
+			case "roo": {
+				// Roo Code Cloud provider requires baseUrl and optional apiKey
+				const rooBaseUrl =
+					options.baseUrl ?? process.env.ROO_CODE_PROVIDER_URL ?? "https://api.roocode.com/proxy"
+				models = await getRooModels(rooBaseUrl, options.apiKey)
+				break
+			}
+			case "chutes":
+				models = await getChutesModels(options.apiKey)
+				break
+			//kilocode_change start
+			case "nano-gpt":
+				models = await getNanoGptModels({
+					nanoGptModelList: options.nanoGptModelList,
+					apiKey: options.apiKey,
+				})
+				break
+			//kilocode_change end
 			default: {
-				// Ensures router is exhaustively checked if RouterName is a strict union
+				// Ensures router is exhaustively checked if RouterName is a strict union.
 				const exhaustiveCheck: never = provider
 				throw new Error(`Unknown provider: ${exhaustiveCheck}`)
 			}
 		}
 
-		// Cache the fetched models (even if empty, to signify a successful fetch with no models)
+		// Cache the fetched models (even if empty, to signify a successful fetch with no models).
 		memoryCache.set(provider, models)
 
 		/* kilocode_change: skip useless file IO
@@ -132,7 +188,6 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 
 		try {
 			models = await readModels(provider)
-			// console.log(`[getModels] read ${router} models from file cache`)
 		} catch (error) {
 			console.error(`[getModels] error reading ${provider} models from file cache`, error)
 		}
@@ -147,13 +202,14 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 }
 
 /**
- * Flush models memory cache for a specific router
+ * Flush models memory cache for a specific router.
+ *
  * @param router - The router to flush models for.
  */
 export const flushModels = async (router: RouterName) => {
 	memoryCache.del(router)
 }
 
-export function getModelsFromCache(provider: string) {
+export function getModelsFromCache(provider: ProviderName) {
 	return memoryCache.get<ModelRecord>(provider)
 }

@@ -1,47 +1,56 @@
 import cloneDeep from "clone-deep"
 import { serializeError } from "serialize-error"
+import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
-import type { ToolParamName, ToolResponse } from "../../shared/tools"
+import type { ToolParamName, ToolResponse, ToolUse } from "../../shared/tools"
+import { Package } from "../../shared/package"
 
-import { fetchInstructionsTool } from "../tools/fetchInstructionsTool"
-import { listFilesTool } from "../tools/listFilesTool"
-import { getReadFileToolDescription, readFileTool } from "../tools/readFileTool"
+import { fetchInstructionsTool } from "../tools/FetchInstructionsTool"
+import { listFilesTool } from "../tools/ListFilesTool"
+import { readFileTool } from "../tools/ReadFileTool"
 import { getSimpleReadFileToolDescription, simpleReadFileTool } from "../tools/simpleReadFileTool"
 import { shouldUseSingleFileRead } from "@roo-code/types"
-import { writeToFileTool } from "../tools/writeToFileTool"
-import { applyDiffTool } from "../tools/multiApplyDiffTool"
-import { insertContentTool } from "../tools/insertContentTool"
-import { searchAndReplaceTool } from "../tools/searchAndReplaceTool"
-import { editFileTool } from "../tools/editFileTool" // kilocode_change: Morph fast apply
-import { listCodeDefinitionNamesTool } from "../tools/listCodeDefinitionNamesTool"
-import { searchFilesTool } from "../tools/searchFilesTool"
-import { browserActionTool } from "../tools/browserActionTool"
-import { executeCommandTool } from "../tools/executeCommandTool"
-import { useMcpToolTool } from "../tools/useMcpToolTool"
+import { writeToFileTool } from "../tools/WriteToFileTool"
+import { applyDiffTool } from "../tools/MultiApplyDiffTool"
+import { insertContentTool } from "../tools/InsertContentTool"
+import { listCodeDefinitionNamesTool } from "../tools/ListCodeDefinitionNamesTool"
+import { searchFilesTool } from "../tools/SearchFilesTool"
+import { browserActionTool } from "../tools/BrowserActionTool"
+import { executeCommandTool } from "../tools/ExecuteCommandTool"
+import { useMcpToolTool } from "../tools/UseMcpToolTool"
 import { accessMcpResourceTool } from "../tools/accessMcpResourceTool"
-import { askFollowupQuestionTool } from "../tools/askFollowupQuestionTool"
-import { switchModeTool } from "../tools/switchModeTool"
-import { attemptCompletionTool } from "../tools/attemptCompletionTool"
-import { newTaskTool } from "../tools/newTaskTool"
+import { askFollowupQuestionTool } from "../tools/AskFollowupQuestionTool"
+import { switchModeTool } from "../tools/SwitchModeTool"
+import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
+import { newTaskTool } from "../tools/NewTaskTool"
 
-import { updateTodoListTool } from "../tools/updateTodoListTool"
-import { runSlashCommandTool } from "../tools/runSlashCommandTool"
-import { generateImageTool } from "../tools/generateImageTool"
+import { updateTodoListTool } from "../tools/UpdateTodoListTool"
+import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
+import { generateImageTool } from "../tools/GenerateImageTool"
 
 import { formatResponse } from "../prompts/responses"
 import { validateToolUse } from "../tools/validateToolUse"
 import { Task } from "../task/Task"
-import { newRuleTool } from "../tools/newRuleTool" // kilocode_change
-import { reportBugTool } from "../tools/reportBugTool" // kilocode_change
-import { condenseTool } from "../tools/condenseTool" // kilocode_change
-import { codebaseSearchTool } from "../tools/codebaseSearchTool"
+import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
 import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
-import { applyDiffToolLegacy } from "../tools/applyDiffTool"
-import { reportExcessiveRecursion, yieldPromise } from "../kilocode"
+import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
+import * as vscode from "vscode"
+import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
+
+import { yieldPromise } from "../kilocode"
+import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
+import { editFileTool } from "../tools/kilocode/editFileTool"
+import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
+import { newRuleTool } from "../tools/kilocode/newRuleTool"
+import { reportBugTool } from "../tools/kilocode/reportBugTool"
+import { condenseTool } from "../tools/kilocode/condenseTool"
+import { searchAndReplaceTool } from "../tools/kilocode/searchAndReplaceTool"
+import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
+import { captureAskApproval } from "./kilocode/captureAskApprovalEvent"
 
 /**
  * Processes and presents assistant message content to the user interface.
@@ -60,9 +69,7 @@ import { reportExcessiveRecursion, yieldPromise } from "../kilocode"
  * as it becomes available.
  */
 
-export async function presentAssistantMessage(cline: Task, recursionDepth: number = 0 /*kilocode_change*/) {
-	reportExcessiveRecursion("presentAssistantMessage", recursionDepth) // kilocode_change
-
+export async function presentAssistantMessage(cline: Task) {
 	if (cline.abort) {
 		throw new Error(`[Task#presentAssistantMessage] task ${cline.taskId}.${cline.instanceId} aborted`)
 	}
@@ -88,7 +95,18 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 		return
 	}
 
-	const block = cloneDeep(cline.assistantMessageContent[cline.currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
+	let block: any
+	try {
+		block = cloneDeep(cline.assistantMessageContent[cline.currentStreamingContentIndex]) // need to create copy bc while stream is updating the array, it could be updating the reference block properties too
+	} catch (error) {
+		console.error(`ERROR cloning block:`, error)
+		console.error(
+			`Block content:`,
+			JSON.stringify(cline.assistantMessageContent[cline.currentStreamingContentIndex], null, 2),
+		)
+		cline.presentAssistantMessageLocked = false
+		return
+	}
 
 	switch (block.type) {
 		case "text": {
@@ -171,7 +189,12 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 						if (shouldUseSingleFileRead(modelId)) {
 							return getSimpleReadFileToolDescription(block.name, block.params)
 						} else {
-							return getReadFileToolDescription(block.name, block.params)
+							// Prefer native typed args when available; fall back to legacy params
+							// Check if nativeArgs exists (native protocol)
+							if (block.nativeArgs) {
+								return readFileTool.getReadFileToolDescription(block.name, block.nativeArgs)
+							}
+							return readFileTool.getReadFileToolDescription(block.name, block.params)
 						}
 					case "fetch_instructions":
 						return `[${block.name} for '${block.params.task}']`
@@ -202,11 +225,11 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 						}]`
 					case "insert_content":
 						return `[${block.name} for '${block.params.path}']`
-					case "search_and_replace":
-						return `[${block.name} for '${block.params.path}']`
-					// kilocode_change start: Morph fast apply
+					// kilocode_change start
 					case "edit_file":
 						return `[${block.name} for '${block.params.target_file}']`
+					case "delete_file":
+						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change end
 					case "list_files":
 						return `[${block.name} for '${block.params.path}']`
@@ -246,21 +269,32 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 						return `[${block.name} for '${block.params.command}'${block.params.args ? ` with args: ${block.params.args}` : ""}]`
 					case "generate_image":
 						return `[${block.name} for '${block.params.path}']`
+					default:
+						return `[${block.name}]`
 				}
 			}
 
 			if (cline.didRejectTool) {
 				// Ignore any tool content after user has rejected tool once.
-				if (!block.partial) {
+				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
+				const toolCallId = block.id
+				const errorMessage = !block.partial
+					? `Skipping tool ${toolDescription()} due to user rejecting a previous tool.`
+					: `Tool ${toolDescription()} was interrupted and not executed due to user rejecting a previous tool.`
+
+				if (toolCallId) {
+					// Native protocol: MUST send tool_result for every tool_use
 					cline.userMessageContent.push({
-						type: "text",
-						text: `Skipping tool ${toolDescription()} due to user rejecting a previous tool.`,
-					})
+						type: "tool_result",
+						tool_use_id: toolCallId,
+						content: errorMessage,
+						is_error: true,
+					} as Anthropic.ToolResultBlockParam)
 				} else {
-					// Partial tool after user rejected a previous tool.
+					// XML protocol: send as text
 					cline.userMessageContent.push({
 						type: "text",
-						text: `Tool ${toolDescription()} was interrupted and not executed due to user rejecting a previous tool.`,
+						text: errorMessage,
 					})
 				}
 
@@ -269,21 +303,86 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 
 			if (cline.didAlreadyUseTool) {
 				// Ignore any content after a tool has already been used.
-				cline.userMessageContent.push({
-					type: "text",
-					text: `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`,
-				})
+				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
+				const toolCallId = block.id
+				const errorMessage = `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`
+
+				if (toolCallId) {
+					// Native protocol: MUST send tool_result for every tool_use
+					cline.userMessageContent.push({
+						type: "tool_result",
+						tool_use_id: toolCallId,
+						content: errorMessage,
+						is_error: true,
+					} as Anthropic.ToolResultBlockParam)
+				} else {
+					// XML protocol: send as text
+					cline.userMessageContent.push({
+						type: "text",
+						text: errorMessage,
+					})
+				}
 
 				break
 			}
 
-			const pushToolResult = (content: ToolResponse) => {
-				cline.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
+			// Track if we've already pushed a tool result for this tool call (native protocol only)
+			let hasToolResult = false
 
-				if (typeof content === "string") {
-					cline.userMessageContent.push({ type: "text", text: content || "(tool did not return anything)" })
+			// Determine protocol by checking if this tool call has an ID.
+			// Native protocol tool calls ALWAYS have an ID (set when parsed from tool_call chunks).
+			// XML protocol tool calls NEVER have an ID (parsed from XML text).
+			const toolCallId = (block as any).id
+			const isNative = !!toolCallId
+
+			const pushToolResult = (content: ToolResponse) => {
+				if (isNative && toolCallId) {
+					// For native protocol, only allow ONE tool_result per tool call
+					if (hasToolResult) {
+						console.warn(
+							`[presentAssistantMessage] Skipping duplicate tool_result for tool_use_id: ${toolCallId}`,
+						)
+						return
+					}
+
+					// For native protocol, add as tool_result block
+					let resultContent: string
+					if (typeof content === "string") {
+						resultContent = content || "(tool did not return anything)"
+					} else {
+						// Convert array of content blocks to string for tool result
+						// Tool results in OpenAI format only support strings
+						resultContent = content
+							.map((item) => {
+								if (item.type === "text") {
+									return item.text
+								} else if (item.type === "image") {
+									return "(image content)"
+								}
+								return ""
+							})
+							.join("\n")
+					}
+
+					cline.userMessageContent.push({
+						type: "tool_result",
+						tool_use_id: toolCallId,
+						content: resultContent,
+					} as Anthropic.ToolResultBlockParam)
+
+					hasToolResult = true
 				} else {
-					cline.userMessageContent.push(...content)
+					// For XML protocol, add as text blocks (legacy behavior)
+					cline.userMessageContent.push({ type: "text", text: `${toolDescription()} Result:` })
+
+					if (typeof content === "string") {
+						cline.userMessageContent.push({
+							type: "text",
+							text: content || "(tool did not return anything)",
+						})
+					} else {
+						cline.userMessageContent.push(...content)
+					}
 				}
 
 				// Once a tool result has been collected, ignore all other tool
@@ -298,6 +397,23 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 				progressStatus?: ToolProgressStatus,
 				isProtected?: boolean,
 			) => {
+				// kilocode_change start: YOLO mode with AI gatekeeper
+				const state = await cline.providerRef.deref()?.getState()
+				if (state?.yoloMode) {
+					// If gatekeeper is configured, use it to evaluate the approval
+					const approved = await evaluateGatekeeperApproval(cline, block.name, block.params)
+					if (!approved) {
+						// Gatekeeper denied the action
+						pushToolResult(formatResponse.toolDenied())
+						cline.didRejectTool = true
+						captureAskApproval(block.name, false)
+						return false
+					}
+					captureAskApproval(block.name, true)
+					return true
+				}
+				// kilocode_change end
+
 				const { response, text, images } = await cline.ask(
 					type,
 					partialMessage,
@@ -315,6 +431,7 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 						pushToolResult(formatResponse.toolDenied())
 					}
 					cline.didRejectTool = true
+					captureAskApproval(block.name, false) // kilocode_change
 					return false
 				}
 
@@ -324,6 +441,7 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 					pushToolResult(formatResponse.toolResult(formatResponse.toolApprovedWithFeedback(text), images))
 				}
 
+				captureAskApproval(block.name, true) // kilocode_change
 				return true
 			}
 
@@ -441,15 +559,35 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 				}
 			}
 
+			await checkpointSaveAndMark(cline) // kilocode_change: moved out of switch
 			switch (block.name) {
 				case "write_to_file":
-					await checkpointSaveAndMark(cline)
-					await writeToFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					// await checkpointSaveAndMark(cline) // kilocode_change
+					await writeToFileTool.handle(cline, block as ToolUse<"write_to_file">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "update_todo_list":
-					await updateTodoListTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await updateTodoListTool.handle(cline, block as ToolUse<"update_todo_list">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "apply_diff": {
+					await checkpointSaveAndMark(cline)
+
+					// kilocode_change start: use search and replace tool
+					if (isNative) {
+						await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
+						break
+					}
+					// kilocode_change end
+
 					// Get the provider and state to check experiment settings
 					const provider = cline.providerRef.deref()
 					let isMultiFileApplyDiffEnabled = false
@@ -463,33 +601,32 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 					}
 
 					if (isMultiFileApplyDiffEnabled) {
-						await checkpointSaveAndMark(cline)
 						await applyDiffTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					} else {
-						await checkpointSaveAndMark(cline)
-						await applyDiffToolLegacy(
-							cline,
-							block,
+						await applyDiffToolClass.handle(cline, block as ToolUse<"apply_diff">, {
 							askApproval,
 							handleError,
 							pushToolResult,
 							removeClosingTag,
-						)
+						})
 					}
 					break
 				}
 				case "insert_content":
-					await checkpointSaveAndMark(cline)
-					await insertContentTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "search_and_replace":
-					await checkpointSaveAndMark(cline)
-					await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					// await checkpointSaveAndMark(cline) // kilocode_change
+					await insertContentTool.handle(cline, block as ToolUse<"insert_content">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				// kilocode_change start: Morph fast apply
 				case "edit_file":
-					await checkpointSaveAndMark(cline)
 					await editFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				case "delete_file":
+					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change end
 				case "read_file":
@@ -505,39 +642,78 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 							removeClosingTag,
 						)
 					} else {
-						await readFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+						// Type assertion is safe here because we're in the "read_file" case
+						await readFileTool.handle(cline, block as ToolUse<"read_file">, {
+							askApproval,
+							handleError,
+							pushToolResult,
+							removeClosingTag,
+						})
 					}
 					break
 				case "fetch_instructions":
-					await fetchInstructionsTool(cline, block, askApproval, handleError, pushToolResult)
-					break
-				case "list_files":
-					await listFilesTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "codebase_search":
-					await codebaseSearchTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "list_code_definition_names":
-					await listCodeDefinitionNamesTool(
-						cline,
-						block,
+					await fetchInstructionsTool.handle(cline, block as ToolUse<"fetch_instructions">, {
 						askApproval,
 						handleError,
 						pushToolResult,
 						removeClosingTag,
-					)
+					})
+					break
+				case "list_files":
+					await listFilesTool.handle(cline, block as ToolUse<"list_files">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
+					break
+				case "codebase_search":
+					await codebaseSearchTool.handle(cline, block as ToolUse<"codebase_search">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
+					break
+				case "list_code_definition_names":
+					await listCodeDefinitionNamesTool.handle(cline, block as ToolUse<"list_code_definition_names">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "search_files":
-					await searchFilesTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await searchFilesTool.handle(cline, block as ToolUse<"search_files">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "browser_action":
-					await browserActionTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await browserActionTool.handle(cline, block as ToolUse<"browser_action">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "execute_command":
-					await executeCommandTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await executeCommandTool.handle(cline, block as ToolUse<"execute_command">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "use_mcp_tool":
-					await useMcpToolTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await useMcpToolTool.handle(cline, block as ToolUse<"use_mcp_tool">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "access_mcp_resource":
 					await accessMcpResourceTool(
@@ -550,34 +726,45 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 					)
 					break
 				case "ask_followup_question":
-					await askFollowupQuestionTool(
-						cline,
-						block,
+					await askFollowupQuestionTool.handle(cline, block as ToolUse<"ask_followup_question">, {
 						askApproval,
 						handleError,
 						pushToolResult,
 						removeClosingTag,
-					)
+					})
 					break
 				case "switch_mode":
-					await switchModeTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "new_task":
-					await newTaskTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
-				case "attempt_completion":
-					await checkpointSaveAndMark(cline) // kilocode_change for "See new changes"
-					await attemptCompletionTool(
-						cline,
-						block,
+					await switchModeTool.handle(cline, block as ToolUse<"switch_mode">, {
 						askApproval,
 						handleError,
 						pushToolResult,
 						removeClosingTag,
-						toolDescription,
+					})
+					break
+				case "new_task":
+					await newTaskTool.handle(cline, block as ToolUse<"new_task">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
+					break
+				case "attempt_completion": {
+					const completionCallbacks: AttemptCompletionCallbacks = {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
 						askFinishSubTaskApproval,
+						toolDescription,
+					}
+					await attemptCompletionTool.handle(
+						cline,
+						block as ToolUse<"attempt_completion">,
+						completionCallbacks,
 					)
 					break
+				}
 				// kilocode_change start
 				case "new_rule":
 					await newRuleTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
@@ -589,14 +776,25 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 					await condenseTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break
 				// kilocode_change end
+
 				case "run_slash_command":
-					await runSlashCommandTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await runSlashCommandTool.handle(cline, block as ToolUse<"run_slash_command">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 				case "generate_image":
-					await generateImageTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					await checkpointSaveAndMark(cline)
+					await generateImageTool.handle(cline, block as ToolUse<"generate_image">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
 					break
 			}
-			// kilocode_change end
 
 			break
 	}
@@ -641,9 +839,15 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 			// this function ourselves.
 			// kilocode_change start: prevent excessive recursion
 			await yieldPromise()
-			await presentAssistantMessage(cline, recursionDepth + 1)
+			await presentAssistantMessage(cline)
 			// kilocode_change end
 			return
+		} else {
+			// CRITICAL FIX: If we're out of bounds and the stream is complete, set userMessageContentReady
+			// This handles the case where assistantMessageContent is empty or becomes empty after processing
+			if (cline.didCompleteReadingStream) {
+				cline.userMessageContentReady = true
+			}
 		}
 	}
 
@@ -651,7 +855,7 @@ export async function presentAssistantMessage(cline: Task, recursionDepth: numbe
 	if (cline.presentAssistantMessageHasPendingUpdates) {
 		// kilocode_change start: prevent excessive recursion
 		await yieldPromise()
-		await presentAssistantMessage(cline, recursionDepth + 1)
+		await presentAssistantMessage(cline)
 		// kilocode_change end
 	}
 }
@@ -666,8 +870,9 @@ async function checkpointSaveAndMark(task: Task) {
 		return
 	}
 	try {
-		await task.checkpointSave(true)
+		// kilocode_change: order changed to prevent second execution while still awaiting the save
 		task.currentStreamingDidCheckpoint = true
+		await task.checkpointSave(true)
 	} catch (error) {
 		console.error(`[Task#presentAssistantMessage] Error saving checkpoint: ${error.message}`, error)
 	}

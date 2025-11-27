@@ -4,7 +4,6 @@
  */
 
 import i18n from "../../../i18n/setup"
-import { isAnyRecognizedKiloCodeError } from "../../../shared/kilocode/errorUtils"
 
 /**
  * Handles OpenAI client errors and transforms them into user-friendly messages
@@ -13,14 +12,15 @@ import { isAnyRecognizedKiloCodeError } from "../../../shared/kilocode/errorUtil
  * @returns The original error or a transformed user-friendly error
  */
 export function handleOpenAIError(error: unknown, providerName: string): Error {
-	// kilocode_change start
-	if (providerName === "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
-		throw error
-	}
-	// kilocode_change end
-
 	if (error instanceof Error) {
 		const msg = error.message || ""
+
+		// Log the original error details for debugging
+		console.error(`[${providerName}] API error:`, {
+			message: msg,
+			name: error.name,
+			stack: error.stack,
+		})
 
 		// Invalid character/ByteString conversion error in API key
 		if (msg.includes("Cannot convert argument to a ByteString")) {
@@ -32,5 +32,6 @@ export function handleOpenAIError(error: unknown, providerName: string): Error {
 	}
 
 	// Non-Error: wrap with provider-specific prefix
+	console.error(`[${providerName}] Non-Error exception:`, error)
 	return new Error(`${providerName} completion error: ${String(error)}`)
 }

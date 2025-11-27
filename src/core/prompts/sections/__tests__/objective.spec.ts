@@ -1,3 +1,13 @@
+// Mock ManagedIndexer before importing anything that uses it
+vi.mock("../../../../services/code-index/managed/ManagedIndexer", () => ({
+	ManagedIndexer: {
+		getInstance: vi.fn().mockReturnValue({
+			isEnabled: vi.fn().mockReturnValue(false),
+			organization: null,
+		}),
+	},
+}))
+
 import { getObjectiveSection } from "../objective"
 import type { CodeIndexManager } from "../../../../services/code-index/manager"
 
@@ -53,13 +63,13 @@ describe("getObjectiveSection", () => {
 		}
 	})
 
-	it("should include thinking tags guidance regardless of codebase_search availability", () => {
+	it("should include analysis guidance regardless of codebase_search availability", () => {
 		const objectiveEnabled = getObjectiveSection(mockCodeIndexManagerEnabled)
 		const objectiveDisabled = getObjectiveSection(mockCodeIndexManagerDisabled)
 
-		// Check that thinking tags guidance is included in both cases
+		// Check that analysis guidance is included in both cases
 		for (const objective of [objectiveEnabled, objectiveDisabled]) {
-			expect(objective).toContain("<thinking></thinking> tags")
+			expect(objective).toContain("Before calling a tool, do some analysis")
 			expect(objective).toContain("analyze the file structure provided in environment_details")
 			expect(objective).toContain("think about which of the provided tools is the most relevant")
 		}

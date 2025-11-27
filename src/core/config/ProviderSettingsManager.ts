@@ -10,11 +10,26 @@ import {
 	ProviderSettingsEntry,
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	getModelId,
+	type ProviderName,
+	type ProfileType, // kilocode_change - autocomplete profile type system
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
 import { Mode, modes } from "../../shared/modes"
 import { migrateMorphApiKey } from "./kilocode/migrateMorphApiKey"
+import { buildApiHandler } from "../../api"
+import { t } from "../../i18n" // kilocode_change - autocomplete profile type system
+
+// Type-safe model migrations mapping
+type ModelMigrations = {
+	[K in ProviderName]?: Record<string, string>
+}
+
+const MODEL_MIGRATIONS: ModelMigrations = {
+	roo: {
+		"roo/code-supernova": "roo/code-supernova-1-million",
+	},
+} as const satisfies ModelMigrations
 
 export interface SyncCloudProfilesResult {
 	hasChanges: boolean
@@ -68,8 +83,23 @@ export class ProviderSettingsManager {
 		this.context = context
 
 		// TODO: We really shouldn't have async methods in the constructor.
-		this.initialize().catch(console.error)
+		// kilocode_change start
+		// only initialize ONCE, and save the promise in case somebody needs to wait.
+		this.initialization = this.init_runMigrations()
+		this.initialization.catch(console.error)
+		// kilocode_change end
 	}
+
+	// kilocode_change start
+	private readonly initialization: Promise<void>
+	/**
+	 * Wait for initialization migrations to complete.  These were started during construction.
+	 * The odd active-verb name is retained to simplify roo-merged.
+	 */
+	public initialize(): Promise<void> {
+		return this.initialization
+	}
+	// kilocode_change end
 
 	public generateId() {
 		return Math.random().toString(36).substring(2, 15)
@@ -83,10 +113,8 @@ export class ProviderSettingsManager {
 		return next
 	}
 
-	/**
-	 * Initialize config if it doesn't exist and run migrations.
-	 */
-	public async initialize() {
+	// kilocode_change: private & renamed:
+	async init_runMigrations() {
 		try {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
@@ -107,6 +135,11 @@ export class ProviderSettingsManager {
 						Object.values(providerProfiles.apiConfigs)[0]?.id ??
 						this.defaultConfigId
 					providerProfiles.modeApiConfigs = Object.fromEntries(modes.map((m) => [m.slug, seedId]))
+					isDirty = true
+				}
+
+				// Apply model migrations for all providers
+				if (this.applyModelMigrations(providerProfiles)) {
 					isDirty = true
 				}
 
@@ -287,6 +320,44 @@ export class ProviderSettingsManager {
 	}
 
 	/**
+	 * Apply model migrations for all providers
+	 * Returns true if any migrations were applied
+	 */
+	private applyModelMigrations(providerProfiles: ProviderProfiles): boolean {
+		let migrated = false
+
+		try {
+			for (const [_name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
+				// Skip configs without provider or model ID
+				if (!apiConfig.apiProvider || !apiConfig.apiModelId) {
+					continue
+				}
+
+				// Check if this provider has migrations (with type safety)
+				const provider = apiConfig.apiProvider as ProviderName
+				const providerMigrations = MODEL_MIGRATIONS[provider]
+				if (!providerMigrations) {
+					continue
+				}
+
+				// Check if the current model ID needs migration
+				const newModelId = providerMigrations[apiConfig.apiModelId]
+				if (newModelId && newModelId !== apiConfig.apiModelId) {
+					console.log(
+						`[ModelMigration] Migrating ${apiConfig.apiProvider} model from ${apiConfig.apiModelId} to ${newModelId}`,
+					)
+					apiConfig.apiModelId = newModelId
+					migrated = true
+				}
+			}
+		} catch (error) {
+			console.error(`[ModelMigration] Failed to apply model migrations:`, error)
+		}
+
+		return migrated
+	}
+
+	/**
 	 * Clean model ID by removing prefix before "/"
 	 */
 	private cleanModelId(modelId: string | undefined): string | undefined {
@@ -313,12 +384,37 @@ export class ProviderSettingsManager {
 					id: apiConfig.id || "",
 					apiProvider: apiConfig.apiProvider,
 					modelId: this.cleanModelId(getModelId(apiConfig)),
+					profileType: apiConfig.profileType, // kilocode_change - autocomplete profile type system
 				}))
 			})
 		} catch (error) {
 			throw new Error(`Failed to list configs: ${error}`)
 		}
 	}
+
+	// kilocode_change start - autocomplete profile type system
+	/**
+	 * Validate that only one autocomplete profile exists
+	 */
+	private async validateAutocompleteConstraint(
+		profiles: ProviderProfiles,
+		newProfileName: string,
+		newProfileType?: ProfileType,
+	): Promise<void> {
+		if (newProfileType !== "autocomplete") {
+			return // No constraint for non-autocomplete profiles
+		}
+
+		const autocompleteProfiles = Object.entries(profiles.apiConfigs).filter(
+			([name, config]) => config.profileType === "autocomplete" && name !== newProfileName,
+		)
+
+		if (autocompleteProfiles.length > 0) {
+			const existingName = autocompleteProfiles[0][0]
+			throw new Error(t("settings:providers.autocomplete.onlyOneAllowed", { existingName }))
+		}
+	}
+	// kilocode_change end
 
 	/**
 	 * Save a config with the given name.
@@ -329,6 +425,10 @@ export class ProviderSettingsManager {
 		try {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
+
+				// kilocode_change - autocomplete profile type system
+				await this.validateAutocompleteConstraint(providerProfiles, name, config.profileType)
+
 				// Preserve the existing ID if this is an update to an existing config.
 				const existingId = providerProfiles.apiConfigs[name]?.id
 				const id = config.id || existingId || this.generateId()
@@ -483,6 +583,31 @@ export class ProviderSettingsManager {
 				for (const name in configs) {
 					// Avoid leaking properties from other providers.
 					configs[name] = discriminatedProviderSettingsWithIdSchema.parse(configs[name])
+
+					// If it has no apiProvider, skip filtering
+					if (!configs[name].apiProvider) {
+						continue
+					}
+
+					// Try to build an API handler to get model information
+					try {
+						const apiHandler = buildApiHandler(configs[name])
+						const modelInfo = apiHandler.getModel().info
+
+						// Check if the model supports reasoning budgets
+						const supportsReasoningBudget =
+							modelInfo.supportsReasoningBudget || modelInfo.requiredReasoningBudget
+
+						// If the model doesn't support reasoning budgets, remove the token fields
+						if (!supportsReasoningBudget) {
+							delete configs[name].modelMaxTokens
+							delete configs[name].modelMaxThinkingTokens
+						}
+					} catch (error) {
+						// If we can't build the API handler or get model info, skip filtering
+						// to avoid accidental data loss from incomplete configurations
+						console.warn(`Skipping token field filtering for config '${name}': ${error}`)
+					}
 				}
 				return profiles
 			})

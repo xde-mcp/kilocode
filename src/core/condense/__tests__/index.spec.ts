@@ -102,7 +102,6 @@ describe("summarizeConversation", () => {
 				info: {
 					contextWindow: 8000,
 					supportsImages: true,
-					supportsComputerUse: true,
 					supportsVision: true,
 					maxTokens: 4000,
 					supportsPromptCache: true,
@@ -282,6 +281,32 @@ describe("summarizeConversation", () => {
 		// Check that maybeRemoveImageBlocks was called with the correct messages
 		const mockCallArgs = (maybeRemoveImageBlocks as Mock).mock.calls[0][0] as any[]
 		expect(mockCallArgs[mockCallArgs.length - 1]).toEqual(expectedFinalMessage)
+	})
+	it("should include the original first user message in summarization input", async () => {
+		const messages: ApiMessage[] = [
+			{ role: "user", content: "Initial ask", ts: 1 },
+			{ role: "assistant", content: "Ack", ts: 2 },
+			{ role: "user", content: "Follow-up", ts: 3 },
+			{ role: "assistant", content: "Response", ts: 4 },
+			{ role: "user", content: "More", ts: 5 },
+			{ role: "assistant", content: "Later", ts: 6 },
+			{ role: "user", content: "Newest", ts: 7 },
+		]
+
+		await summarizeConversation(messages, mockApiHandler, defaultSystemPrompt, taskId, DEFAULT_PREV_CONTEXT_TOKENS)
+
+		const mockCallArgs = (maybeRemoveImageBlocks as Mock).mock.calls[0][0] as any[]
+
+		// Expect the original first user message to be present in the messages sent to the summarizer
+		const hasInitialAsk = mockCallArgs.some(
+			(m) =>
+				m.role === "user" &&
+				(typeof m.content === "string"
+					? m.content === "Initial ask"
+					: Array.isArray(m.content) &&
+						m.content.some((b: any) => b.type === "text" && b.text === "Initial ask")),
+		)
+		expect(hasInitialAsk).toBe(true)
 	})
 
 	it("should calculate newContextTokens correctly with systemPrompt", async () => {
@@ -551,7 +576,6 @@ describe("summarizeConversation with custom settings", () => {
 				info: {
 					contextWindow: 8000,
 					supportsImages: true,
-					supportsComputerUse: true,
 					supportsVision: true,
 					maxTokens: 4000,
 					supportsPromptCache: true,
@@ -575,7 +599,6 @@ describe("summarizeConversation with custom settings", () => {
 				info: {
 					contextWindow: 4000,
 					supportsImages: true,
-					supportsComputerUse: false,
 					supportsVision: false,
 					maxTokens: 2000,
 					supportsPromptCache: false,

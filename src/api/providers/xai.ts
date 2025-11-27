@@ -14,6 +14,7 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
 import { handleOpenAIError } from "./utils/openai-error-handler"
+import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 
 const XAI_DEFAULT_TEMPERATURE = 0
 
@@ -56,22 +57,33 @@ export class XAIHandler extends BaseProvider implements SingleCompletionHandler 
 		// Use the OpenAI-compatible API.
 		let stream
 		try {
-			stream = await this.client.chat.completions.create({
-				model: modelId,
-				max_tokens: modelInfo.maxTokens,
-				temperature: this.options.modelTemperature ?? XAI_DEFAULT_TEMPERATURE,
-				messages: [{ role: "system", content: systemPrompt }, ...convertToOpenAiMessages(messages)],
-				stream: true,
-				stream_options: { include_usage: true },
-				...(reasoning && reasoning),
-			})
+			stream = await this.client.chat.completions.create(
+				// kilocode_change start
+				addNativeToolCallsToParams(
+					{
+						model: modelId,
+						max_tokens: modelInfo.maxTokens,
+						temperature: this.options.modelTemperature ?? XAI_DEFAULT_TEMPERATURE,
+						messages: [{ role: "system", content: systemPrompt }, ...convertToOpenAiMessages(messages)],
+						stream: true,
+						stream_options: { include_usage: true },
+						...(reasoning && reasoning),
+					},
+					this.options,
+					metadata,
+				),
+				// kilocode_change end
+			)
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}
 
+		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 		for await (const chunk of stream) {
 			verifyFinishReason(chunk.choices[0]) // kilocode_change
 			const delta = chunk.choices[0]?.delta
+
+			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 			if (delta?.content) {
 				yield {

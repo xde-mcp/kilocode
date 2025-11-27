@@ -1,3 +1,13 @@
+// Mock ManagedIndexer before importing anything that uses it
+vi.mock("../../../../services/code-index/managed/ManagedIndexer", () => ({
+	ManagedIndexer: {
+		getInstance: vi.fn().mockReturnValue({
+			isEnabled: vi.fn().mockReturnValue(false),
+			organization: null,
+		}),
+	},
+}))
+
 import { getToolUseGuidelinesSection } from "../tool-use-guidelines"
 import type { CodeIndexManager } from "../../../../services/code-index/manager"
 
@@ -34,7 +44,7 @@ describe("getToolUseGuidelinesSection", () => {
 			const guidelines = getToolUseGuidelinesSection(mockCodeIndexManagerEnabled)
 
 			// Check that all numbered items are present
-			expect(guidelines).toContain("1. In <thinking> tags")
+			expect(guidelines).toContain("1. Assess what information")
 			expect(guidelines).toContain("2. **CRITICAL:")
 			expect(guidelines).toContain("3. Choose the most appropriate tool")
 			expect(guidelines).toContain("4. If multiple actions are needed")
@@ -59,7 +69,7 @@ describe("getToolUseGuidelinesSection", () => {
 			const guidelines = getToolUseGuidelinesSection(mockCodeIndexManagerDisabled)
 
 			// Check that all numbered items are present with correct numbering
-			expect(guidelines).toContain("1. In <thinking> tags")
+			expect(guidelines).toContain("1. Assess what information")
 			expect(guidelines).toContain("2. Choose the most appropriate tool")
 			expect(guidelines).toContain("3. If multiple actions are needed")
 			expect(guidelines).toContain("4. Formulate your tool use")

@@ -19,7 +19,6 @@ import {
 	xaiModels,
 	groqModels,
 	groqDefaultModelId,
-	chutesModels,
 	chutesDefaultModelId,
 	vscodeLlmModels,
 	vscodeLlmDefaultModelId,
@@ -37,6 +36,7 @@ import {
 	doubaoDefaultModelId,
 	fireworksModels,
 	fireworksDefaultModelId,
+	syntheticDefaultModelId,
 	ioIntelligenceDefaultModelId,
 	moonshotModels,
 	moonshotDefaultModelId,
@@ -47,6 +47,11 @@ import {
 	deepInfraDefaultModelId,
 	cerebrasModels,
 	cerebrasDefaultModelId,
+	nanoGptDefaultModelId, //kilocode_change
+	ovhCloudAiEndpointsDefaultModelId,
+	inceptionDefaultModelId,
+	minimaxModels,
+	minimaxDefaultModelId,
 } from "@roo-code/types"
 import type { ModelRecord, RouterModels } from "@roo/api"
 import { useRouterModels } from "../../ui/hooks/useRouterModels"
@@ -111,7 +116,7 @@ export const getModelsByProvider = ({
 		}
 		case "chutes": {
 			return {
-				models: chutesModels,
+				models: routerModels.chutes, // kilocode_change
 				defaultModel: chutesDefaultModelId,
 			}
 		}
@@ -135,7 +140,10 @@ export const getModelsByProvider = ({
 		}
 		case "gemini": {
 			return {
-				models: geminiModels,
+				models:
+					routerModels.gemini && Object.keys(routerModels.gemini).length > 0
+						? routerModels.gemini
+						: geminiModels,
 				defaultModel: geminiDefaultModelId,
 			}
 		}
@@ -184,7 +192,7 @@ export const getModelsByProvider = ({
 		}
 		case "kilocode": {
 			return {
-				models: routerModels["kilocode-openrouter"],
+				models: routerModels.kilocode,
 				defaultModel: kilocodeDefaultModel,
 			}
 		}
@@ -224,6 +232,32 @@ export const getModelsByProvider = ({
 				defaultModel: fireworksDefaultModelId,
 			}
 		}
+		// kilocode_change start
+		case "synthetic": {
+			return {
+				models: routerModels.synthetic,
+				defaultModel: syntheticDefaultModelId,
+			}
+		}
+		case "ovhcloud": {
+			return {
+				models: routerModels.ovhcloud,
+				defaultModel: ovhCloudAiEndpointsDefaultModelId,
+			}
+		}
+		case "inception": {
+			return {
+				models: routerModels.inception,
+				defaultModel: inceptionDefaultModelId,
+			}
+		}
+		case "sap-ai-core": {
+			return {
+				models: routerModels["sap-ai-core"],
+				defaultModel: "",
+			}
+		}
+		// kilocode_change end
 		case "io-intelligence": {
 			return {
 				models: routerModels["io-intelligence"],
@@ -254,6 +288,20 @@ export const getModelsByProvider = ({
 				defaultModel: deepInfraDefaultModelId,
 			}
 		}
+		//kilocode_change start
+		case "nano-gpt": {
+			return {
+				models: routerModels["nano-gpt"],
+				defaultModel: nanoGptDefaultModelId,
+			}
+		}
+		//kilocode_change end
+		case "minimax": {
+			return {
+				models: minimaxModels,
+				defaultModel: minimaxDefaultModelId,
+			}
+		}
 		default:
 			return {
 				models: {},
@@ -271,6 +319,14 @@ export const useProviderModels = (apiConfiguration?: ProviderSettings) => {
 		openRouterBaseUrl: apiConfiguration?.openRouterBaseUrl,
 		openRouterApiKey: apiConfiguration?.apiKey,
 		kilocodeOrganizationId: apiConfiguration?.kilocodeOrganizationId ?? "personal",
+		chutesApiKey: apiConfiguration?.chutesApiKey,
+		geminiApiKey: apiConfiguration?.geminiApiKey,
+		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
+		//kilocode_change start
+		nanoGptApiKey: apiConfiguration?.nanoGptApiKey,
+		nanoGptModelList: apiConfiguration?.nanoGptModelList,
+		//kilocode_change end
+		syntheticApiKey: apiConfiguration?.syntheticApiKey, // kilocode_change
 	})
 
 	const { models, defaultModel } =

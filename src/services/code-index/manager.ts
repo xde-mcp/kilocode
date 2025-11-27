@@ -12,7 +12,6 @@ import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import fs from "fs/promises"
 import ignore from "ignore"
 import path from "path"
-import { t } from "../../i18n"
 import { TelemetryService } from "@roo-code/telemetry"
 import { TelemetryEventName } from "@roo-code/types"
 
@@ -63,7 +62,7 @@ export class CodeIndexManager {
 		CodeIndexManager.instances.clear()
 	}
 
-	private readonly workspacePath: string
+	public readonly workspacePath: string // kilocode_change
 	private readonly context: vscode.ExtensionContext
 
 	// Private constructor for singleton pattern
@@ -120,6 +119,7 @@ export class CodeIndexManager {
 		if (!this._configManager) {
 			this._configManager = new CodeIndexConfigManager(contextProxy)
 		}
+
 		// Load configuration once to get current state and restart requirements
 		const { requiresRestart } = await this._configManager.loadConfiguration()
 
@@ -148,7 +148,20 @@ export class CodeIndexManager {
 		const needsServiceRecreation = !this._serviceFactory || requiresRestart
 
 		if (needsServiceRecreation) {
-			await this._recreateServices()
+			// kilocode_change start: add additional logging
+			try {
+				await this._recreateServices()
+			} catch (error) {
+				// Log the error and set error state
+				console.error("[CodeIndexManager] Failed to recreate services:", error)
+				this._stateManager.setSystemState(
+					"Error",
+					`Failed to initialize: ${error instanceof Error ? error.message : String(error)}`,
+				)
+				// Re-throw to prevent further initialization
+				throw error
+			}
+			// kilocode_change end
 		}
 
 		// 5. Handle Indexing Start/Restart
@@ -202,6 +215,20 @@ export class CodeIndexManager {
 			this._orchestrator.stopWatcher()
 		}
 	}
+
+	// kilocode_change start
+	/**
+	 * Cancel any active indexing activity immediately.
+	 */
+	public cancelIndexing(): void {
+		if (!this.isFeatureEnabled) {
+			return
+		}
+		if (this._orchestrator) {
+			this._orchestrator.cancelIndexing()
+		}
+	}
+	// kilocode_change end
 
 	/**
 	 * Recovers from error state by clearing the error and resetting internal state.
@@ -340,13 +367,24 @@ export class CodeIndexManager {
 			rooIgnoreController,
 		)
 
-		// Validate embedder configuration before proceeding
-		const validationResult = await this._serviceFactory.validateEmbedder(embedder)
-		if (!validationResult.valid) {
-			const errorMessage = validationResult.error || "Embedder configuration validation failed"
-			this._stateManager.setSystemState("Error", errorMessage)
-			throw new Error(errorMessage)
+		// kilocode_change start: Handle Kilo org mode (no embedder/vector store validation needed)
+		const isKiloOrgMode = this._configManager!.isKiloOrgMode
+
+		if (!isKiloOrgMode) {
+			// Only validate the embedder if it matches the currently configured provider
+			const config = this._configManager!.getConfig()
+			const shouldValidate = embedder && embedder.embedderInfo.name === config.embedderProvider
+
+			if (shouldValidate) {
+				const validationResult = await this._serviceFactory.validateEmbedder(embedder)
+				if (!validationResult.valid) {
+					const errorMessage = validationResult.error || "Embedder configuration validation failed"
+					this._stateManager.setSystemState("Error", errorMessage)
+					throw new Error(errorMessage)
+				}
+			}
 		}
+		// kilocode_change end
 
 		// (Re)Initialize orchestrator
 		this._orchestrator = new CodeIndexOrchestrator(
@@ -359,15 +397,17 @@ export class CodeIndexManager {
 			fileWatcher,
 		)
 
-		// (Re)Initialize search service
+		// kilocode_change start: Always create search service (it handles both local and Kilo org mode)
+		// In Kilo org mode, embedder and vectorStore ill be null, but search service handles this
 		this._searchService = new CodeIndexSearchService(
 			this._configManager!,
 			this._stateManager,
 			embedder,
 			vectorStore,
 		)
+		// kilocode_change end
 
-		// Clear any error state after successful recreation
+		// Clear any error state after successful recwreation
 		this._stateManager.setSystemState("Standby", "")
 	}
 

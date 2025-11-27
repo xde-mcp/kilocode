@@ -10,7 +10,9 @@ import type { IndexingStatus, IndexingStatusUpdateMessage } from "@roo/Extension
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { PopoverTrigger, StandardTooltip, Button } from "@src/components/ui"
 
-import { CodeIndexPopover } from "./CodeIndexPopover"
+import { CodeIndexPopover } from "./CodeIndexPopover" // kilocode_change
+import { useManagedCodeIndexingEnabled } from "./hooks/useManagedCodeIndexingEnabled" // kilocode_change
+import { TabbedCodeIndexPopover } from "./kilocode/TabbedCodeIndexPopover" // kilocode_change
 
 interface IndexingStatusBadgeProps {
 	className?: string
@@ -19,6 +21,9 @@ interface IndexingStatusBadgeProps {
 export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ className }) => {
 	const { t } = useAppTranslation()
 	const { cwd } = useExtensionState()
+
+	// Check if organization indexing is available
+	const useManagedIndex = useManagedCodeIndexingEnabled() // kilocode_change
 
 	const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>({
 		systemStatus: "Standby",
@@ -82,8 +87,11 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		return statusColors[indexingStatus.systemStatus as keyof typeof statusColors] || statusColors.Standby
 	}, [indexingStatus.systemStatus])
 
+	// Use ManagedCodeIndexPopover when organization is available, otherwise use regular CodeIndexPopover
+	const PopoverComponent = useManagedIndex ? TabbedCodeIndexPopover : CodeIndexPopover // kilocode_change
+
 	return (
-		<CodeIndexPopover indexingStatus={indexingStatus}>
+		<PopoverComponent indexingStatus={indexingStatus}>
 			<StandardTooltip content={tooltipText}>
 				<PopoverTrigger asChild>
 					<Button
@@ -91,7 +99,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 						size="sm"
 						aria-label={tooltipText}
 						className={cn(
-							"relative h-7 w-7 p-0",
+							"relative h-5 w-5 p-0",
 							"text-vscode-foreground opacity-60", // kilocode_change: opacity to match paperclip
 							"hover:opacity-100 hover:bg-[rgba(255,255,255,0.03)]",
 							"focus:outline-none focus-visible:ring-1 focus-visible:ring-vscode-focusBorder",
@@ -100,13 +108,13 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 						<Database className="w-4 h-4" />
 						<span
 							className={cn(
-								"absolute top-1 right-1 w-1.5 h-1.5 rounded-full transition-colors duration-200",
+								"absolute top-0 right-0 w-1.5 h-1.5 rounded-full transition-colors duration-200",
 								statusColorClass,
 							)}
 						/>
 					</Button>
 				</PopoverTrigger>
 			</StandardTooltip>
-		</CodeIndexPopover>
+		</PopoverComponent>
 	)
 }

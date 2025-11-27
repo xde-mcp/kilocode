@@ -4,26 +4,21 @@ import { t } from "../../i18n"
 interface GhostStatusBarStateProps {
 	enabled?: boolean
 	model?: string
-	hasValidToken?: boolean
-	totalSessionCost?: number
-	lastCompletionCost?: number
+	provider?: string
+	profileName?: string | null
+	hasValidToken: boolean
+	totalSessionCost: number
+	completionCount: number
+	sessionStartTime: number
 }
 
 export class GhostStatusBar {
 	statusBar: vscode.StatusBarItem
-	enabled: boolean
-	model: string
-	hasValidToken: boolean
-	totalSessionCost?: number
-	lastCompletionCost?: number
+	private props: GhostStatusBarStateProps
 
 	constructor(params: GhostStatusBarStateProps) {
 		this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100)
-		this.enabled = params.enabled || false
-		this.model = params.model || "default"
-		this.hasValidToken = params.hasValidToken || false
-		this.totalSessionCost = params.totalSessionCost
-		this.lastCompletionCost = params.lastCompletionCost
+		this.props = params
 
 		this.init()
 	}
@@ -34,8 +29,8 @@ export class GhostStatusBar {
 		this.statusBar.show()
 	}
 
-	public updateVisible(enabled: boolean) {
-		if (enabled) {
+	private updateVisible() {
+		if (this.props.enabled) {
 			this.statusBar.show()
 		} else {
 			this.statusBar.hide()
@@ -46,49 +41,56 @@ export class GhostStatusBar {
 		this.statusBar.dispose()
 	}
 
-	private humanFormatCost(cost: number): string {
+	private humanFormatSessionCost(): string {
+		const cost = this.props.totalSessionCost
 		if (cost === 0) return t("kilocode:ghost.statusBar.cost.zero")
 		if (cost > 0 && cost < 0.01) return t("kilocode:ghost.statusBar.cost.lessThanCent") // Less than one cent
 		return `$${cost.toFixed(2)}`
 	}
 
-	public update(params: GhostStatusBarStateProps) {
-		this.enabled = params.enabled !== undefined ? params.enabled : this.enabled
-		this.model = params.model !== undefined ? params.model : this.model
-		this.hasValidToken = params.hasValidToken !== undefined ? params.hasValidToken : this.hasValidToken
-		this.totalSessionCost = params.totalSessionCost !== undefined ? params.totalSessionCost : this.totalSessionCost
-		this.lastCompletionCost =
-			params.lastCompletionCost !== undefined ? params.lastCompletionCost : this.lastCompletionCost
+	public update(params: Partial<GhostStatusBarStateProps>) {
+		this.props = { ...this.props, ...params }
 
-		this.updateVisible(this.enabled)
-		if (this.enabled) this.render()
+		this.updateVisible()
+		if (this.props.enabled) this.render()
 	}
-
-	// TODO: Bring back paused state in the future
-	// private renderPaused() {
-	// 	this.statusBar.text = t("kilocode:ghost.statusBar.disabled")
-	// 	this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.disabled")
-	// }
 
 	private renderTokenError() {
 		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
 		this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.tokenError")
 	}
 
+	private formatTime(timestamp: number): string {
+		const date = new Date(timestamp)
+		return date.toLocaleTimeString()
+	}
+
 	private renderDefault() {
-		const totalCostFormatted = this.humanFormatCost(this.totalSessionCost || 0)
-		const lastCompletionCostFormatted = this.lastCompletionCost?.toFixed(5) || 0
-		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} (${totalCostFormatted})`
-		this.statusBar.tooltip = `\
-${t("kilocode:ghost.statusBar.tooltip.basic")}
-• ${t("kilocode:ghost.statusBar.tooltip.lastCompletion")} $${lastCompletionCostFormatted}
-• ${t("kilocode:ghost.statusBar.tooltip.sessionTotal")} ${totalCostFormatted}
-• ${t("kilocode:ghost.statusBar.tooltip.model")} ${this.model}\
-`
+		const sessionStartTime = this.formatTime(this.props.sessionStartTime)
+		const now = this.formatTime(Date.now())
+
+		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} (${this.props.completionCount})`
+
+		this.statusBar.tooltip = [
+			t("kilocode:ghost.statusBar.tooltip.completionSummary", {
+				count: this.props.completionCount,
+				startTime: sessionStartTime,
+				endTime: now,
+				cost: this.humanFormatSessionCost(),
+			}),
+			this.props.model && this.props.provider
+				? t("kilocode:ghost.statusBar.tooltip.providerInfo", {
+						model: this.props.model,
+						provider: this.props.provider,
+					})
+				: undefined,
+		]
+			.filter(Boolean)
+			.join("\n\n")
 	}
 
 	public render() {
-		if (!this.hasValidToken) {
+		if (!this.props.hasValidToken) {
 			return this.renderTokenError()
 		}
 		return this.renderDefault()
