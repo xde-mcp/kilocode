@@ -321,13 +321,14 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
+	// kilocode_change start
 	// Check for env var conflicts that might confuse users
 	try {
 		checkAnthropicApiKeyConflict()
 	} catch (error) {
 		outputChannel.appendLine(`Failed to check API key conflicts: ${error}`)
 	}
-	// kilocode_change start
+
 	// Initialize VS Code Settings Sync integration
 	try {
 		await SettingsSyncService.initialize(context, outputChannel)
