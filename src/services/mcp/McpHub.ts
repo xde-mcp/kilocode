@@ -594,8 +594,8 @@ export class McpHub {
 			return this.checkAlternativeMcpPaths(workspacePath)
 
 			// If not found in .kilocode/, fall back to .mcp.json in root directory
+			const rootMcpPath = path.join(workspacePath, ".mcp.json")
 			try {
-				const rootMcpPath = path.join(workspacePath, ".mcp.json")
 				await fs.access(rootMcpPath)
 				return rootMcpPath
 			} catch {
