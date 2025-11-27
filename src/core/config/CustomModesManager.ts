@@ -603,14 +603,13 @@ export class CustomModesManager {
 			if (scope === "project") {
 				const workspacePath = getWorkspacePath()
 				if (workspacePath) {
-					rulesFolderPath = path.join(workspacePath, ".kilocode", `rules-${slug}`)
+					rulesFolderPath = path.join(getProjectRooDirectoryForCwd(workspacePath), `rules-${slug}`) // kilocode_change
 				} else {
 					return // No workspace, can't delete project rules
 				}
 			} else {
 				// Global scope - use OS home directory
-				const homeDir = os.homedir()
-				rulesFolderPath = path.join(homeDir, ".kilocode", `rules-${slug}`)
+				rulesFolderPath = path.join(getGlobalRooDirectory(), `rules-${slug}`) // kilocode_change
 			}
 
 			// Check if the rules folder exists and delete it
