@@ -19,12 +19,18 @@ const defaultPaths = {
 	taskMetadataPath: null as null | string,
 }
 
+interface SessionCreatedMessage {
+	sessionId: string
+	timestamp: number
+	event: "session_created"
+}
+
 export interface SessionManagerDependencies {
 	pathProvider: IPathProvider
 	logger: ILogger
 	extensionMessenger: IExtensionMessenger
-	jsonMode?: boolean
-	onRestore?: (() => void) | (() => Promise<void>)
+	onSessionCreated?: (message: SessionCreatedMessage) => void
+	onSessionRestored?: () => void
 	token: string
 	apiConfig: IApiConfig
 }
@@ -51,15 +57,15 @@ export class SessionManager {
 	private readonly logger: ILogger
 	private readonly extensionMessenger: IExtensionMessenger
 	private readonly sessionClient: SessionClient
-	private readonly jsonMode: boolean
-	private readonly onRestore: (() => void) | (() => Promise<void>)
+	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
+	private readonly onSessionRestored: () => void
 
 	constructor(dependencies: SessionManagerDependencies) {
 		this.pathProvider = dependencies.pathProvider
 		this.logger = dependencies.logger
 		this.extensionMessenger = dependencies.extensionMessenger
-		this.jsonMode = dependencies.jsonMode ?? false
-		this.onRestore = dependencies.onRestore ?? (() => {})
+		this.onSessionCreated = dependencies.onSessionCreated ?? (() => {})
+		this.onSessionRestored = dependencies.onSessionRestored ?? (() => {})
 
 		const trpcClient = new TrpcClient(dependencies.token, dependencies.apiConfig, this.logger)
 		this.sessionClient = new SessionClient(trpcClient)
@@ -288,7 +294,7 @@ export class SessionManager {
 
 			this.saveLastSessionId(sessionId)
 
-			await this.onRestore()
+			await this.onSessionRestored()
 
 			this.logger.debug("Marked task as resumed after session restoration", "SessionManager", { sessionId })
 		} catch (error) {
@@ -459,15 +465,11 @@ export class SessionManager {
 
 				this.saveLastSessionId(this.sessionId)
 
-				if (this.jsonMode) {
-					console.log(
-						JSON.stringify({
-							timestamp: Date.now(),
-							event: "session_created",
-							sessionId: this.sessionId,
-						}),
-					)
-				}
+				this.onSessionCreated({
+					timestamp: Date.now(),
+					event: "session_created",
+					sessionId: this.sessionId,
+				})
 			}
 
 			const blobUploads: Array<Promise<void>> = []
