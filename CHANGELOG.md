@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.34.7
+
+### Patch Changes
+
+- ![3.34.7 Release - More Native Tool Integrations](/releases/3.34.7-release.png)
+
 ## [3.34.6] - 2025-11-26
 
 ![3.34.6 Release - Bedrock Embeddings](/releases/3.34.6-release.png)
