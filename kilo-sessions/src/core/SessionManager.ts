@@ -7,9 +7,11 @@ import { createHash } from "crypto"
 import type { IPathProvider } from "../types/IPathProvider.js"
 import type { ILogger } from "../types/ILogger.js"
 import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
-import type { SessionClient } from "./SessionClient.js"
+import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
+import { IApiConfig } from "src/types/IApiConfig.js"
+import { TrpcClient } from "./TrpcClient.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -21,9 +23,10 @@ export interface SessionManagerDependencies {
 	pathProvider: IPathProvider
 	logger: ILogger
 	extensionMessenger: IExtensionMessenger
-	sessionClient: SessionClient
 	jsonMode?: boolean
 	onRestore?: (() => void) | (() => Promise<void>)
+	token: string
+	apiConfig: IApiConfig
 }
 
 /**
@@ -55,9 +58,11 @@ export class SessionManager {
 		this.pathProvider = dependencies.pathProvider
 		this.logger = dependencies.logger
 		this.extensionMessenger = dependencies.extensionMessenger
-		this.sessionClient = dependencies.sessionClient
 		this.jsonMode = dependencies.jsonMode ?? false
 		this.onRestore = dependencies.onRestore ?? (() => {})
+
+		const trpcClient = new TrpcClient(dependencies.token, dependencies.apiConfig, this.logger)
+		this.sessionClient = new SessionClient(trpcClient)
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
