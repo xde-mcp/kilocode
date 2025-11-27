@@ -1,17 +1,18 @@
-name: CLI Integration Tests
+name: CLI Publish
 on:
     push:
         branches:
             - main
-            - cli-integration-tests
+            - catrielmuller/cli-publish-npm
     workflow_dispatch:
 env:
     NODE_VERSION: 20.19.2
     PNPM_VERSION: 10.8.1
     TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
 jobs:
-    cli-integration-tests:
+    integration-tests:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -42,6 +43,7 @@ jobs:
               shell: bash
             - name: Run integration tests
               run: pnpm --filter @kilocode/cli test:integration
+              shell: bash
               env:
                   CI: true
                   KILOCODE_TOKEN: ${{ secrets.KILOCODE_INTEGRATION_TOKEN }}

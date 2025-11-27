@@ -190,10 +190,9 @@ export class InteractiveRun {
  */
 export class TestRig {
 	bundlePath: string
-	testDir: string
 	testName: string
-	configDir: string
-	sourceDir: string
+	testDir: string = ""
+	sourceDir: string = ""
 
 	constructor(testName: string) {
 		this.bundlePath = join(__dirname, "..", "dist/index.js")
@@ -209,19 +208,8 @@ export class TestRig {
 
 		mkdirSync(this.testDir, { recursive: true })
 
-		this.configDir = join(this.testDir, ".kilocode")
-		mkdirSync(this.configDir, { recursive: true })
-
 		this.sourceDir = join(this.testDir, "src")
 		mkdirSync(this.sourceDir, { recursive: true })
-	}
-
-	/**
-	 * Set up test environment
-	 */
-	setup(config: Record<string, unknown>) {
-		const configPath = join(this.configDir, "config.json")
-		writeFileSync(configPath, JSON.stringify(config, null, 2))
 	}
 
 	/**
@@ -293,19 +281,24 @@ export class TestRig {
 		const { command, initialArgs } = this._getCommandAndArgs()
 		const commandArgs = [...initialArgs, ...extraArgs]
 
+		const ptyEnv = {
+			// Keep colors so we can see the logo properly
+			FORCE_COLOR: "1",
+			KILO_EPHEMERAL_MODE: "true",
+			KILO_PROVIDER_TYPE: "kilocode",
+			KILOCODE_MODEL: "anthropic/claude-sonnet-4.5",
+			KILOCODE_TOKEN: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+			...process.env,
+			...env,
+			...options.env,
+		} as { [key: string]: string }
+
 		const ptyOptions: pty.IPtyForkOptions = {
 			name: "xterm-color",
 			cols: options.cols || 120,
 			rows: options.rows || 30,
 			cwd: this.testDir!,
-			env: {
-				...process.env,
-				...env,
-				...options.env,
-				// Keep colors so we can see the logo properly
-				FORCE_COLOR: "1",
-				KILO_CONFIG_DIR: this.configDir,
-			} as { [key: string]: string },
+			env: ptyEnv,
 		}
 
 		const executable = command === "node" ? process.execPath : command
@@ -340,24 +333,5 @@ export class TestRig {
 	 */
 	bundleExists(): boolean {
 		return existsSync(this.bundlePath)
-	}
-}
-
-/**
- * Helper to create a minimal valid config for testing
- */
-export function createMinimalConfig(): Record<string, unknown> {
-	return {
-		providers: [
-			{
-				id: "test-provider-1",
-				provider: "kilocode",
-				kilocodeToken: process.env.KILOCODE_TOKEN,
-				kilocodeModel: "anthropic/claude-sonnet-4.5",
-				kilocodeOrganizationId: "9d278969-5453-4ae3-a51f-a8d2274a7b56",
-			},
-		],
-		provider: "test-provider-1",
-		theme: "dark",
 	}
 }

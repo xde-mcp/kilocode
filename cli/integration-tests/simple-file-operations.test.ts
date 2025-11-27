@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, it, expect } from "vitest"
 import { describe } from "vitest"
-import { createMinimalConfig, poll, TestRig } from "./test-helper"
+import { poll, TestRig } from "./test-helper"
 import { onTestFailed } from "vitest"
 
 describe("Simple File Operations", () => {
@@ -8,8 +8,6 @@ describe("Simple File Operations", () => {
 
 	beforeEach(({ task }) => {
 		rig = new TestRig(task.name)
-		const config = createMinimalConfig()
-		rig.setup(config)
 	})
 
 	afterEach(async () => {
@@ -28,7 +26,15 @@ describe("Simple File Operations", () => {
 
 		await run.pressEnter()
 
-		await poll(() => run.getStrippedOutput().includes("✓ Task Completed"), 60_000, 1_000)
+		await poll(
+			() => {
+				return (
+					run.getStrippedOutput().includes("✓ Task Completed") || run.getStrippedOutput().includes("✖ Error")
+				)
+			},
+			60_000,
+			1_000,
+		)
 
 		expect(rig.readFile("text.json")).toEqual(JSON.stringify({ version: 2 }))
 	}, 120_000)
