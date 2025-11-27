@@ -559,16 +559,15 @@ export class McpHub {
 		await this.initializeMcpServers("global")
 	}
 
-	// Get project-level MCP configuration path
-	private async getProjectMcpPath(): Promise<string | null> {
-		const workspacePath = this.providerRef.deref()?.cwd ?? getWorkspacePath()
-		const mcpPaths = [
-			path.join(workspacePath, ".kilocode", "mcp.json"),
+	// kilocode_change start
+	// Check alternative MCP configuration paths (for compatibility with other tools)
+	private async checkAlternativeMcpPaths(workspacePath: string): Promise<string | null> {
+		const alternativePaths = [
 			path.join(workspacePath, ".cursor", "mcp.json"),
 			path.join(workspacePath, ".mcp.json"),
 		]
 
-		for (const mcpPath of mcpPaths) {
+		for (const mcpPath of alternativePaths) {
 			try {
 				await fs.access(mcpPath)
 				return mcpPath
@@ -578,6 +577,31 @@ export class McpHub {
 		}
 
 		return null
+	}
+	// kilocode_change end
+
+	// Get project-level MCP configuration path
+	private async getProjectMcpPath(): Promise<string | null> {
+		const workspacePath = this.providerRef.deref()?.cwd ?? getWorkspacePath()
+		const projectMcpDir = path.join(workspacePath, ".kilocode")
+		const projectMcpPath = path.join(projectMcpDir, "mcp.json")
+
+		try {
+			await fs.access(projectMcpPath)
+			return projectMcpPath
+		} catch {
+			// kilocode_change
+			return this.checkAlternativeMcpPaths(workspacePath)
+
+			// If not found in .kilocode/, fall back to .mcp.json in root directory
+			try {
+				const rootMcpPath = path.join(workspacePath, ".mcp.json")
+				await fs.access(rootMcpPath)
+				return rootMcpPath
+			} catch {
+				return null
+			}
+		}
 	}
 
 	// Initialize project-level MCP servers
