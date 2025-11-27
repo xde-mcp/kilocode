@@ -31,10 +31,6 @@
 				"$ref": "#/definitions/provider"
 			}
 		},
-		"kiloToken": {
-			"type": "string",
-			"description": "Kilo token used to authenticate backend requests"
-		},
 		"autoApproval": {
 			"type": "object",
 			"description": "Auto approval configuration for CLI operations",

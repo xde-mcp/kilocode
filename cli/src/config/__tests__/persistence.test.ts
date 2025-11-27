@@ -10,6 +10,7 @@ import {
 	configExists,
 	setConfigPaths,
 	resetConfigPaths,
+	getKiloToken,
 } from "../persistence.js"
 import { DEFAULT_CONFIG } from "../defaults.js"
 
@@ -128,11 +129,7 @@ describe("Config Persistence", () => {
 
 			// And we should be able to load it
 			const loadedResult = await loadConfig()
-			// loadConfig applies kiloToken fallback and auto-saves, so expect it in the loaded config
-			expect(loadedResult.config).toEqual({
-				...validConfig,
-				kiloToken: "test-token-1234567890",
-			})
+			expect(loadedResult.config).toEqual(validConfig)
 			expect(loadedResult.validation.valid).toBe(true)
 		})
 
@@ -252,9 +249,9 @@ describe("Config Persistence", () => {
 		})
 	})
 
-	describe("kiloToken fallback", () => {
-		it("should use kilocodeToken from provider as kiloToken fallback when kiloToken is missing and provider is kilocode", async () => {
-			const configWithoutKiloToken = {
+	describe("getKiloToken", () => {
+		it("should extract kilocodeToken from kilocode provider", async () => {
+			const config = {
 				version: "1.0.0",
 				mode: "code",
 				telemetry: true,
@@ -269,50 +266,14 @@ describe("Config Persistence", () => {
 				],
 				autoApproval: DEFAULT_CONFIG.autoApproval,
 				theme: "dark",
-			}
+			} as CLIConfig
 
-			// Write config without kiloToken
-			await ensureConfigDir()
-			await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify(configWithoutKiloToken, null, 2))
-
-			// Load config - should apply fallback
-			const result = await loadConfig()
-
-			// Verify kiloToken was set from provider's kilocodeToken
-			expect(result.config.kiloToken).toBe("provider-token-1234567890")
-			expect(result.validation.valid).toBe(true)
+			const token = getKiloToken(config)
+			expect(token).toBe("provider-token-1234567890")
 		})
 
-		it("should not use fallback when kiloToken already exists", async () => {
-			const configWithKiloToken: CLIConfig = {
-				version: "1.0.0",
-				mode: "code",
-				telemetry: true,
-				provider: "default",
-				kiloToken: "existing-kilo-token-1234567890",
-				providers: [
-					{
-						id: "default",
-						provider: "kilocode",
-						kilocodeToken: "provider-token-1234567890",
-						kilocodeModel: "anthropic/claude-sonnet-4.5",
-					},
-				],
-				autoApproval: DEFAULT_CONFIG.autoApproval,
-				theme: "dark",
-				customThemes: {},
-			}
-
-			await saveConfig(configWithKiloToken)
-			const result = await loadConfig()
-
-			// Verify kiloToken was not overwritten by fallback
-			expect(result.config.kiloToken).toBe("existing-kilo-token-1234567890")
-			expect(result.validation.valid).toBe(true)
-		})
-
-		it("should not use fallback when provider is not kilocode", async () => {
-			const configWithAnthropicProvider = {
+		it("should return null when provider is not kilocode", async () => {
+			const config = {
 				version: "1.0.0",
 				mode: "code",
 				telemetry: true,
@@ -327,21 +288,14 @@ describe("Config Persistence", () => {
 				],
 				autoApproval: DEFAULT_CONFIG.autoApproval,
 				theme: "dark",
-			}
+			} as CLIConfig
 
-			// Write config without kiloToken and with non-kilocode provider
-			await ensureConfigDir()
-			await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify(configWithAnthropicProvider, null, 2))
-
-			// Load config
-			const result = await loadConfig()
-
-			// Verify kiloToken was not set (no fallback for non-kilocode providers)
-			expect(result.config.kiloToken).toBeUndefined()
+			const token = getKiloToken(config)
+			expect(token).toBeNull()
 		})
 
-		it("should not use fallback when provider is kilocode but kilocodeToken doesn't exist", async () => {
-			const configWithoutTokens = {
+		it("should return null when provider is kilocode but kilocodeToken doesn't exist", async () => {
+			const config = {
 				version: "1.0.0",
 				mode: "code",
 				telemetry: true,
@@ -351,26 +305,18 @@ describe("Config Persistence", () => {
 						id: "default",
 						provider: "kilocode",
 						kilocodeModel: "anthropic/claude-sonnet-4.5",
-						// No kilocodeToken field
 					},
 				],
 				autoApproval: DEFAULT_CONFIG.autoApproval,
 				theme: "dark",
-			}
+			} as CLIConfig
 
-			// Write config without any tokens
-			await ensureConfigDir()
-			await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify(configWithoutTokens, null, 2))
-
-			// Load config
-			const result = await loadConfig()
-
-			// Verify kiloToken was not set (no token to fallback to)
-			expect(result.config.kiloToken).toBeUndefined()
+			const token = getKiloToken(config)
+			expect(token).toBeNull()
 		})
 
-		it("should not apply fallback when provider has empty kilocodeToken string", async () => {
-			const configWithEmptyKilocodeToken = {
+		it("should return empty string when provider has empty kilocodeToken", async () => {
+			const config = {
 				version: "1.0.0",
 				mode: "code",
 				telemetry: true,
@@ -379,23 +325,37 @@ describe("Config Persistence", () => {
 					{
 						id: "default",
 						provider: "kilocode",
-						kilocodeToken: "", // Empty string
+						kilocodeToken: "",
 						kilocodeModel: "anthropic/claude-sonnet-4.5",
 					},
 				],
 				autoApproval: DEFAULT_CONFIG.autoApproval,
 				theme: "dark",
-			}
+			} as CLIConfig
 
-			// Write config with empty kilocodeToken
-			await ensureConfigDir()
-			await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify(configWithEmptyKilocodeToken, null, 2))
+			const token = getKiloToken(config)
+			expect(token).toBe("")
+		})
 
-			// Load config
-			const result = await loadConfig()
+		it("should return null when no kilocode provider exists", async () => {
+			const config = {
+				version: "1.0.0",
+				mode: "code",
+				telemetry: true,
+				provider: "openai-provider",
+				providers: [
+					{
+						id: "openai-provider",
+						provider: "openai",
+						apiKey: "openai-key-1234567890",
+					},
+				],
+				autoApproval: DEFAULT_CONFIG.autoApproval,
+				theme: "dark",
+			} as CLIConfig
 
-			// Verify kiloToken was set to empty string (not undefined) - implementation uses the value as-is when present
-			expect(result.config.kiloToken).toBe("")
+			const token = getKiloToken(config)
+			expect(token).toBeNull()
 		})
 	})
 })

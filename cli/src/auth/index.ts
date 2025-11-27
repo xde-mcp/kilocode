@@ -53,10 +53,6 @@ export default async function authWizard(): Promise<void> {
 			providers: [authResult.providerConfig],
 		}
 
-		if (authResult.providerConfig.provider === "kilocode" && "kilocodeToken" in authResult.providerConfig) {
-			newConfig.kiloToken = authResult.providerConfig.kilocodeToken || ""
-		}
-
 		await saveConfig(newConfig)
 		console.log("\n✓ Configuration saved successfully!\n")
 	} catch (error) {

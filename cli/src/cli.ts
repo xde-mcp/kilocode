@@ -26,6 +26,7 @@ import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
 import { TrpcClient } from "./services/trpcClient.js"
 import { SessionService } from "./services/session.js"
+import { getKiloToken } from "./config/persistence.js"
 
 /**
  * Main application class that orchestrates the CLI lifecycle
@@ -131,8 +132,10 @@ export class CLI {
 
 			// Initialize services and restore session if kiloToken is available
 			// This must happen AFTER ExtensionService initialization to allow webview messages
-			if (config.kiloToken) {
-				TrpcClient.init(config.kiloToken)
+			const kiloToken = getKiloToken(config)
+
+			if (kiloToken) {
+				TrpcClient.init(kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
 				this.sessionService = SessionService.init(this.service, this.store, this.options.json)

@@ -80,6 +80,16 @@ function deepMerge(target: any, source: any): any {
 	return result
 }
 
+export function getKiloToken(config: CLIConfig) {
+	const kiloProvider = config.providers.find((p) => p.provider === "kilocode")
+
+	if (kiloProvider && "kilocodeToken" in kiloProvider) {
+		return kiloProvider.kilocodeToken
+	}
+
+	return null
+}
+
 /**
  * Merge loaded config with defaults to fill in missing keys
  */
@@ -94,17 +104,6 @@ function mergeWithDefaults(loadedConfig: Partial<CLIConfig>): CLIConfig {
 		merged.autoApproval = deepMerge(DEFAULT_AUTO_APPROVAL, loadedConfig.autoApproval) as AutoApprovalConfig
 	} else {
 		merged.autoApproval = DEFAULT_AUTO_APPROVAL
-	}
-
-	// CLI-specific: Apply kiloToken fallback from provider configuration
-	// If config.kiloToken is not set, but there is a kilocode provider,
-	// use the kilocodeToken from the provider configuration as fallback
-	if (!merged.kiloToken) {
-		const kiloProvider = merged.providers.find((p) => p.provider === "kilocode")
-		if (kiloProvider && "kilocodeToken" in kiloProvider) {
-			merged.kiloToken = kiloProvider.kilocodeToken
-			logs.debug("Using kilocodeToken from provider configuration as kiloToken fallback", "ConfigPersistence")
-		}
 	}
 
 	// Special handling for providers array to merge each provider with defaults
