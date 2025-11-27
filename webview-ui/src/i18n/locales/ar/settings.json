@@ -331,9 +331,6 @@
 		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"zaiEntrypoint": "نقطة دخول Z AI",
 		"zaiEntrypointDescription": "يرجى اختيار نقطة دخول API المناسبة حسب موقعك. إذا كنت في الصين، اختر open.bigmodel.cn. وإلا، اختر api.z.ai.",
-		"minimaxApiKey": "مفتاح MiniMax API",
-		"getMiniMaxApiKey": "احصل على مفتاح MiniMax API",
-		"minimaxBaseUrl": "نقطة دخول MiniMax",
 		"nanoGptApiKey": "مفتاح Nano-GPT",
 		"getNanoGptApiKey": "احصل على مفتاح Nano-GPT",
 		"nanoGptModelList": "قائمة النماذج",
@@ -398,6 +395,7 @@
 		"awsSessionToken": "رمز الجلسة",
 		"awsRegion": "منطقة AWS",
 		"awsCrossRegion": "تمكين الاستدلال عبر المناطق",
+		"awsGlobalInference": "استخدام الاستدلال العالمي (اختيار منطقة AWS الأمثل تلقائيًا)",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "استخدام نقطة VPC مخصصة",
 			"vpcEndpointUrlPlaceholder": "اكتب رابط نقطة VPC (اختياري)",

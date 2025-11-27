@@ -331,9 +331,6 @@
 		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"zaiEntrypoint": "Vstupní bod Z AI",
 		"zaiEntrypointDescription": "Vyberte prosím vhodný vstupní bod API podle vaší polohy. Pokud jste v Číně, vyberte open.bigmodel.cn. Jinak vyberte api.z.ai.",
-		"minimaxApiKey": "Klíč API MiniMax",
-		"getMiniMaxApiKey": "Získat klíč API MiniMax",
-		"minimaxBaseUrl": "Vstupní bod MiniMax",
 		"geminiApiKey": "Klíč API Gemini",
 		"nanoGptApiKey": "Klíč API Nano-GPT",
 		"getNanoGptApiKey": "Získat klíč API Nano-GPT",
@@ -398,6 +395,7 @@
 		"awsSessionToken": "Token relace AWS",
 		"awsRegion": "Region AWS",
 		"awsCrossRegion": "Použít meziregionální odvozování",
+		"awsGlobalInference": "Použít globální odvozování (automatický výběr optimálního regionu AWS)",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "Použít vlastní koncový bod VPC",
 			"vpcEndpointUrlPlaceholder": "Zadejte URL koncového bodu VPC (volitelné)",

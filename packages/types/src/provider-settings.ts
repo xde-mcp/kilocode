@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { modelInfoSchema, reasoningEffortWithMinimalSchema, verbosityLevelsSchema, serviceTierSchema } from "./model.js"
+import { modelInfoSchema, reasoningEffortSettingSchema, verbosityLevelsSchema, serviceTierSchema } from "./model.js"
 import { codebaseIndexProviderSchema } from "./codebase-index.js"
 import { profileTypeSchema } from "./profile-type.js" // kilocode_change
 import {
@@ -29,7 +29,6 @@ import {
 	internationalZAiModels,
 	minimaxModels,
 } from "./providers/index.js"
-import { toolUseStylesSchema } from "./kilocode/native-function-calling.js"
 
 /**
  * constants
@@ -201,18 +200,14 @@ const baseProviderSettingsSchema = z.object({
 
 	// Model reasoning.
 	enableReasoningEffort: z.boolean().optional(),
-	reasoningEffort: reasoningEffortWithMinimalSchema.optional(),
+	reasoningEffort: reasoningEffortSettingSchema.optional(),
 	modelMaxTokens: z.number().optional(),
 	modelMaxThinkingTokens: z.number().optional(),
 
 	// Model verbosity.
 	verbosity: verbosityLevelsSchema.optional(),
 
-	// kilocode_change start
-	// Tool style - xml (legacy) or json (modern).
-	// Default to XML for anywhere not specified.
-	toolStyle: toolUseStylesSchema.optional(),
-	// kilocode_change end
+	toolStyle: z.enum(["xml", "json"]).optional(), // kilocode_change
 })
 
 // Several of the providers share common model config properties.
@@ -269,6 +264,7 @@ const bedrockSchema = apiModelIdProviderModelSchema.extend({
 	awsSessionToken: z.string().optional(),
 	awsRegion: z.string().optional(),
 	awsUseCrossRegionInference: z.boolean().optional(),
+	awsUseGlobalInference: z.boolean().optional(), // Enable Global Inference profile routing when supported
 	awsUsePromptCache: z.boolean().optional(),
 	awsProfile: z.string().optional(),
 	awsUseProfile: z.boolean().optional(),
