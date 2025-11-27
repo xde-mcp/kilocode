@@ -320,6 +320,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
+	// kilocode_change start
 	// Initialize VS Code Settings Sync integration
 	try {
 		await SettingsSyncService.initialize(context, outputChannel)
@@ -344,6 +345,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			`[SettingsSync] Error during settings sync initialization: ${error instanceof Error ? error.message : String(error)}`,
 		)
 	}
+	// kilocode_change end
 
 	registerCommands({ context, outputChannel, provider })
 
