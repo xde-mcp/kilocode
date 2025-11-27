@@ -1,7 +1,7 @@
-import React, { Fragment, memo, useCallback, useEffect, useMemo, useState } from "react" // kilocode_change Fragment
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
 import { convertHeadersToObject } from "./utils/headers"
 import { useDebounce } from "react-use"
-import { VSCodeLink, VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 // import { ExternalLinkIcon } from "@radix-ui/react-icons" // kilocode_change
 
 import {
@@ -22,6 +22,13 @@ import {
 	geminiCliDefaultModelId,
 	deepSeekDefaultModelId,
 	moonshotDefaultModelId,
+	// kilocode_change start
+	syntheticDefaultModelId,
+	ovhCloudAiEndpointsDefaultModelId,
+	inceptionDefaultModelId,
+	nativeFunctionCallingProviders,
+	MODEL_SELECTION_ENABLED,
+	// kilocode_change end
 	mistralDefaultModelId,
 	xaiDefaultModelId,
 	groqDefaultModelId,
@@ -33,14 +40,13 @@ import {
 	internationalZAiDefaultModelId,
 	mainlandZAiDefaultModelId,
 	fireworksDefaultModelId,
-	syntheticDefaultModelId, // kilocode_change
 	featherlessDefaultModelId,
 	ioIntelligenceDefaultModelId,
 	rooDefaultModelId,
 	vercelAiGatewayDefaultModelId,
 	deepInfraDefaultModelId,
-	ovhCloudAiEndpointsDefaultModelId, // kilocode_change
-	nativeFunctionCallingProviders, // kilocode_change: Added import for native function calling providers
+	minimaxDefaultModelId,
+	nanoGptDefaultModelId, //kilocode_change
 } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
@@ -85,12 +91,14 @@ import {
 	LiteLLM,
 	Mistral,
 	Moonshot,
+	NanoGpt, // kilocode_change
 	Ollama,
 	OpenAI,
 	OpenAICompatible,
 	OpenRouter,
 	QwenCode,
 	Requesty,
+	Roo,
 	SambaNova,
 	Unbound,
 	Vertex,
@@ -100,13 +108,15 @@ import {
 	GeminiCli,
 	VirtualQuotaFallbackProvider,
 	Synthetic,
+	OvhCloudAiEndpoints,
+	Inception,
 	// kilocode_change end
 	ZAi,
 	Fireworks,
 	Featherless,
 	VercelAiGateway,
 	DeepInfra,
-	OvhCloudAiEndpoints, // kilocode_change
+	MiniMax,
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -115,6 +125,7 @@ import { inputEventTransform, noTransform } from "./transforms"
 import { ModelInfoView } from "./ModelInfoView"
 import { ApiErrorMessage } from "./ApiErrorMessage"
 import { ThinkingBudget } from "./ThinkingBudget"
+import { SimpleThinkingBudget } from "./SimpleThinkingBudget"
 import { Verbosity } from "./Verbosity"
 import { DiffSettingsControl } from "./DiffSettingsControl"
 import { TodoListSettingsControl } from "./TodoListSettingsControl"
@@ -126,6 +137,7 @@ import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { KiloCode } from "../kilocode/settings/providers/KiloCode" // kilocode_change
 import { buildDocLink } from "@src/utils/docLinks"
 import { KiloProviderRouting, KiloProviderRoutingManagedByOrganization } from "./providers/KiloProviderRouting"
+import { RateLimitAfterControl } from "./RateLimitAfterSettings" // kilocode_change
 
 export interface ApiOptionsProps {
 	uriScheme: string | undefined
@@ -221,6 +233,7 @@ const ApiOptions = ({
 		geminiApiKey: apiConfiguration?.geminiApiKey,
 		googleGeminiBaseUrl: apiConfiguration?.googleGeminiBaseUrl,
 		chutesApiKey: apiConfiguration?.chutesApiKey,
+		syntheticApiKey: apiConfiguration?.syntheticApiKey,
 	})
 
 	//const { data: openRouterModelProviders } = useOpenRouterModelProviders(
@@ -272,7 +285,9 @@ const ApiOptions = ({
 			} else if (
 				selectedProvider === "litellm" ||
 				selectedProvider === "deepinfra" ||
-				selectedProvider === "chutes" // kilocode_change
+				selectedProvider === "chutes" || // kilocode_change
+				selectedProvider === "synthetic" || // kilocode_change
+				selectedProvider === "roo"
 			) {
 				vscode.postMessage({ type: "requestRouterModels" })
 			}
@@ -373,6 +388,7 @@ const ApiOptions = ({
 				unbound: { field: "unboundModelId", default: unboundDefaultModelId },
 				requesty: { field: "requestyModelId", default: requestyDefaultModelId },
 				litellm: { field: "litellmModelId", default: litellmDefaultModelId },
+				"nano-gpt": { field: "nanoGptModelId", default: nanoGptDefaultModelId }, // kilocode_change
 				anthropic: { field: "apiModelId", default: anthropicDefaultModelId },
 				cerebras: { field: "apiModelId", default: cerebrasDefaultModelId },
 				"claude-code": { field: "apiModelId", default: claudeCodeDefaultModelId },
@@ -382,6 +398,7 @@ const ApiOptions = ({
 				deepseek: { field: "apiModelId", default: deepSeekDefaultModelId },
 				doubao: { field: "apiModelId", default: doubaoDefaultModelId },
 				moonshot: { field: "apiModelId", default: moonshotDefaultModelId },
+				minimax: { field: "apiModelId", default: minimaxDefaultModelId },
 				mistral: { field: "apiModelId", default: mistralDefaultModelId },
 				xai: { field: "apiModelId", default: xaiDefaultModelId },
 				groq: { field: "apiModelId", default: groqDefaultModelId },
@@ -397,9 +414,7 @@ const ApiOptions = ({
 							: internationalZAiDefaultModelId,
 				},
 				fireworks: { field: "apiModelId", default: fireworksDefaultModelId },
-				synthetic: { field: "apiModelId", default: syntheticDefaultModelId }, // kilocode_change
 				featherless: { field: "apiModelId", default: featherlessDefaultModelId },
-				ovhcloud: { field: "ovhCloudAiEndpointsModelId", default: ovhCloudAiEndpointsDefaultModelId }, // kilocode_change
 				"io-intelligence": { field: "ioIntelligenceModelId", default: ioIntelligenceDefaultModelId },
 				roo: { field: "apiModelId", default: rooDefaultModelId },
 				"vercel-ai-gateway": { field: "vercelAiGatewayModelId", default: vercelAiGatewayDefaultModelId },
@@ -409,6 +424,9 @@ const ApiOptions = ({
 				// kilocode_change start
 				kilocode: { field: "kilocodeModel", default: kilocodeDefaultModel },
 				"gemini-cli": { field: "apiModelId", default: geminiCliDefaultModelId },
+				synthetic: { field: "apiModelId", default: syntheticDefaultModelId },
+				ovhcloud: { field: "ovhCloudAiEndpointsModelId", default: ovhCloudAiEndpointsDefaultModelId },
+				inception: { field: "inceptionLabsModelId", default: inceptionDefaultModelId },
 				// kilocode_change end
 			}
 
@@ -438,7 +456,16 @@ const ApiOptions = ({
 
 		// kilocode_change start
 		// Providers that don't have documentation pages yet
-		const excludedProviders = ["gemini-cli", "moonshot", "chutes", "cerebras", "litellm", "zai", "qwen-code"]
+		const excludedProviders = [
+			"gemini-cli",
+			"moonshot",
+			"chutes",
+			"cerebras",
+			"litellm",
+			"zai",
+			"qwen-code",
+			"minimax",
+		]
 
 		// Skip documentation link when the provider is excluded because documentation is not available
 		if (excludedProviders.includes(selectedProvider)) {
@@ -472,6 +499,28 @@ const ApiOptions = ({
 
 	return (
 		<div className="flex flex-col gap-3">
+			{/* kilocode_change start - autocomplete profile type system */}
+			{/* Profile Type Display (read-only for existing profiles) */}
+			{MODEL_SELECTION_ENABLED && (
+				<div className="flex flex-col gap-1">
+					<label className="block font-medium mb-1">{t("settings:providers.profileType")}</label>
+					<div className="px-3 py-2 bg-vscode-input-background border border-vscode-input-border rounded text-vscode-input-foreground">
+						{apiConfiguration.profileType === "autocomplete"
+							? t("settings:providers.profileTypeAutocomplete")
+							: t("settings:providers.profileTypeChat")}
+						{apiConfiguration.profileType === "autocomplete" && (
+							<span className="ml-2 text-vscode-descriptionForeground">
+								{t("settings:providers.autocompleteLabel")}
+							</span>
+						)}
+					</div>
+					<div className="text-vscode-descriptionForeground text-sm mt-1">
+						{t("settings:providers.profileTypeDescription")}
+					</div>
+				</div>
+			)}
+			{/* kilocode_change end */}
+
 			<div className="flex flex-col gap-1 relative">
 				<div className="flex justify-between items-center">
 					<label className="block font-medium mb-1">{t("settings:providers.apiProvider")}</label>
@@ -571,6 +620,19 @@ const ApiOptions = ({
 				/>
 			)}
 
+			{/* kilocode_change start */}
+			{selectedProvider === "inception" && (
+				<Inception
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					routerModels={routerModels}
+					refetchRouterModels={refetchRouterModels}
+					organizationAllowList={organizationAllowList}
+					modelValidationError={modelValidationError}
+				/>
+			)}
+			{/* kilocode_change end */}
+
 			{selectedProvider === "anthropic" && (
 				<Anthropic apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
@@ -660,6 +722,22 @@ const ApiOptions = ({
 				<Moonshot apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
+			{selectedProvider === "minimax" && (
+				<MiniMax apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+			)}
+
+			{/* kilocode_change start */}
+			{selectedProvider === "nano-gpt" && (
+				<NanoGpt
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					routerModels={routerModels}
+					organizationAllowList={organizationAllowList}
+					modelValidationError={modelValidationError}
+				/>
+			)}
+			{/* kilocode_change end */}
+
 			{selectedProvider === "vscode-lm" && (
 				<VSCodeLM apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
@@ -684,10 +762,7 @@ const ApiOptions = ({
 				<Cerebras apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
 
-			{/* kilocode_change start */}
-
 			{selectedProvider === "chutes" && (
-				// kilocode_change: added props
 				<Chutes
 					apiConfiguration={apiConfiguration}
 					setApiConfigurationField={setApiConfigurationField}
@@ -697,6 +772,7 @@ const ApiOptions = ({
 				/>
 			)}
 
+			{/* kilocode_change start */}
 			{selectedProvider === "gemini-cli" && (
 				<GeminiCli apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
@@ -759,34 +835,29 @@ const ApiOptions = ({
 			{selectedProvider === "fireworks" && (
 				<Fireworks apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
+
 			{
-				// kilocode_change start
 				selectedProvider === "synthetic" && (
 					<Synthetic
 						apiConfiguration={apiConfiguration}
 						setApiConfigurationField={setApiConfigurationField}
+						routerModels={routerModels}
+						organizationAllowList={organizationAllowList}
+						modelValidationError={modelValidationError}
 					/>
 				)
 				// kilocode_change end
 			}
 
 			{selectedProvider === "roo" && (
-				<div className="flex flex-col gap-3">
-					{cloudIsAuthenticated ? (
-						<div className="text-sm text-vscode-descriptionForeground">
-							{t("settings:providers.roo.authenticatedMessage")}
-						</div>
-					) : (
-						<div className="flex flex-col gap-2">
-							<VSCodeButton
-								appearance="primary"
-								onClick={() => vscode.postMessage({ type: "rooCloudSignIn" })}
-								className="w-fit">
-								{t("settings:providers.roo.connectButton")}
-							</VSCodeButton>
-						</div>
-					)}
-				</div>
+				<Roo
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					routerModels={routerModels}
+					cloudIsAuthenticated={cloudIsAuthenticated}
+					organizationAllowList={organizationAllowList}
+					modelValidationError={modelValidationError}
+				/>
 			)}
 
 			{selectedProvider === "featherless" && (
@@ -854,12 +925,21 @@ const ApiOptions = ({
 				</>
 			)}
 
-			<ThinkingBudget
-				key={`${selectedProvider}-${selectedModelId}`}
-				apiConfiguration={apiConfiguration}
-				setApiConfigurationField={setApiConfigurationField}
-				modelInfo={selectedModelInfo}
-			/>
+			{selectedProvider === "roo" ? (
+				<SimpleThinkingBudget
+					key={`${selectedProvider}-${selectedModelId}`}
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					modelInfo={selectedModelInfo}
+				/>
+			) : (
+				<ThinkingBudget
+					key={`${selectedProvider}-${selectedModelId}`}
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					modelInfo={selectedModelInfo}
+				/>
+			)}
 
 			{/* Gate Verbosity UI by capability flag */}
 			{selectedModelInfo?.supportsVerbosity && (
@@ -887,7 +967,7 @@ const ApiOptions = ({
 				// kilocode_change end
 			}
 
-			{!fromWelcomeView && (
+			{!fromWelcomeView && selectedProvider !== "virtual-quota-fallback" /*kilocode_change*/ && (
 				<Collapsible open={isAdvancedSettingsOpen} onOpenChange={setIsAdvancedSettingsOpen}>
 					<CollapsibleTrigger className="flex items-center gap-1 w-full cursor-pointer hover:opacity-80 mb-2">
 						<span className={`codicon codicon-chevron-${isAdvancedSettingsOpen ? "down" : "right"}`}></span>
@@ -902,8 +982,19 @@ const ApiOptions = ({
 							// kilocode_change start
 							nativeFunctionCallingProviders.includes(selectedProvider) && (
 								<ToolUseControl
-									toolStyle={apiConfiguration.toolStyle}
-									onChange={(field, value) => setApiConfigurationField(field, value)}
+									toolStyle={
+										apiConfiguration.toolStyle === "json"
+											? "native"
+											: apiConfiguration.toolStyle === "xml"
+												? "xml"
+												: undefined
+									}
+									onChange={(field, value) =>
+										setApiConfigurationField(
+											field,
+											value === "native" ? "json" : value === "xml" ? "xml" : undefined,
+										)
+									}
 								/>
 							)
 							// kilocode_change end
@@ -918,8 +1009,17 @@ const ApiOptions = ({
 								value={apiConfiguration.modelTemperature}
 								onChange={handleInputChange("modelTemperature", noTransform)}
 								maxValue={2}
+								defaultValue={selectedModelInfo?.defaultTemperature}
 							/>
 						)}
+						{
+							// kilocode_change start
+							<RateLimitAfterControl
+								rateLimitAfterEnabled={apiConfiguration.rateLimitAfter}
+								onChange={(field, value) => setApiConfigurationField(field, value)}
+							/>
+							// kilocode_change end
+						}
 						<RateLimitSecondsControl
 							value={apiConfiguration.rateLimitSeconds || 0}
 							onChange={(value) => setApiConfigurationField("rateLimitSeconds", value)}
