@@ -1,17 +1,19 @@
-name: CLI Publish
+name: Publish CLI
 on:
-    push:
-        branches:
-            - main
-            - catrielmuller/cli-publish-npm
+    pull_request:
+        types: [closed]
     workflow_dispatch:
+
 env:
+    GIT_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
     NODE_VERSION: 20.19.2
     PNPM_VERSION: 10.8.1
     TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
+    
+
     integration-tests:
         runs-on: ubuntu-latest
         steps:
@@ -47,3 +49,4 @@ jobs:
               env:
                   CI: true
                   KILOCODE_TOKEN: ${{ secrets.KILOCODE_INTEGRATION_TOKEN }}
+                  KILOCODE_ORGANIZATION_ID: ${{ secrets.KILOCODE_INTEGRATION_ORGANIZATION_ID }}
