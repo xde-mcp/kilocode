@@ -47,6 +47,7 @@
 	"settings.apiRequestTimeout.description": "เวลาสูงสุดเป็นวินาทีที่จะรอการตอบสนอง API (0 = ไม่มีการหมดเวลา, 1-86400 วินาที, ค่าเริ่มต้น: 600 วินาที) แนะนำค่าที่สูงขึ้นสำหรับผู้ให้บริการในเครื่องเช่น LM Studio และ Ollama ที่อาจต้องการเวลาในการประมวลผลมากขึ้น",
 	"settings.newTaskRequireTodos.description": "ต้องการพารามิเตอร์ todos เมื่อสร้างงานใหม่ด้วยเครื่องมือ new_task",
 	"settings.codeIndex.embeddingBatchSize.description": "ขนาดแบตช์สำหรับการดำเนินการฝังตัวระหว่างการสร้างดัชนีโค้ด ปรับค่านี้ตามขีดจำกัดของผู้ให้บริการ API ของคุณ ค่าเริ่มต้นคือ 60",
+	"settings.toolProtocol.description": "โปรโตคอลเครื่องมือที่ใช้สำหรับการโต้ตอบกับ AI XML เป็นโปรโตคอลเริ่มต้นและแนะนำ Native อยู่ในระหว่างการทดลองและอาจไม่ทำงานกับผู้ให้บริการทั้งหมด",
 	"ghost.input.title": "กด 'Enter' เพื่อยืนยันหรือ 'Escape' เพื่อยกเลิก",
 	"ghost.input.placeholder": "อธิบายสิ่งที่คุณต้องการทำ...",
 	"ghost.commands.generateSuggestions": "Kilo Code: สร้างข้อเสนอแนะการแก้ไข",

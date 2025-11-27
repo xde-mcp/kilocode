@@ -989,8 +989,19 @@ const ApiOptions = ({
 							// kilocode_change start
 							nativeFunctionCallingProviders.includes(selectedProvider) && (
 								<ToolUseControl
-									toolStyle={apiConfiguration.toolStyle}
-									onChange={(field, value) => setApiConfigurationField(field, value)}
+									toolStyle={
+										apiConfiguration.toolStyle === "json"
+											? "native"
+											: apiConfiguration.toolStyle === "xml"
+												? "xml"
+												: undefined
+									}
+									onChange={(field, value) =>
+										setApiConfigurationField(
+											field,
+											value === "native" ? "json" : value === "xml" ? "xml" : undefined,
+										)
+									}
 								/>
 							)
 							// kilocode_change end
@@ -1005,6 +1016,7 @@ const ApiOptions = ({
 								value={apiConfiguration.modelTemperature}
 								onChange={handleInputChange("modelTemperature", noTransform)}
 								maxValue={2}
+								defaultValue={selectedModelInfo?.defaultTemperature}
 							/>
 						)}
 						{

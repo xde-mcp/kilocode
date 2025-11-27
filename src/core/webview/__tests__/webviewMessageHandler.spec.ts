@@ -864,8 +864,8 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 
 	it("delegates enable=true to McpHub and posts updated state", async () => {
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: true },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
@@ -876,8 +876,8 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 
 	it("delegates enable=false to McpHub and posts updated state", async () => {
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: false,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: false },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
@@ -890,8 +890,8 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 		;(mockClineProvider as any).getMcpHub = vi.fn().mockReturnValue(undefined)
 
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: true },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
