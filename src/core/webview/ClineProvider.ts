@@ -3319,7 +3319,7 @@ ${prompt}
 						alwaysAllowWriteOutsideWorkspace: !!state.alwaysAllowWriteOutsideWorkspace,
 						alwaysAllowWriteProtected: !!state.alwaysAllowWriteProtected,
 						alwaysApproveResubmit: !!state.alwaysApproveResubmit,
-						yoloModel: !!state.yoloMode,
+						yoloMode: !!state.yoloMode,
 					},
 				}
 			} catch (error) {
