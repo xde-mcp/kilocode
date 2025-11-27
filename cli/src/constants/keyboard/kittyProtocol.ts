@@ -24,7 +24,6 @@ export const EVENT_TYPE_RELEASE = 3
 
 // Timing constants
 export const BACKSLASH_ENTER_DETECTION_WINDOW_MS = 50
-export const DRAG_COMPLETION_TIMEOUT_MS = 100
 export const PASTE_DETECTION_TIMEOUT_MS = 10
 export const MAX_KITTY_SEQUENCE_LENGTH = 32
 export const KITTY_SEQUENCE_OVERFLOW_THRESHOLD = 64
@@ -38,3 +37,14 @@ export const KITTY_CSI_TILDE_TERMINATOR = "~"
 
 // Kitty protocol version
 export const KITTY_PROTOCOL_VERSION = 1
+
+// Kitty protocol flags (bitmask)
+// Based on: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
+export const KITTY_FLAG_DISAMBIGUATE = 1 // Bit 0: Disambiguate escape codes
+export const KITTY_FLAG_REPORT_EVENTS = 2 // Bit 1: Report event types (press/repeat/release)
+export const KITTY_FLAG_REPORT_ALTERNATE = 4 // Bit 2: Report alternate keys
+export const KITTY_FLAG_REPORT_ALL_KEYS = 8 // Bit 3: Report all keys as escape codes
+export const KITTY_FLAG_REPORT_TEXT = 16 // Bit 4: Report associated text
+
+// Default flags to enable (just disambiguate for maximum compatibility)
+export const KITTY_DEFAULT_FLAGS = KITTY_FLAG_DISAMBIGUATE

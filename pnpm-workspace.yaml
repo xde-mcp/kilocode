@@ -10,6 +10,7 @@ packages:
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - '@vscode/vsce-sign'
+  - '@vscode/sqlite3'
   - core-js
   - esbuild
   - keytar

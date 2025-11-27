@@ -1,5 +1,5 @@
 // kilocode_change - new file
-import { HTMLAttributes, useMemo, useState } from "react"
+import { HTMLAttributes, useMemo } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { Monitor } from "lucide-react"
@@ -14,11 +14,12 @@ import { Slider } from "../ui"
 
 type DisplaySettingsProps = HTMLAttributes<HTMLDivElement> & {
 	showTaskTimeline?: boolean
+	sendMessageOnEnter?: boolean // kilocode_change
 	showTimestamps?: boolean
-	ghostServiceSettings?: any
 	reasoningBlockCollapsed: boolean
 	setCachedStateField: SetCachedStateField<
 		| "showTaskTimeline"
+		| "sendMessageOnEnter"
 		| "ghostServiceSettings"
 		| "reasoningBlockCollapsed"
 		| "hideCostBelowThreshold"
@@ -30,7 +31,7 @@ type DisplaySettingsProps = HTMLAttributes<HTMLDivElement> & {
 export const DisplaySettings = ({
 	showTaskTimeline,
 	showTimestamps,
-	ghostServiceSettings,
+	sendMessageOnEnter,
 	setCachedStateField,
 	reasoningBlockCollapsed,
 	hideCostBelowThreshold,
@@ -38,20 +39,7 @@ export const DisplaySettings = ({
 }: DisplaySettingsProps) => {
 	const { t } = useAppTranslation()
 
-	// Get the icons base URI for the animated logo
-	const [iconsBaseUri] = useState(() => {
-		const w = window as any
-		return w.ICONS_BASE_URI || ""
-	})
-
 	const sampleTimelineData = useMemo(() => generateSampleTimelineData(), [])
-
-	const onShowGutterAnimationChange = (newValue: boolean) => {
-		setCachedStateField("ghostServiceSettings", {
-			...(ghostServiceSettings || {}),
-			showGutterAnimation: newValue,
-		})
-	}
 
 	const handleReasoningBlockCollapsedChange = (value: boolean) => {
 		setCachedStateField("reasoningBlockCollapsed", value)
@@ -116,31 +104,17 @@ export const DisplaySettings = ({
 						{t("settings:display.showTimestamps.description")}
 					</div>
 				</div>
-				{/* Gutter Animation Setting */}
-				<div className="mt-6 pt-6 border-t border-vscode-panel-border">
-					<div className="flex flex-col gap-1">
-						<VSCodeCheckbox
-							checked={ghostServiceSettings?.showGutterAnimation !== false}
-							onChange={(e) => {
-								onShowGutterAnimationChange((e as any).target?.checked || false)
-							}}>
-							<span className="font-medium">{t("settings:ghost.showGutterAnimation.label")}</span>
-						</VSCodeCheckbox>
-						<div className="text-vscode-descriptionForeground text-sm mt-1">
-							{t("settings:ghost.showGutterAnimation.description")}
-						</div>
-						<div className="mt-3 flex items-center gap-3">
-							<div className="flex items-center justify-center w-10 h-10 bg-vscode-editor-background border border-vscode-panel-border rounded">
-								<img
-									src={`${iconsBaseUri}/logo-outline-yellow.gif`}
-									alt="Animated logo"
-									className="w-8 h-8"
-								/>
-							</div>
-							<span className="text-vscode-descriptionForeground text-xs">
-								{t("settings:ghost.showGutterAnimation.preview")}
-							</span>
-						</div>
+				{/* Send Message on Enter Setting */}
+				<div className="flex flex-col gap-1">
+					<VSCodeCheckbox
+						checked={sendMessageOnEnter}
+						onChange={(e) => {
+							setCachedStateField("sendMessageOnEnter", (e as any).target?.checked || false)
+						}}>
+						<span className="font-medium">{t("settings:display.sendMessageOnEnter.label")}</span>
+					</VSCodeCheckbox>
+					<div className="text-vscode-descriptionForeground text-sm mt-1">
+						{t("settings:display.sendMessageOnEnter.description")}
 					</div>
 				</div>
 			</Section>

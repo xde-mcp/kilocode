@@ -2,6 +2,7 @@ import { appendFileSync } from "fs"
 import * as fs from "fs-extra"
 import * as path from "path"
 import { KiloCodePaths } from "../utils/paths.js"
+import { safeStringify } from "../utils/safe-stringify.js"
 
 export type LogLevel = "info" | "debug" | "error" | "warn"
 
@@ -11,7 +12,7 @@ export interface LogEntry {
 	level: LogLevel
 	message: string
 	source?: string
-	context?: Record<string, any>
+	context?: Record<string, unknown>
 }
 
 export interface LogFilter {
@@ -68,16 +69,30 @@ export class LogsService {
 	}
 
 	/**
+	 * Serialize context object, handling Error objects and circular references
+	 */
+	private serializeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
+		if (!context) {
+			return undefined
+		}
+
+		return safeStringify(context) as Record<string, unknown>
+	}
+
+	/**
 	 * Add a log entry with the specified level
 	 */
-	private addLog(level: LogLevel, message: string, source?: string, context?: Record<string, any>): void {
+	private addLog(level: LogLevel, message: string, source?: string, context?: Record<string, unknown>): void {
+		// Serialize context to handle Error objects properly
+		const serializedContext = this.serializeContext(context)
+
 		const entry: LogEntry = {
 			id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 			ts: Date.now(),
 			level,
 			message,
 			...(source && { source }),
-			...(context && { context }),
+			...(serializedContext && { context: serializedContext }),
 		}
 
 		// Add to logs array
@@ -106,7 +121,7 @@ export class LogsService {
 	 */
 	private outputToConsole(entry: LogEntry): void {
 		// GUARD: Prevent recursive logging by checking if we're already in a logging call
-		if ((this as any)._isLogging) {
+		if ((this as { _isLogging?: boolean })._isLogging) {
 			return
 		}
 
@@ -117,7 +132,7 @@ export class LogsService {
 		}
 
 		// Set flag to prevent recursion
-		;(this as any)._isLogging = true
+		;(this as { _isLogging?: boolean })._isLogging = true
 
 		try {
 			const ts = new Date(entry.ts).toISOString()
@@ -148,7 +163,7 @@ export class LogsService {
 			}
 		} finally {
 			// Always clear the flag
-			;(this as any)._isLogging = false
+			;(this as { _isLogging?: boolean })._isLogging = false
 		}
 	}
 
@@ -176,7 +191,18 @@ export class LogsService {
 		const ts = new Date(entry.ts).toISOString()
 		const source = entry.source ? `[${entry.source}]` : ""
 		const prefix = `${ts} ${source}`
-		const contextStr = entry.context ? ` ${JSON.stringify(entry.context)}` : ""
+
+		// Use safe stringify to handle circular references
+		let contextStr = ""
+		if (entry.context) {
+			try {
+				const safeContext = safeStringify(entry.context)
+				contextStr = ` ${JSON.stringify(safeContext)}`
+			} catch (_error) {
+				// Fallback if even safe stringify fails
+				contextStr = " [Context serialization failed]"
+			}
+		}
 
 		switch (entry.level) {
 			case "error":
@@ -219,28 +245,28 @@ export class LogsService {
 	/**
 	 * Log an info message
 	 */
-	public info(message: string, source?: string, context?: Record<string, any>): void {
+	public info(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("info", message, source, context)
 	}
 
 	/**
 	 * Log a debug message
 	 */
-	public debug(message: string, source?: string, context?: Record<string, any>): void {
+	public debug(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("debug", message, source, context)
 	}
 
 	/**
 	 * Log an error message
 	 */
-	public error(message: string, source?: string, context?: Record<string, any>): void {
+	public error(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("error", message, source, context)
 	}
 
 	/**
 	 * Log a warning message
 	 */
-	public warn(message: string, source?: string, context?: Record<string, any>): void {
+	public warn(message: string, source?: string, context?: Record<string, unknown>): void {
 		this.addLog("warn", message, source, context)
 	}
 

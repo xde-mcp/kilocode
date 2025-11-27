@@ -3,7 +3,7 @@ import { Box, Text } from "ink"
 import type { ToolMessageProps } from "../types.js"
 import { getToolIcon, formatFilePath, truncateText } from "../utils.js"
 import { useTheme } from "../../../../state/hooks/useTheme.js"
-import { BOX_L3 } from "../../../utils/width.js"
+import { getBoxWidth } from "../../../utils/width.js"
 
 /**
  * Display new file creation with content preview
@@ -29,7 +29,7 @@ export const ToolNewFileCreatedMessage: React.FC<ToolMessageProps> = ({ toolData
 
 			{toolData.content && (
 				<Box
-					width={BOX_L3}
+					width={getBoxWidth(3)}
 					flexDirection="column"
 					borderStyle="single"
 					borderColor={theme.ui.border.default}
@@ -55,13 +55,13 @@ export const ToolNewFileCreatedMessage: React.FC<ToolMessageProps> = ({ toolData
 				</Text>
 			</Box>
 
-			{toolData.fastApplyResult && (
+			{toolData.fastApplyResult && typeof toolData.fastApplyResult === "object" ? (
 				<Box marginLeft={2}>
 					<Text color={theme.semantic.success} dimColor>
 						✓ Fast apply
 					</Text>
 				</Box>
-			)}
+			) : null}
 		</Box>
 	)
 }

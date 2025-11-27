@@ -1,9 +1,9 @@
 import React from "react"
 import { Box, Text } from "ink"
-import type { ToolMessageProps } from "../types.js"
+import type { ToolMessageProps, BatchDiffItem } from "../types.js"
 import { getToolIcon, formatFilePath, truncateText } from "../utils.js"
 import { useTheme } from "../../../../state/hooks/useTheme.js"
-import { BOX_L1, BOX_L3 } from "../../../utils/width.js"
+import { getBoxWidth } from "../../../utils/width.js"
 
 /**
  * Display file edits with diff (handles both editedExistingFile and appliedDiff tool types)
@@ -16,7 +16,7 @@ export const ToolEditedExistingFileMessage: React.FC<ToolMessageProps> = ({ tool
 	if (isBatch) {
 		return (
 			<Box
-				width={BOX_L1}
+				width={getBoxWidth(1)}
 				flexDirection="column"
 				borderStyle="single"
 				borderColor={theme.semantic.info}
@@ -28,7 +28,7 @@ export const ToolEditedExistingFileMessage: React.FC<ToolMessageProps> = ({ tool
 					</Text>
 				</Box>
 				<Box flexDirection="column" marginTop={1}>
-					{toolData.batchDiffs!.map((batchDiff: any, index: number) => (
+					{toolData.batchDiffs!.map((batchDiff: BatchDiffItem, index: number) => (
 						<Box key={index} flexDirection="column" marginBottom={1}>
 							<Text color={theme.semantic.info}>{formatFilePath(batchDiff.path || "")}</Text>
 							{batchDiff.isProtected && (
@@ -66,7 +66,7 @@ export const ToolEditedExistingFileMessage: React.FC<ToolMessageProps> = ({ tool
 
 			{toolData.diff && (
 				<Box
-					width={BOX_L3}
+					width={getBoxWidth(3)}
 					flexDirection="column"
 					borderStyle="single"
 					borderColor={theme.ui.border.default}
@@ -98,7 +98,7 @@ export const ToolEditedExistingFileMessage: React.FC<ToolMessageProps> = ({ tool
 				</Box>
 			)}
 
-			{toolData.fastApplyResult && (
+			{!!toolData.fastApplyResult && (
 				<Box marginLeft={2} marginTop={1}>
 					<Text color={theme.semantic.success} dimColor>
 						✓ Fast apply

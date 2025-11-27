@@ -3,7 +3,7 @@
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
 	"publisher": "kilocode",
-	"version": "4.107.0",
+	"version": "4.124.0",
 	"icon": "assets/icons/logo-outline-black.png",
 	"galleryBanner": {
 		"color": "#FFFFFF",
@@ -255,7 +255,7 @@
 				"category": "%configuration.title%"
 			},
 			{
-				"command": "kilo-code.generateCommitMessage",
+				"command": "kilo-code.vsc.generateCommitMessage",
 				"title": "%command.generateCommitMessage.title%",
 				"icon": {
 					"light": "assets/icons/kilo-light.svg",
@@ -415,13 +415,13 @@
 			],
 			"scm/input": [
 				{
-					"command": "kilo-code.generateCommitMessage",
+					"command": "kilo-code.vsc.generateCommitMessage",
 					"group": "navigation"
 				}
 			],
 			"scm/title": [
 				{
-					"command": "kilo-code.generateCommitMessage",
+					"command": "kilo-code.vsc.generateCommitMessage",
 					"when": "scmProvider == git",
 					"group": "navigation"
 				}
@@ -433,26 +433,6 @@
 				"key": "ctrl+shift+a",
 				"mac": "cmd+shift+a",
 				"when": "true"
-			},
-			{
-				"command": "editor.action.inlineSuggest.commit",
-				"key": "tab",
-				"when": "inlineSuggestionVisible && editorTextFocus && !editorTabMovesFocus && !inSnippetMode && !suggestWidgetVisible && editorLangId != 'markdown'"
-			},
-			{
-				"command": "kilo-code.ghost.applyAllSuggestions",
-				"key": "shift+tab",
-				"when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.ghost.hasSuggestions"
-			},
-			{
-				"command": "kilo-code.ghost.applyCurrentSuggestions",
-				"key": "tab",
-				"when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.ghost.hasSuggestions"
-			},
-			{
-				"command": "kilo-code.ghost.cancelRequest",
-				"key": "escape",
-				"when": "editorTextFocus && !editorTabMovesFocus && !inSnippetMode && kilocode.ghost.isProcessing"
 			},
 			{
 				"command": "kilo-code.ghost.cancelSuggestions",
@@ -478,10 +458,10 @@
 			},
 			{
 				"command": "kilo-code.addToContext",
-				"key": "cmd+y",
-				"mac": "cmd+y",
-				"win": "ctrl+y",
-				"linux": "ctrl+y",
+				"key": "cmd+k cmd+a",
+				"mac": "cmd+k cmd+a",
+				"win": "ctrl+k ctrl+a",
+				"linux": "ctrl+k ctrl+a",
 				"when": "editorTextFocus && editorHasSelection"
 			},
 			{
@@ -588,6 +568,13 @@
 					"default": "",
 					"description": "%settings.autoImportSettingsPath.description%"
 				},
+				"kilo-code.maximumIndexedFilesForFileSearch": {
+					"type": "number",
+					"default": 10000,
+					"minimum": 5000,
+					"maximum": 500000,
+					"description": "%settings.maximumIndexedFilesForFileSearch.description%"
+				},
 				"kilo-code.useAgentRules": {
 					"type": "boolean",
 					"default": true,
@@ -605,12 +592,35 @@
 					"default": false,
 					"description": "%settings.newTaskRequireTodos.description%"
 				},
+				"kilo-code.enableSettingsSync": {
+					"type": "boolean",
+					"default": true,
+					"description": "%settings.enableSettingsSync.description%"
+				},
 				"kilo-code.codeIndex.embeddingBatchSize": {
 					"type": "number",
 					"default": 60,
 					"minimum": 1,
 					"maximum": 200,
 					"description": "%settings.codeIndex.embeddingBatchSize.description%"
+				},
+				"kilo-code.toolProtocol": {
+					"type": "string",
+					"enum": [
+						"xml",
+						"native"
+					],
+					"default": "xml",
+					"description": "%settings.toolProtocol.description%"
+				}
+			}
+		},
+		"icons": {
+			"kilo-logo": {
+				"description": "Kilo Code logo",
+				"default": {
+					"fontPath": "assets/icons/kilo-icon-font.woff2",
+					"fontCharacter": "\\F101"
 				}
 			}
 		},
@@ -645,18 +655,21 @@
 		"@anthropic-ai/bedrock-sdk": "^0.22.0",
 		"@anthropic-ai/sdk": "^0.51.0",
 		"@anthropic-ai/vertex-sdk": "^0.11.3",
-		"@aws-sdk/client-bedrock-runtime": "^3.812.0",
-		"@aws-sdk/credential-providers": "^3.806.0",
+		"@aws-sdk/client-bedrock-runtime": "^3.922.0",
+		"@aws-sdk/credential-providers": "^3.922.0",
 		"@cerebras/cerebras_cloud_sdk": "^1.35.0",
 		"@google/genai": "^1.0.0",
+		"@lancedb/lancedb": "^0.21.2",
 		"@lmstudio/sdk": "^1.1.1",
 		"@mistralai/mistralai": "^1.9.18",
-		"@modelcontextprotocol/sdk": "1.12.0",
+		"@modelcontextprotocol/sdk": "1.13.3",
 		"@qdrant/js-client-rest": "^1.14.0",
 		"@roo-code/cloud": "workspace:^",
 		"@roo-code/ipc": "workspace:^",
 		"@roo-code/telemetry": "workspace:^",
 		"@roo-code/types": "workspace:^",
+		"@sap-ai-sdk/foundation-models": "^2.2.0",
+		"@sap-ai-sdk/orchestration": "^2.2.0",
 		"@vscode/codicons": "^0.0.36",
 		"async-mutex": "^0.5.0",
 		"axios": "^1.12.0",
@@ -667,10 +680,10 @@
 		"delay": "^6.0.0",
 		"diff": "^7.0.0",
 		"diff-match-patch": "^1.0.5",
-		"exceljs": "^4.4.0",
 		"fast-deep-equal": "^3.1.3",
 		"fast-xml-parser": "^5.0.0",
 		"fastest-levenshtein": "^1.0.16",
+		"form-data": ">=4.0.4",
 		"fuse.js": "^7.1.0",
 		"fzf": "^0.5.2",
 		"get-folder-size": "^5.0.0",
@@ -680,12 +693,13 @@
 		"ignore": "^7.0.3",
 		"is-wsl": "^3.1.0",
 		"isbinaryfile": "^5.0.2",
+		"js-tiktoken": "^1.0.8",
 		"jsdom": "^26.0.0",
 		"json5": "^2.2.3",
 		"jwt-decode": "^4.0.0",
 		"lodash.debounce": "^4.0.8",
 		"lru-cache": "^11.1.0",
-		"mammoth": "^1.9.1",
+		"mammoth": "^1.11.0",
 		"monaco-vscode-textmate-theme-converter": "^0.1.7",
 		"node-cache": "^5.1.2",
 		"node-ipc": "^12.0.0",
@@ -693,19 +707,24 @@
 		"openai": "^5.12.2",
 		"os-name": "^6.0.0",
 		"p-limit": "^6.2.0",
+		"p-map": "^7.0.3",
+		"p-retry": "^7.1.0",
 		"p-wait-for": "^5.0.2",
 		"pdf-parse": "^1.1.1",
 		"pkce-challenge": "^5.0.0",
 		"pretty-bytes": "^7.0.0",
 		"proper-lockfile": "^4.1.2",
-		"ps-tree": "^1.2.0",
+		"ps-list": "^8.1.1",
 		"puppeteer-chromium-resolver": "^24.0.0",
 		"puppeteer-core": "^23.4.0",
+		"quick-lru": "^7.0.0",
 		"reconnecting-eventsource": "^1.6.4",
+		"safe-stable-stringify": "^2.5.0",
 		"sanitize-filename": "^1.6.3",
 		"say": "^0.16.0",
 		"serialize-error": "^12.0.0",
 		"shiki": "^3.6.0",
+		"shell-quote": "^1.8.2",
 		"simple-git": "^3.27.0",
 		"socket.io-client": "^4.8.1",
 		"sound-play": "^1.1.0",
@@ -723,6 +742,7 @@
 		"vscode-material-icons": "^0.1.1",
 		"web-tree-sitter": "^0.25.6",
 		"workerpool": "^9.2.0",
+		"xlsx": "^0.18.5",
 		"yaml": "^2.8.0",
 		"zod": "^3.25.61"
 	},
@@ -744,6 +764,7 @@
 		"@types/node-ipc": "^9.2.3",
 		"@types/proper-lockfile": "^4.1.4",
 		"@types/ps-tree": "^1.1.6",
+		"@types/shell-quote": "^1.7.5",
 		"@types/stream-json": "^1.7.8",
 		"@types/string-similarity": "^4.0.2",
 		"@types/tmp": "^0.2.6",
@@ -756,10 +777,11 @@
 		"execa": "^9.5.2",
 		"glob": "^11.0.1",
 		"mkdirp": "^3.0.1",
+		"myers-diff": "^2.1.0",
 		"nock": "^14.0.4",
 		"npm-run-all2": "^8.0.1",
 		"ovsx": "0.10.4",
-		"rimraf": "^6.0.1",
+		"rimraf": "^6.1.0",
 		"tsup": "^8.4.0",
 		"tsx": "^4.19.3",
 		"typescript": "5.8.3",

@@ -5,7 +5,7 @@ Terminal User Interface for Kilo Code
 ## Installation
 
 ```bash
-npm install -g @kilocode/cli@alpha
+npm install -g @kilocode/cli
 ```
 
 Then, make sure you place your Kilo Code API token in the CLI config:
@@ -43,6 +43,31 @@ kilocode --mode architect
 
 # Start with a specific workspace
 kilocode --workspace /path/to/project
+
+# Resume the last conversation from this workspace
+kilocode -c
+# or
+kilocode --continue
+```
+
+### Parallel mode
+
+Parallel mode allows multiple Kilo Code instances to work in parallel on the same directory, without conflicts. You can spawn as many Kilo Code instances as you need! Once finished, changes will be available on a separate git branch.
+
+```bash
+# Prerequisite: must be within a valid git repository
+
+# In interactive mode, changes will be committed on /exit
+# Terminal 1
+kilocode --parallel "improve xyz"
+# Terminal 2
+kilocode --parallel "improve abc"
+
+# Pairs great with auto mode 🚀
+# Terminal 1
+kilocode --parallel --auto "improve xyz"
+# Terminal 2
+kilocode --parallel --auto "improve abc"
 ```
 
 ### Autonomous mode (Non-Interactive)
@@ -136,6 +161,53 @@ Autonomous mode respects your auto-approval configuration. Edit your config file
 - `retry`: Auto-approve API retry requests
 - `todo`: Auto-approve todo list updates
 
+#### Command Approval Patterns
+
+The `execute.allowed` and `execute.denied` lists support hierarchical pattern matching:
+
+- **Base command**: `"git"` matches any git command (e.g., `git status`, `git commit`, `git push`)
+- **Command + subcommand**: `"git status"` matches any git status command (e.g., `git status --short`, `git status -v`)
+- **Full command**: `"git status --short"` only matches exactly `git status --short`
+
+**Example:**
+
+```json
+{
+	"execute": {
+		"enabled": true,
+		"allowed": [
+			"npm", // Allows all npm commands
+			"git status", // Allows all git status commands
+			"ls -la" // Only allows exactly "ls -la"
+		],
+		"denied": [
+			"git push --force" // Denies this specific command even if "git" is allowed
+		]
+	}
+}
+```
+
+#### Interactive Command Approval
+
+When running in interactive mode, command approval requests now show hierarchical options:
+
+```
+[!] Action Required:
+> ✓ Run Command (y)
+  ✓ Always run git (1)
+  ✓ Always run git status (2)
+  ✓ Always run git status --short --branch (3)
+  ✗ Reject (n)
+```
+
+Selecting an "Always run" option will:
+
+1. Approve and execute the current command
+2. Add the pattern to your `execute.allowed` list in the config
+3. Auto-approve matching commands in the future
+
+This allows you to progressively build your auto-approval rules without manually editing the config file.
+
 #### Autonomous mode Follow-up Questions
 
 In Autonomous mode, when the AI asks a follow-up question, it receives this response:
@@ -148,6 +220,8 @@ This instructs the AI to proceed without user input.
 
 - `0`: Success (task completed)
 - `124`: Timeout (task exceeded time limit)
+- `130`: SIGINT interruption (Ctrl+C)
+- `143`: SIGTERM interruption (system termination)
 - `1`: Error (initialization or execution failure)
 
 #### Example CI/CD Integration

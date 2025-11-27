@@ -5,6 +5,7 @@ import type { CLIConfig, AutoApprovalConfig } from "./types.js"
 import { DEFAULT_CONFIG, DEFAULT_AUTO_APPROVAL } from "./defaults.js"
 import { validateConfig, type ValidationResult } from "./validation.js"
 import { logs } from "../services/logs.js"
+import { buildConfigFromEnv, isEphemeralMode } from "./env-config.js"
 
 /**
  * Result of loading config, includes both the config and validation status
@@ -99,7 +100,7 @@ function mergeWithDefaults(loadedConfig: Partial<CLIConfig>): CLIConfig {
 	if (loadedConfig.providers && Array.isArray(loadedConfig.providers)) {
 		merged.providers = loadedConfig.providers.map((loadedProvider) => {
 			// Find matching default provider by id
-			const defaultProvider = DEFAULT_CONFIG.providers.find((p) => p.id === loadedProvider.id)
+			const defaultProvider = DEFAULT_CONFIG.providers.find((p) => p.provider === loadedProvider.provider)
 			if (defaultProvider) {
 				// Merge loaded provider with default to fill in missing fields
 				return deepMerge(defaultProvider, loadedProvider)
@@ -109,6 +110,11 @@ function mergeWithDefaults(loadedConfig: Partial<CLIConfig>): CLIConfig {
 		})
 	}
 
+	// Ensure customThemes property exists (for backward compatibility)
+	if (!merged.customThemes) {
+		merged.customThemes = {}
+	}
+
 	return merged
 }
 
@@ -116,14 +122,33 @@ export async function loadConfig(): Promise<ConfigLoadResult> {
 	try {
 		await ensureConfigDir()
 
-		// Check if config file exists
-		try {
-			await fs.access(configFile)
-		} catch {
-			// File doesn't exist, write default config directly without validation
-			// (DEFAULT_CONFIG may have empty credentials which is ok for initial setup)
-			await fs.writeFile(configFile, JSON.stringify(DEFAULT_CONFIG, null, 2))
-			logs.debug("Created default config file", "ConfigPersistence")
+		// Check if we can build config from environment variables
+		if (!(await configExists())) {
+			// Try to build config from environment variables
+			const envConfig = buildConfigFromEnv()
+
+			if (envConfig) {
+				logs.info("Using configuration from environment variables (ephemeral mode)", "ConfigPersistence")
+
+				// Validate the env config
+				const validation = await validateConfig(envConfig)
+
+				// Don't write to file in ephemeral mode
+				if (!isEphemeralMode()) {
+					logs.debug("Writing env-based config to file", "ConfigPersistence")
+					await fs.writeFile(configFile, JSON.stringify(envConfig, null, 2))
+				}
+
+				return {
+					config: envConfig,
+					validation,
+				}
+			}
+
+			// No env config available, return default config IN MEMORY
+			// DO NOT create the file yet - it will be created when saveConfig() is called
+			// This prevents creating an empty config file if the user interrupts the auth wizard
+			logs.debug("No config file found, returning default config in memory", "ConfigPersistence")
 
 			// Validate the default config
 			const validation = await validateConfig(DEFAULT_CONFIG)
@@ -166,14 +191,16 @@ export async function loadConfig(): Promise<ConfigLoadResult> {
 	}
 }
 
-export async function saveConfig(config: CLIConfig): Promise<void> {
+export async function saveConfig(config: CLIConfig, skipValidation: boolean = false): Promise<void> {
 	try {
 		await ensureConfigDir()
 
-		// Validate before saving
-		const validation = await validateConfig(config)
-		if (!validation.valid) {
-			throw new Error(`Invalid config: ${validation.errors?.join(", ")}`)
+		// Validate before saving (unless explicitly skipped for initial config creation)
+		if (!skipValidation) {
+			const validation = await validateConfig(config)
+			if (!validation.valid) {
+				throw new Error(`Invalid config: ${validation.errors?.join(", ")}`)
+			}
 		}
 
 		// Write config with pretty formatting

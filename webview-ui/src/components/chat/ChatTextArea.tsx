@@ -6,6 +6,7 @@ import { mentionRegex, mentionRegexGlobal, unescapeSpaces } from "@roo/context-m
 import { WebviewMessage } from "@roo/WebviewMessage"
 import { Mode, getAllModes } from "@roo/modes"
 import { ExtensionMessage } from "@roo/ExtensionMessage"
+import type { ProfileType } from "@roo-code/types" // kilocode_change - autocomplete profile type system
 
 import { vscode } from "@/utils/vscode"
 import { useExtensionState } from "@/context/ExtensionStateContext"
@@ -71,6 +72,7 @@ interface ChatTextAreaProps {
 	// Edit mode props
 	isEditMode?: boolean
 	onCancel?: () => void
+	sendMessageOnEnter?: boolean // kilocode_change
 }
 
 export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
@@ -92,6 +94,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			modeShortcutText,
 			isEditMode = false,
 			onCancel,
+			sendMessageOnEnter = true,
 		},
 		ref,
 	) => {
@@ -100,7 +103,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			filePaths,
 			openedTabs,
 			currentApiConfigName,
-			listApiConfigMeta,
+			listApiConfigMeta: listApiConfigMeta_unfilteredByKiloCodeProfileType,
 			customModes,
 			customModePrompts,
 			cwd,
@@ -112,6 +115,18 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			clineMessages,
 		} = useExtensionState()
 
+		// kilocode_change start - autocomplete profile type system
+		// Filter out autocomplete profiles - only show chat profiles in the chat interface
+		const listApiConfigMeta = useMemo(() => {
+			if (!listApiConfigMeta_unfilteredByKiloCodeProfileType) {
+				return []
+			}
+			return listApiConfigMeta_unfilteredByKiloCodeProfileType.filter((config) => {
+				const profileType = (config as { profileType?: ProfileType }).profileType
+				return profileType !== "autocomplete"
+			})
+		}, [listApiConfigMeta_unfilteredByKiloCodeProfileType])
+		// kilocode_change end
 		// Find the ID and display text for the currently selected API configuration
 		const { currentConfigId, displayName } = useMemo(() => {
 			const currentConfig = listApiConfigMeta?.find((config) => config.name === currentApiConfigName)
@@ -586,17 +601,24 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 				const isComposing = event.nativeEvent?.isComposing ?? false
 
-				// Handle prompt history navigation using custom hook
-				if (handleHistoryNavigation(event, showContextMenu, isComposing)) {
-					return
-				}
+				// kilocode_change start
+				const shouldSendMessage =
+					!isComposing &&
+					event.key === "Enter" &&
+					((sendMessageOnEnter && !event.shiftKey) || (!sendMessageOnEnter && event.shiftKey))
 
-				if (event.key === "Enter" && !event.shiftKey && !isComposing) {
+				if (shouldSendMessage) {
 					event.preventDefault()
 
 					resetHistoryNavigation()
 					onSend()
 				}
+
+				// Handle prompt history navigation using custom hook
+				if (handleHistoryNavigation(event, showContextMenu, isComposing)) {
+					return
+				}
+				// kilocode_change end
 
 				if (event.key === "Backspace" && !isComposing) {
 					const charBeforeCursor = inputValue[cursorPosition - 1]
@@ -667,6 +689,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				fileSearchResults,
 				handleHistoryNavigation,
 				resetHistoryNavigation,
+				sendMessageOnEnter,
 			],
 		)
 
@@ -760,7 +783,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 								})
 							}, 200) // 200ms debounce.
 						} else {
-							setSelectedMenuIndex(3) // Set to "File" option by default.
+							setSelectedMenuIndex(-1)
 						}
 					}
 				} else {

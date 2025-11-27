@@ -4,12 +4,19 @@
  */
 
 import { atom } from "jotai"
+import { atomWithReset } from "jotai/utils"
 import type { CliMessage } from "../../types/cli.js"
 import type { ExtensionChatMessage } from "../../types/messages.js"
-import type { CommandSuggestion, ArgumentSuggestion } from "../../services/autocomplete.js"
+import type {
+	CommandSuggestion,
+	ArgumentSuggestion,
+	FileMentionSuggestion,
+	FileMentionContext,
+} from "../../services/autocomplete.js"
 import { chatMessagesAtom } from "./extension.js"
 import { splitMessages } from "../../ui/messages/utils/messageCompletion.js"
 import { textBufferStringAtom, textBufferCursorAtom, setTextAtom, clearTextAtom } from "./textBuffer.js"
+import { commitCompletionTimeout } from "../../parallel/parallel.js"
 
 /**
  * Unified message type that can represent both CLI and extension messages
@@ -31,12 +38,33 @@ export const messagesAtom = atom<CliMessage[]>([])
  * Atom to track when messages have been reset/replaced
  * Increments each time replaceMessages is called to force Static component re-render
  */
+export const refreshTerminalCounterAtom = atom<number>(0)
 export const messageResetCounterAtom = atom<number>(0)
+
+/**
+ * Atom to track the cutoff timestamp for message display
+ * Messages with timestamp <= this value will be hidden from display
+ * Set to 0 to show all messages (default)
+ * Set to Date.now() to hide all previous messages
+ */
+export const messageCutoffTimestampAtom = atom<number>(0)
 
 /**
  * Atom to hold UI error messages
  */
 export const errorAtom = atom<string | null>(null)
+
+/**
+ * Atom to track when parallel mode is committing changes
+ * Used to disable input and show "Committing your changes..." message
+ */
+export const isCommittingParallelModeAtom = atom<boolean>(false)
+
+/**
+ * Atom to track countdown timer for parallel mode commit (in seconds)
+ * Starts at 60 and counts down to 0
+ */
+export const commitCountdownSecondsAtom = atomWithReset<number>(commitCompletionTimeout / 1000)
 
 /**
  * Derived atom to check if the extension is currently streaming/processing
@@ -112,6 +140,8 @@ export type InputMode =
 	| "approval" // Approval pending (blocks input)
 	| "autocomplete" // Command autocomplete active
 	| "followup" // Followup suggestions active
+	| "history" // History navigation mode
+	| "shell" // Shell mode for command execution
 
 /**
  * Current input mode
@@ -156,6 +186,16 @@ export const suggestionsAtom = atom<CommandSuggestion[]>([])
 export const argumentSuggestionsAtom = atom<ArgumentSuggestion[]>([])
 
 /**
+ * Atom to hold file mention suggestions for autocomplete
+ */
+export const fileMentionSuggestionsAtom = atom<FileMentionSuggestion[]>([])
+
+/**
+ * Atom to hold file mention context (when cursor is in @ mention)
+ */
+export const fileMentionContextAtom = atom<FileMentionContext | null>(null)
+
+/**
  * @deprecated Use selectedIndexAtom instead - this is now shared across all selection contexts
  * This atom is kept for backward compatibility but will be removed in a future version.
  */
@@ -195,12 +235,16 @@ export const selectedFollowupIndexAtom = selectedIndexAtom
 // ============================================================================
 
 /**
- * Derived atom to get the total count of suggestions (command or argument)
+ * Derived atom to get the total count of suggestions (command, argument, or file mention)
  */
 export const suggestionCountAtom = atom<number>((get) => {
 	const commandSuggestions = get(suggestionsAtom)
 	const argumentSuggestions = get(argumentSuggestionsAtom)
-	return commandSuggestions.length > 0 ? commandSuggestions.length : argumentSuggestions.length
+	const fileMentionSuggestions = get(fileMentionSuggestionsAtom)
+
+	if (fileMentionSuggestions.length > 0) return fileMentionSuggestions.length
+	if (commandSuggestions.length > 0) return commandSuggestions.length
+	return argumentSuggestions.length
 })
 
 /**
@@ -236,6 +280,42 @@ export const lastMessageAtom = atom<CliMessage | null>((get) => {
 })
 
 /**
+ * Derived atom to get the last ask message from extension messages
+ * Returns the most recent ask message that requires user approval, or null if none exists
+ */
+export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
+	const messages = get(chatMessagesAtom)
+
+	// Ask types that require user approval
+	const approvalAskTypes = [
+		"tool",
+		"command",
+		"command_output",
+		"browser_action_launch",
+		"use_mcp_server",
+		"payment_required_prompt",
+		"checkpoint_restore",
+	]
+
+	const lastMessage = messages[messages.length - 1]
+
+	if (
+		lastMessage &&
+		lastMessage.type === "ask" &&
+		!lastMessage.isAnswered &&
+		lastMessage.ask &&
+		approvalAskTypes.includes(lastMessage.ask)
+	) {
+		// command_output asks can be partial (while command is running)
+		// All other asks must be complete (not partial) to show approval
+		if (lastMessage.ask === "command_output" || !lastMessage.partial) {
+			return lastMessage
+		}
+	}
+	return null
+})
+
+/**
  * Derived atom to check if there's an active error
  */
 export const hasErrorAtom = atom<boolean>((get) => {
@@ -266,8 +346,8 @@ export const clearMessagesAtom = atom(null, (get, set) => {
  * Increments the reset counter to force Static component re-render
  */
 export const replaceMessagesAtom = atom(null, (get, set, messages: CliMessage[]) => {
+	set(messageCutoffTimestampAtom, 0)
 	set(messagesAtom, messages)
-	set(messageResetCounterAtom, (prev) => prev + 1)
 })
 
 /**
@@ -305,6 +385,10 @@ export const updateTextBufferAtom = atom(null, (get, set, value: string) => {
 	}
 })
 
+export const refreshTerminalAtom = atom(null, (get, set) => {
+	set(refreshTerminalCounterAtom, (prev) => prev + 1)
+})
+
 /**
  * Action atom to clear the text buffer
  */
@@ -318,7 +402,11 @@ export const clearTextBufferAtom = atom(null, (get, set) => {
  */
 export const setSuggestionsAtom = atom(null, (get, set, suggestions: CommandSuggestion[]) => {
 	set(suggestionsAtom, suggestions)
-	set(selectedIndexAtom, 0)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
 })
 
 /**
@@ -326,7 +414,38 @@ export const setSuggestionsAtom = atom(null, (get, set, suggestions: CommandSugg
  */
 export const setArgumentSuggestionsAtom = atom(null, (get, set, suggestions: ArgumentSuggestion[]) => {
 	set(argumentSuggestionsAtom, suggestions)
-	set(selectedIndexAtom, 0)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
+})
+
+/**
+ * Action atom to set file mention suggestions
+ */
+export const setFileMentionSuggestionsAtom = atom(null, (get, set, suggestions: FileMentionSuggestion[]) => {
+	set(fileMentionSuggestionsAtom, suggestions)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
+})
+
+/**
+ * Action atom to set file mention context
+ */
+export const setFileMentionContextAtom = atom(null, (get, set, context: FileMentionContext | null) => {
+	set(fileMentionContextAtom, context)
+})
+
+/**
+ * Action atom to clear file mention state
+ */
+export const clearFileMentionAtom = atom(null, (get, set) => {
+	set(fileMentionSuggestionsAtom, [])
+	set(fileMentionContextAtom, null)
 })
 
 /**
@@ -384,7 +503,7 @@ export const hideAutocompleteAtom = atom(null, (get, set) => {
  * This atom is kept for backward compatibility but has no effect
  * @deprecated This atom is kept for backward compatibility but may be removed
  */
-export const showAutocompleteMenuAtom = atom(null, (get, set) => {
+export const showAutocompleteMenuAtom = atom(null, (_get, _set) => {
 	// No-op: autocomplete visibility is now derived from text buffer
 	// Kept for backward compatibility
 })
@@ -392,29 +511,38 @@ export const showAutocompleteMenuAtom = atom(null, (get, set) => {
 /**
  * Action atom to get the currently selected suggestion
  */
-export const getSelectedSuggestionAtom = atom<CommandSuggestion | ArgumentSuggestion | null>((get) => {
-	const commandSuggestions = get(suggestionsAtom)
-	const argumentSuggestions = get(argumentSuggestionsAtom)
-	const selectedIndex = get(selectedIndexAtom)
+export const getSelectedSuggestionAtom = atom<CommandSuggestion | ArgumentSuggestion | FileMentionSuggestion | null>(
+	(get) => {
+		const commandSuggestions = get(suggestionsAtom)
+		const argumentSuggestions = get(argumentSuggestionsAtom)
+		const fileMentionSuggestions = get(fileMentionSuggestionsAtom)
+		const selectedIndex = get(selectedIndexAtom)
 
-	if (commandSuggestions.length > 0) {
-		return commandSuggestions[selectedIndex] ?? null
-	}
+		if (fileMentionSuggestions.length > 0) {
+			return fileMentionSuggestions[selectedIndex] ?? null
+		}
 
-	if (argumentSuggestions.length > 0) {
-		return argumentSuggestions[selectedIndex] ?? null
-	}
+		if (commandSuggestions.length > 0) {
+			return commandSuggestions[selectedIndex] ?? null
+		}
 
-	return null
-})
+		if (argumentSuggestions.length > 0) {
+			return argumentSuggestions[selectedIndex] ?? null
+		}
+
+		return null
+	},
+)
 
 /**
  * Derived atom that merges CLI messages and extension messages chronologically
  * This provides a unified view of all messages for display
+ * Filters out messages before the cutoff timestamp
  */
 export const mergedMessagesAtom = atom<UnifiedMessage[]>((get) => {
 	const cliMessages = get(messagesAtom)
 	const extensionMessages = get(chatMessagesAtom)
+	const cutoffTimestamp = get(messageCutoffTimestampAtom)
 
 	// Convert to unified format
 	const unified: UnifiedMessage[] = [
@@ -427,7 +555,10 @@ export const mergedMessagesAtom = atom<UnifiedMessage[]>((get) => {
 		return a.message.ts - b.message.ts
 	})
 
-	return sorted
+	// Filter out messages before the cutoff timestamp
+	const filtered = sorted.filter((msg) => msg.message.ts > cutoffTimestamp)
+
+	return filtered
 })
 
 // ============================================================================
@@ -531,6 +662,21 @@ export const getSelectedFollowupAtom = atom<FollowupSuggestion | null>((get) => 
  */
 export const hasFollowupSuggestionsAtom = atom<boolean>((get) => {
 	return get(followupSuggestionsAtom).length > 0
+})
+
+/**
+ * Action atom to set the message cutoff timestamp
+ * Messages with timestamp <= this value will be hidden from display
+ */
+export const setMessageCutoffTimestampAtom = atom(null, (get, set, timestamp: number) => {
+	set(messageCutoffTimestampAtom, timestamp)
+})
+
+/**
+ * Action atom to reset the message cutoff timestamp to 0 (show all messages)
+ */
+export const resetMessageCutoffAtom = atom(null, (get, set) => {
+	set(messageCutoffTimestampAtom, 0)
 })
 
 // ============================================================================

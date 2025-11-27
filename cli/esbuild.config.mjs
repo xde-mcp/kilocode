@@ -10,6 +10,7 @@ function copyPostBuildFiles() {
 
 		copyFileSync("src/config/schema.json", "dist/config/schema.json")
 		copyFileSync("package.dist.json", "dist/package.json")
+		copyFileSync("npm-shrinkwrap.dist.json", "dist/npm-shrinkwrap.json")
 		copyFileSync("README.md", "dist/README.md")
 
 		try {
@@ -92,8 +93,8 @@ const __dirname = __dirname__(__filename);
 		"diff-match-patch",
 		"dotenv",
 		"eventemitter3",
-		"exceljs",
 		"fast-deep-equal",
+		"fast-glob",
 		"fast-xml-parser",
 		"fastest-levenshtein",
 		"fs-extra",
@@ -134,7 +135,7 @@ const __dirname = __dirname__(__filename);
 		"pkce-challenge",
 		"pretty-bytes",
 		"proper-lockfile",
-		"ps-tree",
+		"ps-list",
 		"puppeteer-chromium-resolver",
 		"puppeteer-core",
 		"react",
@@ -148,8 +149,6 @@ const __dirname = __dirname__(__filename);
 		"socket.io-client",
 		"sound-play",
 		"stream-json",
-		"string-width",
-		"strip-ansi",
 		"strip-bom",
 		"tiktoken",
 		"tmp",
@@ -163,6 +162,7 @@ const __dirname = __dirname__(__filename);
 		"vscode-uri",
 		"web-tree-sitter",
 		"workerpool",
+		"xlsx",
 		"yaml",
 		"zod",
 	],

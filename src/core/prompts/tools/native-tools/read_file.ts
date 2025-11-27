@@ -1,6 +1,6 @@
 import type OpenAI from "openai"
 
-export default {
+export const read_file = {
 	type: "function",
 	function: {
 		name: "read_file",
@@ -26,17 +26,35 @@ export default {
 									"Optional 1-based inclusive ranges to read (format: start-end). Use multiple ranges for non-contiguous sections and keep ranges tight to the needed context.",
 								items: {
 									type: "string",
-									pattern: "^\\d+-\\d+$",
+									pattern: "^[0-9]+-[0-9]+$",
 								},
-								minItems: 1,
 							},
 						},
-						required: ["path", "line_ranges"],
+						required: [
+							"path",
+							"line_ranges", // kilocode_change
+						],
 						additionalProperties: false,
 					},
 					minItems: 1,
 				},
 			},
+			// kilocode_change start: fix for Haiku 4.5
+			example: [
+				{
+					files: [
+						{
+							path: "src/app.ts",
+							line_ranges: ["1-50"],
+						},
+						{
+							path: "src/utils.ts",
+							line_ranges: ["1-50", "100-150"],
+						},
+					],
+				},
+			],
+			// kilocode_change end
 			required: ["files"],
 			additionalProperties: false,
 		},

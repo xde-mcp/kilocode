@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { VSCodeCheckbox, VSCodeTextField, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
+import { getAppUrl } from "@roo-code/types"
 
 interface ImageGenerationSettingsProps {
 	enabled: boolean
@@ -18,7 +19,10 @@ interface ImageGenerationSettingsProps {
 
 // Hardcoded list of image generation models
 const IMAGE_GENERATION_MODELS = [
-	{ value: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" }, // kilocode_change
+	{ value: "google/gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image" },
+	{ value: "google/gemini-3-pro-image-preview", label: "Gemini 3 Pro Image Preview" }, // kilocode_change
+	{ value: "openai/gpt-5-image", label: "GPT-5 Image" },
+	{ value: "openai/gpt-5-image-mini", label: "GPT-5 Image Mini" },
 	// Add more models as they become available
 ]
 
@@ -43,30 +47,10 @@ export const ImageGenerationSettings = ({
 		if (!enabled) {
 			return
 		}
-		const paidImageGenerationModel = IMAGE_GENERATION_MODELS[0].value
-		if (isUsingOpenRouter) {
-			if (!openRouterImageGenerationSelectedModel) {
-				setImageGenerationSelectedModel(paidImageGenerationModel)
-			}
-		} else {
-			if (openRouterImageApiKey) {
-				setOpenRouterImageApiKey("")
-			}
-			if (openRouterImageGenerationSelectedModel !== paidImageGenerationModel) {
-				setImageGenerationSelectedModel(paidImageGenerationModel)
-			}
+		if (!isUsingOpenRouter && openRouterImageApiKey) {
+			setOpenRouterImageApiKey("")
 		}
-	}, [
-		enabled,
-		isUsingOpenRouter,
-		openRouterImageApiKey,
-		setOpenRouterImageApiKey,
-		kiloCodeImageApiKey,
-		setKiloCodeImageApiKey,
-		openRouterImageGenerationSelectedModel,
-		setImageGenerationSelectedModel,
-		currentProfileKilocodeToken,
-	])
+	}, [enabled, isUsingOpenRouter, openRouterImageApiKey, setOpenRouterImageApiKey])
 	// kilocode_change end
 
 	// Handle API key changes
@@ -151,11 +135,11 @@ export const ImageGenerationSettings = ({
 									<>
 										{t("settings:experimental.IMAGE_GENERATION.getApiKeyText")}{" "}
 										<a
-											href="https://app.kilocode.ai/profile?personal=true"
+											href={getAppUrl("/profile?personal=true")}
 											target="_blank"
 											rel="noopener noreferrer"
 											className="text-vscode-textLink-foreground hover:text-vscode-textLink-activeForeground">
-											app.kilocode.ai/profile
+											{getAppUrl("/profile")}
 										</a>
 									</>
 								)}
@@ -188,7 +172,7 @@ export const ImageGenerationSettings = ({
 					</div>
 
 					{/* Model Selection */}
-					<div style={{ display: isUsingOpenRouter ? undefined : "none" } /*kilocode_change*/}>
+					<div>
 						<label className="block font-medium mb-1">
 							{t("settings:experimental.IMAGE_GENERATION.modelSelectionLabel")}
 						</label>

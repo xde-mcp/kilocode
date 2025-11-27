@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom, useStore } from "jotai"
-import { useCallback, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import {
 	pendingApprovalAtom,
 	approvalOptionsAtom,
@@ -8,18 +8,28 @@ import {
 	selectNextApprovalAtom,
 	selectPreviousApprovalAtom,
 	isApprovalPendingAtom,
+	approvalSetTimestampAtom,
 	startApprovalProcessingAtom,
 	completeApprovalProcessingAtom,
 	approvalProcessingAtom,
 	approveCallbackAtom,
 	rejectCallbackAtom,
 	executeSelectedCallbackAtom,
+	sendTerminalOperationCallbackAtom,
 	type ApprovalOption,
 } from "../atoms/approval.js"
+import { addAllowedCommandAtom, autoApproveExecuteAllowedAtom } from "../atoms/config.js"
+import { updateChatMessageByTsAtom } from "../atoms/extension.js"
 import { useWebviewMessage } from "./useWebviewMessage.js"
 import type { ExtensionChatMessage } from "../../types/messages.js"
 import { logs } from "../../services/logs.js"
 import { useApprovalTelemetry } from "./useApprovalTelemetry.js"
+
+const APPROVAL_MENU_DELAY_MS = 500
+
+// command_output asks should show immediately without delay
+// since they represent running commands that users need to be able to abort
+const COMMAND_OUTPUT_DELAY_MS = 0
 
 /**
  * Options for useApprovalHandler hook
@@ -53,6 +63,8 @@ export interface UseApprovalHandlerReturn {
 	reject: (text?: string, images?: string[]) => Promise<void>
 	/** Execute the currently selected option */
 	executeSelected: (text?: string, images?: string[]) => Promise<void>
+	/** Send terminal operation (continue or abort) */
+	sendTerminalOperation: (operation: "continue" | "abort") => Promise<void>
 }
 
 /**
@@ -86,7 +98,14 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 	const approvalOptions = useAtomValue(approvalOptionsAtom)
 	const selectedIndex = useAtomValue(selectedApprovalIndexAtom)
 	const selectedOption = useAtomValue(selectedApprovalOptionAtom)
-	const isApprovalPending = useAtomValue(isApprovalPendingAtom)
+	const approvalSetTimestamp = useAtomValue(approvalSetTimestampAtom)
+	const isApprovalPendingImmediate = useAtomValue(isApprovalPendingAtom)
+
+	// Use state to manage delayed visibility
+	const [showApprovalMenu, setShowApprovalMenu] = useState(false)
+
+	// Compute if approval is pending with delay
+	const isApprovalPending = isApprovalPendingImmediate && showApprovalMenu
 
 	const selectNext = useSetAtom(selectNextApprovalAtom)
 	const selectPrevious = useSetAtom(selectPreviousApprovalAtom)
@@ -94,8 +113,9 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 	const setApproveCallback = useSetAtom(approveCallbackAtom)
 	const setRejectCallback = useSetAtom(rejectCallbackAtom)
 	const setExecuteSelectedCallback = useSetAtom(executeSelectedCallbackAtom)
+	const setSendTerminalOperationCallback = useSetAtom(sendTerminalOperationCallbackAtom)
 
-	const { sendAskResponse } = useWebviewMessage()
+	const { sendAskResponse, sendMessage } = useWebviewMessage()
 	const approvalTelemetry = useApprovalTelemetry()
 
 	const approve = useCallback(
@@ -134,18 +154,65 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 					ts: currentPendingApproval.ts,
 				})
 
-				await sendAskResponse({
-					response: "yesButtonClicked",
-					...(text && { text }),
-					...(images && { images }),
-				})
+				// Mark message as answered locally BEFORE sending response
+				// This prevents lastAskMessageAtom from returning it again
+				const answeredMessage: ExtensionChatMessage = {
+					...currentPendingApproval,
+					isAnswered: true,
+				}
+				store.set(updateChatMessageByTsAtom, answeredMessage)
 
-				logs.debug("Approval response sent successfully", "useApprovalHandler", {
-					ts: currentPendingApproval.ts,
-				})
+				// Handle checkpoint restore separately - send direct webview message instead of ask response
+				if (currentPendingApproval.ask === "checkpoint_restore") {
+					try {
+						// Parse checkpoint data from the message text
+						const checkpointData = JSON.parse(currentPendingApproval.text || "{}")
+						const { commitHash, checkpointTs } = checkpointData
 
-				// Track manual approval
-				approvalTelemetry.trackManualApproval(currentPendingApproval)
+						logs.debug("Sending checkpoint restore message", "useApprovalHandler", {
+							commitHash,
+							checkpointTs,
+						})
+
+						// Send direct webview message to trigger restore
+						await sendMessage({
+							type: "checkpointRestore",
+							payload: {
+								ts: checkpointTs,
+								commitHash: commitHash,
+								mode: "restore",
+							},
+						})
+
+						logs.debug("Checkpoint restore message sent successfully", "useApprovalHandler", {
+							ts: currentPendingApproval.ts,
+						})
+					} catch (error) {
+						logs.error("Failed to parse checkpoint data or send restore message", "useApprovalHandler", {
+							error,
+						})
+						throw error
+					}
+				} else {
+					// Determine response type based on ask type
+					// payment_required_prompt needs special "retry_clicked" response
+					const responseType =
+						currentPendingApproval.ask === "payment_required_prompt" ? "retry_clicked" : "yesButtonClicked"
+
+					await sendAskResponse({
+						response: responseType,
+						...(text && { text }),
+						...(images && { images }),
+					})
+
+					logs.debug("Approval response sent successfully", "useApprovalHandler", {
+						ts: currentPendingApproval.ts,
+						responseType,
+					})
+
+					// Track manual approval
+					approvalTelemetry.trackManualApproval(currentPendingApproval)
+				}
 
 				// Complete processing atomically - this clears both pending and processing state
 				store.set(completeApprovalProcessingAtom)
@@ -156,7 +223,7 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 				throw error
 			}
 		},
-		[store, sendAskResponse, approvalTelemetry],
+		[store, sendAskResponse, sendMessage, approvalTelemetry],
 	)
 
 	const reject = useCallback(
@@ -191,16 +258,27 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 			try {
 				logs.debug("Rejecting request", "useApprovalHandler", { ask: currentPendingApproval.ask })
 
-				await sendAskResponse({
-					response: "noButtonClicked",
-					...(text && { text }),
-					...(images && { images }),
-				})
+				// Mark message as answered locally BEFORE sending response
+				// This prevents lastAskMessageAtom from returning it again
+				const answeredMessage: ExtensionChatMessage = {
+					...currentPendingApproval,
+					isAnswered: true,
+				}
+				store.set(updateChatMessageByTsAtom, answeredMessage)
 
-				logs.debug("Rejection response sent successfully", "useApprovalHandler")
+				// For checkpoint_restore, we don't need to send any message on cancel - just mark as answered
+				if (currentPendingApproval.ask !== "checkpoint_restore") {
+					await sendAskResponse({
+						response: "noButtonClicked",
+						...(text && { text }),
+						...(images && { images }),
+					})
 
-				// Track manual rejection
-				approvalTelemetry.trackManualRejection(currentPendingApproval)
+					logs.debug("Rejection response sent successfully", "useApprovalHandler")
+
+					// Track manual rejection
+					approvalTelemetry.trackManualRejection(currentPendingApproval)
+				}
 
 				// Complete processing atomically - this clears both pending and processing state
 				store.set(completeApprovalProcessingAtom)
@@ -214,20 +292,136 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 		[store, sendAskResponse, approvalTelemetry],
 	)
 
+	const sendTerminalOperation = useCallback(
+		async (operation: "continue" | "abort") => {
+			// Read the current state directly from the store at call time
+			const currentPendingApproval = store.get(pendingApprovalAtom)
+			const processingState = store.get(approvalProcessingAtom)
+
+			if (!currentPendingApproval) {
+				logs.warn("No pending approval for terminal operation", "useApprovalHandler", {
+					operation,
+				})
+				return
+			}
+
+			// Verify this is a command_output ask
+			if (currentPendingApproval.ask !== "command_output") {
+				logs.warn("Terminal operation called for non-command_output ask", "useApprovalHandler", {
+					ask: currentPendingApproval.ask,
+					operation,
+				})
+				return
+			}
+
+			// Check if already processing
+			if (processingState.isProcessing) {
+				logs.warn("Approval already being processed, skipping duplicate", "useApprovalHandler", {
+					processingTs: processingState.processingTs,
+					currentTs: currentPendingApproval.ts,
+				})
+				return
+			}
+
+			// Start processing atomically
+			const started = store.set(startApprovalProcessingAtom, operation === "continue" ? "approve" : "reject")
+			if (!started) {
+				logs.warn("Failed to start terminal operation processing", "useApprovalHandler")
+				return
+			}
+
+			try {
+				logs.debug(`Sending terminal operation: ${operation}`, "useApprovalHandler", {
+					ts: currentPendingApproval.ts,
+				})
+
+				// Mark message as answered locally BEFORE sending operation
+				const answeredMessage: ExtensionChatMessage = {
+					...currentPendingApproval,
+					isAnswered: true,
+				}
+				store.set(updateChatMessageByTsAtom, answeredMessage)
+
+				// For terminal operations, we only need to send the terminal operation message
+				// DO NOT send askResponse - that would resolve the wrong ask (completion_result instead of command_output)
+				// The backend's onLine callback handles the command_output ask internally
+				await sendMessage({
+					type: "terminalOperation",
+					terminalOperation: operation,
+				})
+
+				logs.debug("Terminal operation sent successfully", "useApprovalHandler", {
+					operation,
+					ts: currentPendingApproval.ts,
+				})
+
+				// Track the operation as manual approval/rejection
+				if (operation === "continue") {
+					approvalTelemetry.trackManualApproval(currentPendingApproval)
+				} else {
+					approvalTelemetry.trackManualRejection(currentPendingApproval)
+				}
+
+				// Complete processing atomically
+				store.set(completeApprovalProcessingAtom)
+			} catch (error) {
+				logs.error("Failed to send terminal operation", "useApprovalHandler", { error, operation })
+				// Reset processing state on error so user can retry
+				store.set(completeApprovalProcessingAtom)
+				throw error
+			}
+		},
+		[store, sendMessage, sendAskResponse, approvalTelemetry],
+	)
+
 	const executeSelected = useCallback(
 		async (text?: string, images?: string[]) => {
+			// Read the current state to check if this is a command_output
+			const currentPendingApproval = store.get(pendingApprovalAtom)
+
 			if (!selectedOption) {
 				logs.warn("No option selected", "useApprovalHandler")
 				return
 			}
 
+			// Special handling for command_output - use terminal operations instead
+			if (currentPendingApproval?.ask === "command_output") {
+				if (selectedOption.action === "approve") {
+					await sendTerminalOperation("continue")
+				} else {
+					await sendTerminalOperation("abort")
+				}
+				return
+			}
+
 			if (selectedOption.action === "approve") {
+				await approve(text, images)
+			} else if (selectedOption.action === "approve-and-remember") {
+				// First add the command pattern to config
+				if (selectedOption.commandPattern) {
+					try {
+						logs.info("Adding command pattern to auto-approval list", "useApprovalHandler", {
+							pattern: selectedOption.commandPattern,
+						})
+						await store.set(addAllowedCommandAtom, selectedOption.commandPattern)
+
+						// Verify the config was updated
+						const updatedAllowed = store.get(autoApproveExecuteAllowedAtom)
+						logs.info("Command pattern added successfully - current allowed list", "useApprovalHandler", {
+							pattern: selectedOption.commandPattern,
+							allowedList: updatedAllowed,
+						})
+					} catch (error) {
+						logs.error("Failed to add command pattern to config", "useApprovalHandler", { error })
+					}
+				}
+				// Then approve the current command
 				await approve(text, images)
 			} else {
 				await reject(text, images)
 			}
 		},
-		[selectedOption, approve, reject],
+		[selectedOption, approve, reject, sendTerminalOperation, store],
 	)
 
 	// Set callbacks for keyboard handler to use
@@ -235,11 +429,43 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 		setApproveCallback(() => approve)
 		setRejectCallback(() => reject)
 		setExecuteSelectedCallback(() => executeSelected)
-	}, [approve, reject, executeSelected, setApproveCallback, setRejectCallback, setExecuteSelectedCallback])
+		setSendTerminalOperationCallback(() => sendTerminalOperation)
+	}, [
+		approve,
+		reject,
+		executeSelected,
+		sendTerminalOperation,
+		setApproveCallback,
+		setRejectCallback,
+		setExecuteSelectedCallback,
+		setSendTerminalOperationCallback,
+	])
 
-	// Note: All auto-approval logic has been moved to useApprovalEffect hook
-	// and the approvalDecision service. This hook now only handles manual
-	// approve/reject actions triggered by user interaction.
+	// Manage delayed visibility of approval menu
+	useEffect(() => {
+		if (approvalSetTimestamp === null) {
+			// No pending approval, hide menu
+			setShowApprovalMenu(false)
+			return
+		}
+
+		// Determine delay based on ask type
+		// command_output asks should show immediately so users can abort running commands
+		const delay = pendingApproval?.ask === "command_output" ? COMMAND_OUTPUT_DELAY_MS : APPROVAL_MENU_DELAY_MS
+
+		// Calculate remaining time for delay
+		const elapsed = Date.now() - approvalSetTimestamp
+		const remaining = Math.max(0, delay - elapsed)
+
+		// Set timeout to show menu after delay
+		const timeoutId = setTimeout(() => {
+			setShowApprovalMenu(true)
+		}, remaining)
+
+		return () => {
+			clearTimeout(timeoutId)
+		}
+	}, [approvalSetTimestamp, isApprovalPendingImmediate, pendingApproval?.ask])
 
 	return {
 		pendingApproval,
@@ -252,5 +478,6 @@ export function useApprovalHandler(): UseApprovalHandlerReturn {
 		approve,
 		reject,
 		executeSelected,
+		sendTerminalOperation,
 	}
 }
