@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { spawn } from "child_process"
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest"
+import { spawn, type ChildProcess } from "child_process"
 import { platform } from "os"
 import openConfigFile from "../openConfig.js"
 import * as configModule from "../index.js"
@@ -19,9 +19,9 @@ vi.mock("../index.js", () => ({
 describe("openConfigFile", () => {
 	const mockConfigPath = "/home/user/.config/kilocode/config.json"
 	let originalEnv: NodeJS.ProcessEnv
-	let consoleLogSpy: ReturnType<typeof vi.spyOn>
-	let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-	let processExitSpy: any
+	let consoleLogSpy: MockInstance
+	let consoleErrorSpy: MockInstance
+	let processExitSpy: MockInstance
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -35,7 +35,7 @@ describe("openConfigFile", () => {
 		// Mock console methods
 		consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
 		consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-		processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as any)
+		processExitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never)
 	})
 
 	afterEach(() => {
@@ -43,9 +43,12 @@ describe("openConfigFile", () => {
 		vi.restoreAllMocks()
 	})
 
-	const createMockProcess = () => {
-		const mockProcess = new EventEmitter() as any
-		mockProcess.stdio = { inherit: true }
+	const createMockProcess = (): ChildProcess => {
+		const mockProcess = new EventEmitter() as unknown as ChildProcess
+		Object.defineProperty(mockProcess, "stdio", {
+			value: { inherit: true },
+			writable: true,
+		})
 		return mockProcess
 	}
 
@@ -126,11 +129,11 @@ describe("openConfigFile", () => {
 			const nanoError = new Error("nano: command not found")
 			nanoProcess.emit("error", nanoError)
 
-			await promise
+			await expect(promise).rejects.toThrow()
 
 			expect(consoleErrorSpy).toHaveBeenCalledWith(`Failed to open editor: ${xdgError.message}`)
 			expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("Nano fallback also failed"))
-			expect(processExitSpy).toHaveBeenCalledWith(1)
+			expect(processExitSpy).not.toHaveBeenCalled()
 		})
 
 		it("should not fallback to nano when EDITOR is set", async () => {
@@ -152,12 +155,12 @@ describe("openConfigFile", () => {
 			const error = new Error("vim: command not found")
 			mockProcess.emit("error", error)
 
-			await promise
+			await expect(promise).rejects.toThrow()
 
 			expect(spawn).toHaveBeenCalledTimes(1)
 			expect(consoleErrorSpy).toHaveBeenCalledWith(`Failed to open editor: ${error.message}`)
 			expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining("Nano fallback"))
-			expect(processExitSpy).toHaveBeenCalledWith(1)
+			expect(processExitSpy).not.toHaveBeenCalled()
 		})
 	})
 
@@ -197,11 +200,11 @@ describe("openConfigFile", () => {
 			const error = new Error("open: command not found")
 			mockProcess.emit("error", error)
 
-			await promise
+			await expect(promise).rejects.toThrow()
 
 			expect(spawn).toHaveBeenCalledTimes(1)
 			expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining("nano"))
-			expect(processExitSpy).toHaveBeenCalledWith(1)
+			expect(processExitSpy).not.toHaveBeenCalled()
 		})
 	})
 
@@ -241,11 +244,11 @@ describe("openConfigFile", () => {
 			const error = new Error("cmd: command not found")
 			mockProcess.emit("error", error)
 
-			await promise
+			await expect(promise).rejects.toThrow()
 
 			expect(spawn).toHaveBeenCalledTimes(1)
 			expect(consoleErrorSpy).not.toHaveBeenCalledWith(expect.stringContaining("nano"))
-			expect(processExitSpy).toHaveBeenCalledWith(1)
+			expect(processExitSpy).not.toHaveBeenCalled()
 		})
 	})
 

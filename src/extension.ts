@@ -46,7 +46,9 @@ import { registerGhostProvider } from "./services/ghost" // kilocode_change
 import { registerMainThreadForwardingLogger } from "./utils/fowardingLogger" // kilocode_change
 import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kilocode_change
 import { checkAnthropicApiKeyConflict } from "./utils/anthropicApiKeyWarning"
+import { SettingsSyncService } from "./services/settings-sync/SettingsSyncService" // kilocode_change
 import { flushModels, getModels } from "./api/providers/fetchers/modelCache"
+import { ManagedIndexer } from "./services/code-index/managed/ManagedIndexer" // kilocode_change
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -81,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	try {
 		telemetryService.register(new PostHogTelemetryClient())
 	} catch (error) {
-		console.warn("Failed to register PostHogTelemetryClient:", error)
+		console.warn("Failed to register PostHogTelemetryClient:", error.message)
 	}
 
 	// Create logger for cloud services.
@@ -157,6 +159,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize the provider *before* the Roo Code Cloud service.
 	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService)
+	// const initManagedCodeIndexing = updateCodeIndexWithKiloProps(provider) // kilocode_change
 
 	// Initialize Roo Code Cloud service.
 	const postStateListener = () => ClineProvider.getVisibleInstance()?.postStateToWebview()
@@ -324,6 +327,32 @@ export async function activate(context: vscode.ExtensionContext) {
 	} catch (error) {
 		outputChannel.appendLine(`Failed to check API key conflicts: ${error}`)
 	}
+	// kilocode_change start
+	// Initialize VS Code Settings Sync integration
+	try {
+		await SettingsSyncService.initialize(context, outputChannel)
+		outputChannel.appendLine("[SettingsSync] VS Code Settings Sync integration initialized")
+
+		// Listen for configuration changes to update sync registration
+		const configChangeListener = vscode.workspace.onDidChangeConfiguration(async (event) => {
+			if (event.affectsConfiguration(`${Package.name}.enableSettingsSync`)) {
+				try {
+					await SettingsSyncService.updateSyncRegistration(context, outputChannel)
+					outputChannel.appendLine("[SettingsSync] Sync registration updated due to configuration change")
+				} catch (error) {
+					outputChannel.appendLine(
+						`[SettingsSync] Error updating sync registration: ${error instanceof Error ? error.message : String(error)}`,
+					)
+				}
+			}
+		})
+		context.subscriptions.push(configChangeListener)
+	} catch (error) {
+		outputChannel.appendLine(
+			`[SettingsSync] Error during settings sync initialization: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	}
+	// kilocode_change end
 
 	registerCommands({ context, outputChannel, provider })
 
@@ -436,7 +465,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	}
 
-	await checkAndRunAutoLaunchingTask(context) // kilocode_change
+	// kilocode_change start: Initialize ManagedIndexer
+	await checkAndRunAutoLaunchingTask(context)
+	const managedIndexer = new ManagedIndexer(contextProxy)
+	context.subscriptions.push(managedIndexer)
+	void managedIndexer.start().catch((error) => {
+		outputChannel.appendLine(
+			`Failed to start ManagedIndexer: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	})
+	// kilocode_change end
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }
