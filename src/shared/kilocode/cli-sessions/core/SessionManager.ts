@@ -1,6 +1,5 @@
-import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from "fs"
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync } from "fs"
 import path from "path"
-import { ensureDirSync } from "fs-extra"
 import simpleGit from "simple-git"
 import { tmpdir } from "os"
 import { createHash } from "crypto"
@@ -10,8 +9,8 @@ import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
 import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
-import { IApiConfig } from "src/types/IApiConfig.js"
 import { TrpcClient } from "./TrpcClient.js"
+import type { IApiConfig } from "../types/IApiConfig.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -196,7 +195,7 @@ export class SessionManager {
 
 			const sessionDirectoryPath = path.join(this.pathProvider.getTasksDir(), sessionId)
 
-			ensureDirSync(sessionDirectoryPath)
+			mkdirSync(sessionDirectoryPath, { recursive: true })
 
 			const blobUrlFields = [
 				"api_conversation_history_blob_url",
