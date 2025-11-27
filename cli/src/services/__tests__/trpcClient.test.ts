@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import { TrpcClient } from "../trpcClient.js"
 
+vi.mock("@roo-code/types", () => ({
+	getApiUrl: vi.fn(() => "https://api.kilocode.ai"),
+}))
+
 describe("TrpcClient", () => {
 	let fetchMock: ReturnType<typeof vi.fn>
 
@@ -102,11 +106,11 @@ describe("TrpcClient", () => {
 				expect(callUrl.pathname).toBe("/api/trpc/user.getProfile")
 			})
 
-			it("should use environment variable endpoint if set", async () => {
-				const originalEnv = process.env.KILOCODE_BACKEND_BASE_URL
-				process.env.KILOCODE_BACKEND_BASE_URL = "https://custom.api.com"
+			it("should use endpoint from getApiUrl", async () => {
+				const { getApiUrl } = await import("@roo-code/types")
+				vi.mocked(getApiUrl).mockReturnValueOnce("https://custom.api.com")
 
-				// Need to create new client instance to pick up env var
+				// Need to create new client instance to pick up mocked getApiUrl
 				// @ts-expect-error - Accessing private static property for testing
 				TrpcClient.instance = null
 				const customClient = TrpcClient.init("test-token")
@@ -120,14 +124,11 @@ describe("TrpcClient", () => {
 
 				const callUrl = fetchMock.mock.calls[0]?.[0] as URL
 				expect(callUrl.origin).toBe("https://custom.api.com")
-
-				// Restore
-				process.env.KILOCODE_BACKEND_BASE_URL = originalEnv
 			})
 
-			it("should use default endpoint if no environment variable", async () => {
-				const originalEnv = process.env.KILOCODE_BACKEND_BASE_URL
-				delete process.env.KILOCODE_BACKEND_BASE_URL
+			it("should use default endpoint from getApiUrl when no environment variable", async () => {
+				const { getApiUrl } = await import("@roo-code/types")
+				vi.mocked(getApiUrl).mockReturnValueOnce("https://api.kilocode.ai")
 
 				// @ts-expect-error - Accessing private static property for testing
 				TrpcClient.instance = null
@@ -142,11 +143,6 @@ describe("TrpcClient", () => {
 
 				const callUrl = fetchMock.mock.calls[0]?.[0] as URL
 				expect(callUrl.origin).toBe("https://api.kilocode.ai")
-
-				// Restore
-				if (originalEnv) {
-					process.env.KILOCODE_BACKEND_BASE_URL = originalEnv
-				}
 			})
 		})
 

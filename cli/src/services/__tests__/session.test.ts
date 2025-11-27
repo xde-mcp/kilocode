@@ -2424,6 +2424,88 @@ describe("SessionService", () => {
 		})
 	})
 
+	describe("restoreLastSession", () => {
+		beforeEach(() => {
+			vi.clearAllMocks()
+			global.fetch = vi.fn()
+		})
+
+		it("should return false when no last session ID exists", async () => {
+			service.setWorkspaceDirectory("/test/workspace")
+			vi.mocked(existsSync).mockReturnValueOnce(false)
+
+			const result = await service.restoreLastSession()
+
+			expect(result).toBe(false)
+			expect(vi.mocked(logs.debug)).toHaveBeenCalledWith("No persisted session ID found", "SessionService")
+		})
+
+		it("should return true when session is restored successfully", async () => {
+			service.setWorkspaceDirectory("/test/workspace")
+
+			const sessionData = {
+				sessionId: "saved-session-id",
+				timestamp: Date.now(),
+			}
+
+			vi.mocked(existsSync).mockReturnValueOnce(true)
+			vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(sessionData))
+
+			const mockSessionData = {
+				session_id: "saved-session-id",
+				title: "Saved Session",
+				created_at: "2025-01-01T00:00:00Z",
+				updated_at: "2025-01-01T00:00:00Z",
+			}
+
+			mockGet.mockResolvedValueOnce(mockSessionData)
+
+			const result = await service.restoreLastSession()
+
+			expect(result).toBe(true)
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Found persisted session ID, attempting to restore",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "saved-session-id",
+				}),
+			)
+			expect(vi.mocked(logs.info)).toHaveBeenCalledWith(
+				"Successfully restored persisted session",
+				"SessionService",
+				expect.objectContaining({
+					sessionId: "saved-session-id",
+				}),
+			)
+		})
+
+		it("should return false when restoration fails", async () => {
+			service.setWorkspaceDirectory("/test/workspace")
+
+			const sessionData = {
+				sessionId: "invalid-session-id",
+				timestamp: Date.now(),
+			}
+
+			vi.mocked(existsSync).mockReturnValueOnce(true)
+			vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(sessionData))
+
+			mockGet.mockRejectedValueOnce(new Error("Session not found"))
+
+			const result = await service.restoreLastSession()
+
+			expect(result).toBe(false)
+			expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
+				"Failed to restore persisted session",
+				"SessionService",
+				expect.objectContaining({
+					error: "Session not found",
+					sessionId: "invalid-session-id",
+				}),
+			)
+		})
+	})
+
 	describe("session persistence", () => {
 		beforeEach(() => {
 			vi.clearAllMocks()
@@ -2531,119 +2613,6 @@ describe("SessionService", () => {
 						error: "Write failed",
 					}),
 				)
-			})
-		})
-
-		describe("getLastSessionId", () => {
-			it("should return null when workspace directory is not set", () => {
-				const result = service.getLastSessionId()
-
-				expect(result).toBeNull()
-				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
-					"Cannot get last session ID: workspace directory not set",
-					"SessionService",
-				)
-			})
-
-			it("should return null when file does not exist", () => {
-				service.setWorkspaceDirectory("/test/workspace")
-
-				const mockExistsSync = vi.fn().mockReturnValue(false)
-				vi.doMock("fs", () => ({
-					existsSync: mockExistsSync,
-					readFileSync: vi.fn(),
-					writeFileSync: vi.fn(),
-				}))
-
-				const result = service.getLastSessionId()
-
-				expect(result).toBeNull()
-			})
-
-			it("should return session ID from valid file", () => {
-				service.setWorkspaceDirectory("/test/workspace")
-
-				const sessionData = {
-					sessionId: "saved-session-id",
-					timestamp: Date.now(),
-				}
-
-				vi.mocked(existsSync).mockReturnValueOnce(true)
-				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(sessionData))
-
-				const result = service.getLastSessionId()
-
-				expect(result).toBe("saved-session-id")
-				expect(vi.mocked(logs.debug)).toHaveBeenCalledWith(
-					"Retrieved last session ID",
-					"SessionService",
-					expect.objectContaining({
-						sessionId: "saved-session-id",
-					}),
-				)
-			})
-
-			it("should return null for invalid JSON", () => {
-				service.setWorkspaceDirectory("/test/workspace")
-
-				vi.mocked(existsSync).mockReturnValueOnce(true)
-				vi.mocked(readFileSync).mockImplementationOnce(() => {
-					throw new Error("Parse error")
-				})
-
-				const result = service.getLastSessionId()
-
-				expect(result).toBeNull()
-				expect(vi.mocked(logs.warn)).toHaveBeenCalledWith(
-					"Failed to read last session ID",
-					"SessionService",
-					expect.objectContaining({
-						error: expect.any(String),
-					}),
-				)
-			})
-
-			it("should return null when sessionId is missing from data", () => {
-				service.setWorkspaceDirectory("/test/workspace")
-
-				const mockExistsSync = vi.fn().mockReturnValue(true)
-				const invalidData = {
-					timestamp: Date.now(),
-				}
-
-				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(invalidData))
-
-				vi.doMock("fs", () => ({
-					existsSync: mockExistsSync,
-					readFileSync: vi.fn().mockReturnValue(JSON.stringify(invalidData)),
-					writeFileSync: vi.fn(),
-				}))
-
-				const result = service.getLastSessionId()
-
-				expect(result).toBeNull()
-			})
-
-			it("should return null when sessionId is not a string", () => {
-				service.setWorkspaceDirectory("/test/workspace")
-
-				const mockExistsSync = vi.fn().mockReturnValue(true)
-				const invalidData = {
-					sessionId: 12345,
-					timestamp: Date.now(),
-				}
-
-				vi.mocked(readFileSync).mockReturnValueOnce(JSON.stringify(invalidData))
-
-				vi.doMock("fs", () => ({
-					existsSync: mockExistsSync,
-					readFileSync: vi.fn().mockReturnValue(JSON.stringify(invalidData)),
-					writeFileSync: vi.fn(),
-				}))
-
-				const result = service.getLastSessionId()
-
-				expect(result).toBeNull()
 			})
 		})
 	})
