@@ -141,6 +141,7 @@ export type InputMode =
 	| "autocomplete" // Command autocomplete active
 	| "followup" // Followup suggestions active
 	| "history" // History navigation mode
+	| "shell" // Shell mode for command execution
 
 /**
  * Current input mode
@@ -286,18 +287,30 @@ export const lastAskMessageAtom = atom<ExtensionChatMessage | null>((get) => {
 	const messages = get(chatMessagesAtom)
 
 	// Ask types that require user approval
-	const approvalAskTypes = ["tool", "command", "browser_action_launch", "use_mcp_server", "payment_required_prompt"]
+	const approvalAskTypes = [
+		"tool",
+		"command",
+		"command_output",
+		"browser_action_launch",
+		"use_mcp_server",
+		"payment_required_prompt",
+		"checkpoint_restore",
+	]
 
 	const lastMessage = messages[messages.length - 1]
+
 	if (
 		lastMessage &&
 		lastMessage.type === "ask" &&
 		!lastMessage.isAnswered &&
 		lastMessage.ask &&
-		approvalAskTypes.includes(lastMessage.ask) &&
-		!lastMessage.partial
+		approvalAskTypes.includes(lastMessage.ask)
 	) {
-		return lastMessage
+		// command_output asks can be partial (while command is running)
+		// All other asks must be complete (not partial) to show approval
+		if (lastMessage.ask === "command_output" || !lastMessage.partial) {
+			return lastMessage
+		}
 	}
 	return null
 })
@@ -389,7 +402,11 @@ export const clearTextBufferAtom = atom(null, (get, set) => {
  */
 export const setSuggestionsAtom = atom(null, (get, set, suggestions: CommandSuggestion[]) => {
 	set(suggestionsAtom, suggestions)
-	set(selectedIndexAtom, 0)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
 })
 
 /**
@@ -397,7 +414,11 @@ export const setSuggestionsAtom = atom(null, (get, set, suggestions: CommandSugg
  */
 export const setArgumentSuggestionsAtom = atom(null, (get, set, suggestions: ArgumentSuggestion[]) => {
 	set(argumentSuggestionsAtom, suggestions)
-	set(selectedIndexAtom, 0)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
 })
 
 /**
@@ -405,7 +426,11 @@ export const setArgumentSuggestionsAtom = atom(null, (get, set, suggestions: Arg
  */
 export const setFileMentionSuggestionsAtom = atom(null, (get, set, suggestions: FileMentionSuggestion[]) => {
 	set(fileMentionSuggestionsAtom, suggestions)
-	set(selectedIndexAtom, 0)
+	if (suggestions.length === 0) {
+		set(selectedIndexAtom, -1)
+	} else {
+		set(selectedIndexAtom, 0)
+	}
 })
 
 /**
@@ -478,7 +503,7 @@ export const hideAutocompleteAtom = atom(null, (get, set) => {
  * This atom is kept for backward compatibility but has no effect
  * @deprecated This atom is kept for backward compatibility but may be removed
  */
-export const showAutocompleteMenuAtom = atom(null, (get, set) => {
+export const showAutocompleteMenuAtom = atom(null, (_get, _set) => {
 	// No-op: autocomplete visibility is now derived from text buffer
 	// Kept for backward compatibility
 })
