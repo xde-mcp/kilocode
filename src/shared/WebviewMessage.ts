@@ -87,6 +87,8 @@ export interface WebviewMessage {
 		| "requestRooModels"
 		| "requestVsCodeLmModels"
 		| "requestHuggingFaceModels"
+		| "requestSapAiCoreModels" // kilocode_change
+		| "requestSapAiCoreDeployments" // kilocode_change
 		| "openImage"
 		| "saveImage"
 		| "openFile"

@@ -89,6 +89,7 @@ import { UsageTracker } from "../../utils/usage-tracker" // kilocode_change
 import { seeNewChanges } from "../checkpoints/kilocode/seeNewChanges" // kilocode_change
 import { getTaskHistory } from "../../shared/kilocode/getTaskHistory" // kilocode_change
 import { fetchAndRefreshOrganizationModesOnStartup, refreshOrganizationModes } from "./kiloWebviewMessgeHandlerHelpers"
+import { getSapAiCoreDeployments } from "../../api/providers/fetchers/sap-ai-core" // kilocode_change
 import { AutoPurgeScheduler } from "../../services/auto-purge" // kilocode_change
 import { setPendingTodoList } from "../tools/UpdateTodoListTool"
 import { ManagedIndexer } from "../../services/code-index/managed/ManagedIndexer"
@@ -867,6 +868,7 @@ export const webviewMessageHandler = async (
 						lmstudio: {},
 						roo: {},
 						synthetic: {}, // kilocode_change
+						"sap-ai-core": {}, // kilocode_change
 						chutes: {},
 						"nano-gpt": {}, // kilocode_change
 					}
@@ -1145,6 +1147,51 @@ export const webviewMessageHandler = async (
 				provider.postMessageToWebview({ type: "huggingFaceModels", huggingFaceModels: [] })
 			}
 			break
+		// kilocode_change start
+		case "requestSapAiCoreModels": {
+			// Specific handler for SAP AI Core models only.
+			if (message?.values?.sapAiCoreServiceKey) {
+				try {
+					// Flush cache first to ensure fresh models.
+					await flushModels("sap-ai-core")
+
+					const sapAiCoreModels = await getModels({
+						provider: "sap-ai-core",
+						sapAiCoreServiceKey: message?.values?.sapAiCoreServiceKey,
+						sapAiCoreResourceGroup: message?.values?.sapAiCoreResourceGroup,
+						sapAiCoreUseOrchestration: message?.values?.sapAiCoreUseOrchestration,
+					})
+
+					if (Object.keys(sapAiCoreModels).length > 0) {
+						provider.postMessageToWebview({ type: "sapAiCoreModels", sapAiCoreModels: sapAiCoreModels })
+					}
+				} catch (error) {
+					console.error("SAP AI Core models fetch failed:", error)
+				}
+			}
+			break
+		}
+		case "requestSapAiCoreDeployments": {
+			if (message?.values?.sapAiCoreServiceKey) {
+				try {
+					const sapAiCoreDeployments = await getSapAiCoreDeployments(
+						message?.values?.sapAiCoreServiceKey,
+						message?.values?.sapAiCoreResourceGroup,
+					)
+
+					if (Object.keys(sapAiCoreDeployments).length > 0) {
+						provider.postMessageToWebview({
+							type: "sapAiCoreDeployments",
+							sapAiCoreDeployments: sapAiCoreDeployments,
+						})
+					}
+				} catch (error) {
+					console.error("SAP AI Core deployments fetch failed:", error)
+				}
+			}
+			break
+		}
+		// kilocode_change end
 		case "openImage":
 			openImage(message.text!, { values: message.values })
 			break

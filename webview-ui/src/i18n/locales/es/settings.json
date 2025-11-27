@@ -554,6 +554,32 @@
 			"description": "Este proveedor usa autenticación OAuth del servicio Qwen y no requiere claves API.",
 			"instructions": "Por favor, siga la documentación oficial para obtener el archivo de autorización y colócalo en la ruta especificada.",
 			"setupLink": "Documentación Oficial de Qwen"
+		},
+		"sapAiCore": {
+			"serviceKey": "Clave de servicio de AI Core",
+			"serviceKeyJson": "Ingrese JSON de clave de servicio...",
+			"resourceGroup": "Grupo de recursos de AI Core",
+			"credentialsNote": "Estas credenciales se almacenan localmente y solo se usan para realizar solicitudes de API desde esta extensión.",
+			"learnMore": "Puede encontrar más información sobre el acceso a la API de SAP AI Core aquí.",
+			"orchestrationMode": "Modo de orquestación",
+			"orchestrationEnabledDesc": "Cuando está habilitado, proporciona acceso a todos los modelos disponibles sin requerir despliegues individuales.",
+			"orchestrationDisabledDesc": "Cuando está deshabilitado, proporciona acceso solo a los modelos base desplegados en su instancia de servicio de AI Core.",
+			"modelDeploymentDesc": "Solo puede seleccionar modelos con despliegues disponibles.",
+			"deployment": "Despliegue",
+			"loading": "Cargando...",
+			"modelsCount": "({{count}} modelos)",
+			"deploymentsCount": "({{count}} despliegues)",
+			"selectModel": "Seleccionar un modelo...",
+			"selectDeployment": "Seleccionar un despliegue...",
+			"searchModels": "Buscar modelos...",
+			"searchDeployments": "Buscar despliegues...",
+			"noModelsFound": "No se encontraron modelos",
+			"noDeploymentFound": "No se encontró despliegue",
+			"getStarted": "Comenzar con SAP AI Core",
+			"supportedProviders": "Proveedores soportados",
+			"supportedProvidersDesc1": "El proveedor SAP AI Core actualmente solo admite modelos base para los siguientes proveedores de LLM:",
+			"supportedProvidersDesc2": "Considere cambiar al modo de orquestación para acceder a más modelos.",
+			"supportedProvidersDesc3": "Más información sobre el modo de orquestación"
 		}
 	},
 	"browser": {
@@ -968,7 +994,9 @@
 		"providerNotAllowed": "El proveedor '{{provider}}' no está permitido por su organización",
 		"modelNotAllowed": "El modelo '{{model}}' no está permitido para el proveedor '{{provider}}' por su organización",
 		"profileInvalid": "Este perfil contiene un proveedor o modelo que no está permitido por su organización",
-		"qwenCodeOauthPath": "Debes proporcionar una ruta válida de credenciales OAuth"
+		"qwenCodeOauthPath": "Debes proporcionar una ruta válida de credenciales OAuth",
+		"sapAiCore": "Debe proporcionar una clave de servicio de SAP AI Core válida.",
+		"sapAiCoreDeploymentId": "Debe seleccionar un despliegue en ejecución para el modelo '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "Ingrese clave API...",

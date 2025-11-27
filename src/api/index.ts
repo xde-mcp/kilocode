@@ -37,6 +37,7 @@ import {
 	SyntheticHandler,
 	OVHcloudAIEndpointsHandler,
 	MiniMaxAnthropicHandler,
+	SapAiCoreHandler,
 	// kilocode_change end
 	ClaudeCodeHandler,
 	QwenCodeHandler,
@@ -219,6 +220,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new InceptionLabsHandler(options)
 		case "ovhcloud":
 			return new OVHcloudAIEndpointsHandler(options)
+		case "sap-ai-core":
+			return new SapAiCoreHandler(options)
 		// kilocode_change end
 		case "io-intelligence":
 			return new IOIntelligenceHandler(options)

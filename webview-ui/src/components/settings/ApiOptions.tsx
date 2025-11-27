@@ -110,6 +110,7 @@ import {
 	Synthetic,
 	OvhCloudAiEndpoints,
 	Inception,
+	SapAiCore,
 	// kilocode_change end
 	ZAi,
 	Fireworks,
@@ -863,6 +864,12 @@ const ApiOptions = ({
 			{selectedProvider === "featherless" && (
 				<Featherless apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
 			)}
+
+			{/* kilocode_change start */}
+			{selectedProvider === "sap-ai-core" && (
+				<SapAiCore apiConfiguration={apiConfiguration} setApiConfigurationField={setApiConfigurationField} />
+			)}
+			{/* kilocode_change end */}
 
 			{selectedProviderModels.length > 0 && (
 				<>

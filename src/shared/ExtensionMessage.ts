@@ -32,6 +32,7 @@ import {
 } from "./WebviewMessage"
 import { ClineRulesToggles } from "./cline-rules"
 import { KiloCodeWrapperProperties } from "./kilocode/wrapper"
+import { DeploymentRecord } from "../api/providers/fetchers/sap-ai-core"
 // kilocode_change end
 
 // Command interface for frontend/backend communication
@@ -99,6 +100,8 @@ export interface ExtensionMessage {
 		| "lmStudioModels"
 		| "vsCodeLmModels"
 		| "huggingFaceModels"
+		| "sapAiCoreModels" // kilocode_change
+		| "sapAiCoreDeployments" // kilocode_change
 		| "vsCodeLmApiAvailable"
 		| "updatePrompt"
 		| "systemPrompt"
@@ -233,6 +236,8 @@ export interface ExtensionMessage {
 			}
 		}>
 	}>
+	sapAiCoreModels?: ModelRecord // kilocode_change
+	sapAiCoreDeployments?: DeploymentRecord // kilocode_change
 	mcpServers?: McpServer[]
 	commits?: GitCommit[]
 	listApiConfig?: ProviderSettingsEntry[]

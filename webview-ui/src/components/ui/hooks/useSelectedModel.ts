@@ -493,6 +493,17 @@ function getSelectedModel({
 			const info = routerModels.inception[id]
 			return { id, info }
 		}
+		case "sap-ai-core": {
+			const id = apiConfiguration.sapAiCoreModelId ?? "gpt-5"
+			const info = {
+				maxTokens: 128000,
+				contextWindow: 400000,
+				supportsImages: true,
+				supportsPromptCache: true,
+				description: "GPT-5: The best model for coding and agentic tasks across domains",
+			}
+			return { id, info }
+		}
 		// kilocode_change end
 		// case "anthropic":
 		// case "human-relay":

@@ -50,10 +50,10 @@ export const dynamicProviders = [
 	// kilocode_change start
 	"kilocode",
 	"ovhcloud",
-	"chutes",
 	"gemini",
 	"inception",
 	"synthetic",
+	"sap-ai-core",
 	// kilocode_change end
 	"deepinfra",
 	"io-intelligence",
@@ -517,6 +517,17 @@ const vercelAiGatewaySchema = baseProviderSettingsSchema.extend({
 	vercelAiGatewayModelId: z.string().optional(),
 })
 
+// kilocode_change start
+const sapAiCoreSchema = baseProviderSettingsSchema.extend({
+	sapAiCoreServiceKey: z.string().optional(),
+	sapAiCoreResourceGroup: z.string().optional(),
+	sapAiCoreUseOrchestration: z.boolean().optional(),
+	sapAiCoreModelId: z.string().optional(),
+	sapAiCoreDeploymentId: z.string().optional(),
+	sapAiCoreCustomModelInfo: modelInfoSchema.nullish(),
+})
+// kilocode_change end
+
 const defaultSchema = z.object({
 	apiProvider: z.undefined(),
 })
@@ -567,6 +578,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	qwenCodeSchema.merge(z.object({ apiProvider: z.literal("qwen-code") })),
 	rooSchema.merge(z.object({ apiProvider: z.literal("roo") })),
 	vercelAiGatewaySchema.merge(z.object({ apiProvider: z.literal("vercel-ai-gateway") })),
+	sapAiCoreSchema.merge(z.object({ apiProvider: z.literal("sap-ai-core") })), // kilocode_change
 	defaultSchema,
 ])
 
@@ -617,6 +629,7 @@ export const providerSettingsSchema = z.object({
 	...qwenCodeSchema.shape,
 	...rooSchema.shape,
 	...vercelAiGatewaySchema.shape,
+	...sapAiCoreSchema.shape, // kilocode_change
 	...codebaseIndexProviderSchema.shape,
 })
 
@@ -655,6 +668,7 @@ export const modelIdKeys = [
 	"kilocodeModel",
 	"ovhCloudAiEndpointsModelId", // kilocode_change
 	"inceptionLabsModelId", // kilocode_change
+	"sapAiCoreModelId", // kilocode_change
 ] as const satisfies readonly (keyof ProviderSettings)[]
 
 export type ModelIdKey = (typeof modelIdKeys)[number]
@@ -701,6 +715,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	synthetic: "apiModelId",
 	ovhcloud: "ovhCloudAiEndpointsModelId",
 	inception: "inceptionLabsModelId",
+	"sap-ai-core": "sapAiCoreModelId",
 	// kilocode_change end
 	groq: "apiModelId",
 	chutes: "apiModelId",
@@ -852,6 +867,7 @@ export const MODELS_BY_PROVIDER: Record<
 	openrouter: { id: "openrouter", label: "OpenRouter", models: [] },
 	requesty: { id: "requesty", label: "Requesty", models: [] },
 	unbound: { id: "unbound", label: "Unbound", models: [] },
+	"sap-ai-core": { id: "sap-ai-core", label: "SAP AI Core", models: [] }, // kilocode_change
 
 	// kilocode_change start
 	ovhcloud: { id: "ovhcloud", label: "OVHcloud AI Endpoints", models: [] },
