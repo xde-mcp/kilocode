@@ -7,13 +7,7 @@ import { App } from "./ui/App.js"
 import { logs } from "./services/logs.js"
 import { extensionServiceAtom } from "./state/atoms/service.js"
 import { initializeServiceEffectAtom } from "./state/atoms/effects.js"
-import {
-	loadConfigAtom,
-	mappedExtensionStateAtom,
-	providersAtom,
-	saveConfigAtom,
-	configAtom,
-} from "./state/atoms/config.js"
+import { loadConfigAtom, mappedExtensionStateAtom, providersAtom, saveConfigAtom } from "./state/atoms/config.js"
 import { ciExitReasonAtom } from "./state/atoms/ci.js"
 import { requestRouterModelsAtom } from "./state/atoms/actions.js"
 import { loadHistoryAtom } from "./state/atoms/history.js"
@@ -42,6 +36,7 @@ export class CLI {
 	private ui: Instance | null = null
 	private options: CLIOptions
 	private isInitialized = false
+	private sessionService: SessionService | null = null
 
 	constructor(options: CLIOptions = {}) {
 		this.options = options
@@ -140,20 +135,20 @@ export class CLI {
 				TrpcClient.init(config.kiloToken)
 				logs.debug("TrpcClient initialized with kiloToken", "CLI")
 
-				const sessionService = SessionService.init(this.service, this.store, this.options.json)
+				this.sessionService = SessionService.init(this.service, this.store, this.options.json)
 				logs.debug("SessionService initialized with ExtensionService", "CLI")
 
 				// Set workspace directory for git operations (important for parallel mode/worktrees)
 				const workspace = this.options.workspace || process.cwd()
-				sessionService.setWorkspaceDirectory(workspace)
+				this.sessionService.setWorkspaceDirectory(workspace)
 				logs.debug("SessionService workspace directory set", "CLI", { workspace })
 
 				if (this.options.session) {
-					await sessionService.restoreSession(this.options.session)
+					await this.sessionService.restoreSession(this.options.session)
 				} else if (this.options.fork) {
 					logs.info("Forking session from share ID", "CLI", { shareId: this.options.fork })
 
-					await sessionService.forkSession(this.options.fork)
+					await this.sessionService.forkSession(this.options.fork)
 				}
 			}
 
@@ -304,9 +299,7 @@ export class CLI {
 		try {
 			logs.info("Disposing Kilo Code CLI...", "CLI")
 
-			const sessionService = SessionService.init()
-
-			await sessionService.destroy()
+			await this.sessionService?.destroy()
 
 			// Signal codes take precedence over CI logic
 			if (signal === "SIGINT") {
@@ -468,28 +461,13 @@ export class CLI {
 			logs.info("Attempting to resume last conversation", "CLI", { workspace })
 
 			// First, try to restore from persisted session ID if kiloToken is available
-			const config = this.store.get(configAtom) as CLIConfig
-			if (config.kiloToken) {
-				const sessionService = SessionService.init()
-				const lastSessionId = sessionService.getLastSessionId()
-
-				if (lastSessionId) {
-					logs.info("Found persisted session ID, attempting to restore", "CLI", { sessionId: lastSessionId })
-
-					try {
-						await sessionService.restoreSession(lastSessionId, true)
-
-						logs.info("Successfully restored persisted session", "CLI", { sessionId: lastSessionId })
-						return
-					} catch (error) {
-						logs.warn("Failed to restore persisted session, falling back to task history", "CLI", {
-							error: error instanceof Error ? error.message : String(error),
-							sessionId: lastSessionId,
-						})
-					}
-				} else {
-					logs.debug("No persisted session ID found, falling back to task history", "CLI")
+			if (this.sessionService) {
+				const restored = await this.sessionService.restoreLastSession()
+				if (restored) {
+					return
 				}
+
+				logs.debug("Falling back to task history", "CLI")
 			}
 
 			// Fallback: Use task history approach

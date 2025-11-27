@@ -92,7 +92,7 @@ export class SessionService {
 		}
 	}
 
-	getLastSessionId(): string | null {
+	private getLastSessionId(): string | null {
 		if (!this.workspaceDir) {
 			logs.warn("Cannot get last session ID: workspace directory not set", "SessionService")
 			return null
@@ -118,6 +118,30 @@ export class SessionService {
 				error: error instanceof Error ? error.message : String(error),
 			})
 			return null
+		}
+	}
+
+	async restoreLastSession(): Promise<boolean> {
+		const lastSessionId = this.getLastSessionId()
+
+		if (!lastSessionId) {
+			logs.debug("No persisted session ID found", "SessionService")
+			return false
+		}
+
+		logs.info("Found persisted session ID, attempting to restore", "SessionService", { sessionId: lastSessionId })
+
+		try {
+			await this.restoreSession(lastSessionId, true)
+
+			logs.info("Successfully restored persisted session", "SessionService", { sessionId: lastSessionId })
+			return true
+		} catch (error) {
+			logs.warn("Failed to restore persisted session", "SessionService", {
+				error: error instanceof Error ? error.message : String(error),
+				sessionId: lastSessionId,
+			})
+			return false
 		}
 	}
 

@@ -1,4 +1,5 @@
 import { logs } from "./logs"
+import { getApiUrl } from "@roo-code/types"
 
 type HttpMethod = "GET" | "POST"
 
@@ -22,7 +23,7 @@ export class TrpcClient {
 		return TrpcClient.instance!
 	}
 
-	public readonly endpoint = process.env.KILOCODE_BACKEND_BASE_URL || "https://api.kilocode.ai"
+	public readonly endpoint = getApiUrl()
 
 	private constructor(public readonly token: string) {}
 
