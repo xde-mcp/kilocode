@@ -1418,6 +1418,9 @@ importers:
 
   kilo-sessions:
     dependencies:
+      '@roo-code/types':
+        specifier: workspace:^
+        version: link:../packages/types
       fs-extra:
         specifier: ^11.2.0
         version: 11.3.2

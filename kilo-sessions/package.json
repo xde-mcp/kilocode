@@ -28,6 +28,7 @@
 	],
 	"author": "KiloCode Team",
 	"dependencies": {
+		"@roo-code/types": "workspace:^",
 		"fs-extra": "^11.2.0",
 		"simple-git": "^3.27.0"
 	},
