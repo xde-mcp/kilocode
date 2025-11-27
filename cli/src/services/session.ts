@@ -405,7 +405,7 @@ export class SessionService {
 
 			const sessionClient = SessionClient.getInstance()
 
-			const basePayload: Parameters<typeof sessionClient.create>[0] = {}
+			const basePayload: Omit<Parameters<typeof sessionClient.create>[0], "created_on_platform"> = {}
 
 			let gitInfo: Awaited<ReturnType<typeof this.getGitState>> | null = null
 
@@ -447,7 +447,10 @@ export class SessionService {
 					}
 				}
 
-				const session = await sessionClient.create(basePayload)
+				const session = await sessionClient.create({
+					...basePayload,
+					created_on_platform: process.env.KILO_PLATFORM || "cli",
+				})
 
 				this.sessionId = session.session_id
 				this.sessionGitUrl = gitInfo?.repoUrl || null

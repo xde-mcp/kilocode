@@ -25,6 +25,7 @@ export type GetSessionOutput = Session | SessionWithSignedUrls
 export interface CreateSessionInput {
 	title?: string
 	git_url?: string
+	created_on_platform: string
 }
 
 export type CreateSessionOutput = Session

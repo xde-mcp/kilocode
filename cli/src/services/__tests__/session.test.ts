@@ -288,7 +288,9 @@ describe("SessionService", () => {
 			// Trigger sync via timer
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
-			expect(mockCreate).toHaveBeenCalledWith({})
+			expect(mockCreate).toHaveBeenCalledWith({
+				created_on_platform: "cli",
+			})
 			expect(mockUploadBlob).toHaveBeenCalledWith("new-session-id", "api_conversation_history", mockData)
 			expect(mockUpdate).not.toHaveBeenCalled()
 		})
@@ -346,6 +348,7 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledWith({
+				created_on_platform: "cli",
 				git_url: "https://github.com/user/repo.git",
 			})
 
@@ -454,6 +457,7 @@ describe("SessionService", () => {
 			await vi.advanceTimersByTimeAsync(SessionService.SYNC_INTERVAL)
 
 			expect(mockCreate).toHaveBeenCalledWith({
+				created_on_platform: "cli",
 				title: "test message",
 			})
 			expect(mockUploadBlob).toHaveBeenCalledWith("session-id", "api_conversation_history", mockData1)
