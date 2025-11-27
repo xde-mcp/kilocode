@@ -132,9 +132,8 @@ import { MessageQueueService } from "../message-queue/MessageQueueService"
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
 import { getAppUrl } from "@roo-code/types"
 import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api/transform/kilocode/reasoning-details"
-import { mergeApiMessages } from "./kilocode"
+import { mergeApiMessages, addOrMergeUserContent } from "./kilocode"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
-import { mergeEnvironmentDetailsIntoUserContent } from "../environment/kilocode/mergeEnvironmentDetailsIntoUserContent"
 import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes
@@ -1648,14 +1647,18 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		})()
 
 		if (responseText) {
-			newUserContent.push({
-				type: "text",
-				text: `\n\nNew instructions for task continuation:\n<user_message>\n${responseText}\n</user_message>`,
-			})
+			// kilocode_change start
+			newUserContent = addOrMergeUserContent(newUserContent, [
+				{
+					type: "text",
+					text: `\n\nNew instructions for task continuation:\n<user_message>\n${responseText}\n</user_message>`,
+				},
+			])
+			// kilocode_change end
 		}
 
 		if (responseImages && responseImages.length > 0) {
-			newUserContent.push(...formatResponse.imageBlocks(responseImages))
+			newUserContent = addOrMergeUserContent(newUserContent, formatResponse.imageBlocks(responseImages)) // kilocode_change
 		}
 
 		// Ensure we have at least some content to send to the API.
@@ -2012,7 +2015,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			// Add environment details as its own text block, separate from tool
 			// results.
-			const finalUserContent = mergeEnvironmentDetailsIntoUserContent(parsedUserContent, environmentDetails) // kilocode_change: support interleaved thinking for environment details
+			// kilocode_change start: support interleaved thinking for environment details
+			const finalUserContent = addOrMergeUserContent(parsedUserContent, [
+				{ type: "text" as const, text: environmentDetails },
+			])
+			// kilocode_change end
 
 			// Only add user message to conversation history if:
 			// 1. This is the first attempt (retryAttempt === 0), OR
