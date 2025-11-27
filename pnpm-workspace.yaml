@@ -2,6 +2,7 @@ packages:
   - src
   - webview-ui
   - cli
+  - kilo-sessions
   - apps/*
   - packages/*
   - jetbrains/host

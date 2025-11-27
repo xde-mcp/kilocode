@@ -37,6 +37,9 @@
 		"cli:deps": "pnpm --filter @kilocode/cli run deps:install",
 		"cli:dev": "pnpm --filter @kilocode/cli run dev",
 		"cli:run": "pnpm --filter @kilocode/cli run start",
+		"sessions:build": "turbo run sessions:build",
+		"sessions:dev": "pnpm --filter @kilocode/sessions run dev",
+		"sessions:clean": "pnpm --filter @kilocode/sessions run clean",
 		"docs:start": "pnpm --filter kilocode-docs start",
 		"docs:build": "pnpm --filter kilocode-docs build"
 	},

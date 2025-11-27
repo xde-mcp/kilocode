@@ -44,6 +44,9 @@
 		"cli:bundle": {
 			"dependsOn": ["@kilocode/cli#build"]
 		},
+		"sessions:build": {
+			"dependsOn": ["@kilocode/sessions#build"]
+		},
 		"chromatic": {
 			"dependsOn": ["storybook:build"],
 			"cache": false

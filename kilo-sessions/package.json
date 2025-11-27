@@ -1,0 +1,56 @@
+{
+	"name": "@kilocode/sessions",
+	"version": "0.1.0",
+	"description": "Session management package for KiloCode - handles session creation, syncing, and restoration",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"clean": "rimraf dist",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"check-types": "tsc --noEmit",
+		"format": "prettier --write src",
+		"lint": "eslint ."
+	},
+	"keywords": [
+		"kilocode",
+		"session",
+		"session-management"
+	],
+	"author": "KiloCode Team",
+	"dependencies": {
+		"fs-extra": "^11.2.0",
+		"simple-git": "^3.27.0"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.22.0",
+		"@roo-code/config-eslint": "workspace:^",
+		"@roo-code/config-typescript": "workspace:^",
+		"@types/fs-extra": "^11.0.4",
+		"@types/node": "20.x",
+		"eslint": "^9.27.0",
+		"eslint-config-prettier": "^10.1.1",
+		"eslint-plugin-turbo": "^2.4.4",
+		"prettier": "^3.4.2",
+		"rimraf": "^6.1.0",
+		"typescript": "^5.4.5",
+		"typescript-eslint": "^8.26.0",
+		"vitest": "^3.2.3"
+	},
+	"engines": {
+		"node": ">=20.19.2"
+	},
+	"files": [
+		"dist",
+		"README.md"
+	]
+}

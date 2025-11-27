@@ -1,0 +1,19 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"clean": {
+			"cache": false,
+			"outputs": []
+		},
+		"build": {
+			"cache": false,
+			"outputs": ["dist/**"],
+			"inputs": ["src/**", "package.json", "tsconfig.json"]
+		},
+		"dev": {
+			"cache": false,
+			"dependsOn": ["build"]
+		}
+	}
+}
