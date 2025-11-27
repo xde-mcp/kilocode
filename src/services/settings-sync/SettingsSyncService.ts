@@ -24,7 +24,7 @@ export class SettingsSyncService {
 	 * Initialize settings synchronization
 	 * @param context VS Code extension context
 	 */
-	static async initialize(context: vscode.ExtensionContext): Promise<void> {
+	static async initialize(context: vscode.ExtensionContext, outputChannel?: vscode.OutputChannel): Promise<void> {
 		const enableSync = vscode.workspace.getConfiguration(Package.name).get<boolean>("enableSettingsSync", true)
 
 		if (enableSync) {
@@ -32,20 +32,26 @@ export class SettingsSyncService {
 			const syncKeys = this.SYNC_KEYS.map((key) => `${Package.name}.${key}`)
 			context.globalState.setKeysForSync(syncKeys)
 
-			console.log(`[SettingsSyncService] Registered ${syncKeys.length} keys for synchronization:`, syncKeys)
+			outputChannel?.appendLine(
+				`[SettingsSyncService] Registered ${syncKeys.length} keys for synchronization: ${syncKeys.join(", ")}`,
+			)
 		} else {
 			// Clear sync keys if sync is disabled
 			context.globalState.setKeysForSync([])
-			console.log(`[SettingsSyncService] Settings sync disabled - cleared sync keys`)
+			outputChannel?.appendLine(`[SettingsSyncService] Settings sync disabled - cleared sync keys`)
 		}
 	}
 
 	/**
 	 * Update sync registration when the setting changes
 	 * @param context VS Code extension context
+	 * @param outputChannel Optional VS Code output channel for logging
 	 */
-	static async updateSyncRegistration(context: vscode.ExtensionContext): Promise<void> {
-		await this.initialize(context)
+	static async updateSyncRegistration(
+		context: vscode.ExtensionContext,
+		outputChannel?: vscode.OutputChannel,
+	): Promise<void> {
+		await this.initialize(context, outputChannel)
 	}
 
 	/**

@@ -12,11 +12,16 @@ vi.mock("vscode", () => ({
 describe("SettingsSyncService", () => {
 	let mockContext: vscode.ExtensionContext
 	let mockGlobalState: any
+	let mockOutputChannel: vscode.OutputChannel
 
 	beforeEach(() => {
 		mockGlobalState = {
 			setKeysForSync: vi.fn(),
 		}
+
+		mockOutputChannel = {
+			appendLine: vi.fn(),
+		} as any
 
 		mockContext = {
 			globalState: mockGlobalState,
@@ -32,7 +37,7 @@ describe("SettingsSyncService", () => {
 			}
 			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
 
-			await SettingsSyncService.initialize(mockContext)
+			await SettingsSyncService.initialize(mockContext, mockOutputChannel)
 
 			expect(mockGlobalState.setKeysForSync).toHaveBeenCalledWith([
 				"kilo-code.allowedCommands",
@@ -46,6 +51,9 @@ describe("SettingsSyncService", () => {
 				"kilo-code.firstInstallCompleted",
 				"kilo-code.telemetrySetting",
 			])
+			expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
+				expect.stringContaining("[SettingsSyncService] Registered 10 keys for synchronization"),
+			)
 		})
 
 		it("should clear sync keys when settings sync is disabled", async () => {
@@ -54,22 +62,38 @@ describe("SettingsSyncService", () => {
 			}
 			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
 
-			await SettingsSyncService.initialize(mockContext)
+			await SettingsSyncService.initialize(mockContext, mockOutputChannel)
 
 			expect(mockGlobalState.setKeysForSync).toHaveBeenCalledWith([])
+			expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
+				"[SettingsSyncService] Settings sync disabled - cleared sync keys",
+			)
 		})
 
 		it("should use default value true when setting is not configured", async () => {
 			const mockConfiguration = {
-				get: vi.fn().mockReturnValue(undefined),
+				get: vi.fn((key: string, defaultValue: boolean) => defaultValue),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
+
+			await SettingsSyncService.initialize(mockContext, mockOutputChannel)
+
+			expect(mockConfiguration.get).toHaveBeenCalledWith("enableSettingsSync", true)
+			expect(mockGlobalState.setKeysForSync).toHaveBeenCalledWith(
+				expect.arrayContaining(["kilo-code.allowedCommands", "kilo-code.deniedCommands"]),
+			)
+		})
+
+		it("should work without outputChannel parameter", async () => {
+			const mockConfiguration = {
+				get: vi.fn().mockReturnValue(true),
 			}
 			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
 
 			await SettingsSyncService.initialize(mockContext)
 
-			expect(mockConfiguration.get).toHaveBeenCalledWith("enableSettingsSync", true)
 			expect(mockGlobalState.setKeysForSync).toHaveBeenCalledWith(
-				expect.arrayContaining(["kilo-code.allowedCommands", "kilo-code.deniedCommands"]),
+				expect.arrayContaining(["kilo-code.allowedCommands"]),
 			)
 		})
 	})
@@ -81,9 +105,12 @@ describe("SettingsSyncService", () => {
 			}
 			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
 
-			await SettingsSyncService.updateSyncRegistration(mockContext)
+			await SettingsSyncService.updateSyncRegistration(mockContext, mockOutputChannel)
 
 			expect(mockGlobalState.setKeysForSync).toHaveBeenCalledWith([])
+			expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
+				"[SettingsSyncService] Settings sync disabled - cleared sync keys",
+			)
 		})
 	})
 

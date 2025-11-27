@@ -322,14 +322,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize VS Code Settings Sync integration
 	try {
-		await SettingsSyncService.initialize(context)
+		await SettingsSyncService.initialize(context, outputChannel)
 		outputChannel.appendLine("[SettingsSync] VS Code Settings Sync integration initialized")
 
 		// Listen for configuration changes to update sync registration
 		const configChangeListener = vscode.workspace.onDidChangeConfiguration(async (event) => {
 			if (event.affectsConfiguration(`${Package.name}.enableSettingsSync`)) {
 				try {
-					await SettingsSyncService.updateSyncRegistration(context)
+					await SettingsSyncService.updateSyncRegistration(context, outputChannel)
 					outputChannel.appendLine("[SettingsSync] Sync registration updated due to configuration change")
 				} catch (error) {
 					outputChannel.appendLine(
