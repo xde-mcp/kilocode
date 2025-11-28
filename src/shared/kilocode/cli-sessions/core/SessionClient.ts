@@ -85,7 +85,8 @@ export interface ShareSessionOutput {
 }
 
 export interface ForkSessionInput {
-	share_id: string
+	share_or_session_id: string
+	created_on_platform: string
 }
 
 export interface ForkSessionOutput {

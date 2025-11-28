@@ -1200,17 +1200,17 @@ ${prompt}
 	public async postMessageToWebview(message: ExtensionMessage) {
 		if (!this.kilo_isCli()) {
 			if (message.type === "apiMessagesSaved" && message.payload) {
-				const [_, filePath] = message.payload as [string, string]
+				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath("apiConversationHistoryPath", filePath)
+				SessionManager.init().setPath(taskId, "apiConversationHistoryPath", filePath)
 			} else if (message.type === "taskMessagesSaved" && message.payload) {
-				const [_, filePath] = message.payload as [string, string]
+				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath("uiMessagesPath", filePath)
+				SessionManager.init().setPath(taskId, "uiMessagesPath", filePath)
 			} else if (message.type === "taskMetadataSaved" && message.payload) {
-				const [_, filePath] = message.payload as [string, string]
+				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath("taskMetadataPath", filePath)
+				SessionManager.init().setPath(taskId, "taskMetadataPath", filePath)
 			}
 		}
 

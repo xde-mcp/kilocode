@@ -375,9 +375,9 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				const payload = message.payload as [string, string] | undefined
 
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [, filePath] = payload
+					const [taskId, filePath] = payload
 
-					SessionManager.init().setPath("apiConversationHistoryPath", filePath)
+					SessionManager.init().setPath(taskId, "apiConversationHistoryPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
 				}
@@ -388,9 +388,9 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				const payload = message.payload as [string, string] | undefined
 
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [, filePath] = payload
+					const [taskId, filePath] = payload
 
-					SessionManager.init().setPath("uiMessagesPath", filePath)
+					SessionManager.init().setPath(taskId, "uiMessagesPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
 				}
@@ -400,9 +400,9 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			case "taskMetadataSaved": {
 				const payload = message.payload as [string, string] | undefined
 				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [, filePath] = payload
+					const [taskId, filePath] = payload
 
-					SessionManager.init().setPath("taskMetadataPath", filePath)
+					SessionManager.init().setPath(taskId, "taskMetadataPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
 				}

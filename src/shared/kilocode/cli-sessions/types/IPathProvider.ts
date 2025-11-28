@@ -10,9 +10,9 @@ export interface IPathProvider {
 	getTasksDir(): string
 
 	/**
-	 * Get the path to the file that stores the last active session ID for a workspace.
+	 * Get the path to the file that stores the local session data.
 	 * @param workspaceDir The workspace directory path
-	 * @returns The absolute path to the last session file
+	 * @returns The absolute path to the session file
 	 */
-	getLastSessionPath(workspaceDir: string): string
+	getSessionFilePath(workspaceDir: string): string
 }

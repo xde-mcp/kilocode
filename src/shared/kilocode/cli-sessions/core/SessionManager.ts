@@ -10,6 +10,7 @@ import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
+import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -60,6 +61,7 @@ export class SessionManager {
 	private paths = { ...defaultPaths }
 	public sessionId: string | null = null
 	private workspaceDir: string | null = null
+	private currentTaskId: string | null = null
 	private sessionTitle: string | null = null
 	private sessionGitUrl: string | null = null
 
@@ -71,6 +73,7 @@ export class SessionManager {
 	private readonly pathProvider: IPathProvider
 	private readonly logger: ILogger
 	private readonly extensionMessenger: IExtensionMessenger
+	private readonly sessionPersistenceManager: SessionPersistenceManager
 	public readonly sessionClient: SessionClient
 	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
 	private readonly onSessionRestored: () => void
@@ -89,6 +92,7 @@ export class SessionManager {
 		})
 
 		this.sessionClient = new SessionClient(trpcClient)
+		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
@@ -104,7 +108,8 @@ export class SessionManager {
 		}
 	}
 
-	setPath(key: keyof typeof defaultPaths, value: string): void {
+	setPath(taskId: string, key: keyof typeof defaultPaths, value: string): void {
+		this.currentTaskId = taskId
 		this.paths[key] = value
 
 		const blobKey = this.pathKeyToBlobKey(key)
@@ -116,22 +121,42 @@ export class SessionManager {
 
 	setWorkspaceDirectory(dir: string): void {
 		this.workspaceDir = dir
+		this.sessionPersistenceManager.setWorkspaceDir(dir)
 	}
 
-	private saveLastSessionId(sessionId: string): void {
-		if (!this.workspaceDir) {
-			this.logger.warn("Cannot save last session ID: workspace directory not set", "SessionManager")
-			return
+	private getExistingSessionIdForTask(): string | null {
+		if (!this.currentTaskId) {
+			return null
 		}
 
 		try {
-			const lastSessionPath = this.pathProvider.getLastSessionPath(this.workspaceDir)
-			const data = {
-				sessionId,
-				timestamp: Date.now(),
+			const sessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
+
+			if (sessionId) {
+				this.logger.debug("Found existing session for task", "SessionManager", {
+					taskId: this.currentTaskId,
+					sessionId,
+				})
+
+				return sessionId
 			}
-			writeFileSync(lastSessionPath, JSON.stringify(data, null, 2))
-			this.logger.debug("Saved last session ID", "SessionManager", { sessionId, path: lastSessionPath })
+
+			return null
+		} catch (error) {
+			this.logger.debug("Failed to check task session mapping", "SessionManager", {
+				error: error instanceof Error ? error.message : String(error),
+				taskId: this.currentTaskId,
+			})
+
+			return null
+		}
+	}
+
+	private async saveLastSessionId(sessionId: string): Promise<void> {
+		try {
+			this.sessionPersistenceManager.setLastSession(sessionId, Date.now())
+
+			this.logger.debug("Saved last session ID", "SessionManager", { sessionId })
 		} catch (error) {
 			this.logger.warn("Failed to save last session ID", "SessionManager", {
 				error: error instanceof Error ? error.message : String(error),
@@ -139,57 +164,30 @@ export class SessionManager {
 		}
 	}
 
-	private getLastSessionId(): string | null {
-		if (!this.workspaceDir) {
-			this.logger.warn("Cannot get last session ID: workspace directory not set", "SessionManager")
-			return null
-		}
-
-		try {
-			const lastSessionPath = this.pathProvider.getLastSessionPath(this.workspaceDir)
-			if (!existsSync(lastSessionPath)) {
-				return null
-			}
-
-			const content = readFileSync(lastSessionPath, "utf-8")
-			const data = JSON.parse(content)
-
-			if (data.sessionId && typeof data.sessionId === "string") {
-				this.logger.debug("Retrieved last session ID", "SessionManager", { sessionId: data.sessionId })
-				return data.sessionId
-			}
-
-			return null
-		} catch (error) {
-			this.logger.warn("Failed to read last session ID", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-			return null
-		}
-	}
-
 	async restoreLastSession(): Promise<boolean> {
-		const lastSessionId = this.getLastSessionId()
-
-		if (!lastSessionId) {
-			this.logger.debug("No persisted session ID found", "SessionManager")
-			return false
-		}
-
-		this.logger.info("Found persisted session ID, attempting to restore", "SessionManager", {
-			sessionId: lastSessionId,
-		})
-
 		try {
-			await this.restoreSession(lastSessionId, true)
+			const lastSession = this.sessionPersistenceManager.getLastSession()
 
-			this.logger.info("Successfully restored persisted session", "SessionManager", { sessionId: lastSessionId })
+			if (!lastSession?.sessionId) {
+				this.logger.debug("No persisted session ID found", "SessionManager")
+				return false
+			}
+
+			this.logger.info("Found persisted session ID, attempting to restore", "SessionManager", {
+				sessionId: lastSession.sessionId,
+			})
+
+			await this.restoreSession(lastSession.sessionId, true)
+
+			this.logger.info("Successfully restored persisted session", "SessionManager", {
+				sessionId: lastSession.sessionId,
+			})
 			return true
 		} catch (error) {
 			this.logger.warn("Failed to restore persisted session", "SessionManager", {
 				error: error instanceof Error ? error.message : String(error),
-				sessionId: lastSessionId,
 			})
+
 			return false
 		}
 	}
@@ -372,8 +370,11 @@ export class SessionManager {
 		})
 	}
 
-	async forkSession(shareId: string, rethrowError = false): Promise<void> {
-		const { session_id } = await this.sessionClient.fork({ share_id: shareId })
+	async forkSession(shareOrSessionId: string, rethrowError = false): Promise<void> {
+		const { session_id } = await this.sessionClient.fork({
+			share_or_session_id: shareOrSessionId,
+			created_on_platform: this.platform,
+		})
 
 		await this.restoreSession(session_id, rethrowError)
 	}
@@ -445,6 +446,14 @@ export class SessionManager {
 				this.logger.debug("Could not get git state", "SessionManager", {
 					error: error instanceof Error ? error.message : String(error),
 				})
+			}
+
+			if (!this.sessionId) {
+				const existingSessionId = this.getExistingSessionIdForTask()
+
+				if (existingSessionId) {
+					this.sessionId = existingSessionId
+				}
 			}
 
 			if (this.sessionId) {

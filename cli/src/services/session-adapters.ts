@@ -9,8 +9,8 @@ export class KiloCodePathProvider implements IPathProvider {
 		return KiloCodePaths.getTasksDir()
 	}
 
-	getLastSessionPath(workspaceDir: string): string {
-		return KiloCodePaths.getLastSessionPath(workspaceDir)
+	getSessionFilePath(workspaceDir: string): string {
+		return KiloCodePaths.getSessionFilePath(workspaceDir)
 	}
 }
 

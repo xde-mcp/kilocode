@@ -28,7 +28,7 @@ export class ExtensionPathProvider implements IPathProvider {
 		return path.join(this.globalStoragePath, "sessions", "tasks")
 	}
 
-	getLastSessionPath(workspaceDir: string): string {
+	getSessionFilePath(workspaceDir: string): string {
 		const hash = createHash("sha256").update(workspaceDir).digest("hex").substring(0, 16)
 		const workspacesDir = path.join(this.globalStoragePath, "sessions", "workspaces")
 		const workspaceSessionDir = path.join(workspacesDir, hash)
@@ -37,6 +37,6 @@ export class ExtensionPathProvider implements IPathProvider {
 			mkdirSync(workspaceSessionDir, { recursive: true })
 		}
 
-		return path.join(workspaceSessionDir, "last-session.json")
+		return path.join(workspaceSessionDir, "session.json")
 	}
 }
