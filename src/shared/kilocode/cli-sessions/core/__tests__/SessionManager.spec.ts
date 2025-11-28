@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { SessionManager, SessionManagerDependencies } from "../SessionManager.js"
 import type { ClineMessage } from "@roo-code/types"
+import path from "path"
 
 vi.mock("fs")
 vi.mock("simple-git")
@@ -64,10 +65,6 @@ describe("SessionManager", () => {
 				sendWebviewMessage: vi.fn().mockResolvedValue(undefined),
 				requestSingleCompletion: vi.fn().mockResolvedValue("Generated title"),
 			},
-			apiConfig: {
-				apiProvider: "test",
-				getApiUrl: vi.fn().mockReturnValue("https://api.test.com"),
-			} as any,
 			getToken: vi.fn().mockResolvedValue("test-token"),
 			onSessionCreated: vi.fn(),
 			onSessionRestored: vi.fn(),
@@ -329,7 +326,9 @@ describe("SessionManager", () => {
 
 			await manager.restoreSession("test-session-id")
 
-			expect(mockFs.mkdirSync).toHaveBeenCalledWith("/tmp/tasks/test-session-id", { recursive: true })
+			expect(mockFs.mkdirSync).toHaveBeenCalledWith(path.join("/tmp/tasks", "test-session-id"), {
+				recursive: true,
+			})
 		})
 
 		it("should fetch and write blob files", async () => {
