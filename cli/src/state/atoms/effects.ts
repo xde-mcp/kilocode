@@ -32,7 +32,7 @@ import {
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
 import { logs } from "../../services/logs.js"
-import { SessionService } from "../../services/session.js"
+import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Message buffer to handle race conditions during initialization
@@ -377,7 +377,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [, filePath] = payload
 
-					SessionService.init().setPath("apiConversationHistoryPath", filePath)
+					SessionManager.init().setPath("apiConversationHistoryPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
 				}
@@ -390,7 +390,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [, filePath] = payload
 
-					SessionService.init().setPath("uiMessagesPath", filePath)
+					SessionManager.init().setPath("uiMessagesPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
 				}
@@ -402,7 +402,7 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				if (payload && Array.isArray(payload) && payload.length === 2) {
 					const [, filePath] = payload
 
-					SessionService.init().setPath("taskMetadataPath", filePath)
+					SessionManager.init().setPath("taskMetadataPath", filePath)
 				} else {
 					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
 				}

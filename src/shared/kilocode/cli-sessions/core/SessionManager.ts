@@ -67,7 +67,7 @@ export class SessionManager {
 	private readonly pathProvider: IPathProvider
 	private readonly logger: ILogger
 	private readonly extensionMessenger: IExtensionMessenger
-	private readonly sessionClient: SessionClient
+	public readonly sessionClient: SessionClient
 	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
 	private readonly onSessionRestored: () => void
 
@@ -84,6 +84,8 @@ export class SessionManager {
 		})
 
 		this.sessionClient = new SessionClient(trpcClient)
+
+		this.startTimer()
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
