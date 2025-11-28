@@ -631,4 +631,391 @@ describe("SessionManager", () => {
 			expect(SessionManager.SYNC_INTERVAL).toBe(1000)
 		})
 	})
+
+	describe("syncSession", () => {
+		async function triggerSyncAndWait(manager: SessionManager): Promise<void> {
+			if (manager["timer"]) {
+				clearInterval(manager["timer"])
+				manager["timer"] = null
+			}
+			await (manager as unknown as { syncSession: (force?: boolean) => Promise<void> })["syncSession"]()
+		}
+
+		it("should not sync when no paths are set", async () => {
+			const manager = SessionManager.init(mockDependencies)
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+			expect(mockSessionClient.update).not.toHaveBeenCalled()
+		})
+
+		it("should not sync when already syncing", async () => {
+			const manager = SessionManager.init(mockDependencies)
+			manager["isSyncing"] = true
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+		})
+
+		it("should not sync when no blob has changed", async () => {
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			manager["blobHashes"] = { ...manager["lastSyncedBlobHashes"] }
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+		})
+
+		it("should create new session when no session exists", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).toHaveBeenCalledWith(
+				expect.objectContaining({
+					created_on_platform: "vscode",
+				}),
+			)
+		})
+
+		it("should call onSessionCreated callback when new session is created", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockDependencies.onSessionCreated).toHaveBeenCalledWith(
+				expect.objectContaining({
+					event: "session_created",
+					sessionId: "new-session-123",
+				}),
+			)
+		})
+
+		it("should use existing session ID from task mapping", async () => {
+			mockSessionPersistenceManager.getSessionForTask.mockReturnValue("existing-session-456")
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "existing-session-456",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+			expect(manager.sessionId).toBe("existing-session-456")
+		})
+
+		it("should upload api_conversation_history blob", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			const testData = [{ role: "user", content: "test message" }]
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(testData))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.uploadBlob).toHaveBeenCalledWith(
+				"new-session-123",
+				"api_conversation_history",
+				testData,
+			)
+		})
+
+		it("should upload ui_messages blob", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			const testData = [{ ts: 123, type: "say", say: "text", text: "Hello" }]
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(testData))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "uiMessagesPath", "/path/to/messages.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.uploadBlob).toHaveBeenCalledWith("new-session-123", "ui_messages", testData)
+		})
+
+		it("should upload task_metadata blob", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			const testData = { taskId: "task-123", metadata: "test" }
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(testData))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "taskMetadataPath", "/path/to/metadata.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.uploadBlob).toHaveBeenCalledWith("new-session-123", "task_metadata", testData)
+		})
+
+		it("should extract title from first UI message", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			const testData = [{ ts: 123, type: "say", say: "text", text: "Create a hello world app" }]
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify(testData))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "uiMessagesPath", "/path/to/messages.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).toHaveBeenCalledWith(
+				expect.objectContaining({
+					title: "Create a hello world app",
+				}),
+			)
+		})
+
+		it("should handle blob upload failures gracefully", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockRejectedValue(new Error("Upload failed"))
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				"Failed to upload api_conversation_history blob",
+				"SessionManager",
+				expect.objectContaining({ error: "Upload failed" }),
+			)
+		})
+
+		it("should handle session creation failure gracefully", async () => {
+			mockSessionClient.create.mockRejectedValue(new Error("API Error"))
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				"Failed to sync session",
+				"SessionManager",
+				expect.objectContaining({ error: "API Error" }),
+			)
+		})
+
+		it("should not create session if paths are empty after reading", async () => {
+			vi.mocked(readFileSync).mockImplementation(() => {
+				throw new Error("File not found")
+			})
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/missing.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+		})
+
+		it("should sync on interval", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			vi.advanceTimersByTime(500)
+			await Promise.resolve()
+			expect(mockSessionClient.create).not.toHaveBeenCalled()
+
+			await triggerSyncAndWait(manager)
+			expect(mockSessionClient.create).toHaveBeenCalled()
+		})
+
+		it("should force sync even when already syncing", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+			manager["isSyncing"] = true
+
+			if (manager["timer"]) {
+				clearInterval(manager["timer"])
+				manager["timer"] = null
+			}
+			await (manager as unknown as { syncSession: (force?: boolean) => Promise<void> })["syncSession"](true)
+
+			expect(mockSessionClient.create).toHaveBeenCalled()
+		})
+
+		it("should mark blob as synced after successful upload", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(manager["blobHashes"].apiConversationHistory).toBe(
+				manager["lastSyncedBlobHashes"].apiConversationHistory,
+			)
+		})
+
+		it("should save last session ID after creating new session", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(mockSessionPersistenceManager.setLastSession).toHaveBeenCalledWith(
+				"new-session-123",
+				expect.any(Number),
+			)
+		})
+
+		it("should set isSyncing to false after sync completes", async () => {
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-123",
+				title: "Test",
+				created_at: "2024-01-01T00:00:00Z",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			mockSessionClient.uploadBlob.mockResolvedValue({
+				session_id: "new-session-123",
+				updated_at: "2024-01-01T00:00:00Z",
+			})
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(manager["isSyncing"]).toBe(false)
+		})
+
+		it("should set isSyncing to false even after sync fails", async () => {
+			mockSessionClient.create.mockRejectedValue(new Error("API Error"))
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([{ role: "user", content: "test" }]))
+
+			const manager = SessionManager.init(mockDependencies)
+			manager.setPath("task-123", "apiConversationHistoryPath", "/path/to/history.json")
+
+			await triggerSyncAndWait(manager)
+
+			expect(manager["isSyncing"]).toBe(false)
+		})
+	})
 })
