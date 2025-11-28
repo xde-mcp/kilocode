@@ -46,44 +46,57 @@ export class SessionPersistenceManager {
 
 	private writeWorkspaceState(state: WorkspaceSessionState): void {
 		const statePath = this.getSessionStatePath()
+
 		if (!statePath) {
 			return
 		}
+
 		const stateDir = path.dirname(statePath)
+
 		mkdirSync(stateDir, { recursive: true })
+
 		writeFileSync(statePath, JSON.stringify(state, null, 2))
 	}
 
 	getLastSession(): { sessionId: string; timestamp: number } | undefined {
 		const state = this.readWorkspaceState()
+
 		return state.lastSession
 	}
 
-	setLastSession(sessionId: string, timestamp: number): void {
+	setLastSession(sessionId: string): void {
 		const state = this.readWorkspaceState()
-		state.lastSession = { sessionId, timestamp }
+
+		state.lastSession = { sessionId, timestamp: Date.now() }
+
 		this.writeWorkspaceState(state)
 	}
 
 	getTaskSessionMap(): Record<string, string> {
 		const state = this.readWorkspaceState()
+
 		return state.taskSessionMap
 	}
 
 	setTaskSessionMap(taskSessionMap: Record<string, string>): void {
 		const state = this.readWorkspaceState()
+
 		state.taskSessionMap = taskSessionMap
+
 		this.writeWorkspaceState(state)
 	}
 
 	getSessionForTask(taskId: string): string | undefined {
 		const taskSessionMap = this.getTaskSessionMap()
+
 		return taskSessionMap[taskId]
 	}
 
 	setSessionForTask(taskId: string, sessionId: string): void {
 		const state = this.readWorkspaceState()
+
 		state.taskSessionMap[taskId] = sessionId
+
 		this.writeWorkspaceState(state)
 	}
 }

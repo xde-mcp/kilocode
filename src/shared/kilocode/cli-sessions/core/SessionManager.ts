@@ -33,10 +33,6 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	onSessionRestored?: () => void
 }
 
-/**
- * Manages session lifecycle including creation, syncing, restoration, and sharing.
- * Handles automatic synchronization of session data to the cloud.
- */
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 1000
 
@@ -97,9 +93,6 @@ export class SessionManager {
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
 
-	/**
-	 * Start the automatic sync timer.
-	 */
 	private startTimer(): void {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
@@ -122,46 +115,6 @@ export class SessionManager {
 	setWorkspaceDirectory(dir: string): void {
 		this.workspaceDir = dir
 		this.sessionPersistenceManager.setWorkspaceDir(dir)
-	}
-
-	private getExistingSessionIdForTask(): string | null {
-		if (!this.currentTaskId) {
-			return null
-		}
-
-		try {
-			const sessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
-
-			if (sessionId) {
-				this.logger.debug("Found existing session for task", "SessionManager", {
-					taskId: this.currentTaskId,
-					sessionId,
-				})
-
-				return sessionId
-			}
-
-			return null
-		} catch (error) {
-			this.logger.debug("Failed to check task session mapping", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-				taskId: this.currentTaskId,
-			})
-
-			return null
-		}
-	}
-
-	private async saveLastSessionId(sessionId: string): Promise<void> {
-		try {
-			this.sessionPersistenceManager.setLastSession(sessionId, Date.now())
-
-			this.logger.debug("Saved last session ID", "SessionManager", { sessionId })
-		} catch (error) {
-			this.logger.warn("Failed to save last session ID", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-		}
 	}
 
 	async restoreLastSession(): Promise<boolean> {
@@ -310,7 +263,7 @@ export class SessionManager {
 
 			this.logger.info("Switched to restored task", "SessionManager", { sessionId })
 
-			this.saveLastSessionId(sessionId)
+			this.sessionPersistenceManager.setLastSession(this.sessionId)
 
 			this.onSessionRestored()
 
@@ -448,8 +401,8 @@ export class SessionManager {
 				})
 			}
 
-			if (!this.sessionId) {
-				const existingSessionId = this.getExistingSessionIdForTask()
+			if (!this.sessionId && this.currentTaskId) {
+				const existingSessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
 
 				if (existingSessionId) {
 					this.sessionId = existingSessionId
@@ -492,13 +445,17 @@ export class SessionManager {
 
 				this.logger.info("Session created successfully", "SessionManager", { sessionId: this.sessionId })
 
-				this.saveLastSessionId(this.sessionId)
+				this.sessionPersistenceManager.setLastSession(this.sessionId)
 
 				this.onSessionCreated({
 					timestamp: Date.now(),
 					event: "session_created",
 					sessionId: this.sessionId,
 				})
+			}
+
+			if (this.currentTaskId) {
+				this.sessionPersistenceManager.setSessionForTask(this.currentTaskId, this.sessionId)
 			}
 
 			const blobUploads: Array<Promise<void>> = []
