@@ -153,6 +153,7 @@ export class CLI {
 							this.store.set(taskResumedViaContinueOrSessionAtom, true)
 						}
 					},
+					platform: "cli",
 				})
 				logs.debug("SessionManager initialized with dependencies", "CLI")
 

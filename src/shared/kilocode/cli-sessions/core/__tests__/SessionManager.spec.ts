@@ -51,6 +51,7 @@ describe("SessionManager", () => {
 		mockTrpcClient = {}
 
 		mockDependencies = {
+			platform: "test",
 			pathProvider: {
 				getTasksDir: vi.fn().mockReturnValue("/tmp/tasks"),
 				getLastSessionPath: vi.fn().mockReturnValue("/tmp/.last-session"),

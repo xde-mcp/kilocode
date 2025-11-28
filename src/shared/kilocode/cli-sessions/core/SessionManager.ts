@@ -24,6 +24,7 @@ interface SessionCreatedMessage {
 }
 
 export interface SessionManagerDependencies extends TrpcClientDependencies {
+	platform: string
 	pathProvider: IPathProvider
 	logger: ILogger
 	extensionMessenger: IExtensionMessenger
@@ -49,7 +50,11 @@ export class SessionManager {
 			SessionManager.instance = new SessionManager(dependencies)
 		}
 
-		return SessionManager.instance!
+		const instance = SessionManager.instance!
+
+		instance.startTimer()
+
+		return instance
 	}
 
 	private paths = { ...defaultPaths }
@@ -69,6 +74,7 @@ export class SessionManager {
 	public readonly sessionClient: SessionClient
 	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
 	private readonly onSessionRestored: () => void
+	private readonly platform: string
 
 	private constructor(dependencies: SessionManagerDependencies) {
 		this.pathProvider = dependencies.pathProvider
@@ -76,14 +82,13 @@ export class SessionManager {
 		this.extensionMessenger = dependencies.extensionMessenger
 		this.onSessionCreated = dependencies.onSessionCreated ?? (() => {})
 		this.onSessionRestored = dependencies.onSessionRestored ?? (() => {})
+		this.platform = dependencies.platform
 
 		const trpcClient = new TrpcClient({
 			getToken: dependencies.getToken,
 		})
 
 		this.sessionClient = new SessionClient(trpcClient)
-
-		this.startTimer()
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
@@ -470,7 +475,7 @@ export class SessionManager {
 
 				const session = await this.sessionClient.create({
 					...basePayload,
-					created_on_platform: process.env.KILO_PLATFORM || "cli",
+					created_on_platform: process.env.KILO_PLATFORM || this.platform,
 				})
 
 				this.sessionId = session.session_id
