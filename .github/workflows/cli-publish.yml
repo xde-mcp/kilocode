@@ -1,9 +1,7 @@
 name: Publish CLI
 on:
-    push:
-        branches: [main]
     pull_request:
-        branches: [main]
+        types: [closed]
     workflow_dispatch:
 
 env:
@@ -14,9 +12,53 @@ env:
     TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
 jobs:
-    
+    check-version:
+        runs-on: ubuntu-latest
+        if: >
+            ( github.event_name == 'pull_request' &&
+            github.event.pull_request.base.ref == 'main' &&
+            contains(github.event.pull_request.title, 'Changeset version bump') ) ||
+            github.event_name == 'workflow_dispatch'
+        outputs:
+            version: ${{ steps.check-version.outputs.version }}
+            publish: ${{ steps.check-version.outputs.publish }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ env.GIT_REF }}
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+            - name: Turbo cache setup
+              uses: actions/cache@v4
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
+            - name: Check Published Version
+              working-directory: cli
+              run: |
+                  version=$(node -p "require('./package.json').version")
+                  published_version=$(npm view @kilocode/cli version || echo "not_found")
+                  if pnpm semver "$version" -r "> $published_version" > /dev/null; then
+                    publish=true
+                  else
+                    publish=false
+                  fi
+                  echo "version=$version" >> $GITHUB_OUTPUT
+                  echo "publish=$publish" >> $GITHUB_OUTPUT
 
     integration-tests:
+        needs: check-version
+        if: needs.check-version.outputs.publish == 'true'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -52,3 +94,94 @@ jobs:
                   CI: true
                   KILOCODE_TOKEN: ${{ secrets.KILOCODE_INTEGRATION_TOKEN }}
                   KILOCODE_ORGANIZATION_ID: ${{ secrets.KILOCODE_INTEGRATION_ORGANIZATION_ID }}
+
+    create-release:
+        needs: [check-version, integration-tests]
+        if: needs.check-version.outputs.publish == 'true'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write # Required for pushing tags and creating releases
+            id-token: write # Required for actions/setup-node to authenticate with npm
+        steps:
+            - name: Configure Git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+            - name: Checkout code
+              uses: actions/checkout@v4
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: ${{ env.PNPM_VERSION }}
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: "pnpm"
+                  registry-url: 'https://registry.npmjs.org'
+            - name: Turbo cache setup
+              uses: actions/cache@v4
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-
+            - name: Install dependencies
+              run: pnpm install
+            - name: Create .env file
+              run: echo "KILOCODE_POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }}" >> .env
+              working-directory: cli
+            - name: Build
+              run: pnpm run cli:bundle
+              shell: bash            
+            - name: Create and Push Git Tag
+              run: |
+                  version=$(node -p "require('./cli/package.json').version")
+
+                  # Check if tag already exists remotely
+                  if git ls-remote --tags origin | grep -q "refs/tags/cli-v${version}$"; then
+                    echo "Tag cli-v${version} already exists remotely, skipping tag creation"
+                  else
+                    git tag -a "cli-v${version}" -m "Release CLI - cli-v${version}"
+                    git push origin "cli-v${version}" --no-verify
+                    echo "Successfully created and pushed git tag cli-v${version}"
+                  fi
+            - name: Publish to NPM
+              working-directory: cli/dist
+              run: |
+                  npm publish --access public
+            - name: Pack CLI
+              working-directory: cli/dist
+              run: npm pack
+            - name: Create GitHub Release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  version=$(node -p "require('./cli/package.json').version")
+
+                  if gh release view "cli-v${version}" >/dev/null 2>&1; then
+                    echo "Release cli-v${version} already exists, skipping release creation"
+                    exit 0
+                  fi
+
+                  echo "Extracting changelog for version ${version}"
+                  # Match version headers: ## [vX.X.X], ## [X.X.X], ## X.X.X (brackets and v are optional)
+                  changelog_content=$(sed -E -n "/^## \\[?v?${version}\\]?/,/^## /p" cli/CHANGELOG.md | sed '$d')
+
+                  if [ -z "$changelog_content" ]; then
+                    echo "Error: No changelog section found for version ${version}"
+                    echo "Please add a changelog entry in cli/CHANGELOG.md for version ${version}"
+                    exit 1
+                  fi
+
+                  echo "Found changelog section for version ${version}"
+
+                  # Create release with changelog content
+                  gh release create "cli-v${version}" \
+                    --title "Release CLI - v${version}" \
+                    --notes "$changelog_content" \
+                    --target ${{ env.GIT_REF }} \
+                    cli/dist/kilocode-cli-${version}.tgz
+                  echo "Successfully created CLI GitHub Release v${version}"    
+
+    
