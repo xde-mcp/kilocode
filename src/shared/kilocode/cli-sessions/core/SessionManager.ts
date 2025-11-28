@@ -39,6 +39,20 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 1000
 
+	static instance: SessionManager | null = null
+
+	static init(dependencies?: SessionManagerDependencies): SessionManager {
+		if (!dependencies && !SessionManager.instance) {
+			throw new Error("SessionManager not initialized")
+		}
+
+		if (dependencies && !SessionManager.instance) {
+			SessionManager.instance = new SessionManager(dependencies)
+		}
+
+		return SessionManager.instance!
+	}
+
 	private paths = { ...defaultPaths }
 	public sessionId: string | null = null
 	private workspaceDir: string | null = null
@@ -57,7 +71,7 @@ export class SessionManager {
 	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
 	private readonly onSessionRestored: () => void
 
-	constructor(dependencies: SessionManagerDependencies) {
+	private constructor(dependencies: SessionManagerDependencies) {
 		this.pathProvider = dependencies.pathProvider
 		this.logger = dependencies.logger
 		this.extensionMessenger = dependencies.extensionMessenger
