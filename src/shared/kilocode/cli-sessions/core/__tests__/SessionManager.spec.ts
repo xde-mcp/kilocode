@@ -14,7 +14,6 @@ vi.mock("crypto", async () => {
 
 const mockFs = await import("fs")
 const mockSimpleGit = await import("simple-git")
-const mockCrypto = await import("crypto")
 
 describe("SessionManager", () => {
 	let mockDependencies: SessionManagerDependencies
