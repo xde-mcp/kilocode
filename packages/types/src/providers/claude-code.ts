@@ -47,6 +47,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-sonnet-4-5-20250929[1m]": {
 		...anthropicModels["claude-sonnet-4-5"],
@@ -56,6 +59,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-sonnet-4-20250514": {
 		...anthropicModels["claude-sonnet-4-20250514"],
@@ -64,6 +70,20 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
+	},
+	"claude-opus-4-5-20251101": {
+		...anthropicModels["claude-opus-4-5-20251101"],
+		supportsImages: false,
+		supportsPromptCache: true, // Claude Code does report cache tokens
+		supportsReasoningEffort: false,
+		supportsReasoningBudget: false,
+		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-opus-4-5-20251101": {
 		...anthropicModels["claude-opus-4-5-20251101"],
@@ -80,6 +100,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-opus-4-20250514": {
 		...anthropicModels["claude-opus-4-20250514"],
@@ -88,6 +111,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-3-7-sonnet-20250219": {
 		...anthropicModels["claude-3-7-sonnet-20250219"],
@@ -96,6 +122,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-3-5-sonnet-20241022": {
 		...anthropicModels["claude-3-5-sonnet-20241022"],
@@ -104,6 +133,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-3-5-haiku-20241022": {
 		...anthropicModels["claude-3-5-haiku-20241022"],
@@ -112,6 +144,9 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 	"claude-haiku-4-5-20251001": {
 		...anthropicModels["claude-haiku-4-5-20251001"],
@@ -120,5 +155,8 @@ export const claudeCodeModels = {
 		supportsReasoningEffort: false,
 		supportsReasoningBudget: false,
 		requiredReasoningBudget: false,
+		// Claude Code manages its own tools and temperature via the CLI
+		supportsNativeTools: false,
+		supportsTemperature: false,
 	},
 } as const satisfies Record<string, ModelInfo>

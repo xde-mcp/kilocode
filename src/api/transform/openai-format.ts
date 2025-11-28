@@ -152,7 +152,9 @@ export function convertToOpenAiMessages(
 					},
 				}))
 
-				openAiMessages.push({
+				// Check if the message has reasoning_details (used by Gemini 3, etc.)
+				const messageWithDetails = anthropicMessage as any
+				const baseMessage: OpenAI.Chat.ChatCompletionAssistantMessageParam = {
 					role: "assistant",
 					content,
 					// Cannot be an empty array. API expects an array with minimum length 1, and will respond with an error if it's empty
@@ -162,7 +164,14 @@ export function convertToOpenAiMessages(
 					reasoning_details:
 						reasoningDetails.length > 0 ? consolidateReasoningDetails(reasoningDetails) : undefined,
 					// kilocode_change end
-				})
+				}
+
+				// Preserve reasoning_details if present (will be processed by provider if needed)
+				if (messageWithDetails.reasoning_details && Array.isArray(messageWithDetails.reasoning_details)) {
+					;(baseMessage as any).reasoning_details = messageWithDetails.reasoning_details
+				}
+
+				openAiMessages.push(baseMessage)
 			}
 		}
 	}

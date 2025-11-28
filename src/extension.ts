@@ -46,8 +46,8 @@ import { registerGhostProvider } from "./services/ghost" // kilocode_change
 import { registerMainThreadForwardingLogger } from "./utils/fowardingLogger" // kilocode_change
 import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kilocode_change
 import { SettingsSyncService } from "./services/settings-sync/SettingsSyncService" // kilocode_change
-import { flushModels, getModels } from "./api/providers/fetchers/modelCache"
 import { ManagedIndexer } from "./services/code-index/managed/ManagedIndexer" // kilocode_change
+import { flushModels, getModels, initializeModelCacheRefresh } from "./api/providers/fetchers/modelCache"
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -179,17 +179,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		// Handle Roo models cache based on auth state
 		const handleRooModelsCache = async () => {
 			try {
-				await flushModels("roo")
+				// Flush and refresh cache on auth state changes
+				await flushModels("roo", true)
 
 				if (data.state === "active-session") {
-					// Reload models with the new auth token
-					const sessionToken = cloudService?.authService?.getSessionToken()
-					await getModels({
-						provider: "roo",
-						baseUrl: process.env.ROO_CODE_PROVIDER_URL ?? "https://api.roocode.com/proxy",
-						apiKey: sessionToken,
-					})
-					cloudLogger(`[authStateChangedHandler] Reloaded Roo models cache for active session`)
+					cloudLogger(`[authStateChangedHandler] Refreshed Roo models cache for active session`)
 				} else {
 					cloudLogger(`[authStateChangedHandler] Flushed Roo models cache on logout`)
 				}
@@ -201,7 +195,33 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 
 		if (data.state === "active-session" || data.state === "logged-out") {
-			// kilocode_change: await handleRooModelsCache()
+			// kilocode_change start: disable
+			// await handleRooModelsCache()
+			// // Apply stored provider model to API configuration if present
+			// if (data.state === "active-session") {
+			// 	try {
+			// 		const storedModel = context.globalState.get<string>("roo-provider-model")
+			// 		if (storedModel) {
+			// 			cloudLogger(`[authStateChangedHandler] Applying stored provider model: ${storedModel}`)
+			// 			// Get the current API configuration name
+			// 			const currentConfigName =
+			// 				provider.contextProxy.getGlobalState("currentApiConfigName") || "default"
+			// 			// Update it with the stored model using upsertProviderProfile
+			// 			await provider.upsertProviderProfile(currentConfigName, {
+			// 				apiProvider: "roo",
+			// 				apiModelId: storedModel,
+			// 			})
+			// 			// Clear the stored model after applying
+			// 			await context.globalState.update("roo-provider-model", undefined)
+			// 			cloudLogger(`[authStateChangedHandler] Applied and cleared stored provider model`)
+			// 		}
+			// 	} catch (error) {
+			// 		cloudLogger(
+			// 			`[authStateChangedHandler] Failed to apply stored provider model: ${error instanceof Error ? error.message : String(error)}`,
+			// 		)
+			// 	}
+			// }
+			// kilocode_change end
 		}
 	}
 
@@ -468,6 +488,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	})
 	// kilocode_change end
+	// Initialize background model cache refresh
+	initializeModelCacheRefresh()
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }
