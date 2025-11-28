@@ -24,6 +24,7 @@ describe("SessionManager", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks()
+		// @ts-expect-error private property
 		SessionManager.instance = null
 
 		mockGit = {
@@ -80,6 +81,7 @@ describe("SessionManager", () => {
 	})
 
 	afterEach(() => {
+		// @ts-expect-error private property
 		SessionManager.instance = null
 		vi.clearAllTimers()
 	})
@@ -89,6 +91,7 @@ describe("SessionManager", () => {
 			const manager = SessionManager.init(mockDependencies)
 
 			expect(manager).toBeInstanceOf(SessionManager)
+			// @ts-expect-error private property
 			expect(SessionManager.instance).toBe(manager)
 		})
 
