@@ -522,6 +522,10 @@ export class ClineProvider
 		this.clineStack.push(task)
 		task.emit(RooCodeEventName.TaskFocused)
 
+		if (!this.kilo_isCli()) {
+			await SessionManager.init().destroy()
+		}
+
 		// Perform special setup provider specific tasks.
 		await this.performPreparationTasks(task)
 
@@ -736,7 +740,9 @@ export class ClineProvider
 			this.autoPurgeScheduler = undefined
 		}
 
-		await SessionManager.init().destroy()
+		if (!this.kilo_isCli()) {
+			await SessionManager.init().destroy()
+		}
 		// kilocode_change end
 
 		this.log("Disposed all disposables")
@@ -1193,20 +1199,18 @@ ${prompt}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
 		if (!this.kilo_isCli()) {
-			const sessionManager = SessionManager.init()
-
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
 
-				sessionManager.setPath("apiConversationHistoryPath", filePath)
+				SessionManager.init().setPath("apiConversationHistoryPath", filePath)
 			} else if (message.type === "taskMessagesSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
 
-				sessionManager.setPath("uiMessagesPath", filePath)
+				SessionManager.init().setPath("uiMessagesPath", filePath)
 			} else if (message.type === "taskMetadataSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
 
-				sessionManager.setPath("taskMetadataPath", filePath)
+				SessionManager.init().setPath("taskMetadataPath", filePath)
 			}
 		}
 
@@ -1951,10 +1955,8 @@ ${prompt}
 	async refreshWorkspace() {
 		this.currentWorkspacePath = getWorkspacePath()
 
-		if (this.currentWorkspacePath) {
-			const sessionManager = SessionManager.init()
-
-			sessionManager.setWorkspaceDirectory(this.currentWorkspacePath)
+		if (this.currentWorkspacePath && !this.kilo_isCli()) {
+			SessionManager.init().setWorkspaceDirectory(this.currentWorkspacePath)
 		}
 
 		await this.postStateToWebview()

@@ -39,7 +39,7 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 1000
 
-	static instance: SessionManager | null = null
+	private static instance: SessionManager | null = null
 
 	static init(dependencies?: SessionManagerDependencies): SessionManager {
 		if (!dependencies && !SessionManager.instance) {
