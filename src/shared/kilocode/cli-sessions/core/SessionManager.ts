@@ -38,7 +38,7 @@ export class SessionManager {
 
 	private static instance: SessionManager | null = null
 
-	static init(dependencies?: SessionManagerDependencies): SessionManager {
+	static init(dependencies?: SessionManagerDependencies) {
 		if (!dependencies && !SessionManager.instance) {
 			throw new Error("SessionManager not initialized")
 		}
@@ -93,7 +93,7 @@ export class SessionManager {
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
 
-	private startTimer(): void {
+	private startTimer() {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
 				this.syncSession()
@@ -101,7 +101,7 @@ export class SessionManager {
 		}
 	}
 
-	setPath(taskId: string, key: keyof typeof defaultPaths, value: string): void {
+	setPath(taskId: string, key: keyof typeof defaultPaths, value: string) {
 		this.currentTaskId = taskId
 		this.paths[key] = value
 
@@ -112,12 +112,12 @@ export class SessionManager {
 		}
 	}
 
-	setWorkspaceDirectory(dir: string): void {
+	setWorkspaceDirectory(dir: string) {
 		this.workspaceDir = dir
 		this.sessionPersistenceManager.setWorkspaceDir(dir)
 	}
 
-	async restoreLastSession(): Promise<boolean> {
+	async restoreLastSession() {
 		try {
 			const lastSession = this.sessionPersistenceManager.getLastSession()
 
@@ -145,7 +145,7 @@ export class SessionManager {
 		}
 	}
 
-	async restoreSession(sessionId: string, rethrowError = false): Promise<void> {
+	async restoreSession(sessionId: string, rethrowError = false) {
 		try {
 			this.logger.info("Restoring session", "SessionManager", { sessionId })
 
@@ -287,7 +287,7 @@ export class SessionManager {
 		}
 	}
 
-	async shareSession(): Promise<ShareSessionOutput> {
+	async shareSession() {
 		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
@@ -299,7 +299,7 @@ export class SessionManager {
 		})
 	}
 
-	async renameSession(newTitle: string): Promise<void> {
+	async renameSession(newTitle: string) {
 		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
@@ -323,7 +323,7 @@ export class SessionManager {
 		})
 	}
 
-	async forkSession(shareOrSessionId: string, rethrowError = false): Promise<void> {
+	async forkSession(shareOrSessionId: string, rethrowError = false) {
 		const { session_id } = await this.sessionClient.fork({
 			share_or_session_id: shareOrSessionId,
 			created_on_platform: this.platform,
@@ -332,7 +332,7 @@ export class SessionManager {
 		await this.restoreSession(session_id, rethrowError)
 	}
 
-	async destroy(): Promise<void> {
+	async destroy() {
 		this.logger.debug("Destroying SessionManager", "SessionManager", {
 			sessionId: this.sessionId,
 			isSyncing: this.isSyncing,
@@ -359,7 +359,7 @@ export class SessionManager {
 		this.logger.debug("SessionManager flushed", "SessionManager")
 	}
 
-	private async syncSession(force = false): Promise<void> {
+	private async syncSession(force = false) {
 		if (!force) {
 			if (this.isSyncing) {
 				return
@@ -568,7 +568,7 @@ export class SessionManager {
 		}
 	}
 
-	private readPath(path: string): unknown {
+	private readPath(path: string) {
 		try {
 			const content = readFileSync(path, "utf-8")
 			try {
@@ -581,7 +581,7 @@ export class SessionManager {
 		}
 	}
 
-	private readPaths(): Partial<Record<keyof typeof this.paths, unknown>> {
+	private readPaths() {
 		const contents: Partial<Record<keyof typeof this.paths, unknown>> = {}
 
 		for (const [key, value] of Object.entries(this.paths)) {
@@ -598,7 +598,7 @@ export class SessionManager {
 		return contents
 	}
 
-	private async fetchBlobFromSignedUrl(url: string, urlType: string): Promise<unknown> {
+	private async fetchBlobFromSignedUrl(url: string, urlType: string) {
 		try {
 			this.logger.debug(`Fetching blob from signed URL`, "SessionManager", { url, urlType })
 
@@ -623,7 +623,7 @@ export class SessionManager {
 		}
 	}
 
-	private pathKeyToBlobKey(pathKey: keyof typeof defaultPaths): keyof typeof this.blobHashes | null {
+	private pathKeyToBlobKey(pathKey: keyof typeof defaultPaths) {
 		switch (pathKey) {
 			case "apiConversationHistoryPath":
 				return "apiConversationHistory"
@@ -636,15 +636,15 @@ export class SessionManager {
 		}
 	}
 
-	private updateBlobHash(blobKey: keyof typeof this.blobHashes): void {
+	private updateBlobHash(blobKey: keyof typeof this.blobHashes) {
 		this.blobHashes[blobKey] = crypto.randomUUID()
 	}
 
-	private hasBlobChanged(blobKey: keyof typeof this.blobHashes): boolean {
+	private hasBlobChanged(blobKey: keyof typeof this.blobHashes) {
 		return this.blobHashes[blobKey] !== this.lastSyncedBlobHashes[blobKey]
 	}
 
-	private hasAnyBlobChanged(): boolean {
+	private hasAnyBlobChanged() {
 		return (
 			this.hasBlobChanged("apiConversationHistory") ||
 			this.hasBlobChanged("uiMessages") ||
@@ -653,22 +653,17 @@ export class SessionManager {
 		)
 	}
 
-	private markBlobSynced(blobKey: keyof typeof this.blobHashes): void {
+	private markBlobSynced(blobKey: keyof typeof this.blobHashes) {
 		this.lastSyncedBlobHashes[blobKey] = this.blobHashes[blobKey]
 	}
 
 	private hashGitState(
 		gitState: Pick<NonNullable<Awaited<ReturnType<typeof this.getGitState>>>, "head" | "patch" | "branch">,
-	): string {
+	) {
 		return createHash("sha256").update(JSON.stringify(gitState)).digest("hex")
 	}
 
-	private createDefaultBlobHashes(): {
-		apiConversationHistory: string
-		uiMessages: string
-		taskMetadata: string
-		gitState: string
-	} {
+	private createDefaultBlobHashes() {
 		return {
 			apiConversationHistory: "",
 			uiMessages: "",
@@ -677,17 +672,12 @@ export class SessionManager {
 		}
 	}
 
-	private resetBlobHashes(): void {
+	private resetBlobHashes() {
 		this.blobHashes = this.createDefaultBlobHashes()
 		this.lastSyncedBlobHashes = this.createDefaultBlobHashes()
 	}
 
-	private async getGitState(): Promise<{
-		repoUrl: string | undefined
-		head: string
-		branch: string | undefined
-		patch: string
-	}> {
+	private async getGitState() {
 		const cwd = this.workspaceDir || process.cwd()
 		const git = simpleGit(cwd)
 
@@ -738,7 +728,7 @@ export class SessionManager {
 		}
 	}
 
-	private async executeGitRestore(gitState: { head: string; patch: string; branch: string }): Promise<void> {
+	private async executeGitRestore(gitState: { head: string; patch: string; branch: string }) {
 		try {
 			const cwd = this.workspaceDir || process.cwd()
 			const git = simpleGit(cwd)
@@ -872,7 +862,7 @@ export class SessionManager {
 		}
 	}
 
-	getFirstMessageText(uiMessages: ClineMessage[], truncate = false): string | null {
+	getFirstMessageText(uiMessages: ClineMessage[], truncate = false) {
 		if (uiMessages.length === 0) {
 			return null
 		}
@@ -897,7 +887,7 @@ export class SessionManager {
 		return rawText
 	}
 
-	async generateTitle(uiMessages: ClineMessage[]): Promise<string | null> {
+	async generateTitle(uiMessages: ClineMessage[]) {
 		const rawText = this.getFirstMessageText(uiMessages)
 
 		if (!rawText) {
