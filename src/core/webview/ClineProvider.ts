@@ -156,7 +156,6 @@ export class ClineProvider
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
-	public kiloSessionManager: SessionManager | null = null
 
 	private recentTasksCache?: string[]
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
@@ -483,16 +482,11 @@ export class ClineProvider
 				return
 			}
 
-			if (this.kiloSessionManager) {
-				this.log("SessionManager already initialized")
-				return
-			}
-
 			const pathProvider = new ExtensionPathProvider(this.context)
 			const logger = new ExtensionLoggerAdapter(this.outputChannel)
 			const extensionMessenger = new ExtensionMessengerImpl(this)
 
-			this.kiloSessionManager = SessionManager.init({
+			const sessionManager = SessionManager.init({
 				pathProvider,
 				logger,
 				extensionMessenger,
@@ -509,7 +503,7 @@ export class ClineProvider
 
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
 			if (workspaceFolder) {
-				this.kiloSessionManager.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
+				sessionManager.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
 			}
 
 			this.log("SessionManager initialized successfully")
@@ -741,13 +735,9 @@ export class ClineProvider
 			this.autoPurgeScheduler.stop()
 			this.autoPurgeScheduler = undefined
 		}
-		// kilocode_change end
 
-		if (this.kiloSessionManager) {
-			await this.kiloSessionManager.destroy()
-			this.kiloSessionManager = null
-			this.log("SessionManager destroyed")
-		}
+		await SessionManager.init().destroy()
+		// kilocode_change end
 
 		this.log("Disposed all disposables")
 		ClineProvider.activeInstances.delete(this)
@@ -1202,17 +1192,21 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		// Intercept file save events to update SessionManager paths
-		if (this.kiloSessionManager) {
+		if (!this.kilo_isCli()) {
+			const sessionManager = SessionManager.init()
+
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
-				this.kiloSessionManager.setPath("apiConversationHistoryPath", filePath)
+
+				sessionManager.setPath("apiConversationHistoryPath", filePath)
 			} else if (message.type === "taskMessagesSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
-				this.kiloSessionManager.setPath("uiMessagesPath", filePath)
+
+				sessionManager.setPath("uiMessagesPath", filePath)
 			} else if (message.type === "taskMetadataSaved" && message.payload) {
 				const [_, filePath] = message.payload as [string, string]
-				this.kiloSessionManager.setPath("taskMetadataPath", filePath)
+
+				sessionManager.setPath("taskMetadataPath", filePath)
 			}
 		}
 
@@ -1957,8 +1951,10 @@ ${prompt}
 	async refreshWorkspace() {
 		this.currentWorkspacePath = getWorkspacePath()
 
-		if (this.kiloSessionManager && this.currentWorkspacePath) {
-			this.kiloSessionManager.setWorkspaceDirectory(this.currentWorkspacePath)
+		if (this.currentWorkspacePath) {
+			const sessionManager = SessionManager.init()
+
+			sessionManager.setWorkspaceDirectory(this.currentWorkspacePath)
 		}
 
 		await this.postStateToWebview()
