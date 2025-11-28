@@ -1,8 +1,5 @@
 import type { TrpcClient } from "./TrpcClient.js"
 
-/**
- * Type definitions matching backend schema
- */
 export interface Session {
 	session_id: string
 	title: string
@@ -67,9 +64,6 @@ export interface SearchSessionOutput {
 	offset: number
 }
 
-/**
- * Shared state enum
- */
 export enum CliSessionSharedState {
 	Public = "public",
 }
