@@ -11,7 +11,7 @@ import { DEFAULT_MODES, getAllModes } from "./constants/modes/defaults.js"
 import { getTelemetryService } from "./services/telemetry/index.js"
 import { Package } from "./constants/package.js"
 import openConfigFile from "./config/openConfig.js"
-import authWizard from "./utils/authWizard.js"
+import authWizard from "./auth/index.js"
 import { configExists } from "./config/persistence.js"
 import { loadCustomModes } from "./config/customModes.js"
 import { envConfigExists, getMissingEnvVars } from "./config/env-config.js"
@@ -43,6 +43,8 @@ program
 	.option("-eb, --existing-branch <branch>", "(Parallel mode only) Instructs the agent to work on an existing branch")
 	.option("-pv, --provider <id>", "Select provider by ID (e.g., 'kilocode-1')")
 	.option("-mo, --model <model>", "Override model for the selected provider")
+	.option("-s, --session <sessionId>", "Restore a session by ID")
+	.option("-f, --fork <shareId>", "Fork a shared session by share ID")
 	.option("--nosplash", "Disable the welcome message and update notifications", false)
 	.argument("[prompt]", "The prompt or command to execute")
 	.action(async (prompt, options) => {
@@ -121,6 +123,12 @@ program
 		// Validate that continue mode is not used with a prompt
 		if (options.continue && finalPrompt) {
 			console.error("Error: --continue option cannot be used with a prompt argument")
+			process.exit(1)
+		}
+
+		// Validate that --fork and --session are not used together
+		if (options.fork && options.session) {
+			console.error("Error: --fork and --session options cannot be used together")
 			process.exit(1)
 		}
 
@@ -210,6 +218,8 @@ program
 			continue: options.continue,
 			provider: options.provider,
 			model: options.model,
+			session: options.session,
+			fork: options.fork,
 			noSplash: options.nosplash,
 		})
 		await cli.start()
@@ -228,7 +238,12 @@ program
 	.command("config")
 	.description("Open the configuration file in your default editor")
 	.action(async () => {
-		await openConfigFile()
+		try {
+			await openConfigFile()
+		} catch (_error) {
+			// Error already logged by openConfigFile
+			process.exit(1)
+		}
 	})
 
 // Debug command - checks hardware and OS compatibility
