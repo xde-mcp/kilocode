@@ -497,8 +497,7 @@ export class ClineProvider
 				onSessionRestored: () => {
 					this.log("Session restored")
 				},
-				// TODO: differentiate between different editors
-				platform: "extension",
+				platform: vscode.env.appName,
 			})
 
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
