@@ -10,7 +10,6 @@ import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
-import type { IApiConfig } from "../types/IApiConfig.js"
 
 const defaultPaths = {
 	apiConversationHistoryPath: null as null | string,
@@ -79,7 +78,6 @@ export class SessionManager {
 		this.onSessionRestored = dependencies.onSessionRestored ?? (() => {})
 
 		const trpcClient = new TrpcClient({
-			apiConfig: dependencies.apiConfig,
 			getToken: dependencies.getToken,
 		})
 

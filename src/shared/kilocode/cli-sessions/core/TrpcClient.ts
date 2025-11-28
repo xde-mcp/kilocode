@@ -1,5 +1,4 @@
-import type { ILogger } from "../types/ILogger.js"
-import type { IApiConfig } from "../types/IApiConfig.js"
+import { getApiUrl } from "@roo-code/types"
 
 type HttpMethod = "GET" | "POST"
 
@@ -10,7 +9,6 @@ export type TrpcResponse<T> = { result: { data: T } }
 
 export interface TrpcClientDependencies {
 	getToken: () => Promise<string>
-	apiConfig: IApiConfig
 }
 
 /**
@@ -23,7 +21,7 @@ export class TrpcClient {
 	public readonly getToken: () => Promise<string>
 
 	constructor(dependencies: TrpcClientDependencies) {
-		this.endpoint = dependencies.apiConfig.getApiUrl()
+		this.endpoint = getApiUrl()
 		this.getToken = dependencies.getToken
 	}
 

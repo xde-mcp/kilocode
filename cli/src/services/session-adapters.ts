@@ -1,16 +1,8 @@
-import { getApiUrl } from "@roo-code/types"
 import { KiloCodePaths } from "../utils/paths.js"
 import type { ExtensionService } from "./extension.js"
-import type { IApiConfig } from "../../../src/shared/kilocode/cli-sessions/types/IApiConfig"
 import type { IPathProvider } from "../../../src/shared/kilocode/cli-sessions/types/IPathProvider"
 import type { IExtensionMessenger } from "../../../src/shared/kilocode/cli-sessions/types/IExtensionMessenger"
 import type { WebviewMessage } from "../../../src/shared/WebviewMessage"
-
-export class CliApiConfig implements IApiConfig {
-	getApiUrl(): string {
-		return getApiUrl()
-	}
-}
 
 export class KiloCodePathProvider implements IPathProvider {
 	getTasksDir(): string {

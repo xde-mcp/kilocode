@@ -24,7 +24,7 @@ import type { CLIOptions } from "./types/cli.js"
 import type { CLIConfig, ProviderConfig } from "./config/types.js"
 import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
-import { CliApiConfig, KiloCodePathProvider, ExtensionMessengerAdapter } from "./services/session-adapters.js"
+import { KiloCodePathProvider, ExtensionMessengerAdapter } from "./services/session-adapters.js"
 import { getKiloToken } from "./config/persistence.js"
 import { SessionManager } from "../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 
@@ -135,12 +135,10 @@ export class CLI {
 			const kiloToken = getKiloToken(config)
 
 			if (kiloToken) {
-				const apiConfig = new CliApiConfig()
 				const pathProvider = new KiloCodePathProvider()
 				const extensionMessenger = new ExtensionMessengerAdapter(this.service)
 
 				this.sessionService = SessionManager.init({
-					apiConfig,
 					pathProvider,
 					logger: logs,
 					extensionMessenger,
