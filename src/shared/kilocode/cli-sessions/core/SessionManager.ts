@@ -93,7 +93,7 @@ export class SessionManager {
 	/**
 	 * Start the automatic sync timer.
 	 */
-	startTimer(): void {
+	private startTimer(): void {
 		if (!this.timer) {
 			this.timer = setInterval(() => {
 				this.syncSession()
@@ -311,7 +311,7 @@ export class SessionManager {
 
 			this.saveLastSessionId(sessionId)
 
-			await this.onSessionRestored()
+			this.onSessionRestored()
 
 			this.logger.debug("Marked task as resumed after session restoration", "SessionManager", { sessionId })
 		} catch (error) {
