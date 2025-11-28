@@ -979,10 +979,7 @@ describe("SessionManager", () => {
 
 			await triggerSyncAndWait(manager)
 
-			expect(mockSessionPersistenceManager.setLastSession).toHaveBeenCalledWith(
-				"new-session-123",
-				expect.any(Number),
-			)
+			expect(mockSessionPersistenceManager.setLastSession).toHaveBeenCalledWith("new-session-123")
 		})
 
 		it("should set isSyncing to false after sync completes", async () => {

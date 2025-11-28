@@ -94,7 +94,7 @@ describe("SessionPersistenceManager", () => {
 
 	describe("setLastSession", () => {
 		it("should not write when workspace directory is not set", () => {
-			manager.setLastSession("session-123", 1234567890)
+			manager.setLastSession("session-123")
 
 			expect(writeFileSync).not.toHaveBeenCalled()
 		})
@@ -104,7 +104,7 @@ describe("SessionPersistenceManager", () => {
 			vi.mocked(existsSync).mockReturnValue(true)
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify({ taskSessionMap: {} }))
 
-			manager.setLastSession("session-456", 9876543210)
+			manager.setLastSession("session-456")
 
 			expect(mkdirSync).toHaveBeenCalledWith("/workspace/.kilocode", { recursive: true })
 			expect(writeFileSync).toHaveBeenCalledWith(
@@ -122,11 +122,11 @@ describe("SessionPersistenceManager", () => {
 				}),
 			)
 
-			manager.setLastSession("session-456", 9876543210)
+			manager.setLastSession("session-456")
 
 			const writtenData = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string)
 			expect(writtenData.taskSessionMap).toEqual({ "task-1": "session-1" })
-			expect(writtenData.lastSession).toEqual({ sessionId: "session-456", timestamp: 9876543210 })
+			expect(writtenData.lastSession).toEqual({ sessionId: "session-456", timestamp: expect.any(Number) })
 		})
 	})
 
