@@ -71,6 +71,8 @@ import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckp
 import { CodeIndexManager } from "../../services/code-index/manager"
 import type { IndexProgressUpdate } from "../../services/code-index/interfaces/manager"
 import { MdmService } from "../../services/mdm/MdmService"
+import { SessionManager } from "../../shared/kilocode/cli-sessions/core/SessionManager"
+import { ExtensionPathProvider, ExtensionLoggerAdapter, ExtensionMessengerImpl } from "../../services/kilo-session"
 
 import { fileExistsAtPath } from "../../utils/fs"
 import { setTtsEnabled, setTtsSpeed } from "../../utils/tts"
@@ -154,6 +156,7 @@ export class ClineProvider
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
+	public kiloSessionManager: SessionManager | null = null
 
 	private recentTasksCache?: string[]
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
@@ -461,6 +464,58 @@ export class ClineProvider
 		}
 	}
 
+	private kilo_isCli(): boolean {
+		return process.env.KILO_CLI_MODE === "true"
+	}
+
+	public async kilo_initializeSessionManager(): Promise<void> {
+		// cli manages its own session manager
+		if (this.kilo_isCli()) {
+			return
+		}
+
+		try {
+			const { apiConfiguration } = await this.getState()
+			const kiloToken = apiConfiguration.kilocodeToken
+
+			if (!kiloToken) {
+				this.log("SessionManager not initialized: No authentication token available")
+				return
+			}
+
+			if (this.kiloSessionManager) {
+				this.log("SessionManager already initialized")
+				return
+			}
+
+			const pathProvider = new ExtensionPathProvider(this.context)
+			const logger = new ExtensionLoggerAdapter(this.outputChannel)
+			const extensionMessenger = new ExtensionMessengerImpl(this)
+
+			this.kiloSessionManager = SessionManager.init({
+				pathProvider,
+				logger,
+				extensionMessenger,
+				getToken: () => Promise.resolve(kiloToken),
+				onSessionCreated: (message) => {
+					this.log(`Session created: ${message.sessionId}`)
+				},
+				onSessionRestored: () => {
+					this.log("Session restored")
+				},
+			})
+
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+			if (workspaceFolder) {
+				this.kiloSessionManager.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
+			}
+
+			this.log("SessionManager initialized successfully")
+		} catch (error) {
+			this.log(`Failed to initialize SessionManager: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	}
+
 	// Adds a new Task instance to clineStack, marking the start of a new task.
 	// The instance is pushed to the top of the stack (LIFO order).
 	// When the task is completed, the top instance is removed, reactivating the
@@ -685,6 +740,12 @@ export class ClineProvider
 			this.autoPurgeScheduler = undefined
 		}
 		// kilocode_change end
+
+		if (this.kiloSessionManager) {
+			await this.kiloSessionManager.destroy()
+			this.kiloSessionManager = null
+			this.log("SessionManager destroyed")
+		}
 
 		this.log("Disposed all disposables")
 		ClineProvider.activeInstances.delete(this)
@@ -1139,6 +1200,20 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
+		// Intercept file save events to update SessionManager paths
+		if (this.kiloSessionManager) {
+			if (message.type === "apiMessagesSaved" && message.payload) {
+				const [_, filePath] = message.payload as [string, string]
+				this.kiloSessionManager.setPath("apiConversationHistoryPath", filePath)
+			} else if (message.type === "taskMessagesSaved" && message.payload) {
+				const [_, filePath] = message.payload as [string, string]
+				this.kiloSessionManager.setPath("uiMessagesPath", filePath)
+			} else if (message.type === "taskMetadataSaved" && message.payload) {
+				const [_, filePath] = message.payload as [string, string]
+				this.kiloSessionManager.setPath("taskMetadataPath", filePath)
+			}
+		}
+
 		await this.view?.webview.postMessage(message)
 	}
 
@@ -1879,6 +1954,11 @@ ${prompt}
 
 	async refreshWorkspace() {
 		this.currentWorkspacePath = getWorkspacePath()
+
+		if (this.kiloSessionManager && this.currentWorkspacePath) {
+			this.kiloSessionManager.setWorkspaceDirectory(this.currentWorkspacePath)
+		}
+
 		await this.postStateToWebview()
 	}
 
