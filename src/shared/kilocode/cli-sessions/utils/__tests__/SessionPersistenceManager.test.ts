@@ -1,6 +1,5 @@
 import { SessionPersistenceManager } from "../SessionPersistenceManager"
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs"
-import path from "path"
 import type { IPathProvider } from "../../types/IPathProvider"
 
 vi.mock("fs", () => ({

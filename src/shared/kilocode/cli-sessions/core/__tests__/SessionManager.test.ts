@@ -1,13 +1,11 @@
 import { SessionManager, SessionManagerDependencies } from "../SessionManager"
 import { SessionClient, CliSessionSharedState, SessionWithSignedUrls } from "../SessionClient"
-import { TrpcClient } from "../TrpcClient"
 import { SessionPersistenceManager } from "../../utils/SessionPersistenceManager"
 import type { IPathProvider } from "../../types/IPathProvider"
 import type { ILogger } from "../../types/ILogger"
 import type { IExtensionMessenger } from "../../types/IExtensionMessenger"
 import type { ClineMessage } from "@roo-code/types"
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync } from "fs"
-import simpleGit from "simple-git"
+import { readFileSync, writeFileSync } from "fs"
 
 vi.mock("fs", () => ({
 	readFileSync: vi.fn(),
