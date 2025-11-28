@@ -42,9 +42,8 @@ export async function parseKiloSlashCommands(
 
 	if (match?.indices) {
 		// remove the slash command
-		const [_fullMatch, _tagName, commandWithWhitespace, commandName] = match
-		const slashCommandStartIndex = match.indices[2][0]
-		const slashCommandEndIndex = slashCommandStartIndex + commandWithWhitespace.length
+		const commandName = match[3]
+		const [slashCommandStartIndex, slashCommandEndIndex] = match.indices[2]
 		const textWithoutSlashCommand = text.slice(0, slashCommandStartIndex) + text.slice(slashCommandEndIndex)
 
 		const command = commandReplacements[commandName]
