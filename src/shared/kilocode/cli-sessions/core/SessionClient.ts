@@ -192,7 +192,7 @@ export class SessionClient {
 		blobType: "api_conversation_history" | "task_metadata" | "ui_messages" | "git_state",
 		blobData: unknown,
 	): Promise<{ session_id: string; updated_at: string }> {
-		const { endpoint, token } = this.trpcClient
+		const { endpoint, getToken } = this.trpcClient
 
 		const url = new URL(`${endpoint}/api/upload-cli-session-blob`)
 		url.searchParams.set("session_id", sessionId)
@@ -202,18 +202,13 @@ export class SessionClient {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${token}`,
+				Authorization: `Bearer ${await getToken()}`,
 			},
 			body: JSON.stringify(blobData),
 		})
 
 		if (!response.ok) {
-			const errorData = await response.json().catch(() => ({}))
-			throw new Error(
-				`Blob upload failed: ${response.status} ${response.statusText}${
-					errorData.error ? ` - ${errorData.error}` : ""
-				}`,
-			)
+			throw new Error(`uploadBlob failed: ${url.toString()} ${response.status}`)
 		}
 
 		return response.json()

@@ -8,6 +8,11 @@ type HttpMethod = "GET" | "POST"
  */
 export type TrpcResponse<T> = { result: { data: T } }
 
+export interface TrpcClientDependencies {
+	getToken: () => Promise<string>
+	apiConfig: IApiConfig
+}
+
 /**
  * Client for making tRPC requests to the KiloCode API.
  * Handles authentication and request formatting.
@@ -15,13 +20,11 @@ export type TrpcResponse<T> = { result: { data: T } }
 export class TrpcClient {
 	public readonly endpoint: string
 
-	constructor(
-		public readonly token: string,
-		readonly apiConfig: IApiConfig,
-		private readonly logger: ILogger,
-	) {
-		this.endpoint = apiConfig.getApiUrl()
-		this.logger.debug("Initiated TrpcClient", "TrpcClient")
+	public readonly getToken: () => Promise<string>
+
+	constructor(dependencies: TrpcClientDependencies) {
+		this.endpoint = dependencies.apiConfig.getApiUrl()
+		this.getToken = dependencies.getToken
 	}
 
 	/**
@@ -46,7 +49,7 @@ export class TrpcClient {
 			method,
 			headers: {
 				"Content-Type": "application/json",
-				Authorization: `Bearer ${this.token}`,
+				Authorization: `Bearer ${await this.getToken()}`,
 			},
 			...(method === "POST" && input && { body: JSON.stringify(input) }),
 		})

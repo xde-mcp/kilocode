@@ -9,7 +9,7 @@ import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
 import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, ShareSessionOutput, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
-import { TrpcClient } from "./TrpcClient.js"
+import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
 import type { IApiConfig } from "../types/IApiConfig.js"
 
 const defaultPaths = {
@@ -24,14 +24,12 @@ interface SessionCreatedMessage {
 	event: "session_created"
 }
 
-export interface SessionManagerDependencies {
+export interface SessionManagerDependencies extends TrpcClientDependencies {
 	pathProvider: IPathProvider
 	logger: ILogger
 	extensionMessenger: IExtensionMessenger
 	onSessionCreated?: (message: SessionCreatedMessage) => void
 	onSessionRestored?: () => void
-	token: string
-	apiConfig: IApiConfig
 }
 
 /**
@@ -66,7 +64,11 @@ export class SessionManager {
 		this.onSessionCreated = dependencies.onSessionCreated ?? (() => {})
 		this.onSessionRestored = dependencies.onSessionRestored ?? (() => {})
 
-		const trpcClient = new TrpcClient(dependencies.token, dependencies.apiConfig, this.logger)
+		const trpcClient = new TrpcClient({
+			apiConfig: dependencies.apiConfig,
+			getToken: dependencies.getToken,
+		})
+
 		this.sessionClient = new SessionClient(trpcClient)
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
