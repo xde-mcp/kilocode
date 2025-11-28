@@ -26,7 +26,7 @@ import { getModelIdKey } from "./constants/providers/models.js"
 import type { ProviderName } from "./types/messages.js"
 import { CliApiConfig, KiloCodePathProvider, ExtensionMessengerAdapter } from "./services/session-adapters.js"
 import { getKiloToken } from "./config/persistence.js"
-import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
+import { SessionManager } from "../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Main application class that orchestrates the CLI lifecycle

@@ -5,7 +5,7 @@
 import { generateMessage } from "../ui/utils/messages.js"
 import type { Command, CommandContext, ArgumentProviderContext, ArgumentSuggestion } from "./core/types.js"
 import { formatRelativeTime } from "../utils/time.js"
-import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
+import { SessionManager } from "../../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Show current session ID

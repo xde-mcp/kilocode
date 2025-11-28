@@ -2,7 +2,7 @@
  * /new command - Start a new task with a clean slate
  */
 
-import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
+import { SessionManager } from "../../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 import { createWelcomeMessage } from "../ui/utils/welcomeMessage.js"
 import type { Command } from "./core/types.js"
 
