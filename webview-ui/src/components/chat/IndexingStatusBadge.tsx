@@ -12,7 +12,7 @@ import { PopoverTrigger, StandardTooltip, Button } from "@src/components/ui"
 
 import { CodeIndexPopover } from "./CodeIndexPopover" // kilocode_change
 import { useManagedIndexerState, useIsIndexing } from "./hooks/useManagedIndexerState" // kilocode_change
-import { TabbedCodeIndexPopover } from "./kilocode/TabbedCodeIndexPopover" // kilocode_change
+import { ManagedCodeIndexPopover } from "./kilocode/ManagedCodeIndexPopover" // kilocode_change
 
 interface IndexingStatusBadgeProps {
 	className?: string
@@ -133,7 +133,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 	}, [indexingStatus.systemStatus])
 
 	// Use ManagedCodeIndexPopover when organization is available, otherwise use regular CodeIndexPopover
-	const PopoverComponent = managedIndexerState.isEnabled ? TabbedCodeIndexPopover : CodeIndexPopover // kilocode_change
+	const PopoverComponent = managedIndexerState.isEnabled ? ManagedCodeIndexPopover : CodeIndexPopover // kilocode_change
 
 	return (
 		<PopoverComponent indexingStatus={indexingStatus}>

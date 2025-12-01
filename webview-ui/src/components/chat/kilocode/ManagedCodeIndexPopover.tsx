@@ -17,7 +17,7 @@ interface CodeIndexPopoverProps {
 	indexingStatus: IndexingStatus
 }
 
-export const TabbedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({ children }) => {
+export const ManagedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({ children }) => {
 	const [open, setOpen] = useState(false)
 	const closeHandlerRef = useRef<() => void>(() => setOpen(false))
 
@@ -49,13 +49,13 @@ export const TabbedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({ childr
 				collisionPadding={16}
 				avoidCollisions={true}
 				container={portalContainer}>
-				<TabbedCodeIndexPopoverTabs />
+				<Content />
 			</PopoverContent>
 		</Popover>
 	)
 }
 
-const TabbedCodeIndexPopoverTabs = () => {
+const Content = () => {
 	const state = useExtensionState()
 	const orgId = state.apiConfiguration?.kilocodeOrganizationId
 	const href = `https://kilo.ai/organizations/${orgId}/code-indexing`
@@ -77,6 +77,29 @@ const TabbedCodeIndexPopoverTabs = () => {
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
 	}, [])
+
+	if (workspaceFolders.length === 0) {
+		return (
+			<>
+				<div className="p-3 cursor-default">
+					<div className="flex flex-row items-center gap-1 p-0 mt-0 mb-1 w-full">
+						<h4 className="m-0 pb-2 flex-1">Managed Code Indexing</h4>
+					</div>
+					<p className="my-0 pr-4 text-sm w-full mb-3">
+						<VSCodeLink href={href}>Configure on kilo.ai</VSCodeLink>
+					</p>
+				</div>
+
+				<div className="border-t border-vscode-dropdown-border" />
+
+				<div className="p-4">
+					<p className="text-sm text-vscode-descriptionForeground">
+						Managed code indexing is only available when workspace folders are git repositories.
+					</p>
+				</div>
+			</>
+		)
+	}
 
 	return (
 		<>
