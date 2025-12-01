@@ -73,7 +73,9 @@ export async function kilo_destroySessionManager() {
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export async function kilo_execIfExtension(cb: Function) {
-	if (!kilo_isCli()) {
-		await cb()
+	if (kilo_isCli()) {
+		return
 	}
+
+	await cb()
 }
