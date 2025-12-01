@@ -96,6 +96,7 @@ jobs:
                   name: cli-packaged
                   path: cli/dist/*.tgz
                   retention-days: 1
+                  compression-level: 0
 
     publish-npm:
         needs: [check-version, build-and-test]
