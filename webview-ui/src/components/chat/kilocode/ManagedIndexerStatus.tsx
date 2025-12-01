@@ -86,7 +86,7 @@ export const ManagedIndexerStatus: React.FC<ManagedIndexerStatusProps> = ({ work
 									: folder.error
 										? "Error"
 										: folder.hasManifest
-											? "Ready"
+											? "Indexed"
 											: "Standby"}
 							</span>
 						</button>
@@ -121,7 +121,7 @@ export const ManagedIndexerStatus: React.FC<ManagedIndexerStatusProps> = ({ work
 								)}
 
 								{/* File Count */}
-								{folder.hasManifest && (
+								{folder.hasManifest && Boolean(folder.manifestFileCount) && (
 									<div className="flex justify-between">
 										<span>Files indexed:</span>
 										<span className="font-medium text-vscode-foreground">

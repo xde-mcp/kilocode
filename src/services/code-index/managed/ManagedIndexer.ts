@@ -63,7 +63,8 @@ interface ManagedIndexerWorkspaceFolderState {
 }
 
 export class ManagedIndexer implements vscode.Disposable {
-	static prevInstance: ManagedIndexer | null = null
+	private static prevInstance: ManagedIndexer | null = null
+
 	static getInstance(): ManagedIndexer {
 		if (!ManagedIndexer.prevInstance) {
 			throw new Error("[ManagedIndexer.getInstance()] no available instance")
@@ -684,7 +685,7 @@ export class ManagedIndexer implements vscode.Disposable {
 						}
 					}
 				},
-				{ concurrency: 20 },
+				{ concurrency: 5 },
 			)
 
 			// Force a re-fetch of the manifest

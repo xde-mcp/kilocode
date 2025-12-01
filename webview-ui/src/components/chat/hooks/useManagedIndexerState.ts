@@ -43,18 +43,10 @@ export function useManagedIndexerState(): ManagedIndexerState {
 
 	useEffect(() => {
 		// Request initial state
-		vscode.postMessage({ type: "requestManagedIndexerEnabled" as any })
+		vscode.postMessage({ type: "requestManagedIndexerState" as any })
 
 		const handleMessage = (event: MessageEvent<any>) => {
-			// Listen for both legacy and new message types
-			if (event.data.type === "managedIndexerEnabled") {
-				// Legacy message format - just has the enabled flag
-				setState({
-					isEnabled: event.data.managedIndexerEnabled === true,
-					isActive: false,
-					workspaceFolders: [],
-				})
-			} else if (event.data.type === "managedIndexerState") {
+			if (event.data.type === "managedIndexerState") {
 				// New message format - has full state
 				const parsed = parseManagedIndexerStateMessage(event.data)
 				if (parsed) {
