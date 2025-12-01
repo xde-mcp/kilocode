@@ -3875,6 +3875,8 @@ export const webviewMessageHandler = async (
 
 				await sessionService.forkSession(message.shareId, true)
 
+				await provider.postStateToWebview()
+
 				vscode.window.showInformationMessage(`Session forked successfully from ${message.shareId}`)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
