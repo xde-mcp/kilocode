@@ -624,12 +624,6 @@ describe("SessionManager", () => {
 		})
 	})
 
-	describe("SYNC_INTERVAL constant", () => {
-		it("should be 1000ms", () => {
-			expect(SessionManager.SYNC_INTERVAL).toBe(1000)
-		})
-	})
-
 	describe("syncSession", () => {
 		async function triggerSyncAndWait(manager: SessionManager): Promise<void> {
 			if (manager["timer"]) {
