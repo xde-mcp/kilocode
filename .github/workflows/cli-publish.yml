@@ -109,7 +109,8 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  registry-url: 'https://registry.npmjs.org'
+            - name: Update npm
+              run: npm install -g npm@latest
             - name: Download Build Artifact
               uses: actions/download-artifact@v4
               with:
@@ -117,7 +118,7 @@ jobs:
                   path: cli/dist
             - name: Publish to NPM
               working-directory: cli/dist
-              run: npm publish --access public
+              run: npm publish --access public --provenance
     
     pack-npm:
         needs: [check-version, build-and-test]
