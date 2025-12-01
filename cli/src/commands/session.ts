@@ -198,7 +198,7 @@ async function shareSession(context: CommandContext): Promise<void> {
 		addMessage({
 			...generateMessage(),
 			type: "system",
-			content: `✅ Session shared successfully!\n\n\`https://kilo.ai/share/${result.share_id}\``,
+			content: `✅ Session shared successfully!\n\n\`https://app.kilo.ai/share/${result.share_id}\``,
 		})
 	} catch (error) {
 		addMessage({
