@@ -1,5 +1,5 @@
 import type { HistoryItem } from "@roo-code/types"
-import { WebviewMessage } from "../../../WebviewMessage"
+import type { WebviewMessage } from "../../../WebviewMessage"
 export type { HistoryItem, WebviewMessage }
 
 /**
