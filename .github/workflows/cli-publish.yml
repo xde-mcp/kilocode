@@ -87,12 +87,16 @@ jobs:
                   CI: true
                   KILOCODE_TOKEN: ${{ secrets.KILOCODE_INTEGRATION_TOKEN }}
                   KILOCODE_ORGANIZATION_ID: ${{ secrets.KILOCODE_INTEGRATION_ORGANIZATION_ID }}
-            - name: Upload Build Artifact
+            - name: Pack CLI
+              working-directory: cli/dist
+              run: npm pack
+            - name: Upload Packaged CLI
               uses: actions/upload-artifact@v4
               with:
-                  name: cli-build
-                  path: cli/dist
+                  name: cli-packaged
+                  path: cli/dist/*.tgz
                   retention-days: 1
+                  compression-level: 0
 
     publish-npm:
         needs: [check-version, build-and-test]
@@ -109,41 +113,21 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ env.NODE_VERSION }}
-                  registry-url: 'https://registry.npmjs.org'
+            - name: Update npm
+              run: npm install -g npm@latest
             - name: Download Build Artifact
               uses: actions/download-artifact@v4
               with:
-                  name: cli-build
+                  name: cli-packaged
                   path: cli/dist
             - name: Publish to NPM
               working-directory: cli/dist
-              run: npm publish --access public
+              run: |
+                version=${{ needs.check-version.outputs.version }}
+                npm publish --access public --provenance kilocode-cli-${version}.tgz
     
-    pack-npm:
-        needs: [check-version, build-and-test]
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  ref: ${{ env.GIT_REF }}
-            - name: Download Build Artifact
-              uses: actions/download-artifact@v4
-              with:
-                  name: cli-build
-                  path: cli/dist
-            - name: Pack CLI
-              working-directory: cli/dist
-              run: npm pack
-            - name: Upload Packaged CLI
-              uses: actions/upload-artifact@v4
-              with:
-                  name: cli-packaged
-                  path: cli/dist/*.tgz
-                  retention-days: 1
-
     publish-docker-debian:
-        needs: [check-version, build-and-test, pack-npm]
+        needs: [check-version, build-and-test]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -183,7 +167,7 @@ jobs:
                       VCS_REF=${{ github.sha }}
 
     publish-docker-alpine:
-        needs: [check-version, build-and-test, pack-npm]
+        needs: [check-version, build-and-test]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -221,7 +205,7 @@ jobs:
                       VCS_REF=${{ github.sha }}
 
     create-release:
-        needs: [check-version, pack-npm, publish-npm, publish-docker-debian, publish-docker-alpine]
+        needs: [check-version, publish-npm, publish-docker-debian, publish-docker-alpine]
         runs-on: ubuntu-latest
         permissions:
             contents: write
