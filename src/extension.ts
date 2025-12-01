@@ -272,7 +272,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	try {
 		const { apiConfiguration } = await provider.getState()
 
-		kilo_initializeSessionManager({
+		await kilo_initializeSessionManager({
 			context: context,
 			kiloToken: apiConfiguration.kilocodeToken,
 			log: provider.log.bind(provider),
