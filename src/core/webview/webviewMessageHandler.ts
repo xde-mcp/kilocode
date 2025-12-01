@@ -3864,6 +3864,24 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		case "sessionFork": {
+			try {
+				if (!message.shareId) {
+					vscode.window.showErrorMessage("Share ID is required for forking a session")
+					break
+				}
+
+				const sessionService = SessionManager.init()
+
+				await sessionService.forkSession(message.shareId, true)
+
+				vscode.window.showInformationMessage(`Session forked successfully from ${message.shareId}`)
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to fork session: ${errorMessage}`)
+			}
+			break
+		}
 		case "singleCompletion": {
 			try {
 				const { text, completionRequestId } = message
