@@ -72,7 +72,6 @@ import { CodeIndexManager } from "../../services/code-index/manager"
 import type { IndexProgressUpdate } from "../../services/code-index/interfaces/manager"
 import { MdmService } from "../../services/mdm/MdmService"
 import { SessionManager } from "../../shared/kilocode/cli-sessions/core/SessionManager"
-import { ExtensionPathProvider, ExtensionLoggerAdapter, ExtensionMessengerImpl } from "../../services/kilo-session"
 
 import { fileExistsAtPath } from "../../utils/fs"
 import { setTtsEnabled, setTtsSpeed } from "../../utils/tts"
@@ -109,6 +108,10 @@ import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocod
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
 import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
+import {
+	kilo_destroySessionManager,
+	kilo_execIfExtension,
+} from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
@@ -463,54 +466,6 @@ export class ClineProvider
 		}
 	}
 
-	private kilo_isCli(): boolean {
-		return process.env.KILO_CLI_MODE === "true"
-	}
-
-	public async kilo_initializeSessionManager(): Promise<void> {
-		// cli manages its own session manager
-		if (this.kilo_isCli()) {
-			return
-		}
-
-		try {
-			const { apiConfiguration } = await this.getState()
-			const kiloToken = apiConfiguration.kilocodeToken
-
-			if (!kiloToken) {
-				this.log("SessionManager not initialized: No authentication token available")
-				return
-			}
-
-			const pathProvider = new ExtensionPathProvider(this.context)
-			const logger = new ExtensionLoggerAdapter(this.outputChannel)
-			const extensionMessenger = new ExtensionMessengerImpl(this)
-
-			const sessionManager = SessionManager.init({
-				pathProvider,
-				logger,
-				extensionMessenger,
-				getToken: () => Promise.resolve(kiloToken),
-				onSessionCreated: (message) => {
-					this.log(`Session created: ${message.sessionId}`)
-				},
-				onSessionRestored: () => {
-					this.log("Session restored")
-				},
-				platform: vscode.env.appName,
-			})
-
-			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-			if (workspaceFolder) {
-				sessionManager.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
-			}
-
-			this.log("SessionManager initialized successfully")
-		} catch (error) {
-			this.log(`Failed to initialize SessionManager: ${error instanceof Error ? error.message : String(error)}`)
-		}
-	}
-
 	// Adds a new Task instance to clineStack, marking the start of a new task.
 	// The instance is pushed to the top of the stack (LIFO order).
 	// When the task is completed, the top instance is removed, reactivating the
@@ -521,9 +476,7 @@ export class ClineProvider
 		this.clineStack.push(task)
 		task.emit(RooCodeEventName.TaskFocused)
 
-		if (!this.kilo_isCli()) {
-			await SessionManager.init().destroy()
-		}
+		await kilo_destroySessionManager()
 
 		// Perform special setup provider specific tasks.
 		await this.performPreparationTasks(task)
@@ -739,9 +692,7 @@ export class ClineProvider
 			this.autoPurgeScheduler = undefined
 		}
 
-		if (!this.kilo_isCli()) {
-			await SessionManager.init().destroy()
-		}
+		await kilo_destroySessionManager()
 		// kilocode_change end
 
 		this.log("Disposed all disposables")
@@ -1197,7 +1148,7 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		if (!this.kilo_isCli()) {
+		await kilo_execIfExtension(() => {
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
@@ -1211,7 +1162,7 @@ ${prompt}
 
 				SessionManager.init().setPath(taskId, "taskMetadataPath", filePath)
 			}
-		}
+		})
 
 		await this.view?.webview.postMessage(message)
 	}
@@ -1954,9 +1905,11 @@ ${prompt}
 	async refreshWorkspace() {
 		this.currentWorkspacePath = getWorkspacePath()
 
-		if (this.currentWorkspacePath && !this.kilo_isCli()) {
-			SessionManager.init().setWorkspaceDirectory(this.currentWorkspacePath)
-		}
+		await kilo_execIfExtension(() => {
+			if (this.currentWorkspacePath) {
+				SessionManager.init().setWorkspaceDirectory(this.currentWorkspacePath)
+			}
+		})
 
 		await this.postStateToWebview()
 	}
