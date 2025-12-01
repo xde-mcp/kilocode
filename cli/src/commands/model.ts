@@ -4,6 +4,8 @@
 
 import type { Command, ArgumentProviderContext, CommandContext } from "./core/types.js"
 import type { ModelRecord } from "../constants/providers/models.js"
+import type { ProviderConfig } from "../config/types.js"
+import type { RouterModels } from "../types/messages.js"
 import {
 	getModelsByProvider,
 	getCurrentModelId,
@@ -165,11 +167,59 @@ function paginateModels(
 	totalCount: number
 } {
 	const totalCount = modelIds.length
+	if (totalCount === 0) {
+		return { pageIds: [], pageCount: 0, totalCount: 0 }
+	}
 	const pageCount = Math.ceil(totalCount / pageSize)
 	const start = pageIndex * pageSize
 	const pageIds = modelIds.slice(start, start + pageSize)
 
 	return { pageIds, pageCount, totalCount }
+}
+/**
+ * Get filtered model IDs and page count based on current filters
+ * This helper avoids duplication in pagination functions
+ */
+function getFilteredModelsWithPageCount(params: {
+	currentProvider: ProviderConfig
+	routerModels: RouterModels | null
+	kilocodeDefaultModel: string
+	filters: {
+		search?: string
+		capabilities: ("images" | "cache" | "reasoning" | "free")[]
+	}
+}): {
+	models: ModelRecord
+	modelIds: string[]
+	pageCount: number
+	totalCount: number
+} {
+	const { currentProvider, routerModels, kilocodeDefaultModel, filters } = params
+
+	const { models } = getModelsByProvider({
+		provider: currentProvider.provider,
+		routerModels,
+		kilocodeDefaultModel,
+	})
+
+	// Apply search filter
+	let modelIds = filters.search ? fuzzyFilterModels(models, filters.search) : Object.keys(models)
+
+	// Apply capability filters
+	modelIds = filterModelsByCapabilities(
+		modelIds.reduce((acc, id) => {
+			const model = models[id]
+			if (model) {
+				acc[id] = model
+			}
+			return acc
+		}, {} as ModelRecord),
+		filters.capabilities,
+	)
+
+	const { pageCount, totalCount } = paginateModels(modelIds, 0)
+
+	return { models, modelIds, pageCount, totalCount }
 }
 
 /**
@@ -602,25 +652,12 @@ async function listModelsPage(context: CommandContext, pageNum: string): Promise
 	}
 
 	// Get total page count
-	const { models } = getModelsByProvider({
-		provider: currentProvider.provider,
+	const { pageCount } = getFilteredModelsWithPageCount({
+		currentProvider,
 		routerModels,
 		kilocodeDefaultModel,
+		filters: modelListFilters,
 	})
-
-	let modelIds = modelListFilters.search ? fuzzyFilterModels(models, modelListFilters.search) : Object.keys(models)
-	modelIds = filterModelsByCapabilities(
-		modelIds.reduce((acc, id) => {
-			const model = models[id]
-			if (model) {
-				acc[id] = model
-			}
-			return acc
-		}, {} as ModelRecord),
-		modelListFilters.capabilities,
-	)
-
-	const { pageCount } = paginateModels(modelIds, 0)
 
 	if (pageIndex >= pageCount) {
 		addMessage({
@@ -661,25 +698,12 @@ async function listModelsNext(context: CommandContext): Promise<void> {
 	}
 
 	// Get total page count
-	const { models } = getModelsByProvider({
-		provider: currentProvider.provider,
+	const { pageCount } = getFilteredModelsWithPageCount({
+		currentProvider,
 		routerModels,
 		kilocodeDefaultModel,
+		filters: modelListFilters,
 	})
-
-	let modelIds = modelListFilters.search ? fuzzyFilterModels(models, modelListFilters.search) : Object.keys(models)
-	modelIds = filterModelsByCapabilities(
-		modelIds.reduce((acc, id) => {
-			const model = models[id]
-			if (model) {
-				acc[id] = model
-			}
-			return acc
-		}, {} as ModelRecord),
-		modelListFilters.capabilities,
-	)
-
-	const { pageCount } = paginateModels(modelIds, 0)
 
 	if (modelListPageIndex >= pageCount - 1) {
 		addMessage({
