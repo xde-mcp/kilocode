@@ -1,9 +1,7 @@
-import { ClineProvider } from "../../../../core/webview/ClineProvider"
-import {
-	ExtensionLoggerAdapter,
-	ExtensionMessengerImpl,
-	ExtensionPathProvider,
-} from "../../../../services/kilo-session"
+import type { ClineProvider } from "../../../../core/webview/ClineProvider"
+import { ExtensionLoggerAdapter } from "../../../../services/kilo-session/ExtensionLoggerAdapter"
+import { ExtensionMessengerImpl } from "../../../../services/kilo-session/ExtensionMessengerImpl"
+import { ExtensionPathProvider } from "../../../../services/kilo-session/ExtensionPathProvider"
 import { SessionManager } from "../core/SessionManager"
 import * as vscode from "vscode"
 
