@@ -92,7 +92,8 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
     org.opencontainers.image.title="Kilo CLI (Alpine)" \
     org.opencontainers.image.description="Docker image for Kilo CLI (Alpine)" \
     org.opencontainers.image.vendor="Kilo" \
-    org.opencontainers.image.licenses="Apache-2.0"
+    org.opencontainers.image.licenses="Apache-2.0" \
+    org.opencontainers.image.url="https://hub.docker.com/r/kiloai/cli"
 
 # Install App
 COPY dist/kilocode-cli-${VERSION}.tgz /tmp/kilocode-cli.tgz
@@ -120,7 +121,8 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
     org.opencontainers.image.title="Kilo CLI" \
     org.opencontainers.image.description="Docker image for Kilo CLI" \
     org.opencontainers.image.vendor="Kilo" \
-    org.opencontainers.image.licenses="Apache-2.0"
+    org.opencontainers.image.licenses="Apache-2.0" \
+    org.opencontainers.image.url="https://hub.docker.com/r/kiloai/cli"
 
 # Install App
 COPY dist/kilocode-cli-${VERSION}.tgz /tmp/kilocode-cli.tgz
