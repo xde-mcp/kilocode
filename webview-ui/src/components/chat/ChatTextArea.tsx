@@ -610,6 +610,15 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				if (shouldSendMessage) {
 					event.preventDefault()
 
+					const trimmedInput = inputValue.trim()
+					if (trimmedInput.startsWith("/session share")) {
+						console.log("Hello share!")
+						return
+					} else if (trimmedInput.startsWith("/session fork")) {
+						console.log("Hello fork!")
+						return
+					}
+
 					resetHistoryNavigation()
 					onSend()
 				}
