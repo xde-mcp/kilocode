@@ -2560,7 +2560,9 @@ export const webviewMessageHandler = async (
 				}
 
 				try {
+					// Skip auto-switch in YOLO mode (cloud agents, CI) to prevent usage billing issues
 					const shouldAutoSwitch =
+						!getGlobalState("yoloMode") &&
 						response.data.organizations &&
 						response.data.organizations.length > 0 &&
 						!apiConfiguration.kilocodeOrganizationId &&
@@ -3832,6 +3834,51 @@ export const webviewMessageHandler = async (
 			})
 			break
 		}
+		// kilocode_change start
+		case "addTaskToHistory": {
+			if (message.historyItem) {
+				await provider.updateTaskHistory(message.historyItem)
+				await provider.postStateToWebview()
+			}
+			break
+		}
+		case "singleCompletion": {
+			try {
+				const { text, completionRequestId } = message
+
+				if (!completionRequestId) {
+					throw new Error("Missing completionRequestId")
+				}
+
+				if (!text) {
+					throw new Error("Missing prompt text")
+				}
+
+				// Always use current configuration
+				const config = (await provider.getState()).apiConfiguration
+
+				// Call the single completion handler
+				const result = await singleCompletionHandler(config, text)
+
+				// Send success response
+				await provider.postMessageToWebview({
+					type: "singleCompletionResult",
+					completionRequestId,
+					completionText: result,
+					success: true,
+				})
+			} catch (error) {
+				// Send error response
+				await provider.postMessageToWebview({
+					type: "singleCompletionResult",
+					completionRequestId: message.completionRequestId,
+					completionError: error instanceof Error ? error.message : String(error),
+					success: false,
+				})
+			}
+			break
+		}
+		// kilocode_change end
 		// kilocode_change start - ManagedIndexer state
 		case "requestManagedIndexerState": {
 			try {

@@ -256,7 +256,10 @@ export interface WebviewMessage {
 		| "getDismissedUpsells"
 		| "updateSettings"
 		| "requestManagedIndexerState" // kilocode_change
+		| "addTaskToHistory" // kilocode_change
+		| "singleCompletion" // kilocode_change
 	text?: string
+	completionRequestId?: string // kilocode_change
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
@@ -322,6 +325,7 @@ export interface WebviewMessage {
 	upsellId?: string // For dismissUpsell
 	list?: string[] // For dismissedUpsells response
 	organizationId?: string | null // For organization switching
+	historyItem?: HistoryItem // kilocode_change For addTaskToHistory
 	codeIndexSettings?: {
 		// Global state settings
 		codebaseIndexEnabled: boolean

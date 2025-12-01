@@ -171,19 +171,27 @@ export interface ExtensionMessage {
 		| "commands"
 		| "insertTextIntoTextarea"
 		| "dismissedUpsells"
-		| "showTimestamps" // kilocode_change
-		| "organizationSwitchResult"
 		| "interactionRequired"
+		| "organizationSwitchResult"
+		| "showTimestamps" // kilocode_change
+		| "apiMessagesSaved" // kilocode_change: File save event for API messages
+		| "taskMessagesSaved" // kilocode_change: File save event for task messages
+		| "taskMetadataSaved" // kilocode_change: File save event for task metadata
+		| "managedIndexerState" // kilocode_change
+		| "singleCompletionResult" // kilocode_change
 		| "managedIndexerState" // kilocode_change
 		| "managedIndexerEnabled" // kilocode_change
-		| "organizationSwitchResult"
 	text?: string
 	// kilocode_change start
+	completionRequestId?: string // Correlation ID from request
+	completionText?: string // The completed text
+	completionError?: string // Error message if failed
 	payload?:
 		| ProfileDataResponsePayload
 		| BalanceDataResponsePayload
 		| TasksByIdResponsePayload
 		| TaskHistoryResponsePayload
+		| [string, string] // For file save events [taskId, filePath]
 	// kilocode_change end
 	// Checkpoint warning message
 	checkpointWarning?: {
