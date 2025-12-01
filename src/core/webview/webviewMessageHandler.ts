@@ -3853,7 +3853,7 @@ export const webviewMessageHandler = async (
 				}
 
 				const result = await sessionService.shareSession()
-				const shareUrl = `https://kilo.ai/share/${result.share_id}`
+				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
 				// Copy URL to clipboard and show success notification
 				await vscode.env.clipboard.writeText(shareUrl)
