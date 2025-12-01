@@ -163,6 +163,26 @@ export {
 } from "./notifications.js"
 
 // ============================================================================
+// Model List Atoms - Model list pagination, sorting, and filtering
+// ============================================================================
+export {
+	// Core model list atoms
+	modelListPageIndexAtom,
+	modelListFiltersAtom,
+
+	// Model list action atoms
+	updateModelListFiltersAtom,
+	changeModelListPageAtom,
+	resetModelListStateAtom,
+
+	// Constants and types
+	MODEL_LIST_PAGE_SIZE,
+	defaultModelListFilters,
+	type ModelListFilters,
+	type ModelListState,
+} from "./modelList.js"
+
+// ============================================================================
 // UI Atoms - Command-based UI state
 // ============================================================================
 export {

@@ -3,7 +3,7 @@
  */
 
 import type { Command, ArgumentProviderContext, CommandContext } from "./core/types.js"
-import type { ModelInfo } from "../constants/providers/models.js"
+import type { ModelRecord } from "../constants/providers/models.js"
 import {
 	getModelsByProvider,
 	getCurrentModelId,
@@ -13,6 +13,22 @@ import {
 	formatPrice,
 	prettyModelName,
 } from "../constants/providers/models.js"
+import { MODEL_LIST_PAGE_SIZE } from "../state/atoms/modelList.js"
+
+/**
+ * Sort options for model list
+ */
+const MODEL_SORT_OPTIONS: Record<string, string> = {
+	name: "name",
+	context: "context",
+	price: "price",
+	preferred: "preferred",
+}
+
+/**
+ * Filter options for model list
+ */
+const MODEL_FILTER_OPTIONS = ["images", "cache", "reasoning", "free", "all"]
 
 /**
  * Ensure router models are loaded for the current provider
@@ -71,6 +87,89 @@ async function ensureRouterModels(context: CommandContext): Promise<boolean> {
 	}
 
 	return true
+}
+
+/**
+ * Sort models by different criteria
+ */
+function sortModels(models: ModelRecord, sortBy: string): string[] {
+	const modelIds = Object.keys(models)
+
+	switch (sortBy) {
+		case "name":
+			return modelIds.sort((a, b) => a.localeCompare(b))
+		case "context":
+			return modelIds.sort((a, b) => (models[b]?.contextWindow || 0) - (models[a]?.contextWindow || 0))
+		case "price":
+			return modelIds.sort((a, b) => {
+				const priceA = models[a]?.inputPrice ?? Infinity
+				const priceB = models[b]?.inputPrice ?? Infinity
+				return priceA - priceB
+			})
+		case "preferred":
+		default:
+			return sortModelsByPreference(models)
+	}
+}
+
+/**
+ * Filter models by capabilities
+ */
+function filterModelsByCapabilities(models: ModelRecord, capabilities: string[]): string[] {
+	if (capabilities.length === 0) {
+		return Object.keys(models)
+	}
+
+	return Object.keys(models).filter((id) => {
+		const model = models[id]
+		if (!model) return false
+
+		return capabilities.every((cap) => {
+			switch (cap) {
+				case "images":
+					return model.supportsImages === true
+				case "cache":
+					return model.supportsPromptCache === true
+				case "reasoning":
+					return (
+						model.supportsReasoningEffort === true ||
+						model.supportsReasoningBudget === true ||
+						(Array.isArray(model.supportsReasoningEffort) && model.supportsReasoningEffort.length > 0)
+					)
+				case "free":
+					// Consider a model free if it has isFree flag OR if both input and output prices are 0
+					return (
+						model.isFree === true ||
+						(model.inputPrice !== undefined &&
+							model.outputPrice !== undefined &&
+							model.inputPrice === 0 &&
+							model.outputPrice === 0)
+					)
+				default:
+					return true
+			}
+		})
+	})
+}
+
+/**
+ * Paginate model list
+ */
+function paginateModels(
+	modelIds: string[],
+	pageIndex: number,
+	pageSize: number = MODEL_LIST_PAGE_SIZE,
+): {
+	pageIds: string[]
+	pageCount: number
+	totalCount: number
+} {
+	const totalCount = modelIds.length
+	const pageCount = Math.ceil(totalCount / pageSize)
+	const start = pageIndex * pageSize
+	const pageIds = modelIds.slice(start, start + pageSize)
+
+	return { pageIds, pageCount, totalCount }
 }
 
 /**
@@ -316,10 +415,20 @@ async function selectModel(context: CommandContext, modelId: string): Promise<vo
 }
 
 /**
- * List all available models
+ * List all available models with pagination
  */
-async function listModels(context: CommandContext, filter?: string): Promise<void> {
-	const { currentProvider, routerModels, kilocodeDefaultModel, addMessage } = context
+async function listModels(
+	context: CommandContext,
+	searchFilter?: string,
+	pageIndexOverride?: number,
+	filtersOverride?: { sort?: string; capabilities?: string[] },
+): Promise<void> {
+	const { currentProvider, routerModels, kilocodeDefaultModel, addMessage, modelListPageIndex, modelListFilters } =
+		context
+
+	// Use overrides if provided, otherwise use context values
+	const effectivePageIndex = pageIndexOverride !== undefined ? pageIndexOverride : modelListPageIndex
+	const effectiveFilters = filtersOverride ? { ...modelListFilters, ...filtersOverride } : modelListFilters
 
 	if (!currentProvider) {
 		addMessage({
@@ -349,42 +458,73 @@ async function listModels(context: CommandContext, filter?: string): Promise<voi
 		kilocodeDefaultModel,
 	})
 
-	let modelIds = filter ? fuzzyFilterModels(models, filter) : Object.keys(models)
-	modelIds = sortModelsByPreference(
-		modelIds.reduce(
-			(acc, id) => {
-				const model = models[id]
-				if (model) {
-					acc[id] = model
-				}
-				return acc
-			},
-			{} as Record<string, ModelInfo>,
-		),
+	// Apply search filter if provided (overrides stored search)
+	const effectiveSearch = searchFilter || modelListFilters.search
+	let modelIds = effectiveSearch ? fuzzyFilterModels(models, effectiveSearch) : Object.keys(models)
+
+	// Apply capability filters
+	modelIds = filterModelsByCapabilities(
+		modelIds.reduce((acc, id) => {
+			const model = models[id]
+			if (model) {
+				acc[id] = model
+			}
+			return acc
+		}, {} as ModelRecord),
+		effectiveFilters.capabilities,
+	)
+
+	// Apply sorting
+	modelIds = sortModels(
+		modelIds.reduce((acc, id) => {
+			const model = models[id]
+			if (model) {
+				acc[id] = model
+			}
+			return acc
+		}, {} as ModelRecord),
+		effectiveFilters.sort,
 	)
 
 	if (modelIds.length === 0) {
 		addMessage({
 			id: Date.now().toString(),
 			type: "system",
-			content: filter ? `No models found matching "${filter}".` : "No models available for this provider.",
+			content: effectiveSearch
+				? `No models found matching "${effectiveSearch}".`
+				: "No models available for this provider.",
 			ts: Date.now(),
 		})
 		return
 	}
+
+	// Paginate results
+	const { pageIds, pageCount, totalCount } = paginateModels(modelIds, effectivePageIndex)
 
 	const providerName = currentProvider.provider
 		.split("-")
 		.map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(" ")
 
-	let content = `**Available Models (${providerName})**`
-	if (filter) {
-		content += ` - Filtered by "${filter}"`
-	}
-	content += `:\n\n`
+	let content = `**Available Models (${providerName})** - Page ${effectivePageIndex + 1}/${pageCount}\n`
 
-	for (const modelId of modelIds) {
+	// Show active filters
+	const filterParts: string[] = []
+	if (effectiveFilters.sort !== "preferred") {
+		filterParts.push(`Sort: ${effectiveFilters.sort}`)
+	}
+	if (effectiveFilters.capabilities.length > 0) {
+		filterParts.push(`Filter: ${effectiveFilters.capabilities.join(", ")}`)
+	}
+	if (effectiveSearch) {
+		filterParts.push(`Search: "${effectiveSearch}"`)
+	}
+	if (filterParts.length > 0) {
+		content += filterParts.join(" | ") + "\n"
+	}
+	content += `\n`
+
+	for (const modelId of pageIds) {
 		const model = models[modelId]
 		if (!model) continue
 
@@ -407,15 +547,284 @@ async function listModels(context: CommandContext, filter?: string): Promise<voi
 		content += `\n`
 	}
 
-	content += `**Total:** ${modelIds.length} model${modelIds.length !== 1 ? "s" : ""}\n`
-	content += `\nUse \`/model select <model>\` to switch models\n`
-	content += `Use \`/model info <model>\` for detailed information\n`
+	const start = effectivePageIndex * MODEL_LIST_PAGE_SIZE + 1
+	const end = Math.min((effectivePageIndex + 1) * MODEL_LIST_PAGE_SIZE, totalCount)
+	content += `**Showing ${start}-${end} of ${totalCount} model${totalCount !== 1 ? "s" : ""}**\n\n`
+
+	// Show navigation hints
+	if (pageCount > 1) {
+		if (effectivePageIndex < pageCount - 1) {
+			content += `Use \`/model list next\` for next page\n`
+		}
+		if (effectivePageIndex > 0) {
+			content += `Use \`/model list prev\` for previous page\n`
+		}
+		content += `Use \`/model list page <n>\` to go to a specific page\n`
+	}
+	content += `Use \`/model list sort <option>\` to change sort order\n`
+	content += `Use \`/model list filter <option>\` to filter by capability\n`
 
 	addMessage({
 		id: Date.now().toString(),
 		type: "system",
 		content,
 		ts: Date.now(),
+	})
+}
+
+/**
+ * Change to a specific page
+ */
+async function listModelsPage(context: CommandContext, pageNum: string): Promise<void> {
+	const { currentProvider, routerModels, kilocodeDefaultModel, addMessage, changeModelListPage, modelListFilters } =
+		context
+
+	if (!currentProvider) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: "No provider configured.",
+			ts: Date.now(),
+		})
+		return
+	}
+
+	const pageIndex = parseInt(pageNum, 10) - 1 // Convert to 0-based index
+
+	if (isNaN(pageIndex) || pageIndex < 0) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: "Invalid page number. Must be a positive number.",
+			ts: Date.now(),
+		})
+		return
+	}
+
+	// Get total page count
+	const { models } = getModelsByProvider({
+		provider: currentProvider.provider,
+		routerModels,
+		kilocodeDefaultModel,
+	})
+
+	let modelIds = modelListFilters.search ? fuzzyFilterModels(models, modelListFilters.search) : Object.keys(models)
+	modelIds = filterModelsByCapabilities(
+		modelIds.reduce((acc, id) => {
+			const model = models[id]
+			if (model) {
+				acc[id] = model
+			}
+			return acc
+		}, {} as ModelRecord),
+		modelListFilters.capabilities,
+	)
+
+	const { pageCount } = paginateModels(modelIds, 0)
+
+	if (pageIndex >= pageCount) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Invalid page number. Must be between 1 and ${pageCount}.`,
+			ts: Date.now(),
+		})
+		return
+	}
+
+	changeModelListPage(pageIndex)
+	await listModels(context, undefined, pageIndex)
+}
+
+/**
+ * Go to next page
+ */
+async function listModelsNext(context: CommandContext): Promise<void> {
+	const {
+		currentProvider,
+		routerModels,
+		kilocodeDefaultModel,
+		addMessage,
+		changeModelListPage,
+		modelListPageIndex,
+		modelListFilters,
+	} = context
+
+	if (!currentProvider) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: "No provider configured.",
+			ts: Date.now(),
+		})
+		return
+	}
+
+	// Get total page count
+	const { models } = getModelsByProvider({
+		provider: currentProvider.provider,
+		routerModels,
+		kilocodeDefaultModel,
+	})
+
+	let modelIds = modelListFilters.search ? fuzzyFilterModels(models, modelListFilters.search) : Object.keys(models)
+	modelIds = filterModelsByCapabilities(
+		modelIds.reduce((acc, id) => {
+			const model = models[id]
+			if (model) {
+				acc[id] = model
+			}
+			return acc
+		}, {} as ModelRecord),
+		modelListFilters.capabilities,
+	)
+
+	const { pageCount } = paginateModels(modelIds, 0)
+
+	if (modelListPageIndex >= pageCount - 1) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "system",
+			content: "Already on the last page.",
+			ts: Date.now(),
+		})
+		return
+	}
+
+	const newPageIndex = modelListPageIndex + 1
+	changeModelListPage(newPageIndex)
+	await listModels(context, undefined, newPageIndex)
+}
+
+/**
+ * Go to previous page
+ */
+async function listModelsPrev(context: CommandContext): Promise<void> {
+	const { addMessage, changeModelListPage, modelListPageIndex } = context
+
+	if (modelListPageIndex <= 0) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "system",
+			content: "Already on the first page.",
+			ts: Date.now(),
+		})
+		return
+	}
+
+	const newPageIndex = modelListPageIndex - 1
+	changeModelListPage(newPageIndex)
+	await listModels(context, undefined, newPageIndex)
+}
+
+/**
+ * Change sort order
+ */
+async function listModelsSort(context: CommandContext, sortOption: string): Promise<void> {
+	const { addMessage, updateModelListFilters } = context
+
+	const validSorts = Object.keys(MODEL_SORT_OPTIONS)
+	const mappedSort = MODEL_SORT_OPTIONS[sortOption]
+
+	if (!mappedSort) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Invalid sort option. Valid options: ${validSorts.join(", ")}`,
+			ts: Date.now(),
+		})
+		return
+	}
+
+	const newSort = mappedSort as "name" | "context" | "price" | "preferred"
+	updateModelListFilters({ sort: newSort })
+	await listModels(context, undefined, undefined, { sort: newSort })
+}
+
+/**
+ * Change filter
+ */
+async function listModelsFilter(context: CommandContext, filterOption: string): Promise<void> {
+	const { addMessage, updateModelListFilters, modelListFilters } = context
+
+	if (!MODEL_FILTER_OPTIONS.includes(filterOption)) {
+		addMessage({
+			id: Date.now().toString(),
+			type: "error",
+			content: `Invalid filter option. Valid options: ${MODEL_FILTER_OPTIONS.join(", ")}`,
+			ts: Date.now(),
+		})
+		return
+	}
+
+	let newCapabilities: ("images" | "cache" | "reasoning" | "free")[]
+
+	if (filterOption === "all") {
+		// Clear all filters
+		newCapabilities = []
+		updateModelListFilters({ capabilities: [] })
+	} else {
+		// Toggle the filter
+		const currentCapabilities = modelListFilters.capabilities
+		const capability = filterOption as "images" | "cache" | "reasoning" | "free"
+
+		if (currentCapabilities.includes(capability)) {
+			// Remove filter
+			newCapabilities = currentCapabilities.filter((c) => c !== capability)
+			updateModelListFilters({ capabilities: newCapabilities })
+		} else {
+			// Add filter
+			newCapabilities = [...currentCapabilities, capability]
+			updateModelListFilters({ capabilities: newCapabilities })
+		}
+	}
+
+	await listModels(context, undefined, undefined, { capabilities: newCapabilities })
+}
+
+/**
+ * Autocomplete provider for list subcommands
+ */
+async function listSubcommandAutocompleteProvider(_context: ArgumentProviderContext) {
+	return [
+		{ value: "page", description: "Go to a specific page", matchScore: 1.0, highlightedValue: "page" },
+		{ value: "next", description: "Go to next page", matchScore: 1.0, highlightedValue: "next" },
+		{ value: "prev", description: "Go to previous page", matchScore: 1.0, highlightedValue: "prev" },
+		{ value: "sort", description: "Change sort order", matchScore: 1.0, highlightedValue: "sort" },
+		{ value: "filter", description: "Filter by capability", matchScore: 1.0, highlightedValue: "filter" },
+	]
+}
+
+/**
+ * Autocomplete provider for sort options
+ */
+async function sortOptionAutocompleteProvider(_context: ArgumentProviderContext) {
+	return Object.keys(MODEL_SORT_OPTIONS).map((option) => ({
+		value: option,
+		description: `Sort by ${option}`,
+		matchScore: 1.0,
+		highlightedValue: option,
+	}))
+}
+
+/**
+ * Autocomplete provider for filter options
+ */
+async function filterOptionAutocompleteProvider(_context: ArgumentProviderContext) {
+	return MODEL_FILTER_OPTIONS.map((option) => {
+		const descriptions: Record<string, string> = {
+			images: "Models supporting images",
+			cache: "Models with prompt cache",
+			reasoning: "Models with reasoning capabilities",
+			free: "Free models only",
+			all: "Clear all filters",
+		}
+		return {
+			value: option,
+			description: descriptions[option] || option,
+			matchScore: 1.0,
+			highlightedValue: option,
+		}
 	})
 }
 
@@ -466,7 +875,18 @@ export const modelCommand: Command = {
 	aliases: ["mdl"],
 	description: "View and manage AI models",
 	usage: "/model [subcommand] [args]",
-	examples: ["/model", "/model info claude-sonnet-4.5", "/model select gpt-4", "/model list", "/model list claude"],
+	examples: [
+		"/model",
+		"/model info claude-sonnet-4.5",
+		"/model select gpt-4",
+		"/model list",
+		"/model list claude",
+		"/model list page 2",
+		"/model list next",
+		"/model list prev",
+		"/model list sort price",
+		"/model list filter images",
+	],
 	category: "settings",
 	priority: 8,
 	arguments: [
@@ -481,8 +901,8 @@ export const modelCommand: Command = {
 			],
 		},
 		{
-			name: "model-or-filter",
-			description: "Model name (for info/select) or filter (for list)",
+			name: "model-or-list-subcommand",
+			description: "Model name (for info/select) or list subcommand (page, next, prev, sort, filter)",
 			required: false,
 			conditionalProviders: [
 				{
@@ -491,6 +911,25 @@ export const modelCommand: Command = {
 						return subcommand === "info" || subcommand === "select"
 					},
 					provider: modelAutocompleteProvider,
+				},
+				{
+					condition: (context) => context.getArgument("subcommand") === "list",
+					provider: listSubcommandAutocompleteProvider,
+				},
+			],
+		},
+		{
+			name: "argument",
+			description: "Argument for the list subcommand",
+			required: false,
+			conditionalProviders: [
+				{
+					condition: (context) => context.getArgument("model-or-list-subcommand") === "sort",
+					provider: sortOptionAutocompleteProvider,
+				},
+				{
+					condition: (context) => context.getArgument("model-or-list-subcommand") === "filter",
+					provider: filterOptionAutocompleteProvider,
 				},
 			],
 		},
@@ -539,8 +978,69 @@ export const modelCommand: Command = {
 				break
 
 			case "list": {
-				const filter = args.length > 1 ? args[1] : undefined
-				await listModels(context, filter)
+				// Check for list subcommands
+				const listSubcommand = args[1]?.toLowerCase()
+
+				if (!listSubcommand) {
+					// No subcommand - just list models
+					await listModels(context)
+					break
+				}
+
+				switch (listSubcommand) {
+					case "page":
+						if (args.length < 3 || !args[2]) {
+							context.addMessage({
+								id: Date.now().toString(),
+								type: "error",
+								content: "Usage: /model list page <number>",
+								ts: Date.now(),
+							})
+							return
+						}
+						await listModelsPage(context, args[2])
+						break
+
+					case "next":
+						await listModelsNext(context)
+						break
+
+					case "prev":
+					case "previous":
+						await listModelsPrev(context)
+						break
+
+					case "sort":
+						if (args.length < 3 || !args[2]) {
+							context.addMessage({
+								id: Date.now().toString(),
+								type: "error",
+								content: `Usage: /model list sort <option>\nValid options: ${Object.keys(MODEL_SORT_OPTIONS).join(", ")}`,
+								ts: Date.now(),
+							})
+							return
+						}
+						await listModelsSort(context, args[2])
+						break
+
+					case "filter":
+						if (args.length < 3 || !args[2]) {
+							context.addMessage({
+								id: Date.now().toString(),
+								type: "error",
+								content: `Usage: /model list filter <option>\nValid options: ${MODEL_FILTER_OPTIONS.join(", ")}`,
+								ts: Date.now(),
+							})
+							return
+						}
+						await listModelsFilter(context, args[2])
+						break
+
+					default:
+						// Treat as search filter
+						await listModels(context, listSubcommand)
+						break
+				}
 				break
 			}
 
