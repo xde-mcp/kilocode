@@ -90,7 +90,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 		await (provider as any).startAgentSession('echo "$(whoami)"')
 
 		expect(spawnMock).toHaveBeenCalledTimes(1)
-		const [cmd, args, options] = spawnMock.mock.calls[0]
+		const [cmd, args, options] = spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, unknown>]
 		expect(cmd).toBe("/usr/bin/kilocode")
 		expect(args[args.length - 1]).toBe('echo "$(whoami)"')
 		expect(options?.shell).not.toBe(true)
