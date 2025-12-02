@@ -7,7 +7,7 @@ import { atom } from "jotai"
 export const MODEL_LIST_PAGE_SIZE = 10
 
 export interface ModelListFilters {
-	search?: string
+	search?: string | undefined
 	sort: "name" | "context" | "price" | "preferred"
 	capabilities: ("images" | "cache" | "reasoning" | "free")[]
 }
@@ -38,7 +38,12 @@ export const modelListFiltersAtom = atom<ModelListFilters>(defaultModelListFilte
  */
 export const updateModelListFiltersAtom = atom(null, (get, set, filters: Partial<ModelListFilters>) => {
 	const current = get(modelListFiltersAtom)
-	set(modelListFiltersAtom, { ...current, ...filters })
+	const updated = { ...current, ...filters }
+	// Remove search if it's explicitly set to undefined
+	if ("search" in filters && filters.search === undefined) {
+		delete updated.search
+	}
+	set(modelListFiltersAtom, updated)
 	// Reset to first page when filters change
 	set(modelListPageIndexAtom, 0)
 })

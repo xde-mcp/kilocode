@@ -15,7 +15,7 @@ import {
 	formatPrice,
 	prettyModelName,
 } from "../constants/providers/models.js"
-import { MODEL_LIST_PAGE_SIZE } from "../state/atoms/modelList.js"
+import { MODEL_LIST_PAGE_SIZE, type ModelListFilters } from "../state/atoms/modelList.js"
 
 /**
  * Sort options for model list
@@ -185,7 +185,7 @@ function getFilteredModelsWithPageCount(params: {
 	routerModels: RouterModels | null
 	kilocodeDefaultModel: string
 	filters: {
-		search?: string
+		search?: string | undefined
 		capabilities: ("images" | "cache" | "reasoning" | "free")[]
 	}
 }): {
@@ -469,9 +469,8 @@ async function selectModel(context: CommandContext, modelId: string): Promise<vo
  */
 async function listModels(
 	context: CommandContext,
-	searchFilter?: string,
 	pageIndexOverride?: number,
-	filtersOverride?: { sort?: string; capabilities?: string[] },
+	filtersOverride?: { sort?: string; capabilities?: string[]; search?: string | undefined },
 ): Promise<void> {
 	const { currentProvider, routerModels, kilocodeDefaultModel, addMessage, modelListPageIndex, modelListFilters } =
 		context
@@ -508,8 +507,8 @@ async function listModels(
 		kilocodeDefaultModel,
 	})
 
-	// Apply search filter if provided (overrides stored search)
-	const effectiveSearch = searchFilter || modelListFilters.search
+	// Apply search filter from stored filters
+	const effectiveSearch = effectiveFilters.search
 	let modelIds = effectiveSearch ? fuzzyFilterModels(models, effectiveSearch) : Object.keys(models)
 
 	// Apply capability filters
@@ -670,7 +669,7 @@ async function listModelsPage(context: CommandContext, pageNum: string): Promise
 	}
 
 	changeModelListPage(pageIndex)
-	await listModels(context, undefined, pageIndex)
+	await listModels(context, pageIndex)
 }
 
 /**
@@ -717,7 +716,7 @@ async function listModelsNext(context: CommandContext): Promise<void> {
 
 	const newPageIndex = modelListPageIndex + 1
 	changeModelListPage(newPageIndex)
-	await listModels(context, undefined, newPageIndex)
+	await listModels(context, newPageIndex)
 }
 
 /**
@@ -738,7 +737,7 @@ async function listModelsPrev(context: CommandContext): Promise<void> {
 
 	const newPageIndex = modelListPageIndex - 1
 	changeModelListPage(newPageIndex)
-	await listModels(context, undefined, newPageIndex)
+	await listModels(context, newPageIndex)
 }
 
 /**
@@ -762,7 +761,7 @@ async function listModelsSort(context: CommandContext, sortOption: string): Prom
 
 	const newSort = mappedSort as "name" | "context" | "price" | "preferred"
 	updateModelListFilters({ sort: newSort })
-	await listModels(context, undefined, undefined, { sort: newSort })
+	await listModels(context, undefined, { sort: newSort })
 }
 
 /**
@@ -803,7 +802,7 @@ async function listModelsFilter(context: CommandContext, filterOption: string): 
 		}
 	}
 
-	await listModels(context, undefined, undefined, { capabilities: newCapabilities })
+	await listModels(context, undefined, { capabilities: newCapabilities })
 }
 
 /**
@@ -1006,8 +1005,8 @@ export const modelCommand: Command = {
 				const listSubcommand = args[1]?.toLowerCase()
 
 				if (!listSubcommand) {
-					// No subcommand - just list models
-					await listModels(context)
+					context.updateModelListFilters({ search: undefined } as Partial<ModelListFilters>)
+					await listModels(context, undefined, { search: undefined } as Partial<ModelListFilters>)
 					break
 				}
 
@@ -1061,8 +1060,8 @@ export const modelCommand: Command = {
 						break
 
 					default:
-						// Treat as search filter
-						await listModels(context, listSubcommand)
+						context.updateModelListFilters({ search: listSubcommand })
+						await listModels(context, undefined, { search: listSubcommand })
 						break
 				}
 				break

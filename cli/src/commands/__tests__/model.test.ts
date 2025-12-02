@@ -324,9 +324,17 @@ describe("/model command", () => {
 		})
 
 		it("should filter models when filter is provided", async () => {
+			// Mock updateModelListFilters to actually update the filters
+			const updateFiltersMock = vi.fn((filters) => {
+				mockContext.modelListFilters = { ...mockContext.modelListFilters, ...filters }
+			})
+			mockContext.updateModelListFilters = updateFiltersMock
 			mockContext.args = ["list", "gpt-4"]
 
 			await modelCommand.handler(mockContext)
+
+			// Verify the filter was persisted
+			expect(updateFiltersMock).toHaveBeenCalledWith({ search: "gpt-4" })
 
 			const message = addMessageMock.mock.calls[0][0]
 			expect(message.content).toContain('Search: "gpt-4"')
@@ -335,9 +343,17 @@ describe("/model command", () => {
 		})
 
 		it("should show message when no models match filter", async () => {
+			// Mock updateModelListFilters to actually update the filters
+			const updateFiltersMock = vi.fn((filters) => {
+				mockContext.modelListFilters = { ...mockContext.modelListFilters, ...filters }
+			})
+			mockContext.updateModelListFilters = updateFiltersMock
 			mockContext.args = ["list", "nonexistent"]
 
 			await modelCommand.handler(mockContext)
+
+			// Verify the filter was persisted
+			expect(updateFiltersMock).toHaveBeenCalledWith({ search: "nonexistent" })
 
 			const message = addMessageMock.mock.calls[0][0]
 			expect(message.type).toBe("system")
