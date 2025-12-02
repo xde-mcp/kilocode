@@ -40,6 +40,20 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		const { pushToolResult, handleError, askApproval, removeClosingTag } = callbacks
 		const relPath = params.path
 		let newContent = params.content
+		// kilocode_change start
+		// Handle the case where the arguments to `write_to_file` are, themselves, valid JSON
+		// In that case, params.content will be an object rather than a string, which we dont want
+		// so decode this to a string with pretty print if possible, otherwise coerce.
+		if (typeof newContent === "string") {
+			// already a string, nothing to do
+		} else {
+			try {
+				newContent = JSON.stringify(newContent, null, "\t")
+			} catch {
+				newContent = String(newContent) // fallback for non-serializable values
+			}
+		}
+		// kilocode_change end
 		const predictedLineCount = params.line_count
 
 		if (!relPath) {
