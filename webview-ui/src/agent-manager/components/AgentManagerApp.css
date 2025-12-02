@@ -33,7 +33,7 @@
 
 .sidebar-header {
 	height: var(--header-height);
-	padding: 0 8px;
+	padding: 0 12px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -45,29 +45,45 @@
 	text-transform: uppercase;
 }
 
-.sidebar-actions {
-	padding: 8px;
+/* New Agent Item - Primary action at top of sidebar */
+.new-agent-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 12px;
+	margin: 8px;
+	cursor: pointer;
+	border-radius: 4px;
+	background: var(--vscode-button-secondaryBackground);
+	color: var(--vscode-button-secondaryForeground);
+	font-size: 13px;
+	font-weight: 500;
+	border: 1px solid var(--vscode-button-border, transparent);
+	transition: background-color 0.1s;
 }
 
-.new-session-btn {
-	width: 100%;
-	padding: 6px 12px;
+.new-agent-item:hover {
+	background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.new-agent-item.selected {
 	background: var(--vscode-button-background);
 	color: var(--vscode-button-foreground);
-	border: 1px solid transparent;
-	border-radius: 2px;
-	cursor: pointer;
-	font-size: 12px;
-	font-family: inherit;
 }
 
-.new-session-btn:hover {
-	background: var(--vscode-button-hoverBackground);
-}
-
-.new-session-btn:focus {
+.new-agent-item:focus {
 	outline: 1px solid var(--vscode-focusBorder);
 	outline-offset: 1px;
+}
+
+/* Section header for Sessions list */
+.sidebar-section-header {
+	padding: 8px 12px 4px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--vscode-sideBarSectionHeader-foreground);
+	opacity: 0.8;
 }
 
 .session-list {
@@ -540,4 +556,85 @@
 .icon-action-btn:disabled {
 	opacity: 0.3;
 	cursor: default;
+}
+
+/* Session Error States */
+.status-error {
+	color: var(--vscode-errorForeground);
+}
+
+.session-error-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 10px 20px;
+	background: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
+	border-bottom: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+	color: var(--vscode-errorForeground);
+	font-size: 13px;
+}
+
+.session-error-banner svg {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+/* Form Validation */
+.prompt-input-error {
+	border-color: var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground)) !important;
+}
+
+.prompt-input-error:focus {
+	outline-color: var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+}
+
+.validation-error {
+	color: var(--vscode-errorForeground);
+	font-size: 12px;
+	margin-top: 4px;
+	text-align: left;
+}
+
+/* Loading Spinner */
+.spinning {
+	animation: spin 1s linear infinite;
+}
+
+/* Button States */
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Keyboard Hints */
+.keyboard-hint kbd {
+	background: var(--vscode-keybindingLabel-background, rgba(128, 128, 128, 0.2));
+	border: 1px solid var(--vscode-keybindingLabel-border, rgba(128, 128, 128, 0.4));
+	border-radius: 3px;
+	padding: 1px 4px;
+	font-family: inherit;
+	font-size: 11px;
+}
+
+/* Empty State */
+.messages-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	color: var(--vscode-descriptionForeground);
+	text-align: center;
+	padding: 20px;
+}
+
+/* Chat Input Disabled State */
+.chat-input-disabled {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 12px;
+	opacity: 0.7;
 }

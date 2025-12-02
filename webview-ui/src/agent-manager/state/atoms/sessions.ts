@@ -35,9 +35,15 @@ export const selectedSessionAtom = atom((get) => {
 export const upsertSessionAtom = atom(null, (get, set, session: AgentSession) => {
 	const current = get(sessionsMapAtom)
 	const order = get(sessionOrderAtom)
+	const isNewSession = !order.includes(session.id)
+
 	set(sessionsMapAtom, { ...current, [session.id]: session })
-	if (!order.includes(session.id)) {
+	if (isNewSession) {
 		set(sessionOrderAtom, [session.id, ...order])
+		// Auto-select newly created sessions if user is on "New Agent" view
+		if (get(selectedSessionIdAtom) === null) {
+			set(selectedSessionIdAtom, session.id)
+		}
 	}
 })
 

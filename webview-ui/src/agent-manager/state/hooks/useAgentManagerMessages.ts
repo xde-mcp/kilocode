@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useSetAtom } from "jotai"
 import type { ClineMessage } from "@roo-code/types"
 import { updateSessionMessagesAtom } from "../atoms/messages"
@@ -38,6 +38,7 @@ export function useAgentManagerMessages() {
 	const removeSession = useSetAtom(removeSessionAtom)
 	const updateSessionStatus = useSetAtom(updateSessionStatusAtom)
 	const setSelectedSessionId = useSetAtom(selectedSessionIdAtom)
+	const hasInitializedSelection = useRef(false)
 
 	useEffect(() => {
 		function handleMessage(event: MessageEvent<ExtensionMessage>) {
@@ -57,8 +58,10 @@ export function useAgentManagerMessages() {
 					for (const session of state.sessions) {
 						upsertSession(session)
 					}
-					if (state.selectedId !== undefined) {
+					// Only set selectedId on initial load to avoid overriding user's selection
+					if (!hasInitializedSelection.current && state.selectedId !== undefined) {
 						setSelectedSessionId(state.selectedId)
+						hasInitializedSelection.current = true
 					}
 					break
 				}

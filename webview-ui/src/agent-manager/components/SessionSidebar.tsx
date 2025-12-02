@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React from "react"
 import { useAtom, useAtomValue } from "jotai"
 import { sessionsArrayAtom, selectedSessionIdAtom, type AgentSession } from "../state/atoms/sessions"
 import { vscode } from "../utils/vscode"
@@ -7,17 +7,9 @@ import { Plus, Trash2, SquareTerminal, Clock } from "lucide-react"
 export function SessionSidebar() {
 	const sessions = useAtomValue(sessionsArrayAtom)
 	const [selectedId, setSelectedId] = useAtom(selectedSessionIdAtom)
-	const [promptText, setPromptText] = useState("")
 
 	const handleNewSession = () => {
 		setSelectedId(null)
-	}
-
-	const handleStartSession = () => {
-		if (promptText.trim()) {
-			vscode.postMessage({ type: "agentManager.startSession", prompt: promptText.trim() })
-			setPromptText("")
-		}
 	}
 
 	const handleSelectSession = (id: string) => {
@@ -30,22 +22,30 @@ export function SessionSidebar() {
 		vscode.postMessage({ type: "agentManager.removeSession", sessionId: id })
 	}
 
+	const isNewAgentSelected = selectedId === null
+
 	return (
 		<div className="sidebar">
 			<div className="sidebar-header">
-				<span>Sessions</span>
-				<div className="sidebar-actions">
-					<button className="icon-btn" onClick={handleNewSession} title="New Session">
-						<Plus size={16} />
-					</button>
-				</div>
+				<span>Agent Manager</span>
 			</div>
+
+			<div
+				className={`new-agent-item ${isNewAgentSelected ? "selected" : ""}`}
+				onClick={handleNewSession}
+				role="button"
+				tabIndex={0}
+				onKeyDown={(e) => e.key === "Enter" && handleNewSession()}>
+				<Plus size={16} />
+				<span>New Agent</span>
+			</div>
+
+			<div className="sidebar-section-header">Sessions</div>
 
 			<div className="session-list">
 				{sessions.length === 0 ? (
 					<div className="no-sessions">
-						<p>No active agents.</p>
-						<p style={{ marginTop: 8, opacity: 0.7 }}>Click + to start one.</p>
+						<p>No active agents yet.</p>
 					</div>
 				) : (
 					sessions.map((session) => (
@@ -59,27 +59,6 @@ export function SessionSidebar() {
 					))
 				)}
 			</div>
-
-			{/* Quick start area at bottom if no session selected */}
-			{selectedId === null && (
-				<div style={{ padding: "12px", borderTop: "1px solid var(--vscode-sideBarSectionHeader-border)" }}>
-					<textarea
-						className="prompt-input"
-						placeholder="Start a new agent..."
-						style={{ minHeight: "60px", marginBottom: "8px", fontSize: "12px" }}
-						value={promptText}
-						onChange={(e) => setPromptText(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-								handleStartSession()
-							}
-						}}
-					/>
-					<button className="new-session-btn" onClick={handleStartSession}>
-						Start Agent
-					</button>
-				</div>
-			)}
 		</div>
 	)
 }
