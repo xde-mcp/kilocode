@@ -152,6 +152,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		if (!workspaceFolder) {
 			this.outputChannel.appendLine("ERROR: No workspace folder open")
 			void vscode.window.showErrorMessage("Please open a folder before starting an agent.")
+			this.postMessage({ type: "agentManager.startSessionFailed" })
 			return
 		}
 		const workspace = workspaceFolder
@@ -160,6 +161,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		if (!cliPath) {
 			this.outputChannel.appendLine("ERROR: kilocode CLI not found")
 			this.showCliNotFoundError()
+			this.postMessage({ type: "agentManager.startSessionFailed" })
 			return
 		}
 

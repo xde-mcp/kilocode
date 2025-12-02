@@ -1,7 +1,7 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useAtomValue, useSetAtom } from "jotai"
 import { useTranslation } from "react-i18next"
-import { selectedSessionAtom, selectedSessionIdAtom } from "../state/atoms/sessions"
+import { selectedSessionAtom, selectedSessionIdAtom, startSessionFailedCounterAtom } from "../state/atoms/sessions"
 import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
@@ -103,6 +103,14 @@ function NewAgentForm() {
 	const [promptText, setPromptText] = useState("")
 	const [isStarting, setIsStarting] = useState(false)
 	const [isFocused, setIsFocused] = useState(false)
+	const startSessionFailedCounter = useAtomValue(startSessionFailedCounterAtom)
+
+	// Reset loading state when session start fails (e.g., no workspace folder)
+	useEffect(() => {
+		if (startSessionFailedCounter > 0) {
+			setIsStarting(false)
+		}
+	}, [startSessionFailedCounter])
 
 	const trimmedPrompt = promptText.trim()
 	const isEmpty = trimmedPrompt.length === 0

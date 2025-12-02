@@ -19,6 +19,10 @@ export const sessionsMapAtom = atom<Record<string, AgentSession>>({})
 export const sessionOrderAtom = atom<string[]>([])
 export const selectedSessionIdAtom = atom<string | null>(null)
 
+// Tracks when a session start attempt fails (e.g., no workspace folder)
+// Incremented each time a failure occurs so components can react
+export const startSessionFailedCounterAtom = atom(0)
+
 // Derived
 export const sessionsArrayAtom = atom((get) => {
 	const map = get(sessionsMapAtom)

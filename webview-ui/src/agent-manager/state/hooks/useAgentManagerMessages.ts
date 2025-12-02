@@ -7,6 +7,7 @@ import {
 	removeSessionAtom,
 	updateSessionStatusAtom,
 	selectedSessionIdAtom,
+	startSessionFailedCounterAtom,
 	type AgentSession,
 } from "../atoms/sessions"
 
@@ -26,7 +27,15 @@ interface StateMessage {
 	state: AgentManagerState
 }
 
-type ExtensionMessage = ChatMessagesMessage | StateMessage | { type: string; [key: string]: unknown }
+interface StartSessionFailedMessage {
+	type: "agentManager.startSessionFailed"
+}
+
+type ExtensionMessage =
+	| ChatMessagesMessage
+	| StateMessage
+	| StartSessionFailedMessage
+	| { type: string; [key: string]: unknown }
 
 /**
  * Hook that listens for messages from the extension and updates Jotai state.
@@ -38,6 +47,7 @@ export function useAgentManagerMessages() {
 	const removeSession = useSetAtom(removeSessionAtom)
 	const updateSessionStatus = useSetAtom(updateSessionStatusAtom)
 	const setSelectedSessionId = useSetAtom(selectedSessionIdAtom)
+	const setStartSessionFailedCounter = useSetAtom(startSessionFailedCounterAtom)
 	const hasInitializedSelection = useRef(false)
 
 	useEffect(() => {
@@ -65,10 +75,16 @@ export function useAgentManagerMessages() {
 					}
 					break
 				}
+
+				case "agentManager.startSessionFailed": {
+					// Increment counter so components can reset their loading state
+					setStartSessionFailedCounter((c) => c + 1)
+					break
+				}
 			}
 		}
 
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
-	}, [updateSessionMessages, upsertSession, removeSession, updateSessionStatus, setSelectedSessionId])
+	}, [updateSessionMessages, upsertSession, removeSession, updateSessionStatus, setSelectedSessionId, setStartSessionFailedCounter])
 }
