@@ -114,7 +114,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 	it("flushes buffered CLI output on process exit", async () => {
 		await (provider as any).startAgentSession("test flush")
 		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
-		const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter; emit: Function }
+		const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
 
 		// Enable text handling
 		const sessionId = (provider as any).registry.getSessions()[0].id as string
