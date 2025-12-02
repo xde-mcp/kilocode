@@ -2165,6 +2165,9 @@ importers:
       i18next-http-backend:
         specifier: ^3.0.2
         version: 3.0.2(encoding@0.1.13)
+      jotai:
+        specifier: ^2.14.0
+        version: 2.15.1(@babel/core@7.27.1)(@babel/template@7.27.2)(@types/react@18.3.23)(react@18.3.1)
       katex:
         specifier: ^0.16.11
         version: 0.16.22
@@ -34261,6 +34264,13 @@ snapshots:
       '@sideway/address': 4.1.5
       '@sideway/formula': 3.0.1
       '@sideway/pinpoint': 2.0.0
+
+  jotai@2.15.1(@babel/core@7.27.1)(@babel/template@7.27.2)(@types/react@18.3.23)(react@18.3.1):
+    optionalDependencies:
+      '@babel/core': 7.27.1
+      '@babel/template': 7.27.2
+      '@types/react': 18.3.23
+      react: 18.3.1
 
   jotai@2.15.1(@babel/core@7.28.5)(@babel/template@7.27.2)(@types/react@18.3.23)(react@19.2.0):
     optionalDependencies:

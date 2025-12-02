@@ -18,6 +18,7 @@ import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
 import { getAppUrl } from "@roo-code/types" // kilocode_change
 import { generateTerminalCommand } from "../utils/terminalCommandGenerator" // kilocode_change
+import { AgentManagerProvider } from "../core/agent-manager/AgentManagerProvider" // Agent Manager
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -65,8 +66,15 @@ export type RegisterCommandOptions = {
 	provider: ClineProvider
 }
 
+// Agent Manager provider instance (singleton for the extension)
+let agentManagerProvider: AgentManagerProvider | undefined
+
 export const registerCommands = (options: RegisterCommandOptions) => {
-	const { context } = options
+	const { context, outputChannel } = options
+
+	// Create Agent Manager provider
+	agentManagerProvider = new AgentManagerProvider(context, outputChannel)
+	context.subscriptions.push(agentManagerProvider)
 
 	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
 		const command = getCommand(id as CommandId)
@@ -76,6 +84,9 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 
 const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Record<CommandId, any> => ({
 	activationCompleted: () => {},
+	agentManagerOpen: () => {
+		agentManagerProvider?.openPanel()
+	},
 	cloudButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 

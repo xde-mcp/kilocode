@@ -81,21 +81,67 @@ export function truncateLine(line: string, maxLength: number = MAX_LINE_LENGTH):
 	return line.length > maxLength ? line.substring(0, maxLength) + " [truncated...]" : line
 }
 /**
- * Get the path to the ripgrep binary within the VSCode installation
+ * Get the path to the ripgrep binary within the VSCode installation,
+ * falling back to system ripgrep if not found (for CLI mode)
  */
 export async function getBinPath(vscodeAppRoot: string): Promise<string | undefined> {
-	const checkPath = async (pkgFolder: string) => {
-		const fullPath = path.join(vscodeAppRoot, pkgFolder, binName)
-		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined
+	// If vscodeAppRoot is undefined (CLI mode), skip VS Code paths
+	if (vscodeAppRoot) {
+		const checkPath = async (pkgFolder: string) => {
+			const fullPath = path.join(vscodeAppRoot, pkgFolder, binName)
+			return (await fileExistsAtPath(fullPath)) ? fullPath : undefined
+		}
+
+		const vscodeRgPath =
+			(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
+			(await checkPath("node_modules/vscode-ripgrep/bin")) ||
+			(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
+			(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/")) ||
+			(await checkBunPath(vscodeAppRoot, binName)) // kilocode_change
+
+		if (vscodeRgPath) {
+			return vscodeRgPath
+		}
 	}
 
-	return (
-		(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
-		(await checkPath("node_modules/vscode-ripgrep/bin")) ||
-		(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
-		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/")) ||
-		(await checkBunPath(vscodeAppRoot, binName)) // kilocode_change
-	)
+	// Fallback: try system ripgrep (for CLI/Agent Manager mode)
+	const systemRgPath = await findSystemRipgrep()
+	return systemRgPath
+}
+
+/**
+ * Try to find system-installed ripgrep
+ */
+async function findSystemRipgrep(): Promise<string | undefined> {
+	// Common locations for ripgrep on different systems
+	const commonPaths = [
+		"/opt/homebrew/bin/rg", // macOS Homebrew (Apple Silicon)
+		"/usr/local/bin/rg", // macOS Homebrew (Intel) / Linux
+		"/usr/bin/rg", // Linux system package
+	]
+
+	for (const rgPath of commonPaths) {
+		if (await fileExistsAtPath(rgPath)) {
+			return rgPath
+		}
+	}
+
+	// Try to find via PATH using 'which' command
+	try {
+		const { execSync } = await import("child_process")
+		const result = execSync("which rg", { encoding: "utf-8" }).trim()
+		if (result && (await fileExistsAtPath(result))) {
+			return result
+		}
+	} catch (error) {
+		// Expected: 'which rg' fails when ripgrep is not installed
+		// Only log in debug scenarios, not an error condition
+		if (process.env.DEBUG_RIPGREP) {
+			console.debug("[ripgrep] System ripgrep not found in PATH:", error)
+		}
+	}
+
+	return undefined
 }
 
 async function execRipgrep(bin: string, args: string[]): Promise<string> {
