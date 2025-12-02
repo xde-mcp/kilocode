@@ -60,21 +60,8 @@ export class ProviderSettingsManager {
 	private static readonly SCOPE_PREFIX = "roo_cline_config_"
 	private readonly defaultConfigId = this.generateId()
 
-	/**
-	 * In-memory report of duplicate-id repairs performed during initialization.
-	 * Keyed by the original duplicated id, value is the list of newly generated ids
-	 * that replaced later duplicates (the first occurrence keeps the original id).
-	 *
-	 * This is intended to be consumed by the layer that owns global state (ContextProxy),
-	 * so it can migrate id-based references like pinned profiles without bypassing caches.
-	 */
-	private pendingDuplicateIdRepairReport: Record<string, string[]> | null = null
-
-	public consumeDuplicateIdRepairReport(): Record<string, string[]> | null {
-		const report = this.pendingDuplicateIdRepairReport
-		this.pendingDuplicateIdRepairReport = null
-		return report
-	}
+	// kilocode_change starT:
+	//
 
 	private readonly defaultModeApiConfigs: Record<string, string> = Object.fromEntries(
 		modes.map((mode) => [mode.slug, this.defaultConfigId]),
@@ -92,6 +79,16 @@ export class ProviderSettingsManager {
 			todoListEnabledMigrated: true, // Mark as migrated on fresh installs
 		},
 	}
+
+	// kilocode_change start
+	private pendingDuplicateIdRepairReport: Record<string, string[]> | null = null
+
+	public consumeDuplicateIdRepairReport(): Record<string, string[]> | null {
+		const report = this.pendingDuplicateIdRepairReport
+		this.pendingDuplicateIdRepairReport = null
+		return report
+	}
+	// kilocode_change end
 
 	private readonly context: ExtensionContext
 
@@ -115,11 +112,6 @@ export class ProviderSettingsManager {
 	public initialize(): Promise<void> {
 		return this.initialization
 	}
-	// kilocode_change end
-
-	public generateId() {
-		return Math.random().toString(36).substring(2, 15)
-	}
 
 	private generateUniqueId(existingIds: Set<string>): string {
 		let id: string
@@ -129,6 +121,11 @@ export class ProviderSettingsManager {
 
 		existingIds.add(id)
 		return id
+	}
+	// kilocode_change end
+
+	public generateId() {
+		return Math.random().toString(36).substring(2, 15)
 	}
 
 	// Synchronize readConfig/writeConfig operations to avoid data loss.
@@ -526,7 +523,7 @@ export class ProviderSettingsManager {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
 
-				// kilocode_change
+				// kilocode_change start" autocomplete profile type system and check for duplicate id's
 				await this.validateAutocompleteConstraint(providerProfiles, name, config.profileType)
 
 				const existingEntry = providerProfiles.apiConfigs[name]
