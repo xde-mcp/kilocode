@@ -640,3 +640,105 @@
 	font-size: 12px;
 	opacity: 0.7;
 }
+
+/* New Agent Form Parity Styles */
+.new-agent-input-wrapper {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	background: var(--vscode-editor-background);
+	padding: 0 6px 4px 6px;
+	border-radius: 4px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.new-agent-input-inner {
+	position: relative;
+	flex: 1;
+	display: flex;
+	flex-direction: column-reverse;
+	min-height: 0;
+	overflow: hidden;
+	border-radius: 4px;
+}
+
+.new-agent-textarea {
+	width: 100%;
+	color: var(--vscode-input-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: var(--vscode-editor-font-size);
+	line-height: var(--vscode-editor-line-height);
+	cursor: text;
+	padding: 6px 8px;
+	background: var(--vscode-input-background);
+	border: 1px solid transparent;
+	min-height: 90px;
+	box-sizing: border-box;
+	border-radius: 4px;
+	resize: none;
+	overflow-x: hidden;
+	overflow-y: auto;
+	padding-right: 36px;
+	padding-bottom: 64px;
+	z-index: 2;
+}
+
+.new-agent-textarea:focus,
+.new-agent-textarea.focused {
+	outline: 1px solid var(--vscode-focusBorder);
+	border-color: var(--vscode-focusBorder);
+}
+
+.new-agent-gradient {
+	position: absolute;
+	bottom: 1px;
+	left: 8px;
+	right: 8px;
+	height: 64px;
+	background: linear-gradient(to top, var(--vscode-input-background), var(--vscode-input-background), transparent);
+	pointer-events: none;
+	z-index: 2;
+}
+
+.new-agent-button-container {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	z-index: 30;
+}
+
+.new-agent-send-btn {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: 1px solid transparent;
+	padding: 6px;
+	border-radius: 6px;
+	min-width: 28px;
+	min-height: 28px;
+	opacity: 0.6;
+	color: var(--vscode-descriptionForeground);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.new-agent-send-btn:hover:not(:disabled) {
+	opacity: 1;
+	color: var(--vscode-foreground);
+	background-color: rgba(255, 255, 255, 0.03);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+.new-agent-send-btn:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+}
+
+.new-agent-send-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	filter: grayscale(30%);
+}

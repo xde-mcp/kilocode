@@ -5,7 +5,9 @@ import { selectedSessionAtom, selectedSessionIdAtom } from "../state/atoms/sessi
 import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
-import { SquareTerminal, Clock, Plus, Square, Play, AlertCircle, Loader2, Zap } from "lucide-react"
+import { SquareTerminal, Clock, Plus, Square, Play, AlertCircle, Loader2, Zap, SendHorizontal } from "lucide-react"
+import DynamicTextArea from "react-textarea-autosize"
+import { cn } from "../../lib/utils"
 
 export function SessionDetail() {
 	const { t } = useTranslation("agentManager")
@@ -100,6 +102,7 @@ function NewAgentForm() {
 	const { t } = useTranslation("agentManager")
 	const [promptText, setPromptText] = useState("")
 	const [isStarting, setIsStarting] = useState(false)
+	const [isFocused, setIsFocused] = useState(false)
 
 	const trimmedPrompt = promptText.trim()
 	const isEmpty = trimmedPrompt.length === 0
@@ -111,42 +114,52 @@ function NewAgentForm() {
 		vscode.postMessage({ type: "agentManager.startSession", prompt: trimmedPrompt })
 	}
 
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+			e.preventDefault()
+			handleStart()
+		}
+	}
+
 	return (
 		<div className="center-form">
 			<h2 id="new-agent-heading">{t("sessionDetail.startNewAgent")}</h2>
 			<p id="new-agent-description">{t("sessionDetail.describeTask")}</p>
 			<div style={{ width: "100%", maxWidth: "500px" }}>
-				<textarea
-					className="prompt-input"
-					placeholder={t("sessionDetail.placeholderTask")}
-					value={promptText}
-					onChange={(e) => setPromptText(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-							handleStart()
-						}
-					}}
-					aria-labelledby="new-agent-heading"
-					aria-describedby="new-agent-description"
-					disabled={isStarting}
-				/>
-				<div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-					<button
-						className="btn btn-primary"
-						onClick={handleStart}
-						disabled={isStarting || isEmpty}
-						aria-label={isStarting ? t("sessionDetail.starting") : t("sessionDetail.startAriaLabel")}
-						style={{ padding: "8px 24px", fontSize: "13px" }}>
-						{isStarting ? (
-							<>
-								<Loader2 size={14} className="spinning" style={{ marginRight: 6 }} /> {t("sessionDetail.starting")}
-							</>
-						) : (
-							<>
-								<Play size={14} style={{ marginRight: 6 }} /> {t("sidebar.startAgent")}
-							</>
-						)}
-					</button>
+				<div className="new-agent-input-wrapper">
+					<div className="new-agent-input-inner">
+						<div className="new-agent-gradient" aria-hidden="true" />
+						<DynamicTextArea
+							className={cn("new-agent-textarea", isFocused && "focused")}
+							placeholder={t("sessionDetail.placeholderTask")}
+							value={promptText}
+							onChange={(e) => setPromptText(e.target.value)}
+							onKeyDown={handleKeyDown}
+							onFocus={() => setIsFocused(true)}
+							onBlur={() => setIsFocused(false)}
+							aria-labelledby="new-agent-heading"
+							aria-describedby="new-agent-description"
+							disabled={isStarting}
+							minRows={3}
+							maxRows={15}
+						/>
+
+						<div className="new-agent-button-container">
+							<button
+								className="new-agent-send-btn"
+								onClick={handleStart}
+								disabled={isEmpty || isStarting}
+								aria-label={
+									isStarting ? t("sessionDetail.starting") : t("sessionDetail.startAriaLabel")
+								}>
+								{isStarting ? (
+									<Loader2 size={16} className="spinning" />
+								) : (
+									<SendHorizontal size={16} />
+								)}
+							</button>
+						</div>
+					</div>
 				</div>
 				<p
 					className="keyboard-hint"
