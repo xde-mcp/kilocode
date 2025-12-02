@@ -139,6 +139,111 @@ describe("findMatchingSuggestion", () => {
 		})
 	})
 
+	describe("backward deletion support", () => {
+		it("should return deleted prefix portion plus suggestion when user backspaces", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "henk",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			// User backspaced from "foo" to "f"
+			const result = findMatchingSuggestion("f", "bar", suggestions)
+			expect(result).toBe("oohenk")
+		})
+
+		it("should return full prefix plus suggestion when user deletes entire prefix", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "world",
+					prefix: "hello",
+					suffix: "!",
+				},
+			]
+
+			// User deleted entire prefix
+			const result = findMatchingSuggestion("", "!", suggestions)
+			expect(result).toBe("helloworld")
+		})
+
+		it("should return null when suffix does not match during backward deletion", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "henk",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			// User backspaced but suffix changed
+			const result = findMatchingSuggestion("f", "baz", suggestions)
+			expect(result).toBeNull()
+		})
+
+		it("should return null when current prefix is not a prefix of stored prefix", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "henk",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			// Current prefix "x" is not a prefix of "foo"
+			const result = findMatchingSuggestion("x", "bar", suggestions)
+			expect(result).toBeNull()
+		})
+
+		it("should handle backward deletion with empty suggestion text", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			// User backspaced - should return just the deleted portion
+			const result = findMatchingSuggestion("f", "bar", suggestions)
+			expect(result).toBe("oo")
+		})
+
+		it("should prefer exact match over backward deletion match", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "henk",
+					prefix: "foo",
+					suffix: "bar",
+				},
+				{
+					text: "exact",
+					prefix: "f",
+					suffix: "bar",
+				},
+			]
+
+			// Should match the exact prefix "f" first (most recent)
+			const result = findMatchingSuggestion("f", "bar", suggestions)
+			expect(result).toBe("exact")
+		})
+
+		it("should handle multi-character backward deletion", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "test()",
+					prefix: "function myFunc",
+					suffix: " { }",
+				},
+			]
+
+			// User deleted "unc" from "function myFunc"
+			const result = findMatchingSuggestion("function myF", " { }", suggestions)
+			expect(result).toBe("unctest()")
+		})
+	})
+
 	describe("partial typing support", () => {
 		it("should return remaining suggestion when user has partially typed", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
