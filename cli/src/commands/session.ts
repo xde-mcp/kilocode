@@ -212,15 +212,15 @@ async function shareSession(context: CommandContext): Promise<void> {
 /**
  * Fork a shared session by share ID
  */
-async function forkSession(context: CommandContext, shareId: string): Promise<void> {
+async function forkSession(context: CommandContext, id: string): Promise<void> {
 	const { addMessage, replaceMessages, refreshTerminal } = context
 	const sessionService = SessionManager.init()
 
-	if (!shareId) {
+	if (!id) {
 		addMessage({
 			...generateMessage(),
 			type: "error",
-			content: "Usage: /session fork <shareId>",
+			content: "Usage: /session fork <id>",
 		})
 		return
 	}
@@ -238,14 +238,14 @@ async function forkSession(context: CommandContext, shareId: string): Promise<vo
 			{
 				id: `system-${now + 1}`,
 				type: "system",
-				content: `Forking session from share ID \`${shareId}\`...`,
+				content: `Forking session from ID \`${id}\`...`,
 				ts: 2,
 			},
 		])
 
 		await refreshTerminal()
 
-		await sessionService.forkSession(shareId, true)
+		await sessionService.forkSession(id, true)
 
 		// Success message handled by restoreSession via extension messages
 	} catch (error) {
@@ -373,7 +373,7 @@ export const sessionCommand: Command = {
 		"/session search <query>",
 		"/session select <sessionId>",
 		"/session share",
-		"/session fork <shareId>",
+		"/session fork <id>",
 		"/session delete <sessionId>",
 		"/session rename <new name>",
 	],
@@ -390,7 +390,7 @@ export const sessionCommand: Command = {
 				{ value: "search", description: "Search sessions by title or ID" },
 				{ value: "select", description: "Restore a session" },
 				{ value: "share", description: "Share current session publicly" },
-				{ value: "fork", description: "Fork a shared session" },
+				{ value: "fork", description: "Fork a session" },
 				{ value: "delete", description: "Delete a session" },
 				{ value: "rename", description: "Rename the current session" },
 			],
