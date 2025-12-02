@@ -3,7 +3,7 @@ import { useAtom, useAtomValue } from "jotai"
 import { useTranslation } from "react-i18next"
 import { sessionsArrayAtom, selectedSessionIdAtom, type AgentSession } from "../state/atoms/sessions"
 import { vscode } from "../utils/vscode"
-import { Plus, Trash2, SquareTerminal, Clock } from "lucide-react"
+import { Plus, Trash2, SquareTerminal, Loader2 } from "lucide-react"
 
 export function SessionSidebar() {
 	const { t } = useTranslation("agentManager")
@@ -90,7 +90,7 @@ function SessionItem({
 		<div className={`session-item ${isSelected ? "selected" : ""}`} onClick={onSelect}>
 			<div className={`status-icon ${session.status}`} title={t(`status.${session.status}`)}>
 				{session.status === "running" ? (
-					<Clock size={14} />
+					<Loader2 size={14} className="spinning" />
 				) : session.status === "done" ? (
 					<span className="codicon codicon-pass" />
 				) : (

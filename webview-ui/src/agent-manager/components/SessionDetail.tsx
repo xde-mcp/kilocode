@@ -5,7 +5,7 @@ import { selectedSessionAtom, selectedSessionIdAtom, startSessionFailedCounterAt
 import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
-import { SquareTerminal, Clock, Plus, Square, Play, AlertCircle, Loader2, Zap, SendHorizontal } from "lucide-react"
+import { SquareTerminal, Clock, Plus, Square, AlertCircle, Loader2, Zap, SendHorizontal } from "lucide-react"
 import DynamicTextArea from "react-textarea-autosize"
 import { cn } from "../../lib/utils"
 
@@ -160,11 +160,7 @@ function NewAgentForm() {
 								aria-label={
 									isStarting ? t("sessionDetail.starting") : t("sessionDetail.startAriaLabel")
 								}>
-								{isStarting ? (
-									<Loader2 size={16} className="spinning" />
-								) : (
-									<SendHorizontal size={16} />
-								)}
+								{isStarting ? <Loader2 size={16} className="spinning" /> : <SendHorizontal size={16} />}
 							</button>
 						</div>
 					</div>
