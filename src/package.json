@@ -296,7 +296,7 @@
 			{
 				"command": "kilo-code.agentManagerOpen",
 				"title": "Open Agent Manager",
-				"icon": "$(window)",
+				"icon": "$(circuit-board)",
 				"category": "%configuration.title%"
 			}
 		],
