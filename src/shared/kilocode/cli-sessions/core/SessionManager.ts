@@ -6,6 +6,7 @@ import { createHash } from "crypto"
 import type { IPathProvider } from "../types/IPathProvider.js"
 import type { ILogger } from "../types/ILogger.js"
 import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
+import type { ITaskDataProvider } from "../types/ITaskDataProvider.js"
 import { SessionClient } from "./SessionClient.js"
 import { SessionWithSignedUrls, CliSessionSharedState } from "./SessionClient.js"
 import type { ClineMessage, HistoryItem } from "@roo-code/types"
@@ -69,7 +70,7 @@ export class SessionManager {
 	private readonly pathProvider: IPathProvider
 	private readonly logger: ILogger
 	private readonly extensionMessenger: IExtensionMessenger
-	private readonly sessionPersistenceManager: SessionPersistenceManager
+	public readonly sessionPersistenceManager: SessionPersistenceManager
 	public readonly sessionClient: SessionClient
 	private readonly onSessionCreated: (message: SessionCreatedMessage) => void
 	private readonly onSessionRestored: () => void
@@ -287,14 +288,14 @@ export class SessionManager {
 		}
 	}
 
-	async shareSession() {
-		const sessionId = this.sessionId
-		if (!sessionId) {
+	async shareSession(sessionId?: string) {
+		const sessionIdToShare = sessionId || this.sessionId
+		if (!sessionIdToShare) {
 			throw new Error("No active session")
 		}
 
 		return await this.sessionClient.share({
-			session_id: sessionId,
+			session_id: sessionIdToShare,
 			shared_state: CliSessionSharedState.Public,
 		})
 	}
@@ -330,6 +331,50 @@ export class SessionManager {
 		})
 
 		await this.restoreSession(session_id, rethrowError)
+	}
+
+	async getSessionFromTask(taskId: string, provider: ITaskDataProvider): Promise<string> {
+		try {
+			let sessionId = this.sessionPersistenceManager.getSessionForTask(taskId)
+
+			if (!sessionId) {
+				this.logger.debug("No existing session for task, creating new session", "SessionManager", { taskId })
+
+				const { historyItem, apiConversationHistoryFilePath, uiMessagesFilePath } =
+					await provider.getTaskWithId(taskId)
+
+				const apiConversationHistory = JSON.parse(readFileSync(apiConversationHistoryFilePath, "utf8"))
+				const uiMessages = JSON.parse(readFileSync(uiMessagesFilePath, "utf8"))
+
+				const title = historyItem.task || this.getFirstMessageText(uiMessages, true) || ""
+
+				const session = await this.sessionClient.create({
+					title,
+					created_on_platform: process.env.KILO_PLATFORM || this.platform,
+				})
+
+				sessionId = session.session_id
+
+				this.logger.info("Created new session for task", "SessionManager", { taskId, sessionId })
+
+				await this.sessionClient.uploadBlob(sessionId, "api_conversation_history", apiConversationHistory)
+				await this.sessionClient.uploadBlob(sessionId, "ui_messages", uiMessages)
+
+				this.logger.debug("Uploaded conversation blobs to session", "SessionManager", { sessionId })
+
+				this.sessionPersistenceManager.setSessionForTask(taskId, sessionId)
+			} else {
+				this.logger.debug("Found existing session for task", "SessionManager", { taskId, sessionId })
+			}
+
+			return sessionId
+		} catch (error) {
+			this.logger.error("Failed to get or create session from task", "SessionManager", {
+				taskId,
+				error: error instanceof Error ? error.message : String(error),
+			})
+			throw error
+		}
 	}
 
 	async destroy() {

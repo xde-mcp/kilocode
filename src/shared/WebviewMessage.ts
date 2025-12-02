@@ -258,6 +258,7 @@ export interface WebviewMessage {
 		| "requestManagedIndexerState" // kilocode_change
 		| "addTaskToHistory" // kilocode_change
 		| "sessionShare" // kilocode_change
+		| "shareTaskSession" // kilocode_change
 		| "sessionFork" // kilocode_change
 		| "singleCompletion" // kilocode_change
 	text?: string

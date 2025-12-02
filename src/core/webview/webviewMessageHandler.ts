@@ -3864,6 +3864,30 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		case "shareTaskSession": {
+			try {
+				if (!message.text) {
+					vscode.window.showErrorMessage("Task ID is required for sharing a task session")
+					break
+				}
+
+				const taskId = message.text
+				const sessionService = SessionManager.init()
+
+				const sessionId = await sessionService.getSessionFromTask(taskId, provider)
+
+				// Share the session
+				const result = await sessionService.shareSession(sessionId)
+				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
+
+				await vscode.env.clipboard.writeText(shareUrl)
+				vscode.window.showInformationMessage(`Session shared! Link copied to clipboard.`)
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to share task session: ${errorMessage}`)
+			}
+			break
+		}
 		case "sessionFork": {
 			try {
 				if (!message.shareId) {
