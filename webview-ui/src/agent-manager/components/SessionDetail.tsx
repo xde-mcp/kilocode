@@ -4,7 +4,7 @@ import { selectedSessionAtom, selectedSessionIdAtom } from "../state/atoms/sessi
 import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
-import { SquareTerminal, Clock, Plus, Square, Play } from "lucide-react"
+import { SquareTerminal, Clock, Plus, Square, Play, Zap } from "lucide-react"
 
 export function SessionDetail() {
 	const selectedSession = useAtomValue(selectedSessionAtom)
@@ -61,6 +61,13 @@ export function SessionDetail() {
 					</button>
 				</div>
 			</div>
+
+			{selectedSession.status === "running" && (
+				<div className="full-auto-banner">
+					<Zap size={14} />
+					<span>Running in full-auto mode - agent will execute actions without confirmation</span>
+				</div>
+			)}
 
 			<MessageList sessionId={selectedSession.id} />
 

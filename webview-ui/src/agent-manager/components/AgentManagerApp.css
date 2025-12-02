@@ -226,6 +226,23 @@
 	gap: 8px;
 }
 
+/* Full Auto Banner */
+.full-auto-banner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 20px;
+	background: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 0, 0.1));
+	border-bottom: 1px solid var(--vscode-inputValidation-warningBorder, var(--vscode-charts-yellow));
+	color: var(--vscode-inputValidation-warningForeground, var(--vscode-editor-foreground));
+	font-size: 12px;
+}
+
+.full-auto-banner svg {
+	color: var(--vscode-charts-yellow);
+	flex-shrink: 0;
+}
+
 .btn {
 	padding: 4px 12px;
 	border-radius: 2px;
