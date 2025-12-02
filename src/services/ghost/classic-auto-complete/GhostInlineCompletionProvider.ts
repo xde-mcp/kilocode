@@ -102,8 +102,8 @@ interface PendingRequest {
 
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
-	/** Tracks the currently pending request, if any */
-	private pendingRequest: PendingRequest | null = null
+	/** Tracks all pending/in-flight requests */
+	private pendingRequests: PendingRequest[] = []
 	private holeFiller: HoleFiller
 	private fimPromptBuilder: FimPromptBuilder
 	private model: GhostModel
@@ -312,55 +312,74 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	}
 
 	/**
-	 * Check if we should reuse the existing pending request instead of starting a new one.
-	 * We can reuse if:
-	 * 1. There is a pending request
-	 * 2. The suffix matches (user hasn't changed text after cursor)
-	 * 3. The current prefix either equals or extends the pending prefix
+	 * Find a pending request that covers the current prefix/suffix.
+	 * A request covers the current position if:
+	 * 1. The suffix matches (user hasn't changed text after cursor)
+	 * 2. The current prefix either equals or extends the pending prefix
 	 *    (user is typing forward, not backspacing or editing earlier)
+	 *
+	 * @returns The covering pending request, or null if none found
 	 */
-	private shouldReuseExistingRequest(prefix: string, suffix: string): boolean {
-		if (!this.pendingRequest) {
-			return false
-		}
+	private findCoveringPendingRequest(prefix: string, suffix: string): PendingRequest | null {
+		for (const pendingRequest of this.pendingRequests) {
+			// Suffix must match exactly (text after cursor unchanged)
+			if (suffix !== pendingRequest.suffix) {
+				continue
+			}
 
-		// Suffix must match exactly (text after cursor unchanged)
-		if (suffix !== this.pendingRequest.suffix) {
-			return false
+			// Current prefix must start with the pending prefix (user typed more)
+			// or be exactly equal (same position)
+			if (prefix.startsWith(pendingRequest.prefix)) {
+				return pendingRequest
+			}
 		}
+		return null
+	}
 
-		// Current prefix must start with the pending prefix (user typed more)
-		// or be exactly equal (same position)
-		return prefix.startsWith(this.pendingRequest.prefix)
+	/**
+	 * Remove a pending request from the list when it completes.
+	 */
+	private removePendingRequest(request: PendingRequest): void {
+		const index = this.pendingRequests.indexOf(request)
+		if (index !== -1) {
+			this.pendingRequests.splice(index, 1)
+		}
 	}
 
 	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
-		// Check if we can reuse the existing pending request
-		if (this.shouldReuseExistingRequest(prefix, suffix) && this.pendingRequest) {
-			// Wait for the existing request to complete
-			return this.pendingRequest.promise
+		// Check if any existing pending request covers this one
+		const coveringRequest = this.findCoveringPendingRequest(prefix, suffix)
+		if (coveringRequest) {
+			// Wait for the existing request to complete - no need to start a new one
+			return coveringRequest.promise
 		}
 
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 		}
 
+		// Create the pending request object first so we can reference it in the cleanup
+		const pendingRequest: PendingRequest = {
+			prefix,
+			suffix,
+			promise: null!, // Will be set immediately below
+		}
+
 		const requestPromise = new Promise<void>((resolve) => {
 			this.debounceTimer = setTimeout(async () => {
 				this.debounceTimer = null
 				await this.fetchAndCacheSuggestion(prompt, prefix, suffix)
-				// Clear pending request when done
-				this.pendingRequest = null
+				// Remove this request from pending when done
+				this.removePendingRequest(pendingRequest)
 				resolve()
 			}, DEBOUNCE_DELAY_MS)
 		})
 
-		// Mark this as a pending request
-		this.pendingRequest = {
-			prefix,
-			suffix,
-			promise: requestPromise,
-		}
+		// Complete the pending request object
+		pendingRequest.promise = requestPromise
+
+		// Add to the list of pending requests
+		this.pendingRequests.push(pendingRequest)
 
 		return requestPromise
 	}
