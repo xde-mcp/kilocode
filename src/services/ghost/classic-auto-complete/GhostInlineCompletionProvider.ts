@@ -61,6 +61,16 @@ export function findMatchingSuggestion(
 				return fillInAtCursor.text.substring(typedContent.length)
 			}
 		}
+
+		// Check for backward deletion: user deleted characters from the end of the prefix
+		// The stored prefix should start with the current prefix (current is shorter)
+		if (fillInAtCursor.prefix.startsWith(prefix) && suffix === fillInAtCursor.suffix) {
+			// Extract the deleted portion of the prefix
+			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
+
+			// Return the deleted portion plus the original suggestion text
+			return deletedContent + fillInAtCursor.text
+		}
 	}
 
 	return null
