@@ -46,7 +46,6 @@ export function SessionDetail() {
 							<Clock size={12} />
 							<span>{formatDuration(selectedSession.startTime, selectedSession.endTime)}</span>
 						</div>
-						{selectedSession.pid && <span>PID: {selectedSession.pid}</span>}
 					</div>
 				</div>
 
