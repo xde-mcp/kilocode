@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import { useSetAtom } from "jotai"
+import { useAtomValue, useSetAtom } from "jotai"
 import type { ClineMessage } from "@roo-code/types"
 import { updateSessionMessagesAtom } from "../atoms/messages"
 import {
@@ -8,6 +8,7 @@ import {
 	updateSessionStatusAtom,
 	selectedSessionIdAtom,
 	startSessionFailedCounterAtom,
+	sessionOrderAtom,
 	type AgentSession,
 } from "../atoms/sessions"
 
@@ -48,6 +49,7 @@ export function useAgentManagerMessages() {
 	const updateSessionStatus = useSetAtom(updateSessionStatusAtom)
 	const setSelectedSessionId = useSetAtom(selectedSessionIdAtom)
 	const setStartSessionFailedCounter = useSetAtom(startSessionFailedCounterAtom)
+	const sessionOrder = useAtomValue(sessionOrderAtom)
 	const hasInitializedSelection = useRef(false)
 
 	useEffect(() => {
@@ -68,6 +70,13 @@ export function useAgentManagerMessages() {
 					for (const session of state.sessions) {
 						upsertSession(session)
 					}
+					// Remove sessions that no longer exist in extension state
+					const extensionSessionIds = new Set(state.sessions.map((s) => s.id))
+					for (const id of sessionOrder) {
+						if (!extensionSessionIds.has(id)) {
+							removeSession(id)
+						}
+					}
 					// Only set selectedId on initial load to avoid overriding user's selection
 					if (!hasInitializedSelection.current && state.selectedId !== undefined) {
 						setSelectedSessionId(state.selectedId)
@@ -86,5 +95,5 @@ export function useAgentManagerMessages() {
 
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
-	}, [updateSessionMessages, upsertSession, removeSession, updateSessionStatus, setSelectedSessionId, setStartSessionFailedCounter])
+	}, [updateSessionMessages, upsertSession, removeSession, updateSessionStatus, setSelectedSessionId, setStartSessionFailedCounter, sessionOrder])
 }
