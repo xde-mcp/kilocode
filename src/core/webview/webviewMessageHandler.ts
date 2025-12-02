@@ -3867,7 +3867,7 @@ export const webviewMessageHandler = async (
 		case "sessionFork": {
 			try {
 				if (!message.shareId) {
-					vscode.window.showErrorMessage("Share ID is required for forking a session")
+					vscode.window.showErrorMessage("ID is required for forking a session")
 					break
 				}
 
