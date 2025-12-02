@@ -611,21 +611,27 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					event.preventDefault()
 
 					const trimmedInput = inputValue.trim()
+
 					if (trimmedInput.startsWith("/session share")) {
 						vscode.postMessage({
 							type: "sessionShare",
 						})
+
 						setInputValue("")
+
 						return
 					} else if (trimmedInput.startsWith("/session fork ")) {
 						const shareId = trimmedInput.substring("/session fork ".length).trim()
+
+						vscode.postMessage({
+							type: "sessionFork",
+							shareId: shareId,
+						})
+
 						if (shareId) {
-							vscode.postMessage({
-								type: "sessionFork",
-								shareId: shareId,
-							})
 							setInputValue("")
 						}
+
 						return
 					}
 
