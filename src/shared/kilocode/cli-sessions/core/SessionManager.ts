@@ -419,6 +419,10 @@ export class SessionManager {
 			}
 		}
 
+		if (process.env.KILO_DISABLE_SESSIONS) {
+			return
+		}
+
 		this.isSyncing = true
 
 		try {
