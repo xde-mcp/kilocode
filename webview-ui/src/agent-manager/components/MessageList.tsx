@@ -87,7 +87,7 @@ function MessageItem({ message }: { message: ClineMessage }) {
 				title = t("messages.apiRequest")
 				const info = safeJsonParse<{ cost?: number }>(message.text)
 				if (info?.cost !== undefined) {
-					extraInfo = <span className="message-cost">$${info.cost.toFixed(4)}</span>
+					extraInfo = <span className="message-cost">${info.cost.toFixed(4)}</span>
 				}
 				// Don't show content for API req started, just header
 				content = null

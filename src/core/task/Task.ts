@@ -1,3 +1,4 @@
+import * as fs from "fs"
 import * as path from "path"
 import * as vscode from "vscode"
 import os from "os"
@@ -511,7 +512,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		// Ensure directory exists
 		try {
-			const fs = require("fs")
 			if (!fs.existsSync(cliStoragePath)) {
 				fs.mkdirSync(cliStoragePath, { recursive: true })
 			}
