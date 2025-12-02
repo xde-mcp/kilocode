@@ -122,6 +122,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private recentlyVisitedRangesService: RecentlyVisitedRangesService
 	private recentlyEditedTracker: RecentlyEditedTracker
 	private debounceTimer: NodeJS.Timeout | null = null
+	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
 
 	constructor(
@@ -356,6 +357,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
+	/**
+	 * Debounced fetch with leading edge execution and pending request reuse.
+	 * - First call executes immediately (leading edge)
+	 * - Subsequent calls reset the timer and wait for DEBOUNCE_DELAY_MS of inactivity (trailing edge)
+	 * - If a pending request covers the current prefix/suffix, reuse it instead of starting a new one
+	 */
 	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
 		// Check if any existing pending request covers this one
 		const coveringRequest = this.findCoveringPendingRequest(prefix, suffix)
@@ -364,6 +371,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return coveringRequest.promise
 		}
 
+		// If this is the first call (no pending debounce), execute immediately
+		if (this.isFirstCall && this.debounceTimer === null) {
+			this.isFirstCall = false
+			return this.fetchAndCacheSuggestion(prompt, prefix, suffix)
+		}
+
+		// Clear any existing timer (reset the debounce)
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 		}
@@ -378,6 +392,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		const requestPromise = new Promise<void>((resolve) => {
 			this.debounceTimer = setTimeout(async () => {
 				this.debounceTimer = null
+				this.isFirstCall = true // Reset for next sequence
 				await this.fetchAndCacheSuggestion(prompt, prefix, suffix)
 				// Remove this request from pending when done
 				this.removePendingRequest(pendingRequest)
