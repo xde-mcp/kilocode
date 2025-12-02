@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { tryParseJson, parseCliChunk, CliOutputParser, type CliJsonEvent } from "../CliOutputParser"
+import { tryParseJson, parseCliChunk, CliOutputParser, type StreamEvent } from "../CliOutputParser"
 
 describe("tryParseJson", () => {
 	it("should parse valid JSON", () => {
@@ -38,11 +38,13 @@ describe("parseCliChunk", () => {
 		const result = parseCliChunk('{"timestamp":123,"source":"extension","type":"say"}\n')
 		expect(result.events).toHaveLength(1)
 		expect(result.events[0]).toEqual({
-			timestamp: 123,
-			source: "extension",
-			type: "say",
+			streamEventType: "kilocode",
+			payload: {
+				timestamp: 123,
+				source: "extension",
+				type: "say",
+			},
 		})
-		expect(result.plainText).toHaveLength(0)
 		expect(result.remainingBuffer).toBe("")
 	})
 
@@ -51,8 +53,11 @@ describe("parseCliChunk", () => {
 			'{"timestamp":1,"source":"cli","type":"info"}\n{"timestamp":2,"source":"extension","type":"ask"}\n'
 		const result = parseCliChunk(input)
 		expect(result.events).toHaveLength(2)
-		expect(result.events[0].timestamp).toBe(1)
-		expect(result.events[1].timestamp).toBe(2)
+		expect(result.events[0]).toMatchObject({ streamEventType: "status" })
+		expect(result.events[1]).toMatchObject({
+			streamEventType: "kilocode",
+			payload: { type: "ask", timestamp: 2 },
+		})
 	})
 
 	it("should handle partial lines in buffer", () => {
@@ -65,9 +70,12 @@ describe("parseCliChunk", () => {
 		const result = parseCliChunk(',"source":"extension","type":"say"}\n', '{"timestamp":123')
 		expect(result.events).toHaveLength(1)
 		expect(result.events[0]).toEqual({
-			timestamp: 123,
-			source: "extension",
-			type: "say",
+			streamEventType: "kilocode",
+			payload: {
+				timestamp: 123,
+				source: "extension",
+				type: "say",
+			},
 		})
 	})
 
@@ -75,21 +83,22 @@ describe("parseCliChunk", () => {
 		const input = '\x1b[2K\x1b[1A\x1b[2K\x1b[G{"timestamp":123,"source":"extension","type":"say"}\n'
 		const result = parseCliChunk(input)
 		expect(result.events).toHaveLength(1)
-		expect(result.events[0].timestamp).toBe(123)
+		expect(result.events[0]).toMatchObject({ streamEventType: "kilocode", payload: { timestamp: 123 } })
 	})
 
-	it("should collect non-JSON lines as plain text with VT codes stripped", () => {
+	it("should collect non-JSON lines as output events with VT codes stripped", () => {
 		const input = 'not json\n{"timestamp":123,"source":"cli","type":"info"}\nalso not json\n'
 		const result = parseCliChunk(input)
-		expect(result.events).toHaveLength(1)
-		expect(result.plainText).toEqual(["not json", "also not json"])
+		expect(result.events).toHaveLength(3)
+		expect(result.events[0]).toMatchObject({ streamEventType: "output", content: "not json" })
+		expect(result.events[1]).toMatchObject({ streamEventType: "status" })
+		expect(result.events[2]).toMatchObject({ streamEventType: "output", content: "also not json" })
 	})
 
 	it("should skip empty lines", () => {
 		const input = '\n\n{"timestamp":123,"source":"cli","type":"info"}\n\n'
 		const result = parseCliChunk(input)
 		expect(result.events).toHaveLength(1)
-		expect(result.plainText).toHaveLength(0)
 	})
 
 	it("should handle real CLI output with terminal codes", () => {
@@ -97,7 +106,10 @@ describe("parseCliChunk", () => {
 			'\x1b[2K\x1b[1A\x1b[2K\x1b[G{"timestamp":123,"source":"extension","type":"say","say":"text","content":"Hello"}\n'
 		const result = parseCliChunk(input)
 		expect(result.events).toHaveLength(1)
-		expect(result.events[0].content).toBe("Hello")
+		expect(result.events[0]).toMatchObject({
+			streamEventType: "kilocode",
+			payload: { content: "Hello" },
+		})
 	})
 })
 
@@ -112,7 +124,10 @@ describe("CliOutputParser class", () => {
 		// Second chunk - completes the JSON
 		const result2 = parser.parse(',"source":"extension","type":"say"}\n')
 		expect(result2.events).toHaveLength(1)
-		expect(result2.events[0].timestamp).toBe(123)
+		expect(result2.events[0]).toMatchObject({
+			streamEventType: "kilocode",
+			payload: { timestamp: 123 },
+		})
 	})
 
 	it("should flush remaining buffer", () => {
@@ -121,7 +136,7 @@ describe("CliOutputParser class", () => {
 		parser.parse('{"timestamp":123,"source":"cli","type":"info"}')
 		const result = parser.flush()
 		expect(result.events).toHaveLength(1)
-		expect(result.events[0].timestamp).toBe(123)
+		expect(result.events[0]).toMatchObject({ streamEventType: "status" })
 	})
 
 	it("should reset buffer state", () => {
@@ -132,13 +147,13 @@ describe("CliOutputParser class", () => {
 
 		// This should not combine with previous partial
 		const result = parser.parse(',"source":"extension"}\n')
-		expect(result.events).toHaveLength(0)
-		expect(result.plainText).toEqual([',"source":"extension"}'])
+		expect(result.events).toHaveLength(1)
+		expect(result.events[0]).toMatchObject({ streamEventType: "output" })
 	})
 
 	it("should handle streaming chunks correctly", () => {
 		const parser = new CliOutputParser()
-		const events: CliJsonEvent[] = []
+		const events: StreamEvent[] = []
 
 		// Simulate streaming output
 		const chunks = [
@@ -157,8 +172,8 @@ describe("CliOutputParser class", () => {
 		events.push(...final.events)
 
 		expect(events).toHaveLength(3)
-		expect(events[0].content).toBe("Hello")
-		expect(events[1].content).toBe("Hello World")
-		expect(events[2].timestamp).toBe(3)
+		expect(events[0]).toMatchObject({ streamEventType: "kilocode", payload: { content: "Hello" } })
+		expect(events[1]).toMatchObject({ streamEventType: "kilocode", payload: { content: "Hello World" } })
+		expect(events[2]).toMatchObject({ streamEventType: "status" })
 	})
 })

@@ -3,7 +3,7 @@ import { spawn, ChildProcess, execSync } from "node:child_process"
 import * as path from "node:path"
 import { fileExistsAtPath } from "../../utils/fs"
 import { AgentRegistry } from "./AgentRegistry"
-import { CliOutputParser, type CliJsonEvent } from "./CliOutputParser"
+import { CliOutputParser, type StreamEvent, type KilocodeStreamEvent, type KilocodePayload } from "./CliOutputParser"
 import { getUri } from "../webview/getUri"
 import { getNonce } from "../webview/getNonce"
 import type { ClineMessage } from "@roo-code/types"
@@ -11,10 +11,7 @@ import type { ClineMessage } from "@roo-code/types"
 const SESSION_TIMEOUT_MS = 120_000 // 2 minutes
 const WINDOWS = "win32"
 
-export function getKilocodeCliCandidatePaths(
-	env: NodeJS.ProcessEnv,
-	platform: NodeJS.Platform,
-): string[] {
+export function getKilocodeCliCandidatePaths(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string[] {
 	const homeDir = env.HOME || ""
 
 	const posixPaths = [
@@ -64,6 +61,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 	private parsers: Map<string, CliOutputParser> = new Map()
 	private cliPath: string | null = null
 	private readonly cliCandidatePaths = getKilocodeCliCandidatePaths(process.env, process.platform)
+	// Track first api_req_started per session to filter user-input echoes
+	private firstApiReqStarted: Map<string, boolean> = new Map()
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
@@ -216,14 +215,10 @@ export class AgentManagerProvider implements vscode.Disposable {
 				`[AgentManager] stdout chunk (${chunkStr.length} bytes): ${chunkStr.slice(0, 200)}`,
 			)
 
-			const { events, plainText } = parser.parse(chunkStr)
+			const { events } = parser.parse(chunkStr)
 
 			for (const event of events) {
 				this.handleCliEvent(session.id, event)
-			}
-
-			for (const line of plainText) {
-				this.log(session.id, line)
 			}
 
 			this.postStateToWebview()
@@ -244,12 +239,9 @@ export class AgentManagerProvider implements vscode.Disposable {
 			// Flush any buffered parser output to avoid dropping the final message when no newline is sent
 			const parser = this.parsers.get(session.id)
 			if (parser) {
-				const { events, plainText } = parser.flush()
+				const { events } = parser.flush()
 				for (const event of events) {
 					this.handleCliEvent(session.id, event)
-				}
-				for (const line of plainText) {
-					this.log(session.id, line)
 				}
 				this.parsers.delete(session.id)
 			}
@@ -283,46 +275,161 @@ export class AgentManagerProvider implements vscode.Disposable {
 	/**
 	 * Handle a JSON event from the CLI stdout
 	 */
-	private handleCliEvent(sessionId: string, event: CliJsonEvent): void {
-		// Log CLI events
-		if (event.source === "cli") {
-			this.log(sessionId, `[CLI] ${event.type}: ${event.content?.slice(0, 100) || ""}`)
+	private handleCliEvent(sessionId: string, event: StreamEvent): void {
+		switch (event.streamEventType) {
+			case "kilocode":
+				this.handleKilocodeEvent(sessionId, event)
+				break
+			case "status":
+				this.log(sessionId, event.message)
+				break
+			case "output":
+				this.log(sessionId, `[${event.source}] ${event.content}`)
+				break
+			case "error":
+				this.registry.updateSessionStatus(sessionId, "error", undefined, event.error)
+				this.log(sessionId, `Error: ${event.error}`)
+				if (event.details) {
+					this.log(sessionId, `Details: ${JSON.stringify(event.details)}`)
+				}
+				break
+			case "complete":
+				this.registry.updateSessionStatus(sessionId, "done", event.exitCode)
+				this.log(sessionId, "Agent completed")
+				break
+			case "interrupted":
+				this.registry.updateSessionStatus(sessionId, "stopped", undefined, event.reason)
+				this.log(sessionId, event.reason || "Execution interrupted")
+				break
+		}
+	}
+
+	private handleKilocodeEvent(sessionId: string, event: KilocodeStreamEvent): void {
+		const payload = event.payload
+		const messageType = payload.type === "ask" ? "ask" : payload.type === "say" ? "say" : null
+		if (!messageType) {
+			// Unknown payloads (e.g., session_created) are logged but not shown as chat
+			const evtName = (payload as { event?: string }).event || payload.type || "event"
+			this.log(sessionId, `event:${evtName}`)
 			return
 		}
 
-		// Process extension messages for chat display
-		if (event.source === "extension") {
-			const message: ClineMessage = {
-				ts: event.timestamp,
-				type: event.type as "say" | "ask",
-				say: event.say as ClineMessage["say"],
-				ask: event.ask as ClineMessage["ask"],
-				text: event.content || (event.metadata ? JSON.stringify(event.metadata) : ""),
-				partial: event.partial ?? false,
-				isAnswered: event.isAnswered,
-			}
-
-			// Update or append message
-			const messages = this.sessionMessages.get(sessionId) || []
-			const existingIdx = messages.findIndex((m) => m.ts === message.ts)
-			if (existingIdx >= 0) {
-				messages[existingIdx] = message
-			} else {
-				messages.push(message)
-			}
-			this.sessionMessages.set(sessionId, messages)
-
-			// Send to webview
-			this.postMessage({
-				type: "agentManager.chatMessages",
-				sessionId,
-				messages,
-			})
-
-			// Log summary
-			const summary = `${event.type}:${event.say || event.ask || ""}`
-			this.log(sessionId, summary)
+		// Track first api_req_started to identify user echo
+		if (payload.say === "api_req_started") {
+			this.firstApiReqStarted.set(sessionId, true)
+			// We don't render api_req_started/finished as chat rows
+			return
 		}
+		if (payload.say === "api_req_finished") {
+			return
+		}
+		// Skip echo of initial user prompt (say:text before first api_req_started)
+		if (payload.say === "text" && !this.firstApiReqStarted.get(sessionId)) {
+			this.log(sessionId, `skipping user input echo: ${(payload.content as string)?.slice(0, 50)}`)
+			return
+		}
+
+		// Skip empty partial messages
+		const rawContent = payload.content || payload.text
+		if (payload.partial && !rawContent) {
+			return
+		}
+
+		const timestamp = (payload.timestamp as number | undefined) ?? (payload as { ts?: number }).ts ?? Date.now()
+		const checkpoint = (payload as { checkpoint?: Record<string, unknown> }).checkpoint
+		const text = this.deriveMessageText(payload, checkpoint)
+		const message: ClineMessage = {
+			ts: timestamp,
+			type: messageType,
+			say: payload.say as ClineMessage["say"],
+			ask: payload.ask as ClineMessage["ask"],
+			text,
+			partial: payload.partial ?? false,
+			isAnswered: payload.isAnswered as boolean | undefined,
+			metadata: payload.metadata as Record<string, unknown> | undefined,
+			checkpoint,
+		}
+
+		// If we have a checkpoint, render as a distinct entry by forcing say=checkpoint_saved and clearing ask
+		if (checkpoint && payload.say === "checkpoint_saved") {
+			message.say = "checkpoint_saved"
+			message.ask = undefined
+		}
+
+		// If content/text missing for ask messages, synthesize from ask subtype
+		if (!message.text && message.type === "ask" && message.ask) {
+			if (message.ask === "tool") {
+				message.text = this.formatToolAskText(payload.metadata)
+			} else {
+				message.text = message.ask
+			}
+		}
+
+		// Drop empty messages (except checkpoints)
+		if (!message.text && message.say !== "checkpoint_saved") {
+			return
+		}
+
+		// Update or append message (dedupe by ts + type + say/ask; final replaces partial)
+		const messages = this.sessionMessages.get(sessionId) || []
+		const key = this.getMessageKey(message)
+		const existingIdx = messages.findIndex((m) => this.getMessageKey(m) === key)
+		if (existingIdx >= 0) {
+			const existing = messages[existingIdx]
+			if (!message.partial || existing.partial) {
+				messages[existingIdx] = message
+			}
+		} else {
+			messages.push(message)
+		}
+		this.sessionMessages.set(sessionId, messages)
+
+		// Send to webview
+		this.postMessage({
+			type: "agentManager.chatMessages",
+			sessionId,
+			messages,
+		})
+
+		// Log summary
+		const summary = `${messageType}:${payload.say || payload.ask || ""}`
+		this.log(sessionId, summary)
+	}
+
+	private deriveMessageText(payload: KilocodePayload, checkpoint?: Record<string, unknown>): string {
+		// Regular content/text first
+		if (payload.content) return payload.content as string
+		if (payload.text) return payload.text as string
+
+		// Checkpoints: do not render hash as chat text; let UI handle via checkpoint
+		if (payload.say === "checkpoint_saved") {
+			return ""
+		}
+
+		// Tool asks
+		if (payload.ask === "tool") {
+			return this.formatToolAskText(payload.metadata) || ""
+		}
+
+		// Fallback empty
+		return ""
+	}
+
+	private formatToolAskText(metadata?: Record<string, unknown>): string | undefined {
+		if (!metadata) return undefined
+		const tool = (metadata as { tool?: string }).tool
+		const query = (metadata as { query?: string }).query
+		const args = (metadata as { args?: unknown }).args
+		if (tool) {
+			if (query) return `Tool: ${tool} (${String(query)})`
+			if (args) return `Tool: ${tool} (${JSON.stringify(args)})`
+			return `Tool: ${tool}`
+		}
+		return undefined
+	}
+
+	private getMessageKey(message: ClineMessage): string {
+		return `${message.ts}-${message.type}-${message.say ?? ""}-${message.ask ?? ""}`
 	}
 
 	/**
@@ -359,6 +466,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.registry.updateSessionStatus(sessionId, "stopped", undefined, "Stopped by user")
 		this.log(sessionId, "Stopped by user")
 		this.postStateToWebview()
+
+		this.firstApiReqStarted.delete(sessionId)
 	}
 
 	/**
@@ -382,6 +491,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 		this.registry.removeSession(sessionId)
 		this.postStateToWebview()
+
+		this.firstApiReqStarted.delete(sessionId)
 	}
 
 	private postStateToWebview(): void {
@@ -444,6 +555,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		// Clear messages and parsers
 		this.sessionMessages.clear()
 		this.parsers.clear()
+		this.firstApiReqStarted.clear()
 
 		this.panel?.dispose()
 		this.disposables.forEach((d) => d.dispose())
@@ -504,9 +616,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 			)
 			.then((selection) => {
 				if (selection === "Install Instructions") {
-					void vscode.env.openExternal(
-						vscode.Uri.parse("https://kilo.ai/docs/cli"),
-					)
+					void vscode.env.openExternal(vscode.Uri.parse("https://kilo.ai/docs/cli"))
 				}
 			})
 	}

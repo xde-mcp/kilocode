@@ -1,45 +1,26 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vitest"
 import { EventEmitter } from "node:events"
 
-import { AgentManagerProvider, getKilocodeCliCandidatePaths } from "../AgentManagerProvider"
-
-// Mock VS Code API used by AgentManagerProvider
-const mockWorkspaceFolder = { uri: { fsPath: "/tmp/workspace" } }
-const mockWindow = { showErrorMessage: vi.fn(), ViewColumn: { One: 1 } }
-vi.mock("vscode", () => ({
-	workspace: { workspaceFolders: [mockWorkspaceFolder] },
-	window: mockWindow,
-	env: { openExternal: vi.fn() },
-	Uri: { parse: vi.fn(), joinPath: vi.fn() },
-	ViewColumn: { One: 1 },
-}))
-
-// Stub file system helper
-vi.mock("../../utils/fs", () => ({
-	fileExistsAtPath: vi.fn().mockResolvedValue(false),
-}))
-
-// Capture spawn calls
-class MockProc extends EventEmitter {
-	stdout = new EventEmitter()
-	stderr = new EventEmitter()
-	kill = vi.fn()
-	pid = 1234
-}
-
-const spawnMock = vi.fn(() => new MockProc())
-const execSyncMock = vi.fn(() => "/usr/bin/kilocode")
-
-vi.mock("node:child_process", async () => {
-	const actual = await vi.importActual<typeof import("node:child_process")>("node:child_process")
-	return {
-		...actual,
-		spawn: spawnMock,
-		execSync: execSyncMock,
-	}
-})
+let AgentManagerProvider: typeof import("../AgentManagerProvider").AgentManagerProvider
+let getKilocodeCliCandidatePaths: typeof import("../AgentManagerProvider").getKilocodeCliCandidatePaths
 
 describe("getKilocodeCliCandidatePaths", () => {
+	beforeEach(async () => {
+		vi.resetModules()
+
+		vi.doMock("vscode", () => ({
+			workspace: { workspaceFolders: [] },
+			window: { showErrorMessage: () => undefined, ViewColumn: { One: 1 } },
+			Uri: { joinPath: () => undefined },
+			ViewColumn: { One: 1 },
+		}))
+
+		vi.doMock("node:child_process", () => ({ spawn: vi.fn(), execSync: vi.fn() }))
+
+		const module = await import("../AgentManagerProvider")
+		getKilocodeCliCandidatePaths = module.getKilocodeCliCandidatePaths
+	})
+
 	it("returns expected POSIX paths", () => {
 		const env = { HOME: "/Users/test" } as NodeJS.ProcessEnv
 		const paths = getKilocodeCliCandidatePaths(env, "darwin")
@@ -67,18 +48,51 @@ describe("getKilocodeCliCandidatePaths", () => {
 		expect(paths).toContain("C:\\Users\\Tester\\AppData\\Local\\Programs\\kilocode\\kilocode.exe")
 		expect(paths).toContain("C:\\Program Files\\Kilocode\\kilocode.exe")
 		expect(paths).toContain("C:\\Program Files (x86)\\Kilocode\\kilocode.exe")
-		expect(paths.some((p) => p.startsWith("/opt/homebrew"))).toBe(false)
+		// Windows includes posix paths as fallback
+		expect(paths.some((p) => p.startsWith("/opt/homebrew"))).toBe(true)
 	})
 })
 
 describe("AgentManagerProvider CLI spawning", () => {
-	let provider: AgentManagerProvider
+	let provider: InstanceType<typeof AgentManagerProvider>
 	const mockContext = { extensionUri: {}, extensionPath: "" } as any
 	const mockOutputChannel = { appendLine: vi.fn() } as any
 
-	beforeEach(() => {
-		spawnMock.mockClear()
-		execSyncMock.mockClear()
+	beforeEach(async () => {
+		vi.resetModules()
+
+		const mockWorkspaceFolder = { uri: { fsPath: "/tmp/workspace" } }
+		const mockWindow = { showErrorMessage: () => undefined, ViewColumn: { One: 1 } }
+
+		vi.doMock("vscode", () => ({
+			workspace: { workspaceFolders: [mockWorkspaceFolder] },
+			window: mockWindow,
+			env: { openExternal: vi.fn() },
+			Uri: { parse: vi.fn(), joinPath: vi.fn() },
+			ViewColumn: { One: 1 },
+		}))
+
+		vi.doMock("../../utils/fs", () => ({
+			fileExistsAtPath: vi.fn().mockResolvedValue(false),
+		}))
+
+		class TestProc extends EventEmitter {
+			stdout = new EventEmitter()
+			stderr = new EventEmitter()
+			kill = vi.fn()
+			pid = 1234
+		}
+
+		const spawnMock = vi.fn(() => new TestProc())
+		const execSyncMock = vi.fn(() => "/usr/bin/kilocode")
+
+		vi.doMock("node:child_process", () => ({
+			spawn: spawnMock,
+			execSync: execSyncMock,
+		}))
+
+		const module = await import("../AgentManagerProvider")
+		AgentManagerProvider = module.AgentManagerProvider
 		provider = new AgentManagerProvider(mockContext, mockOutputChannel)
 	})
 
@@ -89,6 +103,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 	it("spawns kilocode without shell interpolation for prompt arguments", async () => {
 		await (provider as any).startAgentSession('echo "$(whoami)"')
 
+		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
 		expect(spawnMock).toHaveBeenCalledTimes(1)
 		const [cmd, args, options] = spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, unknown>]
 		expect(cmd).toBe("/usr/bin/kilocode")
@@ -98,15 +113,21 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 	it("flushes buffered CLI output on process exit", async () => {
 		await (provider as any).startAgentSession("test flush")
-		const proc = spawnMock.mock.results[0].value as MockProc
+		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+		const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter; emit: Function }
+
+		// Enable text handling
+		const sessionId = (provider as any).registry.getSessions()[0].id as string
+		;(provider as any).handleKilocodeEvent(sessionId, {
+			streamEventType: "kilocode",
+			payload: { type: "say", say: "api_req_started" },
+		})
 
 		// Emit a JSON line without trailing newline to stay buffered
 		const partial = '{"timestamp":1,"source":"extension","type":"say","say":"text","content":"hi"}'
 		proc.stdout.emit("data", Buffer.from(partial))
 
 		// No messages yet because the line lacked a newline
-		const registry = (provider as any).registry
-		const sessionId = registry.getSessions()[0].id as string
 		expect((provider as any).sessionMessages.get(sessionId)).toEqual([])
 
 		// Exit should flush the buffered line and deliver the message

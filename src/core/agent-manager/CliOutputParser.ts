@@ -9,27 +9,75 @@
 
 import { stripVTControlCharacters } from "node:util"
 
-/**
- * JSON event from CLI stdout (nd-json format)
- */
-export interface CliJsonEvent {
-	timestamp: number
-	source: "cli" | "extension"
-	type: string
+export interface KilocodePayload extends Record<string, unknown> {
+	type?: string
 	say?: string
 	ask?: string
 	content?: string
+	text?: string
+	timestamp?: number
 	metadata?: Record<string, unknown>
 	partial?: boolean
 	isAnswered?: boolean
 }
 
+export interface KilocodeStreamEvent {
+	streamEventType: "kilocode"
+	payload: KilocodePayload
+	sessionId?: string
+}
+
+export interface StatusStreamEvent {
+	streamEventType: "status"
+	message: string
+	timestamp: string
+	sessionId?: string
+}
+
+export interface OutputStreamEvent {
+	streamEventType: "output"
+	content: string
+	source: "stdout" | "stderr"
+	timestamp: string
+	sessionId?: string
+}
+
+export interface ErrorStreamEvent {
+	streamEventType: "error"
+	error: string
+	details?: unknown
+	timestamp: string
+	sessionId?: string
+}
+
+export interface CompleteStreamEvent {
+	streamEventType: "complete"
+	taskId?: string
+	sessionId?: string
+	exitCode?: number
+	metadata?: Record<string, unknown>
+}
+
+export interface InterruptedStreamEvent {
+	streamEventType: "interrupted"
+	reason?: string
+	timestamp: string
+	sessionId?: string
+}
+
+export type StreamEvent =
+	| KilocodeStreamEvent
+	| StatusStreamEvent
+	| OutputStreamEvent
+	| ErrorStreamEvent
+	| CompleteStreamEvent
+	| InterruptedStreamEvent
+
 /**
  * Result of parsing a chunk of CLI output
  */
 export interface ParseResult {
-	events: CliJsonEvent[]
-	plainText: string[]
+	events: StreamEvent[]
 	remainingBuffer: string
 }
 
@@ -37,13 +85,13 @@ export interface ParseResult {
  * Try to parse a line as JSON, attempting both raw and ANSI-stripped versions.
  * This matches the cloud agent's approach in streaming-helpers.ts.
  */
-export function tryParseJson(line: string): CliJsonEvent | null {
+export function tryParseJson(line: string): Record<string, unknown> | null {
 	// Try both original and VT-stripped versions
 	for (const candidate of [line, stripVTControlCharacters(line)]) {
 		try {
 			const parsed = JSON.parse(candidate)
 			if (typeof parsed === "object" && parsed !== null) {
-				return parsed as CliJsonEvent
+				return parsed as Record<string, unknown>
 			}
 		} catch {
 			// Continue to next candidate
@@ -57,11 +105,10 @@ export function tryParseJson(line: string): CliJsonEvent | null {
  *
  * @param chunk - The new chunk of data received
  * @param buffer - Any leftover data from the previous chunk
- * @returns Parsed events, plain text lines, and remaining buffer
+ * @returns Parsed events and remaining buffer
  */
 export function parseCliChunk(chunk: string, buffer: string = ""): ParseResult {
-	const events: CliJsonEvent[] = []
-	const plainText: string[] = []
+	const events: StreamEvent[] = []
 
 	// Combine buffer with new chunk and split by newlines
 	const combined = buffer + chunk
@@ -75,19 +122,21 @@ export function parseCliChunk(chunk: string, buffer: string = ""): ParseResult {
 		if (!trimmedLine) continue
 
 		// Try to parse as JSON (tries both raw and VT-stripped versions)
-		const event = tryParseJson(trimmedLine)
+		const parsed = tryParseJson(trimmedLine)
+		const event = parsed ? toStreamEvent(parsed) : null
 		if (event !== null) {
 			events.push(event)
-		} else {
-			// Not JSON - strip VT characters before treating as plain text
-			const cleanLine = stripVTControlCharacters(trimmedLine)
-			if (cleanLine) {
-				plainText.push(cleanLine)
-			}
+			continue
+		}
+
+		// Not JSON - strip VT characters before treating as plain text output event
+		const cleanLine = stripVTControlCharacters(trimmedLine)
+		if (cleanLine) {
+			events.push(createOutputEvent(cleanLine))
 		}
 	}
 
-	return { events, plainText, remainingBuffer }
+	return { events, remainingBuffer }
 }
 
 /**
@@ -110,29 +159,30 @@ export class CliOutputParser {
 	 */
 	flush(): ParseResult {
 		if (!this.buffer) {
-			return { events: [], plainText: [], remainingBuffer: "" }
+			return { events: [], remainingBuffer: "" }
 		}
 
 		const trimmedBuffer = this.buffer.trim()
 		this.buffer = ""
 
 		if (!trimmedBuffer) {
-			return { events: [], plainText: [], remainingBuffer: "" }
+			return { events: [], remainingBuffer: "" }
 		}
 
 		// Try to parse as JSON (tries both raw and VT-stripped versions)
-		const event = tryParseJson(trimmedBuffer)
+		const parsed = tryParseJson(trimmedBuffer)
+		const event = parsed ? toStreamEvent(parsed) : null
 		if (event !== null) {
-			return { events: [event], plainText: [], remainingBuffer: "" }
+			return { events: [event], remainingBuffer: "" }
 		}
 
 		// Not JSON - strip VT characters before treating as plain text
 		const cleanLine = stripVTControlCharacters(trimmedBuffer)
 		if (cleanLine) {
-			return { events: [], plainText: [cleanLine], remainingBuffer: "" }
+			return { events: [createOutputEvent(cleanLine)], remainingBuffer: "" }
 		}
 
-		return { events: [], plainText: [], remainingBuffer: "" }
+		return { events: [], remainingBuffer: "" }
 	}
 
 	/**
@@ -140,5 +190,36 @@ export class CliOutputParser {
 	 */
 	reset(): void {
 		this.buffer = ""
+	}
+}
+
+function toStreamEvent(parsed: Record<string, unknown>): StreamEvent | null {
+	// New format already includes streamEventType
+	const streamEventType = (parsed as { streamEventType?: unknown }).streamEventType
+	if (typeof streamEventType === "string") {
+		return parsed as unknown as StreamEvent
+	}
+
+	// Legacy format from CLI stdout: wrap parsed object as kilocode payload
+	if (parsed.source === "cli") {
+		return {
+			streamEventType: "status",
+			message: (parsed.content as string) || (parsed.type as string) || "cli",
+			timestamp: new Date().toISOString(),
+		}
+	}
+
+	return {
+		streamEventType: "kilocode",
+		payload: parsed as KilocodePayload,
+	}
+}
+
+function createOutputEvent(content: string): OutputStreamEvent {
+	return {
+		streamEventType: "output",
+		content,
+		source: "stdout",
+		timestamp: new Date().toISOString(),
 	}
 }
