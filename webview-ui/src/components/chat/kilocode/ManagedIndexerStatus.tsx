@@ -61,7 +61,9 @@ export const ManagedIndexerStatus: React.FC<ManagedIndexerStatusProps> = ({ work
 							/>
 
 							{/* Folder Name */}
-							<h4 className="text-sm font-medium text-vscode-foreground flex-1 text-left truncate m-0">
+							<h4
+								className="text-sm font-medium text-vscode-foreground flex-1 text-left truncate m-0"
+								title={folder.workspaceFolderName}>
 								{folder.workspaceFolderName}
 							</h4>
 
@@ -106,7 +108,9 @@ export const ManagedIndexerStatus: React.FC<ManagedIndexerStatusProps> = ({ work
 								{folder.repositoryUrl && (
 									<div className="flex justify-between">
 										<span>Repository:</span>
-										<code className="font-mono text-vscode-foreground text-right truncate max-w-[200px]">
+										<code
+											className="font-mono text-vscode-foreground text-right truncate max-w-[200px]"
+											title={folder.repositoryUrl}>
 											{folder.repositoryUrl}
 										</code>
 									</div>
