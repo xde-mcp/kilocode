@@ -60,6 +60,22 @@ export class ProviderSettingsManager {
 	private static readonly SCOPE_PREFIX = "roo_cline_config_"
 	private readonly defaultConfigId = this.generateId()
 
+	/**
+	 * In-memory report of duplicate-id repairs performed during initialization.
+	 * Keyed by the original duplicated id, value is the list of newly generated ids
+	 * that replaced later duplicates (the first occurrence keeps the original id).
+	 *
+	 * This is intended to be consumed by the layer that owns global state (ContextProxy),
+	 * so it can migrate id-based references like pinned profiles without bypassing caches.
+	 */
+	private pendingDuplicateIdRepairReport: Record<string, string[]> | null = null
+
+	public consumeDuplicateIdRepairReport(): Record<string, string[]> | null {
+		const report = this.pendingDuplicateIdRepairReport
+		this.pendingDuplicateIdRepairReport = null
+		return report
+	}
+
 	private readonly defaultModeApiConfigs: Record<string, string> = Object.fromEntries(
 		modes.map((mode) => [mode.slug, this.defaultConfigId]),
 	)
@@ -105,6 +121,16 @@ export class ProviderSettingsManager {
 		return Math.random().toString(36).substring(2, 15)
 	}
 
+	private generateUniqueId(existingIds: Set<string>): string {
+		let id: string
+		do {
+			id = this.generateId()
+		} while (existingIds.has(id))
+
+		existingIds.add(id)
+		return id
+	}
+
 	// Synchronize readConfig/writeConfig operations to avoid data loss.
 	private _lock = Promise.resolve()
 	private lock<T>(cb: () => Promise<T>) {
@@ -148,6 +174,80 @@ export class ProviderSettingsManager {
 					if (!apiConfig.id) {
 						apiConfig.id = this.generateId()
 						isDirty = true
+					}
+				}
+
+				// Repair duplicated IDs (keep the first occurrence based on apiConfigs insertion order).
+				// This must be idempotent and must follow the same canonical ordering the backend uses
+				// when building the profile list (Object.entries on apiConfigs).
+				{
+					const existingIds = new Set(
+						Object.values(providerProfiles.apiConfigs)
+							.map((c) => c.id)
+							.filter((id): id is string => Boolean(id)),
+					)
+
+					const seenIds = new Set<string>()
+					let updatedCloudProfileIds: Set<string> | undefined
+					const duplicateIdRepairReport: Record<string, string[]> = {}
+
+					for (const [name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
+						const id = apiConfig.id
+						if (!id) continue
+
+						// first profile keeps its id
+						if (!seenIds.has(id)) {
+							seenIds.add(id)
+							continue
+						}
+
+						const newId = this.generateUniqueId(existingIds)
+						apiConfig.id = newId
+						isDirty = true
+
+						duplicateIdRepairReport[id] ??= []
+						duplicateIdRepairReport[id].push(newId)
+
+						// If this was considered cloud-managed before (by virtue of its old id being listed),
+						// keep it cloud-managed by adding the new id as well.
+						if (providerProfiles.cloudProfileIds?.includes(id)) {
+							updatedCloudProfileIds ??= new Set(providerProfiles.cloudProfileIds)
+							updatedCloudProfileIds.add(newId)
+						}
+
+						console.warn(
+							`[ProviderSettingsManager] Deduped duplicate provider profile id '${id}' for '${name}', new id '${newId}'`,
+						)
+					}
+
+					if (updatedCloudProfileIds) {
+						providerProfiles.cloudProfileIds = Array.from(updatedCloudProfileIds)
+						isDirty = true
+					}
+
+					if (Object.keys(duplicateIdRepairReport).length > 0) {
+						this.pendingDuplicateIdRepairReport = duplicateIdRepairReport
+					}
+				}
+
+				// Keep secrets-side references consistent (post-dedupe).
+				{
+					const validProfileIds = new Set(
+						Object.values(providerProfiles.apiConfigs)
+							.map((c) => c.id)
+							.filter((id): id is string => Boolean(id)),
+					)
+
+					const firstProfileId = Object.values(providerProfiles.apiConfigs)[0]?.id
+
+					// Fix modeApiConfigs stored inside providerProfiles (secrets) if they point to a missing id.
+					if (providerProfiles.modeApiConfigs && firstProfileId) {
+						for (const [mode, configId] of Object.entries(providerProfiles.modeApiConfigs)) {
+							if (!validProfileIds.has(configId)) {
+								providerProfiles.modeApiConfigs[mode] = firstProfileId
+								isDirty = true
+							}
+						}
 					}
 				}
 
