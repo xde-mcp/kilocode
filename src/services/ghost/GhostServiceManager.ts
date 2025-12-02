@@ -5,7 +5,6 @@ import { GhostModel } from "./GhostModel"
 import { GhostStatusBar } from "./GhostStatusBar"
 import { GhostCodeActionProvider } from "./GhostCodeActionProvider"
 import { GhostInlineCompletionProvider } from "./classic-auto-complete/GhostInlineCompletionProvider"
-import { NewAutocompleteProvider } from "./new-auto-complete/NewAutocompleteProvider"
 import { GhostServiceSettings, TelemetryEventName } from "@roo-code/types"
 import { ContextProxy } from "../../core/config/ContextProxy"
 import { TelemetryService } from "@roo-code/telemetry"
@@ -29,7 +28,6 @@ export class GhostServiceManager {
 	// VSCode Providers
 	public readonly codeActionProvider: GhostCodeActionProvider
 	public readonly inlineCompletionProvider: GhostInlineCompletionProvider
-	private newAutocompleteProvider: NewAutocompleteProvider | null = null
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	private constructor(context: vscode.ExtensionContext, cline: ClineProvider) {
@@ -97,27 +95,15 @@ export class GhostServiceManager {
 			this.inlineCompletionProviderDisposable.dispose()
 			this.inlineCompletionProviderDisposable = null
 		}
-		if (this.newAutocompleteProvider && (!shouldBeRegistered || !this.settings?.useNewAutocomplete)) {
-			// Dispose new autocomplete provider if registration is disabled
-			this.newAutocompleteProvider.dispose()
-			this.newAutocompleteProvider = null
-		}
 
 		if (!shouldBeRegistered) return
 
-		if (this.settings?.useNewAutocomplete) {
-			// Initialize new autocomplete provider if not already created, otherwise reload
-			this.newAutocompleteProvider ??= new NewAutocompleteProvider(this.context, this.cline)
-			await this.newAutocompleteProvider.load()
-			// New autocomplete provider registers itself internally
-		} else {
-			// Register classic provider
-			this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
-				{ scheme: "file" },
-				this.inlineCompletionProvider,
-			)
-			this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
-		}
+		// Register classic provider
+		this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
+			{ scheme: "file" },
+			this.inlineCompletionProvider,
+		)
+		this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
 	}
 
 	public async disable() {
@@ -148,13 +134,6 @@ export class GhostServiceManager {
 		})
 
 		const document = editor.document
-
-		// Check if using new autocomplete
-		if (this.settings?.useNewAutocomplete) {
-			// New autocomplete doesn't support manual code suggestion yet
-			// Just return for now
-			return
-		}
 
 		// Ensure model is loaded
 		if (!this.model.loaded) {
@@ -312,12 +291,6 @@ export class GhostServiceManager {
 
 		// Dispose inline completion provider resources
 		this.inlineCompletionProvider.dispose()
-
-		// Dispose new autocomplete provider if it exists
-		if (this.newAutocompleteProvider) {
-			this.newAutocompleteProvider.dispose()
-			this.newAutocompleteProvider = null
-		}
 
 		GhostServiceManager.instance = null // Reset singleton
 	}
