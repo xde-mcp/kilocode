@@ -87,8 +87,23 @@ export interface LLMRetrievalResult {
 	cacheReadTokens: number
 }
 
+/**
+ * Represents a pending/in-flight request that can be reused if the user
+ * continues typing in a way that's compatible with the pending completion.
+ */
+interface PendingRequest {
+	/** The prefix that was used to start this request */
+	prefix: string
+	/** The suffix that was used to start this request */
+	suffix: string
+	/** Promise that resolves when the request completes */
+	promise: Promise<void>
+}
+
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
+	/** Tracks the currently pending request, if any */
+	private pendingRequest: PendingRequest | null = null
 	private holeFiller: HoleFiller
 	private fimPromptBuilder: FimPromptBuilder
 	private model: GhostModel
@@ -296,18 +311,58 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
+	/**
+	 * Check if we should reuse the existing pending request instead of starting a new one.
+	 * We can reuse if:
+	 * 1. There is a pending request
+	 * 2. The suffix matches (user hasn't changed text after cursor)
+	 * 3. The current prefix either equals or extends the pending prefix
+	 *    (user is typing forward, not backspacing or editing earlier)
+	 */
+	private shouldReuseExistingRequest(prefix: string, suffix: string): boolean {
+		if (!this.pendingRequest) {
+			return false
+		}
+
+		// Suffix must match exactly (text after cursor unchanged)
+		if (suffix !== this.pendingRequest.suffix) {
+			return false
+		}
+
+		// Current prefix must start with the pending prefix (user typed more)
+		// or be exactly equal (same position)
+		return prefix.startsWith(this.pendingRequest.prefix)
+	}
+
 	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
+		// Check if we can reuse the existing pending request
+		if (this.shouldReuseExistingRequest(prefix, suffix) && this.pendingRequest) {
+			// Wait for the existing request to complete
+			return this.pendingRequest.promise
+		}
+
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 		}
 
-		return new Promise<void>((resolve) => {
+		const requestPromise = new Promise<void>((resolve) => {
 			this.debounceTimer = setTimeout(async () => {
 				this.debounceTimer = null
 				await this.fetchAndCacheSuggestion(prompt, prefix, suffix)
+				// Clear pending request when done
+				this.pendingRequest = null
 				resolve()
 			}, DEBOUNCE_DELAY_MS)
 		})
+
+		// Mark this as a pending request
+		this.pendingRequest = {
+			prefix,
+			suffix,
+			promise: requestPromise,
+		}
+
+		return requestPromise
 	}
 
 	private async fetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
