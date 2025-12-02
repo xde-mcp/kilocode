@@ -4,7 +4,6 @@ import * as os from "os"
 import * as fs from "fs/promises"
 import pWaitFor from "p-wait-for"
 import * as vscode from "vscode"
-import deepEqual from "fast-deep-equal"
 // kilocode_change start
 import axios from "axios"
 import { fastApplyApiProviderSchema, getKiloUrlFromToken, isGlobalStateKey } from "@roo-code/types"
@@ -474,10 +473,6 @@ export const webviewMessageHandler = async (
 			const { refreshWorkflowToggles } = await import("../context/instructions/workflows") // kilocode_change
 			await refreshWorkflowToggles(provider.context, provider.cwd) // kilocode_change
 
-			// Ensure provider profile migrations/repairs (including duplicate-id repair) are complete
-			// before sending initial state and list metadata to the webview.
-			await provider.providerSettingsManager.initialize()
-
 			provider.postStateToWebview()
 			provider.postRulesDataToWebview() // kilocode_change: send workflows and rules immediately
 			provider.workspaceTracker?.initializeFilePaths() // Don't await.
@@ -492,88 +487,11 @@ export const webviewMessageHandler = async (
 				provider.postMessageToWebview({ type: "mcpServers", mcpServers: mcpHub.getAllServers() })
 			}
 
-			;(async () => {
-				try {
-					// Ensure migrations (including duplicate-id repair) are complete before listing configs.
-					await provider.providerSettingsManager.initialize()
-
-					const duplicateIdRepairReport = provider.providerSettingsManager.consumeDuplicateIdRepairReport()
-
-					if (duplicateIdRepairReport) {
-						provider.log(
-							`[ProviderSettingsManager] Duplicate profile id repair report: ${JSON.stringify(
-								duplicateIdRepairReport,
-							)}`,
-						)
-					}
-
-					const listApiConfig = await provider.providerSettingsManager.listConfig()
-
+			provider.providerSettingsManager
+				.listConfig()
+				.then(async (listApiConfig) => {
 					if (!listApiConfig) {
 						return
-					}
-
-					// Clean up any global-state id references that point to missing profiles (post-dedupe).
-					{
-						const validProfileIds = new Set(listApiConfig.map((c) => c.id).filter(Boolean))
-						const firstProfileId = listApiConfig[0]?.id
-
-						// pinnedApiConfigs is keyed by profile id (UI pins).
-						// If an id was duplicated and got deduped into multiple new ids, replicate the pin
-						// since the UI couldn't distinguish between those profiles while ids were broken.
-						const pinnedApiConfigs = getGlobalState("pinnedApiConfigs") ?? {}
-						const nextPinnedApiConfigs: Record<string, boolean> = Object.fromEntries(
-							Object.entries(pinnedApiConfigs).filter(
-								([id, pinned]) => pinned && validProfileIds.has(id),
-							),
-						)
-
-						if (duplicateIdRepairReport) {
-							for (const [oldId, newIds] of Object.entries(duplicateIdRepairReport)) {
-								if (pinnedApiConfigs[oldId]) {
-									for (const newId of newIds) {
-										if (validProfileIds.has(newId)) {
-											nextPinnedApiConfigs[newId] = true
-										}
-									}
-								}
-							}
-						}
-
-						if (!deepEqual(nextPinnedApiConfigs, pinnedApiConfigs)) {
-							await updateGlobalState("pinnedApiConfigs", nextPinnedApiConfigs)
-						}
-
-						const idSettingKeys = [
-							"enhancementApiConfigId",
-							"condensingApiConfigId",
-							"yoloGatekeeperApiConfigId",
-							"commitMessageApiConfigId",
-							"terminalCommandApiConfigId",
-						] as const
-
-						for (const key of idSettingKeys) {
-							const current = getGlobalState(key as any) as string | undefined
-							if (current && !validProfileIds.has(current)) {
-								await updateGlobalState(key as any, undefined)
-							}
-						}
-
-						// modeApiConfigs is a global-state map; keep it from pointing to missing ids.
-						const modeApiConfigs = getGlobalState("modeApiConfigs") ?? {}
-						if (firstProfileId && modeApiConfigs && typeof modeApiConfigs === "object") {
-							let changed = false
-							const next: Record<string, string> = { ...modeApiConfigs }
-							for (const [mode, configId] of Object.entries(next)) {
-								if (configId && !validProfileIds.has(configId)) {
-									next[mode] = firstProfileId
-									changed = true
-								}
-							}
-							if (changed) {
-								await updateGlobalState("modeApiConfigs", next as any)
-							}
-						}
 					}
 
 					if (listApiConfig.length === 1) {
@@ -606,15 +524,15 @@ export const webviewMessageHandler = async (
 					}
 
 					await Promise.all([
-						updateGlobalState("listApiConfigMeta", listApiConfig),
-						provider.postMessageToWebview({ type: "listApiConfig", listApiConfig }),
+						await updateGlobalState("listApiConfigMeta", listApiConfig),
+						await provider.postMessageToWebview({ type: "listApiConfig", listApiConfig }),
 					])
-				} catch (error) {
+				})
+				.catch((error) =>
 					provider.log(
 						`Error list api configuration: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
-					)
-				}
-			})()
+					),
+				)
 
 			// If user already opted in to telemetry, enable telemetry service
 			provider.getStateToPostToWebview().then(async (/*kilocode_change*/ state) => {
