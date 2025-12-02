@@ -526,12 +526,22 @@ export class ProviderSettingsManager {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
 
-				// kilocode_change - autocomplete profile type system
+				// kilocode_change
 				await this.validateAutocompleteConstraint(providerProfiles, name, config.profileType)
 
-				// Preserve the existing ID if this is an update to an existing config.
-				const existingId = providerProfiles.apiConfigs[name]?.id
-				const id = config.id || existingId || this.generateId()
+				const existingEntry = providerProfiles.apiConfigs[name]
+				const existingIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
+
+				// EXISTING: preserve stored id; NEW: generate fresh unique id.
+				const id =
+					existingEntry?.id && existingEntry.id.length > 0
+						? existingEntry.id
+						: this.generateUniqueId(existingIds)
+				// kilocode_change end
 
 				// Filter out settings from other providers.
 				const filteredConfig = discriminatedProviderSettingsWithIdSchema.parse(config)
