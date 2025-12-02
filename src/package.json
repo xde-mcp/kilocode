@@ -349,7 +349,7 @@
 				{
 					"command": "kilo-code.agentManagerOpen",
 					"group": "navigation@0",
-					"when": "view == kilo-code.SidebarProvider"
+					"when": "view == kilo-code.SidebarProvider && kilo-code.agentManagerEnabled"
 				},
 				{
 					"command": "kilo-code.plusButtonClicked",

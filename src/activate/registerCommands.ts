@@ -16,7 +16,7 @@ import { CodeIndexManager } from "../services/code-index/manager"
 import { importSettingsWithFeedback } from "../core/config/importExport"
 import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
-import { getAppUrl } from "@roo-code/types" // kilocode_change
+import { getAppUrl, AGENT_MANAGER_ENABLED } from "@roo-code/types" // kilocode_change
 import { generateTerminalCommand } from "../utils/terminalCommandGenerator" // kilocode_change
 import { AgentManagerProvider } from "../core/agent-manager/AgentManagerProvider" // Agent Manager
 
@@ -72,9 +72,14 @@ let agentManagerProvider: AgentManagerProvider | undefined
 export const registerCommands = (options: RegisterCommandOptions) => {
 	const { context, outputChannel } = options
 
-	// Create Agent Manager provider
-	agentManagerProvider = new AgentManagerProvider(context, outputChannel)
-	context.subscriptions.push(agentManagerProvider)
+	// Set feature flag context for Agent Manager visibility
+	vscode.commands.executeCommand("setContext", "kilo-code.agentManagerEnabled", AGENT_MANAGER_ENABLED)
+
+	// Create Agent Manager provider (only if enabled)
+	if (AGENT_MANAGER_ENABLED) {
+		agentManagerProvider = new AgentManagerProvider(context, outputChannel)
+		context.subscriptions.push(agentManagerProvider)
+	}
 
 	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
 		const command = getCommand(id as CommandId)
