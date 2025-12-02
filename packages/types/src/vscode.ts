@@ -49,7 +49,7 @@ export const commandIds = [
 	"settingsButtonClicked",
 
 	"openInNewTab",
-	"agentManagerOpen",
+	"agentManagerOpen", // kilocode_change
 
 	"showHumanRelayDialog",
 	"registerHumanRelayCallback",

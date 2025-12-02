@@ -113,7 +113,7 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				input: {
 					main: resolve(__dirname, "index.html"),
-					"agent-manager": resolve(__dirname, "agent-manager.html"),
+					"agent-manager": resolve(__dirname, "agent-manager.html"), // kilocode_change
 				},
 				external: ["vscode"], // kilocode_change: we inadvertently import vscode into the webview: @roo/modes => src/shared/modes => ../core/prompts/sections/custom-instructions
 				output: {

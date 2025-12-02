@@ -18,7 +18,7 @@ import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
 import { getAppUrl, AGENT_MANAGER_ENABLED } from "@roo-code/types" // kilocode_change
 import { generateTerminalCommand } from "../utils/terminalCommandGenerator" // kilocode_change
-import { AgentManagerProvider } from "../core/agent-manager/AgentManagerProvider" // Agent Manager
+import { AgentManagerProvider } from "../core/agent-manager/AgentManagerProvider" // kilocode_change
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
@@ -66,13 +66,14 @@ export type RegisterCommandOptions = {
 	provider: ClineProvider
 }
 
-// Agent Manager provider instance (singleton for the extension)
+// kilocode_change start - Agent Manager provider instance (singleton for the extension)
 let agentManagerProvider: AgentManagerProvider | undefined
+// kilocode_change end
 
 export const registerCommands = (options: RegisterCommandOptions) => {
 	const { context, outputChannel } = options
 
-	// Set feature flag context for Agent Manager visibility
+	// kilocode_change start - Set feature flag context for Agent Manager visibility
 	vscode.commands.executeCommand("setContext", "kilo-code.agentManagerEnabled", AGENT_MANAGER_ENABLED)
 
 	// Create Agent Manager provider (only if enabled)
@@ -80,6 +81,7 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 		agentManagerProvider = new AgentManagerProvider(context, outputChannel)
 		context.subscriptions.push(agentManagerProvider)
 	}
+	// kilocode_change end
 
 	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
 		const command = getCommand(id as CommandId)
@@ -89,9 +91,11 @@ export const registerCommands = (options: RegisterCommandOptions) => {
 
 const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Record<CommandId, any> => ({
 	activationCompleted: () => {},
+	// kilocode_change start
 	agentManagerOpen: () => {
 		agentManagerProvider?.openPanel()
 	},
+	// kilocode_change end
 	cloudButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 
