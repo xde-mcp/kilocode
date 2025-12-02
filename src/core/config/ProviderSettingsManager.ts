@@ -136,6 +136,7 @@ export class ProviderSettingsManager {
 		return next
 	}
 
+	async kiloRepairExistingIds() {}
 	// kilocode_change: private & renamed:
 	async init_runMigrations() {
 		try {
@@ -174,79 +175,74 @@ export class ProviderSettingsManager {
 					}
 				}
 
-				// Repair duplicated IDs (keep the first occurrence based on apiConfigs insertion order).
-				// This must be idempotent and must follow the same canonical ordering the backend uses
-				// when building the profile list (Object.entries on apiConfigs).
-				{
-					const existingIds = new Set(
-						Object.values(providerProfiles.apiConfigs)
-							.map((c) => c.id)
-							.filter((id): id is string => Boolean(id)),
+				// kilocode_change start: Repair duplicated IDs (keep the first occurrence based on apiConfigs insertion order).
+				const existingIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
+
+				const seenIds = new Set<string>()
+				let updatedCloudProfileIds: Set<string> | undefined
+				const duplicateIdRepairReport: Record<string, string[]> = {}
+
+				for (const [name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
+					const id = apiConfig.id
+					if (!id) continue
+
+					// first profile keeps its id
+					if (!seenIds.has(id)) {
+						seenIds.add(id)
+						continue
+					}
+
+					const newId = this.generateUniqueId(existingIds)
+					apiConfig.id = newId
+					isDirty = true
+
+					duplicateIdRepairReport[id] ??= []
+					duplicateIdRepairReport[id].push(newId)
+
+					// If this was considered cloud-managed before (by virtue of its old id being listed),
+					// keep it cloud-managed by adding the new id as well.
+					if (providerProfiles.cloudProfileIds?.includes(id)) {
+						updatedCloudProfileIds ??= new Set(providerProfiles.cloudProfileIds)
+						updatedCloudProfileIds.add(newId)
+					}
+
+					console.warn(
+						`[ProviderSettingsManager] Deduped duplicate provider profile id '${id}' for '${name}', new id '${newId}'`,
 					)
+				}
 
-					const seenIds = new Set<string>()
-					let updatedCloudProfileIds: Set<string> | undefined
-					const duplicateIdRepairReport: Record<string, string[]> = {}
+				if (updatedCloudProfileIds) {
+					providerProfiles.cloudProfileIds = Array.from(updatedCloudProfileIds)
+					isDirty = true
+				}
 
-					for (const [name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
-						const id = apiConfig.id
-						if (!id) continue
-
-						// first profile keeps its id
-						if (!seenIds.has(id)) {
-							seenIds.add(id)
-							continue
-						}
-
-						const newId = this.generateUniqueId(existingIds)
-						apiConfig.id = newId
-						isDirty = true
-
-						duplicateIdRepairReport[id] ??= []
-						duplicateIdRepairReport[id].push(newId)
-
-						// If this was considered cloud-managed before (by virtue of its old id being listed),
-						// keep it cloud-managed by adding the new id as well.
-						if (providerProfiles.cloudProfileIds?.includes(id)) {
-							updatedCloudProfileIds ??= new Set(providerProfiles.cloudProfileIds)
-							updatedCloudProfileIds.add(newId)
-						}
-
-						console.warn(
-							`[ProviderSettingsManager] Deduped duplicate provider profile id '${id}' for '${name}', new id '${newId}'`,
-						)
-					}
-
-					if (updatedCloudProfileIds) {
-						providerProfiles.cloudProfileIds = Array.from(updatedCloudProfileIds)
-						isDirty = true
-					}
-
-					if (Object.keys(duplicateIdRepairReport).length > 0) {
-						this.pendingDuplicateIdRepairReport = duplicateIdRepairReport
-					}
+				if (Object.keys(duplicateIdRepairReport).length > 0) {
+					this.pendingDuplicateIdRepairReport = duplicateIdRepairReport
 				}
 
 				// Keep secrets-side references consistent (post-dedupe).
-				{
-					const validProfileIds = new Set(
-						Object.values(providerProfiles.apiConfigs)
-							.map((c) => c.id)
-							.filter((id): id is string => Boolean(id)),
-					)
+				const validProfileIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
 
-					const firstProfileId = Object.values(providerProfiles.apiConfigs)[0]?.id
+				const firstProfileId = Object.values(providerProfiles.apiConfigs)[0]?.id
 
-					// Fix modeApiConfigs stored inside providerProfiles (secrets) if they point to a missing id.
-					if (providerProfiles.modeApiConfigs && firstProfileId) {
-						for (const [mode, configId] of Object.entries(providerProfiles.modeApiConfigs)) {
-							if (!validProfileIds.has(configId)) {
-								providerProfiles.modeApiConfigs[mode] = firstProfileId
-								isDirty = true
-							}
+				// Fix modeApiConfigs stored inside providerProfiles (secrets) if they point to a missing id.
+				if (providerProfiles.modeApiConfigs && firstProfileId) {
+					for (const [mode, configId] of Object.entries(providerProfiles.modeApiConfigs)) {
+						if (!validProfileIds.has(configId)) {
+							providerProfiles.modeApiConfigs[mode] = firstProfileId
+							isDirty = true
 						}
 					}
 				}
+				// kilocode_Change end
 
 				// Ensure migrations field exists
 				if (!providerProfiles.migrations) {

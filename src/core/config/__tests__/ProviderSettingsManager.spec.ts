@@ -119,6 +119,7 @@ describe("ProviderSettingsManager", () => {
 			expect(storedConfig.apiConfigs.test.id).toBeTruthy()
 		})
 
+		// kilocode_change start
 		it("should not change anything when no duplicated ids exist", async () => {
 			mockSecrets.get.mockResolvedValue(
 				JSON.stringify({
@@ -167,6 +168,7 @@ describe("ProviderSettingsManager", () => {
 					},
 				}),
 			)
+			// kilocode_change end
 
 			await providerSettingsManager.initialize()
 
