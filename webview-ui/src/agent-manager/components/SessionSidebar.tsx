@@ -1,10 +1,12 @@
 import React from "react"
 import { useAtom, useAtomValue } from "jotai"
+import { useTranslation } from "react-i18next"
 import { sessionsArrayAtom, selectedSessionIdAtom, type AgentSession } from "../state/atoms/sessions"
 import { vscode } from "../utils/vscode"
 import { Plus, Trash2, SquareTerminal, Clock } from "lucide-react"
 
 export function SessionSidebar() {
+	const { t } = useTranslation("agentManager")
 	const sessions = useAtomValue(sessionsArrayAtom)
 	const [selectedId, setSelectedId] = useAtom(selectedSessionIdAtom)
 
@@ -27,7 +29,7 @@ export function SessionSidebar() {
 	return (
 		<div className="sidebar">
 			<div className="sidebar-header">
-				<span>Agent Manager</span>
+				<span>{t("sidebar.title")}</span>
 			</div>
 
 			<div
@@ -37,15 +39,15 @@ export function SessionSidebar() {
 				tabIndex={0}
 				onKeyDown={(e) => e.key === "Enter" && handleNewSession()}>
 				<Plus size={16} />
-				<span>New Agent</span>
+				<span>{t("sidebar.newAgent")}</span>
 			</div>
 
-			<div className="sidebar-section-header">Sessions</div>
+			<div className="sidebar-section-header">{t("sidebar.sessionsSection")}</div>
 
 			<div className="session-list">
 				{sessions.length === 0 ? (
 					<div className="no-sessions">
-						<p>No active agents yet.</p>
+						<p>{t("sidebar.emptyState")}</p>
 					</div>
 				) : (
 					sessions.map((session) => (
@@ -74,6 +76,8 @@ function SessionItem({
 	onSelect: () => void
 	onRemove: (e: React.MouseEvent) => void
 }) {
+	const { t } = useTranslation("agentManager")
+
 	const formatDuration = (start: number, end?: number) => {
 		const duration = (end || Date.now()) - start
 		const seconds = Math.floor(duration / 1000)
@@ -84,7 +88,7 @@ function SessionItem({
 
 	return (
 		<div className={`session-item ${isSelected ? "selected" : ""}`} onClick={onSelect}>
-			<div className={`status-icon ${session.status}`} title={session.status}>
+			<div className={`status-icon ${session.status}`} title={t(`status.${session.status}`)}>
 				{session.status === "running" ? (
 					<Clock size={14} />
 				) : session.status === "done" ? (
@@ -97,7 +101,7 @@ function SessionItem({
 				<div className="session-label">{session.label}</div>
 				<div className="session-meta">{formatDuration(session.startTime, session.endTime)}</div>
 			</div>
-			<button className="icon-btn" onClick={onRemove} title="Remove">
+			<button className="icon-btn" onClick={onRemove} title={t("sidebar.removeSession")}>
 				<Trash2 size={14} />
 			</button>
 		</div>

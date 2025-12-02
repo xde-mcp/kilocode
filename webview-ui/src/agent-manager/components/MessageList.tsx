@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react"
 import { useAtomValue } from "jotai"
+import { useTranslation } from "react-i18next"
 import { sessionMessagesAtomFamily } from "../state/atoms/messages"
 import type { ClineMessage } from "@roo-code/types"
 import { SimpleMarkdown } from "./SimpleMarkdown"
@@ -21,6 +22,7 @@ interface MessageListProps {
  * Displays messages for a session from Jotai state.
  */
 export function MessageList({ sessionId }: MessageListProps) {
+	const { t } = useTranslation("agentManager")
 	const messages = useAtomValue(sessionMessagesAtomFamily(sessionId))
 	const containerRef = useRef<HTMLDivElement>(null)
 
@@ -40,7 +42,7 @@ export function MessageList({ sessionId }: MessageListProps) {
 		return (
 			<div className="messages-empty">
 				<MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
-				<p>Waiting for agent response...</p>
+				<p>{t("messages.waiting")}</p>
 			</div>
 		)
 	}
@@ -68,10 +70,12 @@ function safeJsonParse<T>(text: string | undefined): T | null {
 }
 
 function MessageItem({ message }: { message: ClineMessage }) {
+	const { t } = useTranslation("agentManager")
+
 	// --- 1. Determine Message Style & Content ---
 
 	let icon = <MessageCircle size={16} />
-	let title = "Kilo said"
+	let title = t("messages.kiloSaid")
 	let content: React.ReactNode = null
 	let extraInfo: React.ReactNode = null
 
@@ -80,7 +84,7 @@ function MessageItem({ message }: { message: ClineMessage }) {
 		switch (message.say) {
 			case "api_req_started": {
 				icon = <ArrowRightLeft size={16} className="opacity-70" />
-				title = "API Request"
+				title = t("messages.apiRequest")
 				const info = safeJsonParse<{ cost?: number }>(message.text)
 				if (info?.cost !== undefined) {
 					extraInfo = <span className="message-cost">$${info.cost.toFixed(4)}</span>
@@ -91,25 +95,25 @@ function MessageItem({ message }: { message: ClineMessage }) {
 			}
 			case "text": {
 				icon = <MessageCircle size={16} />
-				title = "Kilo said"
+				title = t("messages.kiloSaid")
 				content = <SimpleMarkdown content={message.text || ""} />
 				break
 			}
 			case "user_feedback": {
 				icon = <User size={16} />
-				title = "You said"
+				title = t("messages.youSaid")
 				content = <SimpleMarkdown content={message.text || ""} />
 				break
 			}
 			case "completion_result": {
 				icon = <CheckCircle2 size={16} className="text-green-500" />
-				title = "Task Completed"
+				title = t("messages.taskCompleted")
 				content = <SimpleMarkdown content={message.text || ""} />
 				break
 			}
 			case "error": {
 				icon = <AlertCircle size={16} className="text-red-500" />
-				title = "Error"
+				title = t("messages.error")
 				content = <SimpleMarkdown content={message.text || ""} />
 				break
 			}
@@ -125,7 +129,7 @@ function MessageItem({ message }: { message: ClineMessage }) {
 		switch (message.ask) {
 			case "followup": {
 				icon = <MessageCircleQuestion size={16} />
-				title = "Kilo Code has a question"
+				title = t("messages.question")
 				const info = safeJsonParse<{ question: string; suggest?: string[] }>(message.text)
 				content = (
 					<div>
@@ -137,19 +141,19 @@ function MessageItem({ message }: { message: ClineMessage }) {
 			}
 			case "command": {
 				icon = <TerminalSquare size={16} />
-				title = "Kilo wants to run a command"
+				title = t("messages.command")
 				content = <SimpleMarkdown content={`\`${message.text}\``} />
 				break
 			}
 			case "tool": {
 				// Tool asks usually have JSON content describing the tool use
 				icon = <TerminalSquare size={16} />
-				title = "Kilo wants to use a tool"
+				title = t("messages.tool")
 				// Try to parse tool use for better display
 				const toolInfo = safeJsonParse<{ tool: string; path?: string }>(message.text)
 				if (toolInfo) {
 					const toolDetails = toolInfo.path ? `(${toolInfo.path})` : ""
-					content = <SimpleMarkdown content={`Using tool: **${toolInfo.tool}** ${toolDetails}`} />
+					content = <SimpleMarkdown content={t("messages.usingTool", { tool: toolInfo.tool, details: toolDetails })} />
 				} else {
 					content = <SimpleMarkdown content={message.text || ""} />
 				}

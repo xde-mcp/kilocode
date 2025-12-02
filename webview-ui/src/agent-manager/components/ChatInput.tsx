@@ -1,4 +1,5 @@
 import React from "react"
+import { useTranslation } from "react-i18next"
 
 interface ChatInputProps {
 	sessionId: string
@@ -12,6 +13,8 @@ interface ChatInputProps {
  * Each agent session runs to completion without user interaction.
  */
 export const ChatInput: React.FC<ChatInputProps> = ({ disabled = false }) => {
+	const { t } = useTranslation("agentManager")
+
 	if (disabled) {
 		return null
 	}
@@ -20,7 +23,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ disabled = false }) => {
 	return (
 		<div className="chat-input-container">
 			<div className="chat-input-disabled">
-				<span>Agent running in autonomous mode</span>
+				<span>{t("chatInput.autonomous")}</span>
 			</div>
 		</div>
 	)

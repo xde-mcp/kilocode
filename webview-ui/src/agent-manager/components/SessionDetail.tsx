@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { useAtomValue, useSetAtom } from "jotai"
+import { useTranslation } from "react-i18next"
 import { selectedSessionAtom, selectedSessionIdAtom } from "../state/atoms/sessions"
 import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
@@ -7,6 +8,7 @@ import { vscode } from "../utils/vscode"
 import { SquareTerminal, Clock, Plus, Square, Play, AlertCircle, Loader2, Zap } from "lucide-react"
 
 export function SessionDetail() {
+	const { t } = useTranslation("agentManager")
 	const selectedSession = useAtomValue(selectedSessionAtom)
 	const setSelectedId = useSetAtom(selectedSessionIdAtom)
 
@@ -44,7 +46,7 @@ export function SessionDetail() {
 							style={{ display: "flex", alignItems: "center", gap: 4 }}
 							className={isError ? "status-error" : undefined}>
 							{isError ? <AlertCircle size={12} /> : <SquareTerminal size={12} />}
-							<span>{selectedSession.status}</span>
+							<span>{t(`status.${selectedSession.status}`)}</span>
 						</div>
 						<div style={{ display: "flex", alignItems: "center", gap: 4 }}>
 							<Clock size={12} />
@@ -58,17 +60,17 @@ export function SessionDetail() {
 						<button
 							className="btn btn-danger"
 							onClick={handleStop}
-							aria-label="Stop agent session"
-							title="Stop Agent">
-							<Square size={12} fill="currentColor" /> Stop
+							aria-label={t("sessionDetail.stopButtonTitle")}
+							title={t("sessionDetail.stopButtonTitle")}>
+							<Square size={12} fill="currentColor" /> {t("sessionDetail.stopButton")}
 						</button>
 					)}
 					<button
 						className="btn btn-secondary"
 						onClick={handleNewAgent}
-						aria-label="Start new agent session"
-						title="New Agent">
-						<Plus size={14} /> New
+						aria-label={t("sessionDetail.newButtonTitle")}
+						title={t("sessionDetail.newButtonTitle")}>
+						<Plus size={14} /> {t("sessionDetail.newButton")}
 					</button>
 				</div>
 			</div>
@@ -83,7 +85,7 @@ export function SessionDetail() {
 			{selectedSession.status === "running" && (
 				<div className="full-auto-banner">
 					<Zap size={14} />
-					<span>Running in full-auto mode - agent will execute actions without confirmation</span>
+					<span>{t("sessionDetail.autoModeWarning")}</span>
 				</div>
 			)}
 
@@ -95,6 +97,7 @@ export function SessionDetail() {
 }
 
 function NewAgentForm() {
+	const { t } = useTranslation("agentManager")
 	const [promptText, setPromptText] = useState("")
 	const [isStarting, setIsStarting] = useState(false)
 
@@ -110,12 +113,12 @@ function NewAgentForm() {
 
 	return (
 		<div className="center-form">
-			<h2 id="new-agent-heading">Start a new agent</h2>
-			<p id="new-agent-description">Describe the task you want the agent to perform.</p>
+			<h2 id="new-agent-heading">{t("sessionDetail.startNewAgent")}</h2>
+			<p id="new-agent-description">{t("sessionDetail.describeTask")}</p>
 			<div style={{ width: "100%", maxWidth: "500px" }}>
 				<textarea
 					className="prompt-input"
-					placeholder="e.g. Create a new React component for a button..."
+					placeholder={t("sessionDetail.placeholderTask")}
 					value={promptText}
 					onChange={(e) => setPromptText(e.target.value)}
 					onKeyDown={(e) => {
@@ -132,15 +135,15 @@ function NewAgentForm() {
 						className="btn btn-primary"
 						onClick={handleStart}
 						disabled={isStarting || isEmpty}
-						aria-label={isStarting ? "Starting agent..." : "Start agent with provided prompt"}
+						aria-label={isStarting ? t("sessionDetail.starting") : t("sessionDetail.startAriaLabel")}
 						style={{ padding: "8px 24px", fontSize: "13px" }}>
 						{isStarting ? (
 							<>
-								<Loader2 size={14} className="spinning" style={{ marginRight: 6 }} /> Starting...
+								<Loader2 size={14} className="spinning" style={{ marginRight: 6 }} /> {t("sessionDetail.starting")}
 							</>
 						) : (
 							<>
-								<Play size={14} style={{ marginRight: 6 }} /> Start Agent
+								<Play size={14} style={{ marginRight: 6 }} /> {t("sidebar.startAgent")}
 							</>
 						)}
 					</button>
@@ -148,7 +151,7 @@ function NewAgentForm() {
 				<p
 					className="keyboard-hint"
 					style={{ textAlign: "center", marginTop: 8, opacity: 0.6, fontSize: "12px" }}>
-					Press <kbd>Cmd</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to start
+					{t("sessionDetail.keyboardHint")}
 				</p>
 			</div>
 		</div>
