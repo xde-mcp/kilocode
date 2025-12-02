@@ -173,11 +173,13 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.outputChannel.appendLine(`[AgentManager] Command: ${cliPath} ${cliArgs.join(" ")}`)
 		this.outputChannel.appendLine(`[AgentManager] Working dir: ${workspace}`)
 
-		// Spawn CLI process. Set NO_COLOR and FORCE_COLOR=0 to disable ANSI output
+		// Spawn CLI process. Avoid shell wrapping so the prompt cannot be interpolated by a shell.
+		// Set NO_COLOR and FORCE_COLOR=0 to disable ANSI output.
 		const proc = spawn(cliPath, cliArgs, {
 			cwd: workspace,
 			stdio: ["pipe", "pipe", "pipe"],
 			env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" },
+			shell: false,
 		})
 
 		this.processes.set(session.id, proc)
@@ -236,6 +238,19 @@ export class AgentManagerProvider implements vscode.Disposable {
 		// Handle process exit
 		proc.on("exit", (code, signal) => {
 			this.outputChannel.appendLine(`[AgentManager] Process exited: code=${code}, signal=${signal}`)
+
+			// Flush any buffered parser output to avoid dropping the final message when no newline is sent
+			const parser = this.parsers.get(session.id)
+			if (parser) {
+				const { events, plainText } = parser.flush()
+				for (const event of events) {
+					this.handleCliEvent(session.id, event)
+				}
+				for (const line of plainText) {
+					this.log(session.id, line)
+				}
+				this.parsers.delete(session.id)
+			}
 
 			const t = this.timeouts.get(session.id)
 			if (t) clearTimeout(t)
