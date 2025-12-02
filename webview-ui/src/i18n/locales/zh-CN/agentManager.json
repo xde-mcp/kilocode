@@ -18,7 +18,7 @@
 		"autoModeWarning": "正在全自动模式下运行 - 代理将在无需确认的情况下执行操作",
 		"starting": "正在启动...",
 		"startAriaLabel": "使用提供的提示启动代理",
-		"keyboardHint": "按 Cmd+Enter 或 Ctrl+Enter 启动"
+		"keyboardHint": "按 Enter 启动，Shift+Enter 换行"
 	},
 	"messages": {
 		"waiting": "等待代理响应...",

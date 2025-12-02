@@ -135,17 +135,23 @@ export class AgentRegistry {
 	}
 
 	/**
-	 * Remove oldest sessions if exceeding max
+	 * Remove oldest sessions if exceeding max.
+	 * Prefers to remove oldest non-running sessions first.
 	 */
 	private pruneOldSessions(): void {
 		const sessions = this.getSessions()
-		if (sessions.length > this.maxSessions) {
-			// Remove oldest non-running sessions first
-			const toRemove = sessions.filter((s) => s.status !== "running").slice(this.maxSessions - 1)
+		const overflow = sessions.length - this.maxSessions
+		if (overflow <= 0) return
 
-			for (const session of toRemove) {
-				this.sessions.delete(session.id)
-			}
+		// Only prune non-running sessions
+		const nonRunning = sessions.filter((s) => s.status !== "running")
+		if (nonRunning.length === 0) return
+
+		// Sessions are sorted most-recent-first, so slice from the end to get oldest
+		const toRemove = nonRunning.slice(-Math.min(overflow, nonRunning.length))
+
+		for (const session of toRemove) {
+			this.sessions.delete(session.id)
 		}
 	}
 

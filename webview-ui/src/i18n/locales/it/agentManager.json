@@ -18,7 +18,7 @@
 		"autoModeWarning": "In esecuzione in modalità completamente automatica - l'agente eseguirà le azioni senza conferma",
 		"starting": "Avvio in corso...",
 		"startAriaLabel": "Avvia agente con il prompt fornito",
-		"keyboardHint": "Premi Cmd+Invio o Ctrl+Invio per avviare"
+		"keyboardHint": "Premi Invio per avviare, Shift+Invio per nuova riga"
 	},
 	"messages": {
 		"waiting": "In attesa della risposta dell'agente...",

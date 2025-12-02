@@ -18,7 +18,7 @@
 		"autoModeWarning": "Tam otomatik modda çalışıyor - ajan onay almadan eylemleri gerçekleştirecek",
 		"starting": "Başlatılıyor...",
 		"startAriaLabel": "Verilen istemle ajanı başlat",
-		"keyboardHint": "Başlatmak için Cmd+Enter veya Ctrl+Enter tuşlarına basın"
+		"keyboardHint": "Başlatmak için Enter, yeni satır için Shift+Enter"
 	},
 	"messages": {
 		"waiting": "Ajan yanıtı bekleniyor...",

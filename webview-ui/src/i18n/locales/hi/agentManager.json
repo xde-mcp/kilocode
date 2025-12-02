@@ -18,7 +18,7 @@
 		"autoModeWarning": "पूर्ण-स्वचालित मोड में चल रहा है - एजेंट बिना पुष्टि के कार्य करेगा",
 		"starting": "शुरू हो रहा है...",
 		"startAriaLabel": "दिए गए प्रॉम्प्ट के साथ एजेंट शुरू करें",
-		"keyboardHint": "शुरू करने के लिए Cmd+Enter या Ctrl+Enter दबाएं"
+		"keyboardHint": "शुरू करने के लिए Enter दबाएं, नई पंक्ति के लिए Shift+Enter"
 	},
 	"messages": {
 		"waiting": "एजेंट की प्रतिक्रिया की प्रतीक्षा में...",

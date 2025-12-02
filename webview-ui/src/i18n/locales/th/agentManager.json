@@ -18,7 +18,7 @@
 		"autoModeWarning": "ทำงานในโหมดอัตโนมัติเต็มรูปแบบ - เอเจนต์จะดำเนินการโดยไม่ต้องยืนยัน",
 		"starting": "กำลังเริ่ม...",
 		"startAriaLabel": "เริ่มเอเจนต์ด้วยพรอมต์ที่ให้มา",
-		"keyboardHint": "กด Cmd+Enter หรือ Ctrl+Enter เพื่อเริ่ม"
+		"keyboardHint": "กด Enter เพื่อเริ่ม, Shift+Enter สำหรับบรรทัดใหม่"
 	},
 	"messages": {
 		"waiting": "รอการตอบกลับจากเอเจนต์...",

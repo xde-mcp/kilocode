@@ -18,7 +18,7 @@
 		"autoModeWarning": "يعمل في الوضع التلقائي الكامل - سينفذ الوكيل الإجراءات دون تأكيد",
 		"starting": "جاري البدء...",
 		"startAriaLabel": "بدء الوكيل بالأمر المقدم",
-		"keyboardHint": "اضغط Cmd+Enter أو Ctrl+Enter للبدء"
+		"keyboardHint": "اضغط Enter للبدء، Shift+Enter لسطر جديد"
 	},
 	"messages": {
 		"waiting": "في انتظار رد الوكيل...",

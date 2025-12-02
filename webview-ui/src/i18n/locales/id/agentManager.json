@@ -18,7 +18,7 @@
 		"autoModeWarning": "Berjalan dalam mode otomatis penuh - agen akan menjalankan tindakan tanpa konfirmasi",
 		"starting": "Memulai...",
 		"startAriaLabel": "Mulai agen dengan prompt yang diberikan",
-		"keyboardHint": "Tekan Cmd+Enter atau Ctrl+Enter untuk memulai"
+		"keyboardHint": "Tekan Enter untuk memulai, Shift+Enter untuk baris baru"
 	},
 	"messages": {
 		"waiting": "Menunggu respons agen...",

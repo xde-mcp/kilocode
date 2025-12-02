@@ -18,7 +18,7 @@
 		"autoModeWarning": "Běží v plně automatickém režimu - agent bude provádět akce bez potvrzení",
 		"starting": "Spouštění...",
 		"startAriaLabel": "Spustit agenta s poskytnutým příkazem",
-		"keyboardHint": "Stiskněte Cmd+Enter nebo Ctrl+Enter pro spuštění"
+		"keyboardHint": "Stiskněte Enter pro spuštění, Shift+Enter pro nový řádek"
 	},
 	"messages": {
 		"waiting": "Čekání na odpověď agenta...",

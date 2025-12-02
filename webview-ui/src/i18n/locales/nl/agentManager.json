@@ -18,7 +18,7 @@
 		"autoModeWarning": "Draait in volledig automatische modus - agent voert acties uit zonder bevestiging",
 		"starting": "Starten...",
 		"startAriaLabel": "Agent starten met opgegeven prompt",
-		"keyboardHint": "Druk op Cmd+Enter of Ctrl+Enter om te starten"
+		"keyboardHint": "Druk op Enter om te starten, Shift+Enter voor nieuwe regel"
 	},
 	"messages": {
 		"waiting": "Wachten op antwoord van agent...",

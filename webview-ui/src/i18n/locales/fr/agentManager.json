@@ -18,7 +18,7 @@
 		"autoModeWarning": "Exécution en mode entièrement automatique - l'agent exécutera les actions sans confirmation",
 		"starting": "Démarrage...",
 		"startAriaLabel": "Démarrer l'agent avec le prompt fourni",
-		"keyboardHint": "Appuyez sur Cmd+Entrée ou Ctrl+Entrée pour démarrer"
+		"keyboardHint": "Appuyez sur Entrée pour démarrer, Shift+Entrée pour nouvelle ligne"
 	},
 	"messages": {
 		"waiting": "En attente de la réponse de l'agent...",

@@ -18,7 +18,7 @@
 		"autoModeWarning": "フルオートモードで実行中 - エージェントは確認なしでアクションを実行します",
 		"starting": "開始中...",
 		"startAriaLabel": "指定されたプロンプトでエージェントを開始",
-		"keyboardHint": "Cmd+EnterまたはCtrl+Enterを押して開始"
+		"keyboardHint": "Enterで開始、Shift+Enterで改行"
 	},
 	"messages": {
 		"waiting": "エージェントの応答を待っています...",

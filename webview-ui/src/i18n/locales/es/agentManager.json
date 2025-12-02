@@ -18,7 +18,7 @@
 		"autoModeWarning": "Ejecutando en modo completamente automático - el agente ejecutará acciones sin confirmación",
 		"starting": "Iniciando...",
 		"startAriaLabel": "Iniciar agente con el prompt proporcionado",
-		"keyboardHint": "Presiona Cmd+Enter o Ctrl+Enter para iniciar"
+		"keyboardHint": "Presiona Enter para iniciar, Shift+Enter para nueva línea"
 	},
 	"messages": {
 		"waiting": "Esperando respuesta del agente...",
