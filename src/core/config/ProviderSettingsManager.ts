@@ -136,7 +136,6 @@ export class ProviderSettingsManager {
 		return next
 	}
 
-	async kiloRepairExistingIds() {}
 	// kilocode_change: private & renamed:
 	async init_runMigrations() {
 		try {
