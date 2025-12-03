@@ -2,56 +2,6 @@ import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vite
 import { EventEmitter } from "node:events"
 
 let AgentManagerProvider: typeof import("../AgentManagerProvider").AgentManagerProvider
-let getKilocodeCliCandidatePaths: typeof import("../AgentManagerProvider").getKilocodeCliCandidatePaths
-
-describe("getKilocodeCliCandidatePaths", () => {
-	beforeEach(async () => {
-		vi.resetModules()
-
-		vi.doMock("vscode", () => ({
-			workspace: { workspaceFolders: [] },
-			window: { showErrorMessage: () => undefined, ViewColumn: { One: 1 } },
-			Uri: { joinPath: () => undefined },
-			ViewColumn: { One: 1 },
-		}))
-
-		vi.doMock("node:child_process", () => ({ spawn: vi.fn(), execSync: vi.fn() }))
-
-		const module = await import("../AgentManagerProvider")
-		getKilocodeCliCandidatePaths = module.getKilocodeCliCandidatePaths
-	})
-
-	it("returns expected POSIX paths", () => {
-		const env = { HOME: "/Users/test" } as NodeJS.ProcessEnv
-		const paths = getKilocodeCliCandidatePaths(env, "darwin")
-
-		expect(paths).toContain("/opt/homebrew/bin/kilocode")
-		expect(paths).toContain("/usr/local/bin/kilocode")
-		expect(paths).toContain("/usr/bin/kilocode")
-		expect(paths).toContain("/Users/test/.npm-global/bin/kilocode")
-		expect(paths).toContain("/Users/test/.local/bin/kilocode")
-		expect(paths.some((p) => p.includes("\\kilocode"))).toBe(false)
-	})
-
-	it("returns expected Windows paths", () => {
-		const env = {
-			USERPROFILE: "C:\\Users\\Tester",
-			APPDATA: "C:\\Users\\Tester\\AppData\\Roaming",
-			LOCALAPPDATA: "C:\\Users\\Tester\\AppData\\Local",
-			ProgramFiles: "C:\\Program Files",
-			"ProgramFiles(x86)": "C:\\Program Files (x86)",
-		} as NodeJS.ProcessEnv
-
-		const paths = getKilocodeCliCandidatePaths(env, "win32")
-
-		expect(paths).toContain("C:\\Users\\Tester\\AppData\\Roaming\\npm\\kilocode.cmd")
-		expect(paths).toContain("C:\\Users\\Tester\\AppData\\Local\\Programs\\kilocode\\kilocode.exe")
-		expect(paths).toContain("C:\\Program Files\\Kilocode\\kilocode.exe")
-		expect(paths).toContain("C:\\Program Files (x86)\\Kilocode\\kilocode.exe")
-		// Windows includes posix paths as fallback
-		expect(paths.some((p) => p.startsWith("/opt/homebrew"))).toBe(true)
-	})
-})
 
 describe("AgentManagerProvider CLI spawning", () => {
 	let provider: InstanceType<typeof AgentManagerProvider>
@@ -72,7 +22,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 			ViewColumn: { One: 1 },
 		}))
 
-		vi.doMock("../../utils/fs", () => ({
+		vi.doMock("../../../../utils/fs", () => ({
 			fileExistsAtPath: vi.fn().mockResolvedValue(false),
 		}))
 

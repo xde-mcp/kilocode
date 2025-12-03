@@ -1,8 +1,7 @@
 import * as vscode from "vscode"
-import { spawn, ChildProcess, execSync } from "node:child_process"
-import * as path from "node:path"
-import { fileExistsAtPath } from "../../../utils/fs"
+import { spawn, ChildProcess } from "node:child_process"
 import { AgentRegistry } from "./AgentRegistry"
+import { findKilocodeCli } from "./CliPathResolver"
 import { CliOutputParser, type StreamEvent, type KilocodeStreamEvent, type KilocodePayload } from "./CliOutputParser"
 import { getUri } from "../../webview/getUri"
 import { getNonce } from "../../webview/getNonce"
@@ -10,39 +9,6 @@ import { getViteDevServerConfig } from "../../webview/getViteDevServerConfig"
 import type { ClineMessage } from "@roo-code/types"
 
 const SESSION_TIMEOUT_MS = 120_000 // 2 minutes
-const WINDOWS = "win32"
-
-export function getKilocodeCliCandidatePaths(env: NodeJS.ProcessEnv, platform: NodeJS.Platform): string[] {
-	const homeDir = env.HOME || ""
-
-	const posixPaths = [
-		"/opt/homebrew/bin/kilocode",
-		"/usr/local/bin/kilocode",
-		"/usr/bin/kilocode",
-		path.posix.join(homeDir, ".npm-global", "bin", "kilocode"),
-		path.posix.join(homeDir, ".local", "bin", "kilocode"),
-	].filter(Boolean)
-
-	if (platform !== WINDOWS) {
-		return posixPaths
-	}
-
-	const userProfile = env.USERPROFILE || ""
-	const appData = env.APPDATA || ""
-	const localAppData = env.LOCALAPPDATA || ""
-	const programFiles = env.ProgramFiles
-	const programFilesX86 = env["ProgramFiles(x86)"]
-
-	const windowsPaths = [
-		path.win32.join(appData, "npm", "kilocode.cmd"),
-		path.win32.join(userProfile, "AppData", "Roaming", "npm", "kilocode.cmd"),
-		path.win32.join(localAppData, "Programs", "kilocode", "kilocode.exe"),
-		programFiles ? path.win32.join(programFiles, "Kilocode", "kilocode.exe") : null,
-		programFilesX86 ? path.win32.join(programFilesX86, "Kilocode", "kilocode.exe") : null,
-	].filter((p): p is string => Boolean(p))
-
-	return [...windowsPaths, ...posixPaths]
-}
 
 /**
  * AgentManagerProvider
@@ -60,8 +26,6 @@ export class AgentManagerProvider implements vscode.Disposable {
 	private timeouts: Map<string, NodeJS.Timeout> = new Map()
 	private sessionMessages: Map<string, ClineMessage[]> = new Map()
 	private parsers: Map<string, CliOutputParser> = new Map()
-	private cliPath: string | null = null
-	private readonly cliCandidatePaths = getKilocodeCliCandidatePaths(process.env, process.platform)
 	// Track first api_req_started per session to filter user-input echoes
 	private firstApiReqStarted: Map<string, boolean> = new Map()
 
@@ -160,7 +124,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		}
 		const workspace = workspaceFolder
 
-		const cliPath = await this.findCliPath()
+		const cliPath = await findKilocodeCli((msg) => this.outputChannel.appendLine(`[AgentManager] ${msg}`))
 		if (!cliPath) {
 			this.outputChannel.appendLine("ERROR: kilocode CLI not found")
 			this.showCliNotFoundError()
@@ -604,53 +568,6 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 		this.panel?.dispose()
 		this.disposables.forEach((d) => d.dispose())
-	}
-
-	private async findCliPath(): Promise<string | null> {
-		if (this.cliPath !== null) {
-			return this.cliPath || null
-		}
-
-		try {
-			const result =
-				process.platform === WINDOWS
-					? execSync("where kilocode", { encoding: "utf-8" }).split(/\r?\n/)[0]?.trim()
-					: execSync("which kilocode", { encoding: "utf-8" }).trim()
-
-			if (result) {
-				this.cliPath = result
-				return result
-			}
-		} catch (error) {
-			this.outputChannel.appendLine(`[AgentManager] kilocode not found in PATH: ${error}`)
-		}
-
-		if (process.platform === WINDOWS) {
-			try {
-				const cmdResult = execSync("where kilocode.cmd", { encoding: "utf-8" }).split(/\r?\n/)[0]?.trim()
-				if (cmdResult) {
-					this.cliPath = cmdResult
-					return cmdResult
-				}
-			} catch (error) {
-				this.outputChannel.appendLine(`[AgentManager] kilocode.cmd not found in PATH: ${error}`)
-			}
-		}
-
-		for (const path of this.cliCandidatePaths) {
-			try {
-				if (path && (await fileExistsAtPath(path))) {
-					this.cliPath = path
-					return path
-				}
-			} catch (error) {
-				this.outputChannel.appendLine(`[AgentManager] Error checking CLI path ${path}: ${error}`)
-			}
-		}
-
-		this.outputChannel.appendLine("[AgentManager] kilocode CLI not found in common paths")
-		this.cliPath = ""
-		return null
 	}
 
 	private showCliNotFoundError(): void {
