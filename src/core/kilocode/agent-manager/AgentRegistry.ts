@@ -1,4 +1,8 @@
+import { randomUUID } from "node:crypto"
 import { AgentSession, AgentStatus, AgentManagerState } from "./types"
+
+const MAX_SESSIONS = 10
+const MAX_LOGS = 100
 
 /**
  * In-memory registry for agent sessions.
@@ -6,13 +10,16 @@ import { AgentSession, AgentStatus, AgentManagerState } from "./types"
  */
 export class AgentRegistry {
 	private sessions: Map<string, AgentSession> = new Map()
-	private selectedId: string | null = null
-	private readonly maxSessions = 10
-	private readonly maxLogs = 100
+	private _selectedId: string | null = null
 
-	/**
-	 * Create a new session
-	 */
+	public get selectedId(): string | null {
+		return this._selectedId
+	}
+
+	public set selectedId(id: string | null) {
+		this._selectedId = id && this.sessions.has(id) ? id : null
+	}
+
 	public createSession(prompt: string): AgentSession {
 		const id = this.generateId()
 		const label = this.truncatePrompt(prompt)
@@ -27,15 +34,12 @@ export class AgentRegistry {
 		}
 
 		this.sessions.set(id, session)
-		this.selectedId = id // Auto-select new session
+		this.selectedId = id
 		this.pruneOldSessions()
 
 		return session
 	}
 
-	/**
-	 * Update session status
-	 */
 	public updateSessionStatus(
 		id: string,
 		status: AgentStatus,
@@ -59,9 +63,6 @@ export class AgentRegistry {
 		return session
 	}
 
-	/**
-	 * Remove a session
-	 */
 	public removeSession(id: string): boolean {
 		const deleted = this.sessions.delete(id)
 		// If we removed the selected session, select the first remaining one
@@ -72,51 +73,24 @@ export class AgentRegistry {
 		return deleted
 	}
 
-	/**
-	 * Get a session by ID
-	 */
 	public getSession(id: string): AgentSession | undefined {
 		return this.sessions.get(id)
 	}
 
-	/**
-	 * Get all sessions sorted by start time (most recent first)
-	 */
 	public getSessions(): AgentSession[] {
 		return Array.from(this.sessions.values()).sort((a, b) => b.startTime - a.startTime)
 	}
 
-	/**
-	 * Append a log line to a session
-	 */
 	public appendLog(id: string, line: string): void {
 		const session = this.sessions.get(id)
 		if (!session) return
 
 		session.logs.push(line)
-		// Keep only the last N logs
-		if (session.logs.length > this.maxLogs) {
-			session.logs = session.logs.slice(-this.maxLogs)
+		if (session.logs.length > MAX_LOGS) {
+			session.logs = session.logs.slice(-MAX_LOGS)
 		}
 	}
 
-	/**
-	 * Set the selected session ID
-	 */
-	public setSelectedId(id: string | null): void {
-		this.selectedId = id
-	}
-
-	/**
-	 * Get the selected session ID
-	 */
-	public getSelectedId(): string | null {
-		return this.selectedId
-	}
-
-	/**
-	 * Set session PID
-	 */
 	public setSessionPid(id: string, pid: number): void {
 		const session = this.sessions.get(id)
 		if (session) {
@@ -124,9 +98,6 @@ export class AgentRegistry {
 		}
 	}
 
-	/**
-	 * Get current state for webview
-	 */
 	public getState(): AgentManagerState {
 		return {
 			sessions: this.getSessions(),
@@ -135,12 +106,11 @@ export class AgentRegistry {
 	}
 
 	/**
-	 * Remove oldest sessions if exceeding max.
-	 * Prefers to remove oldest non-running sessions first.
+	 * Remove oldest sessions if exceeding max, preferring non-running sessions.
 	 */
 	private pruneOldSessions(): void {
 		const sessions = this.getSessions()
-		const overflow = sessions.length - this.maxSessions
+		const overflow = sessions.length - MAX_SESSIONS
 		if (overflow <= 0) return
 
 		// Only prune non-running sessions
@@ -155,16 +125,10 @@ export class AgentRegistry {
 		}
 	}
 
-	/**
-	 * Generate unique session ID
-	 */
 	private generateId(): string {
-		return `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+		return `session-${randomUUID()}`
 	}
 
-	/**
-	 * Truncate prompt for display label
-	 */
 	private truncatePrompt(prompt: string, maxLength = 40): string {
 		const cleaned = prompt.replace(/\s+/g, " ").trim()
 		if (cleaned.length <= maxLength) {

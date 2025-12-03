@@ -447,7 +447,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 	 * Select a session to view its details/logs
 	 */
 	private selectSession(sessionId: string | null): void {
-		this.registry.setSelectedId(sessionId)
+		this.registry.selectedId = sessionId
 		this.postStateToWebview()
 	}
 
