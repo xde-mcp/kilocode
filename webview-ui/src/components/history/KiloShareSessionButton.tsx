@@ -2,7 +2,7 @@ import { vscode } from "@/utils/vscode"
 import { Button } from "@src/components/ui"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 
-export const ShareSessionButton = ({ id }: { id: string }) => {
+export const KiloShareSessionButton = ({ id }: { id: string }) => {
 	const { t } = useAppTranslation()
 
 	return (
