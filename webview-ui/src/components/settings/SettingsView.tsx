@@ -951,6 +951,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 								/>
 								{/* kilocode_change end changes to allow for editting a non-active profile */}
 
+								{/* kilocode_change start - pass editing profile name */}
 								<ApiOptions
 									uriScheme={uriScheme}
 									apiConfiguration={apiConfiguration}
@@ -959,6 +960,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 									setErrorMessage={setErrorMessage}
 									currentApiConfigName={currentApiConfigName}
 								/>
+								{/* kilocode_change end - pass editing profile name */}
 							</Section>
 						</div>
 					)}
