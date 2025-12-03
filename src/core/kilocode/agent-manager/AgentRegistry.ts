@@ -105,6 +105,20 @@ export class AgentRegistry {
 		}
 	}
 
+	public hasRunningSessions(): boolean {
+		return this.getRunningSessionCount() > 0
+	}
+
+	public getRunningSessionCount(): number {
+		let count = 0
+		for (const session of this.sessions.values()) {
+			if (session.status === "running") {
+				count++
+			}
+		}
+		return count
+	}
+
 	/**
 	 * Remove oldest sessions if exceeding max, preferring non-running sessions.
 	 */

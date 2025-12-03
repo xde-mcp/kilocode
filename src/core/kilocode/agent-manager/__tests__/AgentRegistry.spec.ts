@@ -94,4 +94,54 @@ describe("AgentRegistry", () => {
 		expect(state.selectedId).toBe(session.id)
 		expect(state.sessions[0].id).toBe(session.id)
 	})
+
+	describe("hasRunningSessions", () => {
+		it("returns false when no sessions exist", () => {
+			expect(registry.hasRunningSessions()).toBe(false)
+		})
+
+		it("returns true when a session is running", () => {
+			registry.createSession("running session")
+			expect(registry.hasRunningSessions()).toBe(true)
+		})
+
+		it("returns false when all sessions are completed", () => {
+			const session = registry.createSession("done session")
+			registry.updateSessionStatus(session.id, "done")
+			expect(registry.hasRunningSessions()).toBe(false)
+		})
+
+		it("returns false when all sessions have errors", () => {
+			const session = registry.createSession("error session")
+			registry.updateSessionStatus(session.id, "error")
+			expect(registry.hasRunningSessions()).toBe(false)
+		})
+
+		it("returns false when all sessions are stopped", () => {
+			const session = registry.createSession("stopped session")
+			registry.updateSessionStatus(session.id, "stopped")
+			expect(registry.hasRunningSessions()).toBe(false)
+		})
+
+		it("returns true when at least one session is running among others", () => {
+			const s1 = registry.createSession("done")
+			const s2 = registry.createSession("running")
+			const s3 = registry.createSession("error")
+
+			registry.updateSessionStatus(s1.id, "done")
+			registry.updateSessionStatus(s3.id, "error")
+
+			expect(registry.hasRunningSessions()).toBe(true)
+		})
+
+		it("returns the count of running sessions", () => {
+			const s1 = registry.createSession("running 1")
+			const s2 = registry.createSession("running 2")
+			const s3 = registry.createSession("done")
+
+			registry.updateSessionStatus(s3.id, "done")
+
+			expect(registry.getRunningSessionCount()).toBe(2)
+		})
+	})
 })

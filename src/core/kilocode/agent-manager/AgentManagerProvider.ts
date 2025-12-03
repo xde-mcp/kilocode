@@ -71,6 +71,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 		this.panel.onDidDispose(
 			() => {
 				this.panel = undefined
+				this.stopAllAgents()
 			},
 			null,
 			this.disposables,
@@ -546,6 +547,36 @@ export class AgentManagerProvider implements vscode.Disposable {
 	<script nonce="${nonce}" type="module" src="${scriptUri}"></script>
 </body>
 </html>`
+	}
+
+	public hasRunningSessions(): boolean {
+		return this.registry.hasRunningSessions()
+	}
+
+	public getRunningSessionCount(): number {
+		return this.registry.getRunningSessionCount()
+	}
+
+	private stopAllAgents(): void {
+		for (const proc of this.processes.values()) {
+			proc.kill("SIGTERM")
+		}
+		this.processes.clear()
+
+		for (const timeout of this.timeouts.values()) {
+			clearTimeout(timeout)
+		}
+		this.timeouts.clear()
+
+		// Update all running sessions to stopped
+		for (const session of this.registry.getSessions()) {
+			if (session.status === "running") {
+				this.registry.updateSessionStatus(session.id, "stopped", undefined, "Stopped by user")
+			}
+		}
+
+		this.parsers.clear()
+		this.firstApiReqStarted.clear()
 	}
 
 	public dispose(): void {
