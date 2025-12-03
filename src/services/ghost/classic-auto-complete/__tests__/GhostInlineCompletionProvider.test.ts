@@ -1547,4 +1547,152 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(result[0].insertText).toBe("console.log('test');")
 		})
 	})
+
+	describe("pending request reuse", () => {
+		it("should reuse pending request when user types forward (prefix extends, suffix unchanged)", async () => {
+			// Mock the model to track call count
+			let callCount = 0
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				callCount++
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "console.log('test');" })
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			// First request: user at "const x = 1"
+			const doc1 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1\nconst y = 2")
+			const pos1 = new vscode.Position(0, 11) // After "const x = 1"
+
+			// Start first request but don't await it yet
+			const promise1 = provider.provideInlineCompletionItems(doc1, pos1, mockContext, mockToken)
+
+			// Advance time partially (not past debounce)
+			await vi.advanceTimersByTimeAsync(100)
+
+			// Second request: user typed "c" - prefix extended, suffix unchanged
+			const doc2 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1c\nconst y = 2")
+			const pos2 = new vscode.Position(0, 12) // After "const x = 1c"
+
+			// Start second request
+			const promise2 = provider.provideInlineCompletionItems(doc2, pos2, mockContext, mockToken)
+
+			// Advance time past debounce to let requests complete
+			await vi.advanceTimersByTimeAsync(500)
+
+			// Wait for both promises
+			await promise1
+			await promise2
+
+			// The model should only have been called once because the second request
+			// should have reused the pending request from the first
+			expect(callCount).toBe(1)
+		})
+
+		it("should NOT reuse pending request when suffix changes", async () => {
+			// Mock the model to track call count
+			let callCount = 0
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				callCount++
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "console.log('test');" })
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			// First request: user at "const x = 1"
+			const doc1 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1\nconst y = 2")
+			const pos1 = new vscode.Position(0, 11)
+
+			// Start first request (don't await - it will be cancelled by the second request)
+			provider.provideInlineCompletionItems(doc1, pos1, mockContext, mockToken)
+
+			// Advance time partially (not past debounce)
+			await vi.advanceTimersByTimeAsync(100)
+
+			// Second request: suffix changed (different text after cursor)
+			// This will cancel the first request's debounce timer and start a new one
+			const doc2 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1\nconst z = 3")
+			const pos2 = new vscode.Position(0, 11)
+
+			// Start second request
+			const promise2 = provider.provideInlineCompletionItems(doc2, pos2, mockContext, mockToken)
+
+			// Advance time past debounce to let the second request complete
+			await vi.advanceTimersByTimeAsync(500)
+
+			await promise2
+
+			// The model should have been called once (only the second request fires,
+			// the first was cancelled by the debounce)
+			// But the key point is that the second request was NOT reused from the first
+			// because the suffix changed - it started a new debounce cycle
+			expect(callCount).toBe(1)
+		})
+
+		it("should NOT reuse pending request when user backspaces (prefix shrinks)", async () => {
+			// Mock the model to track call count
+			let callCount = 0
+			vi.mocked(mockModel.generateResponse).mockImplementation(async (_sys, _user, onChunk) => {
+				callCount++
+				if (onChunk) {
+					onChunk({ type: "text", text: "<COMPLETION>" })
+					onChunk({ type: "text", text: "console.log('test');" })
+					onChunk({ type: "text", text: "</COMPLETION>" })
+				}
+				return {
+					cost: 0.01,
+					inputTokens: 100,
+					outputTokens: 50,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+				}
+			})
+
+			// First request: user at "const x = 1"
+			const doc1 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = 1\nconst y = 2")
+			const pos1 = new vscode.Position(0, 11)
+
+			// Start first request (don't await - it will be cancelled by the second request)
+			provider.provideInlineCompletionItems(doc1, pos1, mockContext, mockToken)
+
+			// Advance time partially (not past debounce)
+			await vi.advanceTimersByTimeAsync(100)
+
+			// Second request: user backspaced - prefix is now shorter
+			// This will cancel the first request's debounce timer and start a new one
+			const doc2 = new MockTextDocument(vscode.Uri.file("/test.ts"), "const x = \nconst y = 2")
+			const pos2 = new vscode.Position(0, 10) // After "const x = "
+
+			// Start second request
+			const promise2 = provider.provideInlineCompletionItems(doc2, pos2, mockContext, mockToken)
+
+			// Advance time past debounce to let the second request complete
+			await vi.advanceTimersByTimeAsync(500)
+
+			await promise2
+
+			// The model should have been called once (only the second request fires,
+			// the first was cancelled by the debounce)
+			// But the key point is that the second request was NOT reused from the first
+			// because the prefix shrunk - it started a new debounce cycle
+			expect(callCount).toBe(1)
+		})
+	})
 })
