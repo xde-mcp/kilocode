@@ -66,21 +66,26 @@ export type RegisterCommandOptions = {
 	provider: ClineProvider
 }
 
-// kilocode_change start - Agent Manager provider instance (singleton for the extension)
+// kilocode_change start - Agent Manager provider
 let agentManagerProvider: AgentManagerProvider | undefined
+
+const registerAgentManager = (options: RegisterCommandOptions) => {
+	const { context, outputChannel } = options
+
+	vscode.commands.executeCommand("setContext", "kilo-code.agentManagerEnabled", AGENT_MANAGER_ENABLED)
+
+	if (AGENT_MANAGER_ENABLED) {
+		agentManagerProvider = new AgentManagerProvider(context, outputChannel)
+		context.subscriptions.push(agentManagerProvider)
+	}
+}
 // kilocode_change end
 
 export const registerCommands = (options: RegisterCommandOptions) => {
 	const { context, outputChannel } = options
 
-	// kilocode_change start - Set feature flag context for Agent Manager visibility
-	vscode.commands.executeCommand("setContext", "kilo-code.agentManagerEnabled", AGENT_MANAGER_ENABLED)
-
-	// Create Agent Manager provider (only if enabled)
-	if (AGENT_MANAGER_ENABLED) {
-		agentManagerProvider = new AgentManagerProvider(context, outputChannel)
-		context.subscriptions.push(agentManagerProvider)
-	}
+	// kilocode_change start
+	registerAgentManager(options)
 	// kilocode_change end
 
 	for (const [id, callback] of Object.entries(getCommandsMap(options))) {
