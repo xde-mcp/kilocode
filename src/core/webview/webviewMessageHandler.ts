@@ -3843,6 +3843,24 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		case "sessionShow": {
+			try {
+				const sessionService = SessionManager.init()
+
+				if (!sessionService.sessionId) {
+					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
+					break
+				}
+
+				// Copy session ID to clipboard
+				await vscode.env.clipboard.writeText(sessionService.sessionId)
+				vscode.window.showInformationMessage(`Session ID copied to clipboard: ${sessionService.sessionId}`)
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to copy session ID: ${errorMessage}`)
+			}
+			break
+		}
 		case "sessionShare": {
 			try {
 				const sessionService = SessionManager.init()
