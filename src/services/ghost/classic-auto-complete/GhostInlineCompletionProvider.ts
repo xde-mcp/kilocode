@@ -11,6 +11,7 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
 import * as telemetry from "./AutocompleteTelemetry"
+import type { AutocompleteContext, CacheMatchType } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
@@ -20,24 +21,32 @@ export type CostTrackingCallback = (cost: number, inputTokens: number, outputTok
 export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
 
 /**
+ * Result of finding a matching suggestion, includes the match type for telemetry
+ */
+export interface MatchingSuggestionResult {
+	text: string
+	matchType: CacheMatchType
+}
+
+/**
  * Find a matching suggestion from the history based on current prefix and suffix
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion text, or null if no match found
+ * @returns The matching suggestion with match type, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-): string | null {
+): MatchingSuggestionResult | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
 		const fillInAtCursor = suggestionsHistory[i]
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			return fillInAtCursor.text
+			return { text: fillInAtCursor.text, matchType: "exact" }
 		}
 
 		// If no exact match, but suggestion is available, check for partial typing
@@ -53,7 +62,7 @@ export function findMatchingSuggestion(
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
 				// Return the remaining part of the suggestion (with already-typed portion removed)
-				return fillInAtCursor.text.substring(typedContent.length)
+				return { text: fillInAtCursor.text.substring(typedContent.length), matchType: "partial_typing" }
 			}
 		}
 
@@ -64,7 +73,7 @@ export function findMatchingSuggestion(
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
 			// Return the deleted portion plus the original suggestion text
-			return deletedContent + fillInAtCursor.text
+			return { text: deletedContent + fillInAtCursor.text, matchType: "backward_deletion" }
 		}
 	}
 
@@ -212,9 +221,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		prefix: string,
 		suffix: string,
 		model: GhostModel,
+		telemetryContext: AutocompleteContext,
 	): FillInAtCursorSuggestion {
 		if (!suggestionText) {
-			telemetry.captureSuggestionFiltered("empty_response")
+			telemetry.captureSuggestionFiltered("empty_response", telemetryContext)
 			return { text: "", prefix, suffix }
 		}
 
@@ -229,7 +239,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return { text: processedText, prefix, suffix }
 		}
 
-		telemetry.captureSuggestionFiltered("filtered_by_postprocessing")
+		telemetry.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
 		return { text: "", prefix, suffix }
 	}
 
@@ -277,7 +287,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		_context: vscode.InlineCompletionContext,
 		_token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-		telemetry.captureSuggestionRequested()
+		// Build telemetry context
+		const telemetryContext: AutocompleteContext = {
+			languageId: document.languageId,
+			modelId: this.model?.getModelName(),
+			provider: this.model?.getProviderDisplayName(),
+		}
+
+		telemetry.captureSuggestionRequested(telemetryContext)
 
 		if (!this.model) {
 			// bail if no model is available, because if there is none, we also have no cache
@@ -317,22 +334,26 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
 
-			const matchingText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
-			if (matchingText !== null) {
-				telemetry.captureCacheHit()
-				return stringToInlineCompletions(matchingText, position)
+			if (matchingResult !== null) {
+				telemetry.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
 			const { prompt, prefix: promptPrefix, suffix: promptSuffix } = await this.getPrompt(document, position)
-			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix)
 
-			const cachedText = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
-			if (cachedText) {
-				telemetry.captureLlmSuggestionReturned()
+			// Update context with strategy now that we know it
+			telemetryContext.strategy = prompt.strategy
+
+			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix, document.languageId)
+
+			const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+			if (cachedResult) {
+				telemetry.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
 			}
 
-			return stringToInlineCompletions(cachedText ?? "", position)
+			return stringToInlineCompletions(cachedResult?.text ?? "", position)
 		} catch (error) {
 			// only big catch at the top of the call-chain, if anything goes wrong at a lower level
 			// do not catch, just let the error cascade
@@ -382,7 +403,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 * - Subsequent calls reset the timer and wait for DEBOUNCE_DELAY_MS of inactivity (trailing edge)
 	 * - If a pending request covers the current prefix/suffix, reuse it instead of starting a new one
 	 */
-	private debouncedFetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
+	private debouncedFetchAndCacheSuggestion(
+		prompt: GhostPrompt,
+		prefix: string,
+		suffix: string,
+		languageId: string,
+	): Promise<void> {
 		// Check if any existing pending request covers this one
 		const coveringRequest = this.findCoveringPendingRequest(prefix, suffix)
 		if (coveringRequest) {
@@ -393,7 +419,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// If this is the first call (no pending debounce), execute immediately
 		if (this.isFirstCall && this.debounceTimer === null) {
 			this.isFirstCall = false
-			return this.fetchAndCacheSuggestion(prompt, prefix, suffix)
+			return this.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
 		}
 
 		// Clear any existing timer (reset the debounce)
@@ -412,7 +438,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.debounceTimer = setTimeout(async () => {
 				this.debounceTimer = null
 				this.isFirstCall = true // Reset for next sequence
-				await this.fetchAndCacheSuggestion(prompt, prefix, suffix)
+				await this.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
 				// Remove this request from pending when done
 				this.removePendingRequest(pendingRequest)
 				resolve()
@@ -428,11 +454,26 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return requestPromise
 	}
 
-	private async fetchAndCacheSuggestion(prompt: GhostPrompt, prefix: string, suffix: string): Promise<void> {
+	private async fetchAndCacheSuggestion(
+		prompt: GhostPrompt,
+		prefix: string,
+		suffix: string,
+		languageId: string,
+	): Promise<void> {
 		const startTime = performance.now()
+
+		// Build telemetry context for this request
+		const telemetryContext: AutocompleteContext = {
+			languageId,
+			modelId: this.model?.getModelName(),
+			provider: this.model?.getProviderDisplayName(),
+			strategy: prompt.strategy,
+		}
+
 		try {
-			// Curry processSuggestion with prefix, suffix, and model - only text needs to be provided
-			const curriedProcessSuggestion = (text: string) => this.processSuggestion(text, prefix, suffix, this.model)
+			// Curry processSuggestion with prefix, suffix, model, and telemetry context
+			const curriedProcessSuggestion = (text: string) =>
+				this.processSuggestion(text, prefix, suffix, this.model, telemetryContext)
 
 			const result =
 				prompt.strategy === "fim"
@@ -441,12 +482,15 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const latencyMs = performance.now() - startTime
 
-			telemetry.captureLlmRequestCompleted({
-				latencyMs,
-				cost: result.cost,
-				inputTokens: result.inputTokens,
-				outputTokens: result.outputTokens,
-			})
+			telemetry.captureLlmRequestCompleted(
+				{
+					latencyMs,
+					cost: result.cost,
+					inputTokens: result.inputTokens,
+					outputTokens: result.outputTokens,
+				},
+				telemetryContext,
+			)
 
 			this.costTrackingCallback(result.cost, result.inputTokens, result.outputTokens)
 
@@ -454,10 +498,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
 			const latencyMs = performance.now() - startTime
-			telemetry.captureLlmRequestFailed({
-				latencyMs,
-				error: error instanceof Error ? error.message : String(error),
-			})
+			telemetry.captureLlmRequestFailed(
+				{
+					latencyMs,
+					error: error instanceof Error ? error.message : String(error),
+				},
+				telemetryContext,
+			)
 			console.error("Error getting inline completion from LLM:", error)
 		}
 	}
