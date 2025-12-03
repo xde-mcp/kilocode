@@ -3854,10 +3854,6 @@ export const webviewMessageHandler = async (
 
 				const result = await sessionService.shareSession()
 
-				if (!result) {
-					throw new Error("SessionManager returned no share id")
-				}
-
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
 				// Copy URL to clipboard and show success notification
@@ -3882,10 +3878,6 @@ export const webviewMessageHandler = async (
 				const sessionId = await sessionService.getSessionFromTask(taskId, provider)
 
 				const result = await sessionService.shareSession(sessionId)
-
-				if (!result) {
-					throw new Error("SessionManager returned no share id")
-				}
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 

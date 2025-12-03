@@ -196,10 +196,6 @@ async function shareSession(context: CommandContext): Promise<void> {
 	try {
 		const result = await sessionService.shareSession()
 
-		if (!result) {
-			throw new Error("SessionManager returned no share id")
-		}
-
 		addMessage({
 			...generateMessage(),
 			type: "system",

@@ -85,7 +85,7 @@ export class SessionManager {
 		this.sessionClient = new SessionClient(trpcClient)
 		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
 
-		this.logger?.debug("Initialized SessionManager", "SessionManager")
+		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
 
 	private initSingleton(dependencies: SessionManagerDependencies) {
@@ -116,7 +116,11 @@ export class SessionManager {
 
 	async restoreLastSession() {
 		try {
-			const lastSession = this.sessionPersistenceManager?.getLastSession()
+			if (!this.sessionPersistenceManager) {
+				throw new Error("SessionManager used before initialization")
+			}
+
+			const lastSession = this.sessionPersistenceManager.getLastSession()
 
 			if (!lastSession?.sessionId) {
 				this.logger?.debug("No persisted session ID found", "SessionManager")
@@ -146,7 +150,12 @@ export class SessionManager {
 		try {
 			this.logger?.info("Restoring session", "SessionManager", { sessionId })
 
-			if (!this.pathProvider) {
+			if (
+				!this.pathProvider ||
+				!this.sessionClient ||
+				!this.extensionMessenger ||
+				!this.sessionPersistenceManager
+			) {
 				throw new Error("SessionManager used before initialization")
 			}
 
@@ -154,7 +163,7 @@ export class SessionManager {
 			this.resetBlobHashes()
 			this.isSyncing = true
 
-			const session = (await this.sessionClient?.get({
+			const session = (await this.sessionClient.get({
 				session_id: sessionId,
 				include_blob_urls: true,
 			})) as SessionWithSignedUrls | undefined
@@ -247,7 +256,7 @@ export class SessionManager {
 				totalCost: 0,
 			}
 
-			await this.extensionMessenger?.sendWebviewMessage({
+			await this.extensionMessenger.sendWebviewMessage({
 				type: "addTaskToHistory",
 				historyItem,
 			})
@@ -257,14 +266,14 @@ export class SessionManager {
 				taskId: historyItem.id,
 			})
 
-			await this.extensionMessenger?.sendWebviewMessage({
+			await this.extensionMessenger.sendWebviewMessage({
 				type: "showTaskWithId",
 				text: sessionId,
 			})
 
 			this.logger?.info("Switched to restored task", "SessionManager", { sessionId })
 
-			this.sessionPersistenceManager?.setLastSession(this.sessionId)
+			this.sessionPersistenceManager.setLastSession(this.sessionId)
 
 			this.onSessionRestored?.()
 
@@ -289,18 +298,26 @@ export class SessionManager {
 	}
 
 	async shareSession(sessionId?: string) {
+		if (!this.sessionClient) {
+			throw new Error("SessionManager used before initialization")
+		}
+
 		const sessionIdToShare = sessionId || this.sessionId
 		if (!sessionIdToShare) {
 			throw new Error("No active session")
 		}
 
-		return await this.sessionClient?.share({
+		return await this.sessionClient.share({
 			session_id: sessionIdToShare,
 			shared_state: CliSessionSharedState.Public,
 		})
 	}
 
 	async renameSession(newTitle: string) {
+		if (!this.sessionClient) {
+			throw new Error("SessionManager used before initialization")
+		}
+
 		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
@@ -311,7 +328,7 @@ export class SessionManager {
 			throw new Error("Session title cannot be empty")
 		}
 
-		await this.sessionClient?.update({
+		await this.sessionClient.update({
 			session_id: sessionId,
 			title: trimmedTitle,
 		})
@@ -339,11 +356,11 @@ export class SessionManager {
 
 	async getSessionFromTask(taskId: string, provider: ITaskDataProvider): Promise<string> {
 		try {
-			if (!this.platform || !this.sessionClient) {
+			if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
 				throw new Error("SessionManager used before initialization")
 			}
 
-			let sessionId = this.sessionPersistenceManager?.getSessionForTask(taskId)
+			let sessionId = this.sessionPersistenceManager.getSessionForTask(taskId)
 
 			if (!sessionId) {
 				this.logger?.debug("No existing session for task, creating new session", "SessionManager", { taskId })
@@ -370,7 +387,7 @@ export class SessionManager {
 
 				this.logger?.debug("Uploaded conversation blobs to session", "SessionManager", { sessionId })
 
-				this.sessionPersistenceManager?.setSessionForTask(taskId, sessionId)
+				this.sessionPersistenceManager.setSessionForTask(taskId, sessionId)
 			} else {
 				this.logger?.debug("Found existing session for task", "SessionManager", { taskId, sessionId })
 			}
@@ -440,7 +457,7 @@ export class SessionManager {
 		this.isSyncing = true
 
 		try {
-			if (!this.platform || !this.sessionClient) {
+			if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
 				throw new Error("SessionManager used before initialization")
 			}
 
@@ -472,7 +489,7 @@ export class SessionManager {
 			}
 
 			if (!this.sessionId && this.currentTaskId) {
-				const existingSessionId = this.sessionPersistenceManager?.getSessionForTask(this.currentTaskId)
+				const existingSessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
 
 				if (existingSessionId) {
 					this.sessionId = existingSessionId
@@ -515,7 +532,7 @@ export class SessionManager {
 
 				this.logger?.info("Session created successfully", "SessionManager", { sessionId: this.sessionId })
 
-				this.sessionPersistenceManager?.setLastSession(this.sessionId)
+				this.sessionPersistenceManager.setLastSession(this.sessionId)
 
 				this.onSessionCreated?.({
 					timestamp: Date.now(),
@@ -525,7 +542,7 @@ export class SessionManager {
 			}
 
 			if (this.currentTaskId) {
-				this.sessionPersistenceManager?.setSessionForTask(this.currentTaskId, this.sessionId)
+				this.sessionPersistenceManager.setSessionForTask(this.currentTaskId, this.sessionId)
 			}
 
 			const blobUploads: Array<Promise<void>> = []
