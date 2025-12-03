@@ -2217,7 +2217,7 @@ ${prompt}
 			alwaysAllowWrite: alwaysAllowWrite ?? true,
 			alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? false,
 			alwaysAllowWriteProtected: alwaysAllowWriteProtected ?? false,
-			alwaysAllowDelete: alwaysAllowDelete ?? true,
+			alwaysAllowDelete: alwaysAllowDelete ?? false,
 			alwaysAllowExecute: alwaysAllowExecute ?? true,
 			alwaysAllowBrowser: alwaysAllowBrowser ?? true,
 			alwaysAllowMcp: alwaysAllowMcp ?? true,
