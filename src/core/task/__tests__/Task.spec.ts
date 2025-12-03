@@ -1826,6 +1826,7 @@ describe("Cline", () => {
 					apiConfiguration: mockApiConfig,
 					task: "test task",
 					startTask: false,
+					context: mockExtensionContext, // kilocode_change
 				})
 
 				// Create a real AbortController and spy on its abort method
@@ -1858,6 +1859,7 @@ describe("Cline", () => {
 					apiConfiguration: mockApiConfig,
 					task: "test task",
 					startTask: false,
+					context: mockExtensionContext, // kilocode_change
 				})
 
 				// Ensure no controller exists
@@ -1873,6 +1875,7 @@ describe("Cline", () => {
 					apiConfiguration: mockApiConfig,
 					task: "test task",
 					startTask: false,
+					context: mockExtensionContext, // kilocode_change
 				})
 
 				// Spy on cancelCurrentRequest
@@ -2060,6 +2063,7 @@ describe("Queued message processing after condense", () => {
 				},
 				task: "parent task",
 				startTask: false,
+				context: mockProvider.context, // kilocode_change
 			})
 
 			// Mock the API to return a native protocol model
@@ -2106,6 +2110,7 @@ describe("Queued message processing after condense", () => {
 				},
 				task: "parent task",
 				startTask: false,
+				context: mockProvider.context, // kilocode_change
 			})
 
 			// Mock the API to return an XML protocol model (no native tool support)
@@ -2141,6 +2146,7 @@ describe("Queued message processing after condense", () => {
 				apiConfiguration: mockApiConfig,
 				task: "parent task",
 				startTask: false,
+				context: mockProvider.context, // kilocode_change
 			})
 
 			// Mock the API to return an XML protocol model

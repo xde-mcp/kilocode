@@ -59,7 +59,7 @@ describe("MiniMaxHandler", () => {
 		it("should convert /v1 endpoint to /anthropic endpoint", () => {
 			new MiniMaxHandler({
 				minimaxApiKey: "test-minimax-api-key",
-				minimaxBaseUrl: "https://api.minimax.io/v1",
+				minimaxBaseUrl: "https://api.minimax.io/anthropic",
 			})
 			expect(Anthropic).toHaveBeenCalledWith(
 				expect.objectContaining({

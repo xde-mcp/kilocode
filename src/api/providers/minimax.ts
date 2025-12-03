@@ -60,7 +60,7 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 		// Use Anthropic-compatible endpoint
 		// Default to international endpoint: https://api.minimax.io/anthropic
 		// China endpoint: https://api.minimaxi.com/anthropic
-		let baseURL = options.minimaxBaseUrl || "https://api.minimax.io/anthropic"
+		let baseURL = (options.minimaxBaseUrl || "https://api.minimax.io/anthropic") as string
 
 		// If user provided a /v1 endpoint, convert to /anthropic
 		if (baseURL.endsWith("/v1")) {
