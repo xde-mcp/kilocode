@@ -153,8 +153,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
-		// Register command for tracking acceptance - this command is attached to each InlineCompletionItem
-		// and is executed by VS Code after the user accepts the completion
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
 			telemetry.captureAcceptSuggestion(),
 		)
