@@ -84,7 +84,7 @@ function handleSessionCommand(trimmedInput: string, setInputValue: (value: strin
 
 		setInputValue("")
 
-		return
+		return true
 	} else if (trimmedInput.startsWith("/session fork ")) {
 		const shareId = trimmedInput.substring("/session fork ".length).trim()
 
@@ -97,8 +97,10 @@ function handleSessionCommand(trimmedInput: string, setInputValue: (value: strin
 			setInputValue("")
 		}
 
-		return
+		return true
 	}
+
+	return false
 }
 // kilocode_change end
 
@@ -639,7 +641,11 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 					const trimmedInput = inputValue.trim()
 
-					handleSessionCommand(trimmedInput, setInputValue)
+					const preventFlow = handleSessionCommand(trimmedInput, setInputValue)
+
+					if (preventFlow) {
+						return
+					}
 
 					resetHistoryNavigation()
 					onSend()
