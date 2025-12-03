@@ -417,8 +417,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.fuzzyMatchThreshold = fuzzyMatchThreshold
 		this.consecutiveMistakeLimit = consecutiveMistakeLimit ?? DEFAULT_CONSECUTIVE_MISTAKE_LIMIT
 		this.providerRef = new WeakRef(provider)
-		// Handle CLI mode where globalStorageUri might not be properly set
+		// kilocode_change start: Handle CLI mode where globalStorageUri might not be properly set
 		this.globalStoragePath = provider.context?.globalStorageUri?.fsPath ?? this.getCliGlobalStoragePath()
+		// kilocode_change end
 		this.diffViewProvider = new DiffViewProvider(this.cwd, this)
 		this.enableCheckpoints = enableCheckpoints
 		this.checkpointTimeout = checkpointTimeout
