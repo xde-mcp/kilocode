@@ -6,12 +6,6 @@ interface ChatInputProps {
 	disabled?: boolean
 }
 
-/**
- * ChatInput - Disabled for MVP
- *
- * Follow-up messages are not supported in the CLI JSON mode.
- * Each agent session runs to completion without user interaction.
- */
 export const ChatInput: React.FC<ChatInputProps> = ({ disabled = false }) => {
 	const { t } = useTranslation("agentManager")
 

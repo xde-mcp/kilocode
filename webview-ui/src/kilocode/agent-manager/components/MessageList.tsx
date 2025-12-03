@@ -168,12 +168,6 @@ function MessageItem({ message }: { message: ClineMessage }) {
 		}
 	}
 
-	if (message.say === "api_req_started" && !extraInfo) {
-		// Compact view for API requests without cost yet or just minimal info
-		// If you prefer to hide them completely until finished or show a spinner:
-		// For now, let's show the header.
-	}
-
 	return (
 		<div className={`message-item ${message.type === "say" && message.say === "api_req_started" ? "api-req" : ""}`}>
 			<div className="message-icon">{icon}</div>
