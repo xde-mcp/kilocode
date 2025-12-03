@@ -108,12 +108,7 @@ describe("useAgentManagerMessages", () => {
 
 		// Start with 4 sessions
 		act(() => {
-			dispatchStateMessage([
-				createSession("1"),
-				createSession("2"),
-				createSession("3"),
-				createSession("4"),
-			])
+			dispatchStateMessage([createSession("1"), createSession("2"), createSession("3"), createSession("4")])
 		})
 
 		expect(result.current.sessions).toHaveLength(4)

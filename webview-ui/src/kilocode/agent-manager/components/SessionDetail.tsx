@@ -7,7 +7,7 @@ import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
 import { SquareTerminal, Clock, Plus, Square, AlertCircle, Loader2, Zap, SendHorizontal } from "lucide-react"
 import DynamicTextArea from "react-textarea-autosize"
-import { cn } from "../../lib/utils"
+import { cn } from "../../../lib/utils"
 
 export function SessionDetail() {
 	const { t } = useTranslation("agentManager")

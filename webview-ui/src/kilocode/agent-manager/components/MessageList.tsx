@@ -153,7 +153,11 @@ function MessageItem({ message }: { message: ClineMessage }) {
 				const toolInfo = safeJsonParse<{ tool: string; path?: string }>(message.text)
 				if (toolInfo) {
 					const toolDetails = toolInfo.path ? `(${toolInfo.path})` : ""
-					content = <SimpleMarkdown content={t("messages.usingTool", { tool: toolInfo.tool, details: toolDetails })} />
+					content = (
+						<SimpleMarkdown
+							content={t("messages.usingTool", { tool: toolInfo.tool, details: toolDetails })}
+						/>
+					)
 				} else {
 					content = <SimpleMarkdown content={message.text || ""} />
 				}

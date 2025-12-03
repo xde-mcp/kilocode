@@ -95,5 +95,13 @@ export function useAgentManagerMessages() {
 
 		window.addEventListener("message", handleMessage)
 		return () => window.removeEventListener("message", handleMessage)
-	}, [updateSessionMessages, upsertSession, removeSession, updateSessionStatus, setSelectedSessionId, setStartSessionFailedCounter, sessionOrder])
+	}, [
+		updateSessionMessages,
+		upsertSession,
+		removeSession,
+		updateSessionStatus,
+		setSelectedSessionId,
+		setStartSessionFailedCounter,
+		sessionOrder,
+	])
 }

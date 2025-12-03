@@ -1,10 +1,10 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import { I18nextProvider } from "react-i18next"
-import i18next, { loadTranslations } from "../i18n/setup"
+import i18next, { loadTranslations } from "../../i18n/setup"
 import { AgentManagerApp } from "./components/AgentManagerApp"
-import "../../node_modules/@vscode/codicons/dist/codicon.css"
-import "../index.css"
+import "../../../node_modules/@vscode/codicons/dist/codicon.css"
+import "../../index.css"
 
 // Initialize i18n translations
 loadTranslations()

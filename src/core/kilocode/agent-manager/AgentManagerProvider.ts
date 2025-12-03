@@ -1,11 +1,11 @@
 import * as vscode from "vscode"
 import { spawn, ChildProcess, execSync } from "node:child_process"
 import * as path from "node:path"
-import { fileExistsAtPath } from "../../utils/fs"
+import { fileExistsAtPath } from "../../../utils/fs"
 import { AgentRegistry } from "./AgentRegistry"
 import { CliOutputParser, type StreamEvent, type KilocodeStreamEvent, type KilocodePayload } from "./CliOutputParser"
-import { getUri } from "../webview/getUri"
-import { getNonce } from "../webview/getNonce"
+import { getUri } from "../../webview/getUri"
+import { getNonce } from "../../webview/getNonce"
 import type { ClineMessage } from "@roo-code/types"
 
 const SESSION_TIMEOUT_MS = 120_000 // 2 minutes

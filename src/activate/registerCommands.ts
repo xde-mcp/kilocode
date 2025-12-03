@@ -18,7 +18,7 @@ import { MdmService } from "../services/mdm/MdmService"
 import { t } from "../i18n"
 import { getAppUrl, AGENT_MANAGER_ENABLED } from "@roo-code/types" // kilocode_change
 import { generateTerminalCommand } from "../utils/terminalCommandGenerator" // kilocode_change
-import { AgentManagerProvider } from "../core/agent-manager/AgentManagerProvider" // kilocode_change
+import { AgentManagerProvider } from "../core/kilocode/agent-manager/AgentManagerProvider" // kilocode_change
 
 /**
  * Helper to get the visible ClineProvider instance or log if not found.
