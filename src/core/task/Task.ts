@@ -115,6 +115,7 @@ import {
 	saveTaskMessages,
 	taskMetadata,
 } from "../task-persistence"
+import { getTaskDirectoryPath } from "../../utils/storage"
 import { getEnvironmentDetails } from "../environment/getEnvironmentDetails"
 import { checkContextWindowExceededError } from "../context/context-management/context-error-handling"
 import {
@@ -856,6 +857,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				taskId: this.taskId,
 				globalStoragePath: this.globalStoragePath,
 			})
+
+			// kilocode_change start
+			// Post directly to webview for CLI to react to file save
+			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+			const filePath = path.join(taskDir, GlobalFileNames.apiConversationHistory)
+			const provider = this.providerRef.deref()
+			if (provider) {
+				await provider.postMessageToWebview({
+					type: "apiMessagesSaved",
+					payload: [this.taskId, filePath],
+				})
+			}
+			// kilocode_change end
 		} catch (error) {
 			// In the off chance this fails, we don't want to stop the task.
 			console.error("Failed to save API conversation history:", error)
@@ -930,6 +944,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				taskId: this.taskId,
 				globalStoragePath: this.globalStoragePath,
 			})
+
+			// kilocode_change start
+			// Post directly to webview for CLI to react to file save
+			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+			const filePath = path.join(taskDir, GlobalFileNames.uiMessages)
+			const provider = this.providerRef.deref()
+			if (provider) {
+				await provider.postMessageToWebview({
+					type: "taskMessagesSaved",
+					payload: [this.taskId, filePath],
+				})
+			}
+			// kilocode_change end
 
 			const { historyItem, tokenUsage } = await taskMetadata({
 				taskId: this.taskId,
@@ -1455,6 +1482,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		progressStatus?: ToolProgressStatus,
 		options: {
 			isNonInteractive?: boolean
+			metadata?: Record<string, unknown> // kilocode_change
 		} = {},
 		contextCondense?: ContextCondense,
 	): Promise<undefined> {
@@ -1507,6 +1535,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					lastMessage.images = images
 					lastMessage.partial = false
 					lastMessage.progressStatus = progressStatus
+					// kilocode_change start
+					if (options.metadata) {
+						lastMessage.metadata = Object.assign(lastMessage.metadata ?? {}, options.metadata)
+					}
+					// kilocode_change end
 
 					// Instead of streaming partialMessage events, we do a save
 					// and post like normal to persist to disk.
@@ -1529,6 +1562,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						text,
 						images,
 						contextCondense,
+						metadata: options.metadata, // kilocode_csouhange
 					})
 				}
 			}
@@ -1552,6 +1586,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				images,
 				checkpoint,
 				contextCondense,
+				metadata: options.metadata, // kilocode_change
 			})
 		}
 

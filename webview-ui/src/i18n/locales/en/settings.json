@@ -206,6 +206,10 @@
 				"description": "Allow Kilo Code to create and edit protected files (like .kilocodeignore and .kilocode/ configuration files) without requiring approval."
 			}
 		},
+		"delete": {
+			"label": "Delete",
+			"description": "Automatically delete files and directories without requiring approval"
+		},
 		"browser": {
 			"label": "Browser",
 			"description": "Automatically perform browser actions without requiring approval. Note: Only applies when the model supports computer use"
@@ -336,6 +340,8 @@
 		"anthropicUseAuthToken": "Pass Anthropic API Key as Authorization header instead of X-Api-Key",
 		"anthropic1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"anthropic1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Use Azure deployment name",
+		"anthropicAzureDeploymentPlaceholder": "Enter deployment name...",
 		"awsBedrock1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"awsBedrock1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4",
 		"basetenApiKey": "Baseten API Key",

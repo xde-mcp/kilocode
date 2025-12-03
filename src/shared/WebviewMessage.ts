@@ -264,7 +264,14 @@ export interface WebviewMessage {
 		| "showBrowserSessionPanelAtStep"
 		| "refreshBrowserSessionPanel"
 		| "browserPanelDidLaunch"
+		| "addTaskToHistory" // kilocode_change
+		| "sessionShare" // kilocode_change
+		| "shareTaskSession" // kilocode_change
+		| "sessionFork" // kilocode_change
+		| "singleCompletion" // kilocode_change
 	text?: string
+	completionRequestId?: string // kilocode_change
+	shareId?: string // kilocode_change - for sessionFork
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
@@ -334,6 +341,7 @@ export interface WebviewMessage {
 	list?: string[] // For dismissedUpsells response
 	organizationId?: string | null // For organization switching
 	useProviderSignup?: boolean // For rooCloudSignIn to use provider signup flow
+	historyItem?: HistoryItem // kilocode_change For addTaskToHistory
 	codeIndexSettings?: {
 		// Global state settings
 		codebaseIndexEnabled: boolean

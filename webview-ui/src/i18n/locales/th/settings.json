@@ -157,6 +157,10 @@
 		"description": "อนุญาตให้ Kilo Code ดำเนินการโดยอัตโนมัติโดยไม่ต้องขออนุมัติ เปิดใช้งานการตั้งค่าเหล่านี้เฉพาะเมื่อคุณเชื่อถือ AI อย่างเต็มที่และเข้าใจความเสี่ยงด้านความปลอดภัยที่เกี่ยวข้อง",
 		"toggleShortcut": "คุณสามารถกำหนดค่าแป้นพิมพ์ลัดสำหรับการตั้งค่านี้ <SettingsLink>ในการตั้งค่า IDE ของคุณ</SettingsLink>",
 		"enabled": "เปิดใช้งานการอนุมัติอัตโนมัติ",
+		"delete": {
+			"label": "ลบ",
+			"description": "ลบไฟล์และไดเรกทอรีโดยอัตโนมัติโดยไม่ต้องขออนุมัติ"
+		},
 		"readOnly": {
 			"label": "อ่าน",
 			"description": "เมื่อเปิดใช้งาน Kilo Code จะดูเนื้อหาไดเรกทอรีและอ่านไฟล์โดยอัตโนมัติโดยไม่ต้องให้คุณคลิกปุ่มอนุมัติ",
@@ -297,6 +301,8 @@
 		"anthropicApiKey": "คีย์ API ของ Anthropic",
 		"getAnthropicApiKey": "รับคีย์ API ของ Anthropic",
 		"anthropicUseAuthToken": "ส่งคีย์ API ของ Anthropic เป็นส่วนหัว Authorization แทน X-Api-Key",
+		"anthropicUseAzureDeployment": "ใช้ชื่อการปรับใช้ Azure",
+		"anthropicAzureDeploymentPlaceholder": "ป้อนชื่อการปรับใช้...",
 		"anthropic1MContextBetaLabel": "เปิดใช้งาน context window 1M (Beta)",
 		"anthropic1MContextBetaDescription": "ขยาย context window เป็น 1 ล้าน tokens สำหรับ Claude Sonnet 4",
 		"awsBedrock1MContextBetaLabel": "เปิดใช้งาน context window 1M (Beta)",

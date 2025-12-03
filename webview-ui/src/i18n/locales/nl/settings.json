@@ -202,6 +202,10 @@
 				"description": "Sta Kilo Code toe om beschermde bestanden (zoals .kilocodeignore en .kilocode/ configuratiebestanden) aan te maken en te bewerken zonder goedkeuring."
 			}
 		},
+		"delete": {
+			"label": "Verwijderen",
+			"description": "Automatisch bestanden en mappen verwijderen zonder goedkeuring"
+		},
 		"browser": {
 			"label": "Browser",
 			"description": "Automatisch browseracties uitvoeren zonder goedkeuring. Let op: geldt alleen als het model computergebruik ondersteunt."
@@ -322,6 +326,8 @@
 		"anthropicUseAuthToken": "Anthropic API-sleutel als Authorization-header doorgeven in plaats van X-Api-Key",
 		"anthropic1MContextBetaLabel": "1M contextvenster inschakelen (bèta)",
 		"anthropic1MContextBetaDescription": "Breidt het contextvenster uit tot 1 miljoen tokens voor Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Gebruik Azure deployment naam",
+		"anthropicAzureDeploymentPlaceholder": "Voer deployment naam in...",
 		"awsBedrock1MContextBetaLabel": "1M contextvenster inschakelen (bèta)",
 		"awsBedrock1MContextBetaDescription": "Breidt het contextvenster uit tot 1 miljoen tokens voor Claude Sonnet 4",
 		"basetenApiKey": "Baseten API-sleutel",

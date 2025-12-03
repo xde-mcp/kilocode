@@ -193,6 +193,7 @@
 			"label": "लिखें",
 			"description": "अनुमोदन की आवश्यकता के बिना स्वचालित रूप से फाइलें बनाएँ और संपादित करें",
 			"delayLabel": "लिखने के बाद विलंब ताकि डायग्नोस्टिक संभावित समस्याओं का पता लगा सकें",
+			"delayLabel": "लिखने के बाद विलंब ताकि डायग्नोस्टिक संभावित समस्याओं का पता लगा सकें",
 			"outsideWorkspace": {
 				"label": "वर्कस्पेस के बाहर की फाइलें शामिल करें",
 				"description": "Kilo Code को अनुमोदन की आवश्यकता के बिना वर्तमान वर्कस्पेस के बाहर फाइलें बनाने और संपादित करने की अनुमति दें।"
@@ -201,6 +202,10 @@
 				"label": "संरक्षित फाइलें शामिल करें",
 				"description": "Kilo Code को अनुमोदन की आवश्यकता के बिना संरक्षित फाइलें (.kilocodeignore और .kilocode/ कॉन्फ़िगरेशन फाइलें जैसी) बनाने और संपादित करने की अनुमति दें।"
 			}
+		},
+		"delete": {
+			"label": "हटाएं",
+			"description": "अनुमोदन की आवश्यकता के बिना स्वचालित रूप से फाइलें और निर्देशिकाएं हटाएं"
 		},
 		"browser": {
 			"label": "ब्राउज़र",
@@ -330,6 +335,8 @@
 		"anthropicUseAuthToken": "X-Api-Key के बजाय Anthropic API कुंजी को Authorization हेडर के रूप में पास करें",
 		"anthropic1MContextBetaLabel": "1M संदर्भ विंडो सक्षम करें (बीटा)",
 		"anthropic1MContextBetaDescription": "Claude Sonnet 4 के लिए संदर्भ विंडो को 1 मिलियन टोकन तक बढ़ाता है",
+		"anthropicUseAzureDeployment": "Azure डिप्लॉयमेंट नाम का उपयोग करें",
+		"anthropicAzureDeploymentPlaceholder": "डिप्लॉयमेंट नाम दर्ज करें...",
 		"awsBedrock1MContextBetaLabel": "1M संदर्भ विंडो सक्षम करें (बीटा)",
 		"awsBedrock1MContextBetaDescription": "Claude Sonnet 4 के लिए संदर्भ विंडो को 1 मिलियन टोकन तक बढ़ाता है",
 		"basetenApiKey": "Baseten API कुंजी",

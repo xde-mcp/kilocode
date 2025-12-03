@@ -76,6 +76,7 @@ export const globalSettingsSchema = z.object({
 	alwaysAllowWrite: z.boolean().optional(),
 	alwaysAllowWriteOutsideWorkspace: z.boolean().optional(),
 	alwaysAllowWriteProtected: z.boolean().optional(),
+	alwaysAllowDelete: z.boolean().optional(), // kilocode_change
 	writeDelayMs: z.number().min(0).optional(),
 	alwaysAllowBrowser: z.boolean().optional(),
 	alwaysApproveResubmit: z.boolean().optional(),
@@ -344,6 +345,7 @@ export const EVALS_SETTINGS: RooCodeSettings = {
 	alwaysAllowWrite: true,
 	alwaysAllowWriteOutsideWorkspace: false,
 	alwaysAllowWriteProtected: false,
+	alwaysAllowDelete: true, // kilocode_change
 	writeDelayMs: 1000,
 	alwaysAllowBrowser: true,
 	alwaysApproveResubmit: true,

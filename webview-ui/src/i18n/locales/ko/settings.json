@@ -223,6 +223,10 @@
 			"label": "하위 작업",
 			"description": "승인 없이 하위 작업 생성 및 완료 허용"
 		},
+		"delete": {
+			"label": "삭제",
+			"description": "승인 없이 자동으로 파일 및 디렉토리 삭제"
+		},
 		"followupQuestions": {
 			"label": "질문",
 			"description": "설정된 시간이 지나면 후속 질문에 대한 첫 번째 제안 답변을 자동으로 선택합니다",
@@ -320,6 +324,8 @@
 		"anthropicApiKey": "Anthropic API 키",
 		"getAnthropicApiKey": "Anthropic API 키 받기",
 		"anthropicUseAuthToken": "X-Api-Key 대신 Authorization 헤더로 Anthropic API 키 전달",
+		"anthropicUseAzureDeployment": "Azure 배포 이름 사용",
+		"anthropicAzureDeploymentPlaceholder": "배포 이름 입력...",
 		"anthropic1MContextBetaLabel": "1M 컨텍스트 창 활성화 (베타)",
 		"anthropic1MContextBetaDescription": "Claude Sonnet 4의 컨텍스트 창을 100만 토큰으로 확장",
 		"awsBedrock1MContextBetaLabel": "1M 컨텍스트 창 활성화 (베타)",

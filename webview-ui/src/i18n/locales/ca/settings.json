@@ -248,6 +248,10 @@
 			"label": "Todo",
 			"description": "La llista de tasques es actualitza automàticament sense aprovació"
 		},
+		"delete": {
+			"label": "Eliminar",
+			"description": "Eliminar automàticament fitxers i directoris sense requerir aprovació"
+		},
 		"apiRequestLimit": {
 			"title": "Màximes Sol·licituds",
 			"description": "Fes aquesta quantitat de sol·licituds API automàticament abans de demanar aprovació per continuar amb la tasca.",
@@ -322,6 +326,8 @@
 		"anthropicUseAuthToken": "Passar la clau API d'Anthropic com a capçalera d'autorització en lloc de X-Api-Key",
 		"anthropic1MContextBetaLabel": "Activa la finestra de context d'1M (Beta)",
 		"anthropic1MContextBetaDescription": "Amplia la finestra de context a 1 milió de tokens per a Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Utilitza el nom de desplegament d'Azure",
+		"anthropicAzureDeploymentPlaceholder": "Introdueix el nom de desplegament...",
 		"awsBedrock1MContextBetaLabel": "Activa la finestra de context d'1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "Amplia la finestra de context a 1 milió de tokens per a Claude Sonnet 4",
 		"basetenApiKey": "Clau API de Baseten",

@@ -189,6 +189,10 @@
 				"description": "Permitir que o Kilo Code leia arquivos fora do espaço de trabalho atual sem exigir aprovação."
 			}
 		},
+		"delete": {
+			"label": "Excluir",
+			"description": "Excluir automaticamente arquivos e diretórios sem exigir aprovação"
+		},
 		"write": {
 			"label": "Escrita",
 			"description": "Criar e editar arquivos automaticamente sem exigir aprovação",
@@ -322,6 +326,8 @@
 		"anthropicUseAuthToken": "Passar a chave de API Anthropic como cabeçalho Authorization em vez de X-Api-Key",
 		"anthropic1MContextBetaLabel": "Ativar janela de contexto de 1M (Beta)",
 		"anthropic1MContextBetaDescription": "Estende a janela de contexto para 1 milhão de tokens para o Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Usar nome de implantação do Azure",
+		"anthropicAzureDeploymentPlaceholder": "Digite o nome da implantação...",
 		"awsBedrock1MContextBetaLabel": "Ativar janela de contexto de 1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "Estende a janela de contexto para 1 milhão de tokens para o Claude Sonnet 4",
 		"basetenApiKey": "Chave de API Baseten",

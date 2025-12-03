@@ -163,6 +163,10 @@
 		"description": "Дозволити Kilo Code автоматично виконувати операції без необхідності затвердження. Вмикайте ці налаштування, лише якщо ви повністю довіряєте ШІ та розумієте пов'язані з цим ризики безпеки.",
 		"toggleShortcut": "Ви можете налаштувати гарячу клавішу для цього налаштування <SettingsLink>у настройках вашого IDE</SettingsLink>.",
 		"enabled": "Автоматичне затвердження увімкнено",
+		"delete": {
+			"label": "Видалити",
+			"description": "Автоматично видаляти файли та каталоги без необхідності затвердження"
+		},
 		"readOnly": {
 			"label": "Читати",
 			"description": "Якщо ввімкнено, Kilo Code автоматично переглядатиме вміст каталогу та читатиме файли, не вимагаючи від вас натискання кнопки «Схвалити».",
@@ -307,6 +311,8 @@
 		"anthropic1MContextBetaDescription": "Розширити контекстне вікно до 1 мільйона токенів для Claude Sonnet 4",
 		"awsBedrock1MContextBetaLabel": "Увімкнути контекстне вікно 1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "Розширити контекстне вікно до 1 мільйона токенів для Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Використовувати ім'я розгортання Azure",
+		"anthropicAzureDeploymentPlaceholder": "Введіть ім'я розгортання...",
 		"cerebrasApiKey": "Ключ API Cerebras",
 		"getCerebrasApiKey": "Отримати ключ API Cerebras",
 		"chutesApiKey": "Ключ API Chutes",

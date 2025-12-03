@@ -189,6 +189,10 @@
 				"description": "Izinkan Kilo Code membaca file di luar workspace saat ini tanpa memerlukan persetujuan."
 			}
 		},
+		"delete": {
+			"label": "Hapus",
+			"description": "Secara otomatis menghapus file dan direktori tanpa memerlukan persetujuan"
+		},
 		"write": {
 			"label": "Tulis",
 			"description": "Secara otomatis membuat dan mengedit file tanpa memerlukan persetujuan",
@@ -322,6 +326,8 @@
 		"anthropicUseAuthToken": "Kirim Anthropic API Key sebagai Authorization header alih-alih X-Api-Key",
 		"anthropic1MContextBetaLabel": "Aktifkan jendela konteks 1M (Beta)",
 		"anthropic1MContextBetaDescription": "Memperluas jendela konteks menjadi 1 juta token untuk Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Gunakan nama deployment Azure",
+		"anthropicAzureDeploymentPlaceholder": "Masukkan nama deployment...",
 		"awsBedrock1MContextBetaLabel": "Aktifkan jendela konteks 1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "Memperluas jendela konteks menjadi 1 juta token untuk Claude Sonnet 4",
 		"basetenApiKey": "Baseten API Key",

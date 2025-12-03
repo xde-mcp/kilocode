@@ -202,6 +202,10 @@
 				"description": "Pozwól Kilo Code na tworzenie i edycję plików chronionych (takich jak .kilocodeignore i pliki konfiguracyjne .kilocode/) bez konieczności zatwierdzania."
 			}
 		},
+		"delete": {
+			"label": "Usuń",
+			"description": "Automatycznie usuwaj pliki i katalogi bez konieczności zatwierdzania"
+		},
 		"browser": {
 			"label": "Przeglądarka",
 			"description": "Automatycznie wykonuj akcje przeglądarki bez konieczności zatwierdzania. Uwaga: Dotyczy tylko gdy model obsługuje używanie komputera"
@@ -320,6 +324,8 @@
 		"anthropicApiKey": "Klucz API Anthropic",
 		"getAnthropicApiKey": "Uzyskaj klucz API Anthropic",
 		"anthropicUseAuthToken": "Przekaż klucz API Anthropic jako nagłówek Authorization zamiast X-Api-Key",
+		"anthropicUseAzureDeployment": "Użyj nazwy wdrożenia Azure",
+		"anthropicAzureDeploymentPlaceholder": "Wprowadź nazwę wdrożenia...",
 		"anthropic1MContextBetaLabel": "Włącz okno kontekstowe 1M (Beta)",
 		"anthropic1MContextBetaDescription": "Rozszerza okno kontekstowe do 1 miliona tokenów dla Claude Sonnet 4",
 		"awsBedrock1MContextBetaLabel": "Włącz okno kontekstowe 1M (Beta)",

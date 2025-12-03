@@ -224,6 +224,10 @@
 			"label": "Sous-tâches",
 			"description": "Permettre la création et l'achèvement des sous-tâches sans nécessiter d'approbation"
 		},
+		"delete": {
+			"label": "Supprimer",
+			"description": "Supprimer automatiquement les fichiers et répertoires sans nécessiter d'approbation"
+		},
 		"followupQuestions": {
 			"label": "Question",
 			"description": "Sélectionner automatiquement la première réponse suggérée pour les questions de suivi après le délai configuré",
@@ -331,6 +335,8 @@
 		"anthropicUseAuthToken": "Passer la clé API Anthropic comme en-tête d'autorisation au lieu de X-Api-Key",
 		"anthropic1MContextBetaLabel": "Activer la fenêtre de contexte de 1M (Bêta)",
 		"anthropic1MContextBetaDescription": "Étend la fenêtre de contexte à 1 million de tokens pour Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Utiliser le nom de déploiement Azure",
+		"anthropicAzureDeploymentPlaceholder": "Entrez le nom de déploiement...",
 		"awsBedrock1MContextBetaLabel": "Activer la fenêtre de contexte de 1M (Bêta)",
 		"awsBedrock1MContextBetaDescription": "Étend la fenêtre de contexte à 1 million de tokens pour Claude Sonnet 4",
 		"basetenApiKey": "Clé API Baseten",

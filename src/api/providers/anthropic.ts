@@ -57,6 +57,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 		// Filter out non-Anthropic blocks (reasoning, thoughtSignature, etc.) before sending to the API
 		const sanitizedMessages = filterNonAnthropicBlocks(messages)
+		const apiModelId = this.options.anthropicDeploymentName?.trim() || modelId // kilocode_change
 
 		// Add 1M context beta flag if enabled for Claude Sonnet 4 and 4.5
 		if (
@@ -121,7 +122,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 				stream = await this.client.messages.create(
 					{
-						model: modelId,
+						model: apiModelId, // kilocode_change
 						max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 						temperature,
 						thinking,
@@ -187,7 +188,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			}
 			default: {
 				stream = await this.client.messages.create({
-					model: modelId,
+					model: apiModelId, // kilocode_change
 					max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 					temperature,
 					system: [{ text: systemPrompt, type: "text" }],
@@ -464,9 +465,10 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 	async completePrompt(prompt: string) {
 		let { id: model, temperature } = this.getModel()
+		const apiModelId = this.options.anthropicDeploymentName?.trim() || model // kilocode_change
 
 		const message = await this.client.messages.create({
-			model,
+			model: apiModelId, // kilocode_change
 			max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
 			temperature,
@@ -488,9 +490,10 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		try {
 			// Use the current model
 			const { id: model } = this.getModel()
+			const apiModelId = this.options.anthropicDeploymentName?.trim() || model // kilocode_change
 
 			const response = await this.client.messages.countTokens({
-				model,
+				model: apiModelId, // kilocode_change
 				messages: [{ role: "user", content: content }],
 			})
 
