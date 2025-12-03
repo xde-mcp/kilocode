@@ -6,6 +6,7 @@ import { AgentRegistry } from "./AgentRegistry"
 import { CliOutputParser, type StreamEvent, type KilocodeStreamEvent, type KilocodePayload } from "./CliOutputParser"
 import { getUri } from "../../webview/getUri"
 import { getNonce } from "../../webview/getNonce"
+import { getViteDevServerConfig } from "../../webview/getViteDevServerConfig"
 import type { ClineMessage } from "@roo-code/types"
 
 const SESSION_TIMEOUT_MS = 120_000 // 2 minutes
@@ -96,7 +97,10 @@ export class AgentManagerProvider implements vscode.Disposable {
 			dark: vscode.Uri.joinPath(this.context.extensionUri, "assets", "icons", "kilo-dark.png"),
 		}
 
-		this.panel.webview.html = this.getHtmlContent(this.panel.webview)
+		this.panel.webview.html =
+			this.context.extensionMode === vscode.ExtensionMode.Development
+				? await this.getHMRHtmlContent(this.panel.webview)
+				: this.getHtmlContent(this.panel.webview)
 
 		this.panel.webview.onDidReceiveMessage((message) => this.handleMessage(message), null, this.disposables)
 
@@ -504,6 +508,47 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 	private postMessage(message: unknown): void {
 		this.panel?.webview.postMessage(message)
+	}
+
+	// HMR support for development mode - same approach as ClineProvider (see src/core/webview/ClineProvider.ts)
+	private async getHMRHtmlContent(webview: vscode.Webview): Promise<string> {
+		const viteConfig = await getViteDevServerConfig(webview)
+
+		if (!viteConfig) {
+			vscode.window.showErrorMessage(
+				"Vite dev server is not running. Please run 'pnpm dev' in webview-ui directory or use 'pnpm build'.",
+			)
+			return this.getHtmlContent(webview)
+		}
+
+		const { localServerUrl, csp, reactRefreshScript } = viteConfig
+
+		const stylesUri = getUri(webview, this.context.extensionUri, [
+			"webview-ui",
+			"build",
+			"assets",
+			"agent-manager.css",
+		])
+
+		const scriptUri = `http://${localServerUrl}/src/kilocode/agent-manager/index.tsx`
+
+		return /*html*/ `
+			<!DOCTYPE html>
+			<html lang="en">
+				<head>
+					<meta charset="utf-8">
+					<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+					<meta http-equiv="Content-Security-Policy" content="${csp.join("; ")}">
+					<link rel="stylesheet" type="text/css" href="${stylesUri}">
+					<title>Agent Manager</title>
+				</head>
+				<body>
+					<div id="root"></div>
+					${reactRefreshScript}
+					<script type="module" src="${scriptUri}"></script>
+				</body>
+			</html>
+		`
 	}
 
 	private getHtmlContent(webview: vscode.Webview): string {
