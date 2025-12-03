@@ -8,6 +8,7 @@ type AutoApproveToggles = Pick<
 	GlobalSettings,
 	| "alwaysAllowReadOnly"
 	| "alwaysAllowWrite"
+	| "alwaysAllowDelete"
 	| "alwaysAllowBrowser"
 	| "alwaysApproveResubmit"
 	| "alwaysAllowMcp"
@@ -42,6 +43,13 @@ export const autoApproveSettingsConfig: Record<AutoApproveSetting, AutoApproveCo
 		descriptionKey: "settings:autoApprove.write.description",
 		icon: "edit",
 		testId: "always-allow-write-toggle",
+	},
+	alwaysAllowDelete: {
+		key: "alwaysAllowDelete",
+		labelKey: "settings:autoApprove.delete.label",
+		descriptionKey: "settings:autoApprove.delete.description",
+		icon: "trash",
+		testId: "always-allow-delete-toggle",
 	},
 	alwaysAllowBrowser: {
 		key: "alwaysAllowBrowser",

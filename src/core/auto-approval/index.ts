@@ -7,10 +7,11 @@ import { isWriteToolAction, isReadOnlyToolAction } from "./tools"
 import { isMcpToolAlwaysAllowed } from "./mcp"
 import { getCommandDecision } from "./commands"
 
-// We have 10 different actions that can be auto-approved.
+// We have 11 different actions that can be auto-approved.
 export type AutoApprovalState =
 	| "alwaysAllowReadOnly"
 	| "alwaysAllowWrite"
+	| "alwaysAllowDelete"
 	| "alwaysAllowBrowser"
 	| "alwaysApproveResubmit"
 	| "alwaysAllowMcp"
@@ -180,6 +181,10 @@ export async function checkAutoApproval({
 				(!isProtected || state.alwaysAllowWriteProtected === true)
 				? { decision: "approve" }
 				: { decision: "ask" }
+		}
+
+		if (tool.tool === "deleteFile") {
+			return state.alwaysAllowDelete === true ? { decision: "approve" } : { decision: "ask" }
 		}
 	}
 

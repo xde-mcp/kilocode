@@ -19,6 +19,7 @@ describe("AutoApproveToggle", () => {
 	const initialProps = {
 		alwaysAllowReadOnly: true,
 		alwaysAllowWrite: false,
+		alwaysAllowDelete: false,
 		alwaysAllowBrowser: false,
 		alwaysApproveResubmit: true,
 		alwaysAllowMcp: false,
