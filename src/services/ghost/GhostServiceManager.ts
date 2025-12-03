@@ -11,7 +11,6 @@ import { TelemetryService } from "@roo-code/telemetry"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 
 export class GhostServiceManager {
-	private static instance: GhostServiceManager | null = null
 	private readonly model: GhostModel
 	private readonly cline: ClineProvider
 	private readonly context: vscode.ExtensionContext
@@ -30,7 +29,7 @@ export class GhostServiceManager {
 	public readonly inlineCompletionProvider: GhostInlineCompletionProvider
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
-	private constructor(context: vscode.ExtensionContext, cline: ClineProvider) {
+	constructor(context: vscode.ExtensionContext, cline: ClineProvider) {
 		this.context = context
 		this.cline = cline
 
@@ -48,17 +47,6 @@ export class GhostServiceManager {
 		)
 
 		void this.load()
-	}
-
-	// Singleton Management
-	public static initialize(context: vscode.ExtensionContext, cline: ClineProvider): GhostServiceManager {
-		if (GhostServiceManager.instance) {
-			throw new Error(
-				"GhostServiceManager is already initialized. Restart VS code, or change this to return the cached instance.",
-			)
-		}
-		GhostServiceManager.instance = new GhostServiceManager(context, cline)
-		return GhostServiceManager.instance
 	}
 
 	public async load() {
@@ -291,7 +279,5 @@ export class GhostServiceManager {
 
 		// Dispose inline completion provider resources
 		this.inlineCompletionProvider.dispose()
-
-		GhostServiceManager.instance = null // Reset singleton
 	}
 }
