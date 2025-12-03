@@ -410,6 +410,12 @@ export class SessionManager {
 		this.isSyncing = false
 
 		this.logger?.debug("SessionManager flushed", "SessionManager")
+
+		if (!this.timer) {
+			this.timer = setInterval(() => {
+				this.syncSession()
+			}, SessionManager.SYNC_INTERVAL)
+		}
 	}
 
 	private async syncSession(force = false) {
