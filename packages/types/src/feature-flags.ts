@@ -1,4 +1,3 @@
-// kilocode_change - new file
 /**
  * Feature flags for development-only features
  */
