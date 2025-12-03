@@ -45,6 +45,7 @@ interface ImageGenerationOptions {
 	model: string
 	prompt: string
 	inputImage?: string
+	headers?: Record<string, string> // kilocode_change
 }
 
 interface ImagesApiOptions {
@@ -62,16 +63,18 @@ interface ImagesApiOptions {
  * Shared image generation implementation for OpenRouter and Roo Code Cloud providers
  */
 export async function generateImageWithProvider(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
-	const { baseURL, authToken, model, prompt, inputImage } = options
+	// kilocode_change: add headers
+	const { baseURL, authToken, model, prompt, inputImage, headers } = options
 
 	try {
 		const response = await fetch(`${baseURL}/chat/completions`, {
 			method: "POST",
 			headers: {
+				// kilocode_change start
+				...headers,
+				// kilocode_change end
 				Authorization: `Bearer ${authToken}`,
 				"Content-Type": "application/json",
-				"HTTP-Referer": "https://github.com/RooVetGit/Roo-Code",
-				"X-Title": "Roo Code",
 			},
 			body: JSON.stringify({
 				model,

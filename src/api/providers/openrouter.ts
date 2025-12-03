@@ -566,44 +566,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			}
 		}
 
-		try {
-			const response = await fetch(
-				`${this.options.openRouterBaseUrl || "https://openrouter.ai/api/v1/"}chat/completions`, // kilocode_change: support baseUrl
-				{
-					method: "POST",
-					headers: {
-						// kilocode_change start
-						...DEFAULT_HEADERS,
-						...this.getCustomRequestHeaders(taskId),
-						// kilocode_change end
-						Authorization: `Bearer ${apiKey}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						model,
-						messages: [
-							{
-								role: "user",
-								content: inputImage
-									? [
-											{
-												type: "text",
-												text: prompt,
-											},
-											{
-												type: "image_url",
-												image_url: {
-													url: inputImage,
-												},
-											},
-										]
-									: prompt,
-							},
-						],
-						modalities: ["image", "text"],
-					}),
-				},
-			)
 		const baseURL = this.options.openRouterBaseUrl || "https://openrouter.ai/api/v1"
 
 		// OpenRouter only supports chat completions approach for image generation
@@ -613,6 +575,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			model,
 			prompt,
 			inputImage,
+			headers: { ...DEFAULT_HEADERS, ...this.getCustomRequestHeaders(taskId) }, // kilocode_change
 		})
 	}
 }
