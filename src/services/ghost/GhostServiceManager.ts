@@ -208,31 +208,10 @@ export class GhostServiceManager {
 		return this.model.loaded && this.model.hasValidCredentials()
 	}
 
-	private updateCostTracking(
-		cost: number,
-		inputTokens: number,
-		outputTokens: number,
-		cacheWriteTokens: number,
-		cacheReadTokens: number,
-	): void {
-		if (inputTokens === 0 && outputTokens === 0) {
-			// Only count completions that actually hit the LLM (not cached)
-			// A cached completion will have 0 input and output tokens
-			return
-		}
+	private updateCostTracking(cost: number, inputTokens: number, outputTokens: number): void {
 		this.completionCount++
 		this.sessionCost += cost
 		this.updateStatusBar()
-
-		TelemetryService.instance.captureEvent(TelemetryEventName.LLM_COMPLETION, {
-			taskId: this.taskId,
-			inputTokens,
-			outputTokens,
-			cacheWriteTokens,
-			cacheReadTokens,
-			cost,
-			service: "INLINE_ASSIST",
-		})
 	}
 
 	private updateStatusBar() {

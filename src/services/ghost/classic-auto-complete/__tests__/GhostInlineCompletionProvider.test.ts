@@ -9,6 +9,7 @@ import { FillInAtCursorSuggestion } from "../HoleFiller"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
 import { GhostContextProvider } from "../GhostContextProvider"
+import * as telemetry from "../AutocompleteTelemetry"
 
 // Mock RooIgnoreController to prevent vscode.RelativePattern errors
 vi.mock("../../../../core/ignore/RooIgnoreController", () => {
@@ -21,6 +22,17 @@ vi.mock("../../../../core/ignore/RooIgnoreController", () => {
 	}
 })
 
+// Mock AutocompleteTelemetry module
+vi.mock("../AutocompleteTelemetry", () => ({
+	captureSuggestionRequested: vi.fn(),
+	captureSuggestionFiltered: vi.fn(),
+	captureCacheHit: vi.fn(),
+	captureLlmSuggestionReturned: vi.fn(),
+	captureLlmRequestCompleted: vi.fn(),
+	captureLlmRequestFailed: vi.fn(),
+	captureAcceptSuggestion: vi.fn(),
+}))
+
 // Mock vscode InlineCompletionTriggerKind enum and event listeners
 vi.mock("vscode", async () => {
 	const actual = await vi.importActual<typeof vscode>("vscode")
@@ -30,6 +42,22 @@ vi.mock("vscode", async () => {
 			Invoke: 0,
 			Automatic: 1,
 		},
+		// Mock InlineCompletionItem class for use in stringToInlineCompletions
+		InlineCompletionItem: class MockInlineCompletionItem {
+			insertText: string | { value: string }
+			range?: { start: { line: number; character: number }; end: { line: number; character: number } }
+			command?: { command: string; title: string }
+
+			constructor(
+				insertText: string | { value: string },
+				range?: { start: { line: number; character: number }; end: { line: number; character: number } },
+				command?: { command: string; title: string },
+			) {
+				this.insertText = insertText
+				this.range = range
+				this.command = command
+			}
+		},
 		window: {
 			...actual.window,
 			onDidChangeTextEditorSelection: vi.fn(() => ({ dispose: vi.fn() })),
@@ -37,6 +65,10 @@ vi.mock("vscode", async () => {
 		workspace: {
 			...actual.workspace,
 			onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+		},
+		commands: {
+			...actual.commands,
+			registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
 		},
 	}
 })
@@ -53,7 +85,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("")
+			expect(result).toEqual({ text: "", matchType: "exact" })
 		})
 
 		it("should skip failed lookups and find successful suggestions", () => {
@@ -71,7 +103,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("console.log('success');")
+			expect(result).toEqual({ text: "console.log('success');", matchType: "exact" })
 		})
 
 		it("should return empty string for failed lookup even when other suggestions exist", () => {
@@ -89,7 +121,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("")
+			expect(result).toEqual({ text: "", matchType: "exact" })
 		})
 	})
 
@@ -104,7 +136,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("console.log('Hello, World!');")
+			expect(result).toEqual({ text: "console.log('Hello, World!');", matchType: "exact" })
 		})
 
 		it("should return null when prefix does not match", () => {
@@ -151,7 +183,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User backspaced from "foo" to "f"
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toBe("oohenk")
+			expect(result).toEqual({ text: "oohenk", matchType: "backward_deletion" })
 		})
 
 		it("should return full prefix plus suggestion when user deletes entire prefix", () => {
@@ -165,7 +197,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted entire prefix
 			const result = findMatchingSuggestion("", "!", suggestions)
-			expect(result).toBe("helloworld")
+			expect(result).toEqual({ text: "helloworld", matchType: "backward_deletion" })
 		})
 
 		it("should return null when suffix does not match during backward deletion", () => {
@@ -207,7 +239,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User backspaced - should return just the deleted portion
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toBe("oo")
+			expect(result).toEqual({ text: "oo", matchType: "backward_deletion" })
 		})
 
 		it("should prefer exact match over backward deletion match", () => {
@@ -226,7 +258,7 @@ describe("findMatchingSuggestion", () => {
 
 			// Should match the exact prefix "f" first (most recent)
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toBe("exact")
+			expect(result).toEqual({ text: "exact", matchType: "exact" })
 		})
 
 		it("should handle multi-character backward deletion", () => {
@@ -240,7 +272,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted "unc" from "function myFunc"
 			const result = findMatchingSuggestion("function myF", " { }", suggestions)
-			expect(result).toBe("unctest()")
+			expect(result).toEqual({ text: "unctest()", matchType: "backward_deletion" })
 		})
 	})
 
@@ -256,7 +288,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "cons" after the prefix
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toBe("ole.log('Hello, World!');")
+			expect(result).toEqual({ text: "ole.log('Hello, World!');", matchType: "partial_typing" })
 		})
 
 		it("should return full suggestion when no partial typing", () => {
@@ -269,7 +301,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("console.log('test');")
+			expect(result).toEqual({ text: "console.log('test');", matchType: "exact" })
 		})
 
 		it("should return null when partially typed content does not match suggestion", () => {
@@ -296,7 +328,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1console.log('test');", "\nconst y = 2", suggestions)
-			expect(result).toBe("")
+			expect(result).toEqual({ text: "", matchType: "partial_typing" })
 		})
 
 		it("should return null when suffix has changed during partial typing", () => {
@@ -324,7 +356,7 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "function te"
 			const result = findMatchingSuggestion("const x = 1function te", "\nconst y = 2", suggestions)
-			expect(result).toBe("st() { return 42; }")
+			expect(result).toEqual({ text: "st() { return 42; }", matchType: "partial_typing" })
 		})
 
 		it("should be case-sensitive in partial matching", () => {
@@ -358,7 +390,7 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toBe("second suggestion")
+			expect(result).toEqual({ text: "second suggestion", matchType: "exact" })
 		})
 
 		it("should match different suggestions based on context", () => {
@@ -376,10 +408,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result1).toBe("first suggestion")
+			expect(result1).toEqual({ text: "first suggestion", matchType: "exact" })
 
 			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
-			expect(result2).toBe("second suggestion")
+			expect(result2).toEqual({ text: "second suggestion", matchType: "exact" })
 		})
 
 		it("should prefer exact match over partial match", () => {
@@ -398,7 +430,48 @@ describe("findMatchingSuggestion", () => {
 
 			// User is at position that matches exact prefix of second suggestion
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toBe("exact match")
+			expect(result).toEqual({ text: "exact match", matchType: "exact" })
+		})
+	})
+
+	describe("match type tracking", () => {
+		it("should return exact matchType for exact prefix/suffix match", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "test",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			const result = findMatchingSuggestion("foo", "bar", suggestions)
+			expect(result?.matchType).toBe("exact")
+		})
+
+		it("should return partial_typing matchType when user has typed part of suggestion", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "console.log('test');",
+					prefix: "const x = 1",
+					suffix: "\nconst y = 2",
+				},
+			]
+
+			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
+			expect(result?.matchType).toBe("partial_typing")
+		})
+
+		it("should return backward_deletion matchType when user has backspaced", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "test",
+					prefix: "foo",
+					suffix: "bar",
+				},
+			]
+
+			const result = findMatchingSuggestion("f", "bar", suggestions)
+			expect(result?.matchType).toBe("backward_deletion")
 		})
 	})
 })
@@ -540,6 +613,7 @@ describe("GhostInlineCompletionProvider", () => {
 				cacheReadTokens: 0,
 			}),
 			getModelName: vi.fn().mockReturnValue("test-model"),
+			getProviderDisplayName: vi.fn().mockReturnValue("test-provider"),
 			supportsFim: vi.fn().mockReturnValue(false), // Default to false for non-FIM tests
 		} as unknown as GhostModel
 		mockCostTrackingCallback = vi.fn() as CostTrackingCallback
@@ -605,8 +679,11 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(result).toHaveLength(1)
 			expect(result[0].insertText).toBe(fimContent.text)
 			expect(result[0].range).toEqual(new vscode.Range(mockPosition, mockPosition))
-			// No command property - VSCode handles acceptance automatically
-			expect(result[0].command).toBeUndefined()
+			// Command is attached to track acceptance telemetry
+			expect(result[0].command).toEqual({
+				command: "kilocode.ghost.inline-completion.accepted",
+				title: "Autocomplete Accepted",
+			})
 		})
 
 		it("should return empty array when prefix does not match", async () => {
@@ -1199,7 +1276,7 @@ describe("GhostInlineCompletionProvider", () => {
 
 			expect(result1).toHaveLength(0)
 			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
-			expect(mockCostTrackingCallback).toHaveBeenCalledWith(0.01, 100, 50, 0, 0)
+			expect(mockCostTrackingCallback).toHaveBeenCalledWith(0.01, 100, 50)
 
 			// Second call with same prefix/suffix - should NOT invoke LLM
 			vi.mocked(mockModel.generateResponse).mockClear()
@@ -1379,7 +1456,7 @@ describe("GhostInlineCompletionProvider", () => {
 
 			// First call - should invoke LLM
 			await provideWithDebounce(mockDocument, mockPosition, mockContext, mockToken)
-			expect(mockCostTrackingCallback).toHaveBeenCalledWith(0.01, 100, 50, 10, 20)
+			expect(mockCostTrackingCallback).toHaveBeenCalledWith(0.01, 100, 50)
 
 			// Second call - should use failed cache with zero cost
 			vi.mocked(mockCostTrackingCallback).mockClear()
@@ -1832,6 +1909,64 @@ describe("GhostInlineCompletionProvider", () => {
 
 			// Should have executed immediately without waiting
 			expect(callCount).toBe(3)
+		})
+	})
+
+	describe("telemetry tracking", () => {
+		beforeEach(() => {
+			vi.mocked(telemetry.captureAcceptSuggestion).mockClear()
+		})
+
+		it("should track acceptance when suggestion is accepted via command", async () => {
+			// Capture the registered command callback by setting up mock before provider creation
+			let acceptCallback: (() => void) | undefined
+			const originalMock = vi.mocked(vscode.commands.registerCommand)
+			originalMock.mockImplementation((cmd, callback) => {
+				if (cmd === "kilocode.ghost.inline-completion.accepted") {
+					acceptCallback = callback as () => void
+				}
+				return { dispose: vi.fn() }
+			})
+
+			// Create new provider to capture the command
+			const testProvider = new GhostInlineCompletionProvider(
+				mockExtensionContext,
+				mockModel,
+				mockCostTrackingCallback,
+				() => mockSettings,
+				mockClineProvider as any,
+			)
+
+			// Verify callback was captured
+			expect(acceptCallback).toBeDefined()
+
+			// Set up and show a suggestion
+			testProvider.updateSuggestions({
+				text: "console.log('test');",
+				prefix: "const x = 1",
+				suffix: "\nconst y = 2",
+			})
+
+			// Call provideInlineCompletionItems to trigger trackSuggestionShown
+			const promise = testProvider.provideInlineCompletionItems(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)
+			await vi.advanceTimersByTimeAsync(300)
+			const result = await promise
+
+			// Verify we got a suggestion (which means trackSuggestionShown was called)
+			expect(Array.isArray(result) ? result.length : 0).toBeGreaterThan(0)
+
+			// Simulate accepting the suggestion
+			acceptCallback!()
+
+			expect(telemetry.captureAcceptSuggestion).toHaveBeenCalled()
+
+			// Cleanup
+			testProvider.dispose()
 		})
 	})
 })
