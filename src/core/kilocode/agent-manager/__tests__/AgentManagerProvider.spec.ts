@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach, afterEach, type Mock } from "vitest"
 import { EventEmitter } from "node:events"
 
+const MOCK_CLI_PATH = "/mock/path/to/kilocode"
+
 let AgentManagerProvider: typeof import("../AgentManagerProvider").AgentManagerProvider
 
 describe("AgentManagerProvider CLI spawning", () => {
@@ -11,7 +13,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 	beforeEach(async () => {
 		vi.resetModules()
 
-		const mockWorkspaceFolder = { uri: { fsPath: "/tmp/workspace" } }
+		const mockWorkspaceFolder = { uri: { fsPath: "/mock/workspace" } }
 		const mockWindow = { showErrorMessage: () => undefined, ViewColumn: { One: 1 } }
 
 		vi.doMock("vscode", () => ({
@@ -34,7 +36,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 		}
 
 		const spawnMock = vi.fn(() => new TestProc())
-		const execSyncMock = vi.fn(() => "/usr/bin/kilocode")
+		const execSyncMock = vi.fn(() => MOCK_CLI_PATH)
 
 		vi.doMock("node:child_process", () => ({
 			spawn: spawnMock,
@@ -56,7 +58,7 @@ describe("AgentManagerProvider CLI spawning", () => {
 		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
 		expect(spawnMock).toHaveBeenCalledTimes(1)
 		const [cmd, args, options] = spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, unknown>]
-		expect(cmd).toBe("/usr/bin/kilocode")
+		expect(cmd).toBe(MOCK_CLI_PATH)
 		expect(args[args.length - 1]).toBe('echo "$(whoami)"')
 		expect(options?.shell).not.toBe(true)
 	})
