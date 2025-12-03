@@ -25,8 +25,8 @@ export function getVitePort(): string {
 		if (fs.existsSync(portFilePath)) {
 			return fs.readFileSync(portFilePath, "utf8").trim()
 		}
-	} catch {
-		// Ignore errors, use default port
+	} catch (error) {
+		console.warn("Failed to read .vite-port file, using default port:", error)
 	}
 
 	return DEFAULT_VITE_PORT
