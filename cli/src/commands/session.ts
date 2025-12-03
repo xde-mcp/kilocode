@@ -41,10 +41,8 @@ async function listSessions(context: CommandContext): Promise<void> {
 	const sessionClient = sessionService.sessionClient
 
 	try {
-		const result = await sessionClient.list({ limit: 50 })
-		const { cliSessions } = result
-
-		if (cliSessions.length === 0) {
+		const result = await sessionClient?.list({ limit: 50 })
+		if (!result || result.cliSessions.length === 0) {
 			addMessage({
 				...generateMessage(),
 				type: "system",
@@ -52,6 +50,8 @@ async function listSessions(context: CommandContext): Promise<void> {
 			})
 			return
 		}
+
+		const { cliSessions } = result
 
 		// Format and display sessions
 		let content = `**Available Sessions:**\n\n`
@@ -148,10 +148,9 @@ async function searchSessions(context: CommandContext, query: string): Promise<v
 	}
 
 	try {
-		const result = await sessionClient.search({ search_string: query, limit: 20 })
-		const { results, total } = result
+		const result = await sessionClient?.search({ search_string: query, limit: 20 })
 
-		if (results.length === 0) {
+		if (!result || result.results.length === 0) {
 			addMessage({
 				...generateMessage(),
 				type: "system",
@@ -159,6 +158,8 @@ async function searchSessions(context: CommandContext, query: string): Promise<v
 			})
 			return
 		}
+
+		const { results, total } = result
 
 		let content = `**Search Results** (${results.length} of ${total}):\n\n`
 		results.forEach((session, index) => {
@@ -194,6 +195,10 @@ async function shareSession(context: CommandContext): Promise<void> {
 
 	try {
 		const result = await sessionService.shareSession()
+
+		if (!result) {
+			throw new Error("SessionManager returned no share id")
+		}
 
 		addMessage({
 			...generateMessage(),
@@ -275,6 +280,10 @@ async function deleteSession(context: CommandContext, sessionId: string): Promis
 	}
 
 	try {
+		if (!sessionClient) {
+			throw new Error("SessionManager used before initialization")
+		}
+
 		await sessionClient.delete({ session_id: sessionId })
 
 		addMessage({
@@ -340,7 +349,11 @@ async function sessionIdAutocompleteProvider(context: ArgumentProviderContext): 
 	}
 
 	try {
-		const response = await sessionClient.search({ search_string: prefix, limit: 20 })
+		const response = await sessionClient?.search({ search_string: prefix, limit: 20 })
+
+		if (!response) {
+			return []
+		}
 
 		return response.results.map((session, index) => {
 			const title = session.title || "Untitled"
