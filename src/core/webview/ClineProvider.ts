@@ -110,6 +110,7 @@ import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 import { kilo_execIfExtension } from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
+import { DeviceAuthHandler } from "../kilocode/webview/deviceAuthHandler"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
@@ -157,7 +158,7 @@ export class ClineProvider
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
-	private deviceAuthService?: any // kilocode_change - Device auth service
+	private deviceAuthHandler?: DeviceAuthHandler // kilocode_change - Device auth handler
 
 	private recentTasksCache?: string[]
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
@@ -688,16 +689,6 @@ export class ClineProvider
 			this.autoPurgeScheduler.stop()
 			this.autoPurgeScheduler = undefined
 		}
-<<<<<<< HEAD
-=======
-
-		if (this.deviceAuthService) {
-			this.deviceAuthService.dispose()
-			this.deviceAuthService = undefined
-		}
-
-		await kilo_destroySessionManager()
->>>>>>> 5d5976df57 (feat: device auth workflow)
 		// kilocode_change end
 
 		this.log("Disposed all disposables")
@@ -1782,112 +1773,18 @@ ${prompt}
 
 	// kilocode_change start - Device Auth Flow
 	async startDeviceAuth() {
-		try {
-			// Clean up any existing device auth service
-			if (this.deviceAuthService) {
-				this.deviceAuthService.dispose()
-			}
-
-			// Import DeviceAuthService
-			const { DeviceAuthService } = await import("../../services/kilocode/DeviceAuthService")
-			this.deviceAuthService = new DeviceAuthService()
-
-			// Set up event listeners
-			this.deviceAuthService.on("started", (data: any) => {
-				this.postMessageToWebview({
-					type: "deviceAuthStarted",
-					deviceAuthCode: data.code,
-					deviceAuthVerificationUrl: data.verificationUrl,
-					deviceAuthExpiresIn: data.expiresIn,
-				})
-				// Open browser automatically
-				vscode.env.openExternal(vscode.Uri.parse(data.verificationUrl))
+		if (!this.deviceAuthHandler) {
+			this.deviceAuthHandler = new DeviceAuthHandler({
+				postMessageToWebview: (msg) => this.postMessageToWebview(msg),
+				log: (msg) => this.log(msg),
+				showInformationMessage: (msg) => vscode.window.showInformationMessage(msg),
 			})
-
-			this.deviceAuthService.on("polling", (timeRemaining: any) => {
-				this.postMessageToWebview({
-					type: "deviceAuthPolling",
-					deviceAuthTimeRemaining: timeRemaining,
-				})
-			})
-
-			this.deviceAuthService.on("success", async (token: any, userEmail: any) => {
-				this.postMessageToWebview({
-					type: "deviceAuthComplete",
-					deviceAuthToken: token,
-					deviceAuthUserEmail: userEmail,
-				})
-
-				vscode.window.showInformationMessage(`Kilo Code successfully configured! Authenticated as ${userEmail}`)
-
-				// Clean up
-				this.deviceAuthService?.dispose()
-				this.deviceAuthService = undefined
-			})
-
-			this.deviceAuthService.on("denied", () => {
-				this.postMessageToWebview({
-					type: "deviceAuthFailed",
-					deviceAuthError: "Authorization was denied",
-				})
-
-				this.deviceAuthService?.dispose()
-				this.deviceAuthService = undefined
-			})
-
-			this.deviceAuthService.on("expired", () => {
-				this.postMessageToWebview({
-					type: "deviceAuthFailed",
-					deviceAuthError: "Authorization code expired. Please try again.",
-				})
-
-				this.deviceAuthService?.dispose()
-				this.deviceAuthService = undefined
-			})
-
-			this.deviceAuthService.on("error", (error: any) => {
-				this.postMessageToWebview({
-					type: "deviceAuthFailed",
-					deviceAuthError: error.message,
-				})
-
-				this.deviceAuthService?.dispose()
-				this.deviceAuthService = undefined
-			})
-
-			this.deviceAuthService.on("cancelled", () => {
-				this.postMessageToWebview({
-					type: "deviceAuthCancelled",
-				})
-			})
-
-			// Start the auth flow
-			await this.deviceAuthService.initiate()
-		} catch (error) {
-			this.log(`Error starting device auth: ${error instanceof Error ? error.message : String(error)}`)
-
-			this.postMessageToWebview({
-				type: "deviceAuthFailed",
-				deviceAuthError: error instanceof Error ? error.message : "Failed to start authentication",
-			})
-
-			this.deviceAuthService?.dispose()
-			this.deviceAuthService = undefined
 		}
+		await this.deviceAuthHandler.startDeviceAuth()
 	}
 
 	cancelDeviceAuth() {
-		if (this.deviceAuthService) {
-			this.deviceAuthService.cancel()
-			// Clean up the service after cancellation
-			// Use setTimeout to avoid disposing during event emission
-			setTimeout(() => {
-				if (this.deviceAuthService) {
-					this.deviceAuthService.dispose()
-					this.deviceAuthService = undefined
-				}
-			}, 0)
-		}
+		this.deviceAuthHandler?.cancelDeviceAuth()
 	}
 	// kilocode_change end
 
