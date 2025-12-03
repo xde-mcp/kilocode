@@ -9,7 +9,7 @@ export function useAutoApprovalToggles() {
 	const {
 		alwaysAllowReadOnly,
 		alwaysAllowWrite,
-		alwaysAllowDelete,
+		alwaysAllowDelete, // kilocode_change
 		alwaysAllowExecute,
 		alwaysAllowBrowser,
 		alwaysAllowMcp,
@@ -24,7 +24,7 @@ export function useAutoApprovalToggles() {
 		() => ({
 			alwaysAllowReadOnly,
 			alwaysAllowWrite,
-			alwaysAllowDelete,
+			alwaysAllowDelete, // kilocode_change
 			alwaysAllowExecute,
 			alwaysAllowBrowser,
 			alwaysAllowMcp,
@@ -37,7 +37,7 @@ export function useAutoApprovalToggles() {
 		[
 			alwaysAllowReadOnly,
 			alwaysAllowWrite,
-			alwaysAllowDelete,
+			alwaysAllowDelete, // kilocode_change
 			alwaysAllowExecute,
 			alwaysAllowBrowser,
 			alwaysAllowMcp,

@@ -27,7 +27,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 		allowedMaxCost, // kilocode_change
 		setAlwaysAllowReadOnly,
 		setAlwaysAllowWrite,
-		setAlwaysAllowDelete,
+		setAlwaysAllowDelete, // kilocode_change
 		setAlwaysAllowExecute,
 		setAlwaysAllowBrowser,
 		setAlwaysAllowMcp,
@@ -67,9 +67,11 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 				case "alwaysAllowWrite":
 					setAlwaysAllowWrite(value)
 					break
+				// kilocode_change start
 				case "alwaysAllowDelete":
 					setAlwaysAllowDelete(value)
 					break
+				// kilocode_change end
 				case "alwaysAllowExecute":
 					setAlwaysAllowExecute(value)
 					break
@@ -121,7 +123,7 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			hasEnabledOptions,
 			setAlwaysAllowReadOnly,
 			setAlwaysAllowWrite,
-			setAlwaysAllowDelete,
+			setAlwaysAllowDelete, // kilocode_change
 			setAlwaysAllowExecute,
 			setAlwaysAllowBrowser,
 			setAlwaysAllowMcp,
