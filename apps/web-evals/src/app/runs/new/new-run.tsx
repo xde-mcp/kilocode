@@ -209,14 +209,14 @@ export function NewRun() {
 						...(values.settings || {}),
 						apiProvider: "openrouter",
 						openRouterModelId: model,
-						toolProtocol: useNativeToolProtocol ? "native" : "xml",
+						toolStyle: useNativeToolProtocol ? "json" : "xml", // kilocode_change
 					}
 				} else if (provider === "roo") {
 					values.settings = {
 						...(values.settings || {}),
 						apiProvider: "roo",
 						apiModelId: model,
-						toolProtocol: useNativeToolProtocol ? "native" : "xml",
+						toolStyle: useNativeToolProtocol ? "json" : "xml", // kilocode_change
 					}
 				}
 

@@ -64,11 +64,7 @@ import { ClineApiReqCancelReason, ClineApiReqInfo } from "../../shared/Extension
 import { getApiMetrics, hasTokenUsageChanged } from "../../shared/getApiMetrics"
 import { ClineAskResponse } from "../../shared/WebviewMessage"
 import { defaultModeSlug, getModeBySlug, getGroupName } from "../../shared/modes"
-<<<<<<< HEAD
-import { DiffStrategy, type ToolUse } from "../../shared/tools"
-=======
 import { DiffStrategy, type ToolUse, type ToolParamName, toolParamNames } from "../../shared/tools"
->>>>>>> upstream-at-v3.34.7
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { getModelMaxOutputTokens } from "../../shared/api"
 
@@ -1615,7 +1611,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		)
 		const modelInfo = this.api.getModel().info
 		const state = await this.providerRef.deref()?.getState()
-		const toolProtocol = getActiveToolUseStyle(this.apiConfiguration), // kilocode_change
+		const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
 		return formatResponse.toolError(formatResponse.missingToolParameterError(paramName, toolProtocol))
 	}
 
@@ -1773,7 +1769,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// 				// Format tool invocation based on protocol
 			// 				const params = block.input as Record<string, any>
 			// 				const formattedText = formatToolInvocation(block.name, params, protocol)
-
 			// 				return {
 			// 					type: "text",
 			// 					text: formattedText,
@@ -2205,7 +2200,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				const modelInfo = this.api.getModel().info
 				const state = await this.providerRef.deref()?.getState()
 				const toolProtocol = getActiveToolUseStyle(this.apiConfiguration), // kilocode_change
-				nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(toolProtocol) }]
+					nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(toolProtocol) }]
 				this.consecutiveMistakeCount++
 			}
 		}
@@ -3274,7 +3269,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					if (!didToolUse) {
 						const modelInfo = this.api.getModel().info
 						const state = await this.providerRef.deref()?.getState()
-						const toolProtocol = getActiveToolUseStyle(this.apiConfiguration), // kilocode_change
+						const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
 						this.userMessageContent.push({ type: "text", text: formatResponse.noToolsUsed(toolProtocol) })
 						this.consecutiveMistakeCount++
 					}
@@ -3923,8 +3918,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								},
 							}),
 						))
-			this.currentRequestAbortController = undefined
-			const isContextWindowExceededError = checkContextWindowExceededError(error)
+				this.currentRequestAbortController = undefined
+				const isContextWindowExceededError = checkContextWindowExceededError(error)
 
 				if (response === "retry_clicked") {
 					yield* this.attemptApiRequest(retryAttempt + 1)

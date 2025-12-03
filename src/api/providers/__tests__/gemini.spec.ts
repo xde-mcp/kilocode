@@ -29,11 +29,6 @@ describe("GeminiHandler", () => {
 				contextWindow: 131_072,
 				supportsPromptCache: false,
 			},
-			[GEMINI_20_FLASH_THINKING_NAME]: {
-				maxTokens: 8192,
-				contextWindow: 131_072,
-				supportsPromptCache: false,
-			},
 		})
 		// kilocode_change end
 
