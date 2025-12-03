@@ -948,7 +948,7 @@ export class SessionManager {
 		}
 
 		try {
-			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Your result will be used as the conversation title.
+			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Strip out any sensitive information. Your result will be used as the conversation title.
 
 User request:
 ${rawText}
