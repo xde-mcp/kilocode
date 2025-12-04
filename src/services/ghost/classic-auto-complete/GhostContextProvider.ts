@@ -22,15 +22,18 @@ function hasFilepath(snippet: AutocompleteSnippet): snippet is AutocompleteSnipp
 	return snippet.type === AutocompleteSnippetType.Code || snippet.type === AutocompleteSnippetType.Static
 }
 
-async function filterSnippetsByAccess(snippets: AutocompleteSnippet[]): Promise<AutocompleteSnippet[]> {
-	if (!this.ignoreController) {
+async function filterSnippetsByAccess(
+	snippets: AutocompleteSnippet[],
+	ignoreController?: Promise<RooIgnoreController>,
+): Promise<AutocompleteSnippet[]> {
+	if (!ignoreController) {
 		return snippets
 	}
 
 	try {
 		// Try to get the controller, but don't wait too long
 		const controller = await Promise.race([
-			this.ignoreController,
+			ignoreController,
 			new Promise<null>((resolve) => setTimeout(() => resolve(null), 100)),
 		])
 
@@ -38,13 +41,13 @@ async function filterSnippetsByAccess(snippets: AutocompleteSnippet[]): Promise<
 			// If promise hasn't resolved yet, assume files are ignored (as per requirement)
 			return snippets.filter((snippet) => {
 				// Only keep snippets without file paths (Diff, Clipboard)
-				return !this.hasFilepath(snippet) || !snippet.filepath
+				return !hasFilepath(snippet) || !snippet.filepath
 			})
 		}
 
 		return snippets.filter((snippet) => {
-			if (this.hasFilepath(snippet) && snippet.filepath) {
-				const fsPath = this.uriToFsPath(snippet.filepath)
+			if (hasFilepath(snippet) && snippet.filepath) {
+				const fsPath = uriToFsPath(snippet.filepath)
 				const hasAccess = controller.validateAccess(fsPath)
 				return hasAccess
 			}
@@ -56,7 +59,7 @@ async function filterSnippetsByAccess(snippets: AutocompleteSnippet[]): Promise<
 		console.error("[GhostContextProvider] Error filtering snippets by access:", error)
 		// On error, be conservative and filter out file-based snippets
 		return snippets.filter((snippet) => {
-			return !this.hasFilepath(snippet) || !snippet.filepath
+			return !hasFilepath(snippet) || !snippet.filepath
 		})
 	}
 }
@@ -118,7 +121,7 @@ export class GhostContextProvider {
 		const filteredSnippets = getSnippets(helper, snippetPayload)
 
 		// Apply access filtering to remove snippets from blocked files
-		const accessibleSnippets = await this.filterSnippetsByAccess(filteredSnippets)
+		const accessibleSnippets = await filterSnippetsByAccess(filteredSnippets, this.ignoreController)
 
 		// Convert all snippet filepaths to URIs
 		const snippetsWithUris = accessibleSnippets.map((snippet: any) => ({
