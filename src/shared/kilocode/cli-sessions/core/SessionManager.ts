@@ -313,12 +313,11 @@ export class SessionManager {
 		})
 	}
 
-	async renameSession(newTitle: string) {
+	async renameSession(sessionId: string, newTitle: string) {
 		if (!this.sessionClient) {
 			throw new Error("SessionManager used before initialization")
 		}
 
-		const sessionId = this.sessionId
 		if (!sessionId) {
 			throw new Error("No active session")
 		}
@@ -406,6 +405,7 @@ export class SessionManager {
 		this.logger?.debug("Destroying SessionManager", "SessionManager", {
 			sessionId: this.sessionId,
 			isSyncing: this.isSyncing,
+			currentTaskId: this.currentTaskId,
 		})
 
 		if (this.timer) {
@@ -423,7 +423,10 @@ export class SessionManager {
 
 		this.paths = { ...defaultPaths }
 		this.sessionId = null
+		this.currentTaskId = null
 		this.sessionTitle = null
+		this.sessionGitUrl = null
+		this.workspaceDir = null
 		this.isSyncing = false
 
 		this.logger?.debug("SessionManager flushed", "SessionManager")
@@ -455,6 +458,8 @@ export class SessionManager {
 		}
 
 		this.isSyncing = true
+		// capture the sessionId at the start of the sync
+		let sessionId = this.sessionId
 
 		try {
 			if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
@@ -488,28 +493,27 @@ export class SessionManager {
 				})
 			}
 
-			if (!this.sessionId && this.currentTaskId) {
+			if (!sessionId && this.currentTaskId) {
 				const existingSessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
 
 				if (existingSessionId) {
 					this.sessionId = existingSessionId
+					sessionId = existingSessionId
 				}
 			}
 
-			if (this.sessionId) {
+			if (sessionId) {
 				const gitUrlChanged = gitInfo?.repoUrl && gitInfo.repoUrl !== this.sessionGitUrl
 
 				if (gitUrlChanged) {
-					this.logger?.debug("Updating existing session", "SessionManager", { sessionId: this.sessionId })
-
 					await this.sessionClient.update({
-						session_id: this.sessionId,
+						session_id: sessionId,
 						...basePayload,
 					})
 
 					this.sessionGitUrl = gitInfo?.repoUrl || null
 
-					this.logger?.debug("Session updated successfully", "SessionManager", { sessionId: this.sessionId })
+					this.logger?.debug("Session updated successfully", "SessionManager", { sessionId: sessionId })
 				}
 			} else {
 				this.logger?.debug("Creating new session", "SessionManager")
@@ -528,21 +532,23 @@ export class SessionManager {
 				})
 
 				this.sessionId = session.session_id
+				sessionId = session.session_id
+
 				this.sessionGitUrl = gitInfo?.repoUrl || null
 
-				this.logger?.info("Session created successfully", "SessionManager", { sessionId: this.sessionId })
+				this.logger?.info("Session created successfully", "SessionManager", { sessionId: sessionId })
 
-				this.sessionPersistenceManager.setLastSession(this.sessionId)
+				this.sessionPersistenceManager.setLastSession(sessionId)
 
 				this.onSessionCreated?.({
 					timestamp: Date.now(),
 					event: "session_created",
-					sessionId: this.sessionId,
+					sessionId,
 				})
 			}
 
 			if (this.currentTaskId) {
-				this.sessionPersistenceManager.setSessionForTask(this.currentTaskId, this.sessionId)
+				this.sessionPersistenceManager.setSessionForTask(this.currentTaskId, sessionId)
 			}
 
 			const blobUploads: Array<Promise<void>> = []
@@ -550,7 +556,7 @@ export class SessionManager {
 			if (rawPayload.apiConversationHistoryPath && this.hasBlobChanged("apiConversationHistory")) {
 				blobUploads.push(
 					this.sessionClient
-						.uploadBlob(this.sessionId, "api_conversation_history", rawPayload.apiConversationHistoryPath)
+						.uploadBlob(sessionId, "api_conversation_history", rawPayload.apiConversationHistoryPath)
 						.then(() => {
 							this.markBlobSynced("apiConversationHistory")
 							this.logger?.debug("Uploaded api_conversation_history blob", "SessionManager")
@@ -566,7 +572,7 @@ export class SessionManager {
 			if (rawPayload.taskMetadataPath && this.hasBlobChanged("taskMetadata")) {
 				blobUploads.push(
 					this.sessionClient
-						.uploadBlob(this.sessionId, "task_metadata", rawPayload.taskMetadataPath)
+						.uploadBlob(sessionId, "task_metadata", rawPayload.taskMetadataPath)
 						.then(() => {
 							this.markBlobSynced("taskMetadata")
 							this.logger?.debug("Uploaded task_metadata blob", "SessionManager")
@@ -582,7 +588,7 @@ export class SessionManager {
 			if (rawPayload.uiMessagesPath && this.hasBlobChanged("uiMessages")) {
 				blobUploads.push(
 					this.sessionClient
-						.uploadBlob(this.sessionId, "ui_messages", rawPayload.uiMessagesPath)
+						.uploadBlob(sessionId, "ui_messages", rawPayload.uiMessagesPath)
 						.then(() => {
 							this.markBlobSynced("uiMessages")
 							this.logger?.debug("Uploaded ui_messages blob", "SessionManager")
@@ -610,7 +616,7 @@ export class SessionManager {
 					if (this.hasBlobChanged("gitState")) {
 						blobUploads.push(
 							this.sessionClient
-								.uploadBlob(this.sessionId, "git_state", gitStateData)
+								.uploadBlob(sessionId, "git_state", gitStateData)
 								.then(() => {
 									this.markBlobSynced("gitState")
 									this.logger?.debug("Uploaded git_state blob", "SessionManager")
@@ -630,8 +636,8 @@ export class SessionManager {
 			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
 				this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
 					.then((generatedTitle) => {
-						if (generatedTitle) {
-							return this.renameSession(generatedTitle)
+						if (sessionId && generatedTitle) {
+							return this.renameSession(sessionId, generatedTitle)
 						}
 
 						return null
@@ -645,7 +651,7 @@ export class SessionManager {
 		} catch (error) {
 			this.logger?.error("Failed to sync session", "SessionManager", {
 				error: error instanceof Error ? error.message : String(error),
-				sessionId: this.sessionId,
+				sessionId,
 				hasApiHistory: !!this.paths.apiConversationHistoryPath,
 				hasUiMessages: !!this.paths.uiMessagesPath,
 				hasTaskMetadata: !!this.paths.taskMetadataPath,
