@@ -1,5 +1,5 @@
-import { AutocompleteInput, GhostContextProvider } from "../types"
-import { getProcessedSnippets } from "./getProcessedSnippets"
+import { AutocompleteInput, ResponseMetaData } from "../types"
+import { GhostContextProvider } from "./GhostContextProvider"
 import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 import { GhostModel } from "../GhostModel"
 import { FillInAtCursorSuggestion } from "./HoleFiller"
@@ -11,13 +11,8 @@ export interface FimGhostPrompt {
 	prunedSuffix: string
 }
 
-export interface FimCompletionResult {
+export interface FimCompletionResult extends ResponseMetaData {
 	suggestion: FillInAtCursorSuggestion
-	cost: number
-	inputTokens: number
-	outputTokens: number
-	cacheWriteTokens: number
-	cacheReadTokens: number
 }
 
 export class FimPromptBuilder {
@@ -27,14 +22,8 @@ export class FimPromptBuilder {
 	 * Build complete FIM prompt with all necessary data
 	 */
 	async getFimPrompts(autocompleteInput: AutocompleteInput, modelName: string): Promise<FimGhostPrompt> {
-		const { filepathUri, helper, snippetsWithUris, workspaceDirs } = await getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-			this.contextProvider.contextService,
-			this.contextProvider.model,
-			this.contextProvider.ide,
-			this.contextProvider.ignoreController,
-		)
+		const { filepathUri, helper, snippetsWithUris, workspaceDirs } =
+			await this.contextProvider.getProcessedSnippets(autocompleteInput, autocompleteInput.filepath)
 
 		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
 		const prunedPrefixRaw = helper.prunedPrefix

@@ -1,10 +1,9 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, GhostContextProvider } from "../types"
+import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, ResponseMetaData } from "../types"
+import { GhostContextProvider } from "./GhostContextProvider"
 import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
 import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
-import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
-import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
@@ -99,13 +98,8 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 	return [item]
 }
 
-export interface LLMRetrievalResult {
+export interface LLMRetrievalResult extends ResponseMetaData {
 	suggestion: FillInAtCursorSuggestion
-	cost: number
-	inputTokens: number
-	outputTokens: number
-	cacheWriteTokens: number
-	cacheReadTokens: number
 }
 
 /**
@@ -155,17 +149,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return ignoreController
 		})()
 
-		const ide = new VsCodeIde(context)
-		const contextService = new ContextRetrievalService(ide)
-		const contextProvider: GhostContextProvider = {
-			ide,
-			contextService,
-			model,
-			ignoreController: this.ignoreController,
-		}
+		const contextProvider = new GhostContextProvider(context, model, this.ignoreController)
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
+		const ide = contextProvider.getIde()
 		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 

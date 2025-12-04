@@ -11,6 +11,17 @@ import { ContextRetrievalService } from "../continuedev/core/autocomplete/contex
 import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { GhostModel } from "./GhostModel"
 
+/**
+ * Metadata returned from LLM API responses including cost and token usage
+ */
+export interface ResponseMetaData {
+	cost: number
+	inputTokens: number
+	outputTokens: number
+	cacheWriteTokens: number
+	cacheReadTokens: number
+}
+
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
 	range?: vscode.Range | vscode.Selection
