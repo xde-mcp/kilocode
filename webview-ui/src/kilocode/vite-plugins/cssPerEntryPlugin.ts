@@ -78,8 +78,10 @@ export const cssPerEntryPlugin = (): Plugin => ({
 				let mergedCSS = ""
 				cssFiles.forEach((cssFile) => {
 					const asset = bundle[cssFile]
-					if (asset && asset.type === "asset" && typeof asset.source === "string") {
-						mergedCSS += asset.source + "\n"
+					if (asset && asset.type === "asset") {
+						const source =
+							typeof asset.source === "string" ? asset.source : new TextDecoder().decode(asset.source)
+						mergedCSS += source + "\n"
 						delete bundle[cssFile]
 					}
 				})
