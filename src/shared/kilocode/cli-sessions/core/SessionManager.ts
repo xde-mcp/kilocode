@@ -870,7 +870,7 @@ export class SessionManager {
 					})
 				} finally {
 					try {
-						rmSync(patchFile, { recursive: true, force: true })
+						rmSync(tempDir, { recursive: true, force: true })
 					} catch {
 						// Ignore error
 					}
@@ -957,13 +957,21 @@ Summary:`
 				cleanedSummary = cleanedSummary.substring(0, 137) + "..."
 			}
 
-			return cleanedSummary || rawText.substring(0, 137) + "..."
+			if (cleanedSummary) {
+				return cleanedSummary
+			}
+
+			throw new Error("Empty summary generated")
 		} catch (error) {
 			this.logger?.warn("Failed to generate title using LLM, falling back to truncation", "SessionManager", {
 				error: error instanceof Error ? error.message : String(error),
 			})
 
-			return rawText.substring(0, 137) + "..."
+			if (rawText.length > 140) {
+				return rawText.substring(0, 137) + "..."
+			}
+
+			return rawText
 		}
 	}
 }
