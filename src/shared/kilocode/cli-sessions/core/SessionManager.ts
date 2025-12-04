@@ -47,9 +47,9 @@ export class SessionManager {
 	private sessionTitles: Record<string, string> = {}
 
 	public get sessionId() {
-		return this.lastSessionId
+		return this.lastActiveSessionId || this.sessionPersistenceManager?.getLastSession()?.sessionId
 	}
-	private lastSessionId: string | null = null
+	private lastActiveSessionId: string | null = null
 
 	private timer: NodeJS.Timeout | null = null
 	private isSyncing: boolean = false
@@ -292,10 +292,12 @@ export class SessionManager {
 		}
 	}
 
-	async shareSession(sessionId?: string) {
+	async shareSession(sessionIdInput: string) {
 		if (!this.sessionClient) {
 			throw new Error("SessionManager used before initialization")
 		}
+
+		const sessionId = sessionIdInput || this.sessionId
 
 		if (!sessionId) {
 			throw new Error("No active session")
@@ -653,15 +655,15 @@ export class SessionManager {
 		}
 
 		if (lastItem) {
-			this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
+			this.lastActiveSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
 
-			if (this.lastSessionId) {
-				this.sessionPersistenceManager.setLastSession(this.lastSessionId)
+			if (this.lastActiveSessionId) {
+				this.sessionPersistenceManager.setLastSession(this.lastActiveSessionId)
 			}
 		}
 
 		this.logger?.debug("Session sync completed", "SessionManager", {
-			lastSessionId: this.lastSessionId,
+			lastSessionId: this.lastActiveSessionId,
 			remainingQueueLength: this.queue.length,
 		})
 
