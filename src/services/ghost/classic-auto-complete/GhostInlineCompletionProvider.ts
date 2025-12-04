@@ -158,9 +158,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
-		const ide = contextProvider.getIde()
-		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
-		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
+		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(contextProvider.ide)
+		this.recentlyEditedTracker = new RecentlyEditedTracker(contextProvider.ide)
 
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
 			telemetry.captureAcceptSuggestion(),

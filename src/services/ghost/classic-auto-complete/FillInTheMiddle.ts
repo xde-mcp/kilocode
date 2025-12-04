@@ -30,10 +30,10 @@ export class FimPromptBuilder {
 		const { filepathUri, helper, snippetsWithUris, workspaceDirs } = await getProcessedSnippets(
 			autocompleteInput,
 			autocompleteInput.filepath,
-			this.contextProvider.getContextService(),
-			this.contextProvider.getModel(),
-			this.contextProvider.getIde(),
-			this.contextProvider.getIgnoreController(),
+			this.contextProvider.contextService,
+			this.contextProvider.model,
+			this.contextProvider.ide,
+			this.contextProvider.ignoreController,
 		)
 
 		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)

@@ -584,21 +584,29 @@ describe("GhostInlineCompletionProvider", () => {
 			languageModelAccessInformation: {} as any,
 		} as unknown as vscode.ExtensionContext
 
-		// Mock GhostContextProvider
+		// Mock GhostContextProvider public properties
 		const mockIde = {
 			getWorkspaceDirs: vi.fn().mockResolvedValue([]),
 			getOpenFiles: vi.fn().mockResolvedValue([]),
 			readFile: vi.fn().mockResolvedValue(""),
 		}
 
-		vi.spyOn(GhostContextProvider.prototype, "getIde").mockReturnValue(mockIde as any)
-		vi.spyOn(GhostContextProvider.prototype, "getContextService").mockReturnValue({
+		const mockContextService = {
 			initializeForFile: vi.fn().mockResolvedValue(undefined),
-		} as any)
-		vi.spyOn(GhostContextProvider.prototype, "getModel").mockReturnValue({
+		}
+
+		const mockGhostModel = {
 			getModelName: vi.fn().mockReturnValue("codestral"),
-		} as any)
-		vi.spyOn(GhostContextProvider.prototype, "getIgnoreController").mockReturnValue(undefined)
+		}
+
+		// Define mock properties directly on prototype for property access
+		Object.defineProperty(GhostContextProvider.prototype, "ide", { value: mockIde, writable: true })
+		Object.defineProperty(GhostContextProvider.prototype, "contextService", {
+			value: mockContextService,
+			writable: true,
+		})
+		Object.defineProperty(GhostContextProvider.prototype, "model", { value: mockGhostModel, writable: true })
+		Object.defineProperty(GhostContextProvider.prototype, "ignoreController", { value: undefined, writable: true })
 		vi.spyOn(GhostContextProviderModule, "getProcessedSnippets").mockResolvedValue({
 			filepathUri: "file:///test.ts",
 			helper: {

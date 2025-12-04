@@ -113,10 +113,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			expect(result.snippetsWithUris).toEqual([])
@@ -151,10 +151,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			expect(result.snippetsWithUris).toHaveLength(1)
@@ -198,10 +198,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			expect(result.snippetsWithUris).toHaveLength(2)
@@ -230,10 +230,10 @@ describe("GhostContextProvider", () => {
 				getProcessedSnippets(
 					input,
 					"/test.ts",
-					contextProvider.getContextService(),
-					contextProvider.getModel(),
-					contextProvider.getIde(),
-					contextProvider.getIgnoreController(),
+					contextProvider.contextService,
+					contextProvider.model,
+					contextProvider.ide,
+					contextProvider.ignoreController,
 				),
 			).rejects.toThrow("Test error")
 		})
@@ -292,10 +292,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			// Should only contain the allowed file
@@ -355,10 +355,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			// Should not contain blocked file
@@ -403,10 +403,10 @@ describe("GhostContextProvider", () => {
 			const result = await getProcessedSnippets(
 				input,
 				"/test.ts",
-				contextProvider.getContextService(),
-				contextProvider.getModel(),
-				contextProvider.getIde(),
-				contextProvider.getIgnoreController(),
+				contextProvider.contextService,
+				contextProvider.model,
+				contextProvider.ide,
+				contextProvider.ignoreController,
 			)
 
 			// Should contain all files when no controller

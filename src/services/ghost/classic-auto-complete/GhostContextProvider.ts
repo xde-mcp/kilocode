@@ -121,43 +121,15 @@ export async function getProcessedSnippets(
 }
 
 export class GhostContextProvider {
-	private contextService: ContextRetrievalService
-	private ide: VsCodeIde
-	private model: GhostModel
-	private ignoreController?: Promise<RooIgnoreController>
+	public contextService: ContextRetrievalService
+	public ide: VsCodeIde
+	public model: GhostModel
+	public ignoreController?: Promise<RooIgnoreController>
 
 	constructor(context: vscode.ExtensionContext, model: GhostModel, ignoreController?: Promise<RooIgnoreController>) {
 		this.ide = new VsCodeIde(context)
 		this.contextService = new ContextRetrievalService(this.ide)
 		this.model = model
 		this.ignoreController = ignoreController
-	}
-
-	/**
-	 * Get the IDE instance for use by tracking services
-	 */
-	public getIde(): VsCodeIde {
-		return this.ide
-	}
-
-	/**
-	 * Get the context retrieval service
-	 */
-	public getContextService(): ContextRetrievalService {
-		return this.contextService
-	}
-
-	/**
-	 * Get the model
-	 */
-	public getModel(): GhostModel {
-		return this.model
-	}
-
-	/**
-	 * Get the ignore controller
-	 */
-	public getIgnoreController(): Promise<RooIgnoreController> | undefined {
-		return this.ignoreController
 	}
 }

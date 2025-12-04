@@ -171,10 +171,10 @@ Provide a subtle, non-intrusive completion after a typing pause.
 		const { helper, snippetsWithUris, workspaceDirs } = await getProcessedSnippets(
 			autocompleteInput,
 			autocompleteInput.filepath,
-			this.contextProvider.getContextService(),
-			this.contextProvider.getModel(),
-			this.contextProvider.getIde(),
-			this.contextProvider.getIgnoreController(),
+			this.contextProvider.contextService,
+			this.contextProvider.model,
+			this.contextProvider.ide,
+			this.contextProvider.ignoreController,
 		)
 		const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
