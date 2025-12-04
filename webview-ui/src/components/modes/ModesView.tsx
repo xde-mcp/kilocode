@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react"
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import BottomControls from "../kilocode/BottomControls" // kilocode_change
 import { KiloShareModesBanner } from "../kilocode/KiloShareModesBanner" // kilocode_change
 import {
