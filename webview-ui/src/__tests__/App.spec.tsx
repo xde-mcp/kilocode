@@ -331,7 +331,8 @@ describe("App", () => {
 		expect(screen.queryByTestId("marketplace-view")).not.toBeInTheDocument()
 	})
 
-	describe("PostHog feature flag initialization", () => {
+	// kilocode_change: we do not use posthog feature flags
+	describe.skip("PostHog feature flag initialization", () => {
 		it("waits for state hydration before checking feature flags", () => {
 			mockUseExtensionState.mockReturnValue({
 				didHydrateState: false,
