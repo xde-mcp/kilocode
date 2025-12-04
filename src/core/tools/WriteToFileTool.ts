@@ -84,6 +84,12 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		if (!fileExists) {
 			await createDirectoriesForFile(absolutePath)
 		}
+		// kilocode_change start
+		if (typeof newContent !== "string") {
+			console.warn(`[WriteToFileTool] converting incorrect model output ${typeof newContent} to string`)
+			newContent = JSON.stringify(newContent, null, "\t")
+		}
+		// kilocode_change end
 
 		if (newContent.startsWith("```")) {
 			newContent = newContent.split("\n").slice(1).join("\n")

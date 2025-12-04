@@ -113,6 +113,10 @@ export default defineConfig(({ mode }) => {
 			// Use a single combined CSS bundle so both webviews share styles
 			cssCodeSplit: false,
 			rollupOptions: {
+				input: {
+					main: resolve(__dirname, "index.html"),
+					"agent-manager": resolve(__dirname, "agent-manager.html"), // kilocode_change
+				},
 				external: ["vscode"], // kilocode_change: we inadvertently import vscode into the webview: @roo/modes => src/shared/modes => ../core/prompts/sections/custom-instructions
 				input: {
 					index: resolve(__dirname, "index.html"),
