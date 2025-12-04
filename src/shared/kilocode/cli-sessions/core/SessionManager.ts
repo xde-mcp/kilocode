@@ -397,12 +397,10 @@ export class SessionManager {
 		}
 	}
 
-	private async syncSession(force = false) {
-		if (!force) {
-			if (this.isSyncing) {
-				this.logger?.debug("Sync already in progress, skipping", "SessionManager")
-				return
-			}
+	private async syncSession() {
+		if (this.isSyncing) {
+			this.logger?.debug("Sync already in progress, skipping", "SessionManager")
+			return
 		}
 
 		if (this.queue.length === 0) {
