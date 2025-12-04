@@ -66,7 +66,7 @@ export async function applyDiffTool(
 	removeClosingTag: RemoveClosingTag,
 ) {
 	// Check if native protocol is enabled - if so, always use single-file class-based tool
-	const toolProtocol = getActiveToolUseStyle(cline.apiConfiguration) // kilocode_change
+	const toolProtocol = resolveToolProtocol(cline.apiConfiguration, cline.api.getModel().info)
 	if (isNativeProtocol(toolProtocol)) {
 		return searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult) // kilocode_change
 	}

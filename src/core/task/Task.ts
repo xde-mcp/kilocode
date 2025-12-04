@@ -1611,7 +1611,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		)
 		const modelInfo = this.api.getModel().info
 		const state = await this.providerRef.deref()?.getState()
-		const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
+		const toolProtocol = resolveToolProtocol(this.apiConfiguration, modelInfo)
 		return formatResponse.toolError(formatResponse.missingToolParameterError(paramName, toolProtocol))
 	}
 
@@ -2199,8 +2199,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			} else {
 				const modelInfo = this.api.getModel().info
 				const state = await this.providerRef.deref()?.getState()
-				const toolProtocol = getActiveToolUseStyle(this.apiConfiguration), // kilocode_change
-					nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(toolProtocol) }]
+				const toolProtocol = resolveToolProtocol(this.apiConfiguration, modelInfo)
+				nextUserContent = [{ type: "text", text: formatResponse.noToolsUsed(toolProtocol) }]
 				this.consecutiveMistakeCount++
 			}
 		}
@@ -3269,7 +3269,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					if (!didToolUse) {
 						const modelInfo = this.api.getModel().info
 						const state = await this.providerRef.deref()?.getState()
-						const toolProtocol = getActiveToolUseStyle(this.apiConfiguration) // kilocode_change
+						const toolProtocol = resolveToolProtocol(this.apiConfiguration, modelInfo)
 						this.userMessageContent.push({ type: "text", text: formatResponse.noToolsUsed(toolProtocol) })
 						this.consecutiveMistakeCount++
 					}
@@ -3302,7 +3302,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					// user messages (which would cause tool_result validation errors).
 					let state = await this.providerRef.deref()?.getState()
 					if (
-						isNativeProtocol(getActiveToolUseStyle(this.apiConfiguration) /* kilocode_change */) &&
+						isNativeProtocol(resolveToolProtocol(this.apiConfiguration, this.api.getModel().info)) &&
 						this.apiConversationHistory.length > 0
 					) {
 						const lastMessage = this.apiConversationHistory[this.apiConversationHistory.length - 1]
@@ -3572,7 +3572,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					newTaskRequireTodos: vscode.workspace
 						.getConfiguration(Package.name)
 						.get<boolean>("newTaskRequireTodos", false),
-					toolProtocol: getActiveToolUseStyle(apiConfiguration), // kilocode_change
+					toolProtocol,
 				},
 				undefined, // todoList
 				this.api.getModel().id,
@@ -3809,12 +3809,11 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			throw new Error("Auto-approval limit reached and user did not approve continuation")
 		}
 
-		// kilocode_change start
 		// Determine if we should include native tools based on:
 		// 1. Tool protocol is set to NATIVE
 		// 2. Model supports native tools
 		const modelInfo = this.api.getModel().info
-		const toolProtocol = getActiveToolUseStyle(apiConfiguration) // kilocode_change
+		const toolProtocol = resolveToolProtocol(this.apiConfiguration, modelInfo)
 		const shouldIncludeTools = toolProtocol === TOOL_PROTOCOL.NATIVE && (modelInfo.supportsNativeTools ?? false)
 
 		// Build complete tools array: native tools + dynamic MCP tools, filtered by mode restrictions

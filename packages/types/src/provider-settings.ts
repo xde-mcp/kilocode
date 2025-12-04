@@ -209,6 +209,8 @@ const baseProviderSettingsSchema = z.object({
 	// Model verbosity.
 	verbosity: verbosityLevelsSchema.optional(),
 
+	// Tool protocol override for this profile.
+	toolProtocol: z.enum(["xml", "native"]).optional(),
 	toolStyle: z.enum(["xml", "json"]).optional(), // kilocode_change
 })
 

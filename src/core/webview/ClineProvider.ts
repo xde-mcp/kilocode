@@ -113,7 +113,7 @@ import {
 	kilo_destroySessionManager,
 	kilo_execIfExtension,
 } from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
-
+import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
 
@@ -3280,7 +3280,7 @@ ${prompt}
 			// kilocode_change start
 			currentTaskSize: task?.clineMessages.length,
 			taskHistorySize: this.kiloCodeTaskHistorySizeForTelemetryOnly || undefined,
-			toolStyle: getActiveToolUseStyle(apiConfiguration),
+			toolStyle: resolveToolProtocol(apiConfiguration, task?.api?.getModel().info),
 			// kilocode_change end
 		}
 	}
