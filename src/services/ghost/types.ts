@@ -1,42 +1,15 @@
 import * as vscode from "vscode"
 import type { AutocompleteCodeSnippet } from "../continuedev/core/autocomplete/snippets/types"
+import type { Position, Range, RangeInFile } from "../continuedev/core"
+
+// Re-export for convenience
+export type { Position, Range, RangeInFile }
 
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
 	range?: vscode.Range | vscode.Selection
 	recentlyVisitedRanges?: AutocompleteCodeSnippet[] // Recently visited code snippets for context
 	recentlyEditedRanges?: RecentlyEditedRange[] // Recently edited ranges for context
-}
-
-// ============================================================================
-// CompletionProvider-compatible types (duplicated to avoid coupling)
-// ============================================================================
-
-/**
- * Position in a file (line and character)
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface Position {
-	line: number
-	character: number
-}
-
-/**
- * Range in a file
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface Range {
-	start: Position
-	end: Position
-}
-
-/**
- * Range with file path
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface RangeInFile {
-	filepath: string
-	range: Range
 }
 
 /**
