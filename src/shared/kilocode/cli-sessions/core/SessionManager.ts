@@ -292,7 +292,7 @@ export class SessionManager {
 		}
 	}
 
-	async shareSession(sessionIdInput: string) {
+	async shareSession(sessionIdInput?: string) {
 		if (!this.sessionClient) {
 			throw new Error("SessionManager used before initialization")
 		}
