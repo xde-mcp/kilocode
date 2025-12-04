@@ -72,10 +72,10 @@ pnpm run test --verbose --skip-approval
 
 The test suite uses `GhostProviderTester` which mirrors the behavior of `GhostInlineCompletionProvider`:
 
-- Uses `GhostModel` with `KilocodeOpenrouterHandler` directly
+- Uses `LLMClient` for API calls (standalone, no VSCode dependencies)
 - **Auto-selects strategy** based on model capabilities:
-    - **FIM** (Fill-In-Middle): Used when the model supports FIM (e.g., Codestral)
-    - **HoleFiller**: Used for chat-based models without FIM support
+    - **FIM** (Fill-In-Middle): Used when the model supports FIM (e.g., Codestral). Uses `FimPromptBuilder` for prompt building.
+    - **HoleFiller**: Used for chat-based models without FIM support. Uses `HoleFiller` for prompt building.
 - Uses the same prompt building code as the production extension
 
 You can configure the model via the `LLM_MODEL` environment variable:
@@ -150,7 +150,7 @@ Is this acceptable? (y/n):
 - **History**: Keeps track of all approved and rejected outputs
 - **Interactive**: Only asks for input when truly needed
 - **Context-Rich**: Shows the full context when asking for approval
-- **Production Parity**: Uses the same code paths as `GhostInlineCompletionProvider`
+- **Production Parity**: Uses the same prompt building code as `GhostInlineCompletionProvider`
 
 ## Notes
 
@@ -158,4 +158,3 @@ Is this acceptable? (y/n):
 - Each approved/rejected output gets a unique numbered file
 - Tests only prompt for input in the terminal when output is new
 - The test summary at the end shows how many passed/failed
-- Cost statistics are displayed at the end of each run

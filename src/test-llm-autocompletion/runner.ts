@@ -81,10 +81,13 @@ export class TestRunner {
 	}
 
 	async runAllTests(): Promise<void> {
+		const model = process.env.LLM_MODEL || "mistralai/codestral-2508"
+		const strategyName = this.tester.getName()
+
 		console.log("\n🚀 Starting LLM Autocompletion Tests\n")
 		console.log("Provider: kilocode")
-		console.log("Model:", process.env.LLM_MODEL || "mistralai/codestral-2508")
-		console.log("Strategy: GhostInlineCompletionProvider")
+		console.log("Model:", model)
+		console.log("Strategy:", strategyName)
 		if (this.skipApproval) {
 			console.log("Skip Approval: enabled (tests will fail if not already approved)")
 		}
@@ -99,7 +102,6 @@ export class TestRunner {
 			const categoryTests = testCases.filter((tc) => tc.category === category)
 
 			for (const testCase of categoryTests) {
-				const strategyName = this.tester.getName()
 				process.stdout.write(`  Running ${testCase.name} [${strategyName}]... `)
 
 				const result = await this.runTest(testCase)
@@ -241,15 +243,6 @@ export class TestRunner {
 			}
 		}
 
-		// Print cost stats
-		const costStats = this.tester.getCostStats()
-		if (costStats.totalCost > 0 || costStats.totalInputTokens > 0) {
-			console.log("\n💰 Cost Statistics:")
-			console.log(`  Total Cost: $${costStats.totalCost.toFixed(6)}`)
-			console.log(`  Total Input Tokens: ${costStats.totalInputTokens}`)
-			console.log(`  Total Output Tokens: ${costStats.totalOutputTokens}`)
-		}
-
 		console.log("\n" + "═".repeat(80) + "\n")
 
 		// Exit with appropriate code
@@ -341,15 +334,6 @@ export class TestRunner {
 					.join("\n"),
 			)
 			console.log("  " + "─".repeat(78))
-		}
-
-		// Print cost stats
-		const costStats = this.tester.getCostStats()
-		if (costStats.totalCost > 0 || costStats.totalInputTokens > 0) {
-			console.log("\n💰 Cost Statistics:")
-			console.log(`  Total Cost: $${costStats.totalCost.toFixed(6)}`)
-			console.log(`  Total Input Tokens: ${costStats.totalInputTokens}`)
-			console.log(`  Total Output Tokens: ${costStats.totalOutputTokens}`)
 		}
 
 		console.log("\n" + "═".repeat(80) + "\n")

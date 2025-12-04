@@ -1,29 +1,12 @@
-import * as vscode from "vscode"
-import { GhostModel } from "../services/ghost/GhostModel.js"
+import { LLMClient } from "./llm-client.js"
 import { HoleFiller, parseGhostResponse } from "../services/ghost/classic-auto-complete/HoleFiller.js"
 import { FimPromptBuilder } from "../services/ghost/classic-auto-complete/FillInTheMiddle.js"
-import { KilocodeOpenrouterHandler } from "../api/providers/kilocode-openrouter.js"
-import { createContext } from "./utils.js"
-import { AutocompleteInput, extractPrefixSuffix, contextToAutocompleteInput } from "../services/ghost/types.js"
+import { AutocompleteInput } from "../services/ghost/types.js"
+import * as vscode from "vscode"
 import crypto from "crypto"
+import { createContext } from "./utils.js"
 
-/**
- * Creates a GhostModel with a KilocodeOpenrouterHandler for testing
- */
-function createGhostModel(kilocodeToken: string, model: string): GhostModel {
-	const handler = new KilocodeOpenrouterHandler({
-		kilocodeToken,
-		kilocodeModel: model,
-	})
-
-	// Create GhostModel with the handler
-	const ghostModel = new GhostModel(handler)
-	return ghostModel
-}
-
-/**
- * Creates a mock context provider for standalone testing
- */
+// Mock context provider for standalone testing
 function createMockContextProvider(prefix: string, suffix: string, filepath: string) {
 	return {
 		getProcessedSnippets: async () => ({
@@ -40,21 +23,21 @@ function createMockContextProvider(prefix: string, suffix: string, filepath: str
 	} as any
 }
 
+/**
+ * Check if a model supports FIM (Fill-In-Middle) completions.
+ * This mirrors the logic in KilocodeOpenrouterHandler.supportsFim()
+ */
+function modelSupportsFim(modelId: string): boolean {
+	return modelId.includes("codestral")
+}
+
 export class GhostProviderTester {
-	private ghostModel: GhostModel
-	private totalCost: number = 0
-	private totalInputTokens: number = 0
-	private totalOutputTokens: number = 0
+	private llmClient: LLMClient
+	private model: string
 
 	constructor() {
-		const kilocodeToken = process.env.KILOCODE_API_KEY
-		if (!kilocodeToken) {
-			throw new Error("KILOCODE_API_KEY is required")
-		}
-
-		const model = process.env.LLM_MODEL || "mistralai/codestral-2508"
-
-		this.ghostModel = createGhostModel(kilocodeToken, model)
+		this.model = process.env.LLM_MODEL || "mistralai/codestral-2508"
+		this.llmClient = new LLMClient()
 	}
 
 	async getCompletion(
@@ -63,93 +46,75 @@ export class GhostProviderTester {
 	): Promise<{ prefix: string; completion: string; suffix: string }> {
 		const context = createContext(code, testCaseName)
 
-		const document = context.document as vscode.TextDocument
 		const position = context.range?.start ?? new vscode.Position(0, 0)
+		const offset = context.document.offsetAt(position)
+		const text = context.document.getText()
+		const prefix = text.substring(0, offset)
+		const suffix = text.substring(offset)
+		const languageId = context.document.languageId || "javascript"
+		const filepath = context.document.uri.fsPath
 
-		// Get prefix and suffix
-		const { prefix, suffix } = extractPrefixSuffix(document, position)
-		const languageId = document.languageId || "javascript"
-		const filepath = document.uri.fsPath
-
-		// Create mock context provider
-		const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
-
-		// Create autocomplete input
-		const autocompleteInput: AutocompleteInput = {
-			isUntitledFile: false,
-			completionId: crypto.randomUUID(),
-			filepath,
-			pos: { line: position.line, character: position.character },
-			recentlyVisitedRanges: [],
-			recentlyEditedRanges: [],
-		}
-
-		// Determine strategy based on model capabilities
-		const supportsFim = this.ghostModel.supportsFim()
-		let completion = ""
+		// Auto-detect strategy based on model capabilities
+		const supportsFim = modelSupportsFim(this.model)
 
 		if (supportsFim) {
-			// Use FIM strategy
+			// Use FIM strategy with FimPromptBuilder
+			const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
 			const fimPromptBuilder = new FimPromptBuilder(mockContextProvider)
-			const modelName = this.ghostModel.getModelName() ?? "codestral"
-			const prompt = await fimPromptBuilder.getFimPrompts(autocompleteInput, modelName)
 
-			let responseText = ""
-			const result = await this.ghostModel.generateFimResponse(
-				prompt.formattedPrefix,
-				prompt.prunedSuffix,
-				(chunk) => {
-					responseText += chunk
-				},
-			)
+			const autocompleteInput: AutocompleteInput = {
+				isUntitledFile: false,
+				completionId: crypto.randomUUID(),
+				filepath,
+				pos: { line: position.line, character: position.character },
+				recentlyVisitedRanges: [],
+				recentlyEditedRanges: [],
+			}
 
-			this.totalCost += result.cost
-			this.totalInputTokens += result.inputTokens
-			this.totalOutputTokens += result.outputTokens
+			const prompt = await fimPromptBuilder.getFimPrompts(autocompleteInput, this.model)
 
-			completion = responseText
+			// Use the formatted prefix/suffix from FimPromptBuilder
+			const fimResponse = await this.llmClient.sendFimCompletion(prompt.formattedPrefix, prompt.prunedSuffix)
+
+			return {
+				prefix,
+				completion: fimResponse.completion,
+				suffix,
+			}
 		} else {
 			// Use HoleFiller strategy
+			const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
 			const holeFiller = new HoleFiller(mockContextProvider)
+
+			const autocompleteInput: AutocompleteInput = {
+				isUntitledFile: false,
+				completionId: crypto.randomUUID(),
+				filepath,
+				pos: { line: position.line, character: position.character },
+				recentlyVisitedRanges: [],
+				recentlyEditedRanges: [],
+			}
+
 			const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId)
 
-			let responseText = ""
-			const result = await this.ghostModel.generateResponse(systemPrompt, userPrompt, (chunk) => {
-				if (chunk.type === "text") {
-					responseText += chunk.text
-				}
-			})
+			const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
 
-			this.totalCost += result.cost
-			this.totalInputTokens += result.inputTokens
-			this.totalOutputTokens += result.outputTokens
+			const parseResult = parseGhostResponse(response.content, prefix, suffix)
 
-			// Parse the response to extract the completion
-			const parseResult = parseGhostResponse(responseText, prefix, suffix)
-			completion = parseResult.text
-		}
-
-		return {
-			prefix,
-			completion,
-			suffix,
+			return {
+				prefix,
+				completion: parseResult.text,
+				suffix,
+			}
 		}
 	}
 
 	getName(): string {
-		const supportsFim = this.ghostModel.supportsFim()
+		const supportsFim = modelSupportsFim(this.model)
 		return supportsFim ? "ghost-provider-fim" : "ghost-provider-holefiller"
 	}
 
 	dispose(): void {
-		// No resources to dispose in this simplified version
-	}
-
-	getCostStats(): { totalCost: number; totalInputTokens: number; totalOutputTokens: number } {
-		return {
-			totalCost: this.totalCost,
-			totalInputTokens: this.totalInputTokens,
-			totalOutputTokens: this.totalOutputTokens,
-		}
+		// No resources to dispose
 	}
 }
