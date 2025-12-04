@@ -54,59 +54,48 @@ export class GhostProviderTester {
 		const languageId = context.document.languageId || "javascript"
 		const filepath = context.document.uri.fsPath
 
+		// Common setup
+		const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
+		const autocompleteInput: AutocompleteInput = {
+			isUntitledFile: false,
+			completionId: crypto.randomUUID(),
+			filepath,
+			pos: { line: position.line, character: position.character },
+			recentlyVisitedRanges: [],
+			recentlyEditedRanges: [],
+		}
+
 		// Auto-detect strategy based on model capabilities
 		const supportsFim = modelSupportsFim(this.model)
+		const completion = supportsFim
+			? await this.getFimCompletion(mockContextProvider, autocompleteInput)
+			: await this.getHoleFillerCompletion(mockContextProvider, autocompleteInput, languageId, prefix, suffix)
 
-		if (supportsFim) {
-			// Use FIM strategy with FimPromptBuilder
-			const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
-			const fimPromptBuilder = new FimPromptBuilder(mockContextProvider)
+		return { prefix, completion, suffix }
+	}
 
-			const autocompleteInput: AutocompleteInput = {
-				isUntitledFile: false,
-				completionId: crypto.randomUUID(),
-				filepath,
-				pos: { line: position.line, character: position.character },
-				recentlyVisitedRanges: [],
-				recentlyEditedRanges: [],
-			}
+	private async getFimCompletion(
+		contextProvider: ReturnType<typeof createMockContextProvider>,
+		autocompleteInput: AutocompleteInput,
+	): Promise<string> {
+		const fimPromptBuilder = new FimPromptBuilder(contextProvider)
+		const prompt = await fimPromptBuilder.getFimPrompts(autocompleteInput, this.model)
+		const fimResponse = await this.llmClient.sendFimCompletion(prompt.formattedPrefix, prompt.prunedSuffix)
+		return fimResponse.completion
+	}
 
-			const prompt = await fimPromptBuilder.getFimPrompts(autocompleteInput, this.model)
-
-			// Use the formatted prefix/suffix from FimPromptBuilder
-			const fimResponse = await this.llmClient.sendFimCompletion(prompt.formattedPrefix, prompt.prunedSuffix)
-
-			return {
-				prefix,
-				completion: fimResponse.completion,
-				suffix,
-			}
-		} else {
-			// Use HoleFiller strategy
-			const mockContextProvider = createMockContextProvider(prefix, suffix, filepath)
-			const holeFiller = new HoleFiller(mockContextProvider)
-
-			const autocompleteInput: AutocompleteInput = {
-				isUntitledFile: false,
-				completionId: crypto.randomUUID(),
-				filepath,
-				pos: { line: position.line, character: position.character },
-				recentlyVisitedRanges: [],
-				recentlyEditedRanges: [],
-			}
-
-			const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId)
-
-			const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
-
-			const parseResult = parseGhostResponse(response.content, prefix, suffix)
-
-			return {
-				prefix,
-				completion: parseResult.text,
-				suffix,
-			}
-		}
+	private async getHoleFillerCompletion(
+		contextProvider: ReturnType<typeof createMockContextProvider>,
+		autocompleteInput: AutocompleteInput,
+		languageId: string,
+		prefix: string,
+		suffix: string,
+	): Promise<string> {
+		const holeFiller = new HoleFiller(contextProvider)
+		const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId)
+		const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
+		const parseResult = parseGhostResponse(response.content, prefix, suffix)
+		return parseResult.text
 	}
 
 	getName(): string {
