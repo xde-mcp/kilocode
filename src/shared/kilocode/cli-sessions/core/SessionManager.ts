@@ -539,6 +539,10 @@ export class SessionManager {
 								for (let i = 0; i < this.queue.length; i++) {
 									const item = this.queue[i]
 
+									if (!item) {
+										continue
+									}
+
 									if (
 										item.blobName === blobName &&
 										item.taskId === taskId &&
@@ -648,10 +652,12 @@ export class SessionManager {
 			}
 		}
 
-		this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
+		if (lastItem) {
+			this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
 
-		if (this.lastSessionId) {
-			this.sessionPersistenceManager.setLastSession(this.lastSessionId)
+			if (this.lastSessionId) {
+				this.sessionPersistenceManager.setLastSession(this.lastSessionId)
+			}
 		}
 
 		this.logger?.debug("Session sync completed", "SessionManager", {
