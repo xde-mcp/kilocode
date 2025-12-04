@@ -1,5 +1,11 @@
 # kilo-code
 
+## 4.130.0
+
+### Minor Changes
+
+- [#4131](https://github.com/Kilo-Org/kilocode/pull/4131) [`9a2ef51`](https://github.com/Kilo-Org/kilocode/commit/9a2ef512bb50143b6cff690f912f7fd8dcfa65b7) Thanks [@mcowger](https://github.com/mcowger)! - Fix tool parsing failure in write_to_file with JSON contents
+
 ## 4.129.0
 
 ### Minor Changes
