@@ -98,7 +98,6 @@ describe("GhostContextProvider", () => {
 
 		mockIgnoreController = undefined
 
-		// Create the context provider object directly using mocked dependencies
 		const ide = new VsCodeIde({} as any)
 		const contextService = new ContextRetrievalService(ide)
 		contextProvider = {
@@ -254,7 +253,6 @@ describe("GhostContextProvider", () => {
 
 			mockIgnoreController = Promise.resolve(mockController)
 
-			// Create the context provider object directly using mocked dependencies
 			const ide = new VsCodeIde({} as any)
 			const contextService = new ContextRetrievalService(ide)
 			contextProvider = {
