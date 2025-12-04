@@ -77,7 +77,8 @@ export const ImageGenerationSettings = ({
 	}, [openRouterImageGenerationSelectedModel, availableModels, currentProvider])
 
 	// Handle provider changes
-	const handleProviderChange = (value: string) => {
+	// kilocode_change: unused for now
+	const _handleProviderChange = (value: string) => {
 		const newProvider = value as ImageGenerationProvider
 		setImageGenerationProvider(newProvider)
 
@@ -115,7 +116,7 @@ export const ImageGenerationSettings = ({
 	}
 
 	const requiresApiKey = currentProvider === "openrouter"
-	const isConfigured = !requiresApiKey || (requiresApiKey && openRouterImageApiKey)
+	const _isConfigured = !requiresApiKey || (requiresApiKey && openRouterImageApiKey) // kilocode_change: unused
 
 	return (
 		<div className="space-y-4">

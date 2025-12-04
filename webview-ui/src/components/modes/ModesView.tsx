@@ -719,6 +719,9 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 					</div>
 
 					<div className="flex items-center gap-1 mb-3">
+						{isOrganizationMode && <OrganizationModeWarning />} {/* kilocode_change start */}
+						{/* Only show name and delete for custom modes that are not organization modes */}
+						{/* kilocode_change end */}
 						{isRenamingMode ? (
 							<>
 								<VSCodeTextField

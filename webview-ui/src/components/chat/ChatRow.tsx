@@ -1437,39 +1437,6 @@ export const ChatRowContent = ({
 					const { results = [] } = parsed?.content || {}
 
 					return <CodebaseSearchResultsDisplay results={results} />
-				// kilocode_change start: upstream pr https://github.com/RooCodeInc/Roo-Code/pull/5452
-				case "browser_action_result":
-					// This should not normally be rendered here as browser_action_result messages
-					// should be grouped into browser sessions and rendered by BrowserSessionRow.
-					// If we see this, it means the message grouping logic has a bug.
-					return (
-						<>
-							{title && (
-								<div style={headerStyle}>
-									{icon}
-									{title}
-								</div>
-							)}
-							<div style={{ paddingTop: 10 }}>
-								<div
-									style={{
-										color: "var(--vscode-errorForeground)",
-										fontFamily: "monospace",
-										fontSize: "12px",
-										padding: "8px",
-										backgroundColor: "var(--vscode-editor-background)",
-										border: "1px solid var(--vscode-editorError-border)",
-										borderRadius: "4px",
-										marginBottom: "8px",
-									}}>
-									⚠️ Browser action result not properly grouped - this is a bug in the message
-									grouping logic
-								</div>
-								<Markdown markdown={message.text} partial={message.partial} />
-							</div>
-						</>
-					)
-				// kilocode_change end
 				case "user_edit_todos":
 					return <UpdateTodoListToolBlock userEdited onChange={() => {}} />
 				case "tool" as any:
@@ -1562,10 +1529,41 @@ export const ChatRowContent = ({
 							<ImageBlock imageUri={imageInfo.imageUri} imagePath={imageInfo.imagePath} />
 						</div>
 					)
+				// kilocode_change start: upstream pr https://github.com/RooCodeInc/Roo-Code/pull/5452
 				case "browser_action":
-				case "browser_action_result":
-					// Handled by BrowserSessionRow; prevent raw JSON (action/result) from rendering here
 					return null
+				case "browser_action_result":
+					// This should not normally be rendered here as browser_action_result messages
+					// should be grouped into browser sessions and rendered by BrowserSessionRow.
+					// If we see this, it means the message grouping logic has a bug.
+					return (
+						<>
+							{title && (
+								<div style={headerStyle}>
+									{icon}
+									{title}
+								</div>
+							)}
+							<div style={{ paddingTop: 10 }}>
+								<div
+									style={{
+										color: "var(--vscode-errorForeground)",
+										fontFamily: "monospace",
+										fontSize: "12px",
+										padding: "8px",
+										backgroundColor: "var(--vscode-editor-background)",
+										border: "1px solid var(--vscode-editorError-border)",
+										borderRadius: "4px",
+										marginBottom: "8px",
+									}}>
+									⚠️ Browser action result not properly grouped - this is a bug in the message
+									grouping logic
+								</div>
+								<Markdown markdown={message.text} partial={message.partial} />
+							</div>
+						</>
+					)
+				// kilocode_change end
 				default:
 					return (
 						<>
