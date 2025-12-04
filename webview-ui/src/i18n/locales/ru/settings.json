@@ -53,7 +53,7 @@
 		"contact": {
 			"label": "Нужно с нами связаться? Напишите"
 		},
-		"community": "Хотите получить советы или просто пообщаться с другими пользователями Roo Code? Присоединяйтесь к <redditLink>reddit.com/r/RooCode</redditLink> или <discordLink>discord.gg/roocode</discordLink>",
+		"community": "Хотите получить советы или просто пообщаться с другими пользователями Kilo Code? Присоединяйтесь к <redditLink>reddit.com/r/kilocode</redditLink> или <discordLink>kilo.ai/discord</discordLink>",
 		"contactAndCommunity": "Контакты и Сообщество",
 		"manageSettings": "Управление Настройками"
 	},
@@ -857,7 +857,7 @@
 	},
 	"toolProtocol": {
 		"label": "Протокол вызова инструментов",
-		"description": "Выберите, как Roo будет взаимодействовать с API. Нативный использует API вызова функций провайдера, а XML — определения инструментов в формате XML.",
+		"description": "Выберите, как Kilo Code будет взаимодействовать с API. Нативный использует API вызова функций провайдера, а XML — определения инструментов в формате XML.",
 		"default": "По умолчанию",
 		"xml": "XML",
 		"native": "Нативный",

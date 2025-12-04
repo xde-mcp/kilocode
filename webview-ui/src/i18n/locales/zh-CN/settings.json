@@ -54,7 +54,7 @@
 		"contact": {
 			"label": "需要联系我们？请发送邮件至"
 		},
-		"community": "想要获取使用技巧或与其他 Roo Code 用户交流？加入 <redditLink>reddit.com/r/RooCode</redditLink> 或 <discordLink>discord.gg/roocode</discordLink>",
+		"community": "想要获取使用技巧或与其他 Kilo Code 用户交流？加入 <redditLink>reddit.com/r/kilocode</redditLink> 或 <discordLink>kilo.ai/discord</discordLink>",
 		"contactAndCommunity": "联系与社区",
 		"manageSettings": "管理设置"
 	},
@@ -861,7 +861,7 @@
 	},
 	"toolProtocol": {
 		"label": "工具调用协议",
-		"description": "选择 Roo 如何与 API 通信。原生使用提供商的函数调用 API，而 XML 使用 XML 格式的工具定义。",
+		"description": "选择 Kilo Code 如何与 API 通信。原生使用提供商的函数调用 API，而 XML 使用 XML 格式的工具定义。",
 		"default": "默认",
 		"xml": "XML",
 		"native": "原生",
