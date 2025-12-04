@@ -34,29 +34,58 @@ class LocalCefResHandle(val resourceBasePath: String, val request: CefRequest?) 
     private var offset = 0
 
     init {
-        val requestPath = request?.url?.decodeURLPart()?.replace("http://localhost:", "")?.substringAfter("/")?.substringBefore("?")
-        logger.info("init LocalCefResHandle,requestPath:$requestPath,resourceBasePath:$resourceBasePath")
+        val requestPath = request?.url?.let { url ->
+            val withoutProtocol = url.substringAfter("http://localhost:")
+            val withoutPort = withoutProtocol.substringAfter("/")
+            withoutPort.substringBefore("?").decodeURLPart()
+        }
+        logger.info("=== LocalCefResHandle INIT ===")
+        logger.info("Full request URL: ${request?.url}")
+        logger.info("Decoded request path: $requestPath")
+        logger.info("Resource base path: $resourceBasePath")
+        
         requestPath?.let {
             val filePath = if (requestPath.isEmpty()) {
                 "$resourceBasePath/index.html"
             } else {
                 "$resourceBasePath/$requestPath"
             }
+            
+            logger.info("Constructed file path: $filePath")
             file = File(filePath)
+            
+            // If file doesn't exist, try alternative paths
+            if (!file!!.exists()) {
+                if (!requestPath.startsWith("webview-ui/build/")) {
+                    val alternativePath = "$resourceBasePath/webview-ui/build/$requestPath"
+                    file = File(alternativePath)
+                }
+            }
+            
+            logger.info("File exists: ${file!!.exists()}, Is file: ${file!!.isFile}, Absolute path: ${file!!.absolutePath}")
 
             if (file!!.exists() && file!!.isFile) {
                 try {
                     fileContent = file!!.readBytes()
+                    logger.info("Successfully read file content, size: ${fileContent!!.size} bytes")
                 } catch (e: Exception) {
-                    logger.warn("cannot get fileContent,e:$e")
+                    logger.error("Failed to read file content", e)
                     file = null
                     fileContent = null
                 }
             } else {
+                logger.warn("File not found or not a file: ${file!!.absolutePath}")
+                // List directory contents to help debug
+                val parentDir = file!!.parentFile
+                if (parentDir?.exists() == true) {
+                    logger.info("Parent directory exists: ${parentDir.absolutePath}")
+                    logger.info("Parent directory contents: ${parentDir.listFiles()?.joinToString(", ") { it.name }}")
+                } else {
+                    logger.warn("Parent directory does not exist: ${parentDir?.absolutePath}")
+                }
                 file = null
                 fileContent = null
             }
-            logger.info("init LocalCefResHandle,filePath:$filePath,file:$file,exists:${file?.exists()}")
         }
     }
 
@@ -72,6 +101,9 @@ class LocalCefResHandle(val resourceBasePath: String, val request: CefRequest?) 
         return when {
             filePath.endsWith(".html", true) -> "text/html"
             filePath.endsWith(".css", true) -> "text/css"
+            filePath.endsWith(".js.map", true) -> "application/json"
+            filePath.endsWith(".css.map", true) -> "application/json"
+            filePath.endsWith(".map", true) -> "application/json"
             filePath.endsWith(".js", true) -> "application/javascript"
             filePath.endsWith(".json", true) -> "application/json"
             filePath.endsWith(".png", true) -> "image/png"

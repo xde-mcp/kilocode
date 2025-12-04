@@ -7,6 +7,7 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 
 import { sourcemapPlugin } from "./src/vite-plugins/sourcemapPlugin"
+import { cssPerEntryPlugin } from "./src/kilocode/vite-plugins/cssPerEntryPlugin" // kilocode_change
 
 function getGitSha() {
 	let gitSha: string | undefined = undefined
@@ -91,7 +92,14 @@ export default defineConfig(({ mode }) => {
 		define["process.env.PKG_OUTPUT_CHANNEL"] = JSON.stringify("Kilo-Code-Nightly")
 	}
 
-	const plugins: PluginOption[] = [react(), tailwindcss(), persistPortPlugin(), wasmPlugin(), sourcemapPlugin()]
+	const plugins: PluginOption[] = [
+		react(),
+		tailwindcss(),
+		persistPortPlugin(),
+		wasmPlugin(),
+		sourcemapPlugin(),
+		cssPerEntryPlugin(), // kilocode_change: enable per-entry CSS files
+	]
 
 	return {
 		plugins,
@@ -110,6 +118,7 @@ export default defineConfig(({ mode }) => {
 			sourcemap: true,
 			// Ensure source maps are properly included in the build
 			minify: mode === "production" ? "esbuild" : false,
+			cssCodeSplit: true, // kilocode_change: enable CSS code splitting so CSS files are generated
 			rollupOptions: {
 				input: {
 					main: resolve(__dirname, "index.html"),
@@ -138,6 +147,11 @@ export default defineConfig(({ mode }) => {
 						if (assetInfo.name && assetInfo.name.endsWith(".map")) {
 							return "assets/[name]"
 						}
+						// kilocode_change start - CSS files handled by cssPerEntryPlugin
+						if (assetInfo.name && assetInfo.name.endsWith(".css")) {
+							return "assets/[name]-[hash].css"
+						}
+						// kilocode_change end
 						return "assets/[name][extname]"
 					},
 					manualChunks: (id, { getModuleInfo }) => {
