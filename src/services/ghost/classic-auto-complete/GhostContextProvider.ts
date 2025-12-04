@@ -120,16 +120,24 @@ export async function getProcessedSnippets(
 	return { filepathUri, helper, snippetsWithUris, workspaceDirs }
 }
 
-export class GhostContextProvider {
-	public contextService: ContextRetrievalService
-	public ide: VsCodeIde
-	public model: GhostModel
-	public ignoreController?: Promise<RooIgnoreController>
+export interface GhostContextProvider {
+	contextService: ContextRetrievalService
+	ide: VsCodeIde
+	model: GhostModel
+	ignoreController?: Promise<RooIgnoreController>
+}
 
-	constructor(context: vscode.ExtensionContext, model: GhostModel, ignoreController?: Promise<RooIgnoreController>) {
-		this.ide = new VsCodeIde(context)
-		this.contextService = new ContextRetrievalService(this.ide)
-		this.model = model
-		this.ignoreController = ignoreController
+export function createGhostContextProvider(
+	context: vscode.ExtensionContext,
+	model: GhostModel,
+	ignoreController?: Promise<RooIgnoreController>,
+): GhostContextProvider {
+	const ide = new VsCodeIde(context)
+	const contextService = new ContextRetrievalService(ide)
+	return {
+		ide,
+		contextService,
+		model,
+		ignoreController,
 	}
 }

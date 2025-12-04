@@ -8,7 +8,6 @@ import {
 import { FillInAtCursorSuggestion } from "../HoleFiller"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
-import { GhostContextProvider } from "../GhostContextProvider"
 import * as telemetry from "../AutocompleteTelemetry"
 import * as GhostContextProviderModule from "../GhostContextProvider"
 
@@ -584,7 +583,7 @@ describe("GhostInlineCompletionProvider", () => {
 			languageModelAccessInformation: {} as any,
 		} as unknown as vscode.ExtensionContext
 
-		// Mock GhostContextProvider public properties
+		// Mock createGhostContextProvider to return a mock context provider
 		const mockIde = {
 			getWorkspaceDirs: vi.fn().mockResolvedValue([]),
 			getOpenFiles: vi.fn().mockResolvedValue([]),
@@ -599,14 +598,13 @@ describe("GhostInlineCompletionProvider", () => {
 			getModelName: vi.fn().mockReturnValue("codestral"),
 		}
 
-		// Define mock properties directly on prototype for property access
-		Object.defineProperty(GhostContextProvider.prototype, "ide", { value: mockIde, writable: true })
-		Object.defineProperty(GhostContextProvider.prototype, "contextService", {
-			value: mockContextService,
-			writable: true,
+		vi.spyOn(GhostContextProviderModule, "createGhostContextProvider").mockReturnValue({
+			ide: mockIde as any,
+			contextService: mockContextService as any,
+			model: mockGhostModel as any,
+			ignoreController: undefined,
 		})
-		Object.defineProperty(GhostContextProvider.prototype, "model", { value: mockGhostModel, writable: true })
-		Object.defineProperty(GhostContextProvider.prototype, "ignoreController", { value: undefined, writable: true })
+
 		vi.spyOn(GhostContextProviderModule, "getProcessedSnippets").mockResolvedValue({
 			filepathUri: "file:///test.ts",
 			helper: {

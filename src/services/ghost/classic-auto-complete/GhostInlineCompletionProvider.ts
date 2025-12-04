@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
-import { GhostContextProvider } from "./GhostContextProvider"
+import { createGhostContextProvider } from "./GhostContextProvider"
 import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
 import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
@@ -154,7 +154,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return ignoreController
 		})()
 
-		const contextProvider = new GhostContextProvider(context, model, this.ignoreController)
+		const contextProvider = createGhostContextProvider(context, model, this.ignoreController)
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GhostContextProvider, getProcessedSnippets } from "../GhostContextProvider"
+import { createGhostContextProvider, getProcessedSnippets, GhostContextProvider } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import { GhostModel } from "../../GhostModel"
@@ -104,7 +104,7 @@ describe("GhostContextProvider", () => {
 
 		mockIgnoreController = undefined
 
-		contextProvider = new GhostContextProvider(mockContext, mockModel, mockIgnoreController)
+		contextProvider = createGhostContextProvider(mockContext, mockModel, mockIgnoreController)
 	})
 
 	describe("getProcessedSnippets", () => {
@@ -252,7 +252,7 @@ describe("GhostContextProvider", () => {
 
 			mockIgnoreController = Promise.resolve(mockController)
 
-			contextProvider = new GhostContextProvider(mockContext, mockModel, mockIgnoreController)
+			contextProvider = createGhostContextProvider(mockContext, mockModel, mockIgnoreController)
 		})
 
 		it("should filter out blocked files", async () => {
@@ -375,7 +375,7 @@ describe("GhostContextProvider", () => {
 
 		it("should allow all files when no ignore controller is provided", async () => {
 			// Create provider without ignore controller
-			contextProvider = new GhostContextProvider(mockContext, mockModel)
+			contextProvider = createGhostContextProvider(mockContext, mockModel)
 
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"
