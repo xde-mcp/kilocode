@@ -26,7 +26,6 @@ import {
 	syntheticDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
-	nativeFunctionCallingProviders,
 	MODEL_SELECTION_ENABLED,
 	// kilocode_change end
 	mistralDefaultModelId,
@@ -137,7 +136,6 @@ import { TodoListSettingsControl } from "./TodoListSettingsControl"
 import { TemperatureControl } from "./TemperatureControl"
 import { RateLimitSecondsControl } from "./RateLimitSecondsControl"
 import { ConsecutiveMistakeLimitControl } from "./ConsecutiveMistakeLimitControl"
-import { ToolUseControl } from "./kilocode/ToolUseControl" // kilocode_change
 import { BedrockCustomArn } from "./providers/BedrockCustomArn"
 import { KiloCode } from "../kilocode/settings/providers/KiloCode" // kilocode_change
 import { RooBalanceDisplay } from "./providers/RooBalanceDisplay"
@@ -1010,27 +1008,6 @@ const ApiOptions = ({
 							todoListEnabled={apiConfiguration.todoListEnabled}
 							onChange={(field, value) => setApiConfigurationField(field, value)}
 						/>
-						{
-							// kilocode_change start
-							nativeFunctionCallingProviders.includes(selectedProvider) && (
-								<ToolUseControl
-									toolStyle={
-										apiConfiguration.toolStyle === "json"
-											? "native"
-											: apiConfiguration.toolStyle === "xml"
-												? "xml"
-												: undefined
-									}
-									onChange={(field, value) =>
-										setApiConfigurationField(
-											field,
-											value === "native" ? "json" : value === "xml" ? "xml" : undefined,
-										)
-									}
-								/>
-							)
-							// kilocode_change end
-						}
 						<DiffSettingsControl
 							diffEnabled={apiConfiguration.diffEnabled}
 							fuzzyMatchThreshold={apiConfiguration.fuzzyMatchThreshold}
