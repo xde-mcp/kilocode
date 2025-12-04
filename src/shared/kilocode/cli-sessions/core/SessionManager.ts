@@ -328,6 +328,8 @@ export class SessionManager {
 			title: trimmedTitle,
 		})
 
+		this.sessionTitles[sessionId] = trimmedTitle
+
 		this.logger?.info("Session renamed successfully", "SessionManager", {
 			sessionId,
 			newTitle: trimmedTitle,
@@ -577,6 +579,8 @@ export class SessionManager {
 										return
 									}
 
+									this.sessionTitles[sessionId] = "Pending title"
+
 									const session = await this.sessionClient.get({ session_id: sessionId })
 
 									if (session.title) {
@@ -602,11 +606,18 @@ export class SessionManager {
 									})
 
 									this.sessionTitles[sessionId] = generatedTitle
+
+									this.logger?.debug("Updated session title", "SessionManager", {
+										sessionId,
+										generatedTitle,
+									})
 								} catch (error) {
 									this.logger?.error("Failed to get session", "SessionManager", {
 										sessionId,
 										error: error instanceof Error ? error.message : String(error),
 									})
+
+									this.sessionTitles[sessionId] = ""
 								}
 							})()
 						}
