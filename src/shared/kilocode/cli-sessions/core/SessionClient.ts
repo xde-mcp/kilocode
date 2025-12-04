@@ -188,7 +188,7 @@ export class SessionClient {
 	): Promise<{ session_id: string; updated_at: string }> {
 		const { endpoint, getToken } = this.trpcClient
 
-		const url = new URL(`${endpoint}/api/upload-cli-session-blob`)
+		const url = new URL("/api/upload-cli-session-blob", endpoint)
 		url.searchParams.set("session_id", sessionId)
 		url.searchParams.set("blob_type", blobType)
 

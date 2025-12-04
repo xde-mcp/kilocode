@@ -565,7 +565,7 @@ export class SessionManager {
 								}),
 						)
 
-						if (blobName === "uiMessages" && !this.sessionTitles[sessionId]) {
+						if (blobName === "ui_messages" && !this.sessionTitles[sessionId]) {
 							this.logger?.debug("Checking for session title generation", "SessionManager", { sessionId })
 
 							void (async () => {
@@ -702,11 +702,11 @@ export class SessionManager {
 	private pathKeyToBlobKey(pathKey: string) {
 		switch (pathKey) {
 			case "apiConversationHistoryPath":
-				return "apiConversationHistory"
+				return "api_conversation_history"
 			case "uiMessagesPath":
-				return "uiMessages"
+				return "ui_messages"
 			case "taskMetadataPath":
-				return "taskMetadata"
+				return "task_metadata"
 			default:
 				return null
 		}
