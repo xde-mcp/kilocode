@@ -1,6 +1,5 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
-import { GhostContextProvider } from "./GhostContextProvider"
+import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, GhostContextProvider } from "../types"
 import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
 import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"

@@ -119,10 +119,3 @@ export async function getProcessedSnippets(
 
 	return { filepathUri, helper, snippetsWithUris, workspaceDirs }
 }
-
-export interface GhostContextProvider {
-	contextService: ContextRetrievalService
-	ide: VsCodeIde
-	model: GhostModel
-	ignoreController?: Promise<RooIgnoreController>
-}
