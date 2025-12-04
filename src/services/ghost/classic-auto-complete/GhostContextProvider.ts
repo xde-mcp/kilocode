@@ -140,22 +140,24 @@ export class GhostContextProvider {
 		return this.ide
 	}
 
-	public async getProcessedSnippets(
-		autocompleteInput: AutocompleteInput,
-		filepath: string,
-	): Promise<{
-		filepathUri: string
-		helper: any
-		snippetsWithUris: AutocompleteSnippet[]
-		workspaceDirs: string[]
-	}> {
-		return getProcessedSnippets(
-			autocompleteInput,
-			filepath,
-			this.contextService,
-			this.model,
-			this.ide,
-			this.ignoreController,
-		)
+	/**
+	 * Get the context retrieval service
+	 */
+	public getContextService(): ContextRetrievalService {
+		return this.contextService
+	}
+
+	/**
+	 * Get the model
+	 */
+	public getModel(): GhostModel {
+		return this.model
+	}
+
+	/**
+	 * Get the ignore controller
+	 */
+	public getIgnoreController(): Promise<RooIgnoreController> | undefined {
+		return this.ignoreController
 	}
 }

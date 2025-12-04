@@ -1,5 +1,5 @@
 import { AutocompleteInput } from "../types"
-import { GhostContextProvider } from "./GhostContextProvider"
+import { GhostContextProvider, getProcessedSnippets } from "./GhostContextProvider"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
@@ -168,9 +168,13 @@ Provide a subtle, non-intrusive completion after a typing pause.
 	 * Build minimal prompt for auto-trigger with optional context
 	 */
 	async getUserPrompt(autocompleteInput: AutocompleteInput, languageId: string): Promise<string> {
-		const { helper, snippetsWithUris, workspaceDirs } = await this.contextProvider.getProcessedSnippets(
+		const { helper, snippetsWithUris, workspaceDirs } = await getProcessedSnippets(
 			autocompleteInput,
 			autocompleteInput.filepath,
+			this.contextProvider.getContextService(),
+			this.contextProvider.getModel(),
+			this.contextProvider.getIde(),
+			this.contextProvider.getIgnoreController(),
 		)
 		const formattedContext = formatSnippets(helper, snippetsWithUris, workspaceDirs)
 		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)

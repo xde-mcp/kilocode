@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { GhostContextProvider } from "../GhostContextProvider"
+import { GhostContextProvider, getProcessedSnippets } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import { GhostModel } from "../../GhostModel"
@@ -110,7 +110,14 @@ describe("GhostContextProvider", () => {
 	describe("getProcessedSnippets", () => {
 		it("should return empty snippets when no snippets available", async () => {
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			expect(result.snippetsWithUris).toEqual([])
 			expect(result.helper).toBeDefined()
@@ -141,7 +148,14 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			expect(result.snippetsWithUris).toHaveLength(1)
 			expect(result.snippetsWithUris[0]).toEqual({
@@ -181,7 +195,14 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			expect(result.snippetsWithUris).toHaveLength(2)
 			expect(result.snippetsWithUris[0]).toEqual({
@@ -205,7 +226,16 @@ describe("GhostContextProvider", () => {
 
 			const input = createAutocompleteInput("/test.ts")
 
-			await expect(contextProvider.getProcessedSnippets(input, "/test.ts")).rejects.toThrow("Test error")
+			await expect(
+				getProcessedSnippets(
+					input,
+					"/test.ts",
+					contextProvider.getContextService(),
+					contextProvider.getModel(),
+					contextProvider.getIde(),
+					contextProvider.getIgnoreController(),
+				),
+			).rejects.toThrow("Test error")
 		})
 	})
 
@@ -259,7 +289,14 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			// Should only contain the allowed file
 			expect(result.snippetsWithUris).toHaveLength(1)
@@ -315,7 +352,14 @@ describe("GhostContextProvider", () => {
 			])
 
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			// Should not contain blocked file
 			expect(
@@ -356,7 +400,14 @@ describe("GhostContextProvider", () => {
 			})
 
 			const input = createAutocompleteInput("/test.ts")
-			const result = await contextProvider.getProcessedSnippets(input, "/test.ts")
+			const result = await getProcessedSnippets(
+				input,
+				"/test.ts",
+				contextProvider.getContextService(),
+				contextProvider.getModel(),
+				contextProvider.getIde(),
+				contextProvider.getIgnoreController(),
+			)
 
 			// Should contain all files when no controller
 			expect(result.snippetsWithUris).toHaveLength(1)

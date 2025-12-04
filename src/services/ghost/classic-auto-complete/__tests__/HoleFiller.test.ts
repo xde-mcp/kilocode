@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, beforeEach, vi } from "vitest"
 import { HoleFiller, parseGhostResponse } from "../HoleFiller"
 import { AutocompleteInput } from "../../types"
 import crypto from "crypto"
@@ -25,18 +25,37 @@ describe("HoleFiller", () => {
 	beforeEach(() => {
 		// Create a minimal mock context provider for basic tests
 		const mockContextProvider = {
-			getProcessedSnippets: async () => ({
-				filepathUri: "file:///test.ts",
-				helper: {
-					filepath: "file:///test.ts",
-					lang: { name: "typescript", singleLineComment: "//" },
-					prunedPrefix: "const x = 1;\n",
-					prunedSuffix: "",
-				},
-				snippetsWithUris: [],
-				workspaceDirs: [],
+			getContextService: () => ({
+				initializeForFile: async () => {},
 			}),
+			getModel: () => ({
+				getModelName: () => "codestral",
+			}),
+			getIde: () => ({
+				getWorkspaceDirs: async () => [],
+			}),
+			getIgnoreController: () => undefined,
 		} as any
+
+		// Mock the getProcessedSnippets function
+		vi.mock("../GhostContextProvider", async (importOriginal) => {
+			const original = await importOriginal<typeof import("../GhostContextProvider")>()
+			return {
+				...original,
+				getProcessedSnippets: vi.fn().mockResolvedValue({
+					filepathUri: "file:///test.ts",
+					helper: {
+						filepath: "file:///test.ts",
+						lang: { name: "typescript", singleLineComment: "//" },
+						prunedPrefix: "const x = 1;\n",
+						prunedSuffix: "",
+					},
+					snippetsWithUris: [],
+					workspaceDirs: [],
+				}),
+			}
+		})
+
 		holeFiller = new HoleFiller(mockContextProvider)
 	})
 
@@ -68,24 +87,37 @@ Return the COMPLETION tags`
 
 		it("should include comment-wrapped context when provider is set", async () => {
 			const mockContextProvider = {
-				getProcessedSnippets: async () => ({
-					filepathUri: "file:///app.ts",
-					helper: {
-						filepath: "file:///app.ts",
-						lang: { name: "typescript", singleLineComment: "//" },
-						prunedPrefix: "function calculate() {\n  ",
-						prunedSuffix: "\n}",
-					},
-					snippetsWithUris: [
-						{
-							filepath: "file:///utils.ts",
-							content: "export function sum(a: number, b: number) {\n  return a + b\n}",
-							type: AutocompleteSnippetType.Code,
-						},
-					],
-					workspaceDirs: ["file:///workspace"],
+				getContextService: () => ({
+					initializeForFile: async () => {},
 				}),
+				getModel: () => ({
+					getModelName: () => "codestral",
+				}),
+				getIde: () => ({
+					getWorkspaceDirs: async () => ["file:///workspace"],
+				}),
+				getIgnoreController: () => undefined,
 			} as any
+
+			// Update the mock for this specific test
+			const { getProcessedSnippets } = await import("../GhostContextProvider")
+			;(getProcessedSnippets as any).mockResolvedValueOnce({
+				filepathUri: "file:///app.ts",
+				helper: {
+					filepath: "file:///app.ts",
+					lang: { name: "typescript", singleLineComment: "//" },
+					prunedPrefix: "function calculate() {\n  ",
+					prunedSuffix: "\n}",
+				},
+				snippetsWithUris: [
+					{
+						filepath: "file:///utils.ts",
+						content: "export function sum(a: number, b: number) {\n  return a + b\n}",
+						type: AutocompleteSnippetType.Code,
+					},
+				],
+				workspaceDirs: ["file:///workspace"],
+			})
 
 			const holeFillerWithContext = new HoleFiller(mockContextProvider)
 			const { userPrompt } = await holeFillerWithContext.getPrompts(

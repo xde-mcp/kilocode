@@ -10,6 +10,7 @@ import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
 import { GhostContextProvider } from "../GhostContextProvider"
 import * as telemetry from "../AutocompleteTelemetry"
+import * as GhostContextProviderModule from "../GhostContextProvider"
 
 // Mock RooIgnoreController to prevent vscode.RelativePattern errors
 vi.mock("../../../../core/ignore/RooIgnoreController", () => {
@@ -591,7 +592,14 @@ describe("GhostInlineCompletionProvider", () => {
 		}
 
 		vi.spyOn(GhostContextProvider.prototype, "getIde").mockReturnValue(mockIde as any)
-		vi.spyOn(GhostContextProvider.prototype, "getProcessedSnippets").mockResolvedValue({
+		vi.spyOn(GhostContextProvider.prototype, "getContextService").mockReturnValue({
+			initializeForFile: vi.fn().mockResolvedValue(undefined),
+		} as any)
+		vi.spyOn(GhostContextProvider.prototype, "getModel").mockReturnValue({
+			getModelName: vi.fn().mockReturnValue("codestral"),
+		} as any)
+		vi.spyOn(GhostContextProvider.prototype, "getIgnoreController").mockReturnValue(undefined)
+		vi.spyOn(GhostContextProviderModule, "getProcessedSnippets").mockResolvedValue({
 			filepathUri: "file:///test.ts",
 			helper: {
 				filepath: "file:///test.ts",
