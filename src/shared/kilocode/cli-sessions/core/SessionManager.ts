@@ -368,7 +368,7 @@ export class SessionManager {
 
 				const session = await this.sessionClient.create({
 					title,
-					created_on_platform: process.env.KILO_PLATFORM || this.platform,
+					created_on_platform: this.platform,
 				})
 
 				sessionId = session.session_id
@@ -481,7 +481,7 @@ export class SessionManager {
 
 					const createdSession = await this.sessionClient.create({
 						...basePayload,
-						created_on_platform: process.env.KILO_PLATFORM || this.platform,
+						created_on_platform: this.platform,
 					})
 
 					sessionId = createdSession.session_id
