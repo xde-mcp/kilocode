@@ -15,7 +15,7 @@ import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { fetchWithTimeout } from "./kilocode/fetchWithTimeout" // kilocode_change
 import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change
-import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers" // kilocode_change
+import { ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers" // kilocode_change
 import { calculateApiCostOpenAI } from "../../shared/cost"
 
 type BaseOpenAiCompatibleProviderOptions<ModelName extends string> = ApiHandlerOptions & {
@@ -113,10 +113,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 		}
 
 		try {
-			return this.client.chat.completions.create(
-				addNativeToolCallsToParams(params, this.options, metadata), // kilocode_change
-				requestOptions,
-			)
+			return this.client.chat.completions.create(params, requestOptions)
 		} catch (error) {
 			throw handleOpenAIError(error, this.providerName)
 		}

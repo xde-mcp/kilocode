@@ -19,7 +19,7 @@ import { convertToR1Format } from "../transform/r1-format"
 import { convertToSimpleMessages } from "../transform/simple-format"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
-import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
+import { ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
@@ -174,10 +174,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			// Add max_tokens if needed
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
 
-			// kilocode_change start: Add native tool call support when toolStyle is "json"
-			addNativeToolCallsToParams(requestOptions, this.options, metadata)
-			// kilocode_change end
-
 			let stream
 			try {
 				stream = await this.client.chat.completions.create(
@@ -267,9 +263,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 
 			// Add max_tokens if needed
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
-			// kilocode_change start: Add native tool call support when toolStyle is "json"
-			addNativeToolCallsToParams(requestOptions, this.options, metadata)
-			// kilocode_change end
+
 			let response
 			try {
 				response = await this.client.chat.completions.create(

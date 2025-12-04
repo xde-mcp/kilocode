@@ -11,7 +11,6 @@ import {
 import type { ApiHandlerOptions } from "../../shared/api"
 
 import { BaseOpenAiCompatibleProvider } from "./base-openai-compatible-provider"
-import { addNativeToolCallsToParams } from "./kilocode/nativeToolCallHelpers"
 
 export class ZAiHandler extends BaseOpenAiCompatibleProvider<string> {
 	constructor(options: ApiHandlerOptions) {
