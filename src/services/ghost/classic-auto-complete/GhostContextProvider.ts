@@ -67,6 +67,10 @@ async function filterSnippetsByAccess(
 export async function getProcessedSnippets(
 	autocompleteInput: AutocompleteInput,
 	filepath: string,
+	contextService: ContextRetrievalService,
+	model: GhostModel,
+	ide: VsCodeIde,
+	ignoreController?: Promise<RooIgnoreController>,
 ): Promise<{
 	filepathUri: string
 	helper: any
@@ -80,7 +84,7 @@ export async function getProcessedSnippets(
 	// this looks like a race, but the contextService only prefetches data here; it's not a mode switch.
 	// This odd-looking API seems to be an optimization that's used in continue but not (currently) in our codebase,
 	// continue preloads the tree-sitter parse on text editor tab switch to reduce autocomplete latency.
-	await this.contextService.initializeForFile(filepathUri)
+	await contextService.initializeForFile(filepathUri)
 
 	// Create helper with URI filepath
 	const helperInput = {
@@ -88,20 +92,20 @@ export async function getProcessedSnippets(
 		filepath: filepathUri,
 	}
 
-	const modelName = this.model.getModelName() ?? "codestral"
-	const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, modelName, this.ide)
+	const modelName = model.getModelName() ?? "codestral"
+	const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, modelName, ide)
 
 	const snippetPayload = await getAllSnippetsWithoutRace({
 		helper,
-		ide: this.ide,
+		ide,
 		getDefinitionsFromLsp,
-		contextRetrievalService: this.contextService,
+		contextRetrievalService: contextService,
 	})
 
 	const filteredSnippets = getSnippets(helper, snippetPayload)
 
 	// Apply access filtering to remove snippets from blocked files
-	const accessibleSnippets = await filterSnippetsByAccess(filteredSnippets, this.ignoreController)
+	const accessibleSnippets = await filterSnippetsByAccess(filteredSnippets, ignoreController)
 
 	// Convert all snippet filepaths to URIs
 	const snippetsWithUris = accessibleSnippets.map((snippet: any) => ({
@@ -111,7 +115,7 @@ export async function getProcessedSnippets(
 			: vscode.Uri.file(snippet.filepath).toString(),
 	}))
 
-	const workspaceDirs = await this.ide.getWorkspaceDirs()
+	const workspaceDirs = await ide.getWorkspaceDirs()
 
 	return { filepathUri, helper, snippetsWithUris, workspaceDirs }
 }
@@ -134,5 +138,24 @@ export class GhostContextProvider {
 	 */
 	public getIde(): VsCodeIde {
 		return this.ide
+	}
+
+	public async getProcessedSnippets(
+		autocompleteInput: AutocompleteInput,
+		filepath: string,
+	): Promise<{
+		filepathUri: string
+		helper: any
+		snippetsWithUris: AutocompleteSnippet[]
+		workspaceDirs: string[]
+	}> {
+		return getProcessedSnippets(
+			autocompleteInput,
+			filepath,
+			this.contextService,
+			this.model,
+			this.ide,
+			this.ignoreController,
+		)
 	}
 }
