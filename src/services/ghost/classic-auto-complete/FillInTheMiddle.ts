@@ -1,5 +1,5 @@
 import { AutocompleteInput, GhostContextProvider } from "../types"
-import { getProcessedSnippets } from "./GhostContextProvider"
+import { getProcessedSnippets } from "./getProcessedSnippets"
 import { getTemplateForModel } from "../../continuedev/core/autocomplete/templating/AutocompleteTemplate"
 import { GhostModel } from "../GhostModel"
 import { FillInAtCursorSuggestion } from "./HoleFiller"

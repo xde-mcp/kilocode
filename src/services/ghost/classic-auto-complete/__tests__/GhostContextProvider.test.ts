@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { getProcessedSnippets } from "../GhostContextProvider"
+import { getProcessedSnippets } from "../getProcessedSnippets"
 import { AutocompleteInput, GhostContextProvider } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import { GhostModel } from "../../GhostModel"

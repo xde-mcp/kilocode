@@ -9,7 +9,7 @@ import { FillInAtCursorSuggestion } from "../HoleFiller"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
 import * as telemetry from "../AutocompleteTelemetry"
-import * as GhostContextProviderModule from "../GhostContextProvider"
+import * as GhostContextProviderModule from "../getProcessedSnippets"
 
 // Mock RooIgnoreController to prevent vscode.RelativePattern errors
 vi.mock("../../../../core/ignore/RooIgnoreController", () => {

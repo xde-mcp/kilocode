@@ -39,7 +39,7 @@ describe("HoleFiller", () => {
 
 		// Mock the getProcessedSnippets function
 		vi.mock("../GhostContextProvider", async (importOriginal) => {
-			const original = await importOriginal<typeof import("../GhostContextProvider")>()
+			const original = await importOriginal<typeof import("../getProcessedSnippets")>()
 			return {
 				...original,
 				getProcessedSnippets: vi.fn().mockResolvedValue({
@@ -100,7 +100,7 @@ Return the COMPLETION tags`
 			} as any
 
 			// Update the mock for this specific test
-			const { getProcessedSnippets } = await import("../GhostContextProvider")
+			const { getProcessedSnippets } = await import("../getProcessedSnippets")
 			;(getProcessedSnippets as any).mockResolvedValueOnce({
 				filepathUri: "file:///app.ts",
 				helper: {

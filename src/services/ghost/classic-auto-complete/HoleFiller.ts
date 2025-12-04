@@ -1,5 +1,5 @@
 import { AutocompleteInput } from "../types"
-import { GhostContextProvider, getProcessedSnippets } from "./GhostContextProvider"
+import { getProcessedSnippets } from "./getProcessedSnippets"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
 import { GhostModel } from "../GhostModel"
 import { ApiStreamChunk } from "../../../api/transform/stream"
