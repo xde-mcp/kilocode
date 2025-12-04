@@ -11,7 +11,8 @@
     - Tests must be run from inside the correct workspace:
         - Backend tests: `cd src && npx vitest run path/to/test-file` (don't include `src/` in path)
         - UI tests: `cd webview-ui && npx vitest run src/path/to/test-file`
-    - Example: For `src/tests/user.test.ts`, run `cd src && npx vitest run tests/user.test.ts` NOT `npx vitest run src/tests/user.test.ts`
+    - Example: For `src/tests/user.spec.ts`, run `cd src && npx vitest run tests/user.spec.ts` NOT `npx vitest run src/tests/user.spec.ts`
+    - **Test File Naming Convention**: Use `.spec.ts` or `.spec.tsx` for test files, NOT `.test.ts` or `.test.tsx`. This is the project standard.
 
 2. Lint Rules:
 
