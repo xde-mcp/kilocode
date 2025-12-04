@@ -52,31 +52,32 @@ class LocalCefResHandle(val resourceBasePath: String, val request: CefRequest?) 
             }
             
             logger.info("Constructed file path: $filePath")
-            file = File(filePath)
+            var currentFile = File(filePath)
             
             // If file doesn't exist, try alternative paths
-            if (!file!!.exists()) {
+            if (!currentFile.exists()) {
                 if (!requestPath.startsWith("webview-ui/build/")) {
                     val alternativePath = "$resourceBasePath/webview-ui/build/$requestPath"
-                    file = File(alternativePath)
+                    currentFile = File(alternativePath)
                 }
             }
             
-            logger.info("File exists: ${file!!.exists()}, Is file: ${file!!.isFile}, Absolute path: ${file!!.absolutePath}")
+            logger.info("File exists: ${currentFile.exists()}, Is file: ${currentFile.isFile}, Absolute path: ${currentFile.absolutePath}")
 
-            if (file!!.exists() && file!!.isFile) {
+            if (currentFile.exists() && currentFile.isFile) {
                 try {
-                    fileContent = file!!.readBytes()
-                    logger.info("Successfully read file content, size: ${fileContent!!.size} bytes")
+                    fileContent = currentFile.readBytes()
+                    file = currentFile
+                    logger.info("Successfully read file content, size: ${fileContent?.size} bytes")
                 } catch (e: Exception) {
                     logger.error("Failed to read file content", e)
                     file = null
                     fileContent = null
                 }
             } else {
-                logger.warn("File not found or not a file: ${file!!.absolutePath}")
+                logger.warn("File not found or not a file: ${currentFile.absolutePath}")
                 // List directory contents to help debug
-                val parentDir = file!!.parentFile
+                val parentDir = currentFile.parentFile
                 if (parentDir?.exists() == true) {
                     logger.info("Parent directory exists: ${parentDir.absolutePath}")
                     logger.info("Parent directory contents: ${parentDir.listFiles()?.joinToString(", ") { it.name }}")
