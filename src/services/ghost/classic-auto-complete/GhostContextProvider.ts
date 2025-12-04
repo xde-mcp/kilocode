@@ -64,6 +64,58 @@ async function filterSnippetsByAccess(
 	}
 }
 
+export async function getProcessedSnippets(
+	autocompleteInput: AutocompleteInput,
+	filepath: string,
+): Promise<{
+	filepathUri: string
+	helper: any
+	snippetsWithUris: AutocompleteSnippet[]
+	workspaceDirs: string[]
+}> {
+	// Convert filepath to URI if it's not already one
+	const filepathUri = filepath.startsWith("file://") ? filepath : vscode.Uri.file(filepath).toString()
+
+	// Initialize import definitions cache
+	// this looks like a race, but the contextService only prefetches data here; it's not a mode switch.
+	// This odd-looking API seems to be an optimization that's used in continue but not (currently) in our codebase,
+	// continue preloads the tree-sitter parse on text editor tab switch to reduce autocomplete latency.
+	await this.contextService.initializeForFile(filepathUri)
+
+	// Create helper with URI filepath
+	const helperInput = {
+		...autocompleteInput,
+		filepath: filepathUri,
+	}
+
+	const modelName = this.model.getModelName() ?? "codestral"
+	const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, modelName, this.ide)
+
+	const snippetPayload = await getAllSnippetsWithoutRace({
+		helper,
+		ide: this.ide,
+		getDefinitionsFromLsp,
+		contextRetrievalService: this.contextService,
+	})
+
+	const filteredSnippets = getSnippets(helper, snippetPayload)
+
+	// Apply access filtering to remove snippets from blocked files
+	const accessibleSnippets = await filterSnippetsByAccess(filteredSnippets, this.ignoreController)
+
+	// Convert all snippet filepaths to URIs
+	const snippetsWithUris = accessibleSnippets.map((snippet: any) => ({
+		...snippet,
+		filepath: snippet.filepath?.startsWith("file://")
+			? snippet.filepath
+			: vscode.Uri.file(snippet.filepath).toString(),
+	}))
+
+	const workspaceDirs = await this.ide.getWorkspaceDirs()
+
+	return { filepathUri, helper, snippetsWithUris, workspaceDirs }
+}
+
 export class GhostContextProvider {
 	private contextService: ContextRetrievalService
 	private ide: VsCodeIde
@@ -82,57 +134,5 @@ export class GhostContextProvider {
 	 */
 	public getIde(): VsCodeIde {
 		return this.ide
-	}
-
-	public async getProcessedSnippets(
-		autocompleteInput: AutocompleteInput,
-		filepath: string,
-	): Promise<{
-		filepathUri: string
-		helper: any
-		snippetsWithUris: AutocompleteSnippet[]
-		workspaceDirs: string[]
-	}> {
-		// Convert filepath to URI if it's not already one
-		const filepathUri = filepath.startsWith("file://") ? filepath : vscode.Uri.file(filepath).toString()
-
-		// Initialize import definitions cache
-		// this looks like a race, but the contextService only prefetches data here; it's not a mode switch.
-		// This odd-looking API seems to be an optimization that's used in continue but not (currently) in our codebase,
-		// continue preloads the tree-sitter parse on text editor tab switch to reduce autocomplete latency.
-		await this.contextService.initializeForFile(filepathUri)
-
-		// Create helper with URI filepath
-		const helperInput = {
-			...autocompleteInput,
-			filepath: filepathUri,
-		}
-
-		const modelName = this.model.getModelName() ?? "codestral"
-		const helper = await HelperVars.create(helperInput as any, DEFAULT_AUTOCOMPLETE_OPTS, modelName, this.ide)
-
-		const snippetPayload = await getAllSnippetsWithoutRace({
-			helper,
-			ide: this.ide,
-			getDefinitionsFromLsp,
-			contextRetrievalService: this.contextService,
-		})
-
-		const filteredSnippets = getSnippets(helper, snippetPayload)
-
-		// Apply access filtering to remove snippets from blocked files
-		const accessibleSnippets = await filterSnippetsByAccess(filteredSnippets, this.ignoreController)
-
-		// Convert all snippet filepaths to URIs
-		const snippetsWithUris = accessibleSnippets.map((snippet: any) => ({
-			...snippet,
-			filepath: snippet.filepath?.startsWith("file://")
-				? snippet.filepath
-				: vscode.Uri.file(snippet.filepath).toString(),
-		}))
-
-		const workspaceDirs = await this.ide.getWorkspaceDirs()
-
-		return { filepathUri, helper, snippetsWithUris, workspaceDirs }
 	}
 }
