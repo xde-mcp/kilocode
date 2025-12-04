@@ -409,18 +409,18 @@ export class SessionManager {
 
 		this.isSyncing = true
 
+		if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
+			this.logger?.error("SessionManager used before initialization", "SessionManager")
+			return
+		}
+
 		// TODO: logging
-		// TODO: (some) promises should have catches
 
-		try {
-			if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
-				throw new Error("SessionManager used before initialization")
-			}
+		const taskIds = new Set<string>(this.queue.map((item) => item.taskId))
+		const lastItem = this.queue[this.queue.length - 1]
 
-			const taskIds = new Set<string>(this.queue.map((item) => item.taskId))
-			const lastItem = this.queue[this.queue.length - 1]
-
-			for (const taskId of taskIds) {
+		for (const taskId of taskIds) {
+			try {
 				const taskItems = this.queue.filter((item) => item.taskId === taskId)
 				const reversedTaskItems = [...taskItems].reverse()
 
@@ -499,6 +499,11 @@ export class SessionManager {
 								this.queue = this.queue.filter(
 									(item) => item.blobName !== blobName && item.taskId !== taskId,
 								)
+							})
+							.catch((error) => {
+								this.logger?.error("Failed to upload blob", "SessionManager", {
+									error: error instanceof Error ? error.message : String(error),
+								})
 							}),
 					)
 
@@ -531,24 +536,30 @@ export class SessionManager {
 					if (gitStateHash !== this.taskGitHashes[taskId]) {
 						this.taskGitHashes[taskId] = gitStateHash
 
-						blobUploads.push(this.sessionClient.uploadBlob(sessionId, "git_state", gitStateData))
+						blobUploads.push(
+							this.sessionClient.uploadBlob(sessionId, "git_state", gitStateData).catch((error) => {
+								this.logger?.error("Failed to upload git state", "SessionManager", {
+									error: error instanceof Error ? error.message : String(error),
+								})
+							}),
+						)
 					}
 				}
 
 				await Promise.all(blobUploads)
+			} catch (error) {
+				this.logger?.error("Failed to sync session", "SessionManager", {
+					error: error instanceof Error ? error.message : String(error),
+				})
+			} finally {
+				this.isSyncing = false
 			}
+		}
 
-			this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
+		this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
 
-			if (this.lastSessionId) {
-				this.sessionPersistenceManager.setLastSession(this.lastSessionId)
-			}
-		} catch (error) {
-			this.logger?.error("Failed to sync session", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-		} finally {
-			this.isSyncing = false
+		if (this.lastSessionId) {
+			this.sessionPersistenceManager.setLastSession(this.lastSessionId)
 		}
 	}
 
