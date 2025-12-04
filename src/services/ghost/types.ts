@@ -7,9 +7,6 @@ import type {
 	TabAutocompleteOptions as CoreTabAutocompleteOptions,
 } from "../continuedev/core"
 
-// Re-export for convenience
-export type { Position, Range, RangeInFile }
-
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
 	range?: vscode.Range | vscode.Selection
