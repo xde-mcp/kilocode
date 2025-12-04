@@ -1,4 +1,4 @@
-import { AutocompleteInput } from "../types"
+import { AutocompleteInput, GhostContextProvider } from "../types"
 import { getProcessedSnippets } from "./getProcessedSnippets"
 import { formatSnippets } from "../../continuedev/core/autocomplete/templating/formatting"
 import { GhostModel } from "../GhostModel"
