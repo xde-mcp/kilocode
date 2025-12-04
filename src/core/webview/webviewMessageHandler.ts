@@ -3852,9 +3852,7 @@ export const webviewMessageHandler = async (
 					break
 				}
 
-				// Copy session ID to clipboard
-				await vscode.env.clipboard.writeText(sessionService.sessionId)
-				vscode.window.showInformationMessage(`Session ID copied to clipboard: ${sessionService.sessionId}`)
+				vscode.window.showInformationMessage(`Session ID: ${sessionService.sessionId}`)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to copy session ID: ${errorMessage}`)
