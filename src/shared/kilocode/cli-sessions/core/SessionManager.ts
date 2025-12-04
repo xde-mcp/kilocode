@@ -13,12 +13,6 @@ import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
 import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 
-const defaultPaths = {
-	apiConversationHistoryPath: null as null | string,
-	uiMessagesPath: null as null | string,
-	taskMetadataPath: null as null | string,
-}
-
 interface SessionCreatedMessage {
 	sessionId: string
 	timestamp: number
@@ -47,16 +41,17 @@ export class SessionManager {
 		return SessionManager.instance
 	}
 
-	private paths = { ...defaultPaths }
-	public sessionId: string | null = null
 	private workspaceDir: string | null = null
-	private currentTaskId: string | null = null
-	private sessionTitle: string | null = null
-	private sessionGitUrl: string | null = null
+	private taskGitUrls: Record<string, string> = {}
+	private taskGitHashes: Record<string, string> = {}
+	private sessionTitles: Record<string, string> = {}
+
+	public get sessionId() {
+		return this.lastSessionId
+	}
+	private lastSessionId: string | null = null
 
 	private timer: NodeJS.Timeout | null = null
-	private blobHashes = this.createDefaultBlobHashes()
-	private lastSyncedBlobHashes = this.createDefaultBlobHashes()
 	private isSyncing: boolean = false
 
 	private pathProvider: IPathProvider | undefined
@@ -98,14 +93,21 @@ export class SessionManager {
 		}
 	}
 
-	setPath(taskId: string, key: keyof typeof defaultPaths, value: string) {
-		this.currentTaskId = taskId
-		this.paths[key] = value
+	private queue = [] as {
+		taskId: string
+		blobName: string
+		blobPath: string
+	}[]
 
-		const blobKey = this.pathKeyToBlobKey(key)
+	handleFileUpdate(taskId: string, key: string, value: string) {
+		const blobName = this.pathKeyToBlobKey(key)
 
-		if (blobKey) {
-			this.updateBlobHash(blobKey)
+		if (blobName) {
+			this.queue.push({
+				taskId,
+				blobName,
+				blobPath: value,
+			})
 		}
 	}
 
@@ -159,8 +161,6 @@ export class SessionManager {
 				throw new Error("SessionManager used before initialization")
 			}
 
-			this.sessionId = sessionId
-			this.resetBlobHashes()
 			this.isSyncing = true
 
 			const session = (await this.sessionClient.get({
@@ -172,8 +172,6 @@ export class SessionManager {
 				this.logger?.error("Failed to obtain session", "SessionManager", { sessionId })
 				throw new Error("Failed to obtain session")
 			}
-
-			this.sessionTitle = session.title
 
 			const sessionDirectoryPath = path.join(this.pathProvider.getTasksDir(), sessionId)
 
@@ -273,7 +271,7 @@ export class SessionManager {
 
 			this.logger?.info("Switched to restored task", "SessionManager", { sessionId })
 
-			this.sessionPersistenceManager.setLastSession(this.sessionId)
+			this.sessionPersistenceManager.setLastSession(sessionId)
 
 			this.onSessionRestored?.()
 
@@ -283,11 +281,6 @@ export class SessionManager {
 				error: error instanceof Error ? error.message : String(error),
 				sessionId,
 			})
-
-			this.sessionId = null
-			this.sessionTitle = null
-			this.sessionGitUrl = null
-			this.resetBlobHashes()
 
 			if (rethrowError) {
 				throw error
@@ -302,13 +295,12 @@ export class SessionManager {
 			throw new Error("SessionManager used before initialization")
 		}
 
-		const sessionIdToShare = sessionId || this.sessionId
-		if (!sessionIdToShare) {
+		if (!sessionId) {
 			throw new Error("No active session")
 		}
 
 		return await this.sessionClient.share({
-			session_id: sessionIdToShare,
+			session_id: sessionId,
 			shared_state: CliSessionSharedState.Public,
 		})
 	}
@@ -331,8 +323,6 @@ export class SessionManager {
 			session_id: sessionId,
 			title: trimmedTitle,
 		})
-
-		this.sessionTitle = trimmedTitle
 
 		this.logger?.info("Session renamed successfully", "SessionManager", {
 			sessionId,
@@ -401,299 +391,165 @@ export class SessionManager {
 		}
 	}
 
-	async destroy() {
-		this.logger?.debug("Destroying SessionManager", "SessionManager", {
-			sessionId: this.sessionId,
-			isSyncing: this.isSyncing,
-			currentTaskId: this.currentTaskId,
-		})
-
-		if (this.timer) {
-			clearInterval(this.timer)
-			this.timer = null
-		}
-
-		if (this.sessionId) {
-			if (this.isSyncing) {
-				await new Promise((r) => setTimeout(r, 2000))
-			} else {
-				await this.syncSession(true)
-			}
-		}
-
-		this.paths = { ...defaultPaths }
-		this.sessionId = null
-		this.currentTaskId = null
-		this.sessionTitle = null
-		this.sessionGitUrl = null
-		this.isSyncing = false
-
-		this.logger?.debug("SessionManager flushed", "SessionManager")
-
-		if (!this.timer) {
-			this.timer = setInterval(() => {
-				this.syncSession()
-			}, SessionManager.SYNC_INTERVAL)
-		}
-	}
-
 	private async syncSession(force = false) {
 		if (!force) {
 			if (this.isSyncing) {
 				return
 			}
+		}
 
-			if (Object.values(this.paths).every((item) => !item)) {
-				return
-			}
-
-			if (!this.hasAnyBlobChanged()) {
-				return
-			}
+		if (this.queue.length === 0) {
+			return
 		}
 
 		if (process.env.KILO_DISABLE_SESSIONS) {
+			this.queue = []
 			return
 		}
 
 		this.isSyncing = true
-		// capture the sessionId at the start of the sync
-		let capturedSessionId = this.sessionId
+
+		// TODO: logging
+		// TODO: (some) promises should have catches
 
 		try {
 			if (!this.platform || !this.sessionClient || !this.sessionPersistenceManager) {
 				throw new Error("SessionManager used before initialization")
 			}
 
-			const rawPayload = this.readPaths()
+			const taskIds = new Set<string>(this.queue.map((item) => item.taskId))
+			const lastItem = this.queue[this.queue.length - 1]
 
-			if (Object.values(rawPayload).every((item) => !item)) {
-				this.isSyncing = false
+			for (const taskId of taskIds) {
+				const taskItems = this.queue.filter((item) => item.taskId === taskId)
+				const reversedTaskItems = [...taskItems].reverse()
 
-				return
-			}
+				const basePayload: Omit<
+					Parameters<NonNullable<typeof this.sessionClient>["create"]>[0],
+					"created_on_platform"
+				> = {}
 
-			const basePayload: Omit<
-				Parameters<NonNullable<typeof this.sessionClient>["create"]>[0],
-				"created_on_platform"
-			> = {}
+				let gitInfo: Awaited<ReturnType<typeof this.getGitState>> | null = null
+				try {
+					gitInfo = await this.getGitState()
+					if (gitInfo?.repoUrl) {
+						basePayload.git_url = gitInfo.repoUrl
 
-			let gitInfo: Awaited<ReturnType<typeof this.getGitState>> | null = null
-
-			try {
-				gitInfo = await this.getGitState()
-
-				if (gitInfo?.repoUrl) {
-					basePayload.git_url = gitInfo.repoUrl
+						this.taskGitUrls[taskId] = gitInfo.repoUrl
+					}
+				} catch (error) {
+					this.logger?.debug("Could not get git state", "SessionManager", {
+						error: error instanceof Error ? error.message : String(error),
+					})
 				}
-			} catch (error) {
-				this.logger?.debug("Could not get git state", "SessionManager", {
-					error: error instanceof Error ? error.message : String(error),
-				})
-			}
 
-			if (!capturedSessionId && this.currentTaskId) {
-				const existingSessionId = this.sessionPersistenceManager.getSessionForTask(this.currentTaskId)
+				let sessionId = this.sessionPersistenceManager.getSessionForTask(taskId)
 
-				if (existingSessionId) {
-					this.sessionId = existingSessionId
-					capturedSessionId = existingSessionId
-				}
-			}
+				if (sessionId) {
+					const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.taskGitUrls[taskId]
 
-			if (capturedSessionId) {
-				const gitUrlChanged = gitInfo?.repoUrl && gitInfo.repoUrl !== this.sessionGitUrl
-
-				if (gitUrlChanged) {
-					await this.sessionClient.update({
-						session_id: capturedSessionId,
+					if (gitUrlChanged) {
+						await this.sessionClient.update({
+							session_id: sessionId,
+							...basePayload,
+						})
+					}
+				} else {
+					const createdSession = await this.sessionClient.create({
 						...basePayload,
+						created_on_platform: process.env.KILO_PLATFORM || this.platform,
 					})
 
-					this.sessionGitUrl = gitInfo?.repoUrl || null
+					sessionId = createdSession.session_id
 
-					this.logger?.debug("Session updated successfully", "SessionManager", {
-						sessionId: capturedSessionId,
+					this.sessionPersistenceManager.setSessionForTask(taskId, createdSession.session_id)
+
+					this.onSessionCreated?.({
+						timestamp: Date.now(),
+						event: "session_created",
+						sessionId: createdSession.session_id,
 					})
 				}
-			} else {
-				this.logger?.debug("Creating new session", "SessionManager")
 
-				if (rawPayload.uiMessagesPath) {
-					const title = this.getFirstMessageText(rawPayload.uiMessagesPath as ClineMessage[], true)
+				if (!sessionId) {
+					// this should never happen
+					continue
+				}
 
-					if (title) {
-						basePayload.title = title
+				const blobNames = new Set(taskItems.map((item) => item.blobName))
+				const blobUploads: Promise<unknown>[] = []
+
+				for (const blobName of blobNames) {
+					const lastBlobItem = reversedTaskItems.find((item) => item.blobName === blobName)
+
+					if (!lastBlobItem) {
+						// this should also never happen
+						// famous last words
+						continue
+					}
+
+					blobUploads.push(
+						this.sessionClient
+							.uploadBlob(
+								sessionId,
+								lastBlobItem.blobName as Parameters<typeof this.sessionClient.uploadBlob>[1],
+								JSON.parse(readFileSync(lastBlobItem.blobPath, "utf-8")),
+							)
+							.then(() => {
+								this.queue = this.queue.filter(
+									(item) => item.blobName !== blobName && item.taskId !== taskId,
+								)
+							}),
+					)
+
+					if (blobName === "uiMessages" && !this.sessionTitles[sessionId]) {
+						this.sessionClient
+							.get({
+								session_id: sessionId,
+							})
+							.then((session) => {
+								if (session.title) {
+									this.sessionTitles[sessionId] = session.title
+
+									return
+								} else {
+									return this.generateTitle(JSON.parse(readFileSync(lastBlobItem.blobPath, "utf-8")))
+								}
+							})
 					}
 				}
 
-				const session = await this.sessionClient.create({
-					...basePayload,
-					created_on_platform: process.env.KILO_PLATFORM || this.platform,
-				})
+				if (gitInfo) {
+					const gitStateData = {
+						head: gitInfo.head,
+						patch: gitInfo.patch,
+						branch: gitInfo.branch,
+					}
 
-				this.sessionId = session.session_id
-				capturedSessionId = session.session_id
+					const gitStateHash = this.hashGitState(gitStateData)
 
-				this.sessionGitUrl = gitInfo?.repoUrl || null
+					if (gitStateHash !== this.taskGitHashes[taskId]) {
+						this.taskGitHashes[taskId] = gitStateHash
 
-				this.logger?.info("Session created successfully", "SessionManager", { sessionId: capturedSessionId })
-
-				this.sessionPersistenceManager.setLastSession(capturedSessionId)
-
-				this.onSessionCreated?.({
-					timestamp: Date.now(),
-					event: "session_created",
-					sessionId: capturedSessionId,
-				})
-			}
-
-			if (this.currentTaskId) {
-				this.sessionPersistenceManager.setSessionForTask(this.currentTaskId, capturedSessionId)
-			}
-
-			const blobUploads: Array<Promise<void>> = []
-
-			if (rawPayload.apiConversationHistoryPath && this.hasBlobChanged("apiConversationHistory")) {
-				blobUploads.push(
-					this.sessionClient
-						.uploadBlob(
-							capturedSessionId,
-							"api_conversation_history",
-							rawPayload.apiConversationHistoryPath,
-						)
-						.then(() => {
-							this.markBlobSynced("apiConversationHistory")
-							this.logger?.debug("Uploaded api_conversation_history blob", "SessionManager")
-						})
-						.catch((error) => {
-							this.logger?.error("Failed to upload api_conversation_history blob", "SessionManager", {
-								error: error instanceof Error ? error.message : String(error),
-							})
-						}),
-				)
-			}
-
-			if (rawPayload.taskMetadataPath && this.hasBlobChanged("taskMetadata")) {
-				blobUploads.push(
-					this.sessionClient
-						.uploadBlob(capturedSessionId, "task_metadata", rawPayload.taskMetadataPath)
-						.then(() => {
-							this.markBlobSynced("taskMetadata")
-							this.logger?.debug("Uploaded task_metadata blob", "SessionManager")
-						})
-						.catch((error) => {
-							this.logger?.error("Failed to upload task_metadata blob", "SessionManager", {
-								error: error instanceof Error ? error.message : String(error),
-							})
-						}),
-				)
-			}
-
-			if (rawPayload.uiMessagesPath && this.hasBlobChanged("uiMessages")) {
-				blobUploads.push(
-					this.sessionClient
-						.uploadBlob(capturedSessionId, "ui_messages", rawPayload.uiMessagesPath)
-						.then(() => {
-							this.markBlobSynced("uiMessages")
-							this.logger?.debug("Uploaded ui_messages blob", "SessionManager")
-						})
-						.catch((error) => {
-							this.logger?.error("Failed to upload ui_messages blob", "SessionManager", {
-								error: error instanceof Error ? error.message : String(error),
-							})
-						}),
-				)
-			}
-
-			if (gitInfo) {
-				const gitStateData = {
-					head: gitInfo.head,
-					patch: gitInfo.patch,
-					branch: gitInfo.branch,
-				}
-
-				const gitStateHash = this.hashGitState(gitStateData)
-
-				if (gitStateHash !== this.blobHashes.gitState) {
-					this.blobHashes.gitState = gitStateHash
-
-					if (this.hasBlobChanged("gitState")) {
-						blobUploads.push(
-							this.sessionClient
-								.uploadBlob(capturedSessionId, "git_state", gitStateData)
-								.then(() => {
-									this.markBlobSynced("gitState")
-									this.logger?.debug("Uploaded git_state blob", "SessionManager")
-								})
-								.catch((error) => {
-									this.logger?.error("Failed to upload git_state blob", "SessionManager", {
-										error: error instanceof Error ? error.message : String(error),
-									})
-								}),
-						)
+						blobUploads.push(this.sessionClient.uploadBlob(sessionId, "git_state", gitStateData))
 					}
 				}
+
+				await Promise.all(blobUploads)
 			}
 
-			await Promise.all(blobUploads)
+			this.lastSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
 
-			if (!this.sessionTitle && rawPayload.uiMessagesPath) {
-				this.generateTitle(rawPayload.uiMessagesPath as ClineMessage[])
-					.then((generatedTitle) => {
-						if (capturedSessionId && generatedTitle) {
-							return this.renameSession(capturedSessionId, generatedTitle)
-						}
-
-						return null
-					})
-					.catch((error) => {
-						this.logger?.warn("Failed to generate session title", "SessionManager", {
-							error: error instanceof Error ? error.message : String(error),
-						})
-					})
+			if (this.lastSessionId) {
+				this.sessionPersistenceManager.setLastSession(this.lastSessionId)
 			}
 		} catch (error) {
 			this.logger?.error("Failed to sync session", "SessionManager", {
 				error: error instanceof Error ? error.message : String(error),
-				sessionId: capturedSessionId,
-				hasApiHistory: !!this.paths.apiConversationHistoryPath,
-				hasUiMessages: !!this.paths.uiMessagesPath,
-				hasTaskMetadata: !!this.paths.taskMetadataPath,
 			})
 		} finally {
 			this.isSyncing = false
 		}
-	}
-
-	private readPath(path: string) {
-		try {
-			const content = readFileSync(path, "utf-8")
-			try {
-				return JSON.parse(content)
-			} catch {
-				return undefined
-			}
-		} catch {
-			return undefined
-		}
-	}
-
-	private readPaths() {
-		const contents: Partial<Record<keyof typeof this.paths, unknown>> = {}
-
-		for (const [key, value] of Object.entries(this.paths)) {
-			if (!value) {
-				continue
-			}
-
-			const content = this.readPath(value)
-			if (content !== undefined) {
-				contents[key as keyof typeof this.paths] = content
-			}
-		}
-
-		return contents
 	}
 
 	private async fetchBlobFromSignedUrl(url: string, urlType: string) {
@@ -721,7 +577,7 @@ export class SessionManager {
 		}
 	}
 
-	private pathKeyToBlobKey(pathKey: keyof typeof defaultPaths) {
+	private pathKeyToBlobKey(pathKey: string) {
 		switch (pathKey) {
 			case "apiConversationHistoryPath":
 				return "apiConversationHistory"
@@ -734,45 +590,10 @@ export class SessionManager {
 		}
 	}
 
-	private updateBlobHash(blobKey: keyof typeof this.blobHashes) {
-		this.blobHashes[blobKey] = crypto.randomUUID()
-	}
-
-	private hasBlobChanged(blobKey: keyof typeof this.blobHashes) {
-		return this.blobHashes[blobKey] !== this.lastSyncedBlobHashes[blobKey]
-	}
-
-	private hasAnyBlobChanged() {
-		return (
-			this.hasBlobChanged("apiConversationHistory") ||
-			this.hasBlobChanged("uiMessages") ||
-			this.hasBlobChanged("taskMetadata") ||
-			this.hasBlobChanged("gitState")
-		)
-	}
-
-	private markBlobSynced(blobKey: keyof typeof this.blobHashes) {
-		this.lastSyncedBlobHashes[blobKey] = this.blobHashes[blobKey]
-	}
-
 	private hashGitState(
 		gitState: Pick<NonNullable<Awaited<ReturnType<typeof this.getGitState>>>, "head" | "patch" | "branch">,
 	) {
 		return createHash("sha256").update(JSON.stringify(gitState)).digest("hex")
-	}
-
-	private createDefaultBlobHashes() {
-		return {
-			apiConversationHistory: "",
-			uiMessages: "",
-			taskMetadata: "",
-			gitState: "",
-		}
-	}
-
-	private resetBlobHashes() {
-		this.blobHashes = this.createDefaultBlobHashes()
-		this.lastSyncedBlobHashes = this.createDefaultBlobHashes()
 	}
 
 	private async getGitState() {
@@ -990,10 +811,6 @@ export class SessionManager {
 
 		if (!rawText) {
 			return null
-		}
-
-		if (rawText.length <= 140) {
-			return rawText
 		}
 
 		try {

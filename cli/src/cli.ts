@@ -323,8 +323,6 @@ export class CLI {
 		try {
 			logs.info("Disposing Kilo Code CLI...", "CLI")
 
-			await this.sessionService?.destroy()
-
 			// Signal codes take precedence over CI logic
 			if (signal === "SIGINT") {
 				exitCode = 130
