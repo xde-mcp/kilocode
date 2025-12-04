@@ -71,9 +71,8 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		if (verbosity) {
 			betas.push("effort-2025-11-24")
 		}
-		const tools = (metadata?.tools ?? []).length > 0 ? convertOpenAIToolsToAnthropic(metadata?.tools) : undefined
-		const tool_choice = (tools ?? []).length > 0 ? { type: "auto" as const } : undefined
 		// kilocode_change end
+
 		// Prepare native tool parameters if tools are provided and protocol is not XML
 		// Also exclude tools when tool_choice is "none" since that means "don't use tools"
 		const shouldIncludeNativeTools =
@@ -145,8 +144,6 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 						}),
 						stream: true,
 						// kilocode_change start
-						tools,
-						tool_choice,
 						...(verbosity
 							? {
 									output_config: {
@@ -192,10 +189,6 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 					system: [{ text: systemPrompt, type: "text" }],
 					messages: sanitizedMessages,
 					stream: true,
-					// kilocode_change start
-					tools,
-					tool_choice,
-					// kilocode_change end
 					...nativeToolParams,
 				}) // kilocode_change removed: as any
 				break
