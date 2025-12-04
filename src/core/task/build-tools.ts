@@ -1,8 +1,9 @@
 import type OpenAI from "openai"
-import type { ProviderSettings, ModeConfig } from "@roo-code/types"
+import type { ProviderSettings, ModeConfig, ModelInfo } from "@roo-code/types" // kilocode_change
 import type { ClineProvider } from "../webview/ClineProvider"
 import { getNativeTools, getMcpServerTools } from "../prompts/tools/native-tools"
 import { filterNativeToolsForMode, filterMcpToolsForMode } from "../prompts/tools/filter-tools-for-mode"
+import type { ClineProviderState } from "../webview/ClineProvider" // kilocode_change
 
 interface BuildToolsOptions {
 	provider: ClineProvider
@@ -13,6 +14,10 @@ interface BuildToolsOptions {
 	apiConfiguration: ProviderSettings | undefined
 	maxReadFileLine: number
 	browserToolEnabled: boolean
+	// kilocode_change start
+	state?: ClineProviderState
+	modelInfo?: ModelInfo
+	// kilocode_change end
 }
 
 /**
@@ -52,6 +57,10 @@ export async function buildNativeToolsArray(options: BuildToolsOptions): Promise
 		experiments,
 		codeIndexManager,
 		filterSettings,
+		// kilocode_change start
+		options.state,
+		options.modelInfo,
+		// kilocode_change end
 		mcpHub,
 	)
 
