@@ -127,16 +127,6 @@ export function extractPrefixSuffix(
 }
 
 /**
- * Convert VSCode Position to our Position type
- */
-export function vscodePositionToPosition(pos: vscode.Position): Position {
-	return {
-		line: pos.line,
-		character: pos.character,
-	}
-}
-
-/**
  * Convert GhostSuggestionContext to AutocompleteInput
  */
 export function contextToAutocompleteInput(context: GhostSuggestionContext): AutocompleteInput {
@@ -151,7 +141,7 @@ export function contextToAutocompleteInput(context: GhostSuggestionContext): Aut
 		isUntitledFile: context.document.isUntitled,
 		completionId: crypto.randomUUID(),
 		filepath: context.document.uri.fsPath,
-		pos: vscodePositionToPosition(position),
+		pos: { line: position.line, character: position.character },
 		recentlyVisitedRanges,
 		recentlyEditedRanges,
 		manuallyPassFileContents: undefined,
