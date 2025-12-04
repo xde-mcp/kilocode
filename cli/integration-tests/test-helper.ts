@@ -285,7 +285,6 @@ export class TestRig {
 			// Keep colors so we can see the logo properly
 			FORCE_COLOR: "1",
 			KILO_EPHEMERAL_MODE: "true",
-			// Disable session creation during integration tests
 			KILO_DISABLE_SESSIONS: "true",
 			KILO_PROVIDER_TYPE: "kilocode",
 			KILOCODE_MODEL: "anthropic/claude-sonnet-4.5",
