@@ -761,17 +761,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			const reasoningSummary = handler.getSummary?.()
 			const reasoningDetails = handler.getReasoningDetails?.()
 
-			// If we have encrypted_content, add it as a reasoning item before the assistant message
-			if (reasoningData?.encrypted_content) {
-				this.apiConversationHistory.push({
-					type: "reasoning",
-					summary: [],
-					encrypted_content: reasoningData.encrypted_content,
-					...(reasoningData.id ? { id: reasoningData.id } : {}),
-					ts: Date.now(),
-				} as any)
-			}
-
 			// kilocode_change start: prevent consecutive same-role messages, this happens when returning from subtask
 			const lastMessage = this.apiConversationHistory.at(-1)
 			if (lastMessage && lastMessage.role === message.role) {
