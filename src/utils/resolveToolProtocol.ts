@@ -26,6 +26,12 @@ export function resolveToolProtocol(providerSettings: ProviderSettings, modelInf
 		return providerSettings.toolProtocol
 	}
 
+	// kilocode_change start: old setting name, TODO: write migration so this setting can eventually be deleted in favor of toolProtocol
+	if (providerSettings.toolStyle) {
+		return providerSettings.toolStyle === "json" ? TOOL_PROTOCOL.NATIVE : TOOL_PROTOCOL.XML
+	}
+	// kilocode_change end
+
 	// 2. Model Default - model's preferred protocol
 	if (modelInfo?.defaultToolProtocol) {
 		return modelInfo.defaultToolProtocol
