@@ -147,11 +147,6 @@ export default defineConfig(({ mode }) => {
 						if (assetInfo.name && assetInfo.name.endsWith(".map")) {
 							return "assets/[name]"
 						}
-						// kilocode_change start - CSS files handled by cssPerEntryPlugin
-						if (assetInfo.name && assetInfo.name.endsWith(".css")) {
-							return "assets/[name]-[hash].css"
-						}
-						// kilocode_change end
 						return "assets/[name][extname]"
 					},
 					manualChunks: (id, { getModuleInfo }) => {
