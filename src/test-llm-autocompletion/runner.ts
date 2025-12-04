@@ -2,9 +2,7 @@
 
 import fs from "fs"
 import path from "path"
-import { LLMClient } from "./llm-client.js"
-import { HoleFillerTester } from "./hole-filler-tester.js"
-import { FimTester } from "./fim-tester.js"
+import { GhostProviderTester } from "./ghost-provider-tester.js"
 import { testCases, getCategories, TestCase } from "./test-cases.js"
 import { checkApproval } from "./approvals.js"
 
@@ -20,19 +18,15 @@ interface TestResult {
 }
 
 export class TestRunner {
-	private llmClient: LLMClient
-	private tester: HoleFillerTester | FimTester
+	private tester: GhostProviderTester
 	private verbose: boolean
 	private results: TestResult[] = []
 	private skipApproval: boolean
-	private useFim: boolean
 
-	constructor(verbose: boolean = false, skipApproval: boolean = false, useFim: boolean = false) {
+	constructor(verbose: boolean = false, skipApproval: boolean = false) {
 		this.verbose = verbose
 		this.skipApproval = skipApproval
-		this.useFim = useFim
-		this.llmClient = new LLMClient(useFim)
-		this.tester = useFim ? new FimTester(this.llmClient) : new HoleFillerTester(this.llmClient)
+		this.tester = new GhostProviderTester()
 	}
 
 	async runTest(testCase: TestCase): Promise<TestResult> {
@@ -88,9 +82,9 @@ export class TestRunner {
 
 	async runAllTests(): Promise<void> {
 		console.log("\n🚀 Starting LLM Autocompletion Tests\n")
-		console.log("Provider:", this.llmClient["provider"])
-		console.log("Model:", this.llmClient["model"])
-		console.log("Strategy:", this.useFim ? "FIM" : "HoleFiller")
+		console.log("Provider: kilocode")
+		console.log("Model:", process.env.LLM_MODEL || "mistralai/codestral-2508")
+		console.log("Strategy: GhostInlineCompletionProvider")
 		if (this.skipApproval) {
 			console.log("Skip Approval: enabled (tests will fail if not already approved)")
 		}
@@ -162,6 +156,7 @@ export class TestRunner {
 			}
 		}
 
+		this.tester.dispose()
 		this.printSummary()
 	}
 
@@ -244,6 +239,15 @@ export class TestRunner {
 			for (const result of unknownResults) {
 				console.log(`  • ${result.testCase.name} (${result.testCase.category})`)
 			}
+		}
+
+		// Print cost stats
+		const costStats = this.tester.getCostStats()
+		if (costStats.totalCost > 0 || costStats.totalInputTokens > 0) {
+			console.log("\n💰 Cost Statistics:")
+			console.log(`  Total Cost: $${costStats.totalCost.toFixed(6)}`)
+			console.log(`  Total Input Tokens: ${costStats.totalInputTokens}`)
+			console.log(`  Total Output Tokens: ${costStats.totalOutputTokens}`)
 		}
 
 		console.log("\n" + "═".repeat(80) + "\n")
@@ -339,8 +343,18 @@ export class TestRunner {
 			console.log("  " + "─".repeat(78))
 		}
 
+		// Print cost stats
+		const costStats = this.tester.getCostStats()
+		if (costStats.totalCost > 0 || costStats.totalInputTokens > 0) {
+			console.log("\n💰 Cost Statistics:")
+			console.log(`  Total Cost: $${costStats.totalCost.toFixed(6)}`)
+			console.log(`  Total Input Tokens: ${costStats.totalInputTokens}`)
+			console.log(`  Total Output Tokens: ${costStats.totalOutputTokens}`)
+		}
+
 		console.log("\n" + "═".repeat(80) + "\n")
 
+		this.tester.dispose()
 		process.exit(passedRuns === numRuns ? 0 : 1)
 	}
 
@@ -405,11 +419,10 @@ async function main() {
 	const args = process.argv.slice(2)
 	const verbose = args.includes("--verbose") || args.includes("-v")
 	const skipApproval = args.includes("--skip-approval") || args.includes("-sa")
-	const useFim = args.includes("--fim")
 
 	const command = args.find((arg) => !arg.startsWith("-"))
 
-	const runner = new TestRunner(verbose, skipApproval, useFim)
+	const runner = new TestRunner(verbose, skipApproval)
 
 	try {
 		if (command === "clean") {
