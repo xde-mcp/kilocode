@@ -1,13 +1,9 @@
 import { SessionManager, SessionManagerDependencies } from "../SessionManager"
 import { SessionClient, CliSessionSharedState, SessionWithSignedUrls } from "../SessionClient"
 import { SessionPersistenceManager } from "../../utils/SessionPersistenceManager"
-import { TrpcClient } from "../TrpcClient"
-import type { IPathProvider } from "../../types/IPathProvider"
-import type { ILogger } from "../../types/ILogger"
-import type { IExtensionMessenger } from "../../types/IExtensionMessenger"
 import type { ITaskDataProvider } from "../../types/ITaskDataProvider"
 import type { ClineMessage } from "@roo-code/types"
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "fs"
+import { readFileSync, writeFileSync, mkdirSync } from "fs"
 
 vi.mock("fs", () => ({
 	readFileSync: vi.fn(),

@@ -610,7 +610,7 @@ export class SessionManager {
 										generatedTitle,
 									})
 								} catch (error) {
-									this.logger?.error("Failed to get session", "SessionManager", {
+									this.logger?.error("Failed to generate session title", "SessionManager", {
 										sessionId,
 										error: error instanceof Error ? error.message : String(error),
 									})
