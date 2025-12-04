@@ -1,9 +1,25 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, ResponseMetaData } from "../types"
-import { GhostContextProvider } from "./GhostContextProvider"
-import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
-import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
+import {
+	extractPrefixSuffix,
+	GhostSuggestionContext,
+	contextToAutocompleteInput,
+	GhostContextProvider,
+	FillInAtCursorSuggestion,
+	FimGhostPrompt,
+	HoleFillerGhostPrompt,
+	GhostPrompt,
+	MatchingSuggestionResult,
+	CostTrackingCallback,
+	LLMRetrievalResult,
+	PendingRequest,
+	AutocompleteContext,
+	CacheMatchType,
+} from "../types"
+import { HoleFiller } from "./HoleFiller"
+import { FimPromptBuilder } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
+import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
@@ -11,22 +27,11 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
 import * as telemetry from "./AutocompleteTelemetry"
-import type { AutocompleteContext, CacheMatchType } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
 
-export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
-
-export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
-
-/**
- * Result of finding a matching suggestion, includes the match type for telemetry
- */
-export interface MatchingSuggestionResult {
-	text: string
-	matchType: CacheMatchType
-}
+export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix
@@ -98,23 +103,6 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 	return [item]
 }
 
-export interface LLMRetrievalResult extends ResponseMetaData {
-	suggestion: FillInAtCursorSuggestion
-}
-
-/**
- * Represents a pending/in-flight request that can be reused if the user
- * continues typing in a way that's compatible with the pending completion.
- */
-interface PendingRequest {
-	/** The prefix that was used to start this request */
-	prefix: string
-	/** The suffix that was used to start this request */
-	suffix: string
-	/** Promise that resolves when the request completes */
-	promise: Promise<void>
-}
-
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	private suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
@@ -149,11 +137,17 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return ignoreController
 		})()
 
-		const contextProvider = new GhostContextProvider(context, model, this.ignoreController)
+		const ide = new VsCodeIde(context)
+		const contextService = new ContextRetrievalService(ide)
+		const contextProvider: GhostContextProvider = {
+			ide,
+			contextService,
+			model,
+			ignoreController: this.ignoreController,
+		}
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
-		const ide = contextProvider.getIde()
 		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
