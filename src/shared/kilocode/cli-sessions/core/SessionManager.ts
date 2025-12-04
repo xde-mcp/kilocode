@@ -426,7 +426,6 @@ export class SessionManager {
 		this.currentTaskId = null
 		this.sessionTitle = null
 		this.sessionGitUrl = null
-		this.workspaceDir = null
 		this.isSyncing = false
 
 		this.logger?.debug("SessionManager flushed", "SessionManager")
