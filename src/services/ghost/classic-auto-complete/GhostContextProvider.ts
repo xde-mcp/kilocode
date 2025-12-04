@@ -126,18 +126,3 @@ export interface GhostContextProvider {
 	model: GhostModel
 	ignoreController?: Promise<RooIgnoreController>
 }
-
-export function createGhostContextProvider(
-	context: vscode.ExtensionContext,
-	model: GhostModel,
-	ignoreController?: Promise<RooIgnoreController>,
-): GhostContextProvider {
-	const ide = new VsCodeIde(context)
-	const contextService = new ContextRetrievalService(ide)
-	return {
-		ide,
-		contextService,
-		model,
-		ignoreController,
-	}
-}

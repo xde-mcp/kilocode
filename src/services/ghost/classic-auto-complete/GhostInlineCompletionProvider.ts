@@ -1,9 +1,11 @@
 import * as vscode from "vscode"
 import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
-import { createGhostContextProvider } from "./GhostContextProvider"
+import { GhostContextProvider } from "./GhostContextProvider"
 import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
 import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
+import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
@@ -154,12 +156,19 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return ignoreController
 		})()
 
-		const contextProvider = createGhostContextProvider(context, model, this.ignoreController)
+		const ide = new VsCodeIde(context)
+		const contextService = new ContextRetrievalService(ide)
+		const contextProvider: GhostContextProvider = {
+			ide,
+			contextService,
+			model,
+			ignoreController: this.ignoreController,
+		}
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
-		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(contextProvider.ide)
-		this.recentlyEditedTracker = new RecentlyEditedTracker(contextProvider.ide)
+		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
+		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
 			telemetry.captureAcceptSuggestion(),

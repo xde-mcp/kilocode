@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { createGhostContextProvider, getProcessedSnippets, GhostContextProvider } from "../GhostContextProvider"
+import { getProcessedSnippets, GhostContextProvider } from "../GhostContextProvider"
 import { AutocompleteInput } from "../../types"
 import { AutocompleteSnippetType } from "../../../continuedev/core/autocomplete/snippets/types"
 import { GhostModel } from "../../GhostModel"
 import { RooIgnoreController } from "../../../../core/ignore/RooIgnoreController"
 import * as vscode from "vscode"
 import crypto from "crypto"
+import { ContextRetrievalService } from "../../../continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "../../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 
 vi.mock("vscode", () => ({
 	Uri: {
@@ -84,19 +86,11 @@ function createAutocompleteInput(filepath: string = "/test.ts"): AutocompleteInp
 
 describe("GhostContextProvider", () => {
 	let contextProvider: GhostContextProvider
-	let mockContext: vscode.ExtensionContext
 	let mockModel: GhostModel
 	let mockIgnoreController: Promise<RooIgnoreController> | undefined
 
 	beforeEach(() => {
 		vi.clearAllMocks()
-		mockContext = {
-			subscriptions: [],
-			globalState: {
-				get: vi.fn(),
-				update: vi.fn(),
-			},
-		} as any
 
 		mockModel = {
 			getModelName: vi.fn().mockReturnValue("codestral"),
@@ -104,7 +98,15 @@ describe("GhostContextProvider", () => {
 
 		mockIgnoreController = undefined
 
-		contextProvider = createGhostContextProvider(mockContext, mockModel, mockIgnoreController)
+		// Create the context provider object directly using mocked dependencies
+		const ide = new VsCodeIde({} as any)
+		const contextService = new ContextRetrievalService(ide)
+		contextProvider = {
+			ide,
+			contextService,
+			model: mockModel,
+			ignoreController: mockIgnoreController,
+		}
 	})
 
 	describe("getProcessedSnippets", () => {
@@ -252,7 +254,15 @@ describe("GhostContextProvider", () => {
 
 			mockIgnoreController = Promise.resolve(mockController)
 
-			contextProvider = createGhostContextProvider(mockContext, mockModel, mockIgnoreController)
+			// Create the context provider object directly using mocked dependencies
+			const ide = new VsCodeIde({} as any)
+			const contextService = new ContextRetrievalService(ide)
+			contextProvider = {
+				ide,
+				contextService,
+				model: mockModel,
+				ignoreController: mockIgnoreController,
+			}
 		})
 
 		it("should filter out blocked files", async () => {
@@ -375,7 +385,14 @@ describe("GhostContextProvider", () => {
 
 		it("should allow all files when no ignore controller is provided", async () => {
 			// Create provider without ignore controller
-			contextProvider = createGhostContextProvider(mockContext, mockModel)
+			const ide = new VsCodeIde({} as any)
+			const contextService = new ContextRetrievalService(ide)
+			contextProvider = {
+				ide,
+				contextService,
+				model: mockModel,
+				ignoreController: undefined,
+			}
 
 			const { getAllSnippetsWithoutRace } = await import(
 				"../../../continuedev/core/autocomplete/snippets/getAllSnippets"

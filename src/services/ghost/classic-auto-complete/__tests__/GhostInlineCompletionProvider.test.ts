@@ -583,28 +583,7 @@ describe("GhostInlineCompletionProvider", () => {
 			languageModelAccessInformation: {} as any,
 		} as unknown as vscode.ExtensionContext
 
-		// Mock createGhostContextProvider to return a mock context provider
-		const mockIde = {
-			getWorkspaceDirs: vi.fn().mockResolvedValue([]),
-			getOpenFiles: vi.fn().mockResolvedValue([]),
-			readFile: vi.fn().mockResolvedValue(""),
-		}
-
-		const mockContextService = {
-			initializeForFile: vi.fn().mockResolvedValue(undefined),
-		}
-
-		const mockGhostModel = {
-			getModelName: vi.fn().mockReturnValue("codestral"),
-		}
-
-		vi.spyOn(GhostContextProviderModule, "createGhostContextProvider").mockReturnValue({
-			ide: mockIde as any,
-			contextService: mockContextService as any,
-			model: mockGhostModel as any,
-			ignoreController: undefined,
-		})
-
+		// Mock getProcessedSnippets to return test data
 		vi.spyOn(GhostContextProviderModule, "getProcessedSnippets").mockResolvedValue({
 			filepathUri: "file:///test.ts",
 			helper: {
