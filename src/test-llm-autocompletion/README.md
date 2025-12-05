@@ -21,7 +21,8 @@ This test suite uses approval testing instead of regex pattern matching to valid
 
     - Display the test input and output
     - Ask you whether the output is acceptable
-    - Save your decision to `approvals/{category}/{test-name}/approved.N.txt` or `rejected.N.txt`
+    - Save your decision to `approvals/{category}/{test-name}.approved.N.txt` or `{test-name}.rejected.N.txt`
+    - File numbers are globally unique across approved and rejected files (e.g., `approved.1.txt`, `rejected.2.txt`, `approved.3.txt`)
 
 2. **Subsequent Runs**:
     - If the output matches a previously approved file, the test passes
@@ -95,7 +96,7 @@ LLM_MODEL=anthropic/claude-3-haiku pnpm run test
 
 ### Clean Command
 
-The `clean` command removes approval files for test cases that no longer exist:
+The `clean` command removes approval files for test cases that no longer exist and renumbers files to fix duplicates:
 
 ```bash
 pnpm run clean
@@ -106,7 +107,14 @@ This is useful when you've deleted or renamed test cases and want to clean up th
 - Scan all approval files in the `approvals/` directory
 - Check if each approval corresponds to an existing test case
 - Remove approvals for test cases that no longer exist
-- Report how many files were cleaned
+- **Renumber files** to fix duplicate numbers and gaps (e.g., if you have `approved.1.txt` and `rejected.1.txt`, they will be renumbered to `approved.1.txt` and `rejected.2.txt`)
+- Report how many files were cleaned and renumbered
+
+The renumbering feature is particularly useful when:
+
+- You've manually moved files between approved and rejected
+- You have legacy files with duplicate numbers from before the global numbering was implemented
+- You want to ensure all file numbers are sequential and unique
 
 ### Skip Approval Mode
 
@@ -155,6 +163,7 @@ Is this acceptable? (y/n):
 ## Notes
 
 - The `approvals/` directory is gitignored
-- Each approved/rejected output gets a unique numbered file
+- Each approved/rejected output gets a globally unique numbered file (numbers are unique across both approved and rejected files for the same test case)
 - Tests only prompt for input in the terminal when output is new
 - The test summary at the end shows how many passed/failed
+- To move a file from approved to rejected (or vice versa), simply rename it and run `pnpm run clean` to fix the numbering

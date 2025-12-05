@@ -13,18 +13,19 @@ function getCategoryPath(category: string): string {
 	return path.join(APPROVALS_DIR, category)
 }
 
-function getNextFileNumber(categoryDir: string, testName: string, type: "approved" | "rejected"): number {
+function getNextFileNumber(categoryDir: string, testName: string): number {
 	if (!fs.existsSync(categoryDir)) {
 		return 1
 	}
 
 	const files = fs.readdirSync(categoryDir)
-	const pattern = new RegExp(`^${testName}\\.${type}\\.(\\d+)\\.txt$`)
+	// Match both approved and rejected files to get globally unique numbers
+	const pattern = new RegExp(`^${testName}\\.(approved|rejected)\\.(\\d+)\\.txt$`)
 	const numbers = files
 		.filter((f) => pattern.test(f))
 		.map((f) => {
 			const match = f.match(pattern)
-			return match ? parseInt(match[1], 10) : 0
+			return match ? parseInt(match[2], 10) : 0
 		})
 
 	return numbers.length > 0 ? Math.max(...numbers) + 1 : 1
@@ -112,11 +113,118 @@ export async function checkApproval(
 
 	fs.mkdirSync(categoryDir, { recursive: true })
 
-	const nextNumber = getNextFileNumber(categoryDir, testName, type)
+	const nextNumber = getNextFileNumber(categoryDir, testName)
 	const filename = `${testName}.${type}.${nextNumber}.txt`
 	const filePath = path.join(categoryDir, filename)
 
 	fs.writeFileSync(filePath, output, "utf-8")
 
 	return { isApproved, newOutput: true }
+}
+
+export interface RenumberResult {
+	renamedCount: number
+	totalFiles: number
+}
+
+export function renumberApprovals(approvalsDir: string = "approvals"): RenumberResult {
+	let renamedCount = 0
+	let totalFiles = 0
+
+	if (!fs.existsSync(approvalsDir)) {
+		return { renamedCount, totalFiles }
+	}
+
+	// Get all category directories
+	const categories = fs.readdirSync(approvalsDir, { withFileTypes: true }).filter((d) => d.isDirectory())
+
+	for (const category of categories) {
+		const categoryDir = path.join(approvalsDir, category.name)
+		const files = fs.readdirSync(categoryDir).filter((f) => f.endsWith(".txt"))
+
+		// Group files by test name
+		const filesByTestName = new Map<string, string[]>()
+		const pattern = /^(.+)\.(approved|rejected)\.(\d+)\.txt$/
+
+		for (const file of files) {
+			const match = file.match(pattern)
+			if (match) {
+				totalFiles++
+				const testName = match[1]
+				if (!filesByTestName.has(testName)) {
+					filesByTestName.set(testName, [])
+				}
+				filesByTestName.get(testName)!.push(file)
+			}
+		}
+
+		// Renumber files for each test name
+		for (const [testName, testFiles] of filesByTestName) {
+			// Sort files by their current number
+			const sortedFiles = testFiles.sort((a, b) => {
+				const matchA = a.match(pattern)!
+				const matchB = b.match(pattern)!
+				return parseInt(matchA[3], 10) - parseInt(matchB[3], 10)
+			})
+
+			// Check if renumbering is needed
+			const numbers = sortedFiles.map((f) => {
+				const match = f.match(pattern)!
+				return parseInt(match[3], 10)
+			})
+
+			// Check for duplicates or gaps
+			const uniqueNumbers = new Set(numbers)
+			const needsRenumber = uniqueNumbers.size !== numbers.length || !isSequential(numbers)
+
+			if (needsRenumber) {
+				// Renumber all files sequentially
+				for (let i = 0; i < sortedFiles.length; i++) {
+					const oldFile = sortedFiles[i]
+					const match = oldFile.match(pattern)!
+					const type = match[2]
+					const newNumber = i + 1
+					const newFile = `${testName}.${type}.${newNumber}.txt`
+
+					if (oldFile !== newFile) {
+						const oldPath = path.join(categoryDir, oldFile)
+						const newPath = path.join(categoryDir, newFile)
+
+						// Use a temp file to avoid conflicts
+						const tempPath = path.join(categoryDir, `${testName}.${type}.temp_${i}.txt`)
+						fs.renameSync(oldPath, tempPath)
+						sortedFiles[i] = `${testName}.${type}.temp_${i}.txt`
+					}
+				}
+
+				// Now rename from temp to final
+				for (let i = 0; i < sortedFiles.length; i++) {
+					const tempFile = sortedFiles[i]
+					if (tempFile.includes(".temp_")) {
+						const match = tempFile.match(/^(.+)\.(approved|rejected)\.temp_(\d+)\.txt$/)!
+						const type = match[2]
+						const newNumber = i + 1
+						const newFile = `${testName}.${type}.${newNumber}.txt`
+
+						const tempPath = path.join(categoryDir, tempFile)
+						const newPath = path.join(categoryDir, newFile)
+						fs.renameSync(tempPath, newPath)
+						renamedCount++
+					}
+				}
+			}
+		}
+	}
+
+	return { renamedCount, totalFiles }
+}
+
+function isSequential(numbers: number[]): boolean {
+	const sorted = [...numbers].sort((a, b) => a - b)
+	for (let i = 0; i < sorted.length; i++) {
+		if (sorted[i] !== i + 1) {
+			return false
+		}
+	}
+	return true
 }
