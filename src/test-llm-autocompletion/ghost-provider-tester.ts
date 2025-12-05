@@ -5,7 +5,7 @@ import { extractPrefixSuffix, contextToAutocompleteInput } from "../services/gho
 import { createContext } from "./utils.js"
 import {
 	createTestGhostModel,
-	createMockContextProviderWithContent,
+	createMockContextProvider,
 	modelSupportsFim,
 	createProviderForTesting,
 } from "./mock-context-provider.js"
@@ -27,7 +27,7 @@ export class GhostProviderTester {
 		this.ghostModel = createTestGhostModel(this.llmClient, this.modelId)
 
 		// Create a base context provider for the provider instance
-		const baseContextProvider = createMockContextProviderWithContent("", "", "/test/file.ts", this.ghostModel)
+		const baseContextProvider = createMockContextProvider("", "", "/test/file.ts", this.ghostModel)
 		this.provider = createProviderForTesting(baseContextProvider)
 	}
 
@@ -44,12 +44,7 @@ export class GhostProviderTester {
 		const languageId = context.document.languageId || "javascript"
 
 		// Create context provider with the actual content for prompt building
-		const contextProvider = createMockContextProviderWithContent(
-			prefix,
-			suffix,
-			autocompleteInput.filepath,
-			this.ghostModel,
-		)
+		const contextProvider = createMockContextProvider(prefix, suffix, autocompleteInput.filepath, this.ghostModel)
 
 		// Build the prompt using the appropriate strategy
 		const supportsFim = modelSupportsFim(this.modelId)

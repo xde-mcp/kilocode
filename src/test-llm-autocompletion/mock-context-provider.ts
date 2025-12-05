@@ -74,7 +74,7 @@ export function createTestGhostModel(llmClient: LLMClient, modelId: string): Gho
 	return mockModel
 }
 
-export function createMockContextProviderWithContent(
+export function createMockContextProvider(
 	prefix: string,
 	suffix: string,
 	filepath: string,
