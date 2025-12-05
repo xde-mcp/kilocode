@@ -4,7 +4,7 @@ import fs from "fs"
 import path from "path"
 import { GhostProviderTester } from "./ghost-provider-tester.js"
 import { testCases, getCategories, TestCase } from "./test-cases.js"
-import { checkApproval, renumberApprovals } from "./approvals.js"
+import { checkApproval } from "./approvals.js"
 
 interface TestResult {
 	testCase: TestCase
@@ -394,16 +394,6 @@ export class TestRunner {
 			console.log("Removed approvals for test cases that no longer exist.")
 		} else {
 			console.log("No orphaned approval files found.")
-		}
-
-		// Renumber files to fix duplicates and gaps
-		console.log("\n🔢 Renumbering approval files to fix duplicates and gaps...\n")
-		const renumberResult = renumberApprovals(approvalsDir)
-
-		if (renumberResult.renamedCount > 0) {
-			console.log(`✅ Renumbered ${renumberResult.renamedCount} files to ensure unique sequential numbering.`)
-		} else {
-			console.log("No renumbering needed - all files already have unique sequential numbers.")
 		}
 	}
 }

@@ -96,7 +96,7 @@ LLM_MODEL=anthropic/claude-3-haiku pnpm run test
 
 ### Clean Command
 
-The `clean` command removes approval files for test cases that no longer exist and renumbers files to fix duplicates:
+The `clean` command removes approval files for test cases that no longer exist:
 
 ```bash
 pnpm run clean
@@ -107,14 +107,7 @@ This is useful when you've deleted or renamed test cases and want to clean up th
 - Scan all approval files in the `approvals/` directory
 - Check if each approval corresponds to an existing test case
 - Remove approvals for test cases that no longer exist
-- **Renumber files** to fix duplicate numbers and gaps (e.g., if you have `approved.1.txt` and `rejected.1.txt`, they will be renumbered to `approved.1.txt` and `rejected.2.txt`)
-- Report how many files were cleaned and renumbered
-
-The renumbering feature is particularly useful when:
-
-- You've manually moved files between approved and rejected
-- You have legacy files with duplicate numbers from before the global numbering was implemented
-- You want to ensure all file numbers are sequential and unique
+- Report how many files were cleaned
 
 ### Skip Approval Mode
 
@@ -166,4 +159,3 @@ Is this acceptable? (y/n):
 - Each approved/rejected output gets a globally unique numbered file (numbers are unique across both approved and rejected files for the same test case)
 - Tests only prompt for input in the terminal when output is new
 - The test summary at the end shows how many passed/failed
-- To move a file from approved to rejected (or vice versa), simply rename it and run `pnpm run clean` to fix the numbering

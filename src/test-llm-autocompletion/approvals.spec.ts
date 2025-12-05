@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import fs from "fs"
 import path from "path"
 import readline from "readline"
-import { checkApproval, renumberApprovals } from "./approvals.js"
+import { checkApproval } from "./approvals.js"
 
 const TEST_APPROVALS_DIR = "approvals"
 const TEST_CATEGORY = "test-category"
@@ -192,71 +192,6 @@ describe("approvals", () => {
 			const result = await checkApproval(TEST_CATEGORY, TEST_NAME, "input", output)
 
 			expect(result.newOutput).toBe(false)
-		})
-	})
-
-	describe("renumberApprovals", () => {
-		it("should renumber files with duplicate numbers", () => {
-			const categoryDir = path.join(TEST_APPROVALS_DIR, TEST_CATEGORY)
-			fs.mkdirSync(categoryDir, { recursive: true })
-
-			// Create files with duplicate numbers (approved.1 and rejected.1)
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.1.txt`), "output1", "utf-8")
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.rejected.1.txt`), "output2", "utf-8")
-
-			const result = renumberApprovals(TEST_APPROVALS_DIR)
-
-			expect(result.renamedCount).toBeGreaterThan(0)
-
-			const files = fs.readdirSync(categoryDir)
-			const numbers = files.map((f) => {
-				const match = f.match(/\.(\d+)\.txt$/)
-				return match ? parseInt(match[1], 10) : 0
-			})
-
-			// All numbers should be unique
-			const uniqueNumbers = new Set(numbers)
-			expect(uniqueNumbers.size).toBe(numbers.length)
-		})
-
-		it("should renumber files with gaps", () => {
-			const categoryDir = path.join(TEST_APPROVALS_DIR, TEST_CATEGORY)
-			fs.mkdirSync(categoryDir, { recursive: true })
-
-			// Create files with gaps (1, 3, 5)
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.1.txt`), "output1", "utf-8")
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.3.txt`), "output2", "utf-8")
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.5.txt`), "output3", "utf-8")
-
-			const result = renumberApprovals(TEST_APPROVALS_DIR)
-
-			expect(result.renamedCount).toBeGreaterThan(0)
-
-			const files = fs.readdirSync(categoryDir)
-			expect(files).toContain(`${TEST_NAME}.approved.1.txt`)
-			expect(files).toContain(`${TEST_NAME}.approved.2.txt`)
-			expect(files).toContain(`${TEST_NAME}.approved.3.txt`)
-		})
-
-		it("should not rename files that are already sequential", () => {
-			const categoryDir = path.join(TEST_APPROVALS_DIR, TEST_CATEGORY)
-			fs.mkdirSync(categoryDir, { recursive: true })
-
-			// Create files that are already sequential
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.1.txt`), "output1", "utf-8")
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.rejected.2.txt`), "output2", "utf-8")
-			fs.writeFileSync(path.join(categoryDir, `${TEST_NAME}.approved.3.txt`), "output3", "utf-8")
-
-			const result = renumberApprovals(TEST_APPROVALS_DIR)
-
-			expect(result.renamedCount).toBe(0)
-		})
-
-		it("should return zero counts for non-existent directory", () => {
-			const result = renumberApprovals("non-existent-dir")
-
-			expect(result.renamedCount).toBe(0)
-			expect(result.totalFiles).toBe(0)
 		})
 	})
 
