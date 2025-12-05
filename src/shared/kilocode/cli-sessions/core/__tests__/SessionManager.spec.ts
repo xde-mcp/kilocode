@@ -1,3 +1,4 @@
+import path from "path"
 import { SessionManager, SessionManagerDependencies } from "../SessionManager"
 import { SessionClient, CliSessionSharedState, SessionWithSignedUrls } from "../SessionClient"
 import { SessionPersistenceManager } from "../../utils/SessionPersistenceManager"
@@ -9,7 +10,7 @@ vi.mock("fs", () => ({
 	readFileSync: vi.fn(),
 	writeFileSync: vi.fn(),
 	mkdirSync: vi.fn(),
-	mkdtempSync: vi.fn().mockReturnValue("/tmp/kilocode-git-patches-123"),
+	mkdtempSync: vi.fn(),
 	rmSync: vi.fn(),
 }))
 
@@ -58,12 +59,14 @@ vi.mock("../../utils/SessionPersistenceManager", () => ({
 	})),
 }))
 
+const MOCK_TASKS_DIR = path.join("mock", "user", ".kilocode", "tasks")
+
 const createMockDependencies = (): SessionManagerDependencies => ({
 	platform: "vscode",
 	getToken: vi.fn().mockResolvedValue("test-token"),
 	pathProvider: {
-		getTasksDir: vi.fn().mockReturnValue("/home/user/.kilocode/tasks"),
-		getSessionFilePath: vi.fn().mockImplementation((dir: string) => `${dir}/.kilocode/session.json`),
+		getTasksDir: vi.fn().mockReturnValue(MOCK_TASKS_DIR),
+		getSessionFilePath: vi.fn().mockImplementation((dir: string) => path.join(dir, ".kilocode", "session.json")),
 	},
 	logger: {
 		debug: vi.fn(),
@@ -295,7 +298,7 @@ describe("SessionManager", () => {
 
 			await manager.restoreSession("session-123")
 
-			expect(mkdirSync).toHaveBeenCalledWith("/home/user/.kilocode/tasks/session-123", { recursive: true })
+			expect(mkdirSync).toHaveBeenCalledWith(path.join(MOCK_TASKS_DIR, "session-123"), { recursive: true })
 		})
 
 		it("should send webview messages to register and show task", async () => {
