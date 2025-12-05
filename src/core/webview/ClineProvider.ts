@@ -108,11 +108,9 @@ import isWsl from "is-wsl"
 import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocodeDefaultModel"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
-import {
-	kilo_destroySessionManager,
-	kilo_execIfExtension,
-} from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { kilo_execIfExtension } from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
+
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
 
@@ -476,8 +474,6 @@ export class ClineProvider
 		this.clineStack.push(task)
 		task.emit(RooCodeEventName.TaskFocused)
 
-		await kilo_destroySessionManager()
-
 		// Perform special setup provider specific tasks.
 		await this.performPreparationTasks(task)
 
@@ -691,8 +687,6 @@ export class ClineProvider
 			this.autoPurgeScheduler.stop()
 			this.autoPurgeScheduler = undefined
 		}
-
-		await kilo_destroySessionManager()
 		// kilocode_change end
 
 		this.log("Disposed all disposables")
@@ -1155,15 +1149,15 @@ ${prompt}
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath(taskId, "apiConversationHistoryPath", filePath)
+				SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
 			} else if (message.type === "taskMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath(taskId, "uiMessagesPath", filePath)
+				SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
 			} else if (message.type === "taskMetadataSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().setPath(taskId, "taskMetadataPath", filePath)
+				SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
 			}
 		})
 
