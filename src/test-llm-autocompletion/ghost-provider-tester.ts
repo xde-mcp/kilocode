@@ -19,16 +19,11 @@ export class GhostProviderTester {
 	private llmClient: LLMClient
 	private modelId: string
 	private ghostModel: GhostModel
-	private provider: GhostInlineCompletionProvider
 
 	constructor() {
 		this.modelId = process.env.LLM_MODEL || "mistralai/codestral-2508"
 		this.llmClient = new LLMClient()
 		this.ghostModel = createTestGhostModel(this.llmClient, this.modelId)
-
-		// Create a base context provider for the provider instance
-		const baseContextProvider = createMockContextProvider("", "", "/test/file.ts", this.ghostModel)
-		this.provider = createProviderForTesting(baseContextProvider)
 	}
 
 	async getCompletion(
@@ -46,6 +41,9 @@ export class GhostProviderTester {
 		// Create context provider with the actual content for prompt building
 		const contextProvider = createMockContextProvider(prefix, suffix, autocompleteInput.filepath, this.ghostModel)
 
+		// Create a fresh provider instance for this completion
+		const provider = createProviderForTesting(contextProvider)
+
 		// Build the prompt using the appropriate strategy
 		const supportsFim = modelSupportsFim(this.modelId)
 		const prompt = supportsFim
@@ -53,11 +51,13 @@ export class GhostProviderTester {
 			: await new HoleFiller(contextProvider).getPrompts(autocompleteInput, languageId)
 
 		// Use the provider's fetchAndCacheSuggestion method directly
-		await this.provider.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
+		await provider.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
 
 		// Retrieve the cached suggestion using findMatchingSuggestion
-		// Access the public suggestionsHistory property directly
-		const result = findMatchingSuggestion(prefix, suffix, this.provider.suggestionsHistory)
+		const result = findMatchingSuggestion(prefix, suffix, provider.suggestionsHistory)
+
+		// Clean up
+		provider.dispose()
 
 		return { prefix, completion: result?.text ?? "", suffix }
 	}
@@ -68,6 +68,6 @@ export class GhostProviderTester {
 	}
 
 	dispose(): void {
-		this.provider.dispose()
+		// No longer needed since we dispose the provider in getCompletion
 	}
 }
