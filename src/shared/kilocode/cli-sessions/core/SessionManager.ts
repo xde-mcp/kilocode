@@ -83,12 +83,22 @@ export class SessionManager {
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
 
+	private pendingSync: Promise<void> | null = null
+
 	private initSingleton(dependencies: SessionManagerDependencies) {
 		this.initDeps(dependencies)
 
 		if (!this.timer) {
-			this.timer = setInterval(() => {
-				this.syncSession()
+			this.timer = setInterval(async () => {
+				if (this.pendingSync) {
+					return
+				}
+
+				this.pendingSync = this.syncSession()
+
+				await this.pendingSync
+
+				this.pendingSync = null
 			}, SessionManager.SYNC_INTERVAL)
 		}
 	}
@@ -681,6 +691,19 @@ export class SessionManager {
 		} finally {
 			this.isSyncing = false
 		}
+	}
+
+	/**
+	 * use this when exiting the process
+	 */
+	destroy() {
+		this.logger?.debug("Destroying SessionManager", "SessionManager")
+
+		if (!this.pendingSync) {
+			this.pendingSync = this.syncSession()
+		}
+
+		return this.pendingSync
 	}
 
 	private async fetchBlobFromSignedUrl(url: string, urlType: string) {

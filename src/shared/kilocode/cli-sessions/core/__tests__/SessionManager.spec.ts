@@ -122,6 +122,11 @@ describe("SessionManager", () => {
 		it("should set up sync interval timer", () => {
 			expect(vi.getTimerCount()).toBe(1)
 		})
+
+		it("should initialize pendingSync as null", () => {
+			const pendingSync = (manager as unknown as { pendingSync: Promise<void> | null }).pendingSync
+			expect(pendingSync).toBeNull()
+		})
 	})
 
 	describe("sessionId", () => {
@@ -751,6 +756,35 @@ describe("SessionManager", () => {
 			const result = await manager.generateTitle(messages)
 
 			expect(result).toBe("Test message")
+		})
+	})
+
+	describe("destroy", () => {
+		it("should return a promise", async () => {
+			const syncSessionSpy = vi.spyOn(manager as unknown as { syncSession: () => Promise<void> }, "syncSession")
+			syncSessionSpy.mockResolvedValue(undefined)
+
+			const result = manager.destroy()
+
+			expect(result).toBeInstanceOf(Promise)
+		})
+
+		it("should return existing pendingSync when one exists", async () => {
+			const existingPromise = Promise.resolve()
+			;(manager as unknown as { pendingSync: Promise<void> | null }).pendingSync = existingPromise
+
+			const result = manager.destroy()
+
+			expect(result).toBe(existingPromise)
+		})
+
+		it("should log debug message when destroying", async () => {
+			const syncSessionSpy = vi.spyOn(manager as unknown as { syncSession: () => Promise<void> }, "syncSession")
+			syncSessionSpy.mockResolvedValue(undefined)
+
+			manager.destroy()
+
+			expect(mockDependencies.logger.debug).toHaveBeenCalledWith("Destroying SessionManager", "SessionManager")
 		})
 	})
 })
