@@ -1,82 +1,19 @@
 import { LLMClient } from "./llm-client.js"
 import { HoleFiller } from "../services/ghost/classic-auto-complete/HoleFiller.js"
 import { FimPromptBuilder } from "../services/ghost/classic-auto-complete/FillInTheMiddle.js"
-import { extractPrefixSuffix, contextToAutocompleteInput, GhostContextProvider } from "../services/ghost/types.js"
+import { extractPrefixSuffix, contextToAutocompleteInput } from "../services/ghost/types.js"
 import { createContext } from "./utils.js"
 import {
 	createTestGhostModel,
 	createMockContextProviderWithContent,
 	modelSupportsFim,
+	createProviderForTesting,
 } from "./mock-context-provider.js"
 import {
 	GhostInlineCompletionProvider,
 	findMatchingSuggestion,
-	CostTrackingCallback,
 } from "../services/ghost/classic-auto-complete/GhostInlineCompletionProvider.js"
 import { GhostModel } from "../services/ghost/GhostModel.js"
-import type { GhostServiceSettings } from "@roo-code/types"
-import type { AutocompleteCodeSnippet } from "../services/continuedev/core/autocomplete/snippets/types.js"
-import type { RecentlyEditedRange } from "../services/continuedev/core/autocomplete/util/types.js"
-
-/**
- * Stub implementation of RecentlyVisitedRangesService for testing.
- * Always returns an empty array since we don't need this context in tests.
- */
-class StubRecentlyVisitedRangesService {
-	public getSnippets(): AutocompleteCodeSnippet[] {
-		return []
-	}
-
-	public dispose(): void {
-		// No-op
-	}
-}
-
-/**
- * Stub implementation of RecentlyEditedTracker for testing.
- * Always returns an empty array since we don't need this context in tests.
- */
-class StubRecentlyEditedTracker {
-	public async getRecentlyEditedRanges(): Promise<RecentlyEditedRange[]> {
-		return []
-	}
-
-	public dispose(): void {
-		// No-op
-	}
-}
-
-/**
- * Create a GhostInlineCompletionProvider for testing purposes.
- * This factory function creates an instance with a custom GhostContextProvider
- * without requiring VSCode extension context or ClineProvider.
- */
-function createProviderForTesting(
-	contextProvider: GhostContextProvider,
-	costTrackingCallback: CostTrackingCallback = () => {},
-	getSettings: () => GhostServiceSettings | null = () => null,
-): GhostInlineCompletionProvider {
-	const instance = Object.create(GhostInlineCompletionProvider.prototype) as GhostInlineCompletionProvider
-	// Initialize private fields using Object.assign to bypass TypeScript private access
-	Object.assign(instance, {
-		suggestionsHistory: [],
-		pendingRequests: [],
-		model: contextProvider.model,
-		costTrackingCallback,
-		getSettings,
-		holeFiller: new HoleFiller(contextProvider),
-		fimPromptBuilder: new FimPromptBuilder(contextProvider),
-		recentlyVisitedRangesService: new StubRecentlyVisitedRangesService(),
-		recentlyEditedTracker: new StubRecentlyEditedTracker(),
-		debounceTimer: null,
-		isFirstCall: true,
-		ignoreController: contextProvider.ignoreController,
-		acceptedCommand: null,
-		debounceDelayMs: 300, // INITIAL_DEBOUNCE_DELAY_MS
-		latencyHistory: [],
-	})
-	return instance
-}
 
 export class GhostProviderTester {
 	private llmClient: LLMClient
