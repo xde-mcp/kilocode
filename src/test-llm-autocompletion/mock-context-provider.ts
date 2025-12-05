@@ -74,23 +74,6 @@ export function createTestGhostModel(llmClient: LLMClient, modelId: string): Gho
 	return mockModel
 }
 
-export function createMockContextProvider(ghostModel: GhostModel): GhostContextProvider {
-	return {
-		ide: {
-			readFile: async () => "",
-			getWorkspaceDirs: async () => [],
-			getClipboardContent: async () => ({ text: "", copiedAt: new Date().toISOString() }),
-		},
-		contextService: {
-			initializeForFile: async () => {},
-			getRootPathSnippets: async () => [],
-			getSnippetsFromImportDefinitions: async () => [],
-			getStaticContextSnippets: async () => [],
-		},
-		model: ghostModel,
-	} as unknown as GhostContextProvider
-}
-
 export function createMockContextProviderWithContent(
 	prefix: string,
 	suffix: string,
