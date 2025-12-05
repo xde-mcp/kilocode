@@ -94,15 +94,15 @@ const CONTEXT_FILE_HEADER_PATTERN = /^##### ([^:]+):\s*(.*)$/
 function parseContextFiles(lines: string[], startIndex: number): { mainContent: string; contextFiles: ContextFile[] } {
 	const contextFiles: ContextFile[] = []
 
-	// Read main content until we hit a context file header (##### filepath: value)
+	// Read main content until we hit a context file header (##### Filename: value)
 	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, startIndex, CONTEXT_FILE_HEADER_PATTERN)
 
 	// Parse remaining context files
 	let currentIndex = nextHeaderIndex
 	while (currentIndex < lines.length) {
-		// Parse the context file header (##### filepath: path/to/file)
+		// Parse the context file header (##### Filename: path/to/file)
 		const { headers, contentStartIndex } = parseHeaders(lines, currentIndex, CONTEXT_FILE_HEADER_PATTERN, [
-			"filepath",
+			"filename",
 		])
 
 		// Read content until next context file header or end of file
@@ -113,7 +113,7 @@ function parseContextFiles(lines: string[], startIndex: number): { mainContent: 
 		)
 
 		contextFiles.push({
-			filepath: headers.filepath,
+			filepath: headers.filename,
 			content: fileContent,
 		})
 

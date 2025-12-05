@@ -18,7 +18,7 @@ export function ProductCard({ name, price, releaseDate }: ProductCardProps) {
   );
 }
 
-##### filepath: utils/formatters.ts
+##### Filename: utils/formatters.ts
 /**
  * Format a price value to a currency string
  * @param amount - The price amount in cents

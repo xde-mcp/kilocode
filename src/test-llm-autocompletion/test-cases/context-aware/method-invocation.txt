@@ -5,7 +5,7 @@ import { UserService } from './services/user-service';
 const userService = new UserService();
 const user = userService.<<<AUTOCOMPLETE_HERE>>>
 
-##### filepath: services/user-service.ts
+##### Filename: services/user-service.ts
 export class UserService {
   async findById(id: string): Promise<User | null> {
     // Find user by ID
