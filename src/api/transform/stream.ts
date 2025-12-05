@@ -1,10 +1,7 @@
-import { ReasoningDetail } from "./kilocode/reasoning-details"
-
 export type ApiStream = AsyncGenerator<ApiStreamChunk>
 
 export type ApiStreamChunk =
 	// kilocode_change start
-	| ApiStreamReasoningDetailsChunk
 	| ApiStreamAnthropicThinkingChunk
 	| ApiStreamAnthropicRedactedThinkingChunk
 	// kilocode_change end
@@ -45,11 +42,6 @@ export interface ApiStreamAnthropicThinkingChunk {
 export interface ApiStreamAnthropicRedactedThinkingChunk {
 	type: "ant_redacted_thinking"
 	data: string
-}
-
-export interface ApiStreamReasoningDetailsChunk {
-	type: "reasoning_details"
-	reasoning_details: ReasoningDetail
 }
 // kilocode_change end
 

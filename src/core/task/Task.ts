@@ -134,7 +134,6 @@ import { MessageQueueService } from "../message-queue/MessageQueueService"
 
 import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shared/kilocode/errorUtils"
 import { getAppUrl } from "@roo-code/types"
-import { maybeRemoveReasoningDetails_kilocode, ReasoningDetail } from "../../api/transform/kilocode/reasoning-details"
 import { mergeApiMessages, addOrMergeUserContent } from "./kilocode"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
 import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
@@ -2521,7 +2520,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				this.isStreaming = true
 
 				// kilocode_change start
-				const reasoningDetails = new Array<ReasoningDetail>()
 				const antThinkingContent = new Array<
 					Anthropic.Messages.RedactedThinkingBlock | Anthropic.Messages.ThinkingBlock
 				>()
@@ -2596,14 +2594,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								}
 								break
 							// kilocode_change start
-							case "reasoning_details":
-								// reasoning_details may be an array of 0 or 1 items depending on how openrouter returns it
-								if (Array.isArray(chunk.reasoning_details)) {
-									reasoningDetails.push(...chunk.reasoning_details)
-								} else {
-									reasoningDetails.push(chunk.reasoning_details)
-								}
-								break
 							case "ant_thinking":
 								antThinkingContent.push({
 									type: "thinking",

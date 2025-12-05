@@ -6,7 +6,6 @@ import { t } from "../../i18n"
 import { ApiHandler } from "../../api"
 import { ApiMessage } from "../task-persistence/apiMessages"
 import { maybeRemoveImageBlocks } from "../../api/transform/image-cleaning"
-import { maybeRemoveReasoningDetails_kilocode } from "../../api/transform/kilocode/reasoning-details"
 
 /**
  * Checks if a message contains tool_result blocks.
@@ -215,12 +214,8 @@ export async function summarizeConversation(
 		content: "Summarize the conversation so far, as described in the prompt instructions.",
 	}
 
-	const requestMessages = maybeRemoveReasoningDetails_kilocode(
-		maybeRemoveImageBlocks([...messagesToSummarize, finalRequestMessage], apiHandler).map(({ role, content }) => ({
-			role,
-			content,
-		})),
-		undefined,
+	const requestMessages = maybeRemoveImageBlocks([...messagesToSummarize, finalRequestMessage], apiHandler).map(
+		({ role, content }) => ({ role, content }),
 	)
 
 	// Note: this doesn't need to be a stream, consider using something like apiHandler.completePrompt

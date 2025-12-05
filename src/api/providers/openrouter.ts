@@ -40,7 +40,6 @@ type OpenRouterProviderParams = {
 
 import { safeJsonParse } from "../../shared/safeJsonParse"
 import { isAnyRecognizedKiloCodeError } from "../../shared/kilocode/errorUtils"
-import { ReasoningDetail } from "../transform/kilocode/reasoning-details"
 // kilocode_change end
 
 import type { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from "../index"
@@ -246,7 +245,10 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 
 		// https://openrouter.ai/docs/features/prompt-caching
 		// TODO: Add a `promptCacheStratey` field to `ModelInfo`.
-		if (modelId.startsWith("anthropic/claude") /* kilocode_change */ || OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)) {
+		if (
+			modelId.startsWith("anthropic/claude") /* kilocode_change */ ||
+			OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)
+		) {
 			if (modelId.startsWith("google")) {
 				addGeminiCacheBreakpoints(systemPrompt, openAiMessages)
 			} else {
@@ -403,15 +405,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 				}
 
 				// kilocode_change start
-
-				// OpenRouter passes reasoning details that we can pass back unmodified in api requests to preserve reasoning traces for model
-				// See: https://openrouter.ai/docs/use-cases/reasoning-tokens#preserving-reasoning-blocks
-				if (delta && "reasoning_details" in delta && delta.reasoning_details) {
-					yield {
-						type: "reasoning_details",
-						reasoning_details: delta.reasoning_details as ReasoningDetail,
-					}
-				}
 				if (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string") {
 					yield { type: "reasoning", text: delta.reasoning_content }
 				}
