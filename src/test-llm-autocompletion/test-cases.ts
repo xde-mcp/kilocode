@@ -7,11 +7,17 @@ export const CURSOR_MARKER = "<<<AUTOCOMPLETE_HERE>>>"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+export interface ContextFile {
+	filepath: string
+	content: string
+}
+
 interface CategoryTestCase {
 	name: string
 	input: string
 	description: string
 	filename: string
+	contextFiles: ContextFile[]
 }
 
 export interface TestCase extends CategoryTestCase {
@@ -56,21 +62,58 @@ function parseHeaders(
 	return { headers, contentStartIndex }
 }
 
-function parseTestCaseFile(filePath: string): { description: string; filename: string; input: string } {
+function parseContextFiles(content: string): { mainContent: string; contextFiles: ContextFile[] } {
+	const contextFiles: ContextFile[] = []
+
+	// Split by #### headers to find context files
+	const sections = content.split(/^#### /m)
+
+	// First section is the main file content (before any #### headers)
+	const mainContent = sections[0]
+
+	// Remaining sections are context files
+	for (let i = 1; i < sections.length; i++) {
+		const section = sections[i]
+		const newlineIndex = section.indexOf("\n")
+		if (newlineIndex === -1) continue
+
+		const filepath = section.substring(0, newlineIndex).trim()
+		const fileContent = section.substring(newlineIndex + 1)
+
+		if (filepath) {
+			contextFiles.push({
+				filepath,
+				content: fileContent,
+			})
+		}
+	}
+
+	return { mainContent, contextFiles }
+}
+
+function parseTestCaseFile(filePath: string): {
+	description: string
+	filename: string
+	input: string
+	contextFiles: ContextFile[]
+} {
 	const content = fs.readFileSync(filePath, "utf-8")
 	const lines = content.split("\n")
 
 	const { headers, contentStartIndex } = parseHeaders(lines, filePath, ["description", "filename"])
 
-	const input = lines
-		.slice(contentStartIndex)
-		.join("\n")
-		.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
+	const rawContent = lines.slice(contentStartIndex).join("\n")
+
+	// Parse context files from the content
+	const { mainContent, contextFiles } = parseContextFiles(rawContent)
+
+	const input = mainContent.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
 
 	return {
 		description: headers.description,
 		filename: headers.filename,
 		input,
+		contextFiles,
 	}
 }
 
@@ -94,13 +137,14 @@ function loadTestCases(): Category[] {
 		for (const testCaseFile of testCaseFiles) {
 			const testCaseName = testCaseFile.replace(".txt", "")
 			const testCasePath = path.join(categoryPath, testCaseFile)
-			const { description, filename, input } = parseTestCaseFile(testCasePath)
+			const { description, filename, input, contextFiles } = parseTestCaseFile(testCasePath)
 
 			testCases.push({
 				name: testCaseName,
 				input,
 				description,
 				filename,
+				contextFiles,
 			})
 		}
 
