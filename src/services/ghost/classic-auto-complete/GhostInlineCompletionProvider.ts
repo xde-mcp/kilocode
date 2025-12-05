@@ -1,7 +1,22 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput, GhostContextProvider } from "../types"
-import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
-import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
+import {
+	extractPrefixSuffix,
+	GhostSuggestionContext,
+	contextToAutocompleteInput,
+	GhostContextProvider,
+	FillInAtCursorSuggestion,
+	FimGhostPrompt,
+	HoleFillerGhostPrompt,
+	GhostPrompt,
+	MatchingSuggestionResult,
+	CostTrackingCallback,
+	LLMRetrievalResult,
+	PendingRequest,
+	AutocompleteContext,
+	CacheMatchType,
+} from "../types"
+import { HoleFiller } from "./HoleFiller"
+import { FimPromptBuilder } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
 import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
 import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
@@ -12,22 +27,11 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
 import * as telemetry from "./AutocompleteTelemetry"
-import type { AutocompleteContext, CacheMatchType } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 const DEBOUNCE_DELAY_MS = 300
 
-export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
-
-export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
-
-/**
- * Result of finding a matching suggestion, includes the match type for telemetry
- */
-export interface MatchingSuggestionResult {
-	text: string
-	matchType: CacheMatchType
-}
+export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix
@@ -97,28 +101,6 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 		title: "Autocomplete Accepted",
 	})
 	return [item]
-}
-
-export interface LLMRetrievalResult {
-	suggestion: FillInAtCursorSuggestion
-	cost: number
-	inputTokens: number
-	outputTokens: number
-	cacheWriteTokens: number
-	cacheReadTokens: number
-}
-
-/**
- * Represents a pending/in-flight request that can be reused if the user
- * continues typing in a way that's compatible with the pending completion.
- */
-interface PendingRequest {
-	/** The prefix that was used to start this request */
-	prefix: string
-	/** The suffix that was used to start this request */
-	suffix: string
-	/** Promise that resolves when the request completes */
-	promise: Promise<void>
 }
 
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
