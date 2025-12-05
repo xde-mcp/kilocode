@@ -17,9 +17,8 @@ import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
-// import { apply_diff_single_file } from "./apply_diff" // kilocode_change
+import { apply_diff_single_file } from "./apply_diff" // kilocode_change
 
-import searchAndReplace from "./kilocode/search_and_replace"
 import deleteFile from "./kilocode/delete_file"
 import editFile from "./kilocode/edit_file"
 
@@ -35,7 +34,6 @@ export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./c
 export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat.ChatCompletionTool[] {
 	return [
 		// kilocode_change start
-		searchAndReplace,
 		deleteFile,
 		editFile,
 		// todo:
@@ -44,7 +42,7 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 		// reportBugTool,
 		// kilocode_change end
 		accessMcpResource,
-		// apply_diff_single_file, TODO: fix this
+		apply_diff_single_file,
 		askFollowupQuestion,
 		attemptCompletion,
 		browserAction,
