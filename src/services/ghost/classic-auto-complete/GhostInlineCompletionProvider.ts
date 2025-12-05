@@ -15,7 +15,21 @@ import * as telemetry from "./AutocompleteTelemetry"
 import type { AutocompleteContext, CacheMatchType } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
-const DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Initial debounce delay in milliseconds.
+ * This value is used as the starting debounce delay before enough latency samples
+ * are collected. Once LATENCY_SAMPLE_SIZE samples are collected, the debounce delay
+ * is dynamically adjusted to the average of recent request latencies.
+ */
+const INITIAL_DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Number of latency samples to collect before using adaptive debounce delay.
+ * Once this many samples are collected, the debounce delay becomes the average
+ * of the stored latencies, updated after each request.
+ */
+const LATENCY_SAMPLE_SIZE = 10
 
 export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
 
@@ -136,6 +150,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
 	private acceptedCommand: vscode.Disposable | null = null
+	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
+	private latencyHistory: number[] = []
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -255,6 +271,30 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const ignoreController = this.ignoreController
 			this.ignoreController = undefined
 			;(await ignoreController).dispose()
+		}
+	}
+
+	/**
+	 * Records a latency measurement and updates the adaptive debounce delay.
+	 * Maintains a rolling window of the last LATENCY_SAMPLE_SIZE latencies.
+	 * Once enough samples are collected, the debounce delay is set to the
+	 * average of all stored latencies.
+	 *
+	 * @param latencyMs - The latency of the most recent request in milliseconds
+	 */
+	public recordLatency(latencyMs: number): void {
+		// Add the new latency to the history
+		this.latencyHistory.push(latencyMs)
+
+		// Remove oldest if we exceed the sample size
+		if (this.latencyHistory.length > LATENCY_SAMPLE_SIZE) {
+			this.latencyHistory.shift()
+		}
+
+		// Once we have enough samples, update the debounce delay to the average
+		if (this.latencyHistory.length >= LATENCY_SAMPLE_SIZE) {
+			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
+			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
 		}
 	}
 
@@ -450,7 +490,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				// Remove this request from pending when done
 				this.removePendingRequest(pendingRequest)
 				resolve()
-			}, DEBOUNCE_DELAY_MS)
+			}, this.debounceDelayMs)
 		})
 
 		// Complete the pending request object
@@ -499,6 +539,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				},
 				telemetryContext,
 			)
+
+			// Record latency for adaptive debounce delay
+			this.recordLatency(latencyMs)
 
 			this.costTrackingCallback(result.cost, result.inputTokens, result.outputTokens)
 
