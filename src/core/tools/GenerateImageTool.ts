@@ -203,8 +203,9 @@ export class GenerateImageTool extends BaseTool<"generate_image"> {
 			}
 
 			let result
-			if (modelProvider === "roo") {
-				// Use Roo Code Cloud provider (supports both chat completions and images API)
+			if (modelProvider === "kilocode") {
+				// kilocode_change: Updated from "roo" to "kilocode" provider
+				// Use Kilo Code Cloud provider (supports both chat completions and images API via OpenRouter)
 				const rooHandler = new RooHandler({} as any)
 				result = await rooHandler.generateImage(prompt, selectedModel, inputImageData, apiMethod)
 			} else {
