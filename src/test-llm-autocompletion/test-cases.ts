@@ -48,11 +48,10 @@ function parseTestCaseFile(filePath: string): { description: string; filename: s
 	}
 
 	// Validate required headers
-	if (!headers.description) {
-		throw new Error(`Invalid test case file format: ${filePath}. Missing required header "# Description:"`)
-	}
-	if (!headers.filename) {
-		throw new Error(`Invalid test case file format: ${filePath}. Missing required header "# Filename:"`)
+	const requiredHeaders = ["description", "filename"]
+	const missingHeaders = requiredHeaders.filter((header) => !headers[header])
+	if (missingHeaders.length > 0) {
+		throw new Error(`Invalid test case file format: ${filePath}. Missing headers: ${missingHeaders.join(", ")}`)
 	}
 
 	const input = lines
