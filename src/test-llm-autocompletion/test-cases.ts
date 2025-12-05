@@ -85,32 +85,6 @@ function readUntilHeaders(lines: string[], startIndex: number): { content: strin
 	return { content: contentLines.join("\n"), nextHeaderIndex: lines.length }
 }
 
-function parseContextFiles(lines: string[], startIndex: number): { mainContent: string; contextFiles: ContextFile[] } {
-	const contextFiles: ContextFile[] = []
-
-	// Read main content until we hit a context file header (#### Filename: value)
-	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, startIndex)
-
-	// Parse remaining context files
-	let currentIndex = nextHeaderIndex
-	while (currentIndex < lines.length) {
-		// Parse the context file header (#### Filename: path/to/file)
-		const { headers, contentStartIndex } = parseHeaders(lines, currentIndex, ["filename"])
-
-		// Read content until next context file header or end of file
-		const { content: fileContent, nextHeaderIndex: nextIndex } = readUntilHeaders(lines, contentStartIndex)
-
-		contextFiles.push({
-			filepath: headers.filename,
-			content: fileContent,
-		})
-
-		currentIndex = nextIndex
-	}
-
-	return { mainContent, contextFiles }
-}
-
 function parseTestCaseFile(filePath: string): {
 	description: string
 	filename: string
@@ -123,8 +97,32 @@ function parseTestCaseFile(filePath: string): {
 	// Parse main headers (#### Description:, #### Filename:)
 	const { headers, contentStartIndex } = parseHeaders(lines, 0, ["description", "filename"], filePath)
 
-	// Parse main content and context files
-	const { mainContent, contextFiles } = parseContextFiles(lines, contentStartIndex)
+	// Parse main content and context files (inlined from parseContextFiles)
+	const contextFiles: ContextFile[] = []
+
+	// Read main content until we hit a context file header (#### Filename: value)
+	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, contentStartIndex)
+
+	// Parse remaining context files
+	let currentIndex = nextHeaderIndex
+	while (currentIndex < lines.length) {
+		// Parse the context file header (#### Filename: path/to/file)
+		const { headers: contextHeaders, contentStartIndex: contextContentStartIndex } = parseHeaders(
+			lines,
+			currentIndex,
+			["filename"],
+		)
+
+		// Read content until next context file header or end of file
+		const { content: fileContent, nextHeaderIndex: nextIndex } = readUntilHeaders(lines, contextContentStartIndex)
+
+		contextFiles.push({
+			filepath: contextHeaders.filename,
+			content: fileContent,
+		})
+
+		currentIndex = nextIndex
+	}
 
 	const input = mainContent.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
 
