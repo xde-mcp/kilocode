@@ -1,5 +1,5 @@
-# Description: Should autocomplete utility function call with correct parameters
-# Filename: components/ProductCard.tsx
+#### Description: Should autocomplete utility function call with correct parameters
+#### Filename: components/ProductCard.tsx
 import { formatPrice, formatDate } from '../utils/formatters';
 
 interface ProductCardProps {
@@ -18,7 +18,7 @@ export function ProductCard({ name, price, releaseDate }: ProductCardProps) {
   );
 }
 
-#### utils/formatters.ts
+##### utils/formatters.ts
 /**
  * Format a price value to a currency string
  * @param amount - The price amount in cents

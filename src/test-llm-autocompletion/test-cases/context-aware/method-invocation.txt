@@ -1,11 +1,11 @@
-# Description: Should autocomplete method invocation from imported class
-# Filename: app.ts
+#### Description: Should autocomplete method invocation from imported class
+#### Filename: app.ts
 import { UserService } from './services/user-service';
 
 const userService = new UserService();
 const user = userService.<<<CURSOR>>>
 
-#### services/user-service.ts
+##### services/user-service.ts
 export class UserService {
   async findById(id: string): Promise<User | null> {
     // Find user by ID

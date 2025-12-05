@@ -65,10 +65,10 @@ function parseHeaders(
 function parseContextFiles(content: string): { mainContent: string; contextFiles: ContextFile[] } {
 	const contextFiles: ContextFile[] = []
 
-	// Split by #### headers to find context files
-	const sections = content.split(/^#### /m)
+	// Split by ##### headers to find context files (5 hashes for context, 4 for metadata)
+	const sections = content.split(/^##### /m)
 
-	// First section is the main file content (before any #### headers)
+	// First section is the main file content (before any ##### headers)
 	const mainContent = sections[0]
 
 	// Remaining sections are context files

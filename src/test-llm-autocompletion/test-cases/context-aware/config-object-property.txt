@@ -1,5 +1,5 @@
-# Description: Should autocomplete config object property based on type from another file
-# Filename: server.ts
+#### Description: Should autocomplete config object property based on type from another file
+#### Filename: server.ts
 import { ServerConfig, createServer } from './config/server-config';
 
 const config: ServerConfig = {
@@ -17,7 +17,7 @@ const config: ServerConfig = {
 const server = createServer(config);
 server.start();
 
-#### config/server-config.ts
+##### config/server-config.ts
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 export interface CorsConfig {
