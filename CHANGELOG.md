@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.36.2
+
+### Patch Changes
+
+- ![3.36.2 Release - Dynamic API Settings](/releases/3.36.2-release.png)
+
 ## [3.36.1] - 2025-12-04
 
 ![3.36.1 Release - Message Management & Stability Improvements](/releases/3.36.1-release.png)
