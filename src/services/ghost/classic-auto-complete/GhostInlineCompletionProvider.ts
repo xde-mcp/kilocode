@@ -193,7 +193,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private async getPrompt(
+	public async getPrompt(
 		document: vscode.TextDocument,
 		position: vscode.Position,
 	): Promise<{ prompt: GhostPrompt; prefix: string; suffix: string }> {

@@ -1,7 +1,5 @@
 import { LLMClient } from "./llm-client.js"
-import { HoleFiller } from "../services/ghost/classic-auto-complete/HoleFiller.js"
-import { FimPromptBuilder } from "../services/ghost/classic-auto-complete/FillInTheMiddle.js"
-import { extractPrefixSuffix, contextToAutocompleteInput } from "../services/ghost/types.js"
+import { extractPrefixSuffix } from "../services/ghost/types.js"
 import { createContext } from "./utils.js"
 import {
 	createTestGhostModel,
@@ -31,35 +29,33 @@ export class GhostProviderTester {
 		testCaseName: string = "test",
 	): Promise<{ prefix: string; completion: string; suffix: string }> {
 		const context = createContext(code, testCaseName)
-		const { prefix, suffix } = extractPrefixSuffix(
-			context.document,
-			context.range?.start ?? context.document.positionAt(0),
-		)
-		const autocompleteInput = contextToAutocompleteInput(context)
+		const position = context.range?.start ?? context.document.positionAt(0)
+		const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 		const languageId = context.document.languageId || "javascript"
 
 		// Create context provider with the actual content for prompt building
-		const contextProvider = createMockContextProvider(prefix, suffix, autocompleteInput.filepath, this.ghostModel)
+		const contextProvider = createMockContextProvider(prefix, suffix, context.document.fileName, this.ghostModel)
 
 		// Create a fresh provider instance for this completion
 		const provider = createProviderForTesting(contextProvider)
 
-		// Build the prompt using the appropriate strategy
-		const supportsFim = modelSupportsFim(this.modelId)
-		const prompt = supportsFim
-			? await new FimPromptBuilder(contextProvider).getFimPrompts(autocompleteInput, this.modelId)
-			: await new HoleFiller(contextProvider).getPrompts(autocompleteInput, languageId)
+		// Use the provider's getPrompt method to build the prompt
+		const {
+			prompt,
+			prefix: promptPrefix,
+			suffix: promptSuffix,
+		} = await provider.getPrompt(context.document, position)
 
 		// Use the provider's fetchAndCacheSuggestion method directly
-		await provider.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
+		await provider.fetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix, languageId)
 
 		// Retrieve the cached suggestion using findMatchingSuggestion
-		const result = findMatchingSuggestion(prefix, suffix, provider.suggestionsHistory)
+		const result = findMatchingSuggestion(promptPrefix, promptSuffix, provider.suggestionsHistory)
 
 		// Clean up
 		provider.dispose()
 
-		return { prefix, completion: result?.text ?? "", suffix }
+		return { prefix: promptPrefix, completion: result?.text ?? "", suffix: promptSuffix }
 	}
 
 	getName(): string {
