@@ -246,7 +246,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 
 		// https://openrouter.ai/docs/features/prompt-caching
 		// TODO: Add a `promptCacheStratey` field to `ModelInfo`.
-		if (OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)) {
+		if (modelId.startsWith("anthropic/claude") /* kilocode_change */ || OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)) {
 			if (modelId.startsWith("google")) {
 				addGeminiCacheBreakpoints(systemPrompt, openAiMessages)
 			} else {
