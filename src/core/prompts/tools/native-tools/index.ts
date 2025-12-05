@@ -17,7 +17,7 @@ import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
-import { apply_diff_single_file } from "./apply_diff" // kilocode_change
+import { apply_diff_single_file } from "./apply_diff"
 
 import deleteFile from "./kilocode/delete_file"
 import editFile from "./kilocode/edit_file"
