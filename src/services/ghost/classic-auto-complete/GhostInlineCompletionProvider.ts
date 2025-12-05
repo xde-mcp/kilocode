@@ -1,9 +1,25 @@
 import * as vscode from "vscode"
-import { extractPrefixSuffix, GhostSuggestionContext, contextToAutocompleteInput } from "../types"
-import { GhostContextProvider } from "./GhostContextProvider"
-import { HoleFiller, FillInAtCursorSuggestion, HoleFillerGhostPrompt } from "./HoleFiller"
-import { FimPromptBuilder, FimGhostPrompt } from "./FillInTheMiddle"
+import {
+	extractPrefixSuffix,
+	GhostSuggestionContext,
+	contextToAutocompleteInput,
+	GhostContextProvider,
+	FillInAtCursorSuggestion,
+	FimGhostPrompt,
+	HoleFillerGhostPrompt,
+	GhostPrompt,
+	MatchingSuggestionResult,
+	CostTrackingCallback,
+	LLMRetrievalResult,
+	PendingRequest,
+	AutocompleteContext,
+	CacheMatchType,
+} from "../types"
+import { HoleFiller } from "./HoleFiller"
+import { FimPromptBuilder } from "./FillInTheMiddle"
 import { GhostModel } from "../GhostModel"
+import { ContextRetrievalService } from "../../continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "../../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
@@ -11,22 +27,25 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
 import * as telemetry from "./AutocompleteTelemetry"
-import type { AutocompleteContext, CacheMatchType } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
-const DEBOUNCE_DELAY_MS = 300
-
-export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
-
-export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
 
 /**
- * Result of finding a matching suggestion, includes the match type for telemetry
+ * Initial debounce delay in milliseconds.
+ * This value is used as the starting debounce delay before enough latency samples
+ * are collected. Once LATENCY_SAMPLE_SIZE samples are collected, the debounce delay
+ * is dynamically adjusted to the average of recent request latencies.
  */
-export interface MatchingSuggestionResult {
-	text: string
-	matchType: CacheMatchType
-}
+const INITIAL_DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Number of latency samples to collect before using adaptive debounce delay.
+ * Once this many samples are collected, the debounce delay becomes the average
+ * of the stored latencies, updated after each request.
+ */
+const LATENCY_SAMPLE_SIZE = 10
+
+export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix
@@ -98,30 +117,8 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 	return [item]
 }
 
-export interface LLMRetrievalResult {
-	suggestion: FillInAtCursorSuggestion
-	cost: number
-	inputTokens: number
-	outputTokens: number
-	cacheWriteTokens: number
-	cacheReadTokens: number
-}
-
-/**
- * Represents a pending/in-flight request that can be reused if the user
- * continues typing in a way that's compatible with the pending completion.
- */
-interface PendingRequest {
-	/** The prefix that was used to start this request */
-	prefix: string
-	/** The suffix that was used to start this request */
-	suffix: string
-	/** Promise that resolves when the request completes */
-	promise: Promise<void>
-}
-
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
-	private suggestionsHistory: FillInAtCursorSuggestion[] = []
+	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
 	private holeFiller: HoleFiller
@@ -135,6 +132,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
 	private acceptedCommand: vscode.Disposable | null = null
+	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
+	private latencyHistory: number[] = []
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -154,11 +153,17 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return ignoreController
 		})()
 
-		const contextProvider = new GhostContextProvider(context, model, this.ignoreController)
+		const ide = new VsCodeIde(context)
+		const contextService = new ContextRetrievalService(ide)
+		const contextProvider: GhostContextProvider = {
+			ide,
+			contextService,
+			model,
+			ignoreController: this.ignoreController,
+		}
 		this.holeFiller = new HoleFiller(contextProvider)
 		this.fimPromptBuilder = new FimPromptBuilder(contextProvider)
 
-		const ide = contextProvider.getIde()
 		this.recentlyVisitedRangesService = new RecentlyVisitedRangesService(ide)
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
@@ -188,7 +193,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	private async getPrompt(
+	public async getPrompt(
 		document: vscode.TextDocument,
 		position: vscode.Position,
 	): Promise<{ prompt: GhostPrompt; prefix: string; suffix: string }> {
@@ -251,6 +256,28 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
+	/**
+	 * Records a latency measurement and updates the adaptive debounce delay.
+	 * Maintains a rolling window of the last LATENCY_SAMPLE_SIZE latencies.
+	 * Once enough samples are collected, the debounce delay is set to the
+	 * average of all stored latencies.
+	 *
+	 * @param latencyMs - The latency of the most recent request in milliseconds
+	 */
+	public recordLatency(latencyMs: number): void {
+		// Add the new latency to the history
+		this.latencyHistory.push(latencyMs)
+
+		// Remove oldest if we exceed the sample size
+		if (this.latencyHistory.length > LATENCY_SAMPLE_SIZE) {
+			this.latencyHistory.shift()
+
+			// Once we have enough samples, update the debounce delay to the average
+			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
+			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
+		}
+	}
+
 	public dispose(): void {
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
@@ -296,8 +323,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		telemetry.captureSuggestionRequested(telemetryContext)
 
-		if (!this.model) {
-			// bail if no model is available, because if there is none, we also have no cache
+		if (!this.model || !this.model.hasValidCredentials()) {
+			// bail if no model is available or no valid API credentials configured
+			// this prevents errors when autocomplete is enabled but no provider is set up
 			return []
 		}
 
@@ -442,7 +470,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				// Remove this request from pending when done
 				this.removePendingRequest(pendingRequest)
 				resolve()
-			}, DEBOUNCE_DELAY_MS)
+			}, this.debounceDelayMs)
 		})
 
 		// Complete the pending request object
@@ -454,7 +482,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return requestPromise
 	}
 
-	private async fetchAndCacheSuggestion(
+	public async fetchAndCacheSuggestion(
 		prompt: GhostPrompt,
 		prefix: string,
 		suffix: string,
@@ -491,6 +519,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				},
 				telemetryContext,
 			)
+
+			// Record latency for adaptive debounce delay
+			this.recordLatency(latencyMs)
 
 			this.costTrackingCallback(result.cost, result.inputTokens, result.outputTokens)
 

@@ -1,6 +1,6 @@
 # LLM Autocompletion Tests
 
-Standalone test suite for AutoTriggerStrategy with real LLM calls using approval testing.
+Standalone test suite for GhostInlineCompletionProvider with real LLM calls using approval testing.
 
 ## Setup
 
@@ -21,7 +21,8 @@ This test suite uses approval testing instead of regex pattern matching to valid
 
     - Display the test input and output
     - Ask you whether the output is acceptable
-    - Save your decision to `approvals/{category}/{test-name}/approved.N.txt` or `rejected.N.txt`
+    - Save your decision to `approvals/{category}/{test-name}.approved.N.txt` or `{test-name}.rejected.N.txt`
+    - File numbers are globally unique across approved and rejected files (e.g., `approved.1.txt`, `rejected.2.txt`, `approved.3.txt`)
 
 2. **Subsequent Runs**:
     - If the output matches a previously approved file, the test passes
@@ -49,19 +50,19 @@ approvals/
 ## Running Tests
 
 ```bash
-# Run all tests (using HoleFiller strategy)
+# Run all tests
 pnpm run test
-
-# Run all tests using FIM strategy
-pnpm run test:fim
 
 # Run with verbose output
 pnpm run test:verbose
-pnpm run test:fim:verbose
 
 # Run without interactive approval (fail if not already approved)
 pnpm run test --skip-approval
-pnpm run test:fim --skip-approval
+
+# Run with Opus auto-approval (uses Claude Opus to judge completions)
+pnpm run test --opus-approval
+# Or short form
+pnpm run test -oa
 
 # Run a single test
 pnpm run test closing-brace
@@ -71,28 +72,33 @@ pnpm run clean
 
 # Combine flags
 pnpm run test --verbose --skip-approval
-pnpm run test --fim --verbose --skip-approval
+pnpm run test --verbose --opus-approval
 ```
 
-### Completion Strategies
+### Completion Strategy
 
-The test suite supports two strategies for generating completions:
+The test suite uses `GhostProviderTester` which mirrors the behavior of `GhostInlineCompletionProvider`:
 
-- **HoleFiller** (default): Uses chat completion API with structured prompts containing `{{FILL_HERE}}` markers. This strategy sends a system prompt and user prompt to guide the LLM.
-- **FIM** (`--fim` flag): Uses the Fill-In-Middle (FIM) API endpoint directly with prefix/suffix, without any prompting.
+- Uses `LLMClient` for API calls (standalone, no VSCode dependencies)
+- **Auto-selects strategy** based on model capabilities:
+    - **FIM** (Fill-In-Middle): Used when the model supports FIM (e.g., Codestral). Uses `FimPromptBuilder` for prompt building.
+    - **HoleFiller**: Used for chat-based models without FIM support. Uses `HoleFiller` for prompt building.
+- Uses the same prompt building code as the production extension
 
-Both strategies run the same test cases and use the same approval system, allowing direct comparison of completion quality between approaches.
+You can configure the model via the `LLM_MODEL` environment variable:
 
 ```bash
-# Compare HoleFiller vs FIM performance
-pnpm run test              # Run with HoleFiller strategy
-pnpm run test:fim          # Run with FIM strategy
+# Use default model (mistralai/codestral-2508 - supports FIM)
+pnpm run test
+
+# Use a different model
+LLM_MODEL=anthropic/claude-3-haiku pnpm run test
 ```
 
 **Strategy Names in Output:**
 
-- `hole-filler` - HoleFiller strategy with chat completions
-- `fim` - FIM endpoint strategy
+- `ghost-provider-fim` - FIM strategy (model supports FIM)
+- `ghost-provider-holefiller` - HoleFiller strategy (chat-based)
 
 ### Clean Command
 
@@ -125,6 +131,40 @@ This is useful for:
 - Regression testing to ensure outputs haven't changed
 - Validating that all test outputs have been reviewed
 
+### Opus Auto-Approval Mode
+
+Use `--opus-approval` (or `-oa`) to automatically judge completions using Claude Opus:
+
+```bash
+pnpm run test --opus-approval
+pnpm run test -oa
+```
+
+When a new output is detected that hasn't been previously approved/rejected:
+
+1. Opus evaluates whether the completion is useful (meaningful code) vs not useful (trivial like semicolons)
+2. Opus responds with APPROVED or REJECTED based on its judgment
+3. The result is saved to the approvals directory for later manual review
+
+Opus considers a suggestion **useful** if it:
+
+- Provides meaningful code that helps the developer
+- Completes a logical code pattern
+- Adds substantial functionality (not just trivial characters)
+- Is syntactically correct and contextually appropriate
+
+Opus considers a suggestion **not useful** if it:
+
+- Only adds trivial characters like semicolons, closing brackets, or single characters
+- Is empty or nearly empty
+- Is syntactically incorrect or doesn't make sense in context
+
+This is useful for:
+
+- Quickly processing large batches of new test outputs
+- Getting consistent, objective judgments on completion quality
+- Reducing manual review burden while still saving decisions for later audit
+
 ## User Interaction
 
 When new output is detected, you'll see:
@@ -151,10 +191,11 @@ Is this acceptable? (y/n):
 - **History**: Keeps track of all approved and rejected outputs
 - **Interactive**: Only asks for input when truly needed
 - **Context-Rich**: Shows the full context when asking for approval
+- **Production Parity**: Uses the same prompt building code as `GhostInlineCompletionProvider`
 
 ## Notes
 
 - The `approvals/` directory is gitignored
-- Each approved/rejected output gets a unique numbered file
+- Each approved/rejected output gets a globally unique numbered file (numbers are unique across both approved and rejected files for the same test case)
 - Tests only prompt for input in the terminal when output is new
 - The test summary at the end shows how many passed/failed
