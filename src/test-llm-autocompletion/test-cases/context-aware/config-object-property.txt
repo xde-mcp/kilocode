@@ -17,7 +17,7 @@ const config: ServerConfig = {
 const server = createServer(config);
 server.start();
 
-##### config/server-config.ts
+##### filepath: config/server-config.ts
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 export interface CorsConfig {

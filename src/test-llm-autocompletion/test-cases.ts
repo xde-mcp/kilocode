@@ -87,38 +87,33 @@ function readUntilHeaders(
 	return { content: contentLines.join("\n"), nextHeaderIndex: lines.length }
 }
 
-// Header patterns for different levels
+// Header patterns for different levels (both use same format: #### key: value or ##### key: value)
 const MAIN_HEADER_PATTERN = /^#### ([^:]+):\s*(.*)$/
-const CONTEXT_FILE_HEADER_PATTERN = /^##### (.+)$/
+const CONTEXT_FILE_HEADER_PATTERN = /^##### ([^:]+):\s*(.*)$/
 
 function parseContextFiles(lines: string[], startIndex: number): { mainContent: string; contextFiles: ContextFile[] } {
 	const contextFiles: ContextFile[] = []
 
-	// Read main content until we hit a context file header (##### filepath)
+	// Read main content until we hit a context file header (##### filepath: value)
 	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, startIndex, CONTEXT_FILE_HEADER_PATTERN)
 
 	// Parse remaining context files
 	let currentIndex = nextHeaderIndex
 	while (currentIndex < lines.length) {
-		const line = lines[currentIndex]
-		const headerMatch = line.match(CONTEXT_FILE_HEADER_PATTERN)
-
-		if (!headerMatch) {
-			break
-		}
-
-		const filepath = headerMatch[1].trim()
-		currentIndex++
+		// Parse the context file header (##### filepath: path/to/file)
+		const { headers, contentStartIndex } = parseHeaders(lines, currentIndex, CONTEXT_FILE_HEADER_PATTERN, [
+			"filepath",
+		])
 
 		// Read content until next context file header or end of file
 		const { content: fileContent, nextHeaderIndex: nextIndex } = readUntilHeaders(
 			lines,
-			currentIndex,
+			contentStartIndex,
 			CONTEXT_FILE_HEADER_PATTERN,
 		)
 
 		contextFiles.push({
-			filepath,
+			filepath: headers.filepath,
 			content: fileContent,
 		})
 

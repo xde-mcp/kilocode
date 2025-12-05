@@ -8,7 +8,7 @@ function processOrder(order: Order): void {
   }
 }
 
-##### types/order.ts
+##### filepath: types/order.ts
 export interface Order {
   id: string;
   customerId: string;
