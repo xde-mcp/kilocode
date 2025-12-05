@@ -114,8 +114,7 @@ export const ImageGenerationSettings = ({
 		setImageGenerationSelectedModel(value)
 	}
 
-	const requiresApiKey = currentProvider === "openrouter" || currentProvider === "kilocode" // kilocode_change
-	const isConfigured = !requiresApiKey || (requiresApiKey && openRouterImageApiKey)
+	const isConfigured = currentProvider === "openrouter" ? openRouterImageApiKey : kiloCodeImageApiKey // kilocode_change
 
 	return (
 		<div className="space-y-4">
