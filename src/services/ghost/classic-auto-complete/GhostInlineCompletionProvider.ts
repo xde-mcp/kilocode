@@ -482,10 +482,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return requestPromise
 	}
 
-	/**
-	 * Fetch a suggestion from the LLM and cache it.
-	 * This method is public to allow direct testing without going through the debounce logic.
-	 */
 	public async fetchAndCacheSuggestion(
 		prompt: GhostPrompt,
 		prefix: string,
