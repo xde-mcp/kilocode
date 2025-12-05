@@ -25,11 +25,11 @@ export interface Category {
 
 const TEST_CASES_DIR = path.join(__dirname, "test-cases")
 
-function parseTestCaseFile(filePath: string): { description: string; filename: string; input: string } {
-	const content = fs.readFileSync(filePath, "utf-8")
-	const lines = content.split("\n")
-
-	// Parse headers in format "# <name>: <value>"
+function parseHeaders(
+	lines: string[],
+	filePath: string,
+	requiredHeaders: string[],
+): { headers: Record<string, string>; contentStartIndex: number } {
 	const headers: Record<string, string> = {}
 	let contentStartIndex = 0
 
@@ -48,11 +48,19 @@ function parseTestCaseFile(filePath: string): { description: string; filename: s
 	}
 
 	// Validate required headers
-	const requiredHeaders = ["description", "filename"]
 	const missingHeaders = requiredHeaders.filter((header) => !headers[header])
 	if (missingHeaders.length > 0) {
 		throw new Error(`Invalid test case file format: ${filePath}. Missing headers: ${missingHeaders.join(", ")}`)
 	}
+
+	return { headers, contentStartIndex }
+}
+
+function parseTestCaseFile(filePath: string): { description: string; filename: string; input: string } {
+	const content = fs.readFileSync(filePath, "utf-8")
+	const lines = content.split("\n")
+
+	const { headers, contentStartIndex } = parseHeaders(lines, filePath, ["description", "filename"])
 
 	const input = lines
 		.slice(contentStartIndex)
