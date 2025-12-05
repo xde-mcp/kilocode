@@ -7,6 +7,7 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 
 import { sourcemapPlugin } from "./src/vite-plugins/sourcemapPlugin"
+import { cssPerEntryPlugin } from "./src/kilocode/vite-plugins/cssPerEntryPlugin" // kilocode_change
 
 function getGitSha() {
 	let gitSha: string | undefined = undefined
@@ -91,7 +92,14 @@ export default defineConfig(({ mode }) => {
 		define["process.env.PKG_OUTPUT_CHANNEL"] = JSON.stringify("Kilo-Code-Nightly")
 	}
 
-	const plugins: PluginOption[] = [react(), tailwindcss(), persistPortPlugin(), wasmPlugin(), sourcemapPlugin()]
+	const plugins: PluginOption[] = [
+		react(),
+		tailwindcss(),
+		persistPortPlugin(),
+		wasmPlugin(),
+		sourcemapPlugin(),
+		cssPerEntryPlugin(), // kilocode_change: enable per-entry CSS files
+	]
 
 	return {
 		plugins,
@@ -114,7 +122,7 @@ export default defineConfig(({ mode }) => {
 			cssCodeSplit: false,
 			rollupOptions: {
 				input: {
-					main: resolve(__dirname, "index.html"), // kilocode_change
+					main: resolve(__dirname, "index.html"),
 					"agent-manager": resolve(__dirname, "agent-manager.html"), // kilocode_change
 					"browser-panel": resolve(__dirname, "browser-panel.html"),
 				},
