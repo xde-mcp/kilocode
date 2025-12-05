@@ -30,6 +30,7 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
+	static readonly MAX_PATCH_SIZE_BYTES = 1024 * 1024
 
 	private static instance = new SessionManager()
 
@@ -786,6 +787,14 @@ export class SessionManager {
 					const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", nullDevice])).trim()
 					patch = await git.diff([emptyTreeHash, "HEAD"])
 				}
+			}
+
+			if (patch && patch.length > SessionManager.MAX_PATCH_SIZE_BYTES) {
+				this.logger?.warn("Git patch too large", "SessionManager", {
+					patchSize: patch.length,
+					maxSize: SessionManager.MAX_PATCH_SIZE_BYTES,
+				})
+				patch = ""
 			}
 
 			return {

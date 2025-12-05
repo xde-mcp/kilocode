@@ -787,4 +787,99 @@ describe("SessionManager", () => {
 			expect(mockDependencies.logger.debug).toHaveBeenCalledWith("Destroying SessionManager", "SessionManager")
 		})
 	})
+
+	describe("getGitState patch size limit", () => {
+		it("should return patch when size is under the limit", async () => {
+			const simpleGit = await import("simple-git")
+			const smallPatch = "a".repeat(1000)
+
+			const mockRaw = vi.fn().mockResolvedValue("")
+			vi.mocked(simpleGit.default).mockReturnValue({
+				getRemotes: vi.fn().mockResolvedValue([{ refs: { fetch: "https://github.com/test/repo.git" } }]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				raw: mockRaw,
+				diff: vi.fn().mockResolvedValue(smallPatch),
+			} as unknown as ReturnType<typeof simpleGit.default>)
+
+			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
+			const result = await getGitState.call(manager)
+
+			expect(result.patch).toBe(smallPatch)
+		})
+
+		it("should return empty string patch when size exceeds the limit", async () => {
+			const simpleGit = await import("simple-git")
+			const largePatch = "a".repeat(2 * 1024 * 1024)
+
+			const mockRaw = vi.fn().mockResolvedValue("")
+			vi.mocked(simpleGit.default).mockReturnValue({
+				getRemotes: vi.fn().mockResolvedValue([{ refs: { fetch: "https://github.com/test/repo.git" } }]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				raw: mockRaw,
+				diff: vi.fn().mockResolvedValue(largePatch),
+			} as unknown as ReturnType<typeof simpleGit.default>)
+
+			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
+			const result = await getGitState.call(manager)
+
+			expect(result.patch).toBe("")
+		})
+
+		it("should log warning when patch exceeds size limit", async () => {
+			const simpleGit = await import("simple-git")
+			const largePatch = "a".repeat(2 * 1024 * 1024)
+
+			const mockRaw = vi.fn().mockResolvedValue("")
+			vi.mocked(simpleGit.default).mockReturnValue({
+				getRemotes: vi.fn().mockResolvedValue([{ refs: { fetch: "https://github.com/test/repo.git" } }]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				raw: mockRaw,
+				diff: vi.fn().mockResolvedValue(largePatch),
+			} as unknown as ReturnType<typeof simpleGit.default>)
+
+			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
+			await getGitState.call(manager)
+
+			expect(mockDependencies.logger.warn).toHaveBeenCalledWith("Git patch too large", "SessionManager", {
+				patchSize: largePatch.length,
+				maxSize: SessionManager.MAX_PATCH_SIZE_BYTES,
+			})
+		})
+
+		it("should return patch when size is exactly at the limit", async () => {
+			const simpleGit = await import("simple-git")
+			const exactLimitPatch = "a".repeat(1024 * 1024)
+
+			const mockRaw = vi.fn().mockResolvedValue("")
+			vi.mocked(simpleGit.default).mockReturnValue({
+				getRemotes: vi.fn().mockResolvedValue([{ refs: { fetch: "https://github.com/test/repo.git" } }]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				raw: mockRaw,
+				diff: vi.fn().mockResolvedValue(exactLimitPatch),
+			} as unknown as ReturnType<typeof simpleGit.default>)
+
+			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
+			const result = await getGitState.call(manager)
+
+			expect(result.patch).toBe(exactLimitPatch)
+		})
+
+		it("should return empty string patch when size is one byte over the limit", async () => {
+			const simpleGit = await import("simple-git")
+			const overLimitPatch = "a".repeat(1024 * 1024 + 1)
+
+			const mockRaw = vi.fn().mockResolvedValue("")
+			vi.mocked(simpleGit.default).mockReturnValue({
+				getRemotes: vi.fn().mockResolvedValue([{ refs: { fetch: "https://github.com/test/repo.git" } }]),
+				revparse: vi.fn().mockResolvedValue("abc123def456"),
+				raw: mockRaw,
+				diff: vi.fn().mockResolvedValue(overLimitPatch),
+			} as unknown as ReturnType<typeof simpleGit.default>)
+
+			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
+			const result = await getGitState.call(manager)
+
+			expect(result.patch).toBe("")
+		})
+	})
 })
