@@ -126,8 +126,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
-	private recentlyVisitedRangesService: RecentlyVisitedRangesService | null
-	private recentlyEditedTracker: RecentlyEditedTracker | null
+	private recentlyVisitedRangesService: RecentlyVisitedRangesService
+	private recentlyEditedTracker: RecentlyEditedTracker
 	private debounceTimer: NodeJS.Timeout | null = null
 	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
@@ -198,8 +198,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		position: vscode.Position,
 	): Promise<{ prompt: GhostPrompt; prefix: string; suffix: string }> {
 		// Build complete context with all tracking data
-		const recentlyVisitedRanges = this.recentlyVisitedRangesService?.getSnippets() ?? []
-		const recentlyEditedRanges = (await this.recentlyEditedTracker?.getRecentlyEditedRanges()) ?? []
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
+		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
 
 		const context: GhostSuggestionContext = {
 			document,
@@ -283,8 +283,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			clearTimeout(this.debounceTimer)
 			this.debounceTimer = null
 		}
-		this.recentlyVisitedRangesService?.dispose()
-		this.recentlyEditedTracker?.dispose()
+		this.recentlyVisitedRangesService.dispose()
+		this.recentlyEditedTracker.dispose()
 		void this.disposeIgnoreController()
 		if (this.acceptedCommand) {
 			this.acceptedCommand.dispose()

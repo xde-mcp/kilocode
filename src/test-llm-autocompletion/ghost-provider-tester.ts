@@ -15,6 +15,36 @@ import {
 } from "../services/ghost/classic-auto-complete/GhostInlineCompletionProvider.js"
 import { GhostModel } from "../services/ghost/GhostModel.js"
 import type { GhostServiceSettings } from "@roo-code/types"
+import type { AutocompleteCodeSnippet } from "../services/continuedev/core/autocomplete/snippets/types.js"
+import type { RecentlyEditedRange } from "../services/continuedev/core/autocomplete/util/types.js"
+
+/**
+ * Stub implementation of RecentlyVisitedRangesService for testing.
+ * Always returns an empty array since we don't need this context in tests.
+ */
+class StubRecentlyVisitedRangesService {
+	public getSnippets(): AutocompleteCodeSnippet[] {
+		return []
+	}
+
+	public dispose(): void {
+		// No-op
+	}
+}
+
+/**
+ * Stub implementation of RecentlyEditedTracker for testing.
+ * Always returns an empty array since we don't need this context in tests.
+ */
+class StubRecentlyEditedTracker {
+	public async getRecentlyEditedRanges(): Promise<RecentlyEditedRange[]> {
+		return []
+	}
+
+	public dispose(): void {
+		// No-op
+	}
+}
 
 /**
  * Create a GhostInlineCompletionProvider for testing purposes.
@@ -36,8 +66,8 @@ function createProviderForTesting(
 		getSettings,
 		holeFiller: new HoleFiller(contextProvider),
 		fimPromptBuilder: new FimPromptBuilder(contextProvider),
-		recentlyVisitedRangesService: null,
-		recentlyEditedTracker: null,
+		recentlyVisitedRangesService: new StubRecentlyVisitedRangesService(),
+		recentlyEditedTracker: new StubRecentlyEditedTracker(),
 		debounceTimer: null,
 		isFirstCall: true,
 		ignoreController: contextProvider.ignoreController,
