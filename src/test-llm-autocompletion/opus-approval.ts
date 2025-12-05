@@ -1,21 +1,8 @@
 import OpenAI from "openai"
 import { DEFAULT_HEADERS } from "../api/providers/constants.js"
+import { getKiloBaseUriFromToken } from "./llm-client.js"
 
 const OPUS_MODEL = "anthropic/claude-opus-4.5"
-
-function getKiloBaseUriFromToken(kilocodeToken?: string): string {
-	if (kilocodeToken) {
-		try {
-			const payload_string = kilocodeToken.split(".")[1]
-			const payload_json = Buffer.from(payload_string, "base64").toString()
-			const payload = JSON.parse(payload_json)
-			if (payload.env === "development") return "http://localhost:3000"
-		} catch (_error) {
-			console.warn("Failed to get base URL from Kilo Code token")
-		}
-	}
-	return "https://api.kilo.ai"
-}
 
 export async function askOpusApproval(
 	input: string,
