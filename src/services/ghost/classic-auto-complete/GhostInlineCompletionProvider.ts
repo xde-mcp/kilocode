@@ -289,10 +289,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		// Remove oldest if we exceed the sample size
 		if (this.latencyHistory.length > LATENCY_SAMPLE_SIZE) {
 			this.latencyHistory.shift()
-		}
 
-		// Once we have enough samples, update the debounce delay to the average
-		if (this.latencyHistory.length >= LATENCY_SAMPLE_SIZE) {
+			// Once we have enough samples, update the debounce delay to the average
 			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
 			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
 		}

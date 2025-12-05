@@ -2002,8 +2002,8 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(providerAny.debounceDelayMs).toBe(300) // Still initial value
 		})
 
-		it("should update debounce delay to average after 10 samples", () => {
-			// Record 10 latencies of 200ms each
+		it("should update debounce delay to average after exceeding 10 samples", () => {
+			// Record 10 latencies of 200ms each - debounce delay not updated yet
 			for (let i = 0; i < 10; i++) {
 				provider.recordLatency(200)
 			}
@@ -2011,7 +2011,12 @@ describe("GhostInlineCompletionProvider", () => {
 			// Access private field via any cast for testing
 			const providerAny = provider as any
 			expect(providerAny.latencyHistory.length).toBe(10)
-			expect(providerAny.debounceDelayMs).toBe(200) // Average of 200ms
+			expect(providerAny.debounceDelayMs).toBe(300) // Still initial value (not updated until > 10)
+
+			// Record 11th latency - now debounce delay is updated
+			provider.recordLatency(200)
+			expect(providerAny.latencyHistory.length).toBe(10) // Still 10 (oldest removed)
+			expect(providerAny.debounceDelayMs).toBe(200) // Now updated to average
 		})
 
 		it("should maintain rolling window of 10 latencies", () => {
@@ -2029,9 +2034,9 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(providerAny.debounceDelayMs).toBe(195)
 		})
 
-		it("should update debounce delay on each new latency after reaching 10 samples", () => {
-			// Record 10 latencies of 200ms each
-			for (let i = 0; i < 10; i++) {
+		it("should update debounce delay on each new latency after exceeding 10 samples", () => {
+			// Record 11 latencies of 200ms each (need > 10 to trigger update)
+			for (let i = 0; i < 11; i++) {
 				provider.recordLatency(200)
 			}
 
@@ -2062,8 +2067,9 @@ describe("GhostInlineCompletionProvider", () => {
 				}
 			})
 
-			// Record 10 latencies of 150ms each to set debounce delay to 150ms
-			for (let i = 0; i < 10; i++) {
+			// Record 11 latencies of 150ms each to set debounce delay to 150ms
+			// (need > 10 to trigger update)
+			for (let i = 0; i < 11; i++) {
 				provider.recordLatency(150)
 			}
 
