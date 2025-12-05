@@ -10,7 +10,7 @@ const config: ServerConfig = {
     methods: ['GET', 'POST'],
   },
   logging: {
-    level: '<<<CURSOR>>>',
+    level: '<<<AUTOCOMPLETE_HERE>>>',
   },
 };
 

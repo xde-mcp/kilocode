@@ -3,7 +3,7 @@
 import { UserService } from './services/user-service';
 
 const userService = new UserService();
-const user = userService.<<<CURSOR>>>
+const user = userService.<<<AUTOCOMPLETE_HERE>>>
 
 ##### services/user-service.ts
 export class UserService {

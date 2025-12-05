@@ -3,7 +3,7 @@
 import { Order, OrderStatus } from '../types/order';
 
 function processOrder(order: Order): void {
-  if (order.status === OrderStatus.<<<CURSOR>>>) {
+  if (order.status === OrderStatus.<<<AUTOCOMPLETE_HERE>>>) {
     // Process pending order
   }
 }
