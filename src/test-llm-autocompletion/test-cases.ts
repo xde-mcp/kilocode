@@ -31,10 +31,12 @@ export interface Category {
 
 const TEST_CASES_DIR = path.join(__dirname, "test-cases")
 
+// Header pattern: #### key: value
+const HEADER_PATTERN = /^#### ([^:]+):\s*(.*)$/
+
 function parseHeaders(
 	lines: string[],
 	startIndex: number,
-	headerPattern: RegExp,
 	requiredHeaders: string[],
 	filePath?: string,
 ): { headers: Record<string, string>; contentStartIndex: number } {
@@ -43,7 +45,7 @@ function parseHeaders(
 
 	for (let i = startIndex; i < lines.length; i++) {
 		const line = lines[i]
-		const headerMatch = line.match(headerPattern)
+		const headerMatch = line.match(HEADER_PATTERN)
 
 		if (headerMatch) {
 			const [, name, value] = headerMatch
@@ -69,16 +71,12 @@ function parseHeaders(
  * Reads lines from startIndex until the next header pattern is found or end of file.
  * Returns the content and the index where the next header starts (or lines.length if none found).
  */
-function readUntilHeaders(
-	lines: string[],
-	startIndex: number,
-	headerPattern: RegExp,
-): { content: string; nextHeaderIndex: number } {
+function readUntilHeaders(lines: string[], startIndex: number): { content: string; nextHeaderIndex: number } {
 	const contentLines: string[] = []
 
 	for (let i = startIndex; i < lines.length; i++) {
 		const line = lines[i]
-		if (headerPattern.test(line)) {
+		if (HEADER_PATTERN.test(line)) {
 			return { content: contentLines.join("\n"), nextHeaderIndex: i }
 		}
 		contentLines.push(line)
@@ -87,30 +85,20 @@ function readUntilHeaders(
 	return { content: contentLines.join("\n"), nextHeaderIndex: lines.length }
 }
 
-// Header patterns for different levels (both use same format: #### key: value or ##### key: value)
-const MAIN_HEADER_PATTERN = /^#### ([^:]+):\s*(.*)$/
-const CONTEXT_FILE_HEADER_PATTERN = /^##### ([^:]+):\s*(.*)$/
-
 function parseContextFiles(lines: string[], startIndex: number): { mainContent: string; contextFiles: ContextFile[] } {
 	const contextFiles: ContextFile[] = []
 
-	// Read main content until we hit a context file header (##### Filename: value)
-	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, startIndex, CONTEXT_FILE_HEADER_PATTERN)
+	// Read main content until we hit a context file header (#### Filename: value)
+	const { content: mainContent, nextHeaderIndex } = readUntilHeaders(lines, startIndex)
 
 	// Parse remaining context files
 	let currentIndex = nextHeaderIndex
 	while (currentIndex < lines.length) {
-		// Parse the context file header (##### Filename: path/to/file)
-		const { headers, contentStartIndex } = parseHeaders(lines, currentIndex, CONTEXT_FILE_HEADER_PATTERN, [
-			"filename",
-		])
+		// Parse the context file header (#### Filename: path/to/file)
+		const { headers, contentStartIndex } = parseHeaders(lines, currentIndex, ["filename"])
 
 		// Read content until next context file header or end of file
-		const { content: fileContent, nextHeaderIndex: nextIndex } = readUntilHeaders(
-			lines,
-			contentStartIndex,
-			CONTEXT_FILE_HEADER_PATTERN,
-		)
+		const { content: fileContent, nextHeaderIndex: nextIndex } = readUntilHeaders(lines, contentStartIndex)
 
 		contextFiles.push({
 			filepath: headers.filename,
@@ -132,14 +120,8 @@ function parseTestCaseFile(filePath: string): {
 	const content = fs.readFileSync(filePath, "utf-8")
 	const lines = content.split("\n")
 
-	// Parse main headers (#### description:, #### filename:)
-	const { headers, contentStartIndex } = parseHeaders(
-		lines,
-		0,
-		MAIN_HEADER_PATTERN,
-		["description", "filename"],
-		filePath,
-	)
+	// Parse main headers (#### Description:, #### Filename:)
+	const { headers, contentStartIndex } = parseHeaders(lines, 0, ["description", "filename"], filePath)
 
 	// Parse main content and context files
 	const { mainContent, contextFiles } = parseContextFiles(lines, contentStartIndex)
