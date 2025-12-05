@@ -29,26 +29,42 @@ function parseTestCaseFile(filePath: string): { description: string; filename: s
 	const content = fs.readFileSync(filePath, "utf-8")
 	const lines = content.split("\n")
 
-	const descriptionLine = lines[0]
-	if (!descriptionLine.startsWith("# Description: ")) {
-		throw new Error(
-			`Invalid test case file format: ${filePath}. Expected first line to start with "# Description: "`,
-		)
+	// Parse headers in format "# <name>: <value>"
+	const headers: Record<string, string> = {}
+	let contentStartIndex = 0
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i]
+		const headerMatch = line.match(/^# ([^:]+):\s*(.*)$/)
+
+		if (headerMatch) {
+			const [, name, value] = headerMatch
+			headers[name.toLowerCase()] = value.trim()
+			contentStartIndex = i + 1
+		} else {
+			// Stop parsing headers when we hit a non-header line
+			break
+		}
 	}
 
-	const filenameLine = lines[1]
-	if (!filenameLine.startsWith("# Filename: ")) {
-		throw new Error(`Invalid test case file format: ${filePath}. Expected second line to start with "# Filename: "`)
+	// Validate required headers
+	if (!headers.description) {
+		throw new Error(`Invalid test case file format: ${filePath}. Missing required header "# Description:"`)
+	}
+	if (!headers.filename) {
+		throw new Error(`Invalid test case file format: ${filePath}. Missing required header "# Filename:"`)
 	}
 
-	const description = descriptionLine.replace("# Description: ", "").trim()
-	const filename = filenameLine.replace("# Filename: ", "").trim()
 	const input = lines
-		.slice(2)
+		.slice(contentStartIndex)
 		.join("\n")
 		.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
 
-	return { description, filename, input }
+	return {
+		description: headers.description,
+		filename: headers.filename,
+		input,
+	}
 }
 
 function loadTestCases(): Category[] {
