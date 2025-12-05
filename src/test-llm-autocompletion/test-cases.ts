@@ -11,6 +11,7 @@ interface CategoryTestCase {
 	name: string
 	input: string
 	description: string
+	filename: string
 }
 
 export interface TestCase extends CategoryTestCase {
@@ -24,7 +25,7 @@ export interface Category {
 
 const TEST_CASES_DIR = path.join(__dirname, "test-cases")
 
-function parseTestCaseFile(filePath: string): { description: string; input: string } {
+function parseTestCaseFile(filePath: string): { description: string; filename: string; input: string } {
 	const content = fs.readFileSync(filePath, "utf-8")
 	const lines = content.split("\n")
 
@@ -35,13 +36,19 @@ function parseTestCaseFile(filePath: string): { description: string; input: stri
 		)
 	}
 
+	const filenameLine = lines[1]
+	if (!filenameLine.startsWith("# Filename: ")) {
+		throw new Error(`Invalid test case file format: ${filePath}. Expected second line to start with "# Filename: "`)
+	}
+
 	const description = descriptionLine.replace("# Description: ", "").trim()
+	const filename = filenameLine.replace("# Filename: ", "").trim()
 	const input = lines
-		.slice(1)
+		.slice(2)
 		.join("\n")
 		.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
 
-	return { description, input }
+	return { description, filename, input }
 }
 
 function loadTestCases(): Category[] {
@@ -64,12 +71,13 @@ function loadTestCases(): Category[] {
 		for (const testCaseFile of testCaseFiles) {
 			const testCaseName = testCaseFile.replace(".txt", "")
 			const testCasePath = path.join(categoryPath, testCaseFile)
-			const { description, input } = parseTestCaseFile(testCasePath)
+			const { description, filename, input } = parseTestCaseFile(testCasePath)
 
 			testCases.push({
 				name: testCaseName,
 				input,
 				description,
+				filename,
 			})
 		}
 
