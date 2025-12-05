@@ -118,7 +118,7 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 }
 
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
-	private suggestionsHistory: FillInAtCursorSuggestion[] = []
+	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
 	private holeFiller: HoleFiller
@@ -170,43 +170,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
 			telemetry.captureAcceptSuggestion(),
 		)
-	}
-
-	/**
-	 * Create a GhostInlineCompletionProvider for testing purposes.
-	 * This factory method allows creating an instance with a custom GhostContextProvider
-	 * without requiring VSCode extension context or ClineProvider.
-	 */
-	static createForTesting(
-		contextProvider: GhostContextProvider,
-		costTrackingCallback: CostTrackingCallback = () => {},
-		getSettings: () => GhostServiceSettings | null = () => null,
-	): GhostInlineCompletionProvider {
-		const instance = Object.create(GhostInlineCompletionProvider.prototype) as GhostInlineCompletionProvider
-		instance.suggestionsHistory = []
-		instance.pendingRequests = []
-		instance.model = contextProvider.model
-		instance.costTrackingCallback = costTrackingCallback
-		instance.getSettings = getSettings
-		instance.holeFiller = new HoleFiller(contextProvider)
-		instance.fimPromptBuilder = new FimPromptBuilder(contextProvider)
-		instance.recentlyVisitedRangesService = null
-		instance.recentlyEditedTracker = null
-		instance.debounceTimer = null
-		instance.isFirstCall = true
-		instance.ignoreController = contextProvider.ignoreController
-		instance.acceptedCommand = null
-		instance.debounceDelayMs = INITIAL_DEBOUNCE_DELAY_MS
-		instance.latencyHistory = []
-		return instance
-	}
-
-	/**
-	 * Get the suggestions history for testing purposes.
-	 * Use with findMatchingSuggestion() to retrieve cached suggestions.
-	 */
-	public getSuggestionsHistory(): FillInAtCursorSuggestion[] {
-		return this.suggestionsHistory
 	}
 
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {

@@ -1,7 +1,7 @@
 import { LLMClient } from "./llm-client.js"
 import { HoleFiller } from "../services/ghost/classic-auto-complete/HoleFiller.js"
 import { FimPromptBuilder } from "../services/ghost/classic-auto-complete/FillInTheMiddle.js"
-import { extractPrefixSuffix, contextToAutocompleteInput } from "../services/ghost/types.js"
+import { extractPrefixSuffix, contextToAutocompleteInput, GhostContextProvider } from "../services/ghost/types.js"
 import { createContext } from "./utils.js"
 import {
 	createTestGhostModel,
@@ -11,8 +11,42 @@ import {
 import {
 	GhostInlineCompletionProvider,
 	findMatchingSuggestion,
+	CostTrackingCallback,
 } from "../services/ghost/classic-auto-complete/GhostInlineCompletionProvider.js"
 import { GhostModel } from "../services/ghost/GhostModel.js"
+import type { GhostServiceSettings } from "@roo-code/types"
+
+/**
+ * Create a GhostInlineCompletionProvider for testing purposes.
+ * This factory function creates an instance with a custom GhostContextProvider
+ * without requiring VSCode extension context or ClineProvider.
+ */
+function createProviderForTesting(
+	contextProvider: GhostContextProvider,
+	costTrackingCallback: CostTrackingCallback = () => {},
+	getSettings: () => GhostServiceSettings | null = () => null,
+): GhostInlineCompletionProvider {
+	const instance = Object.create(GhostInlineCompletionProvider.prototype) as GhostInlineCompletionProvider
+	// Initialize private fields using Object.assign to bypass TypeScript private access
+	Object.assign(instance, {
+		suggestionsHistory: [],
+		pendingRequests: [],
+		model: contextProvider.model,
+		costTrackingCallback,
+		getSettings,
+		holeFiller: new HoleFiller(contextProvider),
+		fimPromptBuilder: new FimPromptBuilder(contextProvider),
+		recentlyVisitedRangesService: null,
+		recentlyEditedTracker: null,
+		debounceTimer: null,
+		isFirstCall: true,
+		ignoreController: contextProvider.ignoreController,
+		acceptedCommand: null,
+		debounceDelayMs: 300, // INITIAL_DEBOUNCE_DELAY_MS
+		latencyHistory: [],
+	})
+	return instance
+}
 
 export class GhostProviderTester {
 	private llmClient: LLMClient
@@ -27,7 +61,7 @@ export class GhostProviderTester {
 
 		// Create a base context provider for the provider instance
 		const baseContextProvider = createMockContextProviderWithContent("", "", "/test/file.ts", this.ghostModel)
-		this.provider = GhostInlineCompletionProvider.createForTesting(baseContextProvider)
+		this.provider = createProviderForTesting(baseContextProvider)
 	}
 
 	async getCompletion(
@@ -60,7 +94,8 @@ export class GhostProviderTester {
 		await this.provider.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
 
 		// Retrieve the cached suggestion using findMatchingSuggestion
-		const result = findMatchingSuggestion(prefix, suffix, this.provider.getSuggestionsHistory())
+		// Access the public suggestionsHistory property directly
+		const result = findMatchingSuggestion(prefix, suffix, this.provider.suggestionsHistory)
 
 		return { prefix, completion: result?.text ?? "", suffix }
 	}
