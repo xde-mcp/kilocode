@@ -19,10 +19,6 @@ export function modelSupportsFim(modelId: string): boolean {
 	return modelId.includes("codestral")
 }
 
-/**
- * Create a mock GhostModel that wraps an LLMClient for testing.
- * This allows testing the GhostInlineCompletionProvider without VSCode dependencies.
- */
 export function createTestGhostModel(llmClient: LLMClient, modelId: string): GhostModel {
 	const supportsFim = modelSupportsFim(modelId)
 
@@ -78,10 +74,6 @@ export function createTestGhostModel(llmClient: LLMClient, modelId: string): Gho
 	return mockModel
 }
 
-/**
- * Create a mock GhostContextProvider for standalone testing.
- * This provider simulates the context retrieval without requiring VSCode services.
- */
 export function createMockContextProvider(ghostModel: GhostModel): GhostContextProvider {
 	return {
 		ide: {
@@ -99,10 +91,6 @@ export function createMockContextProvider(ghostModel: GhostModel): GhostContextP
 	} as unknown as GhostContextProvider
 }
 
-/**
- * Create a mock GhostContextProvider with prefix/suffix for prompt building.
- * This is used by the prompt builders to get context.
- */
 export function createMockContextProviderWithContent(
 	prefix: string,
 	suffix: string,
@@ -125,39 +113,22 @@ export function createMockContextProviderWithContent(
 	} as unknown as GhostContextProvider
 }
 
-/**
- * Stub implementation of RecentlyVisitedRangesService for testing.
- * Always returns an empty array since we don't need this context in tests.
- */
 export class StubRecentlyVisitedRangesService {
 	public getSnippets(): AutocompleteCodeSnippet[] {
 		return []
 	}
 
-	public dispose(): void {
-		// No-op
-	}
+	public dispose(): void {}
 }
 
-/**
- * Stub implementation of RecentlyEditedTracker for testing.
- * Always returns an empty array since we don't need this context in tests.
- */
 export class StubRecentlyEditedTracker {
 	public async getRecentlyEditedRanges(): Promise<RecentlyEditedRange[]> {
 		return []
 	}
 
-	public dispose(): void {
-		// No-op
-	}
+	public dispose(): void {}
 }
 
-/**
- * Create a GhostInlineCompletionProvider for testing purposes.
- * This factory function creates an instance with a custom GhostContextProvider
- * without requiring VSCode extension context or ClineProvider.
- */
 export function createProviderForTesting(
 	contextProvider: GhostContextProvider,
 	costTrackingCallback: CostTrackingCallback = () => {},
