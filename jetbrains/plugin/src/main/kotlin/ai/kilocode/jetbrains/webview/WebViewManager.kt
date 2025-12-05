@@ -314,9 +314,6 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     fun updateWebViewHtml(data: WebviewHtmlUpdateData) {
         data.htmlContent = data.htmlContent.replace("/jetbrains/resources/kilocode/", "./")
         data.htmlContent = data.htmlContent.replace("<html lang=\"en\">", "<html lang=\"en\" style=\"background: var(--vscode-sideBar-background);\">")
-        // Replace index.css/index.js with main.css/main.js to match actual build output
-        data.htmlContent = data.htmlContent.replace("assets/index.css", "assets/main.css")
-        data.htmlContent = data.htmlContent.replace("assets/index.js", "assets/main.js")
         val encodedState = getLatestWebView()?.state.toString().replace("\"", "\\\"")
         val mRst = """<script\s+nonce="([A-Za-z0-9]{32})">""".toRegex().find(data.htmlContent)
         val str = mRst?.value ?: ""
