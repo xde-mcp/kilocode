@@ -2,7 +2,7 @@
 "kilo-code": minor
 ---
 
-Include changes from Roo Code v3.34.7
+Include changes from Roo Code v3.32.1-v3.34.7
 
 - Enable native tool calling for Moonshot models (PR #9646 by @mrubens)
 - Fix: OpenRouter tool calls handling improvements (PR #9642 by @mrubens)
