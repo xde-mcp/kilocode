@@ -126,7 +126,7 @@ function parseTestCaseFile(filePath: string): {
 		currentIndex = nextIndex
 	}
 
-	const input = mainContent.replace(/<<<CURSOR>>>/g, CURSOR_MARKER)
+	const input = mainContent
 
 	return {
 		description: headers.description,
