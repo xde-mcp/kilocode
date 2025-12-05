@@ -126,8 +126,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
-	private recentlyVisitedRangesService: RecentlyVisitedRangesService
-	private recentlyEditedTracker: RecentlyEditedTracker
+	private recentlyVisitedRangesService: RecentlyVisitedRangesService | null
+	private recentlyEditedTracker: RecentlyEditedTracker | null
 	private debounceTimer: NodeJS.Timeout | null = null
 	private isFirstCall: boolean = true
 	private ignoreController?: Promise<RooIgnoreController>
@@ -172,6 +172,43 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		)
 	}
 
+	/**
+	 * Create a GhostInlineCompletionProvider for testing purposes.
+	 * This factory method allows creating an instance with a custom GhostContextProvider
+	 * without requiring VSCode extension context or ClineProvider.
+	 */
+	static createForTesting(
+		contextProvider: GhostContextProvider,
+		costTrackingCallback: CostTrackingCallback = () => {},
+		getSettings: () => GhostServiceSettings | null = () => null,
+	): GhostInlineCompletionProvider {
+		const instance = Object.create(GhostInlineCompletionProvider.prototype) as GhostInlineCompletionProvider
+		instance.suggestionsHistory = []
+		instance.pendingRequests = []
+		instance.model = contextProvider.model
+		instance.costTrackingCallback = costTrackingCallback
+		instance.getSettings = getSettings
+		instance.holeFiller = new HoleFiller(contextProvider)
+		instance.fimPromptBuilder = new FimPromptBuilder(contextProvider)
+		instance.recentlyVisitedRangesService = null
+		instance.recentlyEditedTracker = null
+		instance.debounceTimer = null
+		instance.isFirstCall = true
+		instance.ignoreController = contextProvider.ignoreController
+		instance.acceptedCommand = null
+		instance.debounceDelayMs = INITIAL_DEBOUNCE_DELAY_MS
+		instance.latencyHistory = []
+		return instance
+	}
+
+	/**
+	 * Get the suggestions history for testing purposes.
+	 * Use with findMatchingSuggestion() to retrieve cached suggestions.
+	 */
+	public getSuggestionsHistory(): FillInAtCursorSuggestion[] {
+		return this.suggestionsHistory
+	}
+
 	public updateSuggestions(fillInAtCursor: FillInAtCursorSuggestion): void {
 		const isDuplicate = this.suggestionsHistory.some(
 			(existing) =>
@@ -198,8 +235,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		position: vscode.Position,
 	): Promise<{ prompt: GhostPrompt; prefix: string; suffix: string }> {
 		// Build complete context with all tracking data
-		const recentlyVisitedRanges = this.recentlyVisitedRangesService.getSnippets()
-		const recentlyEditedRanges = await this.recentlyEditedTracker.getRecentlyEditedRanges()
+		const recentlyVisitedRanges = this.recentlyVisitedRangesService?.getSnippets() ?? []
+		const recentlyEditedRanges = (await this.recentlyEditedTracker?.getRecentlyEditedRanges()) ?? []
 
 		const context: GhostSuggestionContext = {
 			document,
@@ -283,8 +320,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			clearTimeout(this.debounceTimer)
 			this.debounceTimer = null
 		}
-		this.recentlyVisitedRangesService.dispose()
-		this.recentlyEditedTracker.dispose()
+		this.recentlyVisitedRangesService?.dispose()
+		this.recentlyEditedTracker?.dispose()
 		void this.disposeIgnoreController()
 		if (this.acceptedCommand) {
 			this.acceptedCommand.dispose()
@@ -482,7 +519,11 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		return requestPromise
 	}
 
-	private async fetchAndCacheSuggestion(
+	/**
+	 * Fetch a suggestion from the LLM and cache it.
+	 * This method is public to allow direct testing without going through the debounce logic.
+	 */
+	public async fetchAndCacheSuggestion(
 		prompt: GhostPrompt,
 		prefix: string,
 		suffix: string,

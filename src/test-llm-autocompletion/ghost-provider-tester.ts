@@ -1,17 +1,33 @@
 import { LLMClient } from "./llm-client.js"
-import { HoleFiller, parseGhostResponse } from "../services/ghost/classic-auto-complete/HoleFiller.js"
+import { HoleFiller } from "../services/ghost/classic-auto-complete/HoleFiller.js"
 import { FimPromptBuilder } from "../services/ghost/classic-auto-complete/FillInTheMiddle.js"
-import { extractPrefixSuffix, contextToAutocompleteInput, GhostContextProvider } from "../services/ghost/types.js"
+import { extractPrefixSuffix, contextToAutocompleteInput } from "../services/ghost/types.js"
 import { createContext } from "./utils.js"
-import { createMockContextProvider, modelSupportsFim } from "./mock-context-provider.js"
+import {
+	createTestGhostModel,
+	createMockContextProviderWithContent,
+	modelSupportsFim,
+} from "./mock-context-provider.js"
+import {
+	GhostInlineCompletionProvider,
+	findMatchingSuggestion,
+} from "../services/ghost/classic-auto-complete/GhostInlineCompletionProvider.js"
+import { GhostModel } from "../services/ghost/GhostModel.js"
 
 export class GhostProviderTester {
 	private llmClient: LLMClient
-	private model: string
+	private modelId: string
+	private ghostModel: GhostModel
+	private provider: GhostInlineCompletionProvider
 
 	constructor() {
-		this.model = process.env.LLM_MODEL || "mistralai/codestral-2508"
+		this.modelId = process.env.LLM_MODEL || "mistralai/codestral-2508"
 		this.llmClient = new LLMClient()
+		this.ghostModel = createTestGhostModel(this.llmClient, this.modelId)
+
+		// Create a base context provider for the provider instance
+		const baseContextProvider = createMockContextProviderWithContent("", "", "/test/file.ts", this.ghostModel)
+		this.provider = GhostInlineCompletionProvider.createForTesting(baseContextProvider)
 	}
 
 	async getCompletion(
@@ -26,48 +42,35 @@ export class GhostProviderTester {
 		const autocompleteInput = contextToAutocompleteInput(context)
 		const languageId = context.document.languageId || "javascript"
 
-		// Create mock context provider
-		const mockContextProvider = createMockContextProvider(prefix, suffix, autocompleteInput.filepath)
+		// Create context provider with the actual content for prompt building
+		const contextProvider = createMockContextProviderWithContent(
+			prefix,
+			suffix,
+			autocompleteInput.filepath,
+			this.ghostModel,
+		)
 
-		// Auto-detect strategy based on model capabilities
-		const supportsFim = modelSupportsFim(this.model)
-		const completion = supportsFim
-			? await this.getFimCompletion(mockContextProvider, autocompleteInput)
-			: await this.getHoleFillerCompletion(mockContextProvider, autocompleteInput, languageId, prefix, suffix)
+		// Build the prompt using the appropriate strategy
+		const supportsFim = modelSupportsFim(this.modelId)
+		const prompt = supportsFim
+			? await new FimPromptBuilder(contextProvider).getFimPrompts(autocompleteInput, this.modelId)
+			: await new HoleFiller(contextProvider).getPrompts(autocompleteInput, languageId)
 
-		return { prefix, completion, suffix }
-	}
+		// Use the provider's fetchAndCacheSuggestion method directly
+		await this.provider.fetchAndCacheSuggestion(prompt, prefix, suffix, languageId)
 
-	private async getFimCompletion(
-		contextProvider: GhostContextProvider,
-		autocompleteInput: ReturnType<typeof contextToAutocompleteInput>,
-	): Promise<string> {
-		const fimPromptBuilder = new FimPromptBuilder(contextProvider)
-		const prompt = await fimPromptBuilder.getFimPrompts(autocompleteInput, this.model)
-		const fimResponse = await this.llmClient.sendFimCompletion(prompt.formattedPrefix, prompt.prunedSuffix)
-		return fimResponse.completion
-	}
+		// Retrieve the cached suggestion using findMatchingSuggestion
+		const result = findMatchingSuggestion(prefix, suffix, this.provider.getSuggestionsHistory())
 
-	private async getHoleFillerCompletion(
-		contextProvider: GhostContextProvider,
-		autocompleteInput: ReturnType<typeof contextToAutocompleteInput>,
-		languageId: string,
-		prefix: string,
-		suffix: string,
-	): Promise<string> {
-		const holeFiller = new HoleFiller(contextProvider)
-		const { systemPrompt, userPrompt } = await holeFiller.getPrompts(autocompleteInput, languageId)
-		const response = await this.llmClient.sendPrompt(systemPrompt, userPrompt)
-		const parseResult = parseGhostResponse(response.content, prefix, suffix)
-		return parseResult.text
+		return { prefix, completion: result?.text ?? "", suffix }
 	}
 
 	getName(): string {
-		const supportsFim = modelSupportsFim(this.model)
+		const supportsFim = modelSupportsFim(this.modelId)
 		return supportsFim ? "ghost-provider-fim" : "ghost-provider-holefiller"
 	}
 
 	dispose(): void {
-		// No resources to dispose
+		this.provider.dispose()
 	}
 }
