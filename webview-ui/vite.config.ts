@@ -121,7 +121,7 @@ export default defineConfig(({ mode }) => {
 			cssCodeSplit: true, // kilocode_change: enable CSS code splitting so CSS files are generated
 			rollupOptions: {
 				input: {
-					main: resolve(__dirname, "index.html"),
+					index: resolve(__dirname, "index.html"),
 					"agent-manager": resolve(__dirname, "agent-manager.html"), // kilocode_change
 				},
 				external: ["vscode"], // kilocode_change: we inadvertently import vscode into the webview: @roo/modes => src/shared/modes => ../core/prompts/sections/custom-instructions
