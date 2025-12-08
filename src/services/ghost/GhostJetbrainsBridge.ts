@@ -3,6 +3,8 @@ import * as vscode from "vscode"
 import { GhostServiceManager } from "./GhostServiceManager"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
+import { languageForFilepath } from "../continuedev/core/autocomplete/constants/AutocompleteLanguageInfo"
+import { getUriFileExtension } from "../continuedev/core/util/uri"
 
 const GET_INLINE_COMPLETIONS_COMMAND = "kilo-code.jetbrains.getInlineCompletions"
 
@@ -11,6 +13,55 @@ class GhostJetbrainsBridge {
 
 	constructor(ghost: GhostServiceManager) {
 		this.ghost = ghost
+	}
+
+	/**
+	 * Determines the VSCode language ID from a languageId string or file URI
+	 * @param langId - The language ID provided by JetBrains (may be empty or generic)
+	 * @param uri - The file URI to extract language from extension
+	 * @returns VSCode-compatible language ID
+	 */
+	private determineLanguage(langId: string, uri: string): string {
+		// If we have a valid language ID that's not generic, use it
+		if (langId && langId !== "text" && langId !== "textmate") {
+			return langId
+		}
+
+		// Use the languageForFilepath function to get language info from file extension
+		const languageInfo = languageForFilepath(uri)
+		const languageName = languageInfo.name.toLowerCase()
+
+		// Map language names to VSCode language IDs
+		const languageIdMap: { [key: string]: string } = {
+			typescript: "typescript",
+			javascript: "javascript",
+			python: "python",
+			java: "java",
+			"c++": "cpp",
+			"c#": "csharp",
+			c: "c",
+			scala: "scala",
+			go: "go",
+			rust: "rust",
+			haskell: "haskell",
+			php: "php",
+			ruby: "ruby",
+			"ruby on rails": "ruby",
+			swift: "swift",
+			kotlin: "kotlin",
+			clojure: "clojure",
+			julia: "julia",
+			"f#": "fsharp",
+			r: "r",
+			dart: "dart",
+			solidity: "solidity",
+			yaml: "yaml",
+			json: "json",
+			markdown: "markdown",
+			lua: "lua",
+		}
+
+		return languageIdMap[languageName] || languageName
 	}
 
 	public async getInlineCompletions(...args: any[]) {
@@ -50,18 +101,8 @@ class GhostJetbrainsBridge {
 			console.log("  content length:", content.length)
 			console.log("  languageId:", langId)
 
-			// Determine language from languageId or file extension
-			let language = langId
-			if (!language || language === "text" || language === "textmate") {
-				// Try to infer from URI
-				const uriLower = uri.toLowerCase()
-				if (uriLower.endsWith(".kt")) language = "kotlin"
-				else if (uriLower.endsWith(".java")) language = "java"
-				else if (uriLower.endsWith(".ts") || uriLower.endsWith(".tsx")) language = "typescript"
-				else if (uriLower.endsWith(".js") || uriLower.endsWith(".jsx")) language = "javascript"
-				else if (uriLower.endsWith(".py")) language = "python"
-				else language = "plaintext"
-			}
+			// Determine language from languageId or file extension using the comprehensive language info
+			const language = this.determineLanguage(langId, uri)
 
 			console.log("[JetBrains Inline Completion] Final language:", language)
 
