@@ -293,6 +293,12 @@ export class CodeIndexManager {
 		await this._cacheManager!.clearCacheFile()
 	}
 
+	// kilocode_change start
+	public clearErrorState(): void {
+		this._stateManager.setSystemState("Standby", "")
+	}
+	// kilocode_change end
+
 	// --- Private Helpers ---
 
 	public getCurrentStatus() {
