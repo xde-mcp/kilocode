@@ -28,6 +28,11 @@ describe("AgentManagerProvider CLI spawning", () => {
 			fileExistsAtPath: vi.fn().mockResolvedValue(false),
 		}))
 
+		// Mock getRemoteUrl for gitUrl support
+		vi.doMock("../../../../services/code-index/managed/git-utils", () => ({
+			getRemoteUrl: vi.fn().mockResolvedValue(undefined),
+		}))
+
 		class TestProc extends EventEmitter {
 			stdout = new EventEmitter()
 			stderr = new EventEmitter()
@@ -63,36 +68,39 @@ describe("AgentManagerProvider CLI spawning", () => {
 		expect(options?.shell).not.toBe(true)
 	})
 
-	it("flushes buffered CLI output on process exit", async () => {
-		await (provider as any).startAgentSession("test flush")
+	it("creates pending session and waits for session_created event", async () => {
+		await (provider as any).startAgentSession("test pending")
+
+		// Should have a pending session
+		expect((provider as any).registry.pendingSession).not.toBeNull()
+		expect((provider as any).registry.pendingSession.prompt).toBe("test pending")
+
+		// No sessions created yet
+		expect((provider as any).registry.getSessions()).toHaveLength(0)
+	})
+
+	it("creates session when session_created event is received", async () => {
+		await (provider as any).startAgentSession("test session created")
 		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
 		const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
 
-		// Enable text handling
-		const sessionId = (provider as any).registry.getSessions()[0].id as string
-		;(provider as any).handleKilocodeEvent(sessionId, {
-			streamEventType: "kilocode",
-			payload: { type: "say", say: "api_req_started" },
-		})
+		// Emit session_created event
+		const sessionCreatedEvent = '{"event":"session_created","sessionId":"cli-session-123","timestamp":1234567890}\n'
+		proc.stdout.emit("data", Buffer.from(sessionCreatedEvent))
 
-		// Emit a JSON line without trailing newline to stay buffered
-		const partial = '{"timestamp":1,"source":"extension","type":"say","say":"text","content":"hi"}'
-		proc.stdout.emit("data", Buffer.from(partial))
+		// Pending session should be cleared
+		expect((provider as any).registry.pendingSession).toBeNull()
 
-		// No messages yet because the line lacked a newline
-		expect((provider as any).sessionMessages.get(sessionId)).toEqual([])
-
-		// Exit should flush the buffered line and deliver the message
-		proc.emit("exit", 0, null)
-
-		const messages = (provider as any).sessionMessages.get(sessionId)
-		expect(messages).toHaveLength(1)
-		expect(messages?.[0].text).toBe("hi")
+		// Session should be created with CLI's sessionId
+		const sessions = (provider as any).registry.getSessions()
+		expect(sessions).toHaveLength(1)
+		expect(sessions[0].sessionId).toBe("cli-session-123")
 	})
 
 	it("adds metadata text for tool requests and skips non chat events", async () => {
 		const registry = (provider as any).registry
-		const sessionId = registry.createSession("meta").id
+		const sessionId = "test-session-meta"
+		registry.createSession(sessionId, "meta")
 		;(provider as any).sessionMessages.set(sessionId, [])
 
 		// Non-chat event should be logged but not added
@@ -120,7 +128,8 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 	it("adds fallback text for checkpoint_saved", async () => {
 		const registry = (provider as any).registry
-		const sessionId = registry.createSession("checkpoint").id
+		const sessionId = "test-session-checkpoint"
+		registry.createSession(sessionId, "checkpoint")
 		;(provider as any).sessionMessages.set(sessionId, [])
 		;(provider as any).handleKilocodeEvent(sessionId, {
 			streamEventType: "kilocode",
@@ -140,7 +149,8 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 	it("dedupes repeated events with same ts/type/say/ask", async () => {
 		const registry = (provider as any).registry
-		const sessionId = registry.createSession("dedupe").id
+		const sessionId = "test-session-dedupe"
+		registry.createSession(sessionId, "dedupe")
 		;(provider as any).sessionMessages.set(sessionId, [])
 
 		// Enable text handling
@@ -166,7 +176,8 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 	it("skips user echo before api_req_started", async () => {
 		const registry = (provider as any).registry
-		const sessionId = registry.createSession("echo").id
+		const sessionId = "test-session-echo"
+		registry.createSession(sessionId, "echo")
 		;(provider as any).sessionMessages.set(sessionId, [])
 
 		// say:text before api_req_started -> skipped
@@ -205,7 +216,8 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 	it("drops empty partial messages and allows final to overwrite partial", async () => {
 		const registry = (provider as any).registry
-		const sessionId = registry.createSession("partial").id
+		const sessionId = "test-session-partial"
+		registry.createSession(sessionId, "partial")
 		;(provider as any).sessionMessages.set(sessionId, [])
 
 		// Enable text handling
@@ -255,31 +267,55 @@ describe("AgentManagerProvider CLI spawning", () => {
 	})
 
 	describe("dispose behavior", () => {
-		it("kills all running processes on dispose", async () => {
-			await (provider as any).startAgentSession("session 1")
-			await (provider as any).startAgentSession("session 2")
+		it("kills pending process on dispose", async () => {
+			await (provider as any).startAgentSession("pending session")
 
 			const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
-			const proc1 = spawnMock.mock.results[0].value
-			const proc2 = spawnMock.mock.results[1].value
+			const proc = spawnMock.mock.results[0].value
 
-			expect((provider as any).processes.size).toBe(2)
+			const processHandler = (provider as any).processHandler
+			expect(processHandler.pendingProcess).not.toBeNull()
+
+			provider.dispose()
+
+			expect(proc.kill).toHaveBeenCalledWith("SIGTERM")
+			expect(processHandler.pendingProcess).toBeNull()
+		})
+
+		it("kills all running processes on dispose", async () => {
+			// Start two sessions and simulate session_created for both
+			await (provider as any).startAgentSession("session 1")
+			const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+			const proc1 = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter; kill: Mock }
+			proc1.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+			await (provider as any).startAgentSession("session 2")
+			const proc2 = spawnMock.mock.results[1].value as EventEmitter & { stdout: EventEmitter; kill: Mock }
+			proc2.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-2"}\n'))
+
+			const processHandler = (provider as any).processHandler
+			expect(processHandler.activeSessions.size).toBe(2)
 
 			provider.dispose()
 
 			expect(proc1.kill).toHaveBeenCalledWith("SIGTERM")
 			expect(proc2.kill).toHaveBeenCalledWith("SIGTERM")
-			expect((provider as any).processes.size).toBe(0)
+			expect(processHandler.activeSessions.size).toBe(0)
 		})
 
 		it("clears all timeouts on dispose", async () => {
 			await (provider as any).startAgentSession("session with timeout")
+			const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+			const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
+			proc.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
 
-			expect((provider as any).timeouts.size).toBe(1)
+			const processHandler = (provider as any).processHandler
+			expect(processHandler.activeSessions.size).toBe(1)
 
 			provider.dispose()
 
-			expect((provider as any).timeouts.size).toBe(0)
+			// All active sessions (including their timeouts) should be cleared
+			expect(processHandler.activeSessions.size).toBe(0)
 		})
 	})
 
@@ -290,13 +326,242 @@ describe("AgentManagerProvider CLI spawning", () => {
 
 		it("returns true when a session is running", async () => {
 			await (provider as any).startAgentSession("running")
+			const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+			const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
+			proc.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
 			expect((provider as any).hasRunningSessions()).toBe(true)
 		})
 
 		it("returns count of running sessions", async () => {
 			await (provider as any).startAgentSession("running 1")
+			const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+			const proc1 = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
+			proc1.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
 			await (provider as any).startAgentSession("running 2")
+			const proc2 = spawnMock.mock.results[1].value as EventEmitter & { stdout: EventEmitter }
+			proc2.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-2"}\n'))
+
 			expect((provider as any).getRunningSessionCount()).toBe(2)
+		})
+	})
+})
+
+describe("AgentManagerProvider gitUrl filtering", () => {
+	let provider: InstanceType<typeof AgentManagerProvider>
+	const mockContext = { extensionUri: {}, extensionPath: "" } as any
+	const mockOutputChannel = { appendLine: vi.fn() } as any
+	let mockGetRemoteUrl: Mock
+
+	beforeEach(async () => {
+		vi.resetModules()
+
+		const mockWorkspaceFolder = { uri: { fsPath: "/tmp/workspace" } }
+		const mockWindow = { showErrorMessage: () => undefined, ViewColumn: { One: 1 } }
+
+		vi.doMock("vscode", () => ({
+			workspace: { workspaceFolders: [mockWorkspaceFolder] },
+			window: mockWindow,
+			env: { openExternal: vi.fn() },
+			Uri: { parse: vi.fn(), joinPath: vi.fn() },
+			ViewColumn: { One: 1 },
+		}))
+
+		vi.doMock("../../../../utils/fs", () => ({
+			fileExistsAtPath: vi.fn().mockResolvedValue(false),
+		}))
+
+		mockGetRemoteUrl = vi.fn().mockResolvedValue("https://github.com/org/repo.git")
+		vi.doMock("../../../../services/code-index/managed/git-utils", () => ({
+			getRemoteUrl: mockGetRemoteUrl,
+		}))
+
+		class TestProc extends EventEmitter {
+			stdout = new EventEmitter()
+			stderr = new EventEmitter()
+			kill = vi.fn()
+			pid = 1234
+		}
+
+		const spawnMock = vi.fn(() => new TestProc())
+		const execSyncMock = vi.fn(() => MOCK_CLI_PATH)
+
+		vi.doMock("node:child_process", () => ({
+			spawn: spawnMock,
+			execSync: execSyncMock,
+		}))
+
+		const module = await import("../AgentManagerProvider")
+		AgentManagerProvider = module.AgentManagerProvider
+		provider = new AgentManagerProvider(mockContext, mockOutputChannel)
+	})
+
+	afterEach(() => {
+		provider.dispose()
+	})
+
+	it("captures gitUrl from workspace when starting a session", async () => {
+		await (provider as any).startAgentSession("test prompt")
+
+		expect(mockGetRemoteUrl).toHaveBeenCalledWith("/tmp/workspace")
+	})
+
+	it("passes gitUrl to process handler when starting session", async () => {
+		const spawnProcessSpy = vi.spyOn((provider as any).processHandler, "spawnProcess")
+
+		await (provider as any).startAgentSession("test prompt")
+
+		expect(spawnProcessSpy).toHaveBeenCalledWith(
+			expect.any(String),
+			"/tmp/workspace",
+			"test prompt",
+			expect.any(Function),
+			{ gitUrl: "https://github.com/org/repo.git" },
+		)
+	})
+
+	it("handles git URL retrieval errors gracefully", async () => {
+		mockGetRemoteUrl.mockRejectedValue(new Error("No remote configured"))
+		const spawnProcessSpy = vi.spyOn((provider as any).processHandler, "spawnProcess")
+
+		await (provider as any).startAgentSession("test prompt")
+
+		// Should still spawn process without gitUrl
+		expect(spawnProcessSpy).toHaveBeenCalledWith(
+			expect.any(String),
+			"/tmp/workspace",
+			"test prompt",
+			expect.any(Function),
+			undefined,
+		)
+	})
+
+	it("stores gitUrl on created session", async () => {
+		await (provider as any).startAgentSession("test prompt")
+		const spawnMock = (await import("node:child_process")).spawn as unknown as Mock
+		const proc = spawnMock.mock.results[0].value as EventEmitter & { stdout: EventEmitter }
+
+		// Emit session_created event
+		proc.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+		const sessions = (provider as any).registry.getSessions()
+		expect(sessions[0].gitUrl).toBe("https://github.com/org/repo.git")
+	})
+
+	it("sets currentGitUrl on provider initialization", async () => {
+		// The provider should have set the current git URL
+		expect((provider as any).currentGitUrl).toBe("https://github.com/org/repo.git")
+	})
+
+	it("filters sessions by currentGitUrl when broadcasting state", async () => {
+		// Create sessions with different gitUrls
+		const registry = (provider as any).registry
+		registry.createSession("session-1", "prompt 1", undefined, {
+			gitUrl: "https://github.com/org/repo.git",
+		})
+		registry.createSession("session-2", "prompt 2", undefined, {
+			gitUrl: "https://github.com/org/other-repo.git",
+		})
+		registry.createSession("session-3", "prompt 3", undefined, {
+			gitUrl: "https://github.com/org/repo.git",
+		})
+
+		// Get state (which should be filtered)
+		const state = (provider as any).getFilteredState()
+
+		// Should only include sessions matching currentGitUrl
+		expect(state.sessions).toHaveLength(2)
+		expect(state.sessions.map((s: any) => s.sessionId)).toContain("session-1")
+		expect(state.sessions.map((s: any) => s.sessionId)).toContain("session-3")
+		expect(state.sessions.map((s: any) => s.sessionId)).not.toContain("session-2")
+	})
+
+	it("excludes sessions without gitUrl when filtering by gitUrl", async () => {
+		const registry = (provider as any).registry
+		registry.createSession("session-1", "prompt 1", undefined, {
+			gitUrl: "https://github.com/org/repo.git",
+		})
+		registry.createSession("session-2", "prompt 2") // no gitUrl
+		registry.createSession("session-3", "prompt 3", undefined, {
+			gitUrl: "https://github.com/org/other-repo.git",
+		})
+
+		const state = (provider as any).getFilteredState()
+
+		// Should only include session-1 (matches exactly)
+		expect(state.sessions).toHaveLength(1)
+		expect(state.sessions[0].sessionId).toBe("session-1")
+	})
+
+	it("shows only sessions without gitUrl when currentGitUrl is not set", async () => {
+		;(provider as any).currentGitUrl = undefined
+
+		const registry = (provider as any).registry
+		registry.createSession("session-1", "prompt 1", undefined, {
+			gitUrl: "https://github.com/org/repo1.git",
+		})
+		registry.createSession("session-2", "prompt 2") // no gitUrl
+
+		const state = (provider as any).getFilteredState()
+
+		expect(state.sessions).toHaveLength(1)
+		expect(state.sessions[0].sessionId).toBe("session-2")
+	})
+
+	describe("filterRemoteSessionsByGitUrl", () => {
+		it("returns only sessions with matching git_url when currentGitUrl is set", () => {
+			const remoteSessions = [
+				{ session_id: "1", git_url: "https://github.com/org/repo.git" },
+				{ session_id: "2", git_url: "https://github.com/org/other.git" },
+				{ session_id: "3", git_url: "https://github.com/org/repo.git" },
+			] as any[]
+
+			const filtered = (provider as any).filterRemoteSessionsByGitUrl(remoteSessions)
+
+			expect(filtered).toHaveLength(2)
+			expect(filtered.map((s: any) => s.session_id)).toEqual(["1", "3"])
+		})
+
+		it("excludes sessions without git_url when currentGitUrl is set", () => {
+			const remoteSessions = [
+				{ session_id: "1", git_url: "https://github.com/org/repo.git" },
+				{ session_id: "2", git_url: undefined },
+				{ session_id: "3" }, // no git_url property
+			] as any[]
+
+			const filtered = (provider as any).filterRemoteSessionsByGitUrl(remoteSessions)
+
+			expect(filtered).toHaveLength(1)
+			expect(filtered[0].session_id).toBe("1")
+		})
+
+		it("returns only sessions without git_url when currentGitUrl is undefined", () => {
+			;(provider as any).currentGitUrl = undefined
+
+			const remoteSessions = [
+				{ session_id: "1", git_url: "https://github.com/org/repo.git" },
+				{ session_id: "2", git_url: undefined },
+				{ session_id: "3" }, // no git_url property
+			] as any[]
+
+			const filtered = (provider as any).filterRemoteSessionsByGitUrl(remoteSessions)
+
+			expect(filtered).toHaveLength(2)
+			expect(filtered.map((s: any) => s.session_id)).toEqual(["2", "3"])
+		})
+
+		it("excludes sessions with git_url when currentGitUrl is undefined", () => {
+			;(provider as any).currentGitUrl = undefined
+
+			const remoteSessions = [
+				{ session_id: "1", git_url: "https://github.com/org/repo.git" },
+				{ session_id: "2", git_url: "https://github.com/org/other.git" },
+			] as any[]
+
+			const filtered = (provider as any).filterRemoteSessionsByGitUrl(remoteSessions)
+
+			expect(filtered).toHaveLength(0)
 		})
 	})
 })
