@@ -208,8 +208,9 @@ export const registerGhostJetbrainsBridge = (
 	ghost: GhostServiceManager,
 ) => {
 	// Check if we are running inside JetBrains IDE
-	const { kiloCodeWrapped, kiloCodeWrapperCode } = getKiloCodeWrapperProperties()
-	if (!kiloCodeWrapped || kiloCodeWrapperCode == null || !kiloCodeWrapperCode.includes("jetbrains")) {
+	const { kiloCodeWrapped, kiloCodeWrapperJetbrains } = getKiloCodeWrapperProperties()
+	console.log()
+	if (!kiloCodeWrapped || !kiloCodeWrapperJetbrains) {
 		return
 	}
 
