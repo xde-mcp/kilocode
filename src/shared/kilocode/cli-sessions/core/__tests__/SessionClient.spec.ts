@@ -27,6 +27,8 @@ describe("SessionClient", () => {
 
 		it("should get signed URL and upload blob successfully", async () => {
 			const signedUrl = "https://storage.example.com/signed-upload-url"
+			const blobBody = JSON.stringify(blobData)
+			const contentLength = new TextEncoder().encode(blobBody).length
 
 			mockFetch
 				.mockResolvedValueOnce({
@@ -41,23 +43,25 @@ describe("SessionClient", () => {
 
 			expect(mockFetch).toHaveBeenCalledTimes(2)
 
-			expect(mockFetch).toHaveBeenNthCalledWith(
-				1,
-				"https://api.example.com/api/upload-cli-session-blob-v2?session_id=test-session-123&blob_type=ui_messages",
-				{
-					method: "POST",
-					headers: {
-						Authorization: "Bearer test-token",
-					},
+			expect(mockFetch).toHaveBeenNthCalledWith(1, "https://api.example.com/api/upload-cli-session-blob-v2", {
+				method: "POST",
+				headers: {
+					Authorization: "Bearer test-token",
+					"Content-Type": "application/json",
 				},
-			)
+				body: JSON.stringify({
+					session_id: sessionId,
+					blob_type: blobType,
+					content_length: contentLength,
+				}),
+			})
 
 			expect(mockFetch).toHaveBeenNthCalledWith(2, signedUrl, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify(blobData),
+				body: blobBody,
 			})
 		})
 
@@ -96,6 +100,8 @@ describe("SessionClient", () => {
 
 		it("should work with different blob types", async () => {
 			const signedUrl = "https://storage.example.com/signed-upload-url"
+			const blobBody = JSON.stringify(blobData)
+			const contentLength = new TextEncoder().encode(blobBody).length
 
 			mockFetch
 				.mockResolvedValueOnce({
@@ -108,15 +114,25 @@ describe("SessionClient", () => {
 
 			await sessionClient.uploadBlob(sessionId, "api_conversation_history", blobData)
 
-			expect(mockFetch).toHaveBeenNthCalledWith(
-				1,
-				"https://api.example.com/api/upload-cli-session-blob-v2?session_id=test-session-123&blob_type=api_conversation_history",
-				expect.any(Object),
-			)
+			expect(mockFetch).toHaveBeenNthCalledWith(1, "https://api.example.com/api/upload-cli-session-blob-v2", {
+				method: "POST",
+				headers: {
+					Authorization: "Bearer test-token",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					session_id: sessionId,
+					blob_type: "api_conversation_history",
+					content_length: contentLength,
+				}),
+			})
 		})
 
 		it("should work with task_metadata blob type", async () => {
 			const signedUrl = "https://storage.example.com/signed-upload-url"
+			const taskData = { task: "test" }
+			const blobBody = JSON.stringify(taskData)
+			const contentLength = new TextEncoder().encode(blobBody).length
 
 			mockFetch
 				.mockResolvedValueOnce({
@@ -127,17 +143,27 @@ describe("SessionClient", () => {
 					ok: true,
 				})
 
-			await sessionClient.uploadBlob(sessionId, "task_metadata", { task: "test" })
+			await sessionClient.uploadBlob(sessionId, "task_metadata", taskData)
 
-			expect(mockFetch).toHaveBeenNthCalledWith(
-				1,
-				"https://api.example.com/api/upload-cli-session-blob-v2?session_id=test-session-123&blob_type=task_metadata",
-				expect.any(Object),
-			)
+			expect(mockFetch).toHaveBeenNthCalledWith(1, "https://api.example.com/api/upload-cli-session-blob-v2", {
+				method: "POST",
+				headers: {
+					Authorization: "Bearer test-token",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					session_id: sessionId,
+					blob_type: "task_metadata",
+					content_length: contentLength,
+				}),
+			})
 		})
 
 		it("should work with git_state blob type", async () => {
 			const signedUrl = "https://storage.example.com/signed-upload-url"
+			const gitData = { head: "abc123" }
+			const blobBody = JSON.stringify(gitData)
+			const contentLength = new TextEncoder().encode(blobBody).length
 
 			mockFetch
 				.mockResolvedValueOnce({
@@ -148,13 +174,20 @@ describe("SessionClient", () => {
 					ok: true,
 				})
 
-			await sessionClient.uploadBlob(sessionId, "git_state", { head: "abc123" })
+			await sessionClient.uploadBlob(sessionId, "git_state", gitData)
 
-			expect(mockFetch).toHaveBeenNthCalledWith(
-				1,
-				"https://api.example.com/api/upload-cli-session-blob-v2?session_id=test-session-123&blob_type=git_state",
-				expect.any(Object),
-			)
+			expect(mockFetch).toHaveBeenNthCalledWith(1, "https://api.example.com/api/upload-cli-session-blob-v2", {
+				method: "POST",
+				headers: {
+					Authorization: "Bearer test-token",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					session_id: sessionId,
+					blob_type: "git_state",
+					content_length: contentLength,
+				}),
+			})
 		})
 	})
 })
