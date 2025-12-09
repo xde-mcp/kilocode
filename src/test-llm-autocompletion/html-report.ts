@@ -17,6 +17,84 @@ interface ApprovalFile {
 	content: string
 }
 
+interface ParsedApprovalContent {
+	prefix: string
+	completion: string
+	suffix: string
+}
+
+/**
+ * Parse an approval content to extract prefix, completion, and suffix
+ * by comparing with the original input that contains the cursor marker.
+ */
+function parseApprovalContent(input: string, approvalContent: string): ParsedApprovalContent {
+	const cursorIndex = input.indexOf(CURSOR_MARKER)
+	if (cursorIndex === -1) {
+		// No cursor marker found, treat entire content as completion
+		return { prefix: "", completion: approvalContent, suffix: "" }
+	}
+
+	const inputPrefix = input.substring(0, cursorIndex)
+	const inputSuffix = input.substring(cursorIndex + CURSOR_MARKER.length)
+
+	// The approval content should start with the prefix and end with the suffix
+	// The completion is what's in between
+	const trimmedPrefix = inputPrefix.trimEnd()
+	const trimmedSuffix = inputSuffix.trimStart()
+
+	// Find where the prefix ends in the approval content
+	// We need to handle the case where whitespace might differ slightly
+	let prefixEndIndex = 0
+	if (trimmedPrefix.length > 0) {
+		// Find the prefix in the approval content
+		const prefixIndex = approvalContent.indexOf(trimmedPrefix)
+		if (prefixIndex === 0) {
+			prefixEndIndex = trimmedPrefix.length
+		}
+	}
+
+	// Find where the suffix starts in the approval content
+	let suffixStartIndex = approvalContent.length
+	if (trimmedSuffix.length > 0) {
+		// Find the suffix in the approval content (search from the end)
+		const suffixIndex = approvalContent.lastIndexOf(trimmedSuffix)
+		if (suffixIndex !== -1 && suffixIndex >= prefixEndIndex) {
+			suffixStartIndex = suffixIndex
+		}
+	}
+
+	return {
+		prefix: approvalContent.substring(0, prefixEndIndex),
+		completion: approvalContent.substring(prefixEndIndex, suffixStartIndex),
+		suffix: approvalContent.substring(suffixStartIndex),
+	}
+}
+
+/**
+ * Format approval content with prefix/suffix in grey and completion highlighted
+ */
+function formatApprovalContent(input: string, approvalContent: string): string {
+	const { prefix, completion, suffix } = parseApprovalContent(input, approvalContent)
+
+	const escapedPrefix = escapeHtml(prefix)
+	const escapedCompletion = escapeHtml(completion)
+	const escapedSuffix = escapeHtml(suffix)
+
+	// Wrap prefix and suffix in grey spans, completion stays normal
+	let result = ""
+	if (escapedPrefix) {
+		result += `<span class="context-code">${escapedPrefix}</span>`
+	}
+	if (escapedCompletion) {
+		result += `<span class="completion-code">${escapedCompletion}</span>`
+	}
+	if (escapedSuffix) {
+		result += `<span class="context-code">${escapedSuffix}</span>`
+	}
+
+	return result || escapeHtml(approvalContent)
+}
+
 interface TestCaseWithApprovals extends TestCase {
 	approvals: ApprovalFile[]
 }
@@ -232,7 +310,7 @@ function generateTestCaseHtml(tc: TestCaseWithApprovals, allTestCases: TestCaseW
 						<span class="approval-badge approved">✓ Approved #${approval.number}</span>
 						<span class="approval-filename">${approval.filename}</span>
 					</div>
-					<pre class="code-block">${escapeHtml(approval.content)}</pre>
+					<pre class="code-block">${formatApprovalContent(tc.input, approval.content)}</pre>
 				</div>
 			`
 		}
@@ -253,7 +331,7 @@ function generateTestCaseHtml(tc: TestCaseWithApprovals, allTestCases: TestCaseW
 						<span class="approval-badge rejected">✗ Rejected #${rejection.number}</span>
 						<span class="approval-filename">${rejection.filename}</span>
 					</div>
-					<pre class="code-block">${escapeHtml(rejection.content)}</pre>
+					<pre class="code-block">${formatApprovalContent(tc.input, rejection.content)}</pre>
 				</div>
 			`
 		}
@@ -495,6 +573,12 @@ function generateTestCaseHtml(tc: TestCaseWithApprovals, allTestCases: TestCaseW
 			padding: 2px 6px;
 			border-radius: 3px;
 			margin: 0 3px;
+		}
+		.context-code {
+			color: #6a6a6a;
+		}
+		.completion-code {
+			color: #d4d4d4;
 		}
 	</style>
 </head>
