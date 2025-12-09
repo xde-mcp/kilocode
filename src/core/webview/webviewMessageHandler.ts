@@ -3374,6 +3374,16 @@ export const webviewMessageHandler = async (
 					})
 					return
 				}
+
+				// kilocode_change start
+				// Clear any prior error banner in UI even if config is still invalid.
+				manager.clearErrorState()
+				provider.postMessageToWebview({
+					type: "indexingStatusUpdate",
+					values: manager.getCurrentStatus(),
+				})
+				// kilocode_change end
+
 				await manager.clearIndexData()
 				provider.postMessageToWebview({ type: "indexCleared", values: { success: true } })
 			} catch (error) {
