@@ -19,8 +19,10 @@ export const MaxBatchRetriesSlider: React.FC<MaxBatchRetriesSliderProps> = ({ va
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center gap-2">
-				<label className="text-sm font-medium">{t("settings:codeIndex.scannerMaxBatchRetriesLabel")}</label>
-				<StandardTooltip content={t("settings:codeIndex.scannerMaxBatchRetriesDescription")}>
+				<label className="text-sm font-medium">
+					{t("kilocode:settings.codeIndex.scannerMaxBatchRetriesLabel")}
+				</label>
+				<StandardTooltip content={t("kilocode:settings.codeIndex.scannerMaxBatchRetriesDescription")}>
 					<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
 				</StandardTooltip>
 			</div>

@@ -19,8 +19,10 @@ export const EmbeddingBatchSizeSlider: React.FC<EmbeddingBatchSizeSliderProps> =
 	return (
 		<div className="space-y-2">
 			<div className="flex items-center gap-2">
-				<label className="text-sm font-medium">{t("settings:codeIndex.embeddingBatchSizeLabel")}</label>
-				<StandardTooltip content={t("settings:codeIndex.embeddingBatchSizeDescription")}>
+				<label className="text-sm font-medium">
+					{t("kilocode:settings.codeIndex.embeddingBatchSizeLabel")}
+				</label>
+				<StandardTooltip content={t("kilocode:settings.codeIndex.embeddingBatchSizeDescription")}>
 					<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
 				</StandardTooltip>
 			</div>
