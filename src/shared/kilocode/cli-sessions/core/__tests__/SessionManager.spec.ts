@@ -349,6 +349,30 @@ describe("SessionManager", () => {
 			expect(mockDependencies.onSessionRestored).toHaveBeenCalled()
 		})
 
+		it("should add restored session to verified cache", async () => {
+			const mockSession: SessionWithSignedUrls = {
+				session_id: "session-123",
+				title: "Test Session",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				api_conversation_history_blob_url: null,
+				task_metadata_blob_url: null,
+				ui_messages_blob_url: null,
+				git_state_blob_url: null,
+				version: SessionManager.VERSION,
+			}
+
+			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
+
+			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
+			verifiedSessions.clear()
+			expect(verifiedSessions.has("session-123")).toBe(false)
+
+			await manager.restoreSession("session-123")
+
+			expect(verifiedSessions.has("session-123")).toBe(true)
+		})
+
 		it("should persist task-to-session mapping and set lastActiveSessionId when restoring session", async () => {
 			const mockSession: SessionWithSignedUrls = {
 				session_id: "session-123",
@@ -570,6 +594,9 @@ describe("SessionManager", () => {
 					uiMessagesFilePath: "/path/to/ui_messages.json",
 				}),
 			}
+
+			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
+			verifiedSessions.clear()
 		})
 
 		it("should throw error when manager not initialized", async () => {
@@ -580,13 +607,129 @@ describe("SessionManager", () => {
 			)
 		})
 
-		it("should return existing session ID when task is already mapped", async () => {
+		it("should return existing session ID when task is already mapped and session exists", async () => {
 			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("existing-session-123")
+			vi.mocked(manager.sessionClient!.get).mockResolvedValue({
+				session_id: "existing-session-123",
+				title: "Existing Session",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				version: SessionManager.VERSION,
+			})
 
 			const result = await manager.getSessionFromTask("task-123", mockTaskDataProvider)
 
 			expect(result).toBe("existing-session-123")
+			expect(manager.sessionClient!.get).toHaveBeenCalledWith({
+				session_id: "existing-session-123",
+				include_blob_urls: false,
+			})
 			expect(manager.sessionClient!.create).not.toHaveBeenCalled()
+		})
+
+		it("should verify session existence and cache the result", async () => {
+			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("existing-session-123")
+			vi.mocked(manager.sessionClient!.get).mockResolvedValue({
+				session_id: "existing-session-123",
+				title: "Existing Session",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				version: SessionManager.VERSION,
+			})
+
+			await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
+			expect(verifiedSessions.has("existing-session-123")).toBe(true)
+		})
+
+		it("should skip verification for already verified sessions (cached)", async () => {
+			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
+			verifiedSessions.add("cached-session-123")
+
+			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("cached-session-123")
+
+			const result = await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+			expect(result).toBe("cached-session-123")
+			expect(manager.sessionClient!.get).not.toHaveBeenCalled()
+			expect(manager.sessionClient!.create).not.toHaveBeenCalled()
+		})
+
+		it("should create new session when existing session no longer exists (returns null)", async () => {
+			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("deleted-session-123")
+			vi.mocked(manager.sessionClient!.get).mockResolvedValue(undefined as unknown as SessionWithSignedUrls)
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+			vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+				session_id: "new-session-456",
+				title: "Test task",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				version: SessionManager.VERSION,
+			})
+			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+			const result = await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+			expect(result).toBe("new-session-456")
+			expect(manager.sessionClient!.get).toHaveBeenCalledWith({
+				session_id: "deleted-session-123",
+				include_blob_urls: false,
+			})
+			expect(manager.sessionClient!.create).toHaveBeenCalled()
+			expect(manager.sessionPersistenceManager!.setSessionForTask).toHaveBeenCalledWith(
+				"task-123",
+				"new-session-456",
+			)
+		})
+
+		it("should create new session when existing session verification throws error", async () => {
+			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("error-session-123")
+			vi.mocked(manager.sessionClient!.get).mockRejectedValue(new Error("Session not found"))
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+			vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+				session_id: "new-session-789",
+				title: "Test task",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				version: SessionManager.VERSION,
+			})
+			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+			const result = await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+			expect(result).toBe("new-session-789")
+			expect(manager.sessionClient!.get).toHaveBeenCalledWith({
+				session_id: "error-session-123",
+				include_blob_urls: false,
+			})
+			expect(manager.sessionClient!.create).toHaveBeenCalled()
+			expect(mockDependencies.logger.info).toHaveBeenCalledWith(
+				"Session verification failed, will create new session",
+				"SessionManager",
+				expect.objectContaining({
+					taskId: "task-123",
+					sessionId: "error-session-123",
+				}),
+			)
+		})
+
+		it("should add newly created session to verified cache", async () => {
+			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
+			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+			vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+				session_id: "brand-new-session",
+				title: "Test task",
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+				version: SessionManager.VERSION,
+			})
+			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+			await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
+			expect(verifiedSessions.has("brand-new-session")).toBe(true)
 		})
 
 		it("should create new session when task is not mapped", async () => {

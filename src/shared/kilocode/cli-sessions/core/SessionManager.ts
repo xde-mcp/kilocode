@@ -64,6 +64,7 @@ export class SessionManager {
 	private sessionTitles: Record<string, string> = {}
 	private sessionUpdatedAt: Record<string, string> = {}
 	private tokenValid: Record<string, boolean | undefined> = {}
+	private verifiedSessions: Set<string> = new Set()
 
 	public get sessionId() {
 		return this.lastActiveSessionId || this.sessionPersistenceManager?.getLastSession()?.sessionId
@@ -282,6 +283,7 @@ export class SessionManager {
 
 			this.sessionPersistenceManager.setSessionForTask(historyItem.id, sessionId)
 			this.lastActiveSessionId = sessionId
+			this.verifiedSessions.add(sessionId)
 
 			await this.extensionMessenger.sendWebviewMessage({
 				type: "addTaskToHistory",
@@ -383,6 +385,39 @@ export class SessionManager {
 
 			let sessionId = this.sessionPersistenceManager.getSessionForTask(taskId)
 
+			if (sessionId) {
+				if (!this.verifiedSessions.has(sessionId)) {
+					this.logger?.debug("Verifying session existence", "SessionManager", { taskId, sessionId })
+
+					try {
+						const session = await this.sessionClient.get({
+							session_id: sessionId,
+							include_blob_urls: false,
+						})
+
+						if (!session) {
+							this.logger?.info("Session no longer exists, will create new session", "SessionManager", {
+								taskId,
+								sessionId,
+							})
+							sessionId = undefined
+						} else {
+							this.verifiedSessions.add(sessionId)
+							this.logger?.debug("Session verified and cached", "SessionManager", { taskId, sessionId })
+						}
+					} catch (error) {
+						this.logger?.info("Session verification failed, will create new session", "SessionManager", {
+							taskId,
+							sessionId,
+							error: error instanceof Error ? error.message : String(error),
+						})
+						sessionId = undefined
+					}
+				} else {
+					this.logger?.debug("Session already verified (cached)", "SessionManager", { taskId, sessionId })
+				}
+			}
+
 			if (!sessionId) {
 				this.logger?.debug("No existing session for task, creating new session", "SessionManager", { taskId })
 
@@ -410,6 +445,8 @@ export class SessionManager {
 				this.logger?.debug("Uploaded conversation blobs to session", "SessionManager", { sessionId })
 
 				this.sessionPersistenceManager.setSessionForTask(taskId, sessionId)
+
+				this.verifiedSessions.add(sessionId)
 			} else {
 				this.logger?.debug("Found existing session for task", "SessionManager", { taskId, sessionId })
 			}
