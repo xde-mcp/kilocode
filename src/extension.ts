@@ -339,11 +339,13 @@ export async function activate(context: vscode.ExtensionContext) {
 				false,
 			)
 
-			// Enable autocomplete by default for new installs
+			// Enable autocomplete by default for new installs, but not for JetBrains IDEs
+			// JetBrains users can manually enable it if they want to test the feature
+			const { kiloCodeWrapperJetbrains } = getKiloCodeWrapperProperties()
 			const currentGhostSettings = contextProxy.getValue("ghostServiceSettings")
 			await contextProxy.setValue("ghostServiceSettings", {
 				...currentGhostSettings,
-				enableAutoTrigger: true,
+				enableAutoTrigger: !kiloCodeWrapperJetbrains,
 				enableQuickInlineTaskKeybinding: true,
 				enableSmartInlineTaskKeybinding: true,
 			})
