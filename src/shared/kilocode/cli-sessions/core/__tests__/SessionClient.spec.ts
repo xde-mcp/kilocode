@@ -196,4 +196,199 @@ describe("SessionClient", () => {
 			})
 		})
 	})
+
+	describe("tokenValid", () => {
+		const createJwt = (payload: Record<string, unknown>): string => {
+			const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64")
+			const payloadBase64 = Buffer.from(JSON.stringify(payload)).toString("base64")
+			const signature = "fake-signature"
+			return `${header}.${payloadBase64}.${signature}`
+		}
+
+		const validPayload = {
+			env: "development",
+			kiloUserId: "dae0e132-6025-4d71-be50-713dae35eec6",
+			apiTokenPepper: null,
+			version: 3,
+			iat: Math.floor(Date.now() / 1000) - 3600,
+			exp: Math.floor(Date.now() / 1000) + 3600,
+		}
+
+		it("should return true for valid token when API returns ok", async () => {
+			const validToken = createJwt(validPayload)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(validToken)
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+			})
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(true)
+			expect(mockFetch).toHaveBeenCalledWith("https://api.example.com/api/user", {
+				method: "GET",
+				headers: {
+					Authorization: `Bearer ${validToken}`,
+					"Content-Type": "application/json",
+				},
+			})
+		})
+
+		it("should return false for valid token when API returns not ok", async () => {
+			const validToken = createJwt(validPayload)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(validToken)
+
+			mockFetch.mockResolvedValueOnce({
+				ok: false,
+				status: 401,
+			})
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+		})
+
+		it("should return false for token without three parts", async () => {
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue("invalid-token")
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with only two parts", async () => {
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue("part1.part2")
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with invalid base64 payload", async () => {
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue("header.!!!invalid-base64!!!.signature")
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with invalid JSON payload", async () => {
+			const invalidJsonPayload = Buffer.from("not-json").toString("base64")
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(`header.${invalidJsonPayload}.signature`)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token missing kiloUserId", async () => {
+			const payloadWithoutUserId = { ...validPayload }
+			delete (payloadWithoutUserId as Record<string, unknown>).kiloUserId
+			const token = createJwt(payloadWithoutUserId)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with empty kiloUserId", async () => {
+			const token = createJwt({ ...validPayload, kiloUserId: "" })
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with non-string kiloUserId", async () => {
+			const token = createJwt({ ...validPayload, kiloUserId: 12345 })
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token missing version", async () => {
+			const payloadWithoutVersion = { ...validPayload }
+			delete (payloadWithoutVersion as Record<string, unknown>).version
+			const token = createJwt(payloadWithoutVersion)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for token with non-number version", async () => {
+			const token = createJwt({ ...validPayload, version: "3" })
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should return false for expired token", async () => {
+			const expiredPayload = {
+				...validPayload,
+				exp: Math.floor(Date.now() / 1000) - 3600,
+			}
+			const token = createJwt(expiredPayload)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(false)
+			expect(mockFetch).not.toHaveBeenCalled()
+		})
+
+		it("should accept token without exp field", async () => {
+			const payloadWithoutExp = { ...validPayload }
+			delete (payloadWithoutExp as Record<string, unknown>).exp
+			const token = createJwt(payloadWithoutExp)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+			})
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(true)
+			expect(mockFetch).toHaveBeenCalled()
+		})
+
+		it("should work with the example token format", async () => {
+			const examplePayload = {
+				env: "development",
+				kiloUserId: "dae0e132-6025-4d71-be50-713dae35eec6",
+				apiTokenPepper: null,
+				version: 3,
+				iat: 1764606342,
+				exp: 1922394342,
+			}
+			const token = createJwt(examplePayload)
+			vi.mocked(mockTrpcClient.getToken).mockResolvedValue(token)
+
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+			})
+
+			const result = await sessionClient.tokenValid()
+
+			expect(result).toBe(true)
+			expect(mockFetch).toHaveBeenCalled()
+		})
+	})
 })
