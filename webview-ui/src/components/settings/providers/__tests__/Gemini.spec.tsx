@@ -152,13 +152,15 @@ describe("Gemini", () => {
 		})
 	})
 
-	describe("fromWelcomeView prop", () => {
-		it("should hide URL context and grounding checkboxes when fromWelcomeView is true, but keep custom base URL", () => {
-			renderGemini_kiloCode({
-				apiConfiguration: defaultApiConfiguration,
-				setApiConfigurationField: mockSetApiConfigurationField,
-				fromWelcomeView: true,
-			})
+	describe("simplifySettings prop", () => {
+		it("should hide URL context and grounding checkboxes when simplifySettings is true, but keep custom base URL", () => {
+			render(
+				<Gemini
+					apiConfiguration={defaultApiConfiguration}
+					setApiConfigurationField={mockSetApiConfigurationField}
+					simplifySettings={true}
+				/>,
+			)
 
 			// Should still render custom base URL checkbox
 			expect(screen.getByTestId("checkbox-custom-base-url")).toBeInTheDocument()
@@ -167,12 +169,14 @@ describe("Gemini", () => {
 			expect(screen.queryByTestId("checkbox-grounding-search")).not.toBeInTheDocument()
 		})
 
-		it("should show all checkboxes when fromWelcomeView is false", () => {
-			renderGemini_kiloCode({
-				apiConfiguration: defaultApiConfiguration,
-				setApiConfigurationField: mockSetApiConfigurationField,
-				fromWelcomeView: false,
-			})
+		it("should show all checkboxes when simplifySettings is false", () => {
+			render(
+				<Gemini
+					apiConfiguration={defaultApiConfiguration}
+					setApiConfigurationField={mockSetApiConfigurationField}
+					simplifySettings={false}
+				/>,
+			)
 
 			// Should render all checkboxes
 			expect(screen.getByTestId("checkbox-custom-base-url")).toBeInTheDocument()
@@ -180,11 +184,13 @@ describe("Gemini", () => {
 			expect(screen.getByTestId("checkbox-grounding-search")).toBeInTheDocument()
 		})
 
-		it("should show all checkboxes when fromWelcomeView is undefined (default behavior)", () => {
-			renderGemini_kiloCode({
-				apiConfiguration: defaultApiConfiguration,
-				setApiConfigurationField: mockSetApiConfigurationField,
-			})
+		it("should show all checkboxes when simplifySettings is undefined (default behavior)", () => {
+			render(
+				<Gemini
+					apiConfiguration={defaultApiConfiguration}
+					setApiConfigurationField={mockSetApiConfigurationField}
+				/>,
+			)
 
 			// Should render all checkboxes (default behavior)
 			expect(screen.getByTestId("checkbox-custom-base-url")).toBeInTheDocument()

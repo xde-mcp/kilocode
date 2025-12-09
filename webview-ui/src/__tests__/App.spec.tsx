@@ -2,17 +2,8 @@
 
 import React from "react"
 import { render, screen, act, cleanup } from "@/utils/test-utils"
-import posthog from "posthog-js"
 
 import AppWithProviders from "../App"
-
-// Mock posthog
-vi.mock("posthog-js", () => ({
-	default: {
-		onFeatureFlags: vi.fn(),
-		getFeatureFlag: vi.fn(),
-	},
-}))
 
 vi.mock("@src/utils/vscode", () => ({
 	vscode: {
@@ -76,12 +67,8 @@ vi.mock("../components/kilocodeMcp/marketplace/McpMarketplaceView", () => ({
 
 vi.mock("@src/components/modes/ModesView", () => ({
 	__esModule: true,
-	default: function ModesView({ onDone }: { onDone: () => void }) {
-		return (
-			<div data-testid="prompts-view" onClick={onDone}>
-				Modes View
-			</div>
-		)
+	default: function ModesView() {
+		return <div data-testid="prompts-view">Modes View</div>
 	},
 }))
 
@@ -96,12 +83,8 @@ vi.mock("@src/components/marketplace/MarketplaceView", () => ({
 }))
 
 vi.mock("@src/components/cloud/CloudView", () => ({
-	CloudView: function CloudView({ onDone }: { onDone: () => void }) {
-		return (
-			<div data-testid="cloud-view" onClick={onDone}>
-				Cloud View
-			</div>
-		)
+	CloudView: function CloudView() {
+		return <div data-testid="cloud-view">Cloud View</div>
 	},
 }))
 
@@ -329,56 +312,5 @@ describe("App", () => {
 		const chatView = screen.getByTestId("chat-view")
 		expect(chatView.getAttribute("data-hidden")).toBe("false")
 		expect(screen.queryByTestId("marketplace-view")).not.toBeInTheDocument()
-	})
-
-	// kilocode_change: we do not use posthog feature flags
-	describe.skip("PostHog feature flag initialization", () => {
-		it("waits for state hydration before checking feature flags", () => {
-			mockUseExtensionState.mockReturnValue({
-				didHydrateState: false,
-				showWelcome: false,
-				shouldShowAnnouncement: false,
-				experiments: {},
-				language: "en",
-				telemetrySetting: "enabled",
-			})
-
-			render(<AppWithProviders />)
-
-			// PostHog feature flag check should not be called before hydration
-			expect(posthog.onFeatureFlags).not.toHaveBeenCalled()
-		})
-
-		it("checks feature flags after state hydration when telemetry is enabled", () => {
-			mockUseExtensionState.mockReturnValue({
-				didHydrateState: true,
-				showWelcome: false,
-				shouldShowAnnouncement: false,
-				experiments: {},
-				language: "en",
-				telemetrySetting: "enabled",
-			})
-
-			render(<AppWithProviders />)
-
-			// PostHog feature flag check should be called after hydration
-			expect(posthog.onFeatureFlags).toHaveBeenCalled()
-		})
-
-		it("does not check feature flags when telemetry is disabled", () => {
-			mockUseExtensionState.mockReturnValue({
-				didHydrateState: true,
-				showWelcome: false,
-				shouldShowAnnouncement: false,
-				experiments: {},
-				language: "en",
-				telemetrySetting: "disabled",
-			})
-
-			render(<AppWithProviders />)
-
-			// PostHog feature flag check should not be called when telemetry is disabled
-			expect(posthog.onFeatureFlags).not.toHaveBeenCalled()
-		})
 	})
 })

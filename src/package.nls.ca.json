@@ -16,6 +16,7 @@
 	"command.terminal.generateCommand.title": "Kilo Code: Generar Ordre de Terminal",
 	"command.acceptInput.title": "Acceptar Entrada/Suggeriment",
 	"command.toggleAutoApprove.title": "Alternar Auto-Aprovació",
+<<<<<<< HEAD
 	"command.generateCommitMessage.title": "Generar Missatge de Commit amb Kilo",
 	"views.activitybar.title": "Kilo Code",
 	"views.contextMenu.label": "Kilo Code",
@@ -24,6 +25,13 @@
 	"command.mcpServers.title": "Servidors MCP",
 	"command.prompts.title": "Modes",
 	"command.history.title": "Historial",
+=======
+	"views.activitybar.title": "Roo Code",
+	"views.contextMenu.label": "Roo Code",
+	"views.terminalMenu.label": "Roo Code",
+	"views.sidebar.name": "Roo Code",
+	"command.history.title": "Historial de Tasques",
+>>>>>>> upstream-at-v3.36.2
 	"command.marketplace.title": "Mercat",
 	"command.openInEditor.title": "Obrir a l'Editor",
 	"command.cloud.title": "Cloud",
@@ -48,6 +56,7 @@
 	"settings.apiRequestTimeout.description": "Temps màxim en segons per esperar les respostes de l'API (0 = sense temps d'espera, 1-86400s, per defecte: 600s). Es recomanen valors més alts per a proveïdors locals com LM Studio i Ollama que poden necessitar més temps de processament.",
 	"settings.newTaskRequireTodos.description": "Requerir el paràmetre de tasques pendents quan es creïn noves tasques amb l'eina new_task",
 	"settings.codeIndex.embeddingBatchSize.description": "La mida del lot per a operacions d'incrustació durant la indexació de codi. Ajusta això segons els límits del teu proveïdor d'API. Per defecte és 60.",
+<<<<<<< HEAD
 	"settings.toolProtocol.description": "Protocol d'eines a utilitzar per a les interaccions d'IA. XML és el protocol per defecte i recomanat. Natiu és experimental i pot ser que no funcioni amb tots els proveïdors.",
 	"ghost.input.title": "Premeu 'Enter' per confirmar o 'Escape' per cancel·lar",
 	"ghost.input.placeholder": "Descriviu què voleu fer...",
@@ -58,4 +67,7 @@
 	"ghost.commands.applyAllSuggestions": "Aplicar Totes les Edicions Suggerides",
 	"ghost.commands.goToNextSuggestion": "Anar al Suggeriment Següent",
 	"ghost.commands.goToPreviousSuggestion": "Anar al Suggeriment Anterior"
+=======
+	"settings.debug.description": "Activa el mode de depuració per mostrar botons addicionals per veure l'historial de conversa de l'API i els missatges de la interfície d'usuari com a JSON embellert en fitxers temporals."
+>>>>>>> upstream-at-v3.36.2
 }

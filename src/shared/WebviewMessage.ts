@@ -270,6 +270,8 @@ export interface WebviewMessage {
 		| "sessionFork" // kilocode_change
 		| "sessionShow" // kilocode_change
 		| "singleCompletion" // kilocode_change
+		| "openDebugApiHistory"
+		| "openDebugUiHistory"
 	text?: string
 	completionRequestId?: string // kilocode_change
 	shareId?: string // kilocode_change - for sessionFork
@@ -370,6 +372,7 @@ export interface WebviewMessage {
 		codebaseIndexEmbeddingBatchSize?: number
 		codebaseIndexScannerMaxBatchRetries?: number
 		// kilocode_change end
+		codebaseIndexOpenRouterSpecificProvider?: string // OpenRouter provider routing
 
 		// Secret settings
 		codeIndexOpenAiKey?: string
