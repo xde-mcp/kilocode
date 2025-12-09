@@ -805,6 +805,12 @@ describe("SessionManager.syncSession", () => {
 				const uiMessages = [{ type: "say", say: "text", text: "Create a login form" }]
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(uiMessages))
 				vi.mocked(manager.sessionClient!.get).mockRejectedValueOnce(new Error("Network error"))
+				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
+					session_id: "session-123",
+					title: "Create a login form",
+					updated_at: new Date().toISOString(),
+					version: SessionManager.VERSION,
+				})
 
 				manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
 
@@ -812,9 +818,6 @@ describe("SessionManager.syncSession", () => {
 				await triggerSync()
 
 				await new Promise((resolve) => setTimeout(resolve, 100))
-
-				const sessionTitles = (manager as unknown as { sessionTitles: Record<string, string> }).sessionTitles
-				expect(sessionTitles["session-123"]).toBe("Create a login form")
 
 				expect(mockDependencies.logger.error).toHaveBeenCalledWith(
 					"Failed to generate session title",
@@ -824,6 +827,14 @@ describe("SessionManager.syncSession", () => {
 						error: "Network error",
 					}),
 				)
+
+				expect(manager.sessionClient!.update).toHaveBeenCalledWith({
+					session_id: "session-123",
+					title: "Create a login form",
+				})
+
+				const sessionTitles = (manager as unknown as { sessionTitles: Record<string, string> }).sessionTitles
+				expect(sessionTitles["session-123"]).toBe("Create a login form")
 
 				vi.mocked(manager.sessionClient!.get).mockResolvedValue({
 					session_id: "session-123",
@@ -851,6 +862,112 @@ describe("SessionManager.syncSession", () => {
 				await new Promise((resolve) => setTimeout(resolve, 100))
 
 				expect(manager.sessionClient!.get).toHaveBeenCalledTimes(2)
+			})
+
+			it("should handle renameSession failure when falling back to local title", async () => {
+				const uiMessages = [{ type: "say", say: "text", text: "Create a login form" }]
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(uiMessages))
+				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+				vi.mocked(manager.sessionClient!.get).mockResolvedValueOnce({
+					session_id: "session-123",
+					title: "",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					api_conversation_history_blob_url: null,
+					task_metadata_blob_url: null,
+					ui_messages_blob_url: null,
+					git_state_blob_url: null,
+					version: SessionManager.VERSION,
+				})
+
+				vi.mocked(mockDependencies.extensionMessenger.requestSingleCompletion).mockRejectedValueOnce(
+					new Error("LLM generation failed"),
+				)
+
+				let updateCallCount = 0
+				vi.mocked(manager.sessionClient!.update).mockImplementation(async (params) => {
+					updateCallCount++
+					if (params && "title" in params) {
+						throw new Error("Update failed")
+					}
+					return {
+						session_id: params?.session_id || "session-123",
+						title: "",
+						updated_at: new Date().toISOString(),
+						version: SessionManager.VERSION,
+					}
+				})
+
+				const taskGitUrls = (manager as unknown as { taskGitUrls: Record<string, string> }).taskGitUrls
+				taskGitUrls["task-123"] = "https://github.com/test/repo.git"
+
+				manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
+
+				vi.useRealTimers()
+				await triggerSync()
+
+				await new Promise((resolve) => setTimeout(resolve, 100))
+
+				expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+					"Failed to generate session title",
+					"SessionManager",
+					expect.objectContaining({
+						sessionId: "session-123",
+					}),
+				)
+
+				expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+					"Failed to update session title using local title",
+					"SessionManager",
+					expect.objectContaining({
+						sessionId: "session-123",
+						error: "Update failed",
+					}),
+				)
+			})
+
+			it("should not call renameSession when local title is empty", async () => {
+				const uiMessages = [{ type: "say", say: "text" }]
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify(uiMessages))
+				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+				vi.mocked(manager.sessionClient!.get).mockResolvedValueOnce({
+					session_id: "session-123",
+					title: "",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					api_conversation_history_blob_url: null,
+					task_metadata_blob_url: null,
+					ui_messages_blob_url: null,
+					git_state_blob_url: null,
+					version: SessionManager.VERSION,
+				})
+
+				vi.mocked(mockDependencies.extensionMessenger.requestSingleCompletion).mockRejectedValueOnce(
+					new Error("LLM generation failed"),
+				)
+
+				const updateMock = vi.mocked(manager.sessionClient!.update)
+				updateMock.mockClear()
+
+				manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
+
+				vi.useRealTimers()
+				await triggerSync()
+
+				await new Promise((resolve) => setTimeout(resolve, 100))
+
+				expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+					"Failed to generate session title",
+					"SessionManager",
+					expect.objectContaining({
+						sessionId: "session-123",
+					}),
+				)
+
+				const updateCallsWithTitle = updateMock.mock.calls.filter((call) => call[0] && "title" in call[0])
+				expect(updateCallsWithTitle).toHaveLength(0)
 			})
 
 			it("should set pending title marker to prevent concurrent title generation", async () => {
