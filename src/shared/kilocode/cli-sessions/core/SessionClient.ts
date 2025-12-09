@@ -251,4 +251,20 @@ export class SessionClient {
 			updated_at: signedUrlResponse.updated_at,
 		}
 	}
+
+	async tokenValid() {
+		const { endpoint, getToken } = this.trpcClient
+
+		const url = new URL("/api/user", endpoint)
+
+		const response = await fetch(url.toString(), {
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${await getToken()}`,
+				"Content-Type": "application/json",
+			},
+		})
+
+		return response.ok
+	}
 }
