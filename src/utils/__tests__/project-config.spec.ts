@@ -33,6 +33,10 @@ describe("project-config", () => {
 			expect(normalizeProjectId("git@github.com:Kilo-Org/handbook.git")).toBe("handbook")
 		})
 
+		it("extracts repository name from SSH git URL without .git extension", () => {
+			expect(normalizeProjectId("git@github.com:brianc/node-postgres")).toBe("node-postgres")
+		})
+
 		it("returns plain project ID as-is", () => {
 			expect(normalizeProjectId("my-project")).toBe("my-project")
 		})
@@ -78,38 +82,6 @@ describe("project-config", () => {
 			const kilocodeDir = path.join(tempDir, ".kilocode")
 			await fs.mkdir(kilocodeDir, { recursive: true })
 			await fs.writeFile(path.join(kilocodeDir, "config.json"), "{ invalid json }")
-
-			const config = await getKilocodeConfigFile(tempDir)
-
-			expect(config).toBeNull()
-		})
-
-		it("returns null when config file has no project.id", async () => {
-			const kilocodeDir = path.join(tempDir, ".kilocode")
-			await fs.mkdir(kilocodeDir, { recursive: true })
-			await fs.writeFile(
-				path.join(kilocodeDir, "config.json"),
-				JSON.stringify({
-					project: {},
-				}),
-			)
-
-			const config = await getKilocodeConfigFile(tempDir)
-
-			expect(config).toBeNull()
-		})
-
-		it("returns null when config file has empty project.id", async () => {
-			const kilocodeDir = path.join(tempDir, ".kilocode")
-			await fs.mkdir(kilocodeDir, { recursive: true })
-			await fs.writeFile(
-				path.join(kilocodeDir, "config.json"),
-				JSON.stringify({
-					project: {
-						id: "",
-					},
-				}),
-			)
 
 			const config = await getKilocodeConfigFile(tempDir)
 

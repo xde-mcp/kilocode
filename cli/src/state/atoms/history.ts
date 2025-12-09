@@ -116,7 +116,7 @@ export const loadHistoryAtom = atom(null, async (get, set) => {
 /**
  * Save history to disk
  */
-export const saveHistoryAtom = atom(null, async (get, set) => {
+export const saveHistoryAtom = atom(null, async (get, _set) => {
 	try {
 		const data = get(historyDataAtom)
 		await saveHistory(data)
@@ -134,10 +134,8 @@ export const addToHistoryAtom = atom(null, async (get, set, prompt: string) => {
 	try {
 		const currentData = get(historyDataAtom)
 		const newData = addEntry(currentData, prompt)
-
-		// Only save if data actually changed
+		set(historyDataAtom, newData)
 		if (newData.entries.length !== currentData.entries.length) {
-			set(historyDataAtom, newData)
 			await saveHistory(newData)
 		}
 	} catch (error) {

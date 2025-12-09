@@ -46,11 +46,27 @@ export const handleUri = async (uri: vscode.Uri) => {
 			})
 			break
 		}
+		case "/kilo/fork": {
+			const id = query.get("id")
+			if (id) {
+				await visibleProvider.postMessageToWebview({
+					type: "invoke",
+					invoke: "setChatBoxMessage",
+					text: `/session fork ${id}`,
+				})
+				await visibleProvider.postMessageToWebview({
+					type: "action",
+					action: "focusInput",
+				})
+			}
+			break
+		}
 		// kilocode_change end
 		case "/requesty": {
 			const code = query.get("code")
+			const baseUrl = query.get("baseUrl")
 			if (code) {
-				await visibleProvider.handleRequestyCallback(code)
+				await visibleProvider.handleRequestyCallback(code, baseUrl)
 			}
 			break
 		}
@@ -58,11 +74,13 @@ export const handleUri = async (uri: vscode.Uri) => {
 			const code = query.get("code")
 			const state = query.get("state")
 			const organizationId = query.get("organizationId")
+			const providerModel = query.get("provider_model")
 
 			await CloudService.instance.handleAuthCallback(
 				code,
 				state,
 				organizationId === "null" ? null : organizationId,
+				providerModel,
 			)
 			break
 		}

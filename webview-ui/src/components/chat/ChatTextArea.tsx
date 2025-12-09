@@ -6,6 +6,7 @@ import { mentionRegex, mentionRegexGlobal, unescapeSpaces } from "@roo/context-m
 import { WebviewMessage } from "@roo/WebviewMessage"
 import { Mode, getAllModes } from "@roo/modes"
 import { ExtensionMessage } from "@roo/ExtensionMessage"
+import type { ProfileType } from "@roo-code/types" // kilocode_change - autocomplete profile type system
 
 import { vscode } from "@/utils/vscode"
 import { useExtensionState } from "@/context/ExtensionStateContext"
@@ -72,7 +73,45 @@ interface ChatTextAreaProps {
 	isEditMode?: boolean
 	onCancel?: () => void
 	sendMessageOnEnter?: boolean // kilocode_change
+	showBrowserDockToggle?: boolean
 }
+
+// kilocode_change start
+function handleSessionCommand(trimmedInput: string, setInputValue: (value: string) => void) {
+	if (trimmedInput.startsWith("/session show")) {
+		vscode.postMessage({
+			type: "sessionShow",
+		})
+
+		setInputValue("")
+
+		return true
+	} else if (trimmedInput.startsWith("/session share")) {
+		vscode.postMessage({
+			type: "sessionShare",
+		})
+
+		setInputValue("")
+
+		return true
+	} else if (trimmedInput.startsWith("/session fork ")) {
+		const shareId = trimmedInput.substring("/session fork ".length).trim()
+
+		vscode.postMessage({
+			type: "sessionFork",
+			shareId: shareId,
+		})
+
+		if (shareId) {
+			setInputValue("")
+		}
+
+		return true
+	}
+
+	return false
+}
+// kilocode_change end
 
 export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 	(
@@ -102,7 +141,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			filePaths,
 			openedTabs,
 			currentApiConfigName,
-			listApiConfigMeta,
+			listApiConfigMeta: listApiConfigMeta_unfilteredByKiloCodeProfileType,
 			customModes,
 			customModePrompts,
 			cwd,
@@ -114,6 +153,18 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			clineMessages,
 		} = useExtensionState()
 
+		// kilocode_change start - autocomplete profile type system
+		// Filter out autocomplete profiles - only show chat profiles in the chat interface
+		const listApiConfigMeta = useMemo(() => {
+			if (!listApiConfigMeta_unfilteredByKiloCodeProfileType) {
+				return []
+			}
+			return listApiConfigMeta_unfilteredByKiloCodeProfileType.filter((config) => {
+				const profileType = (config as { profileType?: ProfileType }).profileType
+				return profileType !== "autocomplete"
+			})
+		}, [listApiConfigMeta_unfilteredByKiloCodeProfileType])
+		// kilocode_change end
 		// Find the ID and display text for the currently selected API configuration
 		const { currentConfigId, displayName } = useMemo(() => {
 			const currentConfig = listApiConfigMeta?.find((config) => config.name === currentApiConfigName)
@@ -243,6 +294,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
 		const [isMouseDownOnMenu, setIsMouseDownOnMenu] = useState(false)
 		const highlightLayerRef = useRef<HTMLDivElement>(null)
+		const shouldAutoScrollToCaretRef = useRef(false) // kilocode_change
 		const [selectedMenuIndex, setSelectedMenuIndex] = useState(-1)
 		const [selectedType, setSelectedType] = useState<ContextMenuOptionType | null>(null)
 		const [justDeletedSpaceAfterMention, setJustDeletedSpaceAfterMention] = useState(false)
@@ -597,6 +649,14 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				if (shouldSendMessage) {
 					event.preventDefault()
 
+					const trimmedInput = inputValue.trim()
+
+					const preventFlow = handleSessionCommand(trimmedInput, setInputValue)
+
+					if (preventFlow) {
+						return
+					}
+
 					resetHistoryNavigation()
 					onSend()
 				}
@@ -692,13 +752,20 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 		const handleInputChange = useCallback(
 			(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-				const newValue = e.target.value
+				// kilocode_change start
+				const target = e.target
+				const newValue = target.value
+				const cursorAtEnd =
+					target.selectionStart === target.selectionEnd && target.selectionEnd === newValue.length
+				shouldAutoScrollToCaretRef.current = cursorAtEnd
+				// kilocode_change end
+
 				setInputValue(newValue)
 
 				// Reset history navigation when user types
 				resetOnInputChange()
 
-				const newCursorPosition = e.target.selectionStart
+				const newCursorPosition = target.selectionStart // kilocode_change
 				setCursorPosition(newCursorPosition)
 
 				// kilocode_change start: pull slash commands from Cline
@@ -940,6 +1007,29 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 		useLayoutEffect(() => {
 			updateHighlights()
+
+			// kilocode_change start
+			if (!shouldAutoScrollToCaretRef.current) {
+				return
+			}
+
+			shouldAutoScrollToCaretRef.current = false
+
+			if (!textAreaRef.current) {
+				return
+			}
+
+			const rafId = requestAnimationFrame(() => {
+				if (!textAreaRef.current) {
+					return
+				}
+
+				textAreaRef.current.scrollTop = textAreaRef.current.scrollHeight
+				updateHighlights()
+			})
+
+			return () => cancelAnimationFrame(rafId)
+			// kilocode_change end
 		}, [inputValue, updateHighlights])
 
 		const updateCursorPosition = useCallback(() => {

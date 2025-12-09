@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import {
+	type RooCodeSettings,
 	type ProviderSettings,
 	type PromptComponent,
 	type ModeConfig,
@@ -54,20 +55,10 @@ export interface WebviewMessage {
 		| "deleteApiConfiguration"
 		| "loadApiConfiguration"
 		| "loadApiConfigurationById"
+		| "getProfileConfigurationForEditing" // kilocode_change: Request to get profile config without activating
 		| "renameApiConfiguration"
 		| "getListApiConfiguration"
 		| "customInstructions"
-		| "allowedCommands"
-		| "deniedCommands"
-		| "alwaysAllowReadOnly"
-		| "alwaysAllowReadOnlyOutsideWorkspace"
-		| "alwaysAllowWrite"
-		| "alwaysAllowWriteOutsideWorkspace"
-		| "alwaysAllowWriteProtected"
-		| "alwaysAllowExecute"
-		| "alwaysAllowFollowupQuestions"
-		| "alwaysAllowUpdateTodoList"
-		| "followupAutoApproveTimeoutMs"
 		| "webviewDidLaunch"
 		| "newTask"
 		| "askResponse"
@@ -93,8 +84,12 @@ export interface WebviewMessage {
 		| "requestOpenAiModels"
 		| "requestOllamaModels"
 		| "requestLmStudioModels"
+		| "requestRooModels"
+		| "requestRooCreditBalance"
 		| "requestVsCodeLmModels"
 		| "requestHuggingFaceModels"
+		| "requestSapAiCoreModels" // kilocode_change
+		| "requestSapAiCoreDeployments" // kilocode_change
 		| "openImage"
 		| "saveImage"
 		| "openFile"
@@ -103,29 +98,13 @@ export interface WebviewMessage {
 		| "updateVSCodeSetting"
 		| "getVSCodeSetting"
 		| "vsCodeSetting"
-		| "alwaysAllowBrowser"
-		| "alwaysAllowMcp"
-		| "alwaysAllowModeSwitch"
-		| "allowedMaxRequests"
-		| "allowedMaxCost"
-		| "alwaysAllowSubtasks"
-		| "alwaysAllowUpdateTodoList"
-		| "autoCondenseContext"
-		| "autoCondenseContextPercent"
-		| "condensingApiConfigId"
 		| "updateCondensingPrompt"
+		| "yoloGatekeeperApiConfigId" // kilocode_change: AI gatekeeper for YOLO mode
 		| "playSound"
 		| "playTts"
 		| "stopTts"
-		| "soundEnabled"
 		| "ttsEnabled"
 		| "ttsSpeed"
-		| "soundVolume"
-		| "diffEnabled"
-		| "enableCheckpoints"
-		| "browserViewportSize"
-		| "screenshotQuality"
-		| "remoteBrowserHost"
 		| "openKeyboardShortcuts"
 		| "openMcpSettings"
 		| "openProjectMcpSettings"
@@ -135,11 +114,9 @@ export interface WebviewMessage {
 		| "toggleToolEnabledForPrompt"
 		| "toggleMcpServer"
 		| "updateMcpTimeout"
-		| "fuzzyMatchThreshold"
 		| "morphApiKey" // kilocode_change: Morph fast apply - global setting
 		| "fastApplyModel" // kilocode_change: Fast Apply model selection
-		| "writeDelayMs"
-		| "diagnosticsEnabled"
+		| "fastApplyApiProvider" // kilocode_change: Fast Apply model api base url
 		| "enhancePrompt"
 		| "enhancedPrompt"
 		| "draggedImages"
@@ -147,28 +124,13 @@ export interface WebviewMessage {
 		| "deleteMessageConfirm"
 		| "submitEditedMessage"
 		| "editMessageConfirm"
-		| "terminalOutputLineLimit"
-		| "terminalOutputCharacterLimit"
-		| "terminalShellIntegrationTimeout"
-		| "terminalShellIntegrationDisabled"
-		| "terminalCommandDelay"
-		| "terminalPowershellCounter"
-		| "terminalZshClearEolMark"
-		| "terminalZshOhMy"
-		| "terminalZshP10k"
-		| "terminalZdotdir"
-		| "terminalCompressProgressBar"
-		| "mcpEnabled"
 		| "enableMcpServerCreation"
 		| "remoteControlEnabled"
 		| "taskSyncEnabled"
 		| "searchCommits"
-		| "alwaysApproveResubmit"
-		| "requestDelaySeconds"
 		| "setApiConfigPassword"
 		| "mode"
 		| "updatePrompt"
-		| "updateSupportPrompt"
 		| "getSystemPrompt"
 		| "copySystemPrompt"
 		| "systemPrompt"
@@ -176,8 +138,6 @@ export interface WebviewMessage {
 		| "commitMessageApiConfigId" // kilocode_change
 		| "terminalCommandApiConfigId" // kilocode_change
 		| "ghostServiceSettings" // kilocode_change
-		| "includeTaskHistoryInEnhance"
-		| "updateExperimental"
 		| "autoApprovalEnabled"
 		| "yoloMode" // kilocode_change
 		| "updateCustomMode"
@@ -186,32 +146,18 @@ export interface WebviewMessage {
 		| "openCustomModesSettings"
 		| "checkpointDiff"
 		| "checkpointRestore"
+		| "requestCheckpointRestoreApproval"
 		| "seeNewChanges" // kilocode_change
 		| "deleteMcpServer"
-		| "maxOpenTabsContext"
-		| "maxWorkspaceFiles"
 		| "humanRelayResponse"
 		| "humanRelayCancel"
 		| "insertTextToChatArea" // kilocode_change
-		| "browserToolEnabled"
 		| "codebaseIndexEnabled"
 		| "telemetrySetting"
-		| "showRooIgnoredFiles"
 		| "testBrowserConnection"
 		| "browserConnectionResult"
-		| "remoteBrowserEnabled"
-		| "language"
-		| "maxReadFileLine"
-		| "maxImageFileSize"
-		| "maxTotalImageSize"
-		| "maxConcurrentFileReads"
 		| "allowVeryLargeReads" // kilocode_change
-		| "includeDiagnosticMessages"
-		| "maxDiagnosticMessages"
-		| "searchFiles"
-		| "setHistoryPreviewCollapsed"
 		| "showFeedbackOptions" // kilocode_change
-		| "toggleApiConfigPin"
 		| "fetchMcpMarketplace" // kilocode_change
 		| "silentlyRefreshMcpMarketplace" // kilocode_change
 		| "fetchLatestMcpServersFromHub" // kilocode_change
@@ -232,6 +178,8 @@ export interface WebviewMessage {
 		| "toggleRule" // kilocode_change
 		| "createRuleFile" // kilocode_change
 		| "deleteRuleFile" // kilocode_change
+		| "searchFiles"
+		| "toggleApiConfigPin"
 		| "hasOpenedModeSelector"
 		| "cloudButtonClicked"
 		| "rooCloudSignIn"
@@ -247,8 +195,6 @@ export interface WebviewMessage {
 		| "indexingStatusUpdate"
 		| "indexCleared"
 		| "focusPanelRequest"
-		| "profileThresholds"
-		| "setHistoryPreviewCollapsed"
 		| "clearUsageData" // kilocode_change
 		| "getUsageData" // kilocode_change
 		| "usageDataResponse" // kilocode_change
@@ -262,6 +208,7 @@ export interface WebviewMessage {
 		| "openGlobalKeybindings" // kilocode_change
 		| "getKeybindings" // kilocode_change
 		| "setReasoningBlockCollapsed"
+		| "setHistoryPreviewCollapsed" // kilocode_change
 		| "openExternal"
 		| "filterMarketplaceItems"
 		| "mcpButtonClicked"
@@ -273,7 +220,6 @@ export interface WebviewMessage {
 		| "marketplaceInstallResult"
 		| "fetchMarketplaceData"
 		| "switchTab"
-		| "profileThresholds"
 		| "editMessage" // kilocode_change
 		| "systemNotificationsEnabled" // kilocode_change
 		| "dismissNotificationId" // kilocode_change
@@ -303,15 +249,30 @@ export interface WebviewMessage {
 		| "insertTextIntoTextarea"
 		| "showMdmAuthRequiredNotification"
 		| "imageGenerationSettings"
-		| "openRouterImageApiKey"
-		| "kiloCodeImageApiKey"
-		| "openRouterImageGenerationSelectedModel"
+		| "kiloCodeImageApiKey" // kilocode_change
 		| "queueMessage"
 		| "removeQueuedMessage"
 		| "editQueuedMessage"
 		| "dismissUpsell"
 		| "getDismissedUpsells"
+		| "updateSettings"
+		| "requestManagedIndexerState" // kilocode_change
+		| "allowedCommands"
+		| "deniedCommands"
+		| "killBrowserSession"
+		| "openBrowserSessionPanel"
+		| "showBrowserSessionPanelAtStep"
+		| "refreshBrowserSessionPanel"
+		| "browserPanelDidLaunch"
+		| "addTaskToHistory" // kilocode_change
+		| "sessionShare" // kilocode_change
+		| "shareTaskSession" // kilocode_change
+		| "sessionFork" // kilocode_change
+		| "sessionShow" // kilocode_change
+		| "singleCompletion" // kilocode_change
 	text?: string
+	completionRequestId?: string // kilocode_change
+	shareId?: string // kilocode_change - for sessionFork
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
@@ -322,6 +283,9 @@ export interface WebviewMessage {
 	images?: string[]
 	bool?: boolean
 	value?: number
+	stepIndex?: number
+	isLaunchAction?: boolean
+	forceShow?: boolean
 	commands?: string[]
 	audioType?: AudioType
 	// kilocode_change begin
@@ -377,6 +341,8 @@ export interface WebviewMessage {
 	upsellId?: string // For dismissUpsell
 	list?: string[] // For dismissedUpsells response
 	organizationId?: string | null // For organization switching
+	useProviderSignup?: boolean // For rooCloudSignIn to use provider signup flow
+	historyItem?: HistoryItem // kilocode_change For addTaskToHistory
 	codeIndexSettings?: {
 		// Global state settings
 		codebaseIndexEnabled: boolean
@@ -388,10 +354,16 @@ export interface WebviewMessage {
 			| "gemini"
 			| "mistral"
 			| "vercel-ai-gateway"
+			| "bedrock"
+			| "openrouter"
+		codebaseIndexVectorStoreProvider?: "lancedb" | "qdrant" // kilocode_change
+		codebaseIndexLancedbVectorStoreDirectory?: string // kilocode_change
 		codebaseIndexEmbedderBaseUrl?: string
 		codebaseIndexEmbedderModelId: string
 		codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 		codebaseIndexOpenAiCompatibleBaseUrl?: string
+		codebaseIndexBedrockRegion?: string
+		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
 		codebaseIndexEmbeddingBatchSize?: number
@@ -404,7 +376,9 @@ export interface WebviewMessage {
 		codebaseIndexGeminiApiKey?: string
 		codebaseIndexMistralApiKey?: string
 		codebaseIndexVercelAiGatewayApiKey?: string
+		codebaseIndexOpenRouterApiKey?: string
 	}
+	updatedSettings?: RooCodeSettings
 }
 
 // kilocode_change: Create discriminated union for type-safe messages
@@ -477,10 +451,10 @@ export interface TaskHistoryResponsePayload {
 // kilocode_change end
 
 export const checkoutDiffPayloadSchema = z.object({
-	ts: z.number(),
+	ts: z.number().optional(),
 	previousCommitHash: z.string().optional(),
 	commitHash: z.string(),
-	mode: z.enum(["full", "checkpoint"]),
+	mode: z.enum(["full", "checkpoint", "from-init", "to-current"]),
 })
 
 export type CheckpointDiffPayload = z.infer<typeof checkoutDiffPayloadSchema>
@@ -492,6 +466,15 @@ export const checkoutRestorePayloadSchema = z.object({
 })
 
 export type CheckpointRestorePayload = z.infer<typeof checkoutRestorePayloadSchema>
+
+export const requestCheckpointRestoreApprovalPayloadSchema = z.object({
+	commitHash: z.string(),
+	checkpointTs: z.number(),
+	messagesToRemove: z.number(),
+	confirmationText: z.string(),
+})
+
+export type RequestCheckpointRestoreApprovalPayload = z.infer<typeof requestCheckpointRestoreApprovalPayloadSchema>
 
 export interface IndexingStatusPayload {
 	state: "Standby" | "Indexing" | "Indexed" | "Error"
@@ -519,6 +502,7 @@ export type WebViewMessagePayload =
 	| SeeNewChangesPayload
 	| TasksByIdRequestPayload
 	| TaskHistoryRequestPayload
+	| RequestCheckpointRestoreApprovalPayload
 	// kilocode_change end
 	| CheckpointDiffPayload
 	| CheckpointRestorePayload

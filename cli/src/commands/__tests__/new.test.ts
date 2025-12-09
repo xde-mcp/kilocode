@@ -2,54 +2,24 @@
  * Tests for /new command
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { newCommand } from "../new.js"
 import type { CommandContext } from "../core/types.js"
+import { createMockContext } from "./helpers/mockContext.js"
 
 describe("/new command", () => {
 	let mockContext: CommandContext
+
 	beforeEach(() => {
-		// Mock process.stdout.write to capture terminal clearing
 		vi.spyOn(process.stdout, "write").mockImplementation(() => true)
 
-		mockContext = {
+		mockContext = createMockContext({
 			input: "/new",
-			args: [],
-			options: {},
-			sendMessage: vi.fn().mockResolvedValue(undefined),
-			addMessage: vi.fn(),
-			clearMessages: vi.fn(),
-			replaceMessages: vi.fn(),
-			setMessageCutoffTimestamp: vi.fn(),
-			clearTask: vi.fn().mockResolvedValue(undefined),
-			setMode: vi.fn(),
-			exit: vi.fn(),
-			routerModels: null,
-			currentProvider: null,
-			kilocodeDefaultModel: "",
-			updateProviderModel: vi.fn().mockResolvedValue(undefined),
-			refreshRouterModels: vi.fn().mockResolvedValue(undefined),
-			updateProvider: vi.fn().mockResolvedValue(undefined),
-			profileData: null,
-			balanceData: null,
-			profileLoading: false,
-			balanceLoading: false,
-			refreshTerminal: vi.fn().mockResolvedValue(undefined),
-			taskHistoryData: null,
-			taskHistoryFilters: {
-				workspace: "current",
-				sort: "newest",
-				favoritesOnly: false,
-			},
-			taskHistoryLoading: false,
-			taskHistoryError: null,
-			fetchTaskHistory: vi.fn().mockResolvedValue(undefined),
-			updateTaskHistoryFilters: vi.fn().mockResolvedValue(null),
-			changeTaskHistoryPage: vi.fn().mockResolvedValue(null),
-			nextTaskHistoryPage: vi.fn().mockResolvedValue(null),
-			previousTaskHistoryPage: vi.fn().mockResolvedValue(null),
-			sendWebviewMessage: vi.fn().mockResolvedValue(undefined),
-		}
+		})
+	})
+
+	afterEach(() => {
+		vi.restoreAllMocks()
 	})
 
 	describe("Command metadata", () => {
@@ -93,7 +63,7 @@ describe("/new command", () => {
 			await newCommand.handler(mockContext)
 
 			expect(mockContext.replaceMessages).toHaveBeenCalledTimes(1)
-			const replacedMessages = (mockContext.replaceMessages as any).mock.calls[0][0]
+			const replacedMessages = (mockContext.replaceMessages as ReturnType<typeof vi.fn>).mock.calls[0][0]
 
 			expect(replacedMessages).toHaveLength(1)
 			expect(replacedMessages[0]).toMatchObject({
@@ -122,10 +92,13 @@ describe("/new command", () => {
 				callOrder.push("replaceMessages")
 			})
 
+			mockContext.refreshTerminal = vi.fn().mockImplementation(async () => {
+				callOrder.push("refreshTerminal")
+			})
+
 			await newCommand.handler(mockContext)
 
-			// Operations should execute in this order
-			expect(callOrder).toEqual(["clearTask", "replaceMessages"])
+			expect(callOrder).toEqual(["clearTask", "replaceMessages", "refreshTerminal"])
 		})
 
 		it("should handle clearTask errors gracefully", async () => {
@@ -155,12 +128,11 @@ describe("/new command", () => {
 		it("should create a complete fresh start experience", async () => {
 			await newCommand.handler(mockContext)
 
-			// Verify all cleanup operations were performed
 			expect(mockContext.clearTask).toHaveBeenCalled()
 			expect(mockContext.replaceMessages).toHaveBeenCalled()
+			expect(mockContext.refreshTerminal).toHaveBeenCalled()
 
-			// Verify welcome message was replaced
-			const replacedMessages = (mockContext.replaceMessages as any).mock.calls[0][0]
+			const replacedMessages = (mockContext.replaceMessages as ReturnType<typeof vi.fn>).mock.calls[0][0]
 			expect(replacedMessages).toHaveLength(1)
 			expect(replacedMessages[0].type).toBe("welcome")
 			expect(replacedMessages[0].metadata?.welcomeOptions?.showInstructions).toBe(true)

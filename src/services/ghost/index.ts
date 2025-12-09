@@ -4,7 +4,7 @@ import { GhostServiceManager } from "./GhostServiceManager"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 
 export const registerGhostProvider = (context: vscode.ExtensionContext, cline: ClineProvider) => {
-	const ghost = GhostServiceManager.initialize(context, cline)
+	const ghost = new GhostServiceManager(context, cline)
 	context.subscriptions.push(ghost)
 
 	// Register GhostServiceManager Commands
@@ -26,16 +26,6 @@ export const registerGhostProvider = (context: vscode.ExtensionContext, cline: C
 	context.subscriptions.push(
 		vscode.commands.registerCommand("kilo-code.ghost.showIncompatibilityExtensionPopup", async () => {
 			await ghost.showIncompatibilityExtensionPopup()
-		}),
-	)
-	context.subscriptions.push(
-		vscode.commands.registerCommand("kilo-code.ghost.cancelRequest", async () => {
-			await ghost.cancelRequest()
-		}),
-	)
-	context.subscriptions.push(
-		vscode.commands.registerCommand("kilo-code.ghost.enable", async () => {
-			await ghost.enable()
 		}),
 	)
 	context.subscriptions.push(

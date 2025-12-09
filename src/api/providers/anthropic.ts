@@ -1,6 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import { Stream as AnthropicStream } from "@anthropic-ai/sdk/streaming"
 import { CacheControlEphemeral } from "@anthropic-ai/sdk/resources"
+import OpenAI from "openai"
 
 import {
 	type ModelInfo,
@@ -14,10 +15,12 @@ import type { ApiHandlerOptions } from "../../shared/api"
 
 import { ApiStream } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
+import { filterNonAnthropicBlocks } from "../transform/anthropic-filter"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { calculateApiCostAnthropic } from "../../shared/cost"
+import { convertOpenAIToolsToAnthropic, ToolCallAccumulatorAnthropic } from "./kilocode/nativeToolCallHelpers"
 
 export class AnthropicHandler extends BaseProvider implements SingleCompletionHandler {
 	private options: ApiHandlerOptions
@@ -43,7 +46,18 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 	): ApiStream {
 		let stream: AnthropicStream<Anthropic.Messages.RawMessageStreamEvent>
 		const cacheControl: CacheControlEphemeral = { type: "ephemeral" }
-		let { id: modelId, betas = [], maxTokens, temperature, reasoning: thinking } = this.getModel()
+		let {
+			id: modelId,
+			betas = ["fine-grained-tool-streaming-2025-05-14"],
+			maxTokens,
+			temperature,
+			reasoning: thinking,
+			verbosity, // kilocode_change
+		} = this.getModel()
+
+		// Filter out non-Anthropic blocks (reasoning, thoughtSignature, etc.) before sending to the API
+		const sanitizedMessages = filterNonAnthropicBlocks(messages)
+		const apiModelId = this.options.anthropicDeploymentName?.trim() || modelId // kilocode_change
 
 		// Add 1M context beta flag if enabled for Claude Sonnet 4 and 4.5
 		if (
@@ -53,9 +67,31 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			betas.push("context-1m-2025-08-07")
 		}
 
+		// kilocode_change start
+		if (verbosity) {
+			betas.push("effort-2025-11-24")
+		}
+		// kilocode_change end
+
+		// Prepare native tool parameters if tools are provided and protocol is not XML
+		// Also exclude tools when tool_choice is "none" since that means "don't use tools"
+		const shouldIncludeNativeTools =
+			metadata?.tools &&
+			metadata.tools.length > 0 &&
+			metadata?.toolProtocol !== "xml" &&
+			metadata?.tool_choice !== "none"
+
+		const nativeToolParams = shouldIncludeNativeTools
+			? {
+					tools: convertOpenAIToolsToAnthropic(metadata.tools!),
+					tool_choice: this.convertOpenAIToolChoice(metadata.tool_choice, metadata.parallelToolCalls),
+				}
+			: {}
+
 		switch (modelId) {
 			case "claude-sonnet-4-5":
 			case "claude-sonnet-4-20250514":
+			case "claude-opus-4-5-20251101":
 			case "claude-opus-4-1-20250805":
 			case "claude-opus-4-20250514":
 			case "claude-3-7-sonnet-20250219":
@@ -74,7 +110,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 				 * know the last message to retrieve from the cache for the
 				 * current request.
 				 */
-				const userMsgIndices = messages.reduce(
+				const userMsgIndices = sanitizedMessages.reduce(
 					(acc, msg, index) => (msg.role === "user" ? [...acc, index] : acc),
 					[] as number[],
 				)
@@ -84,13 +120,13 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 				stream = await this.client.messages.create(
 					{
-						model: modelId,
+						model: apiModelId, // kilocode_change
 						max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 						temperature,
 						thinking,
 						// Setting cache breakpoint for system prompt so new tasks can reuse it.
 						system: [{ text: systemPrompt, type: "text", cache_control: cacheControl }],
-						messages: messages.map((message, index) => {
+						messages: sanitizedMessages.map((message, index) => {
 							if (index === lastUserMsgIndex || index === secondLastMsgUserIndex) {
 								return {
 									...message,
@@ -107,6 +143,16 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 							return message
 						}),
 						stream: true,
+						// kilocode_change start
+						...(verbosity
+							? {
+									output_config: {
+										effort: verbosity,
+									},
+								}
+							: {}),
+						// kilocode_change end
+						...nativeToolParams,
 					},
 					(() => {
 						// prompt caching: https://x.com/alexalbert__/status/1823751995901272068
@@ -117,6 +163,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 						switch (modelId) {
 							case "claude-sonnet-4-5":
 							case "claude-sonnet-4-20250514":
+							case "claude-opus-4-5-20251101":
 							case "claude-opus-4-1-20250805":
 							case "claude-opus-4-20250514":
 							case "claude-3-7-sonnet-20250219":
@@ -135,14 +182,15 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 				break
 			}
 			default: {
-				stream = (await this.client.messages.create({
-					model: modelId,
+				stream = await this.client.messages.create({
+					model: apiModelId, // kilocode_change
 					max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 					temperature,
 					system: [{ text: systemPrompt, type: "text" }],
-					messages,
+					messages: sanitizedMessages,
 					stream: true,
-				})) as any
+					...nativeToolParams,
+				}) // kilocode_change removed: as any
 				break
 			}
 		}
@@ -152,7 +200,16 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		let cacheWriteTokens = 0
 		let cacheReadTokens = 0
 
+		// kilocode_change start
+		let thinkingDeltaAccumulator = ""
+		let thinkText = ""
+		let thinkSignature = ""
+		const toolCallAccumulator = new ToolCallAccumulatorAnthropic()
+		// kilocode_change end
+
 		for await (const chunk of stream) {
+			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
+
 			switch (chunk.type) {
 				case "message_start": {
 					// Tells us cache reads/writes/input/output.
@@ -201,7 +258,34 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 							}
 
 							yield { type: "reasoning", text: chunk.content_block.thinking }
+
+							// kilocode_change start
+							thinkText = chunk.content_block.thinking
+							thinkSignature = chunk.content_block.signature
+							if (thinkText && thinkSignature) {
+								yield {
+									type: "ant_thinking",
+									thinking: thinkText,
+									signature: thinkSignature,
+								}
+							}
+							// kilocode_change end
+
 							break
+
+						// kilocode_change start
+						case "redacted_thinking":
+							yield {
+								type: "reasoning",
+								text: "[Redacted thinking block]",
+							}
+							yield {
+								type: "ant_redacted_thinking",
+								data: chunk.content_block.data,
+							}
+							break
+						// kilocode_change end
+
 						case "text":
 							// We may receive multiple text blocks, in which
 							// case just insert a line break between them.
@@ -211,36 +295,78 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 							yield { type: "text", text: chunk.content_block.text }
 							break
+						case "tool_use": {
+							// Emit initial tool call partial with id and name
+							yield {
+								type: "tool_call_partial",
+								index: chunk.index,
+								id: chunk.content_block.id,
+								name: chunk.content_block.name,
+								arguments: undefined,
+							}
+							break
+						}
 					}
 					break
 				case "content_block_delta":
 					switch (chunk.delta.type) {
 						case "thinking_delta":
 							yield { type: "reasoning", text: chunk.delta.thinking }
+							thinkingDeltaAccumulator += chunk.delta.thinking // kilocode_change
 							break
+
+						// kilocode_change start
+						case "signature_delta":
+							if (thinkingDeltaAccumulator && chunk.delta.signature) {
+								yield {
+									type: "ant_thinking",
+									thinking: thinkingDeltaAccumulator,
+									signature: chunk.delta.signature,
+								}
+							}
+							break
+						// kilocode_change end
+
 						case "text_delta":
 							yield { type: "text", text: chunk.delta.text }
 							break
+						case "input_json_delta": {
+							// Emit tool call partial chunks as arguments stream in
+							yield {
+								type: "tool_call_partial",
+								index: chunk.index,
+								id: undefined,
+								name: undefined,
+								arguments: chunk.delta.partial_json,
+							}
+							break
+						}
 					}
 
 					break
 				case "content_block_stop":
+					// Block complete - no action needed for now.
+					// NativeToolCallParser handles tool call completion
+					// Note: Signature for multi-turn thinking would require using stream.finalMessage()
+					// after iteration completes, which requires restructuring the streaming approach.
 					break
 			}
 		}
 
 		if (inputTokens > 0 || outputTokens > 0 || cacheWriteTokens > 0 || cacheReadTokens > 0) {
+			const { totalCost } = calculateApiCostAnthropic(
+				this.getModel().info,
+				inputTokens,
+				outputTokens,
+				cacheWriteTokens,
+				cacheReadTokens,
+			)
+
 			yield {
 				type: "usage",
 				inputTokens: 0,
 				outputTokens: 0,
-				totalCost: calculateApiCostAnthropic(
-					this.getModel().info,
-					inputTokens,
-					outputTokens,
-					cacheWriteTokens,
-					cacheReadTokens,
-				),
+				totalCost,
 			}
 		}
 	}
@@ -285,11 +411,55 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		}
 	}
 
+	/**
+	 * Converts OpenAI tool_choice to Anthropic ToolChoice format
+	 * @param toolChoice - OpenAI tool_choice parameter
+	 * @param parallelToolCalls - When true, allows parallel tool calls. When false (default), disables parallel tool calls.
+	 */
+	private convertOpenAIToolChoice(
+		toolChoice: OpenAI.Chat.ChatCompletionCreateParams["tool_choice"],
+		parallelToolCalls?: boolean,
+	): Anthropic.Messages.MessageCreateParams["tool_choice"] | undefined {
+		// Anthropic allows parallel tool calls by default. When parallelToolCalls is false or undefined,
+		// we disable parallel tool use to ensure one tool call at a time.
+		const disableParallelToolUse = !parallelToolCalls
+
+		if (!toolChoice) {
+			// Default to auto with parallel tool use control
+			return { type: "auto", disable_parallel_tool_use: disableParallelToolUse }
+		}
+
+		if (typeof toolChoice === "string") {
+			switch (toolChoice) {
+				case "none":
+					return undefined // Anthropic doesn't have "none", just omit tools
+				case "auto":
+					return { type: "auto", disable_parallel_tool_use: disableParallelToolUse }
+				case "required":
+					return { type: "any", disable_parallel_tool_use: disableParallelToolUse }
+				default:
+					return { type: "auto", disable_parallel_tool_use: disableParallelToolUse }
+			}
+		}
+
+		// Handle object form { type: "function", function: { name: string } }
+		if (typeof toolChoice === "object" && "function" in toolChoice) {
+			return {
+				type: "tool",
+				name: toolChoice.function.name,
+				disable_parallel_tool_use: disableParallelToolUse,
+			}
+		}
+
+		return { type: "auto", disable_parallel_tool_use: disableParallelToolUse }
+	}
+
 	async completePrompt(prompt: string) {
 		let { id: model, temperature } = this.getModel()
+		const apiModelId = this.options.anthropicDeploymentName?.trim() || model // kilocode_change
 
 		const message = await this.client.messages.create({
-			model,
+			model: apiModelId, // kilocode_change
 			max_tokens: ANTHROPIC_DEFAULT_MAX_TOKENS,
 			thinking: undefined,
 			temperature,
@@ -311,9 +481,10 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		try {
 			// Use the current model
 			const { id: model } = this.getModel()
+			const apiModelId = this.options.anthropicDeploymentName?.trim() || model // kilocode_change
 
 			const response = await this.client.messages.countTokens({
-				model,
+				model: apiModelId, // kilocode_change
 				messages: [{ role: "user", content: content }],
 			})
 

@@ -44,17 +44,18 @@ git checkout -b your-branch-name
 ### Testing Your Changes
 
 - Run the test suite:
-  ```bash
-  npm test
-  ```
+    ```bash
+    npm test
+    ```
 - Manually test your changes in the development extension
 
 ### Creating a Pull Request
 
 1. Push your changes to your fork:
-   ```bash
-   git push origin your-branch-name
-   ```
+
+    ```bash
+    git push origin your-branch-name
+    ```
 
 2. Go to the [Kilo Code repository](https://github.com/Kilo-Org/kilocode)
 
@@ -63,10 +64,10 @@ git checkout -b your-branch-name
 4. Select your fork and branch
 
 5. Fill out the PR template with:
-   - A clear description of the changes
-   - Any related issues
-   - Testing steps
-   - Screenshots (if applicable)
+    - A clear description of the changes
+    - Any related issues
+    - Testing steps
+    - Screenshots (if applicable)
 
 ## Creating Custom Modes
 
@@ -83,17 +84,19 @@ Custom modes are a powerful way to extend Kilo Code's capabilities. To create an
 Documentation improvements are highly valued contributions:
 
 1. Follow the documentation style guide:
-   - Use clear, concise language
-   - Include examples where appropriate
-   - Use absolute paths starting from `/docs/` for internal links
-   - Don't include `.md` extensions in links
+
+    - Use clear, concise language
+    - Include examples where appropriate
+    - Use absolute paths starting from `/docs/` for internal links
+    - Don't include `.md` extensions in links
 
 2. Test your documentation changes by running the docs site locally:
-   ```bash
-   cd docs
-   npm install
-   npm start
-   ```
+
+    ```bash
+    cd docs
+    npm install
+    npm start
+    ```
 
 3. Submit a PR with your documentation changes
 
@@ -110,7 +113,7 @@ When participating in the Kilo Code community:
 
 If you need help with your contribution:
 
-- Join our [Discord community](https://kilocode.ai/discord) for real-time support
+- Join our [Discord community](https://kilo.ai/discord) for real-time support
 - Ask questions on [GitHub Discussions](https://github.com/Kilo-Org/kilocode/discussions)
 - Visit our [Reddit community](https://www.reddit.com/r/KiloCode)
 

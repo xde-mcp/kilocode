@@ -37,6 +37,30 @@
 		"about": "عن Kilo Code",
 		"autoPurge": "التنظيف التلقائي"
 	},
+	"about": {
+		"bugReport": {
+			"label": "وجدت خطأ؟",
+			"link": "أبلغ عنه على GitHub"
+		},
+		"featureRequest": {
+			"label": "عندك فكرة؟",
+			"link": "شاركها معنا"
+		},
+		"securityIssue": {
+			"label": "اكتشفت ثغرة أمنية؟",
+			"link": "اتبع عملية الإفصاح"
+		},
+		"contact": {
+			"label": "تحتاج تتواصل معنا؟ راسلنا"
+		},
+		"community": "تبي نصائح أو تتسولف مع مستخدمين آخرين؟ انضم لـ <redditLink>reddit.com/r/kilocode</redditLink> أو <discordLink>kilo.ai/discord</discordLink>",
+		"contactSupport": "تواصل مع الدعم",
+		"contactSupportDesc": "احصل على مساعدة من فريق دعم العملاء",
+		"joinCommunity": "انضم للمجتمع",
+		"joinCommunityDesc": "تواصل مع مستخدمين آخرين وشارك الأفكار",
+		"contactAndCommunity": "التواصل والمجتمع",
+		"manageSettings": "إدارة الإعدادات"
+	},
 	"slashCommands": {
 		"description": "إدارة أوامر الشرطة المائلة لتنفيذ سير العمل والإجراءات المخصصة بسرعة. <DocsLink>تعرف أكثر</DocsLink>"
 	},
@@ -71,6 +95,29 @@
 		"vercelAiGatewayProvider": "Vercel AI Gateway",
 		"vercelAiGatewayApiKeyLabel": "مفتاح API",
 		"vercelAiGatewayApiKeyPlaceholder": "أدخل مفتاح Vercel AI Gateway API",
+		"bedrockProvider": "Amazon Bedrock",
+		"bedrockRegionLabel": "منطقة AWS",
+		"bedrockRegionPlaceholder": "us-east-1",
+		"bedrockProfileLabel": "ملف AWS",
+		"bedrockProfilePlaceholder": "default",
+		"bedrockProfileDescription": "اسم ملف AWS من ~/.aws/credentials (مطلوب).",
+		"bedrockConfigTitle": "إعدادات Amazon Bedrock",
+		"bedrockConfigDesc": "اضبط بيانات اعتماد AWS والمنطقة لاستخدام نماذج التضمين من Amazon Bedrock",
+		"bedrockEmbeddingModel": "نموذج التضمين",
+		"bedrockEmbeddingModelDesc": "اختر نموذج التضمين من Amazon Bedrock",
+		"bedrockEmbeddingModelPlaceholder": "اختر نموذج التضمين",
+		"bedrockAccessKeyId": "معرّف مفتاح الوصول",
+		"bedrockAccessKeyIdDesc": "معرّف مفتاح وصول AWS الخاص بك",
+		"bedrockAccessKeyIdPlaceholder": "أدخل معرّف مفتاح الوصول",
+		"bedrockSecretAccessKey": "مفتاح الوصول السري",
+		"bedrockSecretAccessKeyDesc": "مفتاح الوصول السري لـ AWS الخاص بك",
+		"bedrockSecretAccessKeyPlaceholder": "أدخل مفتاح الوصول السري",
+		"bedrockSessionToken": "رمز الجلسة",
+		"bedrockSessionTokenDesc": "رمز جلسة AWS (اختياري)",
+		"bedrockSessionTokenPlaceholder": "أدخل رمز الجلسة",
+		"openRouterProvider": "OpenRouter",
+		"openRouterApiKeyLabel": "مفتاح OpenRouter API",
+		"openRouterApiKeyPlaceholder": "أدخل مفتاح OpenRouter API",
 		"openaiCompatibleProvider": "متوافق مع OpenAI",
 		"openAiKeyLabel": "مفتاح OpenAI API",
 		"openAiKeyPlaceholder": "أدخل مفتاح OpenAI API",
@@ -87,10 +134,14 @@
 		"selectModelPlaceholder": "اختر نموذج",
 		"ollamaUrlLabel": "رابط Ollama:",
 		"ollamaBaseUrlLabel": "رابط Ollama الأساسي",
+		"vectorStoreProviderLabel": "مزود تخزين المتجهات",
 		"qdrantUrlLabel": "رابط Qdrant",
 		"qdrantKeyLabel": "مفتاح Qdrant:",
 		"qdrantApiKeyLabel": "مفتاح Qdrant API",
 		"qdrantApiKeyPlaceholder": "أدخل مفتاح Qdrant API (اختياري)",
+		"lancedbVectorStoreDirectoryLabel": "مسار LanceDB لتخزين المتجهات",
+		"lancedbVectorStoreDirectoryPlaceholder": "أدخل مسار تخزين المتجهات (اختياري)",
+		"lancedbVectorStoreDirectoryDescription": "المسار لتخزين قاعدة بيانات LanceDB للمتجهات. إذا تركته فارغًا، سيتم استخدام الموقع الافتراضي في globalStorageUri/vector.",
 		"setupConfigLabel": "الإعداد",
 		"advancedConfigLabel": "الإعدادات المتقدمة",
 		"searchMinScoreLabel": "حد نقاط البحث",
@@ -137,12 +188,16 @@
 			"geminiApiKeyRequired": "مفتاح Gemini API مطلوب",
 			"mistralApiKeyRequired": "مفتاح Mistral API مطلوب",
 			"vercelAiGatewayApiKeyRequired": "مفتاح Vercel AI Gateway API مطلوب",
+			"bedrockRegionRequired": "منطقة AWS مطلوبة",
+			"bedrockProfileRequired": "ملف AWS مطلوب",
+			"openRouterApiKeyRequired": "مفتاح OpenRouter API مطلوب",
 			"ollamaBaseUrlRequired": "رابط Ollama الأساسي مطلوب",
 			"baseUrlRequired": "الرابط الأساسي مطلوب",
 			"modelDimensionMinValue": "بُعد النموذج يجب أن يكون أكبر من 0"
 		},
 		"cancelling": "جارٍ الإلغاء...",
-		"cancelIndexingButton": "إلغاء الفهرسة"
+		"cancelIndexingButton": "إلغاء الفهرسة",
+		"optional": "اختياري"
 	},
 	"autoApproval": {
 		"title": "الموافقة التلقائية",
@@ -194,6 +249,10 @@
 			"label": "المهام الفرعية",
 			"description": "إنشاء وإنهاء المهام الفرعية تلقائيًا"
 		},
+		"delete": {
+			"label": "حذف",
+			"description": "حذف الملفات والمجلدات تلقائيًا بدون طلب الموافقة"
+		},
 		"followupQuestions": {
 			"label": "الأسئلة",
 			"description": "اختيار الإجابة الأولى المقترحة تلقائيًا بعد المهلة المحددة",
@@ -238,6 +297,8 @@
 		"providerDocumentation": "توثيق {{provider}}",
 		"configProfile": "ملف الإعداد",
 		"description": "احفظ إعدادات متعددة للتبديل السريع بين مزوّدين ونماذج.",
+		"makeActiveProfile": "جعل الملف النشط",
+		"makeActiveTooltip": "تفعيل هذا الملف لاستخدامه في طلبات API",
 		"apiProvider": "مزود API",
 		"model": "النموذج",
 		"nameEmpty": "الاسم ما يصير فاضي",
@@ -290,10 +351,14 @@
 		"anthropicApiKey": "مفتاح Anthropic",
 		"getAnthropicApiKey": "احصل على مفتاح Anthropic",
 		"anthropicUseAuthToken": "إرسال المفتاح في ترويسة Authorization بدل X-Api-Key",
+		"anthropicUseAzureDeployment": "استخدام اسم نشر Azure",
+		"anthropicAzureDeploymentPlaceholder": "أدخل اسم النشر...",
 		"anthropic1MContextBetaLabel": "تفعيل نافذة السياق 1 مليون (Beta)",
 		"anthropic1MContextBetaDescription": "توسيع نافذة السياق إلى مليون رمز لـ Claude Sonnet 4",
 		"awsBedrock1MContextBetaLabel": "تفعيل نافذة السياق 1 مليون (Beta)",
 		"awsBedrock1MContextBetaDescription": "توسيع نافذة السياق إلى مليون رمز لـ Claude Sonnet 4",
+		"basetenApiKey": "مفتاح Baseten API",
+		"getBasetenApiKey": "احصل على مفتاح Baseten API",
 		"cerebrasApiKey": "مفتاح Cerebras API",
 		"getCerebrasApiKey": "احصل على مفتاح Cerebras API",
 		"chutesApiKey": "مفتاح Chutes",
@@ -311,13 +376,24 @@
 		"getFireworksApiKey": "احصل على مفتاح Fireworks",
 		"syntheticApiKey": "مفتاح Synthetic API",
 		"getSyntheticApiKey": "احصل على مفتاح Synthetic API",
-		"zaiApiKey": "مفتاح Z.AI",
-		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"moonshotApiKey": "مفتاح Moonshot",
 		"getMoonshotApiKey": "احصل على مفتاح Moonshot",
 		"moonshotBaseUrl": "نقطة دخول Moonshot",
+		"minimaxApiKey": "مفتاح MiniMax API",
+		"getMiniMaxApiKey": "احصل على مفتاح MiniMax API",
+		"minimaxBaseUrl": "نقطة دخول MiniMax",
+		"zaiApiKey": "مفتاح Z.AI",
+		"getZaiApiKey": "احصل على مفتاح Z.AI",
 		"zaiEntrypoint": "نقطة دخول Z AI",
 		"zaiEntrypointDescription": "يرجى اختيار نقطة دخول API المناسبة حسب موقعك. إذا كنت في الصين، اختر open.bigmodel.cn. وإلا، اختر api.z.ai.",
+		"nanoGptApiKey": "مفتاح Nano-GPT",
+		"getNanoGptApiKey": "احصل على مفتاح Nano-GPT",
+		"nanoGptModelList": "قائمة النماذج",
+		"nanoGptModelListOptions": {
+			"all": "جميع النماذج",
+			"personalized": "نماذج مخصصة",
+			"subscription": "نماذج الاشتراك"
+		},
 		"geminiApiKey": "مفتاح Gemini",
 		"getGroqApiKey": "احصل على مفتاح Groq",
 		"groqApiKey": "مفتاح Groq",
@@ -342,6 +418,32 @@
 		"huggingFaceSelectProvider": "اختر مزوّد...",
 		"huggingFaceSearchProviders": "البحث في المزوّدين...",
 		"huggingFaceNoProvidersFound": "لم يتم العثور على مزوّدين",
+		"sapAiCore": {
+			"serviceKey": "مفتاح خدمة AI Core",
+			"serviceKeyJson": "أدخل مفتاح الخدمة بصيغة JSON...",
+			"resourceGroup": "مجموعة موارد AI Core",
+			"credentialsNote": "هذه البيانات تُحفظ محليًا وتُستخدم فقط لإرسال طلبات API من هذه الإضافة.",
+			"learnMore": "يمكنك العثور على مزيد من المعلومات حول الوصول إلى SAP AI Core API هنا.",
+			"orchestrationMode": "وضع التنسيق",
+			"orchestrationEnabledDesc": "عند التفعيل، يتيح الوصول إلى جميع النماذج المتاحة بدون الحاجة إلى نشر فردي.",
+			"orchestrationDisabledDesc": "عند التعطيل، يتيح الوصول فقط إلى النماذج الأساسية المنشورة في خدمة AI Core الخاصة بك.",
+			"modelDeploymentDesc": "يمكنك فقط اختيار النماذج التي لديها عمليات نشر متاحة.",
+			"deployment": "النشر",
+			"loading": "جارٍ التحميل...",
+			"modelsCount": "({{count}} نموذج)",
+			"deploymentsCount": "({{count}} عملية نشر)",
+			"selectModel": "اختر نموذج...",
+			"selectDeployment": "اختر عملية نشر...",
+			"searchModels": "البحث في النماذج...",
+			"searchDeployments": "البحث في عمليات النشر...",
+			"noModelsFound": "لم يتم العثور على نماذج",
+			"noDeploymentFound": "لم يتم العثور على عملية نشر",
+			"getStarted": "ابدأ مع SAP AI Core",
+			"supportedProviders": "المزوّدون المدعومون",
+			"supportedProvidersDesc1": "مزوّد SAP AI Core يدعم حاليًا فقط النماذج الأساسية للمزوّدين التاليين:",
+			"supportedProvidersDesc2": "فكّر في التبديل إلى وضع التنسيق للوصول إلى مزيد من النماذج.",
+			"supportedProvidersDesc3": "تعرف أكثر عن وضع التنسيق"
+		},
 		"awsApiKey": "مفتاح Amazon Bedrock API",
 		"apiKey": "مفتاح API",
 		"anthropic": {
@@ -374,6 +476,7 @@
 		"awsSessionToken": "رمز الجلسة",
 		"awsRegion": "منطقة AWS",
 		"awsCrossRegion": "تمكين الاستدلال عبر المناطق",
+		"awsGlobalInference": "استخدام الاستدلال العالمي (اختيار منطقة AWS الأمثل تلقائيًا)",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "استخدام نقطة VPC مخصصة",
 			"vpcEndpointUrlPlaceholder": "اكتب رابط نقطة VPC (اختياري)",
@@ -498,11 +601,12 @@
 			"warning": "⚠️ تعيين القيمة إلى 0 يسمح بإعادة المحاولة غير المحدودة مما قد يستهلك استخدام API كبير"
 		},
 		"reasoningEffort": {
-			"label": "جهد الاستنتاج",
+			"label": "جهد الاستنتاج للنموذج",
+			"none": "لا شيء",
 			"minimal": "الحد الأدنى (الأسرع)",
-			"high": "عالي",
+			"low": "منخفض",
 			"medium": "متوسط",
-			"low": "منخفض"
+			"high": "عالي"
 		},
 		"verbosity": {
 			"label": "مستوى التفصيل في المخرجات",
@@ -555,6 +659,15 @@
 		"roo": {
 			"authenticatedMessage": "تم التوثيق بأمان عبر حساب Roo Code Cloud.",
 			"connectButton": "اتصل بـ Roo Code Cloud"
+		},
+		"profileName": "اسم الملف الشخصي",
+		"profileType": "نوع الملف الشخصي",
+		"profileTypeChat": "محادثة",
+		"profileTypeAutocomplete": "الإكمال التلقائي",
+		"profileTypeDescription": "تُستخدم ملفات المحادثة للمحادثات. يُسمح بملف إكمال تلقائي واحد فقط.",
+		"autocompleteLabel": "(الإكمال التلقائي)",
+		"autocomplete": {
+			"onlyOneAllowed": "يُسمح بملف إكمال تلقائي واحد فقط. الملف الشخصي \"{{existingName}}\" مُكوّن بالفعل للإكمال التلقائي. يرجى تغيير نوعه أولاً أو حذفه."
 		}
 	},
 	"contextWindow": {
@@ -599,6 +712,10 @@
 		}
 	},
 	"checkpoints": {
+		"timeout": {
+			"label": "مهلة تهيئة نقطة الحفظ (ثواني)",
+			"description": "أقصى وقت انتظار لتهيئة خدمة نقاط الحفظ. الافتراضي 15 ثانية. النطاق: 10-60 ثانية."
+		},
 		"enable": {
 			"label": "تفعيل نقاط الحفظ التلقائية",
 			"description": "ينشئ نقاط حفظ آليًا أثناء التنفيذ. <0>تعرف أكثر</0>"
@@ -737,6 +854,14 @@
 			"inheritDescription": "هذا الملف يرث النسبة العامة ({{threshold}}%)",
 			"usesGlobal": "(يستخدم {{threshold}}% عام)"
 		},
+		"includeCurrentTime": {
+			"label": "تضمين الوقت الحالي في السياق",
+			"description": "عند التفعيل، سيتم تضمين الوقت الحالي ومعلومات المنطقة الزمنية في موجه النظام. عطّل هذا إذا كانت النماذج تتوقف عن العمل بسبب مخاوف الوقت."
+		},
+		"includeCurrentCost": {
+			"label": "تضمين التكلفة الحالية في السياق",
+			"description": "عند التفعيل، سيتم تضمين تكلفة استخدام API الحالية في موجه النظام. عطّل هذا إذا كانت النماذج تتوقف عن العمل بسبب مخاوف التكلفة."
+		},
 		"diagnostics": {
 			"includeMessages": {
 				"label": "تضمين رسائل التشخيص تلقائيًا في السياق",
@@ -752,6 +877,14 @@
 				"label": "تأخير بعد الكتابة للسماح للتشخيصات باكتشاف المشاكل المحتملة",
 				"description": "الوقت للانتظار بعد كتابة الملفات قبل المتابعة، مما يسمح لأدوات التشخيص بمعالجة التغييرات واكتشاف المشاكل."
 			}
+		},
+		"maxGitStatusFiles": {
+			"label": "أقصى ملفات Git",
+			"description": "أقصى عدد ملفات تُدرج في سياق git status. 0 للتعطيل. معلومات الفرع تُعرض دومًا عند > 0."
+		},
+		"gitStatusIncludeUntracked": {
+			"label": "تضمين الملفات غير المتتبعة في Git",
+			"gitStatusIncludeUntrackedDesc": "عند التفعيل، سيتم تضمين الملفات غير المتتبعة في سياق git status"
 		}
 	},
 	"terminal": {
@@ -815,6 +948,20 @@
 	"advancedSettings": {
 		"title": "الإعدادات المتقدمة"
 	},
+	"toolProtocol": {
+		"label": "بروتوكول استدعاء الأدوات",
+		"description": "اختر كيف يتواصل Kilo Codeo مع API. Native يستخدم API لاستدعاء الدوال الخاص بالمزود، بينما XML يستخدم تعريفات الأدوات بـ XML.",
+		"default": "افتراضي",
+		"xml": "XML",
+		"native": "Native",
+		"currentDefault": "افتراضي: {{protocol}}",
+		"toolProtocolAuto": "تلقائي",
+		"toolProtocolAutoDesc": "يختار البروتوكول الأفضل تلقائيًا بناءً على المزود والنموذج",
+		"toolProtocolFunctionCall": "استدعاء الدالة",
+		"toolProtocolFunctionCallDesc": "يستخدم API لاستدعاء الدوال الأصلي للمزود",
+		"toolProtocolToolUse": "استخدام الأداة",
+		"toolProtocolToolUseDesc": "يستخدم تنسيق XML لاستدعاء الأدوات"
+	},
 	"advanced": {
 		"diff": {
 			"label": "التعديل عبر Diff",
@@ -847,10 +994,6 @@
 			"name": "استخدم استراتيجية diff الموحدة التجريبية",
 			"description": "قد تقلل من الإعادات لكنها مخاطرة."
 		},
-		"SEARCH_AND_REPLACE": {
-			"name": "أداة بحث واستبدال تجريبية",
-			"description": "تمكّن استبدال متعدد في طلب واحد."
-		},
 		"INSERT_BLOCK": {
 			"name": "أداة إدراج محتوى تجريبية",
 			"description": "تدرج محتوى في أسطر محددة بدون diff."
@@ -878,8 +1021,12 @@
 		"MORPH_FAST_APPLY": {
 			"name": "تفعيل Fast Apply",
 			"description": "عند التفعيل، يستطيع Kilo Code تعديل الملفات باستخدام Fast Apply مع نماذج متخصصة محسّنة لتعديلات الكود. يتطلب Kilo Gateway Provider أو OpenRouter أو مفتاح Morph API.",
-			"apiKey": "مفتاح Morph API (اختياري)",
-			"placeholder": "أدخل مفتاح Morph API (اختياري)",
+			"apiProvider": "مزود API",
+			"apiProviderList": {
+				"current": "الحالي"
+			},
+			"apiKey": "مفتاح API (اختياري)",
+			"placeholder": "أدخل مفتاح API (اختياري)",
 			"modelLabel": "اختيار النموذج",
 			"modelDescription": "اختر نموذج التطبيق السريع لتعديل الملفات",
 			"models": {
@@ -905,6 +1052,8 @@
 			"name": "تمكين إنشاء صور بالذكاء الاصطناعي",
 			"description": "عند التفعيل، يمكن لـ Kilo Code إنشاء صور من النصوص. يتطلب مفتاح Kilo Code أو OpenRouter API.",
 			"apiProvider": "مزود API",
+			"providerLabel": "المزوّد",
+			"providerDescription": "اختر المزوّد المراد استخدامه لإنشاء الصور.",
 			"openRouterApiKeyLabel": "مفتاح OpenRouter API",
 			"openRouterApiKeyPlaceholder": "أدخل مفتاح OpenRouter API",
 			"kiloCodeApiKeyLabel": "مفتاح Kilo Code API",
@@ -920,6 +1069,14 @@
 			"name": "تمكين أوامر الشرطة المدفوعة بالنموذج",
 			"description": "عند التمكين، يمكن لـ Kilo Code تشغيل أوامر الشرطة الخاصة بك لتنفيذ سير العمل."
 		},
+		"MULTIPLE_NATIVE_TOOL_CALLS": {
+			"name": "استدعاءات أدوات متوازية",
+			"description": "عند التفعيل، يمكن للبروتوكول الأصلي تنفيذ عدة أدوات في دور رسالة واحدة."
+		},
+		"experimentalParallelToolCalls": "استدعاءات أدوات متوازية تجريبية",
+		"experimentalParallelToolCallsDesc": "يسمح بتنفيذ عدة أدوات في نفس الوقت",
+		"experimentalParallelToolCallsInfo": "هذه الميزة تجريبية وقد تسبب سلوكًا غير متوقع",
+		"experimentalParallelToolCallsWarning": "⚠️ قد تسبب هذه الميزة سلوكًا غير متوقع",
 		"INLINE_ASSIST": {
 			"name": "Autocomplete",
 			"description": "تمكين ميزات الإكمال التلقائي للحصول على اقتراحات كود سريعة وتحسينات مباشرة في محررك. يتضمن المهمة السريعة (Cmd+I) للتغييرات المستهدفة والإكمال التلقائي للتحسينات السياقية."
@@ -966,8 +1123,8 @@
 		"useCustomModel": "استخدام مخصص: {{modelId}}"
 	},
 	"footer": {
-		"feedback": "عندك سؤال أو ملاحظة؟ افتح تذكرة في <githubLink>github.com/Kilo-Org/kilocode</githubLink> أو انضم لـ <redditLink>r/kilocode</redditLink> أو <discordLink>kilocode.ai/discord</discordLink>.",
-		"support": "للاستفسارات المالية: <supportLink>https://kilocode.ai/support</supportLink>",
+		"feedback": "عندك سؤال أو ملاحظة؟ افتح تذكرة في <githubLink>github.com/Kilo-Org/kilocode</githubLink> أو انضم لـ <redditLink>r/kilocode</redditLink> أو <discordLink>kilo.ai/discord</discordLink>.",
+		"support": "للاستفسارات المالية: <supportLink>https://kilo.ai/support</supportLink>",
 		"telemetry": {
 			"label": "السماح بتقارير الأخطاء والاستخدام",
 			"description": "ساعد في تحسين Kilo Code بإرسال بيانات الاستخدام وتقارير الأخطاء. لا يتم إرسال أي كود أو مطالبات أو معلومات شخصية أبداً. راجع سياسة الخصوصية لمزيد من التفاصيل."
@@ -998,7 +1155,9 @@
 		"modelNotAllowed": "النموذج '{{model}}' غير مسموح به للمزوّد '{{provider}}'.",
 		"profileInvalid": "الملف يحتوي مزوّد أو نموذج غير مسموح.",
 		"qwenCodeOauthPath": "يجب توفير مسار صالح لبيانات OAuth.",
-		"modelDeprecated": "هذا النموذج لم يعد متوفرًا. يرجى اختيار نموذج آخر."
+		"modelDeprecated": "هذا النموذج لم يعد متوفرًا. يرجى اختيار نموذج آخر.",
+		"sapAiCore": "يجب توفير مفتاح خدمة SAP AI Core صالح.",
+		"sapAiCoreDeploymentId": "يجب اختيار عملية نشر قيد التشغيل للنموذج '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "اكتب مفتاح API...",

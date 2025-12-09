@@ -1,129 +1,57 @@
 import * as vscode from "vscode"
+import type { AutocompleteCodeSnippet } from "../continuedev/core/autocomplete/snippets/types"
+import type {
+	Position,
+	Range,
+	RangeInFile,
+	TabAutocompleteOptions as CoreTabAutocompleteOptions,
+} from "../continuedev/core"
+import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
+import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
+import { GhostModel } from "./GhostModel"
 
-/**
- * Represents the type of user action performed on a document
- */
-export enum UserActionType {
-	ADDITION = "ADDITION", // Added new code
-	DELETION = "DELETION", // Removed existing code
-	MODIFICATION = "MODIFICATION", // Changed existing code
-	REFACTOR = "REFACTOR", // Renamed or moved code
-	FORMAT = "FORMAT", // Changed formatting without semantic changes
-}
+export const AUTOCOMPLETE_PROVIDER_MODELS = new Map([
+	["mistral", "codestral-latest"],
+	["kilocode", "mistralai/codestral-2508"],
+	["openrouter", "mistralai/codestral-2508"],
+	["bedrock", "mistral.codestral-2508-v1:0"],
+] as const)
 
-/**
- * Represents a meaningful user action performed on a document
- */
-export interface UserAction {
-	type: UserActionType
-	description: string
-	lineRange?: {
-		start: number
-		end: number
-	}
-	affectedSymbol?: string // Function/variable/class name if applicable
-	scope?: string // Function/class/namespace containing the change
-	timestamp?: number // When the action occurred
-	content?: string // The actual content that was added, deleted, or modified
-}
+export type AutocompleteProviderKey = typeof AUTOCOMPLETE_PROVIDER_MODELS extends Map<infer K, any> ? K : never
 
-export interface GhostDocumentStoreItem {
-	uri: string
-	document: vscode.TextDocument
-	history: string[]
-	lastParsedVersion?: number
-	recentActions?: UserAction[]
+export interface ResponseMetaData {
+	cost: number
+	inputTokens: number
+	outputTokens: number
+	cacheWriteTokens: number
+	cacheReadTokens: number
 }
 
 export interface GhostSuggestionContext {
 	document: vscode.TextDocument
-	editor?: vscode.TextEditor
-	openFiles?: vscode.TextDocument[]
 	range?: vscode.Range | vscode.Selection
-	userInput?: string
-	recentOperations?: UserAction[] // Stores meaningful user actions instead of raw diff
-	diagnostics?: vscode.Diagnostic[] // Document diagnostics (errors, warnings, etc.)
+	recentlyVisitedRanges?: AutocompleteCodeSnippet[]
+	recentlyEditedRanges?: RecentlyEditedRange[]
 }
 
-// ============================================================================
-// CompletionProvider-compatible types (duplicated to avoid coupling)
-// ============================================================================
-
-/**
- * Position in a file (line and character)
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface Position {
-	line: number
-	character: number
-}
-
-/**
- * Range in a file
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface Range {
-	start: Position
-	end: Position
-}
-
-/**
- * Range with file path
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface RangeInFile {
-	filepath: string
-	range: Range
-}
-
-/**
- * Tab autocomplete options
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface TabAutocompleteOptions {
-	disable: boolean
-	maxPromptTokens: number
-	debounceDelay: number
-	modelTimeout: number
-	maxSuffixPercentage: number
-	prefixPercentage: number
-	transform?: boolean
-	multilineCompletions: "always" | "never" | "auto"
-	slidingWindowPrefixPercentage: number
-	slidingWindowSize: number
-	useCache?: boolean
-	onlyMyCode?: boolean
+export interface GhostTabAutocompleteExtensions {
 	template?: string
 	useOtherFiles?: boolean
-	useRecentlyEdited?: boolean
 	recentlyEditedSimilarityThreshold?: number
 	maxSnippetTokens?: number
-	disableInFiles?: string[]
 }
 
-/**
- * Recently edited range with timestamp
- * Duplicated from continuedev/core to avoid coupling
- */
+export type TabAutocompleteOptions = Partial<CoreTabAutocompleteOptions> & GhostTabAutocompleteExtensions
+
 export interface RecentlyEditedRange extends RangeInFile {
 	timestamp: number
 	lines: string[]
 	symbols: Set<string>
 }
 
-/**
- * Code snippet for autocomplete context
- * Duplicated from continuedev/core to avoid coupling
- */
-export interface AutocompleteCodeSnippet extends RangeInFile {
-	content: string
-	score?: number
-}
+export type { AutocompleteCodeSnippet }
 
-/**
- * Input for autocomplete request (CompletionProvider-compatible)
- * Duplicated from continuedev/core to avoid coupling
- */
 export interface AutocompleteInput {
 	isUntitledFile: boolean
 	completionId: string
@@ -140,10 +68,6 @@ export interface AutocompleteInput {
 	injectDetails?: string
 }
 
-/**
- * Output from autocomplete request (CompletionProvider-compatible)
- * Duplicated from continuedev/core to avoid coupling
- */
 export interface AutocompleteOutcome extends TabAutocompleteOptions {
 	accepted?: boolean
 	time: number
@@ -165,10 +89,6 @@ export interface AutocompleteOutcome extends TabAutocompleteOptions {
 	profileType?: "local" | "platform" | "control-plane"
 }
 
-/**
- * Result from prompt generation including prefix/suffix
- * New interface for Ghost to align with CompletionProvider
- */
 export interface PromptResult {
 	systemPrompt: string
 	userPrompt: string
@@ -177,13 +97,73 @@ export interface PromptResult {
 	completionId: string
 }
 
-// ============================================================================
-// Conversion Utilities
-// ============================================================================
+export interface FillInAtCursorSuggestion {
+	text: string
+	prefix: string
+	suffix: string
+}
 
-/**
- * Extract prefix and suffix from a document at a given position
- */
+export interface MatchingSuggestionResult {
+	text: string
+	matchType: CacheMatchType
+}
+
+export interface LLMRetrievalResult extends ResponseMetaData {
+	suggestion: FillInAtCursorSuggestion
+}
+
+export interface ChatCompletionResult extends ResponseMetaData {
+	suggestion: FillInAtCursorSuggestion
+}
+
+export interface FimCompletionResult extends ResponseMetaData {
+	suggestion: FillInAtCursorSuggestion
+}
+
+export interface FimGhostPrompt {
+	strategy: "fim"
+	autocompleteInput: AutocompleteInput
+	formattedPrefix: string
+	prunedSuffix: string
+}
+
+export interface HoleFillerGhostPrompt {
+	strategy: "hole_filler"
+	autocompleteInput: AutocompleteInput
+	systemPrompt: string
+	userPrompt: string
+}
+
+export type GhostPrompt = FimGhostPrompt | HoleFillerGhostPrompt
+
+export interface GhostStatusBarStateProps {
+	enabled?: boolean
+	model?: string
+	provider?: string
+	profileName?: string | null
+	hasValidToken: boolean
+	totalSessionCost: number
+	completionCount: number
+	sessionStartTime: number
+}
+
+export interface AutocompleteContext {
+	languageId: string
+	modelId?: string
+	provider?: string
+	strategy?: "fim" | "hole_filler"
+}
+
+export type CacheMatchType = "exact" | "partial_typing" | "backward_deletion"
+
+export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
+
+export interface PendingRequest {
+	prefix: string
+	suffix: string
+	promise: Promise<void>
+}
+
 export function extractPrefixSuffix(
 	document: vscode.TextDocument,
 	position: vscode.Position,
@@ -197,63 +177,29 @@ export function extractPrefixSuffix(
 	}
 }
 
-/**
- * Convert VSCode Position to our Position type
- */
-export function vscodePositionToPosition(pos: vscode.Position): Position {
-	return {
-		line: pos.line,
-		character: pos.character,
-	}
-}
-
-/**
- * Convert VSCode Range to our Range type
- */
-export function vscodeRangeToRange(range: vscode.Range): Range {
-	return {
-		start: vscodePositionToPosition(range.start),
-		end: vscodePositionToPosition(range.end),
-	}
-}
-
-/**
- * Convert GhostSuggestionContext to AutocompleteInput
- */
 export function contextToAutocompleteInput(context: GhostSuggestionContext): AutocompleteInput {
 	const position = context.range?.start ?? context.document.positionAt(0)
 	const { prefix, suffix } = extractPrefixSuffix(context.document, position)
 
-	// Convert recent operations to recently edited ranges
-	const recentlyEditedRanges: RecentlyEditedRange[] =
-		context.recentOperations?.map((op) => {
-			const range: Range = op.lineRange
-				? {
-						start: { line: op.lineRange.start, character: 0 },
-						end: { line: op.lineRange.end, character: 0 },
-					}
-				: {
-						start: { line: 0, character: 0 },
-						end: { line: 0, character: 0 },
-					}
-
-			return {
-				filepath: context.document.uri.fsPath,
-				range,
-				timestamp: op.timestamp ?? Date.now(),
-				lines: op.content ? op.content.split("\n") : [],
-				symbols: new Set(op.affectedSymbol ? [op.affectedSymbol] : []),
-			}
-		}) ?? []
+	// Get recently visited and edited ranges from context, with empty arrays as fallback
+	const recentlyVisitedRanges = context.recentlyVisitedRanges ?? []
+	const recentlyEditedRanges = context.recentlyEditedRanges ?? []
 
 	return {
 		isUntitledFile: context.document.isUntitled,
 		completionId: crypto.randomUUID(),
 		filepath: context.document.uri.fsPath,
-		pos: vscodePositionToPosition(position),
-		recentlyVisitedRanges: [], // Not tracked in current Ghost implementation
+		pos: { line: position.line, character: position.character },
+		recentlyVisitedRanges,
 		recentlyEditedRanges,
 		manuallyPassFileContents: undefined,
 		manuallyPassPrefix: prefix,
 	}
+}
+
+export interface GhostContextProvider {
+	contextService: ContextRetrievalService
+	ide: VsCodeIde
+	model: GhostModel
+	ignoreController?: Promise<RooIgnoreController>
 }

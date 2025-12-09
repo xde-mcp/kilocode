@@ -4,7 +4,7 @@ sidebar_label: Dashboard Overview
 
 # Seats Dashboard
 
-The Kilo seats dashboard is the first screen that comes up when you visit [the Kilo Code web app](https://app.kilocode.ai). It provides complete visibility into your team's AI usage, costs, and management.
+The Kilo seats dashboard is the first screen that comes up when you visit [the Kilo Code web app](https://app.kilo.ai). It provides complete visibility into your team's AI usage, costs, and management.
 
 <center>
 <img src="/docs/img/teams/dashboard.png" alt="Invite your team members" width="700" />
@@ -113,7 +113,7 @@ Manage your Kilo Teams plan and seat allocation.
 ### Current Plan Details
 
 - **Plan type** (Kilo Teams)
-- **Monthly cost** per seat ($29/user/month)
+- **Monthly cost** per seat ($15/user/month)
 - **Billing cycle** dates and next charge
 - **Plan benefits** and included features
 

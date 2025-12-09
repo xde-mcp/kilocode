@@ -54,7 +54,7 @@ export const KiloCode = ({
 
 	// Use the existing hook to get user identity
 	const userIdentity = useKiloIdentity(apiConfiguration.kilocodeToken || "", "")
-	const isKiloCodeAiUser = userIdentity.endsWith("@kilocode.ai")
+	const isKiloCodeAiUser = userIdentity.endsWith("@kilo.ai")
 
 	const areKilocodeWarningsDisabled = apiConfiguration.kilocodeTesterWarningsDisabledUntil
 		? apiConfiguration.kilocodeTesterWarningsDisabledUntil > Date.now()
@@ -116,14 +116,14 @@ export const KiloCode = ({
 				apiConfiguration={apiConfiguration}
 				setApiConfigurationField={setApiConfigurationField}
 				defaultModelId={kilocodeDefaultModel}
-				models={routerModels?.["kilocode-openrouter"] ?? {}}
+				models={routerModels?.kilocode ?? {}}
 				modelIdKey="kilocodeModel"
 				serviceName="Kilo Code"
 				serviceUrl={getAppUrl()}
 				organizationAllowList={organizationAllowList}
 			/>
 
-			{/* KILOCODE-TESTER warnings setting - only visible for @kilocode.ai users */}
+			{/* KILOCODE-TESTER warnings setting - only visible for @kilo.ai users */}
 			{isKiloCodeAiUser && (
 				<div className="mb-4">
 					<label className="block font-medium mb-2">Disable KILOCODE-TESTER warnings</label>

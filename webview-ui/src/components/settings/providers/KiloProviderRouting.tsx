@@ -58,7 +58,7 @@ export const KiloProviderRoutingManagedByOrganization = (props: { organizationId
 				<VSCodeButtonLink
 					href={getAppUrl(`/organizations/${props.organizationId}`)}
 					appearance="secondary"
-					className="text-sm w-full">
+					className="text-sm w-full whitespace-normal h-auto py-3">
 					{t("kilocode:settings.provider.providerRouting.managedByOrganization")}
 				</VSCodeButtonLink>
 			</div>
@@ -160,17 +160,19 @@ export const KiloProviderRouting = ({ apiConfiguration, setApiConfigurationField
 					</SelectItem>
 				</SelectContent>
 			</Select>
-			<VSCodeButtonLink
-				onClick={() => {
-					telemetryClient.capture(TelemetryEventName.CREATE_ORGANIZATION_LINK_CLICKED, {
-						origin: "provider-routing",
-					})
-				}}
-				href={getAppUrl("/organizations/new")}
-				appearance="primary"
-				className="text-sm w-full">
-				{t("kilocode:settings.provider.providerRouting.createOrganization")}
-			</VSCodeButtonLink>
+			{apiConfiguration.apiProvider === "kilocode" && (
+				<VSCodeButtonLink
+					onClick={() => {
+						telemetryClient.capture(TelemetryEventName.CREATE_ORGANIZATION_LINK_CLICKED, {
+							origin: "provider-routing",
+						})
+					}}
+					href={getAppUrl("/organizations/new")}
+					appearance="primary"
+					className="text-sm w-full whitespace-normal h-auto py-3">
+					{t("kilocode:settings.provider.providerRouting.createOrganization")}
+				</VSCodeButtonLink>
+			)}
 		</div>
 	)
 }

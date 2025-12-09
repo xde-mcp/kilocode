@@ -45,6 +45,35 @@ import { initializeI18n } from "./i18n"
 import { registerGhostProvider } from "./services/ghost" // kilocode_change
 import { registerMainThreadForwardingLogger } from "./utils/fowardingLogger" // kilocode_change
 import { getKiloCodeWrapperProperties } from "./core/kilocode/wrapper" // kilocode_change
+import { checkAnthropicApiKeyConflict } from "./utils/anthropicApiKeyWarning" // kilocode_change
+import { SettingsSyncService } from "./services/settings-sync/SettingsSyncService" // kilocode_change
+import { ManagedIndexer } from "./services/code-index/managed/ManagedIndexer" // kilocode_change
+import { flushModels, getModels, initializeModelCacheRefresh } from "./api/providers/fetchers/modelCache"
+import { kilo_initializeSessionManager } from "./shared/kilocode/cli-sessions/extension/session-manager-utils" // kilocode_change
+
+// kilocode_change start
+async function findKilocodeTokenFromAnyProfile(provider: ClineProvider): Promise<string | undefined> {
+	const { apiConfiguration } = await provider.getState()
+	if (apiConfiguration.kilocodeToken) {
+		return apiConfiguration.kilocodeToken
+	}
+
+	const profiles = await provider.providerSettingsManager.listConfig()
+
+	for (const profile of profiles) {
+		try {
+			const fullProfile = await provider.providerSettingsManager.getProfile({ name: profile.name })
+			if (fullProfile.kilocodeToken) {
+				return fullProfile.kilocodeToken
+			}
+		} catch {
+			continue
+		}
+	}
+
+	return undefined
+}
+// kilocode_change end
 
 /**
  * Built using https://github.com/microsoft/vscode-webview-ui-toolkit
@@ -79,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	try {
 		telemetryService.register(new PostHogTelemetryClient())
 	} catch (error) {
-		console.warn("Failed to register PostHogTelemetryClient:", error)
+		console.warn("Failed to register PostHogTelemetryClient:", error.message)
 	}
 
 	// Create logger for cloud services.
@@ -140,13 +169,13 @@ export async function activate(context: vscode.ExtensionContext) {
 			if (manager) {
 				codeIndexManagers.push(manager)
 
-				try {
-					await manager.initialize(contextProxy)
-				} catch (error) {
+				// Initialize in background; do not block extension activation
+				void manager.initialize(contextProxy).catch((error) => {
+					const message = error instanceof Error ? error.message : String(error)
 					outputChannel.appendLine(
-						`[CodeIndexManager] Error during background CodeIndexManager configuration/indexing for ${folder.uri.fsPath}: ${error.message || error}`,
+						`[CodeIndexManager] Error during background CodeIndexManager configuration/indexing for ${folder.uri.fsPath}: ${message}`,
 					)
-				}
+				})
 
 				context.subscriptions.push(manager)
 			}
@@ -155,6 +184,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Initialize the provider *before* the Roo Code Cloud service.
 	const provider = new ClineProvider(context, outputChannel, "sidebar", contextProxy, mdmService)
+
+	// kilocode_change start: Initialize ManagedIndexer
+	const managedIndexer = new ManagedIndexer(contextProxy)
+	context.subscriptions.push(managedIndexer)
+	// kilocode_change end
 
 	// Initialize Roo Code Cloud service.
 	const postStateListener = () => ClineProvider.getVisibleInstance()?.postStateToWebview()
@@ -170,6 +204,54 @@ export async function activate(context: vscode.ExtensionContext) {
 					`[authStateChangedHandler] remoteControlEnabled(false) failed: ${error instanceof Error ? error.message : String(error)}`,
 				)
 			}
+		}
+
+		// Handle Roo models cache based on auth state
+		const handleRooModelsCache = async () => {
+			try {
+				// Flush and refresh cache on auth state changes
+				await flushModels("roo", true)
+
+				if (data.state === "active-session") {
+					cloudLogger(`[authStateChangedHandler] Refreshed Roo models cache for active session`)
+				} else {
+					cloudLogger(`[authStateChangedHandler] Flushed Roo models cache on logout`)
+				}
+			} catch (error) {
+				cloudLogger(
+					`[authStateChangedHandler] Failed to handle Roo models cache: ${error instanceof Error ? error.message : String(error)}`,
+				)
+			}
+		}
+
+		if (data.state === "active-session" || data.state === "logged-out") {
+			// kilocode_change start: disable
+			// await handleRooModelsCache()
+			// // Apply stored provider model to API configuration if present
+			// if (data.state === "active-session") {
+			// 	try {
+			// 		const storedModel = context.globalState.get<string>("roo-provider-model")
+			// 		if (storedModel) {
+			// 			cloudLogger(`[authStateChangedHandler] Applying stored provider model: ${storedModel}`)
+			// 			// Get the current API configuration name
+			// 			const currentConfigName =
+			// 				provider.contextProxy.getGlobalState("currentApiConfigName") || "default"
+			// 			// Update it with the stored model using upsertProviderProfile
+			// 			await provider.upsertProviderProfile(currentConfigName, {
+			// 				apiProvider: "roo",
+			// 				apiModelId: storedModel,
+			// 			})
+			// 			// Clear the stored model after applying
+			// 			await context.globalState.update("roo-provider-model", undefined)
+			// 			cloudLogger(`[authStateChangedHandler] Applied and cleared stored provider model`)
+			// 		}
+			// 	} catch (error) {
+			// 		cloudLogger(
+			// 			`[authStateChangedHandler] Failed to apply stored provider model: ${error instanceof Error ? error.message : String(error)}`,
+			// 		)
+			// 	}
+			// }
+			// kilocode_change end
 		}
 	}
 
@@ -234,6 +316,24 @@ export async function activate(context: vscode.ExtensionContext) {
 		)
 	}
 
+	// kilocode_change start
+	try {
+		const kiloToken = await findKilocodeTokenFromAnyProfile(provider)
+
+		await kilo_initializeSessionManager({
+			context: context,
+			kiloToken,
+			log: provider.log.bind(provider),
+			outputChannel,
+			provider,
+		})
+	} catch (error) {
+		outputChannel.appendLine(
+			`[SessionManager] Failed to initialize SessionManager: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	}
+	// kilocode_change end
+
 	// Finish initializing the provider.
 	TelemetryService.instance.setProvider(provider)
 
@@ -258,6 +358,15 @@ export async function activate(context: vscode.ExtensionContext) {
 				"kilocode.kilo-code#kiloCodeWalkthrough",
 				false,
 			)
+
+			// Enable autocomplete by default for new installs
+			const currentGhostSettings = contextProxy.getValue("ghostServiceSettings")
+			await contextProxy.setValue("ghostServiceSettings", {
+				...currentGhostSettings,
+				enableAutoTrigger: true,
+				enableQuickInlineTaskKeybinding: true,
+				enableSmartInlineTaskKeybinding: true,
+			})
 		} catch (error) {
 			outputChannel.appendLine(`Error during first-time setup: ${error.message}`)
 		} finally {
@@ -278,6 +387,40 @@ export async function activate(context: vscode.ExtensionContext) {
 			`[AutoImport] Error during auto-import: ${error instanceof Error ? error.message : String(error)}`,
 		)
 	}
+
+	// kilocode_change start
+	// Check for env var conflicts that might confuse users
+	try {
+		checkAnthropicApiKeyConflict()
+	} catch (error) {
+		outputChannel.appendLine(`Failed to check API key conflicts: ${error}`)
+	}
+
+	// Initialize VS Code Settings Sync integration
+	try {
+		await SettingsSyncService.initialize(context, outputChannel)
+		outputChannel.appendLine("[SettingsSync] VS Code Settings Sync integration initialized")
+
+		// Listen for configuration changes to update sync registration
+		const configChangeListener = vscode.workspace.onDidChangeConfiguration(async (event) => {
+			if (event.affectsConfiguration(`${Package.name}.enableSettingsSync`)) {
+				try {
+					await SettingsSyncService.updateSyncRegistration(context, outputChannel)
+					outputChannel.appendLine("[SettingsSync] Sync registration updated due to configuration change")
+				} catch (error) {
+					outputChannel.appendLine(
+						`[SettingsSync] Error updating sync registration: ${error instanceof Error ? error.message : String(error)}`,
+					)
+				}
+			}
+		})
+		context.subscriptions.push(configChangeListener)
+	} catch (error) {
+		outputChannel.appendLine(
+			`[SettingsSync] Error during settings sync initialization: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	}
+	// kilocode_change end
 
 	registerCommands({ context, outputChannel, provider })
 
@@ -390,7 +533,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		})
 	}
 
-	await checkAndRunAutoLaunchingTask(context) // kilocode_change
+	// kilocode_change start: Initialize ManagedIndexer
+	void managedIndexer.start().catch((error) => {
+		outputChannel.appendLine(
+			`Failed to start ManagedIndexer: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	})
+	await checkAndRunAutoLaunchingTask(context)
+	// kilocode_change end
+	// Initialize background model cache refresh
+	initializeModelCacheRefresh()
 
 	return new API(outputChannel, provider, socketPath, enableLogging)
 }

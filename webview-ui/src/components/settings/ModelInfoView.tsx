@@ -49,12 +49,6 @@ export const ModelInfoView = ({
 			supportsLabel={t("settings:modelInfo.supportsImages")}
 			doesNotSupportLabel={t("settings:modelInfo.noImages")}
 		/>,
-		/* kilocode_change: supports computer use => supports browser
-		<ModelInfoSupportsItem
-			isSupported={modelInfo?.supportsComputerUse ?? false}
-			supportsLabel={t("settings:modelInfo.supportsComputerUse")}
-			doesNotSupportLabel={t("settings:modelInfo.noComputerUse")}
-		/>,*/
 		<ModelInfoSupportsItem
 			isSupported={modelInfo?.supportsPromptCache ?? false}
 			supportsLabel={t("settings:modelInfo.supportsPromptCache")}
@@ -75,13 +69,13 @@ export const ModelInfoView = ({
 	].filter(Boolean)
 
 	const priceInfoItems = [
-		modelInfo?.inputPrice !== undefined && modelInfo.inputPrice > 0 && (
+		modelInfo?.inputPrice !== undefined && (
 			<>
 				<span className="font-medium">{t("settings:modelInfo.inputPrice")}:</span>{" "}
 				{formatPrice(modelInfo.inputPrice)} / 1M tokens
 			</>
 		),
-		modelInfo?.outputPrice !== undefined && modelInfo.outputPrice > 0 && (
+		modelInfo?.outputPrice !== undefined && (
 			<>
 				<span className="font-medium">{t("settings:modelInfo.outputPrice")}:</span>{" "}
 				{formatPrice(modelInfo.outputPrice)} / 1M tokens

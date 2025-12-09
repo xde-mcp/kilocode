@@ -3,7 +3,7 @@ import { createExtensionHost, ExtensionHost, ExtensionAPI, type ExtensionHostOpt
 import { createMessageBridge, MessageBridge } from "../communication/ipc.js"
 import { logs } from "./logs.js"
 import { resolveExtensionPaths } from "../utils/extension-paths.js"
-import type { ExtensionMessage, WebviewMessage, ExtensionState } from "../types/messages.js"
+import type { ExtensionMessage, WebviewMessage, ExtensionState, ModeConfig } from "../types/messages.js"
 import type { IdentityInfo } from "../host/VSCode.js"
 
 /**
@@ -14,6 +14,8 @@ export interface ExtensionServiceOptions {
 	workspace?: string
 	/** Initial mode to start with */
 	mode?: string
+	/** Custom modes configuration */
+	customModes?: ModeConfig[]
 	/** Custom extension bundle path (for testing) */
 	extensionBundlePath?: string
 	/** Custom extension root path (for testing) */
@@ -71,7 +73,10 @@ export interface ExtensionServiceEvents {
 export class ExtensionService extends EventEmitter {
 	private extensionHost: ExtensionHost
 	private messageBridge: MessageBridge
-	private options: Required<Omit<ExtensionServiceOptions, "identity">> & { identity?: IdentityInfo }
+	private options: Required<Omit<ExtensionServiceOptions, "identity" | "customModes">> & {
+		identity?: IdentityInfo
+		customModes?: ModeConfig[]
+	}
 	private isInitialized = false
 	private isDisposed = false
 	private isActivated = false
@@ -89,6 +94,7 @@ export class ExtensionService extends EventEmitter {
 			extensionBundlePath: options.extensionBundlePath || extensionPaths.extensionBundlePath,
 			extensionRootPath: options.extensionRootPath || extensionPaths.extensionRootPath,
 			...(options.identity && { identity: options.identity }),
+			...(options.customModes && { customModes: options.customModes }),
 		}
 
 		// Create extension host
@@ -99,6 +105,9 @@ export class ExtensionService extends EventEmitter {
 		}
 		if (this.options.identity) {
 			hostOptions.identity = this.options.identity
+		}
+		if (this.options.customModes) {
+			hostOptions.customModes = this.options.customModes
 		}
 		this.extensionHost = createExtensionHost(hostOptions)
 
@@ -123,19 +132,22 @@ export class ExtensionService extends EventEmitter {
 		})
 
 		// Handle new extension-error events (non-fatal errors from extension)
-		this.extensionHost.on("extension-error", (errorEvent: any) => {
-			const { context, error, recoverable } = errorEvent
+		this.extensionHost.on(
+			"extension-error",
+			(errorEvent: { context: string; error: Error; recoverable: boolean }) => {
+				const { context, error, recoverable } = errorEvent
 
-			if (recoverable) {
-				logs.warn(`Recoverable extension error in ${context}`, "ExtensionService", { error })
-				// Emit warning event instead of error to prevent crashes
-				this.emit("warning", { context, error })
-			} else {
-				logs.error(`Critical extension error in ${context}`, "ExtensionService", { error })
-				// Still emit error but don't crash
-				this.emit("error", error)
-			}
-		})
+				if (recoverable) {
+					logs.warn(`Recoverable extension error in ${context}`, "ExtensionService", { error })
+					// Emit warning event instead of error to prevent crashes
+					this.emit("warning", { context, error })
+				} else {
+					logs.error(`Critical extension error in ${context}`, "ExtensionService", { error })
+					// Still emit error but don't crash
+					this.emit("error", error)
+				}
+			},
+		)
 
 		// Keep backward compatibility for "error" events but don't propagate to prevent crashes
 		this.extensionHost.on("error", (error: Error) => {
@@ -175,12 +187,14 @@ export class ExtensionService extends EventEmitter {
 	/**
 	 * Handle TUI messages and return response
 	 */
-	private async handleTUIMessage(data: any): Promise<any> {
+	private async handleTUIMessage(data: unknown): Promise<unknown> {
 		try {
-			if (data.type === "webviewMessage") {
-				const message = data.payload
-				await this.extensionHost.sendWebviewMessage(message)
-				return { success: true }
+			if (typeof data === "object" && data !== null && "type" in data) {
+				const typedData = data as { type: string; payload?: WebviewMessage }
+				if (typedData.type === "webviewMessage" && typedData.payload) {
+					await this.extensionHost.sendWebviewMessage(typedData.payload)
+					return { success: true }
+				}
 			}
 
 			return { success: true }
@@ -248,6 +262,58 @@ export class ExtensionService extends EventEmitter {
 	}
 
 	/**
+	 * Request a single completion from the extension
+	 *
+	 * @param prompt - The prompt text to complete
+	 * @param timeoutMs - Request timeout in milliseconds (default: 60000)
+	 * @returns Promise resolving to the completed text
+	 */
+	async requestSingleCompletion(prompt: string, timeoutMs: number = 60000): Promise<string> {
+		if (!this.isReady()) {
+			throw new Error("ExtensionService not ready")
+		}
+
+		const completionRequestId = crypto.randomUUID()
+
+		return new Promise<string>((resolve, reject) => {
+			// Setup timeout
+			const timeoutId = setTimeout(() => {
+				this.off("message", messageHandler)
+				reject(new Error("Single completion request timed out"))
+			}, timeoutMs)
+
+			// Setup message handler
+			const messageHandler = (message: ExtensionMessage) => {
+				if (message.type === "singleCompletionResult" && message.completionRequestId === completionRequestId) {
+					clearTimeout(timeoutId)
+					this.off("message", messageHandler)
+
+					if (message.success && typeof message.completionText === "string") {
+						resolve(message.completionText)
+					} else {
+						const errorMessage =
+							typeof message.completionError === "string" ? message.completionError : "Unknown error"
+						reject(new Error(errorMessage))
+					}
+				}
+			}
+
+			this.on("message", messageHandler)
+
+			// Send request
+			this.sendWebviewMessage({
+				type: "singleCompletion",
+				text: prompt,
+				completionRequestId,
+			}).catch((error) => {
+				clearTimeout(timeoutId)
+				this.off("message", messageHandler)
+				reject(error)
+			})
+		})
+	}
+
+	/**
 	 * Get the current extension state
 	 *
 	 * @returns The current extension state or null if not available
@@ -303,7 +369,13 @@ export class ExtensionService extends EventEmitter {
 		if (!this.extensionHost) {
 			return null
 		}
-		return (this.extensionHost as any).extensionHealth || null
+		return (
+			(
+				this.extensionHost as unknown as {
+					extensionHealth?: { isHealthy: boolean; errorCount: number; lastError: Error | null }
+				}
+			).extensionHealth || null
+		)
 	}
 
 	/**
@@ -353,11 +425,11 @@ export class ExtensionService extends EventEmitter {
 	 * Type-safe event emitter methods
 	 */
 	override on<K extends keyof ExtensionServiceEvents>(event: K, listener: ExtensionServiceEvents[K]): this {
-		return super.on(event, listener as any)
+		return super.on(event, listener as (...args: unknown[]) => void)
 	}
 
 	override once<K extends keyof ExtensionServiceEvents>(event: K, listener: ExtensionServiceEvents[K]): this {
-		return super.once(event, listener as any)
+		return super.once(event, listener as (...args: unknown[]) => void)
 	}
 
 	override emit<K extends keyof ExtensionServiceEvents>(
@@ -368,7 +440,7 @@ export class ExtensionService extends EventEmitter {
 	}
 
 	override off<K extends keyof ExtensionServiceEvents>(event: K, listener: ExtensionServiceEvents[K]): this {
-		return super.off(event, listener as any)
+		return super.off(event, listener as (...args: unknown[]) => void)
 	}
 }
 
