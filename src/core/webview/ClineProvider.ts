@@ -221,8 +221,10 @@ export class ClineProvider
 
 			// Create named listener functions so we can remove them later.
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
-			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) =>
-				this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) => {
+				SessionManager.init().doSync(true) // kilocode_change
+				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+			}
 			const onTaskAborted = async () => {
 				this.emit(RooCodeEventName.TaskAborted, instance.taskId)
 
@@ -1158,6 +1160,8 @@ ${prompt}
 				const [taskId, filePath] = message.payload as [string, string]
 
 				SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
+			} else if (message.type === "currentCheckpointUpdated") {
+				SessionManager.init().doSync()
 			}
 		})
 
