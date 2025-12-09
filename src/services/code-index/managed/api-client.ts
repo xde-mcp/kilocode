@@ -60,7 +60,7 @@ export interface UpsertFileParams {
 	/** The file content as a Buffer */
 	fileBuffer: Buffer
 	/** Organization ID (must be a valid UUID) */
-	organizationId: string
+	organizationId: string | null
 	/** Project ID */
 	projectId: string
 	/** Relative file path from workspace root */
@@ -103,7 +103,9 @@ export async function upsertFile(params: UpsertFileParams, signal?: AbortSignal)
 		// Append the file with metadata
 		const filename = filePath.split("/").pop() || "file"
 		formData.append("file", new Blob([fileBuffer as any]), filename)
-		formData.append("organizationId", organizationId)
+		if (organizationId) {
+			formData.append("organizationId", organizationId)
+		}
 		formData.append("projectId", projectId)
 		formData.append("filePath", filePath)
 		formData.append("fileHash", fileHash)
@@ -145,7 +147,7 @@ export async function upsertFile(params: UpsertFileParams, signal?: AbortSignal)
  * @throws Error if the request fails
  */
 export async function getServerManifest(
-	organizationId: string,
+	organizationId: string | null,
 	projectId: string,
 	gitBranch: string,
 	kilocodeToken: string,
@@ -155,10 +157,13 @@ export async function getServerManifest(
 
 	try {
 		const params = new URLSearchParams({
-			organizationId,
 			projectId,
 			gitBranch,
 		})
+
+		if (organizationId) {
+			params.append("organizationId", organizationId)
+		}
 
 		const response = await fetchWithRetries({
 			url: `${baseUrl}/api/code-indexing/manifest?${params.toString()}`,
@@ -180,6 +185,74 @@ export async function getServerManifest(
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error)
 		logger.error(`Failed to get manifest: ${errorMessage}`)
+		throw error
+	}
+}
+
+/**
+ * Parameters for deleting files from the server
+ */
+export interface DeleteFilesParams {
+	/** Organization ID (must be a valid UUID) */
+	organizationId: string | null
+	/** Project ID */
+	projectId: string
+	/** Git branch name (optional) */
+	gitBranch?: string
+	/** Array of file paths to delete (optional - if not provided, deletes all files for the branch) */
+	filePaths?: string[]
+	/** Authentication token */
+	kilocodeToken: string
+}
+
+/**
+ * Deletes files from the server index
+ *
+ * @param params Parameters for the file deletion
+ * @param signal Optional AbortSignal to cancel the request
+ * @throws Error if the request fails
+ */
+export async function deleteFiles(params: DeleteFilesParams, signal?: AbortSignal): Promise<void> {
+	const { organizationId, projectId, gitBranch, filePaths, kilocodeToken } = params
+
+	const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
+
+	try {
+		const requestBody: any = {
+			projectId,
+		}
+
+		if (organizationId) {
+			requestBody.organizationId = organizationId
+		}
+
+		if (gitBranch) {
+			requestBody.gitBranch = gitBranch
+		}
+
+		if (filePaths) {
+			requestBody.filePaths = filePaths
+		}
+
+		const response = await fetchWithRetries({
+			url: `${baseUrl}/api/code-indexing/delete`,
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${kilocodeToken}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(requestBody),
+			signal,
+		})
+
+		if (!response.ok) {
+			throw new Error(`Failed to delete files: ${response.statusText}`)
+		}
+
+		logger.info(`Successfully deleted ${filePaths?.length || "all"} files from index`)
+	} catch (error) {
+		const errorMessage = error instanceof Error ? error.message : String(error)
+		logger.error(`Failed to delete files: ${errorMessage}`)
 		throw error
 	}
 }

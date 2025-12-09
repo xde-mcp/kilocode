@@ -9,6 +9,26 @@ import { formatResponse } from "../prompts/responses"
 import { Package } from "../../shared/package"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
+import { t } from "../../i18n"
+import { getCommitRangeForNewCompletion } from "../checkpoints/kilocode/seeNewChanges" // kilocode_change
+
+// kilocode_change start
+async function getClineMessageOptions(
+	task: Task,
+): Promise<{ isNonInteractive?: boolean; metadata?: Record<string, unknown> }> {
+	const commitRange = await getCommitRangeForNewCompletion(task)
+
+	if (!commitRange) {
+		return {}
+	}
+
+	return {
+		metadata: {
+			kiloCode: { commitRange },
+		},
+	}
+}
+// kilocode_change end
 
 interface AttemptCompletionParams {
 	result: string
@@ -32,7 +52,16 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 
 	async execute(params: AttemptCompletionParams, task: Task, callbacks: AttemptCompletionCallbacks): Promise<void> {
 		const { result } = params
-		const { handleError, pushToolResult, askFinishSubTaskApproval, toolDescription } = callbacks
+		const { handleError, pushToolResult, askFinishSubTaskApproval, toolDescription, toolProtocol } = callbacks
+
+		// Prevent attempt_completion if any tool failed in the current turn
+		if (task.didToolFailInCurrentTurn) {
+			const errorMsg = t("common:errors.attempt_completion_tool_failed")
+
+			await task.say("error", errorMsg)
+			pushToolResult(formatResponse.toolError(errorMsg))
+			return
+		}
 
 		const preventCompletionWithOpenTodos = vscode.workspace
 			.getConfiguration(Package.name)
@@ -63,7 +92,17 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 
 			task.consecutiveMistakeCount = 0
 
-			await task.say("completion_result", result, undefined, false)
+			await task.say(
+				"completion_result",
+				result,
+				undefined,
+				false,
+				// kilocode_change start
+				undefined,
+				undefined,
+				await getClineMessageOptions(task),
+				// kilocode_change end
+			)
 			TelemetryService.instance.captureTaskCompleted(task.taskId)
 			task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage)
 
@@ -83,10 +122,10 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 			const { response, text, images } = await task.ask("completion_result", "", false)
 
 			if (response === "yesButtonClicked") {
-				pushToolResult("")
 				return
 			}
 
+			// User provided feedback - push tool result to continue the conversation
 			await task.say("user_feedback", text ?? "", images)
 
 			const feedbackText = `The user has provided feedback on the results. Consider their input to continue the task, and then attempt completion again.\n<feedback>\n${text}\n</feedback>`
@@ -113,6 +152,11 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 					this.removeClosingTag("result", result, block.partial),
 					undefined,
 					false,
+					// kilocode_change start
+					undefined,
+					undefined,
+					await getClineMessageOptions(task),
+					// kilocode_change end
 				)
 
 				TelemetryService.instance.captureTaskCompleted(task.taskId)
@@ -128,6 +172,11 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 				this.removeClosingTag("result", result, block.partial),
 				undefined,
 				block.partial,
+				// kilocode_change start
+				undefined,
+				undefined,
+				await getClineMessageOptions(task),
+				// kilocode_change end
 			)
 		}
 	}

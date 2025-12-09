@@ -85,6 +85,7 @@ export interface WebviewMessage {
 		| "requestOllamaModels"
 		| "requestLmStudioModels"
 		| "requestRooModels"
+		| "requestRooCreditBalance"
 		| "requestVsCodeLmModels"
 		| "requestHuggingFaceModels"
 		| "requestSapAiCoreModels" // kilocode_change
@@ -256,10 +257,22 @@ export interface WebviewMessage {
 		| "getDismissedUpsells"
 		| "updateSettings"
 		| "requestManagedIndexerState" // kilocode_change
+		| "allowedCommands"
+		| "deniedCommands"
+		| "killBrowserSession"
+		| "openBrowserSessionPanel"
+		| "showBrowserSessionPanelAtStep"
+		| "refreshBrowserSessionPanel"
+		| "browserPanelDidLaunch"
 		| "addTaskToHistory" // kilocode_change
+		| "sessionShare" // kilocode_change
+		| "shareTaskSession" // kilocode_change
+		| "sessionFork" // kilocode_change
+		| "sessionShow" // kilocode_change
 		| "singleCompletion" // kilocode_change
 	text?: string
 	completionRequestId?: string // kilocode_change
+	shareId?: string // kilocode_change - for sessionFork
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
@@ -270,6 +283,9 @@ export interface WebviewMessage {
 	images?: string[]
 	bool?: boolean
 	value?: number
+	stepIndex?: number
+	isLaunchAction?: boolean
+	forceShow?: boolean
 	commands?: string[]
 	audioType?: AudioType
 	// kilocode_change begin
@@ -325,6 +341,7 @@ export interface WebviewMessage {
 	upsellId?: string // For dismissUpsell
 	list?: string[] // For dismissedUpsells response
 	organizationId?: string | null // For organization switching
+	useProviderSignup?: boolean // For rooCloudSignIn to use provider signup flow
 	historyItem?: HistoryItem // kilocode_change For addTaskToHistory
 	codeIndexSettings?: {
 		// Global state settings
@@ -337,6 +354,7 @@ export interface WebviewMessage {
 			| "gemini"
 			| "mistral"
 			| "vercel-ai-gateway"
+			| "bedrock"
 			| "openrouter"
 		codebaseIndexVectorStoreProvider?: "lancedb" | "qdrant" // kilocode_change
 		codebaseIndexLancedbVectorStoreDirectory?: string // kilocode_change
@@ -344,6 +362,8 @@ export interface WebviewMessage {
 		codebaseIndexEmbedderModelId: string
 		codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 		codebaseIndexOpenAiCompatibleBaseUrl?: string
+		codebaseIndexBedrockRegion?: string
+		codebaseIndexBedrockProfile?: string
 		codebaseIndexSearchMaxResults?: number
 		codebaseIndexSearchMinScore?: number
 
