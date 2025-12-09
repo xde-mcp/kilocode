@@ -289,6 +289,7 @@ export class SessionManager {
 			}
 
 			this.sessionPersistenceManager.setSessionForTask(historyItem.id, sessionId)
+			this.lastActiveSessionId = sessionId
 
 			await this.extensionMessenger.sendWebviewMessage({
 				type: "addTaskToHistory",
