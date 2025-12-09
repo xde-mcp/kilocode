@@ -144,7 +144,7 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 	}
 
 	const lastChar = prefix[prefix.length - 1]
-	const isMidWord = /[a-zA-Z0-9_]/.test(lastChar)
+	const lastCharIsWordChar = /[a-zA-Z0-9_]/.test(lastChar)
 
 	// Check if there's alphanumeric content immediately after cursor
 	// If there IS content after, we're truly mid-word (e.g., "con|sole" where | is cursor)
@@ -160,7 +160,7 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 	// 1. Last char is alphanumeric (typing a word), AND
 	// 2. There's NO content after (end of word being typed), AND
 	// 3. Word length is > 2 chars
-	return isMidWord && !hasContentAfter && wordLength > 2
+	return lastCharIsWordChar && !hasContentAfter && wordLength > 2
 }
 
 export function shouldSkipAutocomplete(prefix: string, suffix: string, languageId?: string): boolean {
