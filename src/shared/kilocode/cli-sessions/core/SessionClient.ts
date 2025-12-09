@@ -255,16 +255,59 @@ export class SessionClient {
 	async tokenValid() {
 		const { endpoint, getToken } = this.trpcClient
 
+		const token = await getToken()
+
+		if (!this.isTokenValidLocally(token)) {
+			return false
+		}
+
 		const url = new URL("/api/user", endpoint)
 
 		const response = await fetch(url.toString(), {
 			method: "GET",
 			headers: {
-				Authorization: `Bearer ${await getToken()}`,
+				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 			},
 		})
 
 		return response.ok
+	}
+
+	private isTokenValidLocally(token: string): boolean {
+		try {
+			const parts = token.split(".")
+
+			if (parts.length !== 3) {
+				return false
+			}
+
+			const payloadBase64 = parts[1]
+			const payloadJson = Buffer.from(payloadBase64, "base64").toString("utf-8")
+			const payload = JSON.parse(payloadJson) as {
+				kiloUserId?: string
+				version?: number
+				exp?: number
+			}
+
+			if (typeof payload.kiloUserId !== "string" || payload.kiloUserId.length === 0) {
+				return false
+			}
+
+			if (typeof payload.version !== "number") {
+				return false
+			}
+
+			if (typeof payload.exp === "number") {
+				const nowInSeconds = Math.floor(Date.now() / 1000)
+				if (payload.exp < nowInSeconds) {
+					return false
+				}
+			}
+
+			return true
+		} catch {
+			return false
+		}
 	}
 }
