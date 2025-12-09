@@ -386,12 +386,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
 
-			// Check if we should trigger autocomplete based on smart trigger logic
-			// This single entry point handles all contextual skip conditions:
-			// - End of statement detection
-			// - Mid-word typing detection
-			// - Trigger character detection
-			// Skip autocomplete in certain contexts (end of statement, mid-word typing)
 			if (shouldSkipAutocomplete(prefix, suffix, document.languageId)) {
 				return []
 			}
