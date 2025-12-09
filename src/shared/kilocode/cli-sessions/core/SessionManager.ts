@@ -45,7 +45,8 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
-	static readonly MAX_PATCH_SIZE_BYTES = 1024 * 1024
+	static readonly MAX_PATCH_SIZE_BYTES = 5 * 1024 * 1024
+	static readonly VERSION = 1
 
 	private static instance = new SessionManager()
 

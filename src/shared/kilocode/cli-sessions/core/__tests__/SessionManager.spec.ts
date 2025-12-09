@@ -846,7 +846,7 @@ describe("SessionManager", () => {
 
 		it("should log warning when patch exceeds size limit", async () => {
 			const simpleGit = await import("simple-git")
-			const largePatch = "a".repeat(2 * 1024 * 1024)
+			const largePatch = "a".repeat(10 * 1024 * 1024)
 
 			const mockRaw = vi.fn().mockResolvedValue("")
 			vi.mocked(simpleGit.default).mockReturnValue({
