@@ -40,6 +40,7 @@ export class FileWatcher implements IFileWatcher {
 	private readonly BATCH_DEBOUNCE_DELAY_MS = 500
 	private readonly FILE_PROCESSING_CONCURRENCY_LIMIT = 10
 	private batchSegmentThreshold: number // kilocode_change
+	private maxBatchRetries: number // kilocode_change
 
 	private readonly _onDidStartBatchProcessing = new vscode.EventEmitter<string[]>()
 	private readonly _onBatchProgressUpdate = new vscode.EventEmitter<{
@@ -81,6 +82,7 @@ export class FileWatcher implements IFileWatcher {
 		ignoreInstance?: Ignore,
 		ignoreController?: RooIgnoreController,
 		batchSegmentThreshold?: number,
+		maxBatchRetries?: number,
 	) {
 		this.ignoreController = ignoreController || new RooIgnoreController(workspacePath)
 		if (ignoreInstance) {
@@ -100,6 +102,8 @@ export class FileWatcher implements IFileWatcher {
 				this.batchSegmentThreshold = BATCH_SEGMENT_THRESHOLD
 			}
 		}
+
+		this.maxBatchRetries = maxBatchRetries !== undefined ? maxBatchRetries : MAX_BATCH_RETRIES // kilocode_change: Get the configurable max batch retries, fallback to default
 	}
 
 	/**
@@ -373,23 +377,23 @@ export class FileWatcher implements IFileWatcher {
 					let retryCount = 0
 					let upsertError: Error | undefined
 
-					while (retryCount < MAX_BATCH_RETRIES) {
+					while (retryCount < this.maxBatchRetries /* kilocode_change */) {
 						try {
 							await this.vectorStore.upsertPoints(batch)
 							break
 						} catch (error) {
 							upsertError = error as Error
 							retryCount++
-							if (retryCount === MAX_BATCH_RETRIES) {
+							if (retryCount === this.maxBatchRetries /* kilocode_change */) {
 								// Log telemetry for upsert failure
 								TelemetryService.instance.captureEvent(TelemetryEventName.CODE_INDEX_ERROR, {
 									error: sanitizeErrorMessage(upsertError.message),
 									location: "upsertPoints",
 									errorType: "upsert_retry_exhausted",
-									retryCount: MAX_BATCH_RETRIES,
+									retryCount: this.maxBatchRetries, // kilocode_change
 								})
 								throw new Error(
-									`Failed to upsert batch after ${MAX_BATCH_RETRIES} retries: ${upsertError.message}`,
+									`Failed to upsert batch after ${this.maxBatchRetries} retries: ${upsertError.message}`, // kilocode_change
 								)
 							}
 							await new Promise((resolve) =>

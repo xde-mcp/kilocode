@@ -221,7 +221,8 @@ export class CodeIndexServiceFactory {
 		// kilocode_change start: Get the configurable batch size from config manager
 		const config = this.configManager.getConfig()
 		const batchSize = config.embeddingBatchSize
-		// kilocode_change end
+		const maxBatchRetries = config.scannerMaxBatchRetries
+
 		return new FileWatcher(
 			this.workspacePath,
 			context,
@@ -231,7 +232,9 @@ export class CodeIndexServiceFactory {
 			ignoreInstance,
 			rooIgnoreController,
 			batchSize,
+			maxBatchRetries,
 		)
+		// kilocode_change end
 	}
 
 	/**
