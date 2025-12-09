@@ -28,11 +28,9 @@ to start the CLI and begin a new task with your preferred model and relevant mod
 
 ## Update
 
-Depending on your platform update the package manager:
-
-`brew update`
-
 Upgrade the Kilo CLI package:
+
+`npm update -g @kilocode/cli`
 
 `npm update -g @kilocode/cli`
 
