@@ -62,6 +62,9 @@ export class TestRunner {
 				testCase.name,
 				testCase.input,
 				actualValue,
+				completion,
+				testCase.filename,
+				testCase.contextFiles,
 				this.skipApproval,
 				this.useOpusApproval,
 			)
