@@ -94,18 +94,6 @@ const LANGUAGE_CONFIGS: LanguageFamilyConfig[] = [
 ]
 
 /**
- * Maps language families to their statement terminators.
- * Computed from LANGUAGE_CONFIGS for efficient lookup.
- */
-const LANGUAGE_TERMINATORS: Record<string, Set<string>> = LANGUAGE_CONFIGS.reduce(
-	(map, config) => {
-		map[config.family] = new Set(config.terminators)
-		return map
-	},
-	{} as Record<string, Set<string>>,
-)
-
-/**
  * Maps VS Code language IDs to language families.
  * Computed from LANGUAGE_CONFIGS for efficient lookup.
  */
@@ -134,7 +122,10 @@ const DEFAULT_TERMINATORS = new Set([";", "}", ")"])
 export function getTerminatorsForLanguage(languageId: string): Set<string> {
 	const family = LANGUAGE_FAMILY_MAP[languageId]
 	if (family) {
-		return LANGUAGE_TERMINATORS[family]
+		const config = LANGUAGE_CONFIGS.find((c) => c.family === family)
+		if (config) {
+			return new Set(config.terminators)
+		}
 	}
 	return DEFAULT_TERMINATORS
 }
