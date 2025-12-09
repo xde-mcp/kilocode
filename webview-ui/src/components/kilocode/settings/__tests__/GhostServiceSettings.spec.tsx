@@ -49,6 +49,13 @@ vi.mock("@/hooks/useKeybindings", () => ({
 	}),
 }))
 
+// Mock useExtensionState hook
+vi.mock("@/context/ExtensionStateContext", () => ({
+	useExtensionState: () => ({
+		kiloCodeWrapperProperties: undefined,
+	}),
+}))
+
 // Mock VSCodeCheckbox to render as regular HTML checkbox for testing
 vi.mock("@vscode/webview-ui-toolkit/react", () => ({
 	VSCodeCheckbox: ({ checked, onChange, children }: any) => (
