@@ -138,9 +138,9 @@ function isAtEndOfStatement(prefix: string, suffix: string, languageId?: string)
 	return false
 }
 
-function isMidWordTyping(prefix: string, suffix: string): { isMidWord: boolean; wordLength: number } {
+function isMidWordTyping(prefix: string, suffix: string): boolean {
 	if (prefix.length === 0) {
-		return { isMidWord: false, wordLength: 0 }
+		return false
 	}
 
 	const lastChar = prefix[prefix.length - 1]
@@ -156,10 +156,11 @@ function isMidWordTyping(prefix: string, suffix: string): { isMidWord: boolean; 
 	const wordMatch = prefix.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
 	const wordLength = wordMatch ? wordMatch[1].length : 0
 
-	// We're mid-word if:
+	// Skip if:
 	// 1. Last char is alphanumeric (typing a word), AND
-	// 2. Either there's NO content after (end of word being typed) OR there IS alphanumeric content after (truly mid-word)
-	return { isMidWord: isMidWord && !hasContentAfter, wordLength }
+	// 2. There's NO content after (end of word being typed), AND
+	// 3. Word length is > 2 chars
+	return isMidWord && !hasContentAfter && wordLength > 2
 }
 
 export function shouldSkipAutocomplete(prefix: string, suffix: string, languageId?: string): boolean {
@@ -167,8 +168,7 @@ export function shouldSkipAutocomplete(prefix: string, suffix: string, languageI
 		return true
 	}
 
-	const { isMidWord, wordLength } = isMidWordTyping(prefix, suffix)
-	if (isMidWord && wordLength > 2) {
+	if (isMidWordTyping(prefix, suffix)) {
 		return true
 	}
 
