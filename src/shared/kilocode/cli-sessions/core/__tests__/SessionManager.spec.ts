@@ -885,15 +885,15 @@ describe("SessionManager", () => {
 			expect(result).toBe("Quoted title")
 		})
 
-		it("should truncate long generated titles", async () => {
+		it("should return long generated titles without truncation", async () => {
 			const messages: ClineMessage[] = [{ type: "say", say: "text", text: "Test message" } as ClineMessage]
 
 			vi.mocked(mockDependencies.extensionMessenger.requestSingleCompletion).mockResolvedValue("A".repeat(200))
 
 			const result = await manager.generateTitle(messages)
 
-			expect(result).toHaveLength(140)
-			expect(result?.endsWith("...")).toBe(true)
+			expect(result).toHaveLength(200)
+			expect(result).toBe("A".repeat(200))
 		})
 
 		it("should fall back to truncated message on LLM error", async () => {

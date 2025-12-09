@@ -1127,10 +1127,6 @@ Summary:`
 
 			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
 
-			if (cleanedSummary.length > 140) {
-				cleanedSummary = cleanedSummary.substring(0, 137) + "..."
-			}
-
 			if (cleanedSummary) {
 				return cleanedSummary
 			}
