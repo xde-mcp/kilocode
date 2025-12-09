@@ -704,8 +704,22 @@ export class SessionManager {
 									error: error instanceof Error ? error.message : String(error),
 								})
 
-								this.sessionTitles[sessionId] =
-									this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
+								const localTitle = this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
+
+								if (localTitle) {
+									try {
+										await this.renameSession(sessionId, localTitle)
+									} catch (error) {
+										this.logger?.error(
+											"Failed to update session title using local title",
+											"SessionManager",
+											{
+												sessionId,
+												error: error instanceof Error ? error.message : String(error),
+											},
+										)
+									}
+								}
 							}
 						})()
 					}
