@@ -233,7 +233,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -294,7 +294,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -314,7 +314,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -342,7 +342,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -362,7 +362,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -508,7 +508,7 @@ describe("SessionManager", () => {
 				session_id: "session-123",
 				title: "New Title",
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 
 			await manager.renameSession("session-123", "  New Title  ")
@@ -541,7 +541,7 @@ describe("SessionManager", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			}
 
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(mockSession)
@@ -597,7 +597,7 @@ describe("SessionManager", () => {
 				title: "Test task",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
 
@@ -607,6 +607,7 @@ describe("SessionManager", () => {
 			expect(manager.sessionClient!.create).toHaveBeenCalledWith({
 				title: "Test task",
 				created_on_platform: "vscode",
+				version: SessionManager.VERSION,
 			})
 			expect(manager.sessionPersistenceManager!.setSessionForTask).toHaveBeenCalledWith(
 				"task-123",
@@ -622,7 +623,7 @@ describe("SessionManager", () => {
 				title: "Test task",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
 

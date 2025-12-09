@@ -43,13 +43,13 @@ vi.mock("../SessionClient", () => ({
 			title: "",
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
-			version: 1,
+			version: SessionManager.VERSION,
 		}),
 		update: vi.fn().mockResolvedValue({
 			session_id: "default-session-id",
 			title: "",
 			updated_at: new Date().toISOString(),
-			version: 1,
+			version: SessionManager.VERSION,
 		}),
 		share: vi.fn(),
 		fork: vi.fn(),
@@ -359,7 +359,7 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -371,7 +371,7 @@ describe("SessionManager.syncSession", () => {
 			expect(manager.sessionClient!.create).toHaveBeenCalledWith({
 				created_on_platform: "vscode",
 				git_url: "https://github.com/test/repo.git",
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			expect(manager.sessionPersistenceManager!.setSessionForTask).toHaveBeenCalledWith(
 				"task-123",
@@ -386,7 +386,7 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -586,7 +586,7 @@ describe("SessionManager.syncSession", () => {
 				session_id: "session-123",
 				title: "",
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 
 			const taskGitUrls = (manager as unknown as { taskGitUrls: Record<string, string> }).taskGitUrls
@@ -599,7 +599,6 @@ describe("SessionManager.syncSession", () => {
 			expect(manager.sessionClient!.update).toHaveBeenCalledWith({
 				session_id: "session-123",
 				git_url: "https://github.com/test/repo.git",
-				version: 1,
 			})
 		})
 	})
@@ -622,13 +621,13 @@ describe("SessionManager.syncSession", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 				session_id: "session-123",
 				title: "Login form creation",
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 
 			manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
@@ -653,7 +652,7 @@ describe("SessionManager.syncSession", () => {
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
 				git_state_blob_url: null,
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 
 			manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
@@ -774,7 +773,7 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
-				version: 1,
+				version: SessionManager.VERSION,
 			})
 
 			manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
@@ -813,14 +812,14 @@ describe("SessionManager.syncSession", () => {
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
 						git_state_blob_url: null,
-						version: 1,
+						version: SessionManager.VERSION,
 					}
 				})
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
 					updated_at: new Date().toISOString(),
-					version: 1,
+					version: SessionManager.VERSION,
 				})
 
 				manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file1.json")
@@ -869,13 +868,13 @@ describe("SessionManager.syncSession", () => {
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
 					git_state_blob_url: null,
-					version: 1,
+					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
 					updated_at: new Date().toISOString(),
-					version: 1,
+					version: SessionManager.VERSION,
 				})
 
 				sessionTitles["session-123"] = ""
@@ -906,14 +905,14 @@ describe("SessionManager.syncSession", () => {
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
 						git_state_blob_url: null,
-						version: 1,
+						version: SessionManager.VERSION,
 					}
 				})
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
 					updated_at: new Date().toISOString(),
-					version: 1,
+					version: SessionManager.VERSION,
 				})
 
 				manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
@@ -1059,7 +1058,7 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
-						version: 1,
+						version: SessionManager.VERSION,
 					}
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -1091,7 +1090,7 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
-						version: 1,
+						version: SessionManager.VERSION,
 					}
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
