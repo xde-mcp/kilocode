@@ -21,6 +21,7 @@ import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
+import { shouldSkipAutocomplete } from "./contextualSkip"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
 import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
@@ -384,6 +385,16 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
+
+			// Check if we should trigger autocomplete based on smart trigger logic
+			// This single entry point handles all contextual skip conditions:
+			// - End of statement detection
+			// - Mid-word typing detection
+			// - Trigger character detection
+			// Skip autocomplete in certain contexts (end of statement, mid-word typing)
+			if (shouldSkipAutocomplete(prefix, suffix, document.languageId)) {
+				return []
+			}
 
 			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
