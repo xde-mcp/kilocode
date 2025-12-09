@@ -39,7 +39,7 @@ export class FileWatcher implements IFileWatcher {
 	private batchProcessDebounceTimer?: NodeJS.Timeout
 	private readonly BATCH_DEBOUNCE_DELAY_MS = 500
 	private readonly FILE_PROCESSING_CONCURRENCY_LIMIT = 10
-	private batchSegmentThreshold: number
+	private batchSegmentThreshold: number // kilocode_change
 
 	private readonly _onDidStartBatchProcessing = new vscode.EventEmitter<string[]>()
 	private readonly _onBatchProgressUpdate = new vscode.EventEmitter<{
@@ -119,6 +119,7 @@ export class FileWatcher implements IFileWatcher {
 		this.fileWatcher.onDidDelete(this.handleFileDeleted.bind(this))
 	}
 
+	// kilocode_change start
 	/**
 	 * Updates the batch segment threshold
 	 * @param newThreshold New batch segment threshold value
@@ -126,6 +127,7 @@ export class FileWatcher implements IFileWatcher {
 	updateBatchSegmentThreshold(newThreshold: number): void {
 		this.batchSegmentThreshold = newThreshold
 	}
+	// kilocode_change end
 
 	/**
 	 * Disposes the file watcher

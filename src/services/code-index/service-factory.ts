@@ -191,7 +191,7 @@ export class CodeIndexServiceFactory {
 		parser: ICodeParser,
 		ignoreInstance: Ignore,
 	): DirectoryScanner {
-		// Get the configurable batch size and max retries from config manager
+		// kilocode_change start: Get the configurable batch size and max retries from config manager
 		const config = this.configManager.getConfig()
 		const batchSize = config.embeddingBatchSize
 		const maxBatchRetries = config.scannerMaxBatchRetries
@@ -204,6 +204,7 @@ export class CodeIndexServiceFactory {
 			batchSize,
 			maxBatchRetries,
 		)
+		// kilocode_change end
 	}
 
 	/**
@@ -217,9 +218,10 @@ export class CodeIndexServiceFactory {
 		ignoreInstance: Ignore,
 		rooIgnoreController?: RooIgnoreController,
 	): IFileWatcher {
-		// Get the configurable batch size from config manager
+		// kilocode_change start: Get the configurable batch size from config manager
 		const config = this.configManager.getConfig()
 		const batchSize = config.embeddingBatchSize
+		// kilocode_change end
 		return new FileWatcher(
 			this.workspacePath,
 			context,

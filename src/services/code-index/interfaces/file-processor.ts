@@ -45,11 +45,13 @@ export interface IDirectoryScanner {
 		totalBlockCount: number
 	}>
 
+	// kilocode_change start
 	/**
 	 * Updates the batch segment threshold
 	 * @param newThreshold New batch segment threshold value
 	 */
 	updateBatchSegmentThreshold(newThreshold: number): void
+	// kilocode_change end
 }
 
 /**
@@ -61,11 +63,13 @@ export interface IFileWatcher extends vscode.Disposable {
 	 */
 	initialize(): Promise<void>
 
+	// kilocode_change start
 	/**
 	 * Updates the batch segment threshold
 	 * @param newThreshold New batch segment threshold value
 	 */
 	updateBatchSegmentThreshold(newThreshold: number): void
+	// kilocode_change end
 
 	/**
 	 * Event emitted when a batch of files begins processing.

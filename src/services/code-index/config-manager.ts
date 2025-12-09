@@ -30,8 +30,10 @@ export class CodeIndexConfigManager {
 	private qdrantApiKey?: string
 	private searchMinScore?: number
 	private searchMaxResults?: number
+	// kilocode_change start
 	private embeddingBatchSize?: number
 	private scannerMaxBatchRetries?: number
+	// kilocode_change end
 
 	// kilocode_change start: Kilo org indexing props
 	private _kiloOrgProps: {
@@ -98,8 +100,10 @@ export class CodeIndexConfigManager {
 			codebaseIndexEmbedderModelId: "",
 			codebaseIndexSearchMinScore: undefined,
 			codebaseIndexSearchMaxResults: undefined,
+			// kilocode_change start
 			codebaseIndexEmbeddingBatchSize: undefined,
 			codebaseIndexScannerMaxBatchRetries: undefined,
+			// kilocode_change end
 			codebaseIndexBedrockRegion: "us-east-1",
 			codebaseIndexBedrockProfile: "",
 		}
@@ -113,8 +117,10 @@ export class CodeIndexConfigManager {
 			codebaseIndexLancedbVectorStoreDirectory, // kilocode_change
 			codebaseIndexSearchMinScore,
 			codebaseIndexSearchMaxResults,
+			// kilocode_change start
 			codebaseIndexEmbeddingBatchSize,
 			codebaseIndexScannerMaxBatchRetries,
+			// kilocode_change end
 		} = codebaseIndexConfig
 		// kilocode_change
 		const codebaseIndexVectorStoreProvider = codebaseIndexConfig.codebaseIndexVectorStoreProvider ?? "qdrant"
@@ -141,8 +147,10 @@ export class CodeIndexConfigManager {
 		this.qdrantApiKey = qdrantApiKey ?? ""
 		this.searchMinScore = codebaseIndexSearchMinScore
 		this.searchMaxResults = codebaseIndexSearchMaxResults
+		// kilocode_change start
 		this.embeddingBatchSize = codebaseIndexEmbeddingBatchSize
 		this.scannerMaxBatchRetries = codebaseIndexScannerMaxBatchRetries
+		// kilocode_change end
 
 		// Validate and set model dimension
 		const rawDimension = codebaseIndexConfig.codebaseIndexEmbedderModelDimension
@@ -538,8 +546,10 @@ export class CodeIndexConfigManager {
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,
 			searchMaxResults: this.currentSearchMaxResults,
+			// kilocode_change start
 			embeddingBatchSize: this.currentEmbeddingBatchSize,
 			scannerMaxBatchRetries: this.currentScannerMaxBatchRetries,
+			// kilocode_change end
 		}
 	}
 
@@ -622,6 +632,7 @@ export class CodeIndexConfigManager {
 		return this.searchMaxResults ?? DEFAULT_MAX_SEARCH_RESULTS
 	}
 
+	// kilocode_change start
 	/**
 	 * Gets the configured embedding batch size.
 	 * Returns user setting if configured, otherwise returns undefined (will use default from constants).
@@ -637,4 +648,5 @@ export class CodeIndexConfigManager {
 	public get currentScannerMaxBatchRetries(): number | undefined {
 		return this.scannerMaxBatchRetries
 	}
+	// kilocode_change end
 }

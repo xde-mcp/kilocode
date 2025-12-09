@@ -33,8 +33,8 @@ import { Package } from "../../../shared/package"
 
 export class DirectoryScanner implements IDirectoryScanner {
 	private _cancelled = false // kilocode_change
-	private batchSegmentThreshold: number
-	private maxBatchRetries: number
+	private batchSegmentThreshold: number // kilocode_change
+	private maxBatchRetries: number // kilocode_change
 
 	constructor(
 		private readonly embedder: IEmbedder,
@@ -60,12 +60,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 			}
 		}
 
-		// Get the configurable max batch retries, fallback to default
-		if (maxBatchRetries !== undefined) {
-			this.maxBatchRetries = maxBatchRetries
-		} else {
-			this.maxBatchRetries = MAX_BATCH_RETRIES
-		}
+		this.maxBatchRetries = maxBatchRetries !== undefined ? maxBatchRetries : MAX_BATCH_RETRIES // kilocode_change: Get the configurable max batch retries, fallback to default
 	}
 
 	// kilocode_change start
@@ -463,14 +458,14 @@ export class DirectoryScanner implements IDirectoryScanner {
 		let success = false
 		let lastError: Error | null = null
 
-		while (attempts < this.maxBatchRetries && !success) {
+		while (attempts < this.maxBatchRetries /* kilocode_change */ && !success) {
 			attempts++
 
 			// kilocode_change start
 			if (this._cancelled) return
 
 			console.debug(
-				`[DirectoryScanner] Processing batch attempt ${attempts}/${this.maxBatchRetries} for ${batchBlocks.length} blocks`,
+				`[DirectoryScanner] Processing batch attempt ${attempts}/${this.maxBatchRetries} for ${batchBlocks.length} blocks`, // kilocode_change
 			)
 			// kilocode_change end
 
@@ -594,7 +589,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 					batchSize: batchBlocks.length,
 				})
 
-				if (attempts < this.maxBatchRetries) {
+				if (attempts < this.maxBatchRetries /* kilocode_change */) {
 					const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempts - 1)
 					console.debug(`[DirectoryScanner] Retrying batch in ${delay}ms`) // kilocode_change
 					await new Promise((resolve) => setTimeout(resolve, delay))
@@ -612,7 +607,7 @@ export class DirectoryScanner implements IDirectoryScanner {
 				onError(
 					new Error(
 						t("embeddings:scanner.failedToProcessBatchWithError", {
-							maxRetries: this.maxBatchRetries,
+							maxRetries: this.maxBatchRetries, // kilocode_change
 							errorMessage,
 						}),
 					),
