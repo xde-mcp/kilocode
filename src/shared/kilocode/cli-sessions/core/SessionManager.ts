@@ -689,7 +689,8 @@ export class SessionManager {
 										error: error instanceof Error ? error.message : String(error),
 									})
 
-									this.sessionTitles[sessionId] = ""
+									this.sessionTitles[sessionId] =
+										this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
 								}
 							})()
 						}
