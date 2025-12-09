@@ -164,13 +164,5 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 }
 
 export function shouldSkipAutocomplete(prefix: string, suffix: string, languageId?: string): boolean {
-	if (isAtEndOfStatement(prefix, suffix, languageId)) {
-		return true
-	}
-
-	if (isMidWordTyping(prefix, suffix)) {
-		return true
-	}
-
-	return false
+	return isAtEndOfStatement(prefix, suffix, languageId) || isMidWordTyping(prefix, suffix)
 }
