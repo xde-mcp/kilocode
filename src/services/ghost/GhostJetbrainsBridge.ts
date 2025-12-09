@@ -5,6 +5,9 @@ import { GhostServiceManager } from "./GhostServiceManager"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { languageForFilepath } from "../continuedev/core/autocomplete/constants/AutocompleteLanguageInfo"
+import { GhostContextProvider } from "./types"
+import { FimPromptBuilder } from "./classic-auto-complete/FillInTheMiddle"
+import { HoleFiller } from "./classic-auto-complete/HoleFiller"
 
 const GET_INLINE_COMPLETIONS_COMMAND = "kilo-code.jetbrains.getInlineCompletions"
 
@@ -235,6 +238,32 @@ export class GhostJetbrainsBridge {
 	}
 
 	/**
+	 * Create a mock context provider that prevents workspace file access.
+	 * This is used for JetBrains bridge to ensure only the provided document content is used.
+	 */
+	private createMockContextProvider(normalizedContent: string): GhostContextProvider {
+		// Access the model through the inline completion provider which has access to it
+		const provider = this.ghost.inlineCompletionProvider as any
+		const model = provider.model
+
+		return {
+			ide: {
+				readFile: async () => normalizedContent,
+				getWorkspaceDirs: async () => [],
+				getClipboardContent: async () => ({ text: "", copiedAt: new Date().toISOString() }),
+			},
+			contextService: {
+				initializeForFile: async () => {},
+				getRootPathSnippets: async () => [],
+				getSnippetsFromImportDefinitions: async () => [],
+				getStaticContextSnippets: async () => [],
+			},
+			model,
+			ignoreController: undefined,
+		} as unknown as GhostContextProvider
+	}
+
+	/**
 	 * Serialize completion results to a format suitable for RPC response
 	 */
 	private serializeCompletionResult(
@@ -283,18 +312,34 @@ export class GhostJetbrainsBridge {
 			}
 			const tokenSource = new vscode.CancellationTokenSource()
 
-			// Get completions from the provider
-			const completions = await this.ghost.inlineCompletionProvider.provideInlineCompletionItems(
-				mockDocument,
-				vscodePosition,
-				context,
-				tokenSource.token,
-			)
+			// Create mock context provider to prevent workspace file access
+			const mockContextProvider = this.createMockContextProvider(normalizedContent)
 
-			tokenSource.dispose()
+			// Save original builders
+			const originalFimBuilder = this.ghost.inlineCompletionProvider.fimPromptBuilder
+			const originalHoleFiller = this.ghost.inlineCompletionProvider.holeFiller
 
-			// Serialize and return the result
-			return this.serializeCompletionResult(completions, params.requestId)
+			try {
+				// Temporarily replace builders with ones using mock context
+				this.ghost.inlineCompletionProvider.fimPromptBuilder = new FimPromptBuilder(mockContextProvider)
+				this.ghost.inlineCompletionProvider.holeFiller = new HoleFiller(mockContextProvider)
+
+				// Get completions from the provider (will use mock builders internally)
+				const completions = await this.ghost.inlineCompletionProvider.provideInlineCompletionItems(
+					mockDocument,
+					vscodePosition,
+					context,
+					tokenSource.token,
+				)
+
+				// Serialize and return the result
+				return this.serializeCompletionResult(completions, params.requestId)
+			} finally {
+				// Always restore original builders
+				this.ghost.inlineCompletionProvider.fimPromptBuilder = originalFimBuilder
+				this.ghost.inlineCompletionProvider.holeFiller = originalHoleFiller
+				tokenSource.dispose()
+			}
 		} catch (error) {
 			return {
 				requestId: "",

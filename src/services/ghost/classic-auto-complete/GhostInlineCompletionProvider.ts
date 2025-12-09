@@ -121,8 +121,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
-	private holeFiller: HoleFiller
-	private fimPromptBuilder: FimPromptBuilder
+	public holeFiller: HoleFiller
+	public fimPromptBuilder: FimPromptBuilder
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
