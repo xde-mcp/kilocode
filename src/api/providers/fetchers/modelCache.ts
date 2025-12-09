@@ -212,7 +212,7 @@ export const getModels = async (options: GetModelsOptions): Promise<ModelRecord>
 			memoryCache.set(provider, models)
 
 			// kilocode_change start: prevent eternal caching of kilocode models
-			if (provider === "kilocode") {
+			if (provider !== "kilocode") {
 				await writeModels(provider, models).catch((err) =>
 					console.error(`[MODEL_CACHE] Error writing ${provider} models to file cache:`, err),
 				)
