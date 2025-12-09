@@ -45,6 +45,10 @@ import {
 } from "@src/components/ui"
 import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
+// kilocode_change start
+import { EmbeddingBatchSizeSlider } from "./kilocode/EmbeddingBatchSizeSlider"
+import { MaxBatchRetriesSlider } from "./kilocode/MaxBatchRetriesSlider"
+// kilocode_change end
 
 // Default URLs for providers
 const DEFAULT_QDRANT_URL = "http://localhost:6333"
@@ -1692,93 +1696,19 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										</div>
 									</div>
 
-									{/* Embedding Batch Size Slider */}
-									<div className="space-y-2">
-										<div className="flex items-center gap-2">
-											<label className="text-sm font-medium">
-												{t("settings:codeIndex.embeddingBatchSizeLabel")}
-											</label>
-											<StandardTooltip
-												content={t("settings:codeIndex.embeddingBatchSizeDescription")}>
-												<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
-											</StandardTooltip>
-										</div>
-										<div className="flex items-center gap-2">
-											<Slider
-												min={CODEBASE_INDEX_DEFAULTS.MIN_EMBEDDING_BATCH_SIZE}
-												max={CODEBASE_INDEX_DEFAULTS.MAX_EMBEDDING_BATCH_SIZE}
-												step={CODEBASE_INDEX_DEFAULTS.EMBEDDING_BATCH_SIZE_STEP}
-												value={[
-													currentSettings.codebaseIndexEmbeddingBatchSize ??
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_BATCH_SIZE,
-												]}
-												onValueChange={(values) =>
-													updateSetting("codebaseIndexEmbeddingBatchSize", values[0])
-												}
-												className="flex-1"
-												data-testid="embedding-batch-size-slider"
-											/>
-											<span className="w-12 text-center">
-												{currentSettings.codebaseIndexEmbeddingBatchSize ??
-													CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_BATCH_SIZE}
-											</span>
-											<VSCodeButton
-												appearance="icon"
-												title={t("settings:codeIndex.resetToDefault")}
-												onClick={() =>
-													updateSetting(
-														"codebaseIndexEmbeddingBatchSize",
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_BATCH_SIZE,
-													)
-												}>
-												<span className="codicon codicon-discard" />
-											</VSCodeButton>
-										</div>
-									</div>
+									{/* kilocode_change start */}
+									<EmbeddingBatchSizeSlider
+										value={currentSettings.codebaseIndexEmbeddingBatchSize}
+										onChange={(value) => updateSetting("codebaseIndexEmbeddingBatchSize", value)}
+									/>
 
-									{/* Scanner Max Batch Retries Slider */}
-									<div className="space-y-2">
-										<div className="flex items-center gap-2">
-											<label className="text-sm font-medium">
-												{t("settings:codeIndex.scannerMaxBatchRetriesLabel")}
-											</label>
-											<StandardTooltip
-												content={t("settings:codeIndex.scannerMaxBatchRetriesDescription")}>
-												<span className="codicon codicon-info text-xs text-vscode-descriptionForeground cursor-help" />
-											</StandardTooltip>
-										</div>
-										<div className="flex items-center gap-2">
-											<Slider
-												min={CODEBASE_INDEX_DEFAULTS.MIN_SCANNER_MAX_BATCH_RETRIES}
-												max={CODEBASE_INDEX_DEFAULTS.MAX_SCANNER_MAX_BATCH_RETRIES}
-												step={CODEBASE_INDEX_DEFAULTS.SCANNER_MAX_BATCH_RETRIES_STEP}
-												value={[
-													currentSettings.codebaseIndexScannerMaxBatchRetries ??
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_SCANNER_MAX_BATCH_RETRIES,
-												]}
-												onValueChange={(values) =>
-													updateSetting("codebaseIndexScannerMaxBatchRetries", values[0])
-												}
-												className="flex-1"
-												data-testid="scanner-max-batch-retries-slider"
-											/>
-											<span className="w-12 text-center">
-												{currentSettings.codebaseIndexScannerMaxBatchRetries ??
-													CODEBASE_INDEX_DEFAULTS.DEFAULT_SCANNER_MAX_BATCH_RETRIES}
-											</span>
-											<VSCodeButton
-												appearance="icon"
-												title={t("settings:codeIndex.resetToDefault")}
-												onClick={() =>
-													updateSetting(
-														"codebaseIndexScannerMaxBatchRetries",
-														CODEBASE_INDEX_DEFAULTS.DEFAULT_SCANNER_MAX_BATCH_RETRIES,
-													)
-												}>
-												<span className="codicon codicon-discard" />
-											</VSCodeButton>
-										</div>
-									</div>
+									<MaxBatchRetriesSlider
+										value={currentSettings.codebaseIndexScannerMaxBatchRetries}
+										onChange={(value) =>
+											updateSetting("codebaseIndexScannerMaxBatchRetries", value)
+										}
+									/>
+									{/* kilocode_change end */}
 								</div>
 							)}
 						</div>
