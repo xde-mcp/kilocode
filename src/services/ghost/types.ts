@@ -192,9 +192,7 @@ export function contextToAutocompleteInput(context: GhostSuggestionContext): Aut
 		pos: { line: position.line, character: position.character },
 		recentlyVisitedRanges,
 		recentlyEditedRanges,
-		// For JetBrains: Pass the full file content and prefix so FimPromptBuilder
-		// can use them directly instead of reading from a cached/stale document
-		manuallyPassFileContents: context.document.getText(),
+		manuallyPassFileContents: undefined,
 		manuallyPassPrefix: prefix,
 	}
 }

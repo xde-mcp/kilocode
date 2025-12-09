@@ -284,7 +284,7 @@ export class GhostJetbrainsBridge {
 			const tokenSource = new vscode.CancellationTokenSource()
 
 			// Get completions from the provider
-			const completions = await this.ghost.inlineCompletionProvider.provideInlineCompletionItems_Internal(
+			const completions = await this.ghost.inlineCompletionProvider.provideInlineCompletionItems(
 				mockDocument,
 				vscodePosition,
 				context,
