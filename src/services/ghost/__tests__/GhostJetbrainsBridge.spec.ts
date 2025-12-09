@@ -41,7 +41,7 @@ describe("GhostJetbrainsBridge", () => {
 	beforeEach(() => {
 		mockGhost = {
 			inlineCompletionProvider: {
-				provideInlineCompletionItems_Internal: vi.fn().mockResolvedValue([
+				provideInlineCompletionItems: vi.fn().mockResolvedValue([
 					{
 						insertText: "console.log('test')",
 						range: {
@@ -50,6 +50,8 @@ describe("GhostJetbrainsBridge", () => {
 						},
 					},
 				]),
+				fimPromptBuilder: {},
+				holeFiller: {},
 			},
 		} as any
 
@@ -81,7 +83,7 @@ describe("GhostJetbrainsBridge", () => {
 			const result = await bridge.getInlineCompletions(...args)
 
 			// Should default to position 0,0
-			expect(mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal).toHaveBeenCalledWith(
+			expect(mockGhost.inlineCompletionProvider.provideInlineCompletionItems).toHaveBeenCalledWith(
 				expect.anything(),
 				expect.objectContaining({ line: 0, character: 0 }),
 				expect.anything(),
@@ -105,8 +107,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 			expect(mockDocument.getText()).toBe("line1\nline2\nline3")
 		})
 
@@ -116,8 +117,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 			expect(mockDocument.getText()).toBe("line1\nline2\nline3")
 		})
 
@@ -127,8 +127,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 			expect(mockDocument.getText()).toBe("line1\nline2\nline3\nline4")
 		})
 	})
@@ -140,8 +139,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 
 			expect(mockDocument.languageId).toBe("typescript")
 			expect(mockDocument.lineCount).toBe(3)
@@ -154,8 +152,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 
 			// Test single line range
 			const range1 = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 5))
@@ -172,8 +169,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 
 			const line = mockDocument.lineAt(0)
 			expect(line.text).toBe("  const x = 1")
@@ -187,8 +183,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 
 			// Position at start of line 0
 			expect(mockDocument.offsetAt(new vscode.Position(0, 0))).toBe(0)
@@ -204,8 +199,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 
 			// Offset 0 should be position 0,0
 			const pos1 = mockDocument.positionAt(0)
@@ -236,7 +230,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle completions with string insertText", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockResolvedValue([
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockResolvedValue([
 				{
 					insertText: "simple string",
 					range: null,
@@ -252,7 +246,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle completions with SnippetString insertText", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockResolvedValue([
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockResolvedValue([
 				{
 					insertText: { value: "snippet value" },
 					range: null,
@@ -267,7 +261,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle InlineCompletionList format", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockResolvedValue({
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockResolvedValue({
 				items: [
 					{
 						insertText: "from list",
@@ -285,7 +279,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle empty completions", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockResolvedValue([])
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockResolvedValue([])
 
 			const args = [["file:///test.ts", { line: 0, character: 0 }, "const x = 1", "typescript", "req-13"]]
 
@@ -296,7 +290,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle undefined completions", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockResolvedValue(undefined)
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockResolvedValue(undefined)
 
 			const args = [["file:///test.ts", { line: 0, character: 0 }, "const x = 1", "typescript", "req-14"]]
 
@@ -319,7 +313,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should return error result when provider throws", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockRejectedValue(
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockRejectedValue(
 				new Error("Provider error"),
 			)
 
@@ -333,7 +327,7 @@ describe("GhostJetbrainsBridge", () => {
 		})
 
 		it("should handle non-Error exceptions", async () => {
-			mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mockRejectedValue("String error")
+			mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mockRejectedValue("String error")
 
 			const args = [["file:///test.ts", { line: 0, character: 0 }, "const x = 1", "typescript", "req-16"]]
 
@@ -349,8 +343,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 			expect(mockDocument.languageId).toBe("typescript")
 		})
 
@@ -359,8 +352,7 @@ describe("GhostJetbrainsBridge", () => {
 
 			await bridge.getInlineCompletions(...args)
 
-			const mockDocument =
-				mockGhost.inlineCompletionProvider.provideInlineCompletionItems_Internal.mock.calls[0][0]
+			const mockDocument = mockGhost.inlineCompletionProvider.provideInlineCompletionItems.mock.calls[0][0]
 			expect(mockDocument.languageId).toBe("python")
 		})
 	})
