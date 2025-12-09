@@ -208,6 +208,16 @@ export class SessionManager {
 				throw new Error("Failed to obtain session")
 			}
 
+			if (session.version !== SessionManager.VERSION) {
+				this.logger?.warn("Session version mismatch", "SessionManager", {
+					sessionId,
+					expectedVersion: SessionManager.VERSION,
+					actualVersion: session.version,
+				})
+			}
+
+			this.logger?.debug("Obtained session", "SessionManager", { sessionId, session })
+
 			const sessionDirectoryPath = path.join(this.pathProvider.getTasksDir(), sessionId)
 
 			mkdirSync(sessionDirectoryPath, { recursive: true })
@@ -407,6 +417,7 @@ export class SessionManager {
 				const session = await this.sessionClient.create({
 					title,
 					created_on_platform: this.platform,
+					version: SessionManager.VERSION,
 				})
 
 				sessionId = session.session_id
@@ -506,10 +517,7 @@ export class SessionManager {
 						itemCount: taskItems.length,
 					})
 
-					const basePayload: Omit<
-						Parameters<NonNullable<typeof this.sessionClient>["create"]>[0],
-						"created_on_platform"
-					> = {}
+					const basePayload: Partial<Parameters<NonNullable<typeof this.sessionClient>["create"]>[0]> = {}
 
 					if (gitInfo?.repoUrl) {
 						basePayload.git_url = gitInfo.repoUrl
@@ -543,6 +551,7 @@ export class SessionManager {
 						const createdSession = await this.sessionClient.create({
 							...basePayload,
 							created_on_platform: this.platform,
+							version: SessionManager.VERSION,
 						})
 
 						sessionId = createdSession.session_id
