@@ -176,7 +176,7 @@ function isAtEndOfStatement(prefix: string, suffix: string, languageId?: string)
 	for (const terminator of terminators) {
 		if (terminator.length > 1 && trimmedLinePrefix.endsWith(terminator)) {
 			const beforeTerminator = trimmedLinePrefix.slice(0, -terminator.length)
-			if (beforeTerminator.length === 0 || /\s$/.test(beforeTerminator)) {
+			if (beforeTerminator.length === 0) {
 				return true
 			}
 		}

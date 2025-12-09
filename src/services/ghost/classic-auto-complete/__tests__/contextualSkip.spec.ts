@@ -124,18 +124,18 @@ describe("shouldSkipAutocomplete - end of statement detection", () => {
 			expect(shouldSkipAutocomplete("echo hello;", "\n", languageId)).toBe(true)
 		})
 
-		it("should skip when cursor is after fi (end of if)", () => {
+		it("should skip when cursor is after fi (end of if) at start of line", () => {
 			expect(shouldSkipAutocomplete("fi", "\n", languageId)).toBe(true)
 		})
 
-		it("should skip when cursor is after done (end of loop)", () => {
+		it("should skip when cursor is after done (end of loop) at start of line", () => {
 			expect(shouldSkipAutocomplete("done", "\n", languageId)).toBe(true)
 		})
 
-		it("should skip when fi/done is part of a larger word (mid-word typing)", () => {
-			// Mid-word typing is blocked (word length > 2)
-			expect(shouldSkipAutocomplete("wifi", "\n", languageId)).toBe(true)
-			expect(shouldSkipAutocomplete("undone", "\n", languageId)).toBe(true)
+		it("should NOT skip when fi/done is preceded by other text", () => {
+			// Multi-character terminators only match at start of line now
+			expect(shouldSkipAutocomplete("wifi", "\n", languageId)).toBe(true) // mid-word typing
+			expect(shouldSkipAutocomplete("undone", "\n", languageId)).toBe(true) // mid-word typing
 		})
 	})
 
