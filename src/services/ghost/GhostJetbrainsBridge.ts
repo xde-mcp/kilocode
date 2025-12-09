@@ -8,6 +8,7 @@ import { languageForFilepath } from "../continuedev/core/autocomplete/constants/
 import { GhostContextProvider } from "./types"
 import { FimPromptBuilder } from "./classic-auto-complete/FillInTheMiddle"
 import { HoleFiller } from "./classic-auto-complete/HoleFiller"
+import { MockTextDocument } from "../mocking/MockTextDocument"
 
 const GET_INLINE_COMPLETIONS_COMMAND = "kilo-code.jetbrains.getInlineCompletions"
 
@@ -149,91 +150,10 @@ export class GhostJetbrainsBridge {
 	/**
 	 * Create a mock VSCode TextDocument from the provided parameters
 	 */
-	private createMockDocument(
-		uri: string,
-		normalizedContent: string,
-		lines: string[],
-		language: string,
-	): vscode.TextDocument {
-		const mockDocument = {
-			uri: vscode.Uri.parse(uri),
-			fileName: uri,
-			isUntitled: false, // Set to false to match real file behavior
-			languageId: language,
-			version: 1,
-			isDirty: false,
-			isClosed: false,
-			eol: vscode.EndOfLine.LF,
-			lineCount: lines.length,
-			save: async () => false,
-			getText: (range?: vscode.Range) => {
-				if (!range) return normalizedContent
-				// Extract text within the specified range
-				if (range.start.line === range.end.line) {
-					// Single line range
-					return lines[range.start.line]?.substring(range.start.character, range.end.character) || ""
-				}
-				// Multi-line range
-				const startLine = Math.max(0, range.start.line)
-				const endLine = Math.min(lines.length - 1, range.end.line)
-				if (startLine > endLine) return ""
-
-				const rangeLines: string[] = []
-				for (let i = startLine; i <= endLine; i++) {
-					let lineText = lines[i] || ""
-					if (i === startLine && i === endLine) {
-						// Single line, extract substring
-						lineText = lineText.substring(range.start.character, range.end.character)
-					} else if (i === startLine) {
-						// First line, extract from start character to end
-						lineText = lineText.substring(range.start.character)
-					} else if (i === endLine) {
-						// Last line, extract from beginning to end character
-						lineText = lineText.substring(0, range.end.character)
-					}
-					rangeLines.push(lineText)
-				}
-				return rangeLines.join("\n")
-			},
-			getWordRangeAtPosition: () => undefined,
-			validateRange: (range: vscode.Range) => range,
-			validatePosition: (position: vscode.Position) => position,
-			lineAt: (line: number | vscode.Position) => {
-				const lineNum = typeof line === "number" ? line : line.line
-				const text = lines[lineNum] || ""
-				return {
-					lineNumber: lineNum,
-					text,
-					range: new vscode.Range(lineNum, 0, lineNum, text.length),
-					rangeIncludingLineBreak: new vscode.Range(lineNum, 0, lineNum + 1, 0),
-					firstNonWhitespaceCharacterIndex: text.search(/\S/),
-					isEmptyOrWhitespace: text.trim().length === 0,
-				}
-			},
-			offsetAt: (position: vscode.Position) => {
-				let offset = 0
-				for (let i = 0; i < position.line && i < lines.length; i++) {
-					offset += lines[i].length + 1 // +1 for newline character
-				}
-				offset += Math.min(position.character, lines[position.line]?.length || 0)
-				return offset
-			},
-			positionAt: (offset: number) => {
-				let currentOffset = 0
-				for (let i = 0; i < lines.length; i++) {
-					const lineLength = lines[i].length
-					// Check if offset is within this line
-					if (currentOffset + lineLength >= offset) {
-						return new vscode.Position(i, offset - currentOffset)
-					}
-					// Move to next line (account for newline character)
-					currentOffset += lineLength + 1
-				}
-				// If offset is beyond document, return end position
-				return new vscode.Position(lines.length - 1, lines[lines.length - 1]?.length || 0)
-			},
-		} as any as vscode.TextDocument
-
+	private createMockDocument(uri: string, normalizedContent: string, language: string): vscode.TextDocument {
+		const mockDocument = new MockTextDocument(vscode.Uri.parse(uri), normalizedContent)
+		mockDocument.languageId = language
+		mockDocument.fileName = uri
 		return mockDocument
 	}
 
@@ -302,7 +222,7 @@ export class GhostJetbrainsBridge {
 			const language = this.determineLanguage(params.languageId, params.uri)
 
 			// Create mock document
-			const mockDocument = this.createMockDocument(params.uri, normalizedContent, lines, language)
+			const mockDocument = this.createMockDocument(params.uri, normalizedContent, language)
 
 			// Create VSCode position and context
 			const vscodePosition = new vscode.Position(params.position.line, params.position.character)
