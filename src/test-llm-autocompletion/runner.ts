@@ -23,16 +23,33 @@ export class TestRunner {
 	private results: TestResult[] = []
 	private skipApproval: boolean
 	private useOpusApproval: boolean
+	private originalConsoleLog: typeof console.log
+	private originalConsoleInfo: typeof console.info
 
 	constructor(verbose: boolean = false, skipApproval: boolean = false, useOpusApproval: boolean = false) {
 		this.verbose = verbose
 		this.skipApproval = skipApproval
 		this.useOpusApproval = useOpusApproval
 		this.tester = new GhostProviderTester()
+		this.originalConsoleLog = console.log
+		this.originalConsoleInfo = console.info
+	}
+
+	private suppressConsole(): void {
+		if (!this.verbose) {
+			console.log = () => {}
+			console.info = () => {}
+		}
+	}
+
+	private restoreConsole(): void {
+		console.log = this.originalConsoleLog
+		console.info = this.originalConsoleInfo
 	}
 
 	async runTest(testCase: TestCase): Promise<TestResult> {
 		try {
+			this.suppressConsole()
 			const startTime = performance.now()
 			const { prefix, completion, suffix } = await this.tester.getCompletion(
 				testCase.input,
@@ -40,6 +57,7 @@ export class TestRunner {
 				testCase.contextFiles,
 			)
 			const llmRequestDuration = performance.now() - startTime
+			this.restoreConsole()
 			let actualValue: string = prefix + completion + suffix
 
 			if (completion === "") {
@@ -74,6 +92,7 @@ export class TestRunner {
 				llmRequestDuration,
 			}
 		} catch (error) {
+			this.restoreConsole()
 			return {
 				testCase,
 				isApproved: false,
@@ -153,7 +172,7 @@ export class TestRunner {
 						console.log("✗ FAILED")
 						if (result.error) {
 							console.log(`    Error: ${result.error}`)
-						} else {
+						} else if (this.verbose) {
 							console.log(`    Input:`)
 							console.log("    " + "─".repeat(76))
 							console.log(
@@ -173,7 +192,7 @@ export class TestRunner {
 							)
 							console.log("    " + "─".repeat(76))
 
-							if (this.verbose && result.completion) {
+							if (result.completion) {
 								console.log("    Full LLM Response:")
 								console.log(
 									result.completion
@@ -355,7 +374,7 @@ export class TestRunner {
 			}
 		}
 
-		if (lastResult.completion) {
+		if (this.verbose && lastResult.completion) {
 			console.log("\nCompletion:")
 			console.log("  " + "─".repeat(78))
 			console.log(
