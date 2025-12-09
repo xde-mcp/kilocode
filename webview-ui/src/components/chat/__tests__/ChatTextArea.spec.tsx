@@ -1069,6 +1069,7 @@ describe("ChatTextArea", () => {
 		})
 	})
 
+	// kilocode_change start
 	describe("auto-scroll behavior", () => {
 		const renderAutoScrollSubject = (overrideProps: Partial<typeof defaultProps> = {}) => {
 			const props = { ...defaultProps, ...overrideProps }
@@ -1150,6 +1151,7 @@ describe("ChatTextArea", () => {
 			expect(getTextarea().scrollTop).toBe(42)
 		})
 	})
+	// kilocode_change end
 
 	// kilocode_change: removed in kilocode
 	describe.skip("selectApiConfig", () => {
