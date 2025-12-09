@@ -283,6 +283,11 @@ export class SessionClient {
 			}
 
 			const payloadBase64 = parts[1]
+
+			if (!payloadBase64) {
+				return false
+			}
+
 			const payloadJson = Buffer.from(payloadBase64, "base64").toString("utf-8")
 			const payload = JSON.parse(payloadJson) as {
 				kiloUserId?: string
