@@ -268,17 +268,6 @@ export class TestRunner {
 			}
 		}
 
-		// Failed tests details
-		if (failed > 0) {
-			console.log("\n❌ Failed Tests:")
-			for (const result of failedResults) {
-				console.log(`  • ${result.testCase.name} (${result.testCase.category})`)
-				if (result.error) {
-					console.log(`    Error: ${result.error}`)
-				}
-			}
-		}
-
 		// Unknown tests details
 		if (unknown > 0) {
 			console.log("\n❓ Unknown Tests (new outputs without approval):")
