@@ -459,7 +459,8 @@ export class SessionManager {
 			const token = await this.getToken?.()
 
 			if (!token) {
-				throw new Error("No token available for session sync")
+				this.logger?.debug("No token available for session sync, skipping", "SessionManager")
+				return
 			}
 
 			if (this.tokenValid[token] === undefined) {
