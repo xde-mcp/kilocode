@@ -32,8 +32,6 @@ Upgrade the Kilo CLI package:
 
 `npm update -g @kilocode/cli`
 
-`npm update -g @kilocode/cli`
-
 ## What you can do with Kilo Code CLI
 
 - **Plan and execute code changes without leaving your terminal.** Use your command line to make edits to your project without opening your IDE.
