@@ -123,6 +123,10 @@ export class SessionManager {
 				timestamp: Date.now(),
 			})
 		}
+
+		if (this.queue.length > 7) {
+			this.doSync()
+		}
 	}
 
 	setWorkspaceDirectory(dir: string) {
