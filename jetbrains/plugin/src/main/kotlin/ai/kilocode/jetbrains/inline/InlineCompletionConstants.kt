@@ -11,7 +11,7 @@ object InlineCompletionConstants {
     
     /**
      * Default timeout in milliseconds for inline completion requests.
-     * Set to 5 seconds for faster response compared to commit message generation.
+     * Set to 10 seconds to allow sufficient time for LLM response.
      */
-    const val RPC_TIMEOUT_MS = 5000L
+    const val RPC_TIMEOUT_MS = 10000L
 }

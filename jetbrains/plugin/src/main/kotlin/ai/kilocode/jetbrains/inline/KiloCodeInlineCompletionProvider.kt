@@ -4,13 +4,13 @@ import com.intellij.codeInsight.inline.completion.InlineCompletionEvent
 import com.intellij.codeInsight.inline.completion.InlineCompletionProvider
 import com.intellij.codeInsight.inline.completion.InlineCompletionProviderID
 import com.intellij.codeInsight.inline.completion.InlineCompletionRequest
-import com.intellij.codeInsight.inline.completion.InlineCompletionSuggestion
-import com.intellij.codeInsight.inline.completion.elements.InlineCompletionElement
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
+import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSingleSuggestion
+import com.intellij.codeInsight.inline.completion.suggestion.InlineCompletionSuggestion
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
-import kotlinx.coroutines.flow.flowOf
 
 /**
  * IntelliJ inline completion provider that bridges to VSCode extension's Ghost service.
@@ -40,25 +40,34 @@ class KiloCodeInlineCompletionProvider(
      * Gets inline completion suggestions using the Ghost service.
      * Sends full file content to ensure accurate completions.
      */
-    override suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSuggestion {
-        logger.info("Inline completion requested for handle=$handle, extensionId=$extensionId")
-        
+    override suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSingleSuggestion {
         try {
-            // Get document and position information
-            val editor = request.editor
-            val document = editor.document
-            val offset = request.endOffset
+            // Get document and position information within a read action
+            // We need to get the document reference here too for thread safety
+            val positionInfo = ReadAction.compute<PositionInfo, Throwable> {
+                val editor = request.editor
+                val document = editor.document
+                
+                // Use request.endOffset which is the correct insertion point for the completion
+                // This is where IntelliJ expects the completion to be inserted
+                val completionOffset = request.endOffset
+                
+                // Calculate line and character position from the completion offset
+                val line = document.getLineNumber(completionOffset)
+                val lineStartOffset = document.getLineStartOffset(line)
+                val char = completionOffset - lineStartOffset
+                
+                // Get language ID from file type
+                val virtualFile = FileDocumentManager.getInstance().getFile(document)
+                val langId = virtualFile?.fileType?.name?.lowercase() ?: "text"
+                
+                // Also get caret position for logging/debugging
+                val caretOffset = editor.caretModel.offset
+                
+                PositionInfo(completionOffset, line, char, langId, document, caretOffset)
+            }
             
-            // Calculate line and character position
-            val lineNumber = document.getLineNumber(offset)
-            val lineStartOffset = document.getLineStartOffset(lineNumber)
-            val character = offset - lineStartOffset
-            
-            // Get language ID from file type
-            val virtualFile = FileDocumentManager.getInstance().getFile(document)
-            val languageId = virtualFile?.fileType?.name?.lowercase() ?: "text"
-            
-            logger.info("Requesting completion at line=$lineNumber, char=$character, language=$languageId")
+            val (offset, lineNumber, character, languageId, document, caretOffset) = positionInfo
             
             // Call the new service with full file content
             val result = completionService.getInlineCompletions(
@@ -69,45 +78,37 @@ class KiloCodeInlineCompletionProvider(
                 languageId
             )
             
-            // Convert result to InlineCompletionSuggestion
+            // Convert result to InlineCompletionSingleSuggestion using the new API
             return when (result) {
                 is InlineCompletionService.Result.Success -> {
                     if (result.items.isEmpty()) {
-                        logger.info("No completion items returned")
-                        InlineCompletionSuggestion.empty()
+                        // Return empty suggestion using builder
+                        InlineCompletionSingleSuggestion.build { }
                     } else {
                         val firstItem = result.items[0]
-                        logger.info("Received completion: ${firstItem.insertText.take(50)}...")
-                        
-                        // Create completion elements
-                        val elements = createCompletionElements(firstItem.insertText)
-                        InlineCompletionSuggestion.Default(flowOf(*elements.toTypedArray()))
+                        InlineCompletionSingleSuggestion.build {
+                            emit(InlineCompletionGrayTextElement(firstItem.insertText))
+                        }
                     }
                 }
                 is InlineCompletionService.Result.Error -> {
-                    logger.warn("Completion failed: ${result.errorMessage}")
-                    InlineCompletionSuggestion.empty()
+                    InlineCompletionSingleSuggestion.build { }
                 }
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             // Normal cancellation - user continued typing
-            logger.debug("Inline completion cancelled (user continued typing)")
             throw e // Re-throw to properly propagate cancellation
         } catch (e: java.util.concurrent.CancellationException) {
             // Java cancellation - also normal flow
-            logger.debug("Inline completion cancelled (Java cancellation)")
-            return InlineCompletionSuggestion.empty()
+            return InlineCompletionSingleSuggestion.build { }
         } catch (e: Exception) {
             // Check if this is a wrapped cancellation
             if (e.cause is kotlinx.coroutines.CancellationException ||
                 e.cause is java.util.concurrent.CancellationException) {
-                logger.debug("Inline completion cancelled (wrapped): ${e.message}")
-                return InlineCompletionSuggestion.empty()
+                return InlineCompletionSingleSuggestion.build { }
             }
-            
             // Real error - log appropriately
-            logger.error("Error getting inline completion suggestion", e)
-            return InlineCompletionSuggestion.empty()
+            return InlineCompletionSingleSuggestion.build { }
         }
     }
     
@@ -120,33 +121,14 @@ class KiloCodeInlineCompletionProvider(
     }
     
     /**
-     * Converts a completion item text to InlineCompletionElements for rendering.
-     * Handles both single-line and multi-line completions.
+     * Data class to hold position information calculated in read action
      */
-    private fun createCompletionElements(text: String): List<InlineCompletionElement> {
-        // Split text into lines if it contains newlines
-        val lines = text.split("\n")
-        
-        if (lines.size == 1) {
-            // Single line completion - simple gray text
-            return listOf(InlineCompletionGrayTextElement(text))
-        }
-        
-        // Multi-line completion - create elements for each line
-        val elements = mutableListOf<InlineCompletionElement>()
-        
-        for ((index, line) in lines.withIndex()) {
-            // Add the line content
-            if (line.isNotEmpty()) {
-                elements.add(InlineCompletionGrayTextElement(line))
-            }
-            
-            // Add newline element for all lines except the last
-            if (index < lines.size - 1) {
-                elements.add(InlineCompletionGrayTextElement("\n"))
-            }
-        }
-        
-        return elements
-    }
+    private data class PositionInfo(
+        val offset: Int,
+        val lineNumber: Int,
+        val character: Int,
+        val languageId: String,
+        val document: com.intellij.openapi.editor.Document,
+        val caretOffset: Int
+    )
 }

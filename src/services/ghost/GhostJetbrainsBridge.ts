@@ -1,26 +1,61 @@
 // kilocode_change - new file
 import * as vscode from "vscode"
+import { z } from "zod"
 import { GhostServiceManager } from "./GhostServiceManager"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { languageForFilepath } from "../continuedev/core/autocomplete/constants/AutocompleteLanguageInfo"
-import { getUriFileExtension } from "../continuedev/core/util/uri"
 
 const GET_INLINE_COMPLETIONS_COMMAND = "kilo-code.jetbrains.getInlineCompletions"
 
-class GhostJetbrainsBridge {
+// Zod schemas for validation
+const PositionSchema = z.object({
+	line: z.number().int().nonnegative(),
+	character: z.number().int().nonnegative(),
+})
+
+const InlineCompletionArgsSchema = z.tuple([
+	z.union([z.string(), z.any()]).transform((val) => String(val)), // documentUri - coerce to string
+	z.union([PositionSchema, z.any()]), // position (can be object or any)
+	z.union([z.string(), z.any()]).transform((val) => String(val)), // fileContent - coerce to string
+	z.union([z.string(), z.any()]).transform((val) => String(val)), // languageId - coerce to string
+	z.union([z.string(), z.any()]).transform((val) => String(val)), // requestId - coerce to string
+])
+
+type InlineCompletionArgs = z.infer<typeof InlineCompletionArgsSchema>
+
+interface DocumentParams {
+	uri: string
+	position: { line: number; character: number }
+	content: string
+	languageId: string
+	requestId: string
+}
+
+interface NormalizedContent {
+	normalizedContent: string
+	lines: string[]
+}
+
+interface CompletionResult {
+	requestId: string
+	items: Array<{
+		insertText: string
+		range: {
+			start: { line: number; character: number }
+			end: { line: number; character: number }
+		} | null
+	}>
+	error: string | null
+}
+
+export class GhostJetbrainsBridge {
 	private ghost: GhostServiceManager
 
 	constructor(ghost: GhostServiceManager) {
 		this.ghost = ghost
 	}
 
-	/**
-	 * Determines the VSCode language ID from a languageId string or file URI
-	 * @param langId - The language ID provided by JetBrains (may be empty or generic)
-	 * @param uri - The file URI to extract language from extension
-	 * @returns VSCode-compatible language ID
-	 */
 	private determineLanguage(langId: string, uri: string): string {
 		// If we have a valid language ID that's not generic, use it
 		if (langId && langId !== "text" && langId !== "textmate") {
@@ -64,130 +99,191 @@ class GhostJetbrainsBridge {
 		return languageIdMap[languageName] || languageName
 	}
 
-	public async getInlineCompletions(...args: any[]) {
-		console.log("[JetBrains Inline Completion] ===== START =====")
-		console.log("[JetBrains Inline Completion] Arguments received:", args.length)
-		console.log("[JetBrains Inline Completion] args[0] type:", typeof args[0])
-		console.log("[JetBrains Inline Completion] args[0] is array:", Array.isArray(args[0]))
+	/**
+	 * Parse and validate the RPC arguments using Zod schemas
+	 */
+	private parseAndValidateArgs(...args: any[]): DocumentParams {
+		// RPC passes all arguments as a single array in args[0]
+		const argsArray = Array.isArray(args[0]) ? args[0] : args
 
-		try {
-			// RPC passes all arguments as a single array in args[0]
-			let documentUri: any, position: any, fileContent: any, languageId: any
+		// Parse with Zod schema
+		const parsed = InlineCompletionArgsSchema.parse(argsArray)
+		const [documentUri, position, fileContent, languageId, requestId] = parsed
 
-			if (Array.isArray(args[0])) {
-				// Arguments are in an array
-				;[documentUri, position, fileContent, languageId] = args[0]
-				console.log("[JetBrains Inline Completion] Extracted from array:")
-			} else {
-				// Arguments are separate
-				;[documentUri, position, fileContent, languageId] = args
-				console.log("[JetBrains Inline Completion] Using separate args:")
-			}
+		// Safely extract and normalize parameters
+		const uri = typeof documentUri === "string" ? documentUri : String(documentUri)
+		const pos =
+			typeof position === "object" && position !== null && "line" in position && "character" in position
+				? { line: position.line, character: position.character }
+				: { line: 0, character: 0 }
+		const content = typeof fileContent === "string" ? fileContent : String(fileContent)
+		const langId = typeof languageId === "string" ? languageId : String(languageId || "")
+		const reqId = typeof requestId === "string" ? requestId : String(requestId || "")
 
-			console.log("  documentUri:", documentUri)
-			console.log("  position:", position)
-			console.log("  fileContent length:", fileContent?.length || 0)
-			console.log("  languageId:", languageId)
+		return {
+			uri,
+			position: pos,
+			content,
+			languageId: langId,
+			requestId: reqId,
+		}
+	}
 
-			// Safely extract parameters
-			const uri = typeof documentUri === "string" ? documentUri : String(documentUri)
-			const pos = typeof position === "object" && position !== null ? position : { line: 0, character: 0 }
-			const content = typeof fileContent === "string" ? fileContent : String(fileContent)
-			const langId = typeof languageId === "string" ? languageId : String(languageId || "")
+	/**
+	 * Normalize content line endings to LF for consistent processing
+	 * JetBrains may send content with different line endings
+	 */
+	private normalizeContent(content: string): NormalizedContent {
+		const normalizedContent = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+		const lines = normalizedContent.split("\n")
 
-			console.log("[JetBrains Inline Completion] Final extracted parameters:")
-			console.log("  uri:", uri)
-			console.log("  position:", JSON.stringify(pos))
-			console.log("  content length:", content.length)
-			console.log("  languageId:", langId)
+		return {
+			normalizedContent,
+			lines,
+		}
+	}
 
-			// Determine language from languageId or file extension using the comprehensive language info
-			const language = this.determineLanguage(langId, uri)
+	/**
+	 * Create a mock VSCode TextDocument from the provided parameters
+	 */
+	private createMockDocument(
+		uri: string,
+		normalizedContent: string,
+		lines: string[],
+		language: string,
+	): vscode.TextDocument {
+		const mockDocument = {
+			uri: vscode.Uri.parse(uri),
+			fileName: uri,
+			isUntitled: false, // Set to false to match real file behavior
+			languageId: language,
+			version: 1,
+			isDirty: false,
+			isClosed: false,
+			eol: vscode.EndOfLine.LF,
+			lineCount: lines.length,
+			save: async () => false,
+			getText: (range?: vscode.Range) => {
+				if (!range) return normalizedContent
+				// Extract text within the specified range
+				if (range.start.line === range.end.line) {
+					// Single line range
+					return lines[range.start.line]?.substring(range.start.character, range.end.character) || ""
+				}
+				// Multi-line range
+				const startLine = Math.max(0, range.start.line)
+				const endLine = Math.min(lines.length - 1, range.end.line)
+				if (startLine > endLine) return ""
 
-			console.log("[JetBrains Inline Completion] Final language:", language)
-
-			// Create a mock TextDocument that Ghost service can use
-			// This avoids triggering tryOpenDocument
-			console.log("[JetBrains Inline Completion] Creating mock document...")
-
-			const mockDocument = {
-				uri: vscode.Uri.parse(uri),
-				fileName: uri,
-				isUntitled: true,
-				languageId: language,
-				version: 1,
-				isDirty: false,
-				isClosed: false,
-				eol: vscode.EndOfLine.LF,
-				lineCount: content.split("\n").length,
-				save: async () => false,
-				getText: (range?: vscode.Range) => {
-					if (!range) return content
-					// Simple range extraction
-					const lines = content.split("\n")
-					if (range.start.line === range.end.line) {
-						return lines[range.start.line]?.substring(range.start.character, range.end.character) || ""
+				const rangeLines: string[] = []
+				for (let i = startLine; i <= endLine; i++) {
+					let lineText = lines[i] || ""
+					if (i === startLine && i === endLine) {
+						// Single line, extract substring
+						lineText = lineText.substring(range.start.character, range.end.character)
+					} else if (i === startLine) {
+						// First line, extract from start character to end
+						lineText = lineText.substring(range.start.character)
+					} else if (i === endLine) {
+						// Last line, extract from beginning to end character
+						lineText = lineText.substring(0, range.end.character)
 					}
-					return content // Simplified for now
-				},
-				getWordRangeAtPosition: () => undefined,
-				validateRange: (range: vscode.Range) => range,
-				validatePosition: (position: vscode.Position) => position,
-				lineAt: (line: number | vscode.Position) => {
-					const lineNum = typeof line === "number" ? line : line.line
-					const lines = content.split("\n")
-					const text = lines[lineNum] || ""
-					return {
-						lineNumber: lineNum,
-						text,
-						range: new vscode.Range(lineNum, 0, lineNum, text.length),
-						rangeIncludingLineBreak: new vscode.Range(lineNum, 0, lineNum + 1, 0),
-						firstNonWhitespaceCharacterIndex: text.search(/\S/),
-						isEmptyOrWhitespace: text.trim().length === 0,
+					rangeLines.push(lineText)
+				}
+				return rangeLines.join("\n")
+			},
+			getWordRangeAtPosition: () => undefined,
+			validateRange: (range: vscode.Range) => range,
+			validatePosition: (position: vscode.Position) => position,
+			lineAt: (line: number | vscode.Position) => {
+				const lineNum = typeof line === "number" ? line : line.line
+				const text = lines[lineNum] || ""
+				return {
+					lineNumber: lineNum,
+					text,
+					range: new vscode.Range(lineNum, 0, lineNum, text.length),
+					rangeIncludingLineBreak: new vscode.Range(lineNum, 0, lineNum + 1, 0),
+					firstNonWhitespaceCharacterIndex: text.search(/\S/),
+					isEmptyOrWhitespace: text.trim().length === 0,
+				}
+			},
+			offsetAt: (position: vscode.Position) => {
+				let offset = 0
+				for (let i = 0; i < position.line && i < lines.length; i++) {
+					offset += lines[i].length + 1 // +1 for newline character
+				}
+				offset += Math.min(position.character, lines[position.line]?.length || 0)
+				return offset
+			},
+			positionAt: (offset: number) => {
+				let currentOffset = 0
+				for (let i = 0; i < lines.length; i++) {
+					const lineLength = lines[i].length
+					// Check if offset is within this line
+					if (currentOffset + lineLength >= offset) {
+						return new vscode.Position(i, offset - currentOffset)
 					}
-				},
-				offsetAt: (position: vscode.Position) => {
-					const lines = content.split("\n")
-					let offset = 0
-					for (let i = 0; i < position.line && i < lines.length; i++) {
-						offset += lines[i].length + 1 // +1 for newline
-					}
-					offset += position.character
-					return offset
-				},
-				positionAt: (offset: number) => {
-					const lines = content.split("\n")
-					let currentOffset = 0
-					for (let i = 0; i < lines.length; i++) {
-						const lineLength = lines[i].length + 1
-						if (currentOffset + lineLength > offset) {
-							return new vscode.Position(i, offset - currentOffset)
+					// Move to next line (account for newline character)
+					currentOffset += lineLength + 1
+				}
+				// If offset is beyond document, return end position
+				return new vscode.Position(lines.length - 1, lines[lines.length - 1]?.length || 0)
+			},
+		} as any as vscode.TextDocument
+
+		return mockDocument
+	}
+
+	/**
+	 * Serialize completion results to a format suitable for RPC response
+	 */
+	private serializeCompletionResult(
+		completions: vscode.InlineCompletionItem[] | vscode.InlineCompletionList | undefined,
+		requestId: string,
+	): CompletionResult {
+		const items = Array.isArray(completions) ? completions : completions?.items || []
+
+		return {
+			requestId,
+			items: items.map((item) => ({
+				insertText: typeof item.insertText === "string" ? item.insertText : item.insertText.value,
+				range: item.range
+					? {
+							start: {
+								line: item.range.start.line,
+								character: item.range.start.character,
+							},
+							end: { line: item.range.end.line, character: item.range.end.character },
 						}
-						currentOffset += lineLength
-					}
-					return new vscode.Position(lines.length - 1, lines[lines.length - 1]?.length || 0)
-				},
-			} as any as vscode.TextDocument
+					: null,
+			})),
+			error: null,
+		}
+	}
 
-			console.log("[JetBrains Inline Completion] Mock document created")
+	public async getInlineCompletions(...args: any[]): Promise<CompletionResult> {
+		try {
+			// Parse and validate arguments
+			const params = this.parseAndValidateArgs(...args)
 
-			const vscodePosition = new vscode.Position(pos.line, pos.character)
-			console.log("[JetBrains Inline Completion] VSCode position:", vscodePosition.line, vscodePosition.character)
+			// Normalize content
+			const { normalizedContent, lines } = this.normalizeContent(params.content)
 
+			// Determine language from languageId or file extension
+			const language = this.determineLanguage(params.languageId, params.uri)
+
+			// Create mock document
+			const mockDocument = this.createMockDocument(params.uri, normalizedContent, lines, language)
+
+			// Create VSCode position and context
+			const vscodePosition = new vscode.Position(params.position.line, params.position.character)
 			const context: vscode.InlineCompletionContext = {
 				triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
 				selectedCompletionInfo: undefined,
 			}
-
 			const tokenSource = new vscode.CancellationTokenSource()
 
-			console.log("[JetBrains Inline Completion] Calling Ghost service...")
-
-			// Clear suggestions history before each JetBrains request
-			// JetBrains sends full file content each time, so cache matching doesn't work correctly
-			// Each request is independent, unlike VSCode where the document persists
-			this.ghost.inlineCompletionProvider.suggestionsHistory = []
-
+			// Get completions from the provider
 			const completions = await this.ghost.inlineCompletionProvider.provideInlineCompletionItems_Internal(
 				mockDocument,
 				vscodePosition,
@@ -197,45 +293,11 @@ class GhostJetbrainsBridge {
 
 			tokenSource.dispose()
 
-			console.log("[JetBrains Inline Completion] Ghost service returned:", completions)
-			console.log("[JetBrains Inline Completion] Completions type:", typeof completions)
-			console.log("[JetBrains Inline Completion] Is array:", Array.isArray(completions))
-
-			// Convert to serializable format
-			const items = Array.isArray(completions) ? completions : completions?.items || []
-			console.log("[JetBrains Inline Completion] Items count:", items.length)
-
-			if (items.length > 0) {
-				console.log("[JetBrains Inline Completion] First item:", items[0])
-			}
-
-			const result = {
-				items: items.map((item) => ({
-					insertText: typeof item.insertText === "string" ? item.insertText : item.insertText.value,
-					range: item.range
-						? {
-								start: {
-									line: item.range.start.line,
-									character: item.range.start.character,
-								},
-								end: { line: item.range.end.line, character: item.range.end.character },
-							}
-						: null,
-				})),
-				error: null,
-			}
-
-			console.log("[JetBrains Inline Completion] Returning result:", JSON.stringify(result))
-			console.log("[JetBrains Inline Completion] ===== END =====")
-			return result
+			// Serialize and return the result
+			return this.serializeCompletionResult(completions, params.requestId)
 		} catch (error) {
-			console.error("[JetBrains Inline Completion] Error:", error)
-			console.error(
-				"[JetBrains Inline Completion] Error stack:",
-				error instanceof Error ? error.stack : "No stack",
-			)
-			console.log("[JetBrains Inline Completion] ===== END (ERROR) =====")
 			return {
+				requestId: "",
 				items: [],
 				error: error instanceof Error ? error.message : String(error),
 			}
@@ -245,12 +307,11 @@ class GhostJetbrainsBridge {
 
 export const registerGhostJetbrainsBridge = (
 	context: vscode.ExtensionContext,
-	cline: ClineProvider,
+	_cline: ClineProvider,
 	ghost: GhostServiceManager,
 ) => {
 	// Check if we are running inside JetBrains IDE
 	const { kiloCodeWrapped, kiloCodeWrapperJetbrains } = getKiloCodeWrapperProperties()
-	console.log()
 	if (!kiloCodeWrapped || !kiloCodeWrapperJetbrains) {
 		return
 	}

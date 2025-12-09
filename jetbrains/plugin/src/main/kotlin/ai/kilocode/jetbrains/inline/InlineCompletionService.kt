@@ -11,6 +11,8 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.withTimeout
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Service responsible for getting inline completions via RPC communication
@@ -19,6 +21,12 @@ import kotlinx.coroutines.withTimeout
  */
 class InlineCompletionService {
     private val logger: Logger = Logger.getInstance(InlineCompletionService::class.java)
+    
+    /**
+     * Tracks the current request ID to validate responses.
+     * Only completions matching the current request ID will be shown.
+     */
+    private val currentRequestId = AtomicReference<String?>(null)
 
     /**
      * Result wrapper for inline completion operations.
@@ -77,11 +85,14 @@ class InlineCompletionService {
                 return Result.Error(I18n.t("kilocode:inlineCompletion.errors.connectionFailed"))
             }
 
-            val rpcResult = executeRPCCommand(proxy, document, line, character, languageId)
-            processCommandResult(rpcResult)
+            // Generate unique request ID and mark it as current
+            val requestId = UUID.randomUUID().toString()
+            currentRequestId.set(requestId)
+            val rpcResult = executeRPCCommand(proxy, document, line, character, languageId, requestId)
+            processCommandResult(rpcResult, requestId)
         } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            logger.warn("Inline completion timed out after ${InlineCompletionConstants.RPC_TIMEOUT_MS}ms", e)
-            Result.Error(I18n.t("kilocode:inlineCompletion.errors.timeout"))
+            logger.debug("Inline completion timed out after ${InlineCompletionConstants.RPC_TIMEOUT_MS}ms - returning empty result")
+            Result.Success(emptyList())
         } catch (e: kotlinx.coroutines.CancellationException) {
             // Normal cancellation - user continued typing or request was superseded
             // This is expected behavior, not an error
@@ -99,11 +110,9 @@ class InlineCompletionService {
                 logger.debug("Inline completion cancelled (wrapped exception): ${e.message}")
                 return Result.Success(emptyList())
             }
-            
-            // Real error - log as error
-            logger.error("Inline completion failed", e)
-            Result.Error(I18n.t("kilocode:inlineCompletion.errors.generationFailed",
-                mapOf("errorMessage" to (e.message ?: I18n.t("kilocode:inlineCompletion.errors.unknown")))))
+            // Real error - log as warning and return empty result silently
+            logger.warn("Inline completion failed: ${e.message}", e)
+            Result.Success(emptyList())
         }
     }
 
@@ -125,23 +134,17 @@ class InlineCompletionService {
         document: Document,
         line: Int,
         character: Int,
-        languageId: String
+        languageId: String,
+        requestId: String
     ): Any? {
         // Get full file content
         val fileContent = document.text
-        
-        logger.info("===== INLINE COMPLETION RPC CALL START =====")
-        logger.info("Document text length: ${fileContent.length}")
-        logger.info("Position: line=$line, character=$character")
-        logger.info("Language ID: $languageId")
         
         // Get the actual file path from the document
         val virtualFile = FileDocumentManager.getInstance().getFile(document)
         val documentUri = virtualFile?.path?.let { "file://$it" } ?: "file://jetbrains-document"
         
-        logger.info("Document URI: $documentUri")
-        
-        // Prepare arguments for RPC call
+        // Prepare arguments for RPC call including request ID
         val args = listOf(
             documentUri,
             mapOf(
@@ -149,31 +152,19 @@ class InlineCompletionService {
                 "character" to character
             ),
             fileContent,
-            languageId
+            languageId,
+            requestId
         )
-
-        logger.info("RPC Arguments prepared:")
-        logger.info("  arg[0] (documentUri): $documentUri (${documentUri::class.simpleName})")
-        logger.info("  arg[1] (position): ${args[1]} (${args[1]::class.simpleName})")
-        logger.info("  arg[2] (fileContent): <${fileContent.length} chars> (${fileContent::class.simpleName})")
-        logger.info("  arg[3] (languageId): $languageId (${languageId::class.simpleName})")
-
-        logger.info("Calling RPC command: ${InlineCompletionConstants.EXTERNAL_COMMAND_ID}")
 
         val promise: LazyPromise = proxy.executeContributedCommand(
             InlineCompletionConstants.EXTERNAL_COMMAND_ID,
             args,
         )
 
-        logger.info("RPC command executed, waiting for result...")
-
         // Wait for the result with timeout
         val result = withTimeout(InlineCompletionConstants.RPC_TIMEOUT_MS) {
             promise.await()
         }
-        
-        logger.info("RPC result received: ${result?.javaClass?.simpleName}")
-        logger.info("===== INLINE COMPLETION RPC CALL END =====")
         
         return result
     }
@@ -182,53 +173,45 @@ class InlineCompletionService {
      * Processes the result from the RPC command and returns appropriate Result.
      * Parses the response map and extracts completion items.
      */
-    private fun processCommandResult(result: Any?): Result {
-        logger.info("===== PROCESSING RPC RESULT =====")
-        logger.info("Result type: ${result?.javaClass?.simpleName}")
-        logger.info("Result value: $result")
-        
+    private fun processCommandResult(result: Any?, requestId: String): Result {
         // Handle invalid result format
         if (result !is Map<*, *>) {
             logger.warn("Received unexpected response format: ${result?.javaClass?.simpleName}, result: $result")
-            return Result.Error(I18n.t("kilocode:inlineCompletion.errors.invalidResponse"))
+            return Result.Success(emptyList())
         }
 
-        logger.info("Result is a Map, keys: ${result.keys}")
-        
-        // Extract response data
+        // Extract response data including request ID
+        val responseRequestId = result["requestId"] as? String
         val items = result["items"] as? List<*>
         val error = result["error"] as? String
 
-        logger.info("Extracted items: ${items?.size ?: 0} items")
-        logger.info("Extracted error: $error")
-
+        // Validate request ID - only process if it matches the current request
+        val current = currentRequestId.get()
+        if (responseRequestId != current) {
+            logger.info("Discarding stale completion: response requestId=$responseRequestId, current=$current")
+            return Result.Success(emptyList())
+        }
+        
         // Handle error response
         if (error != null) {
             logger.warn("Inline completion failed with error: $error")
-            return Result.Error(I18n.t("kilocode:inlineCompletion.generationFailed",
-                mapOf("errorMessage" to error)))
+            return Result.Success(emptyList())
         }
 
         // Handle missing items
         if (items == null) {
             logger.warn("Received response without items or error field")
-            return Result.Error(I18n.t("kilocode:inlineCompletion.errors.missingItems"))
+            return Result.Success(emptyList())
         }
-
-        logger.info("Processing ${items.size} completion items...")
 
         // Parse completion items
         val completionItems = items.mapNotNull { item ->
-            logger.info("Processing item: ${item?.javaClass?.simpleName}")
             if (item is Map<*, *>) {
                 val insertText = item["insertText"] as? String
-                logger.info("  insertText: ${insertText?.take(50)}")
-                
                 if (insertText == null) {
                     logger.warn("  Item missing insertText, skipping")
                     return@mapNotNull null
                 }
-                
                 val rangeMap = item["range"] as? Map<*, *>
                 val range = rangeMap?.let {
                     val start = it["start"] as? Map<*, *>
@@ -254,8 +237,6 @@ class InlineCompletionService {
         }
 
         // Success case
-        logger.info("Successfully received ${completionItems.size} inline completions")
-        logger.info("===== PROCESSING COMPLETE =====")
         return Result.Success(completionItems)
     }
 

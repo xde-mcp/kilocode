@@ -18,18 +18,48 @@ export class FimPromptBuilder {
 	 * Build complete FIM prompt with all necessary data
 	 */
 	async getFimPrompts(autocompleteInput: AutocompleteInput, modelName: string): Promise<FimGhostPrompt> {
-		const { filepathUri, helper, snippetsWithUris, workspaceDirs } = await getProcessedSnippets(
-			autocompleteInput,
-			autocompleteInput.filepath,
-			this.contextProvider.contextService,
-			this.contextProvider.model,
-			this.contextProvider.ide,
-			this.contextProvider.ignoreController,
-		)
+		// Check if this is a request with manually passed content
+		// JetBrains sends the full file content and we extract prefix/suffix in extractPrefixSuffix
+		// Using HelperVars would re-read from a cached/stale document, causing incorrect context
+		const hasManualContent = autocompleteInput.manuallyPassPrefix !== undefined
 
-		// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
-		const prunedPrefixRaw = helper.prunedPrefix
-		const prunedSuffix = helper.prunedSuffix
+		let prunedPrefixRaw: string
+		let prunedSuffix: string
+		let filepathUri: string
+		let snippetsWithUris: any[] = []
+		let workspaceDirs: string[] = []
+
+		if (hasManualContent && autocompleteInput.manuallyPassPrefix) {
+			prunedPrefixRaw = autocompleteInput.manuallyPassPrefix
+			if (autocompleteInput.manuallyPassFileContents) {
+				const fullContent = autocompleteInput.manuallyPassFileContents
+				const prefixLength = prunedPrefixRaw.length
+				prunedSuffix = fullContent.substring(prefixLength)
+			} else {
+				prunedSuffix = ""
+			}
+			filepathUri = autocompleteInput.filepath.startsWith("file://")
+				? autocompleteInput.filepath
+				: `file://${autocompleteInput.filepath}`
+		} else {
+			// For VSCode: Use the normal flow with HelperVars and snippet processing
+			const processed = await getProcessedSnippets(
+				autocompleteInput,
+				autocompleteInput.filepath,
+				this.contextProvider.contextService,
+				this.contextProvider.model,
+				this.contextProvider.ide,
+				this.contextProvider.ignoreController,
+			)
+
+			filepathUri = processed.filepathUri
+			snippetsWithUris = processed.snippetsWithUris
+			workspaceDirs = processed.workspaceDirs
+
+			// Use pruned prefix/suffix from HelperVars (token-limited based on DEFAULT_AUTOCOMPLETE_OPTS)
+			prunedPrefixRaw = processed.helper.prunedPrefix
+			prunedSuffix = processed.helper.prunedSuffix
+		}
 
 		const template = getTemplateForModel(modelName)
 
