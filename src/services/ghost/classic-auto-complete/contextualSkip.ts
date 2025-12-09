@@ -172,16 +172,6 @@ function isAtEndOfStatement(prefix: string, suffix: string, languageId?: string)
 		return true
 	}
 
-	// Check multi-character terminators (like "end", "fi", "done")
-	for (const terminator of terminators) {
-		if (terminator.length > 1 && trimmedLinePrefix.endsWith(terminator)) {
-			const beforeTerminator = trimmedLinePrefix.slice(0, -terminator.length)
-			if (beforeTerminator.length === 0) {
-				return true
-			}
-		}
-	}
-
 	return false
 }
 
