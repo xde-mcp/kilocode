@@ -34,7 +34,7 @@ import {
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
-import { kilo_handleExtensionMessage } from "../../../../src/shared/kilocode/cli-sessions/utils/handleExtensionMessage.js"
+import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Message buffer to handle race conditions during initialization
@@ -176,7 +176,22 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			return
 		}
 
-		kilo_handleExtensionMessage(message as never)
+		// NOTE: Copied from ClineProvider - make sure the two match.
+		if (message.type === "apiMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
+		} else if (message.type === "taskMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
+		} else if (message.type === "taskMetadataSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
+		} else if (message.type === "currentCheckpointUpdated") {
+			SessionManager.init().doSync()
+		}
 
 		// Handle different message types
 		switch (message.type) {
