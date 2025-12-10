@@ -1147,23 +1147,23 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		await kilo_execIfExtension(() => {
-			if (message.type === "apiMessagesSaved" && message.payload) {
-				const [taskId, filePath] = message.payload as [string, string]
+		// kilocode_change start
+		if (message.type === "apiMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
-			} else if (message.type === "taskMessagesSaved" && message.payload) {
-				const [taskId, filePath] = message.payload as [string, string]
+			SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
+		} else if (message.type === "taskMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
-			} else if (message.type === "taskMetadataSaved" && message.payload) {
-				const [taskId, filePath] = message.payload as [string, string]
+			SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
+		} else if (message.type === "taskMetadataSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
-			} else if (message.type === "currentCheckpointUpdated") {
-				SessionManager.init().doSync()
-			}
-		})
+			SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
+		} else if (message.type === "currentCheckpointUpdated") {
+			SessionManager.init().doSync()
+		}
+		// kilocode_change end
 
 		await this.view?.webview.postMessage(message)
 	}
