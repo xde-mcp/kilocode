@@ -64,14 +64,10 @@ const LANGUAGE_CONFIGS: LanguageFamilyConfig[] = [
 	},
 ]
 
-/**
- * Default terminators used when language is unknown.
- */
 const DEFAULT_TERMINATORS = [";", "}", ")"]
 
 /**
- * Maps VS Code language IDs to their statement terminators.
- * Built from LANGUAGE_CONFIGS for efficient lookup.
+ * Maps VS Code language IDs to their statement terminators, precomputed for quick lookup.
  */
 const LANGUAGE_TERMINATORS: Record<string, string[]> = LANGUAGE_CONFIGS.reduce(
 	(map, config) => {
