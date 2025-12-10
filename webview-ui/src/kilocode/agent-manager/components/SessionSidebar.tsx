@@ -165,7 +165,7 @@ function SessionItem({
 			className={`am-session-item ${isSelected ? "am-selected" : ""}`}
 			onClick={onSelect}
 			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}>
+			onMouseLeave={() => !showShareConfirm && setIsHovered(false)}>
 			{session.status === "creating" && (
 				<div className="am-status-icon creating" title={t("status.creating")}>
 					<Loader2 size={14} className="am-spinning" />
@@ -206,8 +206,8 @@ function SessionItem({
 				<button
 					className="w-5 h-5 border-none bg-transparent rounded-[3px] cursor-pointer flex items-center justify-center -mt-0.5 hover:bg-vscode-toolbar-hoverBackground"
 					onClick={handleShareClick}
-					title="Share session"
-					aria-label="Share session">
+					title={t("sidebar.shareSession")}
+					aria-label={t("sidebar.shareSession")}>
 					<Share2 size={14} />
 				</button>
 			)}
@@ -215,17 +215,17 @@ function SessionItem({
 				<div
 					className="absolute top-full left-2 right-2 mt-1 p-3 bg-vscode-dropdown-background border border-vscode-dropdown-border rounded z-[100] shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
 					onClick={(e) => e.stopPropagation()}>
-					<div className="text-sm mb-2">Would you like to publicly share a snapshot of this session?</div>
+					<div className="text-sm mb-2">{t("sidebar.shareConfirmMessage")}</div>
 					<div className="flex gap-2">
 						<button
 							className="px-3 py-1 rounded-sm text-xs cursor-pointer border border-transparent transition-colors duration-150 bg-vscode-button-background text-vscode-button-foreground hover:bg-vscode-button-hoverBackground"
 							onClick={handleShareConfirm}>
-							Yes
+							{t("sidebar.shareConfirmYes")}
 						</button>
 						<button
 							className="px-3 py-1 rounded-sm text-xs cursor-pointer border border-transparent transition-colors duration-150 bg-vscode-button-secondaryBackground text-vscode-button-secondaryForeground hover:bg-vscode-button-secondaryHoverBackground"
 							onClick={handleShareCancel}>
-							No
+							{t("sidebar.shareConfirmNo")}
 						</button>
 					</div>
 				</div>

@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "本地",
 		"mainWorkspace": "主工作区",
-		"readyToMerge": "准备合并"
+		"readyToMerge": "准备合并",
+		"shareSession": "分享会话",
+		"shareConfirmMessage": "是否要公开分享此会话的快照？",
+		"shareConfirmYes": "是",
+		"shareConfirmNo": "否"
 	},
 	"sessionDetail": {
 		"startNewAgent": "启动新代理",

@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "Locale",
 		"mainWorkspace": "Area di lavoro principale",
-		"readyToMerge": "Pronto per l'unione"
+		"readyToMerge": "Pronto per l'unione",
+		"shareSession": "Condividi sessione",
+		"shareConfirmMessage": "Vuoi condividere pubblicamente uno snapshot di questa sessione?",
+		"shareConfirmYes": "Sì",
+		"shareConfirmNo": "No"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Avvia un nuovo agente",
