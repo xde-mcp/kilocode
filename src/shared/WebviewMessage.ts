@@ -269,6 +269,7 @@ export interface WebviewMessage {
 		| "shareTaskSession" // kilocode_change
 		| "sessionFork" // kilocode_change
 		| "sessionShow" // kilocode_change
+		| "sessionSelect" // kilocode_change
 		| "singleCompletion" // kilocode_change
 		| "startDeviceAuth" // kilocode_change: Start device auth flow
 		| "cancelDeviceAuth" // kilocode_change: Cancel device auth flow
@@ -277,6 +278,7 @@ export interface WebviewMessage {
 	text?: string
 	completionRequestId?: string // kilocode_change
 	shareId?: string // kilocode_change - for sessionFork
+	sessionId?: string // kilocode_change - for sessionSelect
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud" | "auth" // kilocode_change
 	disabled?: boolean

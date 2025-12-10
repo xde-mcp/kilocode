@@ -109,6 +109,17 @@ function handleSessionCommand(trimmedInput: string, setInputValue: (value: strin
 		}
 
 		return true
+	} else if (trimmedInput.startsWith("/session select ")) {
+		const sessionId = trimmedInput.substring("/session select ".length).trim()
+
+		vscode.postMessage({
+			type: "sessionSelect",
+			sessionId: sessionId,
+		})
+
+		setInputValue("")
+
+		return true
 	}
 
 	return false
