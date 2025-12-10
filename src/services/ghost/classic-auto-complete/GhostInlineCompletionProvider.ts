@@ -5,15 +5,12 @@ import {
 	contextToAutocompleteInput,
 	GhostContextProvider,
 	FillInAtCursorSuggestion,
-	FimGhostPrompt,
-	HoleFillerGhostPrompt,
 	GhostPrompt,
 	MatchingSuggestionResult,
 	CostTrackingCallback,
 	LLMRetrievalResult,
 	PendingRequest,
 	AutocompleteContext,
-	CacheMatchType,
 } from "../types"
 import { HoleFiller } from "./HoleFiller"
 import { FimPromptBuilder } from "./FillInTheMiddle"
@@ -26,9 +23,16 @@ import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
-import * as telemetry from "./AutocompleteTelemetry"
+import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
+
+/**
+ * Minimum debounce delay in milliseconds.
+ * The adaptive debounce delay will never go below this value, even when
+ * average latencies are very fast.
+ */
+const MIN_DEBOUNCE_DELAY_MS = 150
 
 /**
  * Initial debounce delay in milliseconds.
@@ -37,6 +41,13 @@ const MAX_SUGGESTIONS_HISTORY = 20
  * is dynamically adjusted to the average of recent request latencies.
  */
 const INITIAL_DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Maximum debounce delay in milliseconds.
+ * This caps the adaptive debounce delay to prevent excessive waiting times
+ * even when latencies are high.
+ */
+const MAX_DEBOUNCE_DELAY_MS = 1000
 
 /**
  * Number of latency samples to collect before using adaptive debounce delay.
@@ -87,7 +98,12 @@ export function findMatchingSuggestion(
 
 		// Check for backward deletion: user deleted characters from the end of the prefix
 		// The stored prefix should start with the current prefix (current is shorter)
-		if (fillInAtCursor.prefix.startsWith(prefix) && suffix === fillInAtCursor.suffix) {
+		// Only use this logic if the original suggestion is non-empty
+		if (
+			fillInAtCursor.text !== "" &&
+			fillInAtCursor.prefix.startsWith(prefix) &&
+			suffix === fillInAtCursor.suffix
+		) {
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
@@ -121,8 +137,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
-	private holeFiller: HoleFiller
-	private fimPromptBuilder: FimPromptBuilder
+	public holeFiller: HoleFiller // publicly exposed for Jetbrains autocomplete code
+	public fimPromptBuilder: FimPromptBuilder // publicly exposed for Jetbrains autocomplete code
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -134,6 +150,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private acceptedCommand: vscode.Disposable | null = null
 	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
 	private latencyHistory: number[] = []
+	private telemetry: AutocompleteTelemetry | null
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -141,7 +158,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
 		cline: ClineProvider,
+		telemetry: AutocompleteTelemetry | null = null,
 	) {
+		this.telemetry = telemetry
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
@@ -168,7 +187,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
-			telemetry.captureAcceptSuggestion(),
+			this.telemetry?.captureAcceptSuggestion(),
 		)
 	}
 
@@ -229,7 +248,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		telemetryContext: AutocompleteContext,
 	): FillInAtCursorSuggestion {
 		if (!suggestionText) {
-			telemetry.captureSuggestionFiltered("empty_response", telemetryContext)
+			this.telemetry?.captureSuggestionFiltered("empty_response", telemetryContext)
 			return { text: "", prefix, suffix }
 		}
 
@@ -244,7 +263,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return { text: processedText, prefix, suffix }
 		}
 
-		telemetry.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
+		this.telemetry?.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
 		return { text: "", prefix, suffix }
 	}
 
@@ -260,7 +279,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 * Records a latency measurement and updates the adaptive debounce delay.
 	 * Maintains a rolling window of the last LATENCY_SAMPLE_SIZE latencies.
 	 * Once enough samples are collected, the debounce delay is set to the
-	 * average of all stored latencies.
+	 * average of all stored latencies, clamped between MIN_DEBOUNCE_DELAY_MS
+	 * and MAX_DEBOUNCE_DELAY_MS.
 	 *
 	 * @param latencyMs - The latency of the most recent request in milliseconds
 	 */
@@ -274,7 +294,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			// Once we have enough samples, update the debounce delay to the average
 			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
-			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
+			const averageLatency = Math.round(sum / this.latencyHistory.length)
+
+			// Clamp the debounce delay between MIN and MAX
+			this.debounceDelayMs = Math.max(MIN_DEBOUNCE_DELAY_MS, Math.min(averageLatency, MAX_DEBOUNCE_DELAY_MS))
 		}
 	}
 
@@ -321,7 +344,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			provider: this.model?.getProviderDisplayName(),
 		}
 
-		telemetry.captureSuggestionRequested(telemetryContext)
+		this.telemetry?.captureSuggestionRequested(telemetryContext)
 
 		if (!this.model || !this.model.hasValidCredentials()) {
 			// bail if no model is available or no valid API credentials configured
@@ -365,7 +388,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 			if (matchingResult !== null) {
-				telemetry.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
@@ -378,7 +401,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 			if (cachedResult) {
-				telemetry.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
+				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
@@ -510,7 +533,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const latencyMs = performance.now() - startTime
 
-			telemetry.captureLlmRequestCompleted(
+			this.telemetry?.captureLlmRequestCompleted(
 				{
 					latencyMs,
 					cost: result.cost,
@@ -529,7 +552,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
 			const latencyMs = performance.now() - startTime
-			telemetry.captureLlmRequestFailed(
+			this.telemetry?.captureLlmRequestFailed(
 				{
 					latencyMs,
 					error: error instanceof Error ? error.message : String(error),
