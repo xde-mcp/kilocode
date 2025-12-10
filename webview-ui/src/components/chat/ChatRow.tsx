@@ -76,6 +76,7 @@ import { InvalidModelWarning } from "../kilocode/chat/InvalidModelWarning"
 import { formatFileSize } from "@/lib/formatting-utils"
 import ChatTimestamps from "./ChatTimestamps"
 import { removeLeadingNonAlphanumeric } from "@/utils/removeLeadingNonAlphanumeric"
+import { KILOCODE_TOKEN_REQUIRED_ERROR } from "@roo/kilocode/errorUtils"
 // kilocode_change end
 
 // Helper function to get previous todos before a specific message
@@ -1363,7 +1364,8 @@ export const ChatRowContent = ({
 				case "error":
 					// kilocode_change start: Show login button for KiloCode auth errors
 					const isKiloCodeAuthError =
-						apiConfiguration?.apiProvider === "kilocode" && message.text?.includes("KiloCode token")
+						apiConfiguration?.apiProvider === "kilocode" &&
+						message.text?.includes(KILOCODE_TOKEN_REQUIRED_ERROR)
 					return (
 						<ErrorRow
 							type="error"
