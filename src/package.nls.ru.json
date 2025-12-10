@@ -8,6 +8,7 @@
 	"command.newTask.title": "Новая задача",
 	"command.history.title": "История задач",
 	"command.marketplace.title": "Маркетплейс",
+	"command.mcpServers.title": "MCP серверы",
 	"command.openInEditor.title": "Открыть в редакторе",
 	"command.cloud.title": "Cloud",
 	"command.settings.title": "Настройки",
