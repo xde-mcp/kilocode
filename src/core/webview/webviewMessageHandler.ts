@@ -4036,7 +4036,7 @@ export const webviewMessageHandler = async (
 
 				const sessionId = message.sessionId || sessionService.sessionId
 
-				if (!sessionService.sessionId) {
+				if (!sessionId) {
 					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
 					break
 				}
