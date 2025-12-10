@@ -1361,7 +1361,28 @@ export const ChatRowContent = ({
 						</div>
 					)
 				case "error":
-					return <ErrorRow type="error" message={message.text || ""} />
+					// kilocode_change start: Show login button for KiloCode auth errors
+					const isKiloCodeAuthError =
+						apiConfiguration?.apiProvider === "kilocode" && message.text?.includes("KiloCode token")
+					return (
+						<ErrorRow
+							type="error"
+							message={message.text || ""}
+							showLoginButton={isKiloCodeAuthError}
+							onLoginClick={
+								isKiloCodeAuthError
+									? () => {
+											vscode.postMessage({
+												type: "switchTab",
+												tab: "auth",
+												values: { returnTo: "chat" },
+											})
+										}
+									: undefined
+							}
+						/>
+					)
+				// kilocode_change end
 				case "completion_result":
 					const commitRange = message.metadata?.kiloCode?.commitRange
 					return (
