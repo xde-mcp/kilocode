@@ -2,11 +2,10 @@
  * Contextual skip logic for autocomplete.
  *
  * This module provides smart skip logic to determine when autocomplete
+ * should be skipped based on the current context.
  */
 
 interface LanguageFamilyConfig {
-	/** Name of the language family */
-	family: string
 	/** VS Code language IDs that belong to this family */
 	languages: string[]
 	/** Statement terminators for this language family */
@@ -15,7 +14,6 @@ interface LanguageFamilyConfig {
 
 const LANGUAGE_CONFIGS: LanguageFamilyConfig[] = [
 	{
-		family: "c-like",
 		languages: [
 			"javascript",
 			"javascriptreact",
@@ -35,76 +33,61 @@ const LANGUAGE_CONFIGS: LanguageFamilyConfig[] = [
 			"less",
 			"json",
 			"jsonc",
+			"go",
+			"rust",
 		],
 		terminators: [";", "}", ")"],
 	},
 	{
-		family: "python",
 		languages: ["python"],
 		terminators: [")", "]", "}"],
 	},
 	{
-		family: "ruby",
 		languages: ["ruby"],
 		terminators: [")", "]", "}", "end"],
 	},
 	{
-		family: "go",
-		languages: ["go"],
-		terminators: [";", "}", ")"],
-	},
-	{
-		family: "rust",
-		languages: ["rust"],
-		terminators: [";", "}", ")"],
-	},
-	{
-		family: "shell",
 		languages: ["shellscript", "bash", "zsh", "sh"],
 		terminators: [";", "fi", "done", "esac"],
 	},
 	{
-		family: "sql",
 		languages: ["sql", "mysql", "postgresql", "plsql"],
 		terminators: [";"],
 	},
 	{
-		family: "lisp",
 		languages: ["lisp", "clojure", "scheme", "elisp", "racket"],
 		terminators: [],
 	},
 	{
-		family: "markup",
 		languages: ["html", "xml", "svg", "vue", "svelte"],
 		terminators: [],
 	},
 ]
 
 /**
- * Maps VS Code language IDs to language families.
- * Computed from LANGUAGE_CONFIGS for efficient lookup.
+ * Default terminators used when language is unknown.
  */
-const LANGUAGE_FAMILY_MAP: Record<string, string> = LANGUAGE_CONFIGS.reduce(
+const DEFAULT_TERMINATORS = [";", "}", ")"]
+
+/**
+ * Maps VS Code language IDs to their statement terminators.
+ * Built from LANGUAGE_CONFIGS for efficient lookup.
+ */
+const LANGUAGE_TERMINATORS: Record<string, string[]> = LANGUAGE_CONFIGS.reduce(
 	(map, config) => {
 		for (const lang of config.languages) {
-			map[lang] = config.family
+			map[lang] = config.terminators
 		}
 		return map
 	},
-	{} as Record<string, string>,
+	{} as Record<string, string[]>,
 )
 
-const DEFAULT_TERMINATORS = new Set([";", "}", ")"])
-
-export function getTerminatorsForLanguage(languageId: string): Set<string> {
-	const family = LANGUAGE_FAMILY_MAP[languageId]
-	if (family) {
-		const config = LANGUAGE_CONFIGS.find((c) => c.family === family)
-		if (config) {
-			return new Set(config.terminators)
-		}
+export function getTerminatorsForLanguage(languageId: string | undefined): string[] {
+	if (!languageId) {
+		return DEFAULT_TERMINATORS
 	}
-	return DEFAULT_TERMINATORS
+	return LANGUAGE_TERMINATORS[languageId] ?? DEFAULT_TERMINATORS
 }
 
 function isAtEndOfStatement(prefix: string, suffix: string, languageId?: string): boolean {
@@ -127,12 +110,13 @@ function isAtEndOfStatement(prefix: string, suffix: string, languageId?: string)
 	}
 
 	// Get language-specific terminators
-	const terminators = languageId ? getTerminatorsForLanguage(languageId) : DEFAULT_TERMINATORS
+	const terminators = getTerminatorsForLanguage(languageId)
 
-	// Check single-character terminators
-	const lastChar = trimmedLinePrefix[trimmedLinePrefix.length - 1]
-	if (terminators.has(lastChar)) {
-		return true
+	// Check if line ends with any terminator (single or multi-character)
+	for (const terminator of terminators) {
+		if (trimmedLinePrefix.endsWith(terminator)) {
+			return true
+		}
 	}
 
 	return false

@@ -124,8 +124,9 @@ describe("shouldSkipAutocomplete - end of statement detection", () => {
 			expect(shouldSkipAutocomplete("echo hello;", "\n", languageId)).toBe(true)
 		})
 
-		it("should NOT skip when cursor is after fi (short word, <= 2 chars)", () => {
-			expect(shouldSkipAutocomplete("fi", "\n", languageId)).toBe(false)
+		it("should skip when cursor is after fi (shell terminator)", () => {
+			// "fi" is a statement terminator in shell scripts (ends if blocks)
+			expect(shouldSkipAutocomplete("fi", "\n", languageId)).toBe(true)
 		})
 
 		it("should skip when cursor is after done (mid-word typing, > 2 chars)", () => {
@@ -246,41 +247,41 @@ describe("shouldSkipAutocomplete - end of statement detection", () => {
 	describe("getTerminatorsForLanguage", () => {
 		it("should return c-like terminators for JavaScript/TypeScript", () => {
 			const terminators = getTerminatorsForLanguage("typescript")
-			expect(terminators.has(";")).toBe(true)
-			expect(terminators.has("}")).toBe(true)
-			expect(terminators.has(")")).toBe(true)
-			expect(terminators.has(",")).toBe(false)
-			expect(terminators.has(":")).toBe(false)
+			expect(terminators.includes(";")).toBe(true)
+			expect(terminators.includes("}")).toBe(true)
+			expect(terminators.includes(")")).toBe(true)
+			expect(terminators.includes(",")).toBe(false)
+			expect(terminators.includes(":")).toBe(false)
 		})
 
 		it("should return python terminators", () => {
 			const terminators = getTerminatorsForLanguage("python")
-			expect(terminators.has(")")).toBe(true)
-			expect(terminators.has("]")).toBe(true)
-			expect(terminators.has("}")).toBe(true)
-			expect(terminators.has(";")).toBe(false)
-			expect(terminators.has(":")).toBe(false)
+			expect(terminators.includes(")")).toBe(true)
+			expect(terminators.includes("]")).toBe(true)
+			expect(terminators.includes("}")).toBe(true)
+			expect(terminators.includes(";")).toBe(false)
+			expect(terminators.includes(":")).toBe(false)
 		})
 
 		it("should return empty terminators for HTML (markup)", () => {
 			const terminators = getTerminatorsForLanguage("html")
-			expect(terminators.size).toBe(0)
-			expect(terminators.has(">")).toBe(false)
-			expect(terminators.has(";")).toBe(false)
+			expect(terminators.length).toBe(0)
+			expect(terminators.includes(">")).toBe(false)
+			expect(terminators.includes(";")).toBe(false)
 		})
 
 		it("should return shell terminators", () => {
 			const terminators = getTerminatorsForLanguage("shellscript")
-			expect(terminators.has(";")).toBe(true)
-			expect(terminators.has("fi")).toBe(true)
-			expect(terminators.has("done")).toBe(true)
+			expect(terminators.includes(";")).toBe(true)
+			expect(terminators.includes("fi")).toBe(true)
+			expect(terminators.includes("done")).toBe(true)
 		})
 
 		it("should return default terminators for unknown languages", () => {
 			const terminators = getTerminatorsForLanguage("some-unknown-language")
-			expect(terminators.has(";")).toBe(true)
-			expect(terminators.has("}")).toBe(true)
-			expect(terminators.has(")")).toBe(true)
+			expect(terminators.includes(";")).toBe(true)
+			expect(terminators.includes("}")).toBe(true)
+			expect(terminators.includes(")")).toBe(true)
 		})
 	})
 })
