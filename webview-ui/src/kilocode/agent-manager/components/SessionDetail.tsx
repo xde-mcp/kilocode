@@ -13,7 +13,7 @@ import { MessageList } from "./MessageList"
 import { ChatInput } from "./ChatInput"
 import { vscode } from "../utils/vscode"
 import { formatRelativeTime, createRelativeTimeLabels } from "../utils/timeUtils"
-import { Loader2, SendHorizontal, RefreshCw, GitBranch, Folder, ChevronDown, AlertCircle, Zap } from "lucide-react"
+import { Loader2, SendHorizontal, RefreshCw, GitBranch, Folder, ChevronDown, AlertCircle, Zap, X } from "lucide-react"
 import DynamicTextArea from "react-textarea-autosize"
 import { cn } from "../../../lib/utils"
 import { StandardTooltip } from "../../../components/ui"
@@ -130,6 +130,10 @@ function PendingSessionView({
 }) {
 	const { t } = useTranslation("agentManager")
 
+	const handleCancel = () => {
+		vscode.postMessage({ type: "agentManager.cancelPendingSession" })
+	}
+
 	return (
 		<div className="am-session-detail">
 			<div className="am-detail-header">
@@ -144,12 +148,24 @@ function PendingSessionView({
 						</div>
 					</div>
 				</div>
+				<div className="am-header-actions">
+					<button
+						className="am-icon-btn"
+						onClick={handleCancel}
+						aria-label={t("sessionDetail.cancelCreating")}
+						title={t("sessionDetail.cancelCreating")}>
+						<X size={14} />
+					</button>
+				</div>
 			</div>
 
 			<div className="am-center-form">
 				<Loader2 size={48} className="am-spinning" style={{ opacity: 0.5 }} />
 				<h2 style={{ marginTop: 16 }}>{t("sessionDetail.creatingSession")}</h2>
 				<p>{t("sessionDetail.waitingForCli")}</p>
+				<button className="am-cancel-btn" onClick={handleCancel} style={{ marginTop: 16 }}>
+					{t("sessionDetail.cancelButton")}
+				</button>
 			</div>
 		</div>
 	)
@@ -219,6 +235,7 @@ function NewAgentForm() {
 						"rounded",
 					)}>
 					<DynamicTextArea
+						autoFocus
 						value={promptText}
 						onChange={(e) => setPromptText(e.target.value)}
 						onKeyDown={handleKeyDown}
@@ -281,12 +298,15 @@ function NewAgentForm() {
 										: t("sessionDetail.runModeWorktree")
 								}>
 								{runMode === "local" ? <Folder size={14} /> : <GitBranch size={14} />}
-								<ChevronDown size={10} className={cn("am-chevron", isDropdownOpen && "open")} />
+								<ChevronDown size={10} className={cn("am-chevron", isDropdownOpen && "am-open")} />
 							</button>
 							{isDropdownOpen && (
 								<div className="am-run-mode-menu-inline">
 									<button
-										className={cn("am-run-mode-option-inline", runMode === "local" && "selected")}
+										className={cn(
+											"am-run-mode-option-inline",
+											runMode === "local" && "am-selected",
+										)}
 										onClick={() => handleSelectMode("local")}
 										type="button">
 										<Folder size={12} />
@@ -295,7 +315,7 @@ function NewAgentForm() {
 									</button>
 									<StandardTooltip content={t("sessionDetail.comingSoon")}>
 										<button
-											className={cn("am-run-mode-option-inline", "disabled")}
+											className={cn("am-run-mode-option-inline", "am-disabled")}
 											onClick={() => handleSelectMode("worktree")}
 											type="button"
 											disabled>
