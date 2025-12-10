@@ -4034,12 +4034,14 @@ export const webviewMessageHandler = async (
 			try {
 				const sessionService = SessionManager.init()
 
+				const sessionId = message.sessionId || sessionService.sessionId
+
 				if (!sessionService.sessionId) {
 					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
 					break
 				}
 
-				const result = await sessionService.shareSession()
+				const result = await sessionService.shareSession(sessionId)
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
