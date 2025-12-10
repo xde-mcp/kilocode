@@ -325,7 +325,7 @@
 			"tryButton": "클라우드 에이전트 사용해보기"
 		},
 		"careers": "그리고, <careersLink>채용 중입니다!</careersLink>",
-		"socialLinks": "<xLink>X</xLink>, <discordLink>Discord</discordLink>, 또는 <redditLink>r/RooCode</redditLink>에서 만나요 🚀"
+		"socialLinks": "<xLink>X</xLink>, <discordLink>Discord</discordLink>, 또는 <redditLink>r/KiloCode</redditLink>에서 만나요 🚀"
 	},
 	"browser": {
 		"session": "브라우저 세션",

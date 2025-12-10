@@ -17,6 +17,7 @@
 	"command.acceptInput.title": "Eingabe/Vorschlag Akzeptieren",
 	"command.toggleAutoApprove.title": "Auto-Genehmigung Umschalten",
 	"command.generateCommitMessage.title": "Commit-Nachricht mit Kilo generieren",
+	"command.history.title": "Aufgabenverlauf",
 	"views.activitybar.title": "Kilo Code",
 	"views.contextMenu.label": "Kilo Code",
 	"views.terminalMenu.label": "Kilo Code",
