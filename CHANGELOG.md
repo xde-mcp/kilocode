@@ -1,5 +1,39 @@
 # kilo-code
 
+## 4.133.0
+
+### Minor Changes
+
+- [#4317](https://github.com/Kilo-Org/kilocode/pull/4317) [`797c959`](https://github.com/Kilo-Org/kilocode/commit/797c9594a527f19e0d39b7402fb031cd9eb4e2a7) Thanks [@iscekic](https://github.com/iscekic)! - add session versioning
+
+### Patch Changes
+
+- [#3571](https://github.com/Kilo-Org/kilocode/pull/3571) [`ea2702c`](https://github.com/Kilo-Org/kilocode/commit/ea2702c6f29e7ff2bfe55714716f72bb43cfbede) Thanks [@yadue](https://github.com/yadue)! - Add batch size and number of retries to the indexing options
+
+- [#4310](https://github.com/Kilo-Org/kilocode/pull/4310) [`e5e6085`](https://github.com/Kilo-Org/kilocode/commit/e5e6085d1f9b4f142130eddd3eaddb52bd5cde17) Thanks [@iscekic](https://github.com/iscekic)! - check token before syncing session
+
+- [#4272](https://github.com/Kilo-Org/kilocode/pull/4272) [`3ad35d9`](https://github.com/Kilo-Org/kilocode/commit/3ad35d94a5560ca1b87b2b393c6d064703c144d4) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Fix: reset state errors when clearing indexing state
+
+## 4.132.0
+
+### Minor Changes
+
+- [#4305](https://github.com/Kilo-Org/kilocode/pull/4305) [`e7b0aa2`](https://github.com/Kilo-Org/kilocode/commit/e7b0aa2290cbffef7aeb66b8bbcbf2ca71bcdb28) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Add Agent Manager for running multiple Kilo Code agents in parallel from a single panel.
+
+### Patch Changes
+
+- [#4117](https://github.com/Kilo-Org/kilocode/pull/4117) [`2224b90`](https://github.com/Kilo-Org/kilocode/commit/2224b90019f9cc1efacd2e638902732fc6aade02) Thanks [@ShirleyRex](https://github.com/ShirleyRex)! - fix chat textarea autoscroll to keep caret visible
+
+- [#4304](https://github.com/Kilo-Org/kilocode/pull/4304) [`8ca99f4`](https://github.com/Kilo-Org/kilocode/commit/8ca99f433810c188707c97ace90f5bbf82406d3c) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Fixed an issue that caused the Kilo Gateway model list to never refresh
+
+- [#4288](https://github.com/Kilo-Org/kilocode/pull/4288) [`32efaf2`](https://github.com/Kilo-Org/kilocode/commit/32efaf2e79a5203cb85732316baa92d056b0c5a1) Thanks [@pandemicsyn](https://github.com/pandemicsyn)! - Begin emitting session_synced event
+
+## 4.131.2
+
+### Patch Changes
+
+- [#4281](https://github.com/Kilo-Org/kilocode/pull/4281) [`e0ed242`](https://github.com/Kilo-Org/kilocode/commit/e0ed24298b6dc33b8f1c52124b613503d85498aa) Thanks [@iscekic](https://github.com/iscekic)! - force release workflow run
+
 ## 4.131.1
 
 ### Patch Changes
