@@ -47,6 +47,7 @@ export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
 	static readonly MAX_PATCH_SIZE_BYTES = 5 * 1024 * 1024
 	static readonly VERSION = 1
+	static readonly QUEUE_FLUSH_THRESHOLD = 5
 
 	private static instance = new SessionManager()
 
@@ -125,7 +126,7 @@ export class SessionManager {
 			})
 		}
 
-		if (this.queue.length > 7) {
+		if (this.queue.length > SessionManager.QUEUE_FLUSH_THRESHOLD) {
 			this.doSync()
 		}
 	}

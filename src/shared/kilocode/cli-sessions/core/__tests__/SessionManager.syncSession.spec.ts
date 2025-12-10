@@ -1569,20 +1569,20 @@ describe("SessionManager.syncSession", () => {
 	})
 
 	describe("automatic sync trigger", () => {
-		it("should trigger sync when queue exceeds 7 items", async () => {
+		it(`should trigger sync when queue exceeds ${SessionManager.QUEUE_FLUSH_THRESHOLD} items`, async () => {
 			vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue("session-123")
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
 
 			const doSyncSpy = vi.spyOn(manager, "doSync")
 
-			for (let i = 0; i < 7; i++) {
+			for (let i = 0; i < SessionManager.QUEUE_FLUSH_THRESHOLD; i++) {
 				manager.handleFileUpdate(`task-${i}`, "uiMessagesPath", `/path/to/file${i}.json`)
 			}
 
 			expect(doSyncSpy).not.toHaveBeenCalled()
 
-			manager.handleFileUpdate("task-8", "uiMessagesPath", "/path/to/file8.json")
+			manager.handleFileUpdate("task-6", "uiMessagesPath", "/path/to/file6.json")
 
 			expect(doSyncSpy).toHaveBeenCalled()
 		})
