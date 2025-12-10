@@ -1629,12 +1629,14 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							<Virtuoso
 								ref={virtuosoRef}
 								key={task.ts}
-								className="h-full overflow-y-auto mb-1"
+								className="scrollable grow overflow-y-scroll mb-1"
 								increaseViewportBy={{ top: 400, bottom: 400 }} // kilocode_change: use more modest numbers to see if they reduce gray screen incidence
 								data={groupedMessages}
 								itemContent={itemContent}
+								followOutput={(isAtBottom: boolean) => isAtBottom || stickyFollowRef.current}
 								atBottomStateChange={(isAtBottom: boolean) => {
 									setIsAtBottom(isAtBottom)
+									// Only show the scroll-to-bottom button if not at bottom
 									setShowScrollToBottom(!isAtBottom)
 								}}
 								atBottomThreshold={10}
