@@ -28,12 +28,26 @@ import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 const MAX_SUGGESTIONS_HISTORY = 20
 
 /**
+ * Minimum debounce delay in milliseconds.
+ * The adaptive debounce delay will never go below this value, even when
+ * average latencies are very fast.
+ */
+const MIN_DEBOUNCE_DELAY_MS = 150
+
+/**
  * Initial debounce delay in milliseconds.
  * This value is used as the starting debounce delay before enough latency samples
  * are collected. Once LATENCY_SAMPLE_SIZE samples are collected, the debounce delay
  * is dynamically adjusted to the average of recent request latencies.
  */
 const INITIAL_DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Maximum debounce delay in milliseconds.
+ * This caps the adaptive debounce delay to prevent excessive waiting times
+ * even when latencies are high.
+ */
+const MAX_DEBOUNCE_DELAY_MS = 1000
 
 /**
  * Number of latency samples to collect before using adaptive debounce delay.
@@ -265,7 +279,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 * Records a latency measurement and updates the adaptive debounce delay.
 	 * Maintains a rolling window of the last LATENCY_SAMPLE_SIZE latencies.
 	 * Once enough samples are collected, the debounce delay is set to the
-	 * average of all stored latencies.
+	 * average of all stored latencies, clamped between MIN_DEBOUNCE_DELAY_MS
+	 * and MAX_DEBOUNCE_DELAY_MS.
 	 *
 	 * @param latencyMs - The latency of the most recent request in milliseconds
 	 */
@@ -279,7 +294,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			// Once we have enough samples, update the debounce delay to the average
 			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
-			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
+			const averageLatency = Math.round(sum / this.latencyHistory.length)
+
+			// Clamp the debounce delay between MIN and MAX
+			this.debounceDelayMs = Math.max(MIN_DEBOUNCE_DELAY_MS, Math.min(averageLatency, MAX_DEBOUNCE_DELAY_MS))
 		}
 	}
 
