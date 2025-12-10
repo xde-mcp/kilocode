@@ -223,7 +223,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 					void this.refreshSessionMessages(message.sessionId as string)
 					break
 				case "agentManager.sessionShare":
-					void SessionManager.init()
+					SessionManager.init()
 						.shareSession(message.sessionId as string)
 						.then((result) => {
 							const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
@@ -232,6 +232,10 @@ export class AgentManagerProvider implements vscode.Disposable {
 							vscode.window.showInformationMessage(
 								`Session shared! Link copied to clipboard: ${shareUrl}`,
 							)
+						})
+						.catch((error) => {
+							const errorMessage = error instanceof Error ? error.message : String(error)
+							vscode.window.showErrorMessage(`Failed to share session: ${errorMessage}`)
 						})
 					break
 			}
