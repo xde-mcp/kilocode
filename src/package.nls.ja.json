@@ -11,6 +11,7 @@
 	"command.mcpServers.title": "MCP サーバー",
 	"command.openInEditor.title": "エディタで開く",
 	"command.cloud.title": "Cloud",
+	"command.prompts.title": "モード",
 	"command.settings.title": "設定",
 	"command.documentation.title": "ドキュメント",
 	"command.openInNewTab.title": "新しいタブで開く",

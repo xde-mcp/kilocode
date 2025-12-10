@@ -49,6 +49,7 @@
 	"settings.debug.description": "Aktifkan mode debug untuk menampilkan tombol tambahan untuk melihat riwayat percakapan API dan pesan UI sebagai JSON yang diformat dalam file sementara.",
 	"command.generateCommitMessage.title": "Buat Pesan Commit dengan Kilo",
 	"command.profile.title": "Profil",
+	"command.prompts.title": "Mode",
 	"ghost.input.title": "Tekan 'Enter' untuk konfirmasi atau 'Escape' untuk membatalkan",
 	"ghost.input.placeholder": "Jelaskan apa yang ingin Anda lakukan...",
 	"ghost.commands.generateSuggestions": "Kilo Code: Buat Saran Pengeditan",
