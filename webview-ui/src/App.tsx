@@ -66,8 +66,15 @@ const tabsByMessageAction: Partial<Record<NonNullable<ExtensionMessage["action"]
 	historyButtonClicked: "history",
 	profileButtonClicked: "profile",
 	marketplaceButtonClicked: "marketplace",
+	promptsButtonClicked: "settings", // kilocode_change: Navigate to settings with modes section
 	// cloudButtonClicked: "cloud", // kilocode_change: no cloud
 }
+
+// kilocode_change start: Map certain actions to a default section when navigating to settings
+const defaultSectionByAction: Partial<Record<NonNullable<ExtensionMessage["action"]>, string>> = {
+	promptsButtonClicked: "modes",
+}
+// kilocode_change end
 
 const App = () => {
 	const {
@@ -168,7 +175,10 @@ const App = () => {
 				} else {
 					// Handle other actions using the mapping
 					const newTab = tabsByMessageAction[message.action]
-					const section = message.values?.section as string | undefined
+					// kilocode_change start
+					const section =
+						(message.values?.section as string | undefined) ?? defaultSectionByAction[message.action]
+					// kilocode_change end
 					const marketplaceTab = message.values?.marketplaceTab as string | undefined
 
 					if (newTab) {
