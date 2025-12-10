@@ -155,6 +155,28 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 		visibleProvider.postMessageToWebview({ type: "action", action: "historyButtonClicked" })
 	},
 	// kilocode_change begin
+	mcpButtonClicked: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		TelemetryService.instance.captureTitleButtonClicked("mcp")
+
+		visibleProvider.postMessageToWebview({ type: "action", action: "mcpButtonClicked" })
+	},
+	promptsButtonClicked: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		TelemetryService.instance.captureTitleButtonClicked("prompts")
+
+		visibleProvider.postMessageToWebview({ type: "action", action: "promptsButtonClicked" })
+	},
 	profileButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 

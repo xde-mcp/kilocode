@@ -703,7 +703,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		currentSettings.codebaseIndexEmbedderProvider === "openrouter"
 			? currentSettings.codebaseIndexEmbedderModelId
 			: undefined,
-		undefined,
+		// kilocode_change start
+		apiConfiguration?.apiProvider === "openrouter" ? apiConfiguration?.openRouterBaseUrl : undefined,
+		apiConfiguration?.apiKey,
+		apiConfiguration?.kilocodeOrganizationId ?? "personal",
+		// kilocode_change end
 		{
 			enabled:
 				currentSettings.codebaseIndexEmbedderProvider === "openrouter" &&

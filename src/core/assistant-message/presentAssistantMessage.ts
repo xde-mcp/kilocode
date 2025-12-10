@@ -50,8 +50,6 @@ import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
 import { newRuleTool } from "../tools/kilocode/newRuleTool"
 import { reportBugTool } from "../tools/kilocode/reportBugTool"
 import { condenseTool } from "../tools/kilocode/condenseTool"
-import { searchAndReplaceTool } from "../tools/kilocode/searchAndReplaceTool"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 import { captureAskApproval } from "./kilocode/captureAskApprovalEvent"
 
 /**

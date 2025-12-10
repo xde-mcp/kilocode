@@ -99,7 +99,6 @@ export function filterNativeToolsForMode(
 	settings?: Record<string, any>,
 	// kilocode_change start
 	state?: ClineProviderState,
-	modelInfo?: ModelInfo,
 	// kilocode_change end
 	mcpHub?: McpHub,
 ): OpenAI.Chat.ChatCompletionTool[] {

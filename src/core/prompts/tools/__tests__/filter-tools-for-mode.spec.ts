@@ -278,7 +278,6 @@ describe("filterNativeToolsForMode", () => {
 			undefined,
 			{},
 			undefined, // kilocode_change
-			undefined, // kilocode_change
 			mockMcpHub,
 		)
 		const toolNames = filtered.map((t) => ("function" in t ? t.function.name : ""))
@@ -321,7 +320,6 @@ describe("filterNativeToolsForMode", () => {
 			{},
 			undefined,
 			{},
-			undefined, // kilocode_change
 			undefined, // kilocode_change
 			mockMcpHub,
 		)

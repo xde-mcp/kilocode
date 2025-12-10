@@ -209,6 +209,7 @@ export interface ExtensionMessage {
 		| "promptsButtonClicked" // kilocode_change
 		| "profileButtonClicked" // kilocode_change
 		| "marketplaceButtonClicked"
+		| "mcpButtonClicked" // kilocode_change
 		| "cloudButtonClicked"
 		| "didBecomeVisible"
 		| "focusInput"

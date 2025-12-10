@@ -87,7 +87,7 @@ import { GhostServiceSettingsView } from "../kilocode/settings/GhostServiceSetti
 import { SlashCommandsSettings } from "./SlashCommandsSettings"
 import { UISettings } from "./UISettings"
 import ModesView from "../modes/ModesView"
-import McpView from "../mcp/McpView"
+// import McpView from "../mcp/McpView" // kilocode_change: own view
 
 export const settingsTabsContainer = "flex flex-1 overflow-hidden [&.narrow_.tab-label]:hidden"
 export const settingsTabList =

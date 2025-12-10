@@ -69,7 +69,6 @@ export async function buildNativeToolsArray(options: BuildToolsOptions): Promise
 		filterSettings,
 		// kilocode_change start
 		options.state,
-		options.modelInfo,
 		// kilocode_change end
 		mcpHub,
 	)

@@ -1635,10 +1635,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								itemContent={itemContent}
 								atBottomStateChange={(isAtBottom: boolean) => {
 									setIsAtBottom(isAtBottom)
-									if (isAtBottom) {
-										disableAutoScrollRef.current = false
-									}
-									setShowScrollToBottom(disableAutoScrollRef.current && !isAtBottom)
+									setShowScrollToBottom(!isAtBottom)
 								}}
 								atBottomThreshold={10}
 								initialTopMostItemIndex={groupedMessages.length - 1}
