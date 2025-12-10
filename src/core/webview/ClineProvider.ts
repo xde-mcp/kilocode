@@ -110,6 +110,7 @@ import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
 import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 import { kilo_execIfExtension } from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
+import { kilo_handleExtensionMessage } from "../../shared/kilocode/cli-sessions/utils/handleExtensionMessage"
 import { DeviceAuthHandler } from "../kilocode/webview/deviceAuthHandler"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
@@ -1149,23 +1150,9 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		// kilocode_change start
-		if (message.type === "apiMessagesSaved" && message.payload) {
-			const [taskId, filePath] = message.payload as [string, string]
-
-			SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
-		} else if (message.type === "taskMessagesSaved" && message.payload) {
-			const [taskId, filePath] = message.payload as [string, string]
-
-			SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
-		} else if (message.type === "taskMetadataSaved" && message.payload) {
-			const [taskId, filePath] = message.payload as [string, string]
-
-			SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
-		} else if (message.type === "currentCheckpointUpdated") {
-			SessionManager.init().doSync()
-		}
-		// kilocode_change end
+		kilo_execIfExtension(() => {
+			kilo_handleExtensionMessage(message)
+		})
 
 		await this.view?.webview.postMessage(message)
 	}

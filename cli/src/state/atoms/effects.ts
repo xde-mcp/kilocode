@@ -34,6 +34,7 @@ import {
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
+import { kilo_handleExtensionMessage } from "../../../../src/shared/kilocode/cli-sessions/utils/handleExtensionMessage.js"
 
 /**
  * Message buffer to handle race conditions during initialization
@@ -174,6 +175,8 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			set(messageBufferAtom, [...buffer, message])
 			return
 		}
+
+		kilo_handleExtensionMessage(message as never)
 
 		// Handle different message types
 		switch (message.type) {
