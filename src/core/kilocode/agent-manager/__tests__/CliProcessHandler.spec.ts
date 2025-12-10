@@ -152,6 +152,21 @@ describe("CliProcessHandler", () => {
 				}),
 			)
 		})
+
+		it("sets KILO_PLATFORM environment variable to agent-manager", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+
+			expect(spawnMock).toHaveBeenCalledWith(
+				expect.any(String),
+				expect.any(Array),
+				expect.objectContaining({
+					env: expect.objectContaining({
+						KILO_PLATFORM: "agent-manager",
+					}),
+				}),
+			)
+		})
 	})
 
 	describe("session_created event handling", () => {
