@@ -5,15 +5,12 @@ import {
 	contextToAutocompleteInput,
 	GhostContextProvider,
 	FillInAtCursorSuggestion,
-	FimGhostPrompt,
-	HoleFillerGhostPrompt,
 	GhostPrompt,
 	MatchingSuggestionResult,
 	CostTrackingCallback,
 	LLMRetrievalResult,
 	PendingRequest,
 	AutocompleteContext,
-	CacheMatchType,
 } from "../types"
 import { HoleFiller } from "./HoleFiller"
 import { FimPromptBuilder } from "./FillInTheMiddle"
@@ -26,7 +23,7 @@ import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
-import * as telemetry from "./AutocompleteTelemetry"
+import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -140,8 +137,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
-	private holeFiller: HoleFiller
-	private fimPromptBuilder: FimPromptBuilder
+	public holeFiller: HoleFiller // publicly exposed for Jetbrains autocomplete code
+	public fimPromptBuilder: FimPromptBuilder // publicly exposed for Jetbrains autocomplete code
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -153,6 +150,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private acceptedCommand: vscode.Disposable | null = null
 	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
 	private latencyHistory: number[] = []
+	private telemetry: AutocompleteTelemetry | null
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -160,7 +158,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
 		cline: ClineProvider,
+		telemetry: AutocompleteTelemetry | null = null,
 	) {
+		this.telemetry = telemetry
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
@@ -187,7 +187,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
-			telemetry.captureAcceptSuggestion(),
+			this.telemetry?.captureAcceptSuggestion(),
 		)
 	}
 
@@ -248,7 +248,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		telemetryContext: AutocompleteContext,
 	): FillInAtCursorSuggestion {
 		if (!suggestionText) {
-			telemetry.captureSuggestionFiltered("empty_response", telemetryContext)
+			this.telemetry?.captureSuggestionFiltered("empty_response", telemetryContext)
 			return { text: "", prefix, suffix }
 		}
 
@@ -263,7 +263,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			return { text: processedText, prefix, suffix }
 		}
 
-		telemetry.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
+		this.telemetry?.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
 		return { text: "", prefix, suffix }
 	}
 
@@ -344,7 +344,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			provider: this.model?.getProviderDisplayName(),
 		}
 
-		telemetry.captureSuggestionRequested(telemetryContext)
+		this.telemetry?.captureSuggestionRequested(telemetryContext)
 
 		if (!this.model || !this.model.hasValidCredentials()) {
 			// bail if no model is available or no valid API credentials configured
@@ -388,7 +388,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 			if (matchingResult !== null) {
-				telemetry.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
@@ -401,7 +401,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 			if (cachedResult) {
-				telemetry.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
+				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
@@ -533,7 +533,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const latencyMs = performance.now() - startTime
 
-			telemetry.captureLlmRequestCompleted(
+			this.telemetry?.captureLlmRequestCompleted(
 				{
 					latencyMs,
 					cost: result.cost,
@@ -552,7 +552,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
 			const latencyMs = performance.now() - startTime
-			telemetry.captureLlmRequestFailed(
+			this.telemetry?.captureLlmRequestFailed(
 				{
 					latencyMs,
 					error: error instanceof Error ? error.message : String(error),
