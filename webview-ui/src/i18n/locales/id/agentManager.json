@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "Lokal",
 		"mainWorkspace": "Ruang kerja utama",
-		"readyToMerge": "Siap untuk digabungkan"
+		"readyToMerge": "Siap untuk digabungkan",
+		"shareSession": "Bagikan sesi",
+		"shareConfirmMessage": "Apakah Anda ingin membagikan snapshot sesi ini secara publik?",
+		"shareConfirmYes": "Ya",
+		"shareConfirmNo": "Tidak"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Mulai agen baru",

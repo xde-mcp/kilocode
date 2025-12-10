@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "ローカル",
 		"mainWorkspace": "メインワークスペース",
-		"readyToMerge": "マージ準備完了"
+		"readyToMerge": "マージ準備完了",
+		"shareSession": "セッションを共有",
+		"shareConfirmMessage": "このセッションのスナップショットを公開で共有しますか？",
+		"shareConfirmYes": "はい",
+		"shareConfirmNo": "いいえ"
 	},
 	"sessionDetail": {
 		"startNewAgent": "新しいエージェントを開始",

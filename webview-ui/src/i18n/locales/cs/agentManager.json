@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "Lokální",
 		"mainWorkspace": "Hlavní pracovní prostor",
-		"readyToMerge": "Připraveno ke sloučení"
+		"readyToMerge": "Připraveno ke sloučení",
+		"shareSession": "Sdílet relaci",
+		"shareConfirmMessage": "Chcete veřejně sdílet snímek této relace?",
+		"shareConfirmYes": "Ano",
+		"shareConfirmNo": "Ne"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Spustit nového agenta",

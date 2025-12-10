@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "Локально",
 		"mainWorkspace": "Основний робочий простір",
-		"readyToMerge": "Готово до злиття"
+		"readyToMerge": "Готово до злиття",
+		"shareSession": "Поділитися сесією",
+		"shareConfirmMessage": "Хочете опублікувати знімок цієї сесії?",
+		"shareConfirmYes": "Так",
+		"shareConfirmNo": "Ні"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Запустити нового агента",
