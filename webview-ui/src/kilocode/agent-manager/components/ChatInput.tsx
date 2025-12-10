@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { useAtom } from "jotai"
 import { useTranslation } from "react-i18next"
 import { vscode } from "../utils/vscode"
@@ -18,6 +18,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ sessionId, sessionLabel, i
 	const { t } = useTranslation("agentManager")
 	const [messageText, setMessageText] = useAtom(sessionInputAtomFamily(sessionId))
 	const [isFocused, setIsFocused] = useState(false)
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+	// Auto-focus the textarea when the session changes (user selects a different session)
+	useEffect(() => {
+		textareaRef.current?.focus()
+	}, [sessionId])
 
 	const trimmedMessage = messageText.trim()
 	const isEmpty = trimmedMessage.length === 0
@@ -64,6 +70,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ sessionId, sessionLabel, i
 					"rounded",
 				)}>
 				<DynamicTextArea
+					ref={textareaRef}
 					value={messageText}
 					onChange={(e) => setMessageText(e.target.value)}
 					onKeyDown={handleKeyDown}

@@ -219,6 +219,7 @@ function NewAgentForm() {
 						"rounded",
 					)}>
 					<DynamicTextArea
+						autoFocus
 						value={promptText}
 						onChange={(e) => setPromptText(e.target.value)}
 						onKeyDown={handleKeyDown}
