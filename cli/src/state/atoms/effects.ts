@@ -34,7 +34,7 @@ import {
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
-import { SessionManager } from "@roo/kilocode/cli-sessions/core/SessionManager.js"
+import { SessionManager } from "../../../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Message buffer to handle race conditions during initialization
