@@ -28,6 +28,7 @@ import {
 	captureAgentManagerSessionStopped,
 	captureAgentManagerSessionError,
 } from "./telemetry"
+import { SessionManager } from "../../../shared/kilocode/cli-sessions/core/SessionManager"
 
 /**
  * AgentManagerProvider
@@ -220,6 +221,22 @@ export class AgentManagerProvider implements vscode.Disposable {
 					break
 				case "agentManager.refreshSessionMessages":
 					void this.refreshSessionMessages(message.sessionId as string)
+					break
+				case "agentManager.sessionShare":
+					SessionManager.init()
+						.shareSession(message.sessionId as string)
+						.then((result) => {
+							const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
+
+							void vscode.env.clipboard.writeText(shareUrl)
+							vscode.window.showInformationMessage(
+								t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
+							)
+						})
+						.catch((error) => {
+							const errorMessage = error instanceof Error ? error.message : String(error)
+							vscode.window.showErrorMessage(`Failed to share session: ${errorMessage}`)
+						})
 					break
 			}
 		} catch (error) {
