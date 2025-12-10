@@ -230,7 +230,7 @@ export class AgentManagerProvider implements vscode.Disposable {
 
 							void vscode.env.clipboard.writeText(shareUrl)
 							vscode.window.showInformationMessage(
-								`Session shared! Link copied to clipboard: ${shareUrl}`,
+								t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
 							)
 						})
 						.catch((error) => {

@@ -4047,7 +4047,9 @@ export const webviewMessageHandler = async (
 
 				// Copy URL to clipboard and show success notification
 				await vscode.env.clipboard.writeText(shareUrl)
-				vscode.window.showInformationMessage(`Session shared! Link copied to clipboard: ${shareUrl}`)
+				vscode.window.showInformationMessage(
+					t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
+				)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to share session: ${errorMessage}`)
@@ -4071,7 +4073,9 @@ export const webviewMessageHandler = async (
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
 				await vscode.env.clipboard.writeText(shareUrl)
-				vscode.window.showInformationMessage(`Session shared! Link copied to clipboard.`)
+				vscode.window.showInformationMessage(
+					t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
+				)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to share task session: ${errorMessage}`)
