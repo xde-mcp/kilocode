@@ -269,10 +269,12 @@ export interface WebviewMessage {
 		| "shareTaskSession" // kilocode_change
 		| "sessionFork" // kilocode_change
 		| "sessionShow" // kilocode_change
+		| "sessionSelect" // kilocode_change
 		| "singleCompletion" // kilocode_change
 	text?: string
 	completionRequestId?: string // kilocode_change
 	shareId?: string // kilocode_change - for sessionFork
+	sessionId?: string // kilocode_change - for sessionSelect
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
