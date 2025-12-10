@@ -120,7 +120,7 @@ export class CliProcessHandler {
 		const proc = spawn(cliPath, cliArgs, {
 			cwd: workspace,
 			stdio: ["pipe", "pipe", "pipe"],
-			env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0" },
+			env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0", KILO_PLATFORM: "agent-manager" },
 			shell: false,
 		})
 
