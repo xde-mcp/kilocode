@@ -723,7 +723,6 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		() => [
 			{ id: "providers", icon: Plug },
 			{ id: "modes", icon: Users2 },
-			{ id: "mcp", icon: Server },
 			{ id: "autoApprove", icon: CheckCheck },
 			// { id: "slashCommands", icon: SquareSlash }, // kilocode_change: needs work to be re-introduced
 			{ id: "browser", icon: SquareMousePointer },
