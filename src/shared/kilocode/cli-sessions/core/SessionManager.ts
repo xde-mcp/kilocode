@@ -654,76 +654,80 @@ export class SessionManager {
 							}),
 					)
 
-					if (blobName === "ui_messages" && !this.sessionTitles[sessionId]) {
-						this.logger?.debug("Checking for session title generation", "SessionManager", { sessionId })
-
-						void (async () => {
-							try {
-								if (!this.sessionClient) {
-									this.logger?.warn("Session client not initialized", "SessionManager", {
-										sessionId,
-									})
-									return
-								}
-
-								this.sessionTitles[sessionId] = "Pending title"
-
-								const session = await this.sessionClient.get({ session_id: sessionId })
-
-								if (session.title) {
-									this.sessionTitles[sessionId] = session.title
-
-									this.logger?.debug("Found existing session title", "SessionManager", {
-										sessionId,
-										title: session.title,
-									})
-
-									return
-								}
-
-								const generatedTitle = await this.generateTitle(fileContents)
-
-								if (!generatedTitle) {
-									throw new Error("Failed to generate session title")
-								}
-
-								const updateResult = await this.sessionClient.update({
-									session_id: sessionId,
-									title: generatedTitle,
-								})
-
-								this.sessionTitles[sessionId] = generatedTitle
-								this.updateSessionTimestamp(sessionId, updateResult.updated_at)
-
-								this.logger?.debug("Updated session title", "SessionManager", {
-									sessionId,
-									generatedTitle,
-								})
-							} catch (error) {
-								this.logger?.error("Failed to generate session title", "SessionManager", {
-									sessionId,
-									error: error instanceof Error ? error.message : String(error),
-								})
-
-								const localTitle = this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
-
-								if (localTitle) {
-									try {
-										await this.renameSession(sessionId, localTitle)
-									} catch (error) {
-										this.logger?.error(
-											"Failed to update session title using local title",
-											"SessionManager",
-											{
-												sessionId,
-												error: error instanceof Error ? error.message : String(error),
-											},
-										)
-									}
-								}
-							}
-						})()
+					if (blobName !== "ui_messages" || this.sessionTitles[sessionId]) {
+						continue
 					}
+
+					this.logger?.debug("Checking for session title generation", "SessionManager", { sessionId })
+
+					void (async () => {
+						try {
+							if (!this.sessionClient) {
+								this.logger?.warn("Session client not initialized", "SessionManager", {
+									sessionId,
+								})
+								return
+							}
+
+							this.sessionTitles[sessionId] = "Pending title"
+
+							const session = await this.sessionClient.get({ session_id: sessionId })
+
+							if (session.title) {
+								this.sessionTitles[sessionId] = session.title
+
+								this.logger?.debug("Found existing session title", "SessionManager", {
+									sessionId,
+									title: session.title,
+								})
+
+								return
+							}
+
+							const generatedTitle = await this.generateTitle(fileContents)
+
+							if (!generatedTitle) {
+								throw new Error("Failed to generate session title")
+							}
+
+							const updateResult = await this.sessionClient.update({
+								session_id: sessionId,
+								title: generatedTitle,
+							})
+
+							this.sessionTitles[sessionId] = generatedTitle
+							this.updateSessionTimestamp(sessionId, updateResult.updated_at)
+
+							this.logger?.debug("Updated session title", "SessionManager", {
+								sessionId,
+								generatedTitle,
+							})
+						} catch (error) {
+							this.logger?.error("Failed to generate session title", "SessionManager", {
+								sessionId,
+								error: error instanceof Error ? error.message : String(error),
+							})
+
+							const localTitle = this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
+
+							if (!localTitle) {
+								return
+							}
+
+							try {
+								await this.renameSession(sessionId, localTitle)
+							} catch (error) {
+								this.logger?.error(
+									"Failed to update session title using local title",
+									"SessionManager",
+									{
+										sessionId,
+										error: error instanceof Error ? error.message : String(error),
+									},
+								)
+							}
+						}
+					})()
 				}
 
 				if (gitInfo) {
@@ -735,7 +739,9 @@ export class SessionManager {
 
 					const gitStateHash = this.hashGitState(gitStateData)
 
-					if (gitStateHash !== this.taskGitHashes[taskId]) {
+					if (gitStateHash === this.taskGitHashes[taskId]) {
+						this.logger?.debug("Git state unchanged, skipping upload", "SessionManager", { sessionId })
+					} else {
 						this.logger?.debug("Git state changed, uploading", "SessionManager", {
 							sessionId,
 							head: gitInfo.head?.substring(0, 8),
@@ -757,8 +763,6 @@ export class SessionManager {
 									})
 								}),
 						)
-					} else {
-						this.logger?.debug("Git state unchanged, skipping upload", "SessionManager", { sessionId })
 					}
 				}
 
