@@ -148,8 +148,6 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 			requestOptions.temperature = this.options.modelTemperature ?? 0
 		}
 
-		addNativeToolCallsToParams(requestOptions, this.options, metadata) // kilocode_change
-
 		try {
 			const { data: completion } = await this.client.chat.completions.create(requestOptions).withResponse()
 

@@ -138,7 +138,6 @@ import { isAnyRecognizedKiloCodeError, isPaymentRequiredError } from "../../shar
 import { getAppUrl } from "@roo-code/types"
 import { mergeApiMessages, addOrMergeUserContent } from "./kilocode"
 import { AutoApprovalHandler, checkAutoApproval } from "../auto-approval"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 import { MessageManager } from "../message-manager"
 
 const MAX_EXPONENTIAL_BACKOFF_SECONDS = 600 // 10 minutes

@@ -91,11 +91,7 @@ export class DeepInfraHandler extends RouterProvider implements SingleCompletion
 			;(requestOptions as any).max_completion_tokens = this.options.modelMaxTokens || info.maxTokens
 		}
 
-		const { data: stream } = await this.client.chat.completions
-			.create(
-				addNativeToolCallsToParams(requestOptions, this.options, _metadata), // kilocode_change
-			)
-			.withResponse()
+		const { data: stream } = await this.client.chat.completions.create(requestOptions).withResponse()
 
 		let lastUsage: OpenAI.CompletionUsage | undefined
 		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
