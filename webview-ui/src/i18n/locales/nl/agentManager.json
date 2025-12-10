@@ -35,6 +35,7 @@
 		"comingSoon": "Binnenkort beschikbaar",
 		"runningInWorktree": "Draait in worktree",
 		"runningLocally": "Draait lokaal",
+		"runMode": "Uitvoeringsmodus",
 		"branch": "Branch",
 		"creatingSession": "Sessie aanmaken...",
 		"waitingForCli": "Agent-sessie wordt geïnitialiseerd...",

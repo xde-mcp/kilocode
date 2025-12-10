@@ -35,6 +35,7 @@
 		"comingSoon": "Segera hadir",
 		"runningInWorktree": "Berjalan di worktree",
 		"runningLocally": "Berjalan secara lokal",
+		"runMode": "Mode jalankan",
 		"branch": "Cabang",
 		"creatingSession": "Membuat sesi...",
 		"waitingForCli": "Menginisialisasi sesi agen...",

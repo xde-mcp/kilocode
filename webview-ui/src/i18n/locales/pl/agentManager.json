@@ -35,6 +35,7 @@
 		"comingSoon": "Wkrótce",
 		"runningInWorktree": "Działa w worktree",
 		"runningLocally": "Działa lokalnie",
+		"runMode": "Tryb uruchamiania",
 		"branch": "Gałąź",
 		"creatingSession": "Tworzenie sesji...",
 		"waitingForCli": "Inicjalizacja sesji agenta...",
