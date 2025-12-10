@@ -224,7 +224,10 @@ export class ClineProvider
 			// Create named listener functions so we can remove them later.
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
 			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) => {
-				SessionManager.init().doSync(true) // kilocode_change
+				kilo_execIfExtension(() => {
+					SessionManager.init().doSync(true)
+				})
+
 				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
 			}
 			const onTaskAborted = async () => {
