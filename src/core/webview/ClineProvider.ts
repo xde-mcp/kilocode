@@ -223,8 +223,13 @@ export class ClineProvider
 
 			// Create named listener functions so we can remove them later.
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
-			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) =>
-				this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) => {
+				kilo_execIfExtension(() => {
+					SessionManager.init().doSync(true)
+				})
+
+				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+			}
 			const onTaskAborted = async () => {
 				this.emit(RooCodeEventName.TaskAborted, instance.taskId)
 
@@ -1147,7 +1152,8 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
-		await kilo_execIfExtension(() => {
+		// NOTE: Changing this? Update effects.ts in the cli too.
+		kilo_execIfExtension(() => {
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
@@ -1160,6 +1166,8 @@ ${prompt}
 				const [taskId, filePath] = message.payload as [string, string]
 
 				SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
+			} else if (message.type === "currentCheckpointUpdated") {
+				SessionManager.init().doSync()
 			}
 		})
 
@@ -3433,6 +3441,10 @@ ${prompt}
 			...getFastApply(),
 			...getOpenRouter(),
 			...getAutoApproveSettings(),
+			// Add organization ID if available
+			...(apiConfiguration.kilocodeOrganizationId && {
+				kilocodeOrganizationId: apiConfiguration.kilocodeOrganizationId,
+			}),
 			// kilocode_change end
 			...(await this.getTaskProperties()),
 			...(await this.getGitProperties()),
