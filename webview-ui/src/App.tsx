@@ -17,6 +17,7 @@ import SettingsView, { SettingsViewRef } from "./components/settings/SettingsVie
 import WelcomeView from "./components/kilocode/welcome/WelcomeView" // kilocode_change
 import ProfileView from "./components/kilocode/profile/ProfileView" // kilocode_change
 import McpView from "./components/mcp/McpView" // kilocode_change
+import AuthView from "./components/kilocode/auth/AuthView" // kilocode_change
 import { MarketplaceView } from "./components/marketplace/MarketplaceView"
 import { HumanRelayDialog } from "./components/human-relay/HumanRelayDialog"
 import BottomControls from "./components/kilocode/BottomControls" // kilocode_change
@@ -32,7 +33,7 @@ import { STANDARD_TOOLTIP_DELAY } from "./components/ui/standard-tooltip"
 import { useKiloIdentity } from "./utils/kilocode/useKiloIdentity"
 import { MemoryWarningBanner } from "./kilocode/MemoryWarningBanner"
 
-type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "cloud" | "profile" // kilocode_change: add "profile"
+type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "cloud" | "profile" | "auth" // kilocode_change: add "profile" and "auth"
 
 interface HumanRelayDialogState {
 	isOpen: boolean
@@ -101,6 +102,9 @@ const App = () => {
 
 	const [showAnnouncement, setShowAnnouncement] = useState(false)
 	const [tab, setTab] = useState<Tab>("chat")
+	const [authReturnTo, setAuthReturnTo] = useState<"chat" | "settings">("chat")
+	const [authProfileName, setAuthProfileName] = useState<string | undefined>(undefined)
+	const [settingsEditingProfile, setSettingsEditingProfile] = useState<string | undefined>(undefined)
 
 	const [humanRelayDialogState, setHumanRelayDialogState] = useState<HumanRelayDialogState>({
 		isOpen: false,
@@ -138,7 +142,11 @@ const App = () => {
 			setCurrentSection(undefined)
 			setCurrentMarketplaceTab(undefined)
 
-			if (settingsRef.current?.checkUnsaveChanges) {
+			// kilocode_change: start - Bypass unsaved changes check when navigating to auth tab
+			if (newTab === "auth") {
+				setTab(newTab)
+			} else if (settingsRef.current?.checkUnsaveChanges) {
+				// kilocode_change: end
 				settingsRef.current.checkUnsaveChanges(() => setTab(newTab))
 			} else {
 				setTab(newTab)
@@ -168,6 +176,19 @@ const App = () => {
 				// Handle switchTab action with tab parameter
 				if (message.action === "switchTab" && message.tab) {
 					const targetTab = message.tab as Tab
+					// kilocode_change start - Handle auth tab with returnTo and profileName parameters
+					if (targetTab === "auth") {
+						if (message.values?.returnTo) {
+							const returnTo = message.values.returnTo as "chat" | "settings"
+							setAuthReturnTo(returnTo)
+						}
+						if (message.values?.profileName) {
+							const profileName = message.values.profileName as string
+							setAuthProfileName(profileName)
+							setSettingsEditingProfile(profileName)
+						}
+					}
+					// kilocode_change end
 					switchTab(targetTab)
 					// Extract targetSection from values if provided
 					const targetSection = message.values?.section as string | undefined
@@ -181,11 +202,27 @@ const App = () => {
 						(message.values?.section as string | undefined) ?? defaultSectionByAction[message.action]
 					// kilocode_change end
 					const marketplaceTab = message.values?.marketplaceTab as string | undefined
+					const editingProfile = message.values?.editingProfile as string | undefined // kilocode_change
 
 					if (newTab) {
 						switchTab(newTab)
 						setCurrentSection(section)
 						setCurrentMarketplaceTab(marketplaceTab)
+						// kilocode_change start - If navigating to settings with editingProfile, forward it
+						if (newTab === "settings" && editingProfile) {
+							// Re-send the message to SettingsView with the editingProfile
+							setTimeout(() => {
+								window.postMessage(
+									{
+										type: "action",
+										action: "settingsButtonClicked",
+										values: { editingProfile },
+									},
+									"*",
+								)
+							}, 100)
+						}
+						// kilocode_change end
 					}
 				}
 			}
@@ -294,11 +331,18 @@ const App = () => {
 			{tab === "mcp" && <McpView onDone={() => switchTab("chat")} />}
 			{/* kilocode_change end */}
 			{tab === "history" && <HistoryView onDone={() => switchTab("chat")} />}
+			{/* kilocode_change: auth redirect / editingProfile */}
 			{tab === "settings" && (
-				<SettingsView ref={settingsRef} onDone={() => switchTab("chat")} targetSection={currentSection} /> // kilocode_change
+				<SettingsView
+					ref={settingsRef}
+					onDone={() => switchTab("chat")}
+					targetSection={currentSection}
+					editingProfile={settingsEditingProfile}
+				/>
 			)}
-			{/* kilocode_change: add profileview */}
+			{/* kilocode_change: add profileview and authview */}
 			{tab === "profile" && <ProfileView onDone={() => switchTab("chat")} />}
+			{tab === "auth" && <AuthView returnTo={authReturnTo} profileName={authProfileName} />}
 			{tab === "marketplace" && (
 				<MarketplaceView
 					stateManager={marketplaceStateManager}

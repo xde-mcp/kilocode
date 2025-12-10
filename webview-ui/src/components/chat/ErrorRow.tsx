@@ -5,6 +5,7 @@ import { BookOpenText, MessageCircleWarning } from "lucide-react"
 import { useCopyToClipboard } from "@src/utils/clipboard"
 import { vscode } from "@src/utils/vscode"
 import CodeBlock from "../kilocode/common/CodeBlock" // kilocode_change
+import { Button } from "@src/components/ui" // kilocode_change
 
 /**
  * Unified error display component for all error types in the chat.
@@ -62,6 +63,8 @@ export interface ErrorRowProps {
 	messageClassName?: string
 	code?: number
 	docsURL?: string // NEW: Optional documentation link
+	showLoginButton?: boolean // kilocode_change
+	onLoginClick?: () => void // kilocode_change
 }
 
 /**
@@ -80,6 +83,8 @@ export const ErrorRow = memo(
 		messageClassName,
 		docsURL,
 		code,
+		showLoginButton = false, // kilocode_change
+		onLoginClick, // kilocode_change
 	}: ErrorRowProps) => {
 		const { t } = useTranslation()
 		const [isExpanded, setIsExpanded] = useState(defaultExpanded)
@@ -195,6 +200,15 @@ export const ErrorRow = memo(
 						}>
 						{message}
 					</p>
+					{/* kilocode_change start */}
+					{showLoginButton && onLoginClick && (
+						<div className="ml-6 mt-3">
+							<Button variant="secondary" onClick={onLoginClick}>
+								{t("kilocode:settings.provider.login")}
+							</Button>
+						</div>
+					)}
+					{/* kilocode_change end */}
 					{additionalContent}
 				</div>
 			</div>
