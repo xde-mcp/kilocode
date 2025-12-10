@@ -146,8 +146,7 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 	// Check if there's alphanumeric content immediately after cursor
 	// If there IS content after, we're truly mid-word (e.g., "con|sole" where | is cursor)
 	// If there's NO content after, we're at the end of a word being typed
-	const firstCharAfter = suffix.length > 0 ? suffix[0] : ""
-	const hasContentAfter = /[a-zA-Z0-9_]/.test(firstCharAfter)
+	const hasContentAfter = suffix.length > 0 && /[a-zA-Z0-9_]/.test(suffix[0])
 
 	// Extract the current word being typed
 	const wordMatch = prefix.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
