@@ -1,4 +1,4 @@
-# Sessions in Kilo Code
+# Sessions
 
 A session is your platform-agnostic interaction with Kilo. It remembers your repository, your task, and the conversation so you can pause and resume work without losing context. Sessions are private to your account by default; you can optionally share a link with others who can read or fork your session.
 
