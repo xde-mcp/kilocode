@@ -4085,6 +4085,8 @@ export const webviewMessageHandler = async (
 
 				const sessionService = SessionManager.init()
 
+				await provider.clearTask()
+
 				await sessionService.forkSession(message.shareId, true)
 
 				await provider.postStateToWebview()
@@ -4093,6 +4095,26 @@ export const webviewMessageHandler = async (
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to fork session: ${errorMessage}`)
+			}
+			break
+		}
+		case "sessionSelect": {
+			try {
+				if (!message.sessionId) {
+					vscode.window.showErrorMessage("Session ID is required for selecting a session")
+					break
+				}
+
+				const sessionService = SessionManager.init()
+
+				await provider.clearTask()
+
+				await sessionService.restoreSession(message.sessionId, true)
+
+				await provider.postStateToWebview()
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to restore session: ${errorMessage}`)
 			}
 			break
 		}

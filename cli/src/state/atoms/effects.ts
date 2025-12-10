@@ -34,7 +34,6 @@ import {
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
-import { SessionManager } from "../../../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
 
 /**
  * Message buffer to handle race conditions during initialization
@@ -377,43 +376,6 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				break
 			}
 
-			case "apiMessagesSaved": {
-				const payload = message.payload as [string, string] | undefined
-
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
-				}
-				break
-			}
-
-			case "taskMessagesSaved": {
-				const payload = message.payload as [string, string] | undefined
-
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
-				}
-				break
-			}
-
-			case "taskMetadataSaved": {
-				const payload = message.payload as [string, string] | undefined
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
-				}
-				break
-			}
 			case "commandExecutionStatus": {
 				// Handle command execution status messages
 				// Store output updates and apply them when the ask appears
