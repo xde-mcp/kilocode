@@ -77,6 +77,9 @@ pnpm run test closing-brace -r 5
 # Clean up orphaned approval files
 pnpm run clean
 
+# Generate HTML report
+pnpm run test report
+
 # Combine flags
 pnpm run test --verbose --skip-approval
 pnpm run test --verbose --opus-approval
@@ -172,6 +175,26 @@ This is useful for:
 - Getting consistent, objective judgments on completion quality
 - Reducing manual review burden while still saving decisions for later audit
 
+### HTML Report
+
+Generate an interactive HTML report to browse all test cases and their approval history:
+
+```bash
+pnpm run test report
+```
+
+This generates HTML files in `html-output/` (gitignored) with:
+
+- **Index page** (`html-output/index.html`): Overview of all test cases grouped by category, with approval/rejection counts
+- **Individual test pages**: Detailed view of each test case showing input, context files, and all approved/rejected outputs
+- **Keyboard navigation**: Use arrow keys to navigate between tests, `H` to return to index
+
+The report highlights:
+
+- The completion portion of each output (prefix/suffix shown in grey)
+- Cursor position in the input code
+- Approval status with color coding (green for approved, red for rejected)
+
 ## User Interaction
 
 When new output is detected, you'll see:
@@ -203,6 +226,7 @@ Is this acceptable? (y/n):
 ## Notes
 
 - The `approvals/` directory is gitignored
+- The `html-output/` directory is gitignored
 - Each approved/rejected output gets a globally unique numbered file (numbers are unique across both approved and rejected files for the same test case)
 - Tests only prompt for input in the terminal when output is new
 - The test summary at the end shows how many passed/failed
