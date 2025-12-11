@@ -13,7 +13,7 @@ export function calculateSum(
   three: number,
   four: number
 ): CalculationResult {
-  const value = one + two + thr<<<AUTOCOMPLETE_HERE>>> + four;
+  const value = one + two + <<<AUTOCOMPLETE_HERE>>> + four;
   return {
     value,
     formatted: formatResult(value)
