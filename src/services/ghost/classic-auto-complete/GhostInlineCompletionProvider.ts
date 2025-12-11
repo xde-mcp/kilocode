@@ -386,15 +386,18 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
 
-			if (shouldSkipAutocomplete(prefix, suffix, document.languageId)) {
-				return []
-			}
-
+			// Check cache first - allow mid-word lookups from cache
 			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
 				return stringToInlineCompletions(matchingResult.text, position)
+			}
+
+			// Only skip new LLM requests during mid-word typing or at end of statement
+			// Cache lookups above are still allowed
+			if (shouldSkipAutocomplete(prefix, suffix, document.languageId)) {
+				return []
 			}
 
 			const { prompt, prefix: promptPrefix, suffix: promptSuffix } = await this.getPrompt(document, position)
