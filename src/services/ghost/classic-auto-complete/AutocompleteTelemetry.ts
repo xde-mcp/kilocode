@@ -20,25 +20,11 @@ export class AutocompleteTelemetry {
 	private readonly autocompleteType: AutocompleteType
 
 	/**
-	 * Set of suggestion identifiers that have been shown to the user.
-	 * Used to track unique suggestions for the AUTOCOMPLETE_UNIQUE_SUGGESTION_SHOWN event.
-	 */
-	private shownSuggestionIds: Set<string> = new Set()
-
-	/**
 	 * Create a new AutocompleteTelemetry instance
 	 * @param autocompleteType - The type of autocomplete (defaults to "inline" for backward compatibility)
 	 */
 	constructor(autocompleteType: AutocompleteType = "inline") {
 		this.autocompleteType = autocompleteType
-	}
-
-	/**
-	 * Generate a unique identifier for a suggestion based on its content and context.
-	 * Uses a simple hash of the text, prefix, and suffix.
-	 */
-	private generateSuggestionId(text: string, prefix: string, suffix: string): string {
-		return `${prefix}|${text}|${suffix}`
 	}
 
 	private captureEvent(event: TelemetryEventName, properties?: Record<string, unknown>): void {
@@ -172,48 +158,21 @@ export class AutocompleteTelemetry {
 
 	/**
 	 * Capture when a unique suggestion is shown to the user for the first time.
-	 * This tracks only the first time a specific suggestion (identified by text + prefix + suffix)
-	 * is displayed, regardless of whether it came from the LLM or cache.
+	 * Uniqueness is tracked in the cache itself via the shownToUser flag.
 	 *
-	 * @param text - The suggestion text
-	 * @param prefix - The text before the cursor when the suggestion was generated
-	 * @param suffix - The text after the cursor when the suggestion was generated
 	 * @param context - The autocomplete context
+	 * @param suggestionLength - The length of the suggestion in characters
 	 * @param source - Whether the suggestion came from 'llm' or 'cache'
-	 * @returns true if this was the first time the suggestion was shown, false otherwise
 	 */
 	public captureUniqueSuggestionShown(
-		text: string,
-		prefix: string,
-		suffix: string,
 		context: AutocompleteContext,
+		suggestionLength: number,
 		source: "llm" | "cache",
-	): boolean {
-		if (!text) {
-			return false
-		}
-
-		const suggestionId = this.generateSuggestionId(text, prefix, suffix)
-
-		if (this.shownSuggestionIds.has(suggestionId)) {
-			return false
-		}
-
-		this.shownSuggestionIds.add(suggestionId)
+	): void {
 		this.captureEvent(TelemetryEventName.AUTOCOMPLETE_UNIQUE_SUGGESTION_SHOWN, {
 			...context,
-			suggestionLength: text.length,
+			suggestionLength,
 			source,
 		})
-
-		return true
-	}
-
-	/**
-	 * Clear the set of shown suggestion IDs.
-	 * Useful for testing or when resetting state.
-	 */
-	public clearShownSuggestions(): void {
-		this.shownSuggestionIds.clear()
 	}
 }

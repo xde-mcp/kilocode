@@ -64,20 +64,22 @@ export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRe
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion with match type, or null if no match found
+ * @returns The matching suggestion with match type and first-time flag, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-): MatchingSuggestionResult | null {
+): (MatchingSuggestionResult & { isFirstTimeShown: boolean }) | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
 		const fillInAtCursor = suggestionsHistory[i]
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			return { text: fillInAtCursor.text, matchType: "exact" }
+			const isFirstTimeShown = !fillInAtCursor.shownToUser
+			fillInAtCursor.shownToUser = true
+			return { text: fillInAtCursor.text, matchType: "exact", isFirstTimeShown }
 		}
 
 		// If no exact match, but suggestion is available, check for partial typing
@@ -92,8 +94,14 @@ export function findMatchingSuggestion(
 
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
+				const isFirstTimeShown = !fillInAtCursor.shownToUser
+				fillInAtCursor.shownToUser = true
 				// Return the remaining part of the suggestion (with already-typed portion removed)
-				return { text: fillInAtCursor.text.substring(typedContent.length), matchType: "partial_typing" }
+				return {
+					text: fillInAtCursor.text.substring(typedContent.length),
+					matchType: "partial_typing",
+					isFirstTimeShown,
+				}
 			}
 		}
 
@@ -108,8 +116,10 @@ export function findMatchingSuggestion(
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
+			const isFirstTimeShown = !fillInAtCursor.shownToUser
+			fillInAtCursor.shownToUser = true
 			// Return the deleted portion plus the original suggestion text
-			return { text: deletedContent + fillInAtCursor.text, matchType: "backward_deletion" }
+			return { text: deletedContent + fillInAtCursor.text, matchType: "backward_deletion", isFirstTimeShown }
 		}
 	}
 
@@ -483,13 +493,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
-				this.telemetry?.captureUniqueSuggestionShown(
-					matchingResult.text,
-					prefix,
-					suffix,
-					telemetryContext,
-					"cache",
-				)
+				if (matchingResult.isFirstTimeShown) {
+					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, matchingResult.text.length, "cache")
+				}
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
@@ -512,7 +518,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			)
 			if (cachedResult) {
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
-				this.telemetry?.captureUniqueSuggestionShown(cachedResult.text, prefix, suffix, telemetryContext, "llm")
+				if (cachedResult.isFirstTimeShown) {
+					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, cachedResult.text.length, "llm")
+				}
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
