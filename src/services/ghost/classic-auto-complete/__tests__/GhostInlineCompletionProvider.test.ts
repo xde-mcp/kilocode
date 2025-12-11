@@ -692,20 +692,27 @@ describe("applyFirstLineOnly", () => {
 	})
 
 	it("returns result unchanged when text is empty", () => {
-		expect(applyFirstLineOnly({ text: "", matchType: "exact" }, "const x = foo")).toEqual({
+		expect(applyFirstLineOnly({ text: "", matchType: "exact", isFirstTimeShown: true }, "const x = foo")).toEqual({
 			text: "",
 			matchType: "exact",
+			isFirstTimeShown: true,
 		})
 	})
 
 	it("truncates to first line and preserves matchType when enabled", () => {
-		const result = applyFirstLineOnly({ text: "line1\nline2\nline3", matchType: "partial_typing" }, "const x = foo")
-		expect(result).toEqual({ text: "line1", matchType: "partial_typing" })
+		const result = applyFirstLineOnly(
+			{ text: "line1\nline2\nline3", matchType: "partial_typing", isFirstTimeShown: true },
+			"const x = foo",
+		)
+		expect(result).toEqual({ text: "line1", matchType: "partial_typing", isFirstTimeShown: true })
 	})
 
 	it("does not truncate when suggestion starts with newline", () => {
-		const result = applyFirstLineOnly({ text: "\nline1\nline2", matchType: "exact" }, "const x = foo")
-		expect(result).toEqual({ text: "\nline1\nline2", matchType: "exact" })
+		const result = applyFirstLineOnly(
+			{ text: "\nline1\nline2", matchType: "exact", isFirstTimeShown: false },
+			"const x = foo",
+		)
+		expect(result).toEqual({ text: "\nline1\nline2", matchType: "exact", isFirstTimeShown: false })
 	})
 })
 
