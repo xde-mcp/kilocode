@@ -43,6 +43,7 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	onSessionSynced?: (message: SessionSyncedMessage) => void
 	getOrganizationId: (taskId: string) => Promise<string | undefined>
 	getMode: (taskId: string) => Promise<string | undefined>
+	getModel: (taskId: string) => Promise<string | undefined>
 }
 
 export class SessionManager {
@@ -69,6 +70,7 @@ export class SessionManager {
 	private tokenValid: Record<string, boolean | undefined> = {}
 	private verifiedSessions: Set<string> = new Set()
 	private lastSessionMode: Record<string, string> = {}
+	private lastSessionModel: Record<string, string> = {}
 
 	public get sessionId() {
 		return this.lastActiveSessionId || this.sessionPersistenceManager?.getLastSession()?.sessionId
@@ -87,6 +89,7 @@ export class SessionManager {
 	private getToken: (() => Promise<string>) | undefined
 	private getOrganizationId: ((taskId: string) => Promise<string | undefined>) | undefined
 	private getMode: ((taskId: string) => Promise<string | undefined>) | undefined
+	private getModel: ((taskId: string) => Promise<string | undefined>) | undefined
 
 	private constructor() {}
 
@@ -101,6 +104,7 @@ export class SessionManager {
 		this.getToken = dependencies.getToken
 		this.getOrganizationId = dependencies.getOrganizationId
 		this.getMode = dependencies.getMode
+		this.getModel = dependencies.getModel
 
 		const trpcClient = new TrpcClient({
 			getToken: dependencies.getToken,
@@ -438,6 +442,7 @@ export class SessionManager {
 				const title = historyItem.task || this.getFirstMessageText(uiMessages, true) || ""
 
 				const mode = await this.getMode?.(taskId)
+				const model = await this.getModel?.(taskId)
 
 				const session = await this.sessionClient.create({
 					title,
@@ -445,12 +450,17 @@ export class SessionManager {
 					version: SessionManager.VERSION,
 					organization_id: await this.getOrganizationId?.(taskId),
 					last_mode: mode,
+					last_model: model,
 				})
 
 				sessionId = session.session_id
 
 				if (mode) {
 					this.lastSessionMode[sessionId] = mode
+				}
+
+				if (model) {
+					this.lastSessionModel[sessionId] = model
 				}
 
 				this.logger?.info("Created new session for task", "SessionManager", { taskId, sessionId })
@@ -565,7 +575,10 @@ export class SessionManager {
 					const currentMode = await this.getMode?.(taskId)
 					const modeChanged = currentMode && currentMode !== this.lastSessionMode[sessionId]
 
-					if (gitUrlChanged || modeChanged) {
+					const currentModel = await this.getModel?.(taskId)
+					const modelChanged = currentModel && currentModel !== this.lastSessionModel[sessionId]
+
+					if (gitUrlChanged || modeChanged || modelChanged) {
 						if (gitUrlChanged && gitInfo?.repoUrl) {
 							this.logger?.debug("Git URL changed, updating session", "SessionManager", {
 								sessionId,
@@ -585,10 +598,21 @@ export class SessionManager {
 							this.lastSessionMode[sessionId] = currentMode
 						}
 
+						if (modelChanged && currentModel) {
+							this.logger?.debug("Model changed, updating session", "SessionManager", {
+								sessionId,
+								newModel: currentModel,
+								previousModel: this.lastSessionModel[sessionId],
+							})
+
+							this.lastSessionModel[sessionId] = currentModel
+						}
+
 						const updateResult = await this.sessionClient.update({
 							session_id: sessionId,
 							...basePayload,
 							last_mode: currentMode,
+							last_model: currentModel,
 						})
 
 						this.updateSessionTimestamp(sessionId, updateResult.updated_at)
@@ -597,6 +621,7 @@ export class SessionManager {
 					this.logger?.debug("Creating new session for task", "SessionManager", { taskId })
 
 					const currentMode = await this.getMode?.(taskId)
+					const currentModel = await this.getModel?.(taskId)
 
 					const createdSession = await this.sessionClient.create({
 						...basePayload,
@@ -604,12 +629,17 @@ export class SessionManager {
 						version: SessionManager.VERSION,
 						organization_id: await this.getOrganizationId?.(taskId),
 						last_mode: currentMode,
+						last_model: currentModel,
 					})
 
 					sessionId = createdSession.session_id
 
 					if (currentMode) {
 						this.lastSessionMode[sessionId] = currentMode
+					}
+
+					if (currentModel) {
+						this.lastSessionModel[sessionId] = currentModel
 					}
 
 					this.logger?.info("Created new session", "SessionManager", { taskId, sessionId })

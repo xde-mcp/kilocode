@@ -90,6 +90,23 @@ export function kilo_initializeSessionManager({
 
 					return result || undefined
 				},
+				getModel: async (taskId: string) => {
+					const result = await (async () => {
+						const currentTask = provider.getCurrentTask()
+
+						if (currentTask?.taskId === taskId) {
+							return currentTask.api?.getModel().id
+						}
+
+						const state = await provider.getState()
+
+						return state.apiConfiguration?.apiModelId
+					})()
+
+					logger.debug(`Resolved model for task ${taskId}: "${result}"`, "SessionManager")
+
+					return result || undefined
+				},
 			})
 
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]

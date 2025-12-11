@@ -180,6 +180,14 @@ export class CLI {
 
 						return result
 					},
+					getModel: async () => {
+						const state = this.service?.getState()
+						const result = state?.apiConfiguration?.apiModelId
+
+						logs.debug(`Resolved model: "${result}"`, "SessionManager")
+
+						return result
+					},
 				})
 				logs.debug("SessionManager initialized with dependencies", "CLI")
 

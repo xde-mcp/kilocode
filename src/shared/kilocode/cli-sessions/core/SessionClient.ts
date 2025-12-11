@@ -11,6 +11,7 @@ export interface Session {
 	created_on_platform: string
 	organization_id: string | null
 	last_mode: string | null
+	last_model: string | null
 }
 
 export interface SessionWithSignedUrls extends Session {
@@ -33,6 +34,7 @@ export interface CreateSessionInput {
 	created_on_platform: string
 	version?: number
 	last_mode?: string | null | undefined
+	last_model?: string | null | undefined
 	organization_id?: string | undefined
 }
 
@@ -44,6 +46,7 @@ export interface UpdateSessionInput {
 	git_url?: string
 	version?: number
 	last_mode?: string | null | undefined
+	last_model?: string | null | undefined
 	organization_id?: string | null | undefined
 }
 
