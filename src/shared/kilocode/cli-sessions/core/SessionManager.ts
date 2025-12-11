@@ -437,15 +437,21 @@ export class SessionManager {
 
 				const title = historyItem.task || this.getFirstMessageText(uiMessages, true) || ""
 
+				const mode = await this.getMode?.(taskId)
+
 				const session = await this.sessionClient.create({
 					title,
 					created_on_platform: this.platform,
 					version: SessionManager.VERSION,
 					organization_id: await this.getOrganizationId?.(taskId),
-					last_mode: await this.getMode?.(taskId),
+					last_mode: mode,
 				})
 
 				sessionId = session.session_id
+
+				if (mode) {
+					this.lastSessionMode[sessionId] = mode
+				}
 
 				this.logger?.info("Created new session for task", "SessionManager", { taskId, sessionId })
 
