@@ -1,4 +1,4 @@
-#### Description: Should complete variable name in the middle of a return expression (return one + two + thr<cursor> + four should complete to three)
+#### Description: Should complete variable name in the middle of a return expression (return one + two + <cursor> + four should complete to three)
 #### Filename: src/calculator.ts
 import { formatResult } from './utils';
 
