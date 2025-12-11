@@ -55,6 +55,29 @@ export function kilo_initializeSessionManager({
 					log("Session restored")
 				},
 				platform: vscode.env.appName,
+				getOrganizationId: async (taskId: string) => {
+					const currentTask = provider.getCurrentTask()
+
+					if (currentTask?.taskId === taskId) {
+						return currentTask.apiConfiguration.kilocodeOrganizationId || null
+					}
+
+					const state = await provider.getState()
+
+					return state.apiConfiguration.kilocodeOrganizationId || null
+				},
+				getMode: async (taskId: string) => {
+					const currentTask = provider.getCurrentTask()
+
+					if (currentTask?.taskId === taskId) {
+						return currentTask.taskMode || null
+					}
+
+					const task = await provider.getTaskWithId(taskId)
+					const globalMode = await provider.getMode()
+
+					return task?.historyItem?.mode || globalMode || null
+				},
 			})
 
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]

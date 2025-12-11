@@ -84,6 +84,8 @@ export class SessionManager {
 	private onSessionSynced: ((message: SessionSyncedMessage) => void) | undefined
 	private platform: string | undefined
 	private getToken: (() => Promise<string>) | undefined
+	private getOrganizationId: ((taskId: string) => Promise<string | null>) | undefined
+	private getMode: ((taskId: string) => Promise<string | null>) | undefined
 
 	private constructor() {}
 
@@ -96,6 +98,8 @@ export class SessionManager {
 		this.onSessionSynced = dependencies.onSessionSynced ?? (() => {})
 		this.platform = dependencies.platform
 		this.getToken = dependencies.getToken
+		this.getOrganizationId = dependencies.getOrganizationId
+		this.getMode = dependencies.getMode
 
 		const trpcClient = new TrpcClient({
 			getToken: dependencies.getToken,
@@ -436,6 +440,8 @@ export class SessionManager {
 					title,
 					created_on_platform: this.platform,
 					version: SessionManager.VERSION,
+					organization_id: await this.getOrganizationId?.(taskId),
+					last_mode: await this.getMode?.(taskId),
 				})
 
 				sessionId = session.session_id
@@ -560,6 +566,7 @@ export class SessionManager {
 						const updateResult = await this.sessionClient.update({
 							session_id: sessionId,
 							...basePayload,
+							last_mode: await this.getMode?.(taskId),
 						})
 
 						this.updateSessionTimestamp(sessionId, updateResult.updated_at)
@@ -571,6 +578,8 @@ export class SessionManager {
 						...basePayload,
 						created_on_platform: this.platform,
 						version: SessionManager.VERSION,
+						organization_id: await this.getOrganizationId?.(taskId),
+						last_mode: await this.getMode?.(taskId),
 					})
 
 					sessionId = createdSession.session_id

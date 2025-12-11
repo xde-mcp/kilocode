@@ -32,8 +32,8 @@ export interface CreateSessionInput {
 	git_url?: string
 	created_on_platform: string
 	version?: number
-	last_mode?: string
-	organization_id?: string
+	last_mode?: string | null
+	organization_id?: string | null
 }
 
 export type CreateSessionOutput = Session
@@ -43,8 +43,8 @@ export interface UpdateSessionInput {
 	title?: string
 	git_url?: string
 	version?: number
-	last_mode?: string
-	organization_id?: string
+	last_mode?: string | null
+	organization_id?: string | null
 }
 
 export type UpdateSessionOutput = Session
