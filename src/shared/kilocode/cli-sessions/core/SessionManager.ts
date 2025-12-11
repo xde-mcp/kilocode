@@ -41,6 +41,8 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	onSessionCreated?: (message: SessionCreatedMessage) => void
 	onSessionRestored?: () => void
 	onSessionSynced?: (message: SessionSyncedMessage) => void
+	getOrganizationId: () => Promise<string | null>
+	getMode: () => Promise<string | null>
 }
 
 export class SessionManager {
