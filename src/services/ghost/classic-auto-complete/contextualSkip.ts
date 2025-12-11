@@ -123,7 +123,7 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 		return false
 	}
 
-	const suffixStartsWithWordChar = suffix.length > 0 && /[a-zA-Z0-9_]/.test(suffix[0])
+	const suffixStartsWithWordChar = /^[a-zA-Z0-9_]/.test(suffix)
 
 	const wordMatch = prefix.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
 	const lengthOfWordAtEndOfPrefix = wordMatch ? wordMatch[1].length : 0
