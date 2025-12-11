@@ -56,27 +56,39 @@ export function kilo_initializeSessionManager({
 				},
 				platform: vscode.env.appName,
 				getOrganizationId: async (taskId: string) => {
-					const currentTask = provider.getCurrentTask()
+					const result = await (async () => {
+						const currentTask = provider.getCurrentTask()
 
-					if (currentTask?.taskId === taskId) {
-						return currentTask.apiConfiguration.kilocodeOrganizationId || null
-					}
+						if (currentTask?.taskId === taskId) {
+							return currentTask.apiConfiguration.kilocodeOrganizationId
+						}
 
-					const state = await provider.getState()
+						const state = await provider.getState()
 
-					return state.apiConfiguration.kilocodeOrganizationId || null
+						return state.apiConfiguration.kilocodeOrganizationId
+					})()
+
+					logger.debug(`Resolved organization ID for task ${taskId}: "${result}"`, "SessionManager")
+
+					return result || undefined
 				},
 				getMode: async (taskId: string) => {
-					const currentTask = provider.getCurrentTask()
+					const result = await (async () => {
+						const currentTask = provider.getCurrentTask()
 
-					if (currentTask?.taskId === taskId) {
-						return currentTask.taskMode || null
-					}
+						if (currentTask?.taskId === taskId) {
+							return await currentTask.getTaskMode()
+						}
 
-					const task = await provider.getTaskWithId(taskId)
-					const globalMode = await provider.getMode()
+						const task = await provider.getTaskWithId(taskId)
+						const globalMode = await provider.getMode()
 
-					return task?.historyItem?.mode || globalMode || null
+						return task?.historyItem?.mode || globalMode
+					})()
+
+					logger.debug(`Resolved mode for task ${taskId}: "${result}"`, "SessionManager")
+
+					return result || undefined
 				},
 			})
 

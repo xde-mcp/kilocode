@@ -41,8 +41,8 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	onSessionCreated?: (message: SessionCreatedMessage) => void
 	onSessionRestored?: () => void
 	onSessionSynced?: (message: SessionSyncedMessage) => void
-	getOrganizationId: (taskId: string) => Promise<string | null>
-	getMode: (taskId: string) => Promise<string | null>
+	getOrganizationId: (taskId: string) => Promise<string | undefined>
+	getMode: (taskId: string) => Promise<string | undefined>
 }
 
 export class SessionManager {
@@ -68,6 +68,7 @@ export class SessionManager {
 	private sessionUpdatedAt: Record<string, string> = {}
 	private tokenValid: Record<string, boolean | undefined> = {}
 	private verifiedSessions: Set<string> = new Set()
+	private lastSessionMode: Record<string, string> = {}
 
 	public get sessionId() {
 		return this.lastActiveSessionId || this.sessionPersistenceManager?.getLastSession()?.sessionId
@@ -84,8 +85,8 @@ export class SessionManager {
 	private onSessionSynced: ((message: SessionSyncedMessage) => void) | undefined
 	private platform: string | undefined
 	private getToken: (() => Promise<string>) | undefined
-	private getOrganizationId: ((taskId: string) => Promise<string | null>) | undefined
-	private getMode: ((taskId: string) => Promise<string | null>) | undefined
+	private getOrganizationId: ((taskId: string) => Promise<string | undefined>) | undefined
+	private getMode: ((taskId: string) => Promise<string | undefined>) | undefined
 
 	private constructor() {}
 
@@ -555,18 +556,33 @@ export class SessionManager {
 
 					const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.taskGitUrls[taskId]
 
-					if (gitUrlChanged && gitInfo?.repoUrl) {
-						this.taskGitUrls[taskId] = gitInfo.repoUrl
+					const currentMode = await this.getMode?.(taskId)
+					const modeChanged = currentMode && currentMode !== this.lastSessionMode[sessionId]
 
-						this.logger?.debug("Git URL changed, updating session", "SessionManager", {
-							sessionId,
-							newGitUrl: gitInfo.repoUrl,
-						})
+					if (gitUrlChanged || modeChanged) {
+						if (gitUrlChanged && gitInfo?.repoUrl) {
+							this.logger?.debug("Git URL changed, updating session", "SessionManager", {
+								sessionId,
+								newGitUrl: gitInfo.repoUrl,
+							})
+
+							this.taskGitUrls[taskId] = gitInfo.repoUrl
+						}
+
+						if (modeChanged && currentMode) {
+							this.logger?.debug("Mode changed, updating session", "SessionManager", {
+								sessionId,
+								newMode: currentMode,
+								previousMode: this.lastSessionMode[sessionId],
+							})
+
+							this.lastSessionMode[sessionId] = currentMode
+						}
 
 						const updateResult = await this.sessionClient.update({
 							session_id: sessionId,
 							...basePayload,
-							last_mode: await this.getMode?.(taskId),
+							last_mode: currentMode,
 						})
 
 						this.updateSessionTimestamp(sessionId, updateResult.updated_at)
@@ -574,15 +590,21 @@ export class SessionManager {
 				} else {
 					this.logger?.debug("Creating new session for task", "SessionManager", { taskId })
 
+					const currentMode = await this.getMode?.(taskId)
+
 					const createdSession = await this.sessionClient.create({
 						...basePayload,
 						created_on_platform: this.platform,
 						version: SessionManager.VERSION,
 						organization_id: await this.getOrganizationId?.(taskId),
-						last_mode: await this.getMode?.(taskId),
+						last_mode: currentMode,
 					})
 
 					sessionId = createdSession.session_id
+
+					if (currentMode) {
+						this.lastSessionMode[sessionId] = currentMode
+					}
 
 					this.logger?.info("Created new session", "SessionManager", { taskId, sessionId })
 
