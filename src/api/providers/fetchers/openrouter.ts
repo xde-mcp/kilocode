@@ -7,6 +7,7 @@ import {
 	OPEN_ROUTER_REASONING_BUDGET_MODELS,
 	OPEN_ROUTER_REQUIRED_REASONING_BUDGET_MODELS,
 	anthropicModels,
+	toolNames, // kilocode_change
 } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../../shared/api"
@@ -35,8 +36,17 @@ const modelRouterBaseModelSchema = z.object({
 	description: z.string().optional(),
 	context_length: z.number(),
 	max_completion_tokens: z.number().nullish(),
-	preferredIndex: z.number().nullish(), // kilocode_change
 	pricing: openRouterPricingSchema.optional(),
+
+	// kilocode_change start
+	preferredIndex: z.number().nullish(),
+	settings: z
+		.object({
+			included_tools: z.array(z.enum(toolNames)).nullish(),
+			excluded_tools: z.array(z.enum(toolNames)).nullish(),
+		})
+		.nullish(),
+	// kilocode_change end
 })
 
 export type OpenRouterBaseModel = z.infer<typeof modelRouterBaseModelSchema>
@@ -245,6 +255,8 @@ export const parseOpenRouterModel = ({
 		displayName,
 		preferredIndex: model.preferredIndex,
 		supportsVerbosity: !!supportedParameters?.includes("verbosity") || undefined,
+		includedTools: model.settings?.included_tools || undefined,
+		excludedTools: model.settings?.excluded_tools || undefined,
 		// kilocode_change end
 		// Default to native tool protocol when native tools are supported
 		defaultToolProtocol: supportsNativeTools ? ("native" as const) : undefined,
