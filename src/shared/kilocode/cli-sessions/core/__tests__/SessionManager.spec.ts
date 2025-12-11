@@ -68,6 +68,7 @@ const createMockDependencies = (): SessionManagerDependencies => ({
 	getToken: vi.fn().mockResolvedValue("test-token"),
 	getOrganizationId: vi.fn().mockReturnValue(undefined),
 	getMode: vi.fn().mockReturnValue(undefined),
+	getModel: vi.fn().mockReturnValue(undefined),
 	pathProvider: {
 		getTasksDir: vi.fn().mockReturnValue(MOCK_TASKS_DIR),
 		getSessionFilePath: vi.fn().mockImplementation((dir: string) => path.join(dir, ".kilocode", "session.json")),
@@ -233,6 +234,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -299,6 +301,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -324,6 +327,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -357,6 +361,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -382,6 +387,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -411,6 +417,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -442,6 +449,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: "https://storage.example.com/api_history.json",
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -473,6 +481,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: "https://storage.example.com/ui_messages.json",
@@ -580,6 +589,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -610,6 +620,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -623,6 +634,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -681,6 +693,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -706,6 +719,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -742,6 +756,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -774,6 +789,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -809,6 +825,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -832,6 +849,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -863,6 +881,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -914,6 +933,7 @@ describe("SessionManager", () => {
 					created_on_platform: "vscode",
 					organization_id: "org-123",
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -946,6 +966,7 @@ describe("SessionManager", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -980,6 +1001,7 @@ describe("SessionManager", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: "code",
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -1012,6 +1034,7 @@ describe("SessionManager", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -1022,6 +1045,74 @@ describe("SessionManager", () => {
 				expect(manager.sessionClient!.create).toHaveBeenCalledWith(
 					expect.objectContaining({
 						last_mode: undefined,
+					}),
+				)
+			})
+		})
+
+		describe("getModel", () => {
+			it("should call getModel when creating a new session", async () => {
+				const mockGetModel = vi.fn().mockResolvedValue("claude-sonnet-4")
+				mockDependencies.getModel = mockGetModel
+
+				manager = SessionManager.init(mockDependencies)
+
+				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+				vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+					session_id: "session-123",
+					title: "Test Session",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
+					last_model: "claude-sonnet-4",
+					version: SessionManager.VERSION,
+				})
+				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+				await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+				expect(mockGetModel).toHaveBeenCalledWith("task-123")
+				expect(manager.sessionClient!.create).toHaveBeenCalledWith(
+					expect.objectContaining({
+						last_model: "claude-sonnet-4",
+					}),
+				)
+			})
+
+			it("should pass undefined last_model when getModel returns undefined", async () => {
+				const mockGetModel = vi.fn().mockResolvedValue(undefined)
+				mockDependencies.getModel = mockGetModel
+
+				manager = SessionManager.init(mockDependencies)
+
+				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+				vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+					session_id: "session-123",
+					title: "Test Session",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
+					last_model: null,
+					version: SessionManager.VERSION,
+				})
+				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+				await manager.getSessionFromTask("task-123", mockTaskDataProvider)
+
+				expect(mockGetModel).toHaveBeenCalledWith("task-123")
+				expect(manager.sessionClient!.create).toHaveBeenCalledWith(
+					expect.objectContaining({
+						last_model: undefined,
 					}),
 				)
 			})
@@ -1048,6 +1139,7 @@ describe("SessionManager", () => {
 					created_on_platform: "vscode",
 					organization_id: "org-combined",
 					last_mode: "architect",
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
@@ -1060,6 +1152,47 @@ describe("SessionManager", () => {
 					expect.objectContaining({
 						organization_id: "org-combined",
 						last_mode: "architect",
+					}),
+				)
+			})
+
+			it("should include organization_id, last_mode, and last_model when all are provided", async () => {
+				const mockGetOrganizationId = vi.fn().mockResolvedValue("org-all")
+				const mockGetMode = vi.fn().mockResolvedValue("code")
+				const mockGetModel = vi.fn().mockResolvedValue("gpt-4")
+				mockDependencies.getOrganizationId = mockGetOrganizationId
+				mockDependencies.getMode = mockGetMode
+				mockDependencies.getModel = mockGetModel
+
+				manager = SessionManager.init(mockDependencies)
+
+				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
+				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
+				vi.mocked(manager.sessionClient!.create).mockResolvedValue({
+					session_id: "session-all",
+					title: "Test Session",
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: "org-all",
+					last_mode: "code",
+					last_model: "gpt-4",
+					version: SessionManager.VERSION,
+				})
+				vi.mocked(manager.sessionClient!.uploadBlob).mockResolvedValue({ updated_at: new Date().toISOString() })
+
+				await manager.getSessionFromTask("task-all", mockTaskDataProvider)
+
+				expect(mockGetOrganizationId).toHaveBeenCalledWith("task-all")
+				expect(mockGetMode).toHaveBeenCalledWith("task-all")
+				expect(mockGetModel).toHaveBeenCalledWith("task-all")
+				expect(manager.sessionClient!.create).toHaveBeenCalledWith(
+					expect.objectContaining({
+						organization_id: "org-all",
+						last_mode: "code",
+						last_model: "gpt-4",
 					}),
 				)
 			})
@@ -1336,6 +1469,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -1367,6 +1501,7 @@ describe("SessionManager", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,

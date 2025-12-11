@@ -48,6 +48,7 @@ vi.mock("../SessionClient", () => ({
 			created_on_platform: "vscode",
 			organization_id: null,
 			last_mode: null,
+			last_model: null,
 			version: SessionManager.VERSION,
 		}),
 		update: vi.fn().mockResolvedValue({
@@ -60,6 +61,7 @@ vi.mock("../SessionClient", () => ({
 			created_on_platform: "vscode",
 			organization_id: null,
 			last_mode: null,
+			last_model: null,
 			version: SessionManager.VERSION,
 		}),
 		share: vi.fn(),
@@ -89,6 +91,7 @@ const createMockDependencies = (): SessionManagerDependencies => ({
 	getToken: vi.fn().mockResolvedValue("test-token"),
 	getOrganizationId: vi.fn().mockReturnValue(undefined),
 	getMode: vi.fn().mockReturnValue(undefined),
+	getModel: vi.fn().mockReturnValue(undefined),
 	pathProvider: {
 		getTasksDir: vi.fn().mockReturnValue(MOCK_TASKS_DIR),
 		getSessionFilePath: vi.fn().mockImplementation((dir: string) => path.join(dir, ".kilocode", "session.json")),
@@ -370,6 +373,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -402,6 +406,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -608,6 +613,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -644,6 +650,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -660,6 +667,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -686,6 +694,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -789,6 +798,7 @@ describe("SessionManager.syncSession", () => {
 				created_on_platform: "vscode",
 				organization_id: null,
 				last_mode: null,
+				last_model: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -829,6 +839,7 @@ describe("SessionManager.syncSession", () => {
 						created_on_platform: "vscode",
 						organization_id: null,
 						last_mode: null,
+						last_model: null,
 						api_conversation_history_blob_url: null,
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
@@ -846,6 +857,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -876,6 +888,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -913,6 +926,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -929,6 +943,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -957,6 +972,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -984,6 +1000,7 @@ describe("SessionManager.syncSession", () => {
 						created_on_platform: "vscode",
 						organization_id: null,
 						last_mode: null,
+						last_model: null,
 						version: SessionManager.VERSION,
 					}
 				})
@@ -1031,6 +1048,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -1083,6 +1101,7 @@ describe("SessionManager.syncSession", () => {
 						created_on_platform: "vscode",
 						organization_id: null,
 						last_mode: null,
+						last_model: null,
 						api_conversation_history_blob_url: null,
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
@@ -1100,6 +1119,7 @@ describe("SessionManager.syncSession", () => {
 					created_on_platform: "vscode",
 					organization_id: null,
 					last_mode: null,
+					last_model: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -1250,6 +1270,7 @@ describe("SessionManager.syncSession", () => {
 						created_on_platform: "vscode",
 						organization_id: null,
 						last_mode: null,
+						last_model: null,
 						version: SessionManager.VERSION,
 					}
 				})
@@ -1287,6 +1308,7 @@ describe("SessionManager.syncSession", () => {
 						created_on_platform: "vscode",
 						organization_id: null,
 						last_mode: null,
+						last_model: null,
 						version: SessionManager.VERSION,
 					}
 				})
