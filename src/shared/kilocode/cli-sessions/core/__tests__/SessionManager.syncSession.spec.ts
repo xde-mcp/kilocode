@@ -43,12 +43,23 @@ vi.mock("../SessionClient", () => ({
 			title: "",
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
+			git_url: null,
+			cloud_agent_session_id: null,
+			created_on_platform: "vscode",
+			organization_id: null,
+			last_mode: null,
 			version: SessionManager.VERSION,
 		}),
 		update: vi.fn().mockResolvedValue({
 			session_id: "default-session-id",
 			title: "",
+			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
+			git_url: null,
+			cloud_agent_session_id: null,
+			created_on_platform: "vscode",
+			organization_id: null,
+			last_mode: null,
 			version: SessionManager.VERSION,
 		}),
 		share: vi.fn(),
@@ -76,6 +87,8 @@ const MOCK_TASKS_DIR = path.join("mock", "user", ".kilocode", "tasks")
 const createMockDependencies = (): SessionManagerDependencies => ({
 	platform: "vscode",
 	getToken: vi.fn().mockResolvedValue("test-token"),
+	getOrganizationId: vi.fn().mockReturnValue(undefined),
+	getMode: vi.fn().mockReturnValue(undefined),
 	pathProvider: {
 		getTasksDir: vi.fn().mockReturnValue(MOCK_TASKS_DIR),
 		getSessionFilePath: vi.fn().mockImplementation((dir: string) => path.join(dir, ".kilocode", "session.json")),
@@ -352,6 +365,11 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -379,6 +397,11 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				version: SessionManager.VERSION,
 			})
 			vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -578,7 +601,13 @@ describe("SessionManager.syncSession", () => {
 			vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 				session_id: "session-123",
 				title: "",
+				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -610,6 +639,11 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -619,7 +653,13 @@ describe("SessionManager.syncSession", () => {
 			vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 				session_id: "session-123",
 				title: "Login form creation",
+				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -641,6 +681,11 @@ describe("SessionManager.syncSession", () => {
 				title: "Existing title",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				api_conversation_history_blob_url: null,
 				task_metadata_blob_url: null,
 				ui_messages_blob_url: null,
@@ -739,6 +784,11 @@ describe("SessionManager.syncSession", () => {
 				title: "",
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString(),
+				git_url: null,
+				cloud_agent_session_id: null,
+				created_on_platform: "vscode",
+				organization_id: null,
+				last_mode: null,
 				version: SessionManager.VERSION,
 			})
 
@@ -774,6 +824,11 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
+						git_url: null,
+						cloud_agent_session_id: null,
+						created_on_platform: "vscode",
+						organization_id: null,
+						last_mode: null,
 						api_conversation_history_blob_url: null,
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
@@ -784,7 +839,13 @@ describe("SessionManager.syncSession", () => {
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
+					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -808,7 +869,13 @@ describe("SessionManager.syncSession", () => {
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Create a login form",
+					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -841,6 +908,11 @@ describe("SessionManager.syncSession", () => {
 					title: "",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -850,7 +922,13 @@ describe("SessionManager.syncSession", () => {
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
+					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -874,6 +952,11 @@ describe("SessionManager.syncSession", () => {
 					title: "",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -894,7 +977,13 @@ describe("SessionManager.syncSession", () => {
 					return {
 						session_id: params?.session_id || "session-123",
 						title: "",
+						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
+						git_url: null,
+						cloud_agent_session_id: null,
+						created_on_platform: "vscode",
+						organization_id: null,
+						last_mode: null,
 						version: SessionManager.VERSION,
 					}
 				})
@@ -937,6 +1026,11 @@ describe("SessionManager.syncSession", () => {
 					title: "",
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					api_conversation_history_blob_url: null,
 					task_metadata_blob_url: null,
 					ui_messages_blob_url: null,
@@ -984,6 +1078,11 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
+						git_url: null,
+						cloud_agent_session_id: null,
+						created_on_platform: "vscode",
+						organization_id: null,
+						last_mode: null,
 						api_conversation_history_blob_url: null,
 						task_metadata_blob_url: null,
 						ui_messages_blob_url: null,
@@ -994,7 +1093,13 @@ describe("SessionManager.syncSession", () => {
 				vi.mocked(manager.sessionClient!.update).mockResolvedValue({
 					session_id: "session-123",
 					title: "Generated title",
+					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
+					git_url: null,
+					cloud_agent_session_id: null,
+					created_on_platform: "vscode",
+					organization_id: null,
+					last_mode: null,
 					version: SessionManager.VERSION,
 				})
 
@@ -1140,6 +1245,11 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
+						git_url: null,
+						cloud_agent_session_id: null,
+						created_on_platform: "vscode",
+						organization_id: null,
+						last_mode: null,
 						version: SessionManager.VERSION,
 					}
 				})
@@ -1172,6 +1282,11 @@ describe("SessionManager.syncSession", () => {
 						title: "",
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString(),
+						git_url: null,
+						cloud_agent_session_id: null,
+						created_on_platform: "vscode",
+						organization_id: null,
+						last_mode: null,
 						version: SessionManager.VERSION,
 					}
 				})
