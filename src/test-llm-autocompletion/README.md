@@ -225,7 +225,6 @@ Is this acceptable? (y/n):
 
 ## Notes
 
-- The `approvals/` directory is gitignored
 - The `html-output/` directory is gitignored
 - Each approved/rejected output gets a globally unique numbered file (numbers are unique across both approved and rejected files for the same test case)
 - Tests only prompt for input in the terminal when output is new
