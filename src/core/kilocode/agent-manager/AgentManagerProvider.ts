@@ -30,7 +30,6 @@ import {
 	captureAgentManagerSessionError,
 } from "./telemetry"
 import { SessionManager } from "../../../shared/kilocode/cli-sessions/core/SessionManager"
-import { auth } from "@modelcontextprotocol/sdk/client/auth.js"
 
 /**
  * AgentManagerProvider
