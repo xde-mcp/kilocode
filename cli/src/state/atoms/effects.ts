@@ -601,7 +601,10 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			const lastMessage = message.state.chatMessages[message.state.chatMessages.length - 1]
 			if (lastMessage?.type === "ask" && lastMessage?.ask === "completion_result") {
 				logs.info("Completion result detected in state update", "effects")
+
 				set(ciCompletionDetectedAtom, true)
+
+				SessionManager.init().doSync(true)
 			}
 		}
 	} catch (error) {
