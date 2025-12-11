@@ -164,6 +164,22 @@ export class CLI {
 						}
 					},
 					platform: "cli",
+					getOrganizationId: async () => {
+						const state = this.service?.getState()
+						const result = state?.apiConfiguration?.kilocodeOrganizationId
+
+						logs.debug(`Resolved organization ID: "${result}"`, "SessionManager")
+
+						return result
+					},
+					getMode: async () => {
+						const state = this.service?.getState()
+						const result = state?.mode
+
+						logs.debug(`Resolved mode: "${result}"`, "SessionManager")
+
+						return result
+					},
 				})
 				logs.debug("SessionManager initialized with dependencies", "CLI")
 
