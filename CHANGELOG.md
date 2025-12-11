@@ -1,5 +1,15 @@
 # kilo-code
 
+## 4.136.0
+
+### Minor Changes
+
+- [#4380](https://github.com/Kilo-Org/kilocode/pull/4380) [`802cc70`](https://github.com/Kilo-Org/kilocode/commit/802cc700a6ef4bc2f7537a4cfff1663da01982c3) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Add multi-version feature to Agent Manager - launch 1-4 parallel agents in parallel on git worktrees
+
+### Patch Changes
+
+- [#4396](https://github.com/Kilo-Org/kilocode/pull/4396) [`b2a75e6`](https://github.com/Kilo-Org/kilocode/commit/b2a75e6013c6ec1f01a3e735c51b355a5e1e0308) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Add support for GPT-5.2
+
 ## 4.135.0
 
 ### Minor Changes
