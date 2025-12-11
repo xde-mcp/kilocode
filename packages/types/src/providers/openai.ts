@@ -18,9 +18,9 @@ export const openAiNativeModels = {
 		promptCacheRetention: "24h",
 		supportsReasoningEffort: ["none", "low", "medium", "high"],
 		reasoningEffort: "medium",
-		inputPrice: 1.25,
-		outputPrice: 10.0,
-		cacheReadsPrice: 0.125,
+		inputPrice: 1.75,
+		outputPrice: 14.0,
+		cacheReadsPrice: 0.175,
 		supportsVerbosity: true,
 		supportsTemperature: false,
 		tiers: [
