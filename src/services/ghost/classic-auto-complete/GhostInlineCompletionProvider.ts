@@ -483,6 +483,13 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				this.telemetry?.captureUniqueSuggestionShown(
+					matchingResult.text,
+					prefix,
+					suffix,
+					telemetryContext,
+					"cache",
+				)
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
@@ -505,6 +512,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			)
 			if (cachedResult) {
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
+				this.telemetry?.captureUniqueSuggestionShown(cachedResult.text, prefix, suffix, telemetryContext, "llm")
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
