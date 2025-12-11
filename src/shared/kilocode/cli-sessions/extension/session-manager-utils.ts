@@ -3,6 +3,7 @@ import { ExtensionLoggerAdapter } from "../../../../services/kilo-session/Extens
 import { ExtensionMessengerImpl } from "../../../../services/kilo-session/ExtensionMessengerImpl"
 import { ExtensionPathProvider } from "../../../../services/kilo-session/ExtensionPathProvider"
 import { SessionManager } from "../core/SessionManager"
+import { buildApiHandler } from "../../../../api"
 import * as vscode from "vscode"
 
 const kilo_isCli = () => {
@@ -99,8 +100,9 @@ export function kilo_initializeSessionManager({
 						}
 
 						const state = await provider.getState()
+						const apiHandler = buildApiHandler(state.apiConfiguration)
 
-						return state.apiConfiguration?.apiModelId
+						return apiHandler.getModel().id
 					})()
 
 					logger.debug(`Resolved model for task ${taskId}: "${result}"`, "SessionManager")
