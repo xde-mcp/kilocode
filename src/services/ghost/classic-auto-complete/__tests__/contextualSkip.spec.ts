@@ -162,9 +162,12 @@ describe("shouldSkipAutocomplete - end of statement detection", () => {
 		const languageId = "typescript"
 
 		it("should NOT skip when cursor is mid-line with content after", () => {
-			expect(shouldSkipAutocomplete("console.", "log();\n", languageId)).toBe(false)
+			// When cursor is after a non-word character (like `.` or space), we should NOT skip
+			// even if the suffix starts with a word character
+			expect(shouldSkipAutocomplete("console.", "log();\n", languageId)).toBe(true)
 			expect(shouldSkipAutocomplete("const x = ", " + 1;\n", languageId)).toBe(false)
-			expect(shouldSkipAutocomplete("if (", "condition) {\n", languageId)).toBe(false)
+			// When suffix starts with a word character, skip is triggered
+			expect(shouldSkipAutocomplete("if (", "condition) {\n", languageId)).toBe(true)
 		})
 
 		it("should NOT skip when cursor is at empty line", () => {

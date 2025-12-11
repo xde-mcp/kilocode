@@ -128,7 +128,7 @@ function isMidWordTyping(prefix: string, suffix: string): boolean {
 	const wordMatch = prefix.match(/([a-zA-Z_][a-zA-Z0-9_]*)$/)
 	const lengthOfWordAtEndOfPrefix = wordMatch ? wordMatch[1].length : 0
 
-	return lengthOfWordAtEndOfPrefix > 2 && !suffixStartsWithWordChar
+	return lengthOfWordAtEndOfPrefix > 2 || suffixStartsWithWordChar
 }
 
 export function shouldSkipAutocomplete(prefix: string, suffix: string, languageId?: string): boolean {
