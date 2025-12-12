@@ -199,6 +199,42 @@ describe("SessionStateManager", () => {
 		})
 	})
 
+	describe("Task Session (In-Memory Fallback)", () => {
+		it("getSessionForTask returns undefined for unknown task", () => {
+			const result = manager.getSessionForTask("unknown-task")
+
+			expect(result).toBeUndefined()
+		})
+
+		it("setSessionForTask stores session ID", () => {
+			manager.setSessionForTask("task-123", "session-456")
+
+			expect(manager.getSessionForTask("task-123")).toBe("session-456")
+		})
+
+		it("getSessionForTask returns stored session ID", () => {
+			manager.setSessionForTask("task-123", "session-456")
+
+			expect(manager.getSessionForTask("task-123")).toBe("session-456")
+		})
+
+		it("multiple task sessions can be stored independently", () => {
+			manager.setSessionForTask("task-1", "session-1")
+			manager.setSessionForTask("task-2", "session-2")
+
+			expect(manager.getSessionForTask("task-1")).toBe("session-1")
+			expect(manager.getSessionForTask("task-2")).toBe("session-2")
+			expect(manager.getSessionForTask("task-3")).toBeUndefined()
+		})
+
+		it("setSessionForTask overwrites existing value", () => {
+			manager.setSessionForTask("task-123", "session-old")
+			manager.setSessionForTask("task-123", "session-new")
+
+			expect(manager.getSessionForTask("task-123")).toBe("session-new")
+		})
+	})
+
 	describe("Workspace Directory", () => {
 		it("getWorkspaceDir returns null initially", () => {
 			const result = manager.getWorkspaceDir()
@@ -226,6 +262,7 @@ describe("SessionStateManager", () => {
 			manager.setMode("session-123", "code")
 			manager.setModel("session-123", "gpt-4")
 			manager.setTokenValidity("token", true)
+			manager.setSessionForTask("task-1", "cached-session")
 
 			// Reset
 			manager.reset()
@@ -241,6 +278,7 @@ describe("SessionStateManager", () => {
 			expect(manager.getMode("session-123")).toBeUndefined()
 			expect(manager.getModel("session-123")).toBeUndefined()
 			expect(manager.getTokenValidity("token")).toBeUndefined()
+			expect(manager.getSessionForTask("task-1")).toBeUndefined()
 		})
 
 		it("reset allows fresh state to be set", () => {

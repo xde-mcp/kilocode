@@ -8,6 +8,7 @@
  * - Session titles
  * - Timestamp tracking (high-water mark)
  * - Mode/Model tracking
+ * - Task-to-session ID mapping
  *
  * Extracted from SessionManager as part of the refactoring effort to improve
  * maintainability and testability through separation of concerns.
@@ -38,6 +39,10 @@ export class SessionStateManager {
 
 	// Token validity cache
 	private tokenValid: Record<string, boolean | undefined> = {}
+
+	// In-memory task session cache - fallback when workspace isn't present
+	// and persistence manager can't persist data
+	private taskSession: Record<string, string> = {}
 
 	/**
 	 * Gets the current active session ID.
@@ -192,6 +197,26 @@ export class SessionStateManager {
 	}
 
 	/**
+	 * Gets the session ID for a task from in-memory storage.
+	 * Used as fallback when workspace isn't present and persistence manager can't persist data.
+	 * @param taskId - The task ID
+	 * @returns The session ID if found, undefined otherwise.
+	 */
+	getSessionForTask(taskId: string): string | undefined {
+		return this.taskSession[taskId]
+	}
+
+	/**
+	 * Sets the session ID for a task in in-memory storage.
+	 * Used as fallback when workspace isn't present and persistence manager can't persist data.
+	 * @param taskId - The task ID
+	 * @param sessionId - The session ID to set.
+	 */
+	setSessionForTask(taskId: string, sessionId: string): void {
+		this.taskSession[taskId] = sessionId
+	}
+
+	/**
 	 * Gets the workspace directory.
 	 */
 	getWorkspaceDir(): string | null {
@@ -219,5 +244,6 @@ export class SessionStateManager {
 		this.lastSessionMode = {}
 		this.lastSessionModel = {}
 		this.tokenValid = {}
+		this.taskSession = {}
 	}
 }
