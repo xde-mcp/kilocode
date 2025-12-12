@@ -107,7 +107,7 @@ describe("SessionManager", () => {
 			;(privateInstance as unknown as { lastActiveSessionId: string | null }).lastActiveSessionId = null
 		}
 
-		manager = SessionManager.init(mockDependencies)
+		manager = SessionManager.init(mockDependencies)!
 	})
 
 	afterEach(() => {
@@ -269,21 +269,6 @@ describe("SessionManager", () => {
 	})
 
 	describe("restoreSession", () => {
-		it("should throw error when manager not initialized and rethrowError is true", async () => {
-			;(manager as unknown as { pathProvider: undefined }).pathProvider = undefined
-
-			await expect(manager.restoreSession("session-123", true)).rejects.toThrow(
-				"SessionManager used before initialization",
-			)
-		})
-
-		it("should not throw error when manager not initialized and rethrowError is false", async () => {
-			;(manager as unknown as { pathProvider: undefined }).pathProvider = undefined
-
-			await expect(manager.restoreSession("session-123")).resolves.toBeUndefined()
-			expect(mockDependencies.logger.error).toHaveBeenCalled()
-		})
-
 		it("should throw error when session not found", async () => {
 			vi.mocked(manager.sessionClient!.get).mockResolvedValue(undefined as unknown as SessionWithSignedUrls)
 
@@ -515,12 +500,6 @@ describe("SessionManager", () => {
 	})
 
 	describe("shareSession", () => {
-		it("should throw error when manager not initialized", async () => {
-			;(manager as unknown as { sessionClient: undefined }).sessionClient = undefined
-
-			await expect(manager.shareSession()).rejects.toThrow("SessionManager used before initialization")
-		})
-
 		it("should throw error when no active session", async () => {
 			vi.mocked(manager.sessionPersistenceManager!.getLastSession).mockReturnValue(undefined)
 
@@ -562,14 +541,6 @@ describe("SessionManager", () => {
 	})
 
 	describe("renameSession", () => {
-		it("should throw error when manager not initialized", async () => {
-			;(manager as unknown as { sessionClient: undefined }).sessionClient = undefined
-
-			await expect(manager.renameSession("session-123", "New Title")).rejects.toThrow(
-				"SessionManager used before initialization",
-			)
-		})
-
 		it("should throw error when session ID is empty", async () => {
 			await expect(manager.renameSession("", "New Title")).rejects.toThrow("No active session")
 		})
@@ -603,12 +574,6 @@ describe("SessionManager", () => {
 	})
 
 	describe("forkSession", () => {
-		it("should throw error when manager not initialized", async () => {
-			;(manager as unknown as { platform: undefined }).platform = undefined
-
-			await expect(manager.forkSession("share-123")).rejects.toThrow("SessionManager used before initialization")
-		})
-
 		it("should fork session and restore it", async () => {
 			vi.mocked(manager.sessionClient!.fork).mockResolvedValue({
 				session_id: "forked-session-456",
@@ -671,14 +636,6 @@ describe("SessionManager", () => {
 
 			const verifiedSessions = (manager as unknown as { verifiedSessions: Set<string> }).verifiedSessions
 			verifiedSessions.clear()
-		})
-
-		it("should throw error when manager not initialized", async () => {
-			;(manager as unknown as { platform: undefined }).platform = undefined
-
-			await expect(manager.getSessionFromTask("task-123", mockTaskDataProvider)).rejects.toThrow(
-				"SessionManager used before initialization",
-			)
 		})
 
 		it("should return existing session ID when task is already mapped and session exists", async () => {
@@ -919,7 +876,7 @@ describe("SessionManager", () => {
 				const mockGetOrganizationId = vi.fn().mockResolvedValue("org-123")
 				mockDependencies.getOrganizationId = mockGetOrganizationId
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -952,7 +909,7 @@ describe("SessionManager", () => {
 				const mockGetOrganizationId = vi.fn().mockResolvedValue(undefined)
 				mockDependencies.getOrganizationId = mockGetOrganizationId
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -987,7 +944,7 @@ describe("SessionManager", () => {
 				const mockGetMode = vi.fn().mockResolvedValue("code")
 				mockDependencies.getMode = mockGetMode
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -1020,7 +977,7 @@ describe("SessionManager", () => {
 				const mockGetMode = vi.fn().mockResolvedValue(undefined)
 				mockDependencies.getMode = mockGetMode
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -1055,7 +1012,7 @@ describe("SessionManager", () => {
 				const mockGetModel = vi.fn().mockResolvedValue("claude-sonnet-4")
 				mockDependencies.getModel = mockGetModel
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -1088,7 +1045,7 @@ describe("SessionManager", () => {
 				const mockGetModel = vi.fn().mockResolvedValue(undefined)
 				mockDependencies.getModel = mockGetModel
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -1125,7 +1082,7 @@ describe("SessionManager", () => {
 				mockDependencies.getOrganizationId = mockGetOrganizationId
 				mockDependencies.getMode = mockGetMode
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
@@ -1164,7 +1121,7 @@ describe("SessionManager", () => {
 				mockDependencies.getMode = mockGetMode
 				mockDependencies.getModel = mockGetModel
 
-				manager = SessionManager.init(mockDependencies)
+				manager = SessionManager.init(mockDependencies)!
 
 				vi.mocked(manager.sessionPersistenceManager!.getSessionForTask).mockReturnValue(undefined)
 				vi.mocked(readFileSync).mockReturnValue(JSON.stringify([]))
