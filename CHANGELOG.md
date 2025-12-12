@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.36.6
+
+### Patch Changes
+
+- ![3.36.6 Release - Tool Alias Support](/releases/3.36.6-release.png)
+
 ## [3.36.5] - 2025-12-11
 
 ![3.36.5 Release - GPT-5.2](/releases/3.36.5-release.png)
