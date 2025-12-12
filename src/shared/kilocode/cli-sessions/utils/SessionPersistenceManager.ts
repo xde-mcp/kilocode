@@ -103,12 +103,12 @@ export class SessionPersistenceManager {
 	}
 
 	getSessionForTask(taskId: string): string | undefined {
-		const taskSessionMap = this.getTaskSessionMap()
-
-		return taskSessionMap[taskId]
+		return this.stateManager.getSessionForTask(taskId) || this.getTaskSessionMap()[taskId]
 	}
 
 	setSessionForTask(taskId: string, sessionId: string): void {
+		this.stateManager.setSessionForTask(taskId, sessionId)
+
 		const state = this.readWorkspaceState()
 
 		state.taskSessionMap[taskId] = sessionId

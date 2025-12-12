@@ -200,7 +200,7 @@ describe("SessionPersistenceManager", () => {
 	})
 
 	describe("getSessionForTask", () => {
-		it("should return undefined when task is not mapped", () => {
+		it("should return undefined when task is not mapped in either state manager or persistence", () => {
 			stateManager.setWorkspaceDir("/workspace")
 			vi.mocked(existsSync).mockReturnValue(true)
 			vi.mocked(readFileSync).mockReturnValue(
@@ -214,7 +214,7 @@ describe("SessionPersistenceManager", () => {
 			expect(result).toBeUndefined()
 		})
 
-		it("should return session ID for mapped task", () => {
+		it("should return session ID from persisted taskSessionMap when not in state manager", () => {
 			stateManager.setWorkspaceDir("/workspace")
 			vi.mocked(existsSync).mockReturnValue(true)
 			vi.mocked(readFileSync).mockReturnValue(
@@ -226,6 +226,51 @@ describe("SessionPersistenceManager", () => {
 			const result = manager.getSessionForTask("task-1")
 
 			expect(result).toBe("session-1")
+		})
+
+		it("should return session ID from state manager when available", () => {
+			stateManager.setWorkspaceDir("/workspace")
+			stateManager.setSessionForTask("task-1", "session-from-state-manager")
+			vi.mocked(existsSync).mockReturnValue(true)
+			vi.mocked(readFileSync).mockReturnValue(
+				JSON.stringify({
+					taskSessionMap: { "task-1": "session-from-persistence" },
+				}),
+			)
+
+			const result = manager.getSessionForTask("task-1")
+
+			expect(result).toBe("session-from-state-manager")
+		})
+
+		it("should prioritize state manager over persisted taskSessionMap", () => {
+			stateManager.setWorkspaceDir("/workspace")
+			stateManager.setSessionForTask("task-1", "state-manager-session")
+			vi.mocked(existsSync).mockReturnValue(true)
+			vi.mocked(readFileSync).mockReturnValue(
+				JSON.stringify({
+					taskSessionMap: { "task-1": "persisted-session" },
+				}),
+			)
+
+			const result = manager.getSessionForTask("task-1")
+
+			expect(result).toBe("state-manager-session")
+		})
+
+		it("should fall back to persisted taskSessionMap when state manager returns undefined", () => {
+			stateManager.setWorkspaceDir("/workspace")
+			// Don't set anything in state manager
+			vi.mocked(existsSync).mockReturnValue(true)
+			vi.mocked(readFileSync).mockReturnValue(
+				JSON.stringify({
+					taskSessionMap: { "task-1": "persisted-session" },
+				}),
+			)
+
+			const result = manager.getSessionForTask("task-1")
+
+			expect(result).toBe("persisted-session")
 		})
 	})
 
@@ -271,6 +316,39 @@ describe("SessionPersistenceManager", () => {
 
 			const writtenData = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string)
 			expect(writtenData.taskSessionMap).toEqual({ "task-1": "session-1" })
+		})
+
+		it("should also update the state manager when setting session for task", () => {
+			stateManager.setWorkspaceDir("/workspace")
+			vi.mocked(existsSync).mockReturnValue(true)
+			vi.mocked(readFileSync).mockReturnValue(
+				JSON.stringify({
+					taskSessionMap: {},
+				}),
+			)
+
+			manager.setSessionForTask("task-1", "session-1")
+
+			expect(stateManager.getSessionForTask("task-1")).toBe("session-1")
+		})
+
+		it("should update both state manager and persistence when setting session for task", () => {
+			stateManager.setWorkspaceDir("/workspace")
+			vi.mocked(existsSync).mockReturnValue(true)
+			vi.mocked(readFileSync).mockReturnValue(
+				JSON.stringify({
+					taskSessionMap: {},
+				}),
+			)
+
+			manager.setSessionForTask("task-1", "session-1")
+
+			// Verify state manager was updated
+			expect(stateManager.getSessionForTask("task-1")).toBe("session-1")
+
+			// Verify persistence was updated
+			const writtenData = JSON.parse(vi.mocked(writeFileSync).mock.calls[0][1] as string)
+			expect(writtenData.taskSessionMap["task-1"]).toBe("session-1")
 		})
 	})
 
