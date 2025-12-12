@@ -52,11 +52,11 @@ export class SessionManager {
 	static readonly VERSION = 1
 	static readonly QUEUE_FLUSH_THRESHOLD = 5
 
-	private static instance = new SessionManager()
+	private static instance: SessionManager | null = null
 
 	static init(dependencies?: SessionManagerDependencies) {
 		if (dependencies) {
-			SessionManager.instance.initDeps(dependencies)
+			SessionManager.instance = new SessionManager(dependencies)
 		}
 
 		return SessionManager.instance
@@ -91,9 +91,7 @@ export class SessionManager {
 	private getMode: ((taskId: string) => Promise<string | undefined>) | undefined
 	private getModel: ((taskId: string) => Promise<string | undefined>) | undefined
 
-	private constructor() {}
-
-	private initDeps(dependencies: SessionManagerDependencies) {
+	private constructor(dependencies: SessionManagerDependencies) {
 		this.pathProvider = dependencies.pathProvider
 		this.logger = dependencies.logger
 		this.extensionMessenger = dependencies.extensionMessenger
