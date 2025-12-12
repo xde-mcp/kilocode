@@ -219,7 +219,10 @@ export class SessionSyncService {
 					error: error instanceof Error ? error.message : String(error),
 				})
 
-				await this.tokenValidationService.invalidateCache()
+				// Only invalidate cache for authentication errors
+				if (this.isAuthenticationError(error)) {
+					await this.tokenValidationService.invalidateCache()
+				}
 			}
 		}
 
@@ -566,5 +569,28 @@ export class SessionSyncService {
 			default:
 				return null
 		}
+	}
+
+	/**
+	 * Determines if an error is an authentication error that should trigger cache invalidation.
+	 *
+	 * @param error - The error to check
+	 * @returns True if the error is an authentication error, false otherwise
+	 */
+	private isAuthenticationError(error: unknown): boolean {
+		if (error instanceof Error) {
+			const message = error.message.toLowerCase()
+			// Check for common auth error indicators
+			if (
+				message.includes("401") ||
+				message.includes("403") ||
+				message.includes("unauthorized") ||
+				message.includes("authentication") ||
+				message.includes("token")
+			) {
+				return true
+			}
+		}
+		return false
 	}
 }
