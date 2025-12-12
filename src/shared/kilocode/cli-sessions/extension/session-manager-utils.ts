@@ -113,7 +113,7 @@ export function kilo_initializeSessionManager({
 
 			const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
 			if (workspaceFolder) {
-				sessionManager.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
+				sessionManager?.setWorkspaceDirectory(workspaceFolder.uri.fsPath)
 			}
 
 			log("SessionManager initialized successfully")
