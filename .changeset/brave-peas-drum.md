@@ -1,5 +1,5 @@
 ---
-"@roo-code/types": patch
+"kilo-code": patch
 ---
 
 Added support for xhigh reasoning effort
