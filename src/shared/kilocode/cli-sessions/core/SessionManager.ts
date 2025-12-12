@@ -11,6 +11,7 @@ import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
 import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 import { fetchSignedBlob } from "../utils/fetchBlobFromSignedUrl.js"
 import { GitStateService, GitRestoreState } from "./GitStateService.js"
+import { SessionStateManager } from "./SessionStateManager.js"
 
 interface SessionCreatedMessage {
 	sessionId: string
@@ -60,25 +61,17 @@ export class SessionManager {
 	}
 
 	private workspaceDir: string | null = null
-	private taskGitUrls: Record<string, string> = {}
-	private taskGitHashes: Record<string, string> = {}
-	private sessionTitles: Record<string, string> = {}
-	private sessionUpdatedAt: Record<string, string> = {}
-	private tokenValid: Record<string, boolean | undefined> = {}
-	private verifiedSessions: Set<string> = new Set()
-	private lastSessionMode: Record<string, string> = {}
-	private lastSessionModel: Record<string, string> = {}
 
 	public get sessionId() {
-		return this.lastActiveSessionId || this.sessionPersistenceManager?.getLastSession()?.sessionId
+		return this.stateManager.getActiveSessionId() || this.sessionPersistenceManager?.getLastSession()?.sessionId
 	}
-	private lastActiveSessionId: string | null = null
 
 	private pathProvider: IPathProvider
 	private logger: ILogger
 	private extensionMessenger: IExtensionMessenger
 	public sessionPersistenceManager: SessionPersistenceManager
 	public sessionClient: SessionClient
+	public stateManager: SessionStateManager
 	private gitStateService: GitStateService
 	private onSessionCreated: (message: SessionCreatedMessage) => void
 	private onSessionRestored: () => void
@@ -108,6 +101,7 @@ export class SessionManager {
 
 		this.sessionClient = new SessionClient(trpcClient)
 		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
+		this.stateManager = new SessionStateManager()
 		this.gitStateService = new GitStateService({
 			logger: this.logger,
 			getWorkspaceDir: () => this.workspaceDir,
@@ -281,8 +275,8 @@ export class SessionManager {
 			}
 
 			this.sessionPersistenceManager.setSessionForTask(historyItem.id, sessionId)
-			this.lastActiveSessionId = sessionId
-			this.verifiedSessions.add(sessionId)
+			this.stateManager.setActiveSessionId(sessionId)
+			this.stateManager.markSessionVerified(sessionId)
 
 			await this.extensionMessenger.sendWebviewMessage({
 				type: "addTaskToHistory",
@@ -346,8 +340,8 @@ export class SessionManager {
 			title: trimmedTitle,
 		})
 
-		this.sessionTitles[sessionId] = trimmedTitle
-		this.updateSessionTimestamp(sessionId, updateResult.updated_at)
+		this.stateManager.setTitle(sessionId, trimmedTitle)
+		this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
 
 		this.logger.info("Session renamed successfully", "SessionManager", {
 			sessionId,
@@ -369,7 +363,7 @@ export class SessionManager {
 			let sessionId = this.sessionPersistenceManager.getSessionForTask(taskId)
 
 			if (sessionId) {
-				if (!this.verifiedSessions.has(sessionId)) {
+				if (!this.stateManager.isSessionVerified(sessionId)) {
 					this.logger.debug("Verifying session existence", "SessionManager", { taskId, sessionId })
 
 					try {
@@ -385,7 +379,7 @@ export class SessionManager {
 							})
 							sessionId = undefined
 						} else {
-							this.verifiedSessions.add(sessionId)
+							this.stateManager.markSessionVerified(sessionId)
 							this.logger.debug("Session verified and cached", "SessionManager", { taskId, sessionId })
 						}
 					} catch (error) {
@@ -427,11 +421,11 @@ export class SessionManager {
 				sessionId = session.session_id
 
 				if (mode) {
-					this.lastSessionMode[sessionId] = mode
+					this.stateManager.setMode(sessionId, mode)
 				}
 
 				if (model) {
-					this.lastSessionModel[sessionId] = model
+					this.stateManager.setModel(sessionId, model)
 				}
 
 				this.logger.info("Created new session for task", "SessionManager", { taskId, sessionId })
@@ -443,7 +437,7 @@ export class SessionManager {
 
 				this.sessionPersistenceManager.setSessionForTask(taskId, sessionId)
 
-				this.verifiedSessions.add(sessionId)
+				this.stateManager.markSessionVerified(sessionId)
 			} else {
 				this.logger.debug("Found existing session for task", "SessionManager", { taskId, sessionId })
 			}
@@ -476,13 +470,13 @@ export class SessionManager {
 			return
 		}
 
-		if (this.tokenValid[token] === undefined) {
+		if (this.stateManager.getTokenValidity(token) === undefined) {
 			this.logger.debug("Checking token validity", "SessionManager")
 
 			try {
 				const tokenValid = await this.sessionClient.tokenValid()
 
-				this.tokenValid[token] = tokenValid
+				this.stateManager.setTokenValidity(token, tokenValid)
 			} catch (error) {
 				this.logger.error("Failed to check token validity", "SessionManager", {
 					error: error instanceof Error ? error.message : String(error),
@@ -490,10 +484,12 @@ export class SessionManager {
 				return
 			}
 
-			this.logger.debug("Token validity checked", "SessionManager", { tokenValid: this.tokenValid[token] })
+			this.logger.debug("Token validity checked", "SessionManager", {
+				tokenValid: this.stateManager.getTokenValidity(token),
+			})
 		}
 
-		if (!this.tokenValid[token]) {
+		if (!this.stateManager.getTokenValidity(token)) {
 			this.logger.debug("Token is invalid, skipping sync", "SessionManager")
 			return
 		}
@@ -529,13 +525,13 @@ export class SessionManager {
 				if (sessionId) {
 					this.logger.debug("Found existing session for task", "SessionManager", { taskId, sessionId })
 
-					const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.taskGitUrls[taskId]
+					const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.stateManager.getGitUrl(taskId)
 
 					const currentMode = await this.getMode(taskId)
-					const modeChanged = currentMode && currentMode !== this.lastSessionMode[sessionId]
+					const modeChanged = currentMode && currentMode !== this.stateManager.getMode(sessionId)
 
 					const currentModel = await this.getModel(taskId)
-					const modelChanged = currentModel && currentModel !== this.lastSessionModel[sessionId]
+					const modelChanged = currentModel && currentModel !== this.stateManager.getModel(sessionId)
 
 					if (gitUrlChanged || modeChanged || modelChanged) {
 						if (gitUrlChanged && gitInfo?.repoUrl) {
@@ -544,27 +540,27 @@ export class SessionManager {
 								newGitUrl: gitInfo.repoUrl,
 							})
 
-							this.taskGitUrls[taskId] = gitInfo.repoUrl
+							this.stateManager.setGitUrl(taskId, gitInfo.repoUrl)
 						}
 
 						if (modeChanged && currentMode) {
 							this.logger.debug("Mode changed, updating session", "SessionManager", {
 								sessionId,
 								newMode: currentMode,
-								previousMode: this.lastSessionMode[sessionId],
+								previousMode: this.stateManager.getMode(sessionId),
 							})
 
-							this.lastSessionMode[sessionId] = currentMode
+							this.stateManager.setMode(sessionId, currentMode)
 						}
 
 						if (modelChanged && currentModel) {
 							this.logger.debug("Model changed, updating session", "SessionManager", {
 								sessionId,
 								newModel: currentModel,
-								previousModel: this.lastSessionModel[sessionId],
+								previousModel: this.stateManager.getModel(sessionId),
 							})
 
-							this.lastSessionModel[sessionId] = currentModel
+							this.stateManager.setModel(sessionId, currentModel)
 						}
 
 						const updateResult = await this.sessionClient.update({
@@ -574,7 +570,7 @@ export class SessionManager {
 							last_model: currentModel,
 						})
 
-						this.updateSessionTimestamp(sessionId, updateResult.updated_at)
+						this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
 					}
 				} else {
 					this.logger.debug("Creating new session for task", "SessionManager", { taskId })
@@ -594,11 +590,11 @@ export class SessionManager {
 					sessionId = createdSession.session_id
 
 					if (currentMode) {
-						this.lastSessionMode[sessionId] = currentMode
+						this.stateManager.setMode(sessionId, currentMode)
 					}
 
 					if (currentModel) {
-						this.lastSessionModel[sessionId] = currentModel
+						this.stateManager.setModel(sessionId, currentModel)
 					}
 
 					this.logger.info("Created new session", "SessionManager", { taskId, sessionId })
@@ -654,7 +650,7 @@ export class SessionManager {
 								})
 
 								// Track the updated_at timestamp from the upload using high-water mark
-								this.updateSessionTimestamp(sessionId, result.updated_at)
+								this.stateManager.updateTimestamp(sessionId, result.updated_at)
 
 								for (let i = 0; i < this.queue.length; i++) {
 									const item = this.queue[i]
@@ -682,7 +678,7 @@ export class SessionManager {
 							}),
 					)
 
-					if (blobName !== "ui_messages" || this.sessionTitles[sessionId]) {
+					if (blobName !== "ui_messages" || this.stateManager.hasTitle(sessionId)) {
 						continue
 					}
 
@@ -690,12 +686,12 @@ export class SessionManager {
 
 					void (async () => {
 						try {
-							this.sessionTitles[sessionId] = "Pending title"
+							this.stateManager.setTitle(sessionId, "Pending title")
 
 							const session = await this.sessionClient.get({ session_id: sessionId })
 
 							if (session.title) {
-								this.sessionTitles[sessionId] = session.title
+								this.stateManager.setTitle(sessionId, session.title)
 
 								this.logger.debug("Found existing session title", "SessionManager", {
 									sessionId,
@@ -716,8 +712,8 @@ export class SessionManager {
 								title: generatedTitle,
 							})
 
-							this.sessionTitles[sessionId] = generatedTitle
-							this.updateSessionTimestamp(sessionId, updateResult.updated_at)
+							this.stateManager.setTitle(sessionId, generatedTitle)
+							this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
 
 							this.logger.debug("Updated session title", "SessionManager", {
 								sessionId,
@@ -760,7 +756,7 @@ export class SessionManager {
 
 					const gitStateHash = this.gitStateService.hashGitState(gitStateData)
 
-					if (gitStateHash === this.taskGitHashes[taskId]) {
+					if (gitStateHash === this.stateManager.getGitHash(taskId)) {
 						this.logger.debug("Git state unchanged, skipping upload", "SessionManager", { sessionId })
 					} else {
 						this.logger.debug("Git state changed, uploading", "SessionManager", {
@@ -768,14 +764,14 @@ export class SessionManager {
 							head: gitInfo.head?.substring(0, 8),
 						})
 
-						this.taskGitHashes[taskId] = gitStateHash
+						this.stateManager.setGitHash(taskId, gitStateHash)
 
 						blobUploads.push(
 							this.sessionClient
 								.uploadBlob(sessionId, "git_state", gitStateData)
 								.then((result) => {
 									// Track the updated_at timestamp from git state upload using high-water mark
-									this.updateSessionTimestamp(sessionId, result.updated_at)
+									this.stateManager.updateTimestamp(sessionId, result.updated_at)
 								})
 								.catch((error) => {
 									this.logger.error("Failed to upload git state", "SessionManager", {
@@ -796,7 +792,7 @@ export class SessionManager {
 				})
 
 				// Emit session synced event with the latest updated_at timestamp
-				const latestUpdatedAt = this.sessionUpdatedAt[sessionId]
+				const latestUpdatedAt = this.stateManager.getUpdatedAt(sessionId)
 				if (latestUpdatedAt) {
 					const updatedAtTimestamp = new Date(latestUpdatedAt).getTime()
 					this.onSessionSynced({
@@ -820,21 +816,22 @@ export class SessionManager {
 				const token = await this.getToken()
 
 				if (token) {
-					this.tokenValid[token] = undefined
+					this.stateManager.clearTokenValidity(token)
 				}
 			}
 		}
 
 		if (lastItem) {
-			this.lastActiveSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
+			const lastActiveSessionId = this.sessionPersistenceManager.getSessionForTask(lastItem.taskId) || null
+			this.stateManager.setActiveSessionId(lastActiveSessionId)
 
-			if (this.lastActiveSessionId) {
-				this.sessionPersistenceManager.setLastSession(this.lastActiveSessionId)
+			if (lastActiveSessionId) {
+				this.sessionPersistenceManager.setLastSession(lastActiveSessionId)
 			}
 		}
 
 		this.logger.debug("Session sync completed", "SessionManager", {
-			lastSessionId: this.lastActiveSessionId,
+			lastSessionId: this.stateManager.getActiveSessionId(),
 			remainingQueueLength: this.queue.length,
 		})
 	}
@@ -877,18 +874,6 @@ export class SessionManager {
 
 	private async fetchBlobFromSignedUrl(url: string, urlType: string) {
 		return fetchSignedBlob(url, urlType, this.logger, "SessionManager")
-	}
-
-	/**
-	 * Updates the session timestamp using high-water mark logic.
-	 * Only updates if the new timestamp is greater than the current one,
-	 * preventing race conditions when multiple concurrent uploads complete.
-	 */
-	private updateSessionTimestamp(sessionId: string, updatedAt: string): void {
-		const currentUpdatedAt = this.sessionUpdatedAt[sessionId]
-		if (!currentUpdatedAt || updatedAt > currentUpdatedAt) {
-			this.sessionUpdatedAt[sessionId] = updatedAt
-		}
 	}
 
 	private pathKeyToBlobKey(pathKey: string) {
