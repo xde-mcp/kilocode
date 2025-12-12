@@ -8,6 +8,10 @@ import {
 	type ListSessionsOutput,
 	type GetSessionInput,
 	type GetSessionOutput,
+	type SearchSessionInput,
+	type SearchSessionOutput,
+	type DeleteSessionInput,
+	type DeleteSessionOutput,
 } from "./SessionClient.js"
 import { TrpcClient, type TrpcClientDependencies } from "./TrpcClient.js"
 import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
@@ -22,7 +26,16 @@ import { LOG_SOURCES } from "../config.js"
 
 // Re-export types for external consumers
 export type { SessionCreatedMessage, SessionSyncedMessage } from "./SessionSyncService.js"
-export type { ListSessionsInput, ListSessionsOutput, GetSessionInput, GetSessionOutput } from "./SessionClient.js"
+export type {
+	ListSessionsInput,
+	ListSessionsOutput,
+	GetSessionInput,
+	GetSessionOutput,
+	SearchSessionInput,
+	SearchSessionOutput,
+	DeleteSessionInput,
+	DeleteSessionOutput,
+} from "./SessionClient.js"
 
 export interface SessionManagerDependencies extends TrpcClientDependencies {
 	platform: string
@@ -247,5 +260,23 @@ export class SessionManager {
 	 */
 	async getSession(input: GetSessionInput): Promise<GetSessionOutput> {
 		return this.sessionClient.get(input)
+	}
+
+	/**
+	 * Searches sessions by title or ID.
+	 * @param input - Search parameters (search string, limit, offset)
+	 * @returns Search results with total count
+	 */
+	async searchSessions(input: SearchSessionInput): Promise<SearchSessionOutput> {
+		return this.sessionClient.search(input)
+	}
+
+	/**
+	 * Deletes a session by ID.
+	 * @param input - Session ID to delete
+	 * @returns Deletion result
+	 */
+	async deleteSession(input: DeleteSessionInput): Promise<DeleteSessionOutput> {
+		return this.sessionClient.delete(input)
 	}
 }
