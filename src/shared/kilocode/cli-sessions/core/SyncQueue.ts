@@ -1,3 +1,5 @@
+import { DEFAULT_CONFIG } from "../config.js"
+
 /**
  * SyncQueueItem - Represents a single item in the sync queue.
  *
@@ -28,10 +30,22 @@ export interface SyncQueueItem {
  * maintainability and testability through separation of concerns.
  */
 export class SyncQueue {
-	static readonly QUEUE_FLUSH_THRESHOLD = 5
+	private readonly queueFlushThreshold: number
 
 	private items: SyncQueueItem[] = []
+	private taskIndex: Map<string, SyncQueueItem[]> = new Map()
+	private blobIndex: Map<string, SyncQueueItem> = new Map() // key: `${taskId}:${blobName}`
 	private flushHandler: (() => Promise<void>) | null = null
+
+	/**
+	 * Creates a new SyncQueue instance.
+	 *
+	 * @param queueFlushThreshold - Optional threshold for triggering automatic flush.
+	 *                              Defaults to the value from DEFAULT_CONFIG.
+	 */
+	constructor(queueFlushThreshold: number = DEFAULT_CONFIG.sync.queueFlushThreshold) {
+		this.queueFlushThreshold = queueFlushThreshold
+	}
 
 	/**
 	 * Sets the flush handler that will be called when the queue needs to be flushed.
@@ -47,7 +61,16 @@ export class SyncQueue {
 	enqueue(item: SyncQueueItem): void {
 		this.items.push(item)
 
-		if (this.length > SyncQueue.QUEUE_FLUSH_THRESHOLD) {
+		// Update task index
+		const taskItems = this.taskIndex.get(item.taskId) || []
+		taskItems.push(item)
+		this.taskIndex.set(item.taskId, taskItems)
+
+		// Update blob index (keep only latest)
+		const blobKey = `${item.taskId}:${item.blobName}`
+		this.blobIndex.set(blobKey, item)
+
+		if (this.length > this.queueFlushThreshold) {
 			this.flushHandler?.()
 		}
 	}
@@ -64,7 +87,7 @@ export class SyncQueue {
 	 * Gets all items for a specific task.
 	 */
 	getItemsForTask(taskId: string): SyncQueueItem[] {
-		return this.items.filter((item) => item.taskId === taskId)
+		return this.taskIndex.get(taskId) || []
 	}
 
 	/**
@@ -84,18 +107,10 @@ export class SyncQueue {
 
 	/**
 	 * Gets the last item for a specific blob name within a task's items.
-	 * Items are searched in reverse order to find the most recent one.
+	 * Uses the blob index for O(1) lookup.
 	 */
 	getLastItemForBlob(taskId: string, blobName: string): SyncQueueItem | undefined {
-		const taskItems = this.getItemsForTask(taskId)
-		// Search in reverse to find the most recent item
-		for (let i = taskItems.length - 1; i >= 0; i--) {
-			const item = taskItems[i]
-			if (item && item.blobName === blobName) {
-				return item
-			}
-		}
-		return undefined
+		return this.blobIndex.get(`${taskId}:${blobName}`)
 	}
 
 	/**
@@ -116,6 +131,24 @@ export class SyncQueue {
 		this.items = this.items.filter(
 			(item) => !(item.taskId === taskId && item.blobName === blobName && item.timestamp <= beforeTimestamp),
 		)
+
+		// Rebuild task index for affected task
+		const remainingTaskItems = this.items.filter((item) => item.taskId === taskId)
+		if (remainingTaskItems.length > 0) {
+			this.taskIndex.set(taskId, remainingTaskItems)
+		} else {
+			this.taskIndex.delete(taskId)
+		}
+
+		// Update blob index - find the latest item for this blob if any remain
+		const blobKey = `${taskId}:${blobName}`
+		const remainingBlobItems = this.items.filter((item) => item.taskId === taskId && item.blobName === blobName)
+		if (remainingBlobItems.length > 0) {
+			// Set to the last remaining item (most recent)
+			this.blobIndex.set(blobKey, remainingBlobItems[remainingBlobItems.length - 1]!)
+		} else {
+			this.blobIndex.delete(blobKey)
+		}
 	}
 
 	/**
@@ -123,6 +156,8 @@ export class SyncQueue {
 	 */
 	clear(): void {
 		this.items = []
+		this.taskIndex.clear()
+		this.blobIndex.clear()
 	}
 
 	/**
