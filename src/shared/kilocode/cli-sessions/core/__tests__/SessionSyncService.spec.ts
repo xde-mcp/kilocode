@@ -184,7 +184,7 @@ describe("SessionSyncService", () => {
 			expect(tokenValidationCallCount).toBe(1)
 		})
 
-		it("creates new sync when forced", async () => {
+		it("creates new sync when forced and no pending sync", async () => {
 			mockSyncQueueIsEmpty = false
 			mockTokenValidationService.isValid.mockResolvedValue(true)
 			mockSyncQueue.getUniqueTaskIds.mockReturnValue(new Set())
@@ -193,6 +193,133 @@ describe("SessionSyncService", () => {
 			const result = service.doSync(true)
 
 			expect(result).toBeInstanceOf(Promise)
+		})
+
+		it("waits for pending sync to complete when forced", async () => {
+			mockSyncQueueIsEmpty = false
+			mockTokenValidationService.isValid.mockResolvedValue(true)
+			mockSyncQueue.getUniqueTaskIds.mockReturnValue(new Set(["task-1"]))
+			mockSyncQueue.getItemsForTask.mockReturnValue([])
+			mockGitStateService.getGitState.mockResolvedValue(null)
+			mockPersistenceManager.getSessionForTask.mockReturnValue("session-1")
+
+			// Track the order of operations
+			const operationOrder: string[] = []
+			let firstSyncResolve: () => void
+			const firstSyncPromise = new Promise<void>((resolve) => {
+				firstSyncResolve = resolve
+			})
+
+			let tokenValidationCallCount = 0
+			mockTokenValidationService.isValid.mockImplementation(async () => {
+				tokenValidationCallCount++
+				operationOrder.push(`tokenValidation-${tokenValidationCallCount}`)
+				if (tokenValidationCallCount === 1) {
+					// First sync - wait for external signal
+					await firstSyncPromise
+				}
+				return true
+			})
+
+			// Start first sync (will wait at token validation)
+			const firstCall = service.doSync()
+
+			// Start forced sync while first is pending
+			const forcedCall = service.doSync(true)
+
+			// Let the first sync complete
+			firstSyncResolve!()
+
+			await Promise.all([firstCall, forcedCall])
+
+			// With force=true, the second call should wait for the first to complete,
+			// then start a new sync (if queue is not empty)
+			// So we expect 2 token validation calls (one for each sync)
+			expect(tokenValidationCallCount).toBe(2)
+			expect(operationOrder).toEqual(["tokenValidation-1", "tokenValidation-2"])
+		})
+
+		it("skips forced sync when queue is empty after pending sync completes", async () => {
+			mockTokenValidationService.isValid.mockResolvedValue(true)
+			mockSyncQueue.getUniqueTaskIds.mockReturnValue(new Set(["task-1"]))
+			mockSyncQueue.getItemsForTask.mockReturnValue([])
+			mockGitStateService.getGitState.mockResolvedValue(null)
+			mockPersistenceManager.getSessionForTask.mockReturnValue("session-1")
+
+			let tokenValidationCallCount = 0
+			let firstSyncResolve: () => void
+			const firstSyncPromise = new Promise<void>((resolve) => {
+				firstSyncResolve = resolve
+			})
+
+			// Start with non-empty queue
+			mockSyncQueueIsEmpty = false
+
+			mockTokenValidationService.isValid.mockImplementation(async () => {
+				tokenValidationCallCount++
+				if (tokenValidationCallCount === 1) {
+					await firstSyncPromise
+				}
+				return true
+			})
+
+			// Start first sync
+			const firstCall = service.doSync()
+
+			// Start forced sync while first is pending
+			const forcedCall = service.doSync(true)
+
+			// Simulate queue becoming empty after first sync processes items
+			mockSyncQueueIsEmpty = true
+
+			// Let the first sync complete
+			firstSyncResolve!()
+
+			await Promise.all([firstCall, forcedCall])
+
+			// The forced sync should skip because queue is empty after first sync
+			expect(tokenValidationCallCount).toBe(1)
+		})
+
+		it("does not run concurrent syncs when forced", async () => {
+			mockSyncQueueIsEmpty = false
+			mockTokenValidationService.isValid.mockResolvedValue(true)
+			mockSyncQueue.getUniqueTaskIds.mockReturnValue(new Set(["task-1"]))
+			mockSyncQueue.getItemsForTask.mockReturnValue([])
+			mockGitStateService.getGitState.mockResolvedValue(null)
+			mockPersistenceManager.getSessionForTask.mockReturnValue("session-1")
+
+			// Track concurrent execution
+			let concurrentSyncs = 0
+			let maxConcurrentSyncs = 0
+			let firstSyncResolve: () => void
+			const firstSyncPromise = new Promise<void>((resolve) => {
+				firstSyncResolve = resolve
+			})
+
+			mockTokenValidationService.isValid.mockImplementation(async () => {
+				concurrentSyncs++
+				maxConcurrentSyncs = Math.max(maxConcurrentSyncs, concurrentSyncs)
+				if (concurrentSyncs === 1) {
+					await firstSyncPromise
+				}
+				concurrentSyncs--
+				return true
+			})
+
+			// Start first sync
+			const firstCall = service.doSync()
+
+			// Start forced sync while first is pending
+			const forcedCall = service.doSync(true)
+
+			// Let the first sync complete
+			firstSyncResolve!()
+
+			await Promise.all([firstCall, forcedCall])
+
+			// With the fix, syncs should run sequentially, not concurrently
+			expect(maxConcurrentSyncs).toBe(1)
 		})
 
 		it("clears pending sync after completion", async () => {

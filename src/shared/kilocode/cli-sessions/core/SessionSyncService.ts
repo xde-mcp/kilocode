@@ -128,7 +128,14 @@ export class SessionSyncService {
 	/**
 	 * Performs a sync operation, optionally forcing a new sync even if one is pending.
 	 *
-	 * @param force - Whether to force a new sync even if one is pending
+	 * When force = false: If a sync is already in progress, returns the existing promise
+	 * to coalesce multiple callers onto the same sync operation.
+	 *
+	 * When force = true: Waits for any existing sync to complete first, then starts
+	 * a fresh sync to ensure the queue is fully flushed. This prevents race conditions
+	 * where concurrent syncs could process the same queue items.
+	 *
+	 * @param force - Whether to force a new sync after waiting for any pending sync
 	 * @returns A promise that resolves when the sync is complete
 	 */
 	async doSync(force = false): Promise<void> {
@@ -140,8 +147,20 @@ export class SessionSyncService {
 			if (!force) {
 				this.logger.debug("Not forced, returning pending sync", LOG_SOURCES.SESSION_SYNC)
 				return this.pendingSync
-			} else {
-				this.logger.debug("Forced, syncing despite pending sync", LOG_SOURCES.SESSION_SYNC)
+			}
+
+			// force = true: Wait for existing sync to complete first to prevent race conditions
+			this.logger.debug("Forced, waiting for pending sync to complete", LOG_SOURCES.SESSION_SYNC)
+			try {
+				await this.pendingSync
+			} catch {
+				// Ignore errors from the previous sync - we'll start a fresh one
+			}
+
+			// After waiting, check if queue is empty - no need for another sync
+			if (this.syncQueue.isEmpty) {
+				this.logger.debug("Queue empty after pending sync, skipping forced sync", LOG_SOURCES.SESSION_SYNC)
+				return
 			}
 		}
 
