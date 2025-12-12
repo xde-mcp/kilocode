@@ -32,7 +32,7 @@ Before enabling Managed Indexing:
 ## Cost
 
 - **Currently free during beta**
-- **Pricing coming soon** — A daily usage fee for index storage will be deducted from your AI credit balance. Pricing details are TBD.
+- **Pricing coming soon** — A daily usage fee for index storage will be deducted from your AI credit balance. You will be charged per GB per day.
 - **Embedding model** — Uses `mistralai/codestral-embed-2505` which currently charges $0.15/M input tokens.
 
 ---
