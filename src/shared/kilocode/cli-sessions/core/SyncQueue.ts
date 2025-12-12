@@ -31,8 +31,15 @@ export class SyncQueue {
 	static readonly QUEUE_FLUSH_THRESHOLD = 5
 
 	private items: SyncQueueItem[] = []
+	private flushHandler: (() => Promise<void>) | null = null
 
-	constructor(private flush: () => Promise<void>) {}
+	/**
+	 * Sets the flush handler that will be called when the queue needs to be flushed.
+	 * This uses setter injection to avoid circular dependencies in the constructor.
+	 */
+	setFlushHandler(handler: () => Promise<void>): void {
+		this.flushHandler = handler
+	}
 
 	/**
 	 * Adds an item to the queue.
@@ -41,7 +48,7 @@ export class SyncQueue {
 		this.items.push(item)
 
 		if (this.length > SyncQueue.QUEUE_FLUSH_THRESHOLD) {
-			this.flush()
+			this.flushHandler?.()
 		}
 	}
 

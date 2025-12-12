@@ -52,7 +52,6 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
  * separation of concerns internally.
  */
 export class SessionManager {
-	static readonly SYNC_INTERVAL = 3000
 	static readonly VERSION = 2
 
 	private static instance: SessionManager | null = null
@@ -112,10 +111,9 @@ export class SessionManager {
 			getWorkspaceDir: () => this.stateManager.getWorkspaceDir(),
 		})
 
-		// Create SyncQueue with a flush callback that delegates to syncService
-		// Note: We need to create syncService first, but it needs syncQueue
-		// So we create syncQueue with a temporary callback and update it after
-		this.syncQueue = new SyncQueue(() => this.doSync())
+		// Create SyncQueue without a handler - we'll set it after creating syncService
+		// This avoids the circular dependency where syncQueue needs syncService.doSync()
+		this.syncQueue = new SyncQueue()
 
 		this.syncService = new SessionSyncService({
 			sessionClient: this.sessionClient,
@@ -134,6 +132,9 @@ export class SessionManager {
 			onSessionCreated: dependencies.onSessionCreated,
 			onSessionSynced: dependencies.onSessionSynced,
 		})
+
+		// Now that syncService is created, set the flush handler
+		this.syncQueue.setFlushHandler(() => this.syncService.doSync())
 
 		this.lifecycleService = new SessionLifecycleService({
 			sessionClient: this.sessionClient,
@@ -190,13 +191,7 @@ export class SessionManager {
 	 * Delegates to SessionLifecycleService.
 	 */
 	async shareSession(sessionIdInput?: string) {
-		const sessionId = sessionIdInput || this.sessionId
-
-		if (!sessionId) {
-			throw new Error("No active session")
-		}
-
-		return this.lifecycleService.shareSession(sessionId)
+		return this.lifecycleService.shareSession(sessionIdInput)
 	}
 
 	/**

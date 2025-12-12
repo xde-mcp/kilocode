@@ -268,10 +268,12 @@ export class SessionLifecycleService {
 	/**
 	 * Shares a session publicly.
 	 *
-	 * @param sessionId - The session ID to share
+	 * @param sessionIdInput - Optional session ID to share. If not provided, uses the active session.
 	 * @returns The share output containing the share ID
 	 */
-	async shareSession(sessionId: string): Promise<ShareSessionOutput> {
+	async shareSession(sessionIdInput?: string): Promise<ShareSessionOutput> {
+		const sessionId = sessionIdInput || this.stateManager.getActiveSessionId()
+
 		if (!sessionId) {
 			throw new Error("No active session")
 		}
