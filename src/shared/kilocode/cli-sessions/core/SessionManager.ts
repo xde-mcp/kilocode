@@ -2,8 +2,14 @@ import type { IPathProvider } from "../types/IPathProvider.js"
 import type { ILogger } from "../types/ILogger.js"
 import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
 import type { ITaskDataProvider } from "../types/ITaskDataProvider.js"
-import { SessionClient } from "./SessionClient.js"
-import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
+import {
+	SessionClient,
+	type ListSessionsInput,
+	type ListSessionsOutput,
+	type GetSessionInput,
+	type GetSessionOutput,
+} from "./SessionClient.js"
+import { TrpcClient, type TrpcClientDependencies } from "./TrpcClient.js"
 import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 import { GitStateService } from "./GitStateService.js"
 import { SessionStateManager } from "./SessionStateManager.js"
@@ -11,7 +17,11 @@ import { SyncQueue } from "./SyncQueue.js"
 import { TokenValidationService } from "./TokenValidationService.js"
 import { SessionTitleService } from "./SessionTitleService.js"
 import { SessionLifecycleService } from "./SessionLifecycleService.js"
-import { SessionSyncService, SessionCreatedMessage, SessionSyncedMessage } from "./SessionSyncService.js"
+import { SessionSyncService, type SessionCreatedMessage, type SessionSyncedMessage } from "./SessionSyncService.js"
+
+// Re-export types for external consumers
+export type { SessionCreatedMessage, SessionSyncedMessage } from "./SessionSyncService.js"
+export type { ListSessionsInput, ListSessionsOutput, GetSessionInput, GetSessionOutput } from "./SessionClient.js"
 
 export interface SessionManagerDependencies extends TrpcClientDependencies {
 	platform: string
@@ -26,6 +36,21 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	getModel: (taskId: string) => Promise<string | undefined>
 }
 
+/**
+ * SessionManager - Facade for CLI session management.
+ *
+ * This class serves as the main entry point for session operations,
+ * delegating to specialized services for specific functionality:
+ *
+ * - SessionLifecycleService: Session CRUD operations (create, restore, share, fork, rename)
+ * - SessionSyncService: Queue-based synchronization with the cloud
+ * - SessionTitleService: LLM-based title generation
+ * - SessionStateManager: Centralized state management
+ * - TokenValidationService: Authentication token validation
+ *
+ * The facade pattern simplifies the API for consumers while maintaining
+ * separation of concerns internally.
+ */
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
 	static readonly VERSION = 1
@@ -40,22 +65,25 @@ export class SessionManager {
 		return SessionManager.instance
 	}
 
-	private workspaceDir: string | null = null
-
+	/**
+	 * Gets the current session ID.
+	 * Returns the active session ID or falls back to the last persisted session.
+	 */
 	public get sessionId() {
-		return this.stateManager.getActiveSessionId() || this.sessionPersistenceManager?.getLastSession()?.sessionId
+		return this.stateManager.getActiveSessionId() || this.persistenceManager.getLastSession()?.sessionId
 	}
 
-	private logger: ILogger
-	public sessionPersistenceManager: SessionPersistenceManager
-	public sessionClient: SessionClient
-	public stateManager: SessionStateManager
-	public syncQueue: SyncQueue
-	public tokenValidationService: TokenValidationService
-	public titleService: SessionTitleService
-	public lifecycleService: SessionLifecycleService
-	public syncService: SessionSyncService
-	private gitStateService: GitStateService
+	// Internal services - private to enforce facade pattern
+	private readonly logger: ILogger
+	private readonly sessionClient: SessionClient
+	private readonly stateManager: SessionStateManager
+	private readonly persistenceManager: SessionPersistenceManager
+	private readonly syncQueue: SyncQueue
+	private readonly tokenValidationService: TokenValidationService
+	private readonly titleService: SessionTitleService
+	private readonly lifecycleService: SessionLifecycleService
+	private readonly syncService: SessionSyncService
+	private readonly gitStateService: GitStateService
 
 	private constructor(dependencies: SessionManagerDependencies) {
 		this.logger = dependencies.logger
@@ -65,7 +93,7 @@ export class SessionManager {
 		})
 
 		this.sessionClient = new SessionClient(trpcClient)
-		this.sessionPersistenceManager = new SessionPersistenceManager(dependencies.pathProvider)
+		this.persistenceManager = new SessionPersistenceManager(dependencies.pathProvider)
 		this.stateManager = new SessionStateManager()
 		this.tokenValidationService = new TokenValidationService({
 			sessionClient: this.sessionClient,
@@ -81,7 +109,7 @@ export class SessionManager {
 		})
 		this.gitStateService = new GitStateService({
 			logger: this.logger,
-			getWorkspaceDir: () => this.workspaceDir,
+			getWorkspaceDir: () => this.stateManager.getWorkspaceDir(),
 		})
 
 		// Create SyncQueue with a flush callback that delegates to syncService
@@ -91,7 +119,7 @@ export class SessionManager {
 
 		this.syncService = new SessionSyncService({
 			sessionClient: this.sessionClient,
-			persistenceManager: this.sessionPersistenceManager,
+			persistenceManager: this.persistenceManager,
 			stateManager: this.stateManager,
 			titleService: this.titleService,
 			gitStateService: this.gitStateService,
@@ -109,7 +137,7 @@ export class SessionManager {
 
 		this.lifecycleService = new SessionLifecycleService({
 			sessionClient: this.sessionClient,
-			persistenceManager: this.sessionPersistenceManager,
+			persistenceManager: this.persistenceManager,
 			stateManager: this.stateManager,
 			titleService: this.titleService,
 			gitStateService: this.gitStateService,
@@ -134,9 +162,12 @@ export class SessionManager {
 		this.syncService.handleFileUpdate(taskId, key, value)
 	}
 
+	/**
+	 * Sets the workspace directory for session operations.
+	 */
 	setWorkspaceDirectory(dir: string) {
-		this.workspaceDir = dir
-		this.sessionPersistenceManager.setWorkspaceDir(dir)
+		this.stateManager.setWorkspaceDir(dir)
+		this.persistenceManager.setWorkspaceDir(dir)
 	}
 
 	/**
@@ -199,5 +230,27 @@ export class SessionManager {
 	 */
 	async doSync(force = false): Promise<void> {
 		return this.syncService.doSync(force)
+	}
+
+	// ============================================================
+	// Session Query Methods - Facade for SessionClient operations
+	// ============================================================
+
+	/**
+	 * Lists sessions with pagination support.
+	 * @param input - Optional pagination parameters (cursor, limit)
+	 * @returns List of sessions and pagination cursor
+	 */
+	async listSessions(input?: ListSessionsInput): Promise<ListSessionsOutput> {
+		return this.sessionClient.list(input)
+	}
+
+	/**
+	 * Gets a specific session by ID.
+	 * @param input - Session ID and optional flag to include blob URLs
+	 * @returns Session details
+	 */
+	async getSession(input: GetSessionInput): Promise<GetSessionOutput> {
+		return this.sessionClient.get(input)
 	}
 }

@@ -16,6 +16,9 @@ export class SessionStateManager {
 	// Active session state
 	private lastActiveSessionId: string | null = null
 
+	// Workspace directory
+	private workspaceDir: string | null = null
+
 	// Session verification cache - tracks which sessions have been verified to exist
 	private verifiedSessions: Set<string> = new Set()
 
@@ -189,10 +192,25 @@ export class SessionStateManager {
 	}
 
 	/**
+	 * Gets the workspace directory.
+	 */
+	getWorkspaceDir(): string | null {
+		return this.workspaceDir
+	}
+
+	/**
+	 * Sets the workspace directory.
+	 */
+	setWorkspaceDir(dir: string): void {
+		this.workspaceDir = dir
+	}
+
+	/**
 	 * Resets all state. Useful for testing.
 	 */
 	reset(): void {
 		this.lastActiveSessionId = null
+		this.workspaceDir = null
 		this.verifiedSessions.clear()
 		this.taskGitUrls = {}
 		this.taskGitHashes = {}
