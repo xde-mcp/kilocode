@@ -86,7 +86,7 @@ describe("TrpcClient", () => {
 
 			await client.request("cliSessions.get", "GET")
 
-			const [url, options] = mockFetch.mock.calls[0]
+			const [, options] = mockFetch.mock.calls[0]
 			expect(options.headers.Authorization).toBe("Bearer mock-token")
 		})
 

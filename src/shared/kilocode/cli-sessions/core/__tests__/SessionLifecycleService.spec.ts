@@ -1,9 +1,4 @@
 import { SessionLifecycleService } from "../SessionLifecycleService"
-import { SessionClient } from "../SessionClient"
-import { SessionPersistenceManager } from "../../utils/SessionPersistenceManager"
-import { SessionStateManager } from "../SessionStateManager"
-import { SessionTitleService } from "../SessionTitleService"
-import { GitStateService } from "../GitStateService"
 import { readFileSync, writeFileSync, mkdirSync } from "fs"
 import path from "path"
 import { fetchSignedBlob } from "../../utils/fetchBlobFromSignedUrl"
@@ -439,7 +434,7 @@ describe("SessionLifecycleService", () => {
 			mockStateManager.getActiveSessionId.mockReturnValue("active-session-123")
 			mockSessionClient.share.mockResolvedValue({ share_id: "share-123" })
 
-			const result = await service.shareSession()
+			await service.shareSession()
 
 			expect(mockSessionClient.share).toHaveBeenCalledWith({
 				session_id: "active-session-123",
@@ -546,7 +541,7 @@ describe("SessionLifecycleService", () => {
 			mockStateManager.isSessionVerified.mockReturnValue(false)
 			mockSessionClient.get.mockResolvedValue({ session_id: "existing-session-123" })
 
-			const result = await service.getOrCreateSessionForTask("task-123", mockProvider)
+			await service.getOrCreateSessionForTask("task-123", mockProvider)
 
 			expect(mockSessionClient.get).toHaveBeenCalledWith({
 				session_id: "existing-session-123",
