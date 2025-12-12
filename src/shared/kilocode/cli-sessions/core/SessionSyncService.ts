@@ -282,8 +282,12 @@ export class SessionSyncService {
 		let sessionId = this.persistenceManager.getSessionForTask(taskId)
 
 		if (sessionId) {
+			this.logger.debug("Found existing session for task", LOG_SOURCES.SESSION_SYNC, { taskId, sessionId })
+
 			sessionId = await this.updateExistingSession(taskId, sessionId, basePayload, gitInfo)
 		} else {
+			this.logger.debug("Creating new session for task", LOG_SOURCES.SESSION_SYNC, { taskId })
+
 			sessionId = await this.createNewSession(taskId, basePayload)
 		}
 
@@ -315,8 +319,6 @@ export class SessionSyncService {
 		basePayload: Partial<Parameters<NonNullable<typeof this.sessionClient>["create"]>[0]>,
 		gitInfo: Awaited<ReturnType<GitStateService["getGitState"]>>,
 	): Promise<string> {
-		this.logger.debug("Found existing session for task", LOG_SOURCES.SESSION_SYNC, { taskId, sessionId })
-
 		const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.stateManager.getGitUrl(taskId)
 
 		const currentMode = await this.getMode(taskId)
@@ -379,8 +381,6 @@ export class SessionSyncService {
 		taskId: string,
 		basePayload: Partial<Parameters<NonNullable<typeof this.sessionClient>["create"]>[0]>,
 	): Promise<string> {
-		this.logger.debug("Creating new session for task", LOG_SOURCES.SESSION_SYNC, { taskId })
-
 		const currentMode = await this.getMode(taskId)
 		const currentModel = await this.getModel(taskId)
 
