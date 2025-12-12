@@ -93,8 +93,8 @@ export class SessionManager {
 		})
 
 		this.sessionClient = new SessionClient(trpcClient)
-		this.persistenceManager = new SessionPersistenceManager(dependencies.pathProvider)
 		this.stateManager = new SessionStateManager()
+		this.persistenceManager = new SessionPersistenceManager(dependencies.pathProvider, this.stateManager)
 		this.tokenValidationService = new TokenValidationService({
 			sessionClient: this.sessionClient,
 			stateManager: this.stateManager,
@@ -167,7 +167,6 @@ export class SessionManager {
 	 */
 	setWorkspaceDirectory(dir: string) {
 		this.stateManager.setWorkspaceDir(dir)
-		this.persistenceManager.setWorkspaceDir(dir)
 	}
 
 	/**
