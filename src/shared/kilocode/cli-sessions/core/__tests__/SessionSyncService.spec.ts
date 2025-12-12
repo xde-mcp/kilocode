@@ -521,6 +521,34 @@ describe("SessionSyncService", () => {
 			})
 		})
 
+		it("creates new session with parent_session_id undefined when parent task has no session", async () => {
+			mockGitStateService.getGitState.mockResolvedValue(null)
+			mockPersistenceManager.getSessionForTask.mockImplementation((taskId) => {
+				// Parent task exists but has no session
+				if (taskId === "parent-task-1") return undefined
+				return undefined
+			})
+			mockGetOrganizationId.mockResolvedValue("org-1")
+			mockGetMode.mockResolvedValue("code")
+			mockGetModel.mockResolvedValue("gpt-4")
+			mockGetParentTaskId.mockResolvedValue("parent-task-1")
+			mockSessionClient.create.mockResolvedValue({
+				session_id: "new-session-1",
+				updated_at: "2023-01-01T10:00:00Z",
+			})
+
+			await service.doSync()
+
+			expect(mockSessionClient.create).toHaveBeenCalledWith({
+				created_on_platform: "test-platform",
+				version: 1,
+				organization_id: "org-1",
+				last_mode: "code",
+				last_model: "gpt-4",
+				parent_session_id: undefined,
+			})
+		})
+
 		it("updates existing session when git URL changes", async () => {
 			mockGitStateService.getGitState.mockResolvedValue({
 				repoUrl: "https://github.com/user/repo.git",
