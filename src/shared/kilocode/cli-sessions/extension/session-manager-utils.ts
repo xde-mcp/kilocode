@@ -55,6 +55,9 @@ export function kilo_initializeSessionManager({
 				onSessionRestored: () => {
 					log("Session restored")
 				},
+				onSessionSynced: (message) => {
+					log(`Session synced: ${message.sessionId}`)
+				},
 				platform: vscode.env.appName,
 				getOrganizationId: async (taskId: string) => {
 					const result = await (async () => {

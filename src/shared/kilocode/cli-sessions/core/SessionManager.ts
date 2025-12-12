@@ -28,9 +28,9 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 	pathProvider: IPathProvider
 	logger: ILogger
 	extensionMessenger: IExtensionMessenger
-	onSessionCreated?: (message: SessionCreatedMessage) => void
-	onSessionRestored?: () => void
-	onSessionSynced?: (message: SessionSyncedMessage) => void
+	onSessionCreated: (message: SessionCreatedMessage) => void
+	onSessionRestored: () => void
+	onSessionSynced: (message: SessionSyncedMessage) => void
 	getOrganizationId: (taskId: string) => Promise<string | undefined>
 	getMode: (taskId: string) => Promise<string | undefined>
 	getModel: (taskId: string) => Promise<string | undefined>

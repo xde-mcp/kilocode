@@ -83,8 +83,9 @@ export class SyncQueue {
 		const taskItems = this.getItemsForTask(taskId)
 		// Search in reverse to find the most recent item
 		for (let i = taskItems.length - 1; i >= 0; i--) {
-			if (taskItems[i].blobName === blobName) {
-				return taskItems[i]
+			const item = taskItems[i]
+			if (item && item.blobName === blobName) {
+				return item
 			}
 		}
 		return undefined
