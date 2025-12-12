@@ -1,4 +1,5 @@
 import type { ClineMessage } from "@roo-code/types"
+import { DEFAULT_CONFIG, LOG_SOURCES } from "../config.js"
 import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
 import type { ILogger } from "../types/ILogger.js"
 import type { SessionClient } from "./SessionClient.js"
@@ -26,21 +27,38 @@ export interface SessionTitleServiceDependencies {
  * maintainability and testability through separation of concerns.
  */
 export class SessionTitleService {
-	private static readonly LOG_SOURCE = "SessionTitleService"
-	private static readonly MAX_TITLE_LENGTH = 140
-	private static readonly TRUNCATED_TITLE_LENGTH = 137
-	private static readonly LLM_TIMEOUT_MS = 30000
+	private readonly maxTitleLength: number
+	private readonly truncatedTitleLength: number
+	private readonly llmTimeoutMs: number
 
 	private readonly sessionClient: SessionClient
 	private readonly stateManager: SessionStateManager
 	private readonly extensionMessenger: IExtensionMessenger
 	private readonly logger: ILogger
 
-	constructor(dependencies: SessionTitleServiceDependencies) {
+	/**
+	 * Creates a new SessionTitleService instance.
+	 *
+	 * @param dependencies - Required service dependencies
+	 * @param config - Optional configuration overrides for title settings.
+	 *                 Defaults to values from DEFAULT_CONFIG.
+	 */
+	constructor(
+		dependencies: SessionTitleServiceDependencies,
+		config: {
+			maxLength?: number
+			truncatedLength?: number
+			llmTimeoutMs?: number
+		} = {},
+	) {
 		this.sessionClient = dependencies.sessionClient
 		this.stateManager = dependencies.stateManager
 		this.extensionMessenger = dependencies.extensionMessenger
 		this.logger = dependencies.logger
+
+		this.maxTitleLength = config.maxLength ?? DEFAULT_CONFIG.title.maxLength
+		this.truncatedTitleLength = config.truncatedLength ?? DEFAULT_CONFIG.title.truncatedLength
+		this.llmTimeoutMs = config.llmTimeoutMs ?? DEFAULT_CONFIG.title.llmTimeoutMs
 	}
 
 	/**
@@ -68,8 +86,8 @@ export class SessionTitleService {
 			return null
 		}
 
-		if (truncate && rawText.length > SessionTitleService.MAX_TITLE_LENGTH) {
-			return rawText.substring(0, SessionTitleService.TRUNCATED_TITLE_LENGTH) + "..."
+		if (truncate && rawText.length > this.maxTitleLength) {
+			return rawText.substring(0, this.truncatedTitleLength) + "..."
 		}
 
 		return rawText
@@ -97,10 +115,7 @@ ${rawText}
 
 Summary:`
 
-			const summary = await this.extensionMessenger.requestSingleCompletion(
-				prompt,
-				SessionTitleService.LLM_TIMEOUT_MS,
-			)
+			const summary = await this.extensionMessenger.requestSingleCompletion(prompt, this.llmTimeoutMs)
 
 			let cleanedSummary = summary.trim()
 
@@ -115,14 +130,14 @@ Summary:`
 		} catch (error) {
 			this.logger.warn(
 				"Failed to generate title using LLM, falling back to truncation",
-				SessionTitleService.LOG_SOURCE,
+				LOG_SOURCES.SESSION_TITLE,
 				{
 					error: error instanceof Error ? error.message : String(error),
 				},
 			)
 
-			if (rawText.length > SessionTitleService.MAX_TITLE_LENGTH) {
-				return rawText.substring(0, SessionTitleService.TRUNCATED_TITLE_LENGTH) + "..."
+			if (rawText.length > this.maxTitleLength) {
+				return rawText.substring(0, this.truncatedTitleLength) + "..."
 			}
 
 			return rawText
@@ -150,7 +165,7 @@ Summary:`
 		this.stateManager.setTitle(sessionId, trimmedTitle)
 		this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
 
-		this.logger.info("Session title updated successfully", SessionTitleService.LOG_SOURCE, {
+		this.logger.info("Session title updated successfully", LOG_SOURCES.SESSION_TITLE, {
 			sessionId,
 			title: trimmedTitle,
 		})
@@ -178,7 +193,7 @@ Summary:`
 			if (session.title) {
 				this.stateManager.setTitle(sessionId, session.title)
 
-				this.logger.debug("Found existing session title", SessionTitleService.LOG_SOURCE, {
+				this.logger.debug("Found existing session title", LOG_SOURCES.SESSION_TITLE, {
 					sessionId,
 					title: session.title,
 				})
@@ -196,12 +211,12 @@ Summary:`
 			// Update the session with the generated title
 			await this.updateTitle(sessionId, generatedTitle)
 
-			this.logger.debug("Generated and updated session title", SessionTitleService.LOG_SOURCE, {
+			this.logger.debug("Generated and updated session title", LOG_SOURCES.SESSION_TITLE, {
 				sessionId,
 				generatedTitle,
 			})
 		} catch (error) {
-			this.logger.error("Failed to generate session title", SessionTitleService.LOG_SOURCE, {
+			this.logger.error("Failed to generate session title", LOG_SOURCES.SESSION_TITLE, {
 				sessionId,
 				error: error instanceof Error ? error.message : String(error),
 			})
@@ -216,7 +231,7 @@ Summary:`
 			try {
 				await this.updateTitle(sessionId, localTitle)
 			} catch (updateError) {
-				this.logger.error("Failed to update session title using local title", SessionTitleService.LOG_SOURCE, {
+				this.logger.error("Failed to update session title using local title", LOG_SOURCES.SESSION_TITLE, {
 					sessionId,
 					error: updateError instanceof Error ? updateError.message : String(updateError),
 				})

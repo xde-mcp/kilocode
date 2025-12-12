@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "fs"
 import { tmpdir } from "os"
 import path from "path"
 import simpleGit from "simple-git"
+import { DEFAULT_CONFIG, LOG_SOURCES } from "../config.js"
 import type { ILogger } from "../types/ILogger.js"
 
 /**
@@ -37,14 +38,27 @@ export interface GitStateServiceDependencies {
  * capturing and restoring git state.
  */
 export class GitStateService {
-	static readonly MAX_PATCH_SIZE_BYTES = 5 * 1024 * 1024
+	private readonly maxPatchSizeBytes: number
 
 	private logger: ILogger
 	private getWorkspaceDir: () => string | null
 
-	constructor(dependencies: GitStateServiceDependencies) {
+	/**
+	 * Creates a new GitStateService instance.
+	 *
+	 * @param dependencies - Required service dependencies
+	 * @param config - Optional configuration overrides for git settings.
+	 *                 Defaults to values from DEFAULT_CONFIG.
+	 */
+	constructor(
+		dependencies: GitStateServiceDependencies,
+		config: {
+			maxPatchSizeBytes?: number
+		} = {},
+	) {
 		this.logger = dependencies.logger
 		this.getWorkspaceDir = dependencies.getWorkspaceDir
+		this.maxPatchSizeBytes = config.maxPatchSizeBytes ?? DEFAULT_CONFIG.git.maxPatchSizeBytes
 	}
 
 	/**
@@ -99,10 +113,10 @@ export class GitStateService {
 					}
 				}
 
-				if (patch && patch.length > GitStateService.MAX_PATCH_SIZE_BYTES) {
-					this.logger.warn("Git patch too large", "GitStateService", {
+				if (patch && patch.length > this.maxPatchSizeBytes) {
+					this.logger.warn("Git patch too large", LOG_SOURCES.GIT_STATE, {
 						patchSize: patch.length,
-						maxSize: GitStateService.MAX_PATCH_SIZE_BYTES,
+						maxSize: this.maxPatchSizeBytes,
 					})
 					patch = ""
 				}
@@ -119,7 +133,7 @@ export class GitStateService {
 				}
 			}
 		} catch (error) {
-			this.logger.error("Failed to get git state", "GitStateService", {
+			this.logger.error("Failed to get git state", LOG_SOURCES.GIT_STATE, {
 				error: error instanceof Error ? error.message : String(error),
 			})
 
@@ -154,12 +168,12 @@ export class GitStateService {
 
 				if (stashCountAfter > stashCountBefore) {
 					shouldPop = true
-					this.logger.debug(`Stashed current work`, "GitStateService")
+					this.logger.debug(`Stashed current work`, LOG_SOURCES.GIT_STATE)
 				} else {
-					this.logger.debug(`No changes to stash`, "GitStateService")
+					this.logger.debug(`No changes to stash`, LOG_SOURCES.GIT_STATE)
 				}
 			} catch (error) {
-				this.logger.warn(`Failed to stash current work`, "GitStateService", {
+				this.logger.warn(`Failed to stash current work`, LOG_SOURCES.GIT_STATE, {
 					error: error instanceof Error ? error.message : String(error),
 				})
 			}
@@ -168,7 +182,7 @@ export class GitStateService {
 				const currentHead = await git.revparse(["HEAD"])
 
 				if (currentHead.trim() === gitState.head.trim()) {
-					this.logger.debug(`Already at target commit, skipping checkout`, "GitStateService", {
+					this.logger.debug(`Already at target commit, skipping checkout`, LOG_SOURCES.GIT_STATE, {
 						head: gitState.head.substring(0, 8),
 					})
 				} else {
@@ -179,7 +193,7 @@ export class GitStateService {
 							if (branchCommit.trim() === gitState.head.trim()) {
 								await git.checkout(gitState.branch)
 
-								this.logger.debug(`Checked out to branch`, "GitStateService", {
+								this.logger.debug(`Checked out to branch`, LOG_SOURCES.GIT_STATE, {
 									branch: gitState.branch,
 									head: gitState.head.substring(0, 8),
 								})
@@ -188,7 +202,7 @@ export class GitStateService {
 
 								this.logger.debug(
 									`Branch moved, checked out to commit (detached HEAD)`,
-									"GitStateService",
+									LOG_SOURCES.GIT_STATE,
 									{
 										branch: gitState.branch,
 										head: gitState.head.substring(0, 8),
@@ -200,7 +214,7 @@ export class GitStateService {
 
 							this.logger.debug(
 								`Branch not found, checked out to commit (detached HEAD)`,
-								"GitStateService",
+								LOG_SOURCES.GIT_STATE,
 								{
 									branch: gitState.branch,
 									head: gitState.head.substring(0, 8),
@@ -210,13 +224,17 @@ export class GitStateService {
 					} else {
 						await git.checkout(gitState.head)
 
-						this.logger.debug(`No branch info, checked out to commit (detached HEAD)`, "GitStateService", {
-							head: gitState.head.substring(0, 8),
-						})
+						this.logger.debug(
+							`No branch info, checked out to commit (detached HEAD)`,
+							LOG_SOURCES.GIT_STATE,
+							{
+								head: gitState.head.substring(0, 8),
+							},
+						)
 					}
 				}
 			} catch (error) {
-				this.logger.warn(`Failed to checkout`, "GitStateService", {
+				this.logger.warn(`Failed to checkout`, LOG_SOURCES.GIT_STATE, {
 					branch: gitState.branch,
 					head: gitState.head.substring(0, 8),
 					error: error instanceof Error ? error.message : String(error),
@@ -232,7 +250,7 @@ export class GitStateService {
 
 					await git.applyPatch(patchFile)
 
-					this.logger.debug(`Applied patch`, "GitStateService", {
+					this.logger.debug(`Applied patch`, LOG_SOURCES.GIT_STATE, {
 						patchSize: gitState.patch.length,
 					})
 				} finally {
@@ -243,7 +261,7 @@ export class GitStateService {
 					}
 				}
 			} catch (error) {
-				this.logger.warn(`Failed to apply patch`, "GitStateService", {
+				this.logger.warn(`Failed to apply patch`, LOG_SOURCES.GIT_STATE, {
 					error: error instanceof Error ? error.message : String(error),
 				})
 			}
@@ -252,19 +270,19 @@ export class GitStateService {
 				if (shouldPop) {
 					await git.stash(["pop"])
 
-					this.logger.debug(`Popped stash`, "GitStateService")
+					this.logger.debug(`Popped stash`, LOG_SOURCES.GIT_STATE)
 				}
 			} catch (error) {
-				this.logger.warn(`Failed to pop stash`, "GitStateService", {
+				this.logger.warn(`Failed to pop stash`, LOG_SOURCES.GIT_STATE, {
 					error: error instanceof Error ? error.message : String(error),
 				})
 			}
 
-			this.logger.info(`Git state restoration finished`, "GitStateService", {
+			this.logger.info(`Git state restoration finished`, LOG_SOURCES.GIT_STATE, {
 				head: gitState.head.substring(0, 8),
 			})
 		} catch (error) {
-			this.logger.error(`Failed to restore git state`, "GitStateService", {
+			this.logger.error(`Failed to restore git state`, LOG_SOURCES.GIT_STATE, {
 				error: error instanceof Error ? error.message : String(error),
 			})
 		}

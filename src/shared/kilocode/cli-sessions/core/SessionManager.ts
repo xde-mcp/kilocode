@@ -18,6 +18,7 @@ import { TokenValidationService } from "./TokenValidationService.js"
 import { SessionTitleService } from "./SessionTitleService.js"
 import { SessionLifecycleService } from "./SessionLifecycleService.js"
 import { SessionSyncService, type SessionCreatedMessage, type SessionSyncedMessage } from "./SessionSyncService.js"
+import { LOG_SOURCES } from "../config.js"
 
 // Re-export types for external consumers
 export type { SessionCreatedMessage, SessionSyncedMessage } from "./SessionSyncService.js"
@@ -153,7 +154,7 @@ export class SessionManager {
 			onSessionRestored: dependencies.onSessionRestored,
 		})
 
-		this.logger.debug("Initialized SessionManager", "SessionManager")
+		this.logger.debug("Initialized SessionManager", LOG_SOURCES.SESSION_MANAGER)
 	}
 
 	/**

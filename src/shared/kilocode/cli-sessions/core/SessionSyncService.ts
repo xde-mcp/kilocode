@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { promises as fs } from "fs"
 import type { ClineMessage } from "@roo-code/types"
 import type { ILogger } from "../types/ILogger.js"
 import type { SessionClient } from "./SessionClient.js"
@@ -8,6 +8,7 @@ import type { SessionTitleService } from "./SessionTitleService.js"
 import type { GitStateService } from "./GitStateService.js"
 import type { TokenValidationService } from "./TokenValidationService.js"
 import type { SyncQueue } from "./SyncQueue.js"
+import { LOG_SOURCES } from "../config.js"
 
 /**
  * Message emitted when a session has been created.
@@ -67,8 +68,6 @@ export interface SessionSyncServiceDependencies {
  * maintainability and testability through separation of concerns.
  */
 export class SessionSyncService {
-	private static readonly LOG_SOURCE = "SessionSyncService"
-
 	private readonly sessionClient: SessionClient
 	private readonly persistenceManager: SessionPersistenceManager
 	private readonly stateManager: SessionStateManager
@@ -133,20 +132,20 @@ export class SessionSyncService {
 	 * @returns A promise that resolves when the sync is complete
 	 */
 	async doSync(force = false): Promise<void> {
-		this.logger.debug("Doing sync", SessionSyncService.LOG_SOURCE)
+		this.logger.debug("Doing sync", LOG_SOURCES.SESSION_SYNC)
 
 		if (this.pendingSync) {
-			this.logger.debug("Found pending sync", SessionSyncService.LOG_SOURCE)
+			this.logger.debug("Found pending sync", LOG_SOURCES.SESSION_SYNC)
 
 			if (!force) {
-				this.logger.debug("Not forced, returning pending sync", SessionSyncService.LOG_SOURCE)
+				this.logger.debug("Not forced, returning pending sync", LOG_SOURCES.SESSION_SYNC)
 				return this.pendingSync
 			} else {
-				this.logger.debug("Forced, syncing despite pending sync", SessionSyncService.LOG_SOURCE)
+				this.logger.debug("Forced, syncing despite pending sync", LOG_SOURCES.SESSION_SYNC)
 			}
 		}
 
-		this.logger.debug("Creating new sync", SessionSyncService.LOG_SOURCE)
+		this.logger.debug("Creating new sync", LOG_SOURCES.SESSION_SYNC)
 
 		this.pendingSync = this.syncSession()
 
@@ -159,9 +158,9 @@ export class SessionSyncService {
 				if (this.pendingSync === pendingSync) {
 					this.pendingSync = null
 
-					this.logger.debug("Nulling pending sync after resolution", SessionSyncService.LOG_SOURCE)
+					this.logger.debug("Nulling pending sync after resolution", LOG_SOURCES.SESSION_SYNC)
 				} else {
-					this.logger.debug("Pending sync was replaced, not nulling", SessionSyncService.LOG_SOURCE)
+					this.logger.debug("Pending sync was replaced, not nulling", LOG_SOURCES.SESSION_SYNC)
 				}
 			}
 		})()
@@ -180,10 +179,7 @@ export class SessionSyncService {
 		}
 
 		if (process.env.KILO_DISABLE_SESSIONS) {
-			this.logger.debug(
-				"Sessions disabled via KILO_DISABLE_SESSIONS, clearing queue",
-				SessionSyncService.LOG_SOURCE,
-			)
+			this.logger.debug("Sessions disabled via KILO_DISABLE_SESSIONS, clearing queue", LOG_SOURCES.SESSION_SYNC)
 			this.syncQueue.clear()
 			return
 		}
@@ -191,19 +187,19 @@ export class SessionSyncService {
 		const tokenValid = await this.tokenValidationService.isValid()
 
 		if (tokenValid === null) {
-			this.logger.debug("No token available for session sync, skipping", SessionSyncService.LOG_SOURCE)
+			this.logger.debug("No token available for session sync, skipping", LOG_SOURCES.SESSION_SYNC)
 			return
 		}
 
 		if (!tokenValid) {
-			this.logger.debug("Token is invalid, skipping sync", SessionSyncService.LOG_SOURCE)
+			this.logger.debug("Token is invalid, skipping sync", LOG_SOURCES.SESSION_SYNC)
 			return
 		}
 
 		const taskIds = this.syncQueue.getUniqueTaskIds()
 		const lastItem = this.syncQueue.getLastItem()
 
-		this.logger.debug("Starting session sync", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Starting session sync", LOG_SOURCES.SESSION_SYNC, {
 			queueLength: this.syncQueue.length,
 			taskCount: taskIds.size,
 		})
@@ -214,7 +210,7 @@ export class SessionSyncService {
 			try {
 				await this.syncTaskSession(taskId, gitInfo)
 			} catch (error) {
-				this.logger.error("Failed to sync session", SessionSyncService.LOG_SOURCE, {
+				this.logger.error("Failed to sync session", LOG_SOURCES.SESSION_SYNC, {
 					taskId,
 					error: error instanceof Error ? error.message : String(error),
 				})
@@ -235,7 +231,7 @@ export class SessionSyncService {
 			}
 		}
 
-		this.logger.debug("Session sync completed", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Session sync completed", LOG_SOURCES.SESSION_SYNC, {
 			lastSessionId: this.stateManager.getActiveSessionId(),
 			remainingQueueLength: this.syncQueue.length,
 		})
@@ -253,7 +249,7 @@ export class SessionSyncService {
 	): Promise<void> {
 		const taskItems = this.syncQueue.getItemsForTask(taskId)
 
-		this.logger.debug("Processing task", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Processing task", LOG_SOURCES.SESSION_SYNC, {
 			taskId,
 			itemCount: taskItems.length,
 		})
@@ -273,7 +269,7 @@ export class SessionSyncService {
 		}
 
 		if (!sessionId) {
-			this.logger.warn("No session ID available after create/get, skipping task", SessionSyncService.LOG_SOURCE, {
+			this.logger.warn("No session ID available after create/get, skipping task", LOG_SOURCES.SESSION_SYNC, {
 				taskId,
 			})
 			return
@@ -300,7 +296,7 @@ export class SessionSyncService {
 		basePayload: Partial<Parameters<NonNullable<typeof this.sessionClient>["create"]>[0]>,
 		gitInfo: Awaited<ReturnType<GitStateService["getGitState"]>>,
 	): Promise<string> {
-		this.logger.debug("Found existing session for task", SessionSyncService.LOG_SOURCE, { taskId, sessionId })
+		this.logger.debug("Found existing session for task", LOG_SOURCES.SESSION_SYNC, { taskId, sessionId })
 
 		const gitUrlChanged = !!gitInfo?.repoUrl && gitInfo.repoUrl !== this.stateManager.getGitUrl(taskId)
 
@@ -312,7 +308,7 @@ export class SessionSyncService {
 
 		if (gitUrlChanged || modeChanged || modelChanged) {
 			if (gitUrlChanged && gitInfo?.repoUrl) {
-				this.logger.debug("Git URL changed, updating session", SessionSyncService.LOG_SOURCE, {
+				this.logger.debug("Git URL changed, updating session", LOG_SOURCES.SESSION_SYNC, {
 					sessionId,
 					newGitUrl: gitInfo.repoUrl,
 				})
@@ -321,7 +317,7 @@ export class SessionSyncService {
 			}
 
 			if (modeChanged && currentMode) {
-				this.logger.debug("Mode changed, updating session", SessionSyncService.LOG_SOURCE, {
+				this.logger.debug("Mode changed, updating session", LOG_SOURCES.SESSION_SYNC, {
 					sessionId,
 					newMode: currentMode,
 					previousMode: this.stateManager.getMode(sessionId),
@@ -331,7 +327,7 @@ export class SessionSyncService {
 			}
 
 			if (modelChanged && currentModel) {
-				this.logger.debug("Model changed, updating session", SessionSyncService.LOG_SOURCE, {
+				this.logger.debug("Model changed, updating session", LOG_SOURCES.SESSION_SYNC, {
 					sessionId,
 					newModel: currentModel,
 					previousModel: this.stateManager.getModel(sessionId),
@@ -364,7 +360,7 @@ export class SessionSyncService {
 		taskId: string,
 		basePayload: Partial<Parameters<NonNullable<typeof this.sessionClient>["create"]>[0]>,
 	): Promise<string> {
-		this.logger.debug("Creating new session for task", SessionSyncService.LOG_SOURCE, { taskId })
+		this.logger.debug("Creating new session for task", LOG_SOURCES.SESSION_SYNC, { taskId })
 
 		const currentMode = await this.getMode(taskId)
 		const currentModel = await this.getModel(taskId)
@@ -388,7 +384,7 @@ export class SessionSyncService {
 			this.stateManager.setModel(sessionId, currentModel)
 		}
 
-		this.logger.info("Created new session", SessionSyncService.LOG_SOURCE, { taskId, sessionId })
+		this.logger.info("Created new session", LOG_SOURCES.SESSION_SYNC, { taskId, sessionId })
 
 		this.persistenceManager.setSessionForTask(taskId, createdSession.session_id)
 
@@ -399,6 +395,32 @@ export class SessionSyncService {
 		})
 
 		return sessionId
+	}
+
+	/**
+	 * Reads blob files asynchronously with caching to avoid redundant reads.
+	 * @param items Queue items to read files for
+	 * @returns Map of file path to parsed contents
+	 */
+	private async readBlobFiles(items: ReturnType<SyncQueue["getItemsForTask"]>): Promise<Map<string, unknown>> {
+		const cache = new Map<string, unknown>()
+		const uniquePaths = new Set(items.map((item) => item.blobPath))
+
+		await Promise.all(
+			Array.from(uniquePaths).map(async (path) => {
+				try {
+					const content = await fs.readFile(path, "utf-8")
+					cache.set(path, JSON.parse(content))
+				} catch (error) {
+					// Log error but don't fail the entire batch
+					this.logger.warn(`Failed to read blob file: ${path}`, LOG_SOURCES.SESSION_SYNC, {
+						error: error instanceof Error ? error.message : String(error),
+					})
+				}
+			}),
+		)
+
+		return cache
 	}
 
 	/**
@@ -416,23 +438,34 @@ export class SessionSyncService {
 		const blobNames = new Set(taskItems.map((item) => item.blobName))
 		const blobUploads: Promise<unknown>[] = []
 
-		this.logger.debug("Uploading blobs for session", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Uploading blobs for session", LOG_SOURCES.SESSION_SYNC, {
 			sessionId,
 			blobNames: Array.from(blobNames),
 		})
+
+		// Read all blob files asynchronously with caching
+		const fileCache = await this.readBlobFiles(taskItems)
 
 		for (const blobName of blobNames) {
 			const lastBlobItem = this.syncQueue.getLastItemForBlob(taskId, blobName)
 
 			if (!lastBlobItem) {
-				this.logger.warn("Could not find blob item for task", SessionSyncService.LOG_SOURCE, {
+				this.logger.warn("Could not find blob item for task", LOG_SOURCES.SESSION_SYNC, {
 					blobName,
 					taskId,
 				})
 				continue
 			}
 
-			const fileContents = JSON.parse(readFileSync(lastBlobItem.blobPath, "utf-8"))
+			const fileContents = fileCache.get(lastBlobItem.blobPath)
+
+			if (fileContents === undefined) {
+				this.logger.warn("File contents not found in cache, skipping blob", LOG_SOURCES.SESSION_SYNC, {
+					blobName,
+					blobPath: lastBlobItem.blobPath,
+				})
+				continue
+			}
 
 			blobUploads.push(
 				this.sessionClient
@@ -442,7 +475,7 @@ export class SessionSyncService {
 						fileContents,
 					)
 					.then((result) => {
-						this.logger.debug("Blob uploaded successfully", SessionSyncService.LOG_SOURCE, {
+						this.logger.debug("Blob uploaded successfully", LOG_SOURCES.SESSION_SYNC, {
 							sessionId,
 							blobName,
 						})
@@ -454,7 +487,7 @@ export class SessionSyncService {
 						this.syncQueue.removeProcessedItems(taskId, blobName, lastBlobItem.timestamp)
 					})
 					.catch((error) => {
-						this.logger.error("Failed to upload blob", SessionSyncService.LOG_SOURCE, {
+						this.logger.error("Failed to upload blob", LOG_SOURCES.SESSION_SYNC, {
 							sessionId,
 							blobName,
 							error: error instanceof Error ? error.message : String(error),
@@ -464,7 +497,7 @@ export class SessionSyncService {
 
 			// Trigger title generation for ui_messages if no title exists
 			if (blobName === "ui_messages" && !this.stateManager.hasTitle(sessionId)) {
-				this.logger.debug("Triggering session title generation", SessionSyncService.LOG_SOURCE, { sessionId })
+				this.logger.debug("Triggering session title generation", LOG_SOURCES.SESSION_SYNC, { sessionId })
 
 				// Delegate title generation to the title service
 				void this.titleService.generateAndUpdateTitle(sessionId, fileContents as ClineMessage[])
@@ -473,7 +506,7 @@ export class SessionSyncService {
 
 		await Promise.all(blobUploads)
 
-		this.logger.debug("Completed blob uploads for task", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Completed blob uploads for task", LOG_SOURCES.SESSION_SYNC, {
 			taskId,
 			sessionId,
 			uploadCount: blobUploads.length,
@@ -505,11 +538,11 @@ export class SessionSyncService {
 		const gitStateHash = this.gitStateService.hashGitState(gitStateData)
 
 		if (gitStateHash === this.stateManager.getGitHash(taskId)) {
-			this.logger.debug("Git state unchanged, skipping upload", SessionSyncService.LOG_SOURCE, { sessionId })
+			this.logger.debug("Git state unchanged, skipping upload", LOG_SOURCES.SESSION_SYNC, { sessionId })
 			return
 		}
 
-		this.logger.debug("Git state changed, uploading", SessionSyncService.LOG_SOURCE, {
+		this.logger.debug("Git state changed, uploading", LOG_SOURCES.SESSION_SYNC, {
 			sessionId,
 			head: gitInfo.head?.substring(0, 8),
 		})
@@ -521,7 +554,7 @@ export class SessionSyncService {
 			// Track the updated_at timestamp from git state upload using high-water mark
 			this.stateManager.updateTimestamp(sessionId, result.updated_at)
 		} catch (error) {
-			this.logger.error("Failed to upload git state", SessionSyncService.LOG_SOURCE, {
+			this.logger.error("Failed to upload git state", LOG_SOURCES.SESSION_SYNC, {
 				sessionId,
 				error: error instanceof Error ? error.message : String(error),
 			})
@@ -545,7 +578,7 @@ export class SessionSyncService {
 				event: "session_synced",
 			})
 
-			this.logger.debug("Emitted session_synced event", SessionSyncService.LOG_SOURCE, {
+			this.logger.debug("Emitted session_synced event", LOG_SOURCES.SESSION_SYNC, {
 				sessionId,
 				updatedAt: updatedAtTimestamp,
 			})

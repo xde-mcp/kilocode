@@ -1,6 +1,7 @@
 import type { SessionClient } from "./SessionClient.js"
 import type { SessionStateManager } from "./SessionStateManager.js"
 import type { ILogger } from "../types/ILogger.js"
+import { LOG_SOURCES } from "../config.js"
 
 /**
  * Dependencies required by TokenValidationService.
@@ -51,33 +52,33 @@ export class TokenValidationService {
 		const token = await this.getToken()
 
 		if (!token) {
-			this.logger.debug("No token available for validation", "TokenValidationService")
+			this.logger.debug("No token available for validation", LOG_SOURCES.TOKEN_VALIDATION)
 			return null
 		}
 
 		const cachedValidity = this.stateManager.getTokenValidity(token)
 
 		if (cachedValidity !== undefined) {
-			this.logger.debug("Using cached token validity", "TokenValidationService", {
+			this.logger.debug("Using cached token validity", LOG_SOURCES.TOKEN_VALIDATION, {
 				tokenValid: cachedValidity,
 			})
 			return cachedValidity
 		}
 
-		this.logger.debug("Checking token validity", "TokenValidationService")
+		this.logger.debug("Checking token validity", LOG_SOURCES.TOKEN_VALIDATION)
 
 		try {
 			const tokenValid = await this.sessionClient.tokenValid()
 
 			this.stateManager.setTokenValidity(token, tokenValid)
 
-			this.logger.debug("Token validity checked", "TokenValidationService", {
+			this.logger.debug("Token validity checked", LOG_SOURCES.TOKEN_VALIDATION, {
 				tokenValid,
 			})
 
 			return tokenValid
 		} catch (error) {
-			this.logger.error("Failed to check token validity", "TokenValidationService", {
+			this.logger.error("Failed to check token validity", LOG_SOURCES.TOKEN_VALIDATION, {
 				error: error instanceof Error ? error.message : String(error),
 			})
 			return false
@@ -95,7 +96,7 @@ export class TokenValidationService {
 
 		if (token) {
 			this.stateManager.clearTokenValidity(token)
-			this.logger.debug("Token validity cache invalidated", "TokenValidationService")
+			this.logger.debug("Token validity cache invalidated", LOG_SOURCES.TOKEN_VALIDATION)
 		}
 	}
 }

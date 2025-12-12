@@ -12,6 +12,7 @@ import type { SessionStateManager } from "./SessionStateManager.js"
 import type { SessionTitleService } from "./SessionTitleService.js"
 import type { GitStateService, GitRestoreState } from "./GitStateService.js"
 import { fetchSignedBlob } from "../utils/fetchBlobFromSignedUrl.js"
+import { LOG_SOURCES } from "../config.js"
 
 /**
  * Dependencies required by SessionLifecycleService.
@@ -47,8 +48,6 @@ export interface SessionLifecycleServiceDependencies {
  * maintainability and testability through separation of concerns.
  */
 export class SessionLifecycleService {
-	private static readonly LOG_SOURCE = "SessionLifecycleService"
-
 	private readonly sessionClient: SessionClient
 	private readonly persistenceManager: SessionPersistenceManager
 	private readonly stateManager: SessionStateManager
@@ -91,22 +90,22 @@ export class SessionLifecycleService {
 			const lastSession = this.persistenceManager.getLastSession()
 
 			if (!lastSession?.sessionId) {
-				this.logger.debug("No persisted session ID found", SessionLifecycleService.LOG_SOURCE)
+				this.logger.debug("No persisted session ID found", LOG_SOURCES.SESSION_LIFECYCLE)
 				return false
 			}
 
-			this.logger.info("Found persisted session ID, attempting to restore", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.info("Found persisted session ID, attempting to restore", LOG_SOURCES.SESSION_LIFECYCLE, {
 				sessionId: lastSession.sessionId,
 			})
 
 			await this.restoreSession(lastSession.sessionId, true)
 
-			this.logger.info("Successfully restored persisted session", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.info("Successfully restored persisted session", LOG_SOURCES.SESSION_LIFECYCLE, {
 				sessionId: lastSession.sessionId,
 			})
 			return true
 		} catch (error) {
-			this.logger.warn("Failed to restore persisted session", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.warn("Failed to restore persisted session", LOG_SOURCES.SESSION_LIFECYCLE, {
 				error: error instanceof Error ? error.message : String(error),
 			})
 
@@ -122,7 +121,7 @@ export class SessionLifecycleService {
 	 */
 	async restoreSession(sessionId: string, rethrowError = false): Promise<void> {
 		try {
-			this.logger.info("Restoring session", SessionLifecycleService.LOG_SOURCE, { sessionId })
+			this.logger.info("Restoring session", LOG_SOURCES.SESSION_LIFECYCLE, { sessionId })
 
 			const session = (await this.sessionClient.get({
 				session_id: sessionId,
@@ -130,19 +129,19 @@ export class SessionLifecycleService {
 			})) as SessionWithSignedUrls | undefined
 
 			if (!session) {
-				this.logger.error("Failed to obtain session", SessionLifecycleService.LOG_SOURCE, { sessionId })
+				this.logger.error("Failed to obtain session", LOG_SOURCES.SESSION_LIFECYCLE, { sessionId })
 				throw new Error("Failed to obtain session")
 			}
 
 			if (session.version !== this.version) {
-				this.logger.warn("Session version mismatch", SessionLifecycleService.LOG_SOURCE, {
+				this.logger.warn("Session version mismatch", LOG_SOURCES.SESSION_LIFECYCLE, {
 					sessionId,
 					expectedVersion: this.version,
 					actualVersion: session.version,
 				})
 			}
 
-			this.logger.debug("Obtained session", SessionLifecycleService.LOG_SOURCE, { sessionId, session })
+			this.logger.debug("Obtained session", LOG_SOURCES.SESSION_LIFECYCLE, { sessionId, session })
 
 			const sessionDirectoryPath = path.join(this.pathProvider.getTasksDir(), sessionId)
 
@@ -159,7 +158,7 @@ export class SessionLifecycleService {
 				.filter((blobUrlField) => {
 					const signedUrl = session[blobUrlField]
 					if (!signedUrl) {
-						this.logger.debug(`No signed URL for ${blobUrlField}`, SessionLifecycleService.LOG_SOURCE)
+						this.logger.debug(`No signed URL for ${blobUrlField}`, LOG_SOURCES.SESSION_LIFECYCLE)
 						return false
 					}
 					return true
@@ -205,9 +204,9 @@ export class SessionLifecycleService {
 
 						writeFileSync(fullPath, JSON.stringify(fileContent, null, 2))
 
-						this.logger.debug(`Wrote blob to file`, SessionLifecycleService.LOG_SOURCE, { fullPath })
+						this.logger.debug(`Wrote blob to file`, LOG_SOURCES.SESSION_LIFECYCLE, { fullPath })
 					} else {
-						this.logger.error(`Failed to process blob`, SessionLifecycleService.LOG_SOURCE, {
+						this.logger.error(`Failed to process blob`, LOG_SOURCES.SESSION_LIFECYCLE, {
 							filename,
 							error: fetchResult.error,
 						})
@@ -234,7 +233,7 @@ export class SessionLifecycleService {
 				historyItem,
 			})
 
-			this.logger.info("Task registered with extension", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.info("Task registered with extension", LOG_SOURCES.SESSION_LIFECYCLE, {
 				sessionId,
 				taskId: historyItem.id,
 			})
@@ -244,17 +243,17 @@ export class SessionLifecycleService {
 				text: sessionId,
 			})
 
-			this.logger.info("Switched to restored task", SessionLifecycleService.LOG_SOURCE, { sessionId })
+			this.logger.info("Switched to restored task", LOG_SOURCES.SESSION_LIFECYCLE, { sessionId })
 
 			this.persistenceManager.setLastSession(sessionId)
 
 			this.onSessionRestored()
 
-			this.logger.debug("Marked task as resumed after session restoration", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.debug("Marked task as resumed after session restoration", LOG_SOURCES.SESSION_LIFECYCLE, {
 				sessionId,
 			})
 		} catch (error) {
-			this.logger.error("Failed to restore session", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.error("Failed to restore session", LOG_SOURCES.SESSION_LIFECYCLE, {
 				error: error instanceof Error ? error.message : String(error),
 				sessionId,
 			})
@@ -297,7 +296,7 @@ export class SessionLifecycleService {
 
 		await this.titleService.updateTitle(sessionId, newTitle)
 
-		this.logger.info("Session renamed successfully", SessionLifecycleService.LOG_SOURCE, {
+		this.logger.info("Session renamed successfully", LOG_SOURCES.SESSION_LIFECYCLE, {
 			sessionId,
 			newTitle: newTitle.trim(),
 		})
@@ -336,7 +335,7 @@ export class SessionLifecycleService {
 
 			if (sessionId) {
 				if (!this.stateManager.isSessionVerified(sessionId)) {
-					this.logger.debug("Verifying session existence", SessionLifecycleService.LOG_SOURCE, {
+					this.logger.debug("Verifying session existence", LOG_SOURCES.SESSION_LIFECYCLE, {
 						taskId,
 						sessionId,
 					})
@@ -350,7 +349,7 @@ export class SessionLifecycleService {
 						if (!session) {
 							this.logger.info(
 								"Session no longer exists, will create new session",
-								SessionLifecycleService.LOG_SOURCE,
+								LOG_SOURCES.SESSION_LIFECYCLE,
 								{
 									taskId,
 									sessionId,
@@ -359,7 +358,7 @@ export class SessionLifecycleService {
 							sessionId = undefined
 						} else {
 							this.stateManager.markSessionVerified(sessionId)
-							this.logger.debug("Session verified and cached", SessionLifecycleService.LOG_SOURCE, {
+							this.logger.debug("Session verified and cached", LOG_SOURCES.SESSION_LIFECYCLE, {
 								taskId,
 								sessionId,
 							})
@@ -367,7 +366,7 @@ export class SessionLifecycleService {
 					} catch (error) {
 						this.logger.info(
 							"Session verification failed, will create new session",
-							SessionLifecycleService.LOG_SOURCE,
+							LOG_SOURCES.SESSION_LIFECYCLE,
 							{
 								taskId,
 								sessionId,
@@ -377,7 +376,7 @@ export class SessionLifecycleService {
 						sessionId = undefined
 					}
 				} else {
-					this.logger.debug("Session already verified (cached)", SessionLifecycleService.LOG_SOURCE, {
+					this.logger.debug("Session already verified (cached)", LOG_SOURCES.SESSION_LIFECYCLE, {
 						taskId,
 						sessionId,
 					})
@@ -385,11 +384,9 @@ export class SessionLifecycleService {
 			}
 
 			if (!sessionId) {
-				this.logger.debug(
-					"No existing session for task, creating new session",
-					SessionLifecycleService.LOG_SOURCE,
-					{ taskId },
-				)
+				this.logger.debug("No existing session for task, creating new session", LOG_SOURCES.SESSION_LIFECYCLE, {
+					taskId,
+				})
 
 				const { historyItem, apiConversationHistoryFilePath, uiMessagesFilePath } =
 					await provider.getTaskWithId(taskId)
@@ -421,7 +418,7 @@ export class SessionLifecycleService {
 					this.stateManager.setModel(sessionId, model)
 				}
 
-				this.logger.info("Created new session for task", SessionLifecycleService.LOG_SOURCE, {
+				this.logger.info("Created new session for task", LOG_SOURCES.SESSION_LIFECYCLE, {
 					taskId,
 					sessionId,
 				})
@@ -429,7 +426,7 @@ export class SessionLifecycleService {
 				await this.sessionClient.uploadBlob(sessionId, "api_conversation_history", apiConversationHistory)
 				await this.sessionClient.uploadBlob(sessionId, "ui_messages", uiMessages)
 
-				this.logger.debug("Uploaded conversation blobs to session", SessionLifecycleService.LOG_SOURCE, {
+				this.logger.debug("Uploaded conversation blobs to session", LOG_SOURCES.SESSION_LIFECYCLE, {
 					sessionId,
 				})
 
@@ -437,7 +434,7 @@ export class SessionLifecycleService {
 
 				this.stateManager.markSessionVerified(sessionId)
 			} else {
-				this.logger.debug("Found existing session for task", SessionLifecycleService.LOG_SOURCE, {
+				this.logger.debug("Found existing session for task", LOG_SOURCES.SESSION_LIFECYCLE, {
 					taskId,
 					sessionId,
 				})
@@ -445,7 +442,7 @@ export class SessionLifecycleService {
 
 			return sessionId
 		} catch (error) {
-			this.logger.error("Failed to get or create session from task", SessionLifecycleService.LOG_SOURCE, {
+			this.logger.error("Failed to get or create session from task", LOG_SOURCES.SESSION_LIFECYCLE, {
 				taskId,
 				error: error instanceof Error ? error.message : String(error),
 			})
@@ -461,6 +458,6 @@ export class SessionLifecycleService {
 	 * @returns The fetched blob content
 	 */
 	private async fetchBlobFromSignedUrl(url: string, urlType: string) {
-		return fetchSignedBlob(url, urlType, this.logger, SessionLifecycleService.LOG_SOURCE)
+		return fetchSignedBlob(url, urlType, this.logger, LOG_SOURCES.SESSION_LIFECYCLE)
 	}
 }
