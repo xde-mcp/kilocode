@@ -14,6 +14,7 @@ import { GitStateService, GitRestoreState } from "./GitStateService.js"
 import { SessionStateManager } from "./SessionStateManager.js"
 import { SyncQueue } from "./SyncQueue.js"
 import { TokenValidationService } from "./TokenValidationService.js"
+import { SessionTitleService } from "./SessionTitleService.js"
 
 interface SessionCreatedMessage {
 	sessionId: string
@@ -75,6 +76,7 @@ export class SessionManager {
 	public stateManager: SessionStateManager
 	public syncQueue: SyncQueue
 	public tokenValidationService: TokenValidationService
+	public titleService: SessionTitleService
 	private gitStateService: GitStateService
 	private onSessionCreated: (message: SessionCreatedMessage) => void
 	private onSessionRestored: () => void
@@ -110,6 +112,12 @@ export class SessionManager {
 			sessionClient: this.sessionClient,
 			stateManager: this.stateManager,
 			getToken: this.getToken,
+			logger: this.logger,
+		})
+		this.titleService = new SessionTitleService({
+			sessionClient: this.sessionClient,
+			stateManager: this.stateManager,
+			extensionMessenger: this.extensionMessenger,
 			logger: this.logger,
 		})
 		this.gitStateService = new GitStateService({
@@ -329,22 +337,11 @@ export class SessionManager {
 			throw new Error("No active session")
 		}
 
-		const trimmedTitle = newTitle.trim()
-		if (!trimmedTitle) {
-			throw new Error("Session title cannot be empty")
-		}
-
-		const updateResult = await this.sessionClient.update({
-			session_id: sessionId,
-			title: trimmedTitle,
-		})
-
-		this.stateManager.setTitle(sessionId, trimmedTitle)
-		this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
+		await this.titleService.updateTitle(sessionId, newTitle)
 
 		this.logger.info("Session renamed successfully", "SessionManager", {
 			sessionId,
-			newTitle: trimmedTitle,
+			newTitle: newTitle.trim(),
 		})
 	}
 
@@ -403,7 +400,7 @@ export class SessionManager {
 				const apiConversationHistory = JSON.parse(readFileSync(apiConversationHistoryFilePath, "utf8"))
 				const uiMessages = JSON.parse(readFileSync(uiMessagesFilePath, "utf8"))
 
-				const title = historyItem.task || this.getFirstMessageText(uiMessages, true) || ""
+				const title = historyItem.task || this.titleService.getFirstMessageText(uiMessages, true) || ""
 
 				const mode = await this.getMode(taskId)
 				const model = await this.getModel(taskId)
@@ -647,69 +644,10 @@ export class SessionManager {
 						continue
 					}
 
-					this.logger.debug("Checking for session title generation", "SessionManager", { sessionId })
+					this.logger.debug("Triggering session title generation", "SessionManager", { sessionId })
 
-					void (async () => {
-						try {
-							this.stateManager.setTitle(sessionId, "Pending title")
-
-							const session = await this.sessionClient.get({ session_id: sessionId })
-
-							if (session.title) {
-								this.stateManager.setTitle(sessionId, session.title)
-
-								this.logger.debug("Found existing session title", "SessionManager", {
-									sessionId,
-									title: session.title,
-								})
-
-								return
-							}
-
-							const generatedTitle = await this.generateTitle(fileContents)
-
-							if (!generatedTitle) {
-								throw new Error("Failed to generate session title")
-							}
-
-							const updateResult = await this.sessionClient.update({
-								session_id: sessionId,
-								title: generatedTitle,
-							})
-
-							this.stateManager.setTitle(sessionId, generatedTitle)
-							this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
-
-							this.logger.debug("Updated session title", "SessionManager", {
-								sessionId,
-								generatedTitle,
-							})
-						} catch (error) {
-							this.logger.error("Failed to generate session title", "SessionManager", {
-								sessionId,
-								error: error instanceof Error ? error.message : String(error),
-							})
-
-							const localTitle = this.getFirstMessageText(fileContents as ClineMessage[], true) || ""
-
-							if (!localTitle) {
-								return
-							}
-
-							try {
-								await this.renameSession(sessionId, localTitle)
-							} catch (error) {
-								this.logger.error(
-									"Failed to update session title using local title",
-									"SessionManager",
-									{
-										sessionId,
-										error: error instanceof Error ? error.message : String(error),
-									},
-								)
-							}
-						}
-					})()
+					// Delegate title generation to the title service
+					void this.titleService.generateAndUpdateTitle(sessionId, fileContents as ClineMessage[])
 				}
 
 				if (gitInfo) {
@@ -847,70 +785,6 @@ export class SessionManager {
 				return "task_metadata"
 			default:
 				return null
-		}
-	}
-
-	getFirstMessageText(uiMessages: ClineMessage[], truncate = false) {
-		if (uiMessages.length === 0) {
-			return null
-		}
-
-		const firstMessageWithText = uiMessages.find((msg) => msg.text)
-
-		if (!firstMessageWithText?.text) {
-			return null
-		}
-
-		let rawText = firstMessageWithText.text.trim()
-		rawText = rawText.replace(/\s+/g, " ")
-
-		if (!rawText) {
-			return null
-		}
-
-		if (truncate && rawText.length > 140) {
-			return rawText.substring(0, 137) + "..."
-		}
-
-		return rawText
-	}
-
-	async generateTitle(uiMessages: ClineMessage[]) {
-		const rawText = this.getFirstMessageText(uiMessages)
-
-		if (!rawText) {
-			return null
-		}
-
-		try {
-			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Strip out any sensitive information. Your result will be used as the conversation title.
-
-User request:
-${rawText}
-
-Summary:`
-
-			const summary = await this.extensionMessenger.requestSingleCompletion(prompt, 30000)
-
-			let cleanedSummary = summary.trim()
-
-			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
-
-			if (cleanedSummary) {
-				return cleanedSummary
-			}
-
-			throw new Error("Empty summary generated")
-		} catch (error) {
-			this.logger.warn("Failed to generate title using LLM, falling back to truncation", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-
-			if (rawText.length > 140) {
-				return rawText.substring(0, 137) + "..."
-			}
-
-			return rawText
 		}
 	}
 }
