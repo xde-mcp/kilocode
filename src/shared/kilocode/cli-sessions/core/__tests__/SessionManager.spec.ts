@@ -2,6 +2,7 @@ import path from "path"
 import { SessionManager, SessionManagerDependencies } from "../SessionManager"
 import { SessionClient, CliSessionSharedState, SessionWithSignedUrls } from "../SessionClient"
 import { SessionPersistenceManager } from "../../utils/SessionPersistenceManager"
+import { GitStateService } from "../GitStateService"
 import type { ITaskDataProvider } from "../../types/ITaskDataProvider"
 import type { ClineMessage } from "@roo-code/types"
 import { readFileSync, writeFileSync, mkdirSync } from "fs"
@@ -1306,6 +1307,15 @@ describe("SessionManager", () => {
 	})
 
 	describe("getGitState patch size limit", () => {
+		let gitStateService: GitStateService
+
+		beforeEach(() => {
+			gitStateService = new GitStateService({
+				logger: mockDependencies.logger,
+				getWorkspaceDir: () => null,
+			})
+		})
+
 		it("should return patch when size is under the limit", async () => {
 			const smallPatch = "a".repeat(1000)
 
@@ -1321,14 +1331,13 @@ describe("SessionManager", () => {
 				applyPatch: vi.fn().mockResolvedValue(undefined),
 			} as unknown as ReturnType<typeof simpleGit>)
 
-			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
-			const result = await getGitState.call(manager)
+			const result = await gitStateService.getGitState()
 
-			expect(result.patch).toBe(smallPatch)
+			expect(result?.patch).toBe(smallPatch)
 		})
 
 		it("should return empty string patch when size exceeds the limit", async () => {
-			const largePatch = "a".repeat(SessionManager.MAX_PATCH_SIZE_BYTES + 1)
+			const largePatch = "a".repeat(GitStateService.MAX_PATCH_SIZE_BYTES + 1)
 
 			const mockRaw = vi.fn().mockResolvedValue("")
 			vi.mocked(simpleGit).mockReturnValue({
@@ -1342,14 +1351,13 @@ describe("SessionManager", () => {
 				applyPatch: vi.fn().mockResolvedValue(undefined),
 			} as unknown as ReturnType<typeof simpleGit>)
 
-			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
-			const result = await getGitState.call(manager)
+			const result = await gitStateService.getGitState()
 
-			expect(result.patch).toBe("")
+			expect(result?.patch).toBe("")
 		})
 
 		it("should log warning when patch exceeds size limit", async () => {
-			const largePatch = "a".repeat(SessionManager.MAX_PATCH_SIZE_BYTES + 1)
+			const largePatch = "a".repeat(GitStateService.MAX_PATCH_SIZE_BYTES + 1)
 
 			const mockRaw = vi.fn().mockResolvedValue("")
 			vi.mocked(simpleGit).mockReturnValue({
@@ -1363,17 +1371,16 @@ describe("SessionManager", () => {
 				applyPatch: vi.fn().mockResolvedValue(undefined),
 			} as unknown as ReturnType<typeof simpleGit>)
 
-			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
-			await getGitState.call(manager)
+			await gitStateService.getGitState()
 
-			expect(mockDependencies.logger.warn).toHaveBeenCalledWith("Git patch too large", "SessionManager", {
+			expect(mockDependencies.logger.warn).toHaveBeenCalledWith("Git patch too large", "GitStateService", {
 				patchSize: largePatch.length,
-				maxSize: SessionManager.MAX_PATCH_SIZE_BYTES,
+				maxSize: GitStateService.MAX_PATCH_SIZE_BYTES,
 			})
 		})
 
 		it("should return patch when size is exactly at the limit", async () => {
-			const exactLimitPatch = "a".repeat(SessionManager.MAX_PATCH_SIZE_BYTES)
+			const exactLimitPatch = "a".repeat(GitStateService.MAX_PATCH_SIZE_BYTES)
 
 			const mockRaw = vi.fn().mockResolvedValue("")
 			vi.mocked(simpleGit).mockReturnValue({
@@ -1387,14 +1394,13 @@ describe("SessionManager", () => {
 				applyPatch: vi.fn().mockResolvedValue(undefined),
 			} as unknown as ReturnType<typeof simpleGit>)
 
-			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
-			const result = await getGitState.call(manager)
+			const result = await gitStateService.getGitState()
 
-			expect(result.patch).toBe(exactLimitPatch)
+			expect(result?.patch).toBe(exactLimitPatch)
 		})
 
 		it("should return empty string patch when size is one byte over the limit", async () => {
-			const overLimitPatch = "a".repeat(SessionManager.MAX_PATCH_SIZE_BYTES + 1)
+			const overLimitPatch = "a".repeat(GitStateService.MAX_PATCH_SIZE_BYTES + 1)
 
 			const mockRaw = vi.fn().mockResolvedValue("")
 			vi.mocked(simpleGit).mockReturnValue({
@@ -1408,10 +1414,9 @@ describe("SessionManager", () => {
 				applyPatch: vi.fn().mockResolvedValue(undefined),
 			} as unknown as ReturnType<typeof simpleGit>)
 
-			const getGitState = (manager as unknown as { getGitState: () => Promise<{ patch?: string }> }).getGitState
-			const result = await getGitState.call(manager)
+			const result = await gitStateService.getGitState()
 
-			expect(result.patch).toBe("")
+			expect(result?.patch).toBe("")
 		})
 	})
 	describe("restoreSession version mismatch", () => {

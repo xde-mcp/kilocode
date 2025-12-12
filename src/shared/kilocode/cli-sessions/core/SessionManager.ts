@@ -1,8 +1,5 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "fs"
+import { readFileSync, writeFileSync, mkdirSync } from "fs"
 import path from "path"
-import simpleGit from "simple-git"
-import { tmpdir } from "os"
-import { createHash } from "crypto"
 import type { IPathProvider } from "../types/IPathProvider.js"
 import type { ILogger } from "../types/ILogger.js"
 import type { IExtensionMessenger } from "../types/IExtensionMessenger.js"
@@ -13,6 +10,7 @@ import type { ClineMessage, HistoryItem } from "@roo-code/types"
 import { TrpcClient, TrpcClientDependencies } from "./TrpcClient.js"
 import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 import { fetchSignedBlob } from "../utils/fetchBlobFromSignedUrl.js"
+import { GitStateService, GitRestoreState } from "./GitStateService.js"
 
 interface SessionCreatedMessage {
 	sessionId: string
@@ -48,7 +46,6 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
-	static readonly MAX_PATCH_SIZE_BYTES = 5 * 1024 * 1024
 	static readonly VERSION = 1
 	static readonly QUEUE_FLUSH_THRESHOLD = 5
 
@@ -82,6 +79,7 @@ export class SessionManager {
 	private extensionMessenger: IExtensionMessenger
 	public sessionPersistenceManager: SessionPersistenceManager
 	public sessionClient: SessionClient
+	private gitStateService: GitStateService
 	private onSessionCreated: (message: SessionCreatedMessage) => void
 	private onSessionRestored: () => void
 	private onSessionSynced: (message: SessionSyncedMessage) => void
@@ -110,6 +108,10 @@ export class SessionManager {
 
 		this.sessionClient = new SessionClient(trpcClient)
 		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
+		this.gitStateService = new GitStateService({
+			logger: this.logger,
+			getWorkspaceDir: () => this.workspaceDir,
+		})
 
 		this.logger.debug("Initialized SessionManager", "SessionManager")
 	}
@@ -241,9 +243,9 @@ export class SessionManager {
 						let fileContent = fetchResult.content
 
 						if (filename === "git_state") {
-							const gitState = fileContent as Parameters<typeof this.executeGitRestore>[0]
+							const gitState = fileContent as GitRestoreState
 
-							await this.executeGitRestore(gitState)
+							await this.gitStateService.executeGitRestore(gitState)
 
 							continue
 						}
@@ -504,14 +506,7 @@ export class SessionManager {
 			taskCount: taskIds.size,
 		})
 
-		let gitInfo: Awaited<ReturnType<typeof this.getGitState>> | null = null
-		try {
-			gitInfo = await this.getGitState()
-		} catch (error) {
-			this.logger.debug("Could not get git state", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-		}
+		const gitInfo = await this.gitStateService.getGitState()
 
 		for (const taskId of taskIds) {
 			try {
@@ -763,7 +758,7 @@ export class SessionManager {
 						branch: gitInfo.branch,
 					}
 
-					const gitStateHash = this.hashGitState(gitStateData)
+					const gitStateHash = this.gitStateService.hashGitState(gitStateData)
 
 					if (gitStateHash === this.taskGitHashes[taskId]) {
 						this.logger.debug("Git state unchanged, skipping upload", "SessionManager", { sessionId })
@@ -906,205 +901,6 @@ export class SessionManager {
 				return "task_metadata"
 			default:
 				return null
-		}
-	}
-
-	private hashGitState(
-		gitState: Pick<NonNullable<Awaited<ReturnType<typeof this.getGitState>>>, "head" | "patch" | "branch">,
-	) {
-		return createHash("sha256").update(JSON.stringify(gitState)).digest("hex")
-	}
-
-	private async getGitState() {
-		const cwd = this.workspaceDir || process.cwd()
-		const git = simpleGit(cwd)
-
-		const remotes = await git.getRemotes(true)
-		const repoUrl = remotes[0]?.refs?.fetch || remotes[0]?.refs?.push
-
-		const head = await git.revparse(["HEAD"])
-
-		let branch: string | undefined
-		try {
-			const symbolicRef = await git.raw(["symbolic-ref", "-q", "HEAD"])
-			branch = symbolicRef.trim().replace(/^refs\/heads\//, "")
-		} catch {
-			branch = undefined
-		}
-
-		const untrackedOutput = await git.raw(["ls-files", "--others", "--exclude-standard"])
-		const untrackedFiles = untrackedOutput.trim().split("\n").filter(Boolean)
-
-		if (untrackedFiles.length > 0) {
-			await git.raw(["add", "--intent-to-add", "--", ...untrackedFiles])
-		}
-
-		try {
-			let patch = await git.diff(["HEAD"])
-
-			if (!patch || patch.trim().length === 0) {
-				const parents = await git.raw(["rev-list", "--parents", "-n", "1", "HEAD"])
-				const isFirstCommit = parents.trim().split(" ").length === 1
-
-				if (isFirstCommit) {
-					const nullDevice = process.platform === "win32" ? "NUL" : "/dev/null"
-					const emptyTreeHash = (await git.raw(["hash-object", "-t", "tree", nullDevice])).trim()
-					patch = await git.diff([emptyTreeHash, "HEAD"])
-				}
-			}
-
-			if (patch && patch.length > SessionManager.MAX_PATCH_SIZE_BYTES) {
-				this.logger.warn("Git patch too large", "SessionManager", {
-					patchSize: patch.length,
-					maxSize: SessionManager.MAX_PATCH_SIZE_BYTES,
-				})
-				patch = ""
-			}
-
-			return {
-				repoUrl,
-				head,
-				branch,
-				patch,
-			}
-		} finally {
-			if (untrackedFiles.length > 0) {
-				await git.raw(["reset", "HEAD", "--", ...untrackedFiles])
-			}
-		}
-	}
-
-	private async executeGitRestore(gitState: { head: string; patch: string; branch: string }) {
-		try {
-			const cwd = this.workspaceDir || process.cwd()
-			const git = simpleGit(cwd)
-
-			let shouldPop = false
-
-			try {
-				const stashListBefore = await git.stashList()
-				const stashCountBefore = stashListBefore.total
-
-				await git.stash()
-
-				const stashListAfter = await git.stashList()
-				const stashCountAfter = stashListAfter.total
-
-				if (stashCountAfter > stashCountBefore) {
-					shouldPop = true
-					this.logger.debug(`Stashed current work`, "SessionManager")
-				} else {
-					this.logger.debug(`No changes to stash`, "SessionManager")
-				}
-			} catch (error) {
-				this.logger.warn(`Failed to stash current work`, "SessionManager", {
-					error: error instanceof Error ? error.message : String(error),
-				})
-			}
-
-			try {
-				const currentHead = await git.revparse(["HEAD"])
-
-				if (currentHead.trim() === gitState.head.trim()) {
-					this.logger.debug(`Already at target commit, skipping checkout`, "SessionManager", {
-						head: gitState.head.substring(0, 8),
-					})
-				} else {
-					if (gitState.branch) {
-						try {
-							const branchCommit = await git.revparse([gitState.branch])
-
-							if (branchCommit.trim() === gitState.head.trim()) {
-								await git.checkout(gitState.branch)
-
-								this.logger.debug(`Checked out to branch`, "SessionManager", {
-									branch: gitState.branch,
-									head: gitState.head.substring(0, 8),
-								})
-							} else {
-								await git.checkout(gitState.head)
-
-								this.logger.debug(
-									`Branch moved, checked out to commit (detached HEAD)`,
-									"SessionManager",
-									{
-										branch: gitState.branch,
-										head: gitState.head.substring(0, 8),
-									},
-								)
-							}
-						} catch {
-							await git.checkout(gitState.head)
-
-							this.logger.debug(
-								`Branch not found, checked out to commit (detached HEAD)`,
-								"SessionManager",
-								{
-									branch: gitState.branch,
-									head: gitState.head.substring(0, 8),
-								},
-							)
-						}
-					} else {
-						await git.checkout(gitState.head)
-
-						this.logger.debug(`No branch info, checked out to commit (detached HEAD)`, "SessionManager", {
-							head: gitState.head.substring(0, 8),
-						})
-					}
-				}
-			} catch (error) {
-				this.logger.warn(`Failed to checkout`, "SessionManager", {
-					branch: gitState.branch,
-					head: gitState.head.substring(0, 8),
-					error: error instanceof Error ? error.message : String(error),
-				})
-			}
-
-			try {
-				const tempDir = mkdtempSync(path.join(tmpdir(), "kilocode-git-patches"))
-				const patchFile = path.join(tempDir, `${Date.now()}.patch`)
-
-				try {
-					writeFileSync(patchFile, gitState.patch)
-
-					await git.applyPatch(patchFile)
-
-					this.logger.debug(`Applied patch`, "SessionManager", {
-						patchSize: gitState.patch.length,
-					})
-				} finally {
-					try {
-						rmSync(tempDir, { recursive: true, force: true })
-					} catch {
-						// Ignore error
-					}
-				}
-			} catch (error) {
-				this.logger.warn(`Failed to apply patch`, "SessionManager", {
-					error: error instanceof Error ? error.message : String(error),
-				})
-			}
-
-			try {
-				if (shouldPop) {
-					await git.stash(["pop"])
-
-					this.logger.debug(`Popped stash`, "SessionManager")
-				}
-			} catch (error) {
-				this.logger.warn(`Failed to pop stash`, "SessionManager", {
-					error: error instanceof Error ? error.message : String(error),
-				})
-			}
-
-			this.logger.info(`Git state restoration finished`, "SessionManager", {
-				head: gitState.head.substring(0, 8),
-			})
-		} catch (error) {
-			this.logger.error(`Failed to restore git state`, "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
 		}
 	}
 

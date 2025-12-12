@@ -140,7 +140,7 @@ describe("SessionManager.syncSession", () => {
 			;(privateInstance as unknown as { tokenValid: Record<string, boolean | undefined> }).tokenValid = {}
 		}
 
-		manager = SessionManager.init(mockDependencies)
+		manager = SessionManager.init(mockDependencies)!
 
 		// Ensure uploadBlob mock returns valid value by default after init
 		if (manager.sessionClient) {
@@ -198,18 +198,6 @@ describe("SessionManager.syncSession", () => {
 			)
 
 			delete process.env.KILO_DISABLE_SESSIONS
-		})
-
-		it("should log error and return when manager not initialized", async () => {
-			;(manager as unknown as { platform: undefined }).platform = undefined
-			manager.handleFileUpdate("task-123", "uiMessagesPath", "/path/to/file.json")
-
-			await triggerSync()
-
-			expect(mockDependencies.logger.error).toHaveBeenCalledWith(
-				"SessionManager used before initialization",
-				"SessionManager",
-			)
 		})
 	})
 
