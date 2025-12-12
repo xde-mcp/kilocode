@@ -6,7 +6,7 @@
 import { atom } from "jotai"
 import type { WebviewMessage, ProviderSettings, ClineAskResponse } from "../../types/messages.js"
 import { extensionServiceAtom, isServiceReadyAtom, setServiceErrorAtom } from "./service.js"
-import { resetMessageCutoffAtom } from "./ui.js"
+import { resetMessageCutoffAtom, yoloModeAtom } from "./ui.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -305,8 +305,6 @@ export const sendSecondaryButtonClickAtom = atom(null, async (get, set) => {
  * Sends the yoloMode message to the extension to enable/disable auto-approval of all operations
  */
 export const toggleYoloModeAtom = atom(null, async (get, set) => {
-	const { yoloModeAtom } = await import("./ui.js")
-
 	const currentValue = get(yoloModeAtom)
 	const newValue = !currentValue
 
