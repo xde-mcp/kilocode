@@ -13,6 +13,7 @@ import { fetchSignedBlob } from "../utils/fetchBlobFromSignedUrl.js"
 import { GitStateService, GitRestoreState } from "./GitStateService.js"
 import { SessionStateManager } from "./SessionStateManager.js"
 import { SyncQueue } from "./SyncQueue.js"
+import { TokenValidationService } from "./TokenValidationService.js"
 
 interface SessionCreatedMessage {
 	sessionId: string
@@ -73,6 +74,7 @@ export class SessionManager {
 	public sessionClient: SessionClient
 	public stateManager: SessionStateManager
 	public syncQueue: SyncQueue
+	public tokenValidationService: TokenValidationService
 	private gitStateService: GitStateService
 	private onSessionCreated: (message: SessionCreatedMessage) => void
 	private onSessionRestored: () => void
@@ -104,6 +106,12 @@ export class SessionManager {
 		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
 		this.stateManager = new SessionStateManager()
 		this.syncQueue = new SyncQueue(() => this.doSync())
+		this.tokenValidationService = new TokenValidationService({
+			sessionClient: this.sessionClient,
+			stateManager: this.stateManager,
+			getToken: this.getToken,
+			logger: this.logger,
+		})
 		this.gitStateService = new GitStateService({
 			logger: this.logger,
 			getWorkspaceDir: () => this.workspaceDir,
@@ -454,33 +462,14 @@ export class SessionManager {
 			return
 		}
 
-		const token = await this.getToken()
+		const tokenValid = await this.tokenValidationService.isValid()
 
-		if (!token) {
+		if (tokenValid === null) {
 			this.logger.debug("No token available for session sync, skipping", "SessionManager")
 			return
 		}
 
-		if (this.stateManager.getTokenValidity(token) === undefined) {
-			this.logger.debug("Checking token validity", "SessionManager")
-
-			try {
-				const tokenValid = await this.sessionClient.tokenValid()
-
-				this.stateManager.setTokenValidity(token, tokenValid)
-			} catch (error) {
-				this.logger.error("Failed to check token validity", "SessionManager", {
-					error: error instanceof Error ? error.message : String(error),
-				})
-				return
-			}
-
-			this.logger.debug("Token validity checked", "SessionManager", {
-				tokenValid: this.stateManager.getTokenValidity(token),
-			})
-		}
-
-		if (!this.stateManager.getTokenValidity(token)) {
+		if (!tokenValid) {
 			this.logger.debug("Token is invalid, skipping sync", "SessionManager")
 			return
 		}
@@ -789,11 +778,7 @@ export class SessionManager {
 					error: error instanceof Error ? error.message : String(error),
 				})
 
-				const token = await this.getToken()
-
-				if (token) {
-					this.stateManager.clearTokenValidity(token)
-				}
+				await this.tokenValidationService.invalidateCache()
 			}
 		}
 
