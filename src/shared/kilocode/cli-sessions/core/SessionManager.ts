@@ -12,6 +12,7 @@ import { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js
 import { fetchSignedBlob } from "../utils/fetchBlobFromSignedUrl.js"
 import { GitStateService, GitRestoreState } from "./GitStateService.js"
 import { SessionStateManager } from "./SessionStateManager.js"
+import { SyncQueue } from "./SyncQueue.js"
 
 interface SessionCreatedMessage {
 	sessionId: string
@@ -48,7 +49,6 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
 export class SessionManager {
 	static readonly SYNC_INTERVAL = 3000
 	static readonly VERSION = 1
-	static readonly QUEUE_FLUSH_THRESHOLD = 5
 
 	private static instance: SessionManager | null = null
 
@@ -72,6 +72,7 @@ export class SessionManager {
 	public sessionPersistenceManager: SessionPersistenceManager
 	public sessionClient: SessionClient
 	public stateManager: SessionStateManager
+	public syncQueue: SyncQueue
 	private gitStateService: GitStateService
 	private onSessionCreated: (message: SessionCreatedMessage) => void
 	private onSessionRestored: () => void
@@ -102,6 +103,7 @@ export class SessionManager {
 		this.sessionClient = new SessionClient(trpcClient)
 		this.sessionPersistenceManager = new SessionPersistenceManager(this.pathProvider)
 		this.stateManager = new SessionStateManager()
+		this.syncQueue = new SyncQueue(() => this.doSync())
 		this.gitStateService = new GitStateService({
 			logger: this.logger,
 			getWorkspaceDir: () => this.workspaceDir,
@@ -112,27 +114,16 @@ export class SessionManager {
 
 	private pendingSync: Promise<void> | null = null
 
-	private queue = [] as {
-		taskId: string
-		blobName: string
-		blobPath: string
-		timestamp: number
-	}[]
-
 	handleFileUpdate(taskId: string, key: string, value: string) {
 		const blobName = this.pathKeyToBlobKey(key)
 
 		if (blobName) {
-			this.queue.push({
+			this.syncQueue.enqueue({
 				taskId,
 				blobName,
 				blobPath: value,
 				timestamp: Date.now(),
 			})
-		}
-
-		if (this.queue.length > SessionManager.QUEUE_FLUSH_THRESHOLD) {
-			this.doSync()
 		}
 	}
 
@@ -453,13 +444,13 @@ export class SessionManager {
 	}
 
 	private async syncSession() {
-		if (this.queue.length === 0) {
+		if (this.syncQueue.isEmpty) {
 			return
 		}
 
 		if (process.env.KILO_DISABLE_SESSIONS) {
 			this.logger.debug("Sessions disabled via KILO_DISABLE_SESSIONS, clearing queue", "SessionManager")
-			this.queue = []
+			this.syncQueue.clear()
 			return
 		}
 
@@ -494,11 +485,11 @@ export class SessionManager {
 			return
 		}
 
-		const taskIds = new Set<string>(this.queue.map((item) => item.taskId))
-		const lastItem = this.queue[this.queue.length - 1]
+		const taskIds = this.syncQueue.getUniqueTaskIds()
+		const lastItem = this.syncQueue.getLastItem()
 
 		this.logger.debug("Starting session sync", "SessionManager", {
-			queueLength: this.queue.length,
+			queueLength: this.syncQueue.length,
 			taskCount: taskIds.size,
 		})
 
@@ -506,8 +497,7 @@ export class SessionManager {
 
 		for (const taskId of taskIds) {
 			try {
-				const taskItems = this.queue.filter((item) => item.taskId === taskId)
-				const reversedTaskItems = [...taskItems].reverse()
+				const taskItems = this.syncQueue.getItemsForTask(taskId)
 
 				this.logger.debug("Processing task", "SessionManager", {
 					taskId,
@@ -624,10 +614,10 @@ export class SessionManager {
 				})
 
 				for (const blobName of blobNames) {
-					const lastBlobItem = reversedTaskItems.find((item) => item.blobName === blobName)
+					const lastBlobItem = this.syncQueue.getLastItemForBlob(taskId, blobName)
 
 					if (!lastBlobItem) {
-						this.logger.warn("Could not find blob item in reversed list", "SessionManager", {
+						this.logger.warn("Could not find blob item for task", "SessionManager", {
 							blobName,
 							taskId,
 						})
@@ -652,22 +642,8 @@ export class SessionManager {
 								// Track the updated_at timestamp from the upload using high-water mark
 								this.stateManager.updateTimestamp(sessionId, result.updated_at)
 
-								for (let i = 0; i < this.queue.length; i++) {
-									const item = this.queue[i]
-
-									if (!item) {
-										continue
-									}
-
-									if (
-										item.blobName === blobName &&
-										item.taskId === taskId &&
-										item.timestamp <= lastBlobItem.timestamp
-									) {
-										this.queue.splice(i, 1)
-										i--
-									}
-								}
+								// Remove processed items from the queue
+								this.syncQueue.removeProcessedItems(taskId, blobName, lastBlobItem.timestamp)
 							})
 							.catch((error) => {
 								this.logger.error("Failed to upload blob", "SessionManager", {
@@ -832,7 +808,7 @@ export class SessionManager {
 
 		this.logger.debug("Session sync completed", "SessionManager", {
 			lastSessionId: this.stateManager.getActiveSessionId(),
-			remainingQueueLength: this.queue.length,
+			remainingQueueLength: this.syncQueue.length,
 		})
 	}
 
