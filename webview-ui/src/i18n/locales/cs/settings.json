@@ -601,7 +601,8 @@
 			"minimal": "Minimální (nejrychlejší)",
 			"low": "Nízké",
 			"medium": "Střední",
-			"high": "Vysoké"
+			"high": "Vysoké",
+			"xhigh": "Extra vysoké"
 		},
 		"verbosity": {
 			"label": "Podrobnost výstupu",

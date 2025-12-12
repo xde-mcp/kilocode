@@ -584,7 +584,8 @@
 			"minimal": "Minimo (più veloce)",
 			"high": "Alto",
 			"medium": "Medio",
-			"low": "Basso"
+			"low": "Basso",
+			"xhigh": "Extra Alto"
 		},
 		"verbosity": {
 			"label": "Verbosity dell'output",

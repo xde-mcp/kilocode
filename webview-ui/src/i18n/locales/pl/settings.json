@@ -574,7 +574,8 @@
 			"minimal": "Minimalny (najszybszy)",
 			"high": "Wysoki",
 			"medium": "Średni",
-			"low": "Niski"
+			"low": "Niski",
+			"xhigh": "Bardzo wysoki"
 		},
 		"verbosity": {
 			"label": "Szczegółowość danych wyjściowych",

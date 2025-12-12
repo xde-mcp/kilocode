@@ -578,7 +578,8 @@
 			"minimal": "最小 (最快)",
 			"high": "高",
 			"medium": "中",
-			"low": "低"
+			"low": "低",
+			"xhigh": "极高"
 		},
 		"verbosity": {
 			"label": "输出详细程度",

@@ -583,7 +583,8 @@
 			"minimal": "Minimal (schnellste)",
 			"high": "Hoch",
 			"medium": "Mittel",
-			"low": "Niedrig"
+			"low": "Niedrig",
+			"xhigh": "Sehr hoch"
 		},
 		"verbosity": {
 			"label": "Ausgabe-Ausführlichkeit",

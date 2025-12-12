@@ -575,7 +575,8 @@
 			"minimal": "最小 (最速)",
 			"high": "高",
 			"medium": "中",
-			"low": "低"
+			"low": "低",
+			"xhigh": "極高"
 		},
 		"verbosity": {
 			"label": "出力の冗長性",
