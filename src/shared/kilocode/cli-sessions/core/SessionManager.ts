@@ -66,6 +66,11 @@ export interface SessionManagerDependencies extends TrpcClientDependencies {
  * separation of concerns internally.
  */
 export class SessionManager {
+	/**
+	 * 0 - No versioning, some sessions incomplete
+	 * 1 - Initial version
+	 * 2 - Added organization id, last mode and last model
+	 */
 	static readonly VERSION = 2
 
 	private static instance: SessionManager | null = null
