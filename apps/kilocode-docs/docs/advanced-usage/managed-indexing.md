@@ -33,7 +33,7 @@ Before enabling Managed Indexing:
 
 - **Currently free during beta**
 - **Pricing coming soon** — A daily usage fee for index storage will be deducted from your AI credit balance. Pricing details are TBD.
-- **Embedding model** — Uses `text-embedding-3-small`, which indexes approximately 65,000 pages of text per dollar.
+- **Embedding model** — Uses `mistralai/codestral-embed-2505` which currently charges $0.15/M input tokens.
 
 ---
 
@@ -85,7 +85,7 @@ This retention policy keeps costs minimal by only maintaining indexes for active
 A minimal UI is available at [app.kilo.ai](https://app.kilo.ai) to:
 
 - View the size and status of your indexed projects
-- Delete old branches
+- Delete old branches & projects.
 
 ---
 
