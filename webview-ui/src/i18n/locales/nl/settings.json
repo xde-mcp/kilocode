@@ -574,7 +574,8 @@
 			"minimal": "Minimaal (Snelst)",
 			"high": "Hoog",
 			"medium": "Middel",
-			"low": "Laag"
+			"low": "Laag",
+			"xhigh": "Extra Hoog"
 		},
 		"verbosity": {
 			"label": "Uitvoerbaarheid",

@@ -549,7 +549,8 @@
 			"minimal": "Minimal (en hızlı)",
 			"high": "Yüksek",
 			"medium": "Orta",
-			"low": "Düşük"
+			"low": "Düşük",
+			"xhigh": "Ekstra Yüksek"
 		},
 		"verbosity": {
 			"label": "Çıktı Ayrıntı Düzeyi",

@@ -574,7 +574,8 @@
 			"minimal": "Mínim (el més ràpid)",
 			"high": "Alt",
 			"medium": "Mitjà",
-			"low": "Baix"
+			"low": "Baix",
+			"xhigh": "Molt Alt"
 		},
 		"verbosity": {
 			"label": "Verbositat de la sortida",

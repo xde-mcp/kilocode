@@ -574,7 +574,8 @@
 			"minimal": "Tối thiểu (nhanh nhất)",
 			"high": "Cao",
 			"medium": "Trung bình",
-			"low": "Thấp"
+			"low": "Thấp",
+			"xhigh": "Rất cao"
 		},
 		"verbosity": {
 			"label": "Mức độ chi tiết đầu ra",

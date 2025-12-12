@@ -574,7 +574,8 @@
 			"minimal": "Minimal (Tercepat)",
 			"high": "Tinggi",
 			"medium": "Sedang",
-			"low": "Rendah"
+			"low": "Rendah",
+			"xhigh": "Ekstra Tinggi"
 		},
 		"verbosity": {
 			"label": "Verbositas Output",

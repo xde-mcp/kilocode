@@ -557,7 +557,8 @@
 			"minimal": "Minimal (le plus rapide)",
 			"high": "Élevé",
 			"medium": "Moyen",
-			"low": "Faible"
+			"low": "Faible",
+			"xhigh": "Très élevé"
 		},
 		"verbosity": {
 			"label": "Verbosité de la sortie",

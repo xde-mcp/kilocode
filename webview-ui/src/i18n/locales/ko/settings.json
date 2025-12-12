@@ -574,7 +574,8 @@
 			"minimal": "최소 (가장 빠름)",
 			"high": "높음",
 			"medium": "중간",
-			"low": "낮음"
+			"low": "낮음",
+			"xhigh": "매우 높음"
 		},
 		"verbosity": {
 			"label": "출력 상세도",
