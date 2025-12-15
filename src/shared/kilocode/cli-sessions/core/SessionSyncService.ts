@@ -365,6 +365,7 @@ export class SessionSyncService {
 				...basePayload,
 				last_mode: currentMode,
 				last_model: currentModel,
+				version: this.version,
 			})
 
 			this.stateManager.updateTimestamp(sessionId, updateResult.updated_at)
