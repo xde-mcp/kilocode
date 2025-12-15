@@ -132,7 +132,7 @@ export function kilo_initializeSessionManager({
 							return currentTask.parentTaskId
 						}
 
-						const task = await provider.getTaskWithId(taskId)
+						const task = await provider.getTaskWithId(taskId, false)
 
 						return task?.historyItem?.parentTaskId
 					})()
