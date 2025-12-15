@@ -1796,7 +1796,7 @@ ${prompt}
 
 	async getTaskWithId(
 		id: string,
-		kilo_withMessage = true,
+		kilo_withMessage = true, // kilocode_change session manager uses this method in the background
 	): Promise<{
 		historyItem: HistoryItem
 		taskDirPath: string
