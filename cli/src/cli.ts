@@ -206,7 +206,7 @@ export class CLI {
 								}
 
 								// Otherwise, fetch the task from history using promise-based request/response pattern
-								const requestId = Date.now().toString()
+								const requestId = crypto.randomUUID()
 
 								// Create a promise that will be resolved when the response arrives
 								const responsePromise = new Promise<TaskHistoryData>((resolve, reject) => {
