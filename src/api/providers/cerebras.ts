@@ -15,8 +15,6 @@ import { t } from "../../i18n"
 
 const CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"
 const CEREBRAS_DEFAULT_TEMPERATURE = 0
-const CEREBRAS_INTEGRATION_HEADER = "X-Cerebras-3rd-Party-Integration"
-const CEREBRAS_INTEGRATION_NAME = "kilocode"
 
 const CEREBRAS_INTEGRATION_HEADER = "X-Cerebras-3rd-Party-Integration"
 const CEREBRAS_INTEGRATION_NAME = "roocode"
@@ -136,7 +134,7 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 					...DEFAULT_HEADERS,
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${this.apiKey}`,
-					[CEREBRAS_INTEGRATION_HEADER]: CEREBRAS_INTEGRATION_NAME,
+					"X-Cerebras-3rd-Party-Integration": "kilocode",
 				},
 				body: JSON.stringify(requestBody),
 			})
@@ -298,7 +296,7 @@ export class CerebrasHandler extends BaseProvider implements SingleCompletionHan
 					...DEFAULT_HEADERS,
 					"Content-Type": "application/json",
 					Authorization: `Bearer ${this.apiKey}`,
-					[CEREBRAS_INTEGRATION_HEADER]: CEREBRAS_INTEGRATION_NAME,
+					"X-Cerebras-3rd-Party-Integration": "kilocode",
 				},
 				body: JSON.stringify(requestBody),
 			})
