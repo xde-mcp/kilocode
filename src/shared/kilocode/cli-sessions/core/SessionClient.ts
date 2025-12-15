@@ -125,7 +125,7 @@ export class SessionClient {
 	 * Create a new session
 	 */
 	async create(input: CreateSessionInput): Promise<CreateSessionOutput> {
-		return await this.trpcClient.request<CreateSessionInput, CreateSessionOutput>("cliSessions.create", "POST", {
+		return await this.trpcClient.request<CreateSessionInput, CreateSessionOutput>("cliSessions.createV2", "POST", {
 			...input,
 			created_on_platform: process.env.KILO_PLATFORM || input.created_on_platform,
 		})
