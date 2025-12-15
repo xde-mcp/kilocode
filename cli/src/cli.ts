@@ -197,47 +197,51 @@ export class CLI {
 					},
 					getParentTaskId: async (taskId: string) => {
 						const result = await (async () => {
-							// Check if the current task matches the taskId
-							const currentTask = this.store?.get(currentTaskAtom)
+							try {
+								// Check if the current task matches the taskId
+								const currentTask = this.store?.get(currentTaskAtom)
 
-							if (currentTask?.id === taskId) {
-								return currentTask.parentTaskId
-							}
+								if (currentTask?.id === taskId) {
+									return currentTask.parentTaskId
+								}
 
-							// Otherwise, fetch the task from history using promise-based request/response pattern
-							const requestId = Date.now().toString()
+								// Otherwise, fetch the task from history using promise-based request/response pattern
+								const requestId = Date.now().toString()
 
-							// Create a promise that will be resolved when the response arrives
-							const responsePromise = new Promise<TaskHistoryData>((resolve, reject) => {
-								const timeout = setTimeout(() => {
-									reject(new Error("Task history request timed out"))
-								}, 5000) // 5 second timeout as fallback
+								// Create a promise that will be resolved when the response arrives
+								const responsePromise = new Promise<TaskHistoryData>((resolve, reject) => {
+									const timeout = setTimeout(() => {
+										reject(new Error("Task history request timed out"))
+									}, 5000) // 5 second timeout as fallback
 
-								this.store?.set(addPendingRequestAtom, {
-									requestId,
-									resolve,
-									reject,
-									timeout,
+									this.store?.set(addPendingRequestAtom, {
+										requestId,
+										resolve,
+										reject,
+										timeout,
+									})
 								})
-							})
 
-							// Send task history request to get the specific task
-							await this.store?.set(sendWebviewMessageAtom, {
-								type: "taskHistoryRequest",
-								payload: {
-									requestId,
-									workspace: "current",
-									sort: "newest",
-									favoritesOnly: false,
-									pageIndex: 0,
-								},
-							})
+								// Send task history request to get the specific task
+								await this.store?.set(sendWebviewMessageAtom, {
+									type: "taskHistoryRequest",
+									payload: {
+										requestId,
+										workspace: "current",
+										sort: "newest",
+										favoritesOnly: false,
+										pageIndex: 0,
+									},
+								})
 
-							// Wait for the actual response (not a timer)
-							const taskHistoryData = await responsePromise
-							const task = taskHistoryData.historyItems.find((item) => item.id === taskId)
+								// Wait for the actual response (not a timer)
+								const taskHistoryData = await responsePromise
+								const task = taskHistoryData.historyItems.find((item) => item.id === taskId)
 
-							return task?.parentTaskId
+								return task?.parentTaskId
+							} catch {
+								return undefined
+							}
 						})()
 
 						logs.debug(`Resolved parent task ID for task ${taskId}: "${result}"`, "SessionManager")

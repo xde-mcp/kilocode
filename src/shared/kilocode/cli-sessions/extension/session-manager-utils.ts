@@ -126,15 +126,19 @@ export function kilo_initializeSessionManager({
 				},
 				getParentTaskId: async (taskId: string) => {
 					const result = await (async () => {
-						const currentTask = provider.getCurrentTask()
+						try {
+							const currentTask = provider.getCurrentTask()
 
-						if (currentTask?.taskId === taskId) {
-							return currentTask.parentTaskId
+							if (currentTask?.taskId === taskId) {
+								return currentTask.parentTaskId
+							}
+
+							const task = await provider.getTaskWithId(taskId, false)
+
+							return task?.historyItem?.parentTaskId
+						} catch {
+							return undefined
 						}
-
-						const task = await provider.getTaskWithId(taskId, false)
-
-						return task?.historyItem?.parentTaskId
 					})()
 
 					logger.debug(`Resolved parent task ID for task ${taskId}: "${result}"`, "SessionManager")
