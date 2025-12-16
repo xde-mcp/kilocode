@@ -24,21 +24,11 @@ export function suggestionConsideredDuplication(params: AutocompleteSuggestion):
 function checkDuplication(params: AutocompleteSuggestion): boolean {
 	const trimmed = params.suggestion.trim()
 
-	if (trimmed.length === 0) {
-		return true
-	}
-
-	const trimmedPrefixEnd = params.prefix.trimEnd()
-	if (trimmedPrefixEnd.endsWith(trimmed)) {
-		return true
-	}
-
-	const trimmedSuffix = params.suffix.trimStart()
-	if (trimmedSuffix.startsWith(trimmed)) {
-		return true
-	}
-
-	return false
+	return (
+		trimmed.length === 0 ||
+		params.prefix.trimEnd().endsWith(trimmed) ||
+		params.suffix.trimStart().startsWith(trimmed)
+	)
 }
 
 /**
