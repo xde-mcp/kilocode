@@ -51,50 +51,34 @@ function checkDuplication(processed: string, prefix: string, suffix: string): bo
 }
 
 /**
- * When the suggestion doesn't start and end at line boundaries, normalize by including
- * the rest of the line in the prefix and/or suffix.
+ * Normalizes partial-line suggestions by expanding them to the full current line:
+ * (prefix line tail) + (suggestion first line) + (suffix line head).
  *
- * Returns the normalized prefix/suffix and the completed first line, or null if already normalized.
- *
- * For example:
- * - prefix: "console.info('foo')\nconsole.info", suggestion: "('foo')"
- *   -> normalizedPrefix: "console.info('foo')\n", completedLine: "console.info('foo')"
- * - prefix: "console.info", suggestion: "('foo')", suffix: "\nconsole.info('foo')"
- *   -> normalizedSuffix: "\nconsole.info('foo')", completedLine: "console.info('foo')"
+ * Returns null when the suggestion already starts/ends on line boundaries.
  */
 function normalizeToCompleteLine(
 	prefix: string,
 	suggestion: string,
 	suffix: string,
 ): { normalizedPrefix: string; completedLine: string; normalizedSuffix: string } | null {
-	// Get the partial line before the suggestion (from the last newline in prefix)
-	const lastPrefixNewline = prefix.lastIndexOf("\n")
-	const lineStartInPrefix = lastPrefixNewline === -1 ? prefix : prefix.slice(lastPrefixNewline + 1)
+	const prefixNewline = prefix.lastIndexOf("\n")
+	const suffixNewline = suffix.indexOf("\n")
 
-	// Get the partial line after the suggestion (up to the first newline in suffix)
-	const firstSuffixNewline = suffix.indexOf("\n")
-	const lineEndInSuffix = firstSuffixNewline === -1 ? suffix : suffix.slice(0, firstSuffixNewline)
+	const prefixLineTail = prefixNewline === -1 ? prefix : prefix.slice(prefixNewline + 1)
+	const suffixLineHead = suffixNewline === -1 ? suffix : suffix.slice(0, suffixNewline)
 
-	// If the suggestion already starts and ends at line boundaries, no normalization needed
-	if (lineStartInPrefix.length === 0 && lineEndInSuffix.length === 0) {
+	// Already aligned to line boundaries.
+	if (prefixLineTail.length === 0 && suffixLineHead.length === 0) {
 		return null
 	}
 
-	// Build the complete line by combining: lineStartInPrefix + suggestion's first line + lineEndInSuffix
-	const suggestionLines = suggestion.split("\n")
-	const suggestionFirstLine = suggestionLines[0]
-	const completedFirstLine = lineStartInPrefix + suggestionFirstLine + lineEndInSuffix
-
-	// Get the prefix content before the current line (complete lines only, including trailing newline)
-	const normalizedPrefix = lastPrefixNewline === -1 ? "" : prefix.slice(0, lastPrefixNewline + 1)
-
-	// Get the suffix content after the current line (complete lines only, including leading newline)
-	const normalizedSuffix = firstSuffixNewline === -1 ? "" : suffix.slice(firstSuffixNewline)
+	const suggestionNewline = suggestion.indexOf("\n")
+	const suggestionFirstLine = suggestionNewline === -1 ? suggestion : suggestion.slice(0, suggestionNewline)
 
 	return {
-		normalizedPrefix,
-		completedLine: completedFirstLine,
-		normalizedSuffix,
+		normalizedPrefix: prefixNewline === -1 ? "" : prefix.slice(0, prefixNewline + 1),
+		completedLine: prefixLineTail + suggestionFirstLine + suffixLineHead,
+		normalizedSuffix: suffixNewline === -1 ? "" : suffix.slice(suffixNewline),
 	}
 }
 
