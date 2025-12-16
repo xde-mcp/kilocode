@@ -1,28 +1,19 @@
 import { postprocessCompletion } from "../../continuedev/core/autocomplete/postprocessing/index.js"
 
 export type AutocompleteSuggestion = {
-	/**
-	 * The text being considered for insertion at the cursor position.
-	 *
-	 * Note: In this file we use this for both the raw model suggestion (pre-postprocess)
-	 * and the postprocessed suggestion (when doing duplicate checks).
-	 */
 	suggestion: string
 	prefix: string
 	suffix: string
 }
 
 export function suggestionConsideredDuplication(params: AutocompleteSuggestion): boolean {
-	const { suggestion, prefix, suffix } = params
-
-	// First check with original params
-	if (checkDuplication({ suggestion, prefix, suffix })) {
+	if (checkDuplication(params)) {
 		return true
 	}
 
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
-	const normalized = normalizeToCompleteLine(prefix, suggestion, suffix)
+	const normalized = normalizeToCompleteLine(params.prefix, params.suggestion, params.suffix)
 	if (normalized) {
 		return checkDuplication(normalized)
 	}
@@ -30,24 +21,19 @@ export function suggestionConsideredDuplication(params: AutocompleteSuggestion):
 	return false
 }
 
-/**
- * Core duplication check logic - checks if the suggestion is a duplication
- * based on prefix/suffix matching.
- */
 function checkDuplication(params: AutocompleteSuggestion): boolean {
-	const { suggestion, prefix, suffix } = params
-	const trimmed = suggestion.trim()
+	const trimmed = params.suggestion.trim()
 
 	if (trimmed.length === 0) {
 		return true
 	}
 
-	const trimmedPrefixEnd = prefix.trimEnd()
+	const trimmedPrefixEnd = params.prefix.trimEnd()
 	if (trimmedPrefixEnd.endsWith(trimmed)) {
 		return true
 	}
 
-	const trimmedSuffix = suffix.trimStart()
+	const trimmedSuffix = params.suffix.trimStart()
 	if (trimmedSuffix.startsWith(trimmed)) {
 		return true
 	}
@@ -109,21 +95,25 @@ export function postprocessGhostSuggestion(
 		model: string
 	},
 ): string | undefined {
-	const { suggestion, prefix, suffix, model } = params
-
 	// First, run through the continuedev postprocessing pipeline
 	const processedSuggestion = postprocessCompletion({
-		completion: suggestion,
-		llm: { model },
-		prefix,
-		suffix,
+		completion: params.suggestion,
+		llm: { model: params.model },
+		prefix: params.prefix,
+		suffix: params.suffix,
 	})
 
 	if (processedSuggestion === undefined) {
 		return undefined
 	}
 
-	if (suggestionConsideredDuplication({ suggestion: processedSuggestion, prefix, suffix })) {
+	if (
+		suggestionConsideredDuplication({
+			suggestion: processedSuggestion,
+			prefix: params.prefix,
+			suffix: params.suffix,
+		})
+	) {
 		return undefined
 	}
 
