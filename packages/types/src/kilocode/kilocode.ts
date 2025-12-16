@@ -14,7 +14,7 @@ export const ghostServiceSettingsSchema = z
 		enableChatAutocomplete: z.boolean().optional(),
 		provider: z.string().optional(),
 		model: z.string().optional(),
-		snoozeUntil: z.number().optional(), // Unix timestamp when snooze expires
+		snoozeUntil: z.number().optional(),
 	})
 	.optional()
 

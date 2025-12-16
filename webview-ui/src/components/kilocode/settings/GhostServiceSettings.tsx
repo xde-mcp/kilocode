@@ -37,19 +37,17 @@ export const GhostServiceSettingsView = ({
 		model,
 	} = ghostServiceSettings || {}
 	const keybindings = useKeybindings(["kilo-code.addToContextAndFocus", "kilo-code.ghost.generateSuggestions"])
-	const [snoozeDuration, setSnoozeDuration] = useState<number>(300) // Default 5 minutes
+	const [snoozeDuration, setSnoozeDuration] = useState<number>(300)
 	const [currentTime, setCurrentTime] = useState<number>(Date.now())
 
-	// Refresh current time every 30 seconds to keep snooze status up to date
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setCurrentTime(Date.now())
-		}, 30_000) // 30 seconds
+		}, 30_000)
 
 		return () => clearInterval(interval)
 	}, [])
 
-	// Check if currently snoozed
 	const snoozeUntil = ghostServiceSettings?.snoozeUntil
 	const isSnoozed = snoozeUntil ? currentTime < snoozeUntil : false
 

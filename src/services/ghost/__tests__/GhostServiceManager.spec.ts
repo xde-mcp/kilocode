@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import * as vscode from "vscode"
 import { GhostServiceManager } from "../GhostServiceManager"
 
-// VSCode boundary mock: keep it minimal but sufficient for GhostServiceManager.
 vi.mock("vscode", () => {
 	class Position {
 		constructor(
@@ -61,9 +60,6 @@ vi.mock("vscode", () => {
 		},
 	}
 })
-
-// Reduce mocking in tests by using the real GhostServiceManager logic;
-// but mock hard dependencies (telemetry, settings storage, UI) at the module boundary.
 
 vi.mock("../GhostModel", () => {
 	class GhostModel {
@@ -131,7 +127,6 @@ vi.mock("../../../core/kilocode/wrapper", () => ({
 	getKiloCodeWrapperProperties: () => ({ kiloCodeWrapperJetbrains: false }),
 }))
 
-// In-memory ContextProxy mock so we can test manager behavior without re-implementing manager logic.
 vi.mock("../../../core/config/ContextProxy", () => {
 	const state: Record<string, any> = {}
 
@@ -165,7 +160,6 @@ type TestCline = {
 async function createManager(): Promise<GhostServiceManager> {
 	const { __setState } = (await import("../../../core/config/ContextProxy")) as any
 
-	// Ensure constructor-triggered load() doesn’t register providers unless tests explicitly opt in.
 	__setState({
 		ghostServiceSettings: {
 			enableAutoTrigger: false,
@@ -182,7 +176,6 @@ async function createManager(): Promise<GhostServiceManager> {
 
 	const manager = new GhostServiceManager(context, cline as any)
 
-	// Wait for settings/model load to settle (constructor triggers load()).
 	await manager.load()
 
 	return manager

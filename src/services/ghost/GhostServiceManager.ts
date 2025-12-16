@@ -28,7 +28,6 @@ export class GhostServiceManager {
 	private completionCount: number = 0
 	private sessionStartTime: number = Date.now()
 
-	// Snooze timer
 	private snoozeTimer: NodeJS.Timeout | null = null
 
 	// VSCode Providers
@@ -152,7 +151,6 @@ export class GhostServiceManager {
 	 * Snooze autocomplete for a specified number of seconds
 	 */
 	public async snooze(seconds: number): Promise<void> {
-		// Clear any existing snooze timer
 		if (this.snoozeTimer) {
 			clearTimeout(this.snoozeTimer)
 			this.snoozeTimer = null
@@ -167,7 +165,6 @@ export class GhostServiceManager {
 			},
 		})
 
-		// Set timer to automatically unsnooze
 		this.snoozeTimer = setTimeout(() => {
 			void this.unsnooze()
 		}, seconds * 1000)
@@ -179,7 +176,6 @@ export class GhostServiceManager {
 	 * Cancel snooze and re-enable autocomplete
 	 */
 	public async unsnooze(): Promise<void> {
-		// Clear any existing snooze timer
 		if (this.snoozeTimer) {
 			clearTimeout(this.snoozeTimer)
 			this.snoozeTimer = null
@@ -203,7 +199,6 @@ export class GhostServiceManager {
 	 * and this timer ensures we unsnooze at the correct time.
 	 */
 	private setupSnoozeTimerIfNeeded(): void {
-		// Clear any existing snooze timer first
 		if (this.snoozeTimer) {
 			clearTimeout(this.snoozeTimer)
 			this.snoozeTimer = null
@@ -214,7 +209,6 @@ export class GhostServiceManager {
 			return
 		}
 
-		// Set timer to automatically unsnooze when the snooze period expires
 		this.snoozeTimer = setTimeout(() => {
 			void this.unsnooze()
 		}, remainingMs)
@@ -370,7 +364,6 @@ export class GhostServiceManager {
 	public dispose(): void {
 		this.statusBar?.dispose()
 
-		// Clear snooze timer
 		if (this.snoozeTimer) {
 			clearTimeout(this.snoozeTimer)
 			this.snoozeTimer = null

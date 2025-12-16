@@ -9,8 +9,6 @@
 export const MODEL_SELECTION_ENABLED = process.env.NODE_ENV === "development"
 
 /**
- * Enable extreme autocomplete snooze values
- * This allows developers to test autocomplete snooze by using lower values than actually usable
+ * Enable extreme snooze values for autocomplete in development mode.
  */
-
 export const EXTREME_SNOOZE_VALUES_ENABLED = process.env.NODE_ENV === "development"
