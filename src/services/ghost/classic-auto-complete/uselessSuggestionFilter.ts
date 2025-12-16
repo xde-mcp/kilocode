@@ -11,10 +11,17 @@ export function suggestionConsideredDuplication(params: AutocompleteSuggestion):
 		return true
 	}
 
+	// Multiline completions can be "partially duplicated": e.g. the first suggested line
+	// repeats the last complete line in the prefix, or the last suggested line repeats
+	// the first line in the suffix. Those are still considered duplication.
+	if (DuplicatesFromEdgeLines(params)) {
+		return true
+	}
+
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
 	const normalized = normalizeToCompleteLine(params)
-	return !!normalized && DuplicatesFromPrefixOrSuffix(normalized)
+	return !!normalized && (DuplicatesFromPrefixOrSuffix(normalized) || DuplicatesFromEdgeLines(normalized))
 }
 
 function DuplicatesFromPrefixOrSuffix(params: AutocompleteSuggestion): boolean {
@@ -25,6 +32,30 @@ function DuplicatesFromPrefixOrSuffix(params: AutocompleteSuggestion): boolean {
 		params.prefix.trimEnd().endsWith(trimmed) ||
 		params.suffix.trimStart().startsWith(trimmed)
 	)
+}
+
+function DuplicatesFromEdgeLines(params: AutocompleteSuggestion): boolean {
+	const trimmedSuggestion = params.suggestion.trim()
+	if (!trimmedSuggestion.includes("\n")) {
+		return false
+	}
+
+	const suggestionLines = trimmedSuggestion.split("\n")
+	const firstSuggestionLine = suggestionLines[0]?.trim() ?? ""
+	const lastSuggestionLine = suggestionLines[suggestionLines.length - 1]?.trim() ?? ""
+
+	const prefixLastLine = params.prefix.trimEnd().split("\n").pop()?.trim() ?? ""
+	const suffixFirstLine = params.suffix.trimStart().split("\n")[0]?.trim() ?? ""
+
+	if (firstSuggestionLine.length > 0 && prefixLastLine.length > 0 && firstSuggestionLine === prefixLastLine) {
+		return true
+	}
+
+	if (lastSuggestionLine.length > 0 && suffixFirstLine.length > 0 && lastSuggestionLine === suffixFirstLine) {
+		return true
+	}
+
+	return false
 }
 
 /**

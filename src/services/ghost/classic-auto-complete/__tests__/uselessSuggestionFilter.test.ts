@@ -227,4 +227,27 @@ if (foo) {`),
 		// Should NOT be duplication when there's no previous complete line
 		expect(isDuplication(`console.info<<<('logging some stuff')>>>`)).toBe(false)
 	})
+
+	it("treats as duplication when a multiline suggestion duplicates the last line in prefix on its first line", () => {
+		expect(
+			isDuplication(`doStuff()
+console.info('logging some stuff')
+<<<console.info('logging some stuff')
+if (foo) {
+	 bar()
+}>>>`),
+		).toBe(true)
+	})
+
+	it("treats as duplication when a multiline suggestion duplicates the first line in suffix on its last line", () => {
+		expect(
+			isDuplication(`doStuff()
+<<<if (foo) {
+	 bar()
+}
+console.info('logging some stuff')>>>console.info('logging some stuff')
+return 1
+`),
+		).toBe(true)
+	})
 })
