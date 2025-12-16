@@ -105,19 +105,19 @@ describe("suggestionConsideredDuplication", () => {
 		}
 
 		const prefix = input.slice(0, startIdx)
-		const processed = input.slice(startIdx + startMarker.length, endIdx)
+		const suggestion = input.slice(startIdx + startMarker.length, endIdx)
 		const suffix = input.slice(endIdx + endMarker.length)
 
-		return suggestionConsideredDuplication({ processed, prefix, suffix })
+		return suggestionConsideredDuplication({ suggestion, prefix, suffix })
 	}
 
-	it("treats empty/whitespace-only processed suggestions as duplication", () => {
+	it("treats empty/whitespace-only suggestions as duplication", () => {
 		expect(isDuplication("const x = <<<>>> + 1")).toBe(true)
 		expect(isDuplication("const x = <<<   >>> + 1")).toBe(true)
 		expect(isDuplication("const x = <<<\t\n>>> + 1")).toBe(true)
 	})
 
-	it("treats processed suggestion as duplication when it matches the end of the prefix (trim-aware)", () => {
+	it("treats suggestion as duplication when it matches the end of the prefix (trim-aware)", () => {
 		// Exact match at the end
 		expect(isDuplication("const x = hello<<<hello>>>")).toBe(true)
 		expect(isDuplication("hello world<<<world>>> + 1")).toBe(true)
@@ -127,7 +127,7 @@ describe("suggestionConsideredDuplication", () => {
 		expect(isDuplication("bar foo  <<<foo>>>")).toBe(true)
 	})
 
-	it("treats processed suggestion as duplication when it matches the start of the suffix (trim-aware)", () => {
+	it("treats suggestion as duplication when it matches the start of the suffix (trim-aware)", () => {
 		// Exact match at the start
 		expect(isDuplication("const x = <<<hello>>>hello world")).toBe(true)
 		expect(isDuplication("<<<const>>>const y = 2")).toBe(true)
@@ -140,7 +140,7 @@ describe("suggestionConsideredDuplication", () => {
 		expect(isDuplication("const x = <<<bar>>>  bar  baz")).toBe(true)
 	})
 
-	it("trims processed before comparing to prefix/suffix", () => {
+	it("trims suggestion before comparing to prefix/suffix", () => {
 		expect(isDuplication("const x = <<<  hello  >>>hello world")).toBe(true)
 		expect(isDuplication("test hello<<<\nhello\t>>>")).toBe(true)
 	})

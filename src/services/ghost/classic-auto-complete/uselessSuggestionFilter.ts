@@ -1,35 +1,42 @@
 import { postprocessCompletion } from "../../continuedev/core/autocomplete/postprocessing/index.js"
 
-export type SuggestionConsideredDuplicationParams = {
-	processed: string
+export type AutocompleteSuggestion = {
+	/**
+	 * The text being considered for insertion at the cursor position.
+	 *
+	 * Note: In this file we use this for both the raw model suggestion (pre-postprocess)
+	 * and the postprocessed suggestion (when doing duplicate checks).
+	 */
+	suggestion: string
 	prefix: string
 	suffix: string
 }
 
-export function suggestionConsideredDuplication(params: SuggestionConsideredDuplicationParams): boolean {
-	const { processed, prefix, suffix } = params
+export function suggestionConsideredDuplication(params: AutocompleteSuggestion): boolean {
+	const { suggestion, prefix, suffix } = params
 
 	// First check with original params
-	if (checkDuplication(processed, prefix, suffix)) {
+	if (checkDuplication({ suggestion, prefix, suffix })) {
 		return true
 	}
 
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
-	const normalized = normalizeToCompleteLine(prefix, processed, suffix)
+	const normalized = normalizeToCompleteLine(prefix, suggestion, suffix)
 	if (normalized) {
-		return checkDuplication(normalized.completedLine, normalized.normalizedPrefix, normalized.normalizedSuffix)
+		return checkDuplication(normalized)
 	}
 
 	return false
 }
 
 /**
- * Core duplication check logic - checks if the processed suggestion is a duplication
+ * Core duplication check logic - checks if the suggestion is a duplication
  * based on prefix/suffix matching.
  */
-function checkDuplication(processed: string, prefix: string, suffix: string): boolean {
-	const trimmed = processed.trim()
+function checkDuplication(params: AutocompleteSuggestion): boolean {
+	const { suggestion, prefix, suffix } = params
+	const trimmed = suggestion.trim()
 
 	if (trimmed.length === 0) {
 		return true
@@ -54,11 +61,7 @@ function checkDuplication(processed: string, prefix: string, suffix: string): bo
  *
  * Returns null when the suggestion already starts/ends on line boundaries.
  */
-function normalizeToCompleteLine(
-	prefix: string,
-	suggestion: string,
-	suffix: string,
-): { normalizedPrefix: string; completedLine: string; normalizedSuffix: string } | null {
+function normalizeToCompleteLine(prefix: string, suggestion: string, suffix: string): AutocompleteSuggestion | null {
 	const prefixNewlineIndex = prefix.lastIndexOf("\n")
 	const suffixNewlineIndex = suffix.indexOf("\n")
 
@@ -84,9 +87,9 @@ function normalizeToCompleteLine(
 	}
 
 	return {
-		normalizedPrefix,
-		completedLine: prefixLineTail + suggestion + suffixLineHead,
-		normalizedSuffix,
+		prefix: normalizedPrefix,
+		suggestion: prefixLineTail + suggestion + suffixLineHead,
+		suffix: normalizedSuffix,
 	}
 }
 
@@ -101,29 +104,28 @@ function normalizeToCompleteLine(
  * @param params.model - The model string (e.g., "codestral", "qwen3", etc.)
  * @returns The processed suggestion text, or undefined if it should be filtered out
  */
-export function postprocessGhostSuggestion(params: {
-	suggestion: string
-	prefix: string
-	suffix: string
-	model: string
-}): string | undefined {
+export function postprocessGhostSuggestion(
+	params: AutocompleteSuggestion & {
+		model: string
+	},
+): string | undefined {
 	const { suggestion, prefix, suffix, model } = params
 
 	// First, run through the continuedev postprocessing pipeline
-	const processed = postprocessCompletion({
+	const processedSuggestion = postprocessCompletion({
 		completion: suggestion,
 		llm: { model },
 		prefix,
 		suffix,
 	})
 
-	if (processed === undefined) {
+	if (processedSuggestion === undefined) {
 		return undefined
 	}
 
-	if (suggestionConsideredDuplication({ processed, prefix, suffix })) {
+	if (suggestionConsideredDuplication({ suggestion: processedSuggestion, prefix, suffix })) {
 		return undefined
 	}
 
-	return processed
+	return processedSuggestion
 }
