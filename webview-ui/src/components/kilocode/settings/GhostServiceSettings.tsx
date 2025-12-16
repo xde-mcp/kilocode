@@ -1,5 +1,5 @@
 //kilocode_change - new file
-import { HTMLAttributes, useCallback, useState } from "react"
+import { HTMLAttributes, useCallback, useEffect, useState } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { Trans } from "react-i18next"
 import { Bot, Zap, Clock } from "lucide-react"
@@ -38,10 +38,20 @@ export const GhostServiceSettingsView = ({
 	} = ghostServiceSettings || {}
 	const keybindings = useKeybindings(["kilo-code.addToContextAndFocus", "kilo-code.ghost.generateSuggestions"])
 	const [snoozeDuration, setSnoozeDuration] = useState<number>(300) // Default 5 minutes
+	const [currentTime, setCurrentTime] = useState<number>(Date.now())
+
+	// Refresh current time every 30 seconds to keep snooze status up to date
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setCurrentTime(Date.now())
+		}, 30_000) // 30 seconds
+
+		return () => clearInterval(interval)
+	}, [])
 
 	// Check if currently snoozed
 	const snoozeUntil = ghostServiceSettings?.snoozeUntil
-	const isSnoozed = snoozeUntil ? Date.now() < snoozeUntil : false
+	const isSnoozed = snoozeUntil ? currentTime < snoozeUntil : false
 
 	const onEnableAutoTriggerChange = useCallback(
 		(e: any) => {
