@@ -188,6 +188,7 @@ describe("Task reasoning preservation", () => {
 	it("should append reasoning to assistant message when preserveReasoning is true", async () => {
 		// Create a task instance
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -255,6 +256,7 @@ describe("Task reasoning preservation", () => {
 	it("should NOT append reasoning to assistant message when preserveReasoning is false", async () => {
 		// Create a task instance
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -313,6 +315,7 @@ describe("Task reasoning preservation", () => {
 	it("should handle empty reasoning message gracefully when preserveReasoning is true", async () => {
 		// Create a task instance
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -367,6 +370,7 @@ describe("Task reasoning preservation", () => {
 	it("should handle undefined preserveReasoning (defaults to false)", async () => {
 		// Create a task instance
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -411,6 +415,7 @@ describe("Task reasoning preservation", () => {
 
 	it("should embed encrypted reasoning as first assistant content block", async () => {
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -457,6 +462,7 @@ describe("Task reasoning preservation", () => {
 
 	it("should store plain text reasoning from streaming for all providers", async () => {
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",

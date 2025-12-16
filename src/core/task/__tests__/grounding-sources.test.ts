@@ -189,6 +189,7 @@ describe("Task grounding sources handling", () => {
 	it("should strip grounding sources from assistant message before persisting to API history", async () => {
 		// Create a task instance
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",
@@ -247,6 +248,7 @@ Sources: [1](https://example.com), [2](https://another.com)
 
 	it("should not modify assistant message when no grounding sources are present", async () => {
 		const task = new Task({
+			context: mockProvider.context as any,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			task: "Test task",

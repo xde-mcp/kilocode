@@ -90,6 +90,7 @@ describe("Task token usage throttling", () => {
 
 		// Create task instance without starting it
 		task = new Task({
+			context: mockProvider.context,
 			provider: mockProvider as ClineProvider,
 			apiConfiguration: mockApiConfiguration,
 			startTask: false,
