@@ -6,7 +6,7 @@ import { Bot, Zap, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "../../settings/SectionHeader"
 import { Section } from "../../settings/Section"
-import { GhostServiceSettings, MODEL_SELECTION_ENABLED } from "@roo-code/types"
+import { EXTREME_SNOOZE_VALUES_ENABLED, GhostServiceSettings, MODEL_SELECTION_ENABLED } from "@roo-code/types"
 import { vscode } from "@/utils/vscode"
 import { VSCodeCheckbox, VSCodeButton, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import { useKeybindings } from "@/hooks/useKeybindings"
@@ -129,9 +129,11 @@ export const GhostServiceSettingsView = ({
 										<VSCodeDropdown
 											value={snoozeDuration.toString()}
 											onChange={(e: any) => setSnoozeDuration(Number(e.target.value))}>
-											<VSCodeOption value="60">
-												{t("kilocode:ghost.settings.snooze.duration.1min")}
-											</VSCodeOption>
+											{EXTREME_SNOOZE_VALUES_ENABLED && (
+												<VSCodeOption value="60">
+													{t("kilocode:ghost.settings.snooze.duration.1min")}
+												</VSCodeOption>
+											)}
 											<VSCodeOption value="300">
 												{t("kilocode:ghost.settings.snooze.duration.5min")}
 											</VSCodeOption>
