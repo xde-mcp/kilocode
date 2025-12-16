@@ -43,6 +43,18 @@ describe("Model Validation Functions", () => {
 			},
 		},
 		"nano-gpt": {}, //kilocode_change
+		// kilocode_change start
+		glama: {
+			"valid-model": {
+				maxTokens: 8192,
+				contextWindow: 200000,
+				supportsImages: true,
+				supportsPromptCache: false,
+				inputPrice: 3.0,
+				outputPrice: 15.0,
+			},
+		},
+		// kilocode_change end
 		requesty: {},
 		unbound: {},
 		litellm: {},
@@ -108,6 +120,28 @@ describe("Model Validation Functions", () => {
 			const result = getModelValidationError(config, mockRouterModels, restrictiveOrganization)
 			expect(result).toContain("model")
 		})
+
+		// kilocode_change start
+		it("returns undefined for valid Glama model", () => {
+			const config: ProviderSettings = {
+				apiProvider: "glama",
+				glamaModelId: "valid-model",
+			}
+
+			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			expect(result).toBeUndefined()
+		})
+
+		it("returns error for invalid Glama model", () => {
+			const config: ProviderSettings = {
+				apiProvider: "glama",
+				glamaModelId: "invalid-model",
+			}
+
+			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			expect(result).toBeUndefined()
+		})
+		// kilocode_change end
 
 		it("returns undefined for OpenAI models when no router models provided", () => {
 			const config: ProviderSettings = {
@@ -188,5 +222,27 @@ describe("Model Validation Functions", () => {
 			)
 			expect(result).toBeUndefined() // Should exclude model-specific org errors
 		})
+
+		// kilocode_change start
+		it("returns undefined for valid IO Intelligence model", () => {
+			const config: ProviderSettings = {
+				apiProvider: "io-intelligence",
+				glamaModelId: "valid-model",
+			}
+
+			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			expect(result).toBeUndefined()
+		})
+
+		it("returns error for invalid IO Intelligence model", () => {
+			const config: ProviderSettings = {
+				apiProvider: "io-intelligence",
+				glamaModelId: "invalid-model",
+			}
+
+			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
+			expect(result).toBeUndefined()
+		})
+		// kilocode_change end
 	})
 })

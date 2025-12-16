@@ -10,6 +10,7 @@ import {
 	DEFAULT_CONSECUTIVE_MISTAKE_LIMIT,
 	openRouterDefaultModelId,
 	requestyDefaultModelId,
+	glamaDefaultModelId, // kilocode_change
 	unboundDefaultModelId,
 	litellmDefaultModelId,
 	openAiNativeDefaultModelId,
@@ -85,6 +86,7 @@ import {
 	DeepSeek,
 	Doubao,
 	Gemini,
+	Glama, // kilocode_change
 	Groq,
 	HuggingFace,
 	IOIntelligence,
@@ -347,7 +349,7 @@ const ApiOptions = ({
 
 			// It would be much easier to have a single attribute that stores
 			// the modelId, but we have a separate attribute for each of
-			// OpenRouter, Unbound, and Requesty.
+			// OpenRouter, Glama, Unbound, and Requesty.
 			// If you switch to one of these providers and the corresponding
 			// modelId is not set then you immediately end up in an error state.
 			// To address that we set the modelId to the default value for th
@@ -381,6 +383,7 @@ const ApiOptions = ({
 			> = {
 				deepinfra: { field: "deepInfraModelId", default: deepInfraDefaultModelId },
 				openrouter: { field: "openRouterModelId", default: openRouterDefaultModelId },
+				glama: { field: "glamaModelId", default: glamaDefaultModelId }, // kilocode_change
 				unbound: { field: "unboundModelId", default: unboundDefaultModelId },
 				requesty: { field: "requestyModelId", default: requestyDefaultModelId },
 				litellm: { field: "litellmModelId", default: litellmDefaultModelId },
@@ -596,6 +599,22 @@ const ApiOptions = ({
 					simplifySettings={fromWelcomeView}
 				/>
 			)}
+
+			{
+				/* kilocode_change start */
+				selectedProvider === "glama" && (
+					<Glama
+						apiConfiguration={apiConfiguration}
+						setApiConfigurationField={setApiConfigurationField}
+						routerModels={routerModels}
+						uriScheme={uriScheme}
+						organizationAllowList={organizationAllowList}
+						modelValidationError={modelValidationError}
+						simplifySettings={fromWelcomeView}
+					/>
+				)
+				/* kilocode_change end */
+			}
 
 			{selectedProvider === "unbound" && (
 				<Unbound

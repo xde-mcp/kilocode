@@ -14,6 +14,15 @@ export const handleUri = async (uri: vscode.Uri) => {
 	}
 
 	switch (path) {
+		// kilocode_change start
+		case "/glama": {
+			const code = query.get("code")
+			if (code) {
+				await visibleProvider.handleGlamaCallback(code)
+			}
+			break
+		}
+		// kilocode_change end
 		case "/openrouter": {
 			const code = query.get("code")
 			if (code) {

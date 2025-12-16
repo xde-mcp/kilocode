@@ -857,6 +857,7 @@ export const webviewMessageHandler = async (
 						"io-intelligence": {},
 						requesty: {},
 						unbound: {},
+						glama: {}, // kilocode_change
 						ollama: {},
 						lmstudio: {},
 						roo: {},
@@ -905,6 +906,7 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.requestyBaseUrl,
 					},
 				},
+				{ key: "glama", options: { provider: "glama" } }, // kilocode_change
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 				{
 					key: "kilocode",

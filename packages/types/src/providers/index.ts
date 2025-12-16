@@ -15,6 +15,7 @@ export * from "./ovhcloud.js"
 export * from "./synthetic.js"
 export * from "./inception.js"
 export * from "./minimax.js"
+export * from "./glama.js"
 // kilocode_change end
 export * from "./groq.js"
 export * from "./huggingface.js"
@@ -51,6 +52,7 @@ import { doubaoDefaultModelId } from "./doubao.js"
 import { featherlessDefaultModelId } from "./featherless.js"
 import { fireworksDefaultModelId } from "./fireworks.js"
 import { geminiDefaultModelId } from "./gemini.js"
+import { glamaDefaultModelId } from "./glama.js" // kilocode_change
 import { groqDefaultModelId } from "./groq.js"
 import { ioIntelligenceDefaultModelId } from "./io-intelligence.js"
 import { litellmDefaultModelId } from "./lite-llm.js"
@@ -87,6 +89,10 @@ export function getProviderDefaultModelId(
 			return openRouterDefaultModelId
 		case "requesty":
 			return requestyDefaultModelId
+		// kilocode_change start
+		case "glama":
+			return glamaDefaultModelId
+		// kilocode_change end
 		case "unbound":
 			return unboundDefaultModelId
 		case "litellm":

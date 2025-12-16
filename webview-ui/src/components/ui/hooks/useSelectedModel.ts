@@ -205,6 +205,13 @@ function getSelectedModel({
 			const info = routerModels.requesty?.[id]
 			return { id, info }
 		}
+		// kilocode_change start
+		case "glama": {
+			const id = getValidatedModelId(apiConfiguration.glamaModelId, routerModels.glama, defaultModelId)
+			const info = routerModels.glama?.[id]
+			return { id, info }
+		}
+		// kilocode_change end
 		case "unbound": {
 			const id = getValidatedModelId(apiConfiguration.unboundModelId, routerModels.unbound, defaultModelId)
 			const info = routerModels.unbound?.[id]
