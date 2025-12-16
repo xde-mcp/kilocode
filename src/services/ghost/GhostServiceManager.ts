@@ -381,5 +381,16 @@ export class GhostServiceManager {
 
 		// Dispose inline completion provider resources
 		this.inlineCompletionProvider.dispose()
+
+		// Clear singleton instance
+		GhostServiceManager._instance = null
+	}
+
+	/**
+	 * Reset the singleton instance (for testing purposes only)
+	 * @internal
+	 */
+	public static _resetInstance(): void {
+		GhostServiceManager._instance = null
 	}
 }

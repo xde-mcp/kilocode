@@ -189,6 +189,9 @@ describe("GhostServiceManager (less mocked logic)", () => {
 		__resetState()
 		;(vscode.window as any).activeTextEditor = null
 		vi.mocked(vscode.languages.registerInlineCompletionItemProvider).mockReset()
+
+		// Reset singleton instance before each test
+		GhostServiceManager._resetInstance()
 	})
 
 	afterEach(() => {
