@@ -1,113 +1,38 @@
-import { postprocessGhostSuggestion } from "../uselessSuggestionFilter"
+import { postprocessGhostSuggestion, suggestionConsideredDuplication } from "../uselessSuggestionFilter"
 
 describe("postprocessGhostSuggestion", () => {
-	// Helper function to test filtering (returns undefined)
-	const shouldFilter = (suggestion: string, prefix: string, suffix: string, model = "") => {
-		return postprocessGhostSuggestion({ suggestion, prefix, suffix, model }) === undefined
-	}
+	it("calls suggestionConsideredDuplication", () => {
+		let calls = 0
+		;(globalThis as any).__kiloTestHooks = {
+			onSuggestionConsideredDuplication: () => {
+				calls++
+			},
+		}
 
-	// Helper function to test acceptance (returns processed string)
-	const shouldAccept = (suggestion: string, prefix: string, suffix: string, model = "") => {
-		const result = postprocessGhostSuggestion({ suggestion, prefix, suffix, model })
-		return result !== undefined
-	}
+		try {
+			const result = postprocessGhostSuggestion({
+				suggestion: "hello",
+				prefix: "",
+				suffix: "",
+				model: "",
+			})
 
-	describe("should filter out useless suggestions", () => {
-		it("should filter empty suggestions", () => {
-			expect(shouldFilter("", "const x = ", " + 1")).toBe(true)
-			expect(shouldFilter("   ", "const x = ", " + 1")).toBe(true)
-			expect(shouldFilter("\t\n", "const x = ", " + 1")).toBe(true)
-		})
-
-		it("should filter suggestions that match the end of prefix", () => {
-			// Exact match at the end
-			expect(shouldFilter("hello", "const x = hello", "")).toBe(true)
-			expect(shouldFilter("world", "hello world", " + 1")).toBe(true)
-
-			// With whitespace variations
-			expect(shouldFilter("test", "const test ", "")).toBe(true)
-			expect(shouldFilter("foo", "bar foo  ", "")).toBe(true)
-		})
-
-		it("should filter suggestions that match the start of suffix", () => {
-			// Exact match at the start
-			expect(shouldFilter("hello", "const x = ", "hello world")).toBe(true)
-			expect(shouldFilter("const", "", "const y = 2")).toBe(true)
-
-			// With whitespace variations
-			expect(shouldFilter("test", "const x = ", "  test()")).toBe(true)
-			expect(shouldFilter("foo", "", " foo bar")).toBe(true)
-
-			// Trimmed match
-			expect(shouldFilter("bar", "const x = ", "  bar  baz")).toBe(true)
-		})
-
-		it("should filter suggestions when trimmed version matches", () => {
-			expect(shouldFilter("  hello  ", "const x = ", "hello world")).toBe(true)
-			expect(shouldFilter("\nhello\t", "test hello", "")).toBe(true)
-		})
-
-		it("should filter suggestions that rewrite the line above", () => {
-			// This is a new behavior from postprocessCompletion
-			const prefix = "function test() {\n  return true\n  "
-			const suggestion = "return true"
-			expect(shouldFilter(suggestion, prefix, "")).toBe(true)
-		})
+			expect(result).toBe("hello")
+			expect(calls).toBe(1)
+		} finally {
+			;(globalThis as any).__kiloTestHooks = undefined
+		}
 	})
 
-	describe("should accept useful suggestions", () => {
-		it("should accept suggestions that add new content", () => {
-			expect(shouldAccept("newValue", "const x = ", "")).toBe(true)
-			expect(shouldAccept("42", "const x = ", " + y")).toBe(true)
-			expect(shouldAccept("middle", "const x = ", " + y")).toBe(true)
-		})
-
-		it("should accept suggestions that don't match prefix end or suffix start", () => {
-			expect(shouldAccept("hello", "const x = ", "world")).toBe(true)
-			expect(shouldAccept("test", "const x = ", "const y = 2")).toBe(true)
-			expect(shouldAccept("foo", "bar", "baz")).toBe(true)
-		})
-
-		it("should accept partial matches that are still useful", () => {
-			// Suggestion "hello world" with prefix ending in "hello" should be accepted
-			// because the full suggestion doesn't match what's at the end of the prefix
-			expect(shouldAccept("hello world", "const x = hello", "")).toBe(true)
-			expect(shouldAccept("test123", "test", "456")).toBe(true)
-		})
-
-		it("should accept suggestions with meaningful content between prefix and suffix", () => {
-			expect(shouldAccept("= 42", "const x ", " + y")).toBe(true)
-			expect(shouldAccept("()", "myFunction", ".then()")).toBe(true)
-		})
-	})
-
-	describe("edge cases", () => {
-		it("should handle empty prefix and suffix", () => {
-			expect(shouldAccept("hello", "", "")).toBe(true)
-			expect(shouldFilter("", "", "")).toBe(true)
-		})
-
-		it("should handle very long strings", () => {
-			const longString = "a".repeat(1000)
-			expect(shouldAccept("different", longString, longString)).toBe(true)
-			expect(shouldFilter("different", longString + "different", "")).toBe(true)
-		})
-
-		it("should handle special characters", () => {
-			expect(shouldFilter("${}", "const template = `", "${}`")).toBe(true)
-			expect(shouldFilter("\\n", "const x = ", "\\n")).toBe(true)
-			expect(shouldFilter("/**/", "const x = /**/", "")).toBe(true)
-		})
-
-		it("should handle unicode characters", () => {
-			expect(shouldFilter("😀", "const emoji = ", "😀")).toBe(true)
-			expect(shouldFilter("你好", "const greeting = 你好", "")).toBe(true)
-			expect(shouldAccept("🚀", "launch", "🌟")).toBe(true)
-		})
+	it("filters suggestions that rewrite the line above (continuedev postprocessCompletion behavior)", () => {
+		const prefix = "function test() {\n  return true\n  "
+		const suggestion = "return true"
+		const result = postprocessGhostSuggestion({ suggestion, prefix, suffix: "", model: "" })
+		expect(result).toBeUndefined()
 	})
 
 	describe("model-specific postprocessing", () => {
-		it("should remove markdown code fences", () => {
+		it("removes markdown code fences", () => {
 			const suggestion = "```javascript\nconst x = 1\n```"
 			const result = postprocessGhostSuggestion({
 				suggestion,
@@ -118,7 +43,7 @@ describe("postprocessGhostSuggestion", () => {
 			expect(result).toBe("const x = 1")
 		})
 
-		it("should handle Codestral-specific quirks", () => {
+		it("handles Codestral-specific quirks", () => {
 			// Codestral sometimes adds extra leading space
 			const result = postprocessGhostSuggestion({
 				suggestion: " test",
@@ -129,7 +54,7 @@ describe("postprocessGhostSuggestion", () => {
 			expect(result).toBe("test")
 		})
 
-		it("should handle Mercury/Granite prefix duplication", () => {
+		it("handles Mercury/Granite prefix duplication", () => {
 			const result = postprocessGhostSuggestion({
 				suggestion: "const x = 42",
 				prefix: "const x = ",
@@ -139,7 +64,7 @@ describe("postprocessGhostSuggestion", () => {
 			expect(result).toBe("42")
 		})
 
-		it("should handle Gemini/Gemma file separator", () => {
+		it("handles Gemini/Gemma file separator", () => {
 			const result = postprocessGhostSuggestion({
 				suggestion: "const x = 1<|file_separator|>",
 				prefix: "",
@@ -151,14 +76,104 @@ describe("postprocessGhostSuggestion", () => {
 	})
 
 	describe("extreme repetition filtering", () => {
-		it("should filter extreme repetition", () => {
+		it("filters extreme repetition", () => {
 			const repetitive = "test\ntest\ntest\ntest\ntest\ntest\ntest\ntest\ntest\n"
-			expect(shouldFilter(repetitive, "", "")).toBe(true)
+			const result = postprocessGhostSuggestion({
+				suggestion: repetitive,
+				prefix: "",
+				suffix: "",
+				model: "",
+			})
+			expect(result).toBeUndefined()
 		})
 
-		it("should allow normal repetition", () => {
+		it("allows normal repetition", () => {
 			const normal = "test1\ntest2\ntest3\ntest4\n"
-			expect(shouldAccept(normal, "", "")).toBe(true)
+			const result = postprocessGhostSuggestion({
+				suggestion: normal,
+				prefix: "",
+				suffix: "",
+				model: "",
+			})
+			expect(result).toBe(normal)
 		})
+	})
+})
+
+describe("suggestionConsideredDuplication", () => {
+	const isDuplication = (processed: string, prefix: string, suffix: string) =>
+		suggestionConsideredDuplication({ processed, prefix, suffix })
+
+	it("treats empty/whitespace-only processed suggestions as duplication", () => {
+		expect(isDuplication("", "const x = ", " + 1")).toBe(true)
+		expect(isDuplication("   ", "const x = ", " + 1")).toBe(true)
+		expect(isDuplication("\t\n", "const x = ", " + 1")).toBe(true)
+	})
+
+	it("treats processed suggestion as duplication when it matches the end of the prefix (trim-aware)", () => {
+		// Exact match at the end
+		expect(isDuplication("hello", "const x = hello", "")).toBe(true)
+		expect(isDuplication("world", "hello world", " + 1")).toBe(true)
+
+		// With whitespace variations
+		expect(isDuplication("test", "const test ", "")).toBe(true)
+		expect(isDuplication("foo", "bar foo  ", "")).toBe(true)
+	})
+
+	it("treats processed suggestion as duplication when it matches the start of the suffix (trim-aware)", () => {
+		// Exact match at the start
+		expect(isDuplication("hello", "const x = ", "hello world")).toBe(true)
+		expect(isDuplication("const", "", "const y = 2")).toBe(true)
+
+		// With whitespace variations
+		expect(isDuplication("test", "const x = ", "  test()")).toBe(true)
+		expect(isDuplication("foo", "", " foo bar")).toBe(true)
+
+		// Trimmed match
+		expect(isDuplication("bar", "const x = ", "  bar  baz")).toBe(true)
+	})
+
+	it("trims processed before comparing to prefix/suffix", () => {
+		expect(isDuplication("  hello  ", "const x = ", "hello world")).toBe(true)
+		expect(isDuplication("\nhello\t", "test hello", "")).toBe(true)
+	})
+
+	it("returns false for useful suggestions that do not match prefix end or suffix start", () => {
+		expect(isDuplication("newValue", "const x = ", "")).toBe(false)
+		expect(isDuplication("42", "const x = ", " + y")).toBe(false)
+		expect(isDuplication("middle", "const x = ", " + y")).toBe(false)
+
+		expect(isDuplication("hello", "const x = ", "world")).toBe(false)
+		expect(isDuplication("test", "const x = ", "const y = 2")).toBe(false)
+		expect(isDuplication("foo", "bar", "baz")).toBe(false)
+	})
+
+	it("does not consider partial matches at the edge as duplication", () => {
+		// Suggestion "hello world" with prefix ending in "hello" is NOT a duplication
+		expect(isDuplication("hello world", "const x = hello", "")).toBe(false)
+		expect(isDuplication("test123", "test", "456")).toBe(false)
+	})
+
+	it("handles empty prefix and suffix", () => {
+		expect(isDuplication("hello", "", "")).toBe(false)
+		expect(isDuplication("", "", "")).toBe(true)
+	})
+
+	it("handles very long strings", () => {
+		const longString = "a".repeat(1000)
+		expect(isDuplication("different", longString, longString)).toBe(false)
+		expect(isDuplication("different", longString + "different", "")).toBe(true)
+	})
+
+	it("handles special characters", () => {
+		expect(isDuplication("${}", "const template = `", "${}`")).toBe(true)
+		expect(isDuplication("\\n", "const x = ", "\\n")).toBe(true)
+		expect(isDuplication("/**/", "const x = /**/", "")).toBe(true)
+	})
+
+	it("handles unicode characters", () => {
+		expect(isDuplication("😀", "const emoji = ", "😀")).toBe(true)
+		expect(isDuplication("你好", "const greeting = 你好", "")).toBe(true)
+		expect(isDuplication("🚀", "launch", "🌟")).toBe(false)
 	})
 })

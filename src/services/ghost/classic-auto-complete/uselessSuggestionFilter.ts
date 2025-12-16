@@ -1,5 +1,35 @@
 import { postprocessCompletion } from "../../continuedev/core/autocomplete/postprocessing/index.js"
 
+export type SuggestionConsideredDuplicationParams = {
+	processed: string
+	prefix: string
+	suffix: string
+}
+
+export function suggestionConsideredDuplication(params: SuggestionConsideredDuplicationParams): boolean {
+	;(globalThis as any).__kiloTestHooks?.onSuggestionConsideredDuplication?.(params)
+
+	const { processed, prefix, suffix } = params
+
+	const trimmed = processed.trim()
+
+	if (trimmed.length === 0) {
+		return true
+	}
+
+	const trimmedPrefixEnd = prefix.trimEnd()
+	if (trimmedPrefixEnd.endsWith(trimmed)) {
+		return true
+	}
+
+	const trimmedSuffix = suffix.trimStart()
+	if (trimmedSuffix.startsWith(trimmed)) {
+		return true
+	}
+
+	return false
+}
+
 /**
  * Postprocesses a Ghost autocomplete suggestion using the continuedev postprocessing pipeline
  * and applies some of our own duplicate checks.
@@ -31,19 +61,7 @@ export function postprocessGhostSuggestion(params: {
 		return undefined
 	}
 
-	const trimmed = processed.trim()
-
-	if (trimmed.length === 0) {
-		return undefined
-	}
-
-	const trimmedPrefixEnd = prefix.trimEnd()
-	if (trimmedPrefixEnd.endsWith(trimmed)) {
-		return undefined
-	}
-
-	const trimmedSuffix = suffix.trimStart()
-	if (trimmedSuffix.startsWith(trimmed)) {
+	if (suggestionConsideredDuplication({ processed, prefix, suffix })) {
 		return undefined
 	}
 
