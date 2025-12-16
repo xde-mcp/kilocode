@@ -7,8 +7,6 @@ export type SuggestionConsideredDuplicationParams = {
 }
 
 export function suggestionConsideredDuplication(params: SuggestionConsideredDuplicationParams): boolean {
-	;(globalThis as any).__kiloTestHooks?.onSuggestionConsideredDuplication?.(params)
-
 	const { processed, prefix, suffix } = params
 
 	// First check with original params

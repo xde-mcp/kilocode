@@ -1,27 +1,15 @@
 import { postprocessGhostSuggestion, suggestionConsideredDuplication } from "../uselessSuggestionFilter"
 
 describe("postprocessGhostSuggestion", () => {
-	it("calls suggestionConsideredDuplication", () => {
-		let calls = 0
-		;(globalThis as any).__kiloTestHooks = {
-			onSuggestionConsideredDuplication: () => {
-				calls++
-			},
-		}
+	it("filters suggestions that are considered duplication (prefix/suffix match)", () => {
+		const result = postprocessGhostSuggestion({
+			suggestion: "hello",
+			prefix: "hello",
+			suffix: "",
+			model: "",
+		})
 
-		try {
-			const result = postprocessGhostSuggestion({
-				suggestion: "hello",
-				prefix: "",
-				suffix: "",
-				model: "",
-			})
-
-			expect(result).toBe("hello")
-			expect(calls).toBe(1)
-		} finally {
-			;(globalThis as any).__kiloTestHooks = undefined
-		}
+		expect(result).toBeUndefined()
 	})
 
 	it("filters suggestions that rewrite the line above (continuedev postprocessCompletion behavior)", () => {
