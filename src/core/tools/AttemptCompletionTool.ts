@@ -232,6 +232,9 @@ export class AttemptCompletionTool extends BaseTool<"attempt_completion"> {
 					// kilocode_change end
 				)
 
+				// Force final token usage update before emitting TaskCompleted for consistency
+				task.emitFinalTokenUsageUpdate()
+
 				TelemetryService.instance.captureTaskCompleted(task.taskId)
 				task.emit(RooCodeEventName.TaskCompleted, task.taskId, task.getTokenUsage(), task.toolUsage)
 

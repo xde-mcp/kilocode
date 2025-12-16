@@ -857,7 +857,6 @@ export const webviewMessageHandler = async (
 						"io-intelligence": {},
 						requesty: {},
 						unbound: {},
-						glama: {},
 						ollama: {},
 						lmstudio: {},
 						roo: {},
@@ -906,7 +905,6 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.requestyBaseUrl,
 					},
 				},
-				{ key: "glama", options: { provider: "glama" } },
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 				{
 					key: "kilocode",
@@ -1326,6 +1324,10 @@ export const webviewMessageHandler = async (
 		}
 		case "cancelTask":
 			await provider.cancelTask()
+			break
+		case "cancelAutoApproval":
+			// Cancel any pending auto-approval timeout for the current task
+			provider.getCurrentTask()?.cancelAutoApprovalTimeout()
 			break
 		case "killBrowserSession":
 			{

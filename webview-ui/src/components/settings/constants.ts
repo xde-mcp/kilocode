@@ -78,7 +78,6 @@ export const PROVIDERS = [
 	{ value: "qwen-code", label: "Qwen Code" },
 	{ value: "vertex", label: "GCP Vertex AI" },
 	{ value: "bedrock", label: "Amazon Bedrock" },
-	{ value: "glama", label: "Glama" },
 	{ value: "nano-gpt", label: "Nano-GPT" }, //kilocode_change
 	{ value: "vscode-lm", label: "VS Code LM API" },
 	{ value: "mistral", label: "Mistral" },

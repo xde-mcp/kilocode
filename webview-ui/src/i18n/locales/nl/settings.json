@@ -303,8 +303,6 @@
 		"vercelAiGatewayApiKey": "Vercel AI Gateway API-sleutel",
 		"getVercelAiGatewayApiKey": "Vercel AI Gateway API-sleutel ophalen",
 		"apiKeyStorageNotice": "API-sleutels worden veilig opgeslagen in de geheime opslag van VSCode",
-		"glamaApiKey": "Glama API-sleutel",
-		"getGlamaApiKey": "Glama API-sleutel ophalen",
 		"useCustomBaseUrl": "Aangepaste basis-URL gebruiken",
 		"useReasoning": "Redenering inschakelen",
 		"useHostHeader": "Aangepaste Host-header gebruiken",
@@ -573,6 +571,7 @@
 			"none": "Geen",
 			"minimal": "Minimaal (Snelst)",
 			"high": "Hoog",
+			"xhigh": "Zeer hoog",
 			"medium": "Middel",
 			"low": "Laag",
 			"xhigh": "Extra Hoog"
@@ -1146,6 +1145,10 @@
 		"collapseThinking": {
 			"label": "Denkberichten standaard samenvouwen",
 			"description": "Indien ingeschakeld, worden denkblokken standaard samengevouwen totdat je ermee interageert"
+		},
+		"requireCtrlEnterToSend": {
+			"label": "Vereist {{primaryMod}}+Enter om berichten te versturen",
+			"description": "Wanneer ingeschakeld, moet je {{primaryMod}}+Enter indrukken om berichten te versturen in plaats van alleen Enter"
 		}
 	}
 }

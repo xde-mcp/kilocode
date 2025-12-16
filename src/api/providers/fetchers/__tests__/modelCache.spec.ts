@@ -41,7 +41,6 @@ vi.mock("fs", () => ({
 vi.mock("../litellm")
 vi.mock("../openrouter")
 vi.mock("../requesty")
-vi.mock("../glama")
 vi.mock("../unbound")
 vi.mock("../io-intelligence")
 vi.mock("../ovhcloud") // kilocode_change
@@ -65,7 +64,6 @@ import { getModels, getModelsFromCache } from "../modelCache"
 import { getLiteLLMModels } from "../litellm"
 import { getOpenRouterModels } from "../openrouter"
 import { getRequestyModels } from "../requesty"
-import { getGlamaModels } from "../glama"
 import { getUnboundModels } from "../unbound"
 import { getIOIntelligenceModels } from "../io-intelligence"
 import { getOvhCloudAiEndpointsModels } from "../ovhcloud" // kilocode_change
@@ -73,7 +71,6 @@ import { getOvhCloudAiEndpointsModels } from "../ovhcloud" // kilocode_change
 const mockGetLiteLLMModels = getLiteLLMModels as Mock<typeof getLiteLLMModels>
 const mockGetOpenRouterModels = getOpenRouterModels as Mock<typeof getOpenRouterModels>
 const mockGetRequestyModels = getRequestyModels as Mock<typeof getRequestyModels>
-const mockGetGlamaModels = getGlamaModels as Mock<typeof getGlamaModels>
 const mockGetUnboundModels = getUnboundModels as Mock<typeof getUnboundModels>
 const mockGetIOIntelligenceModels = getIOIntelligenceModels as Mock<typeof getIOIntelligenceModels>
 const mockGetOvhCloudAiEndpointsModels = getOvhCloudAiEndpointsModels as Mock<typeof getOvhCloudAiEndpointsModels> // kilocode_change
@@ -139,23 +136,6 @@ describe("getModels with new GetModelsOptions", () => {
 		const result = await getModels({ provider: "requesty", apiKey: DUMMY_REQUESTY_KEY })
 
 		expect(mockGetRequestyModels).toHaveBeenCalledWith(undefined, DUMMY_REQUESTY_KEY)
-		expect(result).toEqual(mockModels)
-	})
-
-	it("calls getGlamaModels for glama provider", async () => {
-		const mockModels = {
-			"glama/model": {
-				maxTokens: 4096,
-				contextWindow: 8192,
-				supportsPromptCache: false,
-				description: "Glama model",
-			},
-		}
-		mockGetGlamaModels.mockResolvedValue(mockModels)
-
-		const result = await getModels({ provider: "glama" })
-
-		expect(mockGetGlamaModels).toHaveBeenCalled()
 		expect(result).toEqual(mockModels)
 	})
 
@@ -324,7 +304,7 @@ describe("getModelsFromCache disk fallback", () => {
 
 		const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 
-		const result = getModelsFromCache("glama")
+		const result = getModelsFromCache("openrouter")
 
 		expect(result).toBeUndefined()
 		expect(consoleErrorSpy).toHaveBeenCalled()

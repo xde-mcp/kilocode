@@ -33,11 +33,11 @@ import {
 	type CloudOrganizationMembership,
 	type CreateTaskOptions,
 	type TokenUsage,
+	type ToolUsage,
 	RooCodeEventName,
 	TelemetryEventName, // kilocode_change
 	requestyDefaultModelId,
 	openRouterDefaultModelId,
-	glamaDefaultModelId,
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 	DEFAULT_WRITE_DELAY_MS,
 	ORGANIZATION_ALLOW_ALL,
@@ -226,12 +226,12 @@ export class ClineProvider
 
 			// Create named listener functions so we can remove them later.
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
-			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) => {
+			const onTaskCompleted = (taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage) => {
 				kilo_execIfExtension(() => {
 					SessionManager.init().doSync(true)
 				})
 
-				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage) // kilocode_change: return
 			}
 			const onTaskAborted = async () => {
 				this.emit(RooCodeEventName.TaskAborted, instance.taskId)
@@ -272,8 +272,8 @@ export class ClineProvider
 			const onTaskUnpaused = (taskId: string) => this.emit(RooCodeEventName.TaskUnpaused, taskId)
 			const onTaskSpawned = (taskId: string) => this.emit(RooCodeEventName.TaskSpawned, taskId)
 			const onTaskUserMessage = (taskId: string) => this.emit(RooCodeEventName.TaskUserMessage, taskId)
-			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage) =>
-				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage)
+			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage) =>
+				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage, toolUsage)
 			const onModelChanged = () => this.postStateToWebview() // kilocode_change: Listen for model changes in virtual quota fallback
 
 			// Attach the listeners.
@@ -1696,39 +1696,6 @@ ${prompt}
 		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
 	}
 
-	// Glama
-
-	async handleGlamaCallback(code: string) {
-		let apiKey: string
-
-		try {
-			const response = await axios.post("https://glama.ai/api/gateway/v1/auth/exchange-code", { code })
-
-			if (response.data && response.data.apiKey) {
-				apiKey = response.data.apiKey
-			} else {
-				throw new Error("Invalid response from Glama API")
-			}
-		} catch (error) {
-			this.log(
-				`Error exchanging code for API key: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
-			)
-
-			throw error
-		}
-
-		const { apiConfiguration, currentApiConfigName = "default" } = await this.getState()
-
-		const newConfiguration: ProviderSettings = {
-			...apiConfiguration,
-			apiProvider: "glama",
-			glamaApiKey: apiKey,
-			glamaModelId: apiConfiguration?.glamaModelId || glamaDefaultModelId,
-		}
-
-		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
-	}
-
 	// Requesty
 
 	async handleRequestyCallback(code: string, baseUrl: string | null) {
@@ -2165,6 +2132,7 @@ ${prompt}
 			terminalCompressProgressBar,
 			historyPreviewCollapsed,
 			reasoningBlockCollapsed,
+			enterBehavior,
 			cloudUserInfo,
 			cloudIsAuthenticated,
 			sharingEnabled,
@@ -2363,6 +2331,7 @@ ${prompt}
 			hasSystemPromptOverride,
 			historyPreviewCollapsed: historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: reasoningBlockCollapsed ?? true,
+			enterBehavior: enterBehavior ?? "send",
 			cloudUserInfo,
 			cloudIsAuthenticated: cloudIsAuthenticated ?? false,
 			cloudOrganizations,
@@ -2660,6 +2629,7 @@ ${prompt}
 			fastApplyApiProvider: stateValues.fastApplyApiProvider ?? "current", // kilocode_change: Fast Apply model api config id
 			historyPreviewCollapsed: stateValues.historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: stateValues.reasoningBlockCollapsed ?? true,
+			enterBehavior: stateValues.enterBehavior ?? "send",
 			cloudUserInfo,
 			cloudIsAuthenticated,
 			sharingEnabled,
