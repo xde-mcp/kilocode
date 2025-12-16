@@ -61,24 +61,34 @@ function normalizeToCompleteLine(
 	suggestion: string,
 	suffix: string,
 ): { normalizedPrefix: string; completedLine: string; normalizedSuffix: string } | null {
-	const prefixNewline = prefix.lastIndexOf("\n")
-	const suffixNewline = suffix.indexOf("\n")
+	const prefixNewlineIndex = prefix.lastIndexOf("\n")
+	const suffixNewlineIndex = suffix.indexOf("\n")
 
-	const prefixLineTail = prefixNewline === -1 ? prefix : prefix.slice(prefixNewline + 1)
-	const suffixLineHead = suffixNewline === -1 ? suffix : suffix.slice(0, suffixNewline)
+	let prefixLineTail: string, normalizedPrefix: string, suffixLineHead: string, normalizedSuffix: string
+	if (prefixNewlineIndex === -1) {
+		prefixLineTail = prefix
+		normalizedPrefix = ""
+	} else {
+		prefixLineTail = prefix.slice(prefixNewlineIndex + 1)
+		normalizedPrefix = prefix.slice(0, prefixNewlineIndex + 1)
+	}
 
-	// Already aligned to line boundaries.
+	if (suffixNewlineIndex === -1) {
+		suffixLineHead = suffix
+		normalizedSuffix = ""
+	} else {
+		suffixLineHead = suffix.slice(0, suffixNewlineIndex)
+		normalizedSuffix = suffix.slice(suffixNewlineIndex)
+	}
+
 	if (prefixLineTail.length === 0 && suffixLineHead.length === 0) {
 		return null
 	}
 
-	const suggestionNewline = suggestion.indexOf("\n")
-	const suggestionFirstLine = suggestionNewline === -1 ? suggestion : suggestion.slice(0, suggestionNewline)
-
 	return {
-		normalizedPrefix: prefixNewline === -1 ? "" : prefix.slice(0, prefixNewline + 1),
-		completedLine: prefixLineTail + suggestionFirstLine + suffixLineHead,
-		normalizedSuffix: suffixNewline === -1 ? "" : suffix.slice(suffixNewline),
+		normalizedPrefix,
+		completedLine: prefixLineTail + suggestion + suffixLineHead,
+		normalizedSuffix,
 	}
 }
 
