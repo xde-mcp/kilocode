@@ -51,32 +51,30 @@ function normalizeToCompleteLine(params: AutocompleteSuggestion): AutocompleteSu
 	const prefixNewlineIndex = params.prefix.lastIndexOf("\n")
 	const suffixNewlineIndex = params.suffix.indexOf("\n")
 
-	let prefixLineTail: string, normalizedPrefix: string, suffixLineHead: string, normalizedSuffix: string
+	let prefixLineTail: string, prefix: string, suffixLineHead: string, suffix: string
 	if (prefixNewlineIndex === -1) {
 		prefixLineTail = params.prefix
-		normalizedPrefix = ""
+		prefix = ""
 	} else {
 		prefixLineTail = params.prefix.slice(prefixNewlineIndex + 1)
-		normalizedPrefix = params.prefix.slice(0, prefixNewlineIndex + 1)
+		prefix = params.prefix.slice(0, prefixNewlineIndex + 1)
 	}
 
 	if (suffixNewlineIndex === -1) {
 		suffixLineHead = params.suffix
-		normalizedSuffix = ""
+		suffix = ""
 	} else {
 		suffixLineHead = params.suffix.slice(0, suffixNewlineIndex)
-		normalizedSuffix = params.suffix.slice(suffixNewlineIndex)
+		suffix = params.suffix.slice(suffixNewlineIndex)
 	}
 
 	if (prefixLineTail.length === 0 && suffixLineHead.length === 0) {
 		return null
 	}
 
-	return {
-		prefix: normalizedPrefix,
-		suggestion: prefixLineTail + params.suggestion + suffixLineHead,
-		suffix: normalizedSuffix,
-	}
+	const suggestion = prefixLineTail + params.suggestion + suffixLineHead
+
+	return { prefix, suggestion, suffix }
 }
 
 /**
