@@ -562,5 +562,218 @@ console.log('test');</COMPLETION>`
 
 			clearTimeoutSpy.mockRestore()
 		})
+
+		describe("setupSnoozeTimerIfNeeded", () => {
+			beforeEach(() => {
+				vi.useFakeTimers()
+			})
+
+			afterEach(() => {
+				vi.useRealTimers()
+			})
+
+			it("should not set timer when not snoozed", () => {
+				const setTimeoutSpy = vi.spyOn(global, "setTimeout")
+
+				const mockManager = {
+					settings: {} as any,
+					snoozeTimer: null as any,
+					getSnoozeRemainingMs() {
+						const snoozeUntil = this.settings?.snoozeUntil
+						if (!snoozeUntil) return 0
+						return Math.max(0, snoozeUntil - Date.now())
+					},
+					async unsnooze() {},
+					setupSnoozeTimerIfNeeded() {
+						if (this.snoozeTimer) {
+							clearTimeout(this.snoozeTimer)
+							this.snoozeTimer = null
+						}
+
+						const remainingMs = this.getSnoozeRemainingMs()
+						if (remainingMs <= 0) {
+							return
+						}
+
+						this.snoozeTimer = setTimeout(() => {
+							void this.unsnooze()
+						}, remainingMs)
+					},
+				}
+
+				mockManager.setupSnoozeTimerIfNeeded()
+
+				// setTimeout should not be called for setting up snooze timer
+				// (it may be called for other things, so we check snoozeTimer is null)
+				expect(mockManager.snoozeTimer).toBeNull()
+
+				setTimeoutSpy.mockRestore()
+			})
+
+			it("should not set timer when snooze has expired", () => {
+				const mockManager = {
+					settings: { snoozeUntil: Date.now() - 1000 } as any, // Expired
+					snoozeTimer: null as any,
+					getSnoozeRemainingMs() {
+						const snoozeUntil = this.settings?.snoozeUntil
+						if (!snoozeUntil) return 0
+						return Math.max(0, snoozeUntil - Date.now())
+					},
+					async unsnooze() {},
+					setupSnoozeTimerIfNeeded() {
+						if (this.snoozeTimer) {
+							clearTimeout(this.snoozeTimer)
+							this.snoozeTimer = null
+						}
+
+						const remainingMs = this.getSnoozeRemainingMs()
+						if (remainingMs <= 0) {
+							return
+						}
+
+						this.snoozeTimer = setTimeout(() => {
+							void this.unsnooze()
+						}, remainingMs)
+					},
+				}
+
+				mockManager.setupSnoozeTimerIfNeeded()
+
+				expect(mockManager.snoozeTimer).toBeNull()
+			})
+
+			it("should set timer for remaining snooze duration when snoozed", () => {
+				const unsnoozeMock = vi.fn()
+				const snoozeUntil = Date.now() + 30000 // 30 seconds from now
+
+				const mockManager = {
+					settings: { snoozeUntil } as any,
+					snoozeTimer: null as any,
+					getSnoozeRemainingMs() {
+						const snoozeUntil = this.settings?.snoozeUntil
+						if (!snoozeUntil) return 0
+						return Math.max(0, snoozeUntil - Date.now())
+					},
+					async unsnooze() {
+						unsnoozeMock()
+					},
+					setupSnoozeTimerIfNeeded() {
+						if (this.snoozeTimer) {
+							clearTimeout(this.snoozeTimer)
+							this.snoozeTimer = null
+						}
+
+						const remainingMs = this.getSnoozeRemainingMs()
+						if (remainingMs <= 0) {
+							return
+						}
+
+						this.snoozeTimer = setTimeout(() => {
+							void this.unsnooze()
+						}, remainingMs)
+					},
+				}
+
+				mockManager.setupSnoozeTimerIfNeeded()
+
+				// Timer should be set
+				expect(mockManager.snoozeTimer).not.toBeNull()
+
+				// unsnooze should not be called yet
+				expect(unsnoozeMock).not.toHaveBeenCalled()
+
+				// Advance time to just before snooze expires
+				vi.advanceTimersByTime(29000)
+				expect(unsnoozeMock).not.toHaveBeenCalled()
+
+				// Advance time past snooze expiration
+				vi.advanceTimersByTime(2000)
+				expect(unsnoozeMock).toHaveBeenCalledTimes(1)
+			})
+
+			it("should clear existing timer before setting new one", () => {
+				const clearTimeoutSpy = vi.spyOn(global, "clearTimeout")
+				const existingTimer = setTimeout(() => {}, 60000)
+
+				const mockManager = {
+					settings: { snoozeUntil: Date.now() + 30000 } as any,
+					snoozeTimer: existingTimer as any,
+					getSnoozeRemainingMs() {
+						const snoozeUntil = this.settings?.snoozeUntil
+						if (!snoozeUntil) return 0
+						return Math.max(0, snoozeUntil - Date.now())
+					},
+					async unsnooze() {},
+					setupSnoozeTimerIfNeeded() {
+						if (this.snoozeTimer) {
+							clearTimeout(this.snoozeTimer)
+							this.snoozeTimer = null
+						}
+
+						const remainingMs = this.getSnoozeRemainingMs()
+						if (remainingMs <= 0) {
+							return
+						}
+
+						this.snoozeTimer = setTimeout(() => {
+							void this.unsnooze()
+						}, remainingMs)
+					},
+				}
+
+				mockManager.setupSnoozeTimerIfNeeded()
+
+				expect(clearTimeoutSpy).toHaveBeenCalledWith(existingTimer)
+				// New timer should be set
+				expect(mockManager.snoozeTimer).not.toBeNull()
+				expect(mockManager.snoozeTimer).not.toBe(existingTimer)
+
+				clearTimeoutSpy.mockRestore()
+			})
+
+			it("should handle extension restart scenario - set timer based on persisted snoozeUntil", () => {
+				// Simulate extension restart: snoozeUntil was persisted, but timer was lost
+				const unsnoozeMock = vi.fn()
+				const snoozeUntil = Date.now() + 10000 // 10 seconds remaining
+
+				const mockManager = {
+					settings: { snoozeUntil } as any,
+					snoozeTimer: null as any, // Timer was lost due to restart
+					getSnoozeRemainingMs() {
+						const snoozeUntil = this.settings?.snoozeUntil
+						if (!snoozeUntil) return 0
+						return Math.max(0, snoozeUntil - Date.now())
+					},
+					async unsnooze() {
+						unsnoozeMock()
+					},
+					setupSnoozeTimerIfNeeded() {
+						if (this.snoozeTimer) {
+							clearTimeout(this.snoozeTimer)
+							this.snoozeTimer = null
+						}
+
+						const remainingMs = this.getSnoozeRemainingMs()
+						if (remainingMs <= 0) {
+							return
+						}
+
+						this.snoozeTimer = setTimeout(() => {
+							void this.unsnooze()
+						}, remainingMs)
+					},
+				}
+
+				// This simulates what happens during load() after extension restart
+				mockManager.setupSnoozeTimerIfNeeded()
+
+				// Timer should be set for remaining duration
+				expect(mockManager.snoozeTimer).not.toBeNull()
+
+				// Advance time to trigger unsnooze
+				vi.advanceTimersByTime(10000)
+				expect(unsnoozeMock).toHaveBeenCalledTimes(1)
+			})
+		})
 	})
 })

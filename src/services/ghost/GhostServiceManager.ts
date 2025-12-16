@@ -84,6 +84,7 @@ export class GhostServiceManager {
 		await this.updateGlobalContext()
 		this.updateStatusBar()
 		await this.updateInlineCompletionProviderRegistration()
+		this.setupSnoozeTimerIfNeeded()
 		const settingsWithModelInfo = {
 			...this.settings,
 			provider: this.getCurrentProviderName(),
@@ -193,6 +194,39 @@ export class GhostServiceManager {
 		})
 
 		await this.load()
+	}
+
+	/**
+	 * Set up a timer to auto-unsnooze if we're currently in a snoozed state.
+	 * This handles the case where the extension restarts while snoozed -
+	 * the persisted snoozeUntil timestamp keeps autocomplete disabled,
+	 * and this timer ensures we unsnooze at the correct time.
+	 */
+	private setupSnoozeTimerIfNeeded(): void {
+		// Clear any existing snooze timer first
+		if (this.snoozeTimer) {
+			clearTimeout(this.snoozeTimer)
+			this.snoozeTimer = null
+		}
+
+		const remainingMs = this.getSnoozeRemainingMs()
+		if (remainingMs <= 0) {
+			return
+		}
+
+		// Set timer to automatically unsnooze when the snooze period expires
+		this.snoozeTimer = setTimeout(() => {
+			void this.unsnooze()
+		}, remainingMs)
+	}
+
+	/**
+	 * Get remaining snooze time in milliseconds
+	 */
+	private getSnoozeRemainingMs(): number {
+		const snoozeUntil = this.settings?.snoozeUntil
+		if (!snoozeUntil) return 0
+		return Math.max(0, snoozeUntil - Date.now())
 	}
 
 	public async codeSuggestion() {
