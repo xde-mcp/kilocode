@@ -195,4 +195,48 @@ describe("suggestionConsideredDuplication", () => {
 		expect(isDuplication("const greeting = 你好<<<你好>>>")).toBe(true)
 		expect(isDuplication("launch<<<🚀>>>🌟")).toBe(false)
 	})
+
+	it("treats as duplication when completed line equals the last complete line in prefix", () => {
+		// The suggestion completes the current line to match the previous line
+		expect(
+			isDuplication(`
+doStuff()
+
+console.info('logging some stuff')
+console.info<<<('logging some stuff')>>>
+
+if (foo) {`),
+		).toBe(true)
+
+		expect(
+			isDuplication(`
+doStuff()
+
+console.info<<<('logging some stuff')>>>
+console.info('logging some stuff')
+
+if (foo) {`),
+		).toBe(true)
+
+		// Different variations - exact match with same spacing
+		expect(
+			isDuplication(`const x = 1
+const x <<<= 1>>>
+`),
+		).toBe(true)
+
+		// Should NOT be duplication when the completed line is different
+		expect(
+			isDuplication(`
+doStuff()
+
+console.info('logging some stuff')
+console.info<<<('logging different stuff')>>>
+
+if (foo) {`),
+		).toBe(false)
+
+		// Should NOT be duplication when there's no previous complete line
+		expect(isDuplication(`console.info<<<('logging some stuff')>>>`)).toBe(false)
+	})
 })
