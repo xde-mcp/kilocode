@@ -1,9 +1,9 @@
 ---
 sidebar_position: 3
-title: "Spec: Annual Billing"
+title: "Annual Billing"
 ---
 
-# SPEC: Annual Billing
+# Annual Billing
 
 # Overview
 
