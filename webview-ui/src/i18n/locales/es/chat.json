@@ -340,12 +340,8 @@
 			"description": "Los agentes trabajan juntos en la nube y se pueden activar desde la web o mediante Slack.",
 			"tryButton": "Prueba los Agentes en la Nube"
 		},
-<<<<<<< HEAD
 		"careers": "Además, <careersLink>¡estamos contratando!</careersLink>",
 		"socialLinks": "Únete a nosotros en <xLink>X</xLink>, <discordLink>Discord</discordLink>, o <redditLink>r/KiloCode</redditLink> 🚀"
-=======
-		"careers": "Además, <careersLink>¡estamos contratando!</careersLink>"
->>>>>>> upstream-at-v3.36.6
 	},
 	"browser": {
 		"session": "Sesión del navegador",

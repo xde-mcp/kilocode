@@ -340,12 +340,8 @@
 			"description": "Die Agenten arbeiten zusammen in der Cloud und können vom Web oder über Slack ausgelöst werden.",
 			"tryButton": "Probiere Cloud-Agenten aus"
 		},
-<<<<<<< HEAD
 		"careers": "Außerdem, <careersLink>wir stellen ein!</careersLink>",
 		"socialLinks": "Folge uns auf <xLink>X</xLink>, <discordLink>Discord</discordLink> oder <redditLink>r/KiloCode</redditLink> 🚀"
-=======
-		"careers": "Außerdem, <careersLink>wir stellen ein!</careersLink>"
->>>>>>> upstream-at-v3.36.6
 	},
 	"browser": {
 		"session": "Browser-Sitzung",

@@ -347,12 +347,8 @@
 			"description": "The agents work together in the cloud and can be triggered from the web or through Slack.",
 			"tryButton": "Try Cloud Agents"
 		},
-<<<<<<< HEAD
 		"careers": "Also, <careersLink>we're hiring!</careersLink>",
 		"socialLinks": "Join us on <xLink>X</xLink>, <discordLink>Discord</discordLink>, or <redditLink>r/KiloCode</redditLink> 🚀"
-=======
-		"careers": "Also, <careersLink>we're hiring!</careersLink>"
->>>>>>> upstream-at-v3.36.6
 	},
 	"reasoning": {
 		"thinking": "Thinking",
