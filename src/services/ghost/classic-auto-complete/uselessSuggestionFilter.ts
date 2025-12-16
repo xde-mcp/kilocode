@@ -35,32 +35,22 @@ function checkDuplication(params: AutocompleteSuggestion): boolean {
  */
 function normalizeToCompleteLine(params: AutocompleteSuggestion): AutocompleteSuggestion | null {
 	const prefixNewlineIndex = params.prefix.lastIndexOf("\n")
+	const prefix = prefixNewlineIndex === -1 ? "" : params.prefix.slice(0, prefixNewlineIndex + 1)
+	const prefixLineTail = prefixNewlineIndex === -1 ? params.prefix : params.prefix.slice(prefixNewlineIndex + 1)
+
 	const suffixNewlineIndex = params.suffix.indexOf("\n")
-
-	let prefixLineTail: string, prefix: string, suffixLineHead: string, suffix: string
-	if (prefixNewlineIndex === -1) {
-		prefixLineTail = params.prefix
-		prefix = ""
-	} else {
-		prefixLineTail = params.prefix.slice(prefixNewlineIndex + 1)
-		prefix = params.prefix.slice(0, prefixNewlineIndex + 1)
-	}
-
-	if (suffixNewlineIndex === -1) {
-		suffixLineHead = params.suffix
-		suffix = ""
-	} else {
-		suffixLineHead = params.suffix.slice(0, suffixNewlineIndex)
-		suffix = params.suffix.slice(suffixNewlineIndex)
-	}
+	const suffixLineHead = suffixNewlineIndex === -1 ? params.suffix : params.suffix.slice(0, suffixNewlineIndex)
+	const suffix = suffixNewlineIndex === -1 ? "" : params.suffix.slice(suffixNewlineIndex)
 
 	if (prefixLineTail.length === 0 && suffixLineHead.length === 0) {
 		return null
 	}
 
-	const suggestion = prefixLineTail + params.suggestion + suffixLineHead
-
-	return { prefix, suggestion, suffix }
+	return {
+		prefix,
+		suggestion: prefixLineTail + params.suggestion + suffixLineHead,
+		suffix,
+	}
 }
 
 /**
