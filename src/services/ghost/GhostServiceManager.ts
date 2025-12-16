@@ -36,6 +36,10 @@ export class GhostServiceManager {
 	private inlineCompletionProviderDisposable: vscode.Disposable | null = null
 
 	constructor(context: vscode.ExtensionContext, cline: ClineProvider) {
+		if (GhostServiceManager._instance) {
+			throw new Error("GhostServiceManager is a singleton. Use GhostServiceManager.getInstance() instead.")
+		}
+
 		this.context = context
 		this.cline = cline
 		GhostServiceManager._instance = this
