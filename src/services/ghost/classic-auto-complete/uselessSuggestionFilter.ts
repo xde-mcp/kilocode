@@ -7,17 +7,17 @@ export type AutocompleteSuggestion = {
 }
 
 export function suggestionConsideredDuplication(params: AutocompleteSuggestion): boolean {
-	if (checkDuplication(params)) {
+	if (DuplicatesFromPrefixOrSuffix(params)) {
 		return true
 	}
 
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
 	const normalized = normalizeToCompleteLine(params)
-	return !!normalized && checkDuplication(normalized)
+	return !!normalized && DuplicatesFromPrefixOrSuffix(normalized)
 }
 
-function checkDuplication(params: AutocompleteSuggestion): boolean {
+function DuplicatesFromPrefixOrSuffix(params: AutocompleteSuggestion): boolean {
 	const trimmed = params.suggestion.trim()
 
 	return (
