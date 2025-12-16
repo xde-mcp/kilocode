@@ -11,6 +11,26 @@ export function suggestionConsideredDuplication(params: SuggestionConsideredDupl
 
 	const { processed, prefix, suffix } = params
 
+	// First check with original params
+	if (checkDuplication(processed, prefix, suffix)) {
+		return true
+	}
+
+	// When the suggestion isn't a full line or set of lines, normalize by including
+	// the rest of the line in the prefix/suffix and check with the completed line(s)
+	const normalized = normalizeToCompleteLine(prefix, processed, suffix)
+	if (normalized) {
+		return checkDuplication(normalized.completedLine, normalized.normalizedPrefix, normalized.normalizedSuffix)
+	}
+
+	return false
+}
+
+/**
+ * Core duplication check logic - checks if the processed suggestion is a duplication
+ * based on prefix/suffix matching.
+ */
+function checkDuplication(processed: string, prefix: string, suffix: string): boolean {
 	const trimmed = processed.trim()
 
 	if (trimmed.length === 0) {
@@ -25,17 +45,6 @@ export function suggestionConsideredDuplication(params: SuggestionConsideredDupl
 	const trimmedSuffix = suffix.trimStart()
 	if (trimmedSuffix.startsWith(trimmed)) {
 		return true
-	}
-
-	// When the suggestion isn't a full line or set of lines, normalize by including
-	// the rest of the line in the prefix/suffix and check recursively with the completed line(s)
-	const normalized = normalizeToCompleteLine(prefix, processed, suffix)
-	if (normalized) {
-		return suggestionConsideredDuplication({
-			processed: normalized.completedLine,
-			prefix: normalized.normalizedPrefix,
-			suffix: normalized.normalizedSuffix,
-		})
 	}
 
 	return false
