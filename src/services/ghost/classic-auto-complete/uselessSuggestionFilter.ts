@@ -13,7 +13,7 @@ export function suggestionConsideredDuplication(params: AutocompleteSuggestion):
 
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
-	const normalized = normalizeToCompleteLine(params.prefix, params.suggestion, params.suffix)
+	const normalized = normalizeToCompleteLine(params)
 	if (normalized) {
 		return checkDuplication(normalized)
 	}
@@ -47,25 +47,25 @@ function checkDuplication(params: AutocompleteSuggestion): boolean {
  *
  * Returns null when the suggestion already starts/ends on line boundaries.
  */
-function normalizeToCompleteLine(prefix: string, suggestion: string, suffix: string): AutocompleteSuggestion | null {
-	const prefixNewlineIndex = prefix.lastIndexOf("\n")
-	const suffixNewlineIndex = suffix.indexOf("\n")
+function normalizeToCompleteLine(params: AutocompleteSuggestion): AutocompleteSuggestion | null {
+	const prefixNewlineIndex = params.prefix.lastIndexOf("\n")
+	const suffixNewlineIndex = params.suffix.indexOf("\n")
 
 	let prefixLineTail: string, normalizedPrefix: string, suffixLineHead: string, normalizedSuffix: string
 	if (prefixNewlineIndex === -1) {
-		prefixLineTail = prefix
+		prefixLineTail = params.prefix
 		normalizedPrefix = ""
 	} else {
-		prefixLineTail = prefix.slice(prefixNewlineIndex + 1)
-		normalizedPrefix = prefix.slice(0, prefixNewlineIndex + 1)
+		prefixLineTail = params.prefix.slice(prefixNewlineIndex + 1)
+		normalizedPrefix = params.prefix.slice(0, prefixNewlineIndex + 1)
 	}
 
 	if (suffixNewlineIndex === -1) {
-		suffixLineHead = suffix
+		suffixLineHead = params.suffix
 		normalizedSuffix = ""
 	} else {
-		suffixLineHead = suffix.slice(0, suffixNewlineIndex)
-		normalizedSuffix = suffix.slice(suffixNewlineIndex)
+		suffixLineHead = params.suffix.slice(0, suffixNewlineIndex)
+		normalizedSuffix = params.suffix.slice(suffixNewlineIndex)
 	}
 
 	if (prefixLineTail.length === 0 && suffixLineHead.length === 0) {
@@ -74,7 +74,7 @@ function normalizeToCompleteLine(prefix: string, suggestion: string, suffix: str
 
 	return {
 		prefix: normalizedPrefix,
-		suggestion: prefixLineTail + suggestion + suffixLineHead,
+		suggestion: prefixLineTail + params.suggestion + suffixLineHead,
 		suffix: normalizedSuffix,
 	}
 }
