@@ -14,11 +14,7 @@ export function suggestionConsideredDuplication(params: AutocompleteSuggestion):
 	// When the suggestion isn't a full line or set of lines, normalize by including
 	// the rest of the line in the prefix/suffix and check with the completed line(s)
 	const normalized = normalizeToCompleteLine(params)
-	if (normalized) {
-		return checkDuplication(normalized)
-	}
-
-	return false
+	return !!normalized && checkDuplication(normalized)
 }
 
 function checkDuplication(params: AutocompleteSuggestion): boolean {
