@@ -9,7 +9,7 @@ Engineering specs are technical documents that describe how we plan to implement
 
 ## Why Write Specs?
 
-As the company gets bigger and adoption, it's important to evolve how we work together. There are more teams and more stakeholders than ever, and with that, more opportunities for mis-communication and untimely disagreements.
+As the company gets bigger and gains adoption, it's important to evolve how we work together. There are more teams and more stakeholders than ever, and with that, more opportunities for mis-communication and untimely disagreements.
 
 Writing specs for reasonably complicated projects has many benefits:
 

@@ -202,7 +202,6 @@ const sidebars: SidebarsConfig = {
 					label: "Engineering Specs",
 					items: [
 						"contributing/specs/index",
-						"contributing/specs/why-specs",
 						"contributing/specs/spec-template",
 						"contributing/specs/spec-enterprise-mcp-controls",
 						"contributing/specs/spec-onboarding-engagement-improvements",
