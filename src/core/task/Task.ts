@@ -952,15 +952,21 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			})
 
 			// kilocode_change start
-			// Post directly to webview for CLI to react to file save
-			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
-			const filePath = path.join(taskDir, GlobalFileNames.apiConversationHistory)
-			const provider = this.providerRef.deref()
-			if (provider) {
-				await provider.postMessageToWebview({
-					type: "apiMessagesSaved",
-					payload: [this.taskId, filePath],
-				})
+			// Post directly to webview for CLI to react to file save.
+			// This must not prevent saving history or emitting usage events if
+			// storage is unavailable (e.g., during unit tests).
+			try {
+				const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+				const filePath = path.join(taskDir, GlobalFileNames.apiConversationHistory)
+				const provider = this.providerRef.deref()
+				if (provider) {
+					await provider.postMessageToWebview({
+						type: "apiMessagesSaved",
+						payload: [this.taskId, filePath],
+					})
+				}
+			} catch (error) {
+				console.warn("Failed to notify webview about saved API messages:", error)
 			}
 			// kilocode_change end
 		} catch (error) {
@@ -1039,15 +1045,21 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			})
 
 			// kilocode_change start
-			// Post directly to webview for CLI to react to file save
-			const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
-			const filePath = path.join(taskDir, GlobalFileNames.uiMessages)
-			const provider = this.providerRef.deref()
-			if (provider) {
-				await provider.postMessageToWebview({
-					type: "taskMessagesSaved",
-					payload: [this.taskId, filePath],
-				})
+			// Post directly to webview for CLI to react to file save.
+			// Keep this isolated so filesystem issues don't prevent token usage
+			// updates (important for unit tests and degraded environments).
+			try {
+				const taskDir = await getTaskDirectoryPath(this.globalStoragePath, this.taskId)
+				const filePath = path.join(taskDir, GlobalFileNames.uiMessages)
+				const provider = this.providerRef.deref()
+				if (provider) {
+					await provider.postMessageToWebview({
+						type: "taskMessagesSaved",
+						payload: [this.taskId, filePath],
+					})
+				}
+			} catch (error) {
+				console.warn("Failed to notify webview about saved task messages:", error)
 			}
 			// kilocode_change end
 
