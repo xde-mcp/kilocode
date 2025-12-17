@@ -24,7 +24,7 @@ Setting Up the Development Environment is described in details on the [Developme
 
 ## Understanding the Architecture
 
-Before diving into the code, we recommend reviewing the [Architecture Overview](/contributing/architecture/architecture) to understand how the different components of Kilo Code fit together.
+Before diving into the code, we recommend reviewing the [Architecture Overview](architecture/architecture) to understand how the different components of Kilo Code fit together.
 
 ## Development Workflow
 
