@@ -29,7 +29,6 @@ interface PendingProcessInfo {
 	prompt: string
 	startTime: number
 	parallelMode?: boolean
-	autoMode?: boolean // True if session was started with --auto flag
 	desiredSessionId?: string
 	desiredLabel?: string
 	worktreeBranch?: string // Captured from welcome event before session_created
@@ -109,7 +108,6 @@ export class CliProcessHandler {
 		options:
 			| {
 					parallelMode?: boolean
-					autoMode?: boolean
 					sessionId?: string
 					label?: string
 					gitUrl?: string
@@ -142,7 +140,6 @@ export class CliProcessHandler {
 			// New session - create pending session state
 			const pendingSession = this.registry.setPendingSession(prompt, {
 				parallelMode: options?.parallelMode,
-				autoMode: options?.autoMode,
 				gitUrl: options?.gitUrl,
 			})
 			this.debugLog(`Pending session created, waiting for CLI session_created event`)
@@ -152,7 +149,6 @@ export class CliProcessHandler {
 		// Build CLI command
 		const cliArgs = buildCliArgs(workspace, prompt, {
 			parallelMode: options?.parallelMode,
-			autoMode: options?.autoMode,
 			sessionId: options?.sessionId,
 			existingBranch: options?.existingBranch,
 		})
@@ -203,7 +199,6 @@ export class CliProcessHandler {
 				prompt,
 				startTime: Date.now(),
 				parallelMode: options?.parallelMode,
-				autoMode: options?.autoMode,
 				desiredSessionId: options?.sessionId,
 				desiredLabel: options?.label,
 				gitUrl: options?.gitUrl,
@@ -433,7 +428,6 @@ export class CliProcessHandler {
 			startTime,
 			parser,
 			parallelMode,
-			autoMode,
 			worktreeBranch,
 			desiredSessionId,
 			desiredLabel,
@@ -457,7 +451,6 @@ export class CliProcessHandler {
 			// Create new session (also sets selectedId)
 			session = this.registry.createSession(sessionId, prompt, startTime, {
 				parallelMode,
-				autoMode,
 				labelOverride: desiredLabel,
 				gitUrl,
 			})
@@ -534,11 +527,28 @@ export class CliProcessHandler {
 		// Clean up
 		this.activeSessions.delete(sessionId)
 
+		// Exit code handling (matching cloud-agent backend behavior):
+		// - 0: Success
+		// - 124: CLI timeout exceeded
+		// - 130 (128+2): SIGINT - user interrupted
+		// - 137 (128+9): SIGKILL - force killed
+		// - 143 (128+15): SIGTERM - terminated
+		// - Other non-zero: Error
+		const INTERRUPTED_EXIT_CODES = [130, 137, 143]
+		const TIMEOUT_EXIT_CODE = 124
+
 		if (code === 0) {
 			this.registry.updateSessionStatus(sessionId, "done", code)
 			this.callbacks.onSessionLog(sessionId, "Agent completed")
 			// Notify that session completed successfully (for state machine transition)
 			this.callbacks.onSessionCompleted?.(sessionId, code)
+		} else if (code === TIMEOUT_EXIT_CODE) {
+			this.registry.updateSessionStatus(sessionId, "error", code, "CLI timeout exceeded")
+			this.callbacks.onSessionLog(sessionId, "Agent timed out")
+		} else if (code !== null && INTERRUPTED_EXIT_CODES.includes(code)) {
+			// User or system interrupted - not an error, just stopped
+			this.registry.updateSessionStatus(sessionId, "stopped", code)
+			this.callbacks.onSessionLog(sessionId, "Agent was interrupted")
 		} else {
 			this.registry.updateSessionStatus(sessionId, "error", code ?? undefined)
 			this.callbacks.onSessionLog(
