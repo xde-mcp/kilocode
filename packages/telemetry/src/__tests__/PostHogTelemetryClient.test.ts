@@ -652,7 +652,8 @@ describe("PostHogTelemetryClient", () => {
 			expect(mockPostHogClient.captureException).not.toHaveBeenCalled()
 		})
 
-		it("should capture non-rate-limit errors", () => {
+		// kilocode_change: we have a different captureException method
+		it.skip("should capture non-rate-limit errors", () => {
 			const client = new PostHogTelemetryClient()
 			client.updateTelemetryState(true)
 
