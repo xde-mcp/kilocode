@@ -14,7 +14,7 @@ import {
 	Users2,
 } from "lucide-react"
 import type { Metadata } from "next"
-import Image from "next/image"
+// import Image from "next/image"
 
 import { Button } from "@/components/ui"
 import { AnimatedBackground, UseExamplesSection } from "@/components/homepage"
@@ -22,7 +22,7 @@ import { SEO } from "@/lib/seo"
 import { ogImageUrl } from "@/lib/og"
 import { EXTERNAL_LINKS } from "@/lib/constants"
 // Workaround for next/image choking on these for some reason
-import screenshotDark from "/public/heroes/cloud-screen.png"
+// import screenshotDark from "/public/heroes/cloud-screen.png"
 
 const TITLE = "Roo Code Cloud"
 const DESCRIPTION =
@@ -179,16 +179,7 @@ export default function CloudPage() {
 					</div>
 
 					{/* Screenshot */}
-					<div className="relative mx-auto mt-4 md:max-w-[1000px]">
-						<Image
-							src={screenshotDark}
-							alt="Roo Code Cloud Interface"
-							className="w-full h-auto"
-							width={1390}
-							height={1012}
-							priority
-						/>
-					</div>
+					<div className="relative mx-auto mt-4 md:max-w-[1000px]"></div>
 				</div>
 			</section>
 
