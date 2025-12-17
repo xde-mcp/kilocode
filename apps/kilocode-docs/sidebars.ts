@@ -212,7 +212,7 @@ const sidebars: SidebarsConfig = {
 					type: "category",
 					label: "Architecture",
 					items: [
-						"contributing/architecture/architecture",
+						"contributing/architecture/index",
 						"contributing/architecture/annual-billing",
 						"contributing/architecture/enterprise-mcp-controls",
 						"contributing/architecture/onboarding-engagement-improvements",
