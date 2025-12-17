@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
-import { type ModelInfo } from "@roo-code/types"
+import type { ModelInfo } from "@roo-code/types"
 
 import { type ApiHandlerOptions, getModelMaxOutputTokens } from "../../shared/api"
 import { XmlMatcher } from "../../utils/xml-matcher"
@@ -135,15 +135,10 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				}) as const,
 		)
 
-		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 		let lastUsage: OpenAI.CompletionUsage | undefined
 
 		for await (const chunk of stream) {
 			verifyFinishReason(chunk.choices?.[0]) // kilocode_change
-
-			const delta = chunk.choices?.[0]?.delta
-
-			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 			// Check for provider-specific error responses (e.g., MiniMax base_resp)
 			const chunkAny = chunk as any
@@ -152,6 +147,8 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 					`${this.providerName} API Error (${chunkAny.base_resp.status_code}): ${chunkAny.base_resp.status_msg || "Unknown error"}`,
 				)
 			}
+
+			const delta = chunk.choices?.[0]?.delta
 
 			if (delta?.content) {
 				for (const processedChunk of matcher.update(delta.content)) {

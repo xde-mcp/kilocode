@@ -96,6 +96,7 @@ import { Task } from "../task/Task"
 import { getSystemPromptFilePath } from "../prompts/sections/custom-system-prompt"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
+import { checkSpeechToTextAvailable } from "./speechToTextCheck" // kilocode_change
 import type { ClineMessage, TodoItem } from "@roo-code/types"
 import { readApiMessages, saveApiMessages, saveTaskMessages } from "../task-persistence"
 import { readTaskMessages } from "../task-persistence/taskMessages"
@@ -229,7 +230,7 @@ export class ClineProvider
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
 			const onTaskCompleted = (taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage) => {
 				kilo_execIfExtension(() => {
-					SessionManager.init().doSync(true)
+					SessionManager.init()?.doSync(true)
 				})
 
 				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage) // kilocode_change: return
@@ -1154,17 +1155,17 @@ ${prompt}
 			if (message.type === "apiMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
+				SessionManager.init()?.handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
 			} else if (message.type === "taskMessagesSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
+				SessionManager.init()?.handleFileUpdate(taskId, "uiMessagesPath", filePath)
 			} else if (message.type === "taskMetadataSaved" && message.payload) {
 				const [taskId, filePath] = message.payload as [string, string]
 
-				SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
+				SessionManager.init()?.handleFileUpdate(taskId, "taskMetadataPath", filePath)
 			} else if (message.type === "currentCheckpointUpdated") {
-				SessionManager.init().doSync()
+				SessionManager.init()?.doSync()
 			}
 		})
 
@@ -1948,7 +1949,7 @@ ${prompt}
 
 		await kilo_execIfExtension(() => {
 			if (this.currentWorkspacePath) {
-				SessionManager.init().setWorkspaceDirectory(this.currentWorkspacePath)
+				SessionManager.init()?.setWorkspaceDirectory(this.currentWorkspacePath)
 			}
 		})
 
@@ -2214,11 +2215,12 @@ ${prompt}
 				: undefined
 		// kilocode_change end
 
-		// kilocode_change start - checkSpeechToTextAvailable (backend prerequisites only, experiment flag checked in frontend)
-		console.log("🎙️ [ClineProvider] Checking speech-to-text availability for webview state update...")
-		const { checkSpeechToTextAvailable } = await import("./speechToTextCheck")
-		const speechToTextAvailable = await checkSpeechToTextAvailable(this.providerSettingsManager)
-		console.log(`🎙️ [ClineProvider] Speech-to-text available: ${speechToTextAvailable}`)
+		// kilocode_change start - checkSpeechToTextAvailable (only when experiment enabled)
+		let speechToTextStatus: { available: boolean; reason?: "openaiKeyMissing" | "ffmpegNotInstalled" } | undefined =
+			undefined
+		if (experiments?.speechToText) {
+			speechToTextStatus = await checkSpeechToTextAvailable(this.providerSettingsManager)
+		}
 		// kilocode_change end - checkSpeechToTextAvailable
 
 		let cloudOrganizations: CloudOrganizationMembership[] = []
@@ -2445,7 +2447,7 @@ ${prompt}
 			featureRoomoteControlEnabled,
 			virtualQuotaActiveModel, // kilocode_change: Include virtual quota active model in state
 			debug: vscode.workspace.getConfiguration(Package.name).get<boolean>("debug", false),
-			speechToTextAvailable, // kilocode_change: Whether speech-to-text is fully configured
+			speechToTextStatus, // kilocode_change: Speech-to-text availability status with failure reason
 		}
 	}
 

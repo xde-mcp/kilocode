@@ -87,6 +87,7 @@ import {
 	fetchKilocodeNotificationsHandler,
 	deviceAuthMessageHandler,
 } from "../kilocode/webview/webviewMessageHandlerUtils"
+import { GhostServiceManager } from "../../services/ghost/GhostServiceManager"
 // kilocode_change end
 
 const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
@@ -1890,6 +1891,13 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("ghostServiceSettings", ghostServiceSettings)
 			await provider.postStateToWebview()
 			vscode.commands.executeCommand("kilo-code.ghost.reload")
+			break
+		case "snoozeAutocomplete":
+			if (typeof message.value === "number" && message.value > 0) {
+				await GhostServiceManager.getInstance()?.snooze(message.value)
+			} else {
+				await GhostServiceManager.getInstance()?.unsnooze()
+			}
 			break
 		// kilocode_change end
 		// kilocode_change start: AI gatekeeper for YOLO mode
@@ -4017,7 +4025,7 @@ export const webviewMessageHandler = async (
 			try {
 				const sessionService = SessionManager.init()
 
-				if (!sessionService.sessionId) {
+				if (!sessionService?.sessionId) {
 					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
 					break
 				}
@@ -4033,14 +4041,18 @@ export const webviewMessageHandler = async (
 			try {
 				const sessionService = SessionManager.init()
 
-				const sessionId = message.sessionId || sessionService.sessionId
+				const sessionId = message.sessionId || sessionService?.sessionId
 
 				if (!sessionId) {
 					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
 					break
 				}
 
-				const result = await sessionService.shareSession(sessionId)
+				const result = await sessionService?.shareSession(sessionId)
+
+				if (!result) {
+					throw new Error("SessionManager not initialized")
+				}
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
@@ -4065,9 +4077,13 @@ export const webviewMessageHandler = async (
 				const taskId = message.text
 				const sessionService = SessionManager.init()
 
-				const sessionId = await sessionService.getSessionFromTask(taskId, provider)
+				const sessionId = await sessionService?.getSessionFromTask(taskId, provider)
 
-				const result = await sessionService.shareSession(sessionId)
+				const result = await sessionService?.shareSession(sessionId)
+
+				if (!result) {
+					throw new Error("SessionManager not initialized")
+				}
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
@@ -4092,7 +4108,7 @@ export const webviewMessageHandler = async (
 
 				await provider.clearTask()
 
-				await sessionService.forkSession(message.shareId, true)
+				await sessionService?.forkSession(message.shareId, true)
 
 				await provider.postStateToWebview()
 
@@ -4114,7 +4130,7 @@ export const webviewMessageHandler = async (
 
 				await provider.clearTask()
 
-				await sessionService.restoreSession(message.sessionId, true)
+				await sessionService?.restoreSession(message.sessionId, true)
 
 				await provider.postStateToWebview()
 			} catch (error) {

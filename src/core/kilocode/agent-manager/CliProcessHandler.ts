@@ -9,8 +9,9 @@ import {
 } from "./CliOutputParser"
 import { AgentRegistry } from "./AgentRegistry"
 import { buildCliArgs } from "./CliArgsBuilder"
-import type { ClineMessage } from "@roo-code/types"
+import type { ClineMessage, ProviderSettings } from "@roo-code/types"
 import { extractApiReqFailedMessage, extractPayloadMessage } from "./askErrorParser"
+import { buildProviderEnvOverrides } from "./providerEnvMapper"
 
 /**
  * Timeout for pending sessions (ms) - if session_created event doesn't arrive within this time,
@@ -28,7 +29,6 @@ interface PendingProcessInfo {
 	prompt: string
 	startTime: number
 	parallelMode?: boolean
-	autoMode?: boolean // True if session was started with --auto flag
 	desiredSessionId?: string
 	desiredLabel?: string
 	worktreeBranch?: string // Captured from welcome event before session_created
@@ -82,12 +82,38 @@ export class CliProcessHandler {
 		}
 	}
 
+	private buildEnvWithApiConfiguration(apiConfiguration?: ProviderSettings): NodeJS.ProcessEnv {
+		const baseEnv = { ...process.env }
+
+		const overrides = buildProviderEnvOverrides(
+			apiConfiguration,
+			baseEnv,
+			(message) => this.callbacks.onLog(message),
+			(message) => this.debugLog(message),
+		)
+
+		return {
+			...baseEnv,
+			...overrides,
+			NO_COLOR: "1",
+			FORCE_COLOR: "0",
+			KILO_PLATFORM: "agent-manager",
+		}
+	}
+
 	public spawnProcess(
 		cliPath: string,
 		workspace: string,
 		prompt: string,
 		options:
-			| { parallelMode?: boolean; autoMode?: boolean; sessionId?: string; label?: string; gitUrl?: string }
+			| {
+					parallelMode?: boolean
+					sessionId?: string
+					label?: string
+					gitUrl?: string
+					apiConfiguration?: ProviderSettings
+					existingBranch?: string
+			  }
 			| undefined,
 		onCliEvent: (sessionId: string, event: StreamEvent) => void,
 	): void {
@@ -114,7 +140,6 @@ export class CliProcessHandler {
 			// New session - create pending session state
 			const pendingSession = this.registry.setPendingSession(prompt, {
 				parallelMode: options?.parallelMode,
-				autoMode: options?.autoMode,
 				gitUrl: options?.gitUrl,
 			})
 			this.debugLog(`Pending session created, waiting for CLI session_created event`)
@@ -124,17 +149,19 @@ export class CliProcessHandler {
 		// Build CLI command
 		const cliArgs = buildCliArgs(workspace, prompt, {
 			parallelMode: options?.parallelMode,
-			autoMode: options?.autoMode,
 			sessionId: options?.sessionId,
+			existingBranch: options?.existingBranch,
 		})
 		this.debugLog(`Command: ${cliPath} ${cliArgs.join(" ")}`)
 		this.debugLog(`Working dir: ${workspace}`)
+
+		const env = this.buildEnvWithApiConfiguration(options?.apiConfiguration)
 
 		// Spawn CLI process
 		const proc = spawn(cliPath, cliArgs, {
 			cwd: workspace,
 			stdio: ["pipe", "pipe", "pipe"],
-			env: { ...process.env, NO_COLOR: "1", FORCE_COLOR: "0", KILO_PLATFORM: "agent-manager" },
+			env,
 			shell: false,
 		})
 
@@ -172,7 +199,6 @@ export class CliProcessHandler {
 				prompt,
 				startTime: Date.now(),
 				parallelMode: options?.parallelMode,
-				autoMode: options?.autoMode,
 				desiredSessionId: options?.sessionId,
 				desiredLabel: options?.label,
 				gitUrl: options?.gitUrl,
@@ -224,6 +250,20 @@ export class CliProcessHandler {
 			info.process.kill("SIGTERM")
 			this.activeSessions.delete(sessionId)
 		}
+	}
+
+	/**
+	 * Terminate a running process but keep it tracked until it exits.
+	 * This is useful when we want the normal CLI shutdown logic to run and for
+	 * the exit handler to update session status (e.g., "Finish to branch").
+	 */
+	public terminateProcess(sessionId: string, signal: NodeJS.Signals = "SIGTERM"): void {
+		const info = this.activeSessions.get(sessionId)
+		if (!info) {
+			return
+		}
+
+		info.process.kill(signal)
 	}
 
 	public stopAllProcesses(): void {
@@ -388,7 +428,6 @@ export class CliProcessHandler {
 			startTime,
 			parser,
 			parallelMode,
-			autoMode,
 			worktreeBranch,
 			desiredSessionId,
 			desiredLabel,
@@ -412,7 +451,6 @@ export class CliProcessHandler {
 			// Create new session (also sets selectedId)
 			session = this.registry.createSession(sessionId, prompt, startTime, {
 				parallelMode,
-				autoMode,
 				labelOverride: desiredLabel,
 				gitUrl,
 			})
@@ -489,11 +527,28 @@ export class CliProcessHandler {
 		// Clean up
 		this.activeSessions.delete(sessionId)
 
+		// Exit code handling (matching cloud-agent backend behavior):
+		// - 0: Success
+		// - 124: CLI timeout exceeded
+		// - 130 (128+2): SIGINT - user interrupted
+		// - 137 (128+9): SIGKILL - force killed
+		// - 143 (128+15): SIGTERM - terminated
+		// - Other non-zero: Error
+		const INTERRUPTED_EXIT_CODES = [130, 137, 143]
+		const TIMEOUT_EXIT_CODE = 124
+
 		if (code === 0) {
 			this.registry.updateSessionStatus(sessionId, "done", code)
 			this.callbacks.onSessionLog(sessionId, "Agent completed")
 			// Notify that session completed successfully (for state machine transition)
 			this.callbacks.onSessionCompleted?.(sessionId, code)
+		} else if (code === TIMEOUT_EXIT_CODE) {
+			this.registry.updateSessionStatus(sessionId, "error", code, "CLI timeout exceeded")
+			this.callbacks.onSessionLog(sessionId, "Agent timed out")
+		} else if (code !== null && INTERRUPTED_EXIT_CODES.includes(code)) {
+			// User or system interrupted - not an error, just stopped
+			this.registry.updateSessionStatus(sessionId, "stopped", code)
+			this.callbacks.onSessionLog(sessionId, "Agent was interrupted")
 		} else {
 			this.registry.updateSessionStatus(sessionId, "error", code ?? undefined)
 			this.callbacks.onSessionLog(

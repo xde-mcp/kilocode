@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { EventEmitter } from "node:events"
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
 import type { ChildProcess } from "node:child_process"
 import { CliProcessHandler, type CliProcessHandlerCallbacks } from "../CliProcessHandler"
 import { AgentRegistry } from "../AgentRegistry"
@@ -80,13 +83,13 @@ describe("CliProcessHandler", () => {
 	})
 
 	describe("spawnProcess", () => {
-		it("spawns a CLI process with correct arguments", () => {
+		it("spawns a CLI process with correct arguments (yolo mode for testing)", () => {
 			const onCliEvent = vi.fn()
 			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
 
 			expect(spawnMock).toHaveBeenCalledWith(
 				"/path/to/kilocode",
-				["--json-io", "--workspace=/workspace", "test prompt"],
+				["--json-io", "--yolo", "--workspace=/workspace", "test prompt"],
 				expect.objectContaining({
 					cwd: "/workspace",
 					stdio: ["pipe", "pipe", "pipe"],
@@ -168,6 +171,150 @@ describe("CliProcessHandler", () => {
 					}),
 				}),
 			)
+		})
+
+		it("injects kilocode provider configuration into env", () => {
+			process.env.EXISTING_VAR = "keep-me"
+			const previousHome = process.env.HOME
+			const previousTmpDir = process.env.TMPDIR
+			const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "cli-process-handler-home-"))
+			process.env.HOME = tempHome
+			delete process.env.TMPDIR
+			const onCliEvent = vi.fn()
+
+			handler.spawnProcess(
+				"/path/to/kilocode",
+				"/workspace",
+				"test prompt",
+				{
+					apiConfiguration: {
+						apiProvider: "kilocode",
+						kilocodeToken: "abc123",
+						kilocodeModel: "claude-sonnet-4-20250514",
+					},
+				},
+				onCliEvent,
+			)
+
+			const env = (spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, any>])[2].env
+			expect(env.KILO_PROVIDER).toBe("default")
+			expect(env.KILO_PROVIDER_TYPE).toBe("kilocode")
+			expect(env.KILOCODE_TOKEN).toBe("abc123")
+			expect(env.KILOCODE_MODEL).toBe("claude-sonnet-4-20250514")
+			expect(env.KILO_PLATFORM).toBe("agent-manager")
+			expect(env.EXISTING_VAR).toBe("keep-me")
+
+			fs.rmSync(tempHome, { recursive: true, force: true })
+			if (previousHome === undefined) delete process.env.HOME
+			else process.env.HOME = previousHome
+			if (previousTmpDir === undefined) delete process.env.TMPDIR
+			else process.env.TMPDIR = previousTmpDir
+			delete process.env.EXISTING_VAR
+		})
+
+		it("overrides HOME when user CLI config lacks a kilocode provider", () => {
+			const previousHome = process.env.HOME
+			const previousTmpDir = process.env.TMPDIR
+
+			const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "cli-process-handler-config-home-"))
+			const tempTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cli-process-handler-tmp-"))
+			process.env.HOME = tempHome
+			process.env.TMPDIR = tempTmpDir
+
+			const configPath = path.join(tempHome, ".kilocode", "cli", "config.json")
+			fs.mkdirSync(path.dirname(configPath), { recursive: true })
+			fs.writeFileSync(
+				configPath,
+				JSON.stringify({
+					version: "1.0.0",
+					provider: "default",
+					providers: [{ id: "default", provider: "anthropic", apiKey: "x", apiModelId: "y" }],
+				}),
+			)
+
+			const onCliEvent = vi.fn()
+
+			handler.spawnProcess(
+				"/path/to/kilocode",
+				"/workspace",
+				"test prompt",
+				{
+					apiConfiguration: {
+						apiProvider: "kilocode",
+						kilocodeToken: "abc123",
+						kilocodeModel: "claude-sonnet-4-20250514",
+					},
+				},
+				onCliEvent,
+			)
+
+			const env = (spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, any>])[2].env
+			expect(env.HOME).toBe(path.join(tempTmpDir, "kilocode-agent-manager-home"))
+			expect(env.USERPROFILE).toBe(path.join(tempTmpDir, "kilocode-agent-manager-home"))
+			expect(env.KILO_PROVIDER_TYPE).toBe("kilocode")
+			expect(env.KILOCODE_TOKEN).toBe("abc123")
+			expect(env.KILOCODE_MODEL).toBe("claude-sonnet-4-20250514")
+
+			fs.rmSync(tempHome, { recursive: true, force: true })
+			fs.rmSync(tempTmpDir, { recursive: true, force: true })
+			if (previousHome === undefined) delete process.env.HOME
+			else process.env.HOME = previousHome
+			if (previousTmpDir === undefined) delete process.env.TMPDIR
+			else process.env.TMPDIR = previousTmpDir
+		})
+
+		it("does not inject BYOK provider settings", () => {
+			const onCliEvent = vi.fn()
+
+			handler.spawnProcess(
+				"/path/to/kilocode",
+				"/workspace",
+				"test prompt",
+				{
+					apiConfiguration: {
+						apiProvider: "openrouter",
+						openRouterApiKey: "or-key",
+						openRouterModelId: "openai/gpt-4",
+						openRouterBaseUrl: "https://openrouter.ai",
+					},
+				},
+				onCliEvent,
+			)
+
+			const env = (spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, any>])[2].env
+			expect(env.KILO_OPENROUTER_API_KEY).toBeUndefined()
+			expect(env.KILO_OPENROUTER_MODEL_ID).toBeUndefined()
+			expect(env.KILO_OPENROUTER_BASE_URL).toBeUndefined()
+		})
+
+		it("does not inject anthropic BYOK settings", () => {
+			process.env.KILO_API_KEY = "user-api-key"
+			const previousProviderType = process.env.KILO_PROVIDER_TYPE
+			delete process.env.KILO_PROVIDER_TYPE
+			const onCliEvent = vi.fn()
+
+			handler.spawnProcess(
+				"/path/to/kilocode",
+				"/workspace",
+				"test prompt",
+				{
+					apiConfiguration: {
+						apiProvider: "anthropic",
+						apiModelId: "claude-3-sonnet",
+					},
+				},
+				onCliEvent,
+			)
+
+			const env = (spawnMock.mock.calls[0] as unknown as [string, string[], Record<string, any>])[2].env
+			// Leave any existing user env intact, but do not inject provider selection/fields.
+			expect(env.KILO_PROVIDER_TYPE).toBeUndefined()
+			expect(env.KILO_API_MODEL_ID).toBeUndefined()
+			expect(env.KILO_API_KEY).toBe("user-api-key")
+
+			delete process.env.KILO_API_KEY
+			if (previousProviderType === undefined) delete process.env.KILO_PROVIDER_TYPE
+			else process.env.KILO_PROVIDER_TYPE = previousProviderType
 		})
 	})
 
@@ -386,6 +533,28 @@ describe("CliProcessHandler", () => {
 				payload: expect.objectContaining({ ask: "api_req_failed" }),
 			})
 		})
+
+		it("marks auth error when api_req_failed includes provider prefix", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+
+			const failEvent = JSON.stringify({
+				streamEventType: "kilocode",
+				payload: {
+					type: "ask",
+					ask: "api_req_failed",
+					text: "Provider error: 401 No cookie auth credentials found",
+				},
+			})
+			mockProcess.stdout.emit("data", Buffer.from(failEvent + "\n"))
+
+			expect(callbacks.onStartSessionFailed).toHaveBeenCalledWith({
+				type: "api_req_failed",
+				message: "Authentication failed: Provider error: 401 No cookie auth credentials found",
+				authError: true,
+				payload: expect.objectContaining({ ask: "api_req_failed" }),
+			})
+		})
 	})
 
 	describe("stopProcess", () => {
@@ -508,7 +677,7 @@ describe("CliProcessHandler", () => {
 			)
 		})
 
-		it("handles exit with signal", () => {
+		it("handles exit with signal (null code)", () => {
 			const onCliEvent = vi.fn()
 			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
 			mockProcess.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
@@ -518,6 +687,59 @@ describe("CliProcessHandler", () => {
 			const session = registry.getSession("session-1")
 			expect(session?.status).toBe("error")
 			expect(callbacks.onSessionLog).toHaveBeenCalledWith("session-1", expect.stringContaining("signal SIGTERM"))
+		})
+
+		it("handles timeout exit (code 124)", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+			mockProcess.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+			mockProcess.emit("exit", 124, null)
+
+			const session = registry.getSession("session-1")
+			expect(session?.status).toBe("error")
+			expect(session?.exitCode).toBe(124)
+			expect(session?.error).toBe("CLI timeout exceeded")
+			expect(callbacks.onSessionLog).toHaveBeenCalledWith("session-1", "Agent timed out")
+		})
+
+		it("handles SIGINT interrupted exit (code 130)", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+			mockProcess.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+			mockProcess.emit("exit", 130, null)
+
+			const session = registry.getSession("session-1")
+			expect(session?.status).toBe("stopped")
+			expect(session?.exitCode).toBe(130)
+			expect(callbacks.onSessionLog).toHaveBeenCalledWith("session-1", "Agent was interrupted")
+		})
+
+		it("handles SIGKILL interrupted exit (code 137)", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+			mockProcess.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+			mockProcess.emit("exit", 137, null)
+
+			const session = registry.getSession("session-1")
+			expect(session?.status).toBe("stopped")
+			expect(session?.exitCode).toBe(137)
+			expect(callbacks.onSessionLog).toHaveBeenCalledWith("session-1", "Agent was interrupted")
+		})
+
+		it("handles SIGTERM interrupted exit (code 143)", () => {
+			const onCliEvent = vi.fn()
+			handler.spawnProcess("/path/to/kilocode", "/workspace", "test prompt", undefined, onCliEvent)
+			mockProcess.stdout.emit("data", Buffer.from('{"event":"session_created","sessionId":"session-1"}\n'))
+
+			mockProcess.emit("exit", 143, null)
+
+			const session = registry.getSession("session-1")
+			expect(session?.status).toBe("stopped")
+			expect(session?.exitCode).toBe(143)
+			expect(callbacks.onSessionLog).toHaveBeenCalledWith("session-1", "Agent was interrupted")
 		})
 
 		it("flushes parser buffer on exit", () => {
