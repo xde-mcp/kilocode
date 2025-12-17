@@ -211,8 +211,11 @@ const sidebars: SidebarsConfig = {
 				{
 					type: "category",
 					label: "Architecture",
+					link: {
+						type: "doc",
+						id: "contributing/architecture/index",
+					},
 					items: [
-						"contributing/architecture/index",
 						"contributing/architecture/annual-billing",
 						"contributing/architecture/enterprise-mcp-controls",
 						"contributing/architecture/onboarding-engagement-improvements",
