@@ -44,7 +44,7 @@ import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
 
 import { yieldPromise } from "../kilocode"
 import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
-import { editFileTool } from "../tools/kilocode/editFileTool"
+import { editFileTool, isFastApplyAvailable } from "../tools/kilocode/editFileTool"
 import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
 import { newRuleTool } from "../tools/kilocode/newRuleTool"
 import { reportBugTool } from "../tools/kilocode/reportBugTool"
@@ -363,6 +363,21 @@ export async function presentAssistantMessage(cline: Task) {
 			// Fetch state early so it's available for toolDescription and validation
 			const state = await cline.providerRef.deref()?.getState()
 			const { mode, customModes, experiments: stateExperiments, apiConfiguration } = state ?? {}
+
+			// kilocode_change start
+			// Fast Apply + native tool aliases compatibility:
+			// In native protocol parsing, `edit_file` may be treated as an alias for `apply_diff`.
+			// When Fast Apply is actually enabled, we need to undo that aliasing so that the
+			// real `edit_file` tool handler runs.
+			if (
+				isFastApplyAvailable(state as any) &&
+				block.originalName === "edit_file" &&
+				block.name === "apply_diff"
+			) {
+				block.name = "edit_file"
+				block.originalName = undefined
+			}
+			// kilocode_change end
 
 			const toolDescription = (): string => {
 				switch (block.name) {
