@@ -543,7 +543,8 @@ describe("PostHogTelemetryClient", () => {
 		})
 	})
 
-	describe("captureException", () => {
+	// kilocode_change: we have our own version of this
+	describe.skip("captureException", () => {
 		it("should not capture exceptions when telemetry is disabled", async () => {
 			const client = new PostHogTelemetryClient()
 			client.updateTelemetryState(false)
