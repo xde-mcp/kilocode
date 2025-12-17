@@ -2824,6 +2824,7 @@ describe("ClineProvider - Router Models", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
+				glama: mockModels, // kilocode_change
 				synthetic: mockModels, // kilocode_change
 				unbound: mockModels,
 				roo: mockModels,
