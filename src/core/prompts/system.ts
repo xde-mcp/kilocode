@@ -138,7 +138,7 @@ ${getCapabilitiesSection(cwd, shouldIncludeMcp ? mcpHub : undefined)}
 
 ${modesSection}
 
-${getRulesSection(cwd, settings)}
+${getRulesSection(cwd, settings, clineProviderState /* kilocode_change */)}
 
 ${getSystemInfoSection(cwd)}
 
