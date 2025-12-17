@@ -6,7 +6,7 @@ import {
 	toolParamNames,
 	type NativeToolArgs,
 } from "../../shared/tools"
-import { resolveToolAlias } from "../prompts/tools/filter-tools-for-mode"
+import { resolveToolAlias } from "../../shared/tool-aliases" // kilocode_change
 import { parseJSON } from "partial-json"
 import type {
 	ApiStreamToolCallStartChunk,

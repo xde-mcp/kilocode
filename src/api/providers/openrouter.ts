@@ -324,10 +324,18 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			)
 		} catch (error) {
 			// kilocode_change start
-			if (this.providerName == "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
+			// KiloCode backend errors are already user-readable and should be handled upstream.
+			if (this.providerName === "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
 				throw error
 			}
-			throw new Error(makeOpenRouterErrorReadable(error))
+
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			const apiError = new ApiProviderError(errorMessage, this.providerName, modelId, "createMessage")
+			TelemetryService.instance.captureException(apiError)
+
+			// Preserve existing readability improvements for user-facing errors.
+			const readableMessage = makeOpenRouterErrorReadable(error)
+			throw new Error(readableMessage)
 			// kilocode_change end
 		}
 
