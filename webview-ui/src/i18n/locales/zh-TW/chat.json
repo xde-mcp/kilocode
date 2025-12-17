@@ -300,6 +300,11 @@
 	},
 	"taskCompleted": "工作完成",
 	"error": "錯誤",
+	"errorDetails": {
+		"title": "錯誤詳情",
+		"copyToClipboard": "複製到剪貼簿",
+		"copied": "已複製！"
+	},
 	"diffError": {
 		"title": "編輯失敗"
 	},

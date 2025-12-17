@@ -302,6 +302,8 @@
 		"getOpenRouterApiKey": "Uzyskaj klucz API OpenRouter",
 		"vercelAiGatewayApiKey": "Klucz API Vercel AI Gateway",
 		"getVercelAiGatewayApiKey": "Uzyskaj klucz API Vercel AI Gateway",
+		"glamaApiKey": "Klucz API Glama",
+		"getGlamaApiKey": "Uzyskaj klucz API Glama",
 		"apiKeyStorageNotice": "Klucze API są bezpiecznie przechowywane w Tajnym Magazynie VSCode",
 		"useCustomBaseUrl": "Użyj niestandardowego URL bazowego",
 		"useReasoning": "Włącz rozumowanie",

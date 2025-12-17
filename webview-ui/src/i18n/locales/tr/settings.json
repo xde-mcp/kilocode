@@ -303,6 +303,8 @@
 		"getOpenRouterApiKey": "OpenRouter API Anahtarı Al",
 		"vercelAiGatewayApiKey": "Vercel AI Gateway API Anahtarı",
 		"getVercelAiGatewayApiKey": "Vercel AI Gateway API Anahtarı Al",
+		"glamaApiKey": "Glama API Anahtarı",
+		"getGlamaApiKey": "Glama API Anahtarı Al",
 		"apiKeyStorageNotice": "API anahtarları VSCode'un Gizli Depolamasında güvenli bir şekilde saklanır",
 		"useCustomBaseUrl": "Özel temel URL kullan",
 		"useReasoning": "Akıl yürütmeyi etkinleştir",

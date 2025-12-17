@@ -302,6 +302,8 @@
 		"getOpenRouterApiKey": "Dapatkan OpenRouter API Key",
 		"vercelAiGatewayApiKey": "Vercel AI Gateway API Key",
 		"getVercelAiGatewayApiKey": "Dapatkan Vercel AI Gateway API Key",
+		"glamaApiKey": "Glama API Key",
+		"getGlamaApiKey": "Dapatkan Glama API Key",
 		"apiKeyStorageNotice": "API key disimpan dengan aman di Secret Storage VSCode",
 		"useCustomBaseUrl": "Gunakan base URL kustom",
 		"useReasoning": "Aktifkan reasoning",
