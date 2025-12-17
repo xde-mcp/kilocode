@@ -19,7 +19,7 @@ import { convertToR1Format } from "../transform/r1-format"
 import { convertToSimpleMessages } from "../transform/simple-format"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
-import { ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
+
 import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
@@ -194,12 +194,9 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			)
 
 			let lastUsage
-			const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 
 			for await (const chunk of stream) {
 				const delta = chunk.choices?.[0]?.delta ?? {}
-
-				yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 				if (delta.content) {
 					for (const chunk of matcher.update(delta.content)) {
@@ -207,20 +204,12 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					}
 				}
 
-				// kilocode_change start: reasoning
-				const reasoningText =
-					"reasoning_content" in delta && typeof delta.reasoning_content === "string"
-						? delta.reasoning_content
-						: "reasoning" in delta && typeof delta.reasoning === "string"
-							? delta.reasoning
-							: undefined
-				if (reasoningText) {
+				if ("reasoning_content" in delta && delta.reasoning_content) {
 					yield {
 						type: "reasoning",
-						text: reasoningText,
+						text: (delta.reasoning_content as string | undefined) || "",
 					}
 				}
-				// kilocode_change end
 
 				if (delta.tool_calls) {
 					for (const toolCall of delta.tool_calls) {
@@ -274,23 +263,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				throw handleOpenAIError(error, this.providerName)
 			}
 
-			// kilocode_change start: reasoning
-			const message = response.choices[0]?.message
-			if (message) {
-				if ("reasoning" in message && typeof message.reasoning === "string") {
-					yield {
-						type: "reasoning",
-						text: message.reasoning,
-					}
-				}
-				if (message.content) {
-					yield {
-						type: "text",
-						text: message.content || "",
-					}
-				}
-			}
-			// kilocode_change end
+			const message = response.choices?.[0]?.message
 
 			if (message?.tool_calls) {
 				for (const toolCall of message.tool_calls) {
