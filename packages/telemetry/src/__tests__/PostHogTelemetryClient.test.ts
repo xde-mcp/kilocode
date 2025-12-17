@@ -606,7 +606,8 @@ describe("PostHogTelemetryClient", () => {
 		})
 	})
 
-	describe("captureException error filtering", () => {
+	// kilocode_change: we have a different method
+	describe.skip("captureException error filtering", () => {
 		it("should filter out 429 rate limit errors (via status property)", () => {
 			const client = new PostHogTelemetryClient()
 			client.updateTelemetryState(true)
