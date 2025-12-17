@@ -147,7 +147,7 @@ export class SearchAndReplaceTool extends BaseTool<"search_and_replace"> {
 				}
 
 				// Apply the replacement
-				newContent = newContent.replace(searchPattern, replace)
+				newContent = newContent.replace(searchPattern, normalizeLineEndings_kilocode(replace, useCrLf_kilocode))
 			}
 
 			// If all operations failed, return error
