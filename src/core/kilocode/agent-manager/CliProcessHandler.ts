@@ -158,6 +158,10 @@ export class CliProcessHandler {
 
 		const env = this.buildEnvWithApiConfiguration(options?.apiConfiguration)
 
+		// On Windows, .cmd files need to be executed through cmd.exe (shell: true)
+		// Without this, spawn() fails silently because .cmd files are batch scripts
+		const needsShell = process.platform === "win32" && cliPath.toLowerCase().endsWith(".cmd")
+
 		// Spawn CLI process
 		// On Windows, .cmd files are batch scripts that require shell execution
 		const needsShell = process.platform === "win32" && cliPath.toLowerCase().endsWith(".cmd")
