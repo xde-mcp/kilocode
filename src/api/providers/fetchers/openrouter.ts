@@ -18,7 +18,7 @@ import {
 	parseModelSettings,
 	VersionedModelSettingsSchema,
 } from "../kilocode/model-settings"
-import { resolveVersionedSettings } from "./versionedSettings"
+import { resolveVersionedSettings } from "./versionedSettings" // kilocode_change
 
 /**
  * OpenRouterBaseModel
