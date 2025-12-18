@@ -71,6 +71,10 @@ describe("OpenRouterHandler", () => {
 		openRouterModelId: "anthropic/claude-sonnet-4",
 	}
 
+	// kilocode_change start
+	const anthropicBetaHeaderValue = "fine-grained-tool-streaming-2025-05-14,structured-outputs-2025-11-13"
+	// kilocode_change end
+
 	beforeEach(() => vitest.clearAllMocks())
 
 	it("initializes with correct options", () => {
@@ -204,7 +208,13 @@ describe("OpenRouterHandler", () => {
 					top_p: undefined,
 					transforms: ["middle-out"],
 				}),
-				undefined, // kilocode_change
+				// kilocode_change start
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						"x-anthropic-beta": anthropicBetaHeaderValue,
+					}),
+				}),
+				// kilocode_change end
 			)
 		})
 
@@ -231,7 +241,13 @@ describe("OpenRouterHandler", () => {
 
 			expect(mockCreate).toHaveBeenCalledWith(
 				expect.objectContaining({ transforms: ["middle-out"] }),
-				undefined, // kilocode_change
+				// kilocode_change start
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						"x-anthropic-beta": anthropicBetaHeaderValue,
+					}),
+				}),
+				// kilocode_change end
 			)
 		})
 
@@ -274,7 +290,13 @@ describe("OpenRouterHandler", () => {
 						}),
 					]),
 				}),
-				undefined, // kilocode_change
+				// kilocode_change start
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						"x-anthropic-beta": anthropicBetaHeaderValue,
+					}),
+				}),
+				// kilocode_change end
 			)
 		})
 
@@ -515,7 +537,13 @@ describe("OpenRouterHandler", () => {
 					messages: [{ role: "user", content: "test prompt" }],
 					stream: false,
 				},
-				undefined, // kilocode_change options
+				// kilocode_change start
+				expect.objectContaining({
+					headers: expect.objectContaining({
+						"x-anthropic-beta": anthropicBetaHeaderValue,
+					}),
+				}),
+				// kilocode_change end
 			)
 		})
 
