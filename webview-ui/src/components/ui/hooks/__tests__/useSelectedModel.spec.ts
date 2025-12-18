@@ -517,15 +517,15 @@ describe("useSelectedModel", () => {
 		it("should not crash when litellmDefaultModelId is not found in routerModels.litellm", () => {
 			const apiConfiguration: ProviderSettings = {
 				apiProvider: "litellm",
-				litellmModelId: "claude-3-7-sonnet-20250219", // This model doesn't exist in routerModels.litellm
+				litellmModelId: "claude-3-7-sonnet-20250219", // Default LiteLLM model ID, but not present in routerModels.litellm
 			}
 
 			const wrapper = createWrapper()
 			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
 
-			// Should not crash and should return the model ID with undefined info
+			// Should not crash; falls back to LiteLLM defaults when model metadata is missing
 			expect(result.current.id).toBe("claude-3-7-sonnet-20250219")
-			expect(result.current.info).toBeUndefined()
+			expect(result.current.info).toEqual(litellmDefaultModelInfo)
 		})
 
 		it("should return model info when litellm model exists in routerModels.litellm", () => {
