@@ -100,6 +100,7 @@ export const internationalZAiModels = {
 		description:
 			"GLM-4.6 is Zhipu's newest model with an extended context window of up to 200k tokens, providing enhanced capabilities for processing longer documents and conversations.",
 	},
+	// kilocode_change start
 	"glm-4.6v": {
 		maxTokens: 98_304,
 		contextWindow: 131_072,
@@ -126,6 +127,7 @@ export const internationalZAiModels = {
 		description:
 			"GLM-4.6V-Flash is a free, high-speed multimodal model with visual reasoning capabilities, excellent for reasoning, coding, and agentic tasks.",
 	},
+	// kilocode_change end
 	"glm-4-32b-0414-128k": {
 		maxTokens: 98_304,
 		contextWindow: 131_072,
