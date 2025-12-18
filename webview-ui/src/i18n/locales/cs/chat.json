@@ -169,7 +169,7 @@
 			"429": "Příliš mnoho požadavků. Poskytovatel tě omezuje rychlostí. Počkej chvíli před dalším API voláním.",
 			"500": "Chyba serveru poskytovatele. Něco je špatně na straně poskytovatele, s tvým požadavkem není nic v nepořádku.",
 			"connection": "Chyba připojení. Ujisti se, že máš funkční připojení k internetu.",
-			"unknown": "Neznámá API chyba. Kontaktuj prosím podporu Roo Code."
+			"unknown": "Neznámá API chyba. Kontaktuj prosím podporu Kilo."
 		}
 	},
 	"checkpoint": {

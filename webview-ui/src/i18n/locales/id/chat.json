@@ -158,7 +158,7 @@
 			"403": "Tidak sah. Kunci API Anda valid, tetapi penyedia menolak untuk menyelesaikan permintaan ini.",
 			"429": "Terlalu banyak permintaan. Anda dibatasi tingkat oleh penyedia. Harap tunggu sebentar sebelum panggilan API berikutnya Anda.",
 			"500": "Kesalahan server penyedia. Ada yang salah di sisi penyedia, tidak ada yang salah dengan permintaan Anda.",
-			"unknown": "Kesalahan API yang tidak diketahui. Harap hubungi dukungan Roo Code.",
+			"unknown": "Kesalahan API yang tidak diketahui. Harap hubungi dukungan Kilo.",
 			"connection": "Kesalahan koneksi. Pastikan Anda memiliki koneksi internet yang berfungsi."
 		}
 	},

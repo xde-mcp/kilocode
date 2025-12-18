@@ -1238,7 +1238,7 @@ export const ChatRowContent = ({
 								// }
 							} else {
 								body = t("chat:apiRequest.errorMessage.unknown")
-								docsURL = "mailto:support@roocode.com?subject=Unknown API Error"
+								docsURL = "https://kilo.ai/support"
 							}
 						} else if (message.text.indexOf("Connection error") === 0) {
 							body = t("chat:apiRequest.errorMessage.connection")
