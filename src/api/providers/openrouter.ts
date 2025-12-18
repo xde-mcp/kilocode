@@ -311,17 +311,17 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			verbosity: model.verbosity, // kilocode_change
 		}
 
-		// Add Anthropic beta header for fine-grained tool streaming when using Anthropic models
-		const requestOptions = modelId.startsWith("anthropic/")
-			? { headers: { "x-anthropic-beta": "fine-grained-tool-streaming-2025-05-14" } }
-			: undefined
+		// kilocode_change start
+		const requestOptions = this.customRequestOptions(metadata) ?? { headers: {} }
+		if (modelId.startsWith("anthropic/")) {
+			requestOptions.headers["x-anthropic-beta"] =
+				"fine-grained-tool-streaming-2025-05-14,structured-outputs-2025-11-13"
+		}
+		// kilocode_change end
 
 		let stream
 		try {
-			stream = await this.client.chat.completions.create(
-				completionParams,
-				this.customRequestOptions(metadata), // kilocode_change
-			)
+			stream = await this.client.chat.completions.create(completionParams, requestOptions)
 		} catch (error) {
 			// kilocode_change start
 			// KiloCode backend errors are already user-readable and should be handled upstream.
