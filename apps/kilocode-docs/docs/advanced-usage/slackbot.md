@@ -97,14 +97,6 @@ Share error messages or stack traces and get help:
 Can you help me understand what's causing it?
 ```
 
-### Code Reviews and Explanations
-
-Get AI-powered insights during code reviews:
-
-```
-@Kilo can you review the changes in PR #123 and suggest any improvements?
-```
-
 ---
 
 ## How It Works
