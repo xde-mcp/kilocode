@@ -448,7 +448,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
  */
 class MainThreadLanguageFeatures(private val project: Project) : MainThreadLanguageFeaturesShape {
     private val logger = Logger.getInstance(MainThreadLanguageFeatures::class.java)
-    
+
     /**
      * Manager for inline completion providers.
      * Handles registration, unregistration, and lifecycle management.
@@ -459,7 +459,7 @@ class MainThreadLanguageFeatures(private val project: Project) : MainThreadLangu
 
     override fun unregister(handle: Int) {
         logger.info("Unregistering service: handle=$handle")
-        
+
         // Try to unregister from inline completion manager
         try {
             inlineCompletionManager.unregisterProvider(handle)
@@ -628,7 +628,7 @@ class MainThreadLanguageFeatures(private val project: Project) : MainThreadLangu
         debounceDelayMs: Int?,
     ) {
         logger.info("Registering inline completions support: handle=$handle, extensionId=$extensionId, displayName=$displayName")
-        
+
         try {
             inlineCompletionManager.registerProvider(
                 handle = handle,
@@ -637,7 +637,7 @@ class MainThreadLanguageFeatures(private val project: Project) : MainThreadLangu
                 extensionId = extensionId,
                 yieldsToExtensionIds = yieldsToExtensionIds,
                 displayName = displayName,
-                debounceDelayMs = debounceDelayMs
+                debounceDelayMs = debounceDelayMs,
             )
             logger.info("Successfully registered inline completion provider: handle=$handle")
         } catch (e: Exception) {
@@ -737,7 +737,7 @@ class MainThreadLanguageFeatures(private val project: Project) : MainThreadLangu
 
     override fun dispose() {
         logger.info("Disposing MainThreadLanguageFeatures resources")
-        
+
         // Dispose inline completion manager
         try {
             inlineCompletionManager.dispose()

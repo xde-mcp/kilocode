@@ -6,8 +6,8 @@
 package ai.kilocode.jetbrains.actions
 
 import ai.kilocode.jetbrains.git.CommitMessageService
-import ai.kilocode.jetbrains.git.WorkspaceResolver
 import ai.kilocode.jetbrains.git.FileDiscoveryService
+import ai.kilocode.jetbrains.git.WorkspaceResolver
 import ai.kilocode.jetbrains.i18n.I18n
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -85,7 +85,7 @@ class GitCommitMessageAction : AnAction(I18n.t("kilocode:commitMessage.ui.genera
         project: Project,
         commitControl: CommitMessageUi,
         workspacePath: String,
-        dataContext: DataContext
+        dataContext: DataContext,
     ) {
         ProgressManager.getInstance().run(object : Task.Backgroundable(
             project,
@@ -128,8 +128,10 @@ class GitCommitMessageAction : AnAction(I18n.t("kilocode:commitMessage.ui.genera
                     ApplicationManager.getApplication().invokeLater {
                         Messages.showErrorDialog(
                             project,
-                            I18n.t("kilocode:commitMessage.errors.processingError",
-                                mapOf("error" to (e.message ?: I18n.t("kilocode:commitMessage.error.unknown")))),
+                            I18n.t(
+                                "kilocode:commitMessage.errors.processingError",
+                                mapOf("error" to (e.message ?: I18n.t("kilocode:commitMessage.error.unknown"))),
+                            ),
                             I18n.t("kilocode:commitMessage.dialogs.error"),
                         )
                     }
@@ -180,8 +182,10 @@ class GitCommitMessageAction : AnAction(I18n.t("kilocode:commitMessage.ui.genera
                     ApplicationManager.getApplication().invokeLater {
                         Messages.showErrorDialog(
                             project,
-                            I18n.t("kilocode:commitMessage.errors.processingError",
-                                mapOf("error" to (e.message ?: I18n.t("kilocode:commitMessage.error.unknown")))),
+                            I18n.t(
+                                "kilocode:commitMessage.errors.processingError",
+                                mapOf("error" to (e.message ?: I18n.t("kilocode:commitMessage.error.unknown"))),
+                            ),
                             I18n.t("kilocode:commitMessage.dialogs.error"),
                         )
                     }
@@ -209,7 +213,6 @@ class GitCommitMessageAction : AnAction(I18n.t("kilocode:commitMessage.ui.genera
             logger.error("Failed to open commit dialog", e)
         }
     }
-
 
     companion object {
         val PENDING_COMMIT_MESSAGE_KEY = com.intellij.openapi.util.Key.create<String>("KILOCODE_PENDING_COMMIT_MESSAGE")
