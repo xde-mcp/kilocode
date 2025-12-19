@@ -24,14 +24,6 @@ class KiloCodeInlineCompletionInsertHandler(
 
     private val logger = Logger.getInstance(KiloCodeInlineCompletionInsertHandler::class.java)
 
-    companion object {
-        /**
-         * Command ID registered in the VSCode extension for tracking acceptance events.
-         * This matches the command registered in GhostInlineCompletionProvider.
-         */
-        private const val INLINE_COMPLETION_ACCEPTED_COMMAND = "kilocode.ghost.inline-completion.accepted"
-    }
-
     /**
      * Called after the completion text has been inserted into the document.
      * This is our hook to trigger telemetry tracking.
@@ -53,7 +45,7 @@ class KiloCodeInlineCompletionInsertHandler(
                 // Execute the acceptance command asynchronously
                 // No need to wait for the result as this is fire-and-forget telemetry
                 proxy.executeContributedCommand(
-                    INLINE_COMPLETION_ACCEPTED_COMMAND,
+                    InlineCompletionConstants.INLINE_COMPLETION_ACCEPTED_COMMAND,
                     emptyList(),
                 )
                 logger.debug("Triggered inline completion acceptance telemetry")
