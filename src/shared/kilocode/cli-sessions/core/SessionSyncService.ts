@@ -33,6 +33,16 @@ export interface SessionSyncedMessage {
 }
 
 /**
+ * Message emitted when a session title has been generated and updated.
+ */
+export interface SessionTitleGeneratedMessage {
+	sessionId: string
+	title: string
+	timestamp: number
+	event: "session_title_generated"
+}
+
+/**
  * Dependencies required by SessionSyncService.
  */
 export interface SessionSyncServiceDependencies {
@@ -52,6 +62,7 @@ export interface SessionSyncServiceDependencies {
 	getParentTaskId: (taskId: string) => Promise<string | undefined>
 	onSessionCreated?: (message: SessionCreatedMessage) => void
 	onSessionSynced?: (message: SessionSyncedMessage) => void
+	onSessionTitleGenerated?: (message: SessionTitleGeneratedMessage) => void
 }
 
 /**
