@@ -6,9 +6,9 @@ package ai.kilocode.jetbrains.git
 
 import ai.kilocode.jetbrains.actions.GitCommitMessageAction
 import ai.kilocode.jetbrains.i18n.I18n
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
@@ -16,15 +16,20 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.vcs.CheckinProjectPanel
 import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.checkin.CheckinHandler
 import com.intellij.openapi.vcs.checkin.CheckinHandler.ReturnResult
-import com.intellij.openapi.vcs.ui.Refreshable
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent
+import com.intellij.openapi.vcs.ui.Refreshable
 import com.intellij.util.ui.FormBuilder
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import javax.swing.JButton
 import javax.swing.JPanel
 
@@ -173,7 +178,7 @@ class CommitMessageHandler(
     ) {
         try {
             indicator.text = I18n.t("kilocode:commitMessage.progress.connecting")
-
+            
             val files = try {
                 runBlocking {
                     withTimeout(5000) {
@@ -187,9 +192,9 @@ class CommitMessageHandler(
                 logger.warn("Error getting selected files: ${e.message}")
                 emptyList()
             }
-
+            
             indicator.text = I18n.t("kilocode:commitMessage.progress.generating")
-
+            
             // Generate message on background thread
             val result = try {
                 runBlocking {
@@ -199,12 +204,12 @@ class CommitMessageHandler(
                 logger.error("Error during message generation", e)
                 CommitMessageService.Result.Error(e.message ?: "Unknown error")
             }
-
+                
             // Set message on EDT
             ApplicationManager.getApplication().invokeLater({
                 isGenerating = false
                 updateButtonState()
-
+                
                 when (result) {
                     is CommitMessageService.Result.Success -> {
                         logger.info("Successfully generated and set commit message: ${result.message}")
@@ -220,6 +225,7 @@ class CommitMessageHandler(
                     }
                 }
             }, ModalityState.defaultModalityState())
+                
         } catch (e: ProcessCanceledException) {
             logger.info("Commit message generation cancelled")
             ApplicationManager.getApplication().invokeLater({
@@ -247,7 +253,7 @@ class CommitMessageHandler(
         val dataContext = SimpleDataContext.builder()
             .add(Refreshable.PANEL_KEY, panel)
             .build()
-
+        
         val discoveryResult = fileDiscoveryService.discoverFilesWithResult(panel.project, dataContext)
         when (discoveryResult) {
             is FileDiscoveryService.FileDiscoveryResult.Success -> discoveryResult.files

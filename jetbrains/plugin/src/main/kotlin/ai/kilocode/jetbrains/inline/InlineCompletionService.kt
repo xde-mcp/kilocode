@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 class InlineCompletionService {
     private val logger: Logger = Logger.getInstance(InlineCompletionService::class.java)
-
+    
     /**
      * Tracks the current request ID to validate responses.
      * Only completions matching the current request ID will be shown.
@@ -41,7 +41,7 @@ class InlineCompletionService {
      */
     data class CompletionItem(
         val insertText: String,
-        val range: Range?,
+        val range: Range?
     )
 
     /**
@@ -49,7 +49,7 @@ class InlineCompletionService {
      */
     data class Range(
         val start: Position,
-        val end: Position,
+        val end: Position
     )
 
     /**
@@ -57,7 +57,7 @@ class InlineCompletionService {
      */
     data class Position(
         val line: Int,
-        val character: Int,
+        val character: Int
     )
 
     /**
@@ -76,7 +76,7 @@ class InlineCompletionService {
         document: Document,
         line: Int,
         character: Int,
-        languageId: String,
+        languageId: String
     ): Result {
         return try {
             val proxy = getRPCProxy(project)
@@ -106,8 +106,7 @@ class InlineCompletionService {
             // Check if this is a wrapped cancellation exception
             if (e.cause is kotlinx.coroutines.CancellationException ||
                 e.cause is java.util.concurrent.CancellationException ||
-                e.message?.contains("cancelled", ignoreCase = true) == true
-            ) {
+                e.message?.contains("cancelled", ignoreCase = true) == true) {
                 logger.debug("Inline completion cancelled (wrapped exception): ${e.message}")
                 return Result.Success(emptyList())
             }
@@ -136,25 +135,25 @@ class InlineCompletionService {
         line: Int,
         character: Int,
         languageId: String,
-        requestId: String,
+        requestId: String
     ): Any? {
         // Get full file content
         val fileContent = document.text
-
+        
         // Get the actual file path from the document
         val virtualFile = FileDocumentManager.getInstance().getFile(document)
         val documentUri = virtualFile?.path?.let { "file://$it" } ?: "file://jetbrains-document"
-
+        
         // Prepare arguments for RPC call including request ID
         val args = listOf(
             documentUri,
             mapOf(
                 "line" to line,
-                "character" to character,
+                "character" to character
             ),
             fileContent,
             languageId,
-            requestId,
+            requestId
         )
 
         val promise: LazyPromise = proxy.executeContributedCommand(
@@ -166,7 +165,7 @@ class InlineCompletionService {
         val result = withTimeout(InlineCompletionConstants.RPC_TIMEOUT_MS) {
             promise.await()
         }
-
+        
         return result
     }
 
@@ -192,7 +191,7 @@ class InlineCompletionService {
             logger.info("Discarding stale completion: response requestId=$responseRequestId, current=$current")
             return Result.Success(emptyList())
         }
-
+        
         // Handle error response
         if (error != null) {
             logger.warn("Inline completion failed with error: $error")
@@ -221,16 +220,14 @@ class InlineCompletionService {
                         Range(
                             Position(
                                 (start["line"] as? Number)?.toInt() ?: 0,
-                                (start["character"] as? Number)?.toInt() ?: 0,
+                                (start["character"] as? Number)?.toInt() ?: 0
                             ),
                             Position(
                                 (end["line"] as? Number)?.toInt() ?: 0,
-                                (end["character"] as? Number)?.toInt() ?: 0,
-                            ),
+                                (end["character"] as? Number)?.toInt() ?: 0
+                            )
                         )
-                    } else {
-                        null
-                    }
+                    } else null
                 }
                 CompletionItem(insertText, range)
             } else {

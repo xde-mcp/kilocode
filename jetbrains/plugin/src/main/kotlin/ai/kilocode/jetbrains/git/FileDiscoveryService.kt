@@ -1,13 +1,15 @@
 package ai.kilocode.jetbrains.git
 
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vcs.CheckinProjectPanel
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.vcs.VcsDataKeys
+import com.intellij.openapi.vcs.CheckinProjectPanel
+import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vcs.ui.Refreshable
+import com.intellij.openapi.wm.ToolWindowManager
 
 /**
  * Service for discovering files to include in commit messages
@@ -20,17 +22,17 @@ class FileDiscoveryService {
      */
     fun discoverFiles(project: Project, dataContext: DataContext): List<String> {
         logger.info("Starting file discovery for commit message generation")
-
+        
         // Try different strategies in order of preference
         // 1. VcsDataKeys (contextual selection) - most specific
         // 2. CheckinProjectPanel (from commit dialog)
         // 3. ChangeListManager (fallback to all uncommitted changes)
-
+        
         val result = tryVcsDataKeys(dataContext)
             ?: tryCheckinProjectPanel(dataContext)
             ?: tryChangeListManager(project)
             ?: emptyList()
-
+        
         logger.info("File discovery completed: found ${result.size} files")
         return result
     }
@@ -38,7 +40,7 @@ class FileDiscoveryService {
     private fun tryVcsDataKeys(dataContext: DataContext): List<String>? {
         return try {
             logger.debug("[DIAGNOSTIC] Trying VcsDataKeys discovery...")
-
+            
             // Try SELECTED_CHANGES first (user selection)
             val selectedChanges = VcsDataKeys.SELECTED_CHANGES.getData(dataContext)
             logger.debug("VcsDataKeys.SELECTED_CHANGES.getData() returned: ${selectedChanges?.size ?: "null"} changes")
@@ -60,7 +62,7 @@ class FileDiscoveryService {
                     return files
                 }
             }
-
+            
             logger.debug("[DIAGNOSTIC] VcsDataKeys: no changes found from either SELECTED_CHANGES or CHANGES")
             null
         } catch (e: Exception) {
@@ -72,13 +74,13 @@ class FileDiscoveryService {
     private fun tryCheckinProjectPanel(dataContext: DataContext): List<String>? {
         return try {
             logger.debug("[DIAGNOSTIC] Trying CheckinProjectPanel discovery...")
-
+            
             // Try to get the panel from DataContext
             val panel = Refreshable.PANEL_KEY.getData(dataContext) as? CheckinProjectPanel
             logger.debug("Refreshable.PANEL_KEY.getData() returned: ${panel?.let { it::class.java.simpleName } ?: "null"}")
             if (panel != null) {
                 logger.debug("[DIAGNOSTIC] Found CheckinProjectPanel")
-
+                
                 // Try to get selected changes
                 val selectedChanges = try {
                     panel.selectedChanges
@@ -87,7 +89,7 @@ class FileDiscoveryService {
                     null
                 }
                 logger.debug("CheckinProjectPanel.selectedChanges returned: ${selectedChanges?.size ?: "null"} changes")
-
+                
                 if (!selectedChanges.isNullOrEmpty()) {
                     val files = selectedChanges.mapNotNull { it.virtualFile?.path }
                     logger.debug("Mapped CheckinProjectPanel.selectedChanges to ${files.size} files")
@@ -95,7 +97,7 @@ class FileDiscoveryService {
                         return files
                     }
                 }
-
+                
                 logger.debug("[DIAGNOSTIC] CheckinProjectPanel exists but no selected changes found")
             } else {
                 logger.debug("[DIAGNOSTIC] No CheckinProjectPanel in DataContext")
@@ -110,10 +112,10 @@ class FileDiscoveryService {
     private fun tryChangeListManager(project: Project): List<String>? {
         return try {
             logger.debug("[DIAGNOSTIC] Trying ChangeListManager discovery (fallback)...")
-
+            
             val changeListManager = ChangeListManager.getInstance(project)
             logger.debug("Retrieved ChangeListManager instance")
-
+            
             // Get all changes from all changelists
             val allChanges = changeListManager.allChanges
             logger.debug("ChangeListManager.allChanges returned: ${allChanges.size} changes")
@@ -122,7 +124,7 @@ class FileDiscoveryService {
                 logger.debug("Mapped ChangeListManager.allChanges to ${files.size} files")
                 return files
             }
-
+            
             logger.warn("[DIAGNOSTIC] ChangeListManager: no changes found in any changelist")
             null
         } catch (e: Exception) {
