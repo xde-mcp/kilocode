@@ -112,7 +112,7 @@ Get AI-powered insights during code reviews:
 1. **Message the bot** — Either through DMs or by mentioning it in a channel
 2. **Bot processes your request** — The Slackbot uses your connected GitHub repositories to understand context
 3. **AI generates a response** — Kilo Code's AI analyzes your request and provides helpful responses
-4. **Code changes (if requested)** — For implementation requests, the bot can create branches and push code
+4. **Code changes (if requested)** — For implementation requests, the bot can create pull requests
 
 ---
 
