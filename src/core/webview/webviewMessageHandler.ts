@@ -3717,6 +3717,13 @@ export const webviewMessageHandler = async (
 			)
 			break
 		}
+		case "chatCompletionAccepted": {
+			const { handleChatCompletionAccepted } = await import(
+				"../../services/ghost/chat-autocomplete/handleChatCompletionAccepted"
+			)
+			handleChatCompletionAccepted(message as WebviewMessage & { type: "chatCompletionAccepted" })
+			break
+		}
 		// kilocode_change end: Chat text area FIM autocomplete
 		case "openCommandFile": {
 			try {
