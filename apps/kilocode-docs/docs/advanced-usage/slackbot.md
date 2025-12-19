@@ -23,8 +23,9 @@ The Kilo Slackbot brings the power of Kilo Code directly into your Slack workspa
 Before using the Kilo Slackbot:
 
 - You must have a **Kilo Code account** with available credits
-- Your **GitHub Integration must be configured** via the [Integrations tab](https://app.kilo.ai/integrations) so the Slackbot can access your repositories
-- The Kilo Slackbot must be **installed in your Slack workspace** by a workspace admin
+- Your **GitHub Integration must be configured** via the [Integrations tab](https://app.kilo.ai/integrations) so the Slackbot can access your repositories 
+
+To install the Kilo Slackbot, simply go to the integrations menu in the sidebar on https://app.kilo.ai and set up the Slack integration.
 
 ---
 
