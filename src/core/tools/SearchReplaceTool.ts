@@ -113,10 +113,16 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 				pushToolResult(formatResponse.toolError(errorMessage, toolProtocol))
 				return
 			}
-
+	
+			const useCrLf_kilocode = fileContent.includes("\r\n")
+	
+			// Normalize line endings in search strings to match file's line ending style
+			const normalizedOldString = normalizeLineEndings_kilocode(old_string, useCrLf_kilocode)
+			const normalizedNewString = normalizeLineEndings_kilocode(new_string, useCrLf_kilocode)
+	
 			// Check for exact match (literal string, not regex)
-			const matchCount = fileContent.split(old_string).length - 1
-
+			const matchCount = fileContent.split(normalizedOldString).length - 1
+	
 			if (matchCount === 0) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("search_replace", "no_match")
@@ -140,10 +146,10 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 				)
 				return
 			}
-
+	
 			// Apply the single replacement
-			const newContent = fileContent.replace(old_string, new_string)
-
+			const newContent = fileContent.replace(normalizedOldString, normalizedNewString)
+	
 			// Check if any changes were made
 			if (newContent === fileContent) {
 				pushToolResult(`No changes needed for '${relPath}'`)
@@ -272,6 +278,16 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 
 		await task.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
 	}
+}
+
+/**
+ * Normalizes line endings in a string to match the target style
+ * @param input String to normalize line endings in
+ * @param useCrLf Whether to use CRLF (true) or LF (false)
+ * @returns String with normalized line endings
+ */
+function normalizeLineEndings_kilocode(input: string, useCrLf: boolean): string {
+	return input.replaceAll(/\r?\n/g, useCrLf ? "\r\n" : "\n")
 }
 
 export const searchReplaceTool = new SearchReplaceTool()
