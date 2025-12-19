@@ -13,6 +13,7 @@ import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { sanitizeUnifiedDiff, computeDiffStats } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
+import { normalizeLineEndings_kilocode } from "./helpers/stringUtils"
 
 interface SearchReplaceParams {
 	file_path: string
@@ -278,16 +279,6 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 
 		await task.ask("tool", JSON.stringify(sharedMessageProps), block.partial).catch(() => {})
 	}
-}
-
-/**
- * Normalizes line endings in a string to match the target style
- * @param input String to normalize line endings in
- * @param useCrLf Whether to use CRLF (true) or LF (false)
- * @returns String with normalized line endings
- */
-function normalizeLineEndings_kilocode(input: string, useCrLf: boolean): string {
-	return input.replaceAll(/\r?\n/g, useCrLf ? "\r\n" : "\n")
 }
 
 export const searchReplaceTool = new SearchReplaceTool()
