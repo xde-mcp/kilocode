@@ -19,18 +19,18 @@ import { GitStateService } from "./GitStateService.js"
 import { SessionStateManager } from "./SessionStateManager.js"
 import { SyncQueue } from "./SyncQueue.js"
 import { TokenValidationService } from "./TokenValidationService.js"
-import { SessionTitleService } from "./SessionTitleService.js"
+import { SessionTitleService, type SessionTitleGeneratedMessage } from "./SessionTitleService.js"
 import { SessionLifecycleService } from "./SessionLifecycleService.js"
 import {
 	SessionSyncService,
 	type SessionCreatedMessage,
 	type SessionSyncedMessage,
-	type SessionTitleGeneratedMessage,
 } from "./SessionSyncService.js"
 import { LOG_SOURCES } from "../config.js"
 
 // Re-export types for external consumers
-export type { SessionCreatedMessage, SessionSyncedMessage, SessionTitleGeneratedMessage } from "./SessionSyncService.js"
+export type { SessionCreatedMessage, SessionSyncedMessage } from "./SessionSyncService.js"
+export type { SessionTitleGeneratedMessage } from "./SessionTitleService.js"
 export type {
 	ListSessionsInput,
 	ListSessionsOutput,
@@ -160,7 +160,6 @@ export class SessionManager {
 			getParentTaskId: dependencies.getParentTaskId,
 			onSessionCreated: dependencies.onSessionCreated,
 			onSessionSynced: dependencies.onSessionSynced,
-			onSessionTitleGenerated: dependencies.onSessionTitleGenerated,
 		})
 
 		// Now that syncService is created, set the flush handler

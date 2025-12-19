@@ -4,7 +4,7 @@ import type { ILogger } from "../types/ILogger.js"
 import type { SessionClient } from "./SessionClient.js"
 import type { SessionPersistenceManager } from "../utils/SessionPersistenceManager.js"
 import type { SessionStateManager } from "./SessionStateManager.js"
-import type { SessionTitleService } from "./SessionTitleService.js"
+import type { SessionTitleService, SessionTitleGeneratedMessage } from "./SessionTitleService.js"
 import type { GitStateService } from "./GitStateService.js"
 import type { TokenValidationService } from "./TokenValidationService.js"
 import type { SyncQueue } from "./SyncQueue.js"
@@ -33,16 +33,6 @@ export interface SessionSyncedMessage {
 }
 
 /**
- * Message emitted when a session title has been generated and updated.
- */
-export interface SessionTitleGeneratedMessage {
-	sessionId: string
-	title: string
-	timestamp: number
-	event: "session_title_generated"
-}
-
-/**
  * Dependencies required by SessionSyncService.
  */
 export interface SessionSyncServiceDependencies {
@@ -62,7 +52,6 @@ export interface SessionSyncServiceDependencies {
 	getParentTaskId: (taskId: string) => Promise<string | undefined>
 	onSessionCreated?: (message: SessionCreatedMessage) => void
 	onSessionSynced?: (message: SessionSyncedMessage) => void
-	onSessionTitleGenerated?: (message: SessionTitleGeneratedMessage) => void
 }
 
 /**
