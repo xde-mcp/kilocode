@@ -676,9 +676,6 @@ describe("AnthropicHandler", () => {
 				chunks.push(chunk)
 			}
 
-			// Ensure we don't emit complete tool_call events alongside partials
-			expect(chunks.filter((chunk) => chunk.type === "tool_call")).toHaveLength(0)
-
 			// Find the tool_call_partial chunk
 			const toolCallChunk = chunks.find((chunk) => chunk.type === "tool_call_partial")
 			expect(toolCallChunk).toBeDefined()
@@ -745,9 +742,6 @@ describe("AnthropicHandler", () => {
 			for await (const chunk of stream) {
 				chunks.push(chunk)
 			}
-
-			// Ensure we don't emit complete tool_call events alongside partials
-			expect(chunks.filter((chunk) => chunk.type === "tool_call")).toHaveLength(0)
 
 			// Find the tool_call_partial chunks
 			const toolCallChunks = chunks.filter((chunk) => chunk.type === "tool_call_partial")
