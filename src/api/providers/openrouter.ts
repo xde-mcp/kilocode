@@ -49,6 +49,7 @@ import { isAnyRecognizedKiloCodeError } from "../../shared/kilocode/errorUtils"
 import type { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from "../index"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { generateImageWithProvider, ImageGenerationResult } from "./utils/image-generation"
+import { VercelAiGatewayChunkSchema } from "./kilocode/vercel-ai-gateway"
 
 // Add custom interface for OpenRouter params.
 type OpenRouterChatCompletionParams = OpenAI.Chat.ChatCompletionCreateParams & {
@@ -341,7 +342,6 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 
 		let lastUsage: CompletionUsage | undefined = undefined
 		let inferenceProvider: string | undefined // kilocode_change
-		const toolCallAccumulator = new Map<number, { id: string; name: string; arguments: string }>()
 		// Accumulator for reasoning_details: accumulate text by type-index key
 		const reasoningDetailsAccumulator = new Map<
 			string,
@@ -366,6 +366,10 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			// kilocode_change start
 			if ("provider" in chunk && typeof chunk.provider === "string") {
 				inferenceProvider = chunk.provider
+			}
+			const vercelChunk = VercelAiGatewayChunkSchema.safeParse(chunk)
+			if (vercelChunk.success) {
+				inferenceProvider = vercelChunk.data.choices[0].delta.provider_metadata.gateway.routing.resolvedProvider
 			}
 			// kilocode_change end
 
