@@ -71,10 +71,19 @@ export interface SessionCreatedStreamEvent {
 	timestamp: number
 }
 
+export interface SessionTitleGeneratedStreamEvent {
+	streamEventType: "session_title_generated"
+	sessionId: string
+	title: string
+	timestamp: number
+}
+
 export interface WelcomeStreamEvent {
 	streamEventType: "welcome"
 	worktreeBranch?: string
 	timestamp: number
+	/** Configuration error instructions from CLI (indicates misconfigured CLI) */
+	instructions?: string[]
 }
 
 export type StreamEvent =
@@ -85,6 +94,7 @@ export type StreamEvent =
 	| CompleteStreamEvent
 	| InterruptedStreamEvent
 	| SessionCreatedStreamEvent
+	| SessionTitleGeneratedStreamEvent
 	| WelcomeStreamEvent
 
 /**
@@ -223,14 +233,26 @@ function toStreamEvent(parsed: Record<string, unknown>): StreamEvent | null {
 		}
 	}
 
-	// Detect welcome event from CLI (format: { type: "welcome", metadata: { welcomeOptions: { worktreeBranch: "..." } }, ... })
+	// Detect session_title_generated event from CLI (format: { event: "session_title_generated", sessionId: "...", title: "...", timestamp: ... })
+	if (parsed.event === "session_title_generated" && typeof parsed.sessionId === "string" && typeof parsed.title === "string") {
+		return {
+			streamEventType: "session_title_generated",
+			sessionId: parsed.sessionId as string,
+			title: parsed.title as string,
+			timestamp: (parsed.timestamp as number) || Date.now(),
+		}
+	}
+
+	// Detect welcome event from CLI (format: { type: "welcome", metadata: { welcomeOptions: { worktreeBranch: "...", instructions: [...] } }, ... })
 	if (parsed.type === "welcome") {
 		const metadata = parsed.metadata as Record<string, unknown> | undefined
 		const welcomeOptions = metadata?.welcomeOptions as Record<string, unknown> | undefined
+		const instructions = welcomeOptions?.instructions as string[] | undefined
 		return {
 			streamEventType: "welcome",
 			worktreeBranch: welcomeOptions?.worktreeBranch as string | undefined,
 			timestamp: (parsed.timestamp as number) || Date.now(),
+			instructions: Array.isArray(instructions) && instructions.length > 0 ? instructions : undefined,
 		}
 	}
 
