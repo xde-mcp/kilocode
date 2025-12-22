@@ -4,6 +4,7 @@
 
 package ai.kilocode.jetbrains.editor
 
+import ai.kilocode.jetbrains.plugin.SystemObjectProvider
 import ai.kilocode.jetbrains.util.URI
 import com.intellij.diff.DiffContentFactory
 import com.intellij.diff.chains.DiffRequestChain
@@ -133,8 +134,21 @@ class EditorAndDocManager(val project: Project) : Disposable {
         CoroutineScope(Dispatchers.Default).launch {
             // Wait for extension host to be ready before initializing editors
             try {
-                val extensionHostManager = project.getService(ai.kilocode.jetbrains.core.ExtensionHostManager::class.java)
-                val isReady = extensionHostManager?.waitForReady()?.get() ?: false
+                // Get ExtensionHostManager from SystemObjectProvider
+                val systemObjectProvider = SystemObjectProvider.getInstance(project)
+                val extensionHostManager = systemObjectProvider.get<ai.kilocode.jetbrains.core.ExtensionHostManager>("extensionHostManager")
+                
+                if (extensionHostManager == null) {
+                    logger.error("ExtensionHostManager not available in SystemObjectProvider, skipping editor initialization")
+                    return@launch
+                }
+                
+                val isReady = try {
+                    extensionHostManager.waitForReady().get()
+                } catch (e: Exception) {
+                    logger.error("Error waiting for extension host to be ready", e)
+                    false
+                }
                 
                 if (!isReady) {
                     logger.error("Extension host failed to initialize, skipping editor initialization")
