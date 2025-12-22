@@ -1,5 +1,5 @@
 ---
-"@roo-code/types": patch
+"kilo-code": patch
 ---
 
-Add GLM-4.7 model support to Z.ai provider with defaultToolProtocol configuration
+Add GLM-4.7 model support to Z.ai provider
