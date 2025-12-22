@@ -10,6 +10,7 @@ import {
 } from "./CliOutputParser"
 import { AgentRegistry } from "./AgentRegistry"
 import { buildCliArgs } from "./CliArgsBuilder"
+import { buildParallelModeWorktreePath } from "./parallelModeParser"
 import type { ClineMessage, ProviderSettings } from "@roo-code/types"
 import { extractApiReqFailedMessage, extractPayloadMessage } from "./askErrorParser"
 import { buildProviderEnvOverrides } from "./providerEnvMapper"
@@ -40,6 +41,8 @@ interface PendingProcessInfo {
 	desiredSessionId?: string
 	desiredLabel?: string
 	worktreeBranch?: string // Captured from welcome event before session_created
+	worktreePath?: string // Captured from welcome event before session_created
+	provisionalSessionId?: string // Used to show streaming content before session_created
 	sawApiReqStarted?: boolean // Track if api_req_started arrived before session_created
 	gitUrl?: string
 	stderrBuffer: string[] // Capture stderr for error detection
@@ -47,7 +50,6 @@ interface PendingProcessInfo {
 	timeoutId?: NodeJS.Timeout // Timer for auto-failing stuck pending sessions
 	hadShellPath?: boolean // Track if shell PATH was used (for telemetry)
 	cliPath?: string // CLI path for error telemetry
-	provisionalSessionId?: string // Temporary session ID created when api_req_started arrives (before session_created)
 	configurationError?: string // Captured from welcome event instructions (indicates misconfigured CLI)
 }
 
@@ -70,9 +72,9 @@ export interface CliProcessHandlerCallbacks {
 	) => void
 	onChatMessages: (sessionId: string, messages: ClineMessage[]) => void
 	onSessionCreated: (sawApiReqStarted: boolean) => void
+	onSessionRenamed?: (oldId: string, newId: string) => void
 	onPaymentRequiredPrompt?: (payload: KilocodePayload) => void
 	onSessionCompleted?: (sessionId: string, exitCode: number | null) => void // Called when process exits successfully
-	onSessionRenamed?: (oldId: string, newId: string) => void // Called when provisional session is upgraded to real session ID
 }
 
 export class CliProcessHandler {
@@ -400,9 +402,33 @@ export class CliProcessHandler {
 			// Capture worktree branch and configuration errors from welcome event (arrives before session_created)
 			if (event.streamEventType === "welcome") {
 				const welcomeEvent = event as WelcomeStreamEvent
+				const derivedWorktreePath =
+					!welcomeEvent.worktreePath && welcomeEvent.worktreeBranch
+						? buildParallelModeWorktreePath(welcomeEvent.worktreeBranch)
+						: undefined
+				const resolvedWorktreePath = welcomeEvent.worktreePath ?? derivedWorktreePath
+
 				if (welcomeEvent.worktreeBranch) {
 					this.pendingProcess.worktreeBranch = welcomeEvent.worktreeBranch
 					this.debugLog(`Captured worktree branch from welcome: ${welcomeEvent.worktreeBranch}`)
+				}
+				if (resolvedWorktreePath) {
+					this.pendingProcess.worktreePath = resolvedWorktreePath
+					const logMessage = derivedWorktreePath
+						? `Derived worktree path from branch: ${resolvedWorktreePath}`
+						: `Captured worktree path from welcome: ${resolvedWorktreePath}`
+					this.callbacks.onLog(logMessage)
+					this.debugLog(logMessage)
+				}
+				if (
+					this.pendingProcess.parallelMode &&
+					this.pendingProcess.provisionalSessionId &&
+					(welcomeEvent.worktreeBranch || resolvedWorktreePath)
+				) {
+					this.registry.updateParallelModeInfo(this.pendingProcess.provisionalSessionId, {
+						branch: welcomeEvent.worktreeBranch,
+						worktreePath: resolvedWorktreePath,
+					})
 				}
 				const configError = this.extractConfigErrorFromWelcome(welcomeEvent)
 				if (configError) {
@@ -411,7 +437,7 @@ export class CliProcessHandler {
 				}
 				return
 			}
-			// Handle kilocode events during pending state
+
 			if (event.streamEventType === "kilocode") {
 				const payload = (event as KilocodeStreamEvent).payload
 
@@ -425,28 +451,28 @@ export class CliProcessHandler {
 					return
 				}
 
-				// Track api_req_started for KilocodeEventProcessor
+				// Track api_req_started that arrives before session_created
+				// This is needed so KilocodeEventProcessor knows the user echo has already happened
 				if (payload?.say === "api_req_started") {
 					this.pendingProcess.sawApiReqStarted = true
 					this.debugLog(`Captured api_req_started before session_created`)
 				}
 
-				// Create provisional session on first content event (text, api_req_started, etc.)
-				// This ensures we don't lose the user's prompt echo or other early events
+				// Create provisional session on first content event (prompt echo, api_req_started, streaming text, etc.)
 				if (!this.pendingProcess.provisionalSessionId) {
 					this.createProvisionalSession(proc)
 				}
 
 				// Forward the event to the provisional session
-				if (this.pendingProcess?.provisionalSessionId) {
+				if (this.pendingProcess.provisionalSessionId) {
 					onCliEvent(this.pendingProcess.provisionalSessionId, event)
 					this.callbacks.onStateChanged()
 				}
 				return
 			}
 
-			// If we have a provisional session, forward non-kilocode events to it
-			if (this.pendingProcess?.provisionalSessionId) {
+			// If we have a provisional session, forward non-kilocode events to it as well
+			if (this.pendingProcess.provisionalSessionId) {
 				onCliEvent(this.pendingProcess.provisionalSessionId, event)
 				this.callbacks.onStateChanged()
 				return
@@ -476,13 +502,21 @@ export class CliProcessHandler {
 		const provisionalId = `provisional-${Date.now()}`
 		this.pendingProcess.provisionalSessionId = provisionalId
 
-		const { prompt, startTime, parallelMode, desiredLabel, gitUrl, parser } = this.pendingProcess
+		const { prompt, startTime, parallelMode, desiredLabel, gitUrl, parser, worktreeBranch, worktreePath } =
+			this.pendingProcess
 
 		this.registry.createSession(provisionalId, prompt, startTime, {
 			parallelMode,
 			labelOverride: desiredLabel,
 			gitUrl,
 		})
+
+		if (parallelMode && (worktreeBranch || worktreePath)) {
+			this.registry.updateParallelModeInfo(provisionalId, {
+				branch: worktreeBranch,
+				worktreePath,
+			})
+		}
 
 		this.activeSessions.set(provisionalId, { process: proc, parser })
 
@@ -503,6 +537,7 @@ export class CliProcessHandler {
 		provisionalSessionId: string,
 		realSessionId: string,
 		worktreeBranch: string | undefined,
+		worktreePath: string | undefined,
 		parallelMode: boolean | undefined,
 	): void {
 		this.debugLog(`Upgrading provisional session ${provisionalSessionId} -> ${realSessionId}`)
@@ -517,8 +552,11 @@ export class CliProcessHandler {
 
 		this.callbacks.onSessionRenamed?.(provisionalSessionId, realSessionId)
 
-		if (worktreeBranch && parallelMode) {
-			this.registry.updateParallelModeInfo(realSessionId, { branch: worktreeBranch })
+		if (parallelMode && (worktreeBranch || worktreePath)) {
+			this.registry.updateParallelModeInfo(realSessionId, {
+				branch: worktreeBranch,
+				worktreePath,
+			})
 		}
 
 		this.pendingProcess = null
@@ -577,6 +615,7 @@ export class CliProcessHandler {
 			parser,
 			parallelMode,
 			worktreeBranch,
+			worktreePath,
 			desiredSessionId,
 			desiredLabel,
 			sawApiReqStarted,
@@ -587,13 +626,24 @@ export class CliProcessHandler {
 		// Use desired sessionId when provided (resuming) to keep UI continuity
 		const sessionId = desiredSessionId ?? event.sessionId
 
-		// Handle provisional session upgrade if one exists
-		if (provisionalSessionId) {
-			this.upgradeProvisionalSession(provisionalSessionId, sessionId, worktreeBranch, parallelMode)
+		// If we created a provisional session, upgrade it instead of creating a second session entry.
+		// In some edge cases, fall back to the active session mapped to this process.
+		const provisionalIdFromProcess = this.findSessionIdForProcess(proc)
+		const effectiveProvisionalSessionId =
+			provisionalSessionId ??
+			(provisionalIdFromProcess?.startsWith("provisional-") ? provisionalIdFromProcess : undefined)
+
+		if (effectiveProvisionalSessionId && effectiveProvisionalSessionId !== sessionId) {
+			this.upgradeProvisionalSession(
+				effectiveProvisionalSessionId,
+				sessionId,
+				worktreeBranch,
+				worktreePath,
+				parallelMode,
+			)
 			return
 		}
 
-		// Normal path: no provisional session, create the session now
 		const existing = this.registry.getSession(sessionId)
 
 		let session: ReturnType<typeof this.registry.createSession>
@@ -620,6 +670,19 @@ export class CliProcessHandler {
 		if (worktreeBranch && parallelMode) {
 			this.registry.updateParallelModeInfo(session.sessionId, { branch: worktreeBranch })
 			this.debugLog(`Applied worktree branch: ${worktreeBranch}`)
+		}
+
+		const resolvedWorktreePath =
+			worktreePath || (parallelMode && worktreeBranch ? buildParallelModeWorktreePath(worktreeBranch) : undefined)
+
+		if (resolvedWorktreePath && parallelMode) {
+			this.registry.updateParallelModeInfo(session.sessionId, { worktreePath: resolvedWorktreePath })
+			const logMessage =
+				worktreePath && worktreePath === resolvedWorktreePath
+					? `Applied worktree path: ${resolvedWorktreePath}`
+					: `Applied derived worktree path: ${resolvedWorktreePath}`
+			this.callbacks.onLog(logMessage)
+			this.debugLog(logMessage)
 		}
 
 		// Clear pending session state
@@ -766,7 +829,7 @@ export class CliProcessHandler {
 			this.callbacks.onPendingSessionChanged(null)
 			this.pendingProcess = null
 
-			// Capture spawn error telemetry with context for debugging
+			// Capture spawn error telemetry with context for debugging.
 			const { platform, shell } = getPlatformDiagnostics()
 			const cliPathExtension = cliPath ? path.extname(cliPath).slice(1).toLowerCase() || undefined : undefined
 			captureAgentManagerLoginIssue({
