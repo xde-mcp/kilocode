@@ -131,18 +131,35 @@ class EditorAndDocManager(val project: Project) : Disposable {
 
     fun initCurrentIdeaEditor() {
         CoroutineScope(Dispatchers.Default).launch {
-            FileEditorManager.getInstance(project).allEditors.forEach { editor ->
-                // Record and synchronize
-                if (editor is FileEditor) {
-                    val uri = URI.file(editor.file.path)
-                    val handle = sync2ExtHost(uri, false)
-                    handle.ideaEditor = editor
-                    val group = tabManager.createTabGroup(EditorGroupColumn.BESIDE.value, true)
-                    val options = TabOptions(isActive = true)
-                    val tab = group.addTab(EditorTabInput(uri, uri.path, ""), options)
-                    handle.tab = tab
-                    handle.group = group
+            // Wait for extension host to be ready before initializing editors
+            try {
+                val extensionHostManager = project.getService(ai.kilocode.jetbrains.core.ExtensionHostManager::class.java)
+                val isReady = extensionHostManager?.waitForReady()?.get() ?: false
+                
+                if (!isReady) {
+                    logger.error("Extension host failed to initialize, skipping editor initialization")
+                    return@launch
                 }
+                
+                logger.info("Extension host ready, initializing current IDE editors")
+                
+                FileEditorManager.getInstance(project).allEditors.forEach { editor ->
+                    // Record and synchronize
+                    if (editor is FileEditor) {
+                        val uri = URI.file(editor.file.path)
+                        val handle = sync2ExtHost(uri, false)
+                        handle.ideaEditor = editor
+                        val group = tabManager.createTabGroup(EditorGroupColumn.BESIDE.value, true)
+                        val options = TabOptions(isActive = true)
+                        val tab = group.addTab(EditorTabInput(uri, uri.path, ""), options)
+                        handle.tab = tab
+                        handle.group = group
+                    }
+                }
+                
+                logger.info("Completed initialization of ${FileEditorManager.getInstance(project).allEditors.size} editors")
+            } catch (e: Exception) {
+                logger.error("Error during editor initialization", e)
             }
         }
     }

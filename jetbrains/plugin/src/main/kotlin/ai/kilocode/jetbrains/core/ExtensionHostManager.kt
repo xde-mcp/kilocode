@@ -27,6 +27,8 @@ import kotlinx.coroutines.cancel
 import java.net.Socket
 import java.nio.channels.SocketChannel
 import java.nio.file.Paths
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Extension host manager, responsible for communication with extension processes.
@@ -60,6 +62,13 @@ class ExtensionHostManager : Disposable {
     private var lastDiagnosticLogTime = 0L
 
     private var projectPath: String? = null
+
+    // Initialization state management
+    private val initializationComplete = CompletableFuture<Boolean>()
+    private val messageQueue = ConcurrentLinkedQueue<() -> Unit>()
+    
+    @Volatile
+    private var isReady = false
 
     // Support Socket constructor
     constructor(clientSocket: Socket, projectPath: String, project: Project) {
@@ -100,6 +109,32 @@ class ExtensionHostManager : Disposable {
         } catch (e: Exception) {
             LOG.error("Failed to start ExtensionHostManager", e)
             dispose()
+        }
+    }
+
+    /**
+     * Wait for extension host to be ready.
+     * @return CompletableFuture that completes when extension host is initialized.
+     */
+    fun waitForReady(): CompletableFuture<Boolean> {
+        return initializationComplete
+    }
+
+    /**
+     * Queue a message to be sent after initialization.
+     * If already initialized, executes immediately.
+     * @param message The message function to execute.
+     */
+    fun queueMessage(message: () -> Unit) {
+        if (isReady) {
+            try {
+                message()
+            } catch (e: Exception) {
+                LOG.error("Error executing queued message", e)
+            }
+        } else {
+            messageQueue.offer(message)
+            LOG.debug("Message queued, total queued: ${messageQueue.size}")
         }
     }
 
@@ -198,22 +233,46 @@ class ExtensionHostManager : Disposable {
 
             // Start file monitoring
             project.getService(WorkspaceFileChangeManager::class.java)
-//            WorkspaceFileChangeManager.getInstance()
-            project.getService(EditorAndDocManager::class.java).initCurrentIdeaEditor()
+
             // Activate RooCode plugin
             val rooCodeId = rooCodeIdentifier ?: throw IllegalStateException("RooCode identifier is not initialized")
             extensionManager.activateExtension(rooCodeId, rpcManager!!.getRPCProtocol())
                 .whenComplete { _, error ->
                     if (error != null) {
                         LOG.error("Failed to activate RooCode plugin", error)
+                        initializationComplete.complete(false)
                     } else {
                         LOG.info("RooCode plugin activated successfully")
+                        
+                        // Mark as ready and process queued messages
+                        isReady = true
+                        initializationComplete.complete(true)
+                        
+                        // Process all queued messages
+                        val queueSize = messageQueue.size
+                        LOG.info("Processing $queueSize queued messages")
+                        var processedCount = 0
+                        while (messageQueue.isNotEmpty()) {
+                            messageQueue.poll()?.let { message ->
+                                try {
+                                    message()
+                                    processedCount++
+                                } catch (e: Exception) {
+                                    LOG.error("Error processing queued message", e)
+                                }
+                            }
+                        }
+                        LOG.info("Processed $processedCount/$queueSize queued messages")
+                        
+                        // Now safe to initialize editors
+                        project.getService(EditorAndDocManager::class.java).initCurrentIdeaEditor()
                     }
                 }
 
             LOG.info("Initialized extension host")
         } catch (e: Exception) {
             LOG.error("Failed to handle Initialized message", e)
+            initializationComplete.complete(false)
         }
     }
 
@@ -338,6 +397,21 @@ class ExtensionHostManager : Disposable {
      */
     override fun dispose() {
         LOG.info("Disposing ExtensionHostManager")
+
+        // Mark as not ready to prevent new messages
+        isReady = false
+        
+        // Clear message queue
+        val remainingMessages = messageQueue.size
+        if (remainingMessages > 0) {
+            LOG.warn("Disposing with $remainingMessages unprocessed messages in queue")
+            messageQueue.clear()
+        }
+        
+        // Complete initialization future if not already done
+        if (!initializationComplete.isDone) {
+            initializationComplete.complete(false)
+        }
 
         // Cancel coroutines
         coroutineScope.cancel()
