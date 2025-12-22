@@ -380,6 +380,7 @@ describe("searchReplaceTool", () => {
 		})
 	})
 
+	// kilocode_change start
 	describe("line ending handling", () => {
 		it("handles files with Unix line endings (LF)", async () => {
 			const fileContent = "Line 1\nLine 2\nLine 3"
@@ -491,4 +492,5 @@ describe("searchReplaceTool", () => {
 			expect(mockCline.recordToolUsage).toHaveBeenCalledWith("search_replace")
 		})
 	})
+	// kilocode_change end
 })

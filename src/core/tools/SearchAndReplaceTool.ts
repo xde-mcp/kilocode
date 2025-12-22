@@ -13,7 +13,7 @@ import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { sanitizeUnifiedDiff, computeDiffStats } from "../diff/stats"
 import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
-import { normalizeLineEndings_kilocode } from "./helpers/stringUtils"
+import { normalizeLineEndings_kilocode } from "./kilocode/normalizeLineEndings"
 
 interface SearchReplaceOperation {
 	search: string
