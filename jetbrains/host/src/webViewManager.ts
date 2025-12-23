@@ -48,6 +48,7 @@ class SimpleWebview {
 export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWebviewsShape {
 	private readonly _proxy: ExtHostWebviewViewsShape
 	private readonly _webviews = new Map<string, SimpleWebview>()
+	private readonly _handleToViewType = new Map<string, string>() // Map handle to viewType
 
 	constructor(private readonly rpcProtocol: IRPCProtocol) {
 		this._proxy = this.rpcProtocol.getProxy(ExtHostContext.ExtHostWebviewViews)
@@ -64,11 +65,14 @@ export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWe
 		// Create a new webview instance
 		const webview = new SimpleWebview()
 
-		// Store the webview instance
-		this._webviews.set(viewType, webview)
-
 		// Generate a unique handle for this webview
 		const webviewHandle = `webview-${viewType}-${Date.now()}`
+
+		// Store the webview instance with the handle as key
+		this._webviews.set(webviewHandle, webview)
+
+		// Store the mapping from handle to viewType for cleanup
+		this._handleToViewType.set(webviewHandle, viewType)
 
 		// Notify the extension host that the webview is ready
 		this._proxy.$resolveWebviewView(
@@ -83,11 +87,16 @@ export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWe
 	$unregisterWebviewViewProvider(viewType: string): void {
 		console.log("Unregister webview view provider:", viewType)
 
-		// Remove the webview instance
-		const webview = this._webviews.get(viewType)
-		if (webview) {
-			webview.dispose()
-			this._webviews.delete(viewType)
+		// Find and remove all webviews with this viewType
+		for (const [handle, mappedViewType] of this._handleToViewType.entries()) {
+			if (mappedViewType === viewType) {
+				const webview = this._webviews.get(handle)
+				if (webview) {
+					webview.dispose()
+					this._webviews.delete(handle)
+				}
+				this._handleToViewType.delete(handle)
+			}
 		}
 	}
 
@@ -155,5 +164,6 @@ export class WebViewManager implements MainThreadWebviewViewsShape, MainThreadWe
 			webview.dispose()
 		}
 		this._webviews.clear()
+		this._handleToViewType.clear()
 	}
 }

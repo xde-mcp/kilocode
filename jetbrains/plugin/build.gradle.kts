@@ -15,7 +15,7 @@ buildscript {
 
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "2.0.21"
+    id("org.jetbrains.kotlin.jvm") version "2.1.0"
     id("org.jetbrains.intellij.platform") version "2.10.0"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.7"
@@ -79,7 +79,7 @@ dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.7")
 
     intellijPlatform {
-        create(properties("platformType"), properties("platformVersion"))
+        intellijIdea(properties("platformVersion"))
 
         // Bundled plugins
         bundledPlugins(
@@ -91,9 +91,6 @@ dependencies {
 
         // Plugin verifier
         pluginVerifier()
-
-        // Instrumentation tools
-        instrumentationTools()
     }
 }
 
@@ -159,10 +156,13 @@ tasks {
         doLast {
             if (ext.get("debugMode") != "idea" && ext.get("debugMode") != "none") {
                 val distributionFile = archiveFile.get().asFile
-                val sandboxPluginsDir = layout.buildDirectory.get().asFile.resolve("idea-sandbox/IC-2024.3/plugins")
-                val jetbrainsDir = sandboxPluginsDir.resolve("jetbrains")
+                val sandboxDir = layout.buildDirectory.get().asFile.resolve("idea-sandbox")
+                
+                // Find the actual sandbox directory (e.g., IU-2025.3.1, IC-2024.3, etc.)
+                val platformDir = sandboxDir.listFiles()?.firstOrNull { it.isDirectory }
+                val jetbrainsDir = platformDir?.resolve("plugins/jetbrains")
 
-                if (jetbrainsDir.exists() && distributionFile.exists()) {
+                if (jetbrainsDir?.exists() == true && distributionFile.exists()) {
                     logger.lifecycle("Adding sandbox resources to distribution ZIP...")
                     logger.lifecycle("Sandbox jetbrains dir: ${jetbrainsDir.absolutePath}")
                     logger.lifecycle("Distribution file: ${distributionFile.absolutePath}")
@@ -198,6 +198,8 @@ tasks {
                     tempDir.deleteRecursively()
 
                     logger.lifecycle("Distribution ZIP updated with sandbox resources at root level")
+                } else {
+                    logger.warn("Jetbrains directory not found in sandbox: ${jetbrainsDir?.absolutePath ?: "null"}")
                 }
             }
         }
