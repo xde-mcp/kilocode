@@ -40,7 +40,7 @@ enum class InitializationState {
             RPC_CREATING -> newState in setOf(RPC_CREATED, FAILED)
             RPC_CREATED -> newState in setOf(EXTENSION_ACTIVATING, FAILED)
             EXTENSION_ACTIVATING -> newState in setOf(EXTENSION_ACTIVATED, WEBVIEW_REGISTERING, FAILED)
-            EXTENSION_ACTIVATED -> newState in setOf(WEBVIEW_REGISTERING, COMPLETE, FAILED)
+            EXTENSION_ACTIVATED -> newState in setOf(WEBVIEW_REGISTERING, WEBVIEW_REGISTERED, HTML_LOADING, HTML_LOADED, COMPLETE, FAILED)  // Allow forward progress even if webview registration happened during activation
             WEBVIEW_REGISTERING -> newState in setOf(WEBVIEW_REGISTERED, EXTENSION_ACTIVATED, FAILED)  // Allow EXTENSION_ACTIVATED for race condition
             WEBVIEW_REGISTERED -> newState in setOf(WEBVIEW_RESOLVING, FAILED)
             WEBVIEW_RESOLVING -> newState in setOf(WEBVIEW_RESOLVED, FAILED)

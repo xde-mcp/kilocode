@@ -336,6 +336,14 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
 
             // Set as the latest created WebView
             latestWebView = webview
+            
+            // If theme config is already available, send it to the newly created WebView
+            if (currentThemeConfig != null) {
+                logger.info("Theme config available, sending to newly created WebView")
+                webview.sendThemeConfigToWebView(currentThemeConfig!!, bodyThemeClass)
+            } else {
+                logger.debug("No theme config available yet for newly created WebView")
+            }
 
             logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId for project: ${project.name}")
 
@@ -637,12 +645,15 @@ class WebViewInstance(
      * Send theme config to the specified WebView instance
      */
     fun sendThemeConfigToWebView(themeConfig: JsonObject, bodyThemeClass: String) {
-        currentThemeConfig = themeConfig
-        this.bodyThemeClass = bodyThemeClass
         if (isDisposed) {
             logger.warn("WebView has been disposed, cannot send theme config")
             return
         }
+        
+        // Always store the theme config, even if page isn't loaded yet
+        currentThemeConfig = themeConfig
+        this.bodyThemeClass = bodyThemeClass
+        logger.debug("Theme config stored for WebView($viewId), will inject when page loads")
         
         synchronized(pageLoadLock) {
             if (!isPageLoaded) {
@@ -673,8 +684,10 @@ class WebViewInstance(
 
     private fun injectTheme() {
         if (currentThemeConfig == null) {
+            logger.warn("Cannot inject theme: currentThemeConfig is null for WebView($viewId)")
             return
         }
+        logger.info("Starting theme injection for WebView($viewId)")
         
         // Check if we're in a terminal state
         val currentState = stateMachine?.getCurrentState()
@@ -736,10 +749,15 @@ class WebViewInstance(
                 if (cssContent != null) {
                     val injectThemeScript = """
                         (function() {
+                            // Check if already injected at the top level
+                            if (window.__cssVariablesInjected) {
+                                console.log("CSS variables already injected, skipping");
+                                return;
+                            }
+                            // Set flag immediately to prevent race conditions
+                            window.__cssVariablesInjected = true;
+                            
                             function injectCSSVariables() {
-                                if (window.__cssVariablesInjected) {
-                                    return;
-                                }
                                 if(document.documentElement) {
                                     // Convert cssContent to style attribute of html tag
                                     try {
@@ -887,7 +905,6 @@ class WebViewInstance(
                                             }
                                         `;
                                         console.log("Default style injected to id=_defaultStyles");
-                                        window.__cssVariablesInjected = true;
                                     }
                                 } else {
                                     // If html tag does not exist yet, wait for DOM to load and try again
@@ -973,10 +990,15 @@ class WebViewInstance(
                 if (cssContent != null) {
                     val injectThemeScript = """
                         (function() {
+                            // Check if already injected at the top level
+                            if (window.__cssVariablesInjected) {
+                                console.log("CSS variables already injected, skipping");
+                                return;
+                            }
+                            // Set flag immediately to prevent race conditions
+                            window.__cssVariablesInjected = true;
+                            
                             function injectCSSVariables() {
-                                if (window.__cssVariablesInjected) {
-                                    return;
-                                }
                                 if(document.documentElement) {
                                     // Convert cssContent to style attribute of html tag
                                     try {
@@ -1124,7 +1146,6 @@ class WebViewInstance(
                                             }
                                         `;
                                         console.log("Default style injected to id=_defaultStyles");
-                                        window.__cssVariablesInjected = true;
                                     }
                                 } else {
                                     // If html tag does not exist yet, wait for DOM to load and try again
@@ -1206,13 +1227,47 @@ class WebViewInstance(
      */
     fun postMessageToWebView(message: String) {
         if (!isDisposed) {
-            // Send message to WebView via JavaScript function
+            // Send message to WebView via JavaScript function with retry mechanism
             val script = """
-                if (window.receiveMessageFromPlugin) {
-                    window.receiveMessageFromPlugin($message);
-                } else {
-                    console.warn("receiveMessageFromPlugin not available");
-                }
+                (function() {
+                    function sendMessage() {
+                        if (window.receiveMessageFromPlugin) {
+                            window.receiveMessageFromPlugin($message);
+                            return true;
+                        }
+                        return false;
+                    }
+                    
+                    // Try to send immediately
+                    if (sendMessage()) {
+                        return;
+                    }
+                    
+                    // If not available, retry with exponential backoff
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    const baseDelay = 50; // Start with 50ms
+                    
+                    function retryWithBackoff() {
+                        if (attempts >= maxAttempts) {
+                            console.warn("receiveMessageFromPlugin not available after " + maxAttempts + " attempts");
+                            return;
+                        }
+                        
+                        attempts++;
+                        const delay = baseDelay * Math.pow(1.5, attempts - 1);
+                        
+                        setTimeout(function() {
+                            if (sendMessage()) {
+                                console.log("Message sent successfully after " + attempts + " attempts");
+                            } else {
+                                retryWithBackoff();
+                            }
+                        }, delay);
+                    }
+                    
+                    retryWithBackoff();
+                })();
             """.trimIndent()
             executeJavaScript(script)
         }
@@ -1381,7 +1436,29 @@ class WebViewInstance(
     fun executeJavaScript(script: String) {
         if (!isDisposed) {
             logger.info("WebView executing JavaScript, script length: ${script.length}")
-            browser.cefBrowser.executeJavaScript(script, browser.cefBrowser.url, 0)
+            try {
+                // Check if JCEF browser is initialized before executing JavaScript
+                val url = browser.cefBrowser.url
+                if (url == null || url.isEmpty()) {
+                    logger.warn("JCEF browser not fully initialized (URL is null/empty), deferring JavaScript execution")
+                    // Retry after a short delay
+                    Timer().schedule(object : TimerTask() {
+                        override fun run() {
+                            executeJavaScript(script)
+                        }
+                    }, 100)
+                    return
+                }
+                browser.cefBrowser.executeJavaScript(script, url, 0)
+            } catch (e: Exception) {
+                logger.error("Failed to execute JavaScript, will retry", e)
+                // Retry after a short delay
+                Timer().schedule(object : TimerTask() {
+                    override fun run() {
+                        executeJavaScript(script)
+                    }
+                }, 100)
+            }
         }
     }
 
