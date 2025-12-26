@@ -1,8 +1,3 @@
-// Copyright 2009-2025 Weibo, Inc.
-// SPDX-FileCopyrightText: 2025 Weibo, Inc.
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package ai.kilocode.jetbrains.core
 
 import ai.kilocode.jetbrains.editor.EditorAndDocManager
@@ -331,17 +326,25 @@ class ExtensionHostManager : Disposable {
      * This handles cases where the extension doesn't require webviews.
      */
     private fun scheduleCompletionCheck() {
-        // Wait 5 seconds after extension activation
+        // Wait 10 seconds after extension activation (increased from 5s for slow machines)
         // If still at EXTENSION_ACTIVATED state, transition to COMPLETE
         java.util.Timer().schedule(object : java.util.TimerTask() {
             override fun run() {
                 val currentState = stateMachine.getCurrentState()
+                
+                // Only transition if still at EXTENSION_ACTIVATED
                 if (currentState == InitializationState.EXTENSION_ACTIVATED) {
                     LOG.info("No webview registration detected after extension activation, transitioning to COMPLETE")
                     stateMachine.transitionTo(InitializationState.COMPLETE, "Extension activated without webview")
+                } else if (currentState.ordinal < InitializationState.EXTENSION_ACTIVATED.ordinal) {
+                    // State hasn't reached EXTENSION_ACTIVATED yet, this shouldn't happen
+                    LOG.warn("Completion check fired but state is $currentState, expected EXTENSION_ACTIVATED or later")
+                } else {
+                    // State has progressed past EXTENSION_ACTIVATED, which is expected
+                    LOG.debug("Completion check skipped, current state: $currentState (already progressed)")
                 }
             }
-        }, 5000) // 5 seconds delay
+        }, 10000) // 10 seconds delay (increased from 5s for slow machines)
     }
 
     /**
@@ -466,6 +469,30 @@ class ExtensionHostManager : Disposable {
      */
     fun getInitializationReport(): String {
         return stateMachine.generateReport()
+    }
+    
+    /**
+     * Restart initialization if stuck or failed.
+     * This method resets the state machine and clears the message queue,
+     * then restarts the initialization process.
+     */
+    fun restartInitialization() {
+        LOG.warn("Restarting initialization")
+        
+        // Reset state machine
+        stateMachine.transitionTo(InitializationState.NOT_STARTED, "Manual restart")
+        
+        // Clear message queue
+        queueLock.withLock {
+            val queueSize = messageQueue.size
+            if (queueSize > 0) {
+                LOG.info("Clearing $queueSize queued messages")
+                messageQueue.clear()
+            }
+        }
+        
+        // Restart
+        start()
     }
 
     /**

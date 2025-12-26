@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2025 Weibo, Inc.
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package ai.kilocode.jetbrains.ui
 
 import ai.kilocode.jetbrains.actions.OpenDevToolsAction
@@ -89,6 +85,44 @@ class RooToolWindowFactory : ToolWindowFactory {
         private var statusUpdateTimer: java.util.Timer? = null
 
         /**
+         * Get initialization state text from state machine
+         */
+        private fun getInitStateText(): String {
+            val pluginContext = try {
+                project.getService(PluginContext::class.java)
+            } catch (e: Exception) {
+                null
+            }
+            
+            val extensionHostManager = pluginContext?.getExtensionHostManager()
+            val initState = extensionHostManager?.stateMachine?.getCurrentState()
+            return when (initState?.name) {
+                null -> "Initializing..."
+                "NOT_STARTED" -> "Starting..."
+                "SOCKET_CONNECTING" -> "Connecting to extension host..."
+                "SOCKET_CONNECTED" -> "Connected to extension host"
+                "READY_RECEIVED" -> "Extension host ready"
+                "INIT_DATA_SENT" -> "Sending initialization data..."
+                "INITIALIZED_RECEIVED" -> "Extension host initialized"
+                "RPC_CREATING" -> "Creating RPC protocol..."
+                "RPC_CREATED" -> "RPC protocol created"
+                "EXTENSION_ACTIVATING" -> "Activating extension..."
+                "EXTENSION_ACTIVATED" -> "Extension activated"
+                "WEBVIEW_REGISTERING" -> "Registering webview..."
+                "WEBVIEW_REGISTERED" -> "Webview registered"
+                "WEBVIEW_RESOLVING" -> "Resolving webview..."
+                "WEBVIEW_RESOLVED" -> "Webview resolved"
+                "HTML_LOADING" -> "Loading UI..."
+                "HTML_LOADED" -> "UI loaded"
+                "THEME_INJECTING" -> "Applying theme..."
+                "THEME_INJECTED" -> "Theme applied"
+                "COMPLETE" -> "Ready"
+                "FAILED" -> "Failed"
+                else -> initState.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
+            }
+        }
+
+        /**
          * Create system information text in HTML format
          */
         private fun createSystemInfoText(): String {
@@ -104,21 +138,7 @@ class RooToolWindowFactory : ToolWindowFactory {
             val isLinuxArm = osName.lowercase().contains("linux") && (osArch.lowercase().contains("aarch64") || osArch.lowercase().contains("arm"))
             
             // Get initialization status
-            val pluginContext = try {
-                project.getService(PluginContext::class.java)
-            } catch (e: Exception) {
-                null
-            }
-            
-            val extensionHostManager = pluginContext?.getExtensionHostManager()
-            val initState = extensionHostManager?.stateMachine?.getCurrentState()
-            val initStateText = when {
-                initState == null -> "Initializing..."
-                initState.name == "NOT_STARTED" -> "Starting..."
-                initState.name == "COMPLETE" -> "Ready"
-                initState.name == "FAILED" -> "Failed"
-                else -> initState.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
-            }
+            val initStateText = getInitStateText()
             
             // Get Node.js version
             val nodeVersion = try {
@@ -140,9 +160,9 @@ class RooToolWindowFactory : ToolWindowFactory {
             }
 
             return buildString {
-                append("<html><body style='width: 300px; padding: 8px;'>")
+                append("<html><body style='width: 400px; padding: 8px;'>")
                 append("<h3>Kilo Code Initialization</h3>")
-                append("<p><b>Status:</b> $initStateText</p>")
+                append("<p><b>Status:</b> $initStateText</p>")                
                 append("<h3>System Information</h3>")
                 append("<table>")
                 append("<tr><td><b>Node.js Version:</b></td><td>$nodeVersion</td></tr>")
@@ -198,21 +218,7 @@ class RooToolWindowFactory : ToolWindowFactory {
             val isLinuxArm = osName.lowercase().contains("linux") && (osArch.lowercase().contains("aarch64") || osArch.lowercase().contains("arm"))
             
             // Get initialization status
-            val pluginContext = try {
-                project.getService(PluginContext::class.java)
-            } catch (e: Exception) {
-                null
-            }
-            
-            val extensionHostManager = pluginContext?.getExtensionHostManager()
-            val initState = extensionHostManager?.stateMachine?.getCurrentState()
-            val initStateText = when {
-                initState == null -> "Initializing..."
-                initState.name == "NOT_STARTED" -> "Starting..."
-                initState.name == "COMPLETE" -> "Ready"
-                initState.name == "FAILED" -> "Failed"
-                else -> initState.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
-            }
+            val initStateText = getInitStateText()
             
             // Get Node.js version
             val nodeVersion = try {

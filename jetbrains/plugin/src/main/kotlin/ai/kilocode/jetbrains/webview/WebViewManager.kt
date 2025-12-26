@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2025 Weibo, Inc.
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package ai.kilocode.jetbrains.webview
 
 import ai.kilocode.jetbrains.core.InitializationState
@@ -261,7 +257,26 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
         logger.info("Register WebView provider and create WebView instance: ${data.viewType} for project: ${project.name}")
         
         try {
-            stateMachine?.transitionTo(InitializationState.WEBVIEW_REGISTERING, "registerProvider() called")
+            val currentState = stateMachine?.getCurrentState()
+            
+            // Check if we should transition to WEBVIEW_REGISTERING
+            // Only transition if we're at or past EXTENSION_ACTIVATING and haven't registered yet
+            if (currentState != null) {
+                when {
+                    currentState.ordinal < InitializationState.EXTENSION_ACTIVATING.ordinal -> {
+                        logger.warn("Webview registration called before extension activation (state: $currentState)")
+                        // Don't transition yet, but continue with registration
+                    }
+                    currentState.ordinal >= InitializationState.WEBVIEW_REGISTERING.ordinal -> {
+                        logger.debug("Webview already registering or registered (state: $currentState)")
+                        // Don't transition, already past this state
+                    }
+                    else -> {
+                        // Safe to transition to WEBVIEW_REGISTERING
+                        stateMachine?.transitionTo(InitializationState.WEBVIEW_REGISTERING, "registerProvider() called")
+                    }
+                }
+            }
             
             val extension = data.extension
 
@@ -604,8 +619,13 @@ class WebViewInstance(
     
     // Theme injection retry mechanism
     private var themeInjectionAttempts = 0
-    private val maxThemeInjectionAttempts = 3
-    private val themeInjectionRetryDelay = 1000L // 1 second
+    private val maxThemeInjectionAttempts = 10 // Increased from 3 for slow machines
+    private val themeInjectionRetryDelay = 2000L // Increased from 1s to 2s for slow machines
+    private val themeInjectionBackoffMultiplier = 1.5 // Exponential backoff multiplier
+    
+    // Track if initial theme injection has completed
+    @Volatile
+    private var initialThemeInjectionComplete = false
 
     init {
         setupJSBridge()
@@ -656,22 +676,37 @@ class WebViewInstance(
             return
         }
         
+        // Check if we're in a terminal state
+        val currentState = stateMachine?.getCurrentState()
+        if (currentState == InitializationState.COMPLETE ||
+            currentState == InitializationState.FAILED) {
+            logger.debug("Skipping theme state transitions, already in terminal state: $currentState")
+            
+            // Still inject the theme (for theme changes), but don't update state machine
+            injectThemeWithoutStateTransitions()
+            return
+        }
+        
         // Check if page is loaded with synchronization
         synchronized(pageLoadLock) {
             if (!isPageLoaded) {
                 if (themeInjectionAttempts < maxThemeInjectionAttempts) {
                     themeInjectionAttempts++
-                    logger.debug("Page not loaded, scheduling theme injection retry (attempt $themeInjectionAttempts)")
+                    // Calculate exponential backoff delay
+                    val delay = (themeInjectionRetryDelay * Math.pow(themeInjectionBackoffMultiplier, (themeInjectionAttempts - 1).toDouble())).toLong()
+                    logger.debug("Page not loaded, scheduling theme injection retry (attempt $themeInjectionAttempts/$maxThemeInjectionAttempts, delay: ${delay}ms)")
                     
-                    // Schedule retry
+                    // Schedule retry with exponential backoff
                     Timer().schedule(object : TimerTask() {
                         override fun run() {
                             injectTheme()
                         }
-                    }, themeInjectionRetryDelay)
+                    }, delay)
                 } else {
-                    logger.warn("Max theme injection attempts ($maxThemeInjectionAttempts) reached, page may not be ready")
-                    stateMachine?.transitionTo(InitializationState.FAILED, "Theme injection max attempts reached")
+                    // Graceful degradation: continue without theme instead of failing
+                    logger.warn("Max theme injection attempts ($maxThemeInjectionAttempts) reached, continuing without theme")
+                    stateMachine?.transitionTo(InitializationState.COMPLETE, "Initialization complete (theme injection skipped)")
+                    initialThemeInjectionComplete = true
                 }
                 return
             }
@@ -681,7 +716,12 @@ class WebViewInstance(
         }
         
         try {
-            stateMachine?.transitionTo(InitializationState.THEME_INJECTING, "Injecting theme")
+            // Only transition states during initial theme injection
+            val shouldTransitionStates = !initialThemeInjectionComplete
+            
+            if (shouldTransitionStates) {
+                stateMachine?.transitionTo(InitializationState.THEME_INJECTING, "Injecting theme")
+            }
             var cssContent: String? = null
 
             // Get cssContent from themeConfig and save, then remove from object
@@ -895,11 +935,244 @@ class WebViewInstance(
                 logger.info("Theme config has been sent to WebView")
             }
             
-            stateMachine?.transitionTo(InitializationState.THEME_INJECTED, "Theme injected")
-            stateMachine?.transitionTo(InitializationState.COMPLETE, "Initialization complete")
+            if (shouldTransitionStates) {
+                stateMachine?.transitionTo(InitializationState.THEME_INJECTED, "Theme injected")
+                stateMachine?.transitionTo(InitializationState.COMPLETE, "Initialization complete")
+                initialThemeInjectionComplete = true
+            } else {
+                logger.debug("Theme injected (runtime theme change, no state transitions)")
+            }
         } catch (e: Exception) {
             logger.error("Failed to send theme config to WebView", e)
-            stateMachine?.transitionTo(InitializationState.FAILED, "Theme injection failed: ${e.message}")
+            if (!initialThemeInjectionComplete) {
+                stateMachine?.transitionTo(InitializationState.FAILED, "Theme injection failed: ${e.message}")
+            }
+        }
+    }
+    
+    /**
+     * Inject theme without state machine transitions (for runtime theme changes)
+     */
+    private fun injectThemeWithoutStateTransitions() {
+        if (currentThemeConfig == null) {
+            return
+        }
+        
+        try {
+            var cssContent: String? = null
+
+            // Get cssContent from themeConfig and save, then remove from object
+            if (currentThemeConfig!!.has("cssContent")) {
+                cssContent = currentThemeConfig!!.get("cssContent").asString
+                // Create a copy of themeConfig to modify without affecting the original object
+                val themeConfigCopy = currentThemeConfig!!.deepCopy()
+                // Remove cssContent property from the copy
+                themeConfigCopy.remove("cssContent")
+
+                // Inject CSS variables into WebView
+                if (cssContent != null) {
+                    val injectThemeScript = """
+                        (function() {
+                            function injectCSSVariables() {
+                                if (window.__cssVariablesInjected) {
+                                    return;
+                                }
+                                if(document.documentElement) {
+                                    // Convert cssContent to style attribute of html tag
+                                    try {
+                                        // Extract CSS variables (format: --name:value;)
+                                        const cssLines = `$cssContent`.split('\n');
+                                        const cssVariables = [];
+
+                                        // Process each line, extract CSS variable declarations
+                                        for (const line of cssLines) {
+                                            const trimmedLine = line.trim();
+                                            // Skip comments and empty lines
+                                            if (trimmedLine.startsWith('/*') || trimmedLine.startsWith('*') || trimmedLine.startsWith('*/') || trimmedLine === '') {
+                                                continue;
+                                            }
+                                            // Extract CSS variable part
+                                            if (trimmedLine.startsWith('--')) {
+                                                cssVariables.push(trimmedLine);
+                                            }
+                                        }
+
+                                        // Merge extracted CSS variables into style attribute string
+                                        const styleAttrValue = cssVariables.join(' ');
+
+                                        // Set as style attribute of html tag
+                                        document.documentElement.setAttribute('style', styleAttrValue);
+                                        console.log("CSS variables set as style attribute of HTML tag");
+
+                                        // Add theme class to body element for styled-components compatibility
+                                        // Remove existing theme classes
+                                        document.body.classList.remove('vscode-dark', 'vscode-light');
+
+                                        // Add appropriate theme class based on current theme
+                                        document.body.classList.add('$bodyThemeClass');
+                                        console.log("Added theme class to body: $bodyThemeClass");
+                                    } catch (error) {
+                                        console.error("Error processing CSS variables and theme classes:", error);
+                                    }
+
+                                    // Keep original default style injection logic
+                                    if(document.head) {
+                                        // Inject default theme style into head, use id="_defaultStyles"
+                                        let defaultStylesElement = document.getElementById('_defaultStyles');
+                                        if (!defaultStylesElement) {
+                                            defaultStylesElement = document.createElement('style');
+                                            defaultStylesElement.id = '_defaultStyles';
+                                            document.head.appendChild(defaultStylesElement);
+                                        }
+
+                                        // Add default_themes.css content
+                                        defaultStylesElement.textContent = `
+                                            html {
+                                                background: var(--vscode-sideBar-background);
+                                                scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-sideBar-background);
+                                            }
+
+                                            body {
+                                                overscroll-behavior-x: none;
+                                                background-color: transparent;
+                                                color: var(--vscode-editor-foreground);
+                                                font-family: var(--vscode-font-family);
+                                                font-weight: var(--vscode-font-weight);
+                                                font-size: var(--vscode-font-size);
+                                                margin: 0;
+                                                padding: 0 20px;
+                                            }
+
+                                            img, video {
+                                                max-width: 100%;
+                                                max-height: 100%;
+                                            }
+
+                                            a, a code {
+                                                color: var(--vscode-textLink-foreground);
+                                            }
+
+                                            p > a {
+                                                text-decoration: var(--text-link-decoration);
+                                            }
+
+                                            a:hover {
+                                                color: var(--vscode-textLink-activeForeground);
+                                            }
+
+                                            a:focus,
+                                            input:focus,
+                                            select:focus,
+                                            textarea:focus {
+                                                outline: 1px solid -webkit-focus-ring-color;
+                                                outline-offset: -1px;
+                                            }
+
+                                            code {
+                                                font-family: var(--monaco-monospace-font);
+                                                color: var(--vscode-textPreformat-foreground);
+                                                background-color: var(--vscode-textPreformat-background);
+                                                padding: 1px 3px;
+                                                border-radius: 4px;
+                                            }
+
+                                            pre code {
+                                                padding: 0;
+                                            }
+
+                                            blockquote {
+                                                background: var(--vscode-textBlockQuote-background);
+                                                border-color: var(--vscode-textBlockQuote-border);
+                                            }
+
+                                            kbd {
+                                                background-color: var(--vscode-keybindingLabel-background);
+                                                color: var(--vscode-keybindingLabel-foreground);
+                                                border-style: solid;
+                                                border-width: 1px;
+                                                border-radius: 3px;
+                                                border-color: var(--vscode-keybindingLabel-border);
+                                                border-bottom-color: var(--vscode-keybindingLabel-bottomBorder);
+                                                box-shadow: inset 0 -1px 0 var(--vscode-widget-shadow);
+                                                vertical-align: middle;
+                                                padding: 1px 3px;
+                                            }
+
+                                            ::-webkit-scrollbar {
+                                                width: 10px;
+                                                height: 10px;
+                                            }
+
+                                            ::-webkit-scrollbar-corner {
+                                                background-color: var(--vscode-editor-background);
+                                            }
+
+                                            ::-webkit-scrollbar-thumb {
+                                                background-color: var(--vscode-scrollbarSlider-background);
+                                            }
+                                            ::-webkit-scrollbar-thumb:hover {
+                                                background-color: var(--vscode-scrollbarSlider-hoverBackground);
+                                            }
+                                            ::-webkit-scrollbar-thumb:active {
+                                                background-color: var(--vscode-scrollbarSlider-activeBackground);
+                                            }
+                                            ::highlight(find-highlight) {
+                                                background-color: var(--vscode-editor-findMatchHighlightBackground);
+                                            }
+                                            ::highlight(current-find-highlight) {
+                                                background-color: var(--vscode-editor-findMatchBackground);
+                                            }
+                                        `;
+                                        console.log("Default style injected to id=_defaultStyles");
+                                        window.__cssVariablesInjected = true;
+                                    }
+                                } else {
+                                    // If html tag does not exist yet, wait for DOM to load and try again
+                                    setTimeout(injectCSSVariables, 10);
+                                }
+                            }
+                            // If document is already loaded
+                            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                                console.log("Document loaded, inject CSS variables immediately");
+                                injectCSSVariables();
+                            } else {
+                                // Otherwise wait for DOMContentLoaded event
+                                console.log("Document not loaded, waiting for DOMContentLoaded event");
+                                document.addEventListener('DOMContentLoaded', injectCSSVariables);
+                            }
+                        })()
+                    """.trimIndent()
+
+                    logger.debug("Injecting theme style into WebView($viewId) without state transitions, size: ${cssContent.length} bytes")
+                    executeJavaScript(injectThemeScript)
+                }
+
+                // Pass the theme config without cssContent via message
+                val themeConfigJson = gson.toJson(themeConfigCopy)
+                val message = """
+                    {
+                        "type": "theme",
+                        "text": "${themeConfigJson.replace("\"", "\\\"")}"
+                    }
+                """.trimIndent()
+
+                postMessageToWebView(message)
+                logger.debug("Theme config without cssContent has been sent to WebView (runtime theme change)")
+            } else {
+                // If there is no cssContent, send the original config directly
+                val themeConfigJson = gson.toJson(currentThemeConfig)
+                val message = """
+                    {
+                        "type": "theme",
+                        "text": "${themeConfigJson.replace("\"", "\\\"")}"
+                    }
+                """.trimIndent()
+
+                postMessageToWebView(message)
+                logger.debug("Theme config has been sent to WebView (runtime theme change)")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to inject theme without state transitions", e)
         }
     }
 
@@ -1006,14 +1279,16 @@ class WebViewInstance(
                         logger.info("WebView finished loading: ${frame?.url}, status code: $httpStatusCode")
                         
                         synchronized(pageLoadLock) {
-                            isPageLoaded = true
-                        }
-
-                        if (isInitialPageLoad) {
-                            stateMachine?.transitionTo(InitializationState.HTML_LOADED, "HTML loaded")
-                            injectTheme()
-                            pageLoadCallback?.invoke()
-                            isInitialPageLoad = false
+                            // Only process initial page load once
+                            if (isInitialPageLoad) {
+                                isInitialPageLoad = false
+                                isPageLoaded = true
+                                stateMachine?.transitionTo(InitializationState.HTML_LOADED, "HTML loaded")
+                                injectTheme()
+                                pageLoadCallback?.invoke()
+                            } else {
+                                logger.debug("Ignoring subsequent onLoadEnd event (not initial page load)")
+                            }
                         }
                     }
 

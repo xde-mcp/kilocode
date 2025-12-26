@@ -1,7 +1,3 @@
-// SPDX-FileCopyrightText: 2025 Weibo, Inc.
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package ai.kilocode.jetbrains.core
 
 import com.intellij.openapi.diagnostic.Logger
@@ -45,7 +41,7 @@ enum class InitializationState {
             RPC_CREATED -> newState in setOf(EXTENSION_ACTIVATING, FAILED)
             EXTENSION_ACTIVATING -> newState in setOf(EXTENSION_ACTIVATED, WEBVIEW_REGISTERING, FAILED)
             EXTENSION_ACTIVATED -> newState in setOf(WEBVIEW_REGISTERING, COMPLETE, FAILED)
-            WEBVIEW_REGISTERING -> newState in setOf(WEBVIEW_REGISTERED, FAILED)
+            WEBVIEW_REGISTERING -> newState in setOf(WEBVIEW_REGISTERED, EXTENSION_ACTIVATED, FAILED)  // Allow EXTENSION_ACTIVATED for race condition
             WEBVIEW_REGISTERED -> newState in setOf(WEBVIEW_RESOLVING, FAILED)
             WEBVIEW_RESOLVING -> newState in setOf(WEBVIEW_RESOLVED, FAILED)
             WEBVIEW_RESOLVED -> newState in setOf(HTML_LOADING, FAILED)
@@ -53,8 +49,8 @@ enum class InitializationState {
             HTML_LOADED -> newState in setOf(THEME_INJECTING, COMPLETE, FAILED)
             THEME_INJECTING -> newState in setOf(THEME_INJECTED, FAILED)
             THEME_INJECTED -> newState in setOf(COMPLETE, FAILED)
-            COMPLETE -> false
-            FAILED -> false
+            COMPLETE -> false  // No transitions from COMPLETE
+            FAILED -> false    // No transitions from FAILED
         }
     }
 }
@@ -82,9 +78,26 @@ class InitializationStateMachine {
     fun transitionTo(newState: InitializationState, context: String = ""): Boolean {
         return stateLock.withLock {
             val currentState = state.get()
+            
+            // Idempotent: if already at target state, return success without logging error
+            if (currentState == newState) {
+                logger.debug("Already at state $newState, ignoring duplicate transition (context: $context)")
+                return true
+            }
+            
+            // Terminal states: once reached, no further transitions allowed
+            if (currentState == InitializationState.COMPLETE) {
+                logger.debug("Already in COMPLETE state, ignoring transition to $newState (context: $context)")
+                return false
+            }
+            
+            if (currentState == InitializationState.FAILED) {
+                logger.debug("Already in FAILED state, ignoring transition to $newState (context: $context)")
+                return false
+            }
 
             if (!currentState.canTransitionTo(newState)) {
-                logger.error("Invalid state transition: $currentState -> $newState (context: $context)")
+                logger.warn("Invalid state transition: $currentState -> $newState (context: $context)")
                 return false
             }
 
@@ -92,7 +105,13 @@ class InitializationStateMachine {
             val previousTimestamp = stateTimestamps[currentState] ?: now
             val duration = now - previousTimestamp
 
-            logger.info("State transition: $currentState -> $newState (took ${duration}ms, context: $context)")
+            // Check if transition took longer than expected and log warning
+            val expectedDuration = getExpectedDuration(currentState)
+            if (duration > expectedDuration) {
+                logger.warn("Slow state transition: $currentState -> $newState took ${duration}ms (expected: ${expectedDuration}ms, context: $context)")
+            } else {
+                logger.info("State transition: $currentState -> $newState (took ${duration}ms, context: $context)")
+            }
 
             state.set(newState)
             stateTimestamps[newState] = now
@@ -120,6 +139,35 @@ class InitializationStateMachine {
             }
 
             true
+        }
+    }
+    
+    /**
+     * Get expected duration for a state transition in milliseconds.
+     * These are baseline expectations for normal machines.
+     * @param state The state to get expected duration for
+     * @return Expected duration in milliseconds
+     */
+    private fun getExpectedDuration(state: InitializationState): Long {
+        return when (state) {
+            InitializationState.SOCKET_CONNECTING -> 5000L
+            InitializationState.SOCKET_CONNECTED -> 1000L
+            InitializationState.READY_RECEIVED -> 1000L
+            InitializationState.INIT_DATA_SENT -> 2000L
+            InitializationState.INITIALIZED_RECEIVED -> 2000L
+            InitializationState.RPC_CREATING -> 1000L
+            InitializationState.RPC_CREATED -> 1000L
+            InitializationState.EXTENSION_ACTIVATING -> 5000L
+            InitializationState.EXTENSION_ACTIVATED -> 2000L
+            InitializationState.WEBVIEW_REGISTERING -> 1000L
+            InitializationState.WEBVIEW_REGISTERED -> 500L
+            InitializationState.WEBVIEW_RESOLVING -> 1000L
+            InitializationState.WEBVIEW_RESOLVED -> 2000L
+            InitializationState.HTML_LOADING -> 10000L
+            InitializationState.HTML_LOADED -> 1000L
+            InitializationState.THEME_INJECTING -> 2000L
+            InitializationState.THEME_INJECTED -> 500L
+            else -> 1000L
         }
     }
 
