@@ -157,6 +157,14 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
                     logger.error("[UDS] Failed to register ExtensionHostManager in SystemObjectProvider", e)
                 }
                 
+                // Also register with PluginContext for UI access
+                try {
+                    project.getService(PluginContext::class.java).setExtensionHostManager(manager)
+                    logger.info("[UDS] Registered ExtensionHostManager in PluginContext")
+                } catch (e: Exception) {
+                    logger.error("[UDS] Failed to register ExtensionHostManager in PluginContext", e)
+                }
+                
                 handleClient(clientChannel, manager) // Start client handler thread
             } catch (e: Exception) {
                 if (isRunning) {
@@ -221,6 +229,14 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
                 logger.info("[UDS] Removed ExtensionHostManager from SystemObjectProvider")
             } catch (e: Exception) {
                 logger.warn("[UDS] Failed to remove ExtensionHostManager from SystemObjectProvider", e)
+            }
+            
+            // Also clear from PluginContext
+            try {
+                project.getService(PluginContext::class.java).clear()
+                logger.info("[UDS] Cleared PluginContext")
+            } catch (e: Exception) {
+                logger.warn("[UDS] Failed to clear PluginContext", e)
             }
             
             try {

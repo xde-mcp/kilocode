@@ -4,6 +4,8 @@
 
 package ai.kilocode.jetbrains.webview
 
+import ai.kilocode.jetbrains.core.InitializationState
+import ai.kilocode.jetbrains.core.InitializationStateMachine
 import ai.kilocode.jetbrains.core.PluginContext
 import ai.kilocode.jetbrains.core.ServiceProxyRegistry
 import ai.kilocode.jetbrains.events.WebviewHtmlUpdateData
@@ -91,6 +93,23 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
     // Prevent repeated dispose
     private var isDisposed = false
     private var themeInitialized = false
+    
+    // State machine reference for tracking initialization progress (lazy initialization)
+    private val stateMachine: InitializationStateMachine? by lazy {
+        try {
+            val pluginContext = project.getService(PluginContext::class.java)
+            val sm = pluginContext.getExtensionHostManager()?.stateMachine
+            if (sm == null) {
+                logger.warn("State machine not available from PluginContext")
+            } else {
+                logger.info("State machine reference obtained successfully")
+            }
+            sm
+        } catch (e: Exception) {
+            logger.error("Failed to get state machine reference", e)
+            null
+        }
+    }
 
     /**
      * Initialize theme manager
@@ -240,64 +259,78 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      */
     fun registerProvider(data: WebviewViewProviderData) {
         logger.info("Register WebView provider and create WebView instance: ${data.viewType} for project: ${project.name}")
-        val extension = data.extension
-
-        // Clean up any existing WebView for this project before creating a new one
-        disposeLatestWebView()
-
-        // Get location info from extension and set resource root directory
+        
         try {
-            @Suppress("UNCHECKED_CAST")
-            val location = extension.get("location") as? Map<String, Any?>
-            val fsPath = location?.get("fsPath") as? String
+            stateMachine?.transitionTo(InitializationState.WEBVIEW_REGISTERING, "registerProvider() called")
+            
+            val extension = data.extension
 
-            if (fsPath != null) {
-                // Set resource root directory
-                val path = Paths.get(fsPath)
-                logger.info("Get resource directory path from extension: $path")
+            // Clean up any existing WebView for this project before creating a new one
+            disposeLatestWebView()
 
-                // Ensure the resource directory exists
-                if (!path.exists()) {
-                    path.createDirectories()
+            // Get location info from extension and set resource root directory
+            try {
+                @Suppress("UNCHECKED_CAST")
+                val location = extension.get("location") as? Map<String, Any?>
+                val fsPath = location?.get("fsPath") as? String
+
+                if (fsPath != null) {
+                    // Set resource root directory
+                    val path = Paths.get(fsPath)
+                    logger.info("Get resource directory path from extension: $path")
+
+                    // Ensure the resource directory exists
+                    if (!path.exists()) {
+                        path.createDirectories()
+                    }
+
+                    // Update resource root directory
+                    resourceRootDir = path
+
+                    // Initialize theme manager
+                    initializeThemeManager(fsPath)
                 }
-
-                // Update resource root directory
-                resourceRootDir = path
-
-                // Initialize theme manager
-                initializeThemeManager(fsPath)
+            } catch (e: Exception) {
+                logger.error("Failed to get resource directory from extension", e)
             }
+
+            val protocol = project.getService(PluginContext::class.java).getRPCProtocol()
+            if (protocol == null) {
+                logger.error("Cannot get RPC protocol instance, cannot register WebView provider: ${data.viewType}")
+                stateMachine?.transitionTo(InitializationState.FAILED, "RPC protocol not available")
+                return
+            }
+            // When registration event is notified, create a new WebView instance
+            val viewId = UUID.randomUUID().toString()
+
+            val title = data.options["title"] as? String ?: data.viewType
+
+            @Suppress("UNCHECKED_CAST")
+            val state = data.options["state"] as? Map<String, Any?> ?: emptyMap()
+
+            val webview = WebViewInstance(data.viewType, viewId, title, state, project, data.extension, stateMachine)
+            // DEBUG HERE!
+            // webview.showDebugWindow()
+
+            stateMachine?.transitionTo(InitializationState.WEBVIEW_REGISTERED, "WebView instance created")
+
+            stateMachine?.transitionTo(InitializationState.WEBVIEW_RESOLVING, "Resolving webview")
+            val proxy = protocol.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostWebviewViews)
+            proxy.resolveWebviewView(viewId, data.viewType, title, state, null)
+            stateMachine?.transitionTo(InitializationState.WEBVIEW_RESOLVED, "Webview resolved")
+
+            // Set as the latest created WebView
+            latestWebView = webview
+
+            logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId for project: ${project.name}")
+
+            // Notify callback
+            notifyWebViewCreated(webview)
         } catch (e: Exception) {
-            logger.error("Failed to get resource directory from extension", e)
+            logger.error("Failed to register WebView provider", e)
+            stateMachine?.transitionTo(InitializationState.FAILED, "registerProvider() exception: ${e.message}")
+            throw e
         }
-
-        val protocol = project.getService(PluginContext::class.java).getRPCProtocol()
-        if (protocol == null) {
-            logger.error("Cannot get RPC protocol instance, cannot register WebView provider: ${data.viewType}")
-            return
-        }
-        // When registration event is notified, create a new WebView instance
-        val viewId = UUID.randomUUID().toString()
-
-        val title = data.options["title"] as? String ?: data.viewType
-
-        @Suppress("UNCHECKED_CAST")
-        val state = data.options["state"] as? Map<String, Any?> ?: emptyMap()
-
-        val webview = WebViewInstance(data.viewType, viewId, title, state, project, data.extension)
-        // DEBUG HERE!
-        // webview.showDebugWindow()
-
-        val proxy = protocol.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostWebviewViews)
-        proxy.resolveWebviewView(viewId, data.viewType, title, state, null)
-
-        // Set as the latest created WebView
-        latestWebView = webview
-
-        logger.info("Create WebView instance: viewType=${data.viewType}, viewId=$viewId for project: ${project.name}")
-
-        // Notify callback
-        notifyWebViewCreated(webview)
     }
 
     /**
@@ -312,122 +345,142 @@ class WebViewManager(var project: Project) : Disposable, ThemeChangeListener {
      * @param data HTML update data
      */
     fun updateWebViewHtml(data: WebviewHtmlUpdateData) {
-        data.htmlContent = data.htmlContent.replace("/jetbrains/resources/kilocode/", "./")
-        data.htmlContent = data.htmlContent.replace("<html lang=\"en\">", "<html lang=\"en\" style=\"background: var(--vscode-sideBar-background);\">")
-        val encodedState = getLatestWebView()?.state.toString().replace("\"", "\\\"")
-        val mRst = """<script\s+nonce="([A-Za-z0-9]{32})">""".toRegex().find(data.htmlContent)
-        val str = mRst?.value ?: ""
-        data.htmlContent = data.htmlContent.replace(
-            str,
-            """
-                        $str
-                        // First define the function to send messages
-                        window.sendMessageToPlugin = function(message) {
-                            // Convert JS object to JSON string
-                            // console.log("sendMessageToPlugin: ", message);
-                            const msgStr = JSON.stringify(message);
-                            ${getLatestWebView()?.jsQuery?.inject("msgStr")}
-                        };
-
-                        // Inject VSCode API mock
-                        globalThis.acquireVsCodeApi = (function() {
-                            let acquired = false;
-
-                            let state = JSON.parse('$encodedState');
-
-                            if (typeof window !== "undefined" && !window.receiveMessageFromPlugin) {
-                                console.log("VSCodeAPIWrapper: Setting up receiveMessageFromPlugin for IDEA plugin compatibility");
-                                window.receiveMessageFromPlugin = (message) => {
-                                    // console.log("receiveMessageFromPlugin received message:", JSON.stringify(message));
-                                    // Create a new MessageEvent and dispatch it to maintain compatibility with existing code
-                                    const event = new MessageEvent("message", {
-                                        data: message,
-                                    });
-                                    window.dispatchEvent(event);
-                                };
-                            }
-
-                            return () => {
-                                if (acquired) {
-                                    throw new Error('An instance of the VS Code API has already been acquired');
-                                }
-                                acquired = true;
-                                return Object.freeze({
-                                    postMessage: function(message, transfer) {
-                                        // console.log("postMessage: ", message);
-                                        window.sendMessageToPlugin(message);
-                                    },
-                                    setState: function(newState) {
-                                        state = newState;
-                                        window.sendMessageToPlugin(newState);
-                                        return newState;
-                                    },
-                                    getState: function() {
-                                        return state;
-                                    }
-                                });
+        try {
+            stateMachine?.transitionTo(InitializationState.HTML_LOADING, "Loading HTML content")
+            
+            data.htmlContent = data.htmlContent.replace("/jetbrains/resources/kilocode/", "./")
+            data.htmlContent = data.htmlContent.replace("<html lang=\"en\">", "<html lang=\"en\" style=\"background: var(--vscode-sideBar-background);\">")
+            val encodedState = getLatestWebView()?.state.toString().replace("\"", "\\\"")
+            val mRst = """<script\s+nonce="([A-Za-z0-9]{32})">""".toRegex().find(data.htmlContent)
+            val str = mRst?.value ?: ""
+            data.htmlContent = data.htmlContent.replace(
+                str,
+                """
+                            $str
+                            // First define the function to send messages
+                            window.sendMessageToPlugin = function(message) {
+                                // Convert JS object to JSON string
+                                // console.log("sendMessageToPlugin: ", message);
+                                const msgStr = JSON.stringify(message);
+                                ${getLatestWebView()?.jsQuery?.inject("msgStr")}
                             };
-                        })();
 
-                        // Clean up references to window parent for security
-                        delete window.parent;
-                        delete window.top;
-                        delete window.frameElement;
+                            // Inject VSCode API mock
+                            globalThis.acquireVsCodeApi = (function() {
+                                let acquired = false;
 
-                        console.log("VSCode API mock injected");
-                        """,
-        )
+                                let state = JSON.parse('$encodedState');
 
-        logger.info("=== Received HTML update event ===")
-        logger.info("Handle: ${data.handle}")
-        logger.info("HTML length: ${data.htmlContent.length}")
+                                if (typeof window !== "undefined" && !window.receiveMessageFromPlugin) {
+                                    console.log("VSCodeAPIWrapper: Setting up receiveMessageFromPlugin for IDEA plugin compatibility");
+                                    window.receiveMessageFromPlugin = (message) => {
+                                        // console.log("receiveMessageFromPlugin received message:", JSON.stringify(message));
+                                        // Create a new MessageEvent and dispatch it to maintain compatibility with existing code
+                                        const event = new MessageEvent("message", {
+                                            data: message,
+                                        });
+                                        window.dispatchEvent(event);
+                                    };
+                                }
 
-        val webView = getLatestWebView()
+                                return () => {
+                                    if (acquired) {
+                                        throw new Error('An instance of the VS Code API has already been acquired');
+                                    }
+                                    acquired = true;
+                                    return Object.freeze({
+                                        postMessage: function(message, transfer) {
+                                            // console.log("postMessage: ", message);
+                                            window.sendMessageToPlugin(message);
+                                        },
+                                        setState: function(newState) {
+                                            state = newState;
+                                            window.sendMessageToPlugin(newState);
+                                            return newState;
+                                        },
+                                        getState: function() {
+                                            return state;
+                                        }
+                                    });
+                                };
+                            })();
 
-        if (webView != null) {
-            try {
-                // If HTTP server is running
-                if (resourceRootDir != null) {
-                    logger.info("Resource root directory is set: ${resourceRootDir?.pathString}")
+                            // Clean up references to window parent for security
+                            delete window.parent;
+                            delete window.top;
+                            delete window.frameElement;
 
-                    // Generate unique file name for WebView
-                    val filename = "index-${project.hashCode()}.html"
+                            console.log("VSCode API mock injected");
+                            """,
+            )
 
-                    // Save HTML content to file
-                    val savedPath = saveHtmlToResourceDir(data.htmlContent, filename)
-                    logger.info("HTML saved to: ${savedPath?.pathString}")
+            logger.info("=== Received HTML update event ===")
+            logger.info("Handle: ${data.handle}")
+            logger.info("HTML length: ${data.htmlContent.length}")
 
-                    // Use HTTP URL to load WebView content
-                    val url = "http://localhost:12345/$filename"
-                    logger.info("Loading WebView via HTTP URL: $url")
+            val webView = getLatestWebView()
 
-                    webView.loadUrl(url)
-                } else {
-                    // Fallback to direct HTML loading
-                    logger.warn("Resource root directory is NULL - loading HTML content directly")
-                    webView.loadHtml(data.htmlContent)
-                }
+            if (webView != null) {
+                try {
+                    // If HTTP server is running
+                    if (resourceRootDir != null) {
+                        logger.info("Resource root directory is set: ${resourceRootDir?.pathString}")
 
-                logger.info("WebView HTML content updated: handle=${data.handle}")
+                        // Generate unique file name for WebView
+                        val filename = "index-${project.hashCode()}.html"
 
-                // If there is already a theme config, send it after content is loaded
-                if (currentThemeConfig != null) {
-                    // Delay sending theme config to ensure HTML is loaded
-                    ApplicationManager.getApplication().invokeLater {
-                        try {
-                            webView.sendThemeConfigToWebView(currentThemeConfig!!, this.bodyThemeClass)
-                        } catch (e: Exception) {
-                            logger.error("Failed to send theme config to WebView", e)
+                        // Save HTML content to file
+                        val savedPath = saveHtmlToResourceDir(data.htmlContent, filename)
+                        logger.info("HTML saved to: ${savedPath?.pathString}")
+
+                        // Use HTTP URL to load WebView content
+                        val url = "http://localhost:12345/$filename"
+                        logger.info("Loading WebView via HTTP URL: $url")
+
+                        webView.loadUrl(url)
+                    } else {
+                        // Fallback to direct HTML loading
+                        logger.warn("Resource root directory is NULL - loading HTML content directly")
+                        webView.loadHtml(data.htmlContent)
+                    }
+
+                    logger.info("WebView HTML content updated: handle=${data.handle}")
+
+                    // If there is already a theme config, send it after content is loaded
+                    if (currentThemeConfig != null) {
+                        // Set callback to inject theme after page loads
+                        webView.setPageLoadCallback {
+                            try {
+                                logger.info("Page load callback triggered, injecting theme")
+                                webView.sendThemeConfigToWebView(currentThemeConfig!!, this.bodyThemeClass)
+                            } catch (e: Exception) {
+                                logger.error("Failed to send theme config to WebView in page load callback", e)
+                            }
+                        }
+                        
+                        // Also try to inject immediately in case page is already loaded
+                        if (webView.isPageLoaded()) {
+                            try {
+                                webView.sendThemeConfigToWebView(currentThemeConfig!!, this.bodyThemeClass)
+                            } catch (e: Exception) {
+                                logger.error("Failed to send theme config to WebView immediately", e)
+                            }
                         }
                     }
+                } catch (e: Exception) {
+                    logger.error("Failed to update WebView HTML content", e)
+                    stateMachine?.transitionTo(InitializationState.FAILED, "HTML loading failed: ${e.message}")
+                    // Fallback to direct HTML loading
+                    webView.loadHtml(data.htmlContent)
                 }
-            } catch (e: Exception) {
-                logger.error("Failed to update WebView HTML content", e)
-                // Fallback to direct HTML loading
-                webView.loadHtml(data.htmlContent)
+            } else {
+                logger.warn("WebView instance not found: handle=${data.handle}")
+                stateMachine?.transitionTo(InitializationState.FAILED, "WebView instance not found")
             }
-        } else {
-            logger.warn("WebView instance not found: handle=${data.handle}")
+        } catch (e: Exception) {
+            logger.error("Failed in updateWebViewHtml", e)
+            stateMachine?.transitionTo(InitializationState.FAILED, "updateWebViewHtml() exception: ${e.message}")
+            throw e
         }
     }
 
@@ -516,6 +569,7 @@ class WebViewInstance(
     val state: Map<String, Any?>,
     val project: Project,
     val extension: Map<String, Any?>,
+    private val stateMachine: InitializationStateMachine? = null,
 ) : Disposable {
     private val logger = Logger.getInstance(WebViewInstance::class.java)
 
@@ -537,6 +591,9 @@ class WebViewInstance(
     // Coroutine scope
     private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // Synchronization for page load state
+    private val pageLoadLock = Any()
+    @Volatile
     private var isPageLoaded = false
     private var isInitialPageLoad = true
 
@@ -544,6 +601,11 @@ class WebViewInstance(
 
     // Callback for page load completion
     private var pageLoadCallback: (() -> Unit)? = null
+    
+    // Theme injection retry mechanism
+    private var themeInjectionAttempts = 0
+    private val maxThemeInjectionAttempts = 3
+    private val themeInjectionRetryDelay = 1000L // 1 second
 
     init {
         setupJSBridge()
@@ -561,11 +623,14 @@ class WebViewInstance(
             logger.warn("WebView has been disposed, cannot send theme config")
             return
         }
-        if (!isPageLoaded) {
-            logger.debug("WebView page not yet loaded, theme will be injected after page load")
-            return
+        
+        synchronized(pageLoadLock) {
+            if (!isPageLoaded) {
+                logger.debug("WebView page not yet loaded, theme will be injected after page load")
+                return
+            }
+            injectTheme()
         }
-        injectTheme()
     }
 
     /**
@@ -573,7 +638,9 @@ class WebViewInstance(
      * @return true if page is loaded, false otherwise
      */
     fun isPageLoaded(): Boolean {
-        return isPageLoaded
+        synchronized(pageLoadLock) {
+            return isPageLoaded
+        }
     }
 
     /**
@@ -588,7 +655,33 @@ class WebViewInstance(
         if (currentThemeConfig == null) {
             return
         }
+        
+        // Check if page is loaded with synchronization
+        synchronized(pageLoadLock) {
+            if (!isPageLoaded) {
+                if (themeInjectionAttempts < maxThemeInjectionAttempts) {
+                    themeInjectionAttempts++
+                    logger.debug("Page not loaded, scheduling theme injection retry (attempt $themeInjectionAttempts)")
+                    
+                    // Schedule retry
+                    Timer().schedule(object : TimerTask() {
+                        override fun run() {
+                            injectTheme()
+                        }
+                    }, themeInjectionRetryDelay)
+                } else {
+                    logger.warn("Max theme injection attempts ($maxThemeInjectionAttempts) reached, page may not be ready")
+                    stateMachine?.transitionTo(InitializationState.FAILED, "Theme injection max attempts reached")
+                }
+                return
+            }
+            
+            // Reset attempts on successful injection
+            themeInjectionAttempts = 0
+        }
+        
         try {
+            stateMachine?.transitionTo(InitializationState.THEME_INJECTING, "Injecting theme")
             var cssContent: String? = null
 
             // Get cssContent from themeConfig and save, then remove from object
@@ -801,8 +894,12 @@ class WebViewInstance(
                 postMessageToWebView(message)
                 logger.info("Theme config has been sent to WebView")
             }
+            
+            stateMachine?.transitionTo(InitializationState.THEME_INJECTED, "Theme injected")
+            stateMachine?.transitionTo(InitializationState.COMPLETE, "Initialization complete")
         } catch (e: Exception) {
             logger.error("Failed to send theme config to WebView", e)
+            stateMachine?.transitionTo(InitializationState.FAILED, "Theme injection failed: ${e.message}")
         }
     }
 
@@ -895,8 +992,10 @@ class WebViewInstance(
                         transitionType: CefRequest.TransitionType?,
                     ) {
                         logger.info("WebView started loading: ${frame?.url}, transition type: $transitionType")
-                        isPageLoaded = false
-                        isInitialPageLoad = true
+                        synchronized(pageLoadLock) {
+                            isPageLoaded = false
+                            isInitialPageLoad = true
+                        }
                     }
 
                     override fun onLoadEnd(
@@ -905,9 +1004,13 @@ class WebViewInstance(
                         httpStatusCode: Int,
                     ) {
                         logger.info("WebView finished loading: ${frame?.url}, status code: $httpStatusCode")
-                        isPageLoaded = true
+                        
+                        synchronized(pageLoadLock) {
+                            isPageLoaded = true
+                        }
 
                         if (isInitialPageLoad) {
+                            stateMachine?.transitionTo(InitializationState.HTML_LOADED, "HTML loaded")
                             injectTheme()
                             pageLoadCallback?.invoke()
                             isInitialPageLoad = false
@@ -921,7 +1024,8 @@ class WebViewInstance(
                         errorText: String?,
                         failedUrl: String?,
                     ) {
-                        logger.info("WebView load error: $failedUrl, error code: $errorCode, error message: $errorText")
+                        logger.error("WebView load error: $failedUrl, error code: $errorCode, error message: $errorText")
+                        stateMachine?.transitionTo(InitializationState.FAILED, "HTML load error: $errorCode - $errorText")
                     }
                 },
                 browser.cefBrowser,

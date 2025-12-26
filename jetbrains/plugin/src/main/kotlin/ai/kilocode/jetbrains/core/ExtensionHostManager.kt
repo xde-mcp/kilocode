@@ -29,6 +29,9 @@ import java.nio.channels.SocketChannel
 import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Extension host manager, responsible for communication with extension processes.
@@ -37,6 +40,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 class ExtensionHostManager : Disposable {
     companion object {
         val LOG = Logger.getInstance(ExtensionHostManager::class.java)
+        private const val INITIALIZATION_TIMEOUT_MS = 60000L // 60 seconds
     }
 
     private val project: Project
@@ -63,12 +67,10 @@ class ExtensionHostManager : Disposable {
 
     private var projectPath: String? = null
 
-    // Initialization state management
-    private val initializationComplete = CompletableFuture<Boolean>()
+    // Initialization state management with state machine
+    val stateMachine = InitializationStateMachine()
     private val messageQueue = ConcurrentLinkedQueue<() -> Unit>()
-    
-    @Volatile
-    private var isReady = false
+    private val queueLock = ReentrantLock()
 
     // Support Socket constructor
     constructor(clientSocket: Socket, projectPath: String, project: Project) {
@@ -89,11 +91,14 @@ class ExtensionHostManager : Disposable {
      * Start communication with the extension process.
      */
     fun start() {
+        stateMachine.transitionTo(InitializationState.SOCKET_CONNECTING, "start()")
+        
         try {
             // Initialize extension manager
             extensionManager = ExtensionManager()
             val extensionPath = PluginResourceUtil.getResourcePath(PluginConstants.PLUGIN_ID, PluginConstants.PLUGIN_CODE_DIR)
             rooCodeIdentifier = extensionPath?.let { extensionManager!!.registerExtension(it).identifier.value }
+            
             // Create protocol
             protocol = PersistentProtocol(
                 PersistentProtocol.PersistentProtocolOptions(
@@ -105,9 +110,11 @@ class ExtensionHostManager : Disposable {
                 this::handleMessage,
             )
 
+            stateMachine.transitionTo(InitializationState.SOCKET_CONNECTED, "Protocol created")
             LOG.info("ExtensionHostManager started successfully")
         } catch (e: Exception) {
             LOG.error("Failed to start ExtensionHostManager", e)
+            stateMachine.transitionTo(InitializationState.FAILED, "start() exception: ${e.message}")
             dispose()
         }
     }
@@ -117,24 +124,38 @@ class ExtensionHostManager : Disposable {
      * @return CompletableFuture that completes when extension host is initialized.
      */
     fun waitForReady(): CompletableFuture<Boolean> {
-        return initializationComplete
+        return stateMachine.waitForState(InitializationState.EXTENSION_ACTIVATED)
+            .thenApply { true }
+            .orTimeout(INITIALIZATION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .exceptionally { ex ->
+                LOG.error("Extension host initialization timeout or failure", ex)
+                false
+            }
     }
 
     /**
      * Queue a message to be sent after initialization.
      * If already initialized, executes immediately.
+     * Uses lock to prevent race condition between checking state and adding to queue.
      * @param message The message function to execute.
      */
     fun queueMessage(message: () -> Unit) {
-        if (isReady) {
-            try {
-                message()
-            } catch (e: Exception) {
-                LOG.error("Error executing queued message", e)
+        queueLock.withLock {
+            val currentState = stateMachine.getCurrentState()
+            
+            // Can execute immediately if extension is activated
+            if (currentState.ordinal >= InitializationState.EXTENSION_ACTIVATED.ordinal &&
+                currentState != InitializationState.FAILED) {
+                try {
+                    message()
+                } catch (e: Exception) {
+                    LOG.error("Error executing message", e)
+                }
+            } else {
+                // Queue for later
+                messageQueue.offer(message)
+                LOG.debug("Message queued, total queued: ${messageQueue.size}, current state: $currentState")
             }
-        } else {
-            messageQueue.offer(message)
-            LOG.debug("Message queued, total queued: ${messageQueue.size}")
         }
     }
 
@@ -198,6 +219,10 @@ class ExtensionHostManager : Disposable {
      * Handle Ready message, send initialization data.
      */
     private fun handleReadyMessage() {
+        if (!stateMachine.transitionTo(InitializationState.READY_RECEIVED, "handleReadyMessage()")) {
+            return
+        }
+        
         LOG.info("Received Ready message from extension host")
 
         try {
@@ -208,9 +233,12 @@ class ExtensionHostManager : Disposable {
             val jsonData = gson.toJson(initData).toByteArray()
 
             protocol?.send(jsonData)
+            
+            stateMachine.transitionTo(InitializationState.INIT_DATA_SENT, "Init data sent")
             LOG.info("Sent initialization data to extension host")
         } catch (e: Exception) {
             LOG.error("Failed to handle Ready message", e)
+            stateMachine.transitionTo(InitializationState.FAILED, "handleReadyMessage() exception: ${e.message}")
         }
     }
 
@@ -218,62 +246,102 @@ class ExtensionHostManager : Disposable {
      * Handle Initialized message, create RPC manager and activate plugin.
      */
     private fun handleInitializedMessage() {
+        if (!stateMachine.transitionTo(InitializationState.INITIALIZED_RECEIVED, "handleInitializedMessage()")) {
+            return
+        }
+        
         LOG.info("Received Initialized message from extension host")
 
         try {
-            // Get protocol
             val protocol = this.protocol ?: throw IllegalStateException("Protocol is not initialized")
             val extensionManager = this.extensionManager ?: throw IllegalStateException("ExtensionManager is not initialized")
 
+            stateMachine.transitionTo(InitializationState.RPC_CREATING, "Creating RPC manager")
+            
             // Create RPC manager
             rpcManager = RPCManager(protocol, extensionManager, null, project)
 
+            stateMachine.transitionTo(InitializationState.RPC_CREATED, "RPC manager created")
+            
             // Start initialization process
             rpcManager?.startInitialize()
 
             // Start file monitoring
             project.getService(WorkspaceFileChangeManager::class.java)
 
+            stateMachine.transitionTo(InitializationState.EXTENSION_ACTIVATING, "Activating extension")
+            
             // Activate RooCode plugin
             val rooCodeId = rooCodeIdentifier ?: throw IllegalStateException("RooCode identifier is not initialized")
             extensionManager.activateExtension(rooCodeId, rpcManager!!.getRPCProtocol())
                 .whenComplete { _, error ->
                     if (error != null) {
                         LOG.error("Failed to activate RooCode plugin", error)
-                        initializationComplete.complete(false)
+                        stateMachine.transitionTo(InitializationState.FAILED, "Extension activation failed: ${error.message}")
                     } else {
                         LOG.info("RooCode plugin activated successfully")
+                        stateMachine.transitionTo(InitializationState.EXTENSION_ACTIVATED, "Extension activated")
                         
-                        // Mark as ready and process queued messages
-                        isReady = true
-                        initializationComplete.complete(true)
-                        
-                        // Process all queued messages
-                        val queueSize = messageQueue.size
-                        LOG.info("Processing $queueSize queued messages")
-                        var processedCount = 0
-                        while (messageQueue.isNotEmpty()) {
-                            messageQueue.poll()?.let { message ->
-                                try {
-                                    message()
-                                    processedCount++
-                                } catch (e: Exception) {
-                                    LOG.error("Error processing queued message", e)
-                                }
-                            }
-                        }
-                        LOG.info("Processed $processedCount/$queueSize queued messages")
+                        // Process queued messages atomically
+                        processQueuedMessages()
                         
                         // Now safe to initialize editors
                         project.getService(EditorAndDocManager::class.java).initCurrentIdeaEditor()
+                        
+                        // Schedule a check to transition to COMPLETE if webview isn't registered
+                        // This handles cases where the extension doesn't use webviews
+                        scheduleCompletionCheck()
                     }
                 }
 
             LOG.info("Initialized extension host")
         } catch (e: Exception) {
             LOG.error("Failed to handle Initialized message", e)
-            initializationComplete.complete(false)
+            stateMachine.transitionTo(InitializationState.FAILED, "handleInitializedMessage() exception: ${e.message}")
         }
+    }
+    
+    /**
+     * Process all queued messages atomically.
+     * This method is called after extension activation to ensure no messages are lost.
+     */
+    private fun processQueuedMessages() {
+        queueLock.withLock {
+            val queueSize = messageQueue.size
+            LOG.info("Processing $queueSize queued messages")
+            var processedCount = 0
+            
+            while (messageQueue.isNotEmpty()) {
+                messageQueue.poll()?.let { message ->
+                    try {
+                        message()
+                        processedCount++
+                    } catch (e: Exception) {
+                        LOG.error("Error processing queued message", e)
+                    }
+                }
+            }
+            
+            LOG.info("Processed $processedCount/$queueSize queued messages")
+        }
+    }
+    
+    /**
+     * Schedule a check to transition to COMPLETE state if webview registration doesn't happen.
+     * This handles cases where the extension doesn't require webviews.
+     */
+    private fun scheduleCompletionCheck() {
+        // Wait 5 seconds after extension activation
+        // If still at EXTENSION_ACTIVATED state, transition to COMPLETE
+        java.util.Timer().schedule(object : java.util.TimerTask() {
+            override fun run() {
+                val currentState = stateMachine.getCurrentState()
+                if (currentState == InitializationState.EXTENSION_ACTIVATED) {
+                    LOG.info("No webview registration detected after extension activation, transitioning to COMPLETE")
+                    stateMachine.transitionTo(InitializationState.COMPLETE, "Extension activated without webview")
+                }
+            }
+        }, 5000) // 5 seconds delay
     }
 
     /**
@@ -393,24 +461,30 @@ class ExtensionHostManager : Disposable {
     }
 
     /**
+     * Get initialization report for diagnostics.
+     * @return String containing initialization state machine report.
+     */
+    fun getInitializationReport(): String {
+        return stateMachine.generateReport()
+    }
+
+    /**
      * Resource disposal.
      */
     override fun dispose() {
         LOG.info("Disposing ExtensionHostManager")
-
-        // Mark as not ready to prevent new messages
-        isReady = false
         
+        // Log final state before disposal
+        LOG.info("Final initialization state: ${stateMachine.getCurrentState()}")
+        if (LOG.isDebugEnabled) {
+            LOG.debug(getInitializationReport())
+        }
+
         // Clear message queue
         val remainingMessages = messageQueue.size
         if (remainingMessages > 0) {
             LOG.warn("Disposing with $remainingMessages unprocessed messages in queue")
             messageQueue.clear()
-        }
-        
-        // Complete initialization future if not already done
-        if (!initializationComplete.isDone) {
-            initializationComplete.complete(false)
         }
 
         // Cancel coroutines
