@@ -19,12 +19,12 @@ class EditorStateService(val project: Project) {
     var extHostEditorsProxy: ExtHostEditorsProxy? = null
     var extHostDocumentsProxy: ExtHostDocumentsProxy? = null
     
-    private val extensionHostManager by lazy {
-        project.getService(ExtensionHostManager::class.java)
+    private fun getExtensionHostManager(): ExtensionHostManager? {
+        return PluginContext.getInstance(project).getExtensionHostManager()
     }
 
     fun acceptDocumentsAndEditorsDelta(detail: DocumentsAndEditorsDelta) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostDocumentsAndEditorsProxy == null) {
                 extHostDocumentsAndEditorsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostDocumentsAndEditors)
@@ -34,7 +34,7 @@ class EditorStateService(val project: Project) {
     }
 
     fun acceptEditorPropertiesChanged(detail: Map<String, EditorPropertiesChangeData>) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostEditorsProxy == null) {
                 extHostEditorsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostEditors)
@@ -48,7 +48,7 @@ class EditorStateService(val project: Project) {
     }
 
     fun acceptModelChanged(detail: Map<URI, ModelChangedEvent>) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostDocumentsProxy == null) {
                 extHostDocumentsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostDocuments)
@@ -65,12 +65,12 @@ class EditorStateService(val project: Project) {
 class TabStateService(val project: Project) {
     var extHostEditorTabsProxy: ExtHostEditorTabsProxy? = null
     
-    private val extensionHostManager by lazy {
-        project.getService(ExtensionHostManager::class.java)
+    private fun getExtensionHostManager(): ExtensionHostManager? {
+        return PluginContext.getInstance(project).getExtensionHostManager()
     }
 
     fun acceptEditorTabModel(detail: List<EditorTabGroupDto>) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostEditorTabsProxy == null) {
                 extHostEditorTabsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostEditorTabs)
@@ -80,7 +80,7 @@ class TabStateService(val project: Project) {
     }
 
     fun acceptTabOperation(detail: TabOperation) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostEditorTabsProxy == null) {
                 extHostEditorTabsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostEditorTabs)
@@ -90,7 +90,7 @@ class TabStateService(val project: Project) {
     }
 
     fun acceptTabGroupUpdate(detail: EditorTabGroupDto) {
-        extensionHostManager?.queueMessage {
+        getExtensionHostManager()?.queueMessage {
             val protocol = PluginContext.getInstance(project).getRPCProtocol()
             if (extHostEditorTabsProxy == null) {
                 extHostEditorTabsProxy = protocol?.getProxy(ServiceProxyRegistry.ExtHostContext.ExtHostEditorTabs)

@@ -140,11 +140,12 @@ class PersistentProtocol(opts: PersistentProtocolOptions, msgListener: ((data: B
         _socketDisposables.clear()
 
         // Clear message queues to free memory
+        val unackMsgCount = _outgoingUnackMsg.size
         _outgoingUnackMsg.clear()
 
         _isDisposed = true
         
-        LOG.info("PersistentProtocol disposed, cleared ${_outgoingUnackMsg.size} unacknowledged messages")
+        LOG.info("PersistentProtocol disposed, cleared $unackMsgCount unacknowledged messages")
     }
 
     override suspend fun drain() {

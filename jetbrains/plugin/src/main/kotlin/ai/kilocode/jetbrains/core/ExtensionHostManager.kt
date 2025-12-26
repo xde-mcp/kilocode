@@ -66,6 +66,7 @@ class ExtensionHostManager : Disposable {
     val stateMachine = InitializationStateMachine()
     private val messageQueue = ConcurrentLinkedQueue<() -> Unit>()
     private val queueLock = ReentrantLock()
+    private var completionCheckTimer: java.util.Timer? = null
 
     // Support Socket constructor
     constructor(clientSocket: Socket, projectPath: String, project: Project) {
@@ -326,25 +327,30 @@ class ExtensionHostManager : Disposable {
      * This handles cases where the extension doesn't require webviews.
      */
     private fun scheduleCompletionCheck() {
+        // Cancel any existing timer first
+        completionCheckTimer?.cancel()
+        
         // Wait 10 seconds after extension activation (increased from 5s for slow machines)
         // If still at EXTENSION_ACTIVATED state, transition to COMPLETE
-        java.util.Timer().schedule(object : java.util.TimerTask() {
-            override fun run() {
-                val currentState = stateMachine.getCurrentState()
-                
-                // Only transition if still at EXTENSION_ACTIVATED
-                if (currentState == InitializationState.EXTENSION_ACTIVATED) {
-                    LOG.info("No webview registration detected after extension activation, transitioning to COMPLETE")
-                    stateMachine.transitionTo(InitializationState.COMPLETE, "Extension activated without webview")
-                } else if (currentState.ordinal < InitializationState.EXTENSION_ACTIVATED.ordinal) {
-                    // State hasn't reached EXTENSION_ACTIVATED yet, this shouldn't happen
-                    LOG.warn("Completion check fired but state is $currentState, expected EXTENSION_ACTIVATED or later")
-                } else {
-                    // State has progressed past EXTENSION_ACTIVATED, which is expected
-                    LOG.debug("Completion check skipped, current state: $currentState (already progressed)")
+        completionCheckTimer = java.util.Timer().apply {
+            schedule(object : java.util.TimerTask() {
+                override fun run() {
+                    val currentState = stateMachine.getCurrentState()
+                    
+                    // Only transition if still at EXTENSION_ACTIVATED
+                    if (currentState == InitializationState.EXTENSION_ACTIVATED) {
+                        LOG.info("No webview registration detected after extension activation, transitioning to COMPLETE")
+                        stateMachine.transitionTo(InitializationState.COMPLETE, "Extension activated without webview")
+                    } else if (currentState.ordinal < InitializationState.EXTENSION_ACTIVATED.ordinal) {
+                        // State hasn't reached EXTENSION_ACTIVATED yet, this shouldn't happen
+                        LOG.warn("Completion check fired but state is $currentState, expected EXTENSION_ACTIVATED or later")
+                    } else {
+                        // State has progressed past EXTENSION_ACTIVATED, which is expected
+                        LOG.debug("Completion check skipped, current state: $currentState (already progressed)")
+                    }
                 }
-            }
-        }, 10000) // 10 seconds delay (increased from 5s for slow machines)
+            }, 10000) // 10 seconds delay (increased from 5s for slow machines)
+        }
     }
 
     /**
@@ -506,6 +512,13 @@ class ExtensionHostManager : Disposable {
         if (LOG.isDebugEnabled) {
             LOG.debug(getInitializationReport())
         }
+
+        // Cancel completion check timer to prevent memory leak
+        completionCheckTimer?.let { timer ->
+            timer.cancel()
+            timer.purge()
+        }
+        completionCheckTimer = null
 
         // Clear message queue
         val remainingMessages = messageQueue.size
