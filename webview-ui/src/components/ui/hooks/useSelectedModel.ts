@@ -431,7 +431,6 @@ function getSelectedModel({
 					maxTokens: 1,
 					contextWindow: 1,
 					supportsPromptCache: false,
-					supportsImages: true,
 				},
 			}
 		}

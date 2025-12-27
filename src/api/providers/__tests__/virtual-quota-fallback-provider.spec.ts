@@ -554,7 +554,6 @@ describe("VirtualQuotaFallbackProvider", () => {
 						maxTokens: 1,
 						contextWindow: 1000000,
 						supportsPromptCache: false,
-						supportsImages: true,
 					},
 				})
 			})

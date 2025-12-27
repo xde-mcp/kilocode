@@ -132,7 +132,6 @@ export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHand
 					maxTokens: 1,
 					contextWindow: 1000000,
 					supportsPromptCache: false,
-					supportsImages: true,
 				},
 			}
 		}
