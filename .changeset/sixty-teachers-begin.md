@@ -2,4 +2,4 @@
 "kilo-code": patch
 ---
 
-Fix loss of kilocode auto model refresh
+Fix loss of Synthetic auto model refresh
