@@ -331,20 +331,11 @@ export class CLI {
 		// Disable stdin for Ink when in CI mode or when stdin is piped (not a TTY)
 		// This prevents the "Raw mode is not supported" error
 		const shouldDisableStdin = this.options.jsonInteractive || this.options.ci || !process.stdin.isTTY
-		const renderOptions = shouldDisableStdin
-			? {
-					stdout: process.stdout,
-					stderr: process.stderr,
-					exitOnCtrlC: false,
-				}
-			: {
-					exitOnCtrlC: false,
-				}
-
 		const renderOptions: RenderOptions = {
 			// Enable Ink's incremental renderer to avoid redrawing the entire screen on every update.
 			// This reduces flickering for frequently updating UIs.
 			incrementalRendering: true,
+			exitOnCtrlC: false,
 			...(shouldDisableStdin ? { stdout: process.stdout, stderr: process.stderr } : {}),
 		}
 
@@ -687,7 +678,13 @@ export class CLI {
 	 * Returns true if the CLI should show an exit confirmation prompt for SIGINT.
 	 */
 	shouldConfirmExitOnSigint(): boolean {
-		return !!this.store && !this.options.ci && !this.options.json && !this.options.jsonInteractive && process.stdin.isTTY
+		return (
+			!!this.store &&
+			!this.options.ci &&
+			!this.options.json &&
+			!this.options.jsonInteractive &&
+			process.stdin.isTTY
+		)
 	}
 
 	/**
