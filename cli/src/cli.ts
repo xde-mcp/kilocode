@@ -33,6 +33,7 @@ import { getSelectedModelId } from "./utils/providers.js"
 import { KiloCodePathProvider, ExtensionMessengerAdapter } from "./services/session-adapters.js"
 import { getKiloToken } from "./config/persistence.js"
 import { SessionManager } from "../../src/shared/kilocode/cli-sessions/core/SessionManager.js"
+import { triggerExitConfirmationAtom } from "./state/atoms/keyboard.js"
 
 /**
  * Main application class that orchestrates the CLI lifecycle
@@ -330,6 +331,15 @@ export class CLI {
 		// Disable stdin for Ink when in CI mode or when stdin is piped (not a TTY)
 		// This prevents the "Raw mode is not supported" error
 		const shouldDisableStdin = this.options.jsonInteractive || this.options.ci || !process.stdin.isTTY
+		const renderOptions = shouldDisableStdin
+			? {
+					stdout: process.stdout,
+					stderr: process.stderr,
+					exitOnCtrlC: false,
+				}
+			: {
+					exitOnCtrlC: false,
+				}
 
 		const renderOptions: RenderOptions = {
 			// Enable Ink's incremental renderer to avoid redrawing the entire screen on every update.
@@ -671,6 +681,25 @@ export class CLI {
 	 */
 	getStore(): ReturnType<typeof createStore> | null {
 		return this.store
+	}
+
+	/**
+	 * Returns true if the CLI should show an exit confirmation prompt for SIGINT.
+	 */
+	shouldConfirmExitOnSigint(): boolean {
+		return !!this.store && !this.options.ci && !this.options.json && !this.options.jsonInteractive && process.stdin.isTTY
+	}
+
+	/**
+	 * Trigger the exit confirmation prompt. Returns true if handled.
+	 */
+	requestExitConfirmation(): boolean {
+		if (!this.shouldConfirmExitOnSigint()) {
+			return false
+		}
+
+		this.store?.set(triggerExitConfirmationAtom)
+		return true
 	}
 
 	/**
