@@ -38,6 +38,69 @@ Upgrade the Kilo CLI package:
 - **Switch between hundreds of LLMs without constraints.** Other CLI tools only work with one model or curate opinionated lists. With Kilo, you can switch models without booting up another tool.
 - **Choose the right mode for the task in your workflow.** Select between Architect, Ask, Debug, Orchestrator, or custom agent modes.
 - **Automate tasks.** Get AI assistance writing shell scripts for tasks like renaming all of the files in a folder or transforming sizes for a set of images.
+- **Extend capabilities with skills.** Add domain expertise and repeatable workflows through Agent Skills.
+
+## Skills
+
+The CLI supports [Agent Skills](https://agentskills.io/), a lightweight format for extending AI capabilities with specialized knowledge and workflows. Skills are discovered from:
+
+- **Global skills**: `~/.kilocode/skills/` (available in all projects)
+- **Project skills**: `.kilocode/skills/` (project-specific)
+- **Mode-specific skills**: `skills-{mode}/` directories (e.g., `skills-code/`, `skills-architect/`)
+
+When skills are available, the agent will list them at the start of a session:
+
+```
+> I have access to the following skills in Code mode:
+
+  1. "frontend-design" skill - Creates distinctive, production-grade
+     frontend interfaces with high design quality...
+
+     * Location: ~/.kilocode/skills/frontend-design/SKILL.md
+```
+
+### Creating a Skill
+
+1. Create the skill directory:
+
+    ```bash
+    mkdir -p ~/.kilocode/skills/api-design
+    ```
+
+2. Create a `SKILL.md` file with YAML frontmatter:
+
+    ```markdown
+    ---
+    name: api-design
+    description: REST API design best practices and conventions
+    ---
+
+    # API Design Guidelines
+
+    When designing REST APIs, follow these conventions...
+    ```
+
+3. Start a new CLI session to load the skill
+
+The `name` field must match the directory name exactly. Skills are loaded when the CLI starts.
+
+### Mode-Specific Skills
+
+Create skills that only appear in specific modes:
+
+```bash
+# For Code mode only
+mkdir -p ~/.kilocode/skills-code/typescript-patterns
+
+# For Architect mode only
+mkdir -p ~/.kilocode/skills-architect/microservices
+```
+
+Start the CLI with the appropriate mode flag to use mode-specific skills:
+
+```bash
+kilocode --mode architect
+```
 
 ## CLI reference
 
