@@ -117,7 +117,7 @@ your-project/
     When designing REST APIs, follow these conventions...
     ```
 
-    The `name` field must match the directory name exactly. Skills are loaded when the CLI starts.
+    The `name` field must match the directory name exactly.
 
 3. Start a new CLI session to load the skill
 
