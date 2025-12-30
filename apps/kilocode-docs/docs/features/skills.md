@@ -168,7 +168,6 @@ This allows you to:
 
 ## When Skills Are Loaded
 
-:::caution Skills load at startup
 Skills are discovered when Kilo Code initializes:
 
 - When VSCode starts
