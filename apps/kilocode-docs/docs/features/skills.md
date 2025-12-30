@@ -4,7 +4,7 @@ Kilo Code implements [Agent Skills](https://agentskills.io/), a lightweight, ope
 
 ## What Are Agent Skills?
 
-Agent Skills are a package domain expertise, new capabilities, and repeatable workflows that that agents can use. At its core, a skill is a folder containing a `SKILL.md` file with metadata and instructions that tell an agent how to perform a specific task.
+Agent Skills package domain expertise, new capabilities, and repeatable workflows that agents can use. At its core, a skill is a folder containing a `SKILL.md` file with metadata and instructions that tell an agent how to perform a specific task.
 
 This approach keeps agents fast while giving them access to more context on demand. When a task matches a skill's description, the agent reads the full instructions into context and follows them—optionally loading referenced files or executing bundled code as needed.
 
