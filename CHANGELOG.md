@@ -1,5 +1,31 @@
 # kilo-code
 
+## 4.141.1
+
+### Patch Changes
+
+- [#4736](https://github.com/Kilo-Org/kilocode/pull/4736) [`c7bd7b7`](https://github.com/Kilo-Org/kilocode/commit/c7bd7b7ad385d32e114f75dfffa6d5d4168ca073) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Skip VSCode-specific diagnostic operations in CLI mode for improved performance
+
+- [#4725](https://github.com/Kilo-Org/kilocode/pull/4725) [`2dcce20`](https://github.com/Kilo-Org/kilocode/commit/2dcce2020b645b8c839a763d4ec97a03f8811aef) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Prevent empty checkpoints from being created on every tool use
+
+- [#4723](https://github.com/Kilo-Org/kilocode/pull/4723) [`b9d0d16`](https://github.com/Kilo-Org/kilocode/commit/b9d0d164bd5a3feaab000a040fb9a04f4cd65f77) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Enable chat autocomplete by default
+
+- [#4681](https://github.com/Kilo-Org/kilocode/pull/4681) [`2be56b8`](https://github.com/Kilo-Org/kilocode/commit/2be56b8b09a0cab177adf18c8dd8998f6362cc2d) Thanks [@catrielmuller](https://github.com/catrielmuller)! - Jetbrains IDEs - Improve intialization process
+
+## 4.141.0
+
+### Minor Changes
+
+- [#4702](https://github.com/Kilo-Org/kilocode/pull/4702) [`b84a66f`](https://github.com/Kilo-Org/kilocode/commit/b84a66f5923cf2600a6d5c8e2b5fd49759406696) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Add support for skills
+
+### Patch Changes
+
+- [#4710](https://github.com/Kilo-Org/kilocode/pull/4710) [`c128319`](https://github.com/Kilo-Org/kilocode/commit/c1283192df1b0e59fef8b9ab2d3442bf4a07abde) Thanks [@sebastiand-cerebras](https://github.com/sebastiand-cerebras)! - Update Cerebras maxTokens from 8192 to 16384 for all models
+
+- [#4718](https://github.com/Kilo-Org/kilocode/pull/4718) [`9a465b0`](https://github.com/Kilo-Org/kilocode/commit/9a465b06fe401f70dd166fb5b320a8070f07c727) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Fix terminal scroll-flicker in CLI by disabling streaming output and enabling Ink incremental rendering
+
+- [#4719](https://github.com/Kilo-Org/kilocode/pull/4719) [`57b0873`](https://github.com/Kilo-Org/kilocode/commit/57b08737788cd504954563d46eb1e6323d619301) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Confirm before exiting the CLI on Ctrl+C/Cmd+C.
+
 ## 4.140.3
 
 ### Patch Changes
