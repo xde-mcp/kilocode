@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.38.3
+
+### Patch Changes
+
+-   - Feat: Add option in Context settings to recursively load `.roo/rules` and `AGENTS.md` from subdirectories (PR #10446 by @mrubens)
+
 ## [3.38.2] - 2025-12-31
 
 ![3.38.2 Release - Skill Alignment](/releases/3.38.2-release.png)
