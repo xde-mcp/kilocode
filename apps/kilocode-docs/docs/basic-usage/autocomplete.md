@@ -79,7 +79,7 @@ Kilo Code automatically selects a provider for autocomplete in the following pri
 - **LiteLLM** (using `codestral/codestral-latest`)
 - **LM Studio** (using `mistralai/codestral-22b-v0.1`)
 - **Ollama** (using `codestral:latest`)
-  `
+
 
 :::note
 **Model Selection is Currently Fixed**: At this time, you cannot freely choose a different model for autocomplete. The feature is designed to work specifically with Codestral, which is optimized for Fill-in-the-Middle (FIM) completions. Support for additional models may be added in future releases.
