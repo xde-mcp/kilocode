@@ -322,6 +322,14 @@ export async function initializeModelCacheRefresh(): Promise<void> {
 			{ provider: "vercel-ai-gateway", options: { provider: "vercel-ai-gateway" } },
 			{ provider: "chutes", options: { provider: "chutes" } },
 			{ provider: "synthetic", options: { provider: "synthetic" } }, // kilocode_change: Add synthetic to background refresh
+			{ provider: "nano-gpt", options: { provider: "nano-gpt" } }, // kilocode_change: Add nanogpt to background refresh
+			{ provider: "huggingface", options: { provider: "huggingface" } }, // kilocode_change: Add huggingface to background refresh
+			{ provider: "deepinfra", options: { provider: "deepinfra" } }, // kilocode_change: Add deepinfra to background refresh
+			{ provider: "inception", options: { provider: "inception" } }, // kilocode_change: Add inception to background refresh
+			{ provider: "lmstudio", options: { provider: "lmstudio" } }, // kilocode_change: Add lmstudio to background refresh
+			{ provider: "requesty", options: { provider: "requesty" } }, // kilocode_change: Add requesty to background refresh
+			{ provider: "sap-ai-core", options: { provider: "sap-ai-core" } }, // kilocode_change: Add sap-ai-core to background refresh
+			{ provider: "unbound", options: { provider: "unbound" } }, // kilocode_change: Add unbound to background refresh
 		]
 
 		// Refresh each provider in background (fire and forget)
