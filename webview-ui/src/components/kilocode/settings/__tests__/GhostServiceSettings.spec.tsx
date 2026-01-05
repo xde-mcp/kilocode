@@ -241,7 +241,7 @@ describe("GhostServiceSettingsView", () => {
 			},
 		})
 
-		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
+		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured.title/)).toBeInTheDocument()
 	})
 
 	it("displays error message when only provider is missing", () => {
@@ -253,7 +253,7 @@ describe("GhostServiceSettingsView", () => {
 			},
 		})
 
-		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
+		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured.title/)).toBeInTheDocument()
 	})
 
 	it("displays error message when only model is missing", () => {
@@ -265,7 +265,7 @@ describe("GhostServiceSettingsView", () => {
 			},
 		})
 
-		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured/)).toBeInTheDocument()
+		expect(screen.getByText(/kilocode:ghost.settings.noModelConfigured.title/)).toBeInTheDocument()
 	})
 
 	describe("snooze status refresh", () => {
