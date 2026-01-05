@@ -490,9 +490,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	): void {
 		// If we're already tracking this exact suggestion, do nothing
 		if (this.visibilityTracking?.suggestionKey === suggestionKey) {
-			console.log(
-				`[VisibilityTracking] Already tracking same key, skipping: ${suggestionKey.substring(0, 50)}...`,
-			)
+			console.log(`🔍VISTRK Already tracking same key, skipping: ${suggestionKey.substring(0, 50)}...`)
 			return
 		}
 
@@ -501,32 +499,28 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 		// Don't track if we've already fired telemetry for this suggestion
 		if (this.firedUniqueTelemetryKeys.has(suggestionKey)) {
-			console.log(
-				`[VisibilityTracking] Already fired telemetry for key, skipping: ${suggestionKey.substring(0, 50)}...`,
-			)
+			console.log(`🔍VISTRK Already fired telemetry for key, skipping: ${suggestionKey.substring(0, 50)}...`)
 			return
 		}
 
 		// Don't track empty suggestions
 		if (suggestionLength === 0) {
-			console.log(`[VisibilityTracking] Empty suggestion, skipping`)
+			console.log(`🔍VISTRK Empty suggestion, skipping`)
 			return
 		}
 
-		console.log(
-			`[VisibilityTracking] Starting tracking for key: ${suggestionKey.substring(0, 50)}..., source: ${source}`,
-		)
+		console.log(`🔍VISTRK Starting tracking for key: ${suggestionKey.substring(0, 50)}..., source: ${source}`)
 
 		// Start a new timer
 		const timer = setTimeout(() => {
 			// Timer fired - the suggestion has been visible for MIN_VISIBILITY_DURATION_MS
 			// Check if we're still tracking the same suggestion
 			console.log(
-				`[VisibilityTracking] Timer fired for key: ${suggestionKey.substring(0, 50)}..., current tracking: ${this.visibilityTracking?.suggestionKey?.substring(0, 50) ?? "null"}`,
+				`🔍VISTRK Timer fired for key: ${suggestionKey.substring(0, 50)}..., current tracking: ${this.visibilityTracking?.suggestionKey?.substring(0, 50) ?? "null"}`,
 			)
 			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
 				// Fire the telemetry
-				console.log(`[VisibilityTracking] Firing telemetry for key: ${suggestionKey.substring(0, 50)}...`)
+				console.log(`🔍VISTRK Firing telemetry for key: ${suggestionKey.substring(0, 50)}...`)
 				this.telemetry?.captureUniqueSuggestionShown(telemetryContext, suggestionLength, source)
 				// Mark this suggestion as having fired telemetry
 				this.firedUniqueTelemetryKeys.add(suggestionKey)
@@ -534,7 +528,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				this.visibilityTracking = null
 			} else {
 				console.log(
-					`[VisibilityTracking] Timer fired but tracking changed, NOT firing telemetry for key: ${suggestionKey.substring(0, 50)}...`,
+					`🔍VISTRK Timer fired but tracking changed, NOT firing telemetry for key: ${suggestionKey.substring(0, 50)}...`,
 				)
 			}
 		}, MIN_VISIBILITY_DURATION_MS)
@@ -555,7 +549,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private cancelVisibilityTracking(): void {
 		if (this.visibilityTracking) {
 			console.log(
-				`[VisibilityTracking] Canceling tracking for key: ${this.visibilityTracking.suggestionKey.substring(0, 50)}...`,
+				`🔍VISTRK Canceling tracking for key: ${this.visibilityTracking.suggestionKey.substring(0, 50)}...`,
 			)
 			clearTimeout(this.visibilityTracking.timer)
 			this.visibilityTracking = null
