@@ -235,7 +235,6 @@
 				"description": "Cần sửa chữa nhanh, hoàn thành, hoặc tái cấu trúc? Kilo sẽ sử dụng ngữ cảnh xung quanh để cung cấp cải tiến ngay lập tức, giữ bạn trong luồng làm việc. <DocsLink>Xem phím tắt</DocsLink>"
 			},
 			"keybindingNotFound": "không tìm thấy",
-			"noModelConfigured": "Không tìm thấy mô hình tự động hoàn thành phù hợp. Vui lòng cấu hình nhà cung cấp trong cài đặt API.",
 			"configureAutocompleteProfile": "Sử dụng bất kỳ mô hình nào bằng cách vào hồ sơ và cấu hình Hồ sơ có Loại Hồ sơ là Tự động hoàn thành.",
 			"model": "Mô hình",
 			"provider": "Nhà cung cấp",

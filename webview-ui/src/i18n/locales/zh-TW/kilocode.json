@@ -237,7 +237,6 @@
 				"description": "需要快速修正、補全或重構？Kilo 將使用周圍內容提供即時改進，保持你的工作流程。<DocsLink>檢視快速鍵</DocsLink>"
 			},
 			"keybindingNotFound": "未找到",
-			"noModelConfigured": "找不到合適的自動補全模型。請在 API 設定中配置提供者。",
 			"configureAutocompleteProfile": "前往設定檔並設定自動補全類型的設定檔即可使用任意模型。",
 			"model": "模型",
 			"provider": "供應商",

@@ -278,10 +278,10 @@ export const GhostServiceSettingsView = ({
 							) : (
 								<div className="flex flex-col gap-2">
 									<div className="text-vscode-errorForeground font-medium">
-										No autocomplete model configured
+										{t("kilocode:ghost.settings.noModelConfigured.title")}
 									</div>
 									<div className="text-vscode-descriptionForeground">
-										To enable autocomplete, add a profile with one of these supported providers:
+										{t("kilocode:ghost.settings.noModelConfigured.description")}
 									</div>
 									<ul className="text-vscode-descriptionForeground list-disc list-inside ml-2">
 										{supportedProviderNames.map((name) => (
@@ -292,7 +292,7 @@ export const GhostServiceSettingsView = ({
 										<a
 											href="https://kilo.ai/docs/basic-usage/autocomplete"
 											className="text-vscode-textLink-foreground hover:underline">
-											Learn more about autocomplete setup →
+											{t("kilocode:ghost.settings.noModelConfigured.learnMore")}
 										</a>
 									</div>
 								</div>

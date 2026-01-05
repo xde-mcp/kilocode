@@ -268,7 +268,11 @@
 				}
 			},
 			"keybindingNotFound": "not found",
-			"noModelConfigured": "No suitable autocomplete model found. Please configure a provider in the API settings.",
+			"noModelConfigured": {
+				"title": "No autocomplete model configured",
+				"description": "To enable autocomplete, add a profile with one of these supported providers:",
+				"learnMore": "Learn more about autocomplete setup →"
+			},
 			"configureAutocompleteProfile": "Use any model by going to profiles and configuring a Profile of the Profile Type Autocomplete."
 		}
 	},

@@ -235,7 +235,6 @@
 				"description": "Hızlı bir düzeltme, tamamlama veya yeniden düzenleme mi gerekiyor? Kilo çevredeki bağlamı kullanarak anında iyileştirmeler sunacak, seni akışta tutacak. <DocsLink>Kısayolu gör</DocsLink>"
 			},
 			"keybindingNotFound": "bulunamadı",
-			"noModelConfigured": "Uygun otomatik tamamlama modeli bulunamadı. Lütfen API ayarlarında bir sağlayıcı yapılandır.",
 			"configureAutocompleteProfile": "Profillere giderek ve Otomatik Tamamlama Profil Türünde bir Profil yapılandırarak herhangi bir model kullan.",
 			"model": "Model",
 			"provider": "Sağlayıcı",

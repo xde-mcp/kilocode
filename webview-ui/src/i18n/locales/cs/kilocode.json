@@ -242,7 +242,6 @@
 				"description": "Potřebuješ rychlou opravu, dokončení nebo refaktoring? Kilo použije okolní kontext k nabídnutí okamžitých vylepšení, udržujíc tě v toku. <DocsLink>Zobrazit zkratku</DocsLink>"
 			},
 			"keybindingNotFound": "nenalezeno",
-			"noModelConfigured": "Nebyl nalezen žádný vhodný model pro automatické dokončování. Nakonfiguruj prosím poskytovatele v nastavení API.",
 			"configureAutocompleteProfile": "Použij libovolný model tak, že přejdeš do profilů a nakonfiguruješ Profil typu Automatické dokončování.",
 			"model": "Model",
 			"provider": "Poskytovatel",
