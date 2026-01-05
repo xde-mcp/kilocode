@@ -111,6 +111,10 @@ export interface FillInAtCursorSuggestion {
 	prefix: string
 	suffix: string
 	shownToUser?: boolean
+	/** Timestamp (ms) when the suggestion was first shown to the user */
+	firstShownAt?: number
+	/** Whether the unique suggestion telemetry has been fired for this suggestion */
+	uniqueTelemetryFired?: boolean
 }
 
 export interface MatchingSuggestionResult {

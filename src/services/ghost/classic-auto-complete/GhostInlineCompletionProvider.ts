@@ -57,30 +57,79 @@ const MAX_DEBOUNCE_DELAY_MS = 1000
  */
 const LATENCY_SAMPLE_SIZE = 10
 
+/**
+ * Minimum time in milliseconds that a suggestion must be visible before
+ * it counts as a "unique suggestion shown" for telemetry purposes.
+ * This filters out suggestions that flash briefly when the user is typing quickly.
+ */
+const MIN_VISIBILITY_DURATION_MS = 300
+
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
- * Result from findMatchingSuggestion including whether this is the first time shown
+ * Result from findMatchingSuggestion including visibility tracking information
  */
 export interface MatchingSuggestionWithFirstTimeFlag extends MatchingSuggestionResult {
 	/** Whether this is the first time this suggestion is being shown (was just marked as shown) */
 	isFirstTimeShown: boolean
+	/** Whether the unique suggestion telemetry should be fired (visibility duration met and not yet fired) */
+	shouldFireUniqueTelemetry: boolean
+}
+
+/**
+ * Helper function to update suggestion visibility tracking and determine telemetry flags.
+ * This centralizes the logic for tracking when a suggestion was first shown and
+ * whether the unique telemetry event should be fired.
+ *
+ * @param suggestion - The suggestion being shown
+ * @param now - Current timestamp in milliseconds
+ * @returns Object with isFirstTimeShown and shouldFireUniqueTelemetry flags
+ */
+function updateVisibilityTracking(
+	suggestion: FillInAtCursorSuggestion,
+	now: number = Date.now(),
+): { isFirstTimeShown: boolean; shouldFireUniqueTelemetry: boolean } {
+	const isFirstTimeShown = !suggestion.shownToUser
+
+	// Mark as shown and record timestamp if first time
+	if (isFirstTimeShown) {
+		suggestion.shownToUser = true
+		suggestion.firstShownAt = now
+	}
+
+	// Determine if we should fire unique telemetry:
+	// - Must not have fired already
+	// - Must have been visible for at least MIN_VISIBILITY_DURATION_MS
+	let shouldFireUniqueTelemetry = false
+	if (!suggestion.uniqueTelemetryFired && suggestion.firstShownAt !== undefined) {
+		const visibilityDuration = now - suggestion.firstShownAt
+		if (visibilityDuration >= MIN_VISIBILITY_DURATION_MS) {
+			suggestion.uniqueTelemetryFired = true
+			shouldFireUniqueTelemetry = true
+		}
+	}
+
+	return { isFirstTimeShown, shouldFireUniqueTelemetry }
 }
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix.
  * When a match is found, it is immediately marked as shown in the cache.
  * The isFirstTimeShown flag indicates whether this was the first retrieval.
+ * The shouldFireUniqueTelemetry flag indicates whether the suggestion has been
+ * visible long enough (MIN_VISIBILITY_DURATION_MS) to count as "seen" by a human.
  *
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion with match type and first-time flag, or null if no match found
+ * @param now - Optional current timestamp for testing (defaults to Date.now())
+ * @returns The matching suggestion with match type and visibility flags, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
+	now: number = Date.now(),
 ): MatchingSuggestionWithFirstTimeFlag | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
@@ -88,10 +137,8 @@ export function findMatchingSuggestion(
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			const isFirstTimeShown = !fillInAtCursor.shownToUser
-			// Mark as shown in the cache
-			fillInAtCursor.shownToUser = true
-			return { text: fillInAtCursor.text, matchType: "exact", isFirstTimeShown }
+			const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
+			return { text: fillInAtCursor.text, matchType: "exact", isFirstTimeShown, shouldFireUniqueTelemetry }
 		}
 
 		// If no exact match, but suggestion is available, check for partial typing
@@ -106,14 +153,13 @@ export function findMatchingSuggestion(
 
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
-				const isFirstTimeShown = !fillInAtCursor.shownToUser
-				// Mark as shown in the cache
-				fillInAtCursor.shownToUser = true
+				const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
 				// Return the remaining part of the suggestion (with already-typed portion removed)
 				return {
 					text: fillInAtCursor.text.substring(typedContent.length),
 					matchType: "partial_typing",
 					isFirstTimeShown,
+					shouldFireUniqueTelemetry,
 				}
 			}
 		}
@@ -129,14 +175,13 @@ export function findMatchingSuggestion(
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
-			const isFirstTimeShown = !fillInAtCursor.shownToUser
-			// Mark as shown in the cache
-			fillInAtCursor.shownToUser = true
+			const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
 			// Return the deleted portion plus the original suggestion text
 			return {
 				text: deletedContent + fillInAtCursor.text,
 				matchType: "backward_deletion",
 				isFirstTimeShown,
+				shouldFireUniqueTelemetry,
 			}
 		}
 	}
@@ -161,7 +206,12 @@ export function applyFirstLineOnly(
 		return result
 	}
 	if (shouldShowOnlyFirstLine(prefix, result.text)) {
-		return { text: getFirstLine(result.text), matchType: result.matchType, isFirstTimeShown: result.isFirstTimeShown }
+		return {
+			text: getFirstLine(result.text),
+			matchType: result.matchType,
+			isFirstTimeShown: result.isFirstTimeShown,
+			shouldFireUniqueTelemetry: result.shouldFireUniqueTelemetry,
+		}
 	}
 	return result
 }
@@ -512,8 +562,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
-				// Fire unique suggestion shown telemetry if this is the first time
-				if (matchingResult.isFirstTimeShown) {
+				// Fire unique suggestion shown telemetry if visibility duration threshold met
+				if (matchingResult.shouldFireUniqueTelemetry) {
 					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, matchingResult.text.length, "cache")
 				}
 				return stringToInlineCompletions(matchingResult.text, position)
@@ -539,8 +589,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			)
 			if (cachedResult) {
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
-				// Fire unique suggestion shown telemetry if this is the first time
-				if (cachedResult.isFirstTimeShown) {
+				// Fire unique suggestion shown telemetry if visibility duration threshold met
+				if (cachedResult.shouldFireUniqueTelemetry) {
 					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, cachedResult.text.length, "llm")
 				}
 			}
