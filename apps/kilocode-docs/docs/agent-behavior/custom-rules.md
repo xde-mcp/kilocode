@@ -217,7 +217,7 @@ If your custom rules aren't being properly followed:
 
 ## Related Features
 
-- [Custom Modes](/customization/custom-modes)
-- [Custom Instructions](/customization/custom-instructions)
-- [Settings Management](/customization/settings-management)
+- [Custom Modes](/agent-behavior/custom-modes)
+- [Custom Instructions](/agent-behavior/custom-instructions)
+- [Settings Management](/basic-usage/settings-management)
 - [Auto-Approval Settings](/features/auto-approving-actions)
