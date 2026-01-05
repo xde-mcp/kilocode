@@ -10,10 +10,6 @@ import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
 import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { GhostModel } from "./GhostModel"
-import { AUTOCOMPLETE_PROVIDER_MODELS, AutocompleteProviderKey } from "@roo-code/types"
-
-export { AUTOCOMPLETE_PROVIDER_MODELS }
-export type { AutocompleteProviderKey }
 
 export interface ResponseMetaData {
 	cost: number
