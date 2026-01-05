@@ -110,8 +110,6 @@ export interface FillInAtCursorSuggestion {
 	text: string
 	prefix: string
 	suffix: string
-	/** Whether this suggestion has been shown to the user at least once */
-	shownToUser?: boolean
 }
 
 export interface MatchingSuggestionResult {

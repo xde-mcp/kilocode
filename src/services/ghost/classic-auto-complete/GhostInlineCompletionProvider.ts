@@ -67,11 +67,9 @@ const MIN_VISIBILITY_DURATION_MS = 300
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
- * Result from findMatchingSuggestion including first-time tracking information
+ * Result from findMatchingSuggestion including visibility tracking information
  */
-export interface MatchingSuggestionWithFirstTimeFlag extends MatchingSuggestionResult {
-	/** Whether this is the first time this suggestion is being shown (was just marked as shown) */
-	isFirstTimeShown: boolean
+export interface MatchingSuggestionWithVisibilityKey extends MatchingSuggestionResult {
 	/** Unique key identifying this suggestion for visibility tracking */
 	suggestionKey: string
 }
@@ -86,33 +84,26 @@ function getSuggestionKey(suggestion: FillInAtCursorSuggestion): string {
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix.
- * When a match is found, it is marked as shown in the cache.
- * The isFirstTimeShown flag indicates whether this was the first retrieval.
  *
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion with match type and first-time flag, or null if no match found
+ * @returns The matching suggestion with match type and visibility key, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-): MatchingSuggestionWithFirstTimeFlag | null {
+): MatchingSuggestionWithVisibilityKey | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
 		const fillInAtCursor = suggestionsHistory[i]
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			const isFirstTimeShown = !fillInAtCursor.shownToUser
-			if (isFirstTimeShown) {
-				fillInAtCursor.shownToUser = true
-			}
 			return {
 				text: fillInAtCursor.text,
 				matchType: "exact",
-				isFirstTimeShown,
 				suggestionKey: getSuggestionKey(fillInAtCursor),
 			}
 		}
@@ -129,15 +120,10 @@ export function findMatchingSuggestion(
 
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
-				const isFirstTimeShown = !fillInAtCursor.shownToUser
-				if (isFirstTimeShown) {
-					fillInAtCursor.shownToUser = true
-				}
 				// Return the remaining part of the suggestion (with already-typed portion removed)
 				return {
 					text: fillInAtCursor.text.substring(typedContent.length),
 					matchType: "partial_typing",
-					isFirstTimeShown,
 					suggestionKey: getSuggestionKey(fillInAtCursor),
 				}
 			}
@@ -154,15 +140,10 @@ export function findMatchingSuggestion(
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
-			const isFirstTimeShown = !fillInAtCursor.shownToUser
-			if (isFirstTimeShown) {
-				fillInAtCursor.shownToUser = true
-			}
 			// Return the deleted portion plus the original suggestion text
 			return {
 				text: deletedContent + fillInAtCursor.text,
 				matchType: "backward_deletion",
-				isFirstTimeShown,
 				suggestionKey: getSuggestionKey(fillInAtCursor),
 			}
 		}
@@ -181,9 +162,9 @@ export function findMatchingSuggestion(
  * @returns A new result with potentially truncated text, or null if input was null
  */
 export function applyFirstLineOnly(
-	result: MatchingSuggestionWithFirstTimeFlag | null,
+	result: MatchingSuggestionWithVisibilityKey | null,
 	prefix: string,
-): MatchingSuggestionWithFirstTimeFlag | null {
+): MatchingSuggestionWithVisibilityKey | null {
 	if (result === null || result.text === "") {
 		return result
 	}
@@ -191,7 +172,6 @@ export function applyFirstLineOnly(
 		return {
 			text: getFirstLine(result.text),
 			matchType: result.matchType,
-			isFirstTimeShown: result.isFirstTimeShown,
 			suggestionKey: result.suggestionKey,
 		}
 	}

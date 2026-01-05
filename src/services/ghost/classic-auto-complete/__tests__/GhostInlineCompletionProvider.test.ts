@@ -70,160 +70,6 @@ vi.mock("vscode", async () => {
 })
 
 describe("findMatchingSuggestion", () => {
-	describe("isFirstTimeShown tracking", () => {
-		it("should return isFirstTimeShown=true on first retrieval", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).not.toBeNull()
-			expect(result!.isFirstTimeShown).toBe(true)
-			expect(result!.text).toBe("console.log('test');")
-		})
-
-		it("should return isFirstTimeShown=false on subsequent retrievals", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval
-			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result1!.isFirstTimeShown).toBe(true)
-
-			// Second retrieval - same suggestion
-			const result2 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result2!.isFirstTimeShown).toBe(false)
-
-			// Third retrieval - still false
-			const result3 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result3!.isFirstTimeShown).toBe(false)
-		})
-
-		it("should set shownToUser flag on the suggestion object", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			expect(suggestions[0].shownToUser).toBeUndefined()
-
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-
-			expect(suggestions[0].shownToUser).toBe(true)
-		})
-
-		it("should track isFirstTimeShown separately for different suggestions", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "first suggestion",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-				{
-					text: "second suggestion",
-					prefix: "const a = 1",
-					suffix: "\nconst b = 2",
-				},
-			]
-
-			// First suggestion - first time
-			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result1!.isFirstTimeShown).toBe(true)
-
-			// Second suggestion - first time
-			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
-			expect(result2!.isFirstTimeShown).toBe(true)
-
-			// First suggestion again - not first time
-			const result3 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result3!.isFirstTimeShown).toBe(false)
-
-			// Second suggestion again - not first time
-			const result4 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
-			expect(result4!.isFirstTimeShown).toBe(false)
-		})
-
-		it("should return isFirstTimeShown=true for partial_typing match on first retrieval", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// Partial typing match
-			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).not.toBeNull()
-			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.isFirstTimeShown).toBe(true)
-		})
-
-		it("should return isFirstTimeShown=false for partial_typing match after first retrieval", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval via exact match
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-
-			// Second retrieval via partial typing - same underlying suggestion
-			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.isFirstTimeShown).toBe(false)
-		})
-
-		it("should return isFirstTimeShown=true for backward_deletion match on first retrieval", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "henk",
-					prefix: "foo",
-					suffix: "bar",
-				},
-			]
-
-			// Backward deletion match
-			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).not.toBeNull()
-			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.isFirstTimeShown).toBe(true)
-		})
-
-		it("should return isFirstTimeShown=false for backward_deletion match after first retrieval", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "henk",
-					prefix: "foo",
-					suffix: "bar",
-				},
-			]
-
-			// First retrieval via exact match
-			findMatchingSuggestion("foo", "bar", suggestions)
-
-			// Second retrieval via backward deletion - same underlying suggestion
-			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.isFirstTimeShown).toBe(false)
-		})
-	})
-
 	describe("failed lookups", () => {
 		it("should return empty string when matching a failed lookup (text is empty string)", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
@@ -238,7 +84,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 			expect(result!.suggestionKey).toBeDefined()
 		})
 
@@ -260,7 +105,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("console.log('success');")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return empty string for failed lookup even when other suggestions exist", () => {
@@ -281,7 +125,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -299,7 +142,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("console.log('Hello, World!');")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when prefix does not match", () => {
@@ -349,7 +191,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("oohenk")
 			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return full prefix plus suggestion when user deletes entire prefix", () => {
@@ -366,7 +207,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("helloworld")
 			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when suffix does not match during backward deletion", () => {
@@ -430,7 +270,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("exact")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should handle multi-character backward deletion", () => {
@@ -447,7 +286,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("unctest()")
 			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -466,7 +304,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("ole.log('Hello, World!');")
 			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return full suggestion when no partial typing", () => {
@@ -482,7 +319,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("console.log('test');")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when partially typed content does not match suggestion", () => {
@@ -512,7 +348,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("")
 			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when suffix has changed during partial typing", () => {
@@ -543,7 +378,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("st() { return 42; }")
 			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should be case-sensitive in partial matching", () => {
@@ -580,7 +414,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("second suggestion")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should match different suggestions based on context", () => {
@@ -601,13 +434,11 @@ describe("findMatchingSuggestion", () => {
 			expect(result1).not.toBeNull()
 			expect(result1!.text).toBe("first suggestion")
 			expect(result1!.matchType).toBe("exact")
-			expect(result1!.isFirstTimeShown).toBe(true)
 
 			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
 			expect(result2).not.toBeNull()
 			expect(result2!.text).toBe("second suggestion")
 			expect(result2!.matchType).toBe("exact")
-			expect(result2!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should prefer exact match over partial match", () => {
@@ -629,7 +460,6 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("exact match")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -786,12 +616,11 @@ describe("applyFirstLineOnly", () => {
 	})
 
 	it("returns result unchanged when text is empty", () => {
-		const input = { text: "", matchType: "exact" as const, isFirstTimeShown: true, suggestionKey: "test-key" }
+		const input = { text: "", matchType: "exact" as const, suggestionKey: "test-key" }
 		const result = applyFirstLineOnly(input, "const x = foo")
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("")
 		expect(result!.matchType).toBe("exact")
-		expect(result!.isFirstTimeShown).toBe(true)
 	})
 
 	it("truncates to first line and preserves matchType when enabled", () => {
@@ -799,7 +628,6 @@ describe("applyFirstLineOnly", () => {
 			{
 				text: "line1\nline2\nline3",
 				matchType: "partial_typing",
-				isFirstTimeShown: true,
 				suggestionKey: "test-key",
 			},
 			"const x = foo",
@@ -807,18 +635,16 @@ describe("applyFirstLineOnly", () => {
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("line1")
 		expect(result!.matchType).toBe("partial_typing")
-		expect(result!.isFirstTimeShown).toBe(true)
 	})
 
 	it("does not truncate when suggestion starts with newline", () => {
 		const result = applyFirstLineOnly(
-			{ text: "\nline1\nline2", matchType: "exact", isFirstTimeShown: false, suggestionKey: "test-key" },
+			{ text: "\nline1\nline2", matchType: "exact", suggestionKey: "test-key" },
 			"const x = foo",
 		)
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("\nline1\nline2")
 		expect(result!.matchType).toBe("exact")
-		expect(result!.isFirstTimeShown).toBe(false)
 	})
 })
 
