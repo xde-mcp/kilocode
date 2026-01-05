@@ -109,11 +109,11 @@ const config: Config = {
 					},
 					{
 						to: "/advanced-usage/custom-instructions",
-						from: ["/features/custom-instructions"],
+						from: ["/agent-behavior/custom-instructions"],
 					},
 					{
 						to: "/features/custom-modes",
-						from: ["/advanced-usage/custom-modes"],
+						from: ["/agent-behavior/custom-modes"],
 					},
 					{
 						to: "/features/enhance-prompt",
