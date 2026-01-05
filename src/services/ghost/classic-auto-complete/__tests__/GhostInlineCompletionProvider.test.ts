@@ -235,12 +235,11 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
+			expect(result!.suggestionKey).toBeDefined()
 		})
 
 		it("should skip failed lookups and find successful suggestions", () => {
@@ -258,12 +257,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "console.log('success');",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('success');")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return empty string for failed lookup even when other suggestions exist", () => {
@@ -281,12 +278,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -301,12 +296,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "console.log('Hello, World!');",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('Hello, World!');")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when prefix does not match", () => {
@@ -353,12 +346,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User backspaced from "foo" to "f"
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toEqual({
-				text: "oohenk",
-				matchType: "backward_deletion",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("oohenk")
+			expect(result!.matchType).toBe("backward_deletion")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return full prefix plus suggestion when user deletes entire prefix", () => {
@@ -372,12 +363,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted entire prefix
 			const result = findMatchingSuggestion("", "!", suggestions)
-			expect(result).toEqual({
-				text: "helloworld",
-				matchType: "backward_deletion",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("helloworld")
+			expect(result!.matchType).toBe("backward_deletion")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when suffix does not match during backward deletion", () => {
@@ -438,12 +427,10 @@ describe("findMatchingSuggestion", () => {
 
 			// Should match the exact prefix "f" first (most recent)
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toEqual({
-				text: "exact",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("exact")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should handle multi-character backward deletion", () => {
@@ -457,12 +444,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted "unc" from "function myFunc"
 			const result = findMatchingSuggestion("function myF", " { }", suggestions)
-			expect(result).toEqual({
-				text: "unctest()",
-				matchType: "backward_deletion",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("unctest()")
+			expect(result!.matchType).toBe("backward_deletion")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -478,12 +463,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "cons" after the prefix
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "ole.log('Hello, World!');",
-				matchType: "partial_typing",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("ole.log('Hello, World!');")
+			expect(result!.matchType).toBe("partial_typing")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return full suggestion when no partial typing", () => {
@@ -496,12 +479,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "console.log('test');",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('test');")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when partially typed content does not match suggestion", () => {
@@ -528,12 +509,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1console.log('test');", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "",
-				matchType: "partial_typing",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("partial_typing")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should return null when suffix has changed during partial typing", () => {
@@ -561,12 +540,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "function te"
 			const result = findMatchingSuggestion("const x = 1function te", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "st() { return 42; }",
-				matchType: "partial_typing",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("st() { return 42; }")
+			expect(result!.matchType).toBe("partial_typing")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should be case-sensitive in partial matching", () => {
@@ -600,12 +577,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "second suggestion",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("second suggestion")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should match different suggestions based on context", () => {
@@ -623,20 +598,16 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result1).toEqual({
-				text: "first suggestion",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result1).not.toBeNull()
+			expect(result1!.text).toBe("first suggestion")
+			expect(result1!.matchType).toBe("exact")
+			expect(result1!.isFirstTimeShown).toBe(true)
 
 			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
-			expect(result2).toEqual({
-				text: "second suggestion",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result2).not.toBeNull()
+			expect(result2!.text).toBe("second suggestion")
+			expect(result2!.matchType).toBe("exact")
+			expect(result2!.isFirstTimeShown).toBe(true)
 		})
 
 		it("should prefer exact match over partial match", () => {
@@ -655,12 +626,10 @@ describe("findMatchingSuggestion", () => {
 
 			// User is at position that matches exact prefix of second suggestion
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toEqual({
-				text: "exact match",
-				matchType: "exact",
-				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
-			})
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("exact match")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.isFirstTimeShown).toBe(true)
 		})
 	})
 
@@ -705,8 +674,8 @@ describe("findMatchingSuggestion", () => {
 		})
 	})
 
-	describe("shouldFireUniqueTelemetry visibility duration tracking", () => {
-		it("should return shouldFireUniqueTelemetry=false on first show (0ms elapsed)", () => {
+	describe("suggestionKey generation", () => {
+		it("should return a suggestionKey for tracking visibility", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
 				{
 					text: "console.log('test');",
@@ -715,16 +684,14 @@ describe("findMatchingSuggestion", () => {
 				},
 			]
 
-			const now = 1000
-			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, now)
+			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 
 			expect(result).not.toBeNull()
-			expect(result!.isFirstTimeShown).toBe(true)
-			expect(result!.shouldFireUniqueTelemetry).toBe(false) // 0ms elapsed, not enough time
-			expect(suggestions[0].firstShownAt).toBe(now)
+			expect(result!.suggestionKey).toBeDefined()
+			expect(typeof result!.suggestionKey).toBe("string")
 		})
 
-		it("should return shouldFireUniqueTelemetry=false when less than 300ms has elapsed", () => {
+		it("should return the same suggestionKey for the same suggestion", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
 				{
 					text: "console.log('test');",
@@ -733,86 +700,13 @@ describe("findMatchingSuggestion", () => {
 				},
 			]
 
-			// First retrieval at t=1000
-			const firstTime = 1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, firstTime)
+			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+			const result2 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 
-			// Second retrieval at t=1200 (200ms later, less than 300ms threshold)
-			const secondTime = 1200
-			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, secondTime)
-
-			expect(result).not.toBeNull()
-			expect(result!.isFirstTimeShown).toBe(false)
-			expect(result!.shouldFireUniqueTelemetry).toBe(false) // Only 200ms elapsed
+			expect(result1!.suggestionKey).toBe(result2!.suggestionKey)
 		})
 
-		it("should return shouldFireUniqueTelemetry=true when exactly 300ms has elapsed", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval at t=1000
-			const firstTime = 1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, firstTime)
-
-			// Second retrieval at t=1300 (exactly 300ms later)
-			const secondTime = 1300
-			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, secondTime)
-
-			expect(result).not.toBeNull()
-			expect(result!.isFirstTimeShown).toBe(false)
-			expect(result!.shouldFireUniqueTelemetry).toBe(true) // Exactly 300ms elapsed
-			expect(suggestions[0].uniqueTelemetryFired).toBe(true)
-		})
-
-		it("should return shouldFireUniqueTelemetry=true when more than 300ms has elapsed", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval at t=1000
-			const firstTime = 1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, firstTime)
-
-			// Second retrieval at t=1500 (500ms later, more than 300ms threshold)
-			const secondTime = 1500
-			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, secondTime)
-
-			expect(result).not.toBeNull()
-			expect(result!.isFirstTimeShown).toBe(false)
-			expect(result!.shouldFireUniqueTelemetry).toBe(true) // 500ms elapsed
-		})
-
-		it("should return shouldFireUniqueTelemetry=false after telemetry has already been fired", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval at t=1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1000)
-
-			// Second retrieval at t=1300 (300ms later) - telemetry fires
-			const result2 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1300)
-			expect(result2!.shouldFireUniqueTelemetry).toBe(true)
-
-			// Third retrieval at t=1600 (600ms from first show) - telemetry already fired
-			const result3 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1600)
-			expect(result3!.shouldFireUniqueTelemetry).toBe(false) // Already fired
-		})
-
-		it("should track visibility duration separately for different suggestions", () => {
+		it("should return different suggestionKeys for different suggestions", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
 				{
 					text: "first suggestion",
@@ -826,63 +720,10 @@ describe("findMatchingSuggestion", () => {
 				},
 			]
 
-			// First suggestion shown at t=1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1000)
+			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
 
-			// Second suggestion shown at t=1100
-			findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions, 1100)
-
-			// First suggestion at t=1300 (300ms from first show) - should fire
-			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1300)
-			expect(result1!.shouldFireUniqueTelemetry).toBe(true)
-
-			// Second suggestion at t=1300 (only 200ms from second show) - should NOT fire
-			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions, 1300)
-			expect(result2!.shouldFireUniqueTelemetry).toBe(false)
-
-			// Second suggestion at t=1400 (300ms from second show) - should fire
-			const result3 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions, 1400)
-			expect(result3!.shouldFireUniqueTelemetry).toBe(true)
-		})
-
-		it("should work with partial_typing match type", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
-
-			// First retrieval via exact match at t=1000
-			findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions, 1000)
-
-			// Second retrieval via partial typing at t=1300 (300ms later)
-			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions, 1300)
-
-			expect(result).not.toBeNull()
-			expect(result!.matchType).toBe("partial_typing")
-			expect(result!.shouldFireUniqueTelemetry).toBe(true) // 300ms elapsed
-		})
-
-		it("should work with backward_deletion match type", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "henk",
-					prefix: "foo",
-					suffix: "bar",
-				},
-			]
-
-			// First retrieval via exact match at t=1000
-			findMatchingSuggestion("foo", "bar", suggestions, 1000)
-
-			// Second retrieval via backward deletion at t=1300 (300ms later)
-			const result = findMatchingSuggestion("f", "bar", suggestions, 1300)
-
-			expect(result).not.toBeNull()
-			expect(result!.matchType).toBe("backward_deletion")
-			expect(result!.shouldFireUniqueTelemetry).toBe(true) // 300ms elapsed
+			expect(result1!.suggestionKey).not.toBe(result2!.suggestionKey)
 		})
 	})
 })
@@ -945,17 +786,12 @@ describe("applyFirstLineOnly", () => {
 	})
 
 	it("returns result unchanged when text is empty", () => {
-		expect(
-			applyFirstLineOnly(
-				{ text: "", matchType: "exact", isFirstTimeShown: true, shouldFireUniqueTelemetry: false },
-				"const x = foo",
-			),
-		).toEqual({
-			text: "",
-			matchType: "exact",
-			isFirstTimeShown: true,
-			shouldFireUniqueTelemetry: false,
-		})
+		const input = { text: "", matchType: "exact" as const, isFirstTimeShown: true, suggestionKey: "test-key" }
+		const result = applyFirstLineOnly(input, "const x = foo")
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("")
+		expect(result!.matchType).toBe("exact")
+		expect(result!.isFirstTimeShown).toBe(true)
 	})
 
 	it("truncates to first line and preserves matchType when enabled", () => {
@@ -964,29 +800,25 @@ describe("applyFirstLineOnly", () => {
 				text: "line1\nline2\nline3",
 				matchType: "partial_typing",
 				isFirstTimeShown: true,
-				shouldFireUniqueTelemetry: false,
+				suggestionKey: "test-key",
 			},
 			"const x = foo",
 		)
-		expect(result).toEqual({
-			text: "line1",
-			matchType: "partial_typing",
-			isFirstTimeShown: true,
-			shouldFireUniqueTelemetry: false,
-		})
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("line1")
+		expect(result!.matchType).toBe("partial_typing")
+		expect(result!.isFirstTimeShown).toBe(true)
 	})
 
 	it("does not truncate when suggestion starts with newline", () => {
 		const result = applyFirstLineOnly(
-			{ text: "\nline1\nline2", matchType: "exact", isFirstTimeShown: false, shouldFireUniqueTelemetry: false },
+			{ text: "\nline1\nline2", matchType: "exact", isFirstTimeShown: false, suggestionKey: "test-key" },
 			"const x = foo",
 		)
-		expect(result).toEqual({
-			text: "\nline1\nline2",
-			matchType: "exact",
-			isFirstTimeShown: false,
-			shouldFireUniqueTelemetry: false,
-		})
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("\nline1\nline2")
+		expect(result!.matchType).toBe("exact")
+		expect(result!.isFirstTimeShown).toBe(false)
 	})
 })
 

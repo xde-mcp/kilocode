@@ -67,69 +67,37 @@ const MIN_VISIBILITY_DURATION_MS = 300
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
- * Result from findMatchingSuggestion including visibility tracking information
+ * Result from findMatchingSuggestion including first-time tracking information
  */
 export interface MatchingSuggestionWithFirstTimeFlag extends MatchingSuggestionResult {
 	/** Whether this is the first time this suggestion is being shown (was just marked as shown) */
 	isFirstTimeShown: boolean
-	/** Whether the unique suggestion telemetry should be fired (visibility duration met and not yet fired) */
-	shouldFireUniqueTelemetry: boolean
+	/** Unique key identifying this suggestion for visibility tracking */
+	suggestionKey: string
 }
 
 /**
- * Helper function to update suggestion visibility tracking and determine telemetry flags.
- * This centralizes the logic for tracking when a suggestion was first shown and
- * whether the unique telemetry event should be fired.
- *
- * @param suggestion - The suggestion being shown
- * @param now - Current timestamp in milliseconds
- * @returns Object with isFirstTimeShown and shouldFireUniqueTelemetry flags
+ * Generate a unique key for a suggestion based on its content and context.
+ * This key is used to track whether the same suggestion is still being displayed.
  */
-function updateVisibilityTracking(
-	suggestion: FillInAtCursorSuggestion,
-	now: number = Date.now(),
-): { isFirstTimeShown: boolean; shouldFireUniqueTelemetry: boolean } {
-	const isFirstTimeShown = !suggestion.shownToUser
-
-	// Mark as shown and record timestamp if first time
-	if (isFirstTimeShown) {
-		suggestion.shownToUser = true
-		suggestion.firstShownAt = now
-	}
-
-	// Determine if we should fire unique telemetry:
-	// - Must not have fired already
-	// - Must have been visible for at least MIN_VISIBILITY_DURATION_MS
-	let shouldFireUniqueTelemetry = false
-	if (!suggestion.uniqueTelemetryFired && suggestion.firstShownAt !== undefined) {
-		const visibilityDuration = now - suggestion.firstShownAt
-		if (visibilityDuration >= MIN_VISIBILITY_DURATION_MS) {
-			suggestion.uniqueTelemetryFired = true
-			shouldFireUniqueTelemetry = true
-		}
-	}
-
-	return { isFirstTimeShown, shouldFireUniqueTelemetry }
+function getSuggestionKey(suggestion: FillInAtCursorSuggestion): string {
+	return `${suggestion.prefix}|${suggestion.suffix}|${suggestion.text}`
 }
 
 /**
  * Find a matching suggestion from the history based on current prefix and suffix.
- * When a match is found, it is immediately marked as shown in the cache.
+ * When a match is found, it is marked as shown in the cache.
  * The isFirstTimeShown flag indicates whether this was the first retrieval.
- * The shouldFireUniqueTelemetry flag indicates whether the suggestion has been
- * visible long enough (MIN_VISIBILITY_DURATION_MS) to count as "seen" by a human.
  *
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @param now - Optional current timestamp for testing (defaults to Date.now())
- * @returns The matching suggestion with match type and visibility flags, or null if no match found
+ * @returns The matching suggestion with match type and first-time flag, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-	now: number = Date.now(),
 ): MatchingSuggestionWithFirstTimeFlag | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
@@ -137,8 +105,16 @@ export function findMatchingSuggestion(
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
-			return { text: fillInAtCursor.text, matchType: "exact", isFirstTimeShown, shouldFireUniqueTelemetry }
+			const isFirstTimeShown = !fillInAtCursor.shownToUser
+			if (isFirstTimeShown) {
+				fillInAtCursor.shownToUser = true
+			}
+			return {
+				text: fillInAtCursor.text,
+				matchType: "exact",
+				isFirstTimeShown,
+				suggestionKey: getSuggestionKey(fillInAtCursor),
+			}
 		}
 
 		// If no exact match, but suggestion is available, check for partial typing
@@ -153,13 +129,16 @@ export function findMatchingSuggestion(
 
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
-				const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
+				const isFirstTimeShown = !fillInAtCursor.shownToUser
+				if (isFirstTimeShown) {
+					fillInAtCursor.shownToUser = true
+				}
 				// Return the remaining part of the suggestion (with already-typed portion removed)
 				return {
 					text: fillInAtCursor.text.substring(typedContent.length),
 					matchType: "partial_typing",
 					isFirstTimeShown,
-					shouldFireUniqueTelemetry,
+					suggestionKey: getSuggestionKey(fillInAtCursor),
 				}
 			}
 		}
@@ -175,13 +154,16 @@ export function findMatchingSuggestion(
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
-			const { isFirstTimeShown, shouldFireUniqueTelemetry } = updateVisibilityTracking(fillInAtCursor, now)
+			const isFirstTimeShown = !fillInAtCursor.shownToUser
+			if (isFirstTimeShown) {
+				fillInAtCursor.shownToUser = true
+			}
 			// Return the deleted portion plus the original suggestion text
 			return {
 				text: deletedContent + fillInAtCursor.text,
 				matchType: "backward_deletion",
 				isFirstTimeShown,
-				shouldFireUniqueTelemetry,
+				suggestionKey: getSuggestionKey(fillInAtCursor),
 			}
 		}
 	}
@@ -210,7 +192,7 @@ export function applyFirstLineOnly(
 			text: getFirstLine(result.text),
 			matchType: result.matchType,
 			isFirstTimeShown: result.isFirstTimeShown,
-			shouldFireUniqueTelemetry: result.shouldFireUniqueTelemetry,
+			suggestionKey: result.suggestionKey,
 		}
 	}
 	return result
@@ -301,6 +283,23 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 	return [item]
 }
 
+/**
+ * Tracks the currently displayed suggestion for visibility-based telemetry.
+ * Used to determine if a suggestion has been visible for MIN_VISIBILITY_DURATION_MS.
+ */
+interface VisibilityTrackingState {
+	/** Unique key identifying the currently displayed suggestion */
+	suggestionKey: string
+	/** Timer that fires after MIN_VISIBILITY_DURATION_MS to capture telemetry */
+	timer: NodeJS.Timeout
+	/** The source of the suggestion (llm or cache) */
+	source: "llm" | "cache"
+	/** Telemetry context for the suggestion */
+	telemetryContext: AutocompleteContext
+	/** Length of the suggestion text */
+	suggestionLength: number
+}
+
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
@@ -319,6 +318,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
 	private latencyHistory: number[] = []
 	private telemetry: AutocompleteTelemetry | null
+	/** Tracks the currently displayed suggestion for visibility-based telemetry */
+	private visibilityTracking: VisibilityTrackingState | null = null
+	/** Set of suggestion keys for which unique telemetry has already been fired */
+	private firedUniqueTelemetryKeys: Set<string> = new Set()
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -469,11 +472,80 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
+	/**
+	 * Start visibility tracking for a suggestion.
+	 * If the suggestion is still being displayed after MIN_VISIBILITY_DURATION_MS,
+	 * the unique suggestion telemetry will be fired.
+	 *
+	 * @param suggestionKey - Unique key identifying the suggestion
+	 * @param source - Whether the suggestion came from 'llm' or 'cache'
+	 * @param telemetryContext - Telemetry context for the suggestion
+	 * @param suggestionLength - Length of the suggestion text
+	 */
+	private startVisibilityTracking(
+		suggestionKey: string,
+		source: "llm" | "cache",
+		telemetryContext: AutocompleteContext,
+		suggestionLength: number,
+	): void {
+		// If we're already tracking this exact suggestion, do nothing
+		if (this.visibilityTracking?.suggestionKey === suggestionKey) {
+			return
+		}
+
+		// Cancel any existing visibility tracking (different suggestion is now shown)
+		this.cancelVisibilityTracking()
+
+		// Don't track if we've already fired telemetry for this suggestion
+		if (this.firedUniqueTelemetryKeys.has(suggestionKey)) {
+			return
+		}
+
+		// Don't track empty suggestions
+		if (suggestionLength === 0) {
+			return
+		}
+
+		// Start a new timer
+		const timer = setTimeout(() => {
+			// Timer fired - the suggestion has been visible for MIN_VISIBILITY_DURATION_MS
+			// Check if we're still tracking the same suggestion
+			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
+				// Fire the telemetry
+				this.telemetry?.captureUniqueSuggestionShown(telemetryContext, suggestionLength, source)
+				// Mark this suggestion as having fired telemetry
+				this.firedUniqueTelemetryKeys.add(suggestionKey)
+				// Clear the tracking state
+				this.visibilityTracking = null
+			}
+		}, MIN_VISIBILITY_DURATION_MS)
+
+		this.visibilityTracking = {
+			suggestionKey,
+			timer,
+			source,
+			telemetryContext,
+			suggestionLength,
+		}
+	}
+
+	/**
+	 * Cancel any pending visibility tracking.
+	 * Called when a different suggestion is shown or no suggestion is shown.
+	 */
+	private cancelVisibilityTracking(): void {
+		if (this.visibilityTracking) {
+			clearTimeout(this.visibilityTracking.timer)
+			this.visibilityTracking = null
+		}
+	}
+
 	public dispose(): void {
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 			this.debounceTimer = null
 		}
+		this.cancelVisibilityTracking()
 		this.recentlyVisitedRangesService.dispose()
 		this.recentlyEditedTracker.dispose()
 		void this.disposeIgnoreController()
@@ -562,12 +634,19 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
-				// Fire unique suggestion shown telemetry if visibility duration threshold met
-				if (matchingResult.shouldFireUniqueTelemetry) {
-					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, matchingResult.text.length, "cache")
-				}
+				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
+				// if the same suggestion is still being displayed
+				this.startVisibilityTracking(
+					matchingResult.suggestionKey,
+					"cache",
+					telemetryContext,
+					matchingResult.text.length,
+				)
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
+
+			// No suggestion to show - cancel any pending visibility tracking
+			this.cancelVisibilityTracking()
 
 			// Only skip new LLM requests during mid-word typing or at end of statement
 			// Cache lookups above are still allowed
@@ -589,10 +668,17 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			)
 			if (cachedResult) {
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
-				// Fire unique suggestion shown telemetry if visibility duration threshold met
-				if (cachedResult.shouldFireUniqueTelemetry) {
-					this.telemetry?.captureUniqueSuggestionShown(telemetryContext, cachedResult.text.length, "llm")
-				}
+				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
+				// if the same suggestion is still being displayed
+				this.startVisibilityTracking(
+					cachedResult.suggestionKey,
+					"llm",
+					telemetryContext,
+					cachedResult.text.length,
+				)
+			} else {
+				// No suggestion to show - cancel any pending visibility tracking
+				this.cancelVisibilityTracking()
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
