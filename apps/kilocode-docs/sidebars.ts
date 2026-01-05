@@ -86,6 +86,7 @@ const sidebars: SidebarsConfig = {
 					],
 				},
 				"basic-usage/adding-credits",
+				"basic-usage/settings-management",
 			],
 		},
 		{
@@ -131,21 +132,20 @@ const sidebars: SidebarsConfig = {
 		},
 		{
 			type: "category",
-			label: "Customization",
+			label: "Agent Behavior",
 			items: [
-				"customization/custom-modes",
-				"customization/custom-rules",
-				"customization/custom-instructions",
-				"customization/workflows",
-				"customization/settings-management",
-				"customization/skills",
+				"agent-behavior/prompt-engineering",
+				"agent-behavior/custom-modes",
+				"agent-behavior/custom-rules",
+				"agent-behavior/custom-instructions",
+				"agent-behavior/workflows",
+				"agent-behavior/skills",
 			],
 		},
 		{
 			type: "category",
 			label: "Advanced Usage",
 			items: [
-				"advanced-usage/prompt-engineering",
 				"advanced-usage/migrating-from-cursor-windsurf",
 				{
 					type: "category",
