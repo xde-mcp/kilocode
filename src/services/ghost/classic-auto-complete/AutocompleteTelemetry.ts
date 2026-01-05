@@ -5,6 +5,13 @@ import type { AutocompleteContext, CacheMatchType } from "../types"
 export type { AutocompleteContext, CacheMatchType }
 
 /**
+ * Minimum time in milliseconds that a suggestion must be visible before
+ * it counts as a "unique suggestion shown" for telemetry purposes.
+ * This filters out suggestions that flash briefly when the user is typing quickly.
+ */
+export const MIN_VISIBILITY_DURATION_MS = 300
+
+/**
  * Type of autocomplete being used
  * - "inline": Classic inline code completion in the editor
  * - "chat-textarea": Autocomplete in the chat input textarea
@@ -161,18 +168,10 @@ export class AutocompleteTelemetry {
 	 * Uniqueness is tracked in the cache itself via the shownToUser flag.
 	 *
 	 * @param context - The autocomplete context
-	 * @param suggestionLength - The length of the suggestion in characters
-	 * @param source - Whether the suggestion came from 'llm' or 'cache'
 	 */
-	public captureUniqueSuggestionShown(
-		context: AutocompleteContext,
-		suggestionLength: number,
-		source: "llm" | "cache",
-	): void {
+	public captureUniqueSuggestionShown(context: AutocompleteContext): void {
 		this.captureEvent(TelemetryEventName.AUTOCOMPLETE_UNIQUE_SUGGESTION_SHOWN, {
 			...context,
-			suggestionLength,
-			source,
 		})
 	}
 }

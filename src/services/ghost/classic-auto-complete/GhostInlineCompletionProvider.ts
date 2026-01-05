@@ -24,7 +24,7 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { shouldSkipAutocomplete } from "./contextualSkip"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
-import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
+import { AutocompleteTelemetry, MIN_VISIBILITY_DURATION_MS } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -56,13 +56,6 @@ const MAX_DEBOUNCE_DELAY_MS = 1000
  * of the stored latencies, updated after each request.
  */
 const LATENCY_SAMPLE_SIZE = 10
-
-/**
- * Minimum time in milliseconds that a suggestion must be visible before
- * it counts as a "unique suggestion shown" for telemetry purposes.
- * This filters out suggestions that flash briefly when the user is typing quickly.
- */
-const MIN_VISIBILITY_DURATION_MS = 300
 
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
@@ -501,7 +494,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
 				// Fire the telemetry
 				console.log(`🔍VISTRK Firing telemetry for key: ${suggestionKey.substring(0, 50)}...`)
-				this.telemetry?.captureUniqueSuggestionShown(telemetryContext, suggestionLength, source)
+				this.telemetry?.captureUniqueSuggestionShown(telemetryContext)
 				// Mark this suggestion as having fired telemetry
 				this.firedUniqueTelemetryKeys.add(suggestionKey)
 				// Clear the tracking state
