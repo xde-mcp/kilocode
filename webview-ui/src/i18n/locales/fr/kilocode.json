@@ -262,6 +262,11 @@
 					"30min": "30 minutes",
 					"1hour": "1 heure"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Aucun modèle d'autocomplétion configuré",
+				"description": "Pour activer l'autocomplétion, ajoutez un profil avec l'un de ces fournisseurs pris en charge :",
+				"learnMore": "En savoir plus sur la configuration de l'autocomplétion →"
 			}
 		}
 	},

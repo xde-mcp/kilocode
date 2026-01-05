@@ -248,6 +248,11 @@
 					"30min": "30 menit",
 					"1hour": "1 jam"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Tidak ada model autocomplete yang dikonfigurasi",
+				"description": "Untuk mengaktifkan autocomplete, tambahkan profil dengan salah satu penyedia yang didukung ini:",
+				"learnMore": "Pelajari lebih lanjut tentang pengaturan autocomplete →"
 			}
 		}
 	},

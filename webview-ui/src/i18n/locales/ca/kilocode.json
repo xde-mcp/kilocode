@@ -248,6 +248,11 @@
 					"30min": "30 minuts",
 					"1hour": "1 hora"
 				}
+			},
+			"noModelConfigured": {
+				"title": "No s'ha configurat cap model d'autocompletat",
+				"description": "Per habilitar l'autocompletat, afegeix un perfil amb un d'aquests proveïdors compatibles:",
+				"learnMore": "Més informació sobre la configuració de l'autocompletat →"
 			}
 		}
 	},

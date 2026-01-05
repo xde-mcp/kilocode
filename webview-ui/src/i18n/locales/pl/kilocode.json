@@ -255,6 +255,11 @@
 					"30min": "30 minut",
 					"1hour": "1 godzina"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Nie skonfigurowano modelu autouzupełniania",
+				"description": "Aby włączyć autouzupełnianie, dodaj profil z jednym z tych obsługiwanych dostawców:",
+				"learnMore": "Dowiedz się więcej o konfiguracji autouzupełniania →"
 			}
 		}
 	},

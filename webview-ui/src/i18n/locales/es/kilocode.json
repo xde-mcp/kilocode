@@ -255,6 +255,11 @@
 					"30min": "30 minutos",
 					"1hour": "1 hora"
 				}
+			},
+			"noModelConfigured": {
+				"title": "No hay modelo de autocompletado configurado",
+				"description": "Para habilitar el autocompletado, añade un perfil con uno de estos proveedores compatibles:",
+				"learnMore": "Más información sobre la configuración del autocompletado →"
 			}
 		}
 	},

@@ -255,6 +255,11 @@
 					"30min": "30 phút",
 					"1hour": "1 giờ"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Chưa cấu hình mô hình tự động hoàn thành",
+				"description": "Để bật tự động hoàn thành, hãy thêm hồ sơ với một trong các nhà cung cấp được hỗ trợ sau:",
+				"learnMore": "Tìm hiểu thêm về cách thiết lập tự động hoàn thành →"
 			}
 		}
 	},

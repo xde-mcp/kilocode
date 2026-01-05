@@ -255,6 +255,11 @@
 					"30min": "30 dakika",
 					"1hour": "1 saat"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Otomatik tamamlama modeli yapılandırılmadı",
+				"description": "Otomatik tamamlamayı etkinleştirmek için desteklenen bu sağlayıcılardan biriyle bir profil ekleyin:",
+				"learnMore": "Otomatik tamamlama kurulumu hakkında daha fazla bilgi →"
 			}
 		}
 	},

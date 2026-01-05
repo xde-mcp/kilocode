@@ -262,6 +262,11 @@
 					"30min": "30 minuten",
 					"1hour": "1 uur"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Geen autocomplete-model geconfigureerd",
+				"description": "Om autocomplete in te schakelen, voeg een profiel toe met een van deze ondersteunde providers:",
+				"learnMore": "Meer informatie over autocomplete-configuratie →"
 			}
 		}
 	},

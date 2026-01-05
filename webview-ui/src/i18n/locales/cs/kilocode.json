@@ -262,6 +262,11 @@
 					"30min": "30 minut",
 					"1hour": "1 hodina"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Není nakonfigurován žádný model pro automatické dokončování",
+				"description": "Pro povolení automatického dokončování přidejte profil s jedním z těchto podporovaných poskytovatelů:",
+				"learnMore": "Zjistěte více o nastavení automatického dokončování →"
 			}
 		}
 	},
