@@ -606,7 +606,7 @@ importers:
         version: 3.922.0
       '@google/genai':
         specifier: ^1.0.0
-        version: 1.3.0(@modelcontextprotocol/sdk@1.22.0)(encoding@0.1.13)
+        version: 1.3.0(@modelcontextprotocol/sdk@1.24.0(zod@3.25.76))(encoding@0.1.13)
       '@lmstudio/sdk':
         specifier: ^1.1.1
         version: 1.2.0
@@ -614,8 +614,8 @@ importers:
         specifier: ^1.9.18
         version: 1.9.18(zod@3.25.76)
       '@modelcontextprotocol/sdk':
-        specifier: ^1.20.1
-        version: 1.22.0
+        specifier: ^1.24.0
+        version: 1.24.0(zod@3.25.76)
       '@qdrant/js-client-rest':
         specifier: ^1.14.0
         version: 1.14.0(typescript@5.8.3)
@@ -1704,7 +1704,7 @@ importers:
         specifier: ^1.9.18
         version: 1.9.18(zod@3.25.61)
       '@modelcontextprotocol/sdk':
-        specifier: 1.24.0
+        specifier: ^1.24.0
         version: 1.24.0(zod@3.25.61)
       '@qdrant/js-client-rest':
         specifier: ^1.14.0
@@ -5150,15 +5150,6 @@ packages:
 
   '@mixmark-io/domino@2.2.0':
     resolution: {integrity: sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==}
-
-  '@modelcontextprotocol/sdk@1.22.0':
-    resolution: {integrity: sha512-VUpl106XVTCpDmTBil2ehgJZjhyLY2QZikzF8NvTXtLRF1CvO5iEE2UNZdVIUer35vFOwMKYeUGbjJtvPWan3g==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      '@cfworker/json-schema': ^4.1.1
-    peerDependenciesMeta:
-      '@cfworker/json-schema':
-        optional: true
 
   '@modelcontextprotocol/sdk@1.24.0':
     resolution: {integrity: sha512-D8h5KXY2vHFW8zTuxn2vuZGN0HGrQ5No6LkHwlEA9trVgNdPL3TF1dSqKA7Dny6BbBYKSW/rOBDXdC8KJAjUCg==}
@@ -23469,9 +23460,9 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@google/genai@1.3.0(@modelcontextprotocol/sdk@1.22.0)(encoding@0.1.13)':
+  '@google/genai@1.3.0(@modelcontextprotocol/sdk@1.24.0(zod@3.25.76))(encoding@0.1.13)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.22.0
+      '@modelcontextprotocol/sdk': 1.24.0(zod@3.25.76)
       google-auth-library: 9.15.1(encoding@0.1.13)
       ws: 8.18.2
       zod: 3.25.76
@@ -24349,24 +24340,6 @@ snapshots:
 
   '@mixmark-io/domino@2.2.0': {}
 
-  '@modelcontextprotocol/sdk@1.22.0':
-    dependencies:
-      ajv: 8.17.1
-      ajv-formats: 3.0.1(ajv@8.17.1)
-      content-type: 1.0.5
-      cors: 2.8.5
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      eventsource-parser: 3.0.2
-      express: 5.1.0
-      express-rate-limit: 7.5.0(express@5.1.0)
-      pkce-challenge: 5.0.0
-      raw-body: 3.0.0
-      zod: 3.25.76
-      zod-to-json-schema: 3.24.5(zod@3.25.76)
-    transitivePeerDependencies:
-      - supports-color
-
   '@modelcontextprotocol/sdk@1.24.0(zod@3.25.61)':
     dependencies:
       ajv: 8.17.1
@@ -24383,6 +24356,25 @@ snapshots:
       raw-body: 3.0.0
       zod: 3.25.61
       zod-to-json-schema: 3.25.0(zod@3.25.61)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@modelcontextprotocol/sdk@1.24.0(zod@3.25.76)':
+    dependencies:
+      ajv: 8.17.1
+      ajv-formats: 3.0.1(ajv@8.17.1)
+      content-type: 1.0.5
+      cors: 2.8.5
+      cross-spawn: 7.0.6
+      eventsource: 3.0.7
+      eventsource-parser: 3.0.6
+      express: 5.1.0
+      express-rate-limit: 7.5.0(express@5.1.0)
+      jose: 6.1.3
+      pkce-challenge: 5.0.0
+      raw-body: 3.0.0
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.0(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
 
@@ -42380,6 +42372,10 @@ snapshots:
   zod-to-json-schema@3.25.0(zod@3.25.61):
     dependencies:
       zod: 3.25.61
+
+  zod-to-json-schema@3.25.0(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod-to-ts@1.2.0(typescript@5.8.3)(zod@3.25.61):
     dependencies:
