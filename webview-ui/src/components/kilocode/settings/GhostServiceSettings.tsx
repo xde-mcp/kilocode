@@ -1,16 +1,22 @@
 //kilocode_change - new file
-import { HTMLAttributes, useCallback, useEffect, useState } from "react"
+import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { Trans } from "react-i18next"
 import { Bot, Zap, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SectionHeader } from "../../settings/SectionHeader"
 import { Section } from "../../settings/Section"
-import { EXTREME_SNOOZE_VALUES_ENABLED, GhostServiceSettings, MODEL_SELECTION_ENABLED } from "@roo-code/types"
+import {
+	AUTOCOMPLETE_PROVIDER_MODELS,
+	EXTREME_SNOOZE_VALUES_ENABLED,
+	GhostServiceSettings,
+	MODEL_SELECTION_ENABLED,
+} from "@roo-code/types"
 import { vscode } from "@/utils/vscode"
 import { VSCodeCheckbox, VSCodeButton, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import { useKeybindings } from "@/hooks/useKeybindings"
 import { useExtensionState } from "../../../context/ExtensionStateContext"
+import { PROVIDERS } from "../../settings/constants"
 
 type GhostServiceSettingsViewProps = HTMLAttributes<HTMLDivElement> & {
 	ghostServiceSettings: GhostServiceSettings
@@ -19,6 +25,9 @@ type GhostServiceSettingsViewProps = HTMLAttributes<HTMLDivElement> & {
 		value: NonNullable<GhostServiceSettings>[K],
 	) => void
 }
+
+// Get the list of supported provider keys from AUTOCOMPLETE_PROVIDER_MODELS
+const SUPPORTED_AUTOCOMPLETE_PROVIDER_KEYS = Array.from(AUTOCOMPLETE_PROVIDER_MODELS.keys())
 
 export const GhostServiceSettingsView = ({
 	ghostServiceSettings,
@@ -39,6 +48,14 @@ export const GhostServiceSettingsView = ({
 	const keybindings = useKeybindings(["kilo-code.addToContextAndFocus", "kilo-code.ghost.generateSuggestions"])
 	const [snoozeDuration, setSnoozeDuration] = useState<number>(300)
 	const [currentTime, setCurrentTime] = useState<number>(Date.now())
+
+	// Get friendly display names for supported autocomplete providers
+	const supportedProviderNames = useMemo(() => {
+		return SUPPORTED_AUTOCOMPLETE_PROVIDER_KEYS.map((key) => {
+			const provider = PROVIDERS.find((p) => p.value === key)
+			return provider?.label ?? key
+		})
+	}, [])
 
 	useEffect(() => {
 		const interval = setInterval(() => {
@@ -259,8 +276,25 @@ export const GhostServiceSettingsView = ({
 									</div>
 								</>
 							) : (
-								<div className="text-vscode-errorForeground">
-									{t("kilocode:ghost.settings.noModelConfigured")}
+								<div className="flex flex-col gap-2">
+									<div className="text-vscode-errorForeground font-medium">
+										No autocomplete model configured
+									</div>
+									<div className="text-vscode-descriptionForeground">
+										To enable autocomplete, add a profile with one of these supported providers:
+									</div>
+									<ul className="text-vscode-descriptionForeground list-disc list-inside ml-2">
+										{supportedProviderNames.map((name) => (
+											<li key={name}>{name}</li>
+										))}
+									</ul>
+									<div className="text-vscode-descriptionForeground">
+										<a
+											href="https://kilo.ai/docs/basic-usage/autocomplete"
+											className="text-vscode-textLink-foreground hover:underline">
+											Learn more about autocomplete setup →
+										</a>
+									</div>
 								</div>
 							)}
 							{MODEL_SELECTION_ENABLED && (

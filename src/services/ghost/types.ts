@@ -10,20 +10,10 @@ import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
 import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { GhostModel } from "./GhostModel"
+import { AUTOCOMPLETE_PROVIDER_MODELS, AutocompleteProviderKey } from "@roo-code/types"
 
-export const AUTOCOMPLETE_PROVIDER_MODELS = new Map([
-	["mistral", "codestral-latest"],
-	["kilocode", "mistralai/codestral-2508"],
-	["openrouter", "mistralai/codestral-2508"],
-	["requesty", "mistral/codestral-latest"],
-	["bedrock", "mistral.codestral-2508-v1:0"],
-	["huggingface", "mistralai/Codestral-22B-v0.1"],
-	["litellm", "codestral/codestral-latest"],
-	["lmstudio", "mistralai/codestral-22b-v0.1"],
-	["ollama", "codestral:latest"],
-] as const)
-
-export type AutocompleteProviderKey = typeof AUTOCOMPLETE_PROVIDER_MODELS extends Map<infer K, any> ? K : never
+export { AUTOCOMPLETE_PROVIDER_MODELS }
+export type { AutocompleteProviderKey }
 
 export interface ResponseMetaData {
 	cost: number
