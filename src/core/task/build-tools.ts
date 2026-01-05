@@ -1,5 +1,5 @@
 import type OpenAI from "openai"
-import type { ProviderSettings, ModeConfig, ModelInfo } from "@roo-code/types" // kilocode_change
+import type { ProviderSettings, ModeConfig, ModelInfo } from "@roo-code/types"
 import type { ClineProvider } from "../webview/ClineProvider"
 import { getNativeTools, getMcpServerTools } from "../prompts/tools/native-tools"
 import { filterNativeToolsForMode, filterMcpToolsForMode } from "../prompts/tools/filter-tools-for-mode"
@@ -16,8 +16,9 @@ interface BuildToolsOptions {
 	browserToolEnabled: boolean
 	// kilocode_change start
 	state?: ClineProviderState
-	modelInfo?: ModelInfo
 	// kilocode_change end
+	modelInfo?: ModelInfo
+	diffEnabled: boolean
 }
 
 /**
@@ -28,8 +29,18 @@ interface BuildToolsOptions {
  * @returns Array of filtered native and MCP tools
  */
 export async function buildNativeToolsArray(options: BuildToolsOptions): Promise<OpenAI.Chat.ChatCompletionTool[]> {
-	const { provider, cwd, mode, customModes, experiments, apiConfiguration, maxReadFileLine, browserToolEnabled } =
-		options
+	const {
+		provider,
+		cwd,
+		mode,
+		customModes,
+		experiments,
+		apiConfiguration,
+		maxReadFileLine,
+		browserToolEnabled,
+		modelInfo,
+		diffEnabled,
+	} = options
 
 	const mcpHub = provider.getMcpHub()
 
@@ -41,6 +52,8 @@ export async function buildNativeToolsArray(options: BuildToolsOptions): Promise
 	const filterSettings = {
 		todoListEnabled: apiConfiguration?.todoListEnabled ?? true,
 		browserToolEnabled: browserToolEnabled ?? true,
+		modelInfo,
+		diffEnabled,
 	}
 
 	// Determine if partial reads are enabled based on maxReadFileLine setting
@@ -59,7 +72,6 @@ export async function buildNativeToolsArray(options: BuildToolsOptions): Promise
 		filterSettings,
 		// kilocode_change start
 		options.state,
-		options.modelInfo,
 		// kilocode_change end
 		mcpHub,
 	)

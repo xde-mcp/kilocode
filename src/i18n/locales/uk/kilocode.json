@@ -99,6 +99,7 @@
 	"ghost": {
 		"statusBar": {
 			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "призупинено",
 			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
@@ -176,13 +177,25 @@
 		"errors": {
 			"cliOutdated": "Твоя версія Kilocode CLI застаріла і не підтримує Agent Manager. Будь ласка, оновись до останньої версії.",
 			"cliNotFound": "Kilocode CLI не знайдено. Будь ласка, встанови його для використання Agent Manager.",
+			"cliMisconfigured": "Kilocode CLI не налаштовано. Виконай 'kilocode auth' для входу або 'kilocode config' для налаштування.",
 			"sessionFailed": "Не вдалося запустити сесію агента",
 			"sessionFailedWithMessage": "Не вдалося запустити сесію агента: {{message}}"
 		},
 		"actions": {
 			"updateInstructions": "Інструкції з Оновлення",
 			"installInstructions": "Інструкції з Встановлення",
-			"getHelp": "Отримати Допомогу"
+			"getHelp": "Отримати Допомогу",
+			"runInTerminal": "Запустити в Терміналі",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Оновити Глобально",
+			"updateLocal": "Оновити Локально",
+			"installGlobal": "Встановити Глобально",
+			"installLocal": "Встановити Локально"
+		},
+		"terminal": {
+			"installMessage": "Виконання npm install для встановлення Kilocode CLI. Після завершення можеш закрити цей термінал і спробувати запустити Agent Manager знову.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
 		}
 	}
 }

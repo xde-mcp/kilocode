@@ -6,7 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Box, Text } from "ink"
 import { useAtomValue, useSetAtom } from "jotai"
-import { isStreamingAtom, errorAtom, addMessageAtom, messageResetCounterAtom } from "../state/atoms/ui.js"
+import { isStreamingAtom, errorAtom, addMessageAtom, messageResetCounterAtom, yoloModeAtom } from "../state/atoms/ui.js"
 import { setCIModeAtom } from "../state/atoms/ci.js"
 import { configValidationAtom } from "../state/atoms/config.js"
 import { taskResumedViaContinueOrSessionAtom } from "../state/atoms/extension.js"
@@ -36,6 +36,7 @@ import { generateNotificationMessage } from "../utils/notifications.js"
 import { notificationsAtom } from "../state/atoms/notifications.js"
 import { workspacePathAtom } from "../state/atoms/shell.js"
 import { useTerminal } from "../state/hooks/useTerminal.js"
+import { exitRequestCounterAtom } from "../state/atoms/keyboard.js"
 
 // Initialize commands on module load
 initializeCommands()
@@ -54,8 +55,9 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	const notifications = useAtomValue(notificationsAtom)
 	const [versionStatus, setVersionStatus] = useState<Awaited<ReturnType<typeof getAutoUpdateStatus>>>()
 
-	// Initialize CI mode configuration
+	// Initialize CI mode and YOLO mode configuration
 	const setCIMode = useSetAtom(setCIModeAtom)
+	const setYoloMode = useSetAtom(yoloModeAtom)
 	const addMessage = useSetAtom(addMessageAtom)
 	const addToHistory = useSetAtom(addToHistoryAtom)
 	const resetHistoryNavigation = useSetAtom(resetHistoryNavigationAtom)
@@ -64,6 +66,7 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 	const setWorkspacePath = useSetAtom(workspacePathAtom)
 	const taskResumedViaSession = useAtomValue(taskResumedViaContinueOrSessionAtom)
 	const { hasActiveTask } = useTaskState()
+	const exitRequestCounter = useAtomValue(exitRequestCounterAtom)
 
 	// Use specialized hooks for command and message handling
 	const { executeCommand, isExecuting: isExecutingCommand } = useCommandHandler()
@@ -93,6 +96,17 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 		onExit: onExit,
 	})
 
+	const handledExitRequestRef = useRef(exitRequestCounter)
+
+	useEffect(() => {
+		if (exitRequestCounter === handledExitRequestRef.current) {
+			return
+		}
+
+		handledExitRequestRef.current = exitRequestCounter
+		void executeCommand("/exit", onExit)
+	}, [exitRequestCounter, executeCommand, onExit])
+
 	// Track if prompt has been executed and welcome message shown
 	const promptExecutedRef = useRef(false)
 	const welcomeShownRef = useRef(false)
@@ -108,6 +122,14 @@ export const UI: React.FC<UIAppProps> = ({ options, onExit }) => {
 			})
 		}
 	}, [options.ci, options.timeout, setCIMode])
+
+	// Initialize YOLO mode atom
+	useEffect(() => {
+		if (options.yolo) {
+			logs.info("Initializing YOLO mode", "UI")
+			setYoloMode(true)
+		}
+	}, [options.yolo, setYoloMode])
 
 	// Set parallel mode flag
 	useEffect(() => {

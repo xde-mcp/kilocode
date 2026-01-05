@@ -26,7 +26,9 @@
 		"expand": "Rozbalit úkol",
 		"collapse": "Sbalit úkol",
 		"openInCloud": "Otevřít v cloudu",
-		"openInCloudIntro": "Monitoruj a spravuj tento úkol vzdáleně"
+		"openInCloudIntro": "Monitoruj a spravuj tento úkol vzdáleně",
+		"openApiHistory": "Otevřít API historii",
+		"openUiHistory": "Otevřít historii UI"
 	},
 	"history": {
 		"title": "Historie"
@@ -138,6 +140,7 @@
 	"enhancePromptDescription": "Tlačítko 'Vylepšit prompt' pomáhá zlepšit tvůj prompt poskytnutím dodatečného kontextu, vyjasnění nebo přeformulování. Zkus sem napsat prompt a znovu kliknout na tlačítko, abys viděl, jak to funguje.",
 	"addImages": "Přidat obrázky do zprávy",
 	"sendMessage": "Odeslat zprávu",
+	"pressToSend": "Stiskni {{keyCombination}} pro odeslání",
 	"stopTts": "Zastavit převod textu na řeč",
 	"typeMessage": "Napiš zprávu...",
 	"typeTask": "Vytvoř, najdi, zeptej se na něco",
@@ -155,7 +158,19 @@
 		"failed": "API požadavek selhal",
 		"streaming": "API požadavek...",
 		"cancelled": "API požadavek zrušen",
-		"streamingFailed": "Streamování API selhalo"
+		"streamingFailed": "Streamování API selhalo",
+		"errorTitle": "API Chyba {{code}}",
+		"errorMessage": {
+			"docs": "Dokumentace",
+			"400": "Poskytovatel nemohl zpracovat požadavek jak byl zadán. Zastav úkol a zkus jiný přístup.",
+			"401": "Nepodařilo se autentizovat u poskytovatele. Zkontroluj konfiguraci svého API klíče.",
+			"402": "Zdá se, že ti došly prostředky/kredity na účtu. Jdi ke svému poskytovateli a přidej více pro pokračování.",
+			"403": "Neautorizováno. Tvůj API klíč je platný, ale poskytovatel odmítl dokončit tento požadavek.",
+			"429": "Příliš mnoho požadavků. Poskytovatel tě omezuje rychlostí. Počkej chvíli před dalším API voláním.",
+			"500": "Chyba serveru poskytovatele. Něco je špatně na straně poskytovatele, s tvým požadavkem není nic v nepořádku.",
+			"connection": "Chyba připojení. Ujisti se, že máš funkční připojení k internetu.",
+			"unknown": "Neznámá API chyba. Kontaktuj prosím podporu Kilo."
+		}
 	},
 	"checkpoint": {
 		"initial": "Počáteční kontrolní bod",
@@ -177,11 +192,20 @@
 		},
 		"current": "Aktuální"
 	},
-	"contextCondense": {
-		"title": "Kontext zhušťěn",
-		"condensing": "Zhušťování kontextu...",
-		"errorHeader": "Nepodařilo se zhuštit kontext",
-		"tokens": "tokeny"
+	"contextManagement": {
+		"tokens": "tokeny",
+		"condensation": {
+			"title": "Kontext zhušťěn",
+			"inProgress": "Zhušťování kontextu...",
+			"errorHeader": "Nepodařilo se zhuštit kontext"
+		},
+		"truncation": {
+			"title": "Kontext zkrácen",
+			"inProgress": "Zkracování kontextu...",
+			"messagesRemoved": "{{count}} zpráva odstraněna",
+			"messagesRemoved_other": "{{count}} zprávy odstraněny",
+			"description": "Starší zprávy byly odstraněny z konverzace, aby zůstala v rámci limitu kontextového okna. Toto je rychlý, ale méně kontextově zachovávající přístup ve srovnání se zhušťováním."
+		}
 	},
 	"instructions": {
 		"wantsToFetch": "Kilo Code chce načíst podrobné instrukce pro pomoc s aktuálním úkolem"
@@ -285,6 +309,11 @@
 	},
 	"taskCompleted": "Úkol dokončen",
 	"error": "Chyba",
+	"errorDetails": {
+		"title": "Detaily chyby",
+		"copyToClipboard": "Kopírovat do schránky",
+		"copied": "Zkopírováno!"
+	},
 	"diffError": {
 		"title": "Úprava neúspěšná"
 	},
@@ -321,6 +350,7 @@
 	},
 	"announcement": {
 		"title": "🎉 Vydán Roo Code {{version}}",
+		"support": "Prosím podpoř Roo Code tím, že nám dáš hvězdičku na <githubLink>GitHubu</githubLink>.",
 		"stealthModel": {
 			"feature": "<bold>Časově omezený ZDARMA stealth model</bold> - Code Supernova: Nyní vylepšen s <bold>kontextovým oknem 1M tokenů</bold>! Všestranný agentní model pro kódování, který podporuje obrazové vstupy, dostupný prostřednictvím Roo Code Cloud.",
 			"note": "(Poznámka: prompty a dokončení jsou zaznamenávány tvůrcem modelu a používány k vylepšení modelu)",
@@ -334,7 +364,9 @@
 			"chutesDynamic": "Chutes nyní dynamicky načítá nejnovější modely",
 			"queuedMessagesFix": "Opravy pro ztracené zprávy ve frontě",
 			"browserUse": "Browser Use 2.0 vylepšuje chatové procházení s trvalými relacemi, jasnější zpětnou vazbou, vyhrazeným panelem prohlížeče a přirozenějšími popisy akcí",
-			"cloudPaid": "Poskytovatel Roo Code Cloud nyní nabízí placené modely: kup si kredity a používej je jak pro cloudové agenty, tak pro inferenci"
+			"cloudPaid": "Poskytovatel Roo Code Cloud nyní nabízí placené modely: kup si kredity a používej je jak pro cloudové agenty, tak pro inferenci",
+			"contextRewind": "Vylepšené zhušťování kontextu nyní umožňuje obnovit plný předchozí kontext při vracení ke kontrolnímu bodu",
+			"rooProvider": "Poskytovatel Roo Code Cloud nyní zachovává obsah uvažování a používá nativní nástroje pro lepší výkon"
 		},
 		"cloudAgents": {
 			"heading": "Nové v cloudu:",
@@ -346,7 +378,7 @@
 			"tryButton": "Vyzkoušet cloudové agenty"
 		},
 		"careers": "Také <careersLink>nabíráme!</careersLink>",
-		"socialLinks": "Připoj se k nám na <xLink>X</xLink>, <discordLink>Discord</discordLink> nebo <redditLink>r/RooCode</redditLink> 🚀"
+		"socialLinks": "Připoj se k nám na <xLink>X</xLink>, <discordLink>Discord</discordLink> nebo <redditLink>r/KiloCode</redditLink> 🚀"
 	},
 	"reasoning": {
 		"thinking": "Přemýšlím",
@@ -354,6 +386,7 @@
 	},
 	"followUpSuggest": {
 		"copyToInput": "Kopírovat do vstupu (stejné jako shift + klik)",
+		"timerPrefix": "Automatické schvalování povoleno. Výběr za {{seconds}}s…",
 		"autoSelectCountdown": "Automatický výběr za {{count}}s",
 		"countdownDisplay": "{{count}}s"
 	},
@@ -372,13 +405,25 @@
 		"sessionStarted": "Relace prohlížeče zahájena",
 		"actions": {
 			"title": "Akce procházení: ",
+			"launched": "Prohlížeč spuštěn",
 			"launch": "Spustit prohlížeč na {{url}}",
+			"clicked": "Kliknuto na: {{coordinate}}",
 			"click": "Kliknout ({{coordinate}})",
+			"typed": "Napsáno: {{text}}",
 			"type": "Napsat \"{{text}}\"",
+			"pressed": "Stisknuta klávesa: {{key}}",
 			"press": "Stisknout {{key}}",
+			"scrolledDown": "Posunuto dolů",
 			"scrollDown": "Posunout dolů",
+			"scrolledUp": "Posunuto nahoru",
 			"scrollUp": "Posunout nahoru",
+			"hovered": "Přejetí kurzorem na: {{coordinate}}",
 			"hover": "Přejet kurzorem ({{coordinate}})",
+			"resized": "Změněna velikost na: {{size}}",
+			"resize": "Změnit velikost na {{size}}",
+			"screenshotSaved": "Snímek obrazovky uložen",
+			"screenshot": "Uložit snímek obrazovky do {{path}}",
+			"closed": "Prohlížeč zavřen",
 			"close": "Zavřít prohlížeč"
 		}
 	},

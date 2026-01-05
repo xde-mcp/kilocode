@@ -10,7 +10,11 @@
 		"worktree": "Worktree",
 		"local": "Local",
 		"mainWorkspace": "Espace de travail principal",
-		"readyToMerge": "Prêt à fusionner"
+		"readyToMerge": "Prêt à fusionner",
+		"shareSession": "Partager la session",
+		"shareConfirmMessage": "Souhaites-tu partager publiquement un instantané de cette session ?",
+		"shareConfirmYes": "Oui",
+		"shareConfirmNo": "Non"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Démarrer un nouvel agent",
@@ -21,7 +25,7 @@
 		"stopButtonTitle": "Arrêter l'agent",
 		"newButtonTitle": "Nouvel agent",
 		"refreshButtonTitle": "Actualiser les messages",
-		"autoModeWarning": "Exécution en mode entièrement automatique - l'agent exécutera les actions sans confirmation",
+		"autoModeWarning": "Mode YOLO - les opérations d'outils sont approuvées automatiquement",
 		"starting": "Démarrage...",
 		"startAriaLabel": "Démarrer l'agent avec le prompt fourni",
 		"keyboardHint": "Appuyez sur Entrée pour démarrer, Shift+Entrée pour nouvelle ligne",
@@ -31,9 +35,27 @@
 		"comingSoon": "Bientôt disponible",
 		"runningInWorktree": "Exécution dans worktree",
 		"runningLocally": "Exécution locale",
+		"runMode": "Mode d'exécution",
 		"branch": "Branche",
 		"creatingSession": "Création de la session...",
-		"waitingForCli": "Initialisation de la session de l'agent..."
+		"waitingForCli": "Initialisation de la session de l'agent...",
+		"versions": "Versions",
+		"versionsTooltip": "Agents parallèles explorant différentes approches",
+		"versionsHelperText": "{{count}} agents parallèles sur des branches séparées",
+		"versionCount_one": "{{count}} version",
+		"versionCount_other": "{{count}} versions",
+		"launchVersions": "Lancer {{count}} versions",
+		"startAgent": "Démarrer l'agent",
+		"cancelCreating": "Annuler la création de session",
+		"cancelButton": "Annuler",
+		"selectBranch": "Sélectionner une branche",
+		"searchBranches": "Tape pour rechercher toutes les branches",
+		"yourBranches": "Tes branches",
+		"otherBranches": "Autres branches",
+		"branchPickerTooltip": "Changer de branche de base",
+		"noBranches": "Aucune branche trouvée",
+		"noMatchingBranches": "Aucune branche ne correspond à ta recherche",
+		"openTerminal": "Ouvrir le terminal"
 	},
 	"messages": {
 		"waiting": "En attente de la réponse de l'agent...",
@@ -45,13 +67,19 @@
 		"question": "Kilo Code a une question",
 		"command": "Kilo veut exécuter une commande",
 		"tool": "Kilo veut utiliser un outil",
-		"usingTool": "Utilisation de l'outil : **{{tool}}** {{details}}"
+		"usingTool": "Utilisation de l'outil : **{{tool}}** {{details}}",
+		"expandOutput": "Développer la sortie",
+		"collapseOutput": "Réduire la sortie",
+		"copyCommand": "Copier la commande"
 	},
 	"chatInput": {
-		"autonomous": "Agent en mode autonome",
+		"autoMode": "Agent en mode entièrement automatique - aucune entrée autorisée",
+		"sessionEnded": "Session terminée, veuillez démarrer une nouvelle session",
 		"placeholderTypeTask": "Écris ta tâche ici...",
 		"ariaLabel": "Saisie de message",
 		"cancelTitle": "Annuler l'agent",
+		"finishToBranchTitle": "Terminer le worktree et préparer la branch : {{branch}}",
+		"finishToBranchTitleNoBranch": "Terminer le worktree et préparer la branch",
 		"sendTitle": "Envoyer le message",
 		"resumeTitle": "Reprendre l'agent",
 		"hint": "Entrée pour envoyer, Shift+Entrée pour nouvelle ligne"

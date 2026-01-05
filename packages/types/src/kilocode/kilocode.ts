@@ -11,8 +11,10 @@ export const ghostServiceSettingsSchema = z
 		enableAutoTrigger: z.boolean().optional(),
 		enableQuickInlineTaskKeybinding: z.boolean().optional(),
 		enableSmartInlineTaskKeybinding: z.boolean().optional(),
+		enableChatAutocomplete: z.boolean().optional(),
 		provider: z.string().optional(),
 		model: z.string().optional(),
+		snoozeUntil: z.number().optional(),
 	})
 	.optional()
 

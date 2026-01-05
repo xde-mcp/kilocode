@@ -10,7 +10,6 @@ import { Package } from "../../shared/package"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 
 import { ClineProvider } from "./ClineProvider"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 export const generateSystemPrompt = async (provider: ClineProvider, message: WebviewMessage) => {
 	const state = await provider.getState() // kilocode_change
@@ -99,12 +98,12 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 				.getConfiguration(Package.name)
 				.get<boolean>("newTaskRequireTodos", false),
 			toolProtocol,
+			isStealthModel: modelInfo?.isStealthModel,
 		},
-		// kilocode_change start
-		undefined,
-		undefined,
-		state,
-		// kilocode_change end
+		undefined, // todoList
+		undefined, // modelId
+		provider.getSkillsManager(),
+		state, // kilocode_change
 	)
 
 	return systemPrompt

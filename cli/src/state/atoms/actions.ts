@@ -6,7 +6,7 @@
 import { atom } from "jotai"
 import type { WebviewMessage, ProviderSettings, ClineAskResponse } from "../../types/messages.js"
 import { extensionServiceAtom, isServiceReadyAtom, setServiceErrorAtom } from "./service.js"
-import { resetMessageCutoffAtom } from "./ui.js"
+import { resetMessageCutoffAtom, yoloModeAtom, isCancellingAtom } from "./ui.js"
 import { logs } from "../../services/logs.js"
 
 /**
@@ -120,8 +120,12 @@ export const clearTaskAtom = atom(null, async (get, set) => {
 
 /**
  * Action atom to cancel the current task
+ * Sets isCancellingAtom immediately for instant UI feedback
  */
 export const cancelTaskAtom = atom(null, async (get, set) => {
+	// Set cancelling state immediately for instant UI feedback
+	set(isCancellingAtom, true)
+
 	const message: WebviewMessage = {
 		type: "cancelTask",
 	}
@@ -297,5 +301,23 @@ export const sendSecondaryButtonClickAtom = atom(null, async (get, set) => {
 		askResponse: "noButtonClicked",
 	}
 
+	await set(sendWebviewMessageAtom, message)
+})
+
+/**
+ * Action atom to toggle YOLO mode
+ * Sends the yoloMode message to the extension to enable/disable auto-approval of all operations
+ */
+export const toggleYoloModeAtom = atom(null, async (get, set) => {
+	const currentValue = get(yoloModeAtom)
+	const newValue = !currentValue
+
+	set(yoloModeAtom, newValue)
+	logs.info(`YOLO mode ${newValue ? "enabled" : "disabled"}`, "actions")
+
+	const message: WebviewMessage = {
+		type: "yoloMode",
+		bool: newValue,
+	}
 	await set(sendWebviewMessageAtom, message)
 })

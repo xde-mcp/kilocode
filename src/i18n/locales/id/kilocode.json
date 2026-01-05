@@ -99,6 +99,7 @@
 	"ghost": {
 		"statusBar": {
 			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "dijeda",
 			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
@@ -176,13 +177,25 @@
 		"errors": {
 			"cliOutdated": "Versi Kilocode CLI kamu sudah usang dan tidak mendukung Agent Manager. Harap perbarui ke versi terbaru.",
 			"cliNotFound": "Kilocode CLI tidak ditemukan. Harap instal untuk menggunakan Agent Manager.",
+			"cliMisconfigured": "Kilocode CLI belum dikonfigurasi. Jalankan 'kilocode auth' untuk masuk atau 'kilocode config' untuk mengonfigurasi.",
 			"sessionFailed": "Gagal memulai sesi agen",
 			"sessionFailedWithMessage": "Gagal memulai sesi agen: {{message}}"
 		},
 		"actions": {
 			"updateInstructions": "Petunjuk Pembaruan",
 			"installInstructions": "Petunjuk Instalasi",
-			"getHelp": "Dapatkan Bantuan"
+			"getHelp": "Dapatkan Bantuan",
+			"runInTerminal": "Jalankan di Terminal",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Perbarui Global",
+			"updateLocal": "Perbarui Lokal",
+			"installGlobal": "Instal Global",
+			"installLocal": "Instal Lokal"
+		},
+		"terminal": {
+			"installMessage": "Menjalankan npm install untuk menginstal Kilocode CLI. Setelah selesai, kamu dapat menutup terminal ini dan mencoba memulai Agent Manager lagi.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
 		}
 	}
 }

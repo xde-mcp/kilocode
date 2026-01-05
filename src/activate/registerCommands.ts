@@ -70,9 +70,9 @@ export type RegisterCommandOptions = {
 let agentManagerProvider: AgentManagerProvider | undefined
 
 const registerAgentManager = (options: RegisterCommandOptions) => {
-	const { context, outputChannel } = options
+	const { context, outputChannel, provider } = options
 
-	agentManagerProvider = new AgentManagerProvider(context, outputChannel)
+	agentManagerProvider = new AgentManagerProvider(context, outputChannel, provider)
 	context.subscriptions.push(agentManagerProvider)
 }
 // kilocode_change end
@@ -124,28 +124,6 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 		// This ensures the focus happens after the view has switched
 		await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 	},
-	mcpButtonClicked: () => {
-		const visibleProvider = getVisibleProviderOrLog(outputChannel)
-
-		if (!visibleProvider) {
-			return
-		}
-
-		TelemetryService.instance.captureTitleButtonClicked("mcp")
-
-		visibleProvider.postMessageToWebview({ type: "action", action: "mcpButtonClicked" })
-	},
-	promptsButtonClicked: () => {
-		const visibleProvider = getVisibleProviderOrLog(outputChannel)
-
-		if (!visibleProvider) {
-			return
-		}
-
-		TelemetryService.instance.captureTitleButtonClicked("prompts")
-
-		visibleProvider.postMessageToWebview({ type: "action", action: "promptsButtonClicked" })
-	},
 	popoutButtonClicked: () => {
 		TelemetryService.instance.captureTitleButtonClicked("popout")
 
@@ -177,6 +155,28 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 		visibleProvider.postMessageToWebview({ type: "action", action: "historyButtonClicked" })
 	},
 	// kilocode_change begin
+	mcpButtonClicked: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		TelemetryService.instance.captureTitleButtonClicked("mcp")
+
+		visibleProvider.postMessageToWebview({ type: "action", action: "mcpButtonClicked" })
+	},
+	promptsButtonClicked: () => {
+		const visibleProvider = getVisibleProviderOrLog(outputChannel)
+
+		if (!visibleProvider) {
+			return
+		}
+
+		TelemetryService.instance.captureTitleButtonClicked("prompts")
+
+		visibleProvider.postMessageToWebview({ type: "action", action: "promptsButtonClicked" })
+	},
 	profileButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)
 

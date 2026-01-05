@@ -1,5 +1,71 @@
 # @kilocode/cli
 
+## 0.18.1
+
+### Patch Changes
+
+- [#4728](https://github.com/Kilo-Org/kilocode/pull/4728) [`8ecb081`](https://github.com/Kilo-Org/kilocode/commit/8ecb081d10ee273613f138e651abae5e1b28ab1e) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Clear input field when Ctrl+C is pressed
+
+- [#4244](https://github.com/Kilo-Org/kilocode/pull/4244) [`f32adee`](https://github.com/Kilo-Org/kilocode/commit/f32adee47a681aa82ed65b412f9ddaeb46c051a5) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Add image paste support to CLI
+
+    - Allow Ctrl+V in the CLI to paste clipboard images, attach them as [Image #N], and send them with messages (macOS only, with status feedback and cleanup)
+    - Add image mention parsing (@path and [Image #N]) so pasted or referenced images are included when sending messages
+    - Split media code into a dedicated module with platform-specific clipboard handlers and image utilities
+
+## 0.18.0
+
+### Minor Changes
+
+- [#4583](https://github.com/Kilo-Org/kilocode/pull/4583) [`845f8c1`](https://github.com/Kilo-Org/kilocode/commit/845f8c13b23496bf4aaf0792be9d52bf26645b64) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Add markdown theming support for Reasoning box content
+
+### Patch Changes
+
+- [#4590](https://github.com/Kilo-Org/kilocode/pull/4590) [`f2cc065`](https://github.com/Kilo-Org/kilocode/commit/f2cc0657870ae77a5720a872c9cd11b8315799b7) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - feat: add session_title_generated event emission to CLI
+
+## 0.17.1
+
+### Patch Changes
+
+- [#4186](https://github.com/Kilo-Org/kilocode/pull/4186) [`6078a9c`](https://github.com/Kilo-Org/kilocode/commit/6078a9ce77512faaebcda54ea9d2e909cf6b340c) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Default read permissions now require approval for read operations outside the workspace
+
+## 0.17.0
+
+### Minor Changes
+
+- [#4428](https://github.com/Kilo-Org/kilocode/pull/4428) [`8394da8`](https://github.com/Kilo-Org/kilocode/commit/8394da8715fae4eacf416301885eeee840456700) Thanks [@iscekic](https://github.com/iscekic)! - add parent session id when creating a session
+
+### Patch Changes
+
+- [#4155](https://github.com/Kilo-Org/kilocode/pull/4155) [`74fe4b8`](https://github.com/Kilo-Org/kilocode/commit/74fe4b8a20ff13c31d967693818708f81bd9167e) Thanks [@omniwired](https://github.com/omniwired)! - feat(cli): add Ctrl+Y keybinding to toggle YOLO mode
+
+- [#4447](https://github.com/Kilo-Org/kilocode/pull/4447) [`0022305`](https://github.com/Kilo-Org/kilocode/commit/0022305558d71957aeb7468a0e8e3ed829997f93) Thanks [@EamonNerbonne](https://github.com/EamonNerbonne)! - Provide a few tips for when an LLM gets stuck in a loop
+
+- [#4477](https://github.com/Kilo-Org/kilocode/pull/4477) [`564b60e`](https://github.com/Kilo-Org/kilocode/commit/564b60eb7c8a1cac6d80c6756a05e9e5eb20d94a) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Simplify --yolo option description
+
+## 0.16.0
+
+### Minor Changes
+
+- [#4388](https://github.com/Kilo-Org/kilocode/pull/4388) [`af93318`](https://github.com/Kilo-Org/kilocode/commit/af93318e3648c235721ba58fe9caab9429608241) Thanks [@iscekic](https://github.com/iscekic)! - send org id and last mode with session data
+
+## 0.15.0
+
+### Minor Changes
+
+- [#4326](https://github.com/Kilo-Org/kilocode/pull/4326) [`6d62090`](https://github.com/Kilo-Org/kilocode/commit/6d620905dfc6d8419bdbc9ffcad54109057e709e) Thanks [@iscekic](https://github.com/iscekic)! - improve session sync mechanism (event based instead of timer)
+
+### Patch Changes
+
+- [#4367](https://github.com/Kilo-Org/kilocode/pull/4367) [`8b3ef61`](https://github.com/Kilo-Org/kilocode/commit/8b3ef617c3f6a6f02eddc9e866efe82ce2644959) Thanks [@iscekic](https://github.com/iscekic)! - flush cli session on completion
+
+- [#4362](https://github.com/Kilo-Org/kilocode/pull/4362) [`d596a08`](https://github.com/Kilo-Org/kilocode/commit/d596a08d6fe5c1a719855616ba5f582407f6769a) Thanks [@iscekic](https://github.com/iscekic)! - extract an extension message handler for extension/cli reuse
+
+## 0.14.0
+
+### Minor Changes
+
+- [#4291](https://github.com/Kilo-Org/kilocode/pull/4291) [`215c48f`](https://github.com/Kilo-Org/kilocode/commit/215c48f68dca37df435ea619ba8496912e2b4c22) Thanks [@pandemicsyn](https://github.com/pandemicsyn)! - Fix race during session restoration
+
 ## 0.13.1
 
 ### Patch Changes

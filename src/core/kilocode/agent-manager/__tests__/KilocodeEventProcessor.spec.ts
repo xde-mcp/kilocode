@@ -18,6 +18,7 @@ function createDeps() {
 	const postChatMessages = vi.fn()
 	const postState = vi.fn()
 	const postStateEvent = vi.fn()
+	const onPaymentRequiredPrompt = vi.fn()
 
 	return {
 		processHandler,
@@ -28,6 +29,7 @@ function createDeps() {
 		postChatMessages,
 		postState,
 		postStateEvent,
+		onPaymentRequiredPrompt,
 	}
 }
 
@@ -149,6 +151,21 @@ describe("KilocodeEventProcessor", () => {
 		expect(stored).toHaveLength(1)
 	})
 
+	it("calls onPaymentRequiredPrompt callback only once", () => {
+		const deps = createDeps()
+		const processor = new KilocodeEventProcessor(deps)
+
+		const payEvent: KilocodeStreamEvent = {
+			streamEventType: "kilocode",
+			payload: { type: "ask", ask: "payment_required_prompt", text: "Need billing" },
+		}
+
+		processor.handle(sessionId, payEvent)
+		processor.handle(sessionId, payEvent)
+
+		expect(deps.onPaymentRequiredPrompt).toHaveBeenCalledTimes(1)
+	})
+
 	it("renders checkpoints as checkpoint_saved entries with no text", () => {
 		const deps = createDeps()
 		const processor = new KilocodeEventProcessor(deps)
@@ -166,5 +183,95 @@ describe("KilocodeEventProcessor", () => {
 		const stored = deps.sessionMessages.get(sessionId)
 		expect(stored?.[0].say).toBe("checkpoint_saved")
 		expect(stored?.[0].text).toBe("")
+	})
+
+	it("extracts command_output text from metadata.output", () => {
+		const deps = createDeps()
+		deps.firstApiReqStarted.set(sessionId, true)
+		const processor = new KilocodeEventProcessor(deps)
+
+		const cmdOutputEvent: KilocodeStreamEvent = {
+			streamEventType: "kilocode",
+			payload: {
+				type: "ask",
+				ask: "command_output",
+				timestamp: 123,
+				metadata: { executionId: "exec-1", command: "echo pong", output: "pong\n" },
+			},
+		}
+
+		processor.handle(sessionId, cmdOutputEvent)
+
+		const stored = deps.sessionMessages.get(sessionId)
+		expect(stored).toHaveLength(1)
+		expect(stored?.[0].ask).toBe("command_output")
+		expect(stored?.[0].text).toBe("pong\n")
+	})
+
+	it("keeps empty partial command_output messages (no placeholder text)", () => {
+		const deps = createDeps()
+		deps.firstApiReqStarted.set(sessionId, true)
+		const processor = new KilocodeEventProcessor(deps)
+
+		const cmdOutputStart: KilocodeStreamEvent = {
+			streamEventType: "kilocode",
+			payload: {
+				type: "ask",
+				ask: "command_output",
+				partial: true,
+				timestamp: 124,
+				metadata: { executionId: "exec-2", command: "echo pong", output: "" },
+			},
+		}
+
+		processor.handle(sessionId, cmdOutputStart)
+
+		const stored = deps.sessionMessages.get(sessionId)
+		expect(stored).toHaveLength(1)
+		expect(stored?.[0].ask).toBe("command_output")
+		expect(stored?.[0].partial).toBe(true)
+		expect(stored?.[0].text).toBe("")
+	})
+
+	it("deduplicates command_output messages by executionId (not timestamp)", () => {
+		const deps = createDeps()
+		deps.firstApiReqStarted.set(sessionId, true)
+		const processor = new KilocodeEventProcessor(deps)
+
+		// First command_output event with isAnswered=false (waiting for approval)
+		const cmdOutputPending: KilocodeStreamEvent = {
+			streamEventType: "kilocode",
+			payload: {
+				type: "ask",
+				ask: "command_output",
+				partial: false,
+				isAnswered: false,
+				timestamp: 1000,
+				metadata: { executionId: "exec-3", command: "pwd", output: "/home/user\n" },
+			},
+		}
+
+		// Second command_output event with isAnswered=true (approved) - different timestamp
+		const cmdOutputApproved: KilocodeStreamEvent = {
+			streamEventType: "kilocode",
+			payload: {
+				type: "ask",
+				ask: "command_output",
+				partial: false,
+				isAnswered: true,
+				timestamp: 1003, // Different timestamp
+				metadata: { executionId: "exec-3", command: "pwd", output: "/home/user\n" },
+			},
+		}
+
+		processor.handle(sessionId, cmdOutputPending)
+		processor.handle(sessionId, cmdOutputApproved)
+
+		// Should only have one message (deduplicated by executionId)
+		const stored = deps.sessionMessages.get(sessionId)
+		expect(stored).toHaveLength(1)
+		expect(stored?.[0].ask).toBe("command_output")
+		expect(stored?.[0].isAnswered).toBe(true) // Should be the latest one
+		expect(stored?.[0].text).toBe("/home/user\n")
 	})
 })

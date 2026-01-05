@@ -55,6 +55,12 @@ export const messageCutoffTimestampAtom = atom<number>(0)
 export const errorAtom = atom<string | null>(null)
 
 /**
+ * Atom to track YOLO mode state
+ * When enabled, all operations are auto-approved without confirmation
+ */
+export const yoloModeAtom = atom<boolean>(false)
+
+/**
  * Atom to track when parallel mode is committing changes
  * Used to disable input and show "Committing your changes..." message
  */
@@ -127,6 +133,15 @@ export const isStreamingAtom = atom<boolean>((get) => {
 
 	return false
 })
+
+/**
+	* Atom to track when a cancellation is in progress
+	* This provides immediate feedback when user presses ESC to cancel
+	* The extension is the source of truth for streaming state, but this atom
+	* allows the CLI to show "Cancelling..." immediately without waiting for
+	* the extension to process the cancellation request
+	*/
+export const isCancellingAtom = atom<boolean>(false)
 
 // ============================================================================
 // Input Mode System
@@ -690,7 +705,7 @@ export const resetMessageCutoffAtom = atom(null, (get, set) => {
  */
 export const splitMessagesAtom = atom((get) => {
 	const allMessages = get(mergedMessagesAtom)
-	return splitMessages(allMessages)
+	return splitMessages(allMessages, { hidePartialMessages: true })
 })
 
 /**
