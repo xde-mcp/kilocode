@@ -217,7 +217,7 @@ If your custom rules aren't being properly followed:
 
 ## Related Features
 
-- [Custom Modes](/docs/features/custom-modes)
-- [Custom Instructions](/advanced-usage/custom-instructions)
-- [Settings Management](/docs/features/settings-management)
-- [Auto-Approval Settings](/docs/features/auto-approving-actions)
+- [Custom Modes](/customization/custom-modes)
+- [Custom Instructions](/customization/custom-instructions)
+- [Settings Management](/customization/settings-management)
+- [Auto-Approval Settings](/features/auto-approving-actions)

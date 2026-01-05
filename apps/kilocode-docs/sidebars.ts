@@ -131,19 +131,22 @@ const sidebars: SidebarsConfig = {
 		},
 		{
 			type: "category",
+			label: "Customization",
+			items: [
+				"customization/custom-modes",
+				"customization/custom-rules",
+				"customization/custom-instructions",
+				"customization/workflows",
+				"customization/settings-management",
+				"customization/skills",
+			],
+		},
+		{
+			type: "category",
 			label: "Advanced Usage",
 			items: [
 				"advanced-usage/prompt-engineering",
-				{
-					type: "category",
-					label: "Customizing Kilo Code",
-					items: [
-						"advanced-usage/custom-rules",
-						"advanced-usage/custom-instructions",
-						"advanced-usage/migrating-from-cursor-windsurf",
-						"features/slash-commands/workflows",
-					],
-				},
+				"advanced-usage/migrating-from-cursor-windsurf",
 				{
 					type: "category",
 					label: "Advanced Context Features",
@@ -177,11 +180,6 @@ const sidebars: SidebarsConfig = {
 				"advanced-usage/sessions",
 				"features/experimental/experimental-features",
 			],
-		},
-		{
-			type: "category",
-			label: "Customization",
-			items: ["features/settings-management", "features/custom-modes", "features/skills"],
 		},
 		{
 			type: "category",
