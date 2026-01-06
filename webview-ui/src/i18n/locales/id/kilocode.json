@@ -249,6 +249,11 @@
 				"title": "Tidak ada model autocomplete yang dikonfigurasi",
 				"description": "Untuk mengaktifkan autocomplete, tambahkan profil dengan salah satu penyedia yang didukung ini:",
 				"learnMore": "Pelajari lebih lanjut tentang pengaturan autocomplete →"
+			},
+			"noCredits": {
+				"title": "Tidak ada kredit di akun Anda",
+				"description": "Akun Kilo Code Anda tidak memiliki kredit. Untuk menggunakan autocomplete, silakan tambahkan kredit ke akun Anda.",
+				"buyCredits": "Beli kredit →"
 			}
 		}
 	},

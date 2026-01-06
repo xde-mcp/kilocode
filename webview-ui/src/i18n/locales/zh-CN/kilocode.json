@@ -263,6 +263,11 @@
 				"title": "未配置自动补全模型",
 				"description": "要启用自动补全，请添加一个使用以下支持的提供商的配置文件：",
 				"learnMore": "了解更多关于自动补全设置 →"
+			},
+			"noCredits": {
+				"title": "您的账户没有额度",
+				"description": "您的 Kilo Code 账户没有额度。要使用自动补全，请为您的账户充值。",
+				"buyCredits": "购买额度 →"
 			}
 		}
 	},

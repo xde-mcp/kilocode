@@ -263,6 +263,11 @@
 				"title": "Geen autocomplete-model geconfigureerd",
 				"description": "Om autocomplete in te schakelen, voeg een profiel toe met een van deze ondersteunde providers:",
 				"learnMore": "Meer informatie over autocomplete-configuratie →"
+			},
+			"noCredits": {
+				"title": "Geen tegoed op je account",
+				"description": "Je Kilo Code-account heeft geen tegoed. Om autocomplete te gebruiken, voeg tegoed toe aan je account.",
+				"buyCredits": "Tegoed kopen →"
 			}
 		}
 	},

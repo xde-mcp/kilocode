@@ -263,6 +263,11 @@
 				"title": "Není nakonfigurován žádný model pro automatické dokončování",
 				"description": "Pro povolení automatického dokončování přidejte profil s jedním z těchto podporovaných poskytovatelů:",
 				"learnMore": "Zjistěte více o nastavení automatického dokončování →"
+			},
+			"noCredits": {
+				"title": "Na vašem účtu nejsou žádné kredity",
+				"description": "Váš účet Kilo Code nemá žádné kredity. Pro použití automatického dokončování prosím přidejte kredity na svůj účet.",
+				"buyCredits": "Koupit kredity →"
 			}
 		}
 	},

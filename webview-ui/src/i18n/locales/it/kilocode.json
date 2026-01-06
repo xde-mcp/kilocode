@@ -256,6 +256,11 @@
 				"title": "Nessun modello di autocompletamento configurato",
 				"description": "Per abilitare l'autocompletamento, aggiungi un profilo con uno di questi provider supportati:",
 				"learnMore": "Scopri di più sulla configurazione dell'autocompletamento →"
+			},
+			"noCredits": {
+				"title": "Nessun credito nel tuo account",
+				"description": "Il tuo account Kilo Code non ha crediti. Per utilizzare l'autocompletamento, aggiungi crediti al tuo account.",
+				"buyCredits": "Acquista crediti →"
 			}
 		}
 	},

@@ -249,6 +249,11 @@
 				"title": "No s'ha configurat cap model d'autocompletat",
 				"description": "Per habilitar l'autocompletat, afegeix un perfil amb un d'aquests proveïdors compatibles:",
 				"learnMore": "Més informació sobre la configuració de l'autocompletat →"
+			},
+			"noCredits": {
+				"title": "No hi ha crèdits al teu compte",
+				"description": "El teu compte de Kilo Code no té crèdits. Per utilitzar l'autocompletat, si us plau afegeix crèdits al teu compte.",
+				"buyCredits": "Comprar crèdits →"
 			}
 		}
 	},

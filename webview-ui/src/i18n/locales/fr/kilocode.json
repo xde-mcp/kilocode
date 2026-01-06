@@ -263,6 +263,11 @@
 				"title": "Aucun modèle d'autocomplétion configuré",
 				"description": "Pour activer l'autocomplétion, ajoutez un profil avec l'un de ces fournisseurs pris en charge :",
 				"learnMore": "En savoir plus sur la configuration de l'autocomplétion →"
+			},
+			"noCredits": {
+				"title": "Aucun crédit sur votre compte",
+				"description": "Votre compte Kilo Code n'a pas de crédits. Pour utiliser l'autocomplétion, veuillez ajouter des crédits à votre compte.",
+				"buyCredits": "Acheter des crédits →"
 			}
 		}
 	},

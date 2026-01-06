@@ -256,6 +256,11 @@
 				"title": "Chưa cấu hình mô hình tự động hoàn thành",
 				"description": "Để bật tự động hoàn thành, hãy thêm hồ sơ với một trong các nhà cung cấp được hỗ trợ sau:",
 				"learnMore": "Tìm hiểu thêm về cách thiết lập tự động hoàn thành →"
+			},
+			"noCredits": {
+				"title": "Tài khoản của bạn không có tín dụng",
+				"description": "Tài khoản Kilo Code của bạn không có tín dụng. Để sử dụng tự động hoàn thành, vui lòng nạp tín dụng vào tài khoản.",
+				"buyCredits": "Mua tín dụng →"
 			}
 		}
 	},

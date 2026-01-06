@@ -255,6 +255,11 @@
 				"title": "Kein Autocomplete-Modell konfiguriert",
 				"description": "Um Autocomplete zu aktivieren, füge ein Profil mit einem dieser unterstützten Anbieter hinzu:",
 				"learnMore": "Mehr über die Autocomplete-Einrichtung erfahren →"
+			},
+			"noCredits": {
+				"title": "Kein Guthaben auf deinem Konto",
+				"description": "Dein Kilo Code Konto hat kein Guthaben. Um Autocomplete zu nutzen, füge bitte Guthaben zu deinem Konto hinzu.",
+				"buyCredits": "Guthaben kaufen →"
 			}
 		}
 	},
