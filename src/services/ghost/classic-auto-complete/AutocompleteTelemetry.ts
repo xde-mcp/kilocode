@@ -214,7 +214,6 @@ export class AutocompleteTelemetry {
 
 	/**
 	 * Capture when a unique suggestion is shown to the user for the first time.
-	 * Uniqueness is tracked in the cache itself via the shownToUser flag.
 	 *
 	 * @param context - The autocomplete context
 	 */

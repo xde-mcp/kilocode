@@ -159,7 +159,6 @@ export function applyFirstLineOnly(
 		return {
 			text: firstLineText,
 			matchType: result.matchType,
-			// Create a new FillInAtCursorSuggestion with the truncated text for telemetry tracking
 			fillInAtCursor: {
 				...result.fillInAtCursor,
 				text: firstLineText,
