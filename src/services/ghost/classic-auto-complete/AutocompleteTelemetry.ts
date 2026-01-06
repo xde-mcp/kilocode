@@ -12,6 +12,12 @@ export type { AutocompleteContext, CacheMatchType }
 export const MIN_VISIBILITY_DURATION_MS = 300
 
 /**
+ * Maximum number of recent suggestion keys for which we've fired unique telemetry.
+ * Prevents unbounded growth over long sessions.
+ */
+const MAX_FIRED_UNIQUE_TELEMETRY_KEYS = 50
+
+/**
  * Type of autocomplete being used
  * - "inline": Classic inline code completion in the editor
  * - "chat-textarea": Autocomplete in the chat input textarea
@@ -44,8 +50,22 @@ export class AutocompleteTelemetry {
 	private readonly autocompleteType: AutocompleteType
 	/** Tracks the currently displayed suggestion for visibility-based telemetry */
 	private visibilityTracking: VisibilityTrackingState | null = null
-	/** Set of suggestion keys for which unique telemetry has already been fired */
-	private firedUniqueTelemetryKeys: Set<string> = new Set()
+	/**
+	 * Tracks suggestion keys for which unique telemetry has already been fired.
+	 * Uses insertion order to evict the oldest keys when the cap is exceeded.
+	 */
+	private firedUniqueTelemetryKeys: Map<string, true> = new Map()
+
+	private markSuggestionKeyAsFired(suggestionKey: string): void {
+		this.firedUniqueTelemetryKeys.set(suggestionKey, true)
+
+		if (this.firedUniqueTelemetryKeys.size > MAX_FIRED_UNIQUE_TELEMETRY_KEYS) {
+			const oldestKey = this.firedUniqueTelemetryKeys.keys().next().value as string | undefined
+			if (oldestKey) {
+				this.firedUniqueTelemetryKeys.delete(oldestKey)
+			}
+		}
+	}
 
 	/**
 	 * Create a new AutocompleteTelemetry instance
@@ -233,7 +253,7 @@ export class AutocompleteTelemetry {
 		const timer = setTimeout(() => {
 			// The suggestion has been visible for MIN_VISIBILITY_DURATION_MS
 			this.captureUniqueSuggestionShown(telemetryContext)
-			this.firedUniqueTelemetryKeys.add(suggestionKey)
+			this.markSuggestionKeyAsFired(suggestionKey)
 			this.visibilityTracking = null
 		}, MIN_VISIBILITY_DURATION_MS)
 
