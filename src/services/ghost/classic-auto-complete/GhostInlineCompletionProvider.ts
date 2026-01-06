@@ -526,7 +526,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
 
 			// Check cache first - allow mid-word lookups from cache
-			// findMatchingSuggestion marks the suggestion as shown and returns isFirstTimeShown flag
 			const matchingResult = applyFirstLineOnly(
 				findMatchingSuggestion(prefix, suffix, this.suggestionsHistory),
 				prefix,
