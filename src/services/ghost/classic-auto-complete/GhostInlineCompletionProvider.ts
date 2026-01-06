@@ -533,8 +533,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
-				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
-				// if the same suggestion is still being displayed
 				this.telemetry?.startVisibilityTracking(
 					matchingResult.suggestionKey,
 					"cache",
@@ -544,8 +542,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
-			// No suggestion to show - cancel any pending visibility tracking
-			this.telemetry?.cancelVisibilityTracking()
+			this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
 
 			// Only skip new LLM requests during mid-word typing or at end of statement
 			// Cache lookups above are still allowed
@@ -560,15 +557,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix, document.languageId)
 
-			// findMatchingSuggestion marks the suggestion as shown and returns isFirstTimeShown flag
 			const cachedResult = applyFirstLineOnly(
 				findMatchingSuggestion(prefix, suffix, this.suggestionsHistory),
 				prefix,
 			)
 			if (cachedResult) {
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
-				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
-				// if the same suggestion is still being displayed
 				this.telemetry?.startVisibilityTracking(
 					cachedResult.suggestionKey,
 					"llm",
@@ -576,8 +570,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 					cachedResult.text.length,
 				)
 			} else {
-				// No suggestion to show - cancel any pending visibility tracking
-				this.telemetry?.cancelVisibilityTracking()
+				this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
