@@ -84,7 +84,7 @@ describe("findMatchingSuggestion", () => {
 			expect(result).not.toBeNull()
 			expect(result!.text).toBe("")
 			expect(result!.matchType).toBe("exact")
-			expect(result!.suggestionKey).toBeDefined()
+			expect(result!.fillInAtCursor).toBeDefined()
 		})
 
 		it("should skip failed lookups and find successful suggestions", () => {
@@ -504,8 +504,8 @@ describe("findMatchingSuggestion", () => {
 		})
 	})
 
-	describe("suggestionKey generation", () => {
-		it("should return a suggestionKey for tracking visibility", () => {
+	describe("fillInAtCursor tracking", () => {
+		it("should return a fillInAtCursor for tracking visibility", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
 				{
 					text: "console.log('test');",
@@ -517,26 +517,28 @@ describe("findMatchingSuggestion", () => {
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 
 			expect(result).not.toBeNull()
-			expect(result!.suggestionKey).toBeDefined()
-			expect(typeof result!.suggestionKey).toBe("string")
+			expect(result!.fillInAtCursor).toBeDefined()
+			expect(result!.fillInAtCursor.text).toBe("console.log('test');")
+			expect(result!.fillInAtCursor.prefix).toBe("const x = 1")
+			expect(result!.fillInAtCursor.suffix).toBe("\nconst y = 2")
 		})
 
-		it("should return the same suggestionKey for the same suggestion", () => {
-			const suggestions: FillInAtCursorSuggestion[] = [
-				{
-					text: "console.log('test');",
-					prefix: "const x = 1",
-					suffix: "\nconst y = 2",
-				},
-			]
+		it("should return the same fillInAtCursor for the same suggestion", () => {
+			const suggestion: FillInAtCursorSuggestion = {
+				text: "console.log('test');",
+				prefix: "const x = 1",
+				suffix: "\nconst y = 2",
+			}
+			const suggestions: FillInAtCursorSuggestion[] = [suggestion]
 
 			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 			const result2 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 
-			expect(result1!.suggestionKey).toBe(result2!.suggestionKey)
+			// Should be the same object reference
+			expect(result1!.fillInAtCursor).toBe(result2!.fillInAtCursor)
 		})
 
-		it("should return different suggestionKeys for different suggestions", () => {
+		it("should return different fillInAtCursor for different suggestions", () => {
 			const suggestions: FillInAtCursorSuggestion[] = [
 				{
 					text: "first suggestion",
@@ -553,7 +555,7 @@ describe("findMatchingSuggestion", () => {
 			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
 			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
 
-			expect(result1!.suggestionKey).not.toBe(result2!.suggestionKey)
+			expect(result1!.fillInAtCursor).not.toBe(result2!.fillInAtCursor)
 		})
 	})
 })
@@ -616,7 +618,12 @@ describe("applyFirstLineOnly", () => {
 	})
 
 	it("returns result unchanged when text is empty", () => {
-		const input = { text: "", matchType: "exact" as const, suggestionKey: "test-key" }
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "",
+			prefix: "const x = ",
+			suffix: ";",
+		}
+		const input = { text: "", matchType: "exact" as const, fillInAtCursor }
 		const result = applyFirstLineOnly(input, "const x = foo")
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("")
@@ -624,11 +631,16 @@ describe("applyFirstLineOnly", () => {
 	})
 
 	it("truncates to first line and preserves matchType when enabled", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "line1\nline2\nline3",
+			prefix: "const x = ",
+			suffix: ";",
+		}
 		const result = applyFirstLineOnly(
 			{
 				text: "line1\nline2\nline3",
 				matchType: "partial_typing",
-				suggestionKey: "test-key",
+				fillInAtCursor,
 			},
 			"const x = foo",
 		)
@@ -637,42 +649,57 @@ describe("applyFirstLineOnly", () => {
 		expect(result!.matchType).toBe("partial_typing")
 	})
 
-	it("updates suggestionKey to reflect truncated text when truncating", () => {
-		// The suggestionKey format is: prefix|suffix|text
-		const originalKey = "const x = |;|line1\nline2\nline3"
+	it("updates fillInAtCursor.text to reflect truncated text when truncating", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "line1\nline2\nline3",
+			prefix: "const x = ",
+			suffix: ";",
+		}
 		const result = applyFirstLineOnly(
 			{
 				text: "line1\nline2\nline3",
 				matchType: "exact",
-				suggestionKey: originalKey,
+				fillInAtCursor,
 			},
 			"const x = foo", // mid-line prefix triggers truncation
 		)
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("line1")
-		// The key should now reflect the truncated text
-		expect(result!.suggestionKey).toBe("const x = |;|line1")
+		// The fillInAtCursor.text should now reflect the truncated text
+		expect(result!.fillInAtCursor.text).toBe("line1")
+		// prefix and suffix should be preserved
+		expect(result!.fillInAtCursor.prefix).toBe("const x = ")
+		expect(result!.fillInAtCursor.suffix).toBe(";")
 	})
 
-	it("preserves suggestionKey when no truncation occurs", () => {
-		const originalKey = "prefix|suffix|singleLine"
+	it("preserves fillInAtCursor when no truncation occurs", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "singleLine",
+			prefix: "prefix",
+			suffix: "suffix",
+		}
 		const result = applyFirstLineOnly(
 			{
 				text: "singleLine",
 				matchType: "exact",
-				suggestionKey: originalKey,
+				fillInAtCursor,
 			},
 			"const x = foo", // mid-line but single-line suggestion
 		)
 		expect(result).not.toBeNull()
 		expect(result!.text).toBe("singleLine")
-		// Key should be unchanged since no truncation happened
-		expect(result!.suggestionKey).toBe(originalKey)
+		// fillInAtCursor should be unchanged since no truncation happened
+		expect(result!.fillInAtCursor).toStrictEqual(fillInAtCursor)
 	})
 
 	it("does not truncate when suggestion starts with newline", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "\nline1\nline2",
+			prefix: "const x = ",
+			suffix: ";",
+		}
 		const result = applyFirstLineOnly(
-			{ text: "\nline1\nline2", matchType: "exact", suggestionKey: "test-key" },
+			{ text: "\nline1\nline2", matchType: "exact", fillInAtCursor },
 			"const x = foo",
 		)
 		expect(result).not.toBeNull()

@@ -1,8 +1,16 @@
 import { TelemetryService } from "@roo-code/telemetry"
 import { TelemetryEventName } from "@roo-code/types"
-import type { AutocompleteContext, CacheMatchType } from "../types"
+import type { AutocompleteContext, CacheMatchType, FillInAtCursorSuggestion } from "../types"
 
-export type { AutocompleteContext, CacheMatchType }
+export type { AutocompleteContext, CacheMatchType, FillInAtCursorSuggestion }
+
+/**
+ * Generate a unique key for a suggestion based on its content and context.
+ * This key is used to track whether the same suggestion is still being displayed.
+ */
+export function getSuggestionKey(suggestion: FillInAtCursorSuggestion): string {
+	return `${suggestion.prefix}|${suggestion.suffix}|${suggestion.text}`
+}
 
 /**
  * Minimum time in milliseconds that a suggestion must be visible before
@@ -221,17 +229,18 @@ export class AutocompleteTelemetry {
 	 * If the suggestion is still being displayed after MIN_VISIBILITY_DURATION_MS,
 	 * the unique suggestion telemetry will be fired.
 	 *
-	 * @param suggestionKey - Unique key identifying the suggestion
+	 * @param suggestion - The suggestion to track (will be serialized to a key internally)
 	 * @param source - Whether the suggestion came from 'llm' or 'cache'
 	 * @param telemetryContext - Telemetry context for the suggestion
-	 * @param suggestionLength - Length of the suggestion text
 	 */
 	public startVisibilityTracking(
-		suggestionKey: string,
+		suggestion: FillInAtCursorSuggestion,
 		source: "llm" | "cache",
 		telemetryContext: AutocompleteContext,
-		suggestionLength: number,
 	): void {
+		const suggestionKey = getSuggestionKey(suggestion)
+		const suggestionLength = suggestion.text.length
+
 		// If we're already tracking this exact suggestion, do nothing
 		if (this.visibilityTracking?.suggestionKey === suggestionKey) {
 			return

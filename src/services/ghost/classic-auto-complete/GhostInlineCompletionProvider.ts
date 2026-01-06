@@ -61,34 +61,11 @@ const LATENCY_SAMPLE_SIZE = 10
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
- * Result from findMatchingSuggestion including visibility tracking information
+ * Result from findMatchingSuggestion including the original suggestion for telemetry tracking
  */
-export interface MatchingSuggestionWithVisibilityKey extends MatchingSuggestionResult {
-	/** Unique key identifying this suggestion for visibility tracking */
-	suggestionKey: string
-}
-
-/**
- * Generate a unique key for a suggestion based on its content and context.
- * This key is used to track whether the same suggestion is still being displayed.
- */
-function getSuggestionKey(suggestion: FillInAtCursorSuggestion): string {
-	return `${suggestion.prefix}|${suggestion.suffix}|${suggestion.text}`
-}
-
-/**
- * Replace the suggestion text portion of a suggestion key with new text.
- * The key format is: prefix|suffix|text
- *
- * @param key - The original suggestion key
- * @param newText - The new text to use in the key
- * @returns A new suggestion key with the text portion replaced
- */
-function replaceSuggestionInSuggestionKey(key: string, newText: string): string {
-	const keyParts = key.split("|")
-	const originalPrefix = keyParts[0]
-	const originalSuffix = keyParts[1]
-	return `${originalPrefix}|${originalSuffix}|${newText}`
+export interface MatchingSuggestionWithFillIn extends MatchingSuggestionResult {
+	/** The original FillInAtCursorSuggestion for telemetry tracking */
+	fillInAtCursor: FillInAtCursorSuggestion
 }
 
 /**
@@ -97,13 +74,13 @@ function replaceSuggestionInSuggestionKey(key: string, newText: string): string 
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion with match type and visibility key, or null if no match found
+ * @returns The matching suggestion with match type and the original FillInAtCursorSuggestion, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-): MatchingSuggestionWithVisibilityKey | null {
+): MatchingSuggestionWithFillIn | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
 		const fillInAtCursor = suggestionsHistory[i]
@@ -113,7 +90,7 @@ export function findMatchingSuggestion(
 			return {
 				text: fillInAtCursor.text,
 				matchType: "exact",
-				suggestionKey: getSuggestionKey(fillInAtCursor),
+				fillInAtCursor,
 			}
 		}
 
@@ -133,7 +110,7 @@ export function findMatchingSuggestion(
 				return {
 					text: fillInAtCursor.text.substring(typedContent.length),
 					matchType: "partial_typing",
-					suggestionKey: getSuggestionKey(fillInAtCursor),
+					fillInAtCursor,
 				}
 			}
 		}
@@ -153,7 +130,7 @@ export function findMatchingSuggestion(
 			return {
 				text: deletedContent + fillInAtCursor.text,
 				matchType: "backward_deletion",
-				suggestionKey: getSuggestionKey(fillInAtCursor),
+				fillInAtCursor,
 			}
 		}
 	}
@@ -171,9 +148,9 @@ export function findMatchingSuggestion(
  * @returns A new result with potentially truncated text, or null if input was null
  */
 export function applyFirstLineOnly(
-	result: MatchingSuggestionWithVisibilityKey | null,
+	result: MatchingSuggestionWithFillIn | null,
 	prefix: string,
-): MatchingSuggestionWithVisibilityKey | null {
+): MatchingSuggestionWithFillIn | null {
 	if (result === null || result.text === "") {
 		return result
 	}
@@ -182,7 +159,11 @@ export function applyFirstLineOnly(
 		return {
 			text: firstLineText,
 			matchType: result.matchType,
-			suggestionKey: replaceSuggestionInSuggestionKey(result.suggestionKey, firstLineText),
+			// Create a new FillInAtCursorSuggestion with the truncated text for telemetry tracking
+			fillInAtCursor: {
+				...result.fillInAtCursor,
+				text: firstLineText,
+			},
 		}
 	}
 	return result
@@ -540,12 +521,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 					length: matchingResult.text.length,
 				}
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
-				this.telemetry?.startVisibilityTracking(
-					matchingResult.suggestionKey,
-					"cache",
-					telemetryContext,
-					matchingResult.text.length,
-				)
+				this.telemetry?.startVisibilityTracking(matchingResult.fillInAtCursor, "cache", telemetryContext)
 				return stringToInlineCompletions(matchingResult.text, position)
 			}
 
@@ -574,12 +550,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 					length: cachedResult.text.length,
 				}
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
-				this.telemetry?.startVisibilityTracking(
-					cachedResult.suggestionKey,
-					"llm",
-					telemetryContext,
-					cachedResult.text.length,
-				)
+				this.telemetry?.startVisibilityTracking(cachedResult.fillInAtCursor, "llm", telemetryContext)
 			} else {
 				this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
 			}

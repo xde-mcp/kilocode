@@ -1,6 +1,6 @@
 // kilocode_change - new file
-import { AutocompleteTelemetry, MIN_VISIBILITY_DURATION_MS } from "../AutocompleteTelemetry"
-import type { AutocompleteContext } from "../../types"
+import { AutocompleteTelemetry, MIN_VISIBILITY_DURATION_MS, getSuggestionKey } from "../AutocompleteTelemetry"
+import type { AutocompleteContext, FillInAtCursorSuggestion } from "../../types"
 
 describe("AutocompleteTelemetry", () => {
 	beforeEach(() => {
@@ -10,6 +10,17 @@ describe("AutocompleteTelemetry", () => {
 	afterEach(() => {
 		vi.useRealTimers()
 	})
+
+	/**
+	 * Helper to create a FillInAtCursorSuggestion with a unique key
+	 */
+	function createSuggestion(index: number): FillInAtCursorSuggestion {
+		return {
+			text: `text-${index}`,
+			prefix: `prefix-${index}`,
+			suffix: `suffix-${index}`,
+		}
+	}
 
 	test("caps fired unique telemetry keys to the 50 most recent", () => {
 		const telemetry = new AutocompleteTelemetry()
@@ -22,17 +33,17 @@ describe("AutocompleteTelemetry", () => {
 		} as unknown as AutocompleteContext
 
 		for (let i = 0; i < 60; i++) {
-			telemetry.startVisibilityTracking(`key-${i}`, "llm", context, 1)
+			telemetry.startVisibilityTracking(createSuggestion(i), "llm", context)
 			vi.advanceTimersByTime(MIN_VISIBILITY_DURATION_MS)
 		}
 
 		const firedMap = (telemetry as any).firedUniqueTelemetryKeys as Map<string, true>
 
 		expect(firedMap.size).toBe(50)
-		expect(firedMap.has("key-0")).toBe(false)
-		expect(firedMap.has("key-9")).toBe(false)
-		expect(firedMap.has("key-10")).toBe(true)
-		expect(firedMap.has("key-59")).toBe(true)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(0)))).toBe(false)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(9)))).toBe(false)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(10)))).toBe(true)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(59)))).toBe(true)
 	})
 
 	test("evicted keys can be tracked again later", () => {
@@ -42,19 +53,19 @@ describe("AutocompleteTelemetry", () => {
 
 		// Fill and overflow the map so key-0 is evicted
 		for (let i = 0; i < 60; i++) {
-			telemetry.startVisibilityTracking(`key-${i}`, "llm", context, 1)
+			telemetry.startVisibilityTracking(createSuggestion(i), "llm", context)
 			vi.advanceTimersByTime(MIN_VISIBILITY_DURATION_MS)
 		}
 
 		let firedMap = (telemetry as any).firedUniqueTelemetryKeys as Map<string, true>
-		expect(firedMap.has("key-0")).toBe(false)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(0)))).toBe(false)
 
 		// Now key-0 should be eligible again
-		telemetry.startVisibilityTracking("key-0", "llm", context, 1)
+		telemetry.startVisibilityTracking(createSuggestion(0), "llm", context)
 		vi.advanceTimersByTime(MIN_VISIBILITY_DURATION_MS)
 
 		firedMap = (telemetry as any).firedUniqueTelemetryKeys as Map<string, true>
-		expect(firedMap.has("key-0")).toBe(true)
+		expect(firedMap.has(getSuggestionKey(createSuggestion(0)))).toBe(true)
 		expect(firedMap.size).toBe(50)
 	})
 })
