@@ -233,7 +233,6 @@
 				"description": "需要快速修正、補全或重構？Kilo 將使用周圍內容提供即時改進，保持你的工作流程。<DocsLink>檢視快速鍵</DocsLink>"
 			},
 			"keybindingNotFound": "未找到",
-			"noModelConfigured": "找不到合適的自動補全模型。請在 API 設定中配置提供者。",
 			"configureAutocompleteProfile": "前往設定檔並設定自動補全類型的設定檔即可使用任意模型。",
 			"model": "模型",
 			"provider": "供應商",
@@ -254,6 +253,16 @@
 					"30min": "30 分鐘",
 					"1hour": "1 小時"
 				}
+			},
+			"noModelConfigured": {
+				"title": "未設定自動補全模型",
+				"description": "若要啟用自動補全，請新增一個使用以下支援供應商的設定檔：",
+				"learnMore": "了解更多關於自動補全設定 →"
+			},
+			"noCredits": {
+				"title": "您的帳戶沒有額度",
+				"description": "您的 Kilo Code 帳戶沒有額度。若要使用自動補全，請為您的帳戶儲值。",
+				"buyCredits": "購買額度 →"
 			}
 		}
 	},

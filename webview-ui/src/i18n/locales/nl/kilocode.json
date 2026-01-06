@@ -238,7 +238,6 @@
 				"description": "Heb je een snelle fix, voltooiing of refactor nodig? Kilo zal de omringende context gebruiken om onmiddellijke verbeteringen aan te bieden, waardoor je in de flow blijft. <DocsLink>Sneltoets bewerken</DocsLink>"
 			},
 			"keybindingNotFound": "niet gevonden",
-			"noModelConfigured": "Geen geschikt autocomplete-model gevonden. Configureer een provider in de API-instellingen.",
 			"configureAutocompleteProfile": "Gebruik elk model door naar profielen te gaan en een Profiel van het Profieltype Autocomplete te configureren.",
 			"model": "Model",
 			"provider": "Provider",
@@ -259,6 +258,16 @@
 					"30min": "30 minuten",
 					"1hour": "1 uur"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Geen autocomplete-model geconfigureerd",
+				"description": "Om autocomplete in te schakelen, voeg een profiel toe met een van deze ondersteunde providers:",
+				"learnMore": "Meer informatie over autocomplete-configuratie →"
+			},
+			"noCredits": {
+				"title": "Geen tegoed op je account",
+				"description": "Je Kilo Code-account heeft geen tegoed. Om autocomplete te gebruiken, voeg tegoed toe aan je account.",
+				"buyCredits": "Tegoed kopen →"
 			}
 		}
 	},

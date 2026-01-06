@@ -231,7 +231,6 @@
 				"description": "Hızlı bir düzeltme, tamamlama veya yeniden düzenleme mi gerekiyor? Kilo çevredeki bağlamı kullanarak anında iyileştirmeler sunacak, seni akışta tutacak. <DocsLink>Kısayolu gör</DocsLink>"
 			},
 			"keybindingNotFound": "bulunamadı",
-			"noModelConfigured": "Uygun otomatik tamamlama modeli bulunamadı. Lütfen API ayarlarında bir sağlayıcı yapılandır.",
 			"configureAutocompleteProfile": "Profillere giderek ve Otomatik Tamamlama Profil Türünde bir Profil yapılandırarak herhangi bir model kullan.",
 			"model": "Model",
 			"provider": "Sağlayıcı",
@@ -252,6 +251,16 @@
 					"30min": "30 dakika",
 					"1hour": "1 saat"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Otomatik tamamlama modeli yapılandırılmadı",
+				"description": "Otomatik tamamlamayı etkinleştirmek için desteklenen bu sağlayıcılardan biriyle bir profil ekleyin:",
+				"learnMore": "Otomatik tamamlama kurulumu hakkında daha fazla bilgi →"
+			},
+			"noCredits": {
+				"title": "Hesabınızda kredi yok",
+				"description": "Kilo Code hesabınızda kredi bulunmuyor. Otomatik tamamlamayı kullanmak için lütfen hesabınıza kredi ekleyin.",
+				"buyCredits": "Kredi satın al →"
 			}
 		}
 	},

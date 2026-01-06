@@ -231,7 +231,6 @@
 				"description": "Precisa de uma correção rápida, completação ou refatoração? O Kilo usará o contexto ao redor para oferecer melhorias imediatas, mantendo você no fluxo. <DocsLink>Ver atalho</DocsLink>"
 			},
 			"keybindingNotFound": "não encontrado",
-			"noModelConfigured": "Nenhum modelo de autocompletar adequado encontrado. Configure um provedor nas configurações da API.",
 			"configureAutocompleteProfile": "Use qualquer modelo indo para perfis e configurando um Perfil do Tipo de Perfil Autocompletar.",
 			"model": "Modelo",
 			"provider": "Provedor",
@@ -252,6 +251,16 @@
 					"30min": "30 minutos",
 					"1hour": "1 hora"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Nenhum modelo de autocomplete configurado",
+				"description": "Para habilitar o autocomplete, adicione um perfil com um destes provedores suportados:",
+				"learnMore": "Saiba mais sobre a configuração do autocomplete →"
+			},
+			"noCredits": {
+				"title": "Sem créditos na sua conta",
+				"description": "Sua conta Kilo Code não tem créditos. Para usar o autocomplete, adicione créditos à sua conta.",
+				"buyCredits": "Comprar créditos →"
 			}
 		}
 	},

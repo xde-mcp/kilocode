@@ -231,7 +231,6 @@
 				"description": "Cần sửa chữa nhanh, hoàn thành, hoặc tái cấu trúc? Kilo sẽ sử dụng ngữ cảnh xung quanh để cung cấp cải tiến ngay lập tức, giữ bạn trong luồng làm việc. <DocsLink>Xem phím tắt</DocsLink>"
 			},
 			"keybindingNotFound": "không tìm thấy",
-			"noModelConfigured": "Không tìm thấy mô hình tự động hoàn thành phù hợp. Vui lòng cấu hình nhà cung cấp trong cài đặt API.",
 			"configureAutocompleteProfile": "Sử dụng bất kỳ mô hình nào bằng cách vào hồ sơ và cấu hình Hồ sơ có Loại Hồ sơ là Tự động hoàn thành.",
 			"model": "Mô hình",
 			"provider": "Nhà cung cấp",
@@ -252,6 +251,16 @@
 					"30min": "30 phút",
 					"1hour": "1 giờ"
 				}
+			},
+			"noModelConfigured": {
+				"title": "Chưa cấu hình mô hình tự động hoàn thành",
+				"description": "Để bật tự động hoàn thành, hãy thêm hồ sơ với một trong các nhà cung cấp được hỗ trợ sau:",
+				"learnMore": "Tìm hiểu thêm về cách thiết lập tự động hoàn thành →"
+			},
+			"noCredits": {
+				"title": "Tài khoản của bạn không có tín dụng",
+				"description": "Tài khoản Kilo Code của bạn không có tín dụng. Để sử dụng tự động hoàn thành, vui lòng nạp tín dụng vào tài khoản.",
+				"buyCredits": "Mua tín dụng →"
 			}
 		}
 	},
