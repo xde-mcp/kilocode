@@ -168,6 +168,15 @@ export type CacheMatchType = "exact" | "partial_typing" | "backward_deletion"
 
 export type CostTrackingCallback = (cost: number, inputTokens: number, outputTokens: number) => void
 
+/**
+ * Information about the last suggestion shown to the user.
+ * Used for telemetry tracking when suggestions are accepted.
+ */
+export interface LastSuggestionInfo {
+	languageId: string
+	length: number
+}
+
 export interface PendingRequest {
 	prefix: string
 	suffix: string
