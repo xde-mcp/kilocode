@@ -230,18 +230,11 @@ export class AutocompleteTelemetry {
 			return
 		}
 
-		// Start a new timer
 		const timer = setTimeout(() => {
-			// Timer fired - the suggestion has been visible for MIN_VISIBILITY_DURATION_MS
-			// Check if we're still tracking the same suggestion
-			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
-				// Fire the telemetry
-				this.captureUniqueSuggestionShown(telemetryContext)
-				// Mark this suggestion as having fired telemetry
-				this.firedUniqueTelemetryKeys.add(suggestionKey)
-				// Clear the tracking state
-				this.visibilityTracking = null
-			}
+			// The suggestion has been visible for MIN_VISIBILITY_DURATION_MS
+			this.captureUniqueSuggestionShown(telemetryContext)
+			this.firedUniqueTelemetryKeys.add(suggestionKey)
+			this.visibilityTracking = null
 		}, MIN_VISIBILITY_DURATION_MS)
 
 		this.visibilityTracking = {
