@@ -31,6 +31,7 @@ my-project/
 ```
 
 **Supported filenames** (in order of precedence):
+
 1. `AGENTS.md` (uppercase, plural - recommended)
 2. `AGENT.md` (uppercase, singular - fallback)
 
@@ -100,81 +101,11 @@ Brief description of the project and its purpose.
 
 ## Best Practices
 
-### Be Specific and Clear
-
-**Bad:**
-```markdown
-- Write good code
-- Follow best practices
-```
-
-**Good:**
-```markdown
-- Use TypeScript strict mode
-- Limit function complexity to cyclomatic complexity < 10
-- Extract functions longer than 50 lines into smaller units
-```
-
-### Use Examples
-
-Include code examples to illustrate your guidelines:
-
-```markdown
-## Error Handling
-
-Always use try-catch blocks for async operations:
-
-\`\`\`typescript
-async function fetchUser(id: string) {
-  try {
-    const user = await db.user.findUnique({ where: { id } })
-    return user
-  } catch (error) {
-    logger.error('Failed to fetch user', { id, error })
-    throw new Error('User not found')
-  }
-}
-\`\`\`
-```
-
-### Organize by Category
-
-Group related guidelines under clear headers:
-
-```markdown
-# Project Guidelines
-
-## Code Style
-[style guidelines]
-
-## Architecture
-[architecture guidelines]
-
-## Testing
-[testing guidelines]
-
-## Security
-[security guidelines]
-```
-
-### Keep It Concise
-
-AI models work best with clear, concise instructions. Avoid:
-- Long paragraphs of prose
-- Redundant information
-- Overly detailed explanations
-
-Instead:
-- Use bullet points
-- Be direct and actionable
-- Focus on the most important guidelines
-
-### Update Regularly
-
-Review and update your AGENTS.md file as your project evolves:
-- Add new conventions as they're established
-- Remove outdated guidelines
-- Refine unclear instructions based on AI behavior
+- **Be specific and clear** - Use concrete rules like "limit cyclomatic complexity to < 10" instead of vague guidance like "write good code"
+- **Include code examples** - Show patterns for error handling, naming conventions, or architecture decisions
+- **Organize by category** - Group related guidelines under clear headers (Code Style, Architecture, Testing, Security)
+- **Keep it concise** - Use bullet points and direct language; avoid long paragraphs
+- **Update regularly** - Review and revise as your project's conventions evolve
 
 ## How AGENTS.md Works in Kilo Code
 
@@ -191,81 +122,23 @@ When you start a task in Kilo Code:
 
 AGENTS.md works alongside Kilo Code's other configuration systems:
 
-| Feature | Scope | Purpose | Priority |
-|---------|-------|---------|----------|
-| **AGENTS.md** | Project-specific | Cross-tool standard for project guidelines | Medium |
-| **[Custom Rules](/agent-behavior/custom-rules)** | Project or Global | Kilo Code-specific rules and constraints | High |
-| **[Custom Instructions](/agent-behavior/custom-instructions)** | Global (IDE-wide) | Personal preferences across all projects | Low |
-| **[Custom Modes](/agent-behavior/custom-modes)** | Project or Global | Specialized workflows with specific permissions | Varies |
-
-**Priority order** (highest to lowest):
-1. Mode-specific Custom Rules (`.kilocode/rules-{mode}/`)
-2. Project Custom Rules (`.kilocode/rules/`)
-3. AGENTS.md (project root)
-4. Global Custom Rules (`~/.kilocode/rules/`)
-5. Custom Instructions (global settings)
+| Feature                                                        | Scope   | Location                  | Purpose                                    | Priority    |
+| -------------------------------------------------------------- | ------- | ------------------------- | ------------------------------------------ | ----------- |
+| **[Mode-specific Custom Rules](/agent-behavior/custom-rules)** | Project | `.kilocode/rules-{mode}/` | Mode-specific rules and constraints        | 1 (Highest) |
+| **[Custom Rules](/agent-behavior/custom-rules)**               | Project | `.kilocode/rules/`        | Kilo Code-specific rules and constraints   | 2           |
+| **AGENTS.md**                                                  | Project | Project root or subfolder | Cross-tool standard for project guidelines | 3           |
+| **[Global Custom Rules](/agent-behavior/custom-rules)**        | Global  | `~/.kilocode/rules/`      | Global Kilo Code rules                     | 4           |
+| **[Custom Instructions](/agent-behavior/custom-instructions)** | Global  | IDE settings              | Personal preferences across all projects   | 5 (Lowest)  |
 
 ### Enabling/Disabling AGENTS.md
 
-AGENTS.md support is **enabled by default** in Kilo Code. To disable it:
-
-1. Open VS Code Settings
-2. Search for "Kilo Code: Use Agent Rules"
-3. Uncheck the setting
-
-Or in `settings.json`:
+AGENTS.md support is **enabled by default** in Kilo Code. To disable it, edit `settings.json`:
 
 ```json
 {
-  "kilocode.useAgentRules": false
+	"kilocode.useAgentRules": false
 }
 ```
-
-## Multiple AGENTS.md Files (Hierarchy)
-
-Kilo Code supports a hierarchical approach to AGENTS.md files:
-
-### Root-Level AGENTS.md
-
-The root-level file provides project-wide guidelines:
-
-```
-my-project/
-├── AGENTS.md          # Project-wide guidelines
-├── src/
-└── docs/
-```
-
-### Subdirectory AGENTS.md
-
-Subdirectory files provide context-specific instructions:
-
-```
-my-project/
-├── AGENTS.md                    # General project guidelines
-├── src/
-│   ├── frontend/
-│   │   └── AGENTS.md            # Frontend-specific guidelines
-│   └── backend/
-│       └── AGENTS.md            # Backend-specific guidelines
-└── docs/
-    └── AGENTS.md                # Documentation guidelines
-```
-
-### Precedence Rules
-
-When multiple AGENTS.md files exist:
-
-1. **Closest file wins**: The AGENTS.md file in the current working directory takes precedence
-2. **Inheritance**: Instructions from parent directories are still applied
-3. **Conflict resolution**: More specific (subdirectory) instructions override general (root) instructions
-
-**Example:**
-
-If you're working in `src/backend/` and both root and `src/backend/AGENTS.md` exist:
-- Both files are loaded
-- Instructions from `src/backend/AGENTS.md` take precedence for conflicts
-- Non-conflicting instructions from both files are applied
 
 ## Related Features
 
