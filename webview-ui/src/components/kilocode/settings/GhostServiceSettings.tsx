@@ -37,8 +37,14 @@ export const GhostServiceSettingsView = ({
 }: GhostServiceSettingsViewProps) => {
 	const { t } = useAppTranslation()
 	const { kiloCodeWrapperProperties } = useExtensionState()
-	const { enableAutoTrigger, enableSmartInlineTaskKeybinding, enableChatAutocomplete, provider, model } =
-		ghostServiceSettings || {}
+	const {
+		enableAutoTrigger,
+		enableSmartInlineTaskKeybinding,
+		enableChatAutocomplete,
+		provider,
+		model,
+		hasKilocodeProfileWithNoBalance,
+	} = ghostServiceSettings || {}
 	const keybindings = useKeybindings(["kilo-code.ghost.generateSuggestions"])
 	const [snoozeDuration, setSnoozeDuration] = useState<number>(300)
 	const [currentTime, setCurrentTime] = useState<number>(Date.now())
@@ -234,6 +240,22 @@ export const GhostServiceSettingsView = ({
 										{model}
 									</div>
 								</>
+							) : hasKilocodeProfileWithNoBalance ? (
+								<div className="flex flex-col gap-2">
+									<div className="text-vscode-errorForeground font-medium">
+										{t("kilocode:ghost.settings.noCredits.title")}
+									</div>
+									<div className="text-vscode-descriptionForeground">
+										{t("kilocode:ghost.settings.noCredits.description")}
+									</div>
+									<div className="text-vscode-descriptionForeground">
+										<a
+											href="https://kilo.ai/credits"
+											className="text-vscode-textLink-foreground hover:underline">
+											{t("kilocode:ghost.settings.noCredits.buyCredits")}
+										</a>
+									</div>
+								</div>
 							) : (
 								<div className="flex flex-col gap-2">
 									<div className="text-vscode-errorForeground font-medium">

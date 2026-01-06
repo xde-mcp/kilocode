@@ -269,6 +269,11 @@
 				"description": "To enable autocomplete, add a profile with one of these supported providers:",
 				"learnMore": "Learn more about autocomplete setup →"
 			},
+			"noCredits": {
+				"title": "No credits in your account",
+				"description": "Your Kilo Code account has no credits. To use autocomplete, please add credits to your account.",
+				"buyCredits": "Buy credits →"
+			},
 			"configureAutocompleteProfile": "Use any model by going to profiles and configuring a Profile of the Profile Type Autocomplete."
 		}
 	},

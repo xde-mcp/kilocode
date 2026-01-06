@@ -14,6 +14,7 @@ export const ghostServiceSettingsSchema = z
 		provider: z.string().optional(),
 		model: z.string().optional(),
 		snoozeUntil: z.number().optional(),
+		hasKilocodeProfileWithNoBalance: z.boolean().optional(),
 	})
 	.optional()
 
