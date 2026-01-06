@@ -76,6 +76,21 @@ function getSuggestionKey(suggestion: FillInAtCursorSuggestion): string {
 }
 
 /**
+ * Replace the suggestion text portion of a suggestion key with new text.
+ * The key format is: prefix|suffix|text
+ *
+ * @param key - The original suggestion key
+ * @param newText - The new text to use in the key
+ * @returns A new suggestion key with the text portion replaced
+ */
+function replaceSuggestionInSuggestionKey(key: string, newText: string): string {
+	const keyParts = key.split("|")
+	const originalPrefix = keyParts[0]
+	const originalSuffix = keyParts[1]
+	return `${originalPrefix}|${originalSuffix}|${newText}`
+}
+
+/**
  * Find a matching suggestion from the history based on current prefix and suffix.
  *
  * @param prefix - The text before the cursor position
@@ -162,10 +177,11 @@ export function applyFirstLineOnly(
 		return result
 	}
 	if (shouldShowOnlyFirstLine(prefix, result.text)) {
+		const firstLineText = getFirstLine(result.text)
 		return {
-			text: getFirstLine(result.text),
+			text: firstLineText,
 			matchType: result.matchType,
-			suggestionKey: result.suggestionKey,
+			suggestionKey: replaceSuggestionInSuggestionKey(result.suggestionKey, firstLineText),
 		}
 	}
 	return result

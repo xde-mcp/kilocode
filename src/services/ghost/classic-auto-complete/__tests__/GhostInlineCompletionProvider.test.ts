@@ -637,6 +637,39 @@ describe("applyFirstLineOnly", () => {
 		expect(result!.matchType).toBe("partial_typing")
 	})
 
+	it("updates suggestionKey to reflect truncated text when truncating", () => {
+		// The suggestionKey format is: prefix|suffix|text
+		const originalKey = "const x = |;|line1\nline2\nline3"
+		const result = applyFirstLineOnly(
+			{
+				text: "line1\nline2\nline3",
+				matchType: "exact",
+				suggestionKey: originalKey,
+			},
+			"const x = foo", // mid-line prefix triggers truncation
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("line1")
+		// The key should now reflect the truncated text
+		expect(result!.suggestionKey).toBe("const x = |;|line1")
+	})
+
+	it("preserves suggestionKey when no truncation occurs", () => {
+		const originalKey = "prefix|suffix|singleLine"
+		const result = applyFirstLineOnly(
+			{
+				text: "singleLine",
+				matchType: "exact",
+				suggestionKey: originalKey,
+			},
+			"const x = foo", // mid-line but single-line suggestion
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("singleLine")
+		// Key should be unchanged since no truncation happened
+		expect(result!.suggestionKey).toBe(originalKey)
+	})
+
 	it("does not truncate when suggestion starts with newline", () => {
 		const result = applyFirstLineOnly(
 			{ text: "\nline1\nline2", matchType: "exact", suggestionKey: "test-key" },
