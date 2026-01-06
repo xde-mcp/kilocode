@@ -24,7 +24,7 @@ import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
 import { shouldSkipAutocomplete } from "./contextualSkip"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
-import { AutocompleteTelemetry, MIN_VISIBILITY_DURATION_MS } from "./AutocompleteTelemetry"
+import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
 
@@ -272,23 +272,6 @@ export function stringToInlineCompletions(text: string, position: vscode.Positio
 	return [item]
 }
 
-/**
- * Tracks the currently displayed suggestion for visibility-based telemetry.
- * Used to determine if a suggestion has been visible for MIN_VISIBILITY_DURATION_MS.
- */
-interface VisibilityTrackingState {
-	/** Unique key identifying the currently displayed suggestion */
-	suggestionKey: string
-	/** Timer that fires after MIN_VISIBILITY_DURATION_MS to capture telemetry */
-	timer: NodeJS.Timeout
-	/** The source of the suggestion (llm or cache) */
-	source: "llm" | "cache"
-	/** Telemetry context for the suggestion */
-	telemetryContext: AutocompleteContext
-	/** Length of the suggestion text */
-	suggestionLength: number
-}
-
 export class GhostInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
@@ -307,10 +290,6 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
 	private latencyHistory: number[] = []
 	private telemetry: AutocompleteTelemetry | null
-	/** Tracks the currently displayed suggestion for visibility-based telemetry */
-	private visibilityTracking: VisibilityTrackingState | null = null
-	/** Set of suggestion keys for which unique telemetry has already been fired */
-	private firedUniqueTelemetryKeys: Set<string> = new Set()
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -461,80 +440,12 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		}
 	}
 
-	/**
-	 * Start visibility tracking for a suggestion.
-	 * If the suggestion is still being displayed after MIN_VISIBILITY_DURATION_MS,
-	 * the unique suggestion telemetry will be fired.
-	 *
-	 * @param suggestionKey - Unique key identifying the suggestion
-	 * @param source - Whether the suggestion came from 'llm' or 'cache'
-	 * @param telemetryContext - Telemetry context for the suggestion
-	 * @param suggestionLength - Length of the suggestion text
-	 */
-	private startVisibilityTracking(
-		suggestionKey: string,
-		source: "llm" | "cache",
-		telemetryContext: AutocompleteContext,
-		suggestionLength: number,
-	): void {
-		// If we're already tracking this exact suggestion, do nothing
-		if (this.visibilityTracking?.suggestionKey === suggestionKey) {
-			return
-		}
-
-		// Cancel any existing visibility tracking (different suggestion is now shown)
-		this.cancelVisibilityTracking()
-
-		// Don't track if we've already fired telemetry for this suggestion
-		if (this.firedUniqueTelemetryKeys.has(suggestionKey)) {
-			return
-		}
-
-		// Don't track empty suggestions
-		if (suggestionLength === 0) {
-			return
-		}
-
-		// Start a new timer
-		const timer = setTimeout(() => {
-			// Timer fired - the suggestion has been visible for MIN_VISIBILITY_DURATION_MS
-			// Check if we're still tracking the same suggestion
-			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
-				// Fire the telemetry
-				this.telemetry?.captureUniqueSuggestionShown(telemetryContext)
-				// Mark this suggestion as having fired telemetry
-				this.firedUniqueTelemetryKeys.add(suggestionKey)
-				// Clear the tracking state
-				this.visibilityTracking = null
-			}
-		}, MIN_VISIBILITY_DURATION_MS)
-
-		this.visibilityTracking = {
-			suggestionKey,
-			timer,
-			source,
-			telemetryContext,
-			suggestionLength,
-		}
-	}
-
-	/**
-	 * Cancel any pending visibility tracking.
-	 * Called when a different suggestion is shown or no suggestion is shown.
-	 */
-	private cancelVisibilityTracking(): void {
-		if (this.visibilityTracking) {
-			clearTimeout(this.visibilityTracking.timer)
-			this.visibilityTracking = null
-		}
-	}
-
 	public dispose(): void {
 		if (this.debounceTimer !== null) {
 			clearTimeout(this.debounceTimer)
 			this.debounceTimer = null
 		}
-		this.cancelVisibilityTracking()
+		this.telemetry?.dispose()
 		this.recentlyVisitedRangesService.dispose()
 		this.recentlyEditedTracker.dispose()
 		void this.disposeIgnoreController()
@@ -625,7 +536,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
 				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
 				// if the same suggestion is still being displayed
-				this.startVisibilityTracking(
+				this.telemetry?.startVisibilityTracking(
 					matchingResult.suggestionKey,
 					"cache",
 					telemetryContext,
@@ -635,7 +546,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			}
 
 			// No suggestion to show - cancel any pending visibility tracking
-			this.cancelVisibilityTracking()
+			this.telemetry?.cancelVisibilityTracking()
 
 			// Only skip new LLM requests during mid-word typing or at end of statement
 			// Cache lookups above are still allowed
@@ -659,7 +570,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
 				// Start visibility tracking - telemetry will fire after MIN_VISIBILITY_DURATION_MS
 				// if the same suggestion is still being displayed
-				this.startVisibilityTracking(
+				this.telemetry?.startVisibilityTracking(
 					cachedResult.suggestionKey,
 					"llm",
 					telemetryContext,
@@ -667,7 +578,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 				)
 			} else {
 				// No suggestion to show - cancel any pending visibility tracking
-				this.cancelVisibilityTracking()
+				this.telemetry?.cancelVisibilityTracking()
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)

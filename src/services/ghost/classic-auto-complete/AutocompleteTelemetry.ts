@@ -19,12 +19,33 @@ export const MIN_VISIBILITY_DURATION_MS = 300
 export type AutocompleteType = "inline" | "chat-textarea"
 
 /**
+ * Tracks the currently displayed suggestion for visibility-based telemetry.
+ * Used to determine if a suggestion has been visible for MIN_VISIBILITY_DURATION_MS.
+ */
+interface VisibilityTrackingState {
+	/** Unique key identifying the currently displayed suggestion */
+	suggestionKey: string
+	/** Timer that fires after MIN_VISIBILITY_DURATION_MS to capture telemetry */
+	timer: NodeJS.Timeout
+	/** The source of the suggestion (llm or cache) */
+	source: "llm" | "cache"
+	/** Telemetry context for the suggestion */
+	telemetryContext: AutocompleteContext
+	/** Length of the suggestion text */
+	suggestionLength: number
+}
+
+/**
  * Telemetry service for autocomplete events.
  * Can be initialized without parameters and injected into components that need telemetry tracking.
  * Supports different autocomplete types via the `autocompleteType` property.
  */
 export class AutocompleteTelemetry {
 	private readonly autocompleteType: AutocompleteType
+	/** Tracks the currently displayed suggestion for visibility-based telemetry */
+	private visibilityTracking: VisibilityTrackingState | null = null
+	/** Set of suggestion keys for which unique telemetry has already been fired */
+	private firedUniqueTelemetryKeys: Set<string> = new Set()
 
 	/**
 	 * Create a new AutocompleteTelemetry instance
@@ -169,9 +190,84 @@ export class AutocompleteTelemetry {
 	 *
 	 * @param context - The autocomplete context
 	 */
-	public captureUniqueSuggestionShown(context: AutocompleteContext): void {
+	private captureUniqueSuggestionShown(context: AutocompleteContext): void {
 		this.captureEvent(TelemetryEventName.AUTOCOMPLETE_UNIQUE_SUGGESTION_SHOWN, {
 			...context,
 		})
+	}
+
+	/**
+	 * Start visibility tracking for a suggestion.
+	 * If the suggestion is still being displayed after MIN_VISIBILITY_DURATION_MS,
+	 * the unique suggestion telemetry will be fired.
+	 *
+	 * @param suggestionKey - Unique key identifying the suggestion
+	 * @param source - Whether the suggestion came from 'llm' or 'cache'
+	 * @param telemetryContext - Telemetry context for the suggestion
+	 * @param suggestionLength - Length of the suggestion text
+	 */
+	public startVisibilityTracking(
+		suggestionKey: string,
+		source: "llm" | "cache",
+		telemetryContext: AutocompleteContext,
+		suggestionLength: number,
+	): void {
+		// If we're already tracking this exact suggestion, do nothing
+		if (this.visibilityTracking?.suggestionKey === suggestionKey) {
+			return
+		}
+
+		// Cancel any existing visibility tracking (different suggestion is now shown)
+		this.cancelVisibilityTracking()
+
+		// Don't track if we've already fired telemetry for this suggestion
+		if (this.firedUniqueTelemetryKeys.has(suggestionKey)) {
+			return
+		}
+
+		// Don't track empty suggestions
+		if (suggestionLength === 0) {
+			return
+		}
+
+		// Start a new timer
+		const timer = setTimeout(() => {
+			// Timer fired - the suggestion has been visible for MIN_VISIBILITY_DURATION_MS
+			// Check if we're still tracking the same suggestion
+			if (this.visibilityTracking?.suggestionKey === suggestionKey) {
+				// Fire the telemetry
+				this.captureUniqueSuggestionShown(telemetryContext)
+				// Mark this suggestion as having fired telemetry
+				this.firedUniqueTelemetryKeys.add(suggestionKey)
+				// Clear the tracking state
+				this.visibilityTracking = null
+			}
+		}, MIN_VISIBILITY_DURATION_MS)
+
+		this.visibilityTracking = {
+			suggestionKey,
+			timer,
+			source,
+			telemetryContext,
+			suggestionLength,
+		}
+	}
+
+	/**
+	 * Cancel any pending visibility tracking.
+	 * Called when a different suggestion is shown or no suggestion is shown.
+	 */
+	public cancelVisibilityTracking(): void {
+		if (this.visibilityTracking) {
+			clearTimeout(this.visibilityTracking.timer)
+			this.visibilityTracking = null
+		}
+	}
+
+	/**
+	 * Dispose of the telemetry service, cleaning up any pending timers.
+	 */
+	public dispose(): void {
+		this.cancelVisibilityTracking()
 	}
 }
