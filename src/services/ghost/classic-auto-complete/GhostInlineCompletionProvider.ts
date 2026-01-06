@@ -486,7 +486,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			if (matchingResult !== null) {
 				this.lastSuggestion = {
-					languageId: document.languageId,
+					...telemetryContext,
 					length: matchingResult.text.length,
 				}
 				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
@@ -512,7 +512,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			)
 			if (cachedResult) {
 				this.lastSuggestion = {
-					languageId: document.languageId,
+					...telemetryContext,
 					length: cachedResult.text.length,
 				}
 				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)

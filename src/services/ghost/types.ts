@@ -172,8 +172,7 @@ export type CostTrackingCallback = (cost: number, inputTokens: number, outputTok
  * Information about the last suggestion shown to the user.
  * Used for telemetry tracking when suggestions are accepted.
  */
-export interface LastSuggestionInfo {
-	languageId: string
+export interface LastSuggestionInfo extends AutocompleteContext {
 	length: number
 }
 
