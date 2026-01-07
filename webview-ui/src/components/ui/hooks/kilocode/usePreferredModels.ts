@@ -1,18 +1,14 @@
 import { useMemo } from "react"
 import type { ModelInfo } from "@roo-code/types"
 
-/**
- * Result containing preferred and rest model IDs, plus a flag indicating if there are preferred models
- */
+// Result containing preferred and rest model IDs, plus a flag indicating if there are preferred models
 export interface GroupedModelIds {
 	preferredModelIds: string[]
 	restModelIds: string[]
 	hasPreferred: boolean
 }
 
-/**
- * Extracts and groups model IDs into preferred and rest categories
- */
+// Extracts and groups model IDs into preferred and rest categories
 export const getGroupedModelIds = (models: Record<string, ModelInfo> | null): GroupedModelIds => {
 	if (!models) {
 		return { preferredModelIds: [], restModelIds: [], hasPreferred: false }
@@ -49,9 +45,7 @@ export const getGroupedModelIds = (models: Record<string, ModelInfo> | null): Gr
 	}
 }
 
-/**
- * Hook to get grouped model IDs with section metadata for sectioned dropdowns
- */
+// Hook to get grouped model IDs with section metadata for sectioned dropdowns
 export const useGroupedModelIds = (models: Record<string, ModelInfo> | null): GroupedModelIds => {
 	return useMemo(() => getGroupedModelIds(models), [models])
 }
