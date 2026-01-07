@@ -12,31 +12,11 @@ import { ResponseMetaData } from "./types"
 
 /**
  * Helper function to get a FimHandler from an ApiHandler if FIM is supported.
- * Uses the new fimSupport() method if available, falls back to duck typing for backward compatibility.
  */
 function getFimHandler(handler: ApiHandler): FimHandler | undefined {
-	// Prefer the new fimSupport() method
 	if (typeof handler.fimSupport === "function") {
 		return handler.fimSupport()
 	}
-
-	// Fallback for backward compatibility with handlers that still use supportsFim()
-	const legacyHandler = handler as any
-	if (
-		typeof legacyHandler.supportsFim === "function" &&
-		typeof legacyHandler.streamFim === "function" &&
-		legacyHandler.supportsFim() === true
-	) {
-		return {
-			streamFim: legacyHandler.streamFim.bind(legacyHandler),
-			getModel: () => handler.getModel(),
-			getTotalCost:
-				typeof legacyHandler.getTotalCost === "function"
-					? legacyHandler.getTotalCost.bind(legacyHandler)
-					: () => 0,
-		}
-	}
-
 	return undefined
 }
 
@@ -131,7 +111,6 @@ export class GhostModel {
 
 	/**
 	 * Generate FIM completion using the FIM API endpoint.
-	 * Uses the new FimHandler interface for cleaner FIM support detection.
 	 */
 	public async generateFimResponse(
 		prefix: string,

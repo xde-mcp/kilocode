@@ -66,26 +66,6 @@ describe("MistralHandler FIM support", () => {
 		})
 	})
 
-	describe("supportsFim (deprecated)", () => {
-		it("returns true for codestral models", () => {
-			const handler = new MistralHandler({
-				...mockOptions,
-				apiModelId: "codestral-latest",
-			})
-
-			expect(handler.supportsFim()).toBe(true)
-		})
-
-		it("returns false for non-codestral models", () => {
-			const handler = new MistralHandler({
-				...mockOptions,
-				apiModelId: "mistral-large-latest",
-			})
-
-			expect(handler.supportsFim()).toBe(false)
-		})
-	})
-
 	describe("streamFim via fimSupport()", () => {
 		it("yields chunks correctly", async () => {
 			const handler = new MistralHandler({

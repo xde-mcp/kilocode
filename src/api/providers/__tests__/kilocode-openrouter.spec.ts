@@ -265,26 +265,6 @@ describe("KilocodeOpenrouterHandler", () => {
 			})
 		})
 
-		describe("supportsFim (deprecated)", () => {
-			it("returns true for codestral models", () => {
-				const handler = new KilocodeOpenrouterHandler({
-					...mockOptions,
-					kilocodeModel: "mistral/codestral-latest",
-				})
-
-				expect(handler.supportsFim()).toBe(true)
-			})
-
-			it("returns false for non-codestral models", () => {
-				const handler = new KilocodeOpenrouterHandler({
-					...mockOptions,
-					kilocodeModel: "anthropic/claude-sonnet-4",
-				})
-
-				expect(handler.supportsFim()).toBe(false)
-			})
-		})
-
 		describe("streamFim via fimSupport()", () => {
 			it("yields chunks correctly", async () => {
 				const handler = new KilocodeOpenrouterHandler({

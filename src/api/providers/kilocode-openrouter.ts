@@ -167,13 +167,6 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		}
 	}
 
-	/**
-	 * @deprecated Use fimSupport() instead. This method is kept for backward compatibility.
-	 */
-	supportsFim(): boolean {
-		return this.fimSupport() !== undefined
-	}
-
 	private async *streamFim(
 		prefix: string,
 		suffix: string,

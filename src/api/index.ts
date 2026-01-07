@@ -143,11 +143,9 @@ export interface ApiHandler {
 	 * Returns a FimHandler if the provider supports FIM (Fill-In-the-Middle) completions,
 	 * or undefined if FIM is not supported.
 	 *
-	 * This replaces the previous pattern of checking `supportsFim()` and then calling
-	 * FIM methods directly on the handler. Instead, callers should:
-	 *
+	 * Example usage:
 	 * ```typescript
-	 * const fimHandler = apiHandler.fimSupport()
+	 * const fimHandler = apiHandler.fimSupport?.()
 	 * if (fimHandler) {
 	 *   for await (const chunk of fimHandler.streamFim(prefix, suffix)) {
 	 *     // handle chunk
