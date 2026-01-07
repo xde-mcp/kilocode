@@ -4,7 +4,6 @@ import OpenAI from "openai"
 import type { ProviderSettings, ModelInfo, ToolProtocol } from "@roo-code/types"
 
 import { ApiStream } from "./transform/stream"
-import type { FimHandler } from "./providers/kilocode/FimHandler" // kilocode_change
 
 import {
 	GlamaHandler, // kilocode_change
@@ -56,6 +55,8 @@ import {
 // kilocode_change start
 import { KilocodeOpenrouterHandler } from "./providers/kilocode-openrouter"
 import { InceptionLabsHandler } from "./providers/inception"
+import type { FimHandler } from "./providers/kilocode/FimHandler" // kilocode_change
+export type { FimHandler } from "./providers/kilocode/FimHandler"
 // kilocode_change end
 import { NativeOllamaHandler } from "./providers/native-ollama"
 
@@ -142,26 +143,12 @@ export interface ApiHandler {
 	/**
 	 * Returns a FimHandler if the provider supports FIM (Fill-In-the-Middle) completions,
 	 * or undefined if FIM is not supported.
-	 *
-	 * Example usage:
-	 * ```typescript
-	 * const fimHandler = apiHandler.fimSupport?.()
-	 * if (fimHandler) {
-	 *   for await (const chunk of fimHandler.streamFim(prefix, suffix)) {
-	 *     // handle chunk
-	 *   }
-	 * }
-	 * ```
 	 */
 	fimSupport?: () => FimHandler | undefined
 	// kilocode_change end
 
 	contextWindow?: number // kilocode_change: Add contextWindow property for virtual quota fallback
 }
-
-// kilocode_change start
-export type { FimHandler } from "./providers/kilocode/FimHandler"
-// kilocode_change end
 
 export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 	const { apiProvider, ...options } = configuration

@@ -10,9 +10,6 @@ import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrout
 import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
 import { ResponseMetaData } from "./types"
 
-/**
- * Helper function to get a FimHandler from an ApiHandler if FIM is supported.
- */
 function getFimHandler(handler: ApiHandler): FimHandler | undefined {
 	if (typeof handler.fimSupport === "function") {
 		return handler.fimSupport()
@@ -98,9 +95,6 @@ export class GhostModel {
 		}
 	}
 
-	/**
-	 * Check if the current handler supports FIM (Fill-In-the-Middle) completions.
-	 */
 	public supportsFim(): boolean {
 		if (!this.apiHandler) {
 			return false

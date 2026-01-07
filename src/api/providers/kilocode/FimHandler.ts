@@ -4,13 +4,6 @@ import type { CompletionUsage } from "../openrouter"
 
 /**
  * Interface for FIM (Fill-In-the-Middle) completion handlers.
- * This interface defines the contract for handlers that support FIM operations,
- * allowing for code completion between a prefix and suffix.
- *
- * Instead of checking `supportsFim()` and then calling FIM methods,
- * use `ApiHandler.fimSupport()` which returns a `FimHandler | undefined`.
- * This provides a cleaner API where FIM capability is determined by the
- * presence of the handler rather than a boolean check.
  */
 export interface FimHandler {
 	/**

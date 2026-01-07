@@ -145,10 +145,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	}
 
 	/**
-	 * Returns a FimHandler if the current model supports FIM (Fill-In-the-Middle) completions,
-	 * or undefined if FIM is not supported.
-	 *
-	 * FIM is only supported for codestral models.
+	 * Returns a FimHandler if the current model supports FIM (Fill-In-the-Middle) completions
 	 */
 	fimSupport(): FimHandler | undefined {
 		const modelId = this.options.kilocodeModel ?? this.defaultModel
