@@ -315,8 +315,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		// kilocode_change start
 		const requestOptions = this.customRequestOptions(metadata) ?? { headers: {} }
 		if (modelId.startsWith("anthropic/")) {
-			requestOptions.headers["x-anthropic-beta"] =
-				"fine-grained-tool-streaming-2025-05-14,structured-outputs-2025-11-13"
+			requestOptions.headers["x-anthropic-beta"] = "fine-grained-tool-streaming-2025-05-14"
 		}
 		// kilocode_change end
 
@@ -566,8 +565,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		// kilocode_change start
 		const requestOptions = this.customRequestOptions() ?? { headers: {} }
 		if (modelId.startsWith("anthropic/")) {
-			requestOptions.headers["x-anthropic-beta"] =
-				"fine-grained-tool-streaming-2025-05-14,structured-outputs-2025-11-13"
+			requestOptions.headers["x-anthropic-beta"] = "fine-grained-tool-streaming-2025-05-14"
 		}
 		// kilocode_change end
 
