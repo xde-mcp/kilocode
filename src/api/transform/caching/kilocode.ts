@@ -13,8 +13,10 @@ function setCacheControl(message: OpenAI.ChatCompletionMessageParam) {
 		]
 	} else if (Array.isArray(message.content)) {
 		const lastItem = message.content.at(-1)
-		// @ts-ignore-next-line
-		lastItem?.cache_control = { type: "ephemeral" }
+		if (lastItem) {
+			// @ts-ignore-next-line
+			lastItem.cache_control = { type: "ephemeral" }
+		}
 	}
 }
 
