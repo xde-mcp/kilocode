@@ -82,8 +82,16 @@ export class GhostStatusBar {
 
 	public render() {
 		if (!this.props.hasValidToken) {
+			if (this.props.hasKilocodeProfileWithNoBalance) {
+				return this.renderNoCreditsError()
+			}
 			return this.renderTokenError()
 		}
 		return this.renderDefault()
+	}
+
+	private renderNoCreditsError() {
+		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
+		this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.noCredits")
 	}
 }

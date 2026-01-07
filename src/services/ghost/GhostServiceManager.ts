@@ -338,6 +338,7 @@ export class GhostServiceManager {
 			provider: this.getCurrentProviderName(),
 			profileName: this.model.profileName,
 			hasValidToken: this.hasValidApiToken(),
+			hasKilocodeProfileWithNoBalance: this.model.hasKilocodeProfileWithNoBalance,
 			totalSessionCost: this.sessionCost,
 			completionCount: this.completionCount,
 			sessionStartTime: this.sessionStartTime,
