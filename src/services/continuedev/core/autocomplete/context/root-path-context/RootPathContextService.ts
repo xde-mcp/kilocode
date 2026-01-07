@@ -5,7 +5,7 @@ import { Node as SyntaxNode, Query, Point } from "web-tree-sitter"
 
 import { IDE } from "../../.."
 import { getFullLanguageName, getQueryForFile, IGNORE_PATH_PATTERNS, LanguageName } from "../../../util/treeSitter"
-import { AutocompleteCodeSnippet, AutocompleteSnippetType } from "../../snippets/types"
+import { AutocompleteCodeSnippet, AutocompleteSnippetType } from "../../types"
 import { RankedSnippet } from "../../types"
 import { AstPath } from "../../util/ast"
 import { ImportDefinitionsService } from "../ImportDefinitionsService"
