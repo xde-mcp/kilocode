@@ -6,9 +6,6 @@ import { removePrefixOverlap } from "../../continuedev/core/autocomplete/postpro
 import { AutocompleteTelemetry } from "../classic-auto-complete/AutocompleteTelemetry"
 import { postprocessGhostSuggestion } from "../classic-auto-complete/uselessSuggestionFilter"
 
-/**
- * Service for providing FIM-based autocomplete suggestions in ChatTextArea
- */
 export class ChatTextAreaAutocomplete {
 	private model: GhostModel
 	private providerSettingsManager: ProviderSettingsManager
@@ -24,10 +21,6 @@ export class ChatTextAreaAutocomplete {
 		return this.model.reload(this.providerSettingsManager)
 	}
 
-	/**
-	 * Check if we can successfully make a FIM request.
-	 * Validates that model is loaded, has valid API handler, and supports FIM.
-	 */
 	isFimAvailable(): boolean {
 		return this.model.hasValidCredentials() && this.model.supportsFim()
 	}
@@ -147,9 +140,6 @@ TASK: Complete the user's message naturally.
 - Return ONLY the completion text (what comes next), no explanations.`
 	}
 
-	/**
-	 * Build the prefix for FIM completion with visible code context and additional sources
-	 */
 	private async buildPrefix(userText: string, visibleCodeContext?: VisibleCodeContext): Promise<string> {
 		const contextParts: string[] = []
 
@@ -179,9 +169,6 @@ TASK: Complete the user's message naturally.
 		return contextParts.join("\n")
 	}
 
-	/**
-	 * Get clipboard content for context
-	 */
 	private async getClipboardContext(): Promise<string | null> {
 		try {
 			const text = await vscode.env.clipboard.readText()
@@ -195,10 +182,6 @@ TASK: Complete the user's message naturally.
 		return null
 	}
 
-	/**
-	 * Clean the suggestion using the shared postprocessGhostSuggestion filter
-	 * and apply chat-specific filtering
-	 */
 	private cleanSuggestion(suggestion: string, userText: string): string {
 		let cleaned = postprocessGhostSuggestion({
 			suggestion: removePrefixOverlap(suggestion, userText),
