@@ -45,13 +45,6 @@ describe("ChatTextAreaAutocomplete", () => {
 		})
 	})
 
-	describe("isFimAvailable", () => {
-		it("should return false when model is not loaded", () => {
-			const result = autocomplete.isFimAvailable()
-			expect(result).toBe(false)
-		})
-	})
-
 	describe("cleanSuggestion", () => {
 		it("should filter code patterns (comments, preprocessor)", () => {
 			// Comments - filtered by the regex check in cleanSuggestion

@@ -21,10 +21,6 @@ export class ChatTextAreaAutocomplete {
 		return this.model.reload(this.providerSettingsManager)
 	}
 
-	isFimAvailable(): boolean {
-		return this.model.hasValidCredentials() && this.model.supportsFim()
-	}
-
 	async getCompletion(userText: string, visibleCodeContext?: VisibleCodeContext): Promise<{ suggestion: string }> {
 		const startTime = Date.now()
 
