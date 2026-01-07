@@ -11,9 +11,9 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { DEFAULT_HEADERS } from "./constants"
-import { streamSse } from "../../services/continuedev/core/fetch/stream"
-import type { CompletionUsage } from "./openrouter"
+import { DEFAULT_HEADERS } from "./constants" // kilocode_change
+import { streamSse } from "../../services/continuedev/core/fetch/stream" // kilocode_change
+import type { CompletionUsage } from "./openrouter" // kilocode_change
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
