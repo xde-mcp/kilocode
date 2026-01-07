@@ -13,6 +13,7 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { DEFAULT_HEADERS } from "./constants"
 import { streamSse } from "../../services/continuedev/core/fetch/stream"
+import type { CompletionUsage } from "./openrouter"
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
@@ -218,7 +219,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		return modelId.startsWith("codestral-")
 	}
 
-	async completeFim(prefix: string, suffix: string): Promise<string> {
+	async completeFim(prefix: string, suffix: string, _taskId?: string): Promise<string> {
 		let result = ""
 		for await (const chunk of this.streamFim(prefix, suffix)) {
 			result += chunk
@@ -226,7 +227,12 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		return result
 	}
 
-	async *streamFim(prefix: string, suffix: string): AsyncGenerator<string> {
+	async *streamFim(
+		prefix: string,
+		suffix: string,
+		_taskId?: string,
+		onUsage?: (usage: CompletionUsage) => void,
+	): AsyncGenerator<string> {
 		const { id: model, maxTokens } = this.getModel()
 
 		// Get the base URL for the model
@@ -269,6 +275,16 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 			const content = data.choices?.[0]?.delta?.content
 			if (content) {
 				yield content
+			}
+
+			// Call usage callback when available
+			// Note: Mistral FIM API returns usage in the final chunk with prompt_tokens and completion_tokens
+			if (data.usage && onUsage) {
+				onUsage({
+					prompt_tokens: data.usage.prompt_tokens,
+					completion_tokens: data.usage.completion_tokens,
+					total_tokens: data.usage.total_tokens,
+				})
 			}
 		}
 	}
