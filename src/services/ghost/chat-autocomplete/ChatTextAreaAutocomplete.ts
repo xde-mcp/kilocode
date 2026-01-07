@@ -212,17 +212,17 @@ TASK: Complete the user's message naturally.
 			return ""
 		}
 
+		// Filter suggestions that look like code rather than natural language
+		if (suggestion.match(/^(\/\/|\/\*|\*|#)/)) {
+			return ""
+		}
+
 		// Chat-specific: truncate at first newline for single-line suggestions
 		const firstNewline = cleaned.indexOf("\n")
 		if (firstNewline !== -1) {
 			cleaned = cleaned.substring(0, firstNewline)
 		}
 		cleaned = cleaned.trimEnd()
-
-		// Filter suggestions that look like code rather than natural language
-		if (suggestion.match(/^(\/\/|\/\*|\*|#)/)) {
-			return ""
-		}
 
 		return cleaned
 	}
