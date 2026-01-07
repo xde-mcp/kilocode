@@ -1,5 +1,29 @@
 # kilo-code
 
+## 4.143.1
+
+### Patch Changes
+
+- [#4832](https://github.com/Kilo-Org/kilocode/pull/4832) [`22a4ebf`](https://github.com/Kilo-Org/kilocode/commit/22a4ebfcd9f885b6ef9979dc6830226db9a4f397) Thanks [@Drilmo](https://github.com/Drilmo)! - Support Cmd+V for pasting images on macOS in VSCode terminal
+
+    - Detect empty bracketed paste (when clipboard contains image instead of text)
+    - Trigger clipboard image check on empty paste or paste timeout
+    - Add Cmd+V (meta key) support alongside Ctrl+V for image paste
+
+- [#3856](https://github.com/Kilo-Org/kilocode/pull/3856) [`91e0a17`](https://github.com/Kilo-Org/kilocode/commit/91e0a1788963b8be50c58881f11ded96516ab163) Thanks [@markijbema](https://github.com/markijbema)! - Faster autocomplete when using the Mistral provider
+
+- [#4839](https://github.com/Kilo-Org/kilocode/pull/4839) [`abaada6`](https://github.com/Kilo-Org/kilocode/commit/abaada6b7ced6d3f4e37e69441e722e453289b81) Thanks [@markijbema](https://github.com/markijbema)! - Enable autocomplete by default in the JetBrains extension
+
+- [#4831](https://github.com/Kilo-Org/kilocode/pull/4831) [`a9cbb2c`](https://github.com/Kilo-Org/kilocode/commit/a9cbb2cebd75e0c675dc3b55e7a1653ccb93921b) Thanks [@Drilmo](https://github.com/Drilmo)! - Fix paste truncation in VSCode terminal
+
+    - Prevent React StrictMode cleanup from interrupting paste operations
+    - Remove `completePaste()` and `clearBuffers()` from useEffect cleanup
+    - Paste buffer refs now persist across React re-mounts and flush properly when paste end marker is received
+
+- [#4847](https://github.com/Kilo-Org/kilocode/pull/4847) [`8ee812a`](https://github.com/Kilo-Org/kilocode/commit/8ee812a18da5da691bf76ee5c5d9d94cfb678f25) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Disable structured outputs for Anthropic models, because the tool schema doesn't yet support it
+
+- [#4843](https://github.com/Kilo-Org/kilocode/pull/4843) [`0e3520a`](https://github.com/Kilo-Org/kilocode/commit/0e3520a0aa9a74f7a28af1f820558d2343fd4fba) Thanks [@markijbema](https://github.com/markijbema)! - Filter unhelpful suggestions in chat autocomplete
+
 ## 4.143.0
 
 ### Minor Changes
