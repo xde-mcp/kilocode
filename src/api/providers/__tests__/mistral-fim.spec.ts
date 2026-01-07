@@ -62,54 +62,6 @@ describe("MistralHandler FIM support", () => {
 		})
 	})
 
-	describe("completeFim", () => {
-		it("handles errors correctly", async () => {
-			const handler = new MistralHandler({
-				...mockOptions,
-				apiModelId: "codestral-latest",
-			})
-
-			const mockResponse = {
-				ok: false,
-				status: 500,
-				statusText: "Internal Server Error",
-				text: vitest.fn().mockResolvedValue("Error details"),
-			}
-
-			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
-
-			await expect(handler.completeFim("prefix", "suffix")).rejects.toThrow(
-				"FIM streaming failed: 500 Internal Server Error - Error details",
-			)
-		})
-
-		it("aggregates all chunks", async () => {
-			const handler = new MistralHandler({
-				...mockOptions,
-				apiModelId: "codestral-latest",
-			})
-
-			// Mock streamSse to return the expected data
-			;(streamSse as any).mockImplementation(async function* () {
-				yield { choices: [{ delta: { content: "Hello" } }] }
-				yield { choices: [{ delta: { content: " " } }] }
-				yield { choices: [{ delta: { content: "World" } }] }
-			})
-
-			const mockResponse = {
-				ok: true,
-				status: 200,
-				statusText: "OK",
-			} as Response
-
-			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
-
-			const result = await handler.completeFim("prefix", "suffix")
-
-			expect(result).toBe("Hello World")
-		})
-	})
-
 	describe("streamFim", () => {
 		it("yields chunks correctly", async () => {
 			const handler = new MistralHandler({

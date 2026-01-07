@@ -219,14 +219,6 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		return modelId.startsWith("codestral-")
 	}
 
-	async completeFim(prefix: string, suffix: string, _taskId?: string): Promise<string> {
-		let result = ""
-		for await (const chunk of this.streamFim(prefix, suffix)) {
-			result += chunk
-		}
-		return result
-	}
-
 	async *streamFim(
 		prefix: string,
 		suffix: string,
