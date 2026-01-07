@@ -3,6 +3,7 @@ import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
 import { AutocompleteContext, VisibleCodeContext } from "../types"
 import { ApiStreamChunk } from "../../../api/transform/stream"
+import { removePrefixOverlap } from "../../continuedev/core/autocomplete/postprocessing/removePrefixOverlap.js"
 import { AutocompleteTelemetry } from "../classic-auto-complete/AutocompleteTelemetry"
 import { postprocessGhostSuggestion } from "../classic-auto-complete/uselessSuggestionFilter"
 
@@ -200,9 +201,12 @@ TASK: Complete the user's message naturally.
 	 * and apply chat-specific filtering
 	 */
 	private cleanSuggestion(suggestion: string, userText: string): string {
+		// First, remove any prefix overlap (LLM might repeat what user typed)
+		const withoutOverlap = removePrefixOverlap(suggestion, userText)
+
 		// Use the shared postprocessing pipeline from uselessSuggestionFilter
 		const processed = postprocessGhostSuggestion({
-			suggestion,
+			suggestion: withoutOverlap,
 			prefix: userText,
 			suffix: "", // Chat textarea has no suffix
 			model: this.model.getModelName() ?? "unknown",
