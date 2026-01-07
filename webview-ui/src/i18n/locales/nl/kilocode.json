@@ -50,7 +50,6 @@
 				"title": "Provider Routing",
 				"managedByOrganization": "Beheer Provider Routing op organisatieniveau",
 				"createOrganization": "Maak organisatie aan om Provider Routing te beheren",
-				"description": "Kilo Code routeert verzoeken naar de beste beschikbare providers voor uw model. Standaard worden verzoeken verdeeld over de beste providers om de uptime te maximaliseren. U kunt echter een specifieke provider kiezen om voor dit model te gebruiken.",
 				"sorting": {
 					"default": "Standaard provider sortering",
 					"price": "Voorkeur voor providers met lagere prijs",
@@ -268,7 +267,6 @@
 				"buyCredits": "Tegoed kopen →"
 			},
 			"keybindingNotFound": "niet gevonden",
-			"noModelConfigured": "Geen geschikt autocomplete-model gevonden. Configureer een provider in de API-instellingen.",
 			"configureAutocompleteProfile": "Gebruik elk model door naar profielen te gaan en een Profiel van het Profieltype Autocomplete te configureren."
 		}
 	},
