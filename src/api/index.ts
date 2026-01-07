@@ -4,6 +4,7 @@ import OpenAI from "openai"
 import type { ProviderSettings, ModelInfo, ToolProtocol } from "@roo-code/types"
 
 import { ApiStream } from "./transform/stream"
+import type { FimHandler } from "./providers/kilocode/FimHandler" // kilocode_change
 
 import {
 	GlamaHandler, // kilocode_change
@@ -137,8 +138,32 @@ export interface ApiHandler {
 	 */
 	countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number>
 
+	// kilocode_change start
+	/**
+	 * Returns a FimHandler if the provider supports FIM (Fill-In-the-Middle) completions,
+	 * or undefined if FIM is not supported.
+	 *
+	 * This replaces the previous pattern of checking `supportsFim()` and then calling
+	 * FIM methods directly on the handler. Instead, callers should:
+	 *
+	 * ```typescript
+	 * const fimHandler = apiHandler.fimSupport()
+	 * if (fimHandler) {
+	 *   for await (const chunk of fimHandler.streamFim(prefix, suffix)) {
+	 *     // handle chunk
+	 *   }
+	 * }
+	 * ```
+	 */
+	fimSupport?: () => FimHandler | undefined
+	// kilocode_change end
+
 	contextWindow?: number // kilocode_change: Add contextWindow property for virtual quota fallback
 }
+
+// kilocode_change start
+export type { FimHandler } from "./providers/kilocode/FimHandler"
+// kilocode_change end
 
 export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 	const { apiProvider, ...options } = configuration

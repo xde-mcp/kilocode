@@ -20,6 +20,7 @@ import { KILOCODE_TOKEN_REQUIRED_ERROR } from "../../shared/kilocode/errorUtils"
 import { DEFAULT_HEADERS } from "./constants"
 import { streamSse } from "../../services/continuedev/core/fetch/stream"
 import { getEditorNameHeader } from "../../core/kilocode/wrapper"
+import type { FimHandler } from "./kilocode/FimHandler"
 
 /**
  * A custom OpenRouter handler that overrides the getModel function
@@ -143,12 +144,37 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		return this.getModel()
 	}
 
-	supportsFim(): boolean {
+	/**
+	 * Returns a FimHandler if the current model supports FIM (Fill-In-the-Middle) completions,
+	 * or undefined if FIM is not supported.
+	 *
+	 * FIM is only supported for codestral models.
+	 */
+	fimSupport(): FimHandler | undefined {
 		const modelId = this.options.kilocodeModel ?? this.defaultModel
-		return modelId.includes("codestral")
+		if (!modelId.includes("codestral")) {
+			return undefined
+		}
+
+		// Return a FimHandler implementation
+		return {
+			streamFim: this.streamFim.bind(this),
+			getModel: () => {
+				const { id, info, maxTokens } = this.getModel()
+				return { id, info, maxTokens }
+			},
+			getTotalCost: (usage: CompletionUsage) => this.getTotalCost(usage),
+		}
 	}
 
-	async *streamFim(
+	/**
+	 * @deprecated Use fimSupport() instead. This method is kept for backward compatibility.
+	 */
+	supportsFim(): boolean {
+		return this.fimSupport() !== undefined
+	}
+
+	private async *streamFim(
 		prefix: string,
 		suffix: string,
 		taskId?: string,

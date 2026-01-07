@@ -14,6 +14,7 @@ import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from ".
 import { DEFAULT_HEADERS } from "./constants" // kilocode_change
 import { streamSse } from "../../services/continuedev/core/fetch/stream" // kilocode_change
 import type { CompletionUsage } from "./openrouter" // kilocode_change
+import type { FimHandler } from "./kilocode/FimHandler" // kilocode_change
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
@@ -214,12 +215,43 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 	}
 
 	// kilocode_change start
-	supportsFim(): boolean {
+	/**
+	 * Returns a FimHandler if the current model supports FIM (Fill-In-the-Middle) completions,
+	 * or undefined if FIM is not supported.
+	 *
+	 * FIM is only supported for codestral models.
+	 */
+	fimSupport(): FimHandler | undefined {
 		const modelId = this.options.apiModelId ?? mistralDefaultModelId
-		return modelId.startsWith("codestral-")
+		if (!modelId.startsWith("codestral-")) {
+			return undefined
+		}
+
+		// Return a FimHandler implementation
+		return {
+			streamFim: this.streamFim.bind(this),
+			getModel: () => {
+				const { id, info, maxTokens } = this.getModel()
+				return { id, info, maxTokens }
+			},
+			getTotalCost: (usage: CompletionUsage) => {
+				// Calculate cost based on model pricing
+				const { info } = this.getModel()
+				const inputCost = ((usage.prompt_tokens ?? 0) / 1_000_000) * (info.inputPrice ?? 0)
+				const outputCost = ((usage.completion_tokens ?? 0) / 1_000_000) * (info.outputPrice ?? 0)
+				return inputCost + outputCost
+			},
+		}
 	}
 
-	async *streamFim(
+	/**
+	 * @deprecated Use fimSupport() instead. This method is kept for backward compatibility.
+	 */
+	supportsFim(): boolean {
+		return this.fimSupport() !== undefined
+	}
+
+	private async *streamFim(
 		prefix: string,
 		suffix: string,
 		_taskId?: string,

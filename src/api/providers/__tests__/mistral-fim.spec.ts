@@ -24,20 +24,53 @@ describe("MistralHandler FIM support", () => {
 
 	beforeEach(() => vitest.clearAllMocks())
 
-	describe("supportsFim", () => {
-		it("returns true for codestral models", () => {
+	describe("fimSupport", () => {
+		it("returns FimHandler for codestral models", () => {
 			const handler = new MistralHandler({
 				...mockOptions,
 				apiModelId: "codestral-latest",
 			})
 
-			expect(handler.supportsFim()).toBe(true)
+			const fimHandler = handler.fimSupport()
+			expect(fimHandler).toBeDefined()
+			expect(typeof fimHandler?.streamFim).toBe("function")
+			expect(typeof fimHandler?.getModel).toBe("function")
+			expect(typeof fimHandler?.getTotalCost).toBe("function")
 		})
 
-		it("returns true for codestral-2405", () => {
+		it("returns FimHandler for codestral-2405", () => {
 			const handler = new MistralHandler({
 				...mockOptions,
 				apiModelId: "codestral-2405",
+			})
+
+			expect(handler.fimSupport()).toBeDefined()
+		})
+
+		it("returns undefined for non-codestral models", () => {
+			const handler = new MistralHandler({
+				...mockOptions,
+				apiModelId: "mistral-large-latest",
+			})
+
+			expect(handler.fimSupport()).toBeUndefined()
+		})
+
+		it("returns FimHandler when no model is specified (defaults to codestral-latest)", () => {
+			const handler = new MistralHandler({
+				mistralApiKey: "test-api-key",
+			})
+
+			// Default model is codestral-latest, which supports FIM
+			expect(handler.fimSupport()).toBeDefined()
+		})
+	})
+
+	describe("supportsFim (deprecated)", () => {
+		it("returns true for codestral models", () => {
+			const handler = new MistralHandler({
+				...mockOptions,
+				apiModelId: "codestral-latest",
 			})
 
 			expect(handler.supportsFim()).toBe(true)
@@ -51,18 +84,9 @@ describe("MistralHandler FIM support", () => {
 
 			expect(handler.supportsFim()).toBe(false)
 		})
-
-		it("returns true when no model is specified (defaults to codestral-latest)", () => {
-			const handler = new MistralHandler({
-				mistralApiKey: "test-api-key",
-			})
-
-			// Default model is codestral-latest, which supports FIM
-			expect(handler.supportsFim()).toBe(true)
-		})
 	})
 
-	describe("streamFim", () => {
+	describe("streamFim via fimSupport()", () => {
 		it("yields chunks correctly", async () => {
 			const handler = new MistralHandler({
 				...mockOptions,
@@ -85,8 +109,10 @@ describe("MistralHandler FIM support", () => {
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
 			const chunks: string[] = []
+			const fimHandler = handler.fimSupport()
+			expect(fimHandler).toBeDefined()
 
-			for await (const chunk of handler.streamFim("prefix", "suffix")) {
+			for await (const chunk of fimHandler!.streamFim("prefix", "suffix")) {
 				chunks.push(chunk)
 			}
 
@@ -109,7 +135,9 @@ describe("MistralHandler FIM support", () => {
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
-			const generator = handler.streamFim("prefix", "suffix")
+			const fimHandler = handler.fimSupport()
+			expect(fimHandler).toBeDefined()
+			const generator = fimHandler!.streamFim("prefix", "suffix")
 			await expect(generator.next()).rejects.toThrow("FIM streaming failed: 400 Bad Request - Invalid request")
 		})
 
@@ -131,7 +159,9 @@ describe("MistralHandler FIM support", () => {
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
-			const generator = handler.streamFim("prefix", "suffix")
+			const fimHandler = handler.fimSupport()
+			expect(fimHandler).toBeDefined()
+			const generator = fimHandler!.streamFim("prefix", "suffix")
 			await generator.next()
 
 			expect(global.fetch).toHaveBeenCalledWith(
@@ -166,7 +196,9 @@ describe("MistralHandler FIM support", () => {
 
 			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
-			const generator = handler.streamFim("prefix", "suffix")
+			const fimHandler = handler.fimSupport()
+			expect(fimHandler).toBeDefined()
+			const generator = fimHandler!.streamFim("prefix", "suffix")
 			await generator.next()
 
 			expect(global.fetch).toHaveBeenCalledWith(
