@@ -1,3 +1,4 @@
+// kilocode_change new file
 import { modelIdKeysByProvider, ProviderName } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
@@ -8,7 +9,6 @@ import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrout
 import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
 import { ResponseMetaData } from "./types"
 
-// kilocode_change start
 /**
  * Interface for handlers that support FIM (Fill-in-the-Middle) completions.
  * Uses duck typing - any handler implementing these methods can be used for FIM.
@@ -30,7 +30,6 @@ function isFimCapable(handler: ApiHandler): handler is ApiHandler & FimCapableHa
 		(handler as any).supportsFim() === true
 	)
 }
-// kilocode_change end
 
 // Convert PROVIDERS array to a lookup map for display names
 const PROVIDER_DISPLAY_NAMES = Object.fromEntries(PROVIDERS.map(({ value, label }) => [value, label])) as Record<
@@ -110,7 +109,6 @@ export class GhostModel {
 		}
 	}
 
-	// kilocode_change start
 	public supportsFim(): boolean {
 		if (!this.apiHandler) {
 			return false
@@ -166,7 +164,6 @@ export class GhostModel {
 			cacheReadTokens,
 		}
 	}
-	// kilocode_change end
 
 	/**
 	 * Generate response with streaming callback support
