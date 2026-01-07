@@ -15,8 +15,14 @@ export class GhostStatusBar {
 
 	private init() {
 		this.statusBar.text = t("kilocode:ghost.statusBar.enabled")
-		this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.basic")
+		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.basic"))
 		this.statusBar.show()
+	}
+
+	private createMarkdownTooltip(text: string): vscode.MarkdownString {
+		const markdown = new vscode.MarkdownString(text)
+		markdown.isTrusted = true
+		return markdown
 	}
 
 	private updateVisible() {
@@ -47,7 +53,7 @@ export class GhostStatusBar {
 
 	private renderTokenError() {
 		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
-		this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.tokenError")
+		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.tokenError"))
 	}
 
 	private formatTime(timestamp: number): string {
@@ -62,28 +68,33 @@ export class GhostStatusBar {
 		const snoozedSuffix = this.props.snoozed ? ` (${t("kilocode:ghost.statusBar.snoozed")})` : ""
 		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} (${this.props.completionCount})${snoozedSuffix}`
 
-		this.statusBar.tooltip = [
-			t("kilocode:ghost.statusBar.tooltip.completionSummary", {
-				count: this.props.completionCount,
-				startTime: sessionStartTime,
-				endTime: now,
-				cost: this.humanFormatSessionCost(),
-			}),
-			this.props.model && this.props.provider
-				? t("kilocode:ghost.statusBar.tooltip.providerInfo", {
-						model: this.props.model,
-						provider: this.props.provider,
-					})
-				: undefined,
-		]
-			.filter(Boolean)
-			.join("\n\n")
+		this.statusBar.tooltip = this.createMarkdownTooltip(
+			[
+				t("kilocode:ghost.statusBar.tooltip.completionSummary", {
+					count: this.props.completionCount,
+					startTime: sessionStartTime,
+					endTime: now,
+					cost: this.humanFormatSessionCost(),
+				}),
+				this.props.model && this.props.provider
+					? t("kilocode:ghost.statusBar.tooltip.providerInfo", {
+							model: this.props.model,
+							provider: this.props.provider,
+						})
+					: undefined,
+			]
+				.filter(Boolean)
+				.join("\n\n"),
+		)
 	}
 
 	public render() {
 		if (!this.props.hasValidToken) {
 			if (this.props.hasKilocodeProfileWithNoBalance) {
 				return this.renderNoCreditsError()
+			}
+			if (this.props.hasNoUsableProvider) {
+				return this.renderNoUsableProviderError()
 			}
 			return this.renderTokenError()
 		}
@@ -92,6 +103,11 @@ export class GhostStatusBar {
 
 	private renderNoCreditsError() {
 		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
-		this.statusBar.tooltip = t("kilocode:ghost.statusBar.tooltip.noCredits")
+		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.noCredits"))
+	}
+
+	private renderNoUsableProviderError() {
+		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
+		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.noUsableProvider"))
 	}
 }

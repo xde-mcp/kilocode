@@ -139,6 +139,7 @@ export interface GhostStatusBarStateProps {
 	profileName?: string | null
 	hasValidToken: boolean
 	hasKilocodeProfileWithNoBalance?: boolean
+	hasNoUsableProvider?: boolean
 	totalSessionCost: number
 	completionCount: number
 	sessionStartTime: number

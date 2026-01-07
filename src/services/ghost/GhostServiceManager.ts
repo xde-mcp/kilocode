@@ -320,6 +320,12 @@ export class GhostServiceManager {
 		return this.model.loaded && this.model.hasValidCredentials()
 	}
 
+	private hasNoUsableProvider(): boolean {
+		// We have no usable provider if the model is loaded but has no valid credentials
+		// and it's not because of a kilocode profile with no balance (that's a different error)
+		return this.model.loaded && !this.model.hasValidCredentials() && !this.model.hasKilocodeProfileWithNoBalance
+	}
+
 	private updateCostTracking(cost: number, inputTokens: number, outputTokens: number): void {
 		this.completionCount++
 		this.sessionCost += cost
@@ -339,6 +345,7 @@ export class GhostServiceManager {
 			profileName: this.model.profileName,
 			hasValidToken: this.hasValidApiToken(),
 			hasKilocodeProfileWithNoBalance: this.model.hasKilocodeProfileWithNoBalance,
+			hasNoUsableProvider: this.hasNoUsableProvider(),
 			totalSessionCost: this.sessionCost,
 			completionCount: this.completionCount,
 			sessionStartTime: this.sessionStartTime,

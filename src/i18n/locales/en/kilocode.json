@@ -104,8 +104,9 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (disabled)",
-				"tokenError": "A valid token must be set to use Autocomplete",
-				"noCredits": "Your Kilo Code account has no credits. To use autocomplete, please add credits to your account.",
+				"tokenError": "A valid token must be set to use Autocomplete. [Open Settings](command:kilo-code.settingsButtonClicked)",
+				"noCredits": "Your Kilo Code account has no credits. To use autocomplete, please add credits to your account. [Open Settings](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "No autocomplete model configured. To enable autocomplete, add a profile with a supported provider. [Open Settings](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "Session total cost:",
 				"provider": "Provider:",
 				"model": "Model:",
