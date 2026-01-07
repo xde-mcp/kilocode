@@ -228,6 +228,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 		const { id: model, maxTokens } = this.getModel()
 
 		// Get the base URL for the model
+		// copy pasted from constructor, be sure to keep in sync
 		const baseUrl = model.startsWith("codestral-")
 			? this.options.mistralCodestralUrl || "https://codestral.mistral.ai"
 			: "https://api.mistral.ai"

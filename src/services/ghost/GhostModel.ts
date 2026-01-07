@@ -3,6 +3,7 @@ import { modelIdKeysByProvider, ProviderName } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
+import { CompletionUsage } from "../../api/providers/openrouter"
 import { ApiStreamChunk } from "../../api/transform/stream"
 import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrouter"
@@ -15,9 +16,14 @@ import { ResponseMetaData } from "./types"
  */
 interface FimCapableHandler {
 	supportsFim(): boolean
-	streamFim(prefix: string, suffix: string, taskId?: string, onUsage?: (usage: any) => void): AsyncGenerator<string>
+	streamFim(
+		prefix: string,
+		suffix: string,
+		taskId?: string,
+		onUsage?: (usage: CompletionUsage) => void,
+	): AsyncGenerator<string>
 	getModel(): { id: string; info: any; maxTokens?: number }
-	getTotalCost?(usage: any): number
+	getTotalCost?(usage: CompletionUsage): number
 }
 
 /**
@@ -139,9 +145,9 @@ export class GhostModel {
 
 		console.log("USED MODEL (FIM)", this.apiHandler.getModel())
 
-		let usage: any
+		let usage: CompletionUsage | undefined
 
-		for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId, (u: any) => {
+		for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId, (u) => {
 			usage = u
 		})) {
 			onChunk(chunk)
@@ -149,9 +155,7 @@ export class GhostModel {
 
 		// Calculate cost if the handler supports it (duck typing)
 		const cost =
-			usage && typeof (this.apiHandler as any).getTotalCost === "function"
-				? (this.apiHandler as any).getTotalCost(usage)
-				: 0
+			usage && typeof this.apiHandler.getTotalCost === "function" ? this.apiHandler.getTotalCost(usage) : 0
 		const inputTokens = usage?.prompt_tokens ?? 0
 		const outputTokens = usage?.completion_tokens ?? 0
 		const cacheReadTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0
