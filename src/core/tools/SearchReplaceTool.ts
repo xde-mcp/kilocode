@@ -106,6 +106,8 @@ export class SearchReplaceTool extends BaseTool<"search_replace"> {
 			let fileContent: string
 			try {
 				fileContent = await fs.readFile(absolutePath, "utf8")
+				// Normalize line endings to LF for consistent matching
+				fileContent = fileContent.replace(/\r\n/g, "\n")
 			} catch (error) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("search_replace")

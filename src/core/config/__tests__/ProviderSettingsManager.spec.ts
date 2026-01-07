@@ -80,6 +80,7 @@ describe("ProviderSettingsManager", () => {
 						openAiHeadersMigrated: true,
 						consecutiveMistakeLimitMigrated: true,
 						todoListEnabledMigrated: true,
+						claudeCodeLegacySettingsMigrated: true,
 					},
 				}),
 			)

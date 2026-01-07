@@ -19,7 +19,6 @@ import ProfileView from "./components/kilocode/profile/ProfileView" // kilocode_
 import McpView from "./components/mcp/McpView" // kilocode_change
 import AuthView from "./components/kilocode/auth/AuthView" // kilocode_change
 import { MarketplaceView } from "./components/marketplace/MarketplaceView"
-import { HumanRelayDialog } from "./components/human-relay/HumanRelayDialog"
 import BottomControls from "./components/kilocode/BottomControls" // kilocode_change
 import { MemoryService } from "./services/MemoryService" // kilocode_change
 import { CheckpointRestoreDialog } from "./components/chat/CheckpointRestoreDialog"
@@ -34,12 +33,6 @@ import { useKiloIdentity } from "./utils/kilocode/useKiloIdentity"
 import { MemoryWarningBanner } from "./kilocode/MemoryWarningBanner"
 
 type Tab = "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "account" | "cloud" | "profile" | "auth" // kilocode_change: add "profile" and "auth"
-
-interface HumanRelayDialogState {
-	isOpen: boolean
-	requestId: string
-	promptText: string
-}
 
 interface DeleteMessageDialogState {
 	isOpen: boolean
@@ -59,8 +52,6 @@ interface EditMessageDialogState {
 const MemoizedDeleteMessageDialog = React.memo(DeleteMessageDialog)
 const MemoizedEditMessageDialog = React.memo(EditMessageDialog)
 const MemoizedCheckpointRestoreDialog = React.memo(CheckpointRestoreDialog)
-const MemoizedHumanRelayDialog = React.memo(HumanRelayDialog)
-
 const tabsByMessageAction: Partial<Record<NonNullable<ExtensionMessage["action"]>, Tab>> = {
 	chatButtonClicked: "chat",
 	settingsButtonClicked: "settings",
@@ -105,12 +96,6 @@ const App = () => {
 	const [authReturnTo, setAuthReturnTo] = useState<"chat" | "settings">("chat")
 	const [authProfileName, setAuthProfileName] = useState<string | undefined>(undefined)
 	const [settingsEditingProfile, setSettingsEditingProfile] = useState<string | undefined>(undefined)
-
-	const [humanRelayDialogState, setHumanRelayDialogState] = useState<HumanRelayDialogState>({
-		isOpen: false,
-		requestId: "",
-		promptText: "",
-	})
 
 	const [deleteMessageDialogState, setDeleteMessageDialogState] = useState<DeleteMessageDialogState>({
 		isOpen: false,
@@ -225,11 +210,6 @@ const App = () => {
 						// kilocode_change end
 					}
 				}
-			}
-
-			if (message.type === "showHumanRelayDialog" && message.requestId && message.promptText) {
-				const { requestId, promptText } = message
-				setHumanRelayDialogState({ isOpen: true, requestId, promptText })
 			}
 
 			if (message.type === "showDeleteMessageDialog" && message.messageTs) {
@@ -369,14 +349,6 @@ const App = () => {
 				isHidden={tab !== "chat"}
 				showAnnouncement={showAnnouncement}
 				hideAnnouncement={() => setShowAnnouncement(false)}
-			/>
-			<MemoizedHumanRelayDialog
-				isOpen={humanRelayDialogState.isOpen}
-				requestId={humanRelayDialogState.requestId}
-				promptText={humanRelayDialogState.promptText}
-				onClose={() => setHumanRelayDialogState((prev) => ({ ...prev, isOpen: false }))}
-				onSubmit={(requestId, text) => vscode.postMessage({ type: "humanRelayResponse", requestId, text })}
-				onCancel={(requestId) => vscode.postMessage({ type: "humanRelayCancel", requestId })}
 			/>
 			{deleteMessageDialogState.hasCheckpoint ? (
 				<MemoizedCheckpointRestoreDialog

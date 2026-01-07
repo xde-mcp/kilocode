@@ -62,9 +62,10 @@ interface ModelPickerProps {
 		value: ProviderSettings[K],
 		isUserAction?: boolean,
 	) => void
-	organizationAllowList: OrganizationAllowList
+	organizationAllowList?: OrganizationAllowList
 	errorMessage?: string
 	simplifySettings?: boolean
+	hidePricing?: boolean
 }
 
 export const ModelPicker = ({

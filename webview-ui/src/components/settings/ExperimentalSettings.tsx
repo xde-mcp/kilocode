@@ -17,6 +17,7 @@ import { Section } from "./Section"
 import { ExperimentalFeature } from "./ExperimentalFeature"
 import { FastApplySettings } from "./FastApplySettings" // kilocode_change: Use Fast Apply version
 import { ImageGenerationSettings } from "./ImageGenerationSettings"
+import { CustomToolsSettings } from "./CustomToolsSettings"
 
 type ExperimentalSettingsProps = HTMLAttributes<HTMLDivElement> & {
 	experiments: Experiments
@@ -145,6 +146,15 @@ export const ExperimentalSettings = ({
 									setKiloCodeImageApiKey={setKiloCodeImageApiKey}
 									setImageGenerationSelectedModel={setImageGenerationSelectedModel}
 									currentProfileKilocodeToken={currentProfileKilocodeToken}
+								/>
+							)
+						}
+						if (config[0] === "CUSTOM_TOOLS") {
+							return (
+								<CustomToolsSettings
+									key={config[0]}
+									enabled={experiments[EXPERIMENT_IDS.CUSTOM_TOOLS] ?? false}
+									onChange={(enabled) => setExperimentEnabled(EXPERIMENT_IDS.CUSTOM_TOOLS, enabled)}
 								/>
 							)
 						}

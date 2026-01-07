@@ -3,23 +3,28 @@ import { serializeError } from "serialize-error"
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
+import { ConsecutiveMistakeError } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
+import { customToolRegistry } from "@roo-code/core"
+
+import { t } from "../../i18n"
 
 import { defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import type { ToolParamName, ToolResponse, ToolUse, McpToolUse } from "../../shared/tools"
-import { Package } from "../../shared/package"
-import { t } from "../../i18n"
+import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
+
 import { AskIgnoredError } from "../task/AskIgnoredError"
+import { Task } from "../task/Task"
 
 import { fetchInstructionsTool } from "../tools/FetchInstructionsTool"
 import { listFilesTool } from "../tools/ListFilesTool"
 import { readFileTool } from "../tools/ReadFileTool"
-import { getSimpleReadFileToolDescription, simpleReadFileTool } from "../tools/simpleReadFileTool"
-import { shouldUseSingleFileRead, TOOL_PROTOCOL } from "@roo-code/types"
+import { TOOL_PROTOCOL } from "@roo-code/types"
 import { writeToFileTool } from "../tools/WriteToFileTool"
 import { applyDiffTool } from "../tools/MultiApplyDiffTool"
 import { searchAndReplaceTool } from "../tools/SearchAndReplaceTool"
 import { searchReplaceTool } from "../tools/SearchReplaceTool"
+import { editFileTool } from "../tools/EditFileTool"
 import { applyPatchTool } from "../tools/ApplyPatchTool"
 import { searchFilesTool } from "../tools/SearchFilesTool"
 import { browserActionTool } from "../tools/BrowserActionTool"
@@ -30,17 +35,14 @@ import { askFollowupQuestionTool } from "../tools/AskFollowupQuestionTool"
 import { switchModeTool } from "../tools/SwitchModeTool"
 import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { newTaskTool } from "../tools/NewTaskTool"
-
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
 import { generateImageTool } from "../tools/GenerateImageTool"
+import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
+import { validateToolUse } from "../tools/validateToolUse"
+import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
 
 import { formatResponse } from "../prompts/responses"
-import { validateToolUse } from "../tools/validateToolUse"
-import { Task } from "../task/Task"
-import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
-import { experiments, EXPERIMENT_IDS } from "../../shared/experiments"
-import { applyDiffTool as applyDiffToolClass } from "../tools/ApplyDiffTool"
 
 import { yieldPromise } from "../kilocode"
 import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
@@ -362,7 +364,7 @@ export async function presentAssistantMessage(cline: Task) {
 		case "tool_use": {
 			// Fetch state early so it's available for toolDescription and validation
 			const state = await cline.providerRef.deref()?.getState()
-			const { mode, customModes, experiments: stateExperiments, apiConfiguration } = state ?? {}
+			const { mode, customModes, experiments: stateExperiments } = state ?? {}
 
 			// kilocode_change start
 			// Fast Apply + native tool aliases compatibility:
@@ -384,18 +386,12 @@ export async function presentAssistantMessage(cline: Task) {
 					case "execute_command":
 						return `[${block.name} for '${block.params.command}']`
 					case "read_file":
-						// Check if this model should use the simplified description
-						const modelId = cline.api.getModel().id
-						if (shouldUseSingleFileRead(modelId)) {
-							return getSimpleReadFileToolDescription(block.name, block.params)
-						} else {
-							// Prefer native typed args when available; fall back to legacy params
-							// Check if nativeArgs exists (native protocol)
-							if (block.nativeArgs) {
-								return readFileTool.getReadFileToolDescription(block.name, block.nativeArgs)
-							}
-							return readFileTool.getReadFileToolDescription(block.name, block.params)
+						// Prefer native typed args when available; fall back to legacy params
+						// Check if nativeArgs exists (native protocol)
+						if (block.nativeArgs) {
+							return readFileTool.getReadFileToolDescription(block.name, block.nativeArgs)
 						}
+						return readFileTool.getReadFileToolDescription(block.name, block.params)
 					case "fetch_instructions":
 						return `[${block.name} for '${block.params.task}']`
 					case "write_to_file":
@@ -432,6 +428,8 @@ export async function presentAssistantMessage(cline: Task) {
 						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change end
 					case "search_replace":
+						return `[${block.name} for '${block.params.file_path}']`
+					case "edit_file":
 						return `[${block.name} for '${block.params.file_path}']`
 					case "apply_patch":
 						return `[${block.name}]`
@@ -754,8 +752,11 @@ export async function presentAssistantMessage(cline: Task) {
 			}
 
 			if (!block.partial) {
-				cline.recordToolUsage(block.name)
-				TelemetryService.instance.captureToolUsage(cline.taskId, block.name, toolProtocol)
+				// Check if this is a custom tool - if so, record as "custom_tool" (like MCP tools)
+				const isCustomTool = stateExperiments?.customTools && customToolRegistry.has(block.name)
+				const recordName = isCustomTool ? "custom_tool" : block.name
+				cline.recordToolUsage(recordName)
+				TelemetryService.instance.captureToolUsage(cline.taskId, recordName, toolProtocol)
 			}
 
 			// Validate tool use before execution - ONLY for complete (non-partial) blocks.
@@ -788,6 +789,7 @@ export async function presentAssistantMessage(cline: Task) {
 					// This prevents the stream from being interrupted with "Response interrupted by tool use result"
 					// which would cause the extension to appear to hang
 					const errorContent = formatResponse.toolError(error.message, toolProtocol)
+
 					if (toolProtocol === TOOL_PROTOCOL.NATIVE && toolCallId) {
 						// For native protocol, push tool_result directly without setting didAlreadyUseTool
 						cline.userMessageContent.push({
@@ -800,6 +802,7 @@ export async function presentAssistantMessage(cline: Task) {
 						// For XML protocol, use the standard pushToolResult
 						pushToolResult(errorContent)
 					}
+
 					break
 				}
 			}
@@ -830,10 +833,21 @@ export async function presentAssistantMessage(cline: Task) {
 
 						// Add user feedback to chat.
 						await cline.say("user_feedback", text, images)
-
-						// Track tool repetition in telemetry.
-						TelemetryService.instance.captureConsecutiveMistakeError(cline.taskId)
 					}
+
+					// Track tool repetition in telemetry via PostHog exception tracking and event.
+					TelemetryService.instance.captureConsecutiveMistakeError(cline.taskId)
+					TelemetryService.instance.captureException(
+						new ConsecutiveMistakeError(
+							`Tool repetition limit reached for ${block.name}`,
+							cline.taskId,
+							cline.consecutiveMistakeCount,
+							cline.consecutiveMistakeLimit,
+							"tool_repetition",
+							cline.apiConfiguration.apiProvider,
+							cline.api.getModel().id,
+						),
+					)
 
 					// Return tool result message about the repetition
 					pushToolResult(
@@ -928,6 +942,16 @@ export async function presentAssistantMessage(cline: Task) {
 						toolProtocol,
 					})
 					break
+				case "edit_file":
+					await checkpointSaveAndMark(cline)
+					await editFileTool.handle(cline, block as ToolUse<"edit_file">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+						toolProtocol,
+					})
+					break
 				case "apply_patch":
 					await checkpointSaveAndMark(cline)
 					await applyPatchTool.handle(cline, block as ToolUse<"apply_patch">, {
@@ -947,29 +971,14 @@ export async function presentAssistantMessage(cline: Task) {
 					break
 				// kilocode_change end
 				case "read_file":
-					// Check if this model should use the simplified single-file read tool
-					// Only use simplified tool for XML protocol - native protocol works with standard tool
-					const modelId = cline.api.getModel().id
-					if (shouldUseSingleFileRead(modelId) && toolProtocol !== TOOL_PROTOCOL.NATIVE) {
-						await simpleReadFileTool(
-							cline,
-							block,
-							askApproval,
-							handleError,
-							pushToolResult,
-							removeClosingTag,
-							toolProtocol,
-						)
-					} else {
-						// Type assertion is safe here because we're in the "read_file" case
-						await readFileTool.handle(cline, block as ToolUse<"read_file">, {
-							askApproval,
-							handleError,
-							pushToolResult,
-							removeClosingTag,
-							toolProtocol,
-						})
-					}
+					// Type assertion is safe here because we're in the "read_file" case
+					await readFileTool.handle(cline, block as ToolUse<"read_file">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+						toolProtocol,
+					})
 					break
 				case "fetch_instructions":
 					await fetchInstructionsTool.handle(cline, block as ToolUse<"fetch_instructions">, {
@@ -1121,9 +1130,8 @@ export async function presentAssistantMessage(cline: Task) {
 					})
 					break
 				default: {
-					// Handle unknown/invalid tool names
+					// Handle unknown/invalid tool names OR custom tools
 					// This is critical for native protocol where every tool_use MUST have a tool_result
-					// Note: This case should rarely be reached since validateToolUse now checks for unknown tools
 
 					// CRITICAL: Don't process partial blocks for unknown tools - just let them stream in.
 					// If we try to show errors for partial blocks, we'd show the error on every streaming chunk,
@@ -1132,6 +1140,47 @@ export async function presentAssistantMessage(cline: Task) {
 						break
 					}
 
+					const customTool = stateExperiments?.customTools ? customToolRegistry.get(block.name) : undefined
+
+					if (customTool) {
+						try {
+							let customToolArgs
+
+							if (customTool.parameters) {
+								try {
+									customToolArgs = customTool.parameters.parse(block.nativeArgs || block.params || {})
+								} catch (parseParamsError) {
+									const message = `Custom tool "${block.name}" argument validation failed: ${parseParamsError.message}`
+									console.error(message)
+									cline.consecutiveMistakeCount++
+									await cline.say("error", message)
+									pushToolResult(formatResponse.toolError(message, toolProtocol))
+									break
+								}
+							}
+
+							const result = await customTool.execute(customToolArgs, {
+								mode: mode ?? defaultModeSlug,
+								task: cline,
+							})
+
+							console.log(
+								`${customTool.name}.execute(): ${JSON.stringify(customToolArgs)} -> ${JSON.stringify(result)}`,
+							)
+
+							pushToolResult(result)
+							cline.consecutiveMistakeCount = 0
+						} catch (executionError: any) {
+							cline.consecutiveMistakeCount++
+							// Record custom tool error with static name
+							cline.recordToolError("custom_tool", executionError.message)
+							await handleError(`executing custom tool "${block.name}"`, executionError)
+						}
+
+						break
+					}
+
+					// Not a custom tool - handle as unknown tool error
 					const errorMessage = `Unknown tool "${block.name}". This tool does not exist. Please use one of the available tools.`
 					cline.consecutiveMistakeCount++
 					cline.recordToolError(block.name as ToolName, errorMessage)

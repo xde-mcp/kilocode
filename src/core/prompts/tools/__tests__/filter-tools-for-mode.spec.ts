@@ -734,6 +734,14 @@ describe("filterMcpToolsForMode", () => {
 					parameters: {},
 				},
 			},
+			{
+				type: "function",
+				function: {
+					name: "edit_file",
+					description: "Edit file",
+					parameters: {},
+				},
+			},
 		]
 
 		it("should exclude tools when model specifies excludedTools", () => {
@@ -835,7 +843,7 @@ describe("filterMcpToolsForMode", () => {
 			expect(toolNames).not.toContain("apply_diff") // Excluded
 		})
 
-		it("should rename tools to alias names when model includes aliases", () => {
+		it("should honor included aliases while respecting exclusions", () => {
 			const codeMode: ModeConfig = {
 				slug: "code",
 				name: "Code",
@@ -846,6 +854,7 @@ describe("filterMcpToolsForMode", () => {
 			const modelInfo: ModelInfo = {
 				contextWindow: 100000,
 				supportsPromptCache: false,
+				excludedTools: ["apply_diff"],
 				includedTools: ["edit_file", "write_file"],
 			}
 

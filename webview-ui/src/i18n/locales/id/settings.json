@@ -214,11 +214,6 @@
 			"label": "Browser",
 			"description": "Secara otomatis melakukan aksi browser tanpa memerlukan persetujuan. Catatan: Hanya berlaku ketika model mendukung computer use"
 		},
-		"retry": {
-			"label": "Coba Lagi",
-			"description": "Secara otomatis mencoba ulang permintaan API yang gagal ketika server mengembalikan respons error",
-			"delayLabel": "Delay sebelum mencoba ulang permintaan"
-		},
 		"mcp": {
 			"label": "MCP",
 			"description": "Aktifkan auto-approval tool MCP individual di tampilan Server MCP (memerlukan pengaturan ini dan checkbox \"Selalu izinkan\" tool tersebut)"
@@ -252,10 +247,6 @@
 			"label": "Tampilkan menu auto-approve di tampilan chat",
 			"description": "Ketika diaktifkan, menu auto-approve akan ditampilkan di bagian bawah tampilan chat, memungkinkan akses cepat ke pengaturan auto-approve"
 		},
-		"updateTodoList": {
-			"label": "Todo",
-			"description": "Daftar tugas diperbarui secara otomatis tanpa persetujuan"
-		},
 		"apiRequestLimit": {
 			"title": "Permintaan Maks",
 			"description": "Secara otomatis membuat sejumlah permintaan API ini sebelum meminta persetujuan untuk melanjutkan tugas.",
@@ -277,6 +268,7 @@
 		"makeActiveProfile": "Jadikan Profil Aktif",
 		"makeActiveTooltip": "Aktifkan profil ini untuk digunakan dalam permintaan API",
 		"apiProvider": "Provider API",
+		"apiProviderDocs": "Dokumentasi Penyedia",
 		"model": "Model",
 		"nameEmpty": "Nama tidak boleh kosong",
 		"nameExists": "Profil dengan nama ini sudah ada",
@@ -324,7 +316,6 @@
 		"getRequestyApiKey": "Dapatkan Requesty API Key",
 		"getRequestyBaseUrl": "Base URL",
 		"requestyUseCustomBaseUrl": "Gunakan URL dasar khusus",
-		"openRouterTransformsText": "Kompres prompt dan rantai pesan ke ukuran konteks (<a>OpenRouter Transforms</a>)",
 		"anthropicApiKey": "Anthropic API Key",
 		"getAnthropicApiKey": "Dapatkan Anthropic API Key",
 		"anthropicUseAuthToken": "Kirim Anthropic API Key sebagai Authorization header alih-alih X-Api-Key",
@@ -334,6 +325,8 @@
 		"anthropicAzureDeploymentPlaceholder": "Masukkan nama deployment...",
 		"awsBedrock1MContextBetaLabel": "Aktifkan jendela konteks 1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "Memperluas jendela konteks menjadi 1 juta token untuk Claude Sonnet 4",
+		"vertex1MContextBetaLabel": "Aktifkan jendela konteks 1M (Beta)",
+		"vertex1MContextBetaDescription": "Memperluas jendela konteks menjadi 1 juta token untuk Claude Sonnet 4",
 		"basetenApiKey": "Baseten API Key",
 		"getBasetenApiKey": "Dapatkan Baseten API Key",
 		"cerebrasApiKey": "Cerebras API Key",
@@ -416,6 +409,14 @@
 		"awsRegion": "AWS Region",
 		"awsCrossRegion": "Gunakan cross-region inference",
 		"awsGlobalInference": "Gunakan inferensi Global (pilih Wilayah AWS optimal secara otomatis)",
+		"awsServiceTier": "Tingkat Layanan",
+		"awsServiceTierStandard": "Standard",
+		"awsServiceTierStandardDesc": "Performa dan biaya yang seimbang",
+		"awsServiceTierFlex": "Flex (diskon 50%)",
+		"awsServiceTierFlexDesc": "Biaya lebih rendah, latensi lebih tinggi untuk tugas non-kritikal",
+		"awsServiceTierPriority": "Priority (premium 75%)",
+		"awsServiceTierPriorityDesc": "Performa tercepat untuk aplikasi mission-critical",
+		"awsServiceTierNote": "Tingkat layanan memengaruhi harga dan performa. Flex menawarkan diskon 50% dengan latensi lebih tinggi, Priority menawarkan performa 25% lebih baik dengan premium 75%.",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "Gunakan VPC endpoint kustom",
 			"vpcEndpointUrlPlaceholder": "Masukkan VPC Endpoint URL (opsional)",
@@ -497,10 +498,6 @@
 		"getUnboundApiKey": "Dapatkan Unbound API Key",
 		"unboundRefreshModelsSuccess": "Daftar model diperbarui! Kamu sekarang dapat memilih dari model terbaru.",
 		"unboundInvalidApiKey": "API key tidak valid. Silakan periksa API key kamu dan coba lagi.",
-		"humanRelay": {
-			"description": "Tidak diperlukan API key, tetapi pengguna perlu membantu menyalin dan menempel informasi ke web chat AI.",
-			"instructions": "Selama penggunaan, kotak dialog akan muncul dan pesan saat ini akan disalin ke clipboard secara otomatis. Kamu perlu menempel ini ke versi web AI (seperti ChatGPT atau Claude), lalu salin balasan AI kembali ke kotak dialog dan klik tombol konfirmasi."
-		},
 		"roo": {
 			"authenticatedMessage": "Terautentikasi dengan aman melalui akun Roo Code Cloud Anda.",
 			"connectButton": "Hubungkan ke Roo Code Cloud"
@@ -798,6 +795,10 @@
 		"maxGitStatusFiles": {
 			"label": "Git status maks file",
 			"description": "Jumlah maksimum entri file untuk disertakan dalam konteks status git. Atur ke 0 untuk menonaktifkan. Info cabang dan commit selalu ditampilkan saat > 0."
+		},
+		"enableSubfolderRules": {
+			"label": "Aktifkan aturan subfolder",
+			"description": "Temukan dan muat file .roo/rules dan AGENTS.md secara rekursif dari subdirektori. Berguna untuk monorepo dengan aturan per-paket."
 		}
 	},
 	"terminal": {
@@ -1008,6 +1009,17 @@
 		"SPEECH_TO_TEXT": {
 			"name": "Ucapan-ke-Teks (STT)",
 			"description": "Ketika diaktifkan, Kilo Code dapat mengubah suara Anda menjadi teks menggunakan model Whisper dari OpenAI. Klik tombol mikrofon di chat untuk mulai merekam. Memerlukan FFmpeg yang terinstal dan penyedia API OpenAI yang dikonfigurasi."
+		},
+		"CUSTOM_TOOLS": {
+			"name": "Aktifkan tool kustom",
+			"description": "Ketika diaktifkan, Roo dapat memuat dan menggunakan tool TypeScript/JavaScript kustom dari direktori .roo/tools proyek Anda atau ~/.roo/tools untuk tool global. Catatan: tool ini akan disetujui otomatis.",
+			"toolsHeader": "Tool Kustom yang Tersedia",
+			"noTools": "Tidak ada tool kustom yang dimuat. Tambahkan file .ts atau .js ke direktori .roo/tools proyek Anda atau ~/.roo/tools untuk tool global.",
+			"refreshButton": "Refresh",
+			"refreshing": "Merefresh...",
+			"refreshSuccess": "Tool berhasil direfresh",
+			"refreshError": "Gagal merefresh tool",
+			"toolParameters": "Parameter"
 		}
 	},
 	"promptCaching": {
