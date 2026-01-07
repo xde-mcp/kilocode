@@ -182,7 +182,7 @@ TASK: Complete the user's message naturally.
 		return null
 	}
 
-	private cleanSuggestion(suggestion: string, userText: string): string {
+	public cleanSuggestion(suggestion: string, userText: string): string {
 		let cleaned = postprocessGhostSuggestion({
 			suggestion: removePrefixOverlap(suggestion, userText),
 			prefix: userText,
