@@ -219,21 +219,11 @@ TASK: Complete the user's message naturally.
 		}
 		cleaned = cleaned.trimEnd()
 
-		// Apply chat-specific unwanted suggestion filtering
-		if (this.isUnwantedSuggestionInChat(cleaned)) {
+		// Filter suggestions that look like code rather than natural language
+		if (suggestion.match(/^(\/\/|\/\*|\*|#)/)) {
 			return ""
 		}
 
 		return cleaned
-	}
-
-	public isUnwantedSuggestionInChat(suggestion: string): boolean {
-		// Filter suggestions that look like code rather than natural language
-		return (
-			suggestion.startsWith("//") ||
-			suggestion.startsWith("/*") ||
-			suggestion.startsWith("*") ||
-			suggestion.startsWith("#")
-		)
 	}
 }
