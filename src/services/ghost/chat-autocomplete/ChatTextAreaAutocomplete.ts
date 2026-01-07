@@ -191,7 +191,7 @@ TASK: Complete the user's message naturally.
 		}
 
 		// Filter suggestions that look like code rather than natural language
-		if (suggestion.match(/^(\/\/|\/\*|\*|#)/)) {
+		if (cleaned.match(/^(\/\/|\/\*|\*|#)/)) {
 			return ""
 		}
 
