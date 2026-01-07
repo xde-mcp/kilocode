@@ -2,12 +2,35 @@ import { modelIdKeysByProvider, ProviderName } from "@roo-code/types"
 import { ApiHandler, buildApiHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
-import { CompletionUsage } from "../../api/providers/openrouter"
 import { ApiStreamChunk } from "../../api/transform/stream"
 import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrouter"
 import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
 import { ResponseMetaData } from "./types"
+
+// kilocode_change start
+/**
+ * Interface for handlers that support FIM (Fill-in-the-Middle) completions.
+ * Uses duck typing - any handler implementing these methods can be used for FIM.
+ */
+interface FimCapableHandler {
+	supportsFim(): boolean
+	streamFim(prefix: string, suffix: string, taskId?: string, onUsage?: (usage: any) => void): AsyncGenerator<string>
+	getModel(): { id: string; info: any; maxTokens?: number }
+	getTotalCost?(usage: any): number
+}
+
+/**
+ * Type guard to check if a handler supports FIM operations using duck typing.
+ */
+function isFimCapable(handler: ApiHandler): handler is ApiHandler & FimCapableHandler {
+	return (
+		typeof (handler as any).supportsFim === "function" &&
+		typeof (handler as any).streamFim === "function" &&
+		(handler as any).supportsFim() === true
+	)
+}
+// kilocode_change end
 
 // Convert PROVIDERS array to a lookup map for display names
 const PROVIDER_DISPLAY_NAMES = Object.fromEntries(PROVIDERS.map(({ value, label }) => [value, label])) as Record<
@@ -87,20 +110,19 @@ export class GhostModel {
 		}
 	}
 
+	// kilocode_change start
 	public supportsFim(): boolean {
 		if (!this.apiHandler) {
 			return false
 		}
 
-		if (this.apiHandler instanceof KilocodeOpenrouterHandler) {
-			return this.apiHandler.supportsFim()
-		}
-
-		return false
+		// Use duck typing to check if the handler supports FIM
+		return isFimCapable(this.apiHandler)
 	}
 
 	/**
-	 * Generate FIM completion using the FIM API endpoint
+	 * Generate FIM completion using the FIM API endpoint.
+	 * Uses duck typing to support any handler that implements supportsFim() and streamFim().
 	 */
 	public async generateFimResponse(
 		prefix: string,
@@ -113,25 +135,25 @@ export class GhostModel {
 			throw new Error("API handler is not initialized. Please check your configuration.")
 		}
 
-		if (!(this.apiHandler instanceof KilocodeOpenrouterHandler)) {
-			throw new Error("FIM is only supported for KiloCode provider")
-		}
-
-		if (!this.apiHandler.supportsFim()) {
-			throw new Error("Current model does not support FIM completions")
+		if (!isFimCapable(this.apiHandler)) {
+			throw new Error("Current provider/model does not support FIM completions")
 		}
 
 		console.log("USED MODEL (FIM)", this.apiHandler.getModel())
 
-		let usage: CompletionUsage | undefined
+		let usage: any
 
-		for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId, (u) => {
+		for await (const chunk of this.apiHandler.streamFim(prefix, suffix, taskId, (u: any) => {
 			usage = u
 		})) {
 			onChunk(chunk)
 		}
 
-		const cost = usage ? this.apiHandler.getTotalCost(usage) : 0
+		// Calculate cost if the handler supports it (duck typing)
+		const cost =
+			usage && typeof (this.apiHandler as any).getTotalCost === "function"
+				? (this.apiHandler as any).getTotalCost(usage)
+				: 0
 		const inputTokens = usage?.prompt_tokens ?? 0
 		const outputTokens = usage?.completion_tokens ?? 0
 		const cacheReadTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0
@@ -144,6 +166,7 @@ export class GhostModel {
 			cacheReadTokens,
 		}
 	}
+	// kilocode_change end
 
 	/**
 	 * Generate response with streaming callback support
