@@ -201,22 +201,16 @@ TASK: Complete the user's message naturally.
 	 * and apply chat-specific filtering
 	 */
 	private cleanSuggestion(suggestion: string, userText: string): string {
-		// First, remove any prefix overlap (LLM might repeat what user typed)
-		const withoutOverlap = removePrefixOverlap(suggestion, userText)
-
-		// Use the shared postprocessing pipeline from uselessSuggestionFilter
-		const processed = postprocessGhostSuggestion({
-			suggestion: withoutOverlap,
+		let cleaned = postprocessGhostSuggestion({
+			suggestion: removePrefixOverlap(suggestion, userText),
 			prefix: userText,
 			suffix: "", // Chat textarea has no suffix
 			model: this.model.getModelName() ?? "unknown",
 		})
 
-		if (processed === undefined) {
+		if (cleaned === undefined) {
 			return ""
 		}
-
-		let cleaned = processed
 
 		// Chat-specific: truncate at first newline for single-line suggestions
 		const firstNewline = cleaned.indexOf("\n")
@@ -226,35 +220,20 @@ TASK: Complete the user's message naturally.
 		cleaned = cleaned.trimEnd()
 
 		// Apply chat-specific unwanted suggestion filtering
-		if (this.isUnwantedSuggestion(cleaned)) {
+		if (this.isUnwantedSuggestionInChat(cleaned)) {
 			return ""
 		}
 
 		return cleaned
 	}
 
-	/**
-	 * Check if suggestion should be filtered out (chat-specific patterns)
-	 */
-	public isUnwantedSuggestion(suggestion: string): boolean {
-		// Filter comment-starting suggestions
-		// This happens because the context uses // prefixes for labels
-		if (suggestion.startsWith("//") || suggestion.startsWith("/*") || suggestion.startsWith("*")) {
-			return true
-		}
-
+	public isUnwantedSuggestionInChat(suggestion: string): boolean {
 		// Filter suggestions that look like code rather than natural language
-		// This includes preprocessor directives (#include) and markdown headers
-		// Chat is for natural language, not formatted documents
-		if (suggestion.startsWith("#")) {
-			return true
-		}
-
-		// Filter suggestions that are just punctuation or whitespace
-		if (suggestion.length < 2 || /^[\s\p{P}]+$/u.test(suggestion)) {
-			return true
-		}
-
-		return false
+		return (
+			suggestion.startsWith("//") ||
+			suggestion.startsWith("/*") ||
+			suggestion.startsWith("*") ||
+			suggestion.startsWith("#")
+		)
 	}
 }

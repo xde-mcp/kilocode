@@ -54,7 +54,7 @@ describe("ChatTextAreaAutocomplete", () => {
 
 	describe("isUnwantedSuggestion", () => {
 		it("should filter code patterns (comments, preprocessor, short/empty)", () => {
-			const filter = autocomplete.isUnwantedSuggestion.bind(autocomplete)
+			const filter = autocomplete.isUnwantedSuggestionInChat.bind(autocomplete)
 
 			// Comments
 			expect(filter("// comment")).toBe(true)
@@ -72,7 +72,7 @@ describe("ChatTextAreaAutocomplete", () => {
 		})
 
 		it("should accept natural language suggestions", () => {
-			const filter = autocomplete.isUnwantedSuggestion.bind(autocomplete)
+			const filter = autocomplete.isUnwantedSuggestionInChat.bind(autocomplete)
 
 			expect(filter("Hello world")).toBe(false)
 			expect(filter("Can you help me")).toBe(false)
@@ -81,7 +81,7 @@ describe("ChatTextAreaAutocomplete", () => {
 		})
 
 		it("should accept symbols in middle of text", () => {
-			const filter = autocomplete.isUnwantedSuggestion.bind(autocomplete)
+			const filter = autocomplete.isUnwantedSuggestionInChat.bind(autocomplete)
 
 			expect(filter("Text with # in middle")).toBe(false)
 			expect(filter("Hello // but not a comment")).toBe(false)
