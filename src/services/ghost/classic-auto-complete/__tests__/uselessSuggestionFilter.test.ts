@@ -250,4 +250,13 @@ return 1
 `),
 		).toBe(true)
 	})
+
+	it("treats as duplication when suggestion repeats the same phrase from the prefix", () => {
+		// User types "We are going to start from" and suggestion repeats "the beginning. We are going to start from the beginning..."
+		expect(
+			isDuplication(
+				`We are going to start from <<<the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning.>>>`,
+			),
+		).toBe(true)
+	})
 })
