@@ -3,8 +3,8 @@ import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
 import { AutocompleteContext, VisibleCodeContext } from "../types"
 import { ApiStreamChunk } from "../../../api/transform/stream"
-import { removePrefixOverlap } from "../../continuedev/core/autocomplete/postprocessing/removePrefixOverlap.js"
 import { AutocompleteTelemetry } from "../classic-auto-complete/AutocompleteTelemetry"
+import { postprocessGhostSuggestion } from "../classic-auto-complete/uselessSuggestionFilter"
 
 /**
  * Service for providing FIM-based autocomplete suggestions in ChatTextArea
@@ -196,22 +196,32 @@ TASK: Complete the user's message naturally.
 	}
 
 	/**
-	 * Clean the suggestion by removing any leading repetition of user text
-	 * and filtering out unwanted patterns like comments
+	 * Clean the suggestion using the shared postprocessGhostSuggestion filter
+	 * and apply chat-specific filtering
 	 */
 	private cleanSuggestion(suggestion: string, userText: string): string {
-		let cleaned = suggestion
+		// Use the shared postprocessing pipeline from uselessSuggestionFilter
+		const processed = postprocessGhostSuggestion({
+			suggestion,
+			prefix: userText,
+			suffix: "", // Chat textarea has no suffix
+			model: this.model.getModelName() ?? "unknown",
+		})
 
-		cleaned = removePrefixOverlap(cleaned, userText)
+		if (processed === undefined) {
+			return ""
+		}
 
+		let cleaned = processed
+
+		// Chat-specific: truncate at first newline for single-line suggestions
 		const firstNewline = cleaned.indexOf("\n")
 		if (firstNewline !== -1) {
 			cleaned = cleaned.substring(0, firstNewline)
 		}
-		cleaned = cleaned.trimEnd() // Do NOT trim the end of the suggestion
+		cleaned = cleaned.trimEnd()
 
-		// Filter out suggestions that start with comment patterns
-		// This happens because the context uses // prefixes for labels
+		// Apply chat-specific unwanted suggestion filtering
 		if (this.isUnwantedSuggestion(cleaned)) {
 			return ""
 		}
@@ -220,10 +230,11 @@ TASK: Complete the user's message naturally.
 	}
 
 	/**
-	 * Check if suggestion should be filtered out
+	 * Check if suggestion should be filtered out (chat-specific patterns)
 	 */
 	public isUnwantedSuggestion(suggestion: string): boolean {
 		// Filter comment-starting suggestions
+		// This happens because the context uses // prefixes for labels
 		if (suggestion.startsWith("//") || suggestion.startsWith("/*") || suggestion.startsWith("*")) {
 			return true
 		}
