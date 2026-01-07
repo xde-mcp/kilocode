@@ -315,9 +315,7 @@ export const SelectDropdown = React.memo(
 												)
 											}
 
-											{
-												/* kilocode_change start: render LABEL type as section header */
-											}
+											// kilocode_change start: render LABEL type as section header
 											if (option.type === DropdownOptionType.LABEL) {
 												return (
 													<div
@@ -328,9 +326,7 @@ export const SelectDropdown = React.memo(
 													</div>
 												)
 											}
-											{
-												/* kilocode_change end */
-											}
+											// kilocode_change end
 
 											if (
 												option.type === DropdownOptionType.SHORTCUT ||
