@@ -157,5 +157,4 @@ The project uses:
 ## Further Reading
 
 - [Development Environment](/contributing/development-environment) - Setup guide
-- [Architecture Pages](/contributing/architecture) - Technical specifications for features
 - [Tools Reference](/features/tools/tool-use-overview) - Available tools
