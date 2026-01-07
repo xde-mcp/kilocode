@@ -3,11 +3,10 @@ import { AutocompleteLanguageInfo } from "./constants/AutocompleteLanguageInfo"
 import { AutocompleteCodeSnippet } from "./snippets/types"
 
 /**
- * @deprecated This type should be removed in the future or renamed.
- * We have a new interface called AutocompleteSnippet which is more
- * general.
+ * A snippet with range information and an optional relevance score.
+ * Used for ranking and selecting context snippets in autocomplete.
  */
-export type AutocompleteSnippetDeprecated = RangeInFileWithContents & {
+export type RankedSnippet = RangeInFileWithContents & {
 	score?: number
 }
 
