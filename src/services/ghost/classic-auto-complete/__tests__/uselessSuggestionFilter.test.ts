@@ -259,4 +259,13 @@ return 1
 			),
 		).toBe(true)
 	})
+
+	it("treats as duplication when suggestion ends with non-word characters but still has repetitive phrases", () => {
+		// Suggestion ends with "..." but the repeating phrase should still be detected
+		expect(
+			isDuplication(
+				`<<<the beginning. We are going to start from the beginning. We are going to start from the beginning. We are going to start from the beginning...>>>`,
+			),
+		).toBe(true)
+	})
 })

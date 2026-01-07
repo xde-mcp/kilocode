@@ -78,14 +78,18 @@ function containsRepetitivePhraseFromPrefix(params: AutocompleteSuggestion): boo
 		return false
 	}
 
-	// Extract a phrase from the end of the suggestion and count occurrences
-	const phrase = suggestion.slice(-phraseLength)
+	// Strip non-word characters from the right before selecting the tail
+	// This handles cases like "...the beginning..." where trailing punctuation would break detection
+	const strippedSuggestion = suggestion.replace(/\W+$/, "")
 
-	if (phrase.trim().length < phraseLength) {
+	if (strippedSuggestion.length < phraseLength) {
 		return false
 	}
 
-	// Count how many times this phrase appears in the suggestion
+	// Extract a phrase from the end of the stripped suggestion
+	const phrase = strippedSuggestion.slice(-phraseLength)
+
+	// Count how many times this phrase appears in the original suggestion
 	let count = 0
 	let pos = 0
 	while ((pos = suggestion.indexOf(phrase, pos)) !== -1) {
