@@ -7,7 +7,7 @@ import type { ProviderSettings, ModelInfo, OrganizationAllowList } from "@roo-co
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useSelectedModel } from "@/components/ui/hooks/useSelectedModel"
-import { useGroupedModelIds } from "@/components/ui/hooks/kilocode/usePreferredModels" // kilocode_change: use grouped hook
+import { useGroupedModelIds } from "@/components/ui/hooks/kilocode/usePreferredModels" // kilocode_change
 // import { filterModels } from "./utils/organizationFilters" // kilocode_change: not doing this
 import { cn } from "@src/lib/utils"
 import {
@@ -89,7 +89,7 @@ export const ModelPicker = ({
 
 	// kilocode_change start: Use grouped model IDs for section headers
 	const { preferredModelIds, restModelIds, hasPreferred } = useGroupedModelIds(models)
-	const allModelIds = useMemo(() => [...preferredModelIds, ...restModelIds], [preferredModelIds, restModelIds])
+	const modelIds = useMemo(() => [...preferredModelIds, ...restModelIds], [preferredModelIds, restModelIds])
 	const [isPricingExpanded, setIsPricingExpanded] = useState(false)
 	// kilocode_change end
 
@@ -139,12 +139,12 @@ export const ModelPicker = ({
 
 	useEffect(() => {
 		if (!selectedModelId && !isInitialized.current) {
-			const initialValue = allModelIds.includes(selectedModelId) ? selectedModelId : defaultModelId // kilocode_change
+			const initialValue = modelIds.includes(selectedModelId) ? selectedModelId : defaultModelId
 			setApiConfigurationField(modelIdKey, initialValue, false) // false = automatic initialization
 		}
 
 		isInitialized.current = true
-	}, [allModelIds, setApiConfigurationField, modelIdKey, selectedModelId, defaultModelId]) // kilocode_change: allModelIds replaces modelIds
+	}, [modelIds, setApiConfigurationField, modelIdKey, selectedModelId, defaultModelId])
 
 	// Cleanup timeouts on unmount to prevent test flakiness
 	useEffect(() => {
@@ -251,17 +251,13 @@ export const ModelPicker = ({
 								)}
 								{/* kilocode_change end */}
 							</CommandList>
-							{searchValue &&
-								!allModelIds.includes(searchValue) && ( // kilocode_change: allModelIds replaces modelIds
-									<div className="p-1 border-t border-vscode-input-border">
-										<CommandItem
-											data-testid="use-custom-model"
-											value={searchValue}
-											onSelect={onSelect}>
-											{t("settings:modelPicker.useCustomModel", { modelId: searchValue })}
-										</CommandItem>
-									</div>
-								)}
+							{searchValue && !modelIds.includes(searchValue) && (
+								<div className="p-1 border-t border-vscode-input-border">
+									<CommandItem data-testid="use-custom-model" value={searchValue} onSelect={onSelect}>
+										{t("settings:modelPicker.useCustomModel", { modelId: searchValue })}
+									</CommandItem>
+								</div>
+							)}
 						</Command>
 					</PopoverContent>
 				</Popover>
