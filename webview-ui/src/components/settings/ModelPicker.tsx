@@ -139,7 +139,7 @@ export const ModelPicker = ({
 
 	useEffect(() => {
 		if (!selectedModelId && !isInitialized.current) {
-			const initialValue = allModelIds.includes(selectedModelId) ? selectedModelId : defaultModelId
+			const initialValue = allModelIds.includes(selectedModelId) ? selectedModelId : defaultModelId // kilocode_change
 			setApiConfigurationField(modelIdKey, initialValue, false) // false = automatic initialization
 		}
 
