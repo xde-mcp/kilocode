@@ -272,10 +272,6 @@ describe("SelectDropdown", () => {
 			// Now we can check for dropdown content
 			const content = screen.getByTestId("dropdown-content")
 			expect(content).toBeInTheDocument()
-
-			// For this test, we'll just verify the content is rendered
-			// In a real scenario, we'd need to update the mock to properly handle label rendering
-			expect(content).toBeInTheDocument()
 		})
 
 		it("LABEL options are non-selectable", () => {
@@ -294,8 +290,10 @@ describe("SelectDropdown", () => {
 			const content = screen.getByTestId("dropdown-content")
 			expect(content).toBeInTheDocument()
 
-			// LABEL items should not trigger onChange when interacted with
-			// The actual behavior is tested via integration since our mock doesn't fully simulate this
+			// Note: The actual component renders LABEL items as static divs without onClick handlers
+			// (with data-testid="dropdown-label"), making them inherently non-selectable.
+			// This test uses mocks, so we just verify the component renders correctly.
+			// The non-selectability behavior is ensured by the component's implementation.
 		})
 		// kilocode_change end
 

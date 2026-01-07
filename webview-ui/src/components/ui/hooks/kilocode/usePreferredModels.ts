@@ -1,4 +1,3 @@
-// kilocode_change - new file
 import { useMemo } from "react"
 import type { ModelInfo } from "@roo-code/types"
 

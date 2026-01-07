@@ -251,13 +251,17 @@ export const ModelPicker = ({
 								)}
 								{/* kilocode_change end */}
 							</CommandList>
-							{searchValue && !allModelIds.includes(searchValue) && (
-								<div className="p-1 border-t border-vscode-input-border">
-									<CommandItem data-testid="use-custom-model" value={searchValue} onSelect={onSelect}>
-										{t("settings:modelPicker.useCustomModel", { modelId: searchValue })}
-									</CommandItem>
-								</div>
-							)}
+							{searchValue &&
+								!allModelIds.includes(searchValue) && ( // kilocode_change: allModelIds replaces modelIds
+									<div className="p-1 border-t border-vscode-input-border">
+										<CommandItem
+											data-testid="use-custom-model"
+											value={searchValue}
+											onSelect={onSelect}>
+											{t("settings:modelPicker.useCustomModel", { modelId: searchValue })}
+										</CommandItem>
+									</div>
+								)}
 						</Command>
 					</PopoverContent>
 				</Popover>

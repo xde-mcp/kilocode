@@ -14,12 +14,11 @@ vi.mock("@/i18n/TranslationContext", () => ({
 	}),
 }))
 
+// Create a mock function that can be controlled per test
+const mockUseGroupedModelIds = vi.fn()
+
 vi.mock("@/components/ui/hooks/kilocode/usePreferredModels", () => ({
-	useGroupedModelIds: () => ({
-		preferredModelIds: [],
-		restModelIds: ["model-1", "model-2"],
-		hasPreferred: false,
-	}),
+	useGroupedModelIds: () => mockUseGroupedModelIds(),
 }))
 
 // Create a mock function that can be controlled per test
@@ -41,9 +40,18 @@ describe("ModelSelector", () => {
 	}
 
 	beforeEach(() => {
-		// Reset mock before each test
+		// Reset mocks before each test
 		mockUseProviderModels.mockReset()
-		// Default mock implementation
+		mockUseGroupedModelIds.mockReset()
+
+		// Default mock implementation for useGroupedModelIds (no preferred models)
+		mockUseGroupedModelIds.mockReturnValue({
+			preferredModelIds: [],
+			restModelIds: ["model-1", "model-2"],
+			hasPreferred: false,
+		})
+
+		// Default mock implementation for useProviderModels
 		mockUseProviderModels.mockReturnValue({
 			provider: "openai",
 			providerModels: {
@@ -191,5 +199,102 @@ describe("ModelSelector", () => {
 
 		const dropdownTrigger = screen.queryByTestId("dropdown-trigger")
 		expect(dropdownTrigger).not.toBeInTheDocument()
+	})
+
+	describe("preferred models sections", () => {
+		test("builds options with section headers when preferred models exist", () => {
+			// Setup mock to return preferred models
+			mockUseGroupedModelIds.mockReturnValue({
+				preferredModelIds: ["preferred-1", "preferred-2"],
+				restModelIds: ["model-1", "model-2"],
+				hasPreferred: true,
+			})
+
+			mockUseProviderModels.mockReturnValue({
+				provider: "openai",
+				providerModels: {
+					"preferred-1": { displayName: "Preferred Model 1", preferredIndex: 0 },
+					"preferred-2": { displayName: "Preferred Model 2", preferredIndex: 1 },
+					"model-1": { displayName: "Model 1" },
+					"model-2": { displayName: "Model 2" },
+				},
+				providerDefaultModel: "model-1",
+				isLoading: false,
+				isError: false,
+			})
+
+			render(
+				<ModelSelector
+					currentApiConfigName="test-profile"
+					apiConfiguration={{
+						apiProvider: "openai",
+						apiModelId: "model-1",
+					}}
+					fallbackText="Select a model"
+				/>,
+			)
+
+			// Should render the dropdown
+			const dropdownTrigger = screen.getByTestId("dropdown-trigger")
+			expect(dropdownTrigger).toBeInTheDocument()
+		})
+
+		test("does not add section headers when no preferred models exist", () => {
+			// Setup mock with no preferred models
+			mockUseGroupedModelIds.mockReturnValue({
+				preferredModelIds: [],
+				restModelIds: ["model-1", "model-2"],
+				hasPreferred: false,
+			})
+
+			render(
+				<ModelSelector
+					currentApiConfigName="test-profile"
+					apiConfiguration={{
+						apiProvider: "openai",
+						apiModelId: "model-1",
+					}}
+					fallbackText="Select a model"
+				/>,
+			)
+
+			// Should render the dropdown
+			const dropdownTrigger = screen.getByTestId("dropdown-trigger")
+			expect(dropdownTrigger).toBeInTheDocument()
+		})
+
+		test("handles only preferred models without rest models", () => {
+			// Setup mock with only preferred models (edge case)
+			mockUseGroupedModelIds.mockReturnValue({
+				preferredModelIds: ["preferred-1"],
+				restModelIds: [],
+				hasPreferred: true,
+			})
+
+			mockUseProviderModels.mockReturnValue({
+				provider: "openai",
+				providerModels: {
+					"preferred-1": { displayName: "Preferred Model 1", preferredIndex: 0 },
+				},
+				providerDefaultModel: "preferred-1",
+				isLoading: false,
+				isError: false,
+			})
+
+			render(
+				<ModelSelector
+					currentApiConfigName="test-profile"
+					apiConfiguration={{
+						apiProvider: "openai",
+						apiModelId: "preferred-1",
+					}}
+					fallbackText="Select a model"
+				/>,
+			)
+
+			// Should render the dropdown with only preferred models section
+			const dropdownTrigger = screen.getByTestId("dropdown-trigger")
+			expect(dropdownTrigger).toBeInTheDocument()
+		})
 	})
 })

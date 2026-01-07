@@ -48,9 +48,6 @@ export const ModelSelector = ({
 				type: DropdownOptionType.LABEL,
 			})
 
-			// Add the missing selected model at the top if it was a preferred model
-			// (unlikely, but handle the edge case)
-
 			preferredModelIds.forEach((modelId) => {
 				result.push({
 					value: modelId,
@@ -121,6 +118,7 @@ export const ModelSelector = ({
 		return null
 	}
 
+	// kilocode_change start: Display active model for virtual quota fallback
 	if (provider === "virtual-quota-fallback" && virtualQuotaActiveModel) {
 		return (
 			<span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">
@@ -128,6 +126,7 @@ export const ModelSelector = ({
 			</span>
 		)
 	}
+	// kilocode_change end
 
 	if (isError || isAutocomplete || options.length <= 0) {
 		return <span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">{fallbackText}</span>
