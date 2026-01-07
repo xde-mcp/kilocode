@@ -1,5 +1,37 @@
 # kilo-code
 
+## 4.143.0
+
+### Minor Changes
+
+- [#4643](https://github.com/Kilo-Org/kilocode/pull/4643) [`bf89c48`](https://github.com/Kilo-Org/kilocode/commit/bf89c4849342d9c0f3cfa335d65e98980d869e36) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Migrate worktree creation from CLI to extension for parallel mode sessions
+
+### Patch Changes
+
+- [#4804](https://github.com/Kilo-Org/kilocode/pull/4804) [`e83c30a`](https://github.com/Kilo-Org/kilocode/commit/e83c30a4160309c45bcfedf60faad3eedff0549e) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Add comprehensive AGENTS.md documentation page to Agent Behavior section
+
+- [#4810](https://github.com/Kilo-Org/kilocode/pull/4810) [`2d8f5b4`](https://github.com/Kilo-Org/kilocode/commit/2d8f5b4f823750d22701d962ba27885b01f78acb) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Add `--append-system-prompt` CLI option to append custom instructions to the system prompt
+
+- [#4808](https://github.com/Kilo-Org/kilocode/pull/4808) [`3253a5f`](https://github.com/Kilo-Org/kilocode/commit/3253a5f0a9ef3db176b0cc027a9a0f246faa27e6) Thanks [@markijbema](https://github.com/markijbema)! - Rename and reorganize autocomplete settings to use more familiar terminology
+
+- [#4815](https://github.com/Kilo-Org/kilocode/pull/4815) [`1530050`](https://github.com/Kilo-Org/kilocode/commit/15300507c8febd2096282e97148e39a0bfda9e23) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Allow null for tool arguments
+
+## 4.142.0
+
+### Minor Changes
+
+- [#4587](https://github.com/Kilo-Org/kilocode/pull/4587) [`d1c35c5`](https://github.com/Kilo-Org/kilocode/commit/d1c35c54c253b22a264ee4ce90fd25f5d93343da) Thanks [@hassoncs](https://github.com/hassoncs)! - Improve the initial setup experience for the speech-to-text feature by adding an inline setup tooltip
+
+### Patch Changes
+
+- [#4785](https://github.com/Kilo-Org/kilocode/pull/4785) [`acc529e`](https://github.com/Kilo-Org/kilocode/commit/acc529e884be601d635ad9e714a0f3b2a4e9b639) Thanks [@markijbema](https://github.com/markijbema)! - Removed the cmd-i (quick inline task) functionality, as cmd-k-a (add to context) is now equivalent
+
+- [#4765](https://github.com/Kilo-Org/kilocode/pull/4765) [`725b0bc`](https://github.com/Kilo-Org/kilocode/commit/725b0bc56d1262b9e847861db86a3609c40479d9) Thanks [@Drilmo](https://github.com/Drilmo)! - Fixed exit prompt showing "Cmd+C" instead of "Ctrl+C" on Mac. Ctrl+C is the universal terminal interrupt signal on all platforms.
+
+- [#4787](https://github.com/Kilo-Org/kilocode/pull/4787) [`84033fa`](https://github.com/Kilo-Org/kilocode/commit/84033fa3015a757b358cc4799308b8209646ec5e) Thanks [@markijbema](https://github.com/markijbema)! - Keep config screen in sync with whether chat autocomplete is enabled
+
+- [#4800](https://github.com/Kilo-Org/kilocode/pull/4800) [`c089dc2`](https://github.com/Kilo-Org/kilocode/commit/c089dc2351daefe7690adf1a3f01cc8b82a27409) Thanks [@hassoncs](https://github.com/hassoncs)! - Add fuzzy matching to / commands
+
 ## 4.141.2
 
 ### Patch Changes
