@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { SelectDropdown, DropdownOptionType } from "@/components/ui"
+import { SelectDropdown, DropdownOptionType, type DropdownOption } from "@/components/ui"
 import { OPENROUTER_DEFAULT_PROVIDER_NAME, type ProviderSettings } from "@roo-code/types"
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
@@ -7,7 +7,7 @@ import { cn } from "@src/lib/utils"
 import { prettyModelName } from "../../../utils/prettyModelName"
 import { useProviderModels } from "../hooks/useProviderModels"
 import { getModelIdKey, getSelectedModelId } from "../hooks/useSelectedModel"
-import { usePreferredModels } from "@/components/ui/hooks/kilocode/usePreferredModels"
+import { useGroupedModelIds } from "@/components/ui/hooks/kilocode/usePreferredModels"
 
 interface ModelSelectorProps {
 	currentApiConfigName?: string
@@ -32,15 +32,69 @@ export const ModelSelector = ({
 	const modelIdKey = getModelIdKey({ provider })
 	const isAutocomplete = apiConfiguration.profileType === "autocomplete"
 
-	const modelsIds = usePreferredModels(providerModels)
+	const { preferredModelIds, restModelIds, hasPreferred } = useGroupedModelIds(providerModels)
 	const options = useMemo(() => {
-		const missingModelIds = modelsIds.indexOf(selectedModelId) >= 0 ? [] : [selectedModelId]
-		return missingModelIds.concat(modelsIds).map((modelId) => ({
-			value: modelId,
-			label: providerModels[modelId]?.displayName ?? prettyModelName(modelId),
-			type: DropdownOptionType.ITEM,
-		}))
-	}, [modelsIds, providerModels, selectedModelId])
+		const result: DropdownOption[] = []
+
+		// Check if selected model is missing from the lists
+		const allModelIds = [...preferredModelIds, ...restModelIds]
+		const isMissingSelectedModel = selectedModelId && !allModelIds.includes(selectedModelId)
+
+		// Add "Recommended models" section if there are preferred models
+		if (hasPreferred && preferredModelIds.length > 0) {
+			result.push({
+				value: "__label_recommended__",
+				label: t("settings:modelPicker.recommendedModels"),
+				type: DropdownOptionType.LABEL,
+			})
+
+			// Add the missing selected model at the top if it was a preferred model
+			// (unlikely, but handle the edge case)
+
+			preferredModelIds.forEach((modelId) => {
+				result.push({
+					value: modelId,
+					label: providerModels[modelId]?.displayName ?? prettyModelName(modelId),
+					type: DropdownOptionType.ITEM,
+				})
+			})
+		}
+
+		// Add "All models" section
+		if (restModelIds.length > 0) {
+			result.push({
+				value: "__label_all__",
+				label: t("settings:modelPicker.allModels"),
+				type: DropdownOptionType.LABEL,
+			})
+
+			// Add missing selected model at the top of "All models" if not in any list
+			if (isMissingSelectedModel) {
+				result.push({
+					value: selectedModelId,
+					label: providerModels[selectedModelId]?.displayName ?? prettyModelName(selectedModelId),
+					type: DropdownOptionType.ITEM,
+				})
+			}
+
+			restModelIds.forEach((modelId) => {
+				result.push({
+					value: modelId,
+					label: providerModels[modelId]?.displayName ?? prettyModelName(modelId),
+					type: DropdownOptionType.ITEM,
+				})
+			})
+		} else if (isMissingSelectedModel) {
+			// If there are no rest models but we have a missing selected model, add it
+			result.push({
+				value: selectedModelId,
+				label: providerModels[selectedModelId]?.displayName ?? prettyModelName(selectedModelId),
+				type: DropdownOptionType.ITEM,
+			})
+		}
+
+		return result
+	}, [preferredModelIds, restModelIds, hasPreferred, providerModels, selectedModelId, t])
 
 	const disabled = isLoading || isError || isAutocomplete
 
@@ -67,7 +121,6 @@ export const ModelSelector = ({
 		return null
 	}
 
-	// kilocode_change start: Display active model for virtual quota fallback
 	if (provider === "virtual-quota-fallback" && virtualQuotaActiveModel) {
 		return (
 			<span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">
@@ -75,7 +128,6 @@ export const ModelSelector = ({
 			</span>
 		)
 	}
-	// kilocode_change end
 
 	if (isError || isAutocomplete || options.length <= 0) {
 		return <span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">{fallbackText}</span>

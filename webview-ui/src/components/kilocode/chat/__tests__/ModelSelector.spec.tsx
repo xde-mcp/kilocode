@@ -15,7 +15,11 @@ vi.mock("@/i18n/TranslationContext", () => ({
 }))
 
 vi.mock("@/components/ui/hooks/kilocode/usePreferredModels", () => ({
-	usePreferredModels: () => ["model-1", "model-2"],
+	useGroupedModelIds: () => ({
+		preferredModelIds: [],
+		restModelIds: ["model-1", "model-2"],
+		hasPreferred: false,
+	}),
 }))
 
 // Create a mock function that can be controlled per test
