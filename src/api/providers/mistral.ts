@@ -215,9 +215,6 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 	}
 
 	// kilocode_change start
-	/**
-	 * Returns a FimHandler if the current model supports FIM (Fill-In-the-Middle) completions
-	 */
 	fimSupport(): FimHandler | undefined {
 		const modelId = this.options.apiModelId ?? mistralDefaultModelId
 		if (!modelId.startsWith("codestral-")) {
