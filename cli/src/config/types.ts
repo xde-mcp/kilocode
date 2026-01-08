@@ -430,11 +430,6 @@ type VirtualQuotaFallbackProviderConfig = BaseProviderConfig & {
 	}>
 }
 
-type HumanRelayProviderConfig = BaseProviderConfig & {
-	provider: "human-relay"
-	// No model ID field
-}
-
 type FakeAIProviderConfig = BaseProviderConfig & {
 	provider: "fake-ai"
 	fakeAi?: unknown
@@ -482,7 +477,6 @@ export type ProviderConfig =
 	| HuggingFaceProviderConfig
 	| SyntheticProviderConfig
 	| VirtualQuotaFallbackProviderConfig
-	| HumanRelayProviderConfig
 	| FakeAIProviderConfig
 
 // Type guards

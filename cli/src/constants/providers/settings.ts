@@ -988,16 +988,6 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				},
 			]
 
-		case "human-relay":
-			return [
-				{
-					field: "apiModelId",
-					label: "Model",
-					value: "human",
-					actualValue: "human",
-					type: "text",
-				},
-			]
 		case "minimax":
 			return [
 				createFieldConfig("minimaxBaseUrl", config, "https://api.minimax.io/anthropic"),
@@ -1088,7 +1078,6 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	roo: "gpt-4o",
 	"vercel-ai-gateway": "gpt-4o",
 	"virtual-quota-fallback": "gpt-4o",
-	"human-relay": "human",
 	minimax: "MiniMax-M2",
 	"fake-ai": "fake-model",
 	ovhcloud: "gpt-oss-120b",

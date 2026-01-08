@@ -157,7 +157,6 @@ export function getModelIdForProvider(provider: ProviderConfig): string {
 			return ""
 		case "huggingface":
 			return provider.huggingFaceModelId || ""
-		case "human-relay":
 		case "fake-ai":
 			return ""
 	}
