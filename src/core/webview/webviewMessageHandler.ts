@@ -2426,14 +2426,14 @@ export const webviewMessageHandler = async (
 				if (scope === "project") {
 					const workspacePath = getWorkspacePath()
 					if (workspacePath) {
-						rulesFolderPath = path.join(workspacePath, ".roo", `rules-${message.slug}`)
+						rulesFolderPath = path.join(workspacePath, ".kilocode", `rules-${message.slug}`)
 					} else {
-						rulesFolderPath = path.join(".roo", `rules-${message.slug}`)
+						rulesFolderPath = path.join(".kilocode", `rules-${message.slug}`)
 					}
 				} else {
 					// Global scope - use OS home directory
 					const homeDir = os.homedir()
-					rulesFolderPath = path.join(homeDir, ".roo", `rules-${message.slug}`)
+					rulesFolderPath = path.join(homeDir, ".kilocode", `rules-${message.slug}`)
 				}
 
 				// Check if the rules folder exists
@@ -3836,7 +3836,7 @@ export const webviewMessageHandler = async (
 				// Determine the commands directory based on source
 				let commandsDir: string
 				if (source === "global") {
-					const globalConfigDir = path.join(os.homedir(), ".roo")
+					const globalConfigDir = path.join(os.homedir(), ".kilocode")
 					commandsDir = path.join(globalConfigDir, "commands")
 				} else {
 					if (!vscode.workspace.workspaceFolders?.length) {
@@ -3849,7 +3849,7 @@ export const webviewMessageHandler = async (
 						vscode.window.showErrorMessage(t("common:errors.no_workspace_for_project_command"))
 						break
 					}
-					commandsDir = path.join(workspaceRoot, ".roo", "commands")
+					commandsDir = path.join(workspaceRoot, ".kilocode", "commands")
 				}
 
 				// Ensure the commands directory exists
