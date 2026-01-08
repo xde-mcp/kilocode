@@ -278,7 +278,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	write_to_file: "write files",
 	apply_diff: "apply changes",
 	// kilocode_change start
-	edit_file: "edit file",
+	// edit_file: "edit file",
 	delete_file: "delete files",
 	report_bug: "report bug",
 	condense: "condense the current context window",

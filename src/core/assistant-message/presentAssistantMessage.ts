@@ -422,8 +422,8 @@ export async function presentAssistantMessage(cline: Task) {
 					case "search_and_replace":
 						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change start
-					case "edit_file":
-						return `[${block.name} for '${block.params.target_file}']`
+					// case "edit_file":
+					// 	return `[${block.name} for '${block.params.target_file}']`
 					case "delete_file":
 						return `[${block.name} for '${block.params.path}']`
 					// kilocode_change end
@@ -963,9 +963,9 @@ export async function presentAssistantMessage(cline: Task) {
 					})
 					break
 				// kilocode_change start: Morph fast apply
-				case "edit_file":
-					await editFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
-					break
+				// case "edit_file":
+				// 	await editFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+				// 	break
 				case "delete_file":
 					await deleteFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
 					break

@@ -652,8 +652,8 @@ export class NativeToolCallParser {
 					break
 
 				// kilocode_change start
+				// case "edit_file":
 				case "condense":
-				case "edit_file":
 				case "delete_file":
 				case "new_rule":
 				case "report_bug":
