@@ -67,11 +67,6 @@ export class GhostStatusBar {
 		if (this.props.enabled) this.render()
 	}
 
-	private renderTokenError() {
-		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
-		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.tokenError"))
-	}
-
 	private formatTime(timestamp: number): string {
 		const date = new Date(timestamp)
 		return date.toLocaleTimeString()
@@ -105,14 +100,11 @@ export class GhostStatusBar {
 	}
 
 	public render() {
-		if (!this.props.hasValidToken) {
-			if (this.props.hasKilocodeProfileWithNoBalance) {
-				return this.renderNoCreditsError()
-			}
-			if (this.props.hasNoUsableProvider) {
-				return this.renderNoUsableProviderError()
-			}
-			return this.renderTokenError()
+		if (this.props.hasKilocodeProfileWithNoBalance) {
+			return this.renderNoCreditsError()
+		}
+		if (this.props.hasNoUsableProvider) {
+			return this.renderNoUsableProviderError()
 		}
 		return this.renderDefault()
 	}

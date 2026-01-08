@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (devre dışı)",
-				"tokenError": "Autocomplete kullanmak için geçerli bir token ayarlanmalı",
 				"sessionTotal": "Oturum toplam maliyeti:",
 				"provider": "Sağlayıcı:",
 				"model": "Model:",

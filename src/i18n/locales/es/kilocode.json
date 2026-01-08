@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (deshabilitado)",
-				"tokenError": "Se debe establecer un token válido para usar Autocomplete",
 				"sessionTotal": "Costo total de la sesión:",
 				"provider": "Proveedor:",
 				"model": "Modelo:",

@@ -108,7 +108,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (معطل)",
-				"tokenError": "يجب تعيين رمز صالح لاستخدام الإكمال التلقائي",
 				"sessionTotal": "إجمالي تكلفة الجلسة:",
 				"provider": "المزود:",
 				"model": "النموذج:",

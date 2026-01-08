@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (đã tắt)",
-				"tokenError": "Phải đặt token hợp lệ để sử dụng Autocomplete",
 				"sessionTotal": "Tổng chi phí phiên:",
 				"provider": "Nhà cung cấp:",
 				"model": "Mô hình:",

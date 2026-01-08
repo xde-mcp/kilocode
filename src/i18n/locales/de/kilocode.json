@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (deaktiviert)",
-				"tokenError": "Ein gültiger Token muss gesetzt werden, um Autocomplete zu verwenden",
 				"sessionTotal": "Sitzungsgesamtkosten:",
 				"provider": "Anbieter:",
 				"model": "Modell:",

@@ -295,7 +295,6 @@ export class GhostServiceManager {
 			enabled: false,
 			model: "loading...",
 			provider: "loading...",
-			hasValidToken: false,
 			totalSessionCost: 0,
 			completionCount: 0,
 			sessionStartTime: this.sessionStartTime,
@@ -314,10 +313,6 @@ export class GhostServiceManager {
 			return
 		}
 		return this.model.getProviderDisplayName()
-	}
-
-	private hasValidApiToken(): boolean {
-		return this.model.loaded && this.model.hasValidCredentials()
 	}
 
 	private hasNoUsableProvider(): boolean {
@@ -343,7 +338,6 @@ export class GhostServiceManager {
 			model: this.getCurrentModelName(),
 			provider: this.getCurrentProviderName(),
 			profileName: this.model.profileName,
-			hasValidToken: this.hasValidApiToken(),
 			hasKilocodeProfileWithNoBalance: this.model.hasKilocodeProfileWithNoBalance,
 			hasNoUsableProvider: this.hasNoUsableProvider(),
 			totalSessionCost: this.sessionCost,

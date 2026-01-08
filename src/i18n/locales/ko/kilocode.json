@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (비활성화됨)",
-				"tokenError": "Autocomplete를 사용하려면 유효한 토큰을 설정해야 합니다",
 				"sessionTotal": "세션 총 비용:",
 				"provider": "제공업체:",
 				"model": "모델:",

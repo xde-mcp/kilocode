@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (uitgeschakeld)",
-				"tokenError": "Een geldig token moet worden ingesteld om Autocomplete te gebruiken",
 				"sessionTotal": "Totale sessiekosten:",
 				"provider": "Provider:",
 				"model": "Model:",

@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete（已停用）",
-				"tokenError": "必須設定有效 Token 才能使用 Autocomplete",
 				"sessionTotal": "工作階段總費用:",
 				"provider": "提供者:",
 				"model": "模型:",

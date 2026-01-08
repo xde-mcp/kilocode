@@ -104,7 +104,6 @@
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete（無効）",
-				"tokenError": "Autocompleteを使用するには有効なトークンを設定する必要があります",
 				"sessionTotal": "セッション合計コスト:",
 				"provider": "プロバイダー:",
 				"model": "モデル:",
