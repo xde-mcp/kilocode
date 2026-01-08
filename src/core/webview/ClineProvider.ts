@@ -1816,7 +1816,13 @@ export class ClineProvider
 
 		// if we tried to get a task that doesn't exist, remove it from state
 		// FIXME: this seems to happen sometimes when the json file doesnt save to disk for some reason
-		await this.deleteTaskFromState(id)
+		// kilocode_change start
+		// commented out deleting the task, because in the previous version we made this task red
+		// instead of deleting, and people were confused because the task was actually working fine
+		// which leads us to believe that this is triggered to often somehow, or that the task will turn up later
+		// via some sync ( context https://github.com/Kilo-Org/kilocode/pull/4880 )
+		// await this.deleteTaskFromState(id)
+		// kilocode_change end
 		throw new Error("Task not found")
 	}
 
