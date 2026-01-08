@@ -373,7 +373,7 @@ function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfigur
 
 	// Priority 1: Use direct Morph API key if available
 	// Allow human-relay for debugging
-	if ((apiProvider === "morph" && state.morphApiKey) || state.apiConfiguration?.apiProvider === "human-relay") {
+	if (apiProvider === "morph" && state.morphApiKey) {
 		const [org, model] = selectedModel.split("/")
 		return {
 			available: true,

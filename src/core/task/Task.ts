@@ -3783,7 +3783,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 							// when parsing slash commands, we still want to allow the user to provide their desired context
 							const { processedText, needsRulesFileCheck: needsCheck } = await parseKiloSlashCommands(
-								parsedText,
+								parsedText.text,
 								localWorkflowToggles,
 								globalWorkflowToggles,
 							)

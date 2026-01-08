@@ -58,7 +58,14 @@ export function convertToZAiFormat(
 					} else if (part.type === "image") {
 						imageParts.push({
 							type: "image_url",
-							image_url: { url: `data:${part.source.media_type};base64,${part.source.data}` },
+							image_url: {
+								// kilocode_change begin support type==url
+								url:
+									part.source.type === "url"
+										? part.source.url
+										: `data:${part.source.media_type};base64,${part.source.data}`,
+								// kilocode_change end
+							},
 						})
 					} else if (part.type === "tool_result") {
 						// Convert tool_result to OpenAI tool message format

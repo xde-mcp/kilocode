@@ -442,6 +442,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		}
 
 		let lastUsage: CompletionUsage | undefined = undefined
+		let inferenceProvider: string | undefined // kilocode_change
 		// Accumulator for reasoning_details FROM the API.
 		// We preserve the original shape of reasoning_details to prevent malformed responses.
 		const reasoningDetailsAccumulator = new Map<

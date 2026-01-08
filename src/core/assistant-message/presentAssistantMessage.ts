@@ -46,7 +46,7 @@ import { formatResponse } from "../prompts/responses"
 
 import { yieldPromise } from "../kilocode"
 import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
-import { editFileTool, isFastApplyAvailable } from "../tools/kilocode/editFileTool"
+import { isFastApplyAvailable } from "../tools/kilocode/editFileTool"
 import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
 import { newRuleTool } from "../tools/kilocode/newRuleTool"
 import { reportBugTool } from "../tools/kilocode/reportBugTool"

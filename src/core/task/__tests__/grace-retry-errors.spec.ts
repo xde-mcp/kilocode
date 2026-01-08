@@ -212,6 +212,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("consecutiveNoAssistantMessagesCount", () => {
 		it("should initialize to 0", () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -223,6 +224,7 @@ describe("Grace Retry Error Handling", () => {
 
 		it("should reset to 0 when abortTask is called", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -242,6 +244,7 @@ describe("Grace Retry Error Handling", () => {
 
 		it("should reset consecutiveNoToolUseCount when abortTask is called", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -266,6 +269,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("consecutiveNoToolUseCount", () => {
 		it("should initialize to 0", () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -279,6 +283,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("Grace Retry Pattern", () => {
 		it("should not show error on first failure (grace retry)", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -303,6 +308,7 @@ describe("Grace Retry Error Handling", () => {
 
 		it("should show error after 2 consecutive failures", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -327,6 +333,7 @@ describe("Grace Retry Error Handling", () => {
 
 		it("should show error on third consecutive failure", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -353,6 +360,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("Counter Reset on Success", () => {
 		it("should be able to simulate counter reset when valid content is received", () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -375,6 +383,7 @@ describe("Grace Retry Error Handling", () => {
 
 		it("should reset counter when tool uses are present", () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -399,6 +408,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("Error Marker", () => {
 		it("should use MODEL_NO_ASSISTANT_MESSAGES marker for error display", async () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",
@@ -422,6 +432,7 @@ describe("Grace Retry Error Handling", () => {
 	describe("Parallel with noToolsUsed error handling", () => {
 		it("should have separate counters for noToolsUsed and noAssistantMessages", () => {
 			const task = new Task({
+				context: mockExtensionContext,
 				provider: mockProvider,
 				apiConfiguration: mockApiConfig,
 				task: "test task",

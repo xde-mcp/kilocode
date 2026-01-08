@@ -3484,12 +3484,11 @@ ${prompt}
 						alwaysAllowReadOnly: !!state.alwaysAllowReadOnly,
 						alwaysAllowReadOnlyOutsideWorkspace: !!state.alwaysAllowReadOnlyOutsideWorkspace,
 						alwaysAllowSubtasks: !!state.alwaysAllowSubtasks,
-						alwaysAllowUpdateTodoList: !!state.alwaysAllowUpdateTodoList,
+
 						alwaysAllowWrite: !!state.alwaysAllowWrite,
 						alwaysAllowWriteOutsideWorkspace: !!state.alwaysAllowWriteOutsideWorkspace,
 						alwaysAllowWriteProtected: !!state.alwaysAllowWriteProtected,
 						alwaysAllowDelete: !!state.alwaysAllowDelete, // kilocode_change
-						alwaysApproveResubmit: !!state.alwaysApproveResubmit,
 						yoloMode: !!state.yoloMode,
 					},
 				}
