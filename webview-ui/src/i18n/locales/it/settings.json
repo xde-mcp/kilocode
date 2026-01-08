@@ -378,6 +378,14 @@
 		"geminiApiKey": "Chiave API Gemini",
 		"getGroqApiKey": "Ottieni chiave API Groq",
 		"groqApiKey": "Chiave API Groq",
+		"nanoGptApiKey": "Chiave API Nano-GPT",
+		"getNanoGptApiKey": "Ottieni chiave API Nano-GPT",
+		"nanoGptModelList": "Elenco modelli",
+		"nanoGptModelListOptions": {
+			"all": "Tutti i modelli",
+			"personalized": "Modelli personalizzati",
+			"subscription": "Modelli in abbonamento"
+		},
 		"getSambaNovaApiKey": "Ottieni chiave API SambaNova",
 		"sambaNovaApiKey": "Chiave API SambaNova",
 		"getHuggingFaceApiKey": "Ottieni chiave API Hugging Face",
@@ -993,13 +1001,13 @@
 		},
 		"CUSTOM_TOOLS": {
 			"name": "Abilita strumenti personalizzati",
-			"description": "Quando abilitato, Roo può caricare e utilizzare strumenti TypeScript/JavaScript personalizzati dalla directory .roo/tools del tuo progetto o ~/.roo/tools per strumenti globali. Nota: questi strumenti saranno automaticamente approvati.",
+			"description": "Quando abilitato, Kilo può caricare e utilizzare strumenti personalizzati TypeScript/JavaScript dalla directory .kilocode/tools del tuo progetto o ~/.kilocode/tools per strumenti globali. Nota: questi strumenti saranno automaticamente auto-approvati.",
 			"toolsHeader": "Strumenti personalizzati disponibili",
-			"noTools": "Nessuno strumento personalizzato caricato. Aggiungi file .ts o .js alla directory .roo/tools del tuo progetto o ~/.roo/tools per strumenti globali.",
+			"noTools": "Nessuno strumento personalizzato caricato. Aggiungi file .ts o .js alla directory .kilocode/tools del tuo progetto o ~/.kilocode/tools per strumenti globali.",
 			"refreshButton": "Aggiorna",
-			"refreshing": "Aggiornamento...",
+			"refreshing": "Aggiornamento in corso...",
 			"refreshSuccess": "Strumenti aggiornati con successo",
-			"refreshError": "Impossibile aggiornare gli strumenti",
+			"refreshError": "Aggiornamento strumenti non riuscito",
 			"toolParameters": "Parametri"
 		}
 	},

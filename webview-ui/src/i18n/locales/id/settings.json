@@ -247,6 +247,10 @@
 			"label": "Tampilkan menu auto-approve di tampilan chat",
 			"description": "Ketika diaktifkan, menu auto-approve akan ditampilkan di bagian bawah tampilan chat, memungkinkan akses cepat ke pengaturan auto-approve"
 		},
+		"updateTodoList": {
+			"label": "Todo",
+			"description": "Secara otomatis memperbarui daftar todo tanpa memerlukan persetujuan"
+		},
 		"apiRequestLimit": {
 			"title": "Permintaan Maks",
 			"description": "Secara otomatis membuat sejumlah permintaan API ini sebelum meminta persetujuan untuk melanjutkan tugas.",
@@ -1012,9 +1016,9 @@
 		},
 		"CUSTOM_TOOLS": {
 			"name": "Aktifkan tool kustom",
-			"description": "Ketika diaktifkan, Roo dapat memuat dan menggunakan tool TypeScript/JavaScript kustom dari direktori .roo/tools proyek Anda atau ~/.roo/tools untuk tool global. Catatan: tool ini akan disetujui otomatis.",
+			"description": "Ketika diaktifkan, Kilo dapat memuat dan menggunakan tool kustom TypeScript/JavaScript dari direktori .kilocode/tools proyek kamu atau ~/.kilocode/tools untuk tool global. Catatan: tool ini akan otomatis disetujui.",
 			"toolsHeader": "Tool Kustom yang Tersedia",
-			"noTools": "Tidak ada tool kustom yang dimuat. Tambahkan file .ts atau .js ke direktori .roo/tools proyek Anda atau ~/.roo/tools untuk tool global.",
+			"noTools": "Tidak ada tool kustom yang dimuat. Tambahkan file .ts atau .js ke direktori .kilocode/tools proyek kamu atau ~/.kilocode/tools untuk tool global.",
 			"refreshButton": "Refresh",
 			"refreshing": "Merefresh...",
 			"refreshSuccess": "Tool berhasil direfresh",

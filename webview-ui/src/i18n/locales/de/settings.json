@@ -990,13 +990,13 @@
 		},
 		"CUSTOM_TOOLS": {
 			"name": "Benutzerdefinierte Tools aktivieren",
-			"description": "Wenn aktiviert, kann Roo benutzerdefinierte TypeScript/JavaScript-Tools aus dem .roo/tools-Verzeichnis deines Projekts oder ~/.roo/tools für globale Tools laden und verwenden. Hinweis: Diese Tools werden automatisch genehmigt.",
+			"description": "Wenn aktiviert, kann Kilo benutzerdefinierte TypeScript/JavaScript Tools aus dem .kilocode/tools-Verzeichnis deines Projekts oder ~/.kilocode/tools für globale Tools laden und verwenden. Hinweis: Diese Tools werden automatisch genehmigt.",
 			"toolsHeader": "Verfügbare benutzerdefinierte Tools",
-			"noTools": "Keine benutzerdefinierten Tools geladen. Füge .ts- oder .js-Dateien zum .roo/tools-Verzeichnis deines Projekts oder ~/.roo/tools für globale Tools hinzu.",
+			"noTools": "Keine benutzerdefinierten Tools geladen. Füge .ts oder .js Dateien zum .kilocode/tools-Verzeichnis deines Projekts oder ~/.kilocode/tools für globale Tools hinzu.",
 			"refreshButton": "Aktualisieren",
-			"refreshing": "Aktualisieren...",
+			"refreshing": "Wird aktualisiert...",
 			"refreshSuccess": "Tools erfolgreich aktualisiert",
-			"refreshError": "Fehler beim Aktualisieren der Tools",
+			"refreshError": "Aktualisierung der Tools fehlgeschlagen",
 			"toolParameters": "Parameter"
 		}
 	},

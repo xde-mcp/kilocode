@@ -1001,9 +1001,9 @@
 		},
 		"CUSTOM_TOOLS": {
 			"name": "カスタムツールを有効化",
-			"description": "有効にすると、Rooはプロジェクトの.roo/toolsディレクトリまたはグローバルツール用の~/.roo/toolsからカスタムTypeScript/JavaScriptツールを読み込んで使用できます。注意：これらのツールは自動的に承認されます。",
+			"description": "有効にすると、Kiloはプロジェクトの .kilocode/tools ディレクトリまたはグローバルツール用の ~/.kilocode/tools からカスタム TypeScript/JavaScript ツールを読み込んで使用できます。注意：これらのツールは自動的に承認されます。",
 			"toolsHeader": "利用可能なカスタムツール",
-			"noTools": "カスタムツールが読み込まれていません。プロジェクトの.roo/toolsディレクトリまたはグローバルツール用の~/.roo/toolsに.tsまたは.jsファイルを追加してください。",
+			"noTools": "カスタムツールが読み込まれていません。プロジェクトの .kilocode/tools ディレクトリまたはグローバルツール用の ~/.kilocode/tools に .ts または .js ファイルを追加してください。",
 			"refreshButton": "更新",
 			"refreshing": "更新中...",
 			"refreshSuccess": "ツールが正常に更新されました",
