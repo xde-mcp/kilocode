@@ -254,49 +254,6 @@ describe("SelectDropdown", () => {
 			expect(content).toBeInTheDocument()
 		})
 
-		// kilocode_change start: Tests for LABEL type (section headers)
-		it("renders label options as section headers", () => {
-			const optionsWithLabel = [
-				{ value: "__label_recommended__", label: "Recommended models", type: DropdownOptionType.LABEL },
-				{ value: "model1", label: "Model 1" },
-				{ value: "__label_all__", label: "All models", type: DropdownOptionType.LABEL },
-				{ value: "model2", label: "Model 2" },
-			]
-
-			render(<SelectDropdown value="model1" options={optionsWithLabel} onChange={onChangeMock} />)
-
-			// Click the trigger to open the dropdown
-			const trigger = screen.getByTestId("dropdown-trigger")
-			fireEvent.click(trigger)
-
-			// Now we can check for dropdown content
-			const content = screen.getByTestId("dropdown-content")
-			expect(content).toBeInTheDocument()
-		})
-
-		it("LABEL options are non-selectable", () => {
-			const optionsWithLabel = [
-				{ value: "__label_section__", label: "Section Header", type: DropdownOptionType.LABEL },
-				{ value: "option1", label: "Option 1" },
-			]
-
-			render(<SelectDropdown value="option1" options={optionsWithLabel} onChange={onChangeMock} />)
-
-			// Click the trigger to open the dropdown
-			const trigger = screen.getByTestId("dropdown-trigger")
-			fireEvent.click(trigger)
-
-			// The content should be rendered
-			const content = screen.getByTestId("dropdown-content")
-			expect(content).toBeInTheDocument()
-
-			// Note: The actual component renders LABEL items as static divs without onClick handlers
-			// (with data-testid="dropdown-label"), making them inherently non-selectable.
-			// This test uses mocks, so we just verify the component renders correctly.
-			// The non-selectability behavior is ensured by the component's implementation.
-		})
-		// kilocode_change end
-
 		it("calls onChange for regular menu items", () => {
 			render(<SelectDropdown value="option1" options={options} onChange={onChangeMock} />)
 

@@ -32,7 +32,7 @@ export const ModelSelector = ({
 	const modelIdKey = getModelIdKey({ provider })
 	const isAutocomplete = apiConfiguration.profileType === "autocomplete"
 
-	const { preferredModelIds, restModelIds, hasPreferred } = useGroupedModelIds(providerModels)
+	const { preferredModelIds, restModelIds } = useGroupedModelIds(providerModels)
 	const options = useMemo(() => {
 		const result: DropdownOption[] = []
 
@@ -41,7 +41,7 @@ export const ModelSelector = ({
 		const isMissingSelectedModel = selectedModelId && !allModelIds.includes(selectedModelId)
 
 		// Add "Recommended models" section if there are preferred models
-		if (hasPreferred && preferredModelIds.length > 0) {
+		if (preferredModelIds.length > 0) {
 			result.push({
 				value: "__label_recommended__",
 				label: t("settings:modelPicker.recommendedModels"),
@@ -91,7 +91,7 @@ export const ModelSelector = ({
 		}
 
 		return result
-	}, [preferredModelIds, restModelIds, hasPreferred, providerModels, selectedModelId, t])
+	}, [preferredModelIds, restModelIds, providerModels, selectedModelId, t])
 
 	const disabled = isLoading || isError || isAutocomplete
 

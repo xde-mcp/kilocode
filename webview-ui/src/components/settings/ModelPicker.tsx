@@ -88,7 +88,7 @@ export const ModelPicker = ({
 	const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 	// kilocode_change start: Use grouped model IDs for section headers
-	const { preferredModelIds, restModelIds, hasPreferred } = useGroupedModelIds(models)
+	const { preferredModelIds, restModelIds } = useGroupedModelIds(models)
 	const modelIds = useMemo(() => [...preferredModelIds, ...restModelIds], [preferredModelIds, restModelIds])
 	const [isPricingExpanded, setIsPricingExpanded] = useState(false)
 	// kilocode_change end
@@ -206,7 +206,7 @@ export const ModelPicker = ({
 									)}
 								</CommandEmpty>
 								{/* kilocode_change start: Section headers for recommended and all models */}
-								{hasPreferred && preferredModelIds.length > 0 && (
+								{preferredModelIds.length > 0 && (
 									<CommandGroup heading={t("settings:modelPicker.recommendedModels")}>
 										{preferredModelIds.map((model) => (
 											<CommandItem

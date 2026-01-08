@@ -48,7 +48,6 @@ describe("ModelSelector", () => {
 		mockUseGroupedModelIds.mockReturnValue({
 			preferredModelIds: [],
 			restModelIds: ["model-1", "model-2"],
-			hasPreferred: false,
 		})
 
 		// Default mock implementation for useProviderModels
@@ -207,7 +206,6 @@ describe("ModelSelector", () => {
 			mockUseGroupedModelIds.mockReturnValue({
 				preferredModelIds: ["preferred-1", "preferred-2"],
 				restModelIds: ["model-1", "model-2"],
-				hasPreferred: true,
 			})
 
 			mockUseProviderModels.mockReturnValue({
@@ -244,7 +242,6 @@ describe("ModelSelector", () => {
 			mockUseGroupedModelIds.mockReturnValue({
 				preferredModelIds: [],
 				restModelIds: ["model-1", "model-2"],
-				hasPreferred: false,
 			})
 
 			render(
@@ -268,7 +265,6 @@ describe("ModelSelector", () => {
 			mockUseGroupedModelIds.mockReturnValue({
 				preferredModelIds: ["preferred-1"],
 				restModelIds: [],
-				hasPreferred: true,
 			})
 
 			mockUseProviderModels.mockReturnValue({

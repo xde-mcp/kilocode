@@ -319,7 +319,7 @@ export const SelectDropdown = React.memo(
 											if (option.type === DropdownOptionType.LABEL) {
 												return (
 													<div
-														key={`section-${index}`}
+														key={`label-${index}`}
 														className="px-3 py-1.5 text-xs font-medium text-vscode-descriptionForeground uppercase tracking-wide"
 														data-testid="dropdown-label">
 														{option.label}

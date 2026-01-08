@@ -20,7 +20,6 @@ describe("getGroupedModelIds", () => {
 		expect(result).toEqual({
 			preferredModelIds: [],
 			restModelIds: [],
-			hasPreferred: false,
 		})
 	})
 
@@ -30,7 +29,6 @@ describe("getGroupedModelIds", () => {
 		expect(result).toEqual({
 			preferredModelIds: [],
 			restModelIds: [],
-			hasPreferred: false,
 		})
 	})
 
@@ -46,7 +44,6 @@ describe("getGroupedModelIds", () => {
 
 		expect(result.preferredModelIds).toEqual(["model-c", "model-a"])
 		expect(result.restModelIds).toEqual(["model-b", "model-d"])
-		expect(result.hasPreferred).toBe(true)
 	})
 
 	it("sorts preferred models by preferredIndex", () => {
@@ -59,7 +56,6 @@ describe("getGroupedModelIds", () => {
 		const result = getGroupedModelIds(models)
 
 		expect(result.preferredModelIds).toEqual(["model-a", "model-m", "model-z"])
-		expect(result.hasPreferred).toBe(true)
 	})
 
 	it("sorts rest models alphabetically", () => {
@@ -72,7 +68,6 @@ describe("getGroupedModelIds", () => {
 		const result = getGroupedModelIds(models)
 
 		expect(result.restModelIds).toEqual(["alpha-model", "beta-model", "zebra-model"])
-		expect(result.hasPreferred).toBe(false)
 	})
 
 	it("handles case where all models are preferred", () => {
@@ -85,7 +80,6 @@ describe("getGroupedModelIds", () => {
 
 		expect(result.preferredModelIds).toEqual(["model-a", "model-b"])
 		expect(result.restModelIds).toEqual([])
-		expect(result.hasPreferred).toBe(true)
 	})
 
 	it("handles case where no models are preferred", () => {
@@ -98,12 +92,11 @@ describe("getGroupedModelIds", () => {
 
 		expect(result.preferredModelIds).toEqual([])
 		expect(result.restModelIds).toEqual(["model-a", "model-b"])
-		expect(result.hasPreferred).toBe(false)
 	})
 })
 
 describe("useGroupedModelIds", () => {
-	it("returns grouped model IDs with hasPreferred flag", () => {
+	it("returns grouped model IDs", () => {
 		const models: Record<string, ModelInfo> = {
 			"pref-model": createModelInfo({ preferredIndex: 0 }),
 			"rest-model": createModelInfo(),
@@ -113,7 +106,6 @@ describe("useGroupedModelIds", () => {
 
 		expect(result.current.preferredModelIds).toEqual(["pref-model"])
 		expect(result.current.restModelIds).toEqual(["rest-model"])
-		expect(result.current.hasPreferred).toBe(true)
 	})
 
 	it("memoizes result when models don't change", () => {
