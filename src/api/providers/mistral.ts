@@ -223,10 +223,7 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 
 		return {
 			streamFim: this.streamFim.bind(this),
-			getModel: () => {
-				const { id, info, maxTokens } = this.getModel()
-				return { id, info, maxTokens }
-			},
+			getModel: () => this.getModel(),
 			getTotalCost: (usage: CompletionUsage) => {
 				// Calculate cost based on model pricing
 				const { info } = this.getModel()

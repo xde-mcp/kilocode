@@ -150,18 +150,10 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 			return undefined
 		}
 
-		// Return a FimHandler implementation
-		return {
-			streamFim: this.streamFim.bind(this),
-			getModel: () => {
-				const { id, info, maxTokens } = this.getModel()
-				return { id, info, maxTokens }
-			},
-			getTotalCost: (usage: CompletionUsage) => this.getTotalCost(usage),
-		}
+		return this
 	}
 
-	private async *streamFim(
+	async *streamFim(
 		prefix: string,
 		suffix: string,
 		taskId?: string,
