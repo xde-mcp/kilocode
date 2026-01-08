@@ -261,6 +261,18 @@ There are community efforts to build and share agent skills. Some resources incl
 
 4. **Check file location**: Ensure `SKILL.md` is directly inside the skill directory, not nested further.
 
+### Verifying a Skill is Activated
+
+To confirm a skill is properly loaded and available to the agent, you can ask the agent directly. Simply send a message like:
+
+- "Do you have access to skill X?"
+- "Is the skill called X loaded?"
+- "What skills do you have available?"
+
+The agent will respond with information about whether the skill is loaded and accessible. This is the most reliable way to verify that a skill has been activated after adding it or reloading VSCode.
+
+If the agent confirms the skill is available, you're ready to use it. If not, check the troubleshooting steps above to identify and resolve the issue.
+
 ### Common Errors
 
 | Error                           | Cause                                        | Solution                                         |
