@@ -1,7 +1,6 @@
 import { IDE, RangeInFileWithContents } from "../index"
 import { AutocompleteLanguageInfo } from "./constants/AutocompleteLanguageInfo"
 
-// Snippet types (merged from snippets/types.ts)
 export enum AutocompleteSnippetType {
 	Code = "code",
 	Diff = "diff",
@@ -39,10 +38,6 @@ export type AutocompleteSnippet =
 	| AutocompleteClipboardSnippet
 	| AutocompleteStaticSnippet
 
-/**
- * A snippet with range information and an optional relevance score.
- * Used for ranking and selecting context snippets in autocomplete.
- */
 export type RankedSnippet = RangeInFileWithContents & {
 	score?: number
 }
