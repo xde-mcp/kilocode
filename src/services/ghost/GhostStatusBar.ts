@@ -1,6 +1,22 @@
 import * as vscode from "vscode"
+import { AUTOCOMPLETE_PROVIDER_MODELS, ProviderName } from "@roo-code/types"
 import { t } from "../../i18n"
+import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
 import type { GhostStatusBarStateProps } from "./types"
+
+// Convert PROVIDERS array to a lookup map for display names
+const PROVIDER_DISPLAY_NAMES = Object.fromEntries(PROVIDERS.map(({ value, label }) => [value, label])) as Record<
+	ProviderName,
+	string
+>
+
+/**
+ * Get the display names of all supported autocomplete providers
+ */
+function getSupportedProviderDisplayNames(): string[] {
+	const providerKeys = Array.from(AUTOCOMPLETE_PROVIDER_MODELS.keys())
+	return providerKeys.map((key) => PROVIDER_DISPLAY_NAMES[key as ProviderName] || key)
+}
 
 export class GhostStatusBar {
 	statusBar: vscode.StatusBarItem
@@ -108,6 +124,10 @@ export class GhostStatusBar {
 
 	private renderNoUsableProviderError() {
 		this.statusBar.text = t("kilocode:ghost.statusBar.warning")
-		this.statusBar.tooltip = this.createMarkdownTooltip(t("kilocode:ghost.statusBar.tooltip.noUsableProvider"))
+		const providers = getSupportedProviderDisplayNames()
+		const providerList = providers.join(", ")
+		this.statusBar.tooltip = this.createMarkdownTooltip(
+			t("kilocode:ghost.statusBar.tooltip.noUsableProvider", { providers: providerList }),
+		)
 	}
 }
