@@ -11,6 +11,8 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import { calculateApiCostOpenAI } from "../../shared/cost"
 import { convertToR1Format } from "../transform/r1-format"
 import { XmlMatcher } from "../../utils/xml-matcher"
+import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
+import { addNativeToolCallsToParams } from "./kilocode/nativeToolCallHelpers" // kilocode_change
 
 export class OVHcloudAIEndpointsHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {
@@ -28,7 +30,7 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 	override async *createMessage(
 		systemPrompt: string,
 		messages: Anthropic.Messages.MessageParam[],
-		_metadata?: ApiHandlerCreateMessageMetadata,
+		metadata?: ApiHandlerCreateMessageMetadata,
 	): ApiStream {
 		const { id: modelId, info } = await this.fetchModel()
 
@@ -45,7 +47,12 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 			stream_options: { include_usage: true },
 		}
 
-		const completion = await this.client.chat.completions.create(body)
+		// kilocode_change start
+		const completion = await this.client.chat.completions.create(
+			addNativeToolCallsToParams(body, this.options, metadata),
+		)
+		// kilocode_change end
+
 		const matcher = new XmlMatcher(
 			"think",
 			(chunk) =>
@@ -56,12 +63,28 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 		)
 
 		for await (const chunk of completion) {
+			verifyFinishReason(chunk.choices[0]) // kilocode_change
 			const delta = chunk.choices[0]?.delta
+
 			if (delta?.content) {
 				for (const matcherChunk of matcher.update(delta.content)) {
 					yield matcherChunk
 				}
 			}
+
+			// kilocode_change start - Emit raw tool call chunks - NativeToolCallParser handles state management
+			if (delta?.tool_calls) {
+				for (const toolCall of delta.tool_calls) {
+					yield {
+						type: "tool_call_partial",
+						index: toolCall.index,
+						id: toolCall.id,
+						name: toolCall.function?.name,
+						arguments: toolCall.function?.arguments,
+					}
+				}
+			}
+			// kilocode_change end
 
 			if (chunk.usage) {
 				const usage = chunk.usage as OpenAI.CompletionUsage
