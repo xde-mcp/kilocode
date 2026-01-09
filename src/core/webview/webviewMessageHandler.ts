@@ -1197,13 +1197,15 @@ export const webviewMessageHandler = async (
 			if (message?.values?.sapAiCoreServiceKey) {
 				try {
 					// Flush cache first to ensure fresh models.
-					await flushModels("sap-ai-core")
+					await flushModels(
+						{
+							provider: "sap-ai-core",
+						},
+						true,
+					)
 
 					const sapAiCoreModels = await getModels({
 						provider: "sap-ai-core",
-						sapAiCoreServiceKey: message?.values?.sapAiCoreServiceKey,
-						sapAiCoreResourceGroup: message?.values?.sapAiCoreResourceGroup,
-						sapAiCoreUseOrchestration: message?.values?.sapAiCoreUseOrchestration,
 					})
 
 					if (Object.keys(sapAiCoreModels).length > 0) {
@@ -2168,7 +2170,14 @@ export const webviewMessageHandler = async (
 						await refreshOrganizationModes(message, provider, updateGlobalState)
 
 						// Flush and refetch models
-						await flushModels("kilocode")
+						await flushModels(
+							{
+								provider: "kilocode",
+								kilocodeOrganizationId: message.apiConfiguration.kilocodeOrganizationId,
+								kilocodeToken: message.apiConfiguration.kilocodeToken,
+							},
+							true,
+						)
 						const models = await getModels({
 							provider: "kilocode",
 							kilocodeOrganizationId: message.apiConfiguration.kilocodeOrganizationId,
