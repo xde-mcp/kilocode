@@ -55,7 +55,7 @@ export function getNativeTools(options: NativeToolsOptions = {}): OpenAI.Chat.Ch
 	return [
 		// kilocode_change start
 		deleteFile,
-		editFile,
+		// editFile,
 		// todo:
 		// condenseTool,
 		// newRuleTool,
