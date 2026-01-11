@@ -410,7 +410,8 @@ describe("extension.ts", () => {
 		expect(mockBridgeOrchestratorDisconnect).not.toHaveBeenCalled()
 	})
 
-	describe("Roo model cache refresh on auth state change (ROO-202)", () => {
+	// kilocode_change: skip Roo models
+	describe.skip("Roo model cache refresh on auth state change (ROO-202)", () => {
 		beforeEach(() => {
 			vi.resetModules()
 			mockRefreshModels.mockClear()
