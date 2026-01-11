@@ -137,6 +137,7 @@ describe("ProviderSettingsManager", () => {
 						consecutiveMistakeLimitMigrated: true,
 						todoListEnabledMigrated: true,
 						morphApiKeyMigrated: true,
+						claudeCodeLegacySettingsMigrated: true,
 					},
 				}),
 			)
