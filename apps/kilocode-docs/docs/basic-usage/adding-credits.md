@@ -14,7 +14,7 @@ You can also use subscriptions or credits you may have purchased directly with a
 
 ## Kilo Pass
 
-Kilo Pass is a subscription which adds credits to your account every month, along with bonus credits depending on your subscription type and duration.
+Kilo Pass is a subscription which adds credits to your account every month, along with bonus credits depending on your subscription type and duration. For pricing information, please see our [pricing page](https://kilo.ai/pricing).
 
 * Kilo Pass purchased credits never expire.
 * Kilo Pass bonus credits expire after 1 month.
