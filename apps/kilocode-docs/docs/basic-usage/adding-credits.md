@@ -4,9 +4,23 @@ import { DISCORD_URL } from '@site/src/constants.ts'
 
 Once you've used any initial free Kilo Credits, you can easily add more:
 
-- Add a credit card to your account (all payments are securely processed through Stripe)
-- We don't currently offer a subscription, so you only pay for the credits you use, and only when you choose to top up your credits!
-- Leverage your own API provider by [connecting your own API provider](/getting-started/connecting-api-provider.md)
+- Subscribe to the [Kilo Pass](#kilo-pass), the most cost effective way to add credits.
+- Enable automatic top-up, which automatically purchases additional credits when you balance dips below $5.
+- Purchase additional credits.
+
+These options are available to purchase from your personal profile page. 
+
+You can also leverage your own API provider by [connecting your own API provider](/getting-started/connecting-api-provider.md).
+
+## Kilo Pass
+
+Kilo Pass is a subscription which adds credits to your account every month, along with bonus credits depending on your subscription type and duration.
+
+* Kilo Pass purchased credits never expire.
+* Kilo Pass bonus credits expire after 1 month.
+* Auto-top, if configured, will automatically add additoinal credits as needed, in the event a Kilo Pass runs out of credits.
+
+If you are a Kilo Pass subscriber and would like to change your subscriptoin tier, please [contact support](https://kilo.ai/support).
 
 ## Transparent Pricing
 
