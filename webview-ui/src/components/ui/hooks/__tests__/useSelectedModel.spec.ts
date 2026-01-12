@@ -540,6 +540,8 @@ describe("useSelectedModel", () => {
 				contextWindow: 8192,
 				supportsImages: false,
 				supportsPromptCache: false,
+				supportsNativeTools: true,
+				defaultToolProtocol: "native",
 			}
 
 			mockUseRouterModels.mockReturnValue({
