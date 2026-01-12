@@ -6,7 +6,7 @@ Once you've used any initial free Kilo Credits, you can easily add more:
 
 - Subscribe to the [Kilo Pass](#kilo-pass), the most cost effective way to add credits.
 - Enable automatic top-up, which automatically purchases additional credits when your balance dips below $5.
-- Purchase additional credits.
+- Purchase additional credits as a one-time transaction.
 
 These options are available to purchase from your personal profile page. 
 
