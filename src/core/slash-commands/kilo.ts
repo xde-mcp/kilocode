@@ -28,11 +28,19 @@ export async function parseKiloSlashCommands(
 	localWorkflowToggles: ClineRulesToggles,
 	globalWorkflowToggles: ClineRulesToggles,
 ): Promise<{ processedText: string; needsRulesFileCheck: boolean }> {
+	// kilocode_change start - /smol and /condense are aliases
+	const condenseAliases = condenseToolResponse
+	// kilocode_change end
+
 	const commandReplacements: Record<string, ((userInput: string) => string) | undefined> = {
 		newtask: newTaskToolResponse,
 		newrule: newRuleToolResponse,
 		reportbug: reportBugToolResponse,
-		smol: condenseToolResponse,
+		// kilocode_change start - /smol and /condense are aliases
+		smol: condenseAliases,
+		condense: condenseAliases,
+		compact: condenseAliases,
+		// kilocode_change end
 	}
 
 	// this currently allows matching prepended whitespace prior to /slash-command
