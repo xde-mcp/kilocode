@@ -5,7 +5,7 @@ import { DISCORD_URL } from '@site/src/constants.ts'
 Once you've used any initial free Kilo Credits, you can easily add more:
 
 - Subscribe to the [Kilo Pass](#kilo-pass), the most cost effective way to add credits.
-- Enable automatic top-up, which automatically purchases additional credits when you balance dips below $5.
+- Enable automatic top-up, which automatically purchases additional credits when your balance dips below $5.
 - Purchase additional credits.
 
 These options are available to purchase from your personal profile page. 
