@@ -10,7 +10,7 @@ Once you've used any initial free Kilo Credits, you can easily add more:
 
 These options are available to purchase from your [personal profile page](https://app.kilo.ai). 
 
-You can also leverage your own API provider by [connecting your own API provider](/getting-started/connecting-api-provider.md).
+You can also use subscriptions or credits you may have purchased directly with an AI provider by setting up [(Bring your own key (BYOK)](https://app.kilo.ai/byok) using the Kilo Gateway. 
 
 ## Kilo Pass
 
