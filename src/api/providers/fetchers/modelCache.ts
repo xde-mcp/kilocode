@@ -100,7 +100,7 @@ async function fetchModelsFromProvider(options: GetModelsOptions): Promise<Model
 			break
 		case "litellm":
 			// Type safety ensures apiKey and baseUrl are always provided for LiteLLM.
-			models = await getLiteLLMModels(options.apiKey ?? "", options.baseUrl ?? "")
+			models = await getLiteLLMModels(options.apiKey ?? "", options.baseUrl ?? "") // kilocode_change: null coalescing
 			break
 		// kilocode_change start
 		case "kilocode": {
