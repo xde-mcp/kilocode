@@ -268,7 +268,18 @@ export function filterNativeToolsForMode(
 		),
 	)
 
-	// Apply model-specific tool customization
+	// kilocode_change start
+	// Apply Fast Apply logic BEFORE model customization so that explicit inclusions can override it
+	if (state && isFastApplyAvailable(state)) {
+		// When Fast Apply is enabled, disable traditional editing tools
+		const traditionalEditingTools = ["apply_diff", "write_to_file"]
+		traditionalEditingTools.forEach((tool) => allowedToolNames.delete(tool))
+	} else {
+		allowedToolNames.delete("edit_file")
+	}
+	// kilocode_change end
+
+	// Apply model-specific tool customization (can re-add tools if explicitly included)
 	const modelInfo = settings?.modelInfo as ModelInfo | undefined
 	const { allowedTools: customizedTools, aliasRenames } = applyModelToolCustomization(
 		allowedToolNames,
@@ -313,16 +324,6 @@ export function filterNativeToolsForMode(
 	) {
 		allowedToolNames.delete("browser_action")
 	}
-
-	// kilocode_change start
-	if (state && isFastApplyAvailable(state)) {
-		// When Fast Apply is enabled, disable traditional editing tools
-		const traditionalEditingTools = ["apply_diff", "write_to_file"]
-		traditionalEditingTools.forEach((tool) => allowedToolNames.delete(tool))
-	} else {
-		allowedToolNames.delete("edit_file")
-	}
-	// kilocode_change end
 
 	// Conditionally exclude apply_diff if diffs are disabled
 	if (settings?.diffEnabled === false) {

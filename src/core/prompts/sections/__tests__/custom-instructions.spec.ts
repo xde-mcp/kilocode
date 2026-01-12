@@ -1447,9 +1447,9 @@ describe("Rules directory reading", () => {
 
 		// Verify both regular file and symlink target content are included (paths should be relative)
 		const expectedRelativeRegularPath =
-			process.platform === "win32" ? ".roo\\rules\\regular.txt" : ".roo/rules/regular.txt"
+			process.platform === "win32" ? ".kilocode\\rules\\regular.txt" : ".kilocode/rules/regular.txt"
 		const expectedRelativeSymlinkPath =
-			process.platform === "win32" ? ".roo\\symlink-target.txt" : ".roo/symlink-target.txt"
+			process.platform === "win32" ? ".kilocode\\symlink-target.txt" : ".kilocode/symlink-target.txt"
 		const expectedRelativeSubdirPath =
 			process.platform === "win32"
 				? ".kilocode\\rules\\symlink-target-dir\\subdir_link.txt"

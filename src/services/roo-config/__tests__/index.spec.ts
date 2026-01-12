@@ -425,8 +425,8 @@ describe("RooConfigService", () => {
 			const result = await getAllRooDirectoriesForCwd("/project/path")
 
 			expect(result).toEqual([
-				path.join("/mock/home", ".roo"), // global
-				path.join("/project/path", ".roo"), // project
+				path.join("/mock/home", ".kilocode"), // global
+				path.join("/project/path", ".kilocode"), // project
 				path.join("/project/path", "subfolder", ".roo"), // subfolder
 			])
 		})
@@ -436,7 +436,7 @@ describe("RooConfigService", () => {
 
 			const result = await getAllRooDirectoriesForCwd("/project/path")
 
-			expect(result).toEqual([path.join("/mock/home", ".roo"), path.join("/project/path", ".roo")])
+			expect(result).toEqual([path.join("/mock/home", ".kilocode"), path.join("/project/path", ".kilocode")])
 		})
 
 		it("should maintain order: global, project, subfolders (alphabetically)", async () => {
@@ -448,8 +448,8 @@ describe("RooConfigService", () => {
 			const result = await getAllRooDirectoriesForCwd("/project/path")
 
 			expect(result).toEqual([
-				path.join("/mock/home", ".roo"), // global first
-				path.join("/project/path", ".roo"), // project second
+				path.join("/mock/home", ".kilocode"), // global first
+				path.join("/project/path", ".kilocode"), // project second
 				path.join("/project/path", "apple", ".roo"), // subfolders alphabetically
 				path.join("/project/path", "zebra", ".roo"),
 			])
