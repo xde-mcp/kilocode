@@ -18,7 +18,8 @@ Kilo Pass is a subscription which adds credits to your account every month, alon
 
 * Kilo Pass purchased credits never expire.
 * Kilo Pass bonus credits expire after 1 month.
-* Auto-top, if configured, will automatically add additoinal credits as needed, in the event a Kilo Pass runs out of credits.
+* Auto-top, if configured, will automatically add additional credits as needed, in the event a Kilo Pass subscriber runs out of credits.
+* Kilo Pass is available for personal accounts only at this time.
 
 If you are a Kilo Pass subscriber and would like to change your subscriptoin tier, please [contact support](https://kilo.ai/support).
 
