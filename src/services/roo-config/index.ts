@@ -185,7 +185,7 @@ export async function discoverSubfolderRooDirectories(cwd: string): Promise<stri
 			// Match paths like "subfolder/.roo/anything" or "subfolder/nested/.roo/anything"
 			// Handle both forward slashes (Unix) and backslashes (Windows)
 			const match = result.path.match(/^(.+?)[/\\]\.roo[/\\]/)
-			if (match) {
+			if (match && match[1]) {
 				const rooDir = path.join(cwd, match[1], ".roo")
 				// Exclude the root .roo directory (already handled by getProjectRooDirectoryForCwd)
 				if (rooDir !== rootRooDir) {
