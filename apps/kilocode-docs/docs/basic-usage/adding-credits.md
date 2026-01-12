@@ -10,7 +10,7 @@ Once you've used any initial free Kilo Credits, you can easily add more:
 
 These options are available to purchase from your [personal profile page](https://app.kilo.ai). 
 
-You can also use subscriptions or credits you may have purchased directly with an AI provider by adding your keys on the Bring your own Key (BYOK)](https://app.kilo.ai/byok) settings screen. 
+You can also use subscriptions or credits you may have purchased directly with an AI provider by adding your keys on the [Bring your own Key (BYOK)](https://app.kilo.ai/byok) settings screen. 
 
 ## Kilo Pass
 
