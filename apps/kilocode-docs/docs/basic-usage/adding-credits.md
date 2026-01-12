@@ -4,24 +4,13 @@ import { DISCORD_URL } from '@site/src/constants.ts'
 
 Once you've used any initial free Kilo Credits, you can easily add more:
 
-- Subscribe to the [Kilo Pass](#kilo-pass), the most cost effective way to add credits.
-- Enable automatic top-up, which automatically purchases additional credits when your balance dips below $5.
+- Subscribe to the [Kilo Pass](https://kilo.ai/features/kilo-pass), the most cost effective way to add credits.
 - Purchase additional credits as a one-time transaction.
+- Enable automatic top-up, which purchases additional credits when your balance is below $5.
 
 These options are available to purchase from your [personal profile page](https://app.kilo.ai). 
 
 You can also use subscriptions or credits you may have purchased directly with an AI provider by adding your keys on the [Bring your own Key (BYOK)](https://app.kilo.ai/byok) settings screen.  If your provider is not yet supported, you can also [directly connect your provider](/getting-started/connecting-api-provider.md) in the extension and CLI.
-
-## Kilo Pass
-
-Kilo Pass is a subscription which adds credits to your account every month, along with bonus credits depending on your subscription type and duration. For pricing information, please see our [pricing page](https://kilo.ai/pricing).
-
-* Kilo Pass purchased credits never expire.
-* Kilo Pass bonus credits expire after 1 month.
-* Auto top-up, if configured, will automatically add additional credits if a Kilo Pass subscriber's credit balance is below $5
-* Kilo Pass is available for personal accounts only at this time.
-
-If you are a Kilo Pass subscriber and would like to change your subscription tier, please [contact support](https://kilo.ai/support).
 
 ## Transparent Pricing
 
