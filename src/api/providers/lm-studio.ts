@@ -14,7 +14,6 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
 import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 import { getModelsFromCache } from "./fetchers/modelCache"
 import { getApiRequestTimeout } from "./utils/timeout-config"
@@ -28,14 +27,14 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 	constructor(options: ApiHandlerOptions) {
 		super()
 		this.options = options
-		const timeout = getApiRequestTimeout() // kilocode_change
+
+		// LM Studio uses "noop" as a placeholder API key
+		const apiKey = "noop"
+
 		this.client = new OpenAI({
 			baseURL: (this.options.lmStudioBaseUrl || "http://localhost:1234") + "/v1",
-			apiKey: "noop",
-			// kilocode_change start
-			timeout: timeout,
-			fetch: timeout ? fetchWithTimeout(timeout) : undefined,
-			// kilocode_change end
+			apiKey: apiKey,
+			timeout: getApiRequestTimeout(),
 		})
 	}
 
@@ -175,11 +174,6 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 				outputTokens,
 			} as const
 		} catch (error) {
-			// kilocode_change start
-			if (error.cause instanceof HeadersTimeoutError) {
-				throw new Error("Headers timeout", { cause: error })
-			}
-			// kilocode_change end
 			throw new Error(
 				"Please check the LM Studio developer logs to debug what went wrong. You may need to load the model with a larger context length to work with Kilo Code's prompts.",
 			)

@@ -243,7 +243,7 @@ describe("Model Validation Functions", () => {
 		it("returns undefined for valid IO Intelligence model", () => {
 			const config: ProviderSettings = {
 				apiProvider: "io-intelligence",
-				glamaModelId: "valid-model",
+				ioIntelligenceModelId: "valid-model",
 			}
 
 			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)
@@ -253,7 +253,7 @@ describe("Model Validation Functions", () => {
 		it("returns error for invalid IO Intelligence model", () => {
 			const config: ProviderSettings = {
 				apiProvider: "io-intelligence",
-				glamaModelId: "invalid-model",
+				ioIntelligenceModelId: "invalid-model",
 			}
 
 			const result = getModelValidationError(config, mockRouterModels, allowAllOrganization)

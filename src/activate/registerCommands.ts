@@ -127,6 +127,7 @@ const getCommandsMap = ({ context, outputChannel }: RegisterCommandOptions): Rec
 
 		return openClineInNewTab({ context, outputChannel })
 	},
+	open: () => openClineInNewTab({ context, outputChannel }), // kilocode_change
 	openInNewTab: () => openClineInNewTab({ context, outputChannel }),
 	settingsButtonClicked: () => {
 		const visibleProvider = getVisibleProviderOrLog(outputChannel)

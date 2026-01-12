@@ -19,7 +19,6 @@ export const historyItemSchema = z.object({
 	size: z.number().optional(),
 	workspace: z.string().optional(),
 	isFavorited: z.boolean().optional(), // kilocode_change
-	fileNotfound: z.boolean().optional(), // kilocode_change
 	mode: z.string().optional(),
 	/**
 	 * The tool protocol used by this task. Once a task uses tools with a specific

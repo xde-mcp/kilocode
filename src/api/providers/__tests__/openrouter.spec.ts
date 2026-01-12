@@ -93,10 +93,6 @@ describe("OpenRouterHandler", () => {
 		openRouterModelId: "anthropic/claude-sonnet-4",
 	}
 
-	// kilocode_change start
-	const anthropicBetaHeaderValue = "fine-grained-tool-streaming-2025-05-14,structured-outputs-2025-11-13"
-	// kilocode_change end
-
 	beforeEach(() => vitest.clearAllMocks())
 
 	it("initializes with correct options", () => {
@@ -274,13 +270,7 @@ describe("OpenRouterHandler", () => {
 					temperature: 0,
 					top_p: undefined,
 				}),
-				// kilocode_change start
-				expect.objectContaining({
-					headers: expect.objectContaining({
-						"x-anthropic-beta": anthropicBetaHeaderValue,
-					}),
-				}),
-				// kilocode_change end
+				{ headers: { "x-anthropic-beta": "fine-grained-tool-streaming-2025-05-14" } },
 			)
 		})
 
@@ -323,13 +313,7 @@ describe("OpenRouterHandler", () => {
 						}),
 					]),
 				}),
-				// kilocode_change start
-				expect.objectContaining({
-					headers: expect.objectContaining({
-						"x-anthropic-beta": anthropicBetaHeaderValue,
-					}),
-				}),
-				// kilocode_change end
+				{ headers: { "x-anthropic-beta": "fine-grained-tool-streaming-2025-05-14" } },
 			)
 		})
 
@@ -570,13 +554,7 @@ describe("OpenRouterHandler", () => {
 					messages: [{ role: "user", content: "test prompt" }],
 					stream: false,
 				},
-				// kilocode_change start
-				expect.objectContaining({
-					headers: expect.objectContaining({
-						"x-anthropic-beta": anthropicBetaHeaderValue,
-					}),
-				}),
-				// kilocode_change end
+				{ headers: { "x-anthropic-beta": "fine-grained-tool-streaming-2025-05-14" } },
 			)
 		})
 
