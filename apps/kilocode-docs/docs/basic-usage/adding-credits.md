@@ -8,7 +8,7 @@ Once you've used any initial free Kilo Credits, you can easily add more:
 - Enable automatic top-up, which automatically purchases additional credits when your balance dips below $5.
 - Purchase additional credits as a one-time transaction.
 
-These options are available to purchase from your personal profile page. 
+These options are available to purchase from your [personal profile page](https://app.kilo.ai). 
 
 You can also leverage your own API provider by [connecting your own API provider](/getting-started/connecting-api-provider.md).
 
