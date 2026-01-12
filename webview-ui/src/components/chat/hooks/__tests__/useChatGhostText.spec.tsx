@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from "@testing-library/react"
+import { renderHook, act } from "@testing-library/react"
 import { vi } from "vitest"
 import { useChatGhostText } from "../useChatGhostText"
 
@@ -9,13 +9,64 @@ vi.mock("@/utils/vscode", () => ({
 	},
 }))
 
+// Mock generateRequestId to return a predictable value
+const MOCK_REQUEST_ID = "test-request-id"
+vi.mock("@roo/id", () => ({
+	generateRequestId: () => MOCK_REQUEST_ID,
+}))
+
+// Helper to simulate the full flow: focus -> input change -> completion result
+function simulateCompletionFlow(
+	result: ReturnType<typeof useChatGhostText>,
+	mockTextArea: HTMLTextAreaElement,
+	text: string,
+	ghostText: string,
+) {
+	// First, focus the textarea
+	act(() => {
+		result.handleFocus()
+	})
+
+	// Then simulate input change (this sets the prefix and triggers completion request)
+	act(() => {
+		mockTextArea.value = text
+		mockTextArea.selectionStart = text.length
+		mockTextArea.selectionEnd = text.length
+		const changeEvent = {
+			target: mockTextArea,
+		} as React.ChangeEvent<HTMLTextAreaElement>
+		result.handleInputChange(changeEvent)
+	})
+
+	// Advance timers to trigger the debounced completion request
+	act(() => {
+		vi.advanceTimersByTime(300)
+	})
+
+	// Finally, simulate receiving the completion result
+	// The requestId should match what was set during handleInputChange
+	act(() => {
+		const messageEvent = new MessageEvent("message", {
+			data: {
+				type: "chatCompletionResult",
+				text: ghostText,
+				requestId: MOCK_REQUEST_ID,
+			},
+		})
+		window.dispatchEvent(messageEvent)
+	})
+}
+
 describe("useChatGhostText", () => {
 	let mockTextArea: HTMLTextAreaElement
 	let textAreaRef: React.RefObject<HTMLTextAreaElement>
 
 	beforeEach(() => {
+		vi.useFakeTimers()
 		mockTextArea = document.createElement("textarea")
 		mockTextArea.value = "Hello world"
+		mockTextArea.selectionStart = 11
+		mockTextArea.selectionEnd = 11
 		document.body.appendChild(mockTextArea)
 		textAreaRef = { current: mockTextArea }
 		document.execCommand = vi.fn(() => true)
@@ -24,6 +75,7 @@ describe("useChatGhostText", () => {
 	afterEach(() => {
 		document.body.removeChild(mockTextArea)
 		vi.clearAllMocks()
+		vi.useRealTimers()
 	})
 
 	describe("Tab key acceptance", () => {
@@ -35,22 +87,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Simulate receiving ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " completion text",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow: focus -> input -> completion result
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion text")
 
-			// Wait for ghost text to be set
-			waitFor(() => {
-				expect(result.current.ghostText).toBe(" completion text")
-			})
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion text")
 
 			// Simulate Tab key press
 			const tabEvent = {
@@ -71,10 +112,6 @@ describe("useChatGhostText", () => {
 
 	describe("Right Arrow key - word-by-word acceptance", () => {
 		it("should accept next word when cursor is at end", () => {
-			mockTextArea.value = "Hello world"
-			mockTextArea.selectionStart = 11 // At end
-			mockTextArea.selectionEnd = 11
-
 			const { result } = renderHook(() =>
 				useChatGhostText({
 					textAreaRef,
@@ -82,17 +119,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text manually for test
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " this is more text",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " this is more text")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" this is more text")
 
 			// Simulate Right Arrow key press
 			const arrowEvent = {
@@ -124,17 +155,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " word1 word2 word3",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Start", " word1 word2 word3")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" word1 word2 word3")
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -164,10 +189,6 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should NOT accept word when cursor is not at end", () => {
-			mockTextArea.value = "Hello world"
-			mockTextArea.selectionStart = 5 // In middle
-			mockTextArea.selectionEnd = 5
-
 			const { result } = renderHook(() =>
 				useChatGhostText({
 					textAreaRef,
@@ -175,17 +196,15 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " more text",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " more text")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" more text")
+
+			// Move cursor to middle
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -203,9 +222,9 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should NOT accept word with Shift modifier", () => {
-			mockTextArea.value = "Test"
-			mockTextArea.selectionStart = 4
-			mockTextArea.selectionEnd = 4
+			mockTextArea.value = "Test1"
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const { result } = renderHook(() =>
 				useChatGhostText({
@@ -214,17 +233,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " text",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Test1", " text")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" text")
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -241,9 +254,9 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should NOT accept word with Ctrl modifier", () => {
-			mockTextArea.value = "Test"
-			mockTextArea.selectionStart = 4
-			mockTextArea.selectionEnd = 4
+			mockTextArea.value = "Test2"
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const { result } = renderHook(() =>
 				useChatGhostText({
@@ -252,17 +265,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " text",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Test2", " text")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" text")
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -288,18 +295,10 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " world",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " world")
 
+			// Verify ghost text is set
 			expect(result.current.ghostText).toBe(" world")
 
 			// Simulate Escape key
@@ -317,9 +316,9 @@ describe("useChatGhostText", () => {
 
 	describe("Edge cases", () => {
 		it("should handle ghost text with only whitespace", () => {
-			mockTextArea.value = "Test"
-			mockTextArea.selectionStart = 4
-			mockTextArea.selectionEnd = 4
+			mockTextArea.value = "Test3"
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const { result } = renderHook(() =>
 				useChatGhostText({
@@ -328,17 +327,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text with only whitespace
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: "   ",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow with whitespace-only ghost text
+			simulateCompletionFlow(result.current, mockTextArea, "Test3", "   ")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe("   ")
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -357,9 +350,9 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should handle single word ghost text", () => {
-			mockTextArea.value = "Test"
-			mockTextArea.selectionStart = 4
-			mockTextArea.selectionEnd = 4
+			mockTextArea.value = "Test4"
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const { result } = renderHook(() =>
 				useChatGhostText({
@@ -368,17 +361,11 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set single word ghost text
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: "word",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Simulate the full flow with single word ghost text
+			simulateCompletionFlow(result.current, mockTextArea, "Test4", "word")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe("word")
 
 			const arrowEvent = {
 				key: "ArrowRight",
@@ -397,9 +384,9 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should handle empty ghost text gracefully", () => {
-			mockTextArea.value = "Test"
-			mockTextArea.selectionStart = 4
-			mockTextArea.selectionEnd = 4
+			mockTextArea.value = "Test5"
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
 
 			const { result } = renderHook(() =>
 				useChatGhostText({
@@ -432,7 +419,107 @@ describe("useChatGhostText", () => {
 				}),
 			)
 
-			// Set ghost text
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			act(() => {
+				result.current.clearGhostText()
+			})
+
+			expect(result.current.ghostText).toBe("")
+		})
+	})
+
+	describe("Focus and blur behavior", () => {
+		it("should clear ghost text on blur and restore on focus", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Blur the textarea
+			act(() => {
+				result.current.handleBlur()
+			})
+
+			expect(result.current.ghostText).toBe("")
+
+			// Focus the textarea again - ghost text should be restored
+			act(() => {
+				result.current.handleFocus()
+			})
+
+			expect(result.current.ghostText).toBe(" completion")
+		})
+
+		it("should not restore ghost text if text changed while unfocused", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Blur the textarea
+			act(() => {
+				result.current.handleBlur()
+			})
+
+			expect(result.current.ghostText).toBe("")
+
+			// Change the text while unfocused (simulating external change)
+			mockTextArea.value = "Different text"
+			mockTextArea.selectionStart = 14
+			mockTextArea.selectionEnd = 14
+
+			// Focus the textarea again - ghost text should NOT be restored
+			act(() => {
+				result.current.handleFocus()
+			})
+
+			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should not request completion when not focused", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Don't call handleFocus - simulate typing without focus
+			act(() => {
+				mockTextArea.value = "Hello world"
+				const changeEvent = {
+					target: mockTextArea,
+				} as React.ChangeEvent<HTMLTextAreaElement>
+				result.current.handleInputChange(changeEvent)
+			})
+
+			// Advance timers
+			act(() => {
+				vi.advanceTimersByTime(300)
+			})
+
+			// Simulate receiving completion result
 			act(() => {
 				const messageEvent = new MessageEvent("message", {
 					data: {
@@ -444,12 +531,102 @@ describe("useChatGhostText", () => {
 				window.dispatchEvent(messageEvent)
 			})
 
-			expect(result.current.ghostText).toBe(" completion")
+			// Ghost text should not be set because we weren't focused
+			expect(result.current.ghostText).toBe("")
+		})
 
+		it("should discard completion result if text changed", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Focus and type
 			act(() => {
-				result.current.clearGhostText()
+				result.current.handleFocus()
 			})
 
+			act(() => {
+				mockTextArea.value = "Hello world"
+				mockTextArea.selectionStart = 11
+				mockTextArea.selectionEnd = 11
+				const changeEvent = {
+					target: mockTextArea,
+				} as React.ChangeEvent<HTMLTextAreaElement>
+				result.current.handleInputChange(changeEvent)
+			})
+
+			// Advance timers to trigger completion request
+			act(() => {
+				vi.advanceTimersByTime(300)
+			})
+
+			// Change the text before completion arrives (simulating paste or external change)
+			mockTextArea.value = "Different text"
+
+			// Simulate receiving completion result for the old text
+			act(() => {
+				const messageEvent = new MessageEvent("message", {
+					data: {
+						type: "chatCompletionResult",
+						text: " completion",
+						requestId: "",
+					},
+				})
+				window.dispatchEvent(messageEvent)
+			})
+
+			// Ghost text should not be set because the text changed
+			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should discard completion result if cursor is not at end", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Focus and type
+			act(() => {
+				result.current.handleFocus()
+			})
+
+			act(() => {
+				mockTextArea.value = "Hello world"
+				mockTextArea.selectionStart = 11
+				mockTextArea.selectionEnd = 11
+				const changeEvent = {
+					target: mockTextArea,
+				} as React.ChangeEvent<HTMLTextAreaElement>
+				result.current.handleInputChange(changeEvent)
+			})
+
+			// Advance timers to trigger completion request
+			act(() => {
+				vi.advanceTimersByTime(300)
+			})
+
+			// Move cursor to middle before completion arrives
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
+
+			// Simulate receiving completion result
+			act(() => {
+				const messageEvent = new MessageEvent("message", {
+					data: {
+						type: "chatCompletionResult",
+						text: " completion",
+						requestId: MOCK_REQUEST_ID,
+					},
+				})
+				window.dispatchEvent(messageEvent)
+			})
+
+			// Ghost text should not be set because cursor is not at end
 			expect(result.current.ghostText).toBe("")
 		})
 	})
