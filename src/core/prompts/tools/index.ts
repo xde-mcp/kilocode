@@ -51,7 +51,9 @@ const toolDescriptionMap: Record<string, (args: ToolArgs) => string | undefined>
 	codebase_search: (args) => getCodebaseSearchDescription(args),
 	switch_mode: () => getSwitchModeDescription(),
 	new_task: (args) => getNewTaskDescription(args),
-	edit_file: () => getEditFileDescription(), // kilocode_change: Morph fast apply
+	// kilocode_change start: Fast Apply
+	fast_edit_file: () => getEditFileDescription(),
+	// kilocode_change end
 	delete_file: (args) => getDeleteFileDescription(args), // kilocode_change
 	apply_diff: (args) =>
 		args.diffStrategy ? args.diffStrategy.getToolDescription({ cwd: args.cwd, toolOptions: args.toolOptions }) : "",
@@ -140,13 +142,13 @@ export function getToolDescriptionsForMode(
 	}
 	// kilocode_change end
 
-	// kilocode_change start: Morph fast apply
+	// kilocode_change start: Fast Apply
 	if (isFastApplyAvailable(clineProviderState)) {
 		// When Morph is enabled, disable traditional editing tools
 		const traditionalEditingTools = ["apply_diff", "write_to_file"]
 		traditionalEditingTools.forEach((tool) => tools.delete(tool))
 	} else {
-		tools.delete("edit_file")
+		tools.delete("fast_edit_file")
 	}
 	// kilocode_change end
 

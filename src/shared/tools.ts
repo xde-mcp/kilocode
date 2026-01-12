@@ -108,6 +108,9 @@ export type NativeToolArgs = {
 	search_and_replace: { path: string; operations: Array<{ search: string; replace: string }> }
 	search_replace: { file_path: string; old_string: string; new_string: string }
 	edit_file: { file_path: string; old_string: string; new_string: string; expected_replacements?: number }
+	// kilocode_change start: Fast Apply
+	fast_edit_file: { target_file: string; instructions: string; code_edit: string }
+	// kilocode_change end
 	apply_patch: { patch: string }
 	ask_followup_question: {
 		question: string
@@ -253,8 +256,9 @@ export interface RunSlashCommandToolUse extends ToolUse<"run_slash_command"> {
 }
 
 // kilocode_change start: Morph fast apply
-export interface EditFileToolUse extends ToolUse {
-	name: "edit_file"
+
+export interface FastEditFileToolUse extends ToolUse {
+	name: "fast_edit_file"
 	params: Required<Pick<Record<ToolParamName, string>, "target_file" | "instructions" | "code_edit">>
 }
 // kilocode_change end
@@ -286,6 +290,9 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	search_and_replace: "apply changes using search and replace",
 	search_replace: "apply single search and replace",
 	edit_file: "edit files using search and replace",
+	// kilocode_change start: Fast Apply
+	fast_edit_file: "edit files using Fast Apply",
+	// kilocode_change end
 	apply_patch: "apply patches using codex format",
 	search_files: "search files",
 	list_files: "list files",
@@ -312,7 +319,10 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 	edit: {
 		tools: [
 			"apply_diff",
-			"edit_file", // kilocode_change: Morph fast apply
+			"edit_file",
+			// kilocode_change start: Fast Apply
+			"fast_edit_file",
+			// kilocode_change end
 			"write_to_file",
 			"delete_file", // kilocode_change
 			"new_rule", // kilocode_change

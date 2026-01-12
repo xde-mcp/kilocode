@@ -3,7 +3,7 @@ import type OpenAI from "openai"
 export default {
 	type: "function",
 	function: {
-		name: "edit_file",
+		name: "fast_edit_file",
 		description:
 			"Use this tool to make an edit to a file. A less intelligent apply model will read your request, so be clear about the change while minimizing unchanged code. Specify each edit sequentially and replace omitted sections with // ... existing code ... placeholders. Provide enough surrounding context to avoid ambiguity, always use the placeholder when skipping existing content, show before-and-after context when deleting, and gather all edits for the file in a single request.",
 		strict: true,

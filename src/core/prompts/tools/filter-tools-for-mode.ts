@@ -275,7 +275,8 @@ export function filterNativeToolsForMode(
 		const traditionalEditingTools = ["apply_diff", "write_to_file"]
 		traditionalEditingTools.forEach((tool) => allowedToolNames.delete(tool))
 	} else {
-		allowedToolNames.delete("edit_file")
+		// Only expose the Fast Apply tool when Fast Apply is actually available.
+		allowedToolNames.delete("fast_edit_file")
 	}
 	// kilocode_change end
 

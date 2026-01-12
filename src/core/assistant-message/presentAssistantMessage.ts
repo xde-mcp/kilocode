@@ -46,7 +46,7 @@ import { formatResponse } from "../prompts/responses"
 
 import { yieldPromise } from "../kilocode"
 import { evaluateGatekeeperApproval } from "./kilocode/gatekeeper"
-import { isFastApplyAvailable } from "../tools/kilocode/editFileTool"
+import { editFileTool as fastEditFileTool, isFastApplyAvailable } from "../tools/kilocode/editFileTool"
 import { deleteFileTool } from "../tools/kilocode/deleteFileTool"
 import { newRuleTool } from "../tools/kilocode/newRuleTool"
 import { reportBugTool } from "../tools/kilocode/reportBugTool"
@@ -367,17 +367,22 @@ export async function presentAssistantMessage(cline: Task) {
 			const { mode, customModes, experiments: stateExperiments } = state ?? {}
 
 			// kilocode_change start
-			// Fast Apply + native tool aliases compatibility:
-			// In native protocol parsing, `edit_file` may be treated as an alias for `apply_diff`.
-			// When Fast Apply is actually enabled, we need to undo that aliasing so that the
-			// real `edit_file` tool handler runs.
-			if (
-				isFastApplyAvailable(state as any) &&
-				block.originalName === "edit_file" &&
-				block.name === "apply_diff"
-			) {
-				block.name = "edit_file"
-				block.originalName = undefined
+			// Fast Apply compatibility:
+			// - Some older prompts/models may still call `edit_file` with Fast Apply-style params
+			//   (target_file/instructions/code_edit). Route those calls to the Fast Apply tool.
+			// - Some older alias resolution may have turned `edit_file` into `apply_diff`.
+			const fastApplyLooksLike =
+				block.params.target_file !== undefined ||
+				block.params.instructions !== undefined ||
+				block.params.code_edit !== undefined
+			if (isFastApplyAvailable(state as any)) {
+				if (block.name === "edit_file" && fastApplyLooksLike) {
+					block.name = "fast_edit_file"
+				}
+				if (block.originalName === "edit_file" && block.name === "apply_diff" && fastApplyLooksLike) {
+					block.name = "fast_edit_file"
+					block.originalName = undefined
+				}
 			}
 			// kilocode_change end
 
@@ -431,6 +436,10 @@ export async function presentAssistantMessage(cline: Task) {
 						return `[${block.name} for '${block.params.file_path}']`
 					case "edit_file":
 						return `[${block.name} for '${block.params.file_path}']`
+					// kilocode_change start: Fast Apply
+					case "fast_edit_file":
+						return `[${block.name} for '${block.params.target_file}']`
+					// kilocode_change end
 					case "apply_patch":
 						return `[${block.name}]`
 					case "list_files":
@@ -952,6 +961,12 @@ export async function presentAssistantMessage(cline: Task) {
 						toolProtocol,
 					})
 					break
+				// kilocode_change start: Fast Apply
+				case "fast_edit_file":
+					await checkpointSaveAndMark(cline)
+					await fastEditFileTool(cline, block, askApproval, handleError, pushToolResult, removeClosingTag)
+					break
+				// kilocode_change end
 				case "apply_patch":
 					await checkpointSaveAndMark(cline)
 					await applyPatchTool.handle(cline, block as ToolUse<"apply_patch">, {

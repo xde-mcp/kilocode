@@ -22,7 +22,7 @@ import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
 
 import deleteFile from "./kilocode/delete_file"
-import editFile from "./kilocode/edit_file"
+import fastEditFile from "./kilocode/fast_edit_file"
 
 export { getMcpServerTools } from "./mcp_server"
 export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./converters"
@@ -55,7 +55,7 @@ export function getNativeTools(options: NativeToolsOptions = {}): OpenAI.Chat.Ch
 	return [
 		// kilocode_change start
 		deleteFile,
-		// editFile,
+		fastEditFile,
 		// todo:
 		// condenseTool,
 		// newRuleTool,

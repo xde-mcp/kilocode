@@ -543,6 +543,22 @@ export class NativeToolCallParser {
 				}
 				break
 
+			// kilocode_change start: Fast Apply
+			case "fast_edit_file":
+				if (
+					partialArgs.target_file !== undefined ||
+					partialArgs.instructions !== undefined ||
+					partialArgs.code_edit !== undefined
+				) {
+					nativeArgs = {
+						target_file: partialArgs.target_file,
+						instructions: partialArgs.instructions,
+						code_edit: partialArgs.code_edit,
+					}
+				}
+				break
+			// kilocode_change end
+
 			default:
 				break
 		}
@@ -827,6 +843,22 @@ export class NativeToolCallParser {
 						} as NativeArgsFor<TName>
 					}
 					break
+
+				// kilocode_change start: Fast Apply
+				case "fast_edit_file":
+					if (
+						args.target_file !== undefined &&
+						args.instructions !== undefined &&
+						args.code_edit !== undefined
+					) {
+						nativeArgs = {
+							target_file: args.target_file,
+							instructions: args.instructions,
+							code_edit: args.code_edit,
+						} as NativeArgsFor<TName>
+					}
+					break
+				// kilocode_change end
 
 				default:
 					if (customToolRegistry.has(resolvedName)) {
