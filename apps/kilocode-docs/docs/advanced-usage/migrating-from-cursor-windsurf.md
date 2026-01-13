@@ -6,8 +6,13 @@ sidebar_label: Migrating from Cursor or Windsurf
 
 Quickly migrate your custom rules from Cursor or Windsurf to Kilo Code. The process typically takes just a few minutes per project.
 
-:::info Workflow Difference: Inline Completions
-If you relied heavily on Cursor's or Windsurf's **inline autocomplete** (Tab-to-accept suggestions as you type), note that Kilo Code takes a different approach. Kilo Code focuses on **agentic, chat-driven workflows** where you describe what you want and the AI generates complete implementations. For inline completions, Kilo Code offers an optional **Ghost** feature (Settings → Ghost) that provides autocomplete suggestions, though the primary workflow is chat-based. See the [Troubleshooting](#i-expected-cursorwindsurf-style-autocomplete) section if you're adjusting to this workflow difference.
+:::info Two Workflow Approaches
+Kilo Code supports **two complementary workflows**—choose the one that fits your style, or use both:
+
+1. **Autocomplete (Ghost)**: Tab-to-accept inline suggestions as you type, similar to Cursor and Windsurf. Enable via Settings → Ghost.
+2. **Chat-driven**: Describe what you want in the chat panel and the AI generates complete implementations.
+
+Many developers combine both approaches: autocomplete for quick completions while typing, and chat for larger refactors or multi-file changes. See [Choosing Your Workflow](#choosing-your-workflow) for details.
 :::
 
 **Last Updated**: November 2025
@@ -313,7 +318,7 @@ After migration:
 - [ ] **Update team docs:** Document new `.kilocode/rules/` location
 - [ ] **Commit to version control:** `git add .kilocode/`
 - [ ] **Remove old directories:** Delete `.cursor/` or `.windsurf/` folders once verified
-- [ ] **Validate autocomplete workflow:** If you used Cursor/Windsurf autocomplete, try Kilo Code's Ghost feature (Settings → Ghost) or adapt to the chat-driven workflow
+- [ ] **Set up autocomplete:** If you used Cursor/Windsurf autocomplete, enable Ghost (Settings → Ghost) for the same Tab-to-accept experience
 
 ## Troubleshooting
 
@@ -368,33 +373,33 @@ Cursor's nested directories don't map to Kilo Code. Flatten with descriptive nam
 - **Check setting:** Verify "Use Agent Rules" is enabled in Kilo Code settings (enabled by default)
 - **Reload:** Restart VS Code if needed
 
-### I Expected Cursor/Windsurf-Style Autocomplete
+### Choosing Your Workflow
 
-Cursor and Windsurf emphasize **inline autocomplete** (Tab-to-accept suggestions as you type). Kilo Code takes a different approach:
+Kilo Code supports **both autocomplete and chat-driven workflows**. Choose the approach that fits your coding style, or combine them:
 
-**Kilo Code's primary workflow is chat-driven:**
-
-- Describe what you want in the chat panel
-- The AI generates complete implementations, refactors, or fixes
-- Review and approve changes before they're applied
-
-**For inline completions, try Ghost:**
+**Autocomplete (Ghost) — Tab-to-accept inline suggestions:**
 
 1. Open Settings → Ghost
 2. Enable Ghost autocomplete
 3. Configure your preferred model for completions
+4. Start typing and press Tab to accept suggestions
 
-**Adapting your workflow:**
+This works the same way as Cursor and Windsurf's autocomplete. Ghost provides context-aware suggestions as you type.
 
-- Instead of waiting for autocomplete suggestions, describe your intent in chat: "Add error handling to this function" or "Create a React component for user profiles"
-- Use the chat for larger changes and Ghost for small, in-line completions
-- Many users find the chat-driven approach faster for substantial changes, while Ghost handles quick completions
+**Chat-driven — describe what you want:**
 
-**Why this approach?**
+- Open the chat panel and describe your intent: "Add error handling to this function" or "Create a React component for user profiles"
+- The AI generates complete implementations, refactors, or fixes
+- Review and approve changes before they're applied
 
-- Chat-driven workflows give you more control over AI-generated code
-- You can review changes before they're applied
-- Complex multi-file changes are easier to coordinate through chat
+**Combining both workflows:**
+
+Many developers use both approaches together:
+
+- **Autocomplete** for quick completions while writing new code
+- **Chat** for larger refactors, bug fixes, or multi-file changes
+
+There's no "right" workflow—use whatever helps you code faster
 
 ## Advanced: Creating Custom Modes
 
