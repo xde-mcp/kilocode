@@ -710,5 +710,76 @@ describe("useChatGhostText", () => {
 			// Ghost text should be cleared because there's a selection
 			expect(result.current.ghostText).toBe("")
 		})
+
+		it("should restore ghost text when cursor returns to end via handleSelect", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Move cursor to middle
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
+
+			// Call handleSelect - ghost text should be cleared
+			act(() => {
+				result.current.handleSelect()
+			})
+			expect(result.current.ghostText).toBe("")
+
+			// Move cursor back to end
+			mockTextArea.selectionStart = 11
+			mockTextArea.selectionEnd = 11
+
+			// Call handleSelect again - ghost text should be restored
+			act(() => {
+				result.current.handleSelect()
+			})
+			expect(result.current.ghostText).toBe(" completion")
+		})
+
+		it("should not restore ghost text when cursor returns to end if text changed", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Move cursor to middle
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
+
+			// Call handleSelect - ghost text should be cleared
+			act(() => {
+				result.current.handleSelect()
+			})
+			expect(result.current.ghostText).toBe("")
+
+			// Change the text
+			mockTextArea.value = "Different text"
+			mockTextArea.selectionStart = 14
+			mockTextArea.selectionEnd = 14
+
+			// Call handleSelect again - ghost text should NOT be restored because text changed
+			act(() => {
+				result.current.handleSelect()
+			})
+			expect(result.current.ghostText).toBe("")
+		})
 	})
 })

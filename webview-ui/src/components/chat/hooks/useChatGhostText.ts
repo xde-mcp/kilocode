@@ -206,14 +206,27 @@ export function useChatGhostText({
 	}, [ghostText, textAreaRef])
 
 	const handleSelect = useCallback(() => {
-		// Clear ghost text if cursor is no longer at the end
 		const textArea = textAreaRef.current
-		if (textArea && ghostText) {
-			const isCursorAtEnd =
-				textArea.selectionStart === textArea.value.length && textArea.selectionEnd === textArea.value.length
+		if (!textArea) return
+
+		const isCursorAtEnd =
+			textArea.selectionStart === textArea.value.length && textArea.selectionEnd === textArea.value.length
+
+		if (ghostText) {
+			// Clear ghost text if cursor is no longer at the end
 			if (!isCursorAtEnd) {
+				// Save ghost text before clearing so we can restore it when cursor returns to end
+				savedGhostTextRef.current = ghostText
+				savedPrefixRef.current = textArea.value
 				setGhostText("")
-				// Also clear saved ghost text since cursor position changed
+			}
+		} else if (isCursorAtEnd && savedGhostTextRef.current) {
+			// Restore ghost text if cursor returned to end and text hasn't changed
+			const currentText = textArea.value
+			if (currentText === savedPrefixRef.current) {
+				setGhostText(savedGhostTextRef.current)
+			} else {
+				// Text changed, clear saved ghost text
 				savedGhostTextRef.current = ""
 				savedPrefixRef.current = ""
 			}
