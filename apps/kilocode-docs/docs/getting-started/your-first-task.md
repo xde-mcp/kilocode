@@ -12,12 +12,6 @@ This quick tour shows how Kilo Code handles a simple request from start to finis
 
 After you [set up Kilo Code](/getting-started/setting-up), follow these steps:
 
-:::info Two Ways to Work with Kilo Code
-
-This tutorial focuses on **chat-based interaction**—you describe tasks in natural language and Kilo Code executes them step by step. For quick inline code suggestions as you type, check out [Autocomplete](/features/autocomplete) after completing this tutorial.
-
-:::
-
 ## Step 1: Open the Kilo Code Panel
 
 Click the Kilo Code icon (<img src="/docs/img/kilo-v1.svg" width="12" />) in the VS Code Primary Side Bar (vertical bar on the side of the window) to open the chat interface. If you don't see the icon, verify the extension is [installed](/getting-started/installing) and enabled.

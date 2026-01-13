@@ -66,7 +66,7 @@ find all instances of the variable oldValue in @/src/App.js and replace them wit
 **Essential controls:**
 
 - **Chat history** - See your conversation and task history
-- **Input field** - Type your chat instructions here (press Enter to send). For inline code suggestions while typing in the editor, see [Autocomplete](/features/autocomplete).
+- **Input field** - Type your requests here (press Enter to send)
 - **Action buttons** - Approve or reject Kilo's proposed changes
 - **Plus button** - Start a new task session
 - **Mode selector** - Choose how Kilo should approach your task
@@ -88,13 +88,13 @@ find all instances of the variable oldValue in @/src/App.js and replace them wit
 
 ## Common Mistakes to Avoid
 
-| Instead of this...                     | Try this                                                          |
-| -------------------------------------- | ----------------------------------------------------------------- |
-| "Fix the code"                         | "Fix the bug in `calculateTotal` that returns incorrect results"  |
-| Assuming Kilo knows context            | Use `@` to reference specific files                               |
-| Multiple unrelated tasks               | Submit one focused request at a time                              |
-| Technical jargon overload              | Clear, straightforward language works best                        |
-| Using chat for tiny code continuations | Use [autocomplete](/features/autocomplete) for inline completions |
+| Instead of this...                | Try this                                                          |
+| --------------------------------- | ----------------------------------------------------------------- |
+| "Fix the code"                    | "Fix the bug in `calculateTotal` that returns incorrect results"  |
+| Assuming Kilo knows context       | Use `@` to reference specific files                               |
+| Multiple unrelated tasks          | Submit one focused request at a time                              |
+| Technical jargon overload         | Clear, straightforward language works best                        |
+| Using chat for tiny code changes. | Use [autocomplete](/features/autocomplete) for inline completions |
 
 **Why it matters:** Kilo Code works best when you communicate like you're talking to a smart teammate who needs clear direction.
 
