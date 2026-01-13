@@ -24,7 +24,7 @@ Kilo Code uses large language models (LLMs) to understand your requests and tran
 - Perform web browsing (if enabled).
 - Use external tools via the Model Context Protocol (MCP).
 
-You interact with Kilo Code through a chat interface, where you provide instructions and review/approve its proposed actions. Kilo Code also provides inline autocomplete suggestions as you type, offering real-time code completions directly in your editor.
+You interact with Kilo Code through a chat interface, where you provide instructions and review/approve its proposed actions, or you can use the inline autocomplete feature which helps you as you type.
 
 ### What can Kilo Code do?
 
@@ -103,7 +103,7 @@ Yes, Kilo Code supports running models locally using [Ollama](/providers/ollama)
 
 ### How do I start a new task?
 
-Open the Kilo Code panel (<img src="/docs/img/kilo-v1.svg" width="12" />) and type your task in the chat box. Be clear and specific about what you want Kilo Code to do. See [The Chat Interface](/basic-usage/the-chat-interface) for best practices. For quick, single-line edits, you can also use autocomplete suggestions directly in your editor without starting a chat task.
+Open the Kilo Code panel (<img src="/docs/img/kilo-v1.svg" width="12" />) and type your task in the chat box. Be clear and specific about what you want Kilo Code to do. See [The Chat Interface](/basic-usage/the-chat-interface) for best practices.
 
 ### When should I use chat vs autocomplete?
 
