@@ -15,6 +15,7 @@ interface UseChatGhostTextReturn {
 	handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
 	handleFocus: () => void
 	handleBlur: () => void
+	handleSelect: () => void
 	clearGhostText: () => void
 }
 
@@ -204,6 +205,21 @@ export function useChatGhostText({
 		}
 	}, [ghostText, textAreaRef])
 
+	const handleSelect = useCallback(() => {
+		// Clear ghost text if cursor is no longer at the end
+		const textArea = textAreaRef.current
+		if (textArea && ghostText) {
+			const isCursorAtEnd =
+				textArea.selectionStart === textArea.value.length && textArea.selectionEnd === textArea.value.length
+			if (!isCursorAtEnd) {
+				setGhostText("")
+				// Also clear saved ghost text since cursor position changed
+				savedGhostTextRef.current = ""
+				savedPrefixRef.current = ""
+			}
+		}
+	}, [ghostText, textAreaRef])
+
 	useEffect(() => {
 		return () => {
 			if (completionDebounceRef.current) {
@@ -218,6 +234,7 @@ export function useChatGhostText({
 		handleInputChange,
 		handleFocus,
 		handleBlur,
+		handleSelect,
 		clearGhostText,
 	}
 }

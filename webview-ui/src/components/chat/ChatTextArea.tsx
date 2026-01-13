@@ -419,6 +419,9 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			ghostText,
 			handleKeyDown: handleGhostTextKeyDown,
 			handleInputChange: handleGhostTextInputChange,
+			handleFocus: handleGhostTextFocus,
+			handleBlur: handleGhostTextBlur,
+			handleSelect: handleGhostTextSelect,
 		} = useChatGhostText({
 			textAreaRef,
 			enableChatAutocomplete: ghostServiceSettings?.enableChatAutocomplete ?? false,
@@ -1013,7 +1016,14 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			} // kilocode_change
 
 			// setIsFocused(false) // kilocode_change - not needed
-		}, [isMouseDownOnMenu])
+			handleGhostTextBlur() // kilocode_change: Clear ghost text on blur
+		}, [isMouseDownOnMenu, handleGhostTextBlur])
+
+		// kilocode_change start: FIM autocomplete - track focus for ghost text
+		const handleFocus = useCallback(() => {
+			handleGhostTextFocus()
+		}, [handleGhostTextFocus])
+		// kilocode_change end: FIM autocomplete
 
 		const handlePaste = useCallback(
 			async (e: React.ClipboardEvent) => {
@@ -1207,7 +1217,8 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			if (textAreaRef.current) {
 				setCursorPosition(textAreaRef.current.selectionStart)
 			}
-		}, [])
+			handleGhostTextSelect() // kilocode_change: Clear ghost text if cursor moved away from end
+		}, [handleGhostTextSelect])
 
 		const handleKeyUp = useCallback(
 			(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1548,7 +1559,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							updateHighlights()
 						}
 					}}
-					// onFocus={() => setIsFocused(true)} // kilocode_change - not needed
+					onFocus={handleFocus} // kilocode_change: FIM autocomplete - track focus for ghost text
 					onKeyDown={(e) => {
 						// Handle ESC to cancel in edit mode
 						if (isEditMode && e.key === "Escape" && !e.nativeEvent?.isComposing) {

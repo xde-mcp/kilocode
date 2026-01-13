@@ -629,5 +629,86 @@ describe("useChatGhostText", () => {
 			// Ghost text should not be set because cursor is not at end
 			expect(result.current.ghostText).toBe("")
 		})
+
+		it("should clear ghost text when cursor moves away from end via handleSelect", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Move cursor to middle (simulating user clicking or using arrow keys)
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
+
+			// Call handleSelect (this is called on selection change events)
+			act(() => {
+				result.current.handleSelect()
+			})
+
+			// Ghost text should be cleared because cursor is no longer at end
+			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should not clear ghost text when cursor is still at end via handleSelect", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Cursor is still at end
+			mockTextArea.selectionStart = 11
+			mockTextArea.selectionEnd = 11
+
+			// Call handleSelect
+			act(() => {
+				result.current.handleSelect()
+			})
+
+			// Ghost text should still be there
+			expect(result.current.ghostText).toBe(" completion")
+		})
+
+		it("should clear ghost text when there is a selection via handleSelect", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Create a selection (not just cursor position)
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 11
+
+			// Call handleSelect
+			act(() => {
+				result.current.handleSelect()
+			})
+
+			// Ghost text should be cleared because there's a selection
+			expect(result.current.ghostText).toBe("")
+		})
 	})
 })
