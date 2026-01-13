@@ -132,6 +132,44 @@ Can you help me understand what's causing it?
 
 ---
 
+## Changing the Slackbot Model
+
+You can customize which AI model the Slackbot uses for generating responses. The model affects the quality, speed, and capabilities of the Slackbot's responses.
+
+### Via the Kilo Dashboard (Recommended)
+
+1. Go to your [Kilo Dashboard](https://app.kilo.ai/settings)
+2. Navigate to **Settings** > **Model Configuration**
+3. Select your preferred model for Slackbot interactions
+4. Save your changes
+
+The Slackbot will start using the new model immediately for subsequent requests.
+
+### Available Models
+
+The Slackbot supports various AI models from different providers. Some popular options include:
+
+- **Anthropic Claude models** - Great for complex reasoning and code understanding
+- **OpenAI GPT models** - Versatile and capable for general tasks
+- **Google Gemini models** - Strong multimodal capabilities
+- **DeepSeek models** - Cost-effective for many use cases
+
+### Model Selection Tips
+
+- **For code-related questions**: Choose models optimized for code understanding like Claude 3.5 Sonnet or GPT-4
+- **For quick responses**: Faster models like Claude 3.5 Haiku or GPT-4o Mini provide lower latency
+- **For complex analysis**: Larger models like Claude 3 Opus or GPT-4 provide more thorough responses
+
+### Environment Variable (CLI)
+
+If you're running the Slackbot through the CLI, you can set the model using the `KILOCODE_MODEL` environment variable:
+
+```bash
+export KILOCODE_MODEL=anthropic/claude-3-5-sonnet-20241022
+```
+
+---
+
 ## Troubleshooting
 
 **"The bot isn't responding."**  
