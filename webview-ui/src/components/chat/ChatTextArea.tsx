@@ -422,6 +422,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			handleFocus: handleGhostTextFocus,
 			handleBlur: handleGhostTextBlur,
 			handleSelect: handleGhostTextSelect,
+			clearGhostText,
 		} = useChatGhostText({
 			textAreaRef,
 			enableChatAutocomplete: ghostServiceSettings?.enableChatAutocomplete ?? false,
@@ -1038,6 +1039,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				const urlRegex = /^\S+:\/\/\S+$/
 				if (urlRegex.test(pastedText.trim())) {
 					e.preventDefault()
+					clearGhostText() // kilocode_change: Clear ghost text on paste
 					const trimmedUrl = pastedText.trim()
 					const newValue =
 						inputValue.slice(0, cursorPosition) + trimmedUrl + " " + inputValue.slice(cursorPosition)
@@ -1122,6 +1124,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				t,
 				selectedImages.length,
 				showImageWarning, // kilocode_change
+				clearGhostText, // kilocode_change: Clear ghost text on paste
 			],
 		)
 
