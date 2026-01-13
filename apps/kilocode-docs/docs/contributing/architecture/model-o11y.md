@@ -74,9 +74,9 @@ Implement [multi-window, multi-burn-rate alerting](https://sre.google/workbook/a
 
 | Window | Burn Rate | Action | Use Case            |
 | ------ | --------- | ------ | ------------------- |
-| 5 min  | 14.4x     | Page   | Outage              |
+| 5 min  | 14.4x     | Page   | Major Outage              |
 | 30 min | 6x        | Page   | Incident            |
-| 6 hr   | 1x        | Ticket | Investigate in shift |
+| 6 hr   | 1x        | Ticket | Change in behavior |
 
 Paging should **only occur on Recommended Models when using the Kilo Gateway**. All other alerts should be tickets, and some may be configured to be ignored.
 
@@ -136,7 +136,7 @@ Hard errors and behavior metrics tell us about failures, but we also need signal
 **Explicit signals:**
 
 - User feedback (thumbs up/down) rate and sentiment
-- User retry/redo rate (same or similar prompt immediately after completion)
+- User retry/redo rate (UI button or same/similar prompt immediately after completion)
 - User abandonment patterns (session ends mid-task without completion signal)
 
 **Implicit signals:**
