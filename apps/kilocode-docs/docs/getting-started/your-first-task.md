@@ -33,7 +33,7 @@ No special commands or syntax needed—just use plain English.
 <details>
 <summary>💡 Optional: Try Autocomplete</summary>
 
-While chat is great for complex tasks, Kilo Code also offers **inline autocomplete** for quick code suggestions. Open any code file, start typing, and watch for ghost text suggestions. Press `Tab` to accept. [Learn more about Autocomplete →](/features/autocomplete)
+While chat is great for complex tasks, Kilo Code also offers **inline autocomplete** for quick code suggestions. Open any code file, start typing, and watch for ghost text suggestions. Press `Tab` to accept. [Learn more about Autocomplete →](/basic-usage/autocomplete)
 
 </details>
 
@@ -85,6 +85,6 @@ You've completed your first task. Along the way you learned:
 
 Ready for more? Here are some next steps:
 
-- **[Autocomplete](/features/autocomplete)** — Get inline code suggestions as you type
+- **[Autocomplete](/basic-usage/autocomplete)** — Get inline code suggestions as you type
 - **[Modes](/basic-usage/using-modes)** — Explore different modes for different tasks
 - **[Auto-approval](/features/auto-approving-actions)** — Speed up repetitive tasks
