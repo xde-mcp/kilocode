@@ -135,16 +135,32 @@ Can you help me understand what's causing it?
 
 ---
 
+## Changing the Slackbot Model
+
+You can customize which AI model the Slackbot uses for generating responses. The model affects the quality, speed, and capabilities of the Slackbot's responses.
+
+1. Go to your [Kilo Workspace](https://app.kilo.ai/)
+2. Navigate to **Integrations** > **Slack**
+3. Select your preferred model for Kilo for Slack
+
+The Slackbot will start using the new model immediately for subsequent requests.
+
+### Available Models
+
+The Slackbot supports over 400+ models across different providers.
+
+---
+
 ## Troubleshooting
 
-**"The bot isn't responding."**  
+**"The bot isn't responding."**
 Ensure the Kilo Slackbot is installed in your workspace and has been added to the channel you're using.
 
-**"The bot can't access my repository."**  
+**"The bot can't access my repository."**
 Verify your GitHub integration is configured correctly in the [Integrations tab](https://app.kilo.ai/integrations).
 
-**"I'm getting incomplete responses."**  
+**"I'm getting incomplete responses."**
 Try breaking your request into smaller, more specific questions.
 
-**"The bot doesn't understand my codebase."**  
+**"The bot doesn't understand my codebase."**
 Make sure the repository you're asking about is connected and accessible through your GitHub integration.
