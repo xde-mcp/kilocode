@@ -179,7 +179,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
 	const prevExpandedRowsRef = useRef<Record<number, boolean>>()
 	const scrollContainerRef = useRef<HTMLDivElement>(null)
-	const disableAutoScrollRef = useRef(false)
+	const stickyFollowRef = useRef<boolean>(false)
 	const [showScrollToBottom, setShowScrollToBottom] = useState(false)
 	const [isAtBottom, setIsAtBottom] = useState(false)
 	const lastTtsRef = useRef<string>("")
@@ -219,6 +219,20 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	useEffect(() => {
 		inputValueRef.current = inputValue
 	}, [inputValue])
+
+	// Compute whether auto-approval is paused (user is typing in a followup)
+	const isFollowUpAutoApprovalPaused = useMemo(() => {
+		return !!(inputValue && inputValue.trim().length > 0 && clineAsk === "followup")
+	}, [inputValue, clineAsk])
+
+	// Cancel auto-approval timeout when user starts typing
+	useEffect(() => {
+		// Only send cancel if there's actual input (user is typing)
+		// and we have a pending follow-up question
+		if (isFollowUpAutoApprovalPaused) {
+			vscode.postMessage({ type: "cancelAutoApproval" })
+		}
+	}, [isFollowUpAutoApprovalPaused])
 
 	useEffect(() => {
 		isMountedRef.current = true
@@ -318,7 +332,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								case "editedExistingFile":
 								case "appliedDiff":
 								case "newFileCreated":
-								case "insertContent":
 								case "generateImage":
 									setPrimaryButtonText(t("chat:save.title"))
 									setSecondaryButtonText(t("chat:reject.title"))
@@ -386,8 +399,22 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							setSendingDisabled(false)
 							setClineAsk("resume_task")
 							setEnableButtons(true)
-							setPrimaryButtonText(t("chat:resumeTask.title"))
-							setSecondaryButtonText(t("chat:terminate.title"))
+							// For completed subtasks, show "Start New Task" instead of "Resume"
+							// A subtask is considered completed if:
+							// - It has a parentTaskId AND
+							// - Its messages contain a completion_result (either ask or say)
+							const isCompletedSubtask =
+								currentTaskItem?.parentTaskId &&
+								messages.some(
+									(msg) => msg.ask === "completion_result" || msg.say === "completion_result",
+								)
+							if (isCompletedSubtask) {
+								setPrimaryButtonText(t("chat:startNewTask.title"))
+								setSecondaryButtonText(undefined)
+							} else {
+								setPrimaryButtonText(t("chat:resumeTask.title"))
+								setSecondaryButtonText(t("chat:terminate.title"))
+							}
 							setDidClickCancel(false) // special case where we reset the cancel button state
 							break
 						case "resume_completed_task":
@@ -449,6 +476,19 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		}
 	}, [lastMessage, secondLastMessage])
 
+	// Update button text when messages change (e.g., completion_result is added) for subtasks in resume_task state
+	useEffect(() => {
+		if (clineAsk === "resume_task" && currentTaskItem?.parentTaskId) {
+			const hasCompletionResult = messages.some(
+				(msg) => msg.ask === "completion_result" || msg.say === "completion_result",
+			)
+			if (hasCompletionResult) {
+				setPrimaryButtonText(t("chat:startNewTask.title"))
+				setSecondaryButtonText(undefined)
+			}
+		}
+	}, [clineAsk, currentTaskItem?.parentTaskId, messages, t])
+
 	useEffect(() => {
 		if (messages.length === 0) {
 			setSendingDisabled(false)
@@ -503,9 +543,11 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			}
 		}
 
+		// Expanding a row indicates the user is browsing; disable sticky follow
 		if (wasAnyRowExpandedByUser) {
-			disableAutoScrollRef.current = true
+			stickyFollowRef.current = false
 		}
+
 		prevExpandedRowsRef.current = expandedRows // Store current state for next comparison
 	}, [expandedRows])
 
@@ -578,7 +620,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		// Do not reset mode here as it should persist.
 		// setPrimaryButtonText(undefined)
 		// setSecondaryButtonText(undefined)
-		disableAutoScrollRef.current = false
 	}, [])
 
 	/**
@@ -687,7 +728,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				case "tool":
 				case "browser_action_launch":
 				case "use_mcp_server":
-				case "resume_task":
 				case "mistake_limit_reached":
 				case "report_bug":
 					// Only send text/images if they exist
@@ -703,6 +743,33 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						setSelectedImages([])
 					} else {
 						vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+					}
+					break
+				case "resume_task":
+					// For completed subtasks (tasks with a parentTaskId and a completion_result),
+					// start a new task instead of resuming since the subtask is done
+					const isCompletedSubtaskForClick =
+						currentTaskItem?.parentTaskId &&
+						messagesRef.current.some(
+							(msg) => msg.ask === "completion_result" || msg.say === "completion_result",
+						)
+					if (isCompletedSubtaskForClick) {
+						startNewTask()
+					} else {
+						// Only send text/images if they exist
+						if (trimmedInput || (images && images.length > 0)) {
+							vscode.postMessage({
+								type: "askResponse",
+								askResponse: "yesButtonClicked",
+								text: trimmedInput,
+								images: images,
+							})
+							// Clear input state after sending
+							setInputValue("")
+							setSelectedImages([])
+						} else {
+							vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+						}
 					}
 					break
 				case "completion_result":
@@ -727,7 +794,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			setClineAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask, lastMessage?.text], // kilocode_change: add lastMessage?.text
+		[clineAsk, startNewTask, currentTaskItem?.parentTaskId, lastMessage?.text], // kilocode_change: add lastMessage?.text
 	)
 
 	const handleSecondaryButtonClick = useCallback(
@@ -833,8 +900,21 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							break
 					}
 					break
+				case "condenseTaskContextStarted":
+					// Handle both manual and automatic condensation start
+					// We don't check the task ID because:
+					// 1. There can only be one active task at a time
+					// 2. Task switching resets isCondensing to false (see useEffect with task?.ts dependency)
+					// 3. For new tasks, currentTaskItem may not be populated yet due to async state updates
+					if (message.text) {
+						setIsCondensing(true)
+						// Note: sendingDisabled is only set for manual condensation via handleCondenseContext
+						// Automatic condensation doesn't disable sending since the task is already running
+					}
+					break
 				case "condenseTaskContextResponse":
-					if (message.text && message.text === currentTaskItem?.id) {
+					// Same reasoning as above - we trust this is for the current task
+					if (message.text) {
 						if (isCondensing && sendingDisabled) {
 							setSendingDisabled(false)
 						}
@@ -857,7 +937,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			isHidden,
 			sendingDisabled,
 			enableButtons,
-			currentTaskItem,
 			handleChatReset,
 			handleSendMessage,
 			handleSetChatBoxMessage,
@@ -999,6 +1078,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				lastMessage.text && // has text
 				(lastMessage.say === "text" || lastMessage.say === "completion_result") && // is a text message
 				!lastMessage.partial && // not a partial message
+				typeof lastMessage.text === "string" && // kilocode_change: is a string
 				!lastMessage.text.startsWith("{") // not a json object
 			) {
 				let text = lastMessage?.text || ""
@@ -1148,7 +1228,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 
 	const handleRowHeightChange = useCallback(
 		(isTaller: boolean) => {
-			if (!disableAutoScrollRef.current) {
+			if (isAtBottom) {
 				if (isTaller) {
 					scrollToBottomSmooth()
 				} else {
@@ -1156,33 +1236,36 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				}
 			}
 		},
-		[scrollToBottomSmooth, scrollToBottomAuto],
+		[scrollToBottomSmooth, scrollToBottomAuto, isAtBottom],
 	)
 
-	useEffect(() => {
-		let timer: ReturnType<typeof setTimeout> | undefined
-		if (!disableAutoScrollRef.current) {
-			timer = setTimeout(() => scrollToBottomSmooth(), 50)
-		}
-		return () => {
-			if (timer) {
-				clearTimeout(timer)
-			}
-		}
-	}, [groupedMessages.length, scrollToBottomSmooth])
-
+	// Disable sticky follow when user scrolls up inside the chat container
 	const handleWheel = useCallback((event: Event) => {
 		const wheelEvent = event as WheelEvent
-
-		if (wheelEvent.deltaY && wheelEvent.deltaY < 0) {
-			if (scrollContainerRef.current?.contains(wheelEvent.target as Node)) {
-				// User scrolled up
-				disableAutoScrollRef.current = true
-			}
+		if (wheelEvent.deltaY < 0 && scrollContainerRef.current?.contains(wheelEvent.target as Node)) {
+			stickyFollowRef.current = false
 		}
 	}, [])
-	//kilocode_change
+	useEvent("wheel", handleWheel, window, { passive: true })
 
+	// Also disable sticky follow when the chat container is scrolled away from bottom
+	useEffect(() => {
+		const el = scrollContainerRef.current
+		if (!el) return
+		const onScroll = () => {
+			// Consider near-bottom within a small threshold consistent with Virtuoso settings
+			const nearBottom = Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight) < 10
+			if (!nearBottom) {
+				stickyFollowRef.current = false
+			}
+			// Keep UI button state in sync with scroll position
+			setShowScrollToBottom(!nearBottom)
+		}
+		el.addEventListener("scroll", onScroll, { passive: true })
+		return () => el.removeEventListener("scroll", onScroll)
+	}, [])
+
+	//kilocode_change
 	// Effect to clear checkpoint warning when messages appear or task changes
 	useEffect(() => {
 		if (isHidden || !task) {
@@ -1295,6 +1378,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					highlighted={highlightedMessageIndex === index} // kilocode_change: add highlight prop
 					enableCheckpoints={enableCheckpoints} // kilocode_change
 					isFollowUpAnswered={messageOrGroup.isAnswered === true || messageOrGroup.ts === currentFollowUpTs}
+					isFollowUpAutoApprovalPaused={isFollowUpAutoApprovalPaused}
 					editable={
 						messageOrGroup.type === "ask" &&
 						messageOrGroup.ask === "tool" &&
@@ -1329,6 +1413,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			highlightedMessageIndex, // kilocode_change: add highlightedMessageIndex
 			enableCheckpoints, // kilocode_change
 			currentFollowUpTs,
+			isFollowUpAutoApprovalPaused,
 			alwaysAllowUpdateTodoList,
 			enableButtons,
 			primaryButtonText,
@@ -1573,16 +1658,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 							<Virtuoso
 								ref={virtuosoRef}
 								key={task.ts}
-								className="h-full overflow-y-auto mb-1"
+								className="scrollable grow overflow-y-scroll mb-1"
 								increaseViewportBy={{ top: 400, bottom: 400 }} // kilocode_change: use more modest numbers to see if they reduce gray screen incidence
 								data={groupedMessages}
 								itemContent={itemContent}
+								followOutput={(isAtBottom: boolean) => isAtBottom || stickyFollowRef.current}
 								atBottomStateChange={(isAtBottom: boolean) => {
 									setIsAtBottom(isAtBottom)
-									if (isAtBottom) {
-										disableAutoScrollRef.current = false
-									}
-									setShowScrollToBottom(disableAutoScrollRef.current && !isAtBottom)
+									// Only show the scroll-to-bottom button if not at bottom
+									setShowScrollToBottom(!isAtBottom)
 								}}
 								atBottomThreshold={10}
 								initialTopMostItemIndex={groupedMessages.length - 1}
@@ -1607,8 +1691,12 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 									<Button
 										className="flex-[2]"
 										onClick={() => {
-											scrollToBottomSmooth()
-											disableAutoScrollRef.current = false
+											// Engage sticky follow until user scrolls up
+											stickyFollowRef.current = true
+											// Pin immediately to avoid lag during fast streaming
+											scrollToBottomAuto()
+											// Hide button immediately to prevent flash
+											setShowScrollToBottom(false)
 										}}>
 										<span className="codicon codicon-chevron-down"></span>
 									</Button>

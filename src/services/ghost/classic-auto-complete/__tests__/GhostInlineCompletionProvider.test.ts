@@ -2,10 +2,14 @@ import * as vscode from "vscode"
 import {
 	GhostInlineCompletionProvider,
 	findMatchingSuggestion,
+	applyFirstLineOnly,
 	stringToInlineCompletions,
+	shouldShowOnlyFirstLine,
+	getFirstLine,
+	countLines,
 	CostTrackingCallback,
 } from "../GhostInlineCompletionProvider"
-import { FillInAtCursorSuggestion } from "../HoleFiller"
+import { FillInAtCursorSuggestion } from "../../types"
 import { MockTextDocument } from "../../../mocking/MockTextDocument"
 import { GhostModel } from "../../GhostModel"
 import { AutocompleteTelemetry } from "../AutocompleteTelemetry"
@@ -77,7 +81,10 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("exact")
+			expect(result!.fillInAtCursor).toBeDefined()
 		})
 
 		it("should skip failed lookups and find successful suggestions", () => {
@@ -95,7 +102,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "console.log('success');", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('success');")
+			expect(result!.matchType).toBe("exact")
 		})
 
 		it("should return empty string for failed lookup even when other suggestions exist", () => {
@@ -113,7 +122,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("exact")
 		})
 	})
 
@@ -128,7 +139,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "console.log('Hello, World!');", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('Hello, World!');")
+			expect(result!.matchType).toBe("exact")
 		})
 
 		it("should return null when prefix does not match", () => {
@@ -175,7 +188,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User backspaced from "foo" to "f"
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toEqual({ text: "oohenk", matchType: "backward_deletion" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("oohenk")
+			expect(result!.matchType).toBe("backward_deletion")
 		})
 
 		it("should return full prefix plus suggestion when user deletes entire prefix", () => {
@@ -189,7 +204,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted entire prefix
 			const result = findMatchingSuggestion("", "!", suggestions)
-			expect(result).toEqual({ text: "helloworld", matchType: "backward_deletion" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("helloworld")
+			expect(result!.matchType).toBe("backward_deletion")
 		})
 
 		it("should return null when suffix does not match during backward deletion", () => {
@@ -250,7 +267,9 @@ describe("findMatchingSuggestion", () => {
 
 			// Should match the exact prefix "f" first (most recent)
 			const result = findMatchingSuggestion("f", "bar", suggestions)
-			expect(result).toEqual({ text: "exact", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("exact")
+			expect(result!.matchType).toBe("exact")
 		})
 
 		it("should handle multi-character backward deletion", () => {
@@ -264,7 +283,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User deleted "unc" from "function myFunc"
 			const result = findMatchingSuggestion("function myF", " { }", suggestions)
-			expect(result).toEqual({ text: "unctest()", matchType: "backward_deletion" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("unctest()")
+			expect(result!.matchType).toBe("backward_deletion")
 		})
 	})
 
@@ -280,7 +301,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "cons" after the prefix
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "ole.log('Hello, World!');", matchType: "partial_typing" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("ole.log('Hello, World!');")
+			expect(result!.matchType).toBe("partial_typing")
 		})
 
 		it("should return full suggestion when no partial typing", () => {
@@ -293,7 +316,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "console.log('test');", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("console.log('test');")
+			expect(result!.matchType).toBe("exact")
 		})
 
 		it("should return null when partially typed content does not match suggestion", () => {
@@ -320,7 +345,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1console.log('test');", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "", matchType: "partial_typing" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("")
+			expect(result!.matchType).toBe("partial_typing")
 		})
 
 		it("should return null when suffix has changed during partial typing", () => {
@@ -348,7 +375,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User typed "function te"
 			const result = findMatchingSuggestion("const x = 1function te", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "st() { return 42; }", matchType: "partial_typing" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("st() { return 42; }")
+			expect(result!.matchType).toBe("partial_typing")
 		})
 
 		it("should be case-sensitive in partial matching", () => {
@@ -382,7 +411,9 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "second suggestion", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("second suggestion")
+			expect(result!.matchType).toBe("exact")
 		})
 
 		it("should match different suggestions based on context", () => {
@@ -400,10 +431,14 @@ describe("findMatchingSuggestion", () => {
 			]
 
 			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
-			expect(result1).toEqual({ text: "first suggestion", matchType: "exact" })
+			expect(result1).not.toBeNull()
+			expect(result1!.text).toBe("first suggestion")
+			expect(result1!.matchType).toBe("exact")
 
 			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
-			expect(result2).toEqual({ text: "second suggestion", matchType: "exact" })
+			expect(result2).not.toBeNull()
+			expect(result2!.text).toBe("second suggestion")
+			expect(result2!.matchType).toBe("exact")
 		})
 
 		it("should prefer exact match over partial match", () => {
@@ -422,7 +457,9 @@ describe("findMatchingSuggestion", () => {
 
 			// User is at position that matches exact prefix of second suggestion
 			const result = findMatchingSuggestion("const x = 1cons", "\nconst y = 2", suggestions)
-			expect(result).toEqual({ text: "exact match", matchType: "exact" })
+			expect(result).not.toBeNull()
+			expect(result!.text).toBe("exact match")
+			expect(result!.matchType).toBe("exact")
 		})
 	})
 
@@ -465,6 +502,224 @@ describe("findMatchingSuggestion", () => {
 			const result = findMatchingSuggestion("f", "bar", suggestions)
 			expect(result?.matchType).toBe("backward_deletion")
 		})
+	})
+
+	describe("fillInAtCursor tracking", () => {
+		it("should return a fillInAtCursor for tracking visibility", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "console.log('test');",
+					prefix: "const x = 1",
+					suffix: "\nconst y = 2",
+				},
+			]
+
+			const result = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+
+			expect(result).not.toBeNull()
+			expect(result!.fillInAtCursor).toBeDefined()
+			expect(result!.fillInAtCursor.text).toBe("console.log('test');")
+			expect(result!.fillInAtCursor.prefix).toBe("const x = 1")
+			expect(result!.fillInAtCursor.suffix).toBe("\nconst y = 2")
+		})
+
+		it("should return the same fillInAtCursor for the same suggestion", () => {
+			const suggestion: FillInAtCursorSuggestion = {
+				text: "console.log('test');",
+				prefix: "const x = 1",
+				suffix: "\nconst y = 2",
+			}
+			const suggestions: FillInAtCursorSuggestion[] = [suggestion]
+
+			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+			const result2 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+
+			// Should be the same object reference
+			expect(result1!.fillInAtCursor).toBe(result2!.fillInAtCursor)
+		})
+
+		it("should return different fillInAtCursor for different suggestions", () => {
+			const suggestions: FillInAtCursorSuggestion[] = [
+				{
+					text: "first suggestion",
+					prefix: "const x = 1",
+					suffix: "\nconst y = 2",
+				},
+				{
+					text: "second suggestion",
+					prefix: "const a = 1",
+					suffix: "\nconst b = 2",
+				},
+			]
+
+			const result1 = findMatchingSuggestion("const x = 1", "\nconst y = 2", suggestions)
+			const result2 = findMatchingSuggestion("const a = 1", "\nconst b = 2", suggestions)
+
+			expect(result1!.fillInAtCursor).not.toBe(result2!.fillInAtCursor)
+		})
+	})
+})
+
+describe("shouldShowOnlyFirstLine", () => {
+	it.each([
+		["\\n", "\nconst y = 2"],
+		["\\r\\n", "\r\nconst y = 2"],
+	])("returns false when suggestion starts with %s", (_label, suggestion) => {
+		expect(shouldShowOnlyFirstLine("const x = foo", suggestion)).toBe(false)
+	})
+
+	it("returns true when cursor is mid-line (current line has non-whitespace)", () => {
+		expect(shouldShowOnlyFirstLine("const x = 1\nconst y = foo", "bar\nbaz")).toBe(true)
+	})
+
+	it("returns false at start of line when suggestion is 3+ lines but current line has no word characters", () => {
+		// When current line has only whitespace (no word characters), show the whole block
+		expect(shouldShowOnlyFirstLine("const x = 1\n    ", "l1\nl2\nl3")).toBe(false)
+	})
+
+	it("returns true at start of line when suggestion is 3+ lines and current line has word characters", () => {
+		// When current line has word characters (e.g., partial code), show only first line
+		expect(shouldShowOnlyFirstLine("const x = 1\n    const", "l1\nl2\nl3")).toBe(true)
+	})
+
+	it("returns false at start of line when suggestion is 2 lines", () => {
+		expect(shouldShowOnlyFirstLine("const x = 1\n", "l1\nl2")).toBe(false)
+	})
+
+	it("returns false when current line has only non-word characters (e.g., indentation after comma)", () => {
+		// Simulates typing comma + Enter in an array of objects, then getting a multi-line suggestion
+		// The prefix ends with whitespace-only line (indentation), suggestion is the next object block
+		const prefix = "const items = [\n\t{ name: 'first' },\n\t"
+		const suggestion = "{ name: 'second' },\n\t{ name: 'third' },"
+		expect(shouldShowOnlyFirstLine(prefix, suggestion)).toBe(false)
+	})
+})
+
+describe("countLines", () => {
+	it("returns 0 for empty string", () => {
+		expect(countLines("")).toBe(0)
+	})
+
+	it("counts mixed \\n and \\r\\n correctly", () => {
+		expect(countLines("l1\nl2\r\nl3")).toBe(3)
+	})
+
+	it("does not count trailing newline as an additional line", () => {
+		expect(countLines("l1\nl2\n")).toBe(2)
+	})
+})
+
+describe("getFirstLine", () => {
+	it("returns the entire text when there is no newline", () => {
+		expect(getFirstLine("console.log('test');")).toBe("console.log('test');")
+	})
+
+	it.each([
+		["\\n", "first line\nsecond line"],
+		["\\r\\n", "first line\r\nsecond line"],
+	])("returns first line for %s line endings", (_label, text) => {
+		expect(getFirstLine(text)).toBe("first line")
+	})
+
+	it("returns empty string when text starts with a newline", () => {
+		expect(getFirstLine("\nsecond line")).toBe("")
+	})
+})
+
+describe("applyFirstLineOnly", () => {
+	it("returns null when input is null", () => {
+		expect(applyFirstLineOnly(null, "const x = foo")).toBeNull()
+	})
+
+	it("returns result unchanged when text is empty", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "",
+			prefix: "const x = ",
+			suffix: ";",
+		}
+		const input = { text: "", matchType: "exact" as const, fillInAtCursor }
+		const result = applyFirstLineOnly(input, "const x = foo")
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("")
+		expect(result!.matchType).toBe("exact")
+	})
+
+	it("truncates to first line and preserves matchType when enabled", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "line1\nline2\nline3",
+			prefix: "const x = ",
+			suffix: ";",
+		}
+		const result = applyFirstLineOnly(
+			{
+				text: "line1\nline2\nline3",
+				matchType: "partial_typing",
+				fillInAtCursor,
+			},
+			"const x = foo",
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("line1")
+		expect(result!.matchType).toBe("partial_typing")
+	})
+
+	it("preserves original fillInAtCursor when truncating (for consistent telemetry keys)", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "line1\nline2\nline3",
+			prefix: "const x = ",
+			suffix: ";",
+		}
+		const result = applyFirstLineOnly(
+			{
+				text: "line1\nline2\nline3",
+				matchType: "exact",
+				fillInAtCursor,
+			},
+			"const x = foo", // mid-line prefix triggers truncation
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("line1")
+		// The fillInAtCursor should remain unchanged for consistent telemetry tracking
+		// (same suggestion should generate same key regardless of truncation)
+		expect(result!.fillInAtCursor.text).toBe("line1\nline2\nline3")
+		// prefix and suffix should be preserved
+		expect(result!.fillInAtCursor.prefix).toBe("const x = ")
+		expect(result!.fillInAtCursor.suffix).toBe(";")
+	})
+
+	it("preserves fillInAtCursor when no truncation occurs", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "singleLine",
+			prefix: "prefix",
+			suffix: "suffix",
+		}
+		const result = applyFirstLineOnly(
+			{
+				text: "singleLine",
+				matchType: "exact",
+				fillInAtCursor,
+			},
+			"const x = foo", // mid-line but single-line suggestion
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("singleLine")
+		// fillInAtCursor should be unchanged since no truncation happened
+		expect(result!.fillInAtCursor).toStrictEqual(fillInAtCursor)
+	})
+
+	it("does not truncate when suggestion starts with newline", () => {
+		const fillInAtCursor: FillInAtCursorSuggestion = {
+			text: "\nline1\nline2",
+			prefix: "const x = ",
+			suffix: ";",
+		}
+		const result = applyFirstLineOnly(
+			{ text: "\nline1\nline2", matchType: "exact", fillInAtCursor },
+			"const x = foo",
+		)
+		expect(result).not.toBeNull()
+		expect(result!.text).toBe("\nline1\nline2")
+		expect(result!.matchType).toBe("exact")
 	})
 })
 
@@ -672,6 +927,24 @@ describe("GhostInlineCompletionProvider", () => {
 				command: "kilocode.ghost.inline-completion.accepted",
 				title: "Autocomplete Accepted",
 			})
+		})
+
+		it("should truncate cached multi-line suggestions to first line when cursor is mid-line", async () => {
+			provider.updateSuggestions({
+				text: "line1\nline2\nline3",
+				prefix: "const x = 1",
+				suffix: "\nconst y = 2",
+			})
+
+			const result = (await provideWithDebounce(
+				mockDocument,
+				mockPosition,
+				mockContext,
+				mockToken,
+			)) as vscode.InlineCompletionItem[]
+
+			expect(result).toHaveLength(1)
+			expect(result[0].insertText).toBe("line1")
 		})
 
 		it("should return empty array when prefix does not match", async () => {
@@ -1607,6 +1880,24 @@ describe("GhostInlineCompletionProvider", () => {
 			expect(result).toHaveLength(0)
 			// Model should not be called
 			expect(mockModel.generateResponse).not.toHaveBeenCalled()
+		})
+
+		it("should not attempt an LLM call if credentials become invalid before the debounced fetch executes", async () => {
+			// First call executes immediately (leading edge) - just to move provider into debounced mode
+			await provider.provideInlineCompletionItems(mockDocument, mockPosition, mockContext, mockToken)
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
+
+			// Second call will be debounced. Simulate a model reload happening before the timer fires.
+			vi.mocked(mockModel.hasValidCredentials).mockReturnValue(false)
+
+			const promise = provider.provideInlineCompletionItems(mockDocument, mockPosition, mockContext, mockToken)
+
+			// Let the trailing-edge debounce fire
+			await vi.advanceTimersByTimeAsync(300)
+			await promise
+
+			// If fetch-time validation is working, we do not call generateResponse again.
+			expect(mockModel.generateResponse).toHaveBeenCalledTimes(1)
 		})
 
 		it("should return suggestions when model has valid credentials", async () => {

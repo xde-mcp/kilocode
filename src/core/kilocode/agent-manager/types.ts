@@ -13,7 +13,8 @@ export type SessionSource = "local" | "remote"
 export interface ParallelModeInfo {
 	enabled: boolean
 	branch?: string // e.g., "add-authentication-1702734891234"
-	worktreePath?: string // e.g., "/tmp/kilocode-worktree-add-auth..."
+	worktreePath?: string // e.g., ".kilocode/worktrees/add-auth..."
+	parentBranch?: string // e.g., "main" - the branch worktree was created from
 	completionMessage?: string // Merge instructions from CLI on completion
 }
 
@@ -57,10 +58,11 @@ export interface AgentManagerState {
  */
 export type AgentManagerMessage =
 	| { type: "agentManager.webviewReady" }
-	| { type: "agentManager.startSession"; prompt: string; parallelMode?: boolean }
+	| { type: "agentManager.startSession"; prompt: string; parallelMode?: boolean; existingBranch?: string }
 	| { type: "agentManager.stopSession"; sessionId: string }
 	| { type: "agentManager.selectSession"; sessionId: string }
 	| { type: "agentManager.refreshRemoteSessions" }
+	| { type: "agentManager.listBranches" }
 
 /**
  * Messages from Extension to Webview
@@ -71,3 +73,4 @@ export type AgentManagerExtensionMessage =
 	| { type: "agentManager.sessionRemoved"; sessionId: string }
 	| { type: "agentManager.error"; error: string }
 	| { type: "agentManager.remoteSessions"; sessions: RemoteSession[] }
+	| { type: "agentManager.branches"; branches: string[]; currentBranch?: string }

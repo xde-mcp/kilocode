@@ -16,12 +16,9 @@ import { parseXmlForDiff } from "../../utils/xml"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { applyDiffTool as applyDiffToolClass } from "./ApplyDiffTool"
 import { computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
-import * as vscode from "vscode"
-import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
-import { Package } from "../../shared/package"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
-import { searchAndReplaceTool } from "./kilocode/searchAndReplaceTool"
+import { isNativeProtocol } from "@roo-code/types"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { trackContribution } from "../../services/contribution-tracking/ContributionTrackingService" // kilocode_change
 
 export interface DiffOperation {
 	path: string
@@ -68,7 +65,13 @@ export async function applyDiffTool(
 	// Check if native protocol is enabled - if so, always use single-file class-based tool
 	const toolProtocol = resolveToolProtocol(cline.apiConfiguration, cline.api.getModel().info)
 	if (isNativeProtocol(toolProtocol)) {
-		return searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult) // kilocode_change
+		return applyDiffToolClass.handle(cline, block as ToolUse<"apply_diff">, {
+			askApproval,
+			handleError,
+			pushToolResult,
+			removeClosingTag,
+			toolProtocol,
+		})
 	}
 
 	// Check if MULTI_FILE_APPLY_DIFF experiment is enabled
@@ -636,6 +639,19 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					const isWriteProtected = cline.rooProtectedController?.isWriteProtected(relPath) || false
 					didApprove = await askApproval("tool", operationMessage, toolProgressStatus, isWriteProtected)
 
+					// kilocode_change start
+					// Track contribution for single file operation (fire-and-forget)
+					trackContribution({
+						cwd: cline.cwd,
+						filePath: relPath,
+						unifiedDiff: unifiedPatch,
+						status: didApprove ? "accepted" : "rejected",
+						taskId: cline.taskId,
+						organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+						kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+					})
+					// kilocode_change end
+
 					if (!didApprove) {
 						// Revert changes if diff view was shown
 						if (!isPreventFocusDisruptionEnabled) {
@@ -661,6 +677,21 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					}
 				} else {
 					// Batch operations - already approved above
+					// kilocode_change start
+					// Track contribution for batch file operation (fire-and-forget)
+					const unifiedPatchRaw = formatResponse.createPrettyPatch(relPath, beforeContent!, originalContent!)
+					const unifiedPatch = sanitizeUnifiedDiff(unifiedPatchRaw)
+					trackContribution({
+						cwd: cline.cwd,
+						filePath: relPath,
+						unifiedDiff: unifiedPatch,
+						status: "accepted", // Batch operations are already approved at this point
+						taskId: cline.taskId,
+						organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+						kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+					})
+					// kilocode_change end
+
 					if (isPreventFocusDisruptionEnabled) {
 						// Direct file write without diff view or opening the file
 						cline.diffViewProvider.editType = "modify"

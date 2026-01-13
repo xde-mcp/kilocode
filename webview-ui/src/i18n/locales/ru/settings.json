@@ -22,6 +22,8 @@
 	},
 	"sections": {
 		"providers": "Провайдеры",
+		"modes": "Режимы",
+		"mcp": "Серверы MCP",
 		"autoApprove": "Автоодобрение",
 		"browser": "Доступ к компьютеру",
 		"checkpoints": "Контрольные точки",
@@ -86,6 +88,8 @@
 		"openRouterProvider": "OpenRouter",
 		"openRouterApiKeyLabel": "Ключ API OpenRouter",
 		"openRouterApiKeyPlaceholder": "Введите свой ключ API OpenRouter",
+		"openRouterProviderRoutingLabel": "Маршрутизация провайдера OpenRouter",
+		"openRouterProviderRoutingDescription": "OpenRouter направляет запросы к лучшим доступным провайдерам для вашей модели эмбеддинга. По умолчанию запросы балансируются между топовыми провайдерами для максимальной доступности. Однако вы можете выбрать конкретного провайдера для этой модели.",
 		"mistralProvider": "Mistral",
 		"mistralApiKeyLabel": "Ключ API:",
 		"mistralApiKeyPlaceholder": "Введите свой API-ключ Mistral",
@@ -298,9 +302,9 @@
 		"getOpenRouterApiKey": "Получить OpenRouter API-ключ",
 		"vercelAiGatewayApiKey": "Ключ API Vercel AI Gateway",
 		"getVercelAiGatewayApiKey": "Получить ключ API Vercel AI Gateway",
+		"glamaApiKey": "API-ключ Glama",
+		"getGlamaApiKey": "Получить API-ключ Glama",
 		"apiKeyStorageNotice": "API-ключи хранятся безопасно в Secret Storage VSCode",
-		"glamaApiKey": "Glama API-ключ",
-		"getGlamaApiKey": "Получить Glama API-ключ",
 		"useCustomBaseUrl": "Использовать пользовательский базовый URL",
 		"useReasoning": "Включить рассуждения",
 		"useHostHeader": "Использовать пользовательский Host-заголовок",
@@ -569,8 +573,10 @@
 			"none": "Нет",
 			"minimal": "Минимальный (самый быстрый)",
 			"high": "Высокие",
+			"xhigh": "Очень высокие",
 			"medium": "Средние",
-			"low": "Низкие"
+			"low": "Низкие",
+			"xhigh": "Очень высокие"
 		},
 		"verbosity": {
 			"label": "Подробность вывода",
@@ -977,6 +983,10 @@
 		"MULTIPLE_NATIVE_TOOL_CALLS": {
 			"name": "Параллельные вызовы инструментов",
 			"description": "При включении нативный протокол может выполнять несколько инструментов в одном ходе сообщения ассистента."
+		},
+		"SPEECH_TO_TEXT": {
+			"name": "Речь-в-текст (STT)",
+			"description": "При включении Kilo Code может преобразовывать вашу речь в текст с помощью модели Whisper от OpenAI. Нажмите кнопку микрофона в чате, чтобы начать запись. Требуется установленный FFmpeg и настроенный API-провайдер OpenAI."
 		}
 	},
 	"promptCaching": {
@@ -1015,7 +1025,10 @@
 		"label": "Модель",
 		"searchPlaceholder": "Поиск",
 		"noMatchFound": "Совпадений не найдено",
-		"useCustomModel": "Использовать пользовательскую: {{modelId}}"
+		"useCustomModel": "Использовать пользовательскую: {{modelId}}",
+		"simplifiedExplanation": "Ты сможешь настроить подробные параметры модели позже.",
+		"recommendedModels": "Рекомендуемые модели",
+		"allModels": "Все модели"
 	},
 	"footer": {
 		"feedback": "Если у вас есть вопросы или предложения, откройте issue на <githubLink>github.com/Kilo-Org/kilocode</githubLink> или присоединяйтесь к <redditLink>reddit.com/r/kilocode</redditLink> или <discordLink>kilo.ai/discord</discordLink>",
@@ -1136,6 +1149,10 @@
 		"collapseThinking": {
 			"label": "Сворачивать сообщения о размышлениях по умолчанию",
 			"description": "Если включено, блоки с размышлениями будут свернуты по умолчанию, пока вы не начнете с ними взаимодействовать"
+		},
+		"requireCtrlEnterToSend": {
+			"label": "Требовать {{primaryMod}}+Enter для отправки сообщений",
+			"description": "Если включено, необходимо нажать {{primaryMod}}+Enter для отправки сообщений вместо простого Enter"
 		}
 	}
 }
