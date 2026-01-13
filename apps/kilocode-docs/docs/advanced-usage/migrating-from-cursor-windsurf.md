@@ -6,6 +6,10 @@ sidebar_label: Migrating from Cursor or Windsurf
 
 Quickly migrate your custom rules from Cursor or Windsurf to Kilo Code. The process typically takes just a few minutes per project.
 
+:::info Workflow Difference: Inline Completions
+If you relied heavily on Cursor's or Windsurf's **inline autocomplete** (Tab-to-accept suggestions as you type), note that Kilo Code takes a different approach. Kilo Code focuses on **agentic, chat-driven workflows** where you describe what you want and the AI generates complete implementations. For inline completions, Kilo Code offers an optional **Ghost** feature (Settings → Ghost) that provides autocomplete suggestions, though the primary workflow is chat-based. See the [Troubleshooting](#i-expected-cursorwindsurf-style-autocomplete) section if you're adjusting to this workflow difference.
+:::
+
 **Last Updated**: November 2025
 
 ## Why Kilo Code's Rules System?
@@ -309,6 +313,7 @@ After migration:
 - [ ] **Update team docs:** Document new `.kilocode/rules/` location
 - [ ] **Commit to version control:** `git add .kilocode/`
 - [ ] **Remove old directories:** Delete `.cursor/` or `.windsurf/` folders once verified
+- [ ] **Validate autocomplete workflow:** If you used Cursor/Windsurf autocomplete, try Kilo Code's Ghost feature (Settings → Ghost) or adapt to the chat-driven workflow
 
 ## Troubleshooting
 
@@ -362,6 +367,34 @@ Cursor's nested directories don't map to Kilo Code. Flatten with descriptive nam
 - **Check location:** Must be at project root
 - **Check setting:** Verify "Use Agent Rules" is enabled in Kilo Code settings (enabled by default)
 - **Reload:** Restart VS Code if needed
+
+### I Expected Cursor/Windsurf-Style Autocomplete
+
+Cursor and Windsurf emphasize **inline autocomplete** (Tab-to-accept suggestions as you type). Kilo Code takes a different approach:
+
+**Kilo Code's primary workflow is chat-driven:**
+
+- Describe what you want in the chat panel
+- The AI generates complete implementations, refactors, or fixes
+- Review and approve changes before they're applied
+
+**For inline completions, try Ghost:**
+
+1. Open Settings → Ghost
+2. Enable Ghost autocomplete
+3. Configure your preferred model for completions
+
+**Adapting your workflow:**
+
+- Instead of waiting for autocomplete suggestions, describe your intent in chat: "Add error handling to this function" or "Create a React component for user profiles"
+- Use the chat for larger changes and Ghost for small, in-line completions
+- Many users find the chat-driven approach faster for substantial changes, while Ghost handles quick completions
+
+**Why this approach?**
+
+- Chat-driven workflows give you more control over AI-generated code
+- You can review changes before they're applied
+- Complex multi-file changes are easier to coordinate through chat
 
 ## Advanced: Creating Custom Modes
 
