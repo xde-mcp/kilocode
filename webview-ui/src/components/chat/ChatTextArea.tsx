@@ -1039,7 +1039,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				const urlRegex = /^\S+:\/\/\S+$/
 				if (urlRegex.test(pastedText.trim())) {
 					e.preventDefault()
-					clearGhostText() // kilocode_change: Clear ghost text on paste
+					clearGhostText() // kilocode_change: Clear ghost text on paste of URL as well
 					const trimmedUrl = pastedText.trim()
 					const newValue =
 						inputValue.slice(0, cursorPosition) + trimmedUrl + " " + inputValue.slice(cursorPosition)
