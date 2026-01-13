@@ -163,6 +163,8 @@ export interface WebviewMessage {
 		| "seeNewChanges" // kilocode_change
 		| "deleteMcpServer"
 		| "insertTextToChatArea" // kilocode_change
+		| "humanRelayResponse"
+		| "humanRelayCancel"
 		| "codebaseIndexEnabled"
 		| "telemetrySetting"
 		| "testBrowserConnection"

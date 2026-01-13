@@ -12,6 +12,7 @@ export { GeminiHandler } from "./gemini"
 export { GlamaHandler } from "./glama" // kilocode_change
 export { GroqHandler } from "./groq"
 export { HuggingFaceHandler } from "./huggingface"
+export { HumanRelayHandler } from "./human-relay"
 export { IOIntelligenceHandler } from "./io-intelligence"
 export { LiteLLMHandler } from "./lite-llm"
 export { LmStudioHandler } from "./lm-studio"

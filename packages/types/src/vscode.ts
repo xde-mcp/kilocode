@@ -44,6 +44,11 @@ export const commandIds = [
 	"open", // kilocode_change
 	"agentManagerOpen", // kilocode_change
 
+	"showHumanRelayDialog",
+	"registerHumanRelayCallback",
+	"unregisterHumanRelayCallback",
+	"handleHumanRelayResponse",
+
 	"newTask",
 
 	"setCustomStoragePath",

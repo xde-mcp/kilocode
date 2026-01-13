@@ -118,6 +118,9 @@ export interface ExtensionMessage {
 		| "currentCheckpointUpdated"
 		| "checkpointInitWarning"
 		| "insertTextToChatArea" // kilocode_change
+		| "showHumanRelayDialog"
+		| "humanRelayResponse"
+		| "humanRelayCancel"
 		| "browserToolEnabled"
 		| "browserConnectionResult"
 		| "remoteBrowserEnabled"

@@ -116,7 +116,7 @@ export const isCustomProvider = (key: string): key is CustomProvider => customPr
  * model lists.
  */
 
-export const fauxProviders = ["fake-ai"] as const
+export const fauxProviders = ["fake-ai", "human-relay"] as const
 
 export type FauxProvider = (typeof fauxProviders)[number]
 
@@ -395,6 +395,8 @@ const requestySchema = baseProviderSettingsSchema.extend({
 	requestyModelId: z.string().optional(),
 })
 
+const humanRelaySchema = baseProviderSettingsSchema
+
 const fakeAiSchema = baseProviderSettingsSchema.extend({
 	fakeAi: z.unknown().optional(),
 })
@@ -559,6 +561,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	minimaxSchema.merge(z.object({ apiProvider: z.literal("minimax") })),
 	unboundSchema.merge(z.object({ apiProvider: z.literal("unbound") })),
 	requestySchema.merge(z.object({ apiProvider: z.literal("requesty") })),
+	humanRelaySchema.merge(z.object({ apiProvider: z.literal("human-relay") })),
 	fakeAiSchema.merge(z.object({ apiProvider: z.literal("fake-ai") })),
 	xaiSchema.merge(z.object({ apiProvider: z.literal("xai") })),
 	// kilocode_change start
@@ -617,6 +620,7 @@ export const providerSettingsSchema = z.object({
 	...minimaxSchema.shape,
 	...unboundSchema.shape,
 	...requestySchema.shape,
+	...humanRelaySchema.shape,
 	...fakeAiSchema.shape,
 	...xaiSchema.shape,
 	...groqSchema.shape,
@@ -771,7 +775,7 @@ export const getApiProtocol = (provider: ProviderName | undefined, modelId?: str
  */
 
 export const MODELS_BY_PROVIDER: Record<
-	Exclude<ProviderName, "fake-ai" | "gemini-cli" | "openai" | "gemini">, // kilocode_change: add gemini
+	Exclude<ProviderName, "fake-ai" | "human-relay" | "gemini-cli" | "openai" | "gemini">,
 	{ id: ProviderName; label: string; models: string[] }
 > = {
 	anthropic: {

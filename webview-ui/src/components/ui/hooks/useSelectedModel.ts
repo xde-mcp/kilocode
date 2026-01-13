@@ -549,9 +549,10 @@ function getSelectedModel({
 		}
 		// kilocode_change end
 		// case "anthropic":
+		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "fake-ai" | "kilocode"
+			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "fake-ai" | "human-relay" | "kilocode"
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 

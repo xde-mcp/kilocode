@@ -14,6 +14,10 @@ export class ProfileValidator {
 			return false
 		}
 
+		if (profile.apiProvider === "human-relay") {
+			return true
+		}
+
 		const modelId = this.getModelIdFromProfile(profile)
 
 		if (!modelId) {
@@ -99,6 +103,7 @@ export class ProfileValidator {
 			case "inception":
 				return profile.inceptionLabsModelId
 			// kilocode_change end
+			case "human-relay":
 			case "fake-ai":
 			default:
 				return undefined
