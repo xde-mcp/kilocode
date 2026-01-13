@@ -36,6 +36,32 @@ export function useChatGhostText({
 	const savedGhostTextRef = useRef<string>("") // Store ghost text when blurring to restore on focus
 	const savedPrefixRef = useRef<string>("") // Store the prefix associated with saved ghost text
 
+	/**
+	 * Idempotent function to synchronize ghost text visibility based on current state.
+	 * This is the single source of truth for whether ghost text should be shown.
+	 */
+	const syncGhostTextVisibility = useCallback(() => {
+		const textArea = textAreaRef.current
+		if (!textArea) return
+
+		const currentText = textArea.value
+		const isCursorAtEnd =
+			textArea.selectionStart === currentText.length && textArea.selectionEnd === currentText.length
+
+		// Ghost text should only be visible when:
+		// 1. The textarea is focused
+		// 2. The cursor is at the end of the text
+		// 3. We have saved ghost text that matches the current prefix
+		const shouldShowGhostText =
+			isFocusedRef.current && isCursorAtEnd && savedGhostTextRef.current && currentText === savedPrefixRef.current
+
+		if (shouldShowGhostText) {
+			setGhostText(savedGhostTextRef.current)
+		} else {
+			setGhostText("")
+		}
+	}, [textAreaRef])
+
 	// Handle chat completion result messages
 	useEffect(() => {
 		const messageHandler = (event: MessageEvent<ExtensionMessage>) => {
@@ -55,7 +81,10 @@ export function useChatGhostText({
 					const isCursorAtEnd = textArea.selectionStart === currentText.length
 
 					if (currentText === expectedPrefix && isCursorAtEnd) {
-						setGhostText(message.text || "")
+						// Store the new ghost text and sync visibility
+						savedGhostTextRef.current = message.text || ""
+						savedPrefixRef.current = currentText
+						syncGhostTextVisibility()
 					}
 					// If prefix doesn't match or cursor not at end, discard the suggestion silently
 				}
@@ -64,9 +93,11 @@ export function useChatGhostText({
 
 		window.addEventListener("message", messageHandler)
 		return () => window.removeEventListener("message", messageHandler)
-	}, [textAreaRef])
+	}, [textAreaRef, syncGhostTextVisibility])
 
 	const clearGhostText = useCallback(() => {
+		savedGhostTextRef.current = ""
+		savedPrefixRef.current = ""
 		setGhostText("")
 	}, [])
 
@@ -91,7 +122,7 @@ export function useChatGhostText({
 					type: "chatCompletionAccepted",
 					suggestionLength: ghostText.length,
 				})
-				setGhostText("")
+				clearGhostText()
 				return true
 			}
 
@@ -112,28 +143,28 @@ export function useChatGhostText({
 					type: "chatCompletionAccepted",
 					suggestionLength: word.length,
 				})
-				setGhostText(remainder)
+				// Update saved ghost text with remainder and sync
+				savedGhostTextRef.current = remainder
+				savedPrefixRef.current = textArea.value
+				syncGhostTextVisibility()
 				return true
 			}
 
 			// Escape: Clear ghost text
 			if (event.key === "Escape" && ghostText) {
-				setGhostText("")
+				clearGhostText()
 			}
 			return false
 		},
-		[ghostText, textAreaRef],
+		[ghostText, textAreaRef, clearGhostText, syncGhostTextVisibility],
 	)
 
 	const handleInputChange = useCallback(
 		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
 			const newValue = e.target.value
 
-			// Clear any existing ghost text when typing
-			setGhostText("")
-			// Also clear saved ghost text since the text has changed
-			savedGhostTextRef.current = ""
-			savedPrefixRef.current = ""
+			// Clear saved ghost text since the text has changed
+			clearGhostText()
 
 			// Clear any pending completion request
 			if (completionDebounceRef.current) {
@@ -164,74 +195,28 @@ export function useChatGhostText({
 				}, 300) // 300ms debounce
 			}
 		},
-		[enableChatAutocomplete],
+		[enableChatAutocomplete, clearGhostText],
 	)
 
 	const handleFocus = useCallback(() => {
 		isFocusedRef.current = true
-
-		// Restore saved ghost text if the text hasn't changed and cursor is at end
-		const textArea = textAreaRef.current
-		if (textArea && savedGhostTextRef.current) {
-			const currentText = textArea.value
-			const isCursorAtEnd = textArea.selectionStart === currentText.length
-
-			if (currentText === savedPrefixRef.current && isCursorAtEnd) {
-				setGhostText(savedGhostTextRef.current)
-			} else {
-				// Text changed while unfocused, clear saved ghost text
-				savedGhostTextRef.current = ""
-				savedPrefixRef.current = ""
-			}
-		}
-	}, [textAreaRef])
+		syncGhostTextVisibility()
+	}, [syncGhostTextVisibility])
 
 	const handleBlur = useCallback(() => {
 		isFocusedRef.current = false
-
-		// Save ghost text before clearing so we can restore it on focus
-		if (ghostText) {
-			savedGhostTextRef.current = ghostText
-			savedPrefixRef.current = textAreaRef.current?.value || ""
-		}
-
-		// Clear ghost text when textarea loses focus (visually hidden)
-		setGhostText("")
+		syncGhostTextVisibility()
 
 		// Cancel any pending completion requests
 		if (completionDebounceRef.current) {
 			clearTimeout(completionDebounceRef.current)
 			completionDebounceRef.current = null
 		}
-	}, [ghostText, textAreaRef])
+	}, [syncGhostTextVisibility])
 
 	const handleSelect = useCallback(() => {
-		const textArea = textAreaRef.current
-		if (!textArea) return
-
-		const isCursorAtEnd =
-			textArea.selectionStart === textArea.value.length && textArea.selectionEnd === textArea.value.length
-
-		if (ghostText) {
-			// Clear ghost text if cursor is no longer at the end
-			if (!isCursorAtEnd) {
-				// Save ghost text before clearing so we can restore it when cursor returns to end
-				savedGhostTextRef.current = ghostText
-				savedPrefixRef.current = textArea.value
-				setGhostText("")
-			}
-		} else if (isCursorAtEnd && savedGhostTextRef.current) {
-			// Restore ghost text if cursor returned to end and text hasn't changed
-			const currentText = textArea.value
-			if (currentText === savedPrefixRef.current) {
-				setGhostText(savedGhostTextRef.current)
-			} else {
-				// Text changed, clear saved ghost text
-				savedGhostTextRef.current = ""
-				savedPrefixRef.current = ""
-			}
-		}
-	}, [ghostText, textAreaRef])
+		syncGhostTextVisibility()
+	}, [syncGhostTextVisibility])
 
 	useEffect(() => {
 		return () => {
