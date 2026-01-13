@@ -10,7 +10,7 @@ This guide walks you through setting up Mistral's Codestral model for free autoc
 ## Video Walkthrough
 
 <video controls width="100%">
-  <source src="./mistral-setup/configure_free_codestral.mp4" type="video/mp4" />
+  <source src="/videos/configure_free_codestral.mp4" type="video/mp4" />
   Your browser does not support the video tag.
 </video>
 

@@ -10,7 +10,7 @@ sidebar_position: 1
 ## 视频教程
 
 <video controls width="100%">
-  <source src="./mistral-setup/configure_free_codestral.mp4" type="video/mp4" />
+  <source src="/videos/configure_free_codestral.mp4" type="video/mp4" />
   您的浏览器不支持视频标签。
 </video>
 
