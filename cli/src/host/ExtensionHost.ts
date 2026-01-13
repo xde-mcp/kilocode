@@ -11,6 +11,7 @@ export interface ExtensionHostOptions {
 	extensionRootPath: string // Root path for extension assets
 	identity?: IdentityInfo // Identity information for VSCode environment
 	customModes?: ModeConfig[] // Custom modes configuration
+	appendSystemPrompt?: string // Custom text to append to system prompt
 }
 
 // Extension module interface
@@ -786,6 +787,8 @@ export class ExtensionHost extends EventEmitter {
 				imageGeneration: false,
 				runSlashCommand: false,
 			},
+			// Add appendSystemPrompt from CLI options
+			...(this.options.appendSystemPrompt && { appendSystemPrompt: this.options.appendSystemPrompt }),
 		}
 
 		// The CLI will inject the actual configuration through updateState
@@ -965,6 +968,92 @@ export class ExtensionHost extends EventEmitter {
 				updatedSettings: { experiments },
 			})
 		}
+
+		// Sync auto-approval settings to the extension
+		// These settings control whether the extension auto-approves operations
+		// or defers to the CLI's approval flow (which prompts the user)
+		const autoApprovalSettings: Record<string, unknown> = {}
+
+		// Only include settings that are explicitly set in configState
+		if (configState.autoApprovalEnabled !== undefined) {
+			autoApprovalSettings.autoApprovalEnabled = configState.autoApprovalEnabled
+		}
+		if (configState.alwaysAllowReadOnly !== undefined) {
+			autoApprovalSettings.alwaysAllowReadOnly = configState.alwaysAllowReadOnly
+		}
+		if (configState.alwaysAllowReadOnlyOutsideWorkspace !== undefined) {
+			autoApprovalSettings.alwaysAllowReadOnlyOutsideWorkspace = configState.alwaysAllowReadOnlyOutsideWorkspace
+		}
+		if (configState.alwaysAllowWrite !== undefined) {
+			autoApprovalSettings.alwaysAllowWrite = configState.alwaysAllowWrite
+		}
+		if (configState.alwaysAllowWriteOutsideWorkspace !== undefined) {
+			autoApprovalSettings.alwaysAllowWriteOutsideWorkspace = configState.alwaysAllowWriteOutsideWorkspace
+		}
+		if (configState.alwaysAllowWriteProtected !== undefined) {
+			autoApprovalSettings.alwaysAllowWriteProtected = configState.alwaysAllowWriteProtected
+		}
+		if (configState.alwaysAllowBrowser !== undefined) {
+			autoApprovalSettings.alwaysAllowBrowser = configState.alwaysAllowBrowser
+		}
+		if (configState.alwaysApproveResubmit !== undefined) {
+			autoApprovalSettings.alwaysApproveResubmit = configState.alwaysApproveResubmit
+		}
+		if (configState.requestDelaySeconds !== undefined) {
+			autoApprovalSettings.requestDelaySeconds = configState.requestDelaySeconds
+		}
+		if (configState.alwaysAllowMcp !== undefined) {
+			autoApprovalSettings.alwaysAllowMcp = configState.alwaysAllowMcp
+		}
+		if (configState.alwaysAllowModeSwitch !== undefined) {
+			autoApprovalSettings.alwaysAllowModeSwitch = configState.alwaysAllowModeSwitch
+		}
+		if (configState.alwaysAllowSubtasks !== undefined) {
+			autoApprovalSettings.alwaysAllowSubtasks = configState.alwaysAllowSubtasks
+		}
+		if (configState.alwaysAllowExecute !== undefined) {
+			autoApprovalSettings.alwaysAllowExecute = configState.alwaysAllowExecute
+		}
+		if (configState.allowedCommands !== undefined) {
+			autoApprovalSettings.allowedCommands = configState.allowedCommands
+		}
+		if (configState.deniedCommands !== undefined) {
+			autoApprovalSettings.deniedCommands = configState.deniedCommands
+		}
+		if (configState.alwaysAllowFollowupQuestions !== undefined) {
+			autoApprovalSettings.alwaysAllowFollowupQuestions = configState.alwaysAllowFollowupQuestions
+		}
+		if (configState.followupAutoApproveTimeoutMs !== undefined) {
+			autoApprovalSettings.followupAutoApproveTimeoutMs = configState.followupAutoApproveTimeoutMs
+		}
+		if (configState.alwaysAllowUpdateTodoList !== undefined) {
+			autoApprovalSettings.alwaysAllowUpdateTodoList = configState.alwaysAllowUpdateTodoList
+		}
+
+		// Send auto-approval settings if any are present
+		if (Object.keys(autoApprovalSettings).length > 0) {
+			await this.sendWebviewMessage({
+				type: "updateSettings",
+				updatedSettings: autoApprovalSettings,
+			})
+			logs.debug("Auto-approval settings synchronized to extension", "ExtensionHost", {
+				settings: Object.keys(autoApprovalSettings),
+			})
+		}
+
+		// Sync appendSystemPrompt to extension
+		// This setting is passed from CLI options and needs to be stored in the extension's
+		// contextProxy so it's available when generating the system prompt
+		const appendSystemPrompt = configState.appendSystemPrompt || this.options.appendSystemPrompt
+		if (appendSystemPrompt) {
+			await this.sendWebviewMessage({
+				type: "updateSettings",
+				updatedSettings: { appendSystemPrompt },
+			})
+			logs.debug("appendSystemPrompt synchronized to extension", "ExtensionHost", {
+				length: appendSystemPrompt.length,
+			})
+		}
 	}
 
 	/**
@@ -1016,20 +1105,28 @@ export class ExtensionHost extends EventEmitter {
 		this.webviewInitialized = true
 		this.isInitialSetup = false
 		logs.info("Webview marked as ready, flushing pending messages", "ExtensionHost")
-		this.flushPendingMessages()
+		void this.flushPendingMessages()
 	}
 
 	/**
 	 * Flush all pending messages that were queued before webview was ready
 	 */
-	private flushPendingMessages(): void {
-		const messages = [...this.pendingMessages]
+	private async flushPendingMessages(): Promise<void> {
+		const upsertMessages = this.pendingMessages.filter((m) => m.type === "upsertApiConfiguration")
+		const otherMessages = this.pendingMessages.filter((m) => m.type !== "upsertApiConfiguration")
 		this.pendingMessages = []
 
-		logs.info(`Flushing ${messages.length} pending messages`, "ExtensionHost")
-		for (const message of messages) {
+		logs.info(`Flushing ${upsertMessages.length + otherMessages.length} pending messages`, "ExtensionHost")
+
+		// Ensure the API configuration is applied before anything tries to read it
+		for (const message of upsertMessages) {
 			logs.debug(`Flushing pending message: ${message.type}`, "ExtensionHost")
-			// Use void to explicitly ignore the promise
+			// Serialize upserts so provider settings are persisted before readers run
+			await this.sendWebviewMessage(message)
+		}
+
+		for (const message of otherMessages) {
+			logs.debug(`Flushing pending message: ${message.type}`, "ExtensionHost")
 			void this.sendWebviewMessage(message)
 		}
 	}

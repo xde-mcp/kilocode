@@ -2,7 +2,6 @@ import { openRouterDefaultModelId, type ProviderSettings } from "@roo-code/types
 import { getKiloUrlFromToken } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { z } from "zod"
-import { fetchWithTimeout } from "./fetchWithTimeout"
 import { DEFAULT_HEADERS } from "../constants"
 
 type KilocodeToken = string
@@ -15,8 +14,6 @@ const defaultsSchema = z.object({
 	defaultModel: z.string().nullish(),
 })
 
-const fetcher = fetchWithTimeout(5000)
-
 async function fetchKilocodeDefaultModel(
 	kilocodeToken: KilocodeToken,
 	organizationId?: OrganizationId,
@@ -24,7 +21,7 @@ async function fetchKilocodeDefaultModel(
 ): Promise<string> {
 	try {
 		const path = organizationId ? `/organizations/${organizationId}/defaults` : `/defaults`
-		const url = getKiloUrlFromToken(`https://api.kilocode.ai/api${path}`, kilocodeToken)
+		const url = getKiloUrlFromToken(`https://api.kilo.ai/api${path}`, kilocodeToken)
 
 		const headers: Record<string, string> = {
 			...DEFAULT_HEADERS,
@@ -39,7 +36,10 @@ async function fetchKilocodeDefaultModel(
 			headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 		}
 
-		const response = await fetcher(url, { headers })
+		const controller = new AbortController()
+		const timeout = setTimeout(() => controller.abort(), 5000)
+		const response = await fetch(url, { headers, signal: controller.signal })
+		clearTimeout(timeout)
 		if (!response.ok) {
 			throw new Error(`Fetching default model from ${url} failed: ${response.status}`)
 		}

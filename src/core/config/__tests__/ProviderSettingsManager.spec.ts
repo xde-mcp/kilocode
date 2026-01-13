@@ -119,6 +119,81 @@ describe("ProviderSettingsManager", () => {
 			expect(storedConfig.apiConfigs.test.id).toBeTruthy()
 		})
 
+		// kilocode_change start
+		it("should not change anything when no duplicated ids exist", async () => {
+			mockSecrets.get.mockResolvedValue(
+				JSON.stringify({
+					currentApiConfigName: "first",
+					apiConfigs: {
+						first: { id: "id-1", apiProvider: "anthropic" },
+						second: { id: "id-2", apiProvider: "anthropic" },
+					},
+					modeApiConfigs: {},
+					migrations: {
+						rateLimitSecondsMigrated: true,
+						diffSettingsMigrated: true,
+						openAiHeadersMigrated: true,
+						consecutiveMistakeLimitMigrated: true,
+						todoListEnabledMigrated: true,
+						morphApiKeyMigrated: true,
+					},
+				}),
+			)
+
+			await providerSettingsManager.initialize()
+
+			// No changes expected since there are no duplicates and migrations are complete
+			expect(mockSecrets.store).not.toHaveBeenCalled()
+			expect(providerSettingsManager.consumeDuplicateIdRepairReport()).toBeNull()
+		})
+
+		it("should dedupe duplicated ids by keeping the first id and assigning new ids to later duplicates", async () => {
+			mockSecrets.get.mockResolvedValue(
+				JSON.stringify({
+					currentApiConfigName: "first",
+					apiConfigs: {
+						// insertion order matters here: first keeps id, second changes
+						first: { id: "dup-id", apiProvider: "anthropic" },
+						second: { id: "dup-id", apiProvider: "anthropic" },
+						third: { id: "ok-id", apiProvider: "anthropic" },
+					},
+					modeApiConfigs: {},
+					migrations: {
+						rateLimitSecondsMigrated: true,
+						diffSettingsMigrated: true,
+						openAiHeadersMigrated: true,
+						consecutiveMistakeLimitMigrated: true,
+						todoListEnabledMigrated: true,
+						morphApiKeyMigrated: true,
+					},
+				}),
+			)
+			// kilocode_change end
+
+			await providerSettingsManager.initialize()
+
+			expect(mockSecrets.store).toHaveBeenCalled()
+			const calls = mockSecrets.store.mock.calls
+			const storedConfig = JSON.parse(calls[calls.length - 1][1])
+
+			expect(storedConfig.apiConfigs.first.id).toBe("dup-id")
+			expect(storedConfig.apiConfigs.second.id).toBeTruthy()
+			expect(storedConfig.apiConfigs.second.id).not.toBe("dup-id")
+			expect(storedConfig.apiConfigs.third.id).toBe("ok-id")
+
+			const report = providerSettingsManager.consumeDuplicateIdRepairReport()
+			expect(report).toBeTruthy()
+			expect(report?.["dup-id"]).toHaveLength(1)
+			expect(report?.["dup-id"][0]).toBe(storedConfig.apiConfigs.second.id)
+
+			// Idempotency: running migrations again on already-deduped config should not write.
+			const newManager = new ProviderSettingsManager(mockContext)
+			mockSecrets.store.mockClear()
+			mockSecrets.get.mockResolvedValueOnce(JSON.stringify(storedConfig))
+			await newManager.initialize()
+			expect(mockSecrets.store).not.toHaveBeenCalled()
+		})
+
 		it("should call migrateRateLimitSeconds if it has not done so already", async () => {
 			mockGlobalState.get.mockResolvedValue(42)
 
@@ -717,7 +792,55 @@ describe("ProviderSettingsManager", () => {
 			)
 		})
 
-		it("should remove invalid profiles during load", async () => {
+		it("should sanitize invalid/removed providers by resetting apiProvider to undefined", async () => {
+			// This tests the fix for the infinite loop issue when a provider is removed
+			const configWithRemovedProvider = {
+				currentApiConfigName: "valid",
+				apiConfigs: {
+					valid: {
+						apiProvider: "anthropic",
+						apiKey: "valid-key",
+						apiModelId: "claude-3-opus-20240229",
+						id: "valid-id",
+					},
+					removedProvider: {
+						// Provider that was removed from the extension (e.g., "invalid-removed-provider")
+						id: "removed-id",
+						apiProvider: "invalid-removed-provider",
+						apiKey: "some-key",
+						apiModelId: "some-model",
+					},
+				},
+				migrations: {
+					rateLimitSecondsMigrated: true,
+					diffSettingsMigrated: true,
+					openAiHeadersMigrated: true,
+					consecutiveMistakeLimitMigrated: true,
+					todoListEnabledMigrated: true,
+				},
+			}
+
+			mockSecrets.get.mockResolvedValue(JSON.stringify(configWithRemovedProvider))
+
+			await providerSettingsManager.initialize()
+
+			const storeCalls = mockSecrets.store.mock.calls
+			expect(storeCalls.length).toBeGreaterThan(0)
+			const finalStoredConfigJson = storeCalls[storeCalls.length - 1][1]
+
+			const storedConfig = JSON.parse(finalStoredConfigJson)
+			// The valid provider should be untouched
+			expect(storedConfig.apiConfigs.valid).toBeDefined()
+			expect(storedConfig.apiConfigs.valid.apiProvider).toBe("anthropic")
+
+			// The config with the removed provider should have its apiProvider reset to undefined
+			// but still be present (not filtered out entirely)
+			expect(storedConfig.apiConfigs.removedProvider).toBeDefined()
+			expect(storedConfig.apiConfigs.removedProvider.apiProvider).toBeUndefined()
+			expect(storedConfig.apiConfigs.removedProvider.id).toBe("removed-id")
+		})
+
+		it("should sanitize invalid providers and remove non-object profiles during load", async () => {
 			const invalidConfig = {
 				currentApiConfigName: "valid",
 				apiConfigs: {
@@ -727,12 +850,12 @@ describe("ProviderSettingsManager", () => {
 						apiModelId: "claude-3-opus-20240229",
 						rateLimitSeconds: 0,
 					},
-					invalid: {
-						// Invalid API provider.
+					invalidProvider: {
+						// Invalid API provider - should be sanitized (kept but apiProvider reset to undefined)
 						id: "x.ai",
 						apiProvider: "x.ai",
 					},
-					// Incorrect type.
+					// Incorrect type - should be completely removed
 					anotherInvalid: "not an object",
 				},
 				migrations: {
@@ -749,10 +872,19 @@ describe("ProviderSettingsManager", () => {
 			const finalStoredConfigJson = storeCalls[storeCalls.length - 1][1]
 
 			const storedConfig = JSON.parse(finalStoredConfigJson)
+			// Valid config should be untouched
 			expect(storedConfig.apiConfigs.valid).toBeDefined()
-			expect(storedConfig.apiConfigs.invalid).toBeUndefined()
+			expect(storedConfig.apiConfigs.valid.apiProvider).toBe("anthropic")
+
+			// Invalid provider config should be sanitized - kept but apiProvider reset to undefined
+			expect(storedConfig.apiConfigs.invalidProvider).toBeDefined()
+			expect(storedConfig.apiConfigs.invalidProvider.apiProvider).toBeUndefined()
+			expect(storedConfig.apiConfigs.invalidProvider.id).toBe("x.ai")
+
+			// Non-object config should be completely removed
 			expect(storedConfig.apiConfigs.anotherInvalid).toBeUndefined()
-			expect(Object.keys(storedConfig.apiConfigs)).toEqual(["valid"])
+
+			expect(Object.keys(storedConfig.apiConfigs)).toEqual(["valid", "invalidProvider"])
 			expect(storedConfig.currentApiConfigName).toBe("valid")
 		})
 	})

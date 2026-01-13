@@ -12,6 +12,7 @@ import {
 	getModelId,
 	type ProviderName,
 	type ProfileType, // kilocode_change - autocomplete profile type system
+	isProviderName,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
@@ -77,6 +78,16 @@ export class ProviderSettingsManager {
 		},
 	}
 
+	// kilocode_change start
+	private pendingDuplicateIdRepairReport: Record<string, string[]> | null = null
+
+	public consumeDuplicateIdRepairReport(): Record<string, string[]> | null {
+		const report = this.pendingDuplicateIdRepairReport
+		this.pendingDuplicateIdRepairReport = null
+		return report
+	}
+	// kilocode_change end
+
 	private readonly context: ExtensionContext
 
 	constructor(context: ExtensionContext) {
@@ -98,6 +109,16 @@ export class ProviderSettingsManager {
 	 */
 	public initialize(): Promise<void> {
 		return this.initialization
+	}
+
+	private generateUniqueId(existingIds: Set<string>): string {
+		let id: string
+		do {
+			id = this.generateId()
+		} while (existingIds.has(id))
+
+		existingIds.add(id)
+		return id
 	}
 	// kilocode_change end
 
@@ -150,6 +171,75 @@ export class ProviderSettingsManager {
 						isDirty = true
 					}
 				}
+
+				// kilocode_change start: Repair duplicated IDs (keep the first occurrence based on apiConfigs insertion order).
+				const existingIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
+
+				const seenIds = new Set<string>()
+				let updatedCloudProfileIds: Set<string> | undefined
+				const duplicateIdRepairReport: Record<string, string[]> = {}
+
+				for (const [name, apiConfig] of Object.entries(providerProfiles.apiConfigs)) {
+					const id = apiConfig.id
+					if (!id) continue
+
+					// first profile keeps its id
+					if (!seenIds.has(id)) {
+						seenIds.add(id)
+						continue
+					}
+
+					const newId = this.generateUniqueId(existingIds)
+					apiConfig.id = newId
+					isDirty = true
+
+					duplicateIdRepairReport[id] ??= []
+					duplicateIdRepairReport[id].push(newId)
+
+					// If this was considered cloud-managed before (by virtue of its old id being listed),
+					// keep it cloud-managed by adding the new id as well.
+					if (providerProfiles.cloudProfileIds?.includes(id)) {
+						updatedCloudProfileIds ??= new Set(providerProfiles.cloudProfileIds)
+						updatedCloudProfileIds.add(newId)
+					}
+
+					console.warn(
+						`[ProviderSettingsManager] Deduped duplicate provider profile id '${id}' for '${name}', new id '${newId}'`,
+					)
+				}
+
+				if (updatedCloudProfileIds) {
+					providerProfiles.cloudProfileIds = Array.from(updatedCloudProfileIds)
+					isDirty = true
+				}
+
+				if (Object.keys(duplicateIdRepairReport).length > 0) {
+					this.pendingDuplicateIdRepairReport = duplicateIdRepairReport
+				}
+
+				// Keep secrets-side references consistent (post-dedupe).
+				const validProfileIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
+
+				const firstProfileId = Object.values(providerProfiles.apiConfigs)[0]?.id
+
+				// Fix modeApiConfigs stored inside providerProfiles (secrets) if they point to a missing id.
+				if (providerProfiles.modeApiConfigs && firstProfileId) {
+					for (const [mode, configId] of Object.entries(providerProfiles.modeApiConfigs)) {
+						if (!validProfileIds.has(configId)) {
+							providerProfiles.modeApiConfigs[mode] = firstProfileId
+							isDirty = true
+						}
+					}
+				}
+				// kilocode_Change end
 
 				// Ensure migrations field exists
 				if (!providerProfiles.migrations) {
@@ -426,12 +516,22 @@ export class ProviderSettingsManager {
 			return await this.lock(async () => {
 				const providerProfiles = await this.load()
 
-				// kilocode_change - autocomplete profile type system
+				// kilocode_change start" autocomplete profile type system and check for duplicate id's
 				await this.validateAutocompleteConstraint(providerProfiles, name, config.profileType)
 
-				// Preserve the existing ID if this is an update to an existing config.
-				const existingId = providerProfiles.apiConfigs[name]?.id
-				const id = config.id || existingId || this.generateId()
+				const existingEntry = providerProfiles.apiConfigs[name]
+				const existingIds = new Set(
+					Object.values(providerProfiles.apiConfigs)
+						.map((c) => c.id)
+						.filter((id): id is string => Boolean(id)),
+				)
+
+				// EXISTING: preserve stored id; NEW: generate fresh unique id.
+				const id =
+					existingEntry?.id && existingEntry.id.length > 0
+						? existingEntry.id
+						: this.generateUniqueId(existingIds)
+				// kilocode_change end
 
 				// Filter out settings from other providers.
 				const filteredConfig = discriminatedProviderSettingsWithIdSchema.parse(config)
@@ -653,7 +753,10 @@ export class ProviderSettingsManager {
 
 			const apiConfigs = Object.entries(providerProfiles.apiConfigs).reduce(
 				(acc, [key, apiConfig]) => {
-					const result = providerSettingsWithIdSchema.safeParse(apiConfig)
+					// First, sanitize invalid apiProvider values before parsing
+					// This handles removed providers (like "glama") gracefully
+					const sanitizedConfig = this.sanitizeProviderConfig(apiConfig)
+					const result = providerSettingsWithIdSchema.safeParse(sanitizedConfig)
 					return result.success ? { ...acc, [key]: result.data } : acc
 				},
 				{} as Record<string, ProviderSettingsWithId>,
@@ -675,6 +778,32 @@ export class ProviderSettingsManager {
 
 			throw new Error(`Failed to read provider profiles from secrets: ${error}`)
 		}
+	}
+
+	/**
+	 * Sanitizes a provider config by resetting invalid/removed apiProvider values.
+	 * This handles cases where a user had a provider selected that was later removed
+	 * from the extension (e.g., "glama").
+	 */
+	private sanitizeProviderConfig(apiConfig: unknown): unknown {
+		if (typeof apiConfig !== "object" || apiConfig === null) {
+			return apiConfig
+		}
+
+		const config = apiConfig as Record<string, unknown>
+
+		// Check if apiProvider is set and if it's still valid
+		if (config.apiProvider !== undefined && !isProviderName(config.apiProvider)) {
+			console.log(
+				`[ProviderSettingsManager] Sanitizing invalid provider "${config.apiProvider}" - resetting to undefined`,
+			)
+			// Return a new config object without the invalid apiProvider
+			// This effectively resets the profile so the user can select a valid provider
+			const { apiProvider, ...restConfig } = config
+			return restConfig
+		}
+
+		return apiConfig
 	}
 
 	private async store(providerProfiles: ProviderProfiles) {
