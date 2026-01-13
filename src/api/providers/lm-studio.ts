@@ -14,7 +14,6 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 import { getModelsFromCache } from "./fetchers/modelCache"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
@@ -100,9 +99,6 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 			if (this.options.lmStudioSpeculativeDecodingEnabled && this.options.lmStudioDraftModelId) {
 				params.draft_model = this.options.lmStudioDraftModelId
 			}
-			// kilocode_change start: Add native tool call support when toolStyle is "json"
-			addNativeToolCallsToParams(params, this.options, metadata)
-			// kilocode_change end
 
 			let results
 			try {
@@ -120,12 +116,9 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 					}) as const,
 			)
 
-			const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 			for await (const chunk of results) {
 				const delta = chunk.choices[0]?.delta
 				const finishReason = chunk.choices[0]?.finish_reason
-
-				yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 				if (delta?.content) {
 					assistantText += delta.content

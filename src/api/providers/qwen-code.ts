@@ -14,7 +14,6 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
-import { addNativeToolCallsToParams, ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 const QWEN_OAUTH_BASE_URL = "https://chat.qwen.ai"
@@ -237,12 +236,9 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 			...(useNativeTools && { parallel_tool_calls: metadata?.parallelToolCalls ?? false }),
 		}
 
-		addNativeToolCallsToParams(requestOptions, this.options, metadata) // kilocode_change
-
 		const stream = await this.callApiWithRetry(() => client.chat.completions.create(requestOptions))
 
 		let fullContent = ""
-		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 
 		for await (const apiChunk of stream) {
 			const delta = apiChunk.choices[0]?.delta ?? {}
@@ -293,7 +289,6 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 				}
 			}
 
-			yield* toolCallAccumulator.processChunk(apiChunk) // kilocode_change
 			// Handle tool calls in stream - emit partial chunks for NativeToolCallParser
 			if (delta.tool_calls) {
 				for (const toolCall of delta.tool_calls) {
