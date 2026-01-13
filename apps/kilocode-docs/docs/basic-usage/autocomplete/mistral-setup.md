@@ -7,6 +7,13 @@ sidebar_position: 1
 
 This guide walks you through setting up Mistral's Codestral model for free autocomplete in Kilo Code. Mistral offers a free tier that's perfect for getting started with AI-powered code completions.
 
+## Video Walkthrough
+
+<video controls width="100%">
+  <source src="/docs/videos/configure_free_codestral.mp4" type="video/mp4" />
+  Your browser does not support the video tag.
+</video>
+
 ## Step 1: Open Kilo Code Settings
 
 In VS Code, open the Kilo Code panel and click the **Settings** icon (gear) in the top-right corner.
