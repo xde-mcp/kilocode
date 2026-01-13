@@ -413,7 +413,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		const [intendedCursorPosition, setIntendedCursorPosition] = useState<number | null>(null)
 		const contextMenuContainerRef = useRef<HTMLDivElement>(null)
 		const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false)
-		// const [isFocused, setIsFocused] = useState(false) // kilocode_change - not needed
+		const [isFocused, setIsFocused] = useState(false)
 		// kilocode_change start: FIM autocomplete ghost text
 		const {
 			ghostText,
@@ -1015,14 +1015,17 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				setShowSlashCommandsMenu(false)
 			} // kilocode_change
 
-			// setIsFocused(false) // kilocode_change - not needed
-			handleGhostTextBlur() // kilocode_change: Clear ghost text on blur
-		}, [isMouseDownOnMenu, handleGhostTextBlur])
+			setIsFocused(false)
+		}, [isMouseDownOnMenu])
 
 		// kilocode_change start: FIM autocomplete - track focus for ghost text
-		const handleFocus = useCallback(() => {
-			handleGhostTextFocus()
-		}, [handleGhostTextFocus])
+		useEffect(() => {
+			if (isFocused) {
+				handleGhostTextFocus()
+			} else {
+				handleGhostTextBlur()
+			}
+		}, [isFocused, handleGhostTextFocus, handleGhostTextBlur])
 		// kilocode_change end: FIM autocomplete
 
 		const handlePaste = useCallback(
@@ -1559,7 +1562,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							updateHighlights()
 						}
 					}}
-					onFocus={handleFocus} // kilocode_change: FIM autocomplete - track focus for ghost text
+					onFocus={() => setIsFocused(true)}
 					onKeyDown={(e) => {
 						// Handle ESC to cancel in edit mode
 						if (isEditMode && e.key === "Escape" && !e.nativeEvent?.isComposing) {
