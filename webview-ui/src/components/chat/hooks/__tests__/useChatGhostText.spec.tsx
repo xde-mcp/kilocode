@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react"
 import { vi } from "vitest"
 import { useChatGhostText } from "../useChatGhostText"
+import { vscode } from "@/utils/vscode"
 
 // Mock vscode
 vi.mock("@/utils/vscode", () => ({
@@ -498,6 +499,9 @@ describe("useChatGhostText", () => {
 		})
 
 		it("should not request completion when not focused", () => {
+			// Clear any previous calls from beforeEach
+			vi.mocked(vscode.postMessage).mockClear()
+
 			const { result } = renderHook(() =>
 				useChatGhostText({
 					textAreaRef,
@@ -519,19 +523,12 @@ describe("useChatGhostText", () => {
 				vi.advanceTimersByTime(300)
 			})
 
-			// Simulate receiving completion result
-			act(() => {
-				const messageEvent = new MessageEvent("message", {
-					data: {
-						type: "chatCompletionResult",
-						text: " completion",
-						requestId: "",
-					},
-				})
-				window.dispatchEvent(messageEvent)
-			})
+			// Verify that no completion request was made because we weren't focused
+			expect(vscode.postMessage).not.toHaveBeenCalledWith(
+				expect.objectContaining({ type: "requestChatCompletion" }),
+			)
 
-			// Ghost text should not be set because we weren't focused
+			// Ghost text should remain empty
 			expect(result.current.ghostText).toBe("")
 		})
 
@@ -567,18 +564,19 @@ describe("useChatGhostText", () => {
 			mockTextArea.value = "Different text"
 
 			// Simulate receiving completion result for the old text
+			// Use the correct requestId to ensure we're testing the prefix mismatch, not requestId mismatch
 			act(() => {
 				const messageEvent = new MessageEvent("message", {
 					data: {
 						type: "chatCompletionResult",
 						text: " completion",
-						requestId: "",
+						requestId: MOCK_REQUEST_ID,
 					},
 				})
 				window.dispatchEvent(messageEvent)
 			})
 
-			// Ghost text should not be set because the text changed
+			// Ghost text should not be set because the text changed (prefix mismatch)
 			expect(result.current.ghostText).toBe("")
 		})
 
@@ -780,6 +778,135 @@ describe("useChatGhostText", () => {
 				result.current.handleSelect()
 			})
 			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should cancel pending completion requests on blur", () => {
+			// Clear any previous calls
+			vi.mocked(vscode.postMessage).mockClear()
+
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Focus and type
+			act(() => {
+				result.current.handleFocus()
+			})
+
+			act(() => {
+				mockTextArea.value = "Hello world"
+				mockTextArea.selectionStart = 11
+				mockTextArea.selectionEnd = 11
+				const changeEvent = {
+					target: mockTextArea,
+				} as React.ChangeEvent<HTMLTextAreaElement>
+				result.current.handleInputChange(changeEvent)
+			})
+
+			// Blur before the debounce timer fires
+			act(() => {
+				result.current.handleBlur()
+			})
+
+			// Advance timers past the debounce period
+			act(() => {
+				vi.advanceTimersByTime(300)
+			})
+
+			// Verify that no completion request was made because blur cancelled it
+			expect(vscode.postMessage).not.toHaveBeenCalledWith(
+				expect.objectContaining({ type: "requestChatCompletion" }),
+			)
+		})
+
+		it("should not restore ghost text on focus if cursor is not at end", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Blur the textarea
+			act(() => {
+				result.current.handleBlur()
+			})
+
+			expect(result.current.ghostText).toBe("")
+
+			// Move cursor to middle while unfocused
+			mockTextArea.selectionStart = 5
+			mockTextArea.selectionEnd = 5
+
+			// Focus the textarea again - ghost text should NOT be restored because cursor is not at end
+			act(() => {
+				result.current.handleFocus()
+			})
+
+			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should handle null textAreaRef gracefully in handleSelect", () => {
+			const nullRef = { current: null } as React.RefObject<HTMLTextAreaElement>
+
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef: nullRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// This should not throw
+			act(() => {
+				result.current.handleSelect()
+			})
+
+			expect(result.current.ghostText).toBe("")
+		})
+
+		it("should handle rapid focus/blur/focus cycles correctly", () => {
+			const { result } = renderHook(() =>
+				useChatGhostText({
+					textAreaRef,
+					enableChatAutocomplete: true,
+				}),
+			)
+
+			// Simulate the full flow
+			simulateCompletionFlow(result.current, mockTextArea, "Hello world", " completion")
+
+			// Verify ghost text is set
+			expect(result.current.ghostText).toBe(" completion")
+
+			// Rapid blur/focus/blur/focus
+			act(() => {
+				result.current.handleBlur()
+			})
+			expect(result.current.ghostText).toBe("")
+
+			act(() => {
+				result.current.handleFocus()
+			})
+			expect(result.current.ghostText).toBe(" completion")
+
+			act(() => {
+				result.current.handleBlur()
+			})
+			expect(result.current.ghostText).toBe("")
+
+			act(() => {
+				result.current.handleFocus()
+			})
+			expect(result.current.ghostText).toBe(" completion")
 		})
 	})
 })
