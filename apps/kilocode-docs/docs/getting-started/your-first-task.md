@@ -12,6 +12,12 @@ This quick tour shows how Kilo Code handles a simple request from start to finis
 
 After you [set up Kilo Code](/getting-started/setting-up), follow these steps:
 
+:::info Two Ways to Work with Kilo Code
+
+This tutorial focuses on **chat-based interaction**—you describe tasks in natural language and Kilo Code executes them step by step. For quick inline code suggestions as you type, check out [Autocomplete](/features/autocomplete) after completing this tutorial.
+
+:::
+
 ## Step 1: Open the Kilo Code Panel
 
 Click the Kilo Code icon (<img src="/docs/img/kilo-v1.svg" width="12" />) in the VS Code Primary Side Bar (vertical bar on the side of the window) to open the chat interface. If you don't see the icon, verify the extension is [installed](/getting-started/installing) and enabled.
@@ -29,6 +35,13 @@ Type a clear, concise description of what you want Kilo Code to do in the chat b
 - "Create an HTML file for a simple website with the title 'Kilo test'"
 
 No special commands or syntax needed—just use plain English.
+
+<details>
+<summary>💡 Optional: Try Autocomplete</summary>
+
+While chat is great for complex tasks, Kilo Code also offers **inline autocomplete** for quick code suggestions. Open any code file, start typing, and watch for ghost text suggestions. Press `Tab` to accept. [Learn more about Autocomplete →](/features/autocomplete)
+
+</details>
 
 <img src="/docs/img/your-first-task/your-first-task-6.png" alt="Typing a task in the Kilo Code chat interface" width="500" />
 *Enter your task in natural language - no special syntax required.*
@@ -76,4 +89,8 @@ You've completed your first task. Along the way you learned:
 - Why approval keeps you in control
 - How iteration lets the AI refine its work
 
-Ready for more? Explore different [modes](/basic-usage/using-modes) or try [auto-approval](/features/auto-approving-actions) to speed up repetitive tasks.
+Ready for more? Here are some next steps:
+
+- **[Autocomplete](/features/autocomplete)** — Get inline code suggestions as you type
+- **[Modes](/basic-usage/using-modes)** — Explore different modes for different tasks
+- **[Auto-approval](/features/auto-approving-actions)** — Speed up repetitive tasks
