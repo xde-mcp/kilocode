@@ -43,6 +43,7 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
 	roo: "Roo",
 	"vercel-ai-gateway": "Vercel AI Gateway",
 	"virtual-quota-fallback": "Virtual Quota Fallback",
+	"human-relay": "Human Relay",
 	"fake-ai": "Fake AI",
 	ovhcloud: "OVHcloud AI Endpoints",
 	inception: "Inception",

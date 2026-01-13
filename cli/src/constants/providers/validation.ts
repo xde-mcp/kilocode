@@ -40,6 +40,7 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	roo: ["apiModelId"],
 	"vercel-ai-gateway": ["vercelAiGatewayApiKey", "vercelAiGatewayModelId"],
 	"fake-ai": ["apiModelId"],
+	"human-relay": ["apiModelId"],
 	ovhcloud: ["ovhCloudAiEndpointsApiKey", "ovhCloudAiEndpointsModelId"],
 	inception: ["inceptionLabsApiKey", "inceptionLabsModelId"],
 	synthetic: ["syntheticApiKey", "apiModelId"],

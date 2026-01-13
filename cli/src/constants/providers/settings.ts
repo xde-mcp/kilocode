@@ -1004,6 +1004,17 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				},
 			]
 
+		case "human-relay":
+			return [
+				{
+					field: "apiModelId",
+					label: "Model",
+					value: "human-relay-model",
+					actualValue: "human-relay-model",
+					type: "text",
+				},
+			]
+
 		case "ovhcloud":
 			return [
 				createFieldConfig("ovhCloudAiEndpointsApiKey", config),
@@ -1080,6 +1091,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	"virtual-quota-fallback": "gpt-4o",
 	minimax: "MiniMax-M2",
 	"fake-ai": "fake-model",
+	"human-relay": "human-relay-model",
 	ovhcloud: "gpt-oss-120b",
 	inception: "gpt-4o",
 	synthetic: "synthetic-model",
