@@ -7,6 +7,13 @@ sidebar_position: 1
 
 本指南将引导您在 Kilo Code 中设置 Mistral 的 Codestral 模型以获得免费的自动补全功能。Mistral 提供免费套餐，非常适合开始使用 AI 驱动的代码补全。
 
+## 视频教程
+
+<video controls width="100%">
+  <source src="./mistral-setup/configure_free_codestral.mp4" type="video/mp4" />
+  您的浏览器不支持视频标签。
+</video>
+
 ## 步骤 1：打开 Kilo Code 设置
 
 在 VS Code 中，打开 Kilo Code 面板，点击右上角的**设置**图标（齿轮）。
