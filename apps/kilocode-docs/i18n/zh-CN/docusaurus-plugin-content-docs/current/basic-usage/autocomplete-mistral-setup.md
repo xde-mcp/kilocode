@@ -47,25 +47,25 @@ sidebar_position: 4.1
 
 点击**生成 API 密钥**按钮创建您的新 Codestral API 密钥。
 
-![确认生成](./autocomplete-mistral-setup/08-confirm-key-generation.png)
+![确认生成](./autocomplete-mistral-setup/07-confirm-key-generation.png)
 
 ## 步骤 8：复制您的 API 密钥
 
 生成后，点击 API 密钥旁边的**复制**按钮将其复制到剪贴板。
 
-![复制 API 密钥](./autocomplete-mistral-setup/09-copy-api-key.png)
+![复制 API 密钥](./autocomplete-mistral-setup/08-copy-api-key.png)
 
 ## 步骤 9：在 Kilo Code 中粘贴 API 密钥
 
 返回 Kilo Code 设置，将您的 API 密钥粘贴到 **Mistral API 密钥**字段中。
 
-![粘贴 API 密钥](./autocomplete-mistral-setup/10-paste-api-key.png)
+![粘贴 API 密钥](./autocomplete-mistral-setup/09-paste-api-key.png)
 
 ## 步骤 10：保存您的设置
 
 点击**保存**应用您的 Mistral 配置。现在您可以使用免费的自动补全了！
 
-![保存设置](./autocomplete-mistral-setup/11-save-settings.png)
+![保存设置](./autocomplete-mistral-setup/10-save-settings.png)
 
 ## 后续步骤
 

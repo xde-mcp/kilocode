@@ -47,25 +47,25 @@ In the Mistral AI Studio sidebar, click **Codestral** under the Code section.
 
 Click the **Generate API Key** button to create your new Codestral API key.
 
-![Confirm Generate](./autocomplete-mistral-setup/08-confirm-key-generation.png)
+![Confirm Generate](./autocomplete-mistral-setup/07-confirm-key-generation.png)
 
 ## Step 8: Copy Your API Key
 
 Once generated, click the **copy** button next to your API key to copy it to your clipboard.
 
-![Copy API Key](./autocomplete-mistral-setup/09-copy-api-key.png)
+![Copy API Key](./autocomplete-mistral-setup/08-copy-api-key.png)
 
 ## Step 9: Paste API Key in Kilo Code
 
 Return to Kilo Code settings and paste your API key into the **Mistral API Key** field.
 
-![Paste API Key](./autocomplete-mistral-setup/10-paste-api-key.png)
+![Paste API Key](./autocomplete-mistral-setup/09-paste-api-key.png)
 
 ## Step 10: Save Your Settings
 
 Click **Save** to apply your Mistral configuration. You're now ready to use free autocomplete!
 
-![Save Settings](./autocomplete-mistral-setup/11-save-settings.png)
+![Save Settings](./autocomplete-mistral-setup/10-save-settings.png)
 
 ## Next Steps
 
