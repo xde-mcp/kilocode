@@ -1,3 +1,8 @@
+---
+sidebar_position: 11
+title: "Agent Observability"
+---
+
 # Kilo Code - Agent Observability
 
 ## Problem Statement
