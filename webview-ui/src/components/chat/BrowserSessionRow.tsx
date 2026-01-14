@@ -70,7 +70,7 @@ const getBrowserActionText = (
 			})
 		case "resize":
 			return t("chat:browser.actions.resized", {
-				size: typeof size === "string" ? size.split(/[x,]/).join(" x ") : String(size || ""),
+				size: typeof size === "string" ? size.split(/[x,]/).join(" x ") : String(size || ""), // kilocode_change
 			})
 		case "screenshot":
 			return t("chat:browser.actions.screenshotSaved")

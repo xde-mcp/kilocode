@@ -71,7 +71,7 @@ export function prettyKey(k?: string): string {
 			const digitMatch = /^Digit([0-9])$/.exec(p)
 			if (digitMatch) return digitMatch[1]
 			// Guard against non-string p (though unlikely from split) to be safe
-			const spaced = typeof p === "string" ? p.replace(/([a-z])([A-Z])/g, "$1 $2") : String(p || "")
+			const spaced = typeof p === "string" ? p.replace(/([a-z])([A-Z])/g, "$1 $2") : String(p || "") // kilocode_change
 			return spaced.charAt(0).toUpperCase() + spaced.slice(1)
 		})
 		.join(" + ")
