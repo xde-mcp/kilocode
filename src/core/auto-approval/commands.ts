@@ -63,7 +63,7 @@ export function containsDangerousSubstitution(source: string): boolean {
 		hereStringWithSubstitution ||
 		zshProcessSubstitution ||
 		zshGlobQualifier ||
-		((process as any).platform === "win32" && /\^/.test(source)) // Windows CMD specific escape character
+		((process as any).platform === "win32" && /\^/.test(source)) // kilocode_change: Windows CMD specific escape character
 	)
 }
 
