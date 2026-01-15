@@ -59,15 +59,15 @@ export const openAiNativeModels = {
 		supportsImages: true,
 		supportsPromptCache: true,
 		promptCacheRetention: "24h",
-		supportsReasoningEffort: ["none", "low", "medium", "high", "xhigh"],
+		supportsReasoningEffort: ["low", "medium", "high", "xhigh"],
 		reasoningEffort: "medium",
 		inputPrice: 1.75,
 		outputPrice: 14.0,
 		cacheReadsPrice: 0.175,
-		supportsVerbosity: true,
 		supportsTemperature: false,
 		tiers: [{ name: "priority", contextWindow: 400000, inputPrice: 3.5, outputPrice: 28.0, cacheReadsPrice: 0.35 }],
-		description: "GPT-5.2 Codex: A version of GPT-5.2 optimized for agentic coding in Codex",
+		description:
+			"GPT-5.2 Codex: Our most intelligent coding model optimized for long-horizon, agentic coding tasks",
 	},
 	"gpt-5.2-chat-latest": {
 		maxTokens: 16_384,
