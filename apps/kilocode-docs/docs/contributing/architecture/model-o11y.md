@@ -135,7 +135,6 @@ Hard errors and behavior metrics tell us about failures, but we also need signal
 **Explicit signals:**
 
 - User feedback (thumbs up/down) rate and sentiment
-- User retry/redo rate (UI button or same/similar prompt immediately after completion)
 - User abandonment patterns (session ends mid-task without completion signal)
 
 **Implicit signals:**
