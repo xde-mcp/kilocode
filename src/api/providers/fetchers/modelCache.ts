@@ -19,7 +19,7 @@ import { fileExistsAtPath } from "../../../utils/fs"
 import { getOpenRouterModels } from "./openrouter"
 import { getVercelAiGatewayModels } from "./vercel-ai-gateway"
 import { getRequestyModels } from "./requesty"
-import { getGlamaModels } from "./glama"
+import { getGlamaModels } from "./glama" // kilocode_change
 import { getUnboundModels } from "./unbound"
 import { getLiteLLMModels } from "./litellm"
 import { GetModelsOptions } from "../../../shared/api"
@@ -89,16 +89,18 @@ async function fetchModelsFromProvider(options: GetModelsOptions): Promise<Model
 			// Requesty models endpoint requires an API key for per-user custom policies.
 			models = await getRequestyModels(options.baseUrl, options.apiKey)
 			break
+		// kilocode_change start
 		case "glama":
 			models = await getGlamaModels()
 			break
+		// kilocode_change end
 		case "unbound":
 			// Unbound models endpoint requires an API key to fetch application specific models.
 			models = await getUnboundModels(options.apiKey)
 			break
 		case "litellm":
 			// Type safety ensures apiKey and baseUrl are always provided for LiteLLM.
-			models = await getLiteLLMModels(options.apiKey, options.baseUrl)
+			models = await getLiteLLMModels(options.apiKey ?? "", options.baseUrl ?? "") // kilocode_change: null coalescing
 			break
 		// kilocode_change start
 		case "kilocode": {
@@ -316,9 +318,22 @@ export async function initializeModelCacheRefresh(): Promise<void> {
 		// Providers that work without API keys
 		const publicProviders: Array<{ provider: RouterName; options: GetModelsOptions }> = [
 			{ provider: "openrouter", options: { provider: "openrouter" } },
-			{ provider: "glama", options: { provider: "glama" } },
+			{ provider: "glama", options: { provider: "glama" } }, // kilocode_change
 			{ provider: "vercel-ai-gateway", options: { provider: "vercel-ai-gateway" } },
 			{ provider: "chutes", options: { provider: "chutes" } },
+			{ provider: "synthetic", options: { provider: "synthetic" } }, // kilocode_change: Add synthetic to background refresh
+			{ provider: "nano-gpt", options: { provider: "nano-gpt" } }, // kilocode_change: Add nanogpt to background refresh
+			{ provider: "huggingface", options: { provider: "huggingface" } }, // kilocode_change: Add huggingface to background refresh
+			{ provider: "deepinfra", options: { provider: "deepinfra" } }, // kilocode_change: Add deepinfra to background refresh
+			{ provider: "inception", options: { provider: "inception" } }, // kilocode_change: Add inception to background refresh
+			{ provider: "lmstudio", options: { provider: "lmstudio" } }, // kilocode_change: Add lmstudio to background refresh
+			{ provider: "requesty", options: { provider: "requesty" } }, // kilocode_change: Add requesty to background refresh
+			{ provider: "sap-ai-core", options: { provider: "sap-ai-core" } }, // kilocode_change: Add sap-ai-core to background refresh
+			{ provider: "unbound", options: { provider: "unbound" } }, // kilocode_change: Add unbound to background refresh
+			{ provider: "ollama", options: { provider: "ollama" } }, // kilocode_change: Add ollama to background refresh
+			{ provider: "io-intelligence", options: { provider: "io-intelligence" } }, // kilocode_change: Add io-intelligence to background refresh
+			{ provider: "ovhcloud", options: { provider: "ovhcloud" } }, // kilocode_change: Add ovhcloud to background refresh
+			{ provider: "litellm", options: { provider: "litellm" } }, // kilocode_change: Add litellm to background refresh
 		]
 
 		// Refresh each provider in background (fire and forget)
@@ -336,20 +351,20 @@ export async function initializeModelCacheRefresh(): Promise<void> {
 /**
  * Flush models memory cache for a specific router.
  *
- * @param router - The router to flush models for.
+ * @param options - The options for fetching models, including provider, apiKey, and baseUrl
  * @param refresh - If true, immediately fetch fresh data from API
  */
-export const flushModels = async (router: RouterName, refresh: boolean = false): Promise<void> => {
+export const flushModels = async (options: GetModelsOptions, refresh: boolean = false): Promise<void> => {
+	const { provider } = options
 	if (refresh) {
 		// Don't delete memory cache - let refreshModels atomically replace it
 		// This prevents a race condition where getModels() might be called
 		// before refresh completes, avoiding a gap in cache availability
-		refreshModels({ provider: router } as GetModelsOptions).catch((error) => {
-			console.error(`[flushModels] Refresh failed for ${router}:`, error)
-		})
+		// Await the refresh to ensure the cache is updated before returning
+		await refreshModels(options)
 	} else {
 		// Only delete memory cache when not refreshing
-		memoryCache.del(router)
+		memoryCache.del(provider)
 	}
 }
 

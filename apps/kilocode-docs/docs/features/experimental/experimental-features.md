@@ -24,7 +24,13 @@ When enabled, native JSON function calling improves reliability via explicit sig
 
 It replaces brittle XML-style prompts that risk mixed prose/markup, missing fields, and regex-heavy cleanup, yielding more deterministic tool use and clearer error handling.
 
-[More Details are available](native-function-calling)
+[More details are available](native-function-calling)
+
+## Voice Transcription
+
+When enabled, voice transcription allows you to dictate messages using speech-to-text in the chat interface. Powered by OpenAI's Whisper API and FFmpeg for audio capture.
+
+[More details are available](voice-transcription)
 
 ## Concurrent file edits
 
@@ -36,6 +42,6 @@ When enabled, Kilo Code will remind the model about the details of its current m
 
 ## Providing Feedback
 
-If you encounter any issues with experimental features, or if you have suggestions for improvements, please report them on the [Kilo Code Code GitHub Issues page](https://github.com/Kilo-Org/kilocode) or join our [Discord server](https://kilo.love/discord) where we have channels dedciated to many experimental features.
+If you encounter any issues with experimental features, or if you have suggestions for improvements, please report them on the [Kilo Code Code GitHub Issues page](https://github.com/Kilo-Org/kilocode) or join our [Discord server](https://kilo.ai/discord) where we have channels dedciated to many experimental features.
 
 Your feedback is valuable and helps us improve Kilo Code!

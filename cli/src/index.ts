@@ -13,11 +13,15 @@ import { Package } from "./constants/package.js"
 import openConfigFile from "./config/openConfig.js"
 import authWizard from "./auth/index.js"
 import { configExists } from "./config/persistence.js"
-import { loadCustomModes } from "./config/customModes.js"
+import { loadCustomModes, getSearchedPaths } from "./config/customModes.js"
 import { envConfigExists, getMissingEnvVars } from "./config/env-config.js"
 import { getParallelModeParams } from "./parallel/parallel.js"
 import { DEBUG_MODES, DEBUG_FUNCTIONS } from "./debug/index.js"
 import { logs } from "./services/logs.js"
+import { validateAttachments, validateAttachRequiresAuto, accumulateAttachments } from "./validation/attachments.js"
+
+// Log CLI location for debugging (visible in VS Code "Kilo-Code" output channel)
+logs.info(`CLI started from: ${import.meta.url}`)
 
 const program = new Command()
 let cli: CLI | null = null
@@ -33,6 +37,7 @@ program
 	.option("-m, --mode <mode>", `Set the mode of operation (${validModes.join(", ")})`)
 	.option("-w, --workspace <path>", "Path to the workspace directory", process.cwd())
 	.option("-a, --auto", "Run in autonomous mode (non-interactive)", false)
+	.option("--yolo", "Auto-approve all tool permissions", false)
 	.option("-j, --json", "Output messages as JSON (requires --auto)", false)
 	.option("-i, --json-io", "Bidirectional JSON mode (no TUI, stdin/stdout enabled)", false)
 	.option("-c, --continue", "Resume the last conversation from this workspace", false)
@@ -47,8 +52,24 @@ program
 	.option("-s, --session <sessionId>", "Restore a session by ID")
 	.option("-f, --fork <shareId>", "Fork a session by ID")
 	.option("--nosplash", "Disable the welcome message and update notifications", false)
+	.option("--append-system-prompt <text>", "Append custom instructions to the system prompt")
+	.option("--on-task-completed <prompt>", "Send a custom prompt to the agent when the task completes")
+	.option(
+		"--attach <path>",
+		"Attach a file to the prompt (can be repeated). Currently supports images: png, jpg, jpeg, webp, gif, tiff",
+		accumulateAttachments,
+		[] as string[],
+	)
 	.argument("[prompt]", "The prompt or command to execute")
 	.action(async (prompt, options) => {
+		// Subcommand names - if prompt matches one, Commander.js should handle it via subcommand
+		// This is a defensive check for cases where Commander.js routing might not work as expected
+		// (e.g., when spawned as a child process with stdin disconnected)
+		const SUBCOMMANDS = ["auth", "config", "debug", "models"]
+		if (SUBCOMMANDS.includes(prompt)) {
+			return
+		}
+
 		// Validate that --existing-branch requires --parallel
 		if (options.existingBranch && !options.parallel) {
 			console.error("Error: --existing-branch option requires --parallel flag to be enabled")
@@ -68,7 +89,14 @@ program
 
 		// Validate mode if provided
 		if (options.mode && !allValidModes.includes(options.mode)) {
-			console.error(`Error: Invalid mode "${options.mode}". Valid modes are: ${allValidModes.join(", ")}`)
+			const searchedPaths = getSearchedPaths()
+			console.error(`Error: Mode "${options.mode}" not found.\n`)
+			console.error("The CLI searched for custom modes in:")
+			for (const searched of searchedPaths) {
+				const status = searched.found ? `found, ${searched.modesCount} mode(s)` : "not found"
+				console.error(`  • ${searched.type === "global" ? "Global" : "Project"}: ${searched.path} (${status})`)
+			}
+			console.error(`\nAvailable modes: ${allValidModes.join(", ")}`)
 			process.exit(1)
 		}
 
@@ -133,6 +161,18 @@ program
 			process.exit(1)
 		}
 
+		// Validate that --on-task-completed requires --auto
+		if (options.onTaskCompleted && !options.auto) {
+			console.error("Error: --on-task-completed option requires --auto flag to be enabled")
+			process.exit(1)
+		}
+
+		// Validate --on-task-completed prompt is not empty
+		if (options.onTaskCompleted !== undefined && options.onTaskCompleted.trim() === "") {
+			console.error("Error: --on-task-completed requires a non-empty prompt")
+			process.exit(1)
+		}
+
 		// Validate provider if specified
 		if (options.provider) {
 			// Load config to check if provider exists
@@ -142,6 +182,24 @@ program
 			if (!providerExists) {
 				const availableIds = config.providers.map((p) => p.id).join(", ")
 				console.error(`Error: Provider "${options.provider}" not found. Available providers: ${availableIds}`)
+				process.exit(1)
+			}
+		}
+
+		// Validate attachments if specified
+		const attachments: string[] = options.attach || []
+		const attachRequiresAutoResult = validateAttachRequiresAuto({ attach: attachments, auto: options.auto })
+		if (!attachRequiresAutoResult.valid) {
+			console.error(attachRequiresAutoResult.error)
+			process.exit(1)
+		}
+
+		if (attachments.length > 0) {
+			const validationResult = validateAttachments(attachments)
+			if (!validationResult.valid) {
+				for (const error of validationResult.errors) {
+					console.error(error)
+				}
 				process.exit(1)
 			}
 		}
@@ -212,6 +270,7 @@ program
 			mode: options.mode,
 			workspace: finalWorkspace,
 			ci: options.auto,
+			yolo: options.yolo,
 			// json-io mode implies json output (both modes output JSON to stdout)
 			json: options.json || jsonIoMode,
 			jsonInteractive: jsonIoMode,
@@ -226,6 +285,9 @@ program
 			session: options.session,
 			fork: options.fork,
 			noSplash: options.nosplash,
+			appendSystemPrompt: options.appendSystemPrompt,
+			attachments: attachments.length > 0 ? attachments : undefined,
+			onTaskCompleted: options.onTaskCompleted,
 		})
 		await cli.start()
 		await cli.dispose()
@@ -271,8 +333,23 @@ program
 		await debugFunction()
 	})
 
+// Models command - list available models as JSON for programmatic use
+program
+	.command("models")
+	.description("List available models for the current provider as JSON")
+	.option("--provider <id>", "Use specific provider instead of default")
+	.option("--json", "Output as JSON (default)", true)
+	.action(async (options: { provider?: string; json?: boolean }) => {
+		const { modelsApiCommand } = await import("./commands/models-api.js")
+		await modelsApiCommand(options)
+	})
+
 // Handle process termination signals
 process.on("SIGINT", async () => {
+	if (cli?.requestExitConfirmation()) {
+		return
+	}
+
 	if (cli) {
 		await cli.dispose("SIGINT")
 	} else {

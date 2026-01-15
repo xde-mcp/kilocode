@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
-import { type ModelInfo } from "@roo-code/types"
+import type { ModelInfo } from "@roo-code/types"
 
 import { type ApiHandlerOptions, getModelMaxOutputTokens } from "../../shared/api"
 import { XmlMatcher } from "../../utils/xml-matcher"
@@ -13,10 +13,8 @@ import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { fetchWithTimeout } from "./kilocode/fetchWithTimeout" // kilocode_change
-import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change
-import { ToolCallAccumulator } from "./kilocode/nativeToolCallHelpers" // kilocode_change
 import { calculateApiCostOpenAI } from "../../shared/cost"
+import { getApiRequestTimeout } from "./utils/timeout-config"
 
 type BaseOpenAiCompatibleProviderOptions<ModelName extends string> = ApiHandlerOptions & {
 	providerName: string
@@ -62,15 +60,11 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			throw new Error("API key is required")
 		}
 
-		const timeout = getApiRequestTimeout() // kilocode_change
 		this.client = new OpenAI({
 			baseURL,
 			apiKey: this.options.apiKey,
 			defaultHeaders: DEFAULT_HEADERS,
-			// kilocode_change start
-			timeout: timeout,
-			fetch: fetchWithTimeout(timeout),
-			// kilocode_change end
+			timeout: getApiRequestTimeout(),
 		})
 	}
 
@@ -135,15 +129,11 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				}) as const,
 		)
 
-		const toolCallAccumulator = new ToolCallAccumulator() // kilocode_change
 		let lastUsage: OpenAI.CompletionUsage | undefined
+		const activeToolCallIds = new Set<string>()
 
 		for await (const chunk of stream) {
 			verifyFinishReason(chunk.choices?.[0]) // kilocode_change
-
-			const delta = chunk.choices?.[0]?.delta
-
-			yield* toolCallAccumulator.processChunk(chunk) // kilocode_change
 
 			// Check for provider-specific error responses (e.g., MiniMax base_resp)
 			const chunkAny = chunk as any
@@ -152,6 +142,9 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 					`${this.providerName} API Error (${chunkAny.base_resp.status_code}): ${chunkAny.base_resp.status_msg || "Unknown error"}`,
 				)
 			}
+
+			const delta = chunk.choices?.[0]?.delta
+			const finishReason = chunk.choices?.[0]?.finish_reason
 
 			if (delta?.content) {
 				for (const processedChunk of matcher.update(delta.content)) {
@@ -174,6 +167,9 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			// Emit raw tool call chunks - NativeToolCallParser handles state management
 			if (delta?.tool_calls) {
 				for (const toolCall of delta.tool_calls) {
+					if (toolCall.id) {
+						activeToolCallIds.add(toolCall.id)
+					}
 					yield {
 						type: "tool_call_partial",
 						index: toolCall.index,
@@ -182,6 +178,15 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 						arguments: toolCall.function?.arguments,
 					}
 				}
+			}
+
+			// Emit tool_call_end events when finish_reason is "tool_calls"
+			// This ensures tool calls are finalized even if the stream doesn't properly close
+			if (finishReason === "tool_calls" && activeToolCallIds.size > 0) {
+				for (const id of activeToolCallIds) {
+					yield { type: "tool_call_end", id }
+				}
+				activeToolCallIds.clear()
 			}
 
 			if (chunk.usage) {

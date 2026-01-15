@@ -3,6 +3,7 @@ import * as path from "path"
 import { logs } from "../services/logs.js"
 import { KiloCodePaths } from "../utils/paths.js"
 import { Package } from "../constants/package.js"
+import { machineIdSync } from "node-machine-id"
 
 // Identity information for VSCode environment
 export interface IdentityInfo {
@@ -1207,9 +1208,11 @@ export class FileSystemAPI {
 
 	async writeFile(uri: Uri, content: Uint8Array): Promise<void> {
 		try {
-			fs.writeFileSync(uri.fsPath, content)
-		} catch {
-			throw new Error(`Failed to write file: ${uri.fsPath}`)
+			// Use Buffer.from to ensure proper handling of Uint8Array content
+			// and write with explicit encoding to handle Unicode paths on Windows
+			fs.writeFileSync(uri.fsPath, Buffer.from(content))
+		} catch (error) {
+			throw new Error(`Failed to write file: ${uri.fsPath}: ${(error as Error).message}`)
 		}
 	}
 
@@ -2321,7 +2324,7 @@ export function createVSCodeAPIMock(extensionRootPath: string, workspacePath: st
 		appName: `wrapper|cli|cli|${Package.version}`,
 		appRoot: import.meta.dirname,
 		language: "en",
-		machineId: identity?.machineId || "cli-machine-id",
+		machineId: identity?.machineId || machineIdSync(),
 		sessionId: identity?.sessionId || "cli-session-id",
 		remoteName: undefined,
 		shell: process.env.SHELL || "/bin/bash",

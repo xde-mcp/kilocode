@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
-import BottomControls from "../kilocode/BottomControls" // kilocode_change
 import { KiloShareModesBanner } from "../kilocode/KiloShareModesBanner" // kilocode_change
 import {
 	VSCodeCheckbox,
@@ -1291,7 +1290,7 @@ const ModesView = () => {
 											// Open or create an empty file
 											vscode.postMessage({
 												type: "openFile",
-												text: `./.roo/rules-${currentMode.slug}/rules.md`,
+												text: `./.kilocode/rules-${currentMode.slug}/rules.md`, // kilocode_change
 												values: {
 													create: true,
 													content: "",
@@ -1779,9 +1778,6 @@ const ModesView = () => {
 					}
 				}}
 			/>
-
-			{/* kilocode_change */}
-			<BottomControls />
 		</div>
 	)
 }

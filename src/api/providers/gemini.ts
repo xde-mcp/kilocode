@@ -7,16 +7,17 @@ import {
 	type GroundingMetadata,
 	FinishReason, // kilocode_change
 	FunctionCallingConfigMode,
-	Content,
 } from "@google/genai"
 import type { JWTInput } from "google-auth-library"
 
 import {
 	type ModelInfo,
-	// type GeminiModelId, // kilocode_change
+	type GeminiModelId,
 	geminiDefaultModelId,
 	geminiModels,
+	ApiProviderError,
 } from "@roo-code/types"
+import { TelemetryService } from "@roo-code/telemetry"
 
 import type {
 	ApiHandlerOptions,
@@ -24,10 +25,11 @@ import type {
 } from "../../shared/api"
 import { safeJsonParse } from "../../shared/safeJsonParse"
 
-import { convertAnthropicContentToGemini, convertAnthropicMessageToGemini } from "../transform/gemini-format"
+import { convertAnthropicMessageToGemini } from "../transform/gemini-format"
 import { t } from "i18next"
 import type { ApiStream, GroundingSource } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
+import { handleProviderError } from "./utils/error-handler"
 
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { BaseProvider } from "./base-provider"
@@ -44,6 +46,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	private client: GoogleGenAI
 	private lastThoughtSignature?: string
 	private lastResponseId?: string
+	private readonly providerName = "Gemini"
 
 	// kilocode_change start
 	private models: ModelRecord = { ...geminiModels }
@@ -253,13 +256,17 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined
 			let pendingGroundingMetadata: GroundingMetadata | undefined
 			let finalResponse: { responseId?: string } | undefined
+			let finishReason: string | undefined
 
 			let toolCallCounter = 0
+			let hasContent = false
+			let hasReasoning = false
 
 			for await (const chunk of result) {
 				// Track the final structured response (per SDK pattern: candidate.finishReason)
 				if (chunk.candidates && chunk.candidates[0]?.finishReason) {
 					finalResponse = chunk as { responseId?: string }
+					finishReason = chunk.candidates[0].finishReason
 				}
 				// Process candidates and their parts to separate thoughts from content
 				if (chunk.candidates && chunk.candidates.length > 0) {
@@ -293,9 +300,11 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 							if (part.thought) {
 								// This is a thinking/reasoning part
 								if (part.text) {
+									hasReasoning = true
 									yield { type: "reasoning", text: part.text }
 								}
 							} else if (part.functionCall) {
+								hasContent = true
 								// Gemini sends complete function calls in a single chunk
 								// Emit as partial chunks for consistent handling with NativeToolCallParser
 								const callId = `${part.functionCall.name}-${toolCallCounter}`
@@ -323,6 +332,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 							} else {
 								// This is regular content
 								if (part.text) {
+									hasContent = true
 									yield { type: "text", text: part.text }
 								}
 							}
@@ -332,6 +342,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 				// Fallback to the original text property if no candidates structure
 				else if (chunk.text) {
+					hasContent = true
 					yield { type: "text", text: chunk.text }
 				}
 
@@ -375,6 +386,10 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				}
 			}
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "createMessage")
+			TelemetryService.instance.captureException(apiError)
+
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_stream", { error: error.message }))
 			}
@@ -446,10 +461,10 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	}
 
 	async completePrompt(prompt: string): Promise<string> {
-		try {
-			await this.ensureModelsLoaded() // kilocode_change
-			const { id: model, info } = this.getModel()
+		await this.ensureModelsLoaded() // kilocode_change
+		const { id: model, info } = this.getModel()
 
+		try {
 			const tools: GenerateContentConfig["tools"] = []
 			if (this.options.enableUrlContext) {
 				tools.push({ urlContext: {} })
@@ -491,36 +506,15 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 			return text
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "completePrompt")
+			TelemetryService.instance.captureException(apiError)
+
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_complete_prompt", { error: error.message }))
 			}
 
 			throw error
-		}
-	}
-
-	override async countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number> {
-		try {
-			await this.ensureModelsLoaded() // kilocode_change
-			const { id: model } = this.getModel()
-
-			const countTokensRequest = {
-				model,
-				// Token counting does not need encrypted continuation; always drop thoughtSignature.
-				contents: convertAnthropicContentToGemini(content, { includeThoughtSignatures: false }),
-			}
-
-			const response = await this.client.models.countTokens(countTokensRequest)
-
-			if (response.totalTokens === undefined) {
-				console.warn("Gemini token counting returned undefined, using fallback")
-				return super.countTokens(content)
-			}
-
-			return response.totalTokens
-		} catch (error) {
-			console.warn("Gemini token counting failed, using fallback", error)
-			return super.countTokens(content)
 		}
 	}
 

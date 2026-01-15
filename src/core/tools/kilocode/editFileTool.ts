@@ -13,6 +13,8 @@ import { TelemetryService } from "@roo-code/telemetry"
 import { type ClineProviderState } from "../../webview/ClineProvider"
 import { ClineSayTool } from "../../../shared/ExtensionMessage"
 import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TASKID, X_KILOCODE_TESTER } from "../../../shared/kilocode/headers"
+import { trackContribution } from "../../../services/contribution-tracking/ContributionTrackingService"
+import { sanitizeUnifiedDiff } from "../../diff/stats"
 
 const FAST_APPLY_MODEL_PRICING = {
 	"morph-v3-fast": {
@@ -54,22 +56,22 @@ async function validateParams(
 ): Promise<boolean> {
 	if (!targetFile) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("edit_file")
-		pushToolResult(await cline.sayAndCreateMissingParamError("edit_file", "target_file"))
+		cline.recordToolError("fast_edit_file")
+		pushToolResult(await cline.sayAndCreateMissingParamError("fast_edit_file", "target_file"))
 		return false
 	}
 
 	if (!instructions) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("edit_file")
-		pushToolResult(await cline.sayAndCreateMissingParamError("edit_file", "instructions"))
+		cline.recordToolError("fast_edit_file")
+		pushToolResult(await cline.sayAndCreateMissingParamError("fast_edit_file", "instructions"))
 		return false
 	}
 
 	if (codeEdit === undefined) {
 		cline.consecutiveMistakeCount++
-		cline.recordToolError("edit_file")
-		pushToolResult(await cline.sayAndCreateMissingParamError("edit_file", "code_edit"))
+		cline.recordToolError("fast_edit_file")
+		pushToolResult(await cline.sayAndCreateMissingParamError("fast_edit_file", "code_edit"))
 		return false
 	}
 
@@ -141,7 +143,7 @@ export async function editFileTool(
 
 		if (morphApplyResult && !morphApplyResult.success) {
 			cline.consecutiveMistakeCount++
-			cline.recordToolError("edit_file")
+			cline.recordToolError("fast_edit_file")
 			const error = `Failed to apply edit using Fast Apply. Please disable the Fast Apply experimental feature if this error persists. ${morphApplyResult.error}`
 			cline.say("error", error)
 			pushToolResult(formatResponse.toolError(error))
@@ -178,6 +180,21 @@ export async function editFileTool(
 			undefined,
 			cline.rooProtectedController?.isWriteProtected(relPath) || false,
 		)
+
+		// Track contribution (fire-and-forget, never blocks user workflow)
+		const provider = cline.providerRef.deref()
+		const state = await provider?.getState()
+		const unifiedPatchRaw = formatResponse.createPrettyPatch(relPath, originalContent, newContent)
+		const unifiedPatch = sanitizeUnifiedDiff(unifiedPatchRaw)
+		trackContribution({
+			cwd: cline.cwd,
+			filePath: relPath,
+			unifiedDiff: unifiedPatch,
+			status: approved ? "accepted" : "rejected",
+			taskId: cline.taskId,
+			organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+			kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+		})
 
 		if (!approved) {
 			await cline.diffViewProvider.revertChanges()
@@ -330,7 +347,7 @@ interface FastApplyConfiguration {
 
 function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfiguration {
 	// Check if Fast Apply is enabled in API configuration
-	if (state.experiments.morphFastApply !== true) {
+	if (state?.experiments?.morphFastApply !== true) {
 		return {
 			available: false,
 			error: "Fast Apply is disabled. Enable it in API Options > Enable Editing with Fast Apply",
@@ -356,7 +373,7 @@ function getFastApplyConfiguration(state: ClineProviderState): FastApplyConfigur
 
 	// Priority 1: Use direct Morph API key if available
 	// Allow human-relay for debugging
-	if ((apiProvider === "morph" && state.morphApiKey) || state.apiConfiguration?.apiProvider === "human-relay") {
+	if (apiProvider === "morph" && state.morphApiKey) {
 		const [org, model] = selectedModel.split("/")
 		return {
 			available: true,

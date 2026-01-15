@@ -20,6 +20,7 @@ interface Dependencies {
 	postChatMessages: (sessionId: string, messages: ClineMessage[]) => void
 	postState: () => void
 	postStateEvent: (sessionId: string, payload: StateEventPayload) => void
+	onPaymentRequiredPrompt?: (payload: KilocodePayload) => void
 }
 
 export class KilocodeEventProcessor {
@@ -31,6 +32,7 @@ export class KilocodeEventProcessor {
 	private readonly postChatMessages: (sessionId: string, messages: ClineMessage[]) => void
 	private readonly postState: () => void
 	private readonly postStateEvent: (sessionId: string, payload: StateEventPayload) => void
+	private readonly onPaymentRequiredPrompt?: (payload: KilocodePayload) => void
 
 	constructor(deps: Dependencies) {
 		this.processHandler = deps.processHandler
@@ -41,11 +43,13 @@ export class KilocodeEventProcessor {
 		this.postChatMessages = deps.postChatMessages
 		this.postState = deps.postState
 		this.postStateEvent = deps.postStateEvent
+		this.onPaymentRequiredPrompt = deps.onPaymentRequiredPrompt
 	}
 
 	public handle(sessionId: string, event: KilocodeStreamEvent): void {
 		const payload = event.payload
 		const messageType = payload.type === "ask" ? "ask" : payload.type === "say" ? "say" : null
+		const isCommandOutput = payload.ask === "command_output" || payload.say === "command_output"
 
 		if (!messageType) {
 			// Unknown payloads (e.g., session_created) are logged but not shown as chat
@@ -78,7 +82,7 @@ export class KilocodeEventProcessor {
 
 		// Skip empty partial messages
 		const rawContent = payload.content || payload.text
-		if (payload.partial && !rawContent) {
+		if (payload.partial && !rawContent && !isCommandOutput) {
 			return
 		}
 
@@ -90,7 +94,7 @@ export class KilocodeEventProcessor {
 
 		// Handle resume asks early - they're state signals, not content to display
 		// The state machine transitions to paused/waiting_input, no chat message needed
-		if (payload.type === "ask" && payload.ask === "resume_task") {
+		if (payload.type === "ask" && (payload.ask === "resume_task" || payload.ask === "resume_completed_task")) {
 			this.postStateEvent(sessionId, { eventType: "ask_resume_task" })
 			return
 		}
@@ -98,6 +102,8 @@ export class KilocodeEventProcessor {
 		const timestamp = (payload.timestamp as number | undefined) ?? (payload as { ts?: number }).ts ?? Date.now()
 		const checkpoint = (payload as { checkpoint?: Record<string, unknown> }).checkpoint
 		const text = this.deriveMessageText(payload, checkpoint)
+		const metadata = payload.metadata as Record<string, unknown> | undefined
+
 		const message: ClineMessage = {
 			ts: timestamp,
 			type: messageType,
@@ -106,7 +112,7 @@ export class KilocodeEventProcessor {
 			text,
 			partial: payload.partial ?? false,
 			isAnswered: payload.isAnswered as boolean | undefined,
-			metadata: payload.metadata as Record<string, unknown> | undefined,
+			metadata,
 			checkpoint,
 		}
 
@@ -120,13 +126,14 @@ export class KilocodeEventProcessor {
 		if (!message.text && message.type === "ask" && message.ask) {
 			if (message.ask === "tool") {
 				message.text = this.formatToolAskText(payload.metadata)
-			} else {
+			} else if (message.ask !== "command_output") {
 				message.text = message.ask
 			}
 		}
 
 		// Drop empty messages (except checkpoints)
-		if (!message.text && message.say !== "checkpoint_saved") {
+		const isCommandOutputMessage = message.ask === "command_output" || message.say === "command_output"
+		if (!message.text && message.say !== "checkpoint_saved" && !isCommandOutputMessage) {
 			return
 		}
 
@@ -140,6 +147,7 @@ export class KilocodeEventProcessor {
 				return
 			}
 
+			this.onPaymentRequiredPrompt?.(payload)
 			this.processHandler.stopProcess(sessionId)
 			const errorText = message.text || "Paid model requires credits or billing setup."
 			this.registry.updateSessionStatus(sessionId, "error", undefined, errorText)
@@ -200,6 +208,7 @@ export class KilocodeEventProcessor {
 
 				// Paused state
 				case "resume_task":
+				case "resume_completed_task":
 					this.postStateEvent(sessionId, { eventType: "ask_resume_task" })
 					break
 
@@ -229,6 +238,19 @@ export class KilocodeEventProcessor {
 			return this.formatToolAskText(payload.metadata) || ""
 		}
 
+		// command_output messages from the CLI often encode output in `metadata`
+		// (because the CLI JSON renderer parses `text` JSON into `metadata`).
+		if ((payload.ask === "command_output" || payload.say === "command_output") && payload.metadata) {
+			const output = (payload.metadata as { output?: unknown }).output
+			if (typeof output === "string") {
+				return output
+			}
+			if (output != null) {
+				return String(output)
+			}
+			return ""
+		}
+
 		// Fallback empty
 		return ""
 	}
@@ -247,6 +269,14 @@ export class KilocodeEventProcessor {
 	}
 
 	private getMessageKey(message: ClineMessage): string {
+		// For command_output, use executionId from metadata for deduplication
+		// This ensures we don't show duplicate outputs when isAnswered changes from false to true
+		if (message.ask === "command_output" || message.say === "command_output") {
+			const executionId = (message.metadata as { executionId?: string } | undefined)?.executionId
+			if (executionId) {
+				return `command_output-${executionId}`
+			}
+		}
 		return `${message.ts}-${message.type}-${message.say ?? ""}-${message.ask ?? ""}`
 	}
 }

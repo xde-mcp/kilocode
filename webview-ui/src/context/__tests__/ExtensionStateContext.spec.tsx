@@ -236,7 +236,6 @@ describe("mergeExtensionState", () => {
 			shouldShowAnnouncement: false,
 			enableCheckpoints: true,
 			writeDelayMs: 1000,
-			requestDelaySeconds: 5,
 			mode: "default",
 			experiments: {} as Record<ExperimentId, boolean>,
 			customModes: [],
@@ -245,6 +244,7 @@ describe("mergeExtensionState", () => {
 			apiConfiguration: { providerId: "openrouter" } as ProviderSettings,
 			telemetrySetting: "unset",
 			showRooIgnoredFiles: true,
+			enableSubfolderRules: false,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,
 			showAutoApproveMenu: false,
@@ -254,6 +254,7 @@ describe("mergeExtensionState", () => {
 			autoCondenseContextPercent: 100,
 			cloudIsAuthenticated: false,
 			sharingEnabled: false,
+			publicSharingEnabled: false,
 			profileThresholds: {},
 			hasOpenedModeSelector: false, // Add the new required property
 			maxImageFileSize: 5,
@@ -281,11 +282,13 @@ describe("mergeExtensionState", () => {
 				multiFileApplyDiff: true,
 				preventFocusDisruption: false,
 				morphFastApply: false, // kilocode_change
+				speechToText: false, // kilocode_change
 				newTaskRequireTodos: false,
 				imageGeneration: false,
 				runSlashCommand: false,
 				nativeToolCalling: false,
 				multipleNativeToolCalls: false,
+				customTools: false,
 			} as Record<ExperimentId, boolean>,
 			checkpointTimeout: DEFAULT_CHECKPOINT_TIMEOUT_SECONDS + 5,
 		}
@@ -302,11 +305,13 @@ describe("mergeExtensionState", () => {
 			multiFileApplyDiff: true,
 			preventFocusDisruption: false,
 			morphFastApply: false, // kilocode_change
+			speechToText: false, // kilocode_change
 			newTaskRequireTodos: false,
 			imageGeneration: false,
 			runSlashCommand: false,
 			nativeToolCalling: false,
 			multipleNativeToolCalls: false,
+			customTools: false,
 		})
 	})
 })
