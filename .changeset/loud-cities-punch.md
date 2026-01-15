@@ -1,5 +1,4 @@
 ---
-"@roo-code/types": minor
 "kilo-code": minor
 ---
 

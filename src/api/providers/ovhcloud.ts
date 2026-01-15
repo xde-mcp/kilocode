@@ -11,7 +11,7 @@ import { convertToOpenAiMessages } from "../transform/openai-format"
 import { calculateApiCostOpenAI } from "../../shared/cost"
 import { convertToR1Format } from "../transform/r1-format"
 import { XmlMatcher } from "../../utils/xml-matcher"
-import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
+import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 
 export class OVHcloudAIEndpointsHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {
@@ -48,9 +48,7 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 			...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
 		}
 
-		// kilocode_change start
 		const completion = await this.client.chat.completions.create(body)
-		// kilocode_change end
 
 		const matcher = new XmlMatcher(
 			"think",
@@ -61,12 +59,12 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 				}) as const,
 		)
 
-		const activeToolCallIds = new Set<string>() // kilocode_change
+		const activeToolCallIds = new Set<string>()
 
 		for await (const chunk of completion) {
-			verifyFinishReason(chunk.choices[0]) // kilocode_change
+			verifyFinishReason(chunk.choices[0])
 			const delta = chunk.choices[0]?.delta
-			const finishReason = chunk.choices[0]?.finish_reason // kilocode_change
+			const finishReason = chunk.choices[0]?.finish_reason
 
 			if (delta?.content) {
 				for (const matcherChunk of matcher.update(delta.content)) {
@@ -74,7 +72,6 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 				}
 			}
 
-			// kilocode_change start - Emit raw tool call chunks - NativeToolCallParser handles state management
 			if (delta?.tool_calls) {
 				for (const toolCall of delta.tool_calls) {
 					if (toolCall.id) {
@@ -98,7 +95,6 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 				}
 				activeToolCallIds.clear()
 			}
-			// kilocode_change end
 
 			if (chunk.usage) {
 				const usage = chunk.usage as OpenAI.CompletionUsage
