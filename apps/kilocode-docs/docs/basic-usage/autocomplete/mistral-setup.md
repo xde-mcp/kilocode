@@ -9,7 +9,7 @@ This guide walks you through setting up Mistral's Codestral model for free autoc
 
 ## Video Walkthrough
 
-<iframe width="100%" height="400" src="https://www.youtube.com/embed/hKPk4yrE8Rw" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="100%" height="400" src="https://www.youtube.com/embed/0aqBbB8fPho" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Step 1: Open Kilo Code Settings
 
