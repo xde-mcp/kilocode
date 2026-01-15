@@ -12,7 +12,6 @@ import { calculateApiCostOpenAI } from "../../shared/cost"
 import { convertToR1Format } from "../transform/r1-format"
 import { XmlMatcher } from "../../utils/xml-matcher"
 import { verifyFinishReason } from "./kilocode/verifyFinishReason" // kilocode_change
-import { addNativeToolCallsToParams } from "./kilocode/nativeToolCallHelpers" // kilocode_change
 
 export class OVHcloudAIEndpointsHandler extends RouterProvider implements SingleCompletionHandler {
 	constructor(options: ApiHandlerOptions) {
@@ -45,12 +44,12 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 			messages: openAiMessages,
 			stream: true,
 			stream_options: { include_usage: true },
+			...(metadata?.tools && { tools: metadata.tools }),
+			...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
 		}
 
 		// kilocode_change start
-		const completion = await this.client.chat.completions.create(
-			addNativeToolCallsToParams(body, this.options, metadata),
-		)
+		const completion = await this.client.chat.completions.create(body)
 		// kilocode_change end
 
 		const matcher = new XmlMatcher(
@@ -62,9 +61,12 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 				}) as const,
 		)
 
+		const activeToolCallIds = new Set<string>() // kilocode_change
+
 		for await (const chunk of completion) {
 			verifyFinishReason(chunk.choices[0]) // kilocode_change
 			const delta = chunk.choices[0]?.delta
+			const finishReason = chunk.choices[0]?.finish_reason // kilocode_change
 
 			if (delta?.content) {
 				for (const matcherChunk of matcher.update(delta.content)) {
@@ -75,6 +77,9 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 			// kilocode_change start - Emit raw tool call chunks - NativeToolCallParser handles state management
 			if (delta?.tool_calls) {
 				for (const toolCall of delta.tool_calls) {
+					if (toolCall.id) {
+						activeToolCallIds.add(toolCall.id)
+					}
 					yield {
 						type: "tool_call_partial",
 						index: toolCall.index,
@@ -83,6 +88,15 @@ export class OVHcloudAIEndpointsHandler extends RouterProvider implements Single
 						arguments: toolCall.function?.arguments,
 					}
 				}
+			}
+
+			// Emit tool_call_end events when finish_reason is "tool_calls"
+			// This ensures tool calls are finalized even if the stream doesn't properly close
+			if (finishReason === "tool_calls" && activeToolCallIds.size > 0) {
+				for (const id of activeToolCallIds) {
+					yield { type: "tool_call_end", id }
+				}
+				activeToolCallIds.clear()
 			}
 			// kilocode_change end
 
