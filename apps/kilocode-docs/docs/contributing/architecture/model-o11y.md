@@ -32,7 +32,6 @@ All of these contribute to the overall reliability and user experience of the sy
 
 **Non-goals for this proposal:**
 
-- Real-time user-facing quality scores
 - Automated remediation
 - A/B testing infrastructure
 
