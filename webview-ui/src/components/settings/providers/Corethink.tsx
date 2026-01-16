@@ -5,15 +5,15 @@ import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { inputEventTransform } from "../transforms"
 
 type CorethinkProps = {
-	_apiConfiguration: ProviderSettings
+	apiConfiguration: ProviderSettings
 	setApiConfigurationField: (field: keyof ProviderSettings, value: ProviderSettings[keyof ProviderSettings]) => void
 	simplifySettings?: boolean
 }
 
-export const Corethink = ({ _apiConfiguration, setApiConfigurationField }: CorethinkProps) => {
-	const { _t } = useAppTranslation()
+export const Corethink = ({ apiConfiguration, setApiConfigurationField }: CorethinkProps) => {
+	const { t } = useAppTranslation()
 
-	const _handleInputChange = useCallback(
+	const handleInputChange = useCallback(
 		<K extends keyof ProviderSettings, E>(
 			field: K,
 			transform: (event: E) => ProviderSettings[K] = inputEventTransform,
@@ -23,6 +23,10 @@ export const Corethink = ({ _apiConfiguration, setApiConfigurationField }: Coret
 			},
 		[setApiConfigurationField],
 	)
+
+	void apiConfiguration // Placeholder to avoid unused variable warning
+	void t // Placeholder to avoid unused variable warning
+	void handleInputChange // Placeholder to avoid unused variable warning
 
 	return (
 		<>
