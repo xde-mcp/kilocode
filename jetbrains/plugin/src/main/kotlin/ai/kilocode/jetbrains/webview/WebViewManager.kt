@@ -1,5 +1,7 @@
 package ai.kilocode.jetbrains.webview
 
+import ai.kilocode.jetbrains.monitoring.ScopeRegistry
+import ai.kilocode.jetbrains.monitoring.DisposableTracker
 import ai.kilocode.jetbrains.core.InitializationState
 import ai.kilocode.jetbrains.core.InitializationStateMachine
 import ai.kilocode.jetbrains.core.PluginContext
@@ -23,6 +25,7 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import org.cef.CefSettings
 import org.cef.browser.CefBrowser
@@ -41,6 +44,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
+import java.util.concurrent.Executors
 import javax.swing.JButton
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -610,9 +614,13 @@ class WebViewInstance(
 
     // Body theme class (e.g., "vscode-dark" or "vscode-light")
     private var bodyThemeClass: String = "vscode-dark"
+    private val boundedIODispatcher = Executors.newFixedThreadPool(
+        Runtime.getRuntime().availableProcessors() * 2,
+        { r -> Thread(r, "KiloCode-WebView-IO").apply { isDaemon = true } }
+    ).asCoroutineDispatcher()
 
     // Coroutine scope
-    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val coroutineScope = CoroutineScope(SupervisorJob() + boundedIODispatcher)
 
     // Synchronization for page load state
     private val pageLoadLock = Any()
@@ -636,6 +644,7 @@ class WebViewInstance(
     private var initialThemeInjectionComplete = false
 
     init {
+        ScopeRegistry.register("WebViewInstance.coroutineScope-$viewId", coroutineScope)
         setupJSBridge()
         // Enable resource loading interception
         enableResourceInterception(extension)
@@ -1440,7 +1449,6 @@ class WebViewInstance(
                 // Check if JCEF browser is initialized before executing JavaScript
                 val url = browser.cefBrowser.url
                 if (url == null || url.isEmpty()) {
-                    logger.warn("JCEF browser not fully initialized (URL is null/empty), deferring JavaScript execution")
                     // Retry after a short delay
                     Timer().schedule(object : TimerTask() {
                         override fun run() {
@@ -1492,7 +1500,15 @@ class WebViewInstance(
 
     override fun dispose() {
         if (!isDisposed) {
+            ScopeRegistry.unregister("WebViewInstance.coroutineScope-$viewId")
             browser.dispose()
+            
+            try {
+                (boundedIODispatcher as? java.util.concurrent.ExecutorService)?.shutdown()
+            } catch (e: Exception) {
+                logger.error("Error shutting down bounded IO dispatcher", e)
+            }
+            
             isDisposed = true
             logger.info("WebView instance released: $viewType/$viewId")
         }
