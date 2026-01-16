@@ -2091,6 +2091,7 @@ describe("pushToolResultToUserContent", () => {
 	it("should add tool_result when not a duplicate", () => {
 		const task = new Task({
 			provider: mockProvider,
+			context: mockProvider.context,
 			apiConfiguration: mockApiConfig,
 			task: "test task",
 			startTask: false,
@@ -2112,6 +2113,7 @@ describe("pushToolResultToUserContent", () => {
 	it("should prevent duplicate tool_result with same tool_use_id", () => {
 		const task = new Task({
 			provider: mockProvider,
+			context: mockProvider.context,
 			apiConfiguration: mockApiConfig,
 			task: "test task",
 			startTask: false,
@@ -2156,6 +2158,7 @@ describe("pushToolResultToUserContent", () => {
 	it("should allow different tool_use_ids to be added", () => {
 		const task = new Task({
 			provider: mockProvider,
+			context: mockProvider.context,
 			apiConfiguration: mockApiConfig,
 			task: "test task",
 			startTask: false,
@@ -2186,6 +2189,7 @@ describe("pushToolResultToUserContent", () => {
 	it("should handle tool_result with is_error flag", () => {
 		const task = new Task({
 			provider: mockProvider,
+			context: mockProvider.context,
 			apiConfiguration: mockApiConfig,
 			task: "test task",
 			startTask: false,
@@ -2208,6 +2212,7 @@ describe("pushToolResultToUserContent", () => {
 	it("should not interfere with other content types in userMessageContent", () => {
 		const task = new Task({
 			provider: mockProvider,
+			context: mockProvider.context,
 			apiConfiguration: mockApiConfig,
 			task: "test task",
 			startTask: false,
