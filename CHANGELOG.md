@@ -1,5 +1,11 @@
 # Roo Code Changelog
 
+## 3.41.2
+
+### Patch Changes
+
+-   - Add button to open markdown in VSCode preview for easier reading of formatted content (PR #10773 by @brunobergher)
+
 ## [3.41.1] - 2026-01-16
 
 ![3.41.1 Release - Aggregated Subtask Costs](/releases/3.41.1-release.png)
