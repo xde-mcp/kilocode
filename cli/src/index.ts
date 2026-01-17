@@ -53,6 +53,7 @@ program
 	.option("-f, --fork <shareId>", "Fork a session by ID")
 	.option("--nosplash", "Disable the welcome message and update notifications", false)
 	.option("--append-system-prompt <text>", "Append custom instructions to the system prompt")
+	.option("--on-task-completed <prompt>", "Send a custom prompt to the agent when the task completes")
 	.option(
 		"--attach <path>",
 		"Attach a file to the prompt (can be repeated). Currently supports images: png, jpg, jpeg, webp, gif, tiff",
@@ -160,6 +161,18 @@ program
 			process.exit(1)
 		}
 
+		// Validate that --on-task-completed requires --auto
+		if (options.onTaskCompleted && !options.auto) {
+			console.error("Error: --on-task-completed option requires --auto flag to be enabled")
+			process.exit(1)
+		}
+
+		// Validate --on-task-completed prompt is not empty
+		if (options.onTaskCompleted !== undefined && options.onTaskCompleted.trim() === "") {
+			console.error("Error: --on-task-completed requires a non-empty prompt")
+			process.exit(1)
+		}
+
 		// Validate provider if specified
 		if (options.provider) {
 			// Load config to check if provider exists
@@ -203,7 +216,27 @@ program
 		const hasEnvConfig = envConfigExists()
 
 		if (!hasConfig && !hasEnvConfig) {
-			// No config file and no env config - show auth wizard
+			// No config file and no env config
+			// Check if running in agent-manager mode (spawned from VS Code extension)
+			if (process.env.KILO_PLATFORM === "agent-manager") {
+				// Output a welcome message with instructions that the agent manager can detect.
+				// The agent manager will show a localized error dialog with "Run kilocode auth"
+				// and "Run kilocode config" buttons. The instructions here are just for
+				// triggering the cli_configuration_error handler and providing log context.
+				const welcomeMessage = {
+					type: "welcome",
+					timestamp: Date.now(),
+					metadata: {
+						welcomeOptions: {
+							instructions: ["Configuration required: No provider configured."],
+						},
+					},
+				}
+				console.log(JSON.stringify(welcomeMessage))
+				process.exit(1)
+			}
+
+			// Interactive mode - show auth wizard
 			console.info("Welcome to the Kilo Code CLI! 🎉\n")
 			console.info("To get you started, please fill out these following questions.")
 			await authWizard()
@@ -274,6 +307,7 @@ program
 			noSplash: options.nosplash,
 			appendSystemPrompt: options.appendSystemPrompt,
 			attachments: attachments.length > 0 ? attachments : undefined,
+			onTaskCompleted: options.onTaskCompleted,
 		})
 		await cli.start()
 		await cli.dispose()
@@ -305,7 +339,13 @@ program
 	.description("Run a system compatibility check for the Kilo Code CLI")
 	.argument("[mode]", `The mode to debug (${DEBUG_MODES.join(", ")})`, "")
 	.action(async (mode: string) => {
-		if (!mode || !DEBUG_MODES.includes(mode)) {
+		// If no mode is provided, show available debug modes (helpful UX)
+		if (!mode) {
+			console.log(`Available debug modes: ${DEBUG_MODES.join(", ")}`)
+			process.exit(0)
+		}
+
+		if (!DEBUG_MODES.includes(mode)) {
 			console.error(`Error: Invalid debug mode. Valid modes are: ${DEBUG_MODES.join(", ")}`)
 			process.exit(1)
 		}
