@@ -3592,7 +3592,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					}
 
 					const deduplicatedAssistantMessage =
-						toolUseBlocks.length > 1 ? deduplicateToolUseBlocks(assistantApiMessage) : assistantApiMessage
+						toolUseBlocks.length > 1
+							? deduplicateToolUseBlocks(assistantApiMessage) // Deduplicate if multiple tools
+							: assistantApiMessage
 
 					await this.addToApiConversationHistory(deduplicatedAssistantMessage, reasoningMessage || undefined)
 
