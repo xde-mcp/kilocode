@@ -1,5 +1,11 @@
 # @kilocode/cli
 
+## 0.22.2
+
+### Patch Changes
+
+- [#5113](https://github.com/Kilo-Org/kilocode/pull/5113) [`6d04a15`](https://github.com/Kilo-Org/kilocode/commit/6d04a150383af75ed42b954fc3c42e9e010bbed9) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Fix CLI crash when config file is empty or contains invalid JSON
+
 ## 0.22.1
 
 ### Patch Changes
