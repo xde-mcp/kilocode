@@ -3596,7 +3596,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 							? deduplicateToolUseBlocks(assistantApiMessage) // Deduplicate if multiple tools
 							: assistantApiMessage
 
-					await this.addToApiConversationHistory(deduplicatedAssistantMessage, reasoningMessage || undefined)
+					await this.addToApiConversationHistory(
+						deduplicatedAssistantMessage,
+						reasoningMessage || undefined, // Include reasoning if present
+					)
 
 					TelemetryService.instance.captureConversationMessage(this.taskId, "assistant")
 
