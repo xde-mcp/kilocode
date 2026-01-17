@@ -3585,10 +3585,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 					// Deduplicate tool_use blocks to prevent "unexpected tool_use_id" API errors
 					// This handles edge cases like long waits during orchestrator sessions
-					const deduplicatedAssistantMessage = deduplicateToolUseBlocks({
-						role: "assistant",
-						content: assistantContent,
-					})
+					// Skip deduplication if 0-1 tool_use blocks (no duplicates possible)
+					const assistantApiMessage: Anthropic.MessageParam = { role: "assistant", content: assistantContent }
+					const deduplicatedAssistantMessage =
+						toolUseBlocks.length > 1 ? deduplicateToolUseBlocks(assistantApiMessage) : assistantApiMessage
 
 					await this.addToApiConversationHistory(deduplicatedAssistantMessage, reasoningMessage || undefined)
 
