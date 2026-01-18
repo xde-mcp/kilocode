@@ -3,7 +3,7 @@
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
 	"publisher": "kilocode",
-	"version": "4.143.1",
+	"version": "4.148.1",
 	"icon": "assets/icons/logo-outline-black.png",
 	"galleryBanner": {
 		"color": "#FFFFFF",
@@ -293,6 +293,19 @@
 				"title": "Open Agent Manager",
 				"icon": "$(circuit-board)",
 				"category": "%configuration.title%"
+			},
+			{
+				"command": "kilo-code.popoutButtonClicked",
+				"title": "%command.openInEditor.title%",
+				"icon": "$(link-external)"
+			},
+			{
+				"command": "kilo-code.open",
+				"title": "%views.activitybar.title%",
+				"icon": {
+					"light": "assets/icons/kilo-light.svg",
+					"dark": "assets/icons/kilo-dark.svg"
+				}
 			}
 		],
 		"menus": {
@@ -404,11 +417,6 @@
 					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
 				},
 				{
-					"command": "kilo-code.popoutButtonClicked",
-					"group": "navigation@4",
-					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
-				},
-				{
 					"command": "kilo-code.settingsButtonClicked",
 					"group": "navigation@5",
 					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
@@ -417,6 +425,11 @@
 					"command": "kilo-code.helpButtonClicked",
 					"group": "navigation@6",
 					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
+				},
+				{
+					"command": "kilo-code.open",
+					"group": "navigation",
+					"when": "true"
 				}
 			],
 			"scm/input": [
@@ -662,6 +675,8 @@
 		"@modelcontextprotocol/sdk": "^1.24.0",
 		"@qdrant/js-client-rest": "^1.14.0",
 		"@roo-code/cloud": "workspace:^",
+		"@roo-code/core": "workspace:^",
+		"@kilocode/core-schemas": "workspace:^",
 		"@roo-code/ipc": "workspace:^",
 		"@roo-code/telemetry": "workspace:^",
 		"@roo-code/types": "workspace:^",
@@ -736,7 +751,6 @@
 		"tmp": "^0.2.3",
 		"tree-sitter-wasms": "^0.1.12",
 		"turndown": "^7.2.0",
-		"undici": "^7.13.0",
 		"uri-js": "^4.4.1",
 		"uuid": "^11.1.0",
 		"vscode-material-icons": "^0.1.1",
@@ -745,7 +759,7 @@
 		"ws": "^8.18.0",
 		"xlsx": "^0.18.5",
 		"yaml": "^2.8.0",
-		"zod": "^3.25.61"
+		"zod": "3.25.61"
 	},
 	"devDependencies": {
 		"@roo-code/build": "workspace:^",
@@ -777,6 +791,7 @@
 		"@vscode/vsce": "3.3.2",
 		"dotenv": "^16.4.7",
 		"esbuild": "^0.25.0",
+		"esbuild-wasm": "^0.25.0",
 		"execa": "^9.5.2",
 		"glob": "^11.1.0",
 		"mkdirp": "^3.0.1",
