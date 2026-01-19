@@ -55,15 +55,19 @@ object DisposableTracker {
      */
     fun disposeAll() {
         logger.warn("Disposing all tracked resources (${disposables.size} total)")
-        disposables.forEach { (name, disposable) ->
-            try {
-                disposable.dispose()
-                logger.info("Disposed: $name")
-            } catch (e: Exception) {
-                logger.error("Failed to dispose $name", e)
+        try {
+            disposables.forEach { (name, disposable) ->
+                try {
+                    disposable.dispose()
+                    logger.info("Disposed: $name")
+                } catch (e: Exception) {
+                    logger.error("Failed to dispose $name", e)
+                }
             }
+        } finally {
+            // Always clear the registry, even if an error occurred during disposal
+            disposables.clear()
         }
-        disposables.clear()
     }
     
     /**

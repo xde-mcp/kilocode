@@ -65,16 +65,16 @@ class ScopeRegistryTest {
         ScopeRegistry.register("test-scope", scope)
         
         assertTrue(
-            ScopeRegistry.getActiveScopes()["test-scope"] == true,
-            "Scope should be active initially"
+            "Scope should be active initially",
+            ScopeRegistry.getActiveScopes()["test-scope"] == true
         )
         
         scope.cancel()
         
         // After cancellation, scope should be inactive
         assertFalse(
-            ScopeRegistry.getActiveScopes()["test-scope"] == true,
-            "Scope should be inactive after cancellation"
+            "Scope should be inactive after cancellation",
+            ScopeRegistry.getActiveScopes()["test-scope"] == true
         )
     }
     
@@ -121,8 +121,8 @@ class ScopeRegistryTest {
         // Cancel the first scope - registry should still show active (because scope2 is active)
         scope1.cancel()
         assertTrue(
-            ScopeRegistry.getActiveScopes()["test-scope"] == true,
-            "Scope should still be active (scope2)"
+            "Scope should still be active (scope2)",
+            ScopeRegistry.getActiveScopes()["test-scope"] == true
         )
         
         scope2.cancel()
