@@ -32,9 +32,6 @@ export const SkillItemCard: React.FC<SkillItemCardProps> = ({ skill }) => {
 								{displayName}
 							</Button>
 						</h3>
-						<p className="text-sm text-vscode-descriptionForeground my-0">
-							{t("marketplace:skills.category", { category: displayCategory })}
-						</p>
 					</div>
 				</div>
 				<div className="flex items-center gap-1">
