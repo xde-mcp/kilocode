@@ -154,6 +154,21 @@ export const internationalZAiModels = {
 		cacheReadsPrice: 0.11,
 		description:
 			"GLM-4.7 is Zhipu's latest model with built-in thinking capabilities enabled by default. It provides enhanced reasoning for complex tasks while maintaining fast response times.",
+		preferredIndex: 1,
+	},
+	"glm-4.7-flash": {
+		maxTokens: 16_384,
+		contextWindow: 200_000,
+		supportsImages: false,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 0,
+		outputPrice: 0,
+		cacheWritesPrice: 0,
+		cacheReadsPrice: 0,
+		description: "GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
+		preferredIndex: 2,
 	},
 	"glm-4-32b-0414-128k": {
 		maxTokens: 16_384,
@@ -285,6 +300,21 @@ export const mainlandZAiModels = {
 		cacheReadsPrice: 0.057,
 		description:
 			"GLM-4.7 is Zhipu's latest model with built-in thinking capabilities enabled by default. It provides enhanced reasoning for complex tasks while maintaining fast response times.",
+		preferredIndex: 1,
+	},
+	"glm-4.7-flash": {
+		maxTokens: 16_384,
+		contextWindow: 204_800,
+		supportsImages: false,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 0,
+		outputPrice: 0,
+		cacheWritesPrice: 0,
+		cacheReadsPrice: 0,
+		description: "GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
+		preferredIndex: 2,
 	},
 } as const satisfies Record<string, ModelInfo>
 
