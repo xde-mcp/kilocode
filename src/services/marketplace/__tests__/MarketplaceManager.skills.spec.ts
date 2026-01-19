@@ -1,6 +1,8 @@
 // npx vitest services/marketplace/__tests__/MarketplaceManager.skills.spec.ts
 // kilocode_change - new file
 
+import * as path from "path"
+
 import { MarketplaceManager } from "../MarketplaceManager"
 
 // Mock CloudService
@@ -101,9 +103,14 @@ describe("MarketplaceManager - Skills", () => {
 		it("should detect installed skills in project directory", async () => {
 			const fs = await import("fs/promises")
 
+			// Use path.join for cross-platform compatibility
+			const projectSkillsPath = path.join("/test/workspace", ".kilocode", "skills")
+			const testSkillPath = path.join(projectSkillsPath, "test-skill", "SKILL.md")
+			const anotherSkillPath = path.join(projectSkillsPath, "another-skill", "SKILL.md")
+
 			// Mock readdir to return skill directories
 			vi.mocked(fs.readdir).mockImplementation(async (dirPath: any) => {
-				if (dirPath === "/test/workspace/.kilocode/skills") {
+				if (dirPath === projectSkillsPath) {
 					return [
 						{ name: "test-skill", isDirectory: () => true },
 						{ name: "another-skill", isDirectory: () => true },
@@ -114,10 +121,7 @@ describe("MarketplaceManager - Skills", () => {
 
 			// Mock access to check for SKILL.md files
 			vi.mocked(fs.access).mockImplementation(async (filePath: any) => {
-				if (
-					filePath === "/test/workspace/.kilocode/skills/test-skill/SKILL.md" ||
-					filePath === "/test/workspace/.kilocode/skills/another-skill/SKILL.md"
-				) {
+				if (filePath === testSkillPath || filePath === anotherSkillPath) {
 					return undefined
 				}
 				throw new Error("ENOENT")
@@ -135,9 +139,13 @@ describe("MarketplaceManager - Skills", () => {
 		it("should detect installed skills in global directory", async () => {
 			const fs = await import("fs/promises")
 
+			// Use path.join for cross-platform compatibility
+			const globalSkillsPath = path.join("/home/user/.kilocode", "skills")
+			const globalSkillFilePath = path.join(globalSkillsPath, "global-skill", "SKILL.md")
+
 			// Mock readdir to return skill directories
 			vi.mocked(fs.readdir).mockImplementation(async (dirPath: any) => {
-				if (dirPath === "/home/user/.kilocode/skills") {
+				if (dirPath === globalSkillsPath) {
 					return [{ name: "global-skill", isDirectory: () => true }] as any
 				}
 				throw new Error("ENOENT")
@@ -145,7 +153,7 @@ describe("MarketplaceManager - Skills", () => {
 
 			// Mock access to check for SKILL.md files
 			vi.mocked(fs.access).mockImplementation(async (filePath: any) => {
-				if (filePath === "/home/user/.kilocode/skills/global-skill/SKILL.md") {
+				if (filePath === globalSkillFilePath) {
 					return undefined
 				}
 				throw new Error("ENOENT")
@@ -162,9 +170,13 @@ describe("MarketplaceManager - Skills", () => {
 		it("should not include directories without SKILL.md", async () => {
 			const fs = await import("fs/promises")
 
+			// Use path.join for cross-platform compatibility
+			const projectSkillsPath = path.join("/test/workspace", ".kilocode", "skills")
+			const validSkillPath = path.join(projectSkillsPath, "valid-skill", "SKILL.md")
+
 			// Mock readdir to return skill directories
 			vi.mocked(fs.readdir).mockImplementation(async (dirPath: any) => {
-				if (dirPath === "/test/workspace/.kilocode/skills") {
+				if (dirPath === projectSkillsPath) {
 					return [
 						{ name: "valid-skill", isDirectory: () => true },
 						{ name: "invalid-skill", isDirectory: () => true },
@@ -175,7 +187,7 @@ describe("MarketplaceManager - Skills", () => {
 
 			// Mock access to only succeed for valid-skill
 			vi.mocked(fs.access).mockImplementation(async (filePath: any) => {
-				if (filePath === "/test/workspace/.kilocode/skills/valid-skill/SKILL.md") {
+				if (filePath === validSkillPath) {
 					return undefined
 				}
 				throw new Error("ENOENT")
