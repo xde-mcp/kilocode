@@ -360,6 +360,7 @@ export class SimpleInstaller {
 			const existingData = JSON.parse(existing)
 
 			if (existingData?.mcpServers) {
+				// kilocode change removed parsing logic which wasn't necessary as evidenced by types
 				const serverName = item.id
 				delete existingData.mcpServers[serverName]
 
