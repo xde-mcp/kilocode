@@ -2,9 +2,9 @@
 sidebar_label: Bring Your Own Key (BYOK)
 ---
 
-# Bring Your Own Key (BYOK) for Kilo Gateway
+# Bring Your Own Key (BYOK)
 
-Bring Your Own Key (BYOK) lets you use your own API keys when using the Kilo Gateway, including Kilo platform features like Code Reviews and Cloud Agents.
+Bring Your Own Key (BYOK) lets you use your own API keys when using the Kilo Gateway, while retaining Kilo platform features like Code Reviews and Cloud Agents.
 
 A user or organization may want to use BYOK to:
 
@@ -36,6 +36,12 @@ Kilo Gateway currently supports BYOK keys for these providers:
 - When you use the **Kilo Gateway** provider, Kilo checks if there’s a BYOK key for the selected model’s provider.
 - If a matching BYOK key exists, the request is routed using your key.
 - If the key is invalid, the request fails. It does not fall back to using Kilo's keys.
+
+## Using BYOK in the Extensions and CLI
+
+- BYOK works with the Kilo Gateway provider. Users should ensure that is set as the active [provider](connecting-providers).
+- Select a model from a provider configured for BYOK, for example Claude Sonnet 4.5 if you configured BYOK for Anthropic.
+- (Optional) Validate with the provider that traffic is being served by that key.
 
 ## Limitations
 
