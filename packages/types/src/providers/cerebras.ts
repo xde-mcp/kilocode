@@ -23,6 +23,7 @@ export const cerebrasModels = {
 		supportsImages: false,
 		supportsPromptCache: false,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0,
 		outputPrice: 0,
 		description:
