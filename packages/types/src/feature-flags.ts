@@ -12,9 +12,3 @@ export const MODEL_SELECTION_ENABLED = process.env.NODE_ENV === "development"
  * Enable extreme snooze values for autocomplete in development mode.
  */
 export const EXTREME_SNOOZE_VALUES_ENABLED = process.env.NODE_ENV === "development"
-
-/**
- * Skills marketplace is now enabled for all users.
- * @deprecated This flag is no longer needed - skills marketplace is always enabled.
- */
-export const SKILLS_MARKETPLACE_ENABLED = true
