@@ -265,9 +265,9 @@ const config: Config = {
 			{
 				id: "llms-txt",
 				name: "Kilo Code Documentation",
-				description: "Comprehensive documentation for Kilo Code, an AI-powered coding assistant for VS Code",
-				url: "https://kilocode.ai/docs",
-				email: "support@kilocode.ai",
+				description: "Comprehensive documentation for Kilo Code, an AI-powered coding assistant for VS Code, Jetbrains, CLI & Cloud",
+				url: "https://kilo.ai/docs",
+				email: "hi@kilocode.ai",
 			},
 		],
 	],
