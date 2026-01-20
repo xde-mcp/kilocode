@@ -157,6 +157,7 @@ export const providerNames = [
 	"virtual-quota-fallback",
 	"synthetic",
 	"inception",
+	"apertis",
 	// kilocode_change end
 	"sambanova",
 	"vertex",
@@ -724,6 +725,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	ovhcloud: "ovhCloudAiEndpointsModelId",
 	inception: "inceptionLabsModelId",
 	"sap-ai-core": "sapAiCoreModelId",
+	apertis: "apiModelId",
 	// kilocode_change end
 	groq: "apiModelId",
 	baseten: "apiModelId",
@@ -884,6 +886,7 @@ export const MODELS_BY_PROVIDER: Record<
 	inception: { id: "inception", label: "Inception", models: [] },
 	kilocode: { id: "kilocode", label: "Kilocode", models: [] },
 	"virtual-quota-fallback": { id: "virtual-quota-fallback", label: "Virtual Quota Fallback", models: [] },
+	apertis: { id: "apertis", label: "Apertis", models: [] },
 	// kilocode_change end
 	deepinfra: { id: "deepinfra", label: "DeepInfra", models: [] },
 	"vercel-ai-gateway": { id: "vercel-ai-gateway", label: "Vercel AI Gateway", models: [] },
