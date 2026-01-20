@@ -16,9 +16,7 @@
 			"incentive": "Probier Roo kostenlos aus"
 		}
 	},
-<<<<<<< HEAD
 	"chooseProvider": "Um seine Magie zu entfalten, benötigt Kilo Code einen API-Schlüssel.",
-=======
 	"landing": {
 		"greeting": "Willkommen bei Roo Code!",
 		"introduction": "Mit einer Reihe von integrierten und erweiterbaren Modi ermöglicht dir Roo Code, zu planen, zu architektieren, zu coden, zu debuggen und deine Produktivität wie nie zuvor zu steigern.",
@@ -26,7 +24,6 @@
 		"getStarted": "Roo-Konto erstellen",
 		"noAccount": "oder ohne Konto verwenden"
 	},
->>>>>>> upstream-at-v3.41.2
 	"providerSignup": {
 		"heading": "Wähle deinen Anbieter",
 		"chooseProvider": "Roo braucht einen LLM-Anbieter, um zu funktionieren. Wähle einen aus, um loszulegen. Du kannst später mehr hinzufügen.",

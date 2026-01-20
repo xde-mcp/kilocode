@@ -49,7 +49,7 @@ type OpenRouterProviderParams = {
 	zdr?: boolean
 }
 
-import { safeJsonParse } from "../../shared/safeJsonParse"
+import { safeJsonParse } from "@roo-code/core" // kilocode_change
 import { isAnyRecognizedKiloCodeError } from "../../shared/kilocode/errorUtils"
 import { OpenAIError } from "openai"
 // kilocode_change end

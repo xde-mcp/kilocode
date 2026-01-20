@@ -38,6 +38,7 @@ import {
 	ExperimentId,
 	checkoutDiffPayloadSchema,
 	checkoutRestorePayloadSchema,
+	requestCheckpointRestoreApprovalPayloadSchema, // kilocode_change
 } from "@roo-code/types"
 import { customToolRegistry } from "@roo-code/core"
 import { CloudService } from "@roo-code/cloud"
@@ -1281,7 +1282,9 @@ export const webviewMessageHandler = async (
 					if (Object.keys(sapAiCoreDeployments).length > 0) {
 						provider.postMessageToWebview({
 							type: "sapAiCoreDeployments",
-							sapAiCoreDeployments: sapAiCoreDeployments,
+							sapAiCoreDeployments:
+								// Cast to canonical type from @roo-code/types to avoid drift.
+								sapAiCoreDeployments as unknown as import("@roo-code/types").DeploymentRecord, // kilocode_change
 						})
 					}
 				} catch (error) {
@@ -2810,7 +2813,7 @@ export const webviewMessageHandler = async (
 
 				// Go back to Personal when no longer part of the current set organization
 				const organizationExists = (response.data.organizations ?? []).some(
-					({ id }) => id === apiConfiguration?.kilocodeOrganizationId,
+					({ id }: { id: string }) => id === apiConfiguration?.kilocodeOrganizationId,
 				)
 				if (apiConfiguration?.kilocodeOrganizationId && !organizationExists) {
 					provider.upsertProviderProfile(currentApiConfigName ?? "default", {

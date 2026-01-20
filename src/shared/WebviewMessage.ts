@@ -1,4 +1,19 @@
-export type { WebviewMessage, WebViewMessagePayload } from "@roo-code/types"
+export type {
+	WebviewMessage,
+	WebViewMessagePayload,
+	MaybeTypedWebviewMessage,
+	GlobalStateValue,
+	ProfileData,
+	UserOrganizationWithApiKey,
+	ProfileDataResponsePayload,
+	BalanceDataResponsePayload,
+	SeeNewChangesPayload,
+	TaskHistoryRequestPayload,
+	TaskHistoryResponsePayload,
+	TasksByIdRequestPayload,
+	TasksByIdResponsePayload,
+	UpdateGlobalStateMessage,
+} from "@roo-code/types" // kilocode_change
 
 export type ClineAskResponse =
 	| "yesButtonClicked"

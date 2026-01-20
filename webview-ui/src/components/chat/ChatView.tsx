@@ -195,18 +195,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const autoApproveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 	const userRespondedRef = useRef<boolean>(false)
 	const [currentFollowUpTs, setCurrentFollowUpTs] = useState<number | null>(null)
-	// kilocode_change start: unused
-	// const [aggregatedCostsMap, setAggregatedCostsMap] = useState<
-	// 	Map<
-	// 		string,
-	// 		{
-	// 			totalCost: number
-	// 			ownCost: number
-	// 			childrenCost: number
-	// 		}
-	// 	>
-	// >(new Map())
-	// kilocode_change end
+	// kilocode_change: keep map for `taskWithAggregatedCosts` updates (even if not currently displayed)
+	const [_aggregatedCostsMap, setAggregatedCostsMap] = useState<
+		Map<
+			string,
+			{
+				totalCost: number
+				ownCost: number
+				childrenCost: number
+			}
+		>
+	>(new Map())
 
 	const clineAskRef = useRef(clineAsk)
 	useEffect(() => {
@@ -955,11 +954,13 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					break
 				case "taskWithAggregatedCosts":
 					if (message.text && message.aggregatedCosts) {
-						setAggregatedCostsMap((prev) => {
-							const newMap = new Map(prev)
-							newMap.set(message.text!, message.aggregatedCosts!)
-							return newMap
-						})
+						setAggregatedCostsMap(
+							(prev: Map<string, { totalCost: number; ownCost: number; childrenCost: number }>) => {
+								const newMap = new Map(prev)
+								newMap.set(message.text!, message.aggregatedCosts!)
+								return newMap
+							},
+						)
 					}
 					break
 			}

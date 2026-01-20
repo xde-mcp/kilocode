@@ -43,7 +43,7 @@ export const parseOllamaModel = (
 	baseUrl?: string,
 	numCtx?: number,
 	// kilocode_change end
-): ModelInfo => {
+): ModelInfo | null => {
 	// kilocode_change start
 	const contextKey = Object.keys(rawModel.model_info).find((k) => k.includes("context_length"))
 	const contextLengthFromModelInfo =

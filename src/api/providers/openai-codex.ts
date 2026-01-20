@@ -418,7 +418,11 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 							content.push({ type: "input_text", text: block.text })
 						} else if (block.type === "image") {
 							const image = block as Anthropic.Messages.ImageBlockParam
-							const imageUrl = `data:${image.source.media_type};base64,${image.source.data}`
+							// `image.source` is a union (base64 vs url). Only base64 sources have `media_type`/`data`.
+							const imageUrl =
+								"media_type" in image.source && "data" in image.source
+									? `data:${image.source.media_type};base64,${image.source.data}`
+									: image.source.url // kilocode_change
 							content.push({ type: "input_image", image_url: imageUrl })
 						} else if (block.type === "tool_result") {
 							const result =

@@ -61,8 +61,19 @@ export interface McpMarketplaceCatalog {
 }
 
 export interface McpDownloadResponse {
+	// kilocode_change: This payload is used both for the marketplace download details
+	// modal and for older install flows. Keep it permissive for backwards compatibility.
 	mcpId: string
-	success: boolean
+	// Marketplace download details (preferred)
+	githubUrl?: string
+	name?: string
+	author?: string
+	description?: string
+	readmeContent?: string
+	llmsInstallationContent?: string
+	requiresApiKey?: boolean
+	// Legacy install response
+	success?: boolean
 	error?: string
 	installPath?: string
 }
@@ -759,6 +770,7 @@ export interface WebviewMessage {
 		| "checkpointDiff"
 		| "checkpointRestore"
 		| "requestCheckpointRestoreApproval" // kilocode_change: Request approval for checkpoint restore
+		| "seeNewChanges" // kilocode_change
 		| "deleteMcpServer"
 		| "insertTextToChatArea" // kilocode_change
 		| "humanRelayResponse" // kilocode_change
@@ -824,7 +836,9 @@ export interface WebviewMessage {
 		| "openGlobalKeybindings" // kilocode_change
 		| "getKeybindings" // kilocode_change
 		| "setHistoryPreviewCollapsed" // kilocode_change
+		| "setReasoningBlockCollapsed" // kilocode_change
 		| "openExternal"
+		| "openInBrowser" // kilocode_change
 		| "filterMarketplaceItems"
 		| "marketplaceButtonClicked"
 		| "installMarketplaceItem"
@@ -838,6 +852,7 @@ export interface WebviewMessage {
 		| "editMessage" // kilocode_change
 		| "systemNotificationsEnabled" // kilocode_change
 		| "dismissNotificationId" // kilocode_change
+		| "fetchKilocodeNotifications" // kilocode_change
 		| "tasksByIdRequest" // kilocode_change
 		| "taskHistoryRequest" // kilocode_change
 		| "updateGlobalState" // kilocode_change
@@ -954,6 +969,7 @@ export interface WebviewMessage {
 	setting?: string
 	slug?: string
 	device?: MicrophoneDevice | null // kilocode_change: Microphone device for stt:selectDevice
+	language?: string // kilocode_change: Optional language hint for stt:start
 	modeConfig?: ModeConfig
 	timeout?: number
 	payload?: WebViewMessagePayload
