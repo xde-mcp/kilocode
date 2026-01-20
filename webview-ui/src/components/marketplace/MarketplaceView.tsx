@@ -173,7 +173,7 @@ export function MarketplaceView({ stateManager, onDone, targetTab, hideHeader = 
 								}>
 								Modes
 							</button>
-							{/* kilocode_change - Skills tab button */}
+							{/* kilocode_change start - Skills tab button */}
 							<button
 								className="flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
 								onClick={() =>
@@ -205,7 +205,7 @@ export function MarketplaceView({ stateManager, onDone, targetTab, hideHeader = 
 							headerMessage={modesHeaderMessage} // kilocode_change
 						/>
 					)}
-					{/* kilocode_change - Skills marketplace tab content */}
+					{/* kilocode_change start - Skills marketplace tab content */}
 					{state.activeTab === "skills" && (
 						<SkillsMarketplace skills={stateManager.getSkills()} isLoading={state.isFetching} />
 					)}
