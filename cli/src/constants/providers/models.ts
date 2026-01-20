@@ -48,6 +48,7 @@ import {
 	minimaxModels,
 	minimaxDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
+	apertisDefaultModelId,
 } from "@roo-code/types"
 
 /**
@@ -166,6 +167,7 @@ export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = 
 	synthetic: null,
 	"sap-ai-core": null,
 	baseten: null,
+	apertis: null, // kilocode_change
 }
 
 /**
@@ -218,6 +220,7 @@ export const PROVIDER_MODEL_FIELD: Record<ProviderName, string | null> = {
 	synthetic: null,
 	"sap-ai-core": "sapAiCoreModelId",
 	baseten: null,
+	apertis: "apertisModelId", // kilocode_change
 }
 
 /**
@@ -284,6 +287,7 @@ export const DEFAULT_MODEL_IDS: Partial<Record<ProviderName, string>> = {
 	roo: rooDefaultModelId,
 	"gemini-cli": geminiCliDefaultModelId,
 	ovhcloud: ovhCloudAiEndpointsDefaultModelId,
+	apertis: apertisDefaultModelId, // kilocode_change
 }
 
 /**
