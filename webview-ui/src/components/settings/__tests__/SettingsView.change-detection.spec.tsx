@@ -16,6 +16,10 @@ import { useExtensionState } from "@src/context/ExtensionStateContext"
 
 // Mock the extension state context
 vi.mock("@src/context/ExtensionStateContext", () => ({
+	// kilocode_change: some components access the raw context via `useContext(ExtensionStateContext)`
+	ExtensionStateContext: React.createContext<any>(undefined),
+	// kilocode_change: keep provider available in case a component tree expects it
+	ExtensionStateContextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 	useExtensionState: vi.fn(),
 }))
 
