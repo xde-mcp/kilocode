@@ -24,8 +24,6 @@ Kilo Deploy lets you ship **Next.js** and **static sites** directly from Kilo Co
 
 **Package managers:** npm, pnpm, yarn, bun — automatically detected.
 
-**Version management:** [`.tool-versions`](https://mise.jdx.dev/dev-tools/) files are supported for specifying runtime versions.
-
 ---
 
 ## Prerequisites
