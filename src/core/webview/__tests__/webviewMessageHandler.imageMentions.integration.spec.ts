@@ -4,19 +4,10 @@ import * as os from "os"
 
 // Must mock dependencies before importing the handler module.
 vi.mock("../../../api/providers/fetchers/modelCache")
+vi.mock("vscode")
 
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import type { ClineProvider } from "../ClineProvider"
-
-vi.mock("vscode", () => ({
-	window: {
-		showInformationMessage: vi.fn(),
-		showErrorMessage: vi.fn(),
-	},
-	workspace: {
-		workspaceFolders: [{ uri: { fsPath: "/mock/workspace" } }],
-	},
-}))
 
 // Mock imageHelpers - use actual implementations for functions that need real file access
 vi.mock("../../tools/helpers/imageHelpers", async (importOriginal) => {

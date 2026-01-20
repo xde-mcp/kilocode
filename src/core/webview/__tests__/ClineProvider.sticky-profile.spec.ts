@@ -14,6 +14,10 @@ vi.mock("vscode", () => ({
 		joinPath: vi.fn(),
 		file: vi.fn(),
 	},
+	UIKind: {
+		Desktop: 1,
+		Web: 2,
+	},
 	CodeActionKind: {
 		QuickFix: { value: "quickfix" },
 		RefactorRewrite: { value: "refactor.rewrite" },
@@ -26,6 +30,7 @@ vi.mock("vscode", () => ({
 		showWarningMessage: vi.fn(),
 		showErrorMessage: vi.fn(),
 		onDidChangeActiveTextEditor: vi.fn(() => ({ dispose: vi.fn() })),
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })), // kilocode_change
 	},
 	workspace: {
 		getConfiguration: vi.fn().mockReturnValue({
@@ -44,6 +49,7 @@ vi.mock("vscode", () => ({
 		uriScheme: "vscode",
 		language: "en",
 		appName: "Visual Studio Code",
+		uiKind: 1,
 	},
 	ExtensionMode: {
 		Production: 1,
@@ -180,6 +186,7 @@ vi.mock("@roo-code/telemetry", () => ({
 				trackEvent: vi.fn(),
 				trackError: vi.fn(),
 				setProvider: vi.fn(),
+				updateIdentity: vi.fn().mockResolvedValue(undefined), // kilocode_change
 				captureModeSwitch: vi.fn(),
 			}
 		},

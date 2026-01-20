@@ -5,6 +5,7 @@ import type { Mock } from "vitest"
 // Mock dependencies - must come before imports
 vi.mock("../../../services/search/file-search")
 vi.mock("../../ignore/RooIgnoreController")
+vi.mock("vscode")
 
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import type { ClineProvider } from "../ClineProvider"
@@ -12,16 +13,6 @@ import { searchWorkspaceFiles } from "../../../services/search/file-search"
 import { RooIgnoreController } from "../../ignore/RooIgnoreController"
 
 const mockSearchWorkspaceFiles = searchWorkspaceFiles as Mock<typeof searchWorkspaceFiles>
-
-vi.mock("vscode", () => ({
-	window: {
-		showInformationMessage: vi.fn(),
-		showErrorMessage: vi.fn(),
-	},
-	workspace: {
-		workspaceFolders: [{ uri: { fsPath: "/mock/workspace" } }],
-	},
-}))
 
 describe("webviewMessageHandler - searchFiles with RooIgnore filtering", () => {
 	let mockClineProvider: ClineProvider

@@ -140,7 +140,7 @@ describe("BaseProvider", () => {
 			expect(result.properties.level1.properties.level2.properties.level3.additionalProperties).toBe(false)
 		})
 
-		it("should convert nullable types to non-nullable", () => {
+		it("should preserve nullable union types (OpenAI strict mode)", () => {
 			const schema = {
 				type: "object",
 				properties: {
@@ -150,7 +150,7 @@ describe("BaseProvider", () => {
 
 			const result = provider.testConvertToolSchemaForOpenAI(schema)
 
-			expect(result.properties.name.type).toBe("string")
+			expect(result.properties.name.type).toEqual(["string", "null"])
 		})
 
 		it("should return non-object schemas unchanged", () => {
