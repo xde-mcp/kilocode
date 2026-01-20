@@ -241,6 +241,9 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new OVHcloudAIEndpointsHandler(options)
 		case "sap-ai-core":
 			return new SapAiCoreHandler(options)
+		case "apertis":
+			// TODO: Implement ApertisHandler in Task 4
+			throw new Error("Apertis provider not yet implemented")
 		// kilocode_change end
 		case "io-intelligence":
 			return new IOIntelligenceHandler(options)
