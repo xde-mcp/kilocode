@@ -469,7 +469,7 @@ const ApiOptions = ({
 				)
 			}
 		},
-		[setApiConfigurationField, apiConfiguration, kilocodeDefaultModel],
+		[setApiConfigurationField, apiConfiguration, organizationAllowList, kilocodeDefaultModel],
 	)
 
 	const modelValidationError = useMemo(() => {

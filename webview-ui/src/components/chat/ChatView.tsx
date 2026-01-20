@@ -10,7 +10,6 @@ import { Trans } from "react-i18next"
 
 import { useDebounceEffect } from "@src/utils/useDebounceEffect"
 import { appendImages } from "@src/utils/imageUtils"
-import { getCostBreakdownIfNeeded } from "@src/utils/costFormatting"
 
 import type { ClineAsk, ClineSayTool, ClineMessage, ExtensionMessage, AudioType } from "@roo-code/types"
 
@@ -196,16 +195,18 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const autoApproveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 	const userRespondedRef = useRef<boolean>(false)
 	const [currentFollowUpTs, setCurrentFollowUpTs] = useState<number | null>(null)
-	const [aggregatedCostsMap, setAggregatedCostsMap] = useState<
-		Map<
-			string,
-			{
-				totalCost: number
-				ownCost: number
-				childrenCost: number
-			}
-		>
-	>(new Map())
+	// kilocode_change start: unused
+	// const [aggregatedCostsMap, setAggregatedCostsMap] = useState<
+	// 	Map<
+	// 		string,
+	// 		{
+	// 			totalCost: number
+	// 			ownCost: number
+	// 			childrenCost: number
+	// 		}
+	// 	>
+	// >(new Map())
+	// kilocode_change end
 
 	const clineAskRef = useRef(clineAsk)
 	useEffect(() => {
@@ -734,26 +735,6 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	)
 
 	const startNewTask = useCallback(() => vscode.postMessage({ type: "clearTask" }), [])
-
-	// Handle stop button click from textarea
-	const handleStopTask = useCallback(() => {
-		vscode.postMessage({ type: "cancelTask" })
-		setDidClickCancel(true)
-	}, [setDidClickCancel])
-
-	// Handle enqueue button click from textarea
-	const handleEnqueueCurrentMessage = useCallback(() => {
-		const text = inputValue.trim()
-		if (text || selectedImages.length > 0) {
-			vscode.postMessage({
-				type: "queueMessage",
-				text,
-				images: selectedImages,
-			})
-			setInputValue("")
-			setSelectedImages([])
-		}
-	}, [inputValue, selectedImages])
 
 	// This logic depends on the useEffect[messages] above to set clineAsk,
 	// after which buttons are shown and we then send an askResponse to the

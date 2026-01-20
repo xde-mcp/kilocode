@@ -457,7 +457,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 		})
 	}, [])
 
-	const setDebug = useCallback((debug: boolean) => {
+	const _setDebug = useCallback((debug: boolean) => {
 		setCachedState((prevState) => {
 			if (prevState.debug === debug) {
 				return prevState

@@ -1,5 +1,4 @@
 import React, { HTMLAttributes } from "react"
-import { FlaskConical } from "lucide-react"
 
 import type { Experiments, ImageGenerationProvider } from "@roo-code/types"
 

@@ -1056,7 +1056,7 @@ export interface ProfileDataResponsePayload {
 export interface BalanceDataResponsePayload {
 	// New: Payload for balance data
 	success: boolean
-	data?: any // Replace 'any' with a more specific type if known for balance
+	data?: unknown
 	error?: string
 }
 

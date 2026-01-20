@@ -94,24 +94,24 @@ export type McpResourceResponse = {
 }
 
 export type McpToolCallResponse = {
-	_meta?: Record<string, any>
+	_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 	content: Array<
 		| {
 				type: "text"
 				text: string
-				_meta?: Record<string, any> // kilocode_change
+				_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 		  }
 		| {
 				type: "image"
 				data: string
 				mimeType: string
-				_meta?: Record<string, any> // kilocode_change
+				_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 		  }
 		| {
 				type: "audio"
 				data: string
 				mimeType: string
-				_meta?: Record<string, any> // kilocode_change
+				_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 		  }
 		| {
 				type: "resource"
@@ -120,9 +120,9 @@ export type McpToolCallResponse = {
 					mimeType?: string
 					text?: string
 					blob?: string
-					_meta?: Record<string, any> // kilocode_change
+					_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 				}
-				_meta?: Record<string, any> // kilocode_change
+				_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 		  }
 		// kilocode_change start
 		| {
@@ -131,11 +131,11 @@ export type McpToolCallResponse = {
 				name?: string
 				description?: string
 				mimeType?: string
-				_meta?: Record<string, any>
+				_meta?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 		  }
 		// kilocode_change end
 	>
-	structuredContent?: Record<string, any> // kilocode_change
+	structuredContent?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 	isError?: boolean
 }
 
