@@ -7,7 +7,10 @@ import type { TokenUsage, ToolUsage, ToolName, ClineMessage } from "@roo-code/ty
 
 // kilocode_change start
 import { type ClineSayTool } from "@roo-code/types"
-import { safeJsonParse } from "@roo-code/core"
+// Use relative import to avoid circular dependency - importing from "@roo-code/core"
+// causes the main index.ts to load, which includes custom-tools/esbuild-runner.ts
+// that depends on Node-only packages like execa, breaking browser builds.
+import { safeJsonParse } from "./safeJsonParse.js"
 // kilocode_change end
 
 export type ParsedApiReqStartedTextType = {
