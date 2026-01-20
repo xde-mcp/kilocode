@@ -14,7 +14,7 @@ export const MODEL_SELECTION_ENABLED = process.env.NODE_ENV === "development"
 export const EXTREME_SNOOZE_VALUES_ENABLED = process.env.NODE_ENV === "development"
 
 /**
- * Enable skills marketplace tab in development mode.
- * This allows developers to test the skills marketplace feature before it's ready for production.
+ * Skills marketplace is now enabled for all users.
+ * @deprecated This flag is no longer needed - skills marketplace is always enabled.
  */
-export const SKILLS_MARKETPLACE_ENABLED = process.env.NODE_ENV === "development"
+export const SKILLS_MARKETPLACE_ENABLED = true
