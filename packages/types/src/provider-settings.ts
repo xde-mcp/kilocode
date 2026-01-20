@@ -156,9 +156,7 @@ export const providerNames = [
 	"minimax",
 	"gemini-cli",
 	"virtual-quota-fallback",
-	"synthetic",
-	"inception",
-	"apertis",
+	// Note: apertis, synthetic, inception are in dynamicProviders, no need to duplicate here
 	// kilocode_change end
 	"sambanova",
 	"vertex",
