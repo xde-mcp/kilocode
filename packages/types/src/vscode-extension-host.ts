@@ -758,6 +758,7 @@ export interface WebviewMessage {
 		| "openCustomModesSettings"
 		| "checkpointDiff"
 		| "checkpointRestore"
+		| "requestCheckpointRestoreApproval" // kilocode_change: Request approval for checkpoint restore
 		| "deleteMcpServer"
 		| "insertTextToChatArea" // kilocode_change
 		| "humanRelayResponse" // kilocode_change
@@ -887,6 +888,7 @@ export interface WebviewMessage {
 		| "sessionShow" // kilocode_change
 		| "sessionSelect" // kilocode_change
 		| "singleCompletion" // kilocode_change
+		| "openExtensionSettings" // kilocode_change: Open extension settings from CLI
 		| "openDebugApiHistory"
 		| "openDebugUiHistory"
 		| "startDeviceAuth" // kilocode_change: Start device auth flow
