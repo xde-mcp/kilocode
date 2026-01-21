@@ -9,7 +9,7 @@ import {
 	VSCodeTextField,
 } from "@vscode/webview-ui-toolkit/react"
 import { Trans } from "react-i18next"
-import { ChevronDown, X, Upload, Download } from "lucide-react"
+import { ChevronDown, X, Upload, Download, MessageSquare } from "lucide-react"
 
 import { ModeConfig, GroupEntry, PromptComponent, ToolGroup, modeConfigSchema } from "@roo-code/types"
 
@@ -52,6 +52,7 @@ import {
 import { DeleteModeDialog } from "@src/components/modes/DeleteModeDialog"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
 import { OrganizationModeWarning } from "../kilocode/OrganizationModeWarning"
+import { SectionHeader } from "../settings/SectionHeader"
 
 // Get all available groups that should show in prompts view
 const availableGroups = (Object.keys(TOOL_GROUPS) as ToolGroup[]).filter((group) => !TOOL_GROUPS[group].alwaysAvailable)
@@ -65,7 +66,9 @@ function getGroupName(group: GroupEntry): ToolGroup {
 	return Array.isArray(group) ? group[0] : group
 }
 
-const ModesView = () => {
+// kilocode_change start - add hideHeader prop
+const ModesView = ({ hideHeader = false }: { hideHeader?: boolean }) => {
+	// kilocode_change end
 	const { t } = useAppTranslation()
 
 	const {
@@ -600,6 +603,17 @@ const ModesView = () => {
 
 	return (
 		<div>
+			{/* kilocode_change start - conditionally render header */}
+			{!hideHeader && (
+				<SectionHeader>
+					<div className="flex items-center gap-2">
+						<MessageSquare className="w-4" />
+						<div>{t("prompts:title")}</div>
+					</div>
+				</SectionHeader>
+			)}
+			{/* kilocode_change end */}
+
 			<Section>
 				<div>
 					<div onClick={(e) => e.stopPropagation()} className="flex justify-between items-center mb-3">
