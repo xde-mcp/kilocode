@@ -112,6 +112,8 @@ const sectionNames = [
 	"contextManagement",
 	"terminal",
 	"agentBehaviour", // kilocode_change - renamed from "modes" and merged with "mcp"
+	// "modes",  // kilocode_change - now used inside AgentBehaviourView
+	// "mcp",  // kilocode_change - now used inside AgentBehaviourView
 	"prompts",
 	"ui",
 	"experimental",
@@ -1155,8 +1157,12 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 						/>
 					)}
 
-					{/* Agent Behaviour Section - kilocode_change: merged modes and mcp */}
+					{/* kilocode_change: Agent Behaviour Section - kilocode_change: merged modes and mcp */}
 					{activeTab === "agentBehaviour" && <AgentBehaviourView />}
+
+					{/* kilocode_change: removed: Modes Section */}
+
+					{/*kilocode_change: removed: MCP Section */}
 
 					{/* Prompts Section */}
 					{activeTab === "prompts" && (
