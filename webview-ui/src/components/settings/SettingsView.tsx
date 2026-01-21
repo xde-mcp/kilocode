@@ -81,7 +81,6 @@ import { LanguageSettings } from "./LanguageSettings"
 import { About } from "./About"
 import { Section } from "./Section"
 import PromptsSettings from "./PromptsSettings"
-// import McpView from "../kilocodeMcp/McpView" // kilocode_change - no longer needed, only TabButton is exported
 import deepEqual from "fast-deep-equal" // kilocode_change
 import { GhostServiceSettingsView } from "../kilocode/settings/GhostServiceSettings" // kilocode_change
 import { SlashCommandsSettings } from "./SlashCommandsSettings"

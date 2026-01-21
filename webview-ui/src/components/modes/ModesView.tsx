@@ -68,8 +68,8 @@ function getGroupName(group: GroupEntry): ToolGroup {
 
 // kilocode_change start - add hideHeader prop
 const ModesView = ({ hideHeader = false }: { hideHeader?: boolean }) => {
-	const { t } = useAppTranslation()
 	// kilocode_change end
+	const { t } = useAppTranslation()
 
 	const {
 		customModePrompts,
