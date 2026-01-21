@@ -3691,6 +3691,19 @@ export const webviewMessageHandler = async (
 			if (marketplaceManager && message.mpItem && message.mpInstallOptions) {
 				try {
 					await marketplaceManager.removeInstalledMarketplaceItem(message.mpItem, message.mpInstallOptions)
+
+					// kilocode_change start: Force skills refresh after skill deletion
+					// If the removed item is a skill, force a refresh of the SkillsManager
+					// to ensure the cache is updated before sending data to the webview
+					if (message.mpItem.type === "skill") {
+						const skillsManager = provider.getSkillsManager()
+						if (skillsManager) {
+							await skillsManager.discoverSkills()
+						}
+						await provider.postSkillsDataToWebview()
+					}
+					// kilocode_change end
+
 					await provider.postStateToWebview()
 
 					// Send success message to webview
