@@ -351,9 +351,9 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 
 				// Build Codex-specific headers. Authorization is provided by the SDK apiKey.
 				const codexHeaders: Record<string, string> = {
-					originator: "roo-code",
+					originator: "kilo-code", // kilocode_change
 					session_id: taskId || this.sessionId,
-					"User-Agent": `roo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`,
+					"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
 					...(accountId ? { "ChatGPT-Account-Id": accountId } : {}),
 				}
 
@@ -497,9 +497,9 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
 			Authorization: `Bearer ${accessToken}`,
-			originator: "roo-code",
+			originator: "kilo-code", // kilocode_change
 			session_id: taskId || this.sessionId,
-			"User-Agent": `roo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`,
+			"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
 		}
 
 		// Add ChatGPT-Account-Id if available (required for organization subscriptions)
@@ -1061,9 +1061,9 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 			const headers: Record<string, string> = {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${accessToken}`,
-				originator: "roo-code",
+				originator: "kilo-code", // kilocode_change
 				session_id: this.sessionId,
-				"User-Agent": `roo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`,
+				"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
 			}
 
 			// Add ChatGPT-Account-Id if available
