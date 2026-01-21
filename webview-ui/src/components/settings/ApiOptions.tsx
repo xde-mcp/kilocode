@@ -267,7 +267,7 @@ const ApiOptions = ({
 	// stops typing.
 	useDebounce(
 		() => {
-			if (selectedProvider === "openai") {
+			if (selectedProvider === "openai" || selectedProvider === "openai-responses") {
 				// Use our custom headers state to build the headers object.
 				const headerObject = convertHeadersToObject(customHeaders)
 
@@ -507,6 +507,7 @@ const ApiOptions = ({
 		const slugs: Record<string, string> = {
 			"openai-native": "openai",
 			openai: "openai-compatible",
+			"openai-responses": "openai-compatible",
 		}
 
 		const slug = slugs[selectedProvider] || selectedProvider
@@ -764,6 +765,15 @@ const ApiOptions = ({
 			)}
 
 			{selectedProvider === "openai" && (
+				<OpenAICompatible
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					organizationAllowList={organizationAllowList}
+					modelValidationError={modelValidationError}
+					simplifySettings={fromWelcomeView}
+				/>
+			)}
+			{selectedProvider === "openai-responses" && (
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration}
 					setApiConfigurationField={setApiConfigurationField}

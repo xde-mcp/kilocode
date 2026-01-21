@@ -52,6 +52,7 @@ import {
 	DeepInfraHandler,
 	MiniMaxHandler,
 	BasetenHandler,
+	OpenAiCompatibleResponsesHandler,
 } from "./providers"
 // kilocode_change start
 import { KilocodeOpenrouterHandler } from "./providers/kilocode-openrouter"
@@ -191,6 +192,8 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new OpenAiCodexHandler(options)
 		case "openai-native":
 			return new OpenAiNativeHandler(options)
+		case "openai-responses":
+			return new OpenAiCompatibleResponsesHandler(options)
 		case "deepseek":
 			return new DeepSeekHandler(options)
 		case "doubao":
