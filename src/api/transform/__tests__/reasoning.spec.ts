@@ -896,8 +896,9 @@ describe("reasoning.ts", () => {
 			// Must not send thinkingLevel to a model that doesn't support it
 			expect(result).toBeUndefined()
 		})
-	})
 		// kilocode_change end
+	})
+
 	describe("Integration scenarios", () => {
 		it("should handle model with requiredReasoningBudget across all providers", () => {
 			const modelWithRequired: ModelInfo = {
