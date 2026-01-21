@@ -30,6 +30,7 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 	private client: OpenAI
 	private readonly providerName = "OpenAI Compatible (Responses)"
 	private abortController?: AbortController
+	private readonly toolCallIdentityById = new Map<string, { id: string; name: string }>()
 
 	constructor(options: ApiHandlerOptions) {
 		super()
@@ -404,6 +405,9 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 		if (eventType === "response.output_item.added" || eventType === "response.output_item.done") {
 			const item = event.item
 			if (item?.type === "function_call") {
+				if (item.call_id && item.name) {
+					this.toolCallIdentityById.set(item.call_id, { id: item.call_id, name: item.name })
+				}
 				yield {
 					type: "tool_call",
 					id: item.call_id,
@@ -418,11 +422,18 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 			eventType === "response.tool_call_arguments.delta" ||
 			eventType === "response.function_call_arguments.delta"
 		) {
+			const callId = event.call_id
+			const cachedIdentity = callId ? this.toolCallIdentityById.get(callId) : undefined
+			const resolvedId = event.call_id || cachedIdentity?.id
+			const resolvedName = event.name || cachedIdentity?.name
+			if (!resolvedId || !resolvedName) {
+				return
+			}
 			yield {
 				type: "tool_call_partial",
 				index: 0,
-				id: event.call_id,
-				name: event.name,
+				id: resolvedId,
+				name: resolvedName,
 				arguments: event.delta,
 			}
 			return
@@ -432,7 +443,9 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 			eventType === "response.tool_call_arguments.done" ||
 			eventType === "response.function_call_arguments.done"
 		) {
-			yield { type: "tool_call_end", id: event.call_id }
+			if (event.call_id) {
+				yield { type: "tool_call_end", id: event.call_id }
+			}
 			return
 		}
 
