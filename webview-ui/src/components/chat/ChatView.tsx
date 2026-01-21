@@ -171,7 +171,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const [enableButtons, setEnableButtons] = useState<boolean>(false)
 	const [primaryButtonText, setPrimaryButtonText] = useState<string | undefined>(undefined)
 	const [secondaryButtonText, setSecondaryButtonText] = useState<string | undefined>(undefined)
-	const [_didClickCancel, setDidClickCancel] = useState(false)
+	const [didClickCancel, setDidClickCancel] = useState(false)
 	const virtuosoRef = useRef<VirtuosoHandle>(null)
 	const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({})
 	const prevExpandedRowsRef = useRef<Record<number, boolean>>()
@@ -869,7 +869,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			setClineAsk(undefined)
 			setEnableButtons(false)
 		},
-		[clineAsk, startNewTask, isStreaming, setDidClickCancel],
+		[clineAsk, startNewTask, isStreaming],
 	)
 
 	const handleTaskCloseButtonClick = useCallback(() => startNewTask(), [startNewTask]) // kilocode_change
@@ -1526,7 +1526,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		vscode.postMessage({ type: "condenseTaskContextRequest", text: taskId })
 	}
 
-	const areButtonsVisible = showScrollToBottom || primaryButtonText || secondaryButtonText
+	const areButtonsVisible = showScrollToBottom || primaryButtonText || secondaryButtonText || isStreaming
 
 	const showTelemetryBanner = telemetrySetting === "unset" // kilocode_change
 
@@ -1737,7 +1737,11 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					{areButtonsVisible && (
 						<div
 							className={`flex h-9 items-center mb-1 px-[15px] ${
-								showScrollToBottom ? "opacity-100" : enableButtons ? "opacity-100" : "opacity-50"
+								showScrollToBottom
+									? "opacity-100"
+									: enableButtons || (isStreaming && !didClickCancel) // kilocode_change
+										? "opacity-100"
+										: "opacity-50"
 							}`}>
 							{showScrollToBottom ? (
 								<StandardTooltip content={t("chat:scrollToBottom")}>
@@ -1756,7 +1760,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								</StandardTooltip>
 							) : (
 								<>
-									{primaryButtonText && (
+									{primaryButtonText && !isStreaming && (
 										<StandardTooltip
 											content={
 												primaryButtonText === t("chat:retry.title")
@@ -1787,27 +1791,31 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 											</Button>
 										</StandardTooltip>
 									)}
-									{secondaryButtonText && (
+									{/* kilocode_change start */}
+									{(secondaryButtonText || isStreaming) && (
 										<StandardTooltip
 											content={
-												secondaryButtonText === t("chat:startNewTask.title")
-													? t("chat:startNewTask.tooltip")
-													: secondaryButtonText === t("chat:reject.title")
-														? t("chat:reject.tooltip")
-														: secondaryButtonText === t("chat:terminate.title")
-															? t("chat:terminate.tooltip")
-															: secondaryButtonText === t("chat:killCommand.title")
-																? t("chat:killCommand.tooltip")
-																: undefined
+												isStreaming
+													? t("chat:cancel.tooltip")
+													: secondaryButtonText === t("chat:startNewTask.title")
+														? t("chat:startNewTask.tooltip")
+														: secondaryButtonText === t("chat:reject.title")
+															? t("chat:reject.tooltip")
+															: secondaryButtonText === t("chat:terminate.title")
+																? t("chat:terminate.tooltip")
+																: secondaryButtonText === t("chat:killCommand.title")
+																	? t("chat:killCommand.tooltip")
+																	: undefined
 											}>
 											<Button
-												disabled={!enableButtons}
+												disabled={!enableButtons && !(isStreaming && !didClickCancel)}
 												className={isStreaming ? "flex-[2] ml-0" : "flex-1 ml-[6px]"}
 												onClick={() => handleSecondaryButtonClick(inputValue, selectedImages)}>
-												{secondaryButtonText}
+												{isStreaming ? t("chat:cancel.title") : secondaryButtonText}
 											</Button>
 										</StandardTooltip>
 									)}
+									{/* kilocode_change end */}
 								</>
 							)}
 						</div>
