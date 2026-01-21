@@ -489,6 +489,27 @@ customModes:
 - **Hyphens for List Items:** List items start with a hyphen and a space (e.g., `- read`)
 - **Validate Your YAML:** Use online YAML validators or your editor's built-in validation
 
+## Contributing to the Marketplace
+
+Have you created a custom mode that others might find useful? Share it with the community by contributing to the [Kilo Marketplace](https://github.com/Kilo-Org/kilo-marketplace)!
+
+### How to Submit Your Mode
+
+1. **Export your mode**: Use the Export Mode button (download icon) in the Modes view to save your mode as a YAML file
+2. **Test thoroughly**: Ensure your mode works correctly across different scenarios
+3. **Fork the marketplace repository**: Visit [github.com/Kilo-Org/kilo-marketplace](https://github.com/Kilo-Org/kilo-marketplace) and create a fork
+4. **Add your mode**: Place your mode YAML file in the appropriate directory following the repository's structure
+5. **Submit a pull request**: Create a PR with a clear description of what your mode does and when it's useful
+
+### Submission Guidelines
+
+- Include a clear, descriptive name and description
+- Document any specific use cases or requirements
+- Test your mode with different AI models if possible
+- Follow the [contribution guidelines](https://github.com/Kilo-Org/kilo-marketplace/blob/main/CONTRIBUTING.md) in the marketplace repository
+
+For more details on contributing to Kilo Code, see the [Contributing Guide](/contributing).
+
 ## Community Gallery
 
 Ready to explore more? Check out the [Show and Tell](https://github.com/Kilo-Org/kilocode/discussions/categories/show-and-tell) to discover and share custom modes created by the community!
