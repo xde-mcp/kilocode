@@ -8,7 +8,7 @@ Each mode—including custom ones—features **Sticky Models**. This means Kilo 
 
 ## Why Use Custom Modes?
 
-- **Specialization:** Create modes optimized for specific tasks, like "Documentation Writer," "Test Engineer," or "Refactoring Expert"
+- **Specialization:** Create modes optimized for specific tasks, like "Documentation Specialist," "Test Engineer," or "Refactoring Expert"
 - **Safety:** Restrict a mode's access to sensitive files or commands. For example, a "Review Mode" could be limited to read-only operations
 - **Experimentation:** Safely experiment with different prompts and configurations without affecting other modes
 - **Team Collaboration:** Share custom modes with your team to standardize workflows
