@@ -47,7 +47,7 @@ Easily share, back up, and template your custom modes. This feature lets you exp
 
 **Exporting a Mode:**
 
-1. Navigate to the Modes view
+1. Navigate to Settings > Agent Behaviour > Modes
 2. Select the mode you wish to export
 3. Click the Export Mode button (download icon)
 4. Choose a location to save the `.yaml` file
@@ -55,7 +55,7 @@ Easily share, back up, and template your custom modes. This feature lets you exp
 
 **Importing a Mode:**
 
-1. Click the Import Mode button (upload icon) in the Modes view
+1. Click the Import Mode button (upload icon) in the Agent Behaviour > Modes view
 2. Select the mode's YAML file
 3. Choose the import level:
     - **Project:** Available only in current workspace (saved to `.kilocodemodes` file)
@@ -83,9 +83,9 @@ Create a new mode called "Documentation Writer". It should only be able to read 
 
 Kilo Code will guide you through the process, prompting for necessary information and creating the mode using the preferred YAML format.
 
-### 2. Using the Prompts Tab
+### 2. Using the Agent Behaviour Tab
 
-1. **Open Prompts Tab:** Click the <Codicon name="notebook" /> icon in the Kilo Code top menu bar
+1. **Open Agent Behaviour Tab:** Click the <Codicon name="gear" /> icon in the Kilo Code top menu bar to open Settings, then select the `Agent Behaviour` tab and the `Modes` sub-tab
 2. **Create New Mode:** Click the <Codicon name="add" /> button to the right of the Modes heading
 3. **Fill in Fields:**
 
@@ -99,8 +99,8 @@ The interface provides fields for Name, Slug, Description, Save Location, Role D
 
 You can directly edit the configuration files to create or modify custom modes. This method offers the most control over all properties. Kilo Code now supports both YAML (preferred) and JSON formats.
 
-- **Global Modes:** Edit the `custom_modes.yaml` (preferred) or `custom_modes.json` file. Access it via Prompts Tab > <Codicon name="gear" /> (Settings Menu icon next to "Global Prompts") > "Edit Global Modes"
-- **Project Modes:** Edit the `.kilocodemodes` file (which can be YAML or JSON) in your project root. Access it via Prompts Tab > <Codicon name="gear" /> (Settings Menu icon next to "Project Prompts") > "Edit Project Modes"
+- **Global Modes:** Edit the `custom_modes.yaml` (preferred) or `custom_modes.json` file. Access it via Settings > Agent Behaviour > Modes > <Codicon name="gear" /> (Settings Menu icon next to "Global Modes") > "Edit Global Modes"
+- **Project Modes:** Edit the `.kilocodemodes` file (which can be YAML or JSON) in your project root. Access it via Settings > Agent Behaviour > Modes > <Codicon name="gear" /> (Settings Menu icon next to "Project Modes") > "Edit Project Modes"
 
 These files define an array/list of custom modes.
 
