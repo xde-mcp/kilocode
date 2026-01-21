@@ -2924,6 +2924,13 @@ export const webviewMessageHandler = async (
 			break
 		}
 
+		// kilocode_change start
+		case "refreshSkills": {
+			await provider.postSkillsDataToWebview()
+			break
+		}
+		// kilocode_change end
+
 		case "toggleRule": {
 			if (message.rulePath && typeof message.enabled === "boolean" && typeof message.isGlobal === "boolean") {
 				await toggleRule(
