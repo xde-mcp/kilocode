@@ -408,11 +408,17 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 				if (item.call_id && item.name) {
 					this.toolCallIdentityById.set(item.call_id, { id: item.call_id, name: item.name })
 				}
-				yield {
-					type: "tool_call",
-					id: item.call_id,
-					name: item.name,
-					arguments: item.arguments,
+
+				if (eventType === "response.output_item.done") {
+					const args = typeof item.arguments === "string" ? item.arguments : undefined
+					if (item.call_id && item.name && args) {
+						yield {
+							type: "tool_call",
+							id: item.call_id,
+							name: item.name,
+							arguments: args,
+						}
+					}
 				}
 			}
 			return
