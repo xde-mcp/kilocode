@@ -2,7 +2,7 @@
 sidebar_label: ChatGPT Plus/Pro
 ---
 
-## Quickstart: Connect your ChatGPT subscription to Kilo Code
+# Connect your ChatGPT subscription to Kilo Code
 
 1. Open Kilo Code settings (click the gear icon <Codicon name="gear" /> in the Kilo Code panel).
 2. In **API Provider**, select **OpenAI – ChatGPT Plus/Pro**.
