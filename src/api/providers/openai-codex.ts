@@ -25,6 +25,8 @@ import { isMcpTool } from "../../utils/mcp-name"
 import { openAiCodexOAuthManager } from "../../integrations/openai-codex/oauth"
 import { t } from "../../i18n"
 
+import { DEFAULT_HEADERS } from "./constants" // kilocode-change
+
 // Get extension version for User-Agent header
 const extensionVersion: string = require("../../package.json").version ?? "unknown"
 
@@ -354,7 +356,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 				const codexHeaders: Record<string, string> = {
 					originator: "kilo-code", // kilocode_change
 					session_id: taskId || this.sessionId,
-					"User-Agent": `kilo-code/${extensionVersion} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+					"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 					...(accountId ? { "ChatGPT-Account-Id": accountId } : {}),
 				}
 
@@ -497,7 +499,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 			Authorization: `Bearer ${accessToken}`,
 			originator: "kilo-code", // kilocode_change
 			session_id: taskId || this.sessionId,
-			"User-Agent": `kilo-code/${extensionVersion} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+			"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 		}
 
 		// Add ChatGPT-Account-Id if available (required for organization subscriptions)
@@ -1061,7 +1063,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 				Authorization: `Bearer ${accessToken}`,
 				originator: "kilo-code", // kilocode_change
 				session_id: this.sessionId,
-				"User-Agent": `kilo-code/${extensionVersion} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+				"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 			}
 
 			// Add ChatGPT-Account-Id if available
