@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP servery"
+			"mcp": "MCP servery",
+			"agentBehaviour": "Chování agenta"
 		},
 		"provider": {
 			"account": "Účet Kilo Code",

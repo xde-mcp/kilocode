@@ -34,7 +34,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "خوادم MCP"
+			"mcp": "خوادم MCP",
+			"agentBehaviour": "سلوك الوكيل"
 		},
 		"codeIndex": {
 			"embeddingBatchSizeLabel": "حجم دفعة التضمين",

@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP 서버"
+			"mcp": "MCP 서버",
+			"agentBehaviour": "에이전트 동작"
 		},
 		"provider": {
 			"account": "Kilo Code 계정",

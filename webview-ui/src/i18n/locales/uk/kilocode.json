@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP сервери"
+			"mcp": "MCP сервери",
+			"agentBehaviour": "Поведінка агента"
 		},
 		"contextManagement": {
 			"allowVeryLargeReads": {

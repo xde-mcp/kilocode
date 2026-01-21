@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "Máy chủ MCP"
+			"mcp": "Máy chủ MCP",
+			"agentBehaviour": "Hành vi của Agent"
 		},
 		"contextManagement": {
 			"allowVeryLargeReads": {

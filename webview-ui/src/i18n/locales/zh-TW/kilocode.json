@@ -33,7 +33,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP 伺服器"
+			"mcp": "MCP 伺服器",
+			"agentBehaviour": "代理行為"
 		},
 		"contextManagement": {
 			"allowVeryLargeReads": {

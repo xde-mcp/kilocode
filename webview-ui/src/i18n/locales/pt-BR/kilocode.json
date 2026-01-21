@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "Servidores MCP"
+			"mcp": "Servidores MCP",
+			"agentBehaviour": "Comportamento do Agente"
 		},
 		"provider": {
 			"account": "Conta Kilo Code",

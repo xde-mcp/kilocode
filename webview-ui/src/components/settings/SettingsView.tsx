@@ -28,7 +28,7 @@ import {
 	// SquareSlash, // kilocode_change
 	// Glasses, // kilocode_change
 	Plug,
-	Server,
+	// Server, // kilocode_change - no longer needed, merged into agentBehaviour
 	Users2,
 } from "lucide-react"
 
@@ -81,12 +81,13 @@ import { LanguageSettings } from "./LanguageSettings"
 import { About } from "./About"
 import { Section } from "./Section"
 import PromptsSettings from "./PromptsSettings"
-import McpView from "../kilocodeMcp/McpView" // kilocode_change
+// import McpView from "../kilocodeMcp/McpView" // kilocode_change - no longer needed, only TabButton is exported
 import deepEqual from "fast-deep-equal" // kilocode_change
 import { GhostServiceSettingsView } from "../kilocode/settings/GhostServiceSettings" // kilocode_change
 import { SlashCommandsSettings } from "./SlashCommandsSettings"
 import { UISettings } from "./UISettings"
-import ModesView from "../modes/ModesView"
+import AgentBehaviourView from "../kilocode/settings/AgentBehaviourView" // kilocode_change - new combined view
+// import ModesView from "../modes/ModesView" // kilocode_change - now used inside AgentBehaviourView
 // import McpView from "../mcp/McpView" // kilocode_change: own view
 
 export const settingsTabsContainer = "flex flex-1 overflow-hidden [&.narrow_.tab-label]:hidden"
@@ -111,13 +112,11 @@ const sectionNames = [
 	"notifications",
 	"contextManagement",
 	"terminal",
-	"modes",
-	"mcp",
+	"agentBehaviour", // kilocode_change - renamed from "modes" and merged with "mcp"
 	"prompts",
 	"ui",
 	"experimental",
 	"language",
-	"mcp",
 	"about",
 ] as const
 
@@ -738,7 +737,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 	const sections: { id: SectionName; icon: LucideIcon }[] = useMemo(
 		() => [
 			{ id: "providers", icon: Plug },
-			{ id: "modes", icon: Users2 },
+			{ id: "agentBehaviour", icon: Users2 }, // kilocode_change - renamed from "modes" and merged with "mcp"
 			{ id: "autoApprove", icon: CheckCheck },
 			// { id: "slashCommands", icon: SquareSlash }, // kilocode_change: needs work to be re-introduced
 			{ id: "browser", icon: SquareMousePointer },
@@ -752,7 +751,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 			// { id: "ui", icon: Glasses }, // kilocode_change: we have our own display section
 			{ id: "experimental", icon: FlaskConical },
 			{ id: "language", icon: Globe },
-			{ id: "mcp", icon: Server },
+			// { id: "mcp", icon: Server }, // kilocode_change - merged into agentBehaviour
 			{ id: "about", icon: Info },
 		],
 		[], // kilocode_change
@@ -886,11 +885,13 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 								<div className={cn("flex items-center gap-2", isCompactMode && "justify-center")}>
 									<Icon className="w-4 h-4" />
 									<span className="tab-label">
-										{id === "mcp"
-											? t(`kilocode:settings.sections.mcp`)
+										{/* kilocode_change start - handle agentBehaviour and ghost labels */}
+										{id === "agentBehaviour"
+											? t(`kilocode:settings.sections.agentBehaviour`)
 											: id === "ghost"
 												? t(`kilocode:ghost.title`)
 												: t(`settings:sections.${id}`)}
+										{/* kilocode_change end */}
 									</span>
 								</div>
 							</TabTrigger>
@@ -907,11 +908,13 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 										</TooltipTrigger>
 										<TooltipContent side="right" className="text-base">
 											<p className="m-0">
-												{id === "mcp"
-													? t(`kilocode:settings.sections.mcp`)
+												{/* kilocode_change start - handle agentBehaviour and ghost labels */}
+												{id === "agentBehaviour"
+													? t(`kilocode:settings.sections.agentBehaviour`)
 													: id === "ghost"
 														? t(`kilocode:ghost.title`)
 														: t(`settings:sections.${id}`)}
+												{/* kilocode_change end */}
 											</p>
 										</TooltipContent>
 									</Tooltip>
@@ -1153,11 +1156,8 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>((props, ref)
 						/>
 					)}
 
-					{/* Modes Section */}
-					{activeTab === "modes" && <ModesView />}
-
-					{/* MCP Section */}
-					{activeTab === "mcp" && <McpView />}
+					{/* Agent Behaviour Section - kilocode_change: merged modes and mcp */}
+					{activeTab === "agentBehaviour" && <AgentBehaviourView />}
 
 					{/* Prompts Section */}
 					{activeTab === "prompts" && (

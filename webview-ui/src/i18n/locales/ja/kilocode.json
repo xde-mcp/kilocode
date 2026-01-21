@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCPサーバー"
+			"mcp": "MCPサーバー",
+			"agentBehaviour": "エージェントの動作"
 		},
 		"provider": {
 			"account": "Kilo Code アカウント",

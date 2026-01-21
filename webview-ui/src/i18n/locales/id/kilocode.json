@@ -31,7 +31,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "Server MCP"
+			"mcp": "Server MCP",
+			"agentBehaviour": "Perilaku Agen"
 		},
 		"provider": {
 			"account": "Akun Kilo Code",

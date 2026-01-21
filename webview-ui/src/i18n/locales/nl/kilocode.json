@@ -38,7 +38,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP-servers"
+			"mcp": "MCP-servers",
+			"agentBehaviour": "Agentgedrag"
 		},
 		"provider": {
 			"account": "Kilo Code Account",

@@ -31,7 +31,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP Sunucuları"
+			"mcp": "MCP Sunucuları",
+			"agentBehaviour": "Ajan Davranışı"
 		},
 		"contextManagement": {
 			"allowVeryLargeReads": {

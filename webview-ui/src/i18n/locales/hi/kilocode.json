@@ -31,7 +31,8 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP सर्वर"
+			"mcp": "MCP सर्वर",
+			"agentBehaviour": "एजेंट व्यवहार"
 		},
 		"provider": {
 			"account": "Kilo Code खाता",
