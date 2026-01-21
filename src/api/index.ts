@@ -34,7 +34,6 @@ import {
 	LiteLLMHandler,
 	// kilocode_change start
 	VirtualQuotaFallbackHandler,
-	GeminiCliHandler,
 	SyntheticHandler,
 	OVHcloudAIEndpointsHandler,
 	SapAiCoreHandler,
