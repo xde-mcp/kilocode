@@ -1,17 +1,19 @@
 import { EventEmitter } from "events"
 import { createVSCodeAPIMock, type IdentityInfo, type ExtensionContext } from "./VSCode.js"
-import { logs } from "../services/logs.js"
-import type { ExtensionMessage, WebviewMessage, ExtensionState, ModeConfig } from "../types/messages.js"
-import { getTelemetryService } from "../services/telemetry/index.js"
+import { logs } from "../utils/logger.js"
+import type { ExtensionMessage, WebviewMessage, ExtensionState, ModeConfig } from "../types/index.js"
 import { argsToMessage } from "../utils/safe-stringify.js"
 
 export interface ExtensionHostOptions {
 	workspacePath: string
 	extensionBundlePath: string // Direct path to extension.js
 	extensionRootPath: string // Root path for extension assets
+	vscodeAppRoot?: string // VS Code app root path (for finding bundled binaries like ripgrep)
 	identity?: IdentityInfo // Identity information for VSCode environment
 	customModes?: ModeConfig[] // Custom modes configuration
 	appendSystemPrompt?: string // Custom text to append to system prompt
+	appName?: string // App name for API identification (e.g., 'wrapper|agent-manager|cli|1.0.0')
+	providerSettings?: Record<string, unknown> // Provider settings (API configuration) to use from startup
 }
 
 // Extension module interface
@@ -213,7 +215,12 @@ export class ExtensionHost extends EventEmitter {
 		return false
 	}
 
-	async activate(): Promise<ExtensionAPI> {
+	async activate(resumeData?: {
+		sessionId: string
+		uiMessages: unknown[]
+		apiConversationHistory: unknown[]
+		metadata: { sessionId: string; title: string; createdAt: string; mode: string | null }
+	}): Promise<ExtensionAPI> {
 		if (this.isActivated) {
 			return this.getAPI()
 		}
@@ -227,6 +234,12 @@ export class ExtensionHost extends EventEmitter {
 
 			// Setup VSCode API mock
 			await this.setupVSCodeAPIMock()
+
+			// Pre-seed task history for resume BEFORE loading extension
+			// This ensures the extension can find the task when showTaskWithId is called
+			if (resumeData) {
+				await this.preSeedTaskHistoryForResume(resumeData)
+			}
 
 			// Load the extension (console already intercepted)
 			await this.loadExtension()
@@ -315,9 +328,6 @@ export class ExtensionHost extends EventEmitter {
 				return
 			}
 
-			// Track extension message sent
-			getTelemetryService().trackExtensionMessageSent(message.type)
-
 			// Handle webviewDidLaunch for CLI state synchronization
 			if (message.type === "webviewDidLaunch") {
 				// Prevent rapid-fire webviewDidLaunch messages
@@ -359,11 +369,18 @@ export class ExtensionHost extends EventEmitter {
 	}
 
 	private async setupVSCodeAPIMock(): Promise<void> {
+		// Use memory-only storage when providerSettings is provided (agent-manager mode)
+		// This avoids file I/O and CLI path dependencies
+		const useMemoryOnlyStorage = !!this.options.providerSettings
+
 		// Create VSCode API mock with extension root path for assets and identity
 		this.vscodeAPI = createVSCodeAPIMock(
 			this.options.extensionRootPath,
 			this.options.workspacePath,
 			this.options.identity,
+			this.options.vscodeAppRoot,
+			this.options.appName,
+			useMemoryOnlyStorage,
 		) as VSCodeAPIMock
 
 		// Set global vscode object for the extension
@@ -470,9 +487,10 @@ export class ExtensionHost extends EventEmitter {
 		try {
 			logs.info(`Loading extension from: ${extensionPath}`, "ExtensionHost")
 
-			// Use createRequire to load CommonJS module from ES module context
+			// Use createRequire to load CommonJS module
+			// We use extensionPath as the base since that's what we're loading from
 			const { createRequire } = await import("module")
-			const require = createRequire(import.meta.url)
+			const require = createRequire(extensionPath)
 
 			// Get Module class for interception
 			const Module = await import("module")
@@ -643,9 +661,6 @@ export class ExtensionHost extends EventEmitter {
 							oldestIds.forEach((id) => processedMessageIds.delete(id))
 						}
 
-						// Track extension message received
-						getTelemetryService().trackExtensionMessageReceived(message.type)
-
 						// Only forward specific message types that are important for CLI
 						switch (message.type) {
 							case "state":
@@ -757,15 +772,20 @@ export class ExtensionHost extends EventEmitter {
 	}
 
 	private initializeState(): void {
+		// Use provider settings if passed (from agent-manager), otherwise use empty defaults
+		const apiConfiguration = this.options.providerSettings
+			? (this.options.providerSettings as ExtensionState["apiConfiguration"])
+			: {
+					apiProvider: "kilocode" as const,
+					kilocodeToken: "",
+					kilocodeModel: "",
+					kilocodeOrganizationId: "",
+				}
+
 		// Create initial state that matches the extension's expected structure
 		this.currentState = {
 			version: "1.0.0",
-			apiConfiguration: {
-				apiProvider: "kilocode",
-				kilocodeToken: "",
-				kilocodeModel: "",
-				kilocodeOrganizationId: "",
-			},
+			apiConfiguration,
 			chatMessages: [],
 			mode: "code",
 			customModes: this.options.customModes || [],
@@ -791,8 +811,11 @@ export class ExtensionHost extends EventEmitter {
 			...(this.options.appendSystemPrompt && { appendSystemPrompt: this.options.appendSystemPrompt }),
 		}
 
-		// The CLI will inject the actual configuration through updateState
-		logs.debug("Initial state created, waiting for CLI config injection", "ExtensionHost")
+		if (this.options.providerSettings) {
+			logs.info("Initial state created with provider settings from caller", "ExtensionHost")
+		} else {
+			logs.debug("Initial state created with empty defaults, waiting for config injection", "ExtensionHost")
+		}
 		this.broadcastStateUpdate()
 	}
 
@@ -1101,6 +1124,135 @@ export class ExtensionHost extends EventEmitter {
 
 		// Broadcast the updated state
 		this.broadcastStateUpdate()
+	}
+
+	/**
+	 * Write task history files to local storage so showTaskWithId can load them.
+	 * This is used for resuming sessions when the history is passed from the parent process.
+	 */
+	public async writeTaskHistory(
+		taskId: string,
+		uiMessages: unknown[],
+		apiConversationHistory: unknown[],
+	): Promise<void> {
+		const fs = await import("fs/promises")
+		const path = await import("path")
+
+		// Get the global storage path from the vscode mock context
+		const globalStoragePath = this.vscodeAPI?.context?.globalStoragePath
+		if (!globalStoragePath) {
+			throw new Error("Cannot write task history: globalStoragePath not available")
+		}
+
+		const tasksDir = path.join(globalStoragePath, "tasks")
+		const taskDir = path.join(tasksDir, taskId)
+
+		// Create task directory if it doesn't exist
+		await fs.mkdir(taskDir, { recursive: true })
+
+		// Write UI messages
+		const uiMessagesPath = path.join(taskDir, "ui_messages.json")
+		await fs.writeFile(uiMessagesPath, JSON.stringify(uiMessages, null, 2), "utf-8")
+
+		// Write API conversation history
+		const apiHistoryPath = path.join(taskDir, "api_conversation_history.json")
+		await fs.writeFile(apiHistoryPath, JSON.stringify(apiConversationHistory, null, 2), "utf-8")
+
+		logs.info("Task history written to local storage", "ExtensionHost", {
+			taskId,
+			taskDir,
+			uiMessagesCount: uiMessages.length,
+			apiHistoryCount: apiConversationHistory.length,
+		})
+	}
+
+	/**
+	 * Pre-seed task history for resume BEFORE extension activation.
+	 * This ensures the extension can find the task when showTaskWithId is called.
+	 * Called by activate() when resumeData is provided.
+	 */
+	private async preSeedTaskHistoryForResume(resumeData: {
+		sessionId: string
+		uiMessages: unknown[]
+		apiConversationHistory: unknown[]
+		metadata: { sessionId: string; title: string; createdAt: string; mode: string | null }
+	}): Promise<void> {
+		logs.info("Pre-seeding task history for resume", "ExtensionHost", {
+			sessionId: resumeData.sessionId,
+			uiMessagesCount: resumeData.uiMessages.length,
+			apiHistoryCount: resumeData.apiConversationHistory.length,
+		})
+
+		// 1. Add HistoryItem to globalState
+		await this.addHistoryItemForResume(
+			resumeData.sessionId,
+			resumeData.metadata.title,
+			new Date(resumeData.metadata.createdAt).getTime(),
+			resumeData.metadata.mode || "code",
+		)
+
+		// 2. Write task files to disk
+		await this.writeTaskHistory(
+			resumeData.sessionId,
+			resumeData.uiMessages,
+			resumeData.apiConversationHistory,
+		)
+
+		logs.info("Task history pre-seeded successfully", "ExtensionHost")
+	}
+
+	/**
+	 * Add a HistoryItem to the taskHistory global state.
+	 * This is required before calling showTaskWithId, as the extension looks up
+	 * the task in taskHistory to get metadata before loading from files.
+	 */
+	public async addHistoryItemForResume(
+		taskId: string,
+		task: string,
+		ts: number,
+		mode: string,
+	): Promise<void> {
+		const globalState = this.vscodeAPI?.context?.globalState
+		if (!globalState) {
+			throw new Error("Cannot add history item: globalState not available")
+		}
+
+		// Get existing task history
+		const taskHistory = (globalState.get("taskHistory") as unknown[]) || []
+
+		// Check if this task already exists in history
+		const existingIndex = taskHistory.findIndex(
+			(item: unknown) => (item as { id?: string }).id === taskId
+		)
+
+		// Create the HistoryItem with minimal required fields
+		const historyItem = {
+			id: taskId,
+			number: existingIndex >= 0 ? (taskHistory[existingIndex] as { number?: number }).number || 0 : taskHistory.length + 1,
+			ts,
+			task,
+			tokensIn: 0,
+			tokensOut: 0,
+			totalCost: 0,
+			mode,
+		}
+
+		if (existingIndex >= 0) {
+			// Update existing entry
+			taskHistory[existingIndex] = historyItem
+		} else {
+			// Add new entry at the beginning (most recent first)
+			taskHistory.unshift(historyItem)
+		}
+
+		// Update global state
+		await globalState.update("taskHistory", taskHistory)
+
+		logs.info("History item added for resume", "ExtensionHost", {
+			taskId,
+			task: task.substring(0, 50) + (task.length > 50 ? "..." : ""),
+			mode,
+		})
 	}
 
 	// Methods for webview provider registration (called from VSCode API mock)

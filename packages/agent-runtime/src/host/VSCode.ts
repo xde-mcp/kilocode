@@ -1,9 +1,11 @@
 import * as fs from "fs"
 import * as path from "path"
-import { logs } from "../services/logs.js"
+import { logs } from "../utils/logger.js"
 import { KiloCodePaths } from "../utils/paths.js"
 import { Package } from "../constants/package.js"
-import { machineIdSync } from "node-machine-id"
+// Use default import for CommonJS module compatibility
+import nodeMachineId from "node-machine-id"
+const { machineIdSync } = nodeMachineId
 
 // Identity information for VSCode environment
 export interface IdentityInfo {
@@ -936,38 +938,61 @@ export class ExtensionContext {
 	public logPath: string
 	public extensionMode: ExtensionMode = ExtensionMode.Production
 
-	constructor(extensionPath: string, workspacePath: string) {
+	/**
+	 * @param extensionPath - Path to the extension root
+	 * @param workspacePath - Path to the workspace
+	 * @param useMemoryOnlyStorage - If true, use in-memory storage only (no file I/O).
+	 *        Use this for agent-manager where config comes via IPC and persistence isn't needed.
+	 */
+	constructor(extensionPath: string, workspacePath: string, useMemoryOnlyStorage = false) {
 		this.extensionPath = extensionPath
 		this.extensionUri = Uri.file(extensionPath)
 
-		// Setup storage paths using centralized path utility
-		// Initialize workspace to ensure all directories exist
-		KiloCodePaths.initializeWorkspace(workspacePath)
+		if (useMemoryOnlyStorage) {
+			// Use in-memory only storage - no file I/O, no CLI path dependency
+			// This is for agent-manager where all config comes via IPC
+			this.globalStoragePath = path.join(workspacePath, ".kilocode-agent")
+			this.globalStorageUri = Uri.file(this.globalStoragePath)
+			this.storagePath = path.join(workspacePath, ".kilocode-agent", "workspace")
+			this.storageUri = Uri.file(this.storagePath)
+			this.logPath = path.join(workspacePath, ".kilocode-agent", "logs")
+			this.logUri = Uri.file(this.logPath)
 
-		const globalStoragePath = KiloCodePaths.getGlobalStorageDir()
-		const workspaceStoragePath = KiloCodePaths.getWorkspaceStorageDir(workspacePath)
-		const logPath = KiloCodePaths.getLogsDir()
+			// Use pure in-memory mementos (no file backing)
+			this.workspaceState = new InMemoryMemento()
+			const globalMemento = new InMemoryMemento()
+			this.globalState = Object.assign(globalMemento, {
+				setKeysForSync: () => {},
+			})
+			this.secrets = new InMemorySecretStorage()
+		} else {
+			// Use file-backed storage (CLI mode)
+			KiloCodePaths.initializeWorkspace(workspacePath)
 
-		this.globalStoragePath = globalStoragePath
-		this.globalStorageUri = Uri.file(globalStoragePath)
-		this.storagePath = workspaceStoragePath
-		this.storageUri = Uri.file(workspaceStoragePath)
-		this.logPath = logPath
-		this.logUri = Uri.file(logPath)
+			const globalStoragePath = KiloCodePaths.getGlobalStorageDir()
+			const workspaceStoragePath = KiloCodePaths.getWorkspaceStorageDir(workspacePath)
+			const logPath = KiloCodePaths.getLogsDir()
 
-		// Ensure directories exist
-		this.ensureDirectoryExists(globalStoragePath)
-		this.ensureDirectoryExists(workspaceStoragePath)
-		this.ensureDirectoryExists(logPath)
+			this.globalStoragePath = globalStoragePath
+			this.globalStorageUri = Uri.file(globalStoragePath)
+			this.storagePath = workspaceStoragePath
+			this.storageUri = Uri.file(workspaceStoragePath)
+			this.logPath = logPath
+			this.logUri = Uri.file(logPath)
 
-		// Initialize state storage
-		this.workspaceState = new MemoryMemento(path.join(workspaceStoragePath, "workspace-state.json"))
-		const globalMemento = new MemoryMemento(path.join(globalStoragePath, "global-state.json"))
-		this.globalState = Object.assign(globalMemento, {
-			setKeysForSync: () => {}, // No-op for CLI
-		})
+			// Ensure directories exist
+			this.ensureDirectoryExists(globalStoragePath)
+			this.ensureDirectoryExists(workspaceStoragePath)
+			this.ensureDirectoryExists(logPath)
 
-		this.secrets = new MockSecretStorage(globalStoragePath)
+			// Initialize state storage with file backing
+			this.workspaceState = new MemoryMemento(path.join(workspaceStoragePath, "workspace-state.json"))
+			const globalMemento = new MemoryMemento(path.join(globalStoragePath, "global-state.json"))
+			this.globalState = Object.assign(globalMemento, {
+				setKeysForSync: () => {},
+			})
+			this.secrets = new MockSecretStorage(globalStoragePath)
+		}
 	}
 
 	private ensureDirectoryExists(dirPath: string): void {
@@ -1039,6 +1064,58 @@ class MemoryMemento implements Memento {
 
 	keys(): readonly string[] {
 		return Object.keys(this.data)
+	}
+}
+
+/**
+ * Pure in-memory Memento implementation (no file I/O).
+ * Used for agent-manager where persistence isn't needed.
+ */
+class InMemoryMemento implements Memento {
+	private data: Record<string, unknown> = {}
+
+	get<T>(key: string, defaultValue?: T): T | undefined {
+		const value = this.data[key]
+		return value !== undefined && value !== null ? (value as T) : defaultValue
+	}
+
+	async update(key: string, value: unknown): Promise<void> {
+		if (value === undefined) {
+			delete this.data[key]
+		} else {
+			this.data[key] = value
+		}
+	}
+
+	keys(): readonly string[] {
+		return Object.keys(this.data)
+	}
+}
+
+/**
+ * Pure in-memory SecretStorage implementation (no file I/O).
+ * Used for agent-manager where secrets come via IPC.
+ */
+class InMemorySecretStorage implements SecretStorage {
+	private secrets: Record<string, string> = {}
+	private _onDidChange = new EventEmitter<{ key: string }>()
+
+	async get(key: string): Promise<string | undefined> {
+		return this.secrets[key]
+	}
+
+	async store(key: string, value: string): Promise<void> {
+		this.secrets[key] = value
+		this._onDidChange.fire({ key })
+	}
+
+	async delete(key: string): Promise<void> {
+		delete this.secrets[key]
+		this._onDidChange.fire({ key })
+	}
+
+	get onDidChange() {
+		return this._onDidChange.event
 	}
 }
 
@@ -1993,6 +2070,22 @@ export class WindowAPI {
 			// Set up webview mock that captures messages from the extension
 			const mockWebview = {
 				postMessage: (message: unknown): Thenable<boolean> => {
+					// Debug: log what messages are being posted
+					const msgObj = message as {
+						type?: string
+						state?: { chatMessages?: unknown[]; clineMessages?: unknown[] }
+					}
+					if (msgObj.type === "state" && msgObj.state) {
+						const chatCount = msgObj.state.chatMessages?.length || 0
+						const clineCount = msgObj.state.clineMessages?.length || 0
+						const lastMsg =
+							msgObj.state.chatMessages?.[chatCount - 1] || msgObj.state.clineMessages?.[clineCount - 1]
+						logs.info(
+							`[WEBVIEW postMessage] state: chatMessages=${chatCount}, clineMessages=${clineCount}, lastType=${(lastMsg as { type?: string; say?: string; ask?: string })?.type}, lastSay=${(lastMsg as { say?: string })?.say}, lastAsk=${(lastMsg as { ask?: string })?.ask}`,
+							"VSCode.Window",
+						)
+					}
+
 					// Forward extension messages to ExtensionHost for CLI consumption
 					if ((global as unknown as { __extensionHost?: unknown }).__extensionHost) {
 						;(
@@ -2310,8 +2403,15 @@ export class CommandsAPI {
 }
 
 // Main VSCode API mock
-export function createVSCodeAPIMock(extensionRootPath: string, workspacePath: string, identity?: IdentityInfo) {
-	const context = new ExtensionContext(extensionRootPath, workspacePath)
+export function createVSCodeAPIMock(
+	extensionRootPath: string,
+	workspacePath: string,
+	identity?: IdentityInfo,
+	vscodeAppRoot?: string,
+	appName?: string,
+	useMemoryOnlyStorage = false,
+) {
+	const context = new ExtensionContext(extensionRootPath, workspacePath, useMemoryOnlyStorage)
 	const workspace = new WorkspaceAPI(workspacePath, context)
 	const window = new WindowAPI()
 	const commands = new CommandsAPI()
@@ -2320,9 +2420,14 @@ export function createVSCodeAPIMock(extensionRootPath: string, workspacePath: st
 	window.setWorkspace(workspace)
 
 	// Environment mock with identity values
+	// Use vscodeAppRoot if provided (for finding bundled binaries like ripgrep)
+	// appName format: wrapper|<source>|<type>|<version>
+	// - source: 'cli' for direct CLI, 'agent-manager' for spawned agents
+	// - type: 'cli' for CLI process
+	const resolvedAppName = appName || `wrapper|cli|cli|${Package.version}`
 	const env = {
-		appName: `wrapper|cli|cli|${Package.version}`,
-		appRoot: import.meta.dirname,
+		appName: resolvedAppName,
+		appRoot: vscodeAppRoot || import.meta.dirname,
 		language: "en",
 		machineId: identity?.machineId || machineIdSync(),
 		sessionId: identity?.sessionId || "cli-session-id",
