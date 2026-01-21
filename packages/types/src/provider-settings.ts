@@ -143,7 +143,6 @@ export const providerNames = [
 	"featherless",
 	"fireworks",
 	"gemini",
-	"gemini-cli",
 	"groq",
 	"mistral",
 	"moonshot",
@@ -155,7 +154,6 @@ export const providerNames = [
 	// kilocode_change start
 	"kilocode",
 	"minimax",
-	"gemini-cli",
 	"virtual-quota-fallback",
 	"synthetic",
 	"inception",
@@ -335,13 +333,6 @@ const geminiSchema = apiModelIdProviderModelSchema.extend({
 	enableUrlContext: z.boolean().optional(),
 	enableGrounding: z.boolean().optional(),
 })
-
-// kilocode_change start
-const geminiCliSchema = apiModelIdProviderModelSchema.extend({
-	geminiCliOAuthPath: z.string().optional(),
-	geminiCliProjectId: z.string().optional(),
-})
-// kilocode_change end
 
 const openAiCodexSchema = apiModelIdProviderModelSchema.extend({
 	// No additional settings needed - uses OAuth authentication
@@ -572,7 +563,6 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	fakeAiSchema.merge(z.object({ apiProvider: z.literal("fake-ai") })),
 	xaiSchema.merge(z.object({ apiProvider: z.literal("xai") })),
 	// kilocode_change start
-	geminiCliSchema.merge(z.object({ apiProvider: z.literal("gemini-cli") })),
 	kilocodeSchema.merge(z.object({ apiProvider: z.literal("kilocode") })),
 	virtualQuotaFallbackSchema.merge(z.object({ apiProvider: z.literal("virtual-quota-fallback") })),
 	syntheticSchema.merge(z.object({ apiProvider: z.literal("synthetic") })),
@@ -611,7 +601,6 @@ export const providerSettingsSchema = z.object({
 	...lmStudioSchema.shape,
 	...geminiSchema.shape,
 	// kilocode_change start
-	...geminiCliSchema.shape,
 	...kilocodeSchema.shape,
 	...virtualQuotaFallbackSchema.shape,
 	...syntheticSchema.shape,
@@ -717,7 +706,6 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	ollama: "ollamaModelId",
 	lmstudio: "lmStudioModelId",
 	gemini: "apiModelId",
-	"gemini-cli": "apiModelId",
 	mistral: "apiModelId",
 	moonshot: "apiModelId",
 	minimax: "apiModelId",
@@ -784,7 +772,7 @@ export const getApiProtocol = (provider: ProviderName | undefined, modelId?: str
  */
 
 export const MODELS_BY_PROVIDER: Record<
-	Exclude<ProviderName, "fake-ai" | "human-relay" | "gemini-cli" | "openai" | "gemini">,
+	Exclude<ProviderName, "fake-ai" | "human-relay" | "openai" | "gemini">,
 	{ id: ProviderName; label: string; models: string[] }
 > = {
 	anthropic: {
