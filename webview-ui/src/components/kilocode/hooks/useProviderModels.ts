@@ -15,8 +15,8 @@ import {
 	mistralModels,
 	openAiNativeDefaultModelId,
 	openAiNativeModels,
-	openAiCodexDefaultModelId, // kilocode_change
-	openAiCodexModels, // kilocode_change
+	openAiCodexDefaultModelId,
+	openAiCodexModels,
 	vertexDefaultModelId,
 	vertexModels,
 	xaiDefaultModelId,
@@ -169,14 +169,12 @@ export const getModelsByProvider = ({
 				defaultModel: openAiNativeDefaultModelId,
 			}
 		}
-		// kilocode_change start
 		case "openai-codex": {
 			return {
 				models: openAiCodexModels,
 				defaultModel: openAiCodexDefaultModelId,
 			}
 		}
-		// kilocode_change end
 		case "mistral": {
 			return {
 				models: mistralModels,

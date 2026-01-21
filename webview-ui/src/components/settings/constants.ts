@@ -89,6 +89,7 @@ export const PROVIDERS = [
 	{ value: "ollama", label: "Ollama", proxy: true },
 	{ value: "unbound", label: "Unbound", proxy: false },
 	{ value: "requesty", label: "Requesty", proxy: false },
+	{ value: "human-relay", label: "Human Relay", proxy: false },
 	{ value: "xai", label: "xAI (Grok)", proxy: false },
 	{ value: "groq", label: "Groq", proxy: false },
 	{ value: "huggingface", label: "Hugging Face", proxy: false },

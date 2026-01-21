@@ -27,6 +27,11 @@ import { sanitizeOpenAiCallId } from "../../utils/tool-id"
 import { openAiCodexOAuthManager } from "../../integrations/openai-codex/oauth"
 import { t } from "../../i18n"
 
+import { DEFAULT_HEADERS } from "./constants" // kilocode-change
+
+// Get extension version for User-Agent header
+const extensionVersion: string = require("../../package.json").version ?? "unknown"
+
 export type OpenAiCodexModel = ReturnType<OpenAiCodexHandler["getModel"]>
 
 /**
@@ -353,7 +358,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 				const codexHeaders: Record<string, string> = {
 					originator: "kilo-code", // kilocode_change
 					session_id: taskId || this.sessionId,
-					"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+					"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 					...(accountId ? { "ChatGPT-Account-Id": accountId } : {}),
 				}
 
@@ -418,7 +423,6 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 							content.push({ type: "input_text", text: block.text })
 						} else if (block.type === "image") {
 							const image = block as Anthropic.Messages.ImageBlockParam
-							// `image.source` is a union (base64 vs url). Only base64 sources have `media_type`/`data`.
 							const imageUrl =
 								"media_type" in image.source && "data" in image.source
 									? `data:${image.source.media_type};base64,${image.source.data}`
@@ -499,7 +503,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 			Authorization: `Bearer ${accessToken}`,
 			originator: "kilo-code", // kilocode_change
 			session_id: taskId || this.sessionId,
-			"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+			"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 		}
 
 		// Add ChatGPT-Account-Id if available (required for organization subscriptions)
@@ -1063,7 +1067,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 				Authorization: `Bearer ${accessToken}`,
 				originator: "kilo-code", // kilocode_change
 				session_id: this.sessionId,
-				"User-Agent": `kilo-code/${Package.version} (${os.platform()} ${os.release()}; ${os.arch()}) node/${process.version.slice(1)}`, // kilocode_change
+				"User-Agent": DEFAULT_HEADERS["User-Agent"], // kilocode_change
 			}
 
 			// Add ChatGPT-Account-Id if available
