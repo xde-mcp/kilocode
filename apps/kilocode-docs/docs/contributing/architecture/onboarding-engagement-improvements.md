@@ -76,9 +76,9 @@ Step 2: Mode Selection
 ├── Content: "Choose between Chat, Edit, and Architect modes for different tasks"
 └── Actions: [Back] [Next]
 
-Step 3: Agent Behaviour & MCP Configuration
-├── Highlight: Settings > Agent Behaviour tab
-├── Content: "Configure modes, MCP servers, rules, and workflows in the Agent Behaviour tab"
+Step 3: Side Panels & MCP Configuration
+├── Highlight: Left sidebar
+├── Content: "Access history, memory, and configure MCP servers for enhanced capabilities"
 └── Actions: [Back] [Next]
 
 Step 4: Starting a Chat
