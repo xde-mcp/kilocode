@@ -1,12 +1,42 @@
 // kilocode_change - new file
 import { useState } from "react"
+import styled from "styled-components"
 import { Users2 } from "lucide-react"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { SectionHeader } from "@src/components/settings/SectionHeader"
 import { Section } from "@src/components/settings/Section"
-import { TabButton } from "@src/components/kilocodeMcp/McpView"
 import ModesView from "@src/components/modes/ModesView"
 import McpView from "@src/components/mcp/McpView"
+
+const StyledTabButton = styled.button<{ isActive: boolean }>`
+	background: none;
+	border: none;
+	border-bottom: 2px solid ${(props) => (props.isActive ? "var(--vscode-foreground)" : "transparent")};
+	color: ${(props) => (props.isActive ? "var(--vscode-foreground)" : "var(--vscode-descriptionForeground)")};
+	padding: 8px 16px;
+	cursor: pointer;
+	font-size: 13px;
+	margin-bottom: -1px;
+	font-family: inherit;
+
+	&:hover {
+		color: var(--vscode-foreground);
+	}
+`
+
+const TabButton = ({
+	children,
+	isActive,
+	onClick,
+}: {
+	children: React.ReactNode
+	isActive: boolean
+	onClick: () => void
+}) => (
+	<StyledTabButton isActive={isActive} onClick={onClick}>
+		{children}
+	</StyledTabButton>
+)
 
 const AgentBehaviourView = () => {
 	const [activeTab, setActiveTab] = useState<"modes" | "mcp">("modes")
