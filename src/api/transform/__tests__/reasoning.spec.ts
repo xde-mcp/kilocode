@@ -839,6 +839,7 @@ describe("reasoning.ts", () => {
 			expect(result).toEqual({ thinkingLevel: "medium", includeThoughts: true })
 		})
 
+		// kilocode_change start
 		it("should return undefined for budget-only models when budget is not enabled (fixes issue #4490)", () => {
 			// This test covers the bug where gemini-2.5-flash would fail with
 			// "Thinking level is not supported for this model" because thinkingLevel
@@ -896,7 +897,7 @@ describe("reasoning.ts", () => {
 			expect(result).toBeUndefined()
 		})
 	})
-
+		// kilocode_change end
 	describe("Integration scenarios", () => {
 		it("should handle model with requiredReasoningBudget across all providers", () => {
 			const modelWithRequired: ModelInfo = {

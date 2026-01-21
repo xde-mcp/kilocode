@@ -137,12 +137,11 @@ export const getGeminiReasoning = ({
 		return { thinkingBudget: reasoningBudget!, includeThoughts: true }
 	}
 
-	// Only proceed with effort-based reasoning if the model supports it.
-	// Models like gemini-2.5-flash only support budget-based reasoning, so we
-	// must not send thinkingLevel to them.
+	// kilocode_change start
 	if (!model.supportsReasoningEffort) {
 		return undefined
 	}
+	// kilocode_change end
 
 	// For effort-based Gemini models, rely directly on the selected effort value.
 	// We intentionally ignore enableReasoningEffort here so that explicitly chosen
