@@ -55,12 +55,15 @@ const KiloRulesToggleModal: React.FC = () => {
 
 			{isVisible && (
 				<div
-					className="fixed left-[15px] right-[15px] border border-[var(--vscode-editorGroup-border)] p-3 rounded z-[1000] overflow-y-auto"
+					className="fixed left-[15px] right-[15px] border border-[var(--vscode-editorGroup-border)] p-3 rounded z-[1000]"
 					style={{
 						bottom: `calc(100vh - ${menuPosition}px + 6px)`,
 						background: "var(--vscode-editor-background)",
-						maxHeight: "calc(100vh - 100px)",
-						overscrollBehavior: "contain",
+						// Keep the modal a consistent height to avoid “jumpy” resizing between tabs.
+						height: "min(520px, calc(100vh - 100px))",
+						overflow: "hidden",
+						display: "flex",
+						flexDirection: "column",
 					}}>
 					<div
 						className="fixed w-[10px] h-[10px] z-[-1] rotate-45 border-r border-b border-[var(--vscode-editorGroup-border)]"
@@ -102,10 +105,19 @@ const KiloRulesToggleModal: React.FC = () => {
 						</div>
 					</div>
 
-					{currentView === "modes" && <ModesView hideHeader />}
-					{currentView === "mcp" && <McpView hideHeader onDone={() => {}} />}
-					{currentView === "rule" && <KiloRulesWorkflowsView type="rule" />}
-					{currentView === "workflow" && <KiloRulesWorkflowsView type="workflow" />}
+					<div
+						data-testid="kilo-rules-toggle-modal-content"
+						style={{
+							flex: 1,
+							overflowY: "auto",
+							overflowX: "hidden",
+							overscrollBehavior: "contain",
+						}}>
+						{currentView === "modes" && <ModesView hideHeader />}
+						{currentView === "mcp" && <McpView hideHeader onDone={() => {}} />}
+						{currentView === "rule" && <KiloRulesWorkflowsView type="rule" />}
+						{currentView === "workflow" && <KiloRulesWorkflowsView type="workflow" />}
+					</div>
 				</div>
 			)}
 		</div>
