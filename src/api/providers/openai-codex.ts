@@ -48,7 +48,7 @@ const CODEX_API_BASE_URL = "https://chatgpt.com/backend-api/codex"
  * - Limited model subset
  * - Custom headers for Codex backend
  */
-export class OpenAiCodexHandler extends BaseProvider implements SingleCompletionHandler {
+export class OpenAiCodexHandler extends BaseProvider /* kilocode_change: implements SingleCompletionHandler */ {
 	protected options: ApiHandlerOptions
 	private readonly providerName = "OpenAI Codex"
 	private client?: OpenAI
@@ -1013,7 +1013,7 @@ export class OpenAiCodexHandler extends BaseProvider implements SingleCompletion
 		return this.lastResponseId
 	}
 
-	async completePrompt(prompt: string): Promise<string> {
+	async completePrompt_deleted_by_kilocode_because_streaming_is_required(prompt: string): Promise<string> {
 		this.abortController = new AbortController()
 
 		try {
