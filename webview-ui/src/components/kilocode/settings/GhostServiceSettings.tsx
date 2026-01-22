@@ -45,7 +45,8 @@ export const GhostServiceSettingsView = ({
 		model,
 		hasKilocodeProfileWithNoBalance,
 	} = ghostServiceSettings || {}
-	const keybindings = useKeybindings(["kilo-code.ghost.generateSuggestions"])
+	const keybindingCommandIds = useMemo(() => ["kilo-code.ghost.generateSuggestions"], [])
+	const keybindings = useKeybindings(keybindingCommandIds)
 	const [snoozeDuration, setSnoozeDuration] = useState<number>(300)
 	const [currentTime, setCurrentTime] = useState<number>(Date.now())
 
