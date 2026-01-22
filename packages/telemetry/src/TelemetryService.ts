@@ -70,12 +70,54 @@ export class TelemetryService {
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	public captureEvent(eventName: TelemetryEventName, properties?: Record<string, any>): void {
+		// kilocode_change start - local telemetry inspection
+		// Note: Additional properties (apiProvider, modelId, etc.) are added by clients via getTelemetryProperties()
+		const shouldLogTelemetry = process.env.NODE_ENV === "development"
+		if (shouldLogTelemetry) {
+			this.logTelemetryEvent(eventName, properties)
+		}
+		// kilocode_change end
+
 		if (!this.isReady) {
 			return
 		}
 
 		this.clients.forEach((client) => client.capture({ event: eventName, properties }))
 	}
+
+	// kilocode_change start - helper for debug logging with provider properties
+	private async logTelemetryEvent(
+		eventName: TelemetryEventName,
+		properties?: Record<string, unknown>,
+	): Promise<void> {
+		try {
+			// Try to get provider properties for more complete debug logging
+			let providerProperties: Record<string, unknown> = {}
+			if (this.clients.length > 0) {
+				const firstClient = this.clients[0]
+				// Access the provider through the client's providerRef if available
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const provider = (firstClient as any).providerRef?.deref?.()
+				if (provider?.getTelemetryProperties) {
+					try {
+						providerProperties = await provider.getTelemetryProperties()
+					} catch {
+						// Ignore errors getting provider properties for debug logging
+					}
+				}
+			}
+
+			const mergedProperties = { ...providerProperties, ...(properties ?? {}) }
+			console.info(
+				`[Telemetry] ${eventName} (isReady=${this.isReady}, clients=${this.clients.length}) ${JSON.stringify(mergedProperties)}`,
+			)
+		} catch {
+			console.info(
+				`[Telemetry] ${eventName} (isReady=${this.isReady}, clients=${this.clients.length}) <unserializable properties>`,
+			)
+		}
+	}
+	// kilocode_change end
 
 	public captureTaskCreated(taskId: string): void {
 		this.captureEvent(TelemetryEventName.TASK_CREATED, { taskId })
