@@ -17,7 +17,8 @@ export class DebugTelemetryClient extends BaseTelemetryClient {
 	public override async capture(event: TelemetryEvent): Promise<void> {
 		const properties = await this.getEventProperties(event)
 
-		console.info(`[DebugTelemetry] ${event.event}`, JSON.stringify(properties, null, 2))
+		// Log event name and properties as expandable object in debug console
+		console.info(`[DebugTelemetry] ${event.event}`, properties)
 	}
 
 	public override updateTelemetryState(_didUserOptIn: boolean): void {
