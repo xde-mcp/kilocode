@@ -8,8 +8,15 @@ export function throwMaxCompletionTokensReachedError() {
 	throw Error(t("kilocode:task.maxCompletionTokens"))
 }
 
+export function throwRequestBlockedByContentFilterError() {
+	throw Error(t("kilocode:task.contentFilter"))
+}
+
 export function verifyFinishReason(choice: ChatCompletionChunk.Choice | undefined) {
 	if (choice?.finish_reason === "length") {
 		throwMaxCompletionTokensReachedError()
+	}
+	if (choice?.finish_reason === "content_filter") {
+		throwRequestBlockedByContentFilterError()
 	}
 }
