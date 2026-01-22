@@ -15,27 +15,24 @@ If you don't have time to contribute, that's fine. There are other easy ways to 
 - [Code of Conduct](#code-of-conduct)
 - [I Have a Question](#i-have-a-question)
 - [I Want To Contribute](#i-want-to-contribute)
-  - [Code Contributors](#code-contributors)
-  - [Reporting Bugs](#reporting-bugs)
-  - [Custom Modes](#custom-modes)
-  - [Feature Requests](#feature-requests)
-  - [Improving The Documentation](#improving-the-documentation)
-  - [Improving The Design](#improving-the-design)
-  - [Publish a Blog Post or Case Study](#publish-a-blog-post-or-case-study)
-  - [Commit Messages](#commit-messages)
+    - [Code Contributors](#code-contributors)
+    - [Reporting Bugs](#reporting-bugs)
+    - [Custom Modes](#custom-modes)
+    - [Feature Requests](#feature-requests)
+    - [Improving The Documentation](#improving-the-documentation)
+    - [Improving The Design](#improving-the-design)
+    - [Publish a Blog Post or Case Study](#publish-a-blog-post-or-case-study)
+    - [Commit Messages](#commit-messages)
 - [Pull requests](#pull-requests)
-
 
 ## Code of Conduct
 
 This project and everyone participating in it is governed by the [Code of Conduct](https://github.com/Kilo-Org/kilocode/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior
 to [hi@kilocode.ai](mailto:hi@kilocode.ai).
 
-
 ## I Have a Question
 
 If you need clarification after reading this document, we encourage you to join our [discord](https://kilocode.ai/discord) workspace and join channels [kilo-dev-contributors](https://discord.com/channels/1349288496988160052/1391109167275577464) and [extensions-support channel](https://discord.com/channels/1349288496988160052/1349358641295265864).
-
 
 ## I Want To Contribute
 
@@ -59,7 +56,6 @@ Don’t let that scare you off, we just want you to have a realistic idea of wha
 
 Unsure if your contribution is “small” or “large”? Start a quick discussion in [kilo-dev-contributors](https://discord.com/channels/1349288496988160052/1391109167275577464) channel on discord or open an issue with good context, follow the commit and pull request guidelines below once you’re ready to open a PR.
 
-
 ### Reporting Bugs
 
 Please use our issues templates that provide hints on what information we need to help you.
@@ -74,11 +70,12 @@ Custom modes are a powerful way to extend Kilo Code's capabilities. To create an
 
 - Test your mode thoroughly
 
-- Share your mode with the community by submitting a [GitHub Discussion](https://github.com/Kilo-Org/kilocode/discussions).
+- Share your mode with the community on [Reddit](https://www.reddit.com/r/kilocode/) or you can show off / start a discussion on [show-off-your-builds](https://discord.com/channels/1349288496988160052/1375399779760214037) or [workflows-and-integration](https://discord.com/channels/1349288496988160052/1420236932780130418) on discord.
 
 ### Feature Requests
 
-Open an [Issue](https://github.com/Kilo-Org/kilocode/issues/new/choose) only to suggest enhancement or reporting a bug. Don't open issues for questions or support, instead join our [Discord workspace](https://kilocode.ai/discord) and ask there.
+Suggest feature requests in [Discussion](https://github.com/Kilo-Org/kilocode/discussions), only open an [Issue](https://github.com/Kilo-Org/kilocode/issues/new/choose) for reporting a bug or actual contributions. Don't open issues for questions or support, instead join our [Discord workspace](https://kilocode.ai/discord) and ask there.
+
 - Provide as much context as you can about what you're running into.
 
 ### Improving The Documentation
@@ -93,8 +90,8 @@ This helps us gather the right context (such as wireframes, mockups, or visual r
 
 ### Publish a Blog Post or Case Study
 
-We love hearing how people use or extend Kilo Code in their own projects. If you’ve written about your experience, we’d be happy to feature it!
-Our blog and case study repository has been archived, you can still access it [here](https://github.com/Kilo-Org/docs/tree/main/blog-posts) for reference. To share your work, please start a discussion in the [general](https://discord.com/channels/1349288496988160052/1349288496988160055) channel on discord,  summarizing your post or case study, with a link to the full content.
+We love hearing how people use or extend Kilo Code in their own projects. If you’ve written about your experience, we’re happy to review it!
+Our blog and case study repository has been archived, you can still access it [here](https://github.com/Kilo-Org/docs/tree/main/blog-posts) for reference. To share your work, please start a discussion in the [general](https://discord.com/channels/1349288496988160052/1349288496988160055) channel on discord, summarizing your post or case study, with a link to the full content.
 
 ### Commit Messages
 
@@ -109,7 +106,6 @@ Writing clear and consistent commit messages helps maintainers understand the pu
 - Reference related issue numbers (e.g., Fixes `#123)
 
 - Keep each commit focused on one logical change
-
 
 ## Pull Requests
 
@@ -129,17 +125,16 @@ When you’re ready to contribute your changes, follow these steps to create a c
 
 - A clear description of your changes
 
-  - Any related issues (e.g., “Fixes `#123”)
+    - Any related issues (e.g., “Fixes `#123”)
 
-  - Testing steps or screenshots (if applicable)
+    - Testing steps or screenshots (if applicable)
 
-  - Notes for reviewers, if special attention is needed
+    - Notes for reviewers, if special attention is needed
 
 For more context, kindly read the official [contributing docs](https://kilocode.ai/docs/extending/contributing-to-kilo).
 
 Your contributions, big or small help make Kilo Code better for everyone!🫶
 
-
-## References 
+## References
 
 This document was adapted from [https://contributing.md](https://contributing.md/)!
