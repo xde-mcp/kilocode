@@ -844,12 +844,14 @@ export class OpenAiCodexHandler extends BaseProvider /* kilocode_change: impleme
 		}
 
 		// Handle text deltas
+		/* kilocode_change: don't yield text deltas, the full text is yielded as part of response.output_item.done
 		if (event?.type === "response.text.delta" || event?.type === "response.output_text.delta") {
 			if (event?.delta) {
 				yield { type: "text", text: event.delta }
 			}
 			return
 		}
+		*/
 
 		// Handle reasoning deltas
 		if (
