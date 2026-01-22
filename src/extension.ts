@@ -115,7 +115,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	try {
 		if (process.env.NODE_ENV === "development") {
 			telemetryService.register(new DebugTelemetryClient())
-			console.info("[Telemetry] Using DebugTelemetryClient for development")
+			console.info("[DebugTelemetry] Using DebugTelemetryClient for development")
 
 			// Also register PostHog if API key is present for local testing
 			if (process.env.KILOCODE_POSTHOG_API_KEY) {
