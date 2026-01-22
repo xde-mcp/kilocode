@@ -9,6 +9,7 @@ export function throwMaxCompletionTokensReachedError() {
 }
 
 export function throwRequestBlockedByContentFilterError() {
+	TelemetryService.instance.captureEvent(TelemetryEventName.BLOCKED_BY_CONTENT_FILTER_ERROR)
 	throw Error(t("kilocode:task.contentFilter"))
 }
 
