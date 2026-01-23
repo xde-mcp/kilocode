@@ -135,10 +135,11 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 			store: false,
 			instructions: systemPrompt,
 			...(this.options.enableResponsesReasoningSummary ? { reasoning: { summary: "auto" as const } } : {}),
-			...(model.info.supportsTemperature !== false && {
-				temperature: this.options.modelTemperature ?? 0,
-			}),
-			...(model.maxTokens ? { max_output_tokens: model.maxTokens } : {}),
+			...(model.info.supportsTemperature !== false &&
+				typeof this.options.modelTemperature === "number" && {
+					temperature: this.options.modelTemperature,
+				}),
+			...(model.maxTokens && this.options.includeMaxTokens ? { max_output_tokens: model.maxTokens } : {}),
 			...(metadata?.tools && {
 				tools: metadata.tools
 					.filter((tool) => tool.type === "function")
