@@ -267,7 +267,10 @@ const ApiOptions = ({
 	// stops typing.
 	useDebounce(
 		() => {
-			if (selectedProvider === "openai" || selectedProvider === "openai-responses") {
+			if (
+				selectedProvider === "openai" ||
+				selectedProvider === "openai-responses" // kilocode_change
+			) {
 				// Use our custom headers state to build the headers object.
 				const headerObject = convertHeadersToObject(customHeaders)
 
@@ -507,7 +510,7 @@ const ApiOptions = ({
 		const slugs: Record<string, string> = {
 			"openai-native": "openai",
 			openai: "openai-compatible",
-			"openai-responses": "openai-compatible",
+			"openai-responses": "openai-compatible", // kilocode_change
 		}
 
 		const slug = slugs[selectedProvider] || selectedProvider
@@ -764,16 +767,7 @@ const ApiOptions = ({
 				/>
 			)}
 
-			{selectedProvider === "openai" && (
-				<OpenAICompatible
-					apiConfiguration={apiConfiguration}
-					setApiConfigurationField={setApiConfigurationField}
-					organizationAllowList={organizationAllowList}
-					modelValidationError={modelValidationError}
-					simplifySettings={fromWelcomeView}
-				/>
-			)}
-			{selectedProvider === "openai-responses" && (
+			{(selectedProvider === "openai" || selectedProvider === "openai-responses") /* kilocode_change */ && (
 				<OpenAICompatible
 					apiConfiguration={apiConfiguration}
 					setApiConfigurationField={setApiConfigurationField}
