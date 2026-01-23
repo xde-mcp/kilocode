@@ -102,6 +102,7 @@ export function getModelIdForProvider(provider: ProviderConfig): string {
 		case "anthropic":
 			return provider.apiModelId || ""
 		case "openai-native":
+		case "openai-codex":
 			return provider.apiModelId || ""
 		case "openrouter":
 			return provider.openRouterModelId || ""

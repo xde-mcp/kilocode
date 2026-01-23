@@ -235,6 +235,7 @@
 						"kilocode",
 						"anthropic",
 						"openai-native",
+						"openai-codex",
 						"openrouter",
 						"bedrock",
 						"gemini",
@@ -440,6 +441,19 @@
 					"then": {
 						"properties": {
 							"openAiNativeApiKey": { "minLength": 10 }
+						}
+					}
+				},
+				{
+					"if": {
+						"properties": { "provider": { "const": "openai-codex" } }
+					},
+					"then": {
+						"properties": {
+							"apiModelId": {
+								"type": "string",
+								"description": "OpenAI model ID"
+							}
 						}
 					}
 				},
