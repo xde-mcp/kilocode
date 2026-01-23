@@ -42,7 +42,9 @@
 		"experimental": "Experimentální",
 		"language": "Jazyk",
 		"about": "O Kilo Code",
-		"autoPurge": "Automatické čištění"
+		"autoPurge": "Automatické čištění",
+		"agentBehaviour": "Chování agenta",
+		"ghost": "Automatické dokončování"
 	},
 	"about": {
 		"bugReport": {

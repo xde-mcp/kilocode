@@ -43,6 +43,7 @@
 		"language": "Мова",
 		"about": "Про Kilo Code",
 		"autoPurge": "Авто-очищення",
+		"agentBehaviour": "Поведінка агента",
 		"ghost": "Ghost"
 	},
 	"about": {

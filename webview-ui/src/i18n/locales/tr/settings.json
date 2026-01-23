@@ -43,7 +43,8 @@
 		"language": "Dil",
 		"about": "Kilo Code Hakkında",
 		"ghost": "Ghost",
-		"autoPurge": "Otomatik Temizlik"
+		"autoPurge": "Otomatik Temizlik",
+		"agentBehaviour": "Ajan Davranışı"
 	},
 	"about": {
 		"bugReport": {

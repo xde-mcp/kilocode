@@ -42,8 +42,9 @@
 		"experimental": "Sperimentale",
 		"language": "Lingua",
 		"about": "Informazioni su Kilo Code",
-		"ghost": "Ghost",
-		"autoPurge": "Auto-pulizia"
+		"autoPurge": "Auto-pulizia",
+		"agentBehaviour": "Comportamento agente",
+		"ghost": "Ghost"
 	},
 	"about": {
 		"bugReport": {

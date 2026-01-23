@@ -42,7 +42,9 @@
 		"experimental": "Expérimental",
 		"language": "Langue",
 		"about": "À propos de Kilo Code",
-		"autoPurge": "Auto-nettoyage"
+		"autoPurge": "Auto-nettoyage",
+		"agentBehaviour": "Comportement de l'agent",
+		"ghost": "Autocomplétion"
 	},
 	"about": {
 		"bugReport": {

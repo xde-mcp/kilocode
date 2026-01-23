@@ -43,6 +43,7 @@
 		"language": "言語",
 		"about": "Kilo Codeについて",
 		"autoPurge": "自動クリーンアップ",
+		"agentBehaviour": "エージェントの動作",
 		"ghost": "Ghost"
 	},
 	"about": {

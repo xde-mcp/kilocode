@@ -43,7 +43,8 @@
 		"language": "語言",
 		"about": "關於 Kilo Code",
 		"autoPurge": "自動清理",
-		"ghost": "Ghost"
+		"agentBehaviour": "Agent 行為",
+		"ghost": "自動補全"
 	},
 	"about": {
 		"bugReport": {

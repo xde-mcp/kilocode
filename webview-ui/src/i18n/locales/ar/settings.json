@@ -42,7 +42,9 @@
 		"experimental": "تجريبي",
 		"language": "اللغة",
 		"about": "عن Kilo Code",
-		"autoPurge": "التنظيف التلقائي"
+		"autoPurge": "التنظيف التلقائي",
+		"agentBehaviour": "سلوك الوكيل",
+		"ghost": "الإكمال التلقائي"
 	},
 	"about": {
 		"bugReport": {

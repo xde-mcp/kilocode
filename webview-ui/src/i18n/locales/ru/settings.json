@@ -42,7 +42,9 @@
 		"experimental": "Экспериментальное",
 		"language": "Язык",
 		"about": "О Kilo Code",
-		"autoPurge": "Авто-очистка"
+		"autoPurge": "Авто-очистка",
+		"agentBehaviour": "Поведение агента",
+		"ghost": "Автодополнение"
 	},
 	"about": {
 		"bugReport": {

@@ -43,7 +43,8 @@
 		"experimental": "ทดลอง",
 		"language": "ภาษา",
 		"about": "เกี่ยวกับ Kilo Code",
-		"autoPurge": "ทำความสะอาดอัตโนมัติ"
+		"autoPurge": "ทำความสะอาดอัตโนมัติ",
+		"agentBehaviour": "พฤติกรรม Agent"
 	},
 	"about": {
 		"debugMode": {

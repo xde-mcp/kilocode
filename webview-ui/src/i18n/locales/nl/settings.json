@@ -42,7 +42,9 @@
 		"experimental": "Experimenteel",
 		"language": "Taal",
 		"about": "Over Kilo Code",
-		"autoPurge": "Auto-opruimen"
+		"autoPurge": "Auto-opruimen",
+		"agentBehaviour": "Agentgedrag",
+		"ghost": "Autocomplete"
 	},
 	"about": {
 		"bugReport": {

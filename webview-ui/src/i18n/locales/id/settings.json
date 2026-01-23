@@ -42,7 +42,9 @@
 		"experimental": "Eksperimental",
 		"language": "Bahasa",
 		"about": "Tentang Kilo Code",
-		"autoPurge": "Pembersihan Otomatis"
+		"autoPurge": "Pembersihan Otomatis",
+		"agentBehaviour": "Perilaku Agent",
+		"ghost": "Autocomplete"
 	},
 	"about": {
 		"bugReport": {

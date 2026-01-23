@@ -42,7 +42,9 @@
 		"experimental": "Experimental",
 		"language": "Idioma",
 		"about": "Sobre",
-		"autoPurge": "Auto-limpeza"
+		"autoPurge": "Auto-limpeza",
+		"agentBehaviour": "Comportamento do Agente",
+		"ghost": "Autocompletar"
 	},
 	"about": {
 		"bugReport": {

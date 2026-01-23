@@ -42,7 +42,9 @@
 		"experimental": "Experimental",
 		"language": "Idioma",
 		"about": "Sobre Kilo Code",
-		"autoPurge": "Auto-neteja"
+		"autoPurge": "Auto-neteja",
+		"agentBehaviour": "Comportament de l'agent",
+		"ghost": "Autocompletat"
 	},
 	"about": {
 		"bugReport": {

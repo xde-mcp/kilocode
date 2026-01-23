@@ -42,7 +42,9 @@
 		"experimental": "Thử nghiệm",
 		"language": "Ngôn ngữ",
 		"about": "Giới thiệu",
-		"autoPurge": "Tự động dọn dẹp"
+		"autoPurge": "Tự động dọn dẹp",
+		"agentBehaviour": "Hành Vi Agent",
+		"ghost": "Tự Động Hoàn Thành"
 	},
 	"about": {
 		"bugReport": {

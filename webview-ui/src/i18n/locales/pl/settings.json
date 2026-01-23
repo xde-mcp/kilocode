@@ -42,7 +42,9 @@
 		"experimental": "Eksperymentalne",
 		"language": "Język",
 		"about": "O Kilo Code",
-		"autoPurge": "Auto-czyszczenie"
+		"autoPurge": "Auto-czyszczenie",
+		"agentBehaviour": "Zachowanie agenta",
+		"ghost": "Autouzupełnianie"
 	},
 	"about": {
 		"bugReport": {

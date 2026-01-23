@@ -42,7 +42,9 @@
 		"experimental": "Experimentell",
 		"language": "Sprache",
 		"about": "Über Kilo Code",
-		"autoPurge": "Auto-Bereinigung"
+		"autoPurge": "Auto-Bereinigung",
+		"agentBehaviour": "Agentenverhalten",
+		"ghost": "Autovervollständigung"
 	},
 	"about": {
 		"bugReport": {

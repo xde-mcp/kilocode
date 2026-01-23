@@ -42,7 +42,9 @@
 		"experimental": "实验性",
 		"language": "语言",
 		"about": "关于 Kilo Code",
-		"autoPurge": "自动清理"
+		"autoPurge": "自动清理",
+		"agentBehaviour": "智能体行为",
+		"ghost": "自动补全"
 	},
 	"about": {
 		"bugReport": {

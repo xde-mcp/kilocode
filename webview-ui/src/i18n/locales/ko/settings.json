@@ -42,7 +42,9 @@
 		"experimental": "실험적",
 		"language": "언어",
 		"about": "Kilo Code 정보",
-		"autoPurge": "자동 정리"
+		"autoPurge": "자동 정리",
+		"agentBehaviour": "에이전트 동작",
+		"ghost": "자동 완성"
 	},
 	"about": {
 		"bugReport": {
