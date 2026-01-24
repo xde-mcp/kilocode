@@ -59,6 +59,22 @@ export const openAIProviderSchema = baseProviderSchema.extend({
 	openAiHeaders: z.record(z.string(), z.string()).optional(),
 })
 
+// kilocode_change start
+// OpenAI Responses provider
+export const openAIResponsesProviderSchema = baseProviderSchema.extend({
+	provider: z.literal("openai-responses"),
+	openAiModelId: z.string().optional(),
+	openAiBaseUrl: z.string().optional(),
+	openAiApiKey: z.string().optional(),
+	openAiLegacyFormat: z.boolean().optional(),
+	openAiR1FormatEnabled: z.boolean().optional(),
+	openAiUseAzure: z.boolean().optional(),
+	azureApiVersion: z.string().optional(),
+	openAiStreamingEnabled: z.boolean().optional(),
+	openAiHeaders: z.record(z.string(), z.string()).optional(),
+})
+// kilocode_change end
+
 // OpenRouter provider
 export const openRouterProviderSchema = baseProviderSchema.extend({
 	provider: z.literal("openrouter"),
@@ -397,6 +413,7 @@ export const providerConfigSchema = z.discriminatedUnion("provider", [
 	openAINativeProviderSchema,
 	openAICodexProviderSchema, // kilocode_change
 	openAIProviderSchema,
+	openAIResponsesProviderSchema, // kilocode_change
 	openRouterProviderSchema,
 	ollamaProviderSchema,
 	lmStudioProviderSchema,
@@ -443,6 +460,7 @@ export type AnthropicProviderConfig = z.infer<typeof anthropicProviderSchema>
 export type OpenAINativeProviderConfig = z.infer<typeof openAINativeProviderSchema>
 export type OpenAICodexProviderConfig = z.infer<typeof openAICodexProviderSchema> // kilocode_change
 export type OpenAIProviderConfig = z.infer<typeof openAIProviderSchema>
+export type OpenAIResponsesProviderConfig = z.infer<typeof openAIResponsesProviderSchema> // kilocode_change
 export type OpenRouterProviderConfig = z.infer<typeof openRouterProviderSchema>
 export type OllamaProviderConfig = z.infer<typeof ollamaProviderSchema>
 export type LMStudioProviderConfig = z.infer<typeof lmStudioProviderSchema>

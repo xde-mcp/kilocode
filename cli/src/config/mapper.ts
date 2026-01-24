@@ -112,6 +112,8 @@ export function getModelIdForProvider(provider: ProviderConfig): string {
 			return provider.lmStudioModelId || ""
 		case "openai":
 			return provider.openAiModelId || ""
+		case "openai-responses":
+			return provider.openAiModelId || ""
 		case "glama":
 			return provider.glamaModelId || ""
 		case "litellm":
