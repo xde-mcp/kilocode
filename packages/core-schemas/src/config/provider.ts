@@ -37,6 +37,14 @@ export const openAINativeProviderSchema = baseProviderSchema.extend({
 	openAiNativeServiceTier: z.enum(["auto", "default", "flex", "priority"]).optional(),
 })
 
+// kilocode_change start
+// OpenAI Codex provider (ChatGPT Plus/Pro)
+export const openAICodexProviderSchema = baseProviderSchema.extend({
+	provider: z.literal("openai-codex"),
+	apiModelId: z.string().optional(),
+})
+// kilocode_change end
+
 // OpenAI provider
 export const openAIProviderSchema = baseProviderSchema.extend({
 	provider: z.literal("openai"),
@@ -387,6 +395,7 @@ export const providerConfigSchema = z.discriminatedUnion("provider", [
 	kilocodeProviderSchema,
 	anthropicProviderSchema,
 	openAINativeProviderSchema,
+	openAICodexProviderSchema, // kilocode_change
 	openAIProviderSchema,
 	openRouterProviderSchema,
 	ollamaProviderSchema,
@@ -432,6 +441,7 @@ export const providerConfigSchema = z.discriminatedUnion("provider", [
 export type KilocodeProviderConfig = z.infer<typeof kilocodeProviderSchema>
 export type AnthropicProviderConfig = z.infer<typeof anthropicProviderSchema>
 export type OpenAINativeProviderConfig = z.infer<typeof openAINativeProviderSchema>
+export type OpenAICodexProviderConfig = z.infer<typeof openAICodexProviderSchema> // kilocode_change
 export type OpenAIProviderConfig = z.infer<typeof openAIProviderSchema>
 export type OpenRouterProviderConfig = z.infer<typeof openRouterProviderSchema>
 export type OllamaProviderConfig = z.infer<typeof ollamaProviderSchema>
