@@ -45,6 +45,44 @@ export type McpExecutionStatus = z.infer<typeof mcpExecutionStatusSchema>
  * McpServer
  */
 
+// kilocode_change start: Add authStatus to McpServer type
+/**
+ * OAuth authentication status for MCP servers
+ */
+export type McpAuthStatus = {
+	/** Whether the server uses OAuth authentication */
+	method: "oauth" | "static" | "none"
+	/** Current authentication status */
+	status: "authenticated" | "expired" | "required" | "none"
+	/** Token expiry timestamp (Unix milliseconds) */
+	expiresAt?: number
+	/** OAuth scopes granted */
+	scopes?: string[]
+	/** Debug information for OAuth tokens */
+	debug?: McpAuthDebugInfo
+}
+
+/**
+ * Debug information about OAuth token state
+ */
+export type McpAuthDebugInfo = {
+	/** When the token was originally issued (Unix milliseconds) */
+	issuedAt?: number
+	/** Whether the server supports refresh tokens */
+	hasRefreshToken?: boolean
+	/** When the last token refresh occurred (Unix milliseconds) */
+	lastRefreshAt?: number
+	/** When the next token refresh is expected (Unix milliseconds) */
+	nextRefreshAt?: number
+	/** The token endpoint URL used for refresh */
+	tokenEndpoint?: string
+	/** The client ID used for authentication */
+	clientId?: string
+	/** Whether all required metadata for token refresh is available */
+	canRefresh?: boolean
+}
+// kilocode_change end
+
 export type McpServer = {
 	name: string
 	config: string
@@ -59,6 +97,7 @@ export type McpServer = {
 	source?: "global" | "project"
 	projectPath?: string
 	instructions?: string
+	authStatus?: McpAuthStatus // kilocode_change: OAuth authentication status
 }
 
 export type McpTool = {

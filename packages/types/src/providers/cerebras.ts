@@ -13,6 +13,8 @@ export const cerebrasModels = {
 		supportsPromptCache: false,
 		supportsNativeTools: true,
 		defaultToolProtocol: "native",
+		supportsTemperature: true,
+		defaultTemperature: 0.9,
 		inputPrice: 0,
 		outputPrice: 0,
 		description:

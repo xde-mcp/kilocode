@@ -256,6 +256,7 @@ export interface ExtensionMessage {
 		| "customToolsResult"
 		| "modes"
 		| "taskWithAggregatedCosts"
+		| "skillsData" // kilocode_change: Skills data response
 	text?: string
 	// kilocode_change start
 	completionRequestId?: string // Correlation ID from request
@@ -387,6 +388,14 @@ export interface ExtensionMessage {
 	}>
 	// kilocode_change end
 	commands?: Command[]
+	skills?: Array<{
+		// kilocode_change: Skills data
+		name: string
+		description: string
+		path: string
+		source: "global" | "project"
+		mode?: string
+	}>
 	queuedMessages?: QueuedMessage[]
 	list?: string[] // For dismissedUpsells
 	organizationId?: string | null // For organizationSwitchResult
@@ -773,6 +782,7 @@ export interface WebviewMessage {
 		| "requestCheckpointRestoreApproval" // kilocode_change: Request approval for checkpoint restore
 		| "seeNewChanges" // kilocode_change
 		| "deleteMcpServer"
+		| "mcpServerOAuthSignIn" // kilocode_change: Initiate OAuth sign-in for an MCP server
 		| "insertTextToChatArea" // kilocode_change
 		| "humanRelayResponse" // kilocode_change
 		| "humanRelayCancel" // kilocode_change
@@ -919,6 +929,7 @@ export interface WebviewMessage {
 		| "requestModes"
 		| "switchMode"
 		| "debugSetting"
+		| "refreshSkills" // kilocode_change: Request skills data refresh
 	text?: string
 	suggestionLength?: number // kilocode_change: Length of accepted suggestion for telemetry
 	completionRequestId?: string // kilocode_change

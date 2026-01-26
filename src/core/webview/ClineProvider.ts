@@ -2078,6 +2078,11 @@ export class ClineProvider
 			})
 		}
 	}
+
+	async postSkillsDataToWebview() {
+		const skills = this.skillsManager?.getAllSkills() ?? []
+		this.postMessageToWebview({ type: "skillsData", skills })
+	}
 	// kilocode_change end
 
 	/**
