@@ -136,6 +136,7 @@ export const PROVIDER_TO_ROUTER_NAME: Record<ProviderName, RouterName | null> = 
 	bedrock: null,
 	vertex: null,
 	openai: null,
+	"openai-responses": null,
 	"vscode-lm": null,
 	gemini: null,
 	"openai-native": null,
@@ -188,6 +189,7 @@ export const PROVIDER_MODEL_FIELD: Record<ProviderName, string | null> = {
 	bedrock: null,
 	vertex: null,
 	openai: null,
+	"openai-responses": null,
 	"vscode-lm": "vsCodeLmModelSelector",
 	gemini: null,
 	"openai-native": null,
@@ -437,6 +439,8 @@ export function getModelIdKey(provider: ProviderName): string {
 		case "litellm":
 			return "litellmModelId"
 		case "openai":
+			return "openAiModelId"
+		case "openai-responses":
 			return "openAiModelId"
 		case "ollama":
 			return "ollamaModelId"
