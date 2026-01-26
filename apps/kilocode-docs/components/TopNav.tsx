@@ -342,50 +342,6 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 					gap: 0.75rem;
 				}
 
-				#docsearch {
-					--docsearch-primary-color: var(--text-brand);
-					--docsearch-text-color: var(--text-color);
-					--docsearch-spacing: 0.5rem;
-					--docsearch-icon-stroke-width: 1.5;
-					--docsearch-highlight-color: var(--text-brand);
-					--docsearch-muted-color: var(--text-secondary);
-					--docsearch-container-background: var(--bg-color);
-					--docsearch-modal-background: var(--bg-color);
-					--docsearch-modal-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-					--docsearch-searchbox-height: 2.5rem;
-					--docsearch-searchbox-background: var(--bg-secondary);
-					--docsearch-searchbox-focus-background: var(--bg-secondary);
-					--docsearch-hit-color: var(--text-color);
-					--docsearch-hit-active-color: var(--text-color);
-					--docsearch-hit-background: var(--bg-secondary);
-					--docsearch-hit-shadow: none;
-					--docsearch-key-gradient: var(--bg-secondary);
-					--docsearch-key-shadow: inset 0 -1px 0 var(--border-color);
-					--docsearch-footer-background: var(--bg-color);
-					--docsearch-footer-shadow: 0 -1px 0 var(--border-color);
-					--docsearch-border-color: var(--border-color);
-				}
-
-				#docsearch .DocSearch-Button {
-					margin: 0;
-					padding: 0 0.75rem;
-					border-radius: 0.5rem;
-					border: 1px solid var(--border-color);
-					background-color: var(--bg-secondary);
-					color: var(--text-secondary);
-					min-width: 200px;
-					height: 2rem;
-				}
-
-				#docsearch .DocSearch-Button-Placeholder {
-					font-size: 0.875rem;
-				}
-
-				#docsearch .DocSearch-Search-Icon {
-					width: 1rem;
-					height: 1rem;
-				}
-
 				.ask-ai-btn {
 					display: flex;
 					align-items: center;
@@ -483,13 +439,6 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 
 					.right-actions {
 						gap: 0.5rem;
-					}
-				}
-
-				/* Tablet styles */
-				@media (max-width: 1024px) and (min-width: 769px) {
-					#docsearch .DocSearch-Button {
-						min-width: 140px;
 					}
 				}
 			`}</style>
