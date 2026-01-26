@@ -563,7 +563,7 @@ function getSelectedModel({
 		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies "anthropic" | "qwen-code" | "fake-ai" | "human-relay" | "kilocode"
+			provider satisfies "anthropic" | "fake-ai" | "human-relay" | "kilocode"
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 
