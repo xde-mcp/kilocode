@@ -159,32 +159,32 @@ importers:
         specifier: ^4
         version: 4.5.3
       '@markdoc/markdoc':
-        specifier: latest
+        specifier: ^0.5.4
         version: 0.5.4(@types/react@18.3.23)(react@19.2.4)
       '@markdoc/next.js':
-        specifier: latest
+        specifier: ^0.5.0
         version: 0.5.0(@markdoc/markdoc@0.5.4(@types/react@18.3.23)(react@19.2.4))(next@16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
       '@vscode/codicons':
         specifier: ^0.0.44
         version: 0.0.44
       next:
-        specifier: latest
+        specifier: ^16.1.5
         version: 16.1.5(@opentelemetry/api@1.9.0)(@playwright/test@1.57.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       prismjs:
-        specifier: latest
+        specifier: ^1.30.0
         version: 1.30.0
       react:
-        specifier: latest
+        specifier: ^19.2.4
         version: 19.2.4
       react-dom:
-        specifier: latest
+        specifier: ^19.2.4
         version: 19.2.4(react@19.2.4)
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.1.18
       '@types/node':
-        specifier: latest
+        specifier: ^25.0.10
         version: 25.0.10
       '@types/react':
         specifier: ^18.3.23
@@ -202,7 +202,7 @@ importers:
         specifier: ^4.1.18
         version: 4.1.18
       typescript:
-        specifier: latest
+        specifier: ^5.9.3
         version: 5.9.3
 
   apps/playwright-e2e:
@@ -10608,6 +10608,9 @@ packages:
   eight-colors@1.3.1:
     resolution: {integrity: sha512-7nXPYDeKh6DgJDR/mpt2G7N/hCNSGwwoPVmoI3+4TEwOb07VFN1WMPG0DFf6nMEjrkgdj8Og7l7IaEEk3VE6Zg==}
 
+  electron-to-chromium@1.5.152:
+    resolution: {integrity: sha512-xBOfg/EBaIlVsHipHl2VdTPJRSvErNUaqW8ejTq5OlOlIYx1wOllCHsAvAIrr55jD1IYEfdR86miUEt8H5IeJg==}
+
   electron-to-chromium@1.5.267:
     resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
@@ -14462,6 +14465,9 @@ packages:
   node-pty@1.1.0:
     resolution: {integrity: sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==}
 
+  node-releases@2.0.19:
+    resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
+
   node-releases@2.0.27:
     resolution: {integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==}
 
@@ -17955,6 +17961,12 @@ packages:
     resolution: {integrity: sha512-aZwGpamFO61g3OlfT7OQCHqhGnW43ieH9WZeP7QxN/G/jS4jfqUkZxoryvJgVPEcrl5NL/ggHsSmLMHuH64Lhg==}
     engines: {node: '>=4'}
 
+  update-browserslist-db@1.1.3:
+    resolution: {integrity: sha512-UxhIZQ+QInVdunkDAaiazvvT/+fXL5Osr0JZlJulepYu6Jd7qJtDZjlur0emRlT71EN3ScPoE7gvsuIKKNavKw==}
+    hasBin: true
+    peerDependencies:
+      browserslist: '>= 4.21.0'
+
   update-browserslist-db@1.2.3:
     resolution: {integrity: sha512-Js0m9cx+qOgDxo0eMiFGEueWztz+d4+M3rGlmKPT+T4IS/jP4ylw3Nwpu6cpTTP8R1MAC1kF4VbdLt3ARf209w==}
     hasBin: true
@@ -18899,8 +18911,8 @@ snapshots:
 
   '@ampproject/remapping@2.3.0':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/gen-mapping': 0.3.8
+      '@jridgewell/trace-mapping': 0.3.25
 
   '@antfu/install-pkg@1.1.0':
     dependencies:
@@ -20249,7 +20261,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.27.2
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -20257,7 +20269,7 @@ snapshots:
     dependencies:
       '@babel/compat-data': 7.28.6
       '@babel/helper-validator-option': 7.27.1
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       lru-cache: 5.1.1
       semver: 6.3.1
 
@@ -21498,7 +21510,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/trace-mapping': 0.3.25
       '@types/node': 20.17.57
       chalk: 4.1.2
       collect-v8-coverage: 1.0.3
@@ -21530,7 +21542,7 @@ snapshots:
 
   '@jest/source-map@29.6.3':
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/trace-mapping': 0.3.25
       callsites: 3.1.0
       graceful-fs: 4.2.11
 
@@ -21552,7 +21564,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.27.1
       '@jest/types': 29.6.3
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/trace-mapping': 0.3.25
       babel-plugin-istanbul: 6.1.1
       chalk: 4.1.2
       convert-source-map: 2.0.0
@@ -21607,19 +21619,19 @@ snapshots:
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.5.0
       '@jridgewell/trace-mapping': 0.3.31
 
   '@jridgewell/gen-mapping@0.3.8':
     dependencies:
       '@jridgewell/set-array': 1.2.1
-      '@jridgewell/sourcemap-codec': 1.5.5
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/sourcemap-codec': 1.5.0
+      '@jridgewell/trace-mapping': 0.3.25
 
   '@jridgewell/remapping@2.3.5':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/gen-mapping': 0.3.8
+      '@jridgewell/trace-mapping': 0.3.25
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
@@ -21627,8 +21639,8 @@ snapshots:
 
   '@jridgewell/source-map@0.3.11':
     dependencies:
-      '@jridgewell/gen-mapping': 0.3.13
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/gen-mapping': 0.3.8
+      '@jridgewell/trace-mapping': 0.3.25
 
   '@jridgewell/sourcemap-codec@1.5.0': {}
 
@@ -21637,12 +21649,12 @@ snapshots:
   '@jridgewell/trace-mapping@0.3.25':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.5.0
 
   '@jridgewell/trace-mapping@0.3.31':
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.5.0
 
   '@jridgewell/trace-mapping@0.3.9':
     dependencies:
@@ -26965,10 +26977,10 @@ snapshots:
 
   browserslist@4.24.5:
     dependencies:
-      caniuse-lite: 1.0.30001765
-      electron-to-chromium: 1.5.267
-      node-releases: 2.0.27
-      update-browserslist-db: 1.2.3(browserslist@4.24.5)
+      caniuse-lite: 1.0.30001718
+      electron-to-chromium: 1.5.152
+      node-releases: 2.0.19
+      update-browserslist-db: 1.1.3(browserslist@4.24.5)
 
   browserslist@4.28.1:
     dependencies:
@@ -27125,8 +27137,8 @@ snapshots:
 
   caniuse-api@3.0.0:
     dependencies:
-      browserslist: 4.28.1
-      caniuse-lite: 1.0.30001765
+      browserslist: 4.24.5
+      caniuse-lite: 1.0.30001718
       lodash.memoize: 4.1.2
       lodash.uniq: 4.5.0
 
@@ -27923,7 +27935,7 @@ snapshots:
 
   cssnano-preset-default@6.1.2(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       css-declaration-sorter: 7.3.1(postcss@8.5.4)
       cssnano-utils: 4.0.2(postcss@8.5.4)
       postcss: 8.5.4
@@ -28664,6 +28676,8 @@ snapshots:
   ee-first@1.1.1: {}
 
   eight-colors@1.3.1: {}
+
+  electron-to-chromium@1.5.152: {}
 
   electron-to-chromium@1.5.267: {}
 
@@ -32608,7 +32622,7 @@ snapshots:
 
   magic-string@0.27.0:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.5.0
 
   magic-string@0.30.17:
     dependencies:
@@ -33656,6 +33670,8 @@ snapshots:
     dependencies:
       node-addon-api: 7.1.1
 
+  node-releases@2.0.19: {}
+
   node-releases@2.0.27: {}
 
   node-rsa@1.1.1:
@@ -34500,7 +34516,7 @@ snapshots:
 
   postcss-colormin@6.1.0(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       caniuse-api: 3.0.0
       colord: 2.9.3
       postcss: 8.5.4
@@ -34508,7 +34524,7 @@ snapshots:
 
   postcss-convert-values@6.1.0(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       postcss: 8.5.4
       postcss-value-parser: 4.2.0
 
@@ -34583,7 +34599,7 @@ snapshots:
 
   postcss-merge-rules@6.1.1(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       caniuse-api: 3.0.0
       cssnano-utils: 4.0.2(postcss@8.5.4)
       postcss: 8.5.4
@@ -34603,7 +34619,7 @@ snapshots:
 
   postcss-minify-params@6.1.0(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       cssnano-utils: 4.0.2(postcss@8.5.4)
       postcss: 8.5.4
       postcss-value-parser: 4.2.0
@@ -34677,7 +34693,7 @@ snapshots:
 
   postcss-normalize-unicode@6.1.0(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       postcss: 8.5.4
       postcss-value-parser: 4.2.0
 
@@ -34699,7 +34715,7 @@ snapshots:
 
   postcss-reduce-initial@6.1.0(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       caniuse-api: 3.0.0
       postcss: 8.5.4
 
@@ -36714,7 +36730,7 @@ snapshots:
 
   stylehacks@6.1.1(postcss@8.5.4):
     dependencies:
-      browserslist: 4.28.1
+      browserslist: 4.24.5
       postcss: 8.5.4
       postcss-selector-parser: 6.1.2
 
@@ -36918,7 +36934,7 @@ snapshots:
 
   terser-webpack-plugin@5.3.16(@swc/core@1.15.8)(esbuild@0.25.9)(webpack@5.104.1):
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       serialize-javascript: 6.0.2
@@ -37667,7 +37683,7 @@ snapshots:
 
   upath@1.2.0: {}
 
-  update-browserslist-db@1.2.3(browserslist@4.24.5):
+  update-browserslist-db@1.1.3(browserslist@4.24.5):
     dependencies:
       browserslist: 4.24.5
       escalade: 3.2.0
@@ -37769,7 +37785,7 @@ snapshots:
 
   v8-to-istanbul@9.3.0:
     dependencies:
-      '@jridgewell/trace-mapping': 0.3.31
+      '@jridgewell/trace-mapping': 0.3.25
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
