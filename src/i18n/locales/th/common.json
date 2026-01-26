@@ -156,7 +156,26 @@
 		"manual_url_auth_failed": "การยืนยันตัวตนล้มเหลว",
 		"manual_url_auth_error": "เกิดข้อผิดพลาดในการยืนยันตัวตน",
 		"api": {
-			"invalidKeyInvalidChars": "API key มีตัวอักษรที่ไม่ถูกต้อง"
+			"invalidKeyInvalidChars": "API key มีตัวอักษรที่ไม่ถูกต้อง",
+			"apiRequestFailed": "คำขอ API ล้มเหลว ({{status}})"
+		},
+		"openAiCodex": {
+			"notAuthenticated": "ยังไม่ได้ยืนยันตัวตนกับ OpenAI Codex กรุณาลงชื่อเข้าใช้โดยใช้ OAuth flow ของ OpenAI Codex",
+			"invalidRequest": "คำขอไปยัง Codex API ไม่ถูกต้อง กรุณาตรวจสอบพารามิเตอร์ที่ป้อน",
+			"authenticationFailed": "การยืนยันตัวตนล้มเหลว กรุณายืนยันตัวตนใหม่กับ OpenAI Codex",
+			"accessDenied": "การเข้าถึงถูกปฏิเสธ บัญชี ChatGPT ของคุณอาจไม่รวมการเข้าถึง Codex",
+			"endpointNotFound": "ไม่พบ endpoint ของ Codex API",
+			"rateLimitExceeded": "เกินขีดจำกัดอัตรา กรุณาลองอีกครั้งในภายหลัง",
+			"serviceError": "ข้อผิดพลาดบริการ OpenAI Codex กรุณาลองอีกครั้งในภายหลัง",
+			"genericError": "ข้อผิดพลาด Codex API ({{status}})",
+			"noResponseBody": "ข้อผิดพลาด Codex API: ไม่มีเนื้อหาการตอบกลับ",
+			"connectionFailed": "ล้มเหลวในการเชื่อมต่อกับ Codex API: {{message}}",
+			"unexpectedConnectionError": "เกิดข้อผิดพลาดที่ไม่คาดคิดในการเชื่อมต่อกับ Codex API",
+			"apiError": "ข้อผิดพลาด Codex API: {{message}}",
+			"responseFailed": "การตอบสนองล้มเหลว: {{message}}",
+			"streamProcessingError": "เกิดข้อผิดพลาดในการประมวลผลสตรีมการตอบสนอง: {{message}}",
+			"unexpectedStreamError": "เกิดข้อผิดพลาดที่ไม่คาดคิดในการประมวลผลสตรีมการตอบสนอง",
+			"completionError": "ข้อผิดพลาดการเติมเต็ม OpenAI Codex: {{message}}"
 		}
 	},
 	"warnings": {
@@ -251,7 +270,8 @@
 	},
 	"interruption": {
 		"responseInterruptedByUser": "การตอบสนองถูกหยุดโดยผู้ใช้",
-		"responseInterruptedByApiError": "การตอบสนองถูกหยุดโดยข้อผิดพลาดของ API"
+		"responseInterruptedByApiError": "การตอบสนองถูกหยุดโดยข้อผิดพลาดของ API",
+		"streamTerminatedByProvider": "ผู้ให้บริการยุติคำขอ"
 	},
 	"commands": {
 		"preventCompletionWithOpenTodos": {

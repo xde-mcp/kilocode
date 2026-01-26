@@ -14,7 +14,9 @@
 		"shareSession": "Oturumu paylaş",
 		"shareConfirmMessage": "Bu oturumun bir anlık görüntüsünü herkese açık olarak paylaşmak istiyor musunuz?",
 		"shareConfirmYes": "Evet",
-		"shareConfirmNo": "Hayır"
+		"shareConfirmNo": "Hayır",
+		"options": "Seçenekler",
+		"configureSetupScript": "Worktree kurulum betiği"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Yeni bir ajan başlat",
@@ -58,7 +60,9 @@
 		"selectModel": "Model seç",
 		"modelTooltip": "Bu oturum için hangi AI modelini kullanacağını seç",
 		"defaultModel": "Varsayılan model",
-		"loadingModels": "Yükleniyor..."
+		"loadingModels": "Yükleniyor...",
+		"selectMode": "Mod seç",
+		"modeTooltip": "Mod: {{mode}}"
 	},
 	"messages": {
 		"waiting": "Ajan yanıtı bekleniyor...",
@@ -73,7 +77,9 @@
 		"usingTool": "Araç kullanılıyor: **{{tool}}** {{details}}",
 		"expandOutput": "Çıktıyı genişlet",
 		"collapseOutput": "Çıktıyı daralt",
-		"copyCommand": "Komutu kopyala"
+		"copyCommand": "Komutu kopyala",
+		"thinking": "Düşünüyor",
+		"thinkingSeconds": "{{count}}sn"
 	},
 	"chatInput": {
 		"autoMode": "Agent tam otomatik modda çalışıyor - girişe izin verilmiyor",
@@ -86,7 +92,9 @@
 		"createPRTitle": "Pull request oluştur",
 		"sendTitle": "Mesaj gönder",
 		"resumeTitle": "Ajanı devam ettir",
-		"hint": "Göndermek için Enter, yeni satır için Shift+Enter"
+		"hint": "Göndermek için Enter, yeni satır için Shift+Enter",
+		"addImage": "Resim ekle",
+		"removeImage": "Resmi kaldır"
 	},
 	"status": {
 		"running": "çalışıyor",

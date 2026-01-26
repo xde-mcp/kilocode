@@ -14,6 +14,7 @@ import {
 	VertexHandler,
 	AnthropicVertexHandler,
 	OpenAiHandler,
+	OpenAiCodexHandler,
 	LmStudioHandler,
 	GeminiHandler,
 	OpenAiNativeHandler,
@@ -51,7 +52,7 @@ import {
 	DeepInfraHandler,
 	MiniMaxHandler,
 	BasetenHandler,
-	CorethinkHandler,
+	OpenAiCompatibleResponsesHandler, // kilocode_change
 } from "./providers"
 // kilocode_change start
 import { KilocodeOpenrouterHandler } from "./providers/kilocode-openrouter"
@@ -119,6 +120,15 @@ export interface ApiHandlerCreateMessageMetadata {
 	 * Only applies when toolProtocol is "native".
 	 */
 	parallelToolCalls?: boolean
+	/**
+	 * Optional array of tool names that the model is allowed to call.
+	 * When provided, all tool definitions are passed to the model (so it can reference
+	 * historical tool calls), but only the specified tools can actually be invoked.
+	 * This is used when switching modes to prevent model errors from missing tool
+	 * definitions while still restricting callable tools to the current mode's permissions.
+	 * Only applies to providers that support function calling restrictions (e.g., Gemini).
+	 */
+	allowedFunctionNames?: string[]
 }
 
 export interface ApiHandler {
@@ -187,8 +197,12 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new LmStudioHandler(options)
 		case "gemini":
 			return new GeminiHandler(options)
+		case "openai-codex":
+			return new OpenAiCodexHandler(options)
 		case "openai-native":
 			return new OpenAiNativeHandler(options)
+		case "openai-responses": // kilocode_change
+			return new OpenAiCompatibleResponsesHandler(options) // kilocode_change
 		case "deepseek":
 			return new DeepSeekHandler(options)
 		case "doubao":
@@ -257,8 +271,6 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 			return new MiniMaxHandler(options)
 		case "baseten":
 			return new BasetenHandler(options)
-		case "corethink":
-			return new CorethinkHandler(options)
 		default:
 			apiProvider satisfies "gemini-cli" | undefined
 			return new AnthropicHandler(options)

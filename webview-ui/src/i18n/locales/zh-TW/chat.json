@@ -9,6 +9,7 @@
 		"tokens": "Token",
 		"cache": "快取",
 		"apiCost": "API 費用",
+		"changes": "變更",
 		"size": "大小",
 		"condenseContext": "智慧壓縮內容",
 		"contextWindow": "上下文長度",
@@ -100,6 +101,11 @@
 		"title": "取消",
 		"tooltip": "取消目前操作"
 	},
+	"stop": {
+		"title": "停止",
+		"tooltip": "停止目前的工作"
+	},
+	"enqueueMessage": "將訊息加入佇列（會在目前工作完成後傳送）",
 	"editMessage": {
 		"placeholder": "編輯您的訊息..."
 	},
@@ -163,7 +169,7 @@
 			"403": "無權存取。您的 API 金鑰有效，但提供商拒絕完成此請求。",
 			"429": "請求次數過多。提供商已對您的請求進行速率限制。請在下一次 API 呼叫前稍候。",
 			"500": "提供商伺服器錯誤。提供商端發生問題，您的請求沒有問題。",
-			"unknown": "未知 API 錯誤。請聯絡 Kilo 支援。",
+			"unknown": "未知 API 錯誤,點擊詳情了解更多資訊。",
 			"connection": "連線錯誤。請確保您有可用的網際網路連線。",
 			"claudeCodeNotAuthenticated": "你需要登入才能使用 Claude Code。前往設定並點擊「登入 Claude Code」以進行驗證。"
 		}
@@ -319,7 +325,8 @@
 		"title": "錯誤詳細資訊",
 		"copyToClipboard": "複製到剪貼簿",
 		"copied": "已複製！",
-		"diagnostics": "取得詳細錯誤資訊"
+		"diagnostics": "取得詳細錯誤資訊",
+		"proxyProvider": "看起來你在使用基於代理的提供商。請檢查日誌並確保它不會重寫 Roo 的請求。"
 	},
 	"powershell": {
 		"issues": "您似乎遇到了 Windows PowerShell 的問題，請參閱此說明文件"
@@ -340,7 +347,7 @@
 		"triggerLabel_zero": "0 個自動核准",
 		"triggerLabel_one": "1 個自動核准",
 		"triggerLabel_other": "{{count}} 個自動核准",
-		"triggerLabelAll": "YOLO"
+		"triggerLabelAll": "BRRR"
 	},
 	"announcement": {
 		"title": "Roo Code {{version}} 已發布",
@@ -354,8 +361,9 @@
 		},
 		"release": {
 			"heading": "新增功能：",
-			"skills": "Roo 現已支援 <skillsLink>Agent Skills</skillsLink> - 可重複使用的提示詞、工具和資源套件，用於擴展 Roo 的功能。",
-			"nativeToolCalling": "所有新工作現在都需要原生工具呼叫。<blogLink>深入了解</blogLink>相關動機以及遇到問題時的解決方案。"
+			"openaiCodexProvider": "新增 OpenAI - ChatGPT Plus/Pro 提供商，提供基於訂閱的 Codex 模型存取，無須按 Token 計費。",
+			"gpt52codexModel": "新的 gpt-5.2-codex 模型已新增至 Roo Code Router、標準 OpenAI 提供商等。",
+			"bugFixes": "修復導致灰屏的記憶體洩漏、Gemini 思考簽名問題以及其他穩定性改進。"
 		},
 		"cloudAgents": {
 			"heading": "雲端的新功能：",
@@ -374,8 +382,14 @@
 		"copyToInput": "複製到輸入框 (或按住 Shift 並點選)",
 		"timerPrefix": "自動批准已啟用。{{seconds}}秒後選擇中…"
 	},
+	"costs": {
+		"totalWithSubtasks": "總成本（包括子任務）: ${{cost}}",
+		"total": "總成本: ${{cost}}",
+		"includesSubtasks": "包括子任務成本"
+	},
 	"browser": {
 		"session": "瀏覽器會話",
+		"active": "活動中",
 		"rooWantsToUse": "Kilo Code 想要使用瀏覽器",
 		"consoleLogs": "主控台記錄",
 		"noNewLogs": "（沒有新記錄）",

@@ -1,4 +1,9 @@
 {
+	"back": "Повернутися до перегляду завдань",
+	"search": {
+		"placeholder": "Пошук налаштувань...",
+		"noResults": "Налаштувань не знайдено"
+	},
 	"common": {
 		"save": "Зберегти",
 		"done": "Готово",
@@ -38,9 +43,14 @@
 		"language": "Мова",
 		"about": "Про Kilo Code",
 		"autoPurge": "Авто-очищення",
+		"agentBehaviour": "Поведінка агента",
 		"ghost": "Ghost"
 	},
 	"about": {
+		"debugMode": {
+			"label": "Увімкнути режим налагодження",
+			"description": "Увімкнути режим налагодження для відображення додаткових кнопок у заголовку завдання для перегляду історії розмов API та повідомлень UI як prettified JSON у тимчасових файлах."
+		},
 		"contactSupport": "Зв'язатися зі службою підтримки",
 		"contactSupportDesc": "Потребуєш допомоги? Зв'яжися з нашою службою підтримки клієнтів для отримання персоналізованої допомоги.",
 		"joinCommunity": "Приєднатися до спільноти",
@@ -128,6 +138,7 @@
 		"openRouterProviderRoutingLabel": "Маршрутизація провайдера OpenRouter",
 		"openRouterProviderRoutingDescription": "OpenRouter направляє запити до найкращих доступних провайдерів для вашої моделі вбудовувань. За замовчуванням запити розподіляються між провідними провайдерами для максимального часу безвідмовної роботи. Однак ви можете вибрати конкретного провайдера для використання цієї моделі.",
 		"openaiCompatibleProvider": "Сумісний з OpenAI",
+		"openaiCompatibleResponsesProvider": "Сумісний з OpenAI (Responses)",
 		"openAiKeyLabel": "Ключ API OpenAI",
 		"openAiKeyPlaceholder": "Введіть ваш ключ API OpenAI",
 		"openaiKeyLabel": "Ключ OpenAI:",
@@ -794,6 +805,10 @@
 		"showTimestamps": {
 			"label": "Показувати часові мітки",
 			"description": "Показувати часову мітку для кожного повідомлення у вікні чату"
+		},
+		"showDiffStats": {
+			"label": "Показувати статистику diff",
+			"description": "Відображати статистику доданих/видалених рядків у заголовку завдання"
 		}
 	},
 	"notifications": {

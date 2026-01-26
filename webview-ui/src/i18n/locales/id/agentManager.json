@@ -14,7 +14,9 @@
 		"shareSession": "Bagikan sesi",
 		"shareConfirmMessage": "Apakah Anda ingin membagikan snapshot sesi ini secara publik?",
 		"shareConfirmYes": "Ya",
-		"shareConfirmNo": "Tidak"
+		"shareConfirmNo": "Tidak",
+		"options": "Opsi",
+		"configureSetupScript": "Skrip setup worktree"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Mulai agen baru",
@@ -58,7 +60,9 @@
 		"selectModel": "Pilih model",
 		"modelTooltip": "Pilih model AI mana yang akan digunakan untuk sesi ini",
 		"defaultModel": "Model default",
-		"loadingModels": "Memuat..."
+		"loadingModels": "Memuat...",
+		"selectMode": "Pilih mode",
+		"modeTooltip": "Mode: {{mode}}"
 	},
 	"messages": {
 		"waiting": "Menunggu respons agen...",
@@ -73,7 +77,9 @@
 		"usingTool": "Menggunakan alat: **{{tool}}** {{details}}",
 		"expandOutput": "Perluas output",
 		"collapseOutput": "Ciutkan output",
-		"copyCommand": "Salin perintah"
+		"copyCommand": "Salin perintah",
+		"thinking": "Berpikir",
+		"thinkingSeconds": "{{count}}d"
 	},
 	"chatInput": {
 		"autoMode": "Agen berjalan dalam mode otomatis penuh - input tidak diizinkan",
@@ -86,7 +92,9 @@
 		"createPRTitle": "Buat pull request",
 		"sendTitle": "Kirim pesan",
 		"resumeTitle": "Lanjutkan agen",
-		"hint": "Tekan Enter untuk mengirim, Shift+Enter untuk baris baru"
+		"hint": "Tekan Enter untuk mengirim, Shift+Enter untuk baris baru",
+		"addImage": "Tambah gambar",
+		"removeImage": "Hapus gambar"
 	},
 	"status": {
 		"running": "berjalan",

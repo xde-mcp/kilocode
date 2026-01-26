@@ -14,7 +14,9 @@
 		"shareSession": "Partager la session",
 		"shareConfirmMessage": "Souhaites-tu partager publiquement un instantané de cette session ?",
 		"shareConfirmYes": "Oui",
-		"shareConfirmNo": "Non"
+		"shareConfirmNo": "Non",
+		"options": "Options",
+		"configureSetupScript": "Script de setup worktree"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Démarrer un nouvel agent",
@@ -58,7 +60,9 @@
 		"selectModel": "Sélectionner le modèle",
 		"modelTooltip": "Choisis quel modèle d'IA utiliser pour cette session",
 		"defaultModel": "Modèle par défaut",
-		"loadingModels": "Chargement..."
+		"loadingModels": "Chargement...",
+		"selectMode": "Sélectionner le mode",
+		"modeTooltip": "Mode : {{mode}}"
 	},
 	"messages": {
 		"waiting": "En attente de la réponse de l'agent...",
@@ -73,7 +77,9 @@
 		"usingTool": "Utilisation de l'outil : **{{tool}}** {{details}}",
 		"expandOutput": "Développer la sortie",
 		"collapseOutput": "Réduire la sortie",
-		"copyCommand": "Copier la commande"
+		"copyCommand": "Copier la commande",
+		"thinking": "Réflexion",
+		"thinkingSeconds": "{{count}}s"
 	},
 	"chatInput": {
 		"autoMode": "Agent en mode entièrement automatique - aucune entrée autorisée",
@@ -86,7 +92,9 @@
 		"createPRTitle": "Créer une pull request",
 		"sendTitle": "Envoyer le message",
 		"resumeTitle": "Reprendre l'agent",
-		"hint": "Entrée pour envoyer, Shift+Entrée pour nouvelle ligne"
+		"hint": "Entrée pour envoyer, Shift+Entrée pour nouvelle ligne",
+		"addImage": "Ajouter une image",
+		"removeImage": "Supprimer l'image"
 	},
 	"status": {
 		"running": "en cours",

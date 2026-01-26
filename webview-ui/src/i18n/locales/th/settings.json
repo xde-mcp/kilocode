@@ -1,4 +1,9 @@
 {
+	"back": "กลับไปยังมุมมองงาน",
+	"search": {
+		"placeholder": "ค้นหาการตั้งค่า...",
+		"noResults": "ไม่พบการตั้งค่า"
+	},
 	"common": {
 		"save": "บันทึก",
 		"done": "เสร็จสิ้น",
@@ -38,9 +43,14 @@
 		"experimental": "ทดลอง",
 		"language": "ภาษา",
 		"about": "เกี่ยวกับ Kilo Code",
-		"autoPurge": "ทำความสะอาดอัตโนมัติ"
+		"autoPurge": "ทำความสะอาดอัตโนมัติ",
+		"agentBehaviour": "พฤติกรรม Agent"
 	},
 	"about": {
+		"debugMode": {
+			"label": "เปิดใช้งานโหมดดีบัก",
+			"description": "เปิดใช้งานโหมดดีบักเพื่อแสดงปุ่มเพิ่มเติมในส่วนหัวของงานสำหรับการดูประวัติการสนทนา API และข้อความ UI ในรูปแบบ JSON ที่อ่านง่ายในไฟล์ชั่วคราว"
+		},
 		"bugReport": {
 			"label": "พบข้อผิดพลาด?",
 			"link": "รายงานบน GitHub"
@@ -128,6 +138,7 @@
 		"openRouterProviderRoutingLabel": "การกำหนดเส้นทางผู้ให้บริการ OpenRouter",
 		"openRouterProviderRoutingDescription": "OpenRouter กำหนดเส้นทางคำขอไปยังผู้ให้บริการที่ดีที่สุดสำหรับโมเดล embedding ของคุณ โดยค่าเริ่มต้น คำขอจะถูกกระจายโหลดไปยังผู้ให้บริการชั้นนำเพื่อเพิ่มเวลาทำงานสูงสุด อย่างไรก็ตาม คุณสามารถเลือกผู้ให้บริการเฉพาะสำหรับโมเดลนี้ได้",
 		"openaiCompatibleProvider": "เข้ากันได้กับ OpenAI",
+		"openaiCompatibleResponsesProvider": "เข้ากันได้กับ OpenAI (Responses)",
 		"openAiKeyLabel": "คีย์ API OpenAI",
 		"openAiKeyPlaceholder": "ป้อนคีย์ API OpenAI ของคุณ",
 		"openAiCompatibleBaseUrlLabel": "URL พื้นฐาน",
@@ -779,6 +790,10 @@
 		"showTimestamps": {
 			"label": "แสดงตราเวลา",
 			"description": "แสดงตราเวลาสำหรับข้อความแต่ละข้อในมุมมองแชต"
+		},
+		"showDiffStats": {
+			"label": "แสดงสถิติ diff",
+			"description": "แสดงสถิติบรรทัดที่เพิ่ม/ลบในส่วนหัวของงาน"
 		}
 	},
 	"ghost": {
