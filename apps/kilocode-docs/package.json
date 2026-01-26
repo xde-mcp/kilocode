@@ -8,6 +8,8 @@
 		"start": "next start"
 	},
 	"dependencies": {
+		"@docsearch/css": "^4",
+		"@docsearch/js": "^4",
 		"@markdoc/markdoc": "latest",
 		"@markdoc/next.js": "latest",
 		"@vscode/codicons": "^0.0.44",

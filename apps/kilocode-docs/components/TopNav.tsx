@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/router"
+import docsearch from "@docsearch/js"
 import { ThemeToggle } from "./ThemeToggle"
 
 interface NavItem {
@@ -55,33 +56,6 @@ function ChevronDownIcon({ className }: { className?: string }) {
 			xmlns="http://www.w3.org/2000/svg">
 			<path
 				d="M2.5 4.5L6 8L9.5 4.5"
-				stroke="currentColor"
-				strokeWidth="1.5"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	)
-}
-
-function SearchIcon({ className }: { className?: string }) {
-	return (
-		<svg
-			className={className}
-			width="16"
-			height="16"
-			viewBox="0 0 16 16"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg">
-			<path
-				d="M7.25 12.5C10.1495 12.5 12.5 10.1495 12.5 7.25C12.5 4.35051 10.1495 2 7.25 2C4.35051 2 2 4.35051 2 7.25C2 10.1495 4.35051 12.5 7.25 12.5Z"
-				stroke="currentColor"
-				strokeWidth="1.5"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-			<path
-				d="M11 11L14 14"
 				stroke="currentColor"
 				strokeWidth="1.5"
 				strokeLinecap="round"
@@ -219,6 +193,17 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 		return router.pathname.startsWith(href)
 	}
 
+	// Initialize DocSearch
+	useEffect(() => {
+		docsearch({
+			container: "#docsearch",
+			appId: process.env.NEXT_PUBLIC_ALGOLIA_APP_ID || "PMZUYBQDAK",
+			indexName: process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME || "docsearch",
+			apiKey: process.env.NEXT_PUBLIC_ALGOLIA_API_KEY || "24b09689d5b4223813d9b8e48563c8f6",
+			askAi: process.env.NEXT_PUBLIC_ALGOLIA_ASSISTANT_ID || "askAIDemo",
+		})
+	}, [])
+
 	return (
 		<header className="top-header">
 			{/* Top bar */}
@@ -249,16 +234,12 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 
 				{/* Center - Search and Ask AI (desktop only) */}
 				<div className="search-container desktop-nav">
-					<button className="search-btn">
-						<SearchIcon className="w-4 h-4" />
-						<span>Search</span>
-						<span className="search-shortcut">/</span>
-					</button>
+					<div id="docsearch" />
 
-					<button className="ask-ai-btn">
+					{/* <button className="ask-ai-btn">
 						Ask AI
 						<SparkleIcon className="w-4 h-4" />
-					</button>
+					</button> */}
 				</div>
 
 				<div className="right-actions">
@@ -361,32 +342,48 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 					gap: 0.75rem;
 				}
 
-				.search-btn {
-					display: flex;
-					align-items: center;
-					gap: 0.5rem;
-					padding: 0.375rem 0.75rem;
+				#docsearch {
+					--docsearch-primary-color: var(--text-brand);
+					--docsearch-text-color: var(--text-color);
+					--docsearch-spacing: 0.5rem;
+					--docsearch-icon-stroke-width: 1.5;
+					--docsearch-highlight-color: var(--text-brand);
+					--docsearch-muted-color: var(--text-secondary);
+					--docsearch-container-background: var(--bg-color);
+					--docsearch-modal-background: var(--bg-color);
+					--docsearch-modal-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+					--docsearch-searchbox-height: 2.5rem;
+					--docsearch-searchbox-background: var(--bg-secondary);
+					--docsearch-searchbox-focus-background: var(--bg-secondary);
+					--docsearch-hit-color: var(--text-color);
+					--docsearch-hit-active-color: var(--text-color);
+					--docsearch-hit-background: var(--bg-secondary);
+					--docsearch-hit-shadow: none;
+					--docsearch-key-gradient: var(--bg-secondary);
+					--docsearch-key-shadow: inset 0 -1px 0 var(--border-color);
+					--docsearch-footer-background: var(--bg-color);
+					--docsearch-footer-shadow: 0 -1px 0 var(--border-color);
+					--docsearch-border-color: var(--border-color);
+				}
+
+				#docsearch .DocSearch-Button {
+					margin: 0;
+					padding: 0 0.75rem;
 					border-radius: 0.5rem;
 					border: 1px solid var(--border-color);
 					background-color: var(--bg-secondary);
 					color: var(--text-secondary);
-					font-size: 0.875rem;
 					min-width: 200px;
-					cursor: pointer;
-					transition: border-color 0.15s ease;
+					height: 2rem;
 				}
 
-				.search-btn:hover {
-					border-color: #9ca3af;
+				#docsearch .DocSearch-Button-Placeholder {
+					font-size: 0.875rem;
 				}
 
-				.search-shortcut {
-					margin-left: auto;
-					font-size: 0.75rem;
-					padding: 0.125rem 0.375rem;
-					border-radius: 0.25rem;
-					border: 1px solid var(--border-color);
-					font-family: monospace;
+				#docsearch .DocSearch-Search-Icon {
+					width: 1rem;
+					height: 1rem;
 				}
 
 				.ask-ai-btn {
@@ -491,7 +488,7 @@ export function TopNav({ onMobileMenuToggle, isMobileMenuOpen = false, showMobil
 
 				/* Tablet styles */
 				@media (max-width: 1024px) and (min-width: 769px) {
-					.search-btn {
+					#docsearch .DocSearch-Button {
 						min-width: 140px;
 					}
 				}

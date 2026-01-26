@@ -152,6 +152,12 @@ importers:
 
   apps/kilocode-docs:
     dependencies:
+      '@docsearch/css':
+        specifier: ^4
+        version: 4.5.3
+      '@docsearch/js':
+        specifier: ^4
+        version: 4.5.3
       '@markdoc/markdoc':
         specifier: latest
         version: 0.5.4(@types/react@18.3.23)(react@19.2.3)
@@ -3419,6 +3425,12 @@ packages:
   '@discoveryjs/json-ext@0.5.7':
     resolution: {integrity: sha512-dBVuXR082gk3jsFp7Rd/JI4kytwGHecnCoTtXFb7DB6CNHp4rg5k1bhg0nWdLGLnOV71lmDzGQaLMy8iPLY0pw==}
     engines: {node: '>=10.0.0'}
+
+  '@docsearch/css@4.5.3':
+    resolution: {integrity: sha512-kUpHaxn0AgI3LQfyzTYkNUuaFY4uEz/Ym9/N/FvyDE+PzSgZsCyDH9jE49B6N6f1eLCm9Yp64J9wENd6vypdxA==}
+
+  '@docsearch/js@4.5.3':
+    resolution: {integrity: sha512-rcBiUMCXbZLqrLIT6F6FDcrG/tyvM2WM0zum6NPbIiQNDQxbSgmNc+/bToS0rxBsXaxiU64esiWoS02WqrWLsg==}
 
   '@dotenvx/dotenvx@1.44.2':
     resolution: {integrity: sha512-2C44+G2dch4cB6zw7+oGQ9VcFQuuVhc5xOzfVvY7iUEj2PRhiVMIB6SpNMK1V5TvpdqrAqCYFjclK18Mh9vwNQ==}
@@ -20895,6 +20907,10 @@ snapshots:
       kuler: 2.0.0
 
   '@discoveryjs/json-ext@0.5.7': {}
+
+  '@docsearch/css@4.5.3': {}
+
+  '@docsearch/js@4.5.3': {}
 
   '@dotenvx/dotenvx@1.44.2':
     dependencies:

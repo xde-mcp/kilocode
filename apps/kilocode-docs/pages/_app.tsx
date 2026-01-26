@@ -10,6 +10,8 @@ import "prismjs"
 import "prismjs/components/prism-bash.min"
 import "prismjs/themes/prism.css"
 
+import "@docsearch/css"
+
 import "../public/globals.css"
 
 import type { AppProps } from "next/app"
@@ -113,6 +115,8 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
 				<meta name="description" content={description} />
 				<link rel="shortcut icon" href="/docs/img/logo.svg" />
 				<link rel="icon" href="/docs/img/logo.svg" type="image/svg+xml" />
+				{/* Preconnect to Algolia for better performance */}
+				<link rel="preconnect" href="https://PMZUYBQDAK-dsn.algolia.net" crossOrigin="anonymous" />
 				{/* Script to prevent flash of wrong theme */}
 				<script
 					dangerouslySetInnerHTML={{
