@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "क्रेडिट जोड़ें",
-		"lowBalance": "आपका Kilo Code बैलेंस कम है",
-		"newOrganization": "काम के लिए Kilo उपयोग कर रहे हैं?"
+		"lowBalance": "आपका Kilo Code बैलेंस कम है"
 	},
 	"pagination": {
 		"previous": "पिछला",

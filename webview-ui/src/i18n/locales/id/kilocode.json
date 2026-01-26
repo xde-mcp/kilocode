@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Tambah Kredit",
-		"lowBalance": "Saldo Kilo Code kamu rendah",
-		"newOrganization": "Menggunakan Kilo untuk pekerjaan?"
+		"lowBalance": "Saldo Kilo Code kamu rendah"
 	},
 	"pagination": {
 		"previous": "Sebelumnya",

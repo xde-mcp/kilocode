@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "クレジットを追加",
-		"lowBalance": "Kilo Codeの残高が少なくなっています",
-		"newOrganization": "仕事でKiloを使用していますか？"
+		"lowBalance": "Kilo Codeの残高が少なくなっています"
 	},
 	"pagination": {
 		"previous": "前へ",

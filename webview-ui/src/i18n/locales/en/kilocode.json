@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Add Credit",
-		"lowBalance": "Your Kilo Code balance is low",
-		"newOrganization": "Using Kilo for work?"
+		"lowBalance": "Your Kilo Code balance is low"
 	},
 	"memoryWarning": {
 		"message": "Memory usage is at {{percentage}}%. Please restart your IDE to prevent crashes."
