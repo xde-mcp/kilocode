@@ -1,0 +1,17 @@
+import { AiProvidersNav } from "./ai-providers"
+import { AutomateNav } from "./automate"
+import { CodeWithAiNav } from "./code-with-ai"
+import { CollaborateNav } from "./collaborate"
+import { ContributingNav } from "./contributing"
+import { DeploySecureNav } from "./deploy-secure"
+import { GettingStartedNav } from "./getting-started"
+
+export const Nav = {
+	GettingStartedNav,
+	CodeWithAiNav,
+	CollaborateNav,
+	AutomateNav,
+	DeploySecureNav,
+	ContributingNav,
+	AiProvidersNav,
+}
