@@ -1,4 +1,4 @@
-name: Docusaurus Build Check
+name: Markdoc Build Check
 
 env:
     NODE_VERSION: 20.20.0
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
     build:
-        name: Build Docusaurus Site
+        name: Build Markdoc Site
         runs-on: ubuntu-latest
 
         steps:
