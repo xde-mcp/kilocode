@@ -69,8 +69,7 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 				kilocodeModel: data.defaultFreeModel,
 			},
 		})
-		// After switching model, retry the request
-		handleRetry()
+		setTimeout(() => handleRetry(), 500)
 	}
 
 	return (
