@@ -66,20 +66,6 @@ export const CodeWithAiNav: NavSection[] = [
 		],
 	},
 	{
-		title: "Context & Indexing",
-		links: [
-			{
-				href: "/code-with-ai/context/codebase-indexing",
-				children: "Codebase Indexing",
-			},
-			{ href: "/code-with-ai/context/memory-bank", children: "Memory Bank" },
-			{
-				href: "/code-with-ai/context/large-projects",
-				children: "Large Projects",
-			},
-		],
-	},
-	{
 		title: "Customization",
 		links: [
 			{
@@ -100,6 +86,20 @@ export const CodeWithAiNav: NavSection[] = [
 			{
 				href: "/code-with-ai/customization/prompt-engineering",
 				children: "Prompt Engineering",
+			},
+		],
+	},
+	{
+		title: "Context & Indexing",
+		links: [
+			{
+				href: "/code-with-ai/context/codebase-indexing",
+				children: "Codebase Indexing",
+			},
+			{ href: "/code-with-ai/context/memory-bank", children: "Memory Bank" },
+			{
+				href: "/code-with-ai/context/large-projects",
+				children: "Large Projects",
 			},
 		],
 	},

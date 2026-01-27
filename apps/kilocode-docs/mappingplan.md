@@ -104,6 +104,9 @@
 | What is MCP                    | `features/mcp/what-is-mcp`            |
 | Server Transports              | `features/mcp/server-transports`      |
 | MCP vs API                     | `features/mcp/mcp-vs-api`             |
+| **Tools (subheader)**          |                                       |
+| How Tools Work                 | `basic-usage/how-tools-work`          |
+| Tool Details                   | ALL of Tool reference                 |
 
 ---
 
@@ -160,20 +163,18 @@
 
 ## Pages to Remove from Nav / Condense
 
-| Page                                          | Recommendation                                                                                                                           |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `features/system-notifications`               | Fold into Settings or remove                                                                                                             |
-| `features/more-features`                      | This is a red flag - break out or remove                                                                                                 |
-| `features/suggested-responses`                | Fold into Chat Interface                                                                                                                 |
-| `basic-usage/how-tools-work`                  | Fold into Tools Reference intro                                                                                                          |
-| `features/auto-approving-actions`             | Fold into Settings                                                                                                                       |
-| `advanced-usage/auto-cleanup`                 | Fold into Settings                                                                                                                       |
-| `features/model-temperature`                  | Fold into Model Selection                                                                                                                |
-| `advanced-usage/rate-limits-costs`            | Fold into Adding Credits or AI Providers                                                                                                 |
-| `features/footgun-prompting`                  | Remove                                                                                                                                   |
-| `tips-and-tricks`                             | Could become a blog post or fold relevant bits elsewhere                                                                                 |
-| `features/experimental/experimental-features` | Keep but maybe as a single page, not a section                                                                                           |
-| **Tools Reference (entire section)**          | This is 17 pages. Consider: (1) Keep as reference section but not in main nav, (2) Link from relevant pages, (3) Auto-generate from code |
+| Page                                          | Recommendation                                           |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `features/system-notifications`               | Fold into Settings or remove                             |
+| `features/more-features`                      | This is a red flag - break out or remove                 |
+| `features/suggested-responses`                | Fold into Chat Interface                                 |
+| `features/auto-approving-actions`             | Fold into Settings                                       |
+| `advanced-usage/auto-cleanup`                 | Fold into Settings                                       |
+| `features/model-temperature`                  | Fold into Model Selection                                |
+| `advanced-usage/rate-limits-costs`            | Fold into Adding Credits or AI Providers                 |
+| `features/footgun-prompting`                  | Remove                                                   |
+| `tips-and-tricks`                             | Could become a blog post or fold relevant bits elsewhere |
+| `features/experimental/experimental-features` | Keep but maybe as a single page, not a section           |
 
 ---
 
