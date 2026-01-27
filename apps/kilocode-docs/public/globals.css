@@ -270,10 +270,6 @@ a:hover {
 
 /* Mobile Responsive Styles */
 @media (max-width: 1024px) {
-	:root {
-		--top-nav-height: 60px;
-	}
-
 	/* Hide table of contents on tablet and below */
 	.toc-container {
 		display: none;

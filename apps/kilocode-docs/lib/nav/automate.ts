@@ -41,4 +41,11 @@ export const AutomateNav: NavSection[] = [
 			{ href: "/automate/mcp/mcp-vs-api", children: "MCP vs API" },
 		],
 	},
+	{
+		title: "Tools",
+		links: [
+			{ href: "/automate/how-tools-work", children: "How Tools Work" },
+			{ href: "/automate/tools", children: "Tools Details" },
+		],
+	},
 ]

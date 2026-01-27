@@ -9,6 +9,7 @@ const sectionNavItems: SectionNav = {
 	"getting-started": Nav.GettingStartedNav,
 	"code-with-ai": Nav.CodeWithAiNav,
 	collaborate: Nav.CollaborateNav,
+	"automate/tools": Nav.ToolsNav,
 	automate: Nav.AutomateNav,
 	"deploy-secure": Nav.DeploySecureNav,
 	contributing: Nav.ContributingNav,

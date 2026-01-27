@@ -27,7 +27,7 @@ export const GettingStartedNav: NavSection[] = [
 			{ href: "/getting-started/faq", children: "FAQ" },
 			{
 				href: "/getting-started/migrating",
-				children: "Migrating from Cursor/Windsurf",
+				children: "Migrating from Cursor",
 			},
 		],
 	},

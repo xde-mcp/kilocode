@@ -586,7 +586,7 @@ module.exports = [
 	},
 	{
 		source: "/basic-usage/how-tools-work",
-		destination: "/docs/code-with-ai",
+		destination: "/docs/automate/how-tools-work",
 		basePath: false,
 		permanent: true,
 	},
@@ -617,6 +617,112 @@ module.exports = [
 	{
 		source: "/advanced-usage/free-and-budget-models",
 		destination: "/docs/code-with-ai/agents/free-and-budget-models",
+		basePath: false,
+		permanent: true,
+	},
+
+	// ============================================
+	// AUTOMATE - Tools Reference
+	// ============================================
+	{
+		source: "/features/tools/tool-use-overview",
+		destination: "/docs/automate/tools",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/access-mcp-resource",
+		destination: "/docs/automate/tools/access-mcp-resource",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/apply-diff",
+		destination: "/docs/automate/tools/apply-diff",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/ask-followup-question",
+		destination: "/docs/automate/tools/ask-followup-question",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/attempt-completion",
+		destination: "/docs/automate/tools/attempt-completion",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/browser-action",
+		destination: "/docs/automate/tools/browser-action",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/delete-file",
+		destination: "/docs/automate/tools/delete-file",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/execute-command",
+		destination: "/docs/automate/tools/execute-command",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/list-code-definition-names",
+		destination: "/docs/automate/tools/list-code-definition-names",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/list-files",
+		destination: "/docs/automate/tools/list-files",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/new-task",
+		destination: "/docs/automate/tools/new-task",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/read-file",
+		destination: "/docs/automate/tools/read-file",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/search-files",
+		destination: "/docs/automate/tools/search-files",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/switch-mode",
+		destination: "/docs/automate/tools/switch-mode",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/update-todo-list",
+		destination: "/docs/automate/tools/update-todo-list",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/use-mcp-tool",
+		destination: "/docs/automate/tools/use-mcp-tool",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/features/tools/write-to-file",
+		destination: "/docs/automate/tools/write-to-file",
 		basePath: false,
 		permanent: true,
 	},
