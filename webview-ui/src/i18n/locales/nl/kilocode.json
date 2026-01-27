@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Krediet toevoegen",
-		"lowBalance": "Uw Kilo Code-saldo is laag",
-		"newOrganization": "Gebruik je Kilo voor werk?"
+		"lowBalance": "Uw Kilo Code-saldo is laag"
 	},
 	"pagination": {
 		"previous": "Vorige",

@@ -11,8 +11,7 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Додати кредит",
-		"lowBalance": "Твій баланс Kilo Code низький",
-		"newOrganization": "Використовуєш Kilo для роботи?"
+		"lowBalance": "Твій баланс Kilo Code низький"
 	},
 	"pagination": {
 		"previous": "Попередня",
