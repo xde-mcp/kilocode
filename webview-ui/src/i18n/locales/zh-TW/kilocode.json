@@ -72,8 +72,7 @@
 					"deny": "拒絕提示詞訓練",
 					"zdr": "零資料保留"
 				}
-			},
-			"automaticFetch": "最新模型會自動在 Kilo Code 中提供。如果您不確定要選擇哪個模型，Kilo Code 與列在頂部<strong>粗體</strong>顯示的推薦模型搭配使用效果最佳。"
+			}
 		},
 		"modelInfo": {
 			"contextWindow": "上下文視窗",
