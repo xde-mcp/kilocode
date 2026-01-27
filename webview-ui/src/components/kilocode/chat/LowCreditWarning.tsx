@@ -49,6 +49,14 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 		console.error("Failed to parse payment_required_prompt data:", e)
 	}
 
+	const handleRetry = () => {
+		vscode.postMessage({
+			type: "askResponse",
+			askResponse: "retry_clicked",
+			text: message.text,
+		})
+	}
+
 	const handleSwitchToFreeModel = () => {
 		if (!data.defaultFreeModel || !currentApiConfigName || !apiConfiguration) {
 			return
@@ -62,11 +70,7 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 			},
 		})
 		// After switching model, retry the request
-		vscode.postMessage({
-			type: "askResponse",
-			askResponse: "retry_clicked",
-			text: message.text,
-		})
+		handleRetry()
 	}
 
 	return (
@@ -92,11 +96,7 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 					{t("kilocode:lowCreditWarning.lowBalance")}
 					<RetryIconButton
 						onClick={() => {
-							vscode.postMessage({
-								type: "askResponse",
-								askResponse: "retry_clicked",
-								text: message.text, // Pass original data back if needed
-							})
+							handleRetry()
 						}}
 					/>
 				</div>
