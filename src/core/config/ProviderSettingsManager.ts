@@ -73,7 +73,7 @@ export class ProviderSettingsManager {
 			default: {
 				id: this.defaultConfigId,
 				apiProvider: "kilocode",
-				kilocodeModel: "google/gemma-2-9b-it:free",
+				kilocodeModel: "kilo:free",
 			},
 		},
 		modeApiConfigs: this.defaultModeApiConfigs,
