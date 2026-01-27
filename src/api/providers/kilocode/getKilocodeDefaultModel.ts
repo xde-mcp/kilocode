@@ -46,7 +46,7 @@ async function fetchKilocodeDefaultModel(
 				`Default model from ${url} was invalid: ${JSON.stringify(defaultModel.error.format(), undefined, 2)}`,
 			)
 		}
-		console.info(`Fetched default model from ${url}: ${defaultModel}`)
+		console.info(`Fetched default model from ${url}: ${defaultModel.data.defaultModel}`)
 		return defaultModel.data
 	} catch (err) {
 		console.error("Failed to get default model", err)
