@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "क्रेडिट जोड़ें",
-		"lowBalance": "आपका Kilo Code बैलेंस कम है"
+		"lowBalance": "आपका Kilo Code बैलेंस कम है",
+		"switchToFreeModel": "इसके बजाय मुफ्त मॉडल पर स्विच करें"
 	},
 	"pagination": {
 		"previous": "पिछला",

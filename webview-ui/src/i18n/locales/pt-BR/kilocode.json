@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Adicionar crédito",
-		"lowBalance": "Seu saldo do Kilo Code está baixo"
+		"lowBalance": "Seu saldo do Kilo Code está baixo",
+		"switchToFreeModel": "Mudar para um modelo gratuito"
 	},
 	"pagination": {
 		"previous": "Anterior",
