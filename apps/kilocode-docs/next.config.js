@@ -9,15 +9,7 @@ module.exports = withMarkdoc(/* config: https://markdoc.io/docs/nextjs#options *
 		instrumentationHook: true,
 	},
 	async redirects() {
-		return [
-			{
-				source: "/",
-				destination: "/docs",
-				basePath: false,
-				permanent: true,
-			},
-			...previousDocsRedirects,
-		]
+		return [...previousDocsRedirects]
 	},
 	async rewrites() {
 		return {
