@@ -24,9 +24,10 @@ Use Kilo Code wherever you work:
 - [**VS Code**](/docs/code-with-ai/platforms/vscode) — The most popular IDE integration
 - [**JetBrains**](/docs/code-with-ai/platforms/jetbrains) — IntelliJ, PyCharm, WebStorm, and more
 - [**CLI**](/docs/code-with-ai/platforms/cli) — Terminal-based AI coding for scripts and automation
-- [**Web & Mobile**](/docs/code-with-ai/platforms/web-app) — Access Kilo from your browser
+- [**Cloud Agent**](/docs/code-with-ai/platforms/cloud-agent) — Run Kilo in the cloud
 - [**Mobile Apps**](/docs/code-with-ai/platforms/mobile) — iOS and Android support
 - [**Slack**](/docs/code-with-ai/platforms/slack) — Chat with Kilo in your workspace
+- [**App Builder**](/docs/code-with-ai/app-builder) — Create full-stack applications with AI
 
 ## Working with Agents
 
@@ -37,6 +38,7 @@ Kilo uses specialized agents to help with different tasks:
 - [**Model Selection**](/docs/code-with-ai/agents/model-selection) — Choose the right AI model for each task
 - [**Context Mentions**](/docs/code-with-ai/agents/context-mentions) — Reference files, functions, and symbols
 - [**Orchestrator Mode**](/docs/code-with-ai/agents/orchestrator-mode) — Complex multi-step tasks
+- [**Free & Budget Models**](/docs/code-with-ai/agents/free-and-budget-models) — Cost-effective AI options
 
 ## Features
 
@@ -51,35 +53,9 @@ Core capabilities to boost your productivity:
 - [**Enhance Prompt**](/docs/code-with-ai/features/enhance-prompt) — Improve your prompts automatically
 - [**Git Commit Generation**](/docs/code-with-ai/features/git-commit-generation) — AI-powered commit messages
 
-## Context & Memory
-
-Help Kilo understand your codebase:
-
-- [**Codebase Indexing**](/docs/code-with-ai/context/codebase-indexing) — Build an index of your code for better context
-- [**Memory Bank**](/docs/code-with-ai/context/memory-bank) — Store project context and decisions
-- [**Large Projects**](/docs/code-with-ai/context/large-projects) — Best practices for monorepos and large codebases
-
-## Customization
-
-Tailor Kilo to your workflow:
-
-- [**Custom Modes**](/docs/code-with-ai/customization/custom-modes) — Create specialized modes for your team
-- [**Custom Instructions**](/docs/code-with-ai/customization/custom-instructions) — Add project-specific guidelines
-- [**Custom Rules**](/docs/code-with-ai/customization/custom-rules) — Define when and how Kilo should act
-- [**Prompt Engineering**](/docs/code-with-ai/customization/prompt-engineering) — Write effective prompts
-- [**Skills**](/docs/code-with-ai/customization/skills) — Extend Kilo's capabilities
-- [**Workflows**](/docs/code-with-ai/customization/workflows) — Automate repetitive tasks
-- [**agents.md**](/docs/code-with-ai/customization/agents-md) — Configure agent behavior
-
-## App Building
-
-Build complete applications with Kilo:
-
-- [**App Builder**](/docs/code-with-ai/app-builder.md) — Create full-stack applications with AI
-- [**Cloud Agent**](/docs/code-with-ai/platforms/cloud-agent) — Deploy agents to the cloud
-
 ## Next Steps
 
-- Explore the [**Automate**](/docs/automate) section for advanced workflows
+- Explore [**Customize**](/docs/customize) to tailor Kilo to your workflow
 - Learn about [**Collaborating**](/docs/collaborate) with your team
-- Set up [**Deploy & Secure**](/docs/deploy-secure) deployments
+- Set up [**Automate**](/docs/automate) for CI/CD integration
+- Configure [**Deploy & Secure**](/docs/deploy-secure) deployments

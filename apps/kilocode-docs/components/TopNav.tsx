@@ -26,6 +26,7 @@ interface DropdownMenuProps {
 const mainNavItems: NavItem[] = [
 	{ label: "Get Started", href: "/getting-started" },
 	{ label: "Code with AI", href: "/code-with-ai" },
+	{ label: "Customize", href: "/customize" },
 	{ label: "Collaborate", href: "/collaborate" },
 	{ label: "Automate", href: "/automate" },
 	{ label: "Deploy & Secure", href: "/deploy-secure" },

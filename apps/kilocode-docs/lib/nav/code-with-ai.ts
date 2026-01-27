@@ -65,42 +65,4 @@ export const CodeWithAiNav: NavSection[] = [
 			},
 		],
 	},
-	{
-		title: "Customization",
-		links: [
-			{
-				href: "/code-with-ai/customization/custom-modes",
-				children: "Custom Modes",
-			},
-			{
-				href: "/code-with-ai/customization/custom-rules",
-				children: "Custom Rules",
-			},
-			{
-				href: "/code-with-ai/customization/custom-instructions",
-				children: "Custom Instructions",
-			},
-			{ href: "/code-with-ai/customization/agents-md", children: "agents.md" },
-			{ href: "/code-with-ai/customization/workflows", children: "Workflows" },
-			{ href: "/code-with-ai/customization/skills", children: "Skills" },
-			{
-				href: "/code-with-ai/customization/prompt-engineering",
-				children: "Prompt Engineering",
-			},
-		],
-	},
-	{
-		title: "Context & Indexing",
-		links: [
-			{
-				href: "/code-with-ai/context/codebase-indexing",
-				children: "Codebase Indexing",
-			},
-			{ href: "/code-with-ai/context/memory-bank", children: "Memory Bank" },
-			{
-				href: "/code-with-ai/context/large-projects",
-				children: "Large Projects",
-			},
-		],
-	},
 ]

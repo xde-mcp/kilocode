@@ -8,6 +8,7 @@ import { Nav } from "../lib/nav"
 const sectionNavItems: SectionNav = {
 	"getting-started": Nav.GettingStartedNav,
 	"code-with-ai": Nav.CodeWithAiNav,
+	customize: Nav.CustomizeNav,
 	collaborate: Nav.CollaborateNav,
 	"automate/tools": Nav.ToolsNav,
 	automate: Nav.AutomateNav,
@@ -21,6 +22,7 @@ const mainNavItems = [
 	{ label: "Home", href: "/", sectionKey: null },
 	{ label: "Get Started", href: "/getting-started", sectionKey: "getting-started" },
 	{ label: "Code with AI", href: "/code-with-ai", sectionKey: "code-with-ai" },
+	{ label: "Customize", href: "/customize", sectionKey: "customize" },
 	{ label: "Collaborate", href: "/collaborate", sectionKey: "collaborate" },
 	{ label: "Automate", href: "/automate", sectionKey: "automate" },
 	{ label: "Deploy & Secure", href: "/deploy-secure", sectionKey: "deploy-secure" },

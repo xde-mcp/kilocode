@@ -184,69 +184,131 @@ module.exports = [
 	},
 
 	// ============================================
-	// CODE WITH AI - Context & Indexing
+	// CUSTOMIZE - Context & Indexing
 	// ============================================
 	{
 		source: "/features/codebase-indexing",
-		destination: "/docs/code-with-ai/context/codebase-indexing",
+		destination: "/docs/customize/context/codebase-indexing",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/advanced-usage/memory-bank",
-		destination: "/docs/code-with-ai/context/memory-bank",
+		destination: "/docs/customize/context/memory-bank",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/advanced-usage/large-projects",
-		destination: "/docs/code-with-ai/context/large-projects",
+		destination: "/docs/customize/context/large-projects",
+		basePath: false,
+		permanent: true,
+	},
+	// Old code-with-ai/context paths redirect to new customize/context paths
+	{
+		source: "/code-with-ai/context/codebase-indexing",
+		destination: "/docs/customize/context/codebase-indexing",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/context/memory-bank",
+		destination: "/docs/customize/context/memory-bank",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/context/large-projects",
+		destination: "/docs/customize/context/large-projects",
 		basePath: false,
 		permanent: true,
 	},
 
 	// ============================================
-	// CODE WITH AI - Customization
+	// CUSTOMIZE - Customization
 	// ============================================
 	{
 		source: "/agent-behavior/custom-modes",
-		destination: "/docs/code-with-ai/customization/custom-modes",
+		destination: "/docs/customize/custom-modes",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/custom-rules",
-		destination: "/docs/code-with-ai/customization/custom-rules",
+		destination: "/docs/customize/custom-rules",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/custom-instructions",
-		destination: "/docs/code-with-ai/customization/custom-instructions",
+		destination: "/docs/customize/custom-instructions",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/agents-md",
-		destination: "/docs/code-with-ai/customization/agents-md",
+		destination: "/docs/customize/agents-md",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/workflows",
-		destination: "/docs/code-with-ai/customization/workflows",
+		destination: "/docs/customize/workflows",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/skills",
-		destination: "/docs/code-with-ai/customization/skills",
+		destination: "/docs/customize/skills",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/agent-behavior/prompt-engineering",
-		destination: "/docs/code-with-ai/customization/prompt-engineering",
+		destination: "/docs/customize/prompt-engineering",
+		basePath: false,
+		permanent: true,
+	},
+	// Old code-with-ai/customization paths redirect to new customize paths
+	{
+		source: "/code-with-ai/customization/custom-modes",
+		destination: "/docs/customize/custom-modes",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/custom-rules",
+		destination: "/docs/customize/custom-rules",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/custom-instructions",
+		destination: "/docs/customize/custom-instructions",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/agents-md",
+		destination: "/docs/customize/agents-md",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/workflows",
+		destination: "/docs/customize/workflows",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/skills",
+		destination: "/docs/customize/skills",
+		basePath: false,
+		permanent: true,
+	},
+	{
+		source: "/code-with-ai/customization/prompt-engineering",
+		destination: "/docs/customize/prompt-engineering",
 		basePath: false,
 		permanent: true,
 	},
