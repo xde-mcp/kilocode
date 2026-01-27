@@ -5,9 +5,18 @@ import { RetryIconButton } from "../common/RetryIconButton"
 import styled from "styled-components"
 import { useTranslation } from "react-i18next"
 import { FreeModelsLink } from "../FreeModelsLink"
+import { useExtensionState } from "@src/context/ExtensionStateContext"
 
 type LowCreditWarningProps = {
 	message: ClineMessage
+}
+
+type LowCreditWarningData = {
+	title: string
+	message: string
+	balance: string
+	buyCreditsUrl: string
+	defaultFreeModel?: string
 }
 
 const HeaderContainer = styled.div`
@@ -26,12 +35,38 @@ const Description = styled.div`
 
 export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 	const { t } = useTranslation()
-	let data = { title: "Error", message: "Payment required.", balance: "-?.??", buyCreditsUrl: "" }
+	const { currentApiConfigName, apiConfiguration } = useExtensionState()
+	let data: LowCreditWarningData = {
+		title: "Error",
+		message: "Payment required.",
+		balance: "-?.??",
+		buyCreditsUrl: "",
+	}
 
 	try {
 		data = JSON.parse(message.text ?? "{}")
 	} catch (e) {
 		console.error("Failed to parse payment_required_prompt data:", e)
+	}
+
+	const handleSwitchToFreeModel = () => {
+		if (!data.defaultFreeModel || !currentApiConfigName || !apiConfiguration) {
+			return
+		}
+		vscode.postMessage({
+			type: "upsertApiConfiguration",
+			text: currentApiConfigName,
+			apiConfiguration: {
+				...apiConfiguration,
+				kilocodeModel: data.defaultFreeModel,
+			},
+		})
+		// After switching model, retry the request
+		vscode.postMessage({
+			type: "askResponse",
+			askResponse: "retry_clicked",
+			text: message.text,
+		})
 	}
 
 	return (
@@ -77,7 +112,16 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 					}}>
 					{t("kilocode:lowCreditWarning.addCredit")}
 				</VSCodeButton>
-				<FreeModelsLink className="p-1 w-full rounded mt-1" origin="chat" />
+				{data.defaultFreeModel ? (
+					<VSCodeButton
+						className="p-1 w-full rounded"
+						appearance="secondary"
+						onClick={handleSwitchToFreeModel}>
+						{t("kilocode:lowCreditWarning.switchToFreeModel")}
+					</VSCodeButton>
+				) : (
+					<FreeModelsLink className="p-1 w-full rounded mt-1" origin="chat" />
+				)}
 			</div>
 		</>
 	)
