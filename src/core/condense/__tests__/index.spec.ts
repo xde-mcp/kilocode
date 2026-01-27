@@ -338,8 +338,6 @@ describe("getKeepMessagesWithToolBlocks", () => {
 	})
 
 	it("should preserve Anthropic thinking blocks alongside tool_use blocks", () => {
-		// Test that Anthropic-style thinking blocks (type: "thinking") are preserved
-		// alongside tool_use blocks for extended thinking mode
 		const thinkingBlock = {
 			type: "thinking" as const,
 			thinking: "Let me analyze this...",
@@ -363,7 +361,6 @@ describe("getKeepMessagesWithToolBlocks", () => {
 			{ role: "user", content: "Please read the file", ts: 3 },
 			{
 				role: "assistant",
-				// Anthropic stores thinking blocks with type: "thinking" and signature
 				content: [thinkingBlock as any, { type: "text" as const, text: "Reading file..." }, toolUseBlock],
 				ts: 4,
 			},
@@ -378,11 +375,9 @@ describe("getKeepMessagesWithToolBlocks", () => {
 
 		const result = getKeepMessagesWithToolBlocks(messages, 3)
 
-		// Should preserve the tool_use block
 		expect(result.toolUseBlocksToPreserve).toHaveLength(1)
 		expect(result.toolUseBlocksToPreserve[0]).toEqual(toolUseBlock)
 
-		// Should preserve the thinking block for Anthropic extended thinking
 		expect(result.reasoningBlocksToPreserve).toHaveLength(1)
 		expect((result.reasoningBlocksToPreserve[0] as any).type).toBe("thinking")
 		expect((result.reasoningBlocksToPreserve[0] as any).thinking).toBe("Let me analyze this...")
@@ -430,10 +425,242 @@ describe("getKeepMessagesWithToolBlocks", () => {
 
 		const result = getKeepMessagesWithToolBlocks(messages, 3)
 
-		// Should preserve the redacted_thinking block
 		expect(result.reasoningBlocksToPreserve).toHaveLength(1)
 		expect((result.reasoningBlocksToPreserve[0] as any).type).toBe("redacted_thinking")
 		expect((result.reasoningBlocksToPreserve[0] as any).data).toBe("encrypted_data_here")
+	})
+
+	it("should preserve tool_use when tool_result is in 2nd kept message and tool_use is 2 messages before boundary", () => {
+		const toolUseBlock = {
+			type: "tool_use" as const,
+			id: "toolu_second_kept",
+			name: "read_file",
+			input: { path: "test.txt" },
+		}
+		const toolResultBlock = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_second_kept",
+			content: "file contents",
+		}
+
+		const messages: ApiMessage[] = [
+			{ role: "user", content: "Hello", ts: 1 },
+			{ role: "assistant", content: "Let me help", ts: 2 },
+			{
+				role: "assistant",
+				content: [{ type: "text" as const, text: "Reading file..." }, toolUseBlock],
+				ts: 3,
+			},
+			{ role: "user", content: "Some other message", ts: 4 },
+			{ role: "assistant", content: "First kept message", ts: 5 },
+			{
+				role: "user",
+				content: [toolResultBlock, { type: "text" as const, text: "Continue" }],
+				ts: 6,
+			},
+			{ role: "assistant", content: "Third kept message", ts: 7 },
+		]
+
+		const result = getKeepMessagesWithToolBlocks(messages, 3)
+
+		expect(result.keepMessages).toHaveLength(3)
+		expect(result.keepMessages[0].ts).toBe(5)
+		expect(result.keepMessages[1].ts).toBe(6)
+		expect(result.keepMessages[2].ts).toBe(7)
+
+		expect(result.toolUseBlocksToPreserve).toHaveLength(1)
+		expect(result.toolUseBlocksToPreserve[0]).toEqual(toolUseBlock)
+	})
+
+	it("should preserve tool_use when tool_result is in 3rd kept message and tool_use is at boundary edge", () => {
+		const toolUseBlock = {
+			type: "tool_use" as const,
+			id: "toolu_third_kept",
+			name: "search",
+			input: { query: "test" },
+		}
+		const toolResultBlock = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_third_kept",
+			content: "search results",
+		}
+
+		const messages: ApiMessage[] = [
+			{ role: "user", content: "Start", ts: 1 },
+			{
+				role: "assistant",
+				content: [{ type: "text" as const, text: "Searching..." }, toolUseBlock],
+				ts: 2,
+			},
+			{ role: "user", content: "First kept message", ts: 3 },
+			{ role: "assistant", content: "Second kept message", ts: 4 },
+			{
+				role: "user",
+				content: [toolResultBlock, { type: "text" as const, text: "Done" }],
+				ts: 5,
+			},
+		]
+
+		const result = getKeepMessagesWithToolBlocks(messages, 3)
+
+		expect(result.keepMessages).toHaveLength(3)
+		expect(result.keepMessages[0].ts).toBe(3)
+		expect(result.keepMessages[1].ts).toBe(4)
+		expect(result.keepMessages[2].ts).toBe(5)
+
+		expect(result.toolUseBlocksToPreserve).toHaveLength(1)
+		expect(result.toolUseBlocksToPreserve[0]).toEqual(toolUseBlock)
+	})
+
+	it("should preserve multiple tool_uses when tool_results are in different kept messages", () => {
+		const toolUseBlock1 = {
+			type: "tool_use" as const,
+			id: "toolu_multi_1",
+			name: "read_file",
+			input: { path: "file1.txt" },
+		}
+		const toolUseBlock2 = {
+			type: "tool_use" as const,
+			id: "toolu_multi_2",
+			name: "read_file",
+			input: { path: "file2.txt" },
+		}
+		const toolResultBlock1 = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_multi_1",
+			content: "contents 1",
+		}
+		const toolResultBlock2 = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_multi_2",
+			content: "contents 2",
+		}
+
+		const messages: ApiMessage[] = [
+			{ role: "user", content: "Start", ts: 1 },
+			{
+				role: "assistant",
+				content: [{ type: "text" as const, text: "Reading file 1..." }, toolUseBlock1],
+				ts: 2,
+			},
+			{ role: "user", content: "Some message", ts: 3 },
+			{
+				role: "assistant",
+				content: [{ type: "text" as const, text: "Reading file 2..." }, toolUseBlock2],
+				ts: 4,
+			},
+			{
+				role: "user",
+				content: [toolResultBlock1, { type: "text" as const, text: "First result" }],
+				ts: 5,
+			},
+			{
+				role: "user",
+				content: [toolResultBlock2, { type: "text" as const, text: "Second result" }],
+				ts: 6,
+			},
+			{ role: "assistant", content: "Got both files", ts: 7 },
+		]
+
+		const result = getKeepMessagesWithToolBlocks(messages, 3)
+
+		expect(result.keepMessages).toHaveLength(3)
+
+		expect(result.toolUseBlocksToPreserve).toHaveLength(2)
+		expect(result.toolUseBlocksToPreserve).toContainEqual(toolUseBlock1)
+		expect(result.toolUseBlocksToPreserve).toContainEqual(toolUseBlock2)
+	})
+
+	it("should not crash when tool_result references tool_use beyond search boundary", () => {
+		const toolResultBlock = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_beyond_boundary",
+			content: "result",
+		}
+
+		const messages: ApiMessage[] = [
+			{
+				role: "assistant",
+				content: [
+					{ type: "text" as const, text: "Way back..." },
+					{
+						type: "tool_use" as const,
+						id: "toolu_beyond_boundary",
+						name: "old_tool",
+						input: {},
+					},
+				],
+				ts: 1,
+			},
+			{ role: "user", content: "Message 2", ts: 2 },
+			{ role: "assistant", content: "Message 3", ts: 3 },
+			{ role: "user", content: "Message 4", ts: 4 },
+			{ role: "assistant", content: "Message 5", ts: 5 },
+			{ role: "user", content: "Message 6", ts: 6 },
+			{ role: "assistant", content: "Message 7", ts: 7 },
+			{
+				role: "user",
+				content: [toolResultBlock],
+				ts: 8,
+			},
+			{ role: "assistant", content: "Message 9", ts: 9 },
+			{ role: "user", content: "Message 10", ts: 10 },
+		]
+
+		const result = getKeepMessagesWithToolBlocks(messages, 3)
+
+		expect(result.keepMessages).toHaveLength(3)
+		expect(result.keepMessages[0].ts).toBe(8)
+		expect(result.keepMessages[1].ts).toBe(9)
+		expect(result.keepMessages[2].ts).toBe(10)
+
+		expect(result.toolUseBlocksToPreserve).toHaveLength(0)
+	})
+
+	it("should not duplicate tool_use blocks when same tool_result ID appears multiple times", () => {
+		const toolUseBlock = {
+			type: "tool_use" as const,
+			id: "toolu_duplicate",
+			name: "read_file",
+			input: { path: "test.txt" },
+		}
+		const toolResultBlock1 = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_duplicate",
+			content: "result 1",
+		}
+		const toolResultBlock2 = {
+			type: "tool_result" as const,
+			tool_use_id: "toolu_duplicate",
+			content: "result 2",
+		}
+
+		const messages: ApiMessage[] = [
+			{ role: "user", content: "Start", ts: 1 },
+			{
+				role: "assistant",
+				content: [{ type: "text" as const, text: "Using tool..." }, toolUseBlock],
+				ts: 2,
+			},
+			{
+				role: "user",
+				content: [toolResultBlock1],
+				ts: 3,
+			},
+			{ role: "assistant", content: "Processing", ts: 4 },
+			{
+				role: "user",
+				content: [toolResultBlock2],
+				ts: 5,
+			},
+		]
+
+		const result = getKeepMessagesWithToolBlocks(messages, 3)
+
+		expect(result.keepMessages).toHaveLength(3)
+
+		expect(result.toolUseBlocksToPreserve).toHaveLength(1)
+		expect(result.toolUseBlocksToPreserve[0]).toEqual(toolUseBlock)
 	})
 })
 
