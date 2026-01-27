@@ -112,16 +112,17 @@ export const LowCreditWarning = ({ message }: LowCreditWarningProps) => {
 					}}>
 					{t("kilocode:lowCreditWarning.addCredit")}
 				</VSCodeButton>
-				{data.defaultFreeModel ? (
-					<VSCodeButton
-						className="p-1 w-full rounded"
-						appearance="secondary"
-						onClick={handleSwitchToFreeModel}>
-						{t("kilocode:lowCreditWarning.switchToFreeModel")}
-					</VSCodeButton>
-				) : (
-					<FreeModelsLink className="p-1 w-full rounded mt-1" origin="chat" />
-				)}
+				{apiConfiguration?.kilocodeModel !== data.defaultFreeModel &&
+					(data.defaultFreeModel ? (
+						<VSCodeButton
+							className="p-1 w-full rounded mt-1"
+							appearance="primary"
+							onClick={handleSwitchToFreeModel}>
+							{t("kilocode:lowCreditWarning.switchToFreeModel")}
+						</VSCodeButton>
+					) : (
+						<FreeModelsLink className="p-1 w-full rounded mt-1" origin="chat" />
+					))}
 			</div>
 		</>
 	)
