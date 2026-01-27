@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import Head from "next/head"
-import Link from "next/link"
 import { useRouter } from "next/router"
+import posthog from "posthog-js"
 
 import { CopyPageButton, SideNav, TableOfContents, TopNav } from "../components"
 
@@ -60,15 +60,21 @@ export default function MyApp({ Component, pageProps }: AppProps<MyAppProps>) {
 	const is404 = router.pathname === "/404"
 	const isFullPageLayout = isHomepage || is404
 
-	// Close mobile menu on route change
+	// Close mobile menu on route change and track pageviews
 	useEffect(() => {
 		const handleRouteChange = () => {
 			setIsMobileMenuOpen(false)
 		}
 
+		const handleRouteComplete = () => {
+			posthog.capture("$pageview")
+		}
+
 		router.events.on("routeChangeStart", handleRouteChange)
+		router.events.on("routeChangeComplete", handleRouteComplete)
 		return () => {
 			router.events.off("routeChangeStart", handleRouteChange)
+			router.events.off("routeChangeComplete", handleRouteComplete)
 		}
 	}, [router])
 

@@ -14,6 +14,7 @@ export const CodeWithAiNav: NavSection[] = [
 			{ href: "/code-with-ai/platforms/cloud-agent", children: "Cloud Agent" },
 			{ href: "/code-with-ai/platforms/mobile", children: "Mobile Apps" },
 			{ href: "/code-with-ai/platforms/slack", children: "Slack" },
+			{ href: "/code-with-ai/app-builder", children: "App Builder" },
 		],
 	},
 	{
@@ -97,9 +98,5 @@ export const CodeWithAiNav: NavSection[] = [
 				children: "Prompt Engineering",
 			},
 		],
-	},
-	{
-		title: "App Builder",
-		links: [{ href: "/code-with-ai/app-builder", children: "App Builder" }],
 	},
 ]
