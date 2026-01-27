@@ -257,7 +257,7 @@ export interface ExtensionMessage {
 		| "modes"
 		| "taskWithAggregatedCosts"
 		| "skillsData"
-		| "askReviewScope" // kilocode_change: Skills data response
+		| "askReviewScope" // kilocode_change: Review mode scope selection
 	text?: string
 	// kilocode_change start
 	completionRequestId?: string // Correlation ID from request
