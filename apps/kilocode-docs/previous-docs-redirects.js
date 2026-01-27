@@ -616,7 +616,7 @@ module.exports = [
 	},
 	{
 		source: "/advanced-usage/free-and-budget-models",
-		destination: "/docs/code-with-ai/agents/model-selection",
+		destination: "/docs/code-with-ai/agents/free-and-budget-models",
 		basePath: false,
 		permanent: true,
 	},

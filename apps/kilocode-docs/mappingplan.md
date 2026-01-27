@@ -1,22 +1,18 @@
-This is a great exercise. Let me map everything out.
-
----
-
 ## Mapping Existing Pages to New Structure
 
 ### Get Started
 
-| New Item                          | Existing Page(s)                                                        |
-| --------------------------------- | ----------------------------------------------------------------------- |
-| ☑️ Introduction / Overview        | `index`, `getting-started/concepts`                                     |
-| ☑️ Installation                   | `getting-started/installing`                                            |
-| ☑️ Quickstart                     | `getting-started/your-first-task`                                       |
-| ☑️ Setup & Authentication         | `getting-started/setting-up`, `getting-started/connecting-api-provider` |
-| ☑️ AI Providers                   | `basic-usage/connecting-providers`, `providers/*` (all of them)         |
-| Settings                          | `basic-usage/settings-management`                                       |
-| ☑️ Adding Credits                 | `basic-usage/adding-credits`                                            |
-| ☑️ FAQ                            | Keep if it exists                                                       |
-| ☑️ Migrating from Cursor/Windsurf | `advanced-usage/migrating-from-cursor-windsurf`                         |
+| New Item                       | Existing Page(s)                                                        |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| Introduction / Overview        | `index`, `getting-started/concepts`                                     |
+| Installation                   | `getting-started/installing`                                            |
+| Quickstart                     | `getting-started/your-first-task`                                       |
+| Setup & Authentication         | `getting-started/setting-up`, `getting-started/connecting-api-provider` |
+| AI Providers                   | `basic-usage/connecting-providers`, `providers/*` (all of them)         |
+| Settings                       | `basic-usage/settings-management`                                       |
+| Adding Credits                 | `basic-usage/adding-credits`                                            |
+| FAQ                            | Keep if it exists                                                       |
+| Migrating from Cursor/Windsurf | `advanced-usage/migrating-from-cursor-windsurf`                         |
 
 ---
 
@@ -27,9 +23,9 @@ This is a great exercise. Let me map everything out.
 | **Platforms** (subheader)           |                                                                            |
 | VS Code Extension                   | Needs new page (or pull from install)                                      |
 | JetBrains Extension                 | Needs new page                                                             |
-| ☑️ CLI                              | `cli`                                                                      |
-| ☑️ Cloud Agent                      | `advanced-usage/cloud-agent` (partial)                                     |
-| ☑️ Mobile Apps                      | Needs new page                                                             |
+| CLI                                 | `cli`                                                                      |
+| Cloud Agent                         | `advanced-usage/cloud-agent` (partial)                                     |
+| Mobile Apps                         | Needs new page                                                             |
 | Slack                               | `slack`                                                                    |
 | **Working with Agents** (subheader) |                                                                            |
 | The Chat Interface                  | `basic-usage/the-chat-interface`                                           |
@@ -37,6 +33,7 @@ This is a great exercise. Let me map everything out.
 | Using Modes                         | `basic-usage/using-modes`                                                  |
 | Orchestrator Mode                   | `basic-usage/orchestrator-mode`                                            |
 | Model Selection                     | `basic-usage/model-selection-guide`                                        |
+| Free & Budget Models                | `advanced-usage/free-and-budget-models`                                    |
 | **Features** (subheader)            |                                                                            |
 | Autocomplete                        | `basic-usage/autocomplete/index`, `basic-usage/autocomplete/mistral-setup` |
 | Code Actions                        | `features/code-actions`                                                    |
@@ -93,20 +90,20 @@ This is a great exercise. Let me map everything out.
 
 | New Item                       | Existing Page(s)                      |
 | ------------------------------ | ------------------------------------- |
-| ☑️ Integrations Overview       | `advanced-usage/integrations`         |
-| ☑️ Code Reviews                | `advanced-usage/code-reviews`         |
-| ☑️ Agent Manager               | `advanced-usage/agent-manager`        |
+| Integrations Overview          | `advanced-usage/integrations`         |
+| Code Reviews                   | `advanced-usage/code-reviews`         |
+| Agent Manager                  | `advanced-usage/agent-manager`        |
 | **Extending Kilo** (subheader) |                                       |
-| ☑️ Local Models                | `advanced-usage/local-models`         |
-| ☑️ Shell Integration           | `features/shell-integration`          |
-| ☑️ Auto-launch Configuration   | `features/auto-launch-configuration`  |
+| Local Models                   | `advanced-usage/local-models`         |
+| Shell Integration              | `features/shell-integration`          |
+| Auto-launch Configuration      | `features/auto-launch-configuration`  |
 | **MCP** (subheader)            |                                       |
-| ☑️ MCP Overview                | `features/mcp/overview`               |
-| ☑️ Using MCP in Kilo Code      | `features/mcp/using-mcp-in-kilo-code` |
-| ☑️ Using MCP in CLI            | `features/mcp/using-mcp-in-cli`       |
-| ☑️ What is MCP                 | `features/mcp/what-is-mcp`            |
-| ☑️ Server Transports           | `features/mcp/server-transports`      |
-| ☑️ MCP vs API                  | `features/mcp/mcp-vs-api`             |
+| MCP Overview                   | `features/mcp/overview`               |
+| Using MCP in Kilo Code         | `features/mcp/using-mcp-in-kilo-code` |
+| Using MCP in CLI               | `features/mcp/using-mcp-in-cli`       |
+| What is MCP                    | `features/mcp/what-is-mcp`            |
+| Server Transports              | `features/mcp/server-transports`      |
+| MCP vs API                     | `features/mcp/mcp-vs-api`             |
 
 ---
 
@@ -173,8 +170,7 @@ This is a great exercise. Let me map everything out.
 | `advanced-usage/auto-cleanup`                 | Fold into Settings                                                                                                                       |
 | `features/model-temperature`                  | Fold into Model Selection                                                                                                                |
 | `advanced-usage/rate-limits-costs`            | Fold into Adding Credits or AI Providers                                                                                                 |
-| `advanced-usage/free-and-budget-models`       | Fold into Model Selection                                                                                                                |
-| `features/footgun-prompting`                  | This feels like a blog post, not docs - consider removing or moving to tips                                                              |
+| `features/footgun-prompting`                  | Remove                                                                                                                                   |
 | `tips-and-tricks`                             | Could become a blog post or fold relevant bits elsewhere                                                                                 |
 | `features/experimental/experimental-features` | Keep but maybe as a single page, not a section                                                                                           |
 | **Tools Reference (entire section)**          | This is 17 pages. Consider: (1) Keep as reference section but not in main nav, (2) Link from relevant pages, (3) Auto-generate from code |
