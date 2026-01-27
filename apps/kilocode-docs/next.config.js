@@ -3,21 +3,12 @@ const previousDocsRedirects = require("./previous-docs-redirects")
 
 module.exports = withMarkdoc(/* config: https://markdoc.io/docs/nextjs#options */)({
 	pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdoc"],
-	basePath: "/docs",
 	turbopack: {},
 	experimental: {
 		instrumentationHook: true,
 	},
 	async redirects() {
-		return [
-			{
-				source: "/",
-				destination: "/docs",
-				basePath: false,
-				permanent: true,
-			},
-			...previousDocsRedirects,
-		]
+		return [...previousDocsRedirects]
 	},
 	async rewrites() {
 		return {
