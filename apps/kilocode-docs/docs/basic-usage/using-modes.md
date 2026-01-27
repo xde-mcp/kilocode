@@ -85,6 +85,15 @@ Four ways to switch modes:
 | **Ideal For**        | Breaking down complex projects into manageable subtasks assigned to specialized modes                               |
 | **Special Features** | Uses the new_task tool to delegate work to other modes                                                              |
 
+### Review Mode
+
+| Aspect               | Details                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Description**      | An expert code reviewer specializing in analyzing changes to provide structured feedback on quality, security, and best practices |
+| **Tool Access**      | Access to `read`, `browser`, `mcp`, and when permitted, `edit`                                                           |
+| **Ideal For**        | Catching issues early, enforcing code standards, accelerating PR turnaround                                              |
+| **Special Features** | Code review before committing, surfacing feedback across performance, security, style, and test coverage                 |
+
 ## Custom Modes
 
 Create your own specialized assistants by defining tool access, file permissions, and behavior instructions. Custom modes help enforce team standards or create purpose-specific assistants. See [Custom Modes documentation](/agent-behavior/custom-modes) for setup instructions.
