@@ -72,8 +72,7 @@
 					"deny": "Deny prompt training",
 					"zdr": "Zero data retention"
 				}
-			},
-			"automaticFetch": "The latest models are automatically available in Kilo Code. If you're unsure which model to choose, Kilo Code works best with the recommended models listed at the top in <strong>bold face</strong>."
+			}
 		},
 		"modelInfo": {
 			"contextWindow": "Context window",

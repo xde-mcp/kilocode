@@ -47,7 +47,6 @@
 			"apiKey": "Kilo Code API-Schlüssel",
 			"login": "Bei Kilo Code anmelden",
 			"logout": "Von Kilo Code abmelden",
-			"automaticFetch": "Die neuesten Modelle sind automatisch in Kilo Code verfügbar. Wenn du dir nicht sicher bist, welches Modell du wählen sollst, funktioniert Kilo Code am besten mit den empfohlenen Modellen, die oben in <strong>fetter Schrift</strong> aufgeführt sind.",
 			"providerRouting": {
 				"title": "Anbieter-Routing",
 				"managedByOrganization": "Anbieter-Routing auf Organisationsebene verwalten",
