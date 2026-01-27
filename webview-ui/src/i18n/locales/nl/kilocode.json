@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Krediet toevoegen",
-		"lowBalance": "Uw Kilo Code-saldo is laag"
+		"lowBalance": "Je Kilo Code-saldo is laag",
+		"switchToFreeModel": "Schakel over naar een gratis model"
 	},
 	"pagination": {
 		"previous": "Vorige",

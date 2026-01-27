@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "크레딧 추가",
-		"lowBalance": "Kilo Code 잔액이 부족합니다"
+		"lowBalance": "Kilo Code 잔액이 부족합니다",
+		"switchToFreeModel": "무료 모델로 전환"
 	},
 	"pagination": {
 		"previous": "이전",

@@ -12,7 +12,7 @@
 	"lowCreditWarning": {
 		"addCredit": "Add Credit",
 		"lowBalance": "Your Kilo Code balance is low",
-		"switchToFreeModel": "Switch to free model"
+		"switchToFreeModel": "Switch to Free Model instead"
 	},
 	"memoryWarning": {
 		"message": "Memory usage is at {{percentage}}%. Please restart your IDE to prevent crashes."
