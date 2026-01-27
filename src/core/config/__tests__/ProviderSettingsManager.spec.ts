@@ -69,7 +69,7 @@ describe("ProviderSettingsManager", () => {
 			const calls = mockSecrets.store.mock.calls
 			const storedConfig = JSON.parse(calls[calls.length - 1][1])
 			expect(storedConfig.apiConfigs.default.apiProvider).toBe("kilocode")
-			expect(storedConfig.apiConfigs.default.kilocodeModel).toBe("google/gemma-2-9b-it:free")
+			expect(storedConfig.apiConfigs.default.kilocodeModel).toBe("kilo:free")
 		})
 		// kilocode_change end
 
