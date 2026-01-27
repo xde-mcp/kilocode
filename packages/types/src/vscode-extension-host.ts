@@ -948,7 +948,7 @@ export interface WebviewMessage {
 		| "switchMode"
 		| "debugSetting"
 		| "refreshSkills"
-		| "reviewScopeSelected" // kilocode_change: Request skills data refresh
+		| "reviewScopeSelected" // kilocode_change: Review mode scope selection
 	text?: string
 	suggestionLength?: number // kilocode_change: Length of accepted suggestion for telemetry
 	completionRequestId?: string // kilocode_change
