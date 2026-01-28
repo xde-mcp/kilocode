@@ -156,6 +156,7 @@ export const internationalZAiModels = {
 			"GLM-4.7 is Zhipu's latest model with built-in thinking capabilities enabled by default. It provides enhanced reasoning for complex tasks while maintaining fast response times.",
 		preferredIndex: 1,
 	},
+	// kilocode_change start
 	"glm-4.7-flash": {
 		maxTokens: 16_384,
 		contextWindow: 200_000,
@@ -167,9 +168,11 @@ export const internationalZAiModels = {
 		outputPrice: 0,
 		cacheWritesPrice: 0,
 		cacheReadsPrice: 0,
-		description: "GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
+		description:
+			"GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
 		preferredIndex: 2,
 	},
+	// kilocode_change end
 	"glm-4-32b-0414-128k": {
 		maxTokens: 16_384,
 		contextWindow: 131_072,
@@ -302,6 +305,7 @@ export const mainlandZAiModels = {
 			"GLM-4.7 is Zhipu's latest model with built-in thinking capabilities enabled by default. It provides enhanced reasoning for complex tasks while maintaining fast response times.",
 		preferredIndex: 1,
 	},
+	// kilocode_change start
 	"glm-4.7-flash": {
 		maxTokens: 16_384,
 		contextWindow: 204_800,
@@ -313,9 +317,11 @@ export const mainlandZAiModels = {
 		outputPrice: 0,
 		cacheWritesPrice: 0,
 		cacheReadsPrice: 0,
-		description: "GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
+		description:
+			"GLM-4.7-Flash is a free, high-speed model with built-in thinking capabilities, excellent for reasoning, coding, and agentic tasks.",
 		preferredIndex: 2,
 	},
+	// kilocode_change end
 } as const satisfies Record<string, ModelInfo>
 
 export const ZAI_DEFAULT_TEMPERATURE = 0.6
