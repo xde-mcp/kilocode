@@ -31,3 +31,12 @@ export function getCostBreakdownIfNeeded(
 	}
 	return formatCostBreakdown(costs.ownCost, costs.childrenCost, labels)
 }
+
+/**
+ * Formats a cost value: 4 decimal places if under $0.03, otherwise 2 decimal places.
+ * @param cost - The cost in USD
+ * @returns Formatted string like "0.0234" or "1.23"
+ */
+export function formatCost(cost: number): string {
+  return cost < 0.03 ? cost.toFixed(4) : cost.toFixed(2);
+}
