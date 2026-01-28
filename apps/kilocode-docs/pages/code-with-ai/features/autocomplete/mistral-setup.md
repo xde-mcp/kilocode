@@ -48,7 +48,7 @@ You'll see a warning that you need a valid API key. Click **Get Mistral / Codest
 
 In the Mistral AI Studio sidebar, click **Codestral** under the Code section.
 
-![Select Codestral](/docs/code-with-ai/features/autocomplete/mistral-setup/06-navigate-to-codestral.png)
+![Select Codestral](/docs/img/mistral-setup/06-navigate-to-codestral.png)
 
 ## Step 7: Generate API Key
 
