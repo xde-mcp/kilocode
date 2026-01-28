@@ -33,10 +33,11 @@ export function getCostBreakdownIfNeeded(
 }
 
 /**
- * Formats a cost value: 4 decimal places if under $0.03, otherwise 2 decimal places.
+ * Formats a cost value: 2 decimal places if above $0.05, otherwise 4 decimal places.
+ * If cost value is zero it will stay at 2 decimal places.
  * @param cost - The cost in USD
  * @returns Formatted string like "0.0234" or "1.23"
  */
 export function formatCost(cost: number): string {
-  return cost < 0.03 ? cost.toFixed(4) : cost.toFixed(2);
+  return (cost === 0 || cost > 0.05) ? cost.toFixed(2) : cost.toFixed(4);
 }
