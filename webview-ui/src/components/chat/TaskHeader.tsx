@@ -80,14 +80,14 @@ const TaskHeader = ({
 	const isTaskComplete =
 		clineMessages && clineMessages.length > 0
 			? (() => {
-				const lastRelevantIndex = findLastIndex(
-					clineMessages,
-					(m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"),
-				)
-				return lastRelevantIndex !== -1
-					? clineMessages[lastRelevantIndex]?.ask === "completion_result"
-					: false
-			})()
+					const lastRelevantIndex = findLastIndex(
+						clineMessages,
+						(m) => !(m.ask === "resume_task" || m.ask === "resume_completed_task"),
+					)
+					return lastRelevantIndex !== -1
+						? clineMessages[lastRelevantIndex]?.ask === "completion_result"
+						: false
+				})()
 			: false
 
 	useEffect(() => {
@@ -219,10 +219,10 @@ const TaskHeader = ({
 										{(() => {
 											const maxTokens = model
 												? getModelMaxOutputTokens({
-													modelId,
-													model,
-													settings: apiConfiguration,
-												})
+														modelId,
+														model,
+														settings: apiConfiguration,
+													})
 												: 0
 											const reservedForOutput = maxTokens || 0
 											const availableSpace =
@@ -360,10 +360,10 @@ const TaskHeader = ({
 														maxTokens={
 															model
 																? getModelMaxOutputTokens({
-																	modelId,
-																	model,
-																	settings: apiConfiguration,
-																})
+																		modelId,
+																		model,
+																		settings: apiConfiguration,
+																	})
 																: undefined
 														}
 													/>
@@ -391,28 +391,28 @@ const TaskHeader = ({
 
 									{((typeof cacheReads === "number" && cacheReads > 0) ||
 										(typeof cacheWrites === "number" && cacheWrites > 0)) && (
-											<tr>
-												<th className="font-medium text-left align-top w-1 whitespace-nowrap pr-3 h-[24px]">
-													{t("chat:task.cache")}
-												</th>
-												<td className="font-light align-top">
-													<div className="flex items-center gap-1 flex-wrap">
-														{typeof cacheWrites === "number" && cacheWrites > 0 && (
-															<>
-																<HardDriveDownload className="size-2.5" />
-																<span>{formatLargeNumber(cacheWrites)}</span>
-															</>
-														)}
-														{typeof cacheReads === "number" && cacheReads > 0 && (
-															<>
-																<HardDriveUpload className="size-2.5" />
-																<span>{formatLargeNumber(cacheReads)}</span>
-															</>
-														)}
-													</div>
-												</td>
-											</tr>
-										)}
+										<tr>
+											<th className="font-medium text-left align-top w-1 whitespace-nowrap pr-3 h-[24px]">
+												{t("chat:task.cache")}
+											</th>
+											<td className="font-light align-top">
+												<div className="flex items-center gap-1 flex-wrap">
+													{typeof cacheWrites === "number" && cacheWrites > 0 && (
+														<>
+															<HardDriveDownload className="size-2.5" />
+															<span>{formatLargeNumber(cacheWrites)}</span>
+														</>
+													)}
+													{typeof cacheReads === "number" && cacheReads > 0 && (
+														<>
+															<HardDriveUpload className="size-2.5" />
+															<span>{formatLargeNumber(cacheReads)}</span>
+														</>
+													)}
+												</div>
+											</td>
+										</tr>
+									)}
 
 									{!!totalCost && (
 										<tr>
