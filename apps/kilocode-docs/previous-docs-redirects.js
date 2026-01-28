@@ -28,13 +28,13 @@ module.exports = [
 	},
 	{
 		source: "/docs/basic-usage/connecting-providers",
-		destination: "/docs/getting-started/ai-providers",
+		destination: "/docs/ai-providers",
 		basePath: false,
 		permanent: true,
 	},
 	{
 		source: "/docs/providers/:path*",
-		destination: "/docs/getting-started/ai-providers",
+		destination: "/docs/ai-providers/:path*",
 		basePath: false,
 		permanent: true,
 	},
