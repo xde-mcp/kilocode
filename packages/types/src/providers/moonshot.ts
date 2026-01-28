@@ -27,6 +27,7 @@ export const moonshotModels = {
 		supportsImages: false,
 		supportsPromptCache: true,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0.6, // $0.60 per million tokens (cache miss)
 		outputPrice: 2.5, // $2.50 per million tokens
 		cacheWritesPrice: 0, // $0 per million tokens (cache miss)
@@ -39,6 +40,7 @@ export const moonshotModels = {
 		supportsImages: false,
 		supportsPromptCache: true,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0.6,
 		outputPrice: 2.5,
 		cacheReadsPrice: 0.15,
@@ -51,6 +53,7 @@ export const moonshotModels = {
 		supportsImages: false,
 		supportsPromptCache: true,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 2.4, // $2.40 per million tokens (cache miss)
 		outputPrice: 10, // $10.00 per million tokens
 		cacheWritesPrice: 0, // $0 per million tokens (cache miss)
@@ -78,6 +81,7 @@ export const moonshotModels = {
 		supportsImages: false, // Text-only (no image/vision support)
 		supportsPromptCache: true,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0.6, // $0.60 per million tokens (cache miss)
 		outputPrice: 2.5, // $2.50 per million tokens
 		cacheWritesPrice: 0, // $0 per million tokens (cache miss)

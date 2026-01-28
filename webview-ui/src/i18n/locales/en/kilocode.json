@@ -12,7 +12,7 @@
 	"lowCreditWarning": {
 		"addCredit": "Add Credit",
 		"lowBalance": "Your Kilo Code balance is low",
-		"newOrganization": "Using Kilo for work?"
+		"switchToFreeModel": "Switch to Free Model instead"
 	},
 	"memoryWarning": {
 		"message": "Memory usage is at {{percentage}}%. Please restart your IDE to prevent crashes."
@@ -46,13 +46,16 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP Servers"
+			"mcp": "MCP Servers",
+			"agentBehaviour": "Agent Behaviour",
+			"skills": "Skills"
 		},
 		"provider": {
 			"account": "Kilo Code Account",
 			"apiKey": "Kilo Code API Key",
 			"login": "Log in at Kilo Code",
 			"logout": "Log out from Kilo Code",
+			"loginForPremiumModels": "Log in to access premium models & features",
 			"providerRouting": {
 				"title": "Provider Routing",
 				"managedByOrganization": "Manage Organization-level Provider Routing",
@@ -70,8 +73,7 @@
 					"deny": "Deny prompt training",
 					"zdr": "Zero data retention"
 				}
-			},
-			"automaticFetch": "The latest models are automatically available in Kilo Code. If you're unsure which model to choose, Kilo Code works best with the recommended models listed at the top in <strong>bold face</strong>."
+			}
 		},
 		"modelInfo": {
 			"contextWindow": "Context window",
@@ -149,7 +151,14 @@
 	},
 	"docs": "Docs",
 	"rules": {
-		"tooltip": "Manage Kilo Code Rules & Workflows",
+		"tooltip": "Manage Agent Behaviour ({{types}})",
+		"agentBehaviourTypes": {
+			"rules": "Rules",
+			"workflows": "Workflows",
+			"mcps": "MCPs",
+			"modes": "Modes",
+			"skills": "Skills"
+		},
 		"ariaLabel": "Kilo Code Rules",
 		"tabs": {
 			"rules": "Rules",
@@ -306,6 +315,9 @@
 		},
 		"modes": {
 			"description": "These modes are available from the community. Click <1>here</1> to edit your own custom modes."
+		},
+		"skills": {
+			"description": "Browse and discover skills from the community. Skills provide specialized instructions for specific tasks."
 		}
 	},
 	"modes": {
@@ -349,6 +361,18 @@
 			"loading": "Loading microphone devices...",
 			"noDevices": "No microphone devices found",
 			"refresh": "Refresh"
+		}
+	},
+	"skills": {
+		"description": "Skills provide specialized instructions for specific tasks. They are automatically applied when relevant to your request.",
+		"noSkills": "No skills installed",
+		"projectSkills": "Project Skills",
+		"globalSkills": "Global Skills",
+		"deleteDialog": {
+			"title": "Delete Skill",
+			"description": "Are you sure you want to delete the skill \"{{skillName}}\"? This action cannot be undone.",
+			"cancel": "Cancel",
+			"delete": "Delete"
 		}
 	}
 }

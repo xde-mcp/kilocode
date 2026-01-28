@@ -91,6 +91,8 @@ const __dirname = __dirname__(__filename);
 	},
 	external: [
 		// Keep these as external dependencies (will be installed via npm)
+		// NOTE: @kilocode/agent-runtime is intentionally NOT external - it must be bundled
+		// so that import.meta.url in extension-paths.ts resolves to the CLI's dist folder
 		"@anthropic-ai/bedrock-sdk",
 		"@anthropic-ai/sdk",
 		"@anthropic-ai/vertex-sdk",
@@ -115,7 +117,6 @@ const __dirname = __dirname__(__filename);
 		"diff",
 		"diff-match-patch",
 		"dotenv",
-		"eventemitter3",
 		"fast-deep-equal",
 		"fast-glob",
 		"fast-xml-parser",
@@ -169,13 +170,10 @@ const __dirname = __dirname__(__filename);
 		"tiktoken",
 		"tmp",
 		"tree-sitter-wasms",
-		"ts-node",
 		"turndown",
-		"undici",
 		"uri-js",
 		"uuid",
 		"vscode-material-icons",
-		"vscode-uri",
 		"web-tree-sitter",
 		"workerpool",
 		"xlsx",

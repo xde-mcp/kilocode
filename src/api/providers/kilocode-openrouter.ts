@@ -20,6 +20,7 @@ import { KILOCODE_TOKEN_REQUIRED_ERROR } from "../../shared/kilocode/errorUtils"
 import { DEFAULT_HEADERS } from "./constants"
 import { streamSse } from "../../services/continuedev/core/fetch/stream"
 import { getEditorNameHeader } from "../../core/kilocode/wrapper"
+import type { FimHandler } from "./kilocode/FimHandler"
 
 /**
  * A custom OpenRouter handler that overrides the getModel function
@@ -119,8 +120,8 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	}
 
 	public override async fetchModel() {
-		if (!this.options.kilocodeToken || !this.options.openRouterBaseUrl) {
-			throw new Error(KILOCODE_TOKEN_REQUIRED_ERROR)
+		if (!this.options.openRouterBaseUrl) {
+			throw new Error("OpenRouter base URL is required")
 		}
 
 		const [models, endpoints, defaultModel] = await Promise.all([
@@ -134,18 +135,22 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 				modelId: this.options.kilocodeModel,
 				endpoint: this.options.openRouterSpecificProvider,
 			}),
-			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId, this.options),
+			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId),
 		])
 
 		this.models = models
 		this.endpoints = endpoints
-		this.defaultModel = defaultModel
+		this.defaultModel = defaultModel.defaultModel
 		return this.getModel()
 	}
 
-	supportsFim(): boolean {
+	fimSupport(): FimHandler | undefined {
 		const modelId = this.options.kilocodeModel ?? this.defaultModel
-		return modelId.includes("codestral")
+		if (!modelId.includes("codestral")) {
+			return undefined
+		}
+
+		return this
 	}
 
 	async *streamFim(
