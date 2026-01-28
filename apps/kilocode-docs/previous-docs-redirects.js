@@ -130,7 +130,7 @@ module.exports = [
 	},
 	{
 		source: "/docs/basic-usage/autocomplete/mistral-setup",
-		destination: "/docs/code-with-ai/features/autocomplete",
+		destination: "/docs/code-with-ai/features/autocomplete/mistral-setup",
 		basePath: false,
 		permanent: true,
 	},
