@@ -69,7 +69,7 @@ describe("ProviderSettingsManager", () => {
 			const calls = mockSecrets.store.mock.calls
 			const storedConfig = JSON.parse(calls[calls.length - 1][1])
 			expect(storedConfig.apiConfigs.default.apiProvider).toBe("kilocode")
-			expect(storedConfig.apiConfigs.default.kilocodeModel).toBe("kilo:free")
+			expect(storedConfig.apiConfigs.default.kilocodeModel).toBe("minimax/minimax-m2.1:free")
 		})
 		// kilocode_change end
 
