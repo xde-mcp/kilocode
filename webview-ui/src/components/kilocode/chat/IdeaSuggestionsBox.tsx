@@ -35,8 +35,9 @@ export const IdeaSuggestionsBox = () => {
 
 	const handleIdeaClick = (idea: string) => {
 		vscode.postMessage({
-			type: "insertTextToChatArea",
+			type: "newTask",
 			text: idea,
+			images: [],
 		})
 
 		telemetryClient.capture(TelemetryEventName.SUGGESTION_BUTTON_CLICKED, {

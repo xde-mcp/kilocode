@@ -18,7 +18,8 @@ vi.mock("react-i18next", () => ({
 		t: (key: string, options?: any) => {
 			if (key === "ideaSuggestionsBox.newHere") return "New here?"
 			if (key === "ideaSuggestionsBox.tryOneOfThese") return "Try one of these ideas to get started:"
-			if (key === "ideaSuggestionsBox.clickToInsert") return "Click any suggestion to insert it into the chat"
+			if (key === "ideaSuggestionsBox.clickToInsert")
+				return "Click any suggestion to start working on it immediately"
 			if (key === "ideaSuggestionsBox.ideas" && options?.returnObjects) {
 				return {
 					idea1: "Create a portfolio website",
@@ -72,7 +73,7 @@ describe("IdeaSuggestionsBox", () => {
 		expect(buttons.length).toBeGreaterThan(0)
 	})
 
-	it("should send message when suggestion is clicked", async () => {
+	it("should execute task immediately when suggestion is clicked", async () => {
 		vi.mocked(useTaskHistory).mockReturnValue({
 			data: { historyItems: [] },
 		} as any)
@@ -85,8 +86,9 @@ describe("IdeaSuggestionsBox", () => {
 		await waitFor(() => {
 			expect(vscode.postMessage).toHaveBeenCalledWith(
 				expect.objectContaining({
-					type: "insertTextToChatArea",
+					type: "newTask",
 					text: expect.any(String),
+					images: [],
 				}),
 			)
 		})
