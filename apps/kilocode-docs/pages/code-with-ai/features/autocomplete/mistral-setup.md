@@ -54,7 +54,7 @@ In the Mistral AI Studio sidebar, click **Codestral** under the Code section.
 
 Click the **Generate API Key** button to create your new Codestral API key.
 
-![Confirm Generate](/docs/code-with-ai/features/autocomplete/mistral-setup/07-confirm-key-generation.png)
+![Confirm Generate](/docs/img/mistral-setup/07-confirm-key-generation.png)
 
 ## Step 8: Copy Your API Key
 
