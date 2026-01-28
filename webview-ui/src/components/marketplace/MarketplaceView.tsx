@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useContext } from "react"
-import { SKILLS_MARKETPLACE_ENABLED } from "@roo-code/types" // kilocode_change
 import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 import { Tab, TabContent, TabHeader } from "../common/Tab"
 import { MarketplaceViewStateManager } from "./MarketplaceViewStateManager"
 import { useStateManager } from "./useStateManager"
@@ -134,12 +134,14 @@ export function MarketplaceView({ stateManager, onDone, targetTab, hideHeader = 
 						<h3 className="font-bold m-0">{t("marketplace:title")}</h3>
 						<div className="flex gap-2 items-center">
 							<Button
-								variant="primary"
-								onClick={() => {
-									onDone?.()
-								}}>
-								{t("marketplace:done")}
+								variant="ghost"
+								className="px-1.5 -ml-2"
+								onClick={() => onDone?.()}
+								aria-label={t("settings:back")}>
+								<ArrowLeft />
+								<span className="sr-only">{t("settings:back")}</span>
 							</Button>
+							<h3 className="font-bold m-0">{t("marketplace:title")}</h3>
 						</div>
 					</div>
 
@@ -163,29 +165,25 @@ export function MarketplaceView({ stateManager, onDone, targetTab, hideHeader = 
 								{/* kilocode_change end */}
 							</div>
 							<button
-								className="flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
+								className="cursor-pointer flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
 								onClick={() => manager.transition({ type: "SET_ACTIVE_TAB", payload: { tab: "mcp" } })}>
 								MCP
 							</button>
 							<button
-								className="flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
+								className="cursor-pointer flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
 								onClick={() =>
 									manager.transition({ type: "SET_ACTIVE_TAB", payload: { tab: "mode" } })
 								}>
 								Modes
 							</button>
-							{/* kilocode_change start - Skills tab button or filler div */}
-							{SKILLS_MARKETPLACE_ENABLED ? (
-								<button
-									className="flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
-									onClick={() =>
-										manager.transition({ type: "SET_ACTIVE_TAB", payload: { tab: "skills" } })
-									}>
-									Skills
-								</button>
-							) : (
-								<div className="flex-1" />
-							)}
+							{/* kilocode_change start - Skills tab button */}
+							<button
+								className="flex items-center justify-center gap-2 flex-1 text-sm font-medium rounded-sm transition-colors duration-300 relative z-10 text-vscode-foreground"
+								onClick={() =>
+									manager.transition({ type: "SET_ACTIVE_TAB", payload: { tab: "skills" } })
+								}>
+								Skills
+							</button>
 							{/* kilocode_change end */}
 						</div>
 					</div>
@@ -211,7 +209,7 @@ export function MarketplaceView({ stateManager, onDone, targetTab, hideHeader = 
 						/>
 					)}
 					{/* kilocode_change start - Skills marketplace tab content */}
-					{SKILLS_MARKETPLACE_ENABLED && state.activeTab === "skills" && (
+					{state.activeTab === "skills" && (
 						<SkillsMarketplace skills={stateManager.getSkills()} isLoading={state.isFetching} />
 					)}
 					{/* kilocode_change end */}
