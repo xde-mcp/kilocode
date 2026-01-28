@@ -60,7 +60,7 @@ Click the **Generate API Key** button to create your new Codestral API key.
 
 Once generated, click the **copy** button next to your API key to copy it to your clipboard.
 
-![Copy API Key](/docs/code-with-ai/features/autocomplete/mistral-setup/08-copy-api-key.png)
+![Copy API Key](/docs/img/mistral-setup/08-copy-api-key.png)
 
 ## Step 9: Paste API Key in Kilo Code
 
