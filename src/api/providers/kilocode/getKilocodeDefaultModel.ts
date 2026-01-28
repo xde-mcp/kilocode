@@ -59,7 +59,6 @@ export async function getKilocodeDefaultModel(
 	kilocodeToken?: KilocodeToken,
 	organizationId?: OrganizationId,
 ): Promise<Defaults> {
-	// kilocode_change: Remove early return - allow fetching default model without token for anonymous access
 	const key = JSON.stringify({
 		kilocodeToken: kilocodeToken ?? "anonymous",
 		organizationId,
