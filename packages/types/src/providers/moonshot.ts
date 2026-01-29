@@ -13,7 +13,7 @@ export const moonshotModels = {
 		supportsPromptCache: true,
 		supportsNativeTools: true,
 		defaultToolProtocol: "native",
-		supportsTemperature: true,
+		supportsTemperature: false, // Based on API specs
 		defaultTemperature: 1.0, // Default for thinking mode
 		supportsReasoningBudget: true,
 		supportsReasoningEffort: true,
