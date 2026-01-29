@@ -11,6 +11,20 @@ import { ContextProxy } from "../../config/ContextProxy"
 
 const shownNativeNotificationIds = new Set<string>()
 
+/**
+ * Replaces vscode:// protocol in URLs with the appropriate protocol for the current IDE.
+ * For example, in Cursor it becomes cursor://, in VSCodium it becomes vscodium://, etc.
+ * @param url The URL to transform
+ * @returns The URL with the appropriate protocol for the current IDE
+ */
+export function replaceVscodeProtocol(url: string): string {
+	if (!url.startsWith("vscode://")) {
+		return url
+	}
+	const currentScheme = vscode.env.uriScheme
+	return url.replace(/^vscode:\/\//, `${currentScheme}://`)
+}
+
 interface KilocodeNotification {
 	id: string
 	title: string
@@ -89,7 +103,9 @@ export async function displayNativeNotifications(
 			)
 			if (selection === actionButton) {
 				if (notification.action?.actionURL) {
-					await vscode.env.openExternal(vscode.Uri.parse(notification.action.actionURL))
+					// Replace vscode:// protocol with the appropriate protocol for the current IDE
+					const actionUrl = replaceVscodeProtocol(notification.action.actionURL)
+					await vscode.env.openExternal(vscode.Uri.parse(actionUrl))
 				}
 			}
 
