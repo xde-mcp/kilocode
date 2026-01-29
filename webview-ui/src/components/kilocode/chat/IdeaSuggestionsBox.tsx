@@ -110,7 +110,7 @@ export const IdeaSuggestionsBox = () => {
 				</div>
 
 				{/* Footer hint */}
-				<div className="mt-4 pt-3 border-t border-vscode-panel-border">
+				<div className="mt-4">
 					<p className="text-center text-xs text-vscode-descriptionForeground m-0 flex items-center justify-center gap-1.5">
 						<span className="codicon codicon-info" />
 						{t("ideaSuggestionsBox.clickToInsert")}
