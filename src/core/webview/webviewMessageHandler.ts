@@ -2259,13 +2259,11 @@ export const webviewMessageHandler = async (
 			if (message.text && message.apiConfiguration) {
 				let configToSave = message.apiConfiguration
 				let organizationChanged = false
-				let currentConfig: any = undefined
 
 				try {
-					currentConfig = await provider.providerSettingsManager.getProfile({
+					const { ...currentConfig } = await provider.providerSettingsManager.getProfile({
 						name: message.text,
 					})
-
 					// Only clear organization ID if we actually had a kilocode token before and it's different now
 					const hadPreviousToken = currentConfig.kilocodeToken !== undefined
 					const hasNewToken = message.apiConfiguration.kilocodeToken !== undefined
@@ -2303,8 +2301,7 @@ export const webviewMessageHandler = async (
 						})
 					}
 				} catch (error) {
-					// Profile doesn't exist yet (expected for new profiles)
-					// This is fine - we'll create it below
+					// Config might not exist yet, that's fine
 				}
 
 				// kilocode_change start: If we're updating the active profile, we need to activate it to ensure it's persisted
