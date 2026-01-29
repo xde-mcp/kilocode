@@ -33,18 +33,27 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 
 	// Listen for successful authentication and automatically retry
 	useEffect(() => {
+		let retryTimeoutId: ReturnType<typeof setTimeout> | undefined
+
 		const handleMessage = (event: MessageEvent) => {
+			// Validate message shape and type before acting
 			const msg = event.data
-			if (msg.type === "deviceAuthComplete") {
-				// Auth succeeded - wait briefly for token to be saved, then retry
-				setTimeout(() => {
-					handleRetry()
-				}, 500)
+			if (typeof msg !== "object" || msg === null || msg.type !== "deviceAuthComplete") {
+				return
 			}
+			// Auth succeeded - wait briefly for token to be saved, then retry
+			retryTimeoutId = setTimeout(() => {
+				handleRetry()
+			}, 500)
 		}
 
 		window.addEventListener("message", handleMessage)
-		return () => window.removeEventListener("message", handleMessage)
+		return () => {
+			window.removeEventListener("message", handleMessage)
+			if (retryTimeoutId !== undefined) {
+				clearTimeout(retryTimeoutId)
+			}
+		}
 	}, [handleRetry])
 
 	const modelId = data?.modelId || "(chosen)"
