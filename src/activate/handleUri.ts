@@ -8,6 +8,26 @@ import { Package } from "../shared/package"
 export const handleUri = async (uri: vscode.Uri) => {
 	const path = uri.path
 	const query = new URLSearchParams(uri.query.replace(/\+/g, "%2B"))
+
+	// kilocode_change start: Handle /kilocode/chat path specially - it needs to open the extension first
+	// before we can get a provider instance
+	if (path === "/kilocode/chat") {
+		// Focus the sidebar first to open the Kilo Code extension
+		await vscode.commands.executeCommand(`${Package.name}.SidebarProvider.focus`)
+		// Use getInstance() which waits for the provider to become visible after focusing
+		const provider = await ClineProvider.getInstance()
+		if (!provider) {
+			return
+		}
+		// Open a fresh chat (same as clicking the + button)
+		await provider.removeClineFromStack()
+		await provider.refreshWorkspace()
+		await provider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
+		await provider.postMessageToWebview({ type: "action", action: "focusInput" })
+		return
+	}
+	// kilocode_change end
+
 	const visibleProvider = ClineProvider.getVisibleInstance()
 
 	if (!visibleProvider) {
@@ -66,16 +86,6 @@ export const handleUri = async (uri: vscode.Uri) => {
 					action: "focusInput",
 				})
 			}
-			break
-		}
-		case "/kilocode/chat": {
-			// Focus the sidebar first so users can see the chat
-			await vscode.commands.executeCommand(`${Package.name}.SidebarProvider.focus`)
-			// Open a fresh chat (same as clicking the + button)
-			await visibleProvider.removeClineFromStack()
-			await visibleProvider.refreshWorkspace()
-			await visibleProvider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
-			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			break
 		}
 		// kilocode_change end

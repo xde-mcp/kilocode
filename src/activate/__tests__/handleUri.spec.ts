@@ -24,6 +24,7 @@ vi.mock("vscode", () => ({
 vi.mock("../../core/webview/ClineProvider", () => ({
 	ClineProvider: {
 		getVisibleInstance: vi.fn(),
+		getInstance: vi.fn(),
 	},
 }))
 
@@ -59,14 +60,27 @@ describe("handleUri", () => {
 			refreshWorkspace: vi.fn(),
 		}
 		vi.mocked(ClineProvider.getVisibleInstance).mockReturnValue(mockProvider as unknown as ClineProvider)
+		vi.mocked(ClineProvider.getInstance).mockResolvedValue(mockProvider as unknown as ClineProvider)
 	})
 
-	it("should do nothing if no visible provider", async () => {
+	it("should do nothing if no visible provider for non-chat paths", async () => {
 		vi.mocked(ClineProvider.getVisibleInstance).mockReturnValue(undefined)
+
+		const uri = { path: "/kilocode/profile", query: "" } as any
+		await handleUri(uri)
+
+		expect(mockProvider.postMessageToWebview).not.toHaveBeenCalled()
+	})
+
+	it("should do nothing if getInstance returns undefined for /kilocode/chat", async () => {
+		vi.mocked(ClineProvider.getInstance).mockResolvedValue(undefined)
 
 		const uri = { path: "/kilocode/chat", query: "" } as any
 		await handleUri(uri)
 
+		// Should still focus the sidebar
+		expect(vscode.commands.executeCommand).toHaveBeenCalledWith(`${Package.name}.SidebarProvider.focus`)
+		// But should not call provider methods since getInstance returned undefined
 		expect(mockProvider.postMessageToWebview).not.toHaveBeenCalled()
 	})
 
