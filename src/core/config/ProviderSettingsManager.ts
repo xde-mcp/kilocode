@@ -73,7 +73,7 @@ export class ProviderSettingsManager {
 			default: {
 				id: this.defaultConfigId,
 				apiProvider: "kilocode",
-				kilocodeModel: "kilo:free",
+				kilocodeModel: "minimax/minimax-m2.1:free",
 			},
 		},
 		modeApiConfigs: this.defaultModeApiConfigs,

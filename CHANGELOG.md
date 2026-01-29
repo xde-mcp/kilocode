@@ -1,5 +1,33 @@
 # kilo-code
 
+## 5.2.0
+
+### Minor Changes
+
+- [#5477](https://github.com/Kilo-Org/kilocode/pull/5477) [`59a792e`](https://github.com/Kilo-Org/kilocode/commit/59a792eeb461497fe2968ca17e2858389c55894a) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Improve idea box during onboarding experience
+
+### Patch Changes
+
+- [#5503](https://github.com/Kilo-Org/kilocode/pull/5503) [`e53f086`](https://github.com/Kilo-Org/kilocode/commit/e53f0865d32296cb5e4db5f853466f5fa7671371) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Fix mode selection after anonymous usage
+
+- [#5426](https://github.com/Kilo-Org/kilocode/pull/5426) [`56d086b`](https://github.com/Kilo-Org/kilocode/commit/56d086b4853abfeebff6b1afb6c8d0431c232542) Thanks [@lambertjosh](https://github.com/lambertjosh)! - OpenAI Codex: Add ChatGPT subscription usage limits dashboard
+
+- [#4947](https://github.com/Kilo-Org/kilocode/pull/4947) [`53080fd`](https://github.com/Kilo-Org/kilocode/commit/53080fddfc62a171ebae09fe38629aec8b0e6098) Thanks [@CaiDingxian](https://github.com/CaiDingxian)! - feat(moonshot): add new Kimi models and coding API endpoint
+
+- [#5451](https://github.com/Kilo-Org/kilocode/pull/5451) [`af25644`](https://github.com/Kilo-Org/kilocode/commit/af25644f8482bd1a10e6645ed3061421ac23045e) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Updated welcome screen model names in all translations
+
+## 5.1.0
+
+### Minor Changes
+
+- [`8140071`](https://github.com/Kilo-Org/kilocode/commit/8140071cf0235906d06e14034372af5941b0b9cc) Thanks [@markijbema](https://github.com/markijbema)! - New users can now start using Kilo Code immediately without any configuration - a default Kilo Code Gateway profile with a free model is automatically set up on first launch
+
+- [#5288](https://github.com/Kilo-Org/kilocode/pull/5288) [`016ea49`](https://github.com/Kilo-Org/kilocode/commit/016ea49a3a875a8e60c846b314a7040852701262) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Remove Gemini CLI provider support.
+
+### Patch Changes
+
+- [#5420](https://github.com/Kilo-Org/kilocode/pull/5420) [`ebcfca8`](https://github.com/Kilo-Org/kilocode/commit/ebcfca8ea1dd3aad87e3a2598370208a1daaddc6) Thanks [@pedroheyerdahl](https://github.com/pedroheyerdahl)! - Improved Portuguese (Brazil) translation
+
 ## 5.0.0
 
 ### Major Changes
