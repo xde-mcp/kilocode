@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { IdeaSuggestionsBox } from "../IdeaSuggestionsBox"
 import { useTaskHistory } from "@/kilocode/hooks/useTaskHistory"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { vscode } from "@/utils/vscode"
@@ -10,6 +9,22 @@ vi.mock("@/context/ExtensionStateContext")
 vi.mock("@/utils/vscode", () => ({
 	vscode: {
 		postMessage: vi.fn(),
+	},
+}))
+
+// Mock i18next before importing the component (it uses i18next.t at module level)
+vi.mock("i18next", () => ({
+	default: {
+		t: (key: string, options?: any) => {
+			if (key === "ideaSuggestionsBox.ideas" && options?.returnObjects) {
+				return {
+					idea1: "Create a portfolio website",
+					idea2: "Build a todo app",
+					idea3: "Make a calculator",
+				}
+			}
+			return key
+		},
 	},
 }))
 
@@ -31,6 +46,9 @@ vi.mock("react-i18next", () => ({
 		},
 	}),
 }))
+
+// Import component after mocks are set up
+import { IdeaSuggestionsBox } from "../IdeaSuggestionsBox"
 
 describe("IdeaSuggestionsBox", () => {
 	beforeEach(() => {
