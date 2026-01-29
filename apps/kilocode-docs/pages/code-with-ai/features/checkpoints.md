@@ -178,7 +178,7 @@ Checkpoints do not support nested Git repositories. The working directory must b
 
 - Nested `.git` directories are not supported and checkpoints will be disabled
 - Git submodules are not a workaround - each submodule will have its own `.git` directory, which is incompatible with checkpoint tracking
-- If you have nested repositories, consider using Git submodules instead or consolidating to a single repository
+- If you have nested repositories, consider consolidating to a single repository
 
 ### Concurrency Control
 
