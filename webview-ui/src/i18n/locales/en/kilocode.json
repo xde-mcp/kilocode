@@ -30,9 +30,9 @@
 		"continue": "Continue"
 	},
 	"unauthorizedError": {
-		"title": "Join Kilo Cloud today",
-		"message": "You need to be logged in to use the {{model}} model. Please log in or create a Kilo account to continue.",
-		"loginButton": "Log In",
+		"title": "You need to sign in to use this model",
+		"message": "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.",
+		"loginButton": "Sign In",
 		"signupButton": "Create Account"
 	},
 	"pricing": {
