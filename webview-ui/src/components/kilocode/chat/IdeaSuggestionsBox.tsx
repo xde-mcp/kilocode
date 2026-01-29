@@ -53,7 +53,7 @@ export const IdeaSuggestionsBox = () => {
 	}
 
 	return (
-		<div className="mt-6 mb-4 flex flex-col items-center">
+		<div className="flex flex-col items-center">
 			{/* Kilo Logo */}
 			<div
 				className="mb-5 flex items-center justify-center"
