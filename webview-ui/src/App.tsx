@@ -15,6 +15,7 @@ import ChatView, { ChatViewRef } from "./components/chat/ChatView"
 import HistoryView from "./components/history/HistoryView"
 import SettingsView, { SettingsViewRef } from "./components/settings/SettingsView"
 import WelcomeView from "./components/kilocode/welcome/WelcomeView" // kilocode_change
+import OnboardingView from "./components/kilocode/welcome/OnboardingView" // kilocode_change
 import ProfileView from "./components/kilocode/profile/ProfileView" // kilocode_change
 import McpView from "./components/mcp/McpView" // kilocode_change
 import AuthView from "./components/kilocode/auth/AuthView" // kilocode_change
@@ -94,6 +95,8 @@ const App = () => {
 		renderContext,
 		mdmCompliant,
 		apiConfiguration, // kilocode_change
+		hasCompletedOnboarding, // kilocode_change: Track onboarding state
+		taskHistoryFullLength, // kilocode_change: Used to detect existing users
 	} = useExtensionState()
 
 	// Create a persistent state manager
@@ -314,16 +317,59 @@ const App = () => {
 		}
 	}, [tab])
 
+	// kilocode_change start: Onboarding handlers
+	const handleSelectFreeModels = useCallback(() => {
+		// Mark onboarding as complete
+		vscode.postMessage({ type: "hasCompletedOnboarding", bool: true })
+		// The default profile is already set up with a free model, so just close welcome
+		// This will trigger a state update that sets showWelcome to false
+	}, [])
+
+	const handleSelectPremiumModels = useCallback(() => {
+		// Mark onboarding as complete
+		vscode.postMessage({ type: "hasCompletedOnboarding", bool: true })
+		// Navigate to auth view which will show the device code and handle the OAuth flow
+		// The AuthView auto-starts device auth on mount
+		switchTab("auth")
+		setAuthReturnTo("chat")
+	}, [switchTab])
+
+	const handleSelectBYOK = useCallback(() => {
+		// Mark onboarding as complete
+		vscode.postMessage({ type: "hasCompletedOnboarding", bool: true })
+		// Navigate to settings with providers section
+		switchTab("settings")
+		setCurrentSection("providers")
+	}, [switchTab])
+	// kilocode_change end
+
 	if (!didHydrateState) {
 		return null
 	}
 
+	// kilocode_change start: Show OnboardingView for new users who haven't completed onboarding
+	// Show onboarding only if:
+	// 1. hasCompletedOnboarding is not true (undefined or false)
+	// 2. AND user has no task history (meaning they're truly new, not an existing user upgrading)
+	//
+	// This ensures existing users who upgrade don't see the onboarding screen,
+	// while new users who have never used the extension will see it.
+	const isExistingUser = (taskHistoryFullLength ?? 0) > 0
+	const showOnboarding = hasCompletedOnboarding !== true && !isExistingUser
+
 	// Do not conditionally load ChatView, it's expensive and there's state we
 	// don't want to lose (user input, disableInput, askResponse promise, etc.)
 	// kilocode_change: no WelcomeViewProvider toggle
-	return showWelcome ? (
+	return showOnboarding ? (
+		<OnboardingView
+			onSelectFreeModels={handleSelectFreeModels}
+			onSelectPremiumModels={handleSelectPremiumModels}
+			onSelectBYOK={handleSelectBYOK}
+		/>
+	) : showWelcome ? (
 		<WelcomeView />
 	) : (
+		// kilocode_change end
 		<>
 			{/* kilocode_change start */}
 			<MemoryWarningBanner />

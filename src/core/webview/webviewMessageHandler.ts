@@ -1908,6 +1908,12 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("hasOpenedModeSelector", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change start: Handle onboarding completion
+		case "hasCompletedOnboarding":
+			await updateGlobalState("hasCompletedOnboarding", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
+		// kilocode_change end
 		// kilocode_change start
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)
