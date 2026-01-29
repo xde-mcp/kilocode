@@ -6,6 +6,7 @@ export type MoonshotModelId = keyof typeof moonshotModels
 export const moonshotDefaultModelId: MoonshotModelId = "kimi-k2-thinking"
 
 export const moonshotModels = {
+	// kilocode_change start
 	"kimi-k2.5": {
 		maxTokens: 32_000,
 		contextWindow: 262_144, // 256K
@@ -24,6 +25,7 @@ export const moonshotModels = {
 		cacheReadsPrice: 0.1, // $0.10 per million (cache hit)
 		description: `Kimi K2.5 is Kimi's most versatile multimodal model with native vision support. Supports both thinking mode (default, temp=1.0) and instant mode (thinking disabled, temp=0.6). Features 256K context, vision understanding, and agent capabilities.`,
 	},
+	// kilocode_change end
 	"kimi-for-coding": {
 		maxTokens: 32_000,
 		contextWindow: 131_072,
