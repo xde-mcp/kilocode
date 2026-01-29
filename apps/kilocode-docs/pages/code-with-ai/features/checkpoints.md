@@ -176,7 +176,6 @@ This separation is intentional, as `.kilocodeignore` limits which files the AI c
 
 Checkpoints do not support nested Git repositories. The working directory must be a single Git repository for checkpoints to function properly.
 
-- Checkpoints require a single Git repository (not nested `.git` directories)
 - Nested `.git` directories are not supported and checkpoints will be disabled
 - Git submodules are not a workaround - each submodule will have its own `.git` directory, which is incompatible with checkpoint tracking
 - If you have nested repositories, consider using Git submodules instead or consolidating to a single repository
