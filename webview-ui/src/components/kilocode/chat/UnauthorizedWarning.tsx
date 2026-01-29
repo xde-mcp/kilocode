@@ -1,6 +1,6 @@
 import { ClineMessage } from "@roo-code/types"
 import { vscode } from "@src/utils/vscode"
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
+import { Button } from "@src/components/ui"
 import styled from "styled-components"
 import { useTranslation } from "react-i18next"
 import { safeJsonParse } from "@roo/safeJsonParse"
@@ -35,22 +35,6 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 	const data = safeJsonParse<UnauthorizedWarningData>(message.text)
 
 	const modelId = data?.modelId || "(unknown)"
-	const loginUrl = data?.loginUrl || "https://kilocode.com/login"
-	const signupUrl = data?.signupUrl || "https://kilocode.com/signup"
-
-	const handleLogin = () => {
-		vscode.postMessage({
-			type: "openInBrowser",
-			url: loginUrl,
-		})
-	}
-
-	const handleSignup = () => {
-		vscode.postMessage({
-			type: "openInBrowser",
-			url: signupUrl,
-		})
-	}
 
 	return (
 		<>
@@ -71,12 +55,28 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 					padding: "14px 16px 22px",
 					justifyContent: "center",
 				}}>
-				<VSCodeButton className="p-1 w-full rounded" appearance="primary" onClick={handleLogin}>
+				<Button
+					variant="primary"
+					onClick={() => {
+						vscode.postMessage({
+							type: "switchTab",
+							tab: "auth",
+							values: { returnTo: "chat" },
+						})
+					}}>
 					{t("kilocode:unauthorizedError.loginButton")}
-				</VSCodeButton>
-				<VSCodeButton className="p-1 w-full rounded" onClick={handleSignup}>
+				</Button>
+				<Button
+					variant="secondary"
+					onClick={() => {
+						vscode.postMessage({
+							type: "switchTab",
+							tab: "auth",
+							values: { returnTo: "chat" },
+						})
+					}}>
 					{t("kilocode:unauthorizedError.signupButton")}
-				</VSCodeButton>
+				</Button>
 			</div>
 		</>
 	)
