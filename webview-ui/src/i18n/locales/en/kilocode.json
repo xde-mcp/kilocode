@@ -30,10 +30,10 @@
 		"continue": "Continue"
 	},
 	"unauthorizedError": {
-		"title": "🔐 Authentication Required",
-		"message": "You need to be logged in to use {{model}}. Please log in or create a free Kilo Code account to continue.",
+		"title": "Join Kilo Cloud today",
+		"message": "You need to be logged in to use the {{model}} model. Please log in or create a Kilo account to continue.",
 		"loginButton": "Log In",
-		"signupButton": "Create Free Account"
+		"signupButton": "Create Account"
 	},
 	"pricing": {
 		"costUnknown": "cost unknown",
