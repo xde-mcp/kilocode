@@ -1,3 +1,4 @@
+import * as vscode from "vscode"
 import { handleUri } from "../handleUri"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { CloudService } from "@roo-code/cloud"
@@ -12,6 +13,9 @@ vi.mock("vscode", () => ({
 				query: url.search.slice(1),
 			}
 		},
+	},
+	commands: {
+		executeCommand: vi.fn(),
 	},
 }))
 
@@ -59,17 +63,18 @@ describe("handleUri", () => {
 	it("should do nothing if no visible provider", async () => {
 		vi.mocked(ClineProvider.getVisibleInstance).mockReturnValue(undefined)
 
-		const uri = { path: "/chat", query: "" } as any
+		const uri = { path: "/kilocode/chat", query: "" } as any
 		await handleUri(uri)
 
 		expect(mockProvider.postMessageToWebview).not.toHaveBeenCalled()
 	})
 
-	describe("/chat path", () => {
-		it("should open a fresh chat", async () => {
-			const uri = { path: "/chat", query: "" } as any
+	describe("/kilocode/chat path", () => {
+		it("should focus sidebar and open a fresh chat", async () => {
+			const uri = { path: "/kilocode/chat", query: "" } as any
 			await handleUri(uri)
 
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
 			expect(mockProvider.removeClineFromStack).toHaveBeenCalled()
 			expect(mockProvider.refreshWorkspace).toHaveBeenCalled()
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
@@ -84,10 +89,11 @@ describe("handleUri", () => {
 	})
 
 	describe("/kilocode/profile path", () => {
-		it("should open profile view", async () => {
+		it("should focus sidebar and open profile view", async () => {
 			const uri = { path: "/kilocode/profile", query: "" } as any
 			await handleUri(uri)
 
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
 				type: "action",
 				action: "profileButtonClicked",
@@ -99,10 +105,11 @@ describe("handleUri", () => {
 	})
 
 	describe("/kilocode/fork path", () => {
-		it("should set fork command in chat box", async () => {
+		it("should focus sidebar and set fork command in chat box", async () => {
 			const uri = { path: "/kilocode/fork", query: "id=test-session-123" } as any
 			await handleUri(uri)
 
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
 				type: "invoke",
 				invoke: "setChatBoxMessage",
@@ -118,6 +125,7 @@ describe("handleUri", () => {
 			const uri = { path: "/kilocode/fork", query: "" } as any
 			await handleUri(uri)
 
+			expect(vscode.commands.executeCommand).not.toHaveBeenCalled()
 			expect(mockProvider.postMessageToWebview).not.toHaveBeenCalled()
 		})
 	})

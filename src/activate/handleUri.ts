@@ -39,6 +39,8 @@ export const handleUri = async (uri: vscode.Uri) => {
 		}
 		// kilocode_change start
 		case "/kilocode/profile": {
+			// Focus the sidebar first so users can see the profile
+			await vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
 			await visibleProvider.postMessageToWebview({
 				type: "action",
 				action: "profileButtonClicked",
@@ -51,6 +53,8 @@ export const handleUri = async (uri: vscode.Uri) => {
 		case "/kilocode/fork": {
 			const id = query.get("id")
 			if (id) {
+				// Focus the sidebar first so users can see the fork
+				await vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
 				await visibleProvider.postMessageToWebview({
 					type: "invoke",
 					invoke: "setChatBoxMessage",
@@ -63,7 +67,9 @@ export const handleUri = async (uri: vscode.Uri) => {
 			}
 			break
 		}
-		case "/chat": {
+		case "/kilocode/chat": {
+			// Focus the sidebar first so users can see the chat
+			await vscode.commands.executeCommand("kilo-code.SidebarProvider.focus")
 			// Open a fresh chat (same as clicking the + button)
 			await visibleProvider.removeClineFromStack()
 			await visibleProvider.refreshWorkspace()
