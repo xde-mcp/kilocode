@@ -1,3 +1,4 @@
+import { useEffect, useRef, useCallback } from "react"
 import { ClineMessage } from "@roo-code/types"
 import { vscode } from "@src/utils/vscode"
 import { Button } from "@src/components/ui"
@@ -31,8 +32,37 @@ const Description = styled.div`
 
 export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 	const { t } = useTranslation()
+	const hasRetried = useRef(false)
 
 	const data = safeJsonParse<UnauthorizedWarningData>(message.text)
+
+	const handleRetry = useCallback(() => {
+		if (hasRetried.current) {
+			return
+		}
+		hasRetried.current = true
+		vscode.postMessage({
+			type: "askResponse",
+			askResponse: "retry_clicked",
+			text: message.text,
+		})
+	}, [message.text])
+
+	// Listen for successful authentication and automatically retry
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			const msg = event.data
+			if (msg.type === "deviceAuthComplete") {
+				// Auth succeeded - wait briefly for token to be saved, then retry
+				setTimeout(() => {
+					handleRetry()
+				}, 500)
+			}
+		}
+
+		window.addEventListener("message", handleMessage)
+		return () => window.removeEventListener("message", handleMessage)
+	}, [handleRetry])
 
 	const modelId = data?.modelId || "(unknown)"
 
