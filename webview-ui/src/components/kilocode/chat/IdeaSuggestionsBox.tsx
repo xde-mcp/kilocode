@@ -103,7 +103,7 @@ export const IdeaSuggestionsBox = () => {
 									style={{
 										background: "color-mix(in srgb, var(--vscode-focusBorder) 15%, transparent)",
 									}}>
-									<Lightbulb className="w-4 h-4 text-vscode-focusBorder transition-colors duration-200 group-hover:text-vscode-editor-background" />
+									<Lightbulb className="w-4 h-4 text-vscode-focusBorder transition-colors duration-200 group-hover:text-vscode-button-foreground" />
 								</div>
 								<span className="flex-1 text-vscode-foreground leading-relaxed pt-0.5">{idea}</span>
 								<ArrowRight className="w-4 h-4 text-vscode-descriptionForeground opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1" />
