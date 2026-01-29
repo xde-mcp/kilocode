@@ -56,7 +56,7 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 		<>
 			<HeaderContainer>
 				<span className="text-yellow-400" style={{ marginBottom: "-1.5px" }}>
-					🔐
+					✨
 				</span>
 				<span style={{ fontWeight: "bold" }}>{t("kilocode:unauthorizedError.title")}</span>
 			</HeaderContainer>
