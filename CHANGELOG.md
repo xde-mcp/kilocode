@@ -1,5 +1,11 @@
 # kilo-code
 
+## 5.2.1
+
+### Patch Changes
+
+- [#5501](https://github.com/Kilo-Org/kilocode/pull/5501) [`cecefc1`](https://github.com/Kilo-Org/kilocode/commit/cecefc1dd660100631eecf8517f2c0c918f6cdb3) Thanks [@Neonsy](https://github.com/Neonsy)! - Adding Kimi K2.5
+
 ## 5.2.0
 
 ### Minor Changes
