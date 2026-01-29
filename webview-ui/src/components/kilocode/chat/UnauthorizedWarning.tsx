@@ -96,17 +96,6 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 					}}>
 					{t("kilocode:unauthorizedError.loginButton")}
 				</Button>
-				<Button
-					variant="secondary"
-					onClick={() => {
-						vscode.postMessage({
-							type: "switchTab",
-							tab: "auth",
-							values: { returnTo: "chat" },
-						})
-					}}>
-					{t("kilocode:unauthorizedError.signupButton")}
-				</Button>
 			</div>
 		</>
 	)
