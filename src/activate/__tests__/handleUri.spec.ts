@@ -2,6 +2,7 @@ import * as vscode from "vscode"
 import { handleUri } from "../handleUri"
 import { ClineProvider } from "../../core/webview/ClineProvider"
 import { CloudService } from "@roo-code/cloud"
+import { Package } from "../../shared/package"
 
 // Mock vscode
 vi.mock("vscode", () => ({
@@ -74,7 +75,7 @@ describe("handleUri", () => {
 			const uri = { path: "/kilocode/chat", query: "" } as any
 			await handleUri(uri)
 
-			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith(`${Package.name}.SidebarProvider.focus`)
 			expect(mockProvider.removeClineFromStack).toHaveBeenCalled()
 			expect(mockProvider.refreshWorkspace).toHaveBeenCalled()
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
@@ -93,7 +94,7 @@ describe("handleUri", () => {
 			const uri = { path: "/kilocode/profile", query: "" } as any
 			await handleUri(uri)
 
-			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith(`${Package.name}.SidebarProvider.focus`)
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
 				type: "action",
 				action: "profileButtonClicked",
@@ -109,7 +110,7 @@ describe("handleUri", () => {
 			const uri = { path: "/kilocode/fork", query: "id=test-session-123" } as any
 			await handleUri(uri)
 
-			expect(vscode.commands.executeCommand).toHaveBeenCalledWith("kilo-code.SidebarProvider.focus")
+			expect(vscode.commands.executeCommand).toHaveBeenCalledWith(`${Package.name}.SidebarProvider.focus`)
 			expect(mockProvider.postMessageToWebview).toHaveBeenCalledWith({
 				type: "invoke",
 				invoke: "setChatBoxMessage",
