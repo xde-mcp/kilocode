@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from "react"
 import { ClineMessage } from "@roo-code/types"
 import { vscode } from "@src/utils/vscode"
 import { Button } from "@src/components/ui"
-import styled from "styled-components"
 import { useTranslation } from "react-i18next"
 import { safeJsonParse } from "@roo/safeJsonParse"
 
@@ -15,20 +14,6 @@ type UnauthorizedWarningData = {
 	loginUrl?: string
 	signupUrl?: string
 }
-
-const HeaderContainer = styled.div`
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	margin-bottom: 10px;
-`
-
-const Description = styled.div`
-	margin: 0;
-	white-space: pre-wrap;
-	word-break: break-word;
-	overflow-wrap: anywhere;
-`
 
 export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 	const { t } = useTranslation()
@@ -67,36 +52,27 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 	const modelId = data?.modelId || "(unknown)"
 
 	return (
-		<>
-			<HeaderContainer>
-				<span className="text-yellow-400" style={{ marginBottom: "-1.5px" }}>
-					✨
-				</span>
-				<span style={{ fontWeight: "bold" }}>{t("kilocode:unauthorizedError.title")}</span>
-			</HeaderContainer>
-			<Description>{t("kilocode:unauthorizedError.message", { model: modelId })}</Description>
-
-			<div
-				className="bg-vscode-panel-border flex flex-col gap-3"
-				style={{
-					borderRadius: "4px",
-					display: "flex",
-					marginTop: "15px",
-					padding: "14px 16px 22px",
-					justifyContent: "center",
-				}}>
-				<Button
-					variant="primary"
-					onClick={() => {
-						vscode.postMessage({
-							type: "switchTab",
-							tab: "auth",
-							values: { returnTo: "chat" },
-						})
-					}}>
-					{t("kilocode:unauthorizedError.loginButton")}
-				</Button>
+		<div className="flex flex-col gap-3">
+			<div className="flex items-center gap-2">
+				<span className="text-yellow-400 text-lg">✨</span>
+				<span className="font-semibold text-vscode-foreground">{t("kilocode:unauthorizedError.title")}</span>
 			</div>
-		</>
+			<p className="text-vscode-descriptionForeground text-sm m-0 break-words">
+				{t("kilocode:unauthorizedError.message", { model: modelId })}
+			</p>
+			<Button
+				variant="primary"
+				size="lg"
+				className="w-full mt-1"
+				onClick={() => {
+					vscode.postMessage({
+						type: "switchTab",
+						tab: "auth",
+						values: { returnTo: "chat" },
+					})
+				}}>
+				{t("kilocode:unauthorizedError.loginButton")}
+			</Button>
+		</div>
 	)
 }
