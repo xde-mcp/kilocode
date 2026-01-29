@@ -666,6 +666,18 @@ export const FIELD_REGISTRY: Record<string, FieldMetadata> = {
 		type: "text",
 		placeholder: "Enter profiles configuration...",
 	},
+
+	// Poe fields
+	poeApiKey: {
+		label: "API Key",
+		type: "password",
+		placeholder: "Enter Poe API key...",
+	},
+	poeModelId: {
+		label: "Model ID",
+		type: "text",
+		placeholder: "Enter model ID...",
+	},
 }
 
 /**
@@ -1046,6 +1058,9 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				createFieldConfig("sapAiCoreModelId", config),
 			]
 
+		case "poe":
+			return [createFieldConfig("poeApiKey", config), createFieldConfig("poeModelId", config, "gpt-4o")]
+
 		default:
 			return []
 	}
@@ -1097,6 +1112,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	"fake-ai": "fake-model",
 	"human-relay": "human-relay-model",
 	ovhcloud: "gpt-oss-120b",
+	poe: "gpt-4o",
 	inception: "gpt-4o",
 	synthetic: "synthetic-model",
 	"sap-ai-core": "gpt-4o",

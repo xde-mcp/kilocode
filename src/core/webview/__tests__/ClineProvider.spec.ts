@@ -2806,6 +2806,7 @@ describe("ClineProvider - Router Models", () => {
 				"sap-ai-core": {}, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
+				poe: mockModels, // kilocode_change
 			},
 			values: undefined,
 		})
@@ -2858,6 +2859,7 @@ describe("ClineProvider - Router Models", () => {
 			.mockResolvedValueOnce(mockModels) // kilocode_change: synthetic success
 			.mockResolvedValueOnce(mockModels) // roo success
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes fail
+			.mockResolvedValueOnce(mockModels) // kilocode_change: poe success
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm fail
 
 		await messageHandler({ type: "requestRouterModels" })
@@ -2886,6 +2888,7 @@ describe("ClineProvider - Router Models", () => {
 				"sap-ai-core": {}, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
+				poe: mockModels, // kilocode_change
 			},
 			values: undefined,
 		})
@@ -3042,6 +3045,7 @@ describe("ClineProvider - Router Models", () => {
 				"sap-ai-core": {}, // kilocode_change
 				huggingface: {},
 				"io-intelligence": {},
+				poe: mockModels, // kilocode_change
 			},
 			values: undefined,
 		})
