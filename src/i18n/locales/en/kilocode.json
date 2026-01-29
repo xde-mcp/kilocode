@@ -15,6 +15,10 @@
 		"title": "Low Credit Warning!",
 		"message": "Check to see if you can top up with free credits or purchase some more!"
 	},
+	"unauthorizedError": {
+		"title": "Authentication Required",
+		"message": "You need to be logged in to use this paid model. Please log in or create a free Kilo Code account to continue."
+	},
 	"task": {
 		"noAssistantMessages": "The model's response ended unexpectedly (no assistant messages). This may be a sign of rate limiting.",
 		"notLoggedInError": "Cannot complete request, make sure you are connected and logged in with the selected provider.\n\n{{error}}",

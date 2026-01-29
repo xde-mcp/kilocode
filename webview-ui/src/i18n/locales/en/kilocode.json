@@ -29,6 +29,12 @@
 		"continueWith": "Continue with {{model}}",
 		"continue": "Continue"
 	},
+	"unauthorizedError": {
+		"title": "🔐 Authentication Required",
+		"message": "You need to be logged in to use {{model}}. Please log in or create a free Kilo Code account to continue.",
+		"loginButton": "Log In",
+		"signupButton": "Create Free Account"
+	},
 	"pricing": {
 		"costUnknown": "cost unknown",
 		"costUnknownDescription": "The API Provider did not provide any cost data or the request was canceled.",
