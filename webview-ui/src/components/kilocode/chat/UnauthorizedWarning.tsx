@@ -11,8 +11,6 @@ type UnauthorizedWarningProps = {
 
 type UnauthorizedWarningData = {
 	modelId?: string
-	loginUrl?: string
-	signupUrl?: string
 }
 
 export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
@@ -49,16 +47,18 @@ export const UnauthorizedWarning = ({ message }: UnauthorizedWarningProps) => {
 		return () => window.removeEventListener("message", handleMessage)
 	}, [handleRetry])
 
-	const modelId = data?.modelId || "(unknown)"
+	const modelId = data?.modelId || "(chosen)"
 
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center gap-2">
 				<span className="text-yellow-400 text-lg">✨</span>
-				<span className="font-semibold text-vscode-foreground">{t("kilocode:unauthorizedError.title")}</span>
+				<span className="font-semibold text-vscode-foreground">
+					{t("kilocode:unauthorizedError.title", { modelId })}
+				</span>
 			</div>
 			<p className="text-vscode-descriptionForeground text-sm m-0 break-words">
-				{t("kilocode:unauthorizedError.message", { model: modelId })}
+				{t("kilocode:unauthorizedError.message")}
 			</p>
 			<Button
 				variant="primary"

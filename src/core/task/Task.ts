@@ -4629,8 +4629,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 								"unauthorized_prompt",
 								JSON.stringify({
 									modelId: apiConfiguration.kilocodeModel,
-									loginUrl: getAppUrl("/users/sign_in"),
-									signupUrl: getAppUrl("/get-started"),
 								}),
 							)
 						: this.ask(
