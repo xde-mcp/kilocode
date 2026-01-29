@@ -6,11 +6,13 @@ import { useTranslation } from "react-i18next"
 import { useTaskHistory } from "@/kilocode/hooks/useTaskHistory"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { Lightbulb, Sparkles, ArrowRight } from "lucide-react"
+import i18next from "i18next"
+
+const ideas = Object.values(i18next.t("ideaSuggestionsBox.ideas", { returnObjects: true }))
 
 export const IdeaSuggestionsBox = () => {
 	const { t } = useTranslation("kilocode")
 	const { taskHistoryVersion } = useExtensionState()
-	const ideas = Object.values(t("ideaSuggestionsBox.ideas", { returnObjects: true }))
 
 	const [iconsBaseUri] = useState(() => {
 		const w = window as any
@@ -31,7 +33,7 @@ export const IdeaSuggestionsBox = () => {
 
 	// Show 3-4 random ideas - memoized to prevent re-shuffling on re-renders
 	// Must be called before early return to satisfy React hooks rules
-	const shuffledIdeas = useMemo(() => [...ideas].sort(() => Math.random() - 0.5).slice(0, 4), [ideas])
+	const shuffledIdeas = useMemo(() => [...ideas].sort(() => Math.random() - 0.5).slice(0, 4), [])
 
 	// Don't show if workspace has tasks
 	if (hasWorkspaceTasks) {
