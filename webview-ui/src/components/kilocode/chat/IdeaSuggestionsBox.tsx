@@ -8,7 +8,7 @@ import { useExtensionState } from "@/context/ExtensionStateContext"
 import { Lightbulb, Sparkles, ArrowRight } from "lucide-react"
 import i18next from "i18next"
 
-const ideas = Object.values(i18next.t("ideaSuggestionsBox.ideas", { returnObjects: true }))
+const ideas = Object.values(i18next.t("kilocode:ideaSuggestionsBox.ideas", { returnObjects: true }))
 
 export const IdeaSuggestionsBox = () => {
 	const { t } = useTranslation("kilocode")
