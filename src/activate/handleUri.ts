@@ -63,6 +63,14 @@ export const handleUri = async (uri: vscode.Uri) => {
 			}
 			break
 		}
+		case "/chat": {
+			// Open a fresh chat (same as clicking the + button)
+			await visibleProvider.removeClineFromStack()
+			await visibleProvider.refreshWorkspace()
+			await visibleProvider.postMessageToWebview({ type: "action", action: "chatButtonClicked" })
+			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
+			break
+		}
 		// kilocode_change end
 		case "/requesty": {
 			const code = query.get("code")
