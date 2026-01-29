@@ -4,6 +4,7 @@ export type FireworksModelId =
 	| "accounts/fireworks/models/kimi-k2-thinking"
 	| "accounts/fireworks/models/kimi-k2-instruct"
 	| "accounts/fireworks/models/kimi-k2-instruct-0905"
+	| "accounts/fireworks/models/kimi-k2p5"
 	| "accounts/fireworks/models/minimax-m2"
 	| "accounts/fireworks/models/minimax-m2p1"
 	| "accounts/fireworks/models/qwen3-235b-a22b"
@@ -59,6 +60,17 @@ export const fireworksModels = {
 		inputPrice: 0.6,
 		outputPrice: 2.5,
 		deprecated: true,
+	},
+	"accounts/fireworks/models/kimi-k2p5": {
+		maxTokens: 256000,
+		contextWindow: 256000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		inputPrice: 0.6,
+		outputPrice: 3,
+		cacheReadsPrice: 0.1,
+		displayName: "Kimi K2.5",
 	},
 	"accounts/fireworks/models/minimax-m2": {
 		maxTokens: 192000,
