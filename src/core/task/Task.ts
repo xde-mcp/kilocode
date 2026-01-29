@@ -1986,7 +1986,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			switch (toolName) {
 				case "apply_diff":
 					return t("kilocode:task.disableApplyDiff") + " "
-				case "edit_file":
+				case "fast_edit_file":
 					return t("kilocode:task.disableEditFile") + " "
 				default:
 					return ""
