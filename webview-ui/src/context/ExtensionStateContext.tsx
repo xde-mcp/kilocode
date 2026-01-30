@@ -95,7 +95,7 @@ export interface ExtensionStateContextType extends ExtensionState {
 	mdmCompliant?: boolean
 	hasOpenedModeSelector: boolean // New property to track if user has opened mode selector
 	setHasOpenedModeSelector: (value: boolean) => void // Setter for the new property
-	hasCompletedOnboarding: boolean // kilocode_change: Track if user has completed onboarding flow
+	hasCompletedOnboarding?: boolean // kilocode_change: Track if user has completed onboarding flow
 	setHasCompletedOnboarding: (value: boolean) => void // kilocode_change
 	alwaysAllowFollowupQuestions: boolean // New property for follow-up questions auto-approve
 	setAlwaysAllowFollowupQuestions: (value: boolean) => void // Setter for the new property
