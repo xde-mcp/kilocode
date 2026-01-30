@@ -1908,13 +1908,11 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("hasOpenedModeSelector", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start: Handle onboarding completion
+		// kilocode_change start
 		case "hasCompletedOnboarding":
 			await updateGlobalState("hasCompletedOnboarding", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change end
-		// kilocode_change start
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)
 			await provider.postStateToWebview()
@@ -1927,22 +1925,18 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "sendMessageOnEnter":
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change end
 		case "showTimestamps":
 			await updateGlobalState("showTimestamps", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "showDiffStats":
 			await updateGlobalState("showDiffStats", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change end
 		case "hideCostBelowThreshold":
 			await updateGlobalState("hideCostBelowThreshold", message.value)
 			await provider.postStateToWebview()
