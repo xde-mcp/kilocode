@@ -1929,14 +1929,17 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change end
 		case "showTimestamps":
 			await updateGlobalState("showTimestamps", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change start
 		case "showDiffStats":
 			await updateGlobalState("showDiffStats", message.bool ?? true)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change end
 		case "hideCostBelowThreshold":
 			await updateGlobalState("hideCostBelowThreshold", message.value)
 			await provider.postStateToWebview()
@@ -1945,7 +1948,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("allowVeryLargeReads", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change end
 
 		case "setReasoningBlockCollapsed":
 			await updateGlobalState("reasoningBlockCollapsed", message.bool ?? true)
