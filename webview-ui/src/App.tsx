@@ -317,10 +317,8 @@ const App = () => {
 
 	// kilocode_change start: Onboarding handlers
 	const handleSelectFreeModels = useCallback(() => {
-		// Mark onboarding as complete
+		// Mark onboarding as complete - the default profile is already set up with a free model
 		vscode.postMessage({ type: "hasCompletedOnboarding", bool: true })
-		// The default profile is already set up with a free model, so just close welcome
-		// This will trigger a state update that sets showWelcome to false
 	}, [])
 
 	const handleSelectPremiumModels = useCallback(() => {
