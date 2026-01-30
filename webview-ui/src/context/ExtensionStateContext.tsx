@@ -711,7 +711,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		enterBehavior: state.enterBehavior ?? "send",
 		setEnterBehavior: (value) => setState((prevState) => ({ ...prevState, enterBehavior: value })),
 		setHasOpenedModeSelector: (value) => setState((prevState) => ({ ...prevState, hasOpenedModeSelector: value })),
-		hasCompletedOnboarding: state.hasCompletedOnboarding ?? false, // kilocode_change
+		hasCompletedOnboarding: state.hasCompletedOnboarding, // kilocode_change
 		setHasCompletedOnboarding: (value) =>
 			setState((prevState) => ({ ...prevState, hasCompletedOnboarding: value })), // kilocode_change
 		setAutoCondenseContext: (value) => setState((prevState) => ({ ...prevState, autoCondenseContext: value })),
