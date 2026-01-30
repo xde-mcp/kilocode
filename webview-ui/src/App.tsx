@@ -14,7 +14,6 @@ import { ExtensionStateContextProvider, useExtensionState } from "./context/Exte
 import ChatView, { ChatViewRef } from "./components/chat/ChatView"
 import HistoryView from "./components/history/HistoryView"
 import SettingsView, { SettingsViewRef } from "./components/settings/SettingsView"
-import WelcomeView from "./components/kilocode/welcome/WelcomeView" // kilocode_change
 import OnboardingView from "./components/kilocode/welcome/OnboardingView" // kilocode_change
 import ProfileView from "./components/kilocode/profile/ProfileView" // kilocode_change
 import McpView from "./components/mcp/McpView" // kilocode_change
@@ -81,7 +80,6 @@ const defaultSectionByAction: Partial<Record<NonNullable<ExtensionMessage["actio
 const App = () => {
 	const {
 		didHydrateState,
-		showWelcome,
 		shouldShowAnnouncement,
 		telemetrySetting,
 		telemetryKey,
@@ -341,6 +339,13 @@ const App = () => {
 		switchTab("settings")
 		setCurrentSection("providers")
 	}, [switchTab])
+
+	// One-time migration: mark existing users as having completed onboarding
+	useEffect(() => {
+		if (hasCompletedOnboarding !== true && (taskHistoryFullLength ?? 0) > 0) {
+			vscode.postMessage({ type: "hasCompletedOnboarding", bool: true })
+		}
+	}, [hasCompletedOnboarding, taskHistoryFullLength])
 	// kilocode_change end
 
 	if (!didHydrateState) {
@@ -348,26 +353,16 @@ const App = () => {
 	}
 
 	// kilocode_change start: Show OnboardingView for new users who haven't completed onboarding
-	// Show onboarding only if:
-	// 1. hasCompletedOnboarding is not true (undefined or false)
-	// 2. AND user has no task history (meaning they're truly new, not an existing user upgrading)
-	//
-	// This ensures existing users who upgrade don't see the onboarding screen,
-	// while new users who have never used the extension will see it.
-	const isExistingUser = (taskHistoryFullLength ?? 0) > 0
-	const showOnboarding = hasCompletedOnboarding !== true && !isExistingUser
+	const showOnboarding = hasCompletedOnboarding !== true
 
 	// Do not conditionally load ChatView, it's expensive and there's state we
 	// don't want to lose (user input, disableInput, askResponse promise, etc.)
-	// kilocode_change: no WelcomeViewProvider toggle
 	return showOnboarding ? (
 		<OnboardingView
 			onSelectFreeModels={handleSelectFreeModels}
 			onSelectPremiumModels={handleSelectPremiumModels}
 			onSelectBYOK={handleSelectBYOK}
 		/>
-	) : showWelcome ? (
-		<WelcomeView />
 	) : (
 		// kilocode_change end
 		<>
