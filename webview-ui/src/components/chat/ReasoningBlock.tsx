@@ -46,9 +46,8 @@ export const ReasoningBlock = ({ content, isStreaming, isLast }: ReasoningBlockP
 
 	return (
 		<div className="group">
-			{/* kilocode_change: muted styling with hover opacity */}
 			<div
-				className="flex items-center justify-between pr-2 cursor-pointer select-none opacity-40 hover:opacity-100 transition-opacity"
+				className="flex items-center justify-between pr-2 cursor-pointer select-none opacity-40 hover:opacity-100 transition-opacity" // kilocode_change
 				onClick={handleToggle}>
 				<div className="flex items-center gap-2">
 					<Lightbulb className="w-4" />

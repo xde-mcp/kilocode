@@ -431,12 +431,11 @@ export const ChatRowContent = ({
 		isLast,
 	])
 
-	// kilocode_change: reduced marginBottom from 10px to 4px for tighter spacing
 	const headerStyle: React.CSSProperties = {
 		display: "flex",
 		alignItems: "center",
 		gap: "10px",
-		marginBottom: "4px",
+		marginBottom: "4px", // kilocode_change
 		wordBreak: "break-word",
 	}
 
@@ -1357,14 +1356,13 @@ export const ChatRowContent = ({
 								<User className="w-4 shrink-0" aria-label="User icon" />
 								<span style={{ fontWeight: "bold" }}>{t("chat:feedback.youSaid")}</span>
 							</div>
-							{/* kilocode_change: muted user message styling with sideBar background */}
 							<div
 								className={cn(
 									"ml-6 border rounded-sm whitespace-pre-wrap",
 									isEditing ? "overflow-visible" : "overflow-hidden",
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
-										: "cursor-text p-1 bg-vscode-sideBar-background text-vscode-foreground",
+										: "cursor-text p-1 bg-vscode-sideBar-background text-vscode-foreground", // kilocode_change
 								)}>
 								{isEditing ? (
 									<div className="flex flex-col gap-2">

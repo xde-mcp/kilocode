@@ -84,13 +84,14 @@ export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: Checkpoin
 		return null
 	}
 
-	// kilocode_change start: muted styling with theme-aware colors and hover opacity
 	return (
 		<div
-			className="flex items-center justify-between gap-2 opacity-40 hover:opacity-100 transition-opacity"
+			className="flex items-center justify-between gap-2 opacity-40 hover:opacity-100 transition-opacity" // kilocode_change
 			onMouseEnter={handleMouseEnter}
 			onMouseLeave={handleMouseLeave}>
 			<div className="flex items-center gap-2 text-vscode-foreground whitespace-nowrap">
+				{" "}
+				{/* kilocode_change */}
 				<GitCommitVertical className="w-4" />
 				<span className="text-sm">{t("chat:checkpoint.regular")}</span>
 				{isCurrent && <span className="text-muted">({t("chat:checkpoint.current")})</span>}
@@ -99,9 +100,8 @@ export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: Checkpoin
 				className="block w-full h-[2px] mt-[2px] text-xs"
 				style={{
 					backgroundImage:
-						"linear-gradient(90deg, color-mix(in srgb, var(--vscode-editorGroup-border) 65%, transparent), color-mix(in srgb, var(--vscode-editorGroup-border) 65%, transparent) 80%, transparent 99%)",
+						"linear-gradient(90deg, color-mix(in srgb, var(--vscode-editorGroup-border) 65%, transparent), color-mix(in srgb, var(--vscode-editorGroup-border) 65%, transparent) 80%, transparent 99%)", // kilocode_change
 				}}></span>
-			{/* kilocode_change end */}
 
 			{/* Keep menu visible while hovering, popover is open, or briefly after close to prevent jump */}
 			<div data-testid="checkpoint-menu-container" className={cn("h-4 -mt-2", menuVisible ? "block" : "hidden")}>
