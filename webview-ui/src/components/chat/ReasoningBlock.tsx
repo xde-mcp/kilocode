@@ -51,7 +51,8 @@ export const ReasoningBlock = ({ content, isStreaming, isLast }: ReasoningBlockP
 				onClick={handleToggle}>
 				<div className="flex items-center gap-2">
 					<Lightbulb className="w-4" />
-					<span className="text-sm text-vscode-foreground">{t("chat:reasoning.thinking")}</span>
+					<span className="text-sm text-vscode-foreground">{t("chat:reasoning.thinking")}</span>{" "}
+					{/* kilocode_change */}
 					{elapsed > 0 && (
 						<span className="text-sm text-vscode-descriptionForeground mt-0.5">{secondsLabel}</span>
 					)}
