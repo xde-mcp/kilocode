@@ -1925,7 +1925,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "sendMessageOnEnter":
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
