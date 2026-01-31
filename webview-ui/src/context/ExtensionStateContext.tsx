@@ -294,7 +294,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		customCondensingPrompt: "", // Default empty string for custom condensing prompt
 		yoloGatekeeperApiConfigId: "", // kilocode_change: Default empty string for gatekeeper API config ID
 		hasOpenedModeSelector: false, // Default to false (not opened yet)
-		hasCompletedOnboarding: false, // kilocode_change: Default to false (not completed yet)
+		hasCompletedOnboarding: undefined, // kilocode_change: Leave unset until extension sends value
 		autoApprovalEnabled: true,
 		customModes: [],
 		maxOpenTabsContext: 20,
