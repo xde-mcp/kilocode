@@ -6,16 +6,23 @@ import { useAppTranslation } from "@/i18n/TranslationContext"
 interface OnboardingOptionProps {
 	title: string
 	description: string
+	icon: string
 	onClick: () => void
 }
 
-const OnboardingOption: React.FC<OnboardingOptionProps> = ({ title, description, onClick }) => {
+const OnboardingOption: React.FC<OnboardingOptionProps> = ({ title, description, icon, onClick }) => {
 	return (
 		<button
-			className="w-full p-5 rounded-lg border border-vscode-panel-border bg-vscode-editor-background hover:bg-vscode-list-hoverBackground cursor-pointer text-left transition-colors"
+			className="w-full p-5 rounded-lg border border-vscode-panel-border bg-vscode-editor-background hover:bg-vscode-list-hoverBackground cursor-pointer text-left transition-colors flex items-center gap-4"
 			onClick={onClick}>
-			<h3 className="text-lg font-semibold text-vscode-foreground m-0 mb-2">{title}</h3>
-			<p className="text-sm text-vscode-descriptionForeground m-0">{description}</p>
+			<span
+				className={`codicon codicon-${icon} text-vscode-foreground`}
+				style={{ fontSize: "24px", width: "24px", height: "24px" }}
+			/>
+			<div>
+				<h3 className="text-lg font-semibold text-vscode-foreground m-0 mb-2">{title}</h3>
+				<p className="text-sm text-vscode-descriptionForeground m-0">{description}</p>
+			</div>
 		</button>
 	)
 }
@@ -41,18 +48,21 @@ const OnboardingView: React.FC<OnboardingViewProps> = ({ onSelectFreeModels, onS
 				<OnboardingOption
 					title={t("kilocode:onboarding.freeModels.title")}
 					description={t("kilocode:onboarding.freeModels.description")}
+					icon="sparkle"
 					onClick={onSelectFreeModels}
 				/>
 
 				<OnboardingOption
 					title={t("kilocode:onboarding.premiumModels.title")}
 					description={t("kilocode:onboarding.premiumModels.description")}
+					icon="star-full"
 					onClick={onSelectPremiumModels}
 				/>
 
 				<OnboardingOption
 					title={t("kilocode:onboarding.byok.title")}
 					description={t("kilocode:onboarding.byok.description")}
+					icon="key"
 					onClick={onSelectBYOK}
 				/>
 			</div>
