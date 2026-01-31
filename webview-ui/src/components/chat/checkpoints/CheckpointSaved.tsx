@@ -93,7 +93,7 @@ export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: Checkpoin
 				{" "}
 				{/* kilocode_change */}
 				<GitCommitVertical className="w-4" />
-				<span className="text-sm">{t("chat:checkpoint.regular")}</span>
+				<span className="text-sm">{t("chat:checkpoint.regular")}</span> {/* kilocode_change */}
 				{isCurrent && <span className="text-muted">({t("chat:checkpoint.current")})</span>}
 			</div>
 			<span
