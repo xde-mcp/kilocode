@@ -1356,14 +1356,16 @@ export const ChatRowContent = ({
 								<User className="w-4 shrink-0" aria-label="User icon" />
 								<span style={{ fontWeight: "bold" }}>{t("chat:feedback.youSaid")}</span>
 							</div>
+							{/* kilocode_change start: muted user message styling */}
 							<div
 								className={cn(
 									"ml-6 border rounded-sm whitespace-pre-wrap",
-									isEditing ? "overflow-visible" : "overflow-hidden", // kilocode_change
+									isEditing ? "overflow-visible" : "overflow-hidden",
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
-										: "cursor-text p-1 bg-vscode-sideBar-background text-vscode-foreground", // kilocode_change
+										: "cursor-text p-1 bg-vscode-sideBar-background text-vscode-foreground",
 								)}>
+								{/* kilocode_change end */}
 								{isEditing ? (
 									<div className="flex flex-col gap-2">
 										<ChatTextArea
