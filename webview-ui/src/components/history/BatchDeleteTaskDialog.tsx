@@ -26,13 +26,24 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 
 	const favoritedTasks = tasks?.filter((task) => taskIds.includes(task.id) && task.isFavorited) ?? [] // kilocode_change
 	const hasFavoritedTasks = favoritedTasks.length > 0 // kilocode_change
+	const nonFavoritedTaskIds = taskIds.filter((id) => !favoritedTasks.some((task) => task.id === id)) // kilocode_change
+	const hasNonFavoritedTasks = nonFavoritedTaskIds.length > 0 // kilocode_change
 
-	const onDelete = useCallback(() => {
+	const onDeleteAll = useCallback(() => {
 		if (taskIds.length > 0) {
-			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: taskIds })
+			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: taskIds, excludeFavorites: false })
 			onOpenChange?.(false)
 		}
 	}, [taskIds, onOpenChange])
+
+	// kilocode_change start
+	const onDeleteNonFavorited = useCallback(() => {
+		if (nonFavoritedTaskIds.length > 0) {
+			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: nonFavoritedTaskIds, excludeFavorites: true })
+			onOpenChange?.(false)
+		}
+	}, [nonFavoritedTaskIds, onOpenChange])
+	// kilocode_change end
 
 	return (
 		<AlertDialog {...props}>
@@ -57,12 +68,33 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 					<AlertDialogCancel asChild>
 						<Button variant="secondary">{t("history:cancel")}</Button>
 					</AlertDialogCancel>
-					<AlertDialogAction asChild>
-						<Button variant="destructive" onClick={onDelete}>
-							<span className="codicon codicon-trash mr-1"></span>
-							{t("history:deleteItems", { count: taskIds.length })}
-						</Button>
-					</AlertDialogAction>
+					{/* kilocode_change start */}
+					{hasFavoritedTasks ? (
+						<>
+							{hasNonFavoritedTasks && (
+								<AlertDialogAction asChild>
+									<Button variant="secondary" onClick={onDeleteNonFavorited}>
+										<span className="codicon codicon-trash mr-1"></span>
+										{t("history:deleteNonFavorited", { count: nonFavoritedTaskIds.length })}
+									</Button>
+								</AlertDialogAction>
+							)}
+							<AlertDialogAction asChild>
+								<Button variant="destructive" onClick={onDeleteAll}>
+									<span className="codicon codicon-trash mr-1"></span>
+									{t("history:deleteAllItems", { count: taskIds.length })}
+								</Button>
+							</AlertDialogAction>
+						</>
+					) : (
+						<AlertDialogAction asChild>
+							<Button variant="destructive" onClick={onDeleteAll}>
+								<span className="codicon codicon-trash mr-1"></span>
+								{t("history:deleteItems", { count: taskIds.length })}
+							</Button>
+						</AlertDialogAction>
+					)}
+					{/* kilocode_change end */}
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
