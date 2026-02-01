@@ -30,6 +30,8 @@
 	"deleteTaskFavoritedWarning": "Esta tarefa está marcada como favorita. Tem certeza que deseja excluí-la?",
 	"deleteTasksFavoritedWarning": "{{count}} das tarefas selecionadas estão marcadas como favoritas. Tem certeza que deseja excluí-las?",
 	"deleteItems": "Excluir {{count}} itens",
+	"deleteNonFavorited": "Excluir {{count}} itens não favoritos",
+	"deleteAllItems": "Excluir todos os {{count}} itens",
 	"showAllWorkspaces": "Mostrar tarefas de todos os espaços de trabalho",
 	"showFavoritesOnly": "Mostrar apenas favoritos",
 	"workspace": {

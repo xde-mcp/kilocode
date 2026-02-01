@@ -30,6 +30,8 @@
 	"deleteTaskFavoritedWarning": "このタスクはお気に入りに登録されています。削除してもよろしいですか？",
 	"deleteTasksFavoritedWarning": "{{count}} 件のタスクはお気に入りに登録されています。削除してもよろしいですか？",
 	"deleteItems": "{{count}} 項目を削除",
+	"deleteNonFavorited": "お気に入り以外の {{count}} 項目を削除",
+	"deleteAllItems": "すべての {{count}} 項目を削除",
 	"showAllWorkspaces": "すべてのワークスペースのタスクを表示",
 	"showFavoritesOnly": "お気に入りのみ表示",
 	"workspace": {

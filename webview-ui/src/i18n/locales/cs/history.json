@@ -30,6 +30,8 @@
 	"confirmDeleteTasks": "Opravdu chceš smazat {{count}} úkolů?",
 	"deleteTasksWarning": "Smazané úkoly nelze obnovit. Ujisti se, že chceš pokračovat.",
 	"deleteItems": "Smazat {{count}} položek",
+	"deleteNonFavorited": "Smazat {{count}} neoblíbených",
+	"deleteAllItems": "Smazat všech {{count}} položek",
 	"showAllWorkspaces": "Zobrazit úkoly ze všech pracovních prostorů",
 	"showFavoritesOnly": "Zobrazit pouze oblíbené",
 	"workspace": {

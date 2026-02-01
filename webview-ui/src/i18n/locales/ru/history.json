@@ -30,6 +30,8 @@
 	"deleteTaskFavoritedWarning": "Эта задача добавлена в избранное. Вы уверены, что хотите удалить её?",
 	"deleteTasksFavoritedWarning": "{{count}} задач добавлены в избранное. Вы уверены, что хотите удалить их?",
 	"deleteItems": "Удалить {{count}} элементов",
+	"deleteNonFavorited": "Удалить {{count}} неизбранных элементов",
+	"deleteAllItems": "Удалить все {{count}} элементов",
 	"showAllWorkspaces": "Показать задачи из всех рабочих пространств",
 	"showFavoritesOnly": "Показать только избранное",
 	"workspace": {

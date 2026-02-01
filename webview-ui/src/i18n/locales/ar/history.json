@@ -30,6 +30,8 @@
 	"confirmDeleteTasks": "متأكد إنك تبي تحذف {{count}} مهمة؟",
 	"deleteTasksWarning": "المهام المحذوفة ما تقدر تسترجعها. تأكد قبل ما تكمل.",
 	"deleteItems": "حذف {{count}} عنصر",
+	"deleteNonFavorited": "حذف {{count}} غير المفضلة",
+	"deleteAllItems": "حذف جميع {{count}} عناصر",
 	"showAllWorkspaces": "عرض المهام من جميع المساحات",
 	"showFavoritesOnly": "عرض المفضلة فقط",
 	"workspace": {
