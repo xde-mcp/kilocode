@@ -1152,6 +1152,7 @@ export interface TaskHistoryResponsePayload {
 	historyItems: HistoryItem[]
 	pageIndex: number
 	pageCount: number
+	totalItems: number
 }
 // kilocode_change end
 

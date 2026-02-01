@@ -40,7 +40,6 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 		showAllWorkspaces,
 		setShowAllWorkspaces,
 		// kilocode_change start
-		taskHistoryFullLength,
 		showFavoritesOnly,
 		setShowFavoritesOnly,
 		setRequestedPageIndex,
@@ -245,7 +244,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 								<span className="ml-auto text-vscode-descriptionForeground text-xs">
 									{t("history:selectedItems", {
 										selected: selectedTaskIds.length,
-										total: taskHistoryFullLength, // kilocode_change
+										total: data?.totalItems ?? 0,
 									})}
 								</span>
 							</div>
@@ -289,7 +288,7 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 						<div className="text-vscode-foreground">
 							{t("history:selectedItems", {
 								selected: selectedTaskIds.length,
-								total: taskHistoryFullLength, // kilocode_change
+								total: data?.totalItems ?? 0,
 							})}
 						</div>
 						<div className="flex gap-2">
