@@ -30,7 +30,7 @@
 	"confirmDeleteTasks": "Are you sure you want to delete {{count}} tasks?",
 	"deleteTasksWarning": "Deleted tasks cannot be recovered. Please make sure you want to proceed.",
 	"deleteItems": "Delete {{count}} Items",
-	"deleteNonFavorited": "Delete {{count}} Non-Favorited",
+	"deleteNonFavorites": "Delete {{count}} Non-Favorites",
 	"deleteAllItems": "Delete All {{count}} Items",
 	"showAllWorkspaces": "Show tasks from all workspaces",
 	"showFavoritesOnly": "Show favorites only",

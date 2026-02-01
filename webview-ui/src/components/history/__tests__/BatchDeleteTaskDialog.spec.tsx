@@ -15,7 +15,7 @@ vi.mock("@/i18n/TranslationContext", () => ({
 				"history:deleteTasksWarning": "This action cannot be undone.",
 				"history:cancel": "Cancel",
 				"history:deleteItems": `Delete ${options?.count || 0} items`,
-				"history:deleteNonFavorited": `Delete ${options?.count || 0} non-favorited`,
+				"history:deleteNonFavorites": `Delete ${options?.count || 0} non-favorited`,
 				"history:deleteAllItems": `Delete all ${options?.count || 0} items`,
 			}
 			return translations[key] || key

@@ -59,41 +59,42 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 							</div>
 						)}
 						{/* kilocode_change end */}
-						<div className="text-vscode-editor-foreground bg-vscode-editor-background p-2 rounded text-sm">
+						<div className="text-vscode-editor-foreground bg-vscode-editor-background rounded text-sm">
 							{t("history:deleteTasksWarning")}
 						</div>
 					</AlertDialogDescription>
 				</AlertDialogHeader>
-				<AlertDialogFooter>
+				<AlertDialogFooter className="flex-row justify-between items-end">
+					{/* kilocode_change start */}
+					{/* Left side: Delete buttons stacked vertically */}
+					<div className="flex flex-col gap-2">
+						{hasFavoritedTasks ? (
+							<>
+								{hasNonFavoritedTasks && (
+									<Button
+										variant="primary"
+										onClick={onDeleteNonFavorited}
+										className="flex justify-start">
+										<span className="codicon codicon-trash size-4 align-middle"></span>
+										{t("history:deleteNonFavorites", { count: nonFavoritedTaskIds.length })}
+									</Button>
+								)}
+								<Button variant="destructive" onClick={onDeleteAll} className="flex justify-start">
+									<span className="codicon codicon-trash size-4 align-middle"></span>
+									{t("history:deleteAllItems", { count: taskIds.length })}
+								</Button>
+							</>
+						) : (
+							<Button variant="destructive" onClick={onDeleteAll}>
+								<span className="codicon codicon-trash size-4 align-middle"></span>
+								{t("history:deleteItems", { count: taskIds.length })}
+							</Button>
+						)}
+					</div>
+					{/* Right side: Cancel button aligned with bottom */}
 					<AlertDialogCancel asChild>
 						<Button variant="secondary">{t("history:cancel")}</Button>
 					</AlertDialogCancel>
-					{/* kilocode_change start */}
-					{hasFavoritedTasks ? (
-						<>
-							{hasNonFavoritedTasks && (
-								<AlertDialogAction asChild>
-									<Button variant="secondary" onClick={onDeleteNonFavorited}>
-										<span className="codicon codicon-trash mr-1"></span>
-										{t("history:deleteNonFavorited", { count: nonFavoritedTaskIds.length })}
-									</Button>
-								</AlertDialogAction>
-							)}
-							<AlertDialogAction asChild>
-								<Button variant="destructive" onClick={onDeleteAll}>
-									<span className="codicon codicon-trash mr-1"></span>
-									{t("history:deleteAllItems", { count: taskIds.length })}
-								</Button>
-							</AlertDialogAction>
-						</>
-					) : (
-						<AlertDialogAction asChild>
-							<Button variant="destructive" onClick={onDeleteAll}>
-								<span className="codicon codicon-trash mr-1"></span>
-								{t("history:deleteItems", { count: taskIds.length })}
-							</Button>
-						</AlertDialogAction>
-					)}
 					{/* kilocode_change end */}
 				</AlertDialogFooter>
 			</AlertDialogContent>

@@ -30,7 +30,7 @@
 	"deleteTaskFavoritedWarning": "Questa attività è stata segnata come preferita. Sei sicuro di voler eliminarla?",
 	"deleteTasksFavoritedWarning": "{{count}} delle attività selezionate sono state segnate come preferite. Sei sicuro di voler eliminarle?",
 	"deleteItems": "Elimina {{count}} elementi",
-	"deleteNonFavorited": "Elimina {{count}} elementi non preferiti",
+	"deleteNonFavorites": "Elimina {{count}} non preferiti",
 	"deleteAllItems": "Elimina tutti i {{count}} elementi",
 	"showAllWorkspaces": "Mostra attività da tutti gli spazi di lavoro",
 	"showFavoritesOnly": "Mostra solo preferiti",

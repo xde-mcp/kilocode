@@ -30,7 +30,7 @@
 	"confirmDeleteTasks": "คุณแน่ใจหรือไม่ว่าต้องการลบ {{count}} งาน?",
 	"deleteTasksWarning": "งานที่ถูกลบไม่สามารถกู้คืนได้ โปรดตรวจสอบให้แน่ใจว่าคุณต้องการดำเนินการต่อ",
 	"deleteItems": "ลบ {{count}} รายการ",
-	"deleteNonFavorited": "ลบ {{count}} รายการที่ไม่ได้โปรด",
+	"deleteNonFavorites": "ลบ {{count}} ที่ไม่ได้โปรด",
 	"deleteAllItems": "ลบ {{count}} รายการทั้งหมด",
 	"showAllWorkspaces": "แสดงงานจากทุก workspace",
 	"showFavoritesOnly": "แสดงเฉพาะรายการโปรด",

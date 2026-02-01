@@ -30,7 +30,7 @@
 	"confirmDeleteTasks": "Ти впевнений, що хочеш видалити {{count}} завдань?",
 	"deleteTasksWarning": "Видалені завдання не можна відновити. Переконайся, що хочеш продовжити.",
 	"deleteItems": "Видалити {{count}} елементів",
-	"deleteNonFavorited": "Видалити {{count}} не обраних",
+	"deleteNonFavorites": "Видалити {{count}} не обрані",
 	"deleteAllItems": "Видалити всі {{count}} елементів",
 	"showAllWorkspaces": "Показати завдання з усіх робочих просторів",
 	"showFavoritesOnly": "Показати тільки обране",

@@ -30,7 +30,7 @@
 	"deleteTaskFavoritedWarning": "यह कार्य पसंदीदा है। क्या आप वाकई इसे हटाना चाहते हैं?",
 	"deleteTasksFavoritedWarning": "{{count}} चयनित कार्य पसंदीदा हैं। क्या आप वाकई इन्हें हटाना चाहते हैं?",
 	"deleteItems": "{{count}} आइटम हटाएं",
-	"deleteNonFavorited": "{{count}} गैर-पसंदीदा हटाएं",
+	"deleteNonFavorites": "{{count}} गैर-पसंदीदा हटाएं",
 	"deleteAllItems": "सभी {{count}} आइटम हटाएं",
 	"showAllWorkspaces": "सभी वर्कस्पेस से कार्य दिखाएं",
 	"showFavoritesOnly": "केवल पसंदीदा दिखाएं",

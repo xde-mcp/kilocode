@@ -30,7 +30,7 @@
 	"deleteTaskFavoritedWarning": "Bu görev favoriye eklendi. Silmek istediğinizden emin misiniz?",
 	"deleteTasksFavoritedWarning": "{{count}} görev favoriye eklendi. Silmek istediğinizden emin misiniz?",
 	"deleteItems": "{{count}} Öğeyi Sil",
-	"deleteNonFavorited": "{{count}} Favori Olmayanı Sil",
+	"deleteNonFavorites": "{{count}} Favori Olmayanı Sil",
 	"deleteAllItems": "Tüm {{count}} Öğeyi Sil",
 	"showAllWorkspaces": "Tüm çalışma alanlarından görevleri göster",
 	"showFavoritesOnly": "Sadece favorileri göster",

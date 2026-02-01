@@ -37,7 +37,7 @@
 	"deleteTaskFavoritedWarning": "Esta tarea está marcada como favorita. ¿Estás seguro de que quieres eliminarla?",
 	"deleteTasksFavoritedWarning": "{{count}} de las tareas seleccionadas están marcadas como favoritas. ¿Estás seguro de que quieres eliminarlas?",
 	"deleteItems": "Eliminar {{count}} elementos",
-	"deleteNonFavorited": "Eliminar {{count}} elementos no favoritos",
+	"deleteNonFavorites": "Eliminar {{count}} no favoritos",
 	"deleteAllItems": "Eliminar todos los {{count}} elementos",
 	"showAllWorkspaces": "Mostrar tareas de todos los espacios de trabajo",
 	"showFavoritesOnly": "Mostrar solo favoritos",
