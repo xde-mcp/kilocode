@@ -15,6 +15,8 @@ vi.mock("@/i18n/TranslationContext", () => ({
 				"history:deleteTasksWarning": "This action cannot be undone.",
 				"history:cancel": "Cancel",
 				"history:deleteItems": `Delete ${options?.count || 0} items`,
+				"history:deleteNonFavorited": `Delete ${options?.count || 0} non-favorited`,
+				"history:deleteAllItems": `Delete all ${options?.count || 0} items`,
 			}
 			return translations[key] || key
 		},
@@ -49,18 +51,21 @@ describe("BatchDeleteTaskDialog", () => {
 		expect(screen.getByText("Are you sure you want to delete 3 tasks?")).toBeInTheDocument()
 		expect(screen.getByText("This action cannot be undone.")).toBeInTheDocument()
 		expect(screen.getByText("Cancel")).toBeInTheDocument()
-		expect(screen.getByText("Delete 3 items")).toBeInTheDocument()
+		// With favorited tasks in selection, shows two buttons
+		expect(screen.getByText("Delete 2 non-favorited")).toBeInTheDocument()
+		expect(screen.getByText("Delete all 3 items")).toBeInTheDocument()
 	})
 
 	it("calls vscode.postMessage when delete is confirmed", () => {
 		render(<BatchDeleteTaskDialog taskIds={mockTaskIds} open={true} onOpenChange={mockOnOpenChange} />)
 
-		const deleteButton = screen.getByText("Delete 3 items")
+		const deleteButton = screen.getByText("Delete all 3 items")
 		fireEvent.click(deleteButton)
 
 		expect(vscode.postMessage).toHaveBeenCalledWith({
 			type: "deleteMultipleTasksWithIds",
 			ids: mockTaskIds,
+			excludeFavorites: false,
 		})
 		expect(mockOnOpenChange).toHaveBeenCalledWith(false)
 	})
@@ -90,13 +95,14 @@ describe("BatchDeleteTaskDialog", () => {
 		render(<BatchDeleteTaskDialog taskIds={singleTaskId} open={true} onOpenChange={mockOnOpenChange} />)
 
 		expect(screen.getByText("Are you sure you want to delete 1 tasks?")).toBeInTheDocument()
+		// task-1 is not favorited, so only shows single delete button
 		expect(screen.getByText("Delete 1 items")).toBeInTheDocument()
 	})
 
 	it("renders trash icon in delete button", () => {
 		render(<BatchDeleteTaskDialog taskIds={mockTaskIds} open={true} onOpenChange={mockOnOpenChange} />)
 
-		const deleteButton = screen.getByText("Delete 3 items")
+		const deleteButton = screen.getByText("Delete all 3 items")
 		const trashIcon = deleteButton.querySelector(".codicon-trash")
 		expect(trashIcon).toBeInTheDocument()
 	})
