@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react"
+import React, { memo, useState, useEffect } from "react"
 import BottomControls from "../kilocode/BottomControls" // kilocode_change
 import { ArrowLeft } from "lucide-react"
 import { DeleteTaskDialog } from "./DeleteTaskDialog"
@@ -56,6 +56,11 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 	const [isSelectionMode, setIsSelectionMode] = useState(false)
 	const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 	const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState<boolean>(false)
+
+	// Clear selections when switching between all/current workspace
+	useEffect(() => {
+		setSelectedTaskIds([])
+	}, [showAllWorkspaces])
 
 	// Toggle selection mode
 	const toggleSelectionMode = () => {
