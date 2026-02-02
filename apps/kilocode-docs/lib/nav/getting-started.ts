@@ -21,6 +21,7 @@ export const GettingStartedNav: NavSection[] = [
 				href: "/getting-started/settings",
 				children: "Settings",
 				subLinks: [
+					{ href: "/getting-started/settings/auto-approving-actions", children: "Auto-Approving Actions" },
 					{ href: "/getting-started/settings/system-notifications", children: "System Notifications" },
 				],
 			},
