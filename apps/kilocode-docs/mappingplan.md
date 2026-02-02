@@ -169,7 +169,7 @@
 | `features/more-features`              | This is a red flag - break out or remove                 |
 | ☑️ `features/suggested-responses`     | Fold into Chat Interface                                 |
 | ☑️ `features/auto-approving-actions`  | Fold into Settings                                       |
-| `advanced-usage/auto-cleanup`         | Fold into Settings                                       |
+| ☑️ `advanced-usage/auto-cleanup`      | Fold into Settings                                       |
 | ❎ `features/model-temperature`       | Remove                                                   |
 | ☑️ `advanced-usage/rate-limits-costs` | Fold into Adding Credits or AI Providers                 |
 | ❎ `features/footgun-prompting`       | Remove                                                   |
