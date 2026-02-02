@@ -298,8 +298,8 @@
 				"command": "kilo-code.open",
 				"title": "%views.activitybar.title%",
 				"icon": {
-					"light": "assets/icons/kilo-brand-light.svg",
-					"dark": "assets/icons/kilo-brand-dark.svg"
+					"light": "assets/icons/kilo-light.svg",
+					"dark": "assets/icons/kilo-dark.svg"
 				}
 			}
 		],
