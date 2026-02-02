@@ -2,7 +2,6 @@ import { useCallback } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import {
 	AlertDialog,
-	AlertDialogAction,
 	AlertDialogCancel,
 	AlertDialogContent,
 	AlertDialogDescription,
@@ -32,16 +31,16 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 	const onDeleteAll = useCallback(() => {
 		if (taskIds.length > 0) {
 			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: taskIds, excludeFavorites: false })
-			onOpenChange?.(false)
 		}
+		onOpenChange?.(false)
 	}, [taskIds, onOpenChange])
 
 	// kilocode_change start
 	const onDeleteNonFavorited = useCallback(() => {
 		if (nonFavoritedTaskIds.length > 0) {
 			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: nonFavoritedTaskIds, excludeFavorites: true })
-			onOpenChange?.(false)
 		}
+		onOpenChange?.(false)
 	}, [nonFavoritedTaskIds, onOpenChange])
 	// kilocode_change end
 
