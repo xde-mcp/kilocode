@@ -1,7 +1,19 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
+
+const getIsLightTheme = () =>
+	document.body.classList.contains("vscode-light") || document.body.classList.contains("vscode-high-contrast-light")
 
 export const KiloLogo = () => {
-	const isLightTheme = /\bvscode-light\b|\bvscode-high-contrast-light\b/i.test(document.body.className)
+	const [isLightTheme, setIsLightTheme] = useState(getIsLightTheme)
+
+	useEffect(() => {
+		const observer = new MutationObserver(() => {
+			setIsLightTheme(getIsLightTheme())
+		})
+		observer.observe(document.body, { attributes: true, attributeFilter: ["class"] })
+		return () => observer.disconnect()
+	}, [])
+
 	const fillColor = isLightTheme ? "#1a1a18" : "#f8f674"
 
 	return (

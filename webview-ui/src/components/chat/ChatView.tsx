@@ -76,7 +76,9 @@ const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0
 // kilocode_change start: KiloLogo component
 const KiloLogo = () => {
 	const iconsBaseUri = (window as any).ICONS_BASE_URI || ""
-	const isLightTheme = /\bvscode-light\b|\bvscode-high-contrast-light\b/i.test(document.body.className)
+	const isLightTheme =
+		document.body.classList.contains("vscode-light") ||
+		document.body.classList.contains("vscode-high-contrast-light")
 	const iconFile = isLightTheme ? "kilo-light.svg" : "kilo-dark.svg"
 	return (
 		<div className="flex items-center justify-center" style={{ width: "56px", height: "56px", margin: "0 auto" }}>
