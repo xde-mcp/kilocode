@@ -166,14 +166,14 @@
 | Page                                  | Recommendation                                           |
 | ------------------------------------- | -------------------------------------------------------- |
 | ☑️ `features/system-notifications`    | Fold into Settings or remove                             |
-| `features/more-features`              | This is a red flag - break out or remove                 |
+| ❎ `features/more-features`           | Remove                                                   |
 | ☑️ `features/suggested-responses`     | Fold into Chat Interface                                 |
 | ☑️ `features/auto-approving-actions`  | Fold into Settings                                       |
 | ☑️ `advanced-usage/auto-cleanup`      | Fold into Settings                                       |
 | ❎ `features/model-temperature`       | Remove                                                   |
 | ☑️ `advanced-usage/rate-limits-costs` | Fold into Adding Credits or AI Providers                 |
 | ❎ `features/footgun-prompting`       | Remove                                                   |
-| `tips-and-tricks`                     | Could become a blog post or fold relevant bits elsewhere |
+| ☑️ `tips-and-tricks`                  | Could become a blog post or fold relevant bits elsewhere |
 
 ---
 
