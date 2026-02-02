@@ -184,6 +184,25 @@ Yes, if you use a [local model](/docs/advanced-usage/local-models).
 Yes, you can create your own MCP servers to add custom functionality to Kilo Code. See the [MCP documentation](https://github.com/modelcontextprotocol) for details.
 Yes, you can create your own MCP servers to add custom functionality to Kilo Code. See the [MCP documentation](https://github.com/modelcontextprotocol) for details.
 
+## Known Limitations
+
+### Multi-Folder Workspaces ("Add Folder to Workspace")
+
+Using VS Code's "Add Folder to Workspace" feature to add additional folders is **not supported** by Kilo Code.
+
+**What this means:**
+
+- If you use "File > Add Folder to Workspace..." to add additional folders to your VS Code workspace, Kilo Code will **not** recognize or use these additional folders.
+- Any folders added this way will be treated as directories **outside** of the workspace from Kilo Code's perspective.
+- Kilo Code only operates within the primary workspace folder (the first folder opened or the root of a single-folder workspace).
+
+**Workarounds:**
+
+- Open each project in a separate VS Code window if you need Kilo Code to work with multiple projects.
+- Use context mentions (e.g., `@/path/to/file`) to reference files within the primary workspace folder.
+
+This is a current limitation of the extension architecture and may be addressed in future releases.
+
 ## Troubleshooting
 
 ### Kilo Code isn't responding. What should I do?
