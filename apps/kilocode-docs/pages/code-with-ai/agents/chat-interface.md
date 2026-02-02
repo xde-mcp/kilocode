@@ -126,4 +126,16 @@ You have two options for using suggested responses:
 
 This feature streamlines the interaction when Kilo Code requires clarification, allowing you to guide the task effectively with minimal effort.
 
+## Tips for Better Workflow
+
+{% callout type="tip" %}
+**Move Kilo Code to the Secondary Side Bar** for a better layout. Right-click on the Kilo Code icon in the Activity Bar and select **Move To → Secondary Side Bar**. This lets you see the Explorer, Search, Source Control, etc. alongside Kilo Code.
+
+{% image src="/docs/img/move-to-secondary.png" alt="Move to Secondary Side Bar" width="600" caption="Move Kilo Code to the Secondary Side Bar for better workspace organization" /%}
+{% /callout %}
+
+{% callout type="tip" %}
+**Drag files directly into chat.** Once you have Kilo Code in a separate sidebar from the file explorer, you can drag files from the explorer into the chat window (even multiple at once). Just hold down the Shift key after you start dragging the files.
+{% /callout %}
+
 Ready to start coding? Open the chat panel and describe what you want to build!

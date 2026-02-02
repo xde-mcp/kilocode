@@ -92,3 +92,19 @@ When enabled, Kilo Code will remind the model about the details of its current m
 **Default:** Disabled
 
 Learn more about [Custom Modes](/docs/customize/custom-modes) and how Power Steering can improve mode behavior.
+
+### File Read Auto-Truncate Threshold
+
+This setting controls the number of lines read from a file in one batch. To manage large files and reduce context/resource usage, adjust the `File read auto-truncate threshold` setting.
+
+**When to adjust:**
+
+- Working with very large files that consume too much context
+- Need to improve performance when reading large files
+- Want to reduce token usage for file operations
+
+**Trade-off:** Lower values can improve performance when working with very large files, but may require more read operations to access the full file content.
+
+**Default:** Set in Advanced Settings
+
+You can find this setting in the Kilo Code settings under 'Advanced Settings'.
