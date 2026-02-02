@@ -17,7 +17,13 @@ export const GettingStartedNav: NavSection[] = [
 				children: "Setup & Authentication",
 			},
 			{ href: "/ai-providers", children: "AI Providers" },
-			{ href: "/getting-started/settings", children: "Settings" },
+			{
+				href: "/getting-started/settings",
+				children: "Settings",
+				subLinks: [
+					{ href: "/getting-started/settings/system-notifications", children: "System Notifications" },
+				],
+			},
 			{ href: "/getting-started/adding-credits", children: "Adding Credits" },
 		],
 	},

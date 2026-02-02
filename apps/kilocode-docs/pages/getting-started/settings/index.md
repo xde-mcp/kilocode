@@ -7,10 +7,9 @@ description: "Configure Kilo Code settings and preferences"
 
 Kilo Code allows you to manage your configuration settings effectively through export, import, and reset options. These features are useful for backing up your setup, sharing configurations with others, or restoring default settings if needed.
 
-You can find these options at the bottom of the Kilo Code settings page, accessible via the gear icon (<i class="codicon codicon-gear"></i>) in the Kilo Code chat view.
+You can find these options at the bottom of the Kilo Code settings page, accessible via the gear icon ({% codicon name="gear" /%}) in the Kilo Code chat view.
 
-<img src="/docs/img/settings-management/settings-management.png" alt="Export, Import, and Reset buttons in Kilo Code settings" width="400" />
-*Image: Export, Import, and Reset buttons.*
+{% image src="/docs/img/settings-management/settings-management.png" alt="Export, Import, and Reset buttons in Kilo Code settings" width="800" caption="Export, Import, and Reset buttons" /%}
 
 ## Export Settings
 
