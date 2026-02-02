@@ -11,6 +11,12 @@ module.exports = [
 		basePath: false,
 		permanent: true,
 	},
+	{
+		source: "/docs/features/suggested-responses",
+		destination: "/docs/code-with-ai/agents/chat-interface#suggested-responses",
+		basePath: false,
+		permanent: true,
+	},
 	// ============================================
 	// GET STARTED
 	// ============================================
