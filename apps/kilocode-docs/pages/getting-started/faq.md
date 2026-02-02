@@ -188,7 +188,7 @@ Yes, you can create your own MCP servers to add custom functionality to Kilo Cod
 
 ### Multi-Folder Workspaces ("Add Folder to Workspace")
 
-Using VS Code's "Add Folder to Workspace" feature to add additional folders is not supported by the Kilo Code VSCode extension.
+Using VS Code's "Add Folder to Workspace" feature to add additional folders is not supported by the Kilo Code VS Code extension.
 
 **What this means:**
 
