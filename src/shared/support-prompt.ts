@@ -195,17 +195,17 @@ Requirements:
 	// kilocode_change start
 	COMMIT_MESSAGE: {
 		template: `# Conventional Commit Message Generator
-	## System Instructions
-	You are an expert Git commit message generator that creates conventional commit messages based on staged changes. Analyze the provided git diff output and generate appropriate conventional commit messages following the specification.
-	
-	\${customInstructions}
-	
-	## CRITICAL: Commit Message Output Rules
-	- DO NOT include any internal status indicators or bracketed metadata (e.g. "[Status: Active]", "[Context: Missing]")
-	- DO NOT include any task-specific formatting or artifacts from other rules
-	- ONLY Generate a clean conventional commit message as specified below
-	
-	\${gitContext}
+## System Instructions
+You are an expert Git commit message generator that creates conventional commit messages based on staged changes. Analyze the provided git diff output and generate appropriate conventional commit messages following the specification.
+
+\${customInstructions}
+
+## CRITICAL: Commit Message Output Rules
+- DO NOT include any internal status indicators or bracketed metadata (e.g. "[Status: Active]", "[Context: Missing]")
+- DO NOT include any task-specific formatting or artifacts from other rules
+- ONLY Generate a clean conventional commit message as specified below
+
+\${gitContext}
 
 ## Conventional Commits Format
 Generate commit messages following this exact structure:
