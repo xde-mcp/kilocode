@@ -6,6 +6,8 @@ import * as vscode from "vscode"
 
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
 import { fileExistsAtPath } from "../../utils/fs"
+import { checkBunPath } from "./index.kilocode" // kilocode_change
+import "../../utils/path" // Import to enable String.prototype.toPosix()
 /*
 This file provides functionality to perform regex searches on files using ripgrep.
 Inspired by: https://github.com/DiscreteTom/vscode-ripgrep-utils
@@ -92,7 +94,8 @@ export async function getBinPath(vscodeAppRoot: string): Promise<string | undefi
 		(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
 		(await checkPath("node_modules/vscode-ripgrep/bin")) ||
 		(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
-		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/"))
+		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/")) ||
+		(await checkBunPath(vscodeAppRoot, binName)) // kilocode_change
 	)
 }
 
@@ -150,7 +153,15 @@ export async function regexSearchFiles(
 		throw new Error("Could not find ripgrep binary")
 	}
 
-	const args = ["--json", "-e", regex, "--glob", filePattern || "*", "--context", "1", "--no-messages", directoryPath]
+	const args = ["--json", "-e", regex]
+
+	// Only add --glob if a specific file pattern is provided
+	// Using --glob "*" overrides .gitignore behavior, so we omit it when no pattern is specified
+	if (filePattern) {
+		args.push("--glob", filePattern)
+	}
+
+	args.push("--context", "1", "--no-messages", directoryPath)
 
 	let output: string
 	try {
@@ -185,11 +196,11 @@ export async function regexSearchFiles(
 					}
 
 					const lastResult = currentFile.searchResults[currentFile.searchResults.length - 1]
-					if (lastResult?.lines.length > 0) {
+					if (lastResult?.lines && lastResult.lines.length > 0) {
 						const lastLine = lastResult.lines[lastResult.lines.length - 1]
 
 						// If this line is contiguous with the last result, add to it
-						if (parsed.data.line_number <= lastLine.line + 1) {
+						if (lastLine && parsed.data.line_number <= lastLine.line + 1) {
 							lastResult.lines.push(line)
 						} else {
 							// Otherwise create a new result

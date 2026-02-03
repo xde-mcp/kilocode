@@ -1,10 +1,12 @@
 /**
  * General error handler for OpenAI client errors
  * Transforms technical errors into user-friendly messages
+ *
+ * @deprecated Use handleProviderError from './error-handler' instead
+ * This file is kept for backward compatibility
  */
 
-import i18n from "../../../i18n/setup"
-import { isAnyRecognizedKiloCodeError } from "../../../shared/kilocode/errorUtils"
+import { handleProviderError } from "./error-handler"
 
 /**
  * Handles OpenAI client errors and transforms them into user-friendly messages
@@ -13,24 +15,5 @@ import { isAnyRecognizedKiloCodeError } from "../../../shared/kilocode/errorUtil
  * @returns The original error or a transformed user-friendly error
  */
 export function handleOpenAIError(error: unknown, providerName: string): Error {
-	// kilocode_change start
-	if (providerName === "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
-		throw error
-	}
-	// kilocode_change end
-
-	if (error instanceof Error) {
-		const msg = error.message || ""
-
-		// Invalid character/ByteString conversion error in API key
-		if (msg.includes("Cannot convert argument to a ByteString")) {
-			return new Error(i18n.t("common:errors.api.invalidKeyInvalidChars"))
-		}
-
-		// For other Error instances, wrap with provider-specific prefix
-		return new Error(`${providerName} completion error: ${msg}`)
-	}
-
-	// Non-Error: wrap with provider-specific prefix
-	return new Error(`${providerName} completion error: ${String(error)}`)
+	return handleProviderError(error, providerName, { messagePrefix: "completion" })
 }

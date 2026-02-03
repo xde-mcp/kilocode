@@ -12,8 +12,10 @@ import com.intellij.openapi.Disposable
  */
 class PendingRPCReply(
     private val promise: LazyPromise,
-    private val disposable: Disposable
+    private val disposable: Disposable,
 ) {
+    val creationTime: Long = System.currentTimeMillis()
+    
     /**
      * Resolve reply successfully
      * @param value Result value
@@ -31,4 +33,4 @@ class PendingRPCReply(
         promise.resolveErr(err)
         disposable.dispose()
     }
-} 
+}

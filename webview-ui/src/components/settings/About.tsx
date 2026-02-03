@@ -1,4 +1,7 @@
-import { HTMLAttributes } from "react"
+import {
+	HTMLAttributes,
+	useState, // kilocode_change
+} from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { Trans } from "react-i18next"
 import { Info, Download, Upload, TriangleAlert } from "lucide-react"
@@ -14,14 +17,24 @@ import { Button } from "@/components/ui"
 
 import { SectionHeader } from "./SectionHeader"
 import { Section } from "./Section"
+import { getMemoryPercentage } from "@/kilocode/helpers"
 
 type AboutProps = HTMLAttributes<HTMLDivElement> & {
 	telemetrySetting: TelemetrySetting
 	setTelemetrySetting: (setting: TelemetrySetting) => void
+	isVsCode: boolean // kilocode_change
 }
 
-export const About = ({ telemetrySetting, setTelemetrySetting, className, ...props }: AboutProps) => {
+export const About = ({
+	telemetrySetting,
+	setTelemetrySetting,
+	className,
+	isVsCode, // kilocode_change
+	...props
+}: AboutProps) => {
 	const { t } = useAppTranslation()
+
+	const [kiloCodeBloat, setKiloCodeBloat] = useState<number[][]>([])
 
 	return (
 		<div className={cn("flex flex-col gap-2", className)} {...props}>
@@ -38,7 +51,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 			</SectionHeader>
 
 			<Section>
-				<div>
+				<div style={{ display: isVsCode ? "none" : undefined }}>
 					<VSCodeCheckbox
 						checked={telemetrySetting !== "disabled"}
 						onChange={(e: any) => {
@@ -51,7 +64,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						<Trans
 							i18nKey="settings:footer.telemetry.description"
 							components={{
-								privacyLink: <VSCodeLink href="https://kilocode.ai/privacy" />,
+								privacyLink: <VSCodeLink href="https://kilo.ai/privacy" />,
 							}}
 						/>
 					</p>
@@ -63,7 +76,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						components={{
 							githubLink: <VSCodeLink href="https://github.com/Kilo-Org/kilocode" />,
 							redditLink: <VSCodeLink href="https://reddit.com/r/kilocode" />,
-							discordLink: <VSCodeLink href="https://kilocode.ai/discord" />,
+							discordLink: <VSCodeLink href="https://kilo.ai/discord" />,
 						}}
 					/>
 				</div>
@@ -73,7 +86,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 					<Trans
 						i18nKey="settings:footer.support"
 						components={{
-							supportLink: <VSCodeLink href="https://kilocode.ai/support" />,
+							supportLink: <VSCodeLink href="https://kilo.ai/support" />,
 						}}
 					/>
 				</div>
@@ -96,6 +109,23 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						{t("settings:footer.settings.reset")}
 					</Button>
 				</div>
+
+				{
+					// kilocode_change start
+					process.env.NODE_ENV === "development" && (
+						<div className="flex flex-wrap items-center gap-2 mt-2">
+							<Button
+								variant="destructive"
+								onClick={() => {
+									setKiloCodeBloat([...kiloCodeBloat, new Array<number>(20_000_000).fill(0)])
+									console.debug(`Memory percentage: ${getMemoryPercentage()}`)
+								}}>
+								Development: Allocate memory
+							</Button>
+						</div>
+					)
+					// kilocode_change end
+				}
 			</Section>
 		</div>
 	)

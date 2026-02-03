@@ -83,6 +83,12 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 		return this._retryQueue
 	}
 
+	private _isCloudAgent = false
+
+	public get isCloudAgent() {
+		return this._isCloudAgent
+	}
+
 	private constructor(context: ExtensionContext, log?: (...args: unknown[]) => void) {
 		super()
 
@@ -117,6 +123,7 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 
 			if (cloudToken && cloudToken.length > 0) {
 				this._authService = new StaticTokenAuthService(this.context, cloudToken, this.log)
+				this._isCloudAgent = true
 			} else {
 				this._authService = new WebAuthService(this.context, this.log)
 			}
@@ -141,19 +148,19 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 
 			this._cloudAPI = new CloudAPI(this._authService, this.log)
 
-			// Initialize retry queue with auth header provider
+			// Initialize retry queue with auth header provider.
 			this._retryQueue = new RetryQueue(
 				this.context,
-				undefined, // Use default config
+				undefined, // Use default config.
 				this.log,
 				() => {
-					// Provide fresh auth headers for retries
+					// Provide fresh auth headers for retries.
 					const sessionToken = this._authService?.getSessionToken()
+
 					if (sessionToken) {
-						return {
-							Authorization: `Bearer ${sessionToken}`,
-						}
+						return { Authorization: `Bearer ${sessionToken}` }
 					}
+
 					return undefined
 				},
 			)
@@ -171,9 +178,9 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 
 	// AuthService
 
-	public async login(landingPageSlug?: string): Promise<void> {
+	public async login(landingPageSlug?: string, useProviderSignup: boolean = false): Promise<void> {
 		this.ensureInitialized()
-		return this.authService!.login(landingPageSlug)
+		return this.authService!.login(landingPageSlug, useProviderSignup)
 	}
 
 	public async logout(): Promise<void> {
@@ -238,9 +245,10 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 		code: string | null,
 		state: string | null,
 		organizationId?: string | null,
+		providerModel?: string | null,
 	): Promise<void> {
 		this.ensureInitialized()
-		return this.authService!.handleCallback(code, state, organizationId)
+		return this.authService!.handleCallback(code, state, organizationId, providerModel)
 	}
 
 	public async switchOrganization(organizationId: string | null): Promise<void> {
@@ -327,6 +335,11 @@ export class CloudService extends EventEmitter<CloudServiceEvents> implements Di
 	public async canShareTask(): Promise<boolean> {
 		this.ensureInitialized()
 		return this.shareService!.canShareTask()
+	}
+
+	public async canSharePublicly(): Promise<boolean> {
+		this.ensureInitialized()
+		return this.shareService!.canSharePublicly()
 	}
 
 	// Lifecycle

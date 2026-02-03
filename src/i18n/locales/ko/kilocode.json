@@ -15,6 +15,7 @@
 		"noAssistantMessages": "모델의 응답이 예상치 못하게 종료되었습니다 (어시스턴트 메시지 없음). 이는 요청 제한의 징후일 수 있습니다.",
 		"notLoggedInError": "요청을 완료할 수 없습니다. 선택한 공급자와 연결되어 로그인했는지 확인하세요.\n\n{{error}}",
 		"maxCompletionTokens": "최대 완료 토큰 수에 도달했습니다.",
+		"contentFilter": "요청이 콘텐츠 필터에 의해 차단되었습니다.",
 		"disableApplyDiff": "이 오류가 계속 발생하면 고급 설정에서 차이점을 통한 편집을 비활성화하세요.",
 		"disableEditFile": "이 오류가 계속 발생하면 빠른 적용 실험 기능을 비활성화하세요."
 	},
@@ -60,20 +61,59 @@
 		"generationFailed": "Kilo: 커밋 메시지 생성 실패: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: 스테이징되지 않은 변경 사항으로 메시지 생성 중",
 		"activationFailed": "Kilo: 메시지 생성기 활성화 실패: {{error}}",
-		"providerRegistered": "Kilo: 커밋 메시지 공급자 등록됨"
+		"providerRegistered": "Kilo: 커밋 메시지 공급자 등록됨",
+		"errors": {
+			"noProject": "이용 가능한 프로젝트 없음",
+			"connectionFailed": "Kilo Code 확장 프로그램에 연결하지 못했습니다",
+			"timeout": "30초 후 요청 시간이 초과되었습니다",
+			"invalidResponse": "확장 프로그램으로부터 잘못된 응답 형식을 받았습니다",
+			"noChanges": "커밋할 변경 사항 없음",
+			"missingMessage": "확장 프로그램에서 커밋 메시지를 받지 못했습니다",
+			"noWorkspacePath": "Git 저장소의 작업 공간 경로를 확인할 수 없습니다",
+			"workspaceNotFound": "Git 저장소의 워크스페이스 경로를 확인할 수 없습니다",
+			"processingError": "커밋 메시지 생성 처리 오류: {{error}}"
+		},
+		"error": {
+			"title": "오류",
+			"workspacePathNotFound": "Git 저장소에 대한 작업 공간 경로를 확인할 수 없습니다",
+			"generationFailed": "커밋 메시지 생성 실패: {{error}}",
+			"unknown": "알 수 없는 오류",
+			"processingFailed": "커밋 메시지 생성 처리 중 오류: {{error}}"
+		},
+		"dialogs": {
+			"info": "AI 커밋 메시지",
+			"error": "오류",
+			"success": "성공",
+			"title": "AI 커밋 메시지"
+		},
+		"progress": {
+			"analyzing": "변경사항 분석 중...",
+			"title": "커밋 메시지 생성 중",
+			"connecting": "Kilo Code에 연결 중...",
+			"generating": "커밋 메시지 생성 중..."
+		},
+		"ui": {
+			"generateButtonTooltip": "AI를 사용하여 코드 변경 사항을 분석하고 커밋 메시지를 생성합니다",
+			"generateButton": "커밋 메시지 생성"
+		}
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "일시 중지됨",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (비활성화됨)",
-				"tokenError": "Autocomplete를 사용하려면 유효한 토큰을 설정해야 합니다",
-				"lastCompletion": "마지막 제안:",
+				"noCredits": "**계정에 크레딧이 없습니다**\n\nKilo Code 계정에 크레딧이 없습니다. 자동완성을 사용하려면 계정에 크레딧을 추가해 주세요.\n\n[설정 열기](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**자동완성 모델이 구성되지 않았습니다**\n\n자동완성을 활성화하려면 다음 지원되는 제공업체 중 하나로 프로필을 추가하세요: {{providers}}.\n\n[설정 열기](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "세션 총 비용:",
-				"model": "모델:"
+				"provider": "제공업체:",
+				"model": "모델:",
+				"profile": "프로필: ",
+				"defaultProfile": "기본값",
+				"completionSummary": "{{startTime}}부터 {{endTime}}까지 {{count}}회 완성을 수행했으며, 총 비용은 {{cost}}입니다.",
+				"providerInfo": "자동완성은 {{provider}}를 통해 {{model}}에서 제공됩니다."
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -98,7 +138,6 @@
 			"cancelSuggestions": "제안된 편집 취소",
 			"applyCurrentSuggestion": "현재 제안된 편집 적용",
 			"applyAllSuggestions": "모든 제안된 편집 적용",
-			"promptCodeSuggestion": "빠른 작업",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +174,39 @@
 		"checkpointsUnavailable": "새로운 변경사항을 표시할 수 없습니다. 체크포인트를 사용할 수 없습니다.",
 		"noChanges": "새로운 변경사항을 표시할 수 없습니다. 변경사항이 없습니다.",
 		"error": "새로운 변경사항을 표시할 수 없습니다. 오류가 발생했습니다."
+	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "Kilocode CLI 버전이 오래되어 Agent Manager를 지원하지 않습니다. 최신 버전으로 업데이트하세요.",
+			"cliMisconfigured": "Kilocode CLI가 구성되지 않았습니다. 'kilocode auth'를 실행하여 로그인하거나 'kilocode config'로 구성하세요.",
+			"sessionFailed": "에이전트 세션 시작 실패",
+			"sessionFailedWithMessage": "에이전트 세션 시작 실패: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "업데이트 지침",
+			"installInstructions": "설치 지침",
+			"getHelp": "도움말 보기",
+			"runInTerminal": "터미널에서 실행",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "전역 업데이트",
+			"updateLocal": "로컬 업데이트",
+			"installGlobal": "전역 설치",
+			"installLocal": "로컬 설치"
+		},
+		"terminal": {
+			"installMessage": "Kilocode CLI를 설치하기 위해 npm install을 실행합니다. 완료되면 이 터미널을 닫고 Agent Manager를 다시 시작해 보세요.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "OpenAI API 키가 유효하지 않거나 Realtime API에 대한 액세스 권한이 없습니다. API 키를 확인하고 다시 시도해 주세요.",
+			"unknown": "연결에 실패했습니다. 설정을 확인한 후 다시 시도해 주세요."
+		}
+	},
+	"configDiscovery": {
+		"added": "킬로 코드: {{source}} {{configType}}: {{name}}{{modeStr}} 추가됨",
+		"removed": "Kilo 코드: 제거됨 {{source}} {{configType}}: {{name}}{{modeStr}}"
 	}
 }

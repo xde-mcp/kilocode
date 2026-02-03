@@ -2,7 +2,7 @@
 	"welcome": {
 		"greeting": "Vítej v Kilo Code!",
 		"introText1": "Kilo Code je bezplatný open source AI coding agent.",
-		"introText2": "Funguje s nejnovějšími AI modely jako Claude Sonnet 4.5, Gemini 2.5 Pro, GPT-5 a více než 450 dalšími.",
+		"introText2": "Funguje s nejnovějšími AI modely jako Claude Opus 4.5, Gemini 3 Pro, GPT-5.2 a více než 450 dalšími.",
 		"introText3": "Vytvoř si bezplatný účet a získej $20 bonusových kreditů při prvním dobití.",
 		"ctaButton": "Začít",
 		"manualModeButton": "Použij vlastní API key",
@@ -11,7 +11,8 @@
 	},
 	"lowCreditWarning": {
 		"addCredit": "Přidat kredit",
-		"lowBalance": "Tvůj Kilo Code zůstatek je nízký"
+		"lowBalance": "Tvůj Kilo Code zůstatek je nízký",
+		"switchToFreeModel": "Přepnout na bezplatný model"
 	},
 	"pagination": {
 		"previous": "Předchozí",
@@ -25,13 +26,15 @@
 		"continueWith": "Pokračovat s {{model}}",
 		"continue": "Pokračovat"
 	},
+	"unauthorizedError": {
+		"title": "Musíš se přihlásit, abys mohl použít model {{modelId}}",
+		"message": "Přihlaš se nebo si vytvoř účet pro přístup k více než 500 modelům, použij kredity za pořizovací cenu nebo přines svůj vlastní klíč.",
+		"loginButton": "Přihlásit se"
+	},
 	"pricing": {
 		"costUnknown": "neznámé náklady",
 		"costUnknownDescription": "Poskytovatel API neposkytl žádné údaje o nákladech nebo byl požadavek zrušen.",
-		"freeModelsDescription": "Bezplatné modely mohou mít limity na počet požadavků. Použij odkaz níže pro optimalizaci využití bezplatných modelů!",
-		"freeModelsLink": "Objevte možnosti bezplatných a rozpočtových modelů",
-		"openRouterMarkup": "Poskytovatel Kilo Code zahrnuje všechny modely OpenRouter, bez přirážky a s 0% provizí!",
-		"switchToKiloCode": "Přepnout na Kilo Code"
+		"freeModelsLink": "Objevte možnosti bezplatných a rozpočtových modelů"
 	},
 	"notifications": {
 		"toolRequest": "Požadavek na nástroj čeká na schválení",
@@ -40,17 +43,20 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "MCP servery"
+			"mcp": "MCP servery",
+			"agentBehaviour": "Chování agenta",
+			"skills": "Dovednosti"
 		},
 		"provider": {
 			"account": "Účet Kilo Code",
 			"apiKey": "Kilo Code API Key",
 			"login": "Přihlásit se do Kilo Code",
 			"logout": "Odhlásit se z Kilo Code",
-			"automaticFetch": "Nejnovější modely jsou v Kilo Code automaticky dostupné. Pokud si nejste jisti, který model zvolit, Kilo Code funguje nejlépe s doporučenými modely uvedenými nahoře <strong>tučně</strong>.",
+			"loginForPremiumModels": "Přihlas se pro přístup k prémiovým modelům a funkcím",
 			"providerRouting": {
 				"title": "Směrování poskytovatelů",
-				"managedByOrganization": "Nastavení směrování poskytovatelů je spravováno vaší organizací.",
+				"managedByOrganization": "Spravovat směrování poskytovatelů na úrovni organizace",
+				"createOrganization": "Vytvořit organizaci pro správu směrování poskytovatelů",
 				"description": "Kilo Code směruje požadavky na nejlepší dostupné poskytovatele pro váš model. Ve výchozím nastavení jsou požadavky rozloženy mezi nejlepší poskytovatele, aby se maximalizovala doba provozu. Můžete si však vybrat konkrétního poskytovatele, kterého chcete pro tento model použít.",
 				"sorting": {
 					"default": "Výchozí řazení poskytovatelů",
@@ -60,8 +66,10 @@
 				},
 				"dataCollection": {
 					"default": "Není nastavena zásada dat",
-					"allow": "Povolit shromažďování dat poskytovateli",
-					"deny": "Zakázat shromažďování dat poskytovateli"
+					"allowFree": "Povolit trénování promptů (pouze zdarma)",
+					"allow": "Povolit trénování promptů",
+					"deny": "Zakázat trénování promptů",
+					"zdr": "Nulové uchovávání dat"
 				}
 			}
 		},
@@ -100,6 +108,12 @@
 				},
 				"provider": "Poskytovatel generátoru terminálových příkazů"
 			}
+		},
+		"codeIndex": {
+			"embeddingBatchSizeLabel": "Velikost dávky embeddingu",
+			"embeddingBatchSizeDescription": "Počet segmentů kódu, které se seskupí pro generování embeddingů a vektové upserty. Vyšší hodnoty mohou zlepšit rychlost indexování, ale mohou zvýšit spotřebu paměti. Nižší hodnoty snižují spotřebu paměti, ale mohou zpomalit indexování.",
+			"scannerMaxBatchRetriesLabel": "Maximální počet opakování dávky skeneru",
+			"scannerMaxBatchRetriesDescription": "Maximální počet pokusů o opakování neúspěšné dávky během skenování adresářů. Vyšší hodnoty zvyšují odolnost vůči přechodným chybám, ale mohou zpomalit indexování, pokud chyby přetrvávají. Nižší hodnoty selhávají rychleji, ale mohou při dočasných problémech přeskočit obsah."
 		}
 	},
 	"chat": {
@@ -107,7 +121,10 @@
 			"wantsToCondense": "Kilo Code chce zkrátit tvou konverzaci",
 			"condenseConversation": "Zkrátit konverzaci"
 		},
-		"seeNewChanges": "Zobrazit nové změny"
+		"seeNewChanges": "Zobrazit nové změny",
+		"revertNewChanges": "Vrátit nové změny",
+		"confirmRevertChanges": "Potvrdit vrácení změn",
+		"cancelRevertChanges": "Zrušit vrácení změn"
 	},
 	"newTaskPreview": {
 		"task": "Úkol"
@@ -126,11 +143,20 @@
 			"credits": "kredity",
 			"action": "Koupit nyní",
 			"viewAll": "Zobrazit všechny cenové možnosti"
-		}
+		},
+		"detailedUsage": "Podrobné využití",
+		"createOrganization": "Vytvořit organizaci pro sledování podrobného využití"
 	},
 	"docs": "Dokumentace",
 	"rules": {
-		"tooltip": "Spravovat Kilo Code Rules a Workflows",
+		"tooltip": "Spravovat chování agenta ({{types}})",
+		"agentBehaviourTypes": {
+			"rules": "Pravidla",
+			"workflows": "Pracovní postupy",
+			"mcps": "MCP",
+			"modes": "Režimy",
+			"skills": "Dovednosti"
+		},
 		"ariaLabel": "Kilo Code Rules",
 		"tabs": {
 			"rules": "Pravidla",
@@ -190,6 +216,7 @@
 	},
 	"ideaSuggestionsBox": {
 		"newHere": "Nový tady?",
+		"tryOneOfThese": "Zkus jeden z těchto nápadů pro začátek:",
 		"suggestionText": "<suggestionButton>Klikni sem</suggestionButton> pro skvělý nápad, pak klikni na <sendIcon /> a sleduj mě, jak dělám zázraky!",
 		"ideas": {
 			"idea1": "Vytvoř rotující, zářící 3D kouli, která reaguje na pohyby myši. Udělej aplikaci funkční v prohlížeči.",
@@ -201,38 +228,62 @@
 			"idea7": "Vytvoř uklidňující interaktivní hvězdné pole, které se pohybuje s gesty myši"
 		}
 	},
+	"toolCallStyle": {
+		"title": "Styl volání nástrojů",
+		"description": "Vyber, jak jsou volání nástrojů formátována v systémovém promptu. JSON je momentálně experimentální a je určen především pro uživatele, kteří mají zájem přispět k jeho vývoji.",
+		"automatic": "Nech Kilo rozhodnout",
+		"xml": "XML",
+		"json": "JSON"
+	},
 	"ghost": {
 		"title": "Autocomplete",
 		"settings": {
-			"triggers": "Spouštěče",
-			"keybindingDescription": "Funkce Autocomplete lze spustit pomocí příkazů. Můžeš nakonfigurovat <DocsLink>Klávesové Zkratky zde</DocsLink>.",
 			"enableAutoTrigger": {
-				"label": "Povolit Autocomplete",
-				"description": "Když je povoleno, Kilo Code automaticky spustí Autocomplete, když přestaneš psát. To může být užitečné pro rychlé opravy a návrhy."
+				"label": "Automatické spouštění návrhů",
+				"description": "Automaticky zobrazovat návrhy kódu při pozastavení psaní."
 			},
 			"autoTriggerDelay": {
 				"label": "Zpoždění Automatického Spuštění",
-				"description": "Zpoždění v sekundách před tím, než Kilo Code spustí Autocomplete poté, co přestaneš psát. Kratší zpoždění znamená rychlejší návrhy, ale může být náročnější na zdroje."
-			},
-			"enableQuickInlineTaskKeybinding": {
-				"label": "Rychlý úkol ({{keybinding}})",
-				"description": "Potřebuješ jen rychlou změnu? Vyber nějaký kód (nebo ne!) a stiskni Cmd+I. Popiš svůj cíl v jednoduché češtině (\"vytvoř React komponentu s těmito props\", \"přidej zpracování chyb do této funkce\"), a získej několik připravených návrhů přímo ve svém editoru. <DocsLink>Zobrazit zkratku</DocsLink>"
+				"description": "Zpoždění v sekundách před zobrazením návrhů po pozastavení psaní. Kratší zpoždění znamená rychlejší návrhy, ale může být náročnější na zdroje."
 			},
 			"enableSmartInlineTaskKeybinding": {
-				"label": "Ruční dokončování ({{keybinding}})",
-				"description": "Potřebuješ rychlou opravu, dokončení nebo refaktoring? Kilo použije okolní kontext k nabídnutí okamžitých vylepšení, udržujíc tě v toku. <DocsLink>Zobrazit zkratku</DocsLink>"
+				"label": "Spustit klávesovou zkratkou ({{keybinding}})",
+				"description": "Stiskni {{keybinding}} pro vyžádání návrhu kódu na pozici kurzoru. <DocsLink>Upravit zkratku</DocsLink>"
 			},
-			"enableCustomProvider": {
-				"label": "Použít vlastního poskytovatele",
-				"description": "Autocomplete používá tvé přihlašovací údaje KiloCode / OpenRouter / Mistral k použití modelu Codestral ve výchozím nastavení"
-			},
+			"keybindingNotFound": "nenalezeno",
+			"configureAutocompleteProfile": "Použij libovolný model tak, že přejdeš do profilů a nakonfiguruješ Profil typu Automatické dokončování.",
+			"model": "Model",
 			"provider": "Poskytovatel",
-			"apiConfigId": {
-				"label": "Konfigurace API",
-				"current": "Použít aktuálně vybranou konfiguraci API",
-				"description": "Vyber konfiguraci API pro použití v Autocomplete promptech, nebo jen použij tu, která je aktuálně vybraná"
+			"enableChatAutocomplete": {
+				"label": "Povolit automatické dokončování v chatu",
+				"description": "Zobrazovat návrhy při psaní v chatovém vstupu. Stiskni Tab pro přijetí návrhů."
 			},
-			"keybindingNotFound": "nenalezeno"
+			"snooze": {
+				"label": "Pozastavit návrhy",
+				"description": "Dočasně pozastavit návrhy na určitou dobu.",
+				"button": "Pozastavit",
+				"unsnooze": "Obnovit",
+				"currentlySnoozed": "Návrhy jsou momentálně pozastaveny.",
+				"duration": {
+					"1min": "1 minuta",
+					"5min": "5 minut",
+					"15min": "15 minut",
+					"30min": "30 minut",
+					"1hour": "1 hodina"
+				}
+			},
+			"noModelConfigured": {
+				"title": "Není nakonfigurován žádný model pro automatické dokončování",
+				"description": "Pro povolení automatického dokončování přidejte profil s jedním z těchto podporovaných poskytovatelů:",
+				"learnMore": "Zjistěte více o nastavení automatického dokončování →"
+			},
+			"noCredits": {
+				"title": "Na vašem účtu nejsou žádné kredity",
+				"description": "Váš účet Kilo Code nemá žádné kredity. Pro použití automatického dokončování prosím přidejte kredity na svůj účet.",
+				"buyCredits": "Koupit kredity →"
+			},
+			"codeEditorSuggestions": "Návrhy v editoru kódu",
+			"chatSuggestions": "Návrhy v chatu"
 		}
 	},
 	"virtualProvider": {
@@ -245,7 +296,7 @@
 		"removeProfile": "Odstranit profil",
 		"selectProfilePlaceholder": "Vybrat profil...",
 		"addProfile": "Přidat profil",
-		"noProfilesAvailable": "Žádné profily nejsou k dispozici. Nejprve prosím nakonfigurujte alespoň jeden nevirtualní profil poskytovatele.",
+		"noProfilesAvailable": "Žádné profily nejsou k dispozici. Nejprve nakonfigurujte alespoň jeden profil nevirtuálního poskytovatele.",
 		"dangerZoneTitle": "Nebezpečná zóna",
 		"dangerZoneDescription": "Tyto akce jsou destruktivní a nelze je vrátit zpět.",
 		"clearUsageData": "Vymazat data o využití",
@@ -261,5 +312,74 @@
 		"modelNoImageSupport": "Obrázky nejsou podporovány aktuálním modelem.",
 		"maxImagesReached": "Maximálně 20 obrázků na zprávu. Odstraňte některé obrázky, abyste mohli přidat další.",
 		"imagesRemovedNoSupport": "Obrázky odstraněny, nejsou podporovány modelem."
+	},
+	"memoryWarning": {
+		"message": "Využití paměti je na {{percentage}}%. Restartuj prosím své IDE, aby se předešlo pádům."
+	},
+	"marketplace": {
+		"mcp": {
+			"description": "Tyto servery MCP jsou spravovány komunitou. Klikněte <1>zde</1> pro úpravu vašich vlastních nastavení MCP."
+		},
+		"modes": {
+			"description": "Tyto režimy jsou dostupné od komunity. Klikněte <1>zde</1> pro úpravu vašich vlastních režimů."
+		},
+		"skills": {
+			"description": "Procházejte a objevujte dovednosti od komunity. Dovednosti poskytují specializované instrukce pro konkrétní úkoly."
+		}
+	},
+	"modes": {
+		"shareModesNewBanner": "Novinka: Sdílejte režimy vytvořením organizace"
+	},
+	"deviceAuth": {
+		"title": "Přihlásit se do Kilo Code",
+		"step1": "Otevři následující URL ve svém prohlížeči",
+		"step2": "Ověř kód a autorizuj toto zařízení ve svém prohlížeči",
+		"scanQr": "Nebo naskenuj tento QR kód svým telefonem",
+		"openBrowser": "Otevřít prohlížeč",
+		"copyUrl": "Kopírovat URL",
+		"waiting": "Čekání na autorizaci...",
+		"timeRemaining": "Kód vyprší za {{time}}",
+		"success": "Úspěšně přihlášen!",
+		"authenticatedAs": "Ověřen jako {{email}}",
+		"error": "Chyba ověření",
+		"unknownError": "Došlo k chybě. Zkus to prosím znovu.",
+		"cancel": "Zrušit",
+		"retry": "Zkusit znovu",
+		"tryAgain": "Zkusit znovu",
+		"cancelled": "Ověření zrušeno",
+		"initiating": "Spouštění ověření..."
+	},
+	"speechToText": {
+		"startRecording": "Spustit hlasový vstup",
+		"stopRecording": "Zastavit hlasový vstup",
+		"setupPopover": {
+			"title": "Převod řeči na text",
+			"openAiReason": "Pro použití hlasové transkripce potřebujete platného poskytovatele OpenAI s API klíčem.",
+			"description": "Převod řeči na text není k dispozici. Převod řeči na text vyžaduje jak FFmpeg, tak platně nakonfigurovaného poskytovatele OpenAI. <moreInfoLink>Klikněte sem pro více informací</moreInfoLink>.",
+			"ffmpegReason": "Potřebujete nainstalovaný FFmpeg. <ffmpegLink>Klikněte zde</ffmpegLink>, aby vám Kilo pomohlo s instalací FFmpeg.",
+			"ffmpegMessage": "Pomozte mi nainstalovat FFmpeg"
+		},
+		"misconfiguredState": "Nedostupné kvůli konfiguraci",
+		"errorState": "Nedostupné kvůli chybě",
+		"microphone": {
+			"label": "Mikrofon",
+			"description": "Vyberte mikrofonní zařízení pro převod řeči na text",
+			"defaultOption": "Výchozí nastavení systému",
+			"loading": "Načítání mikrofonních zařízení...",
+			"refresh": "Obnovit",
+			"noDevices": "Nebyla nalezena žádná zařízení mikrofonu"
+		}
+	},
+	"skills": {
+		"description": "Dovednosti poskytují specializované instrukce pro konkrétní úkoly. Jsou automaticky aplikovány, když jsou relevantní pro tvůj požadavek.",
+		"noSkills": "Žádné dovednosti nainstalovány",
+		"projectSkills": "Dovednosti projektu",
+		"globalSkills": "Globální dovednosti",
+		"deleteDialog": {
+			"title": "Smazat dovednost",
+			"description": "Opravdu chceš smazat dovednost \"{{skillName}}\"? Tuto akci nelze vrátit zpět.",
+			"cancel": "Zrušit",
+			"delete": "Smazat"
+		}
 	}
 }

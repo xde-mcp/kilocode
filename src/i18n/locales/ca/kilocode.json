@@ -15,6 +15,7 @@
 		"noAssistantMessages": "La resposta del model ha acabat de forma inesperada (cap missatge de l'assistent). Això pot ser un signe de limitació de freqüència.",
 		"notLoggedInError": "No es pot completar la sol·licitud, assegura't que estàs connectat i has iniciat sessió amb el proveïdor seleccionat.\n\n{{error}}",
 		"maxCompletionTokens": "S'ha arribat al nombre màxim de tokens de compleció.",
+		"contentFilter": "La sol·licitud ha estat bloquejada pel filtre de contingut.",
 		"disableApplyDiff": "Si aquest error continua apareixent, desactiva l'Edició Mitjançant Diferències a la Configuració Avançada.",
 		"disableEditFile": "Si aquest error continua apareixent, desactiva la funció experimental d'Aplicació Ràpida."
 	},
@@ -60,20 +61,59 @@
 		"generationFailed": "Kilo: No s'ha pogut generar el missatge de confirmació: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: Generant missatge utilitzant canvis no preparats",
 		"providerRegistered": "Kilo: Proveïdor de missatges de «commit» registrat",
-		"activationFailed": "Kilo: No s'ha pogut activar el generador de missatges: {{error}}"
+		"activationFailed": "Kilo: No s'ha pogut activar el generador de missatges: {{error}}",
+		"errors": {
+			"noProject": "Cap projecte disponible",
+			"connectionFailed": "No s'ha pogut connectar a l'extensió de Kilo Code",
+			"invalidResponse": "Format de resposta invàlid rebut de l'extensió",
+			"timeout": "La sol·licitud ha esgotat el temps d'espera després de 30 segons",
+			"missingMessage": "No s'ha rebut cap missatge de comissió des de l'extensió",
+			"noChanges": "No s'han trobat canvis per confirmar",
+			"workspaceNotFound": "No s'ha pogut determinar la ruta de l'espai de treball pel repositori Git",
+			"noWorkspacePath": "No s'ha pogut determinar el camí de l'espai de treball per al repositori Git",
+			"processingError": "Error en processar la generació del missatge de commit: {{error}}"
+		},
+		"error": {
+			"title": "Error",
+			"unknown": "Error desconegut",
+			"workspacePathNotFound": "No s'ha pogut determinar el camí de l'espai de treball per al repositori Git",
+			"processingFailed": "Error en processar la generació del missatge de commit: {{error}}",
+			"generationFailed": "No s'ha pogut generar el missatge de confirmació: {{error}}"
+		},
+		"dialogs": {
+			"error": "Error",
+			"title": "Missatge de Commit d'IA",
+			"info": "Missatge de Commit d'IA",
+			"success": "Èxit"
+		},
+		"progress": {
+			"title": "Generant Missatge de Commit",
+			"connecting": "Connectant amb Kilo Code...",
+			"analyzing": "Analitzant canvis...",
+			"generating": "Generant missatge de commit..."
+		},
+		"ui": {
+			"generateButtonTooltip": "Genera missatges de commit utilitzant IA per analitzar els teus canvis de codi",
+			"generateButton": "Genera Missatge de Commit"
+		}
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "pausat",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (desactivat)",
-				"tokenError": "S'ha d'establir un token vàlid per utilitzar Autocomplete",
-				"lastCompletion": "Últim suggeriment:",
+				"noCredits": "**No tens crèdits al teu compte**\n\nEl teu compte de Kilo Code no té crèdits. Per utilitzar l'autocompletat, si us plau afegeix crèdits al teu compte.\n\n[Obrir Configuració](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**No s'ha configurat cap model d'autocompletat**\n\nPer habilitar l'autocompletat, afegeix un perfil amb un d'aquests proveïdors compatibles: {{providers}}.\n\n[Obrir Configuració](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "Cost total de la sessió:",
-				"model": "Model:"
+				"provider": "Proveïdor:",
+				"model": "Model:",
+				"profile": "Perfil: ",
+				"defaultProfile": "Per defecte",
+				"completionSummary": "S'han realitzat {{count}} completacions entre {{startTime}} i {{endTime}}, amb un cost total de {{cost}}.",
+				"providerInfo": "Les completacions automàtiques són proporcionades per {{model}} via {{provider}}."
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -98,7 +138,6 @@
 			"cancelSuggestions": "Cancel·lar Edicions Suggerides",
 			"applyCurrentSuggestion": "Aplicar Edició Suggerida Actual",
 			"applyAllSuggestions": "Aplicar Totes les Edicions Suggerides",
-			"promptCodeSuggestion": "Tasca Ràpida",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +174,39 @@
 		"checkpointsUnavailable": "No es poden mostrar canvis nous, els punts de control no estan disponibles.",
 		"noChanges": "No es poden mostrar canvis nous, no s'han trobat canvis.",
 		"error": "No es poden mostrar canvis nous, s'ha produït un error."
+	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "La teva versió de Kilocode CLI està desactualitzada i no és compatible amb el Gestor d'Agents. Si us plau, actualitza a la versió més recent.",
+			"cliMisconfigured": "Kilocode CLI no està configurat. Executa 'kilocode auth' per iniciar sessió o 'kilocode config' per configurar.",
+			"sessionFailed": "Error en iniciar la sessió de l'agent",
+			"sessionFailedWithMessage": "Error en iniciar la sessió de l'agent: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "Instruccions d'Actualització",
+			"installInstructions": "Instruccions d'Instal·lació",
+			"getHelp": "Obtenir Ajuda",
+			"runInTerminal": "Executar al Terminal",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Actualitzar Global",
+			"updateLocal": "Actualitzar Local",
+			"installGlobal": "Instal·lar Global",
+			"installLocal": "Instal·lar Local"
+		},
+		"terminal": {
+			"installMessage": "Executant npm install per instal·lar Kilocode CLI. Un cop completat, pots tancar aquest terminal i intentar iniciar el Gestor d'Agents de nou.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "La vostra clau de l'API d'OpenAI no és vàlida o no té accés a l'API en temps real. Si us plau, comproveu la vostra clau de l'API i torneu-ho a provar.",
+			"unknown": "Ha fallat la connexió. Comproveu la configuració i torneu-ho a provar."
+		}
+	},
+	"configDiscovery": {
+		"removed": "Kilo Codi: Eliminat {{source}} {{configType}}: {{name}}{{modeStr}}",
+		"added": "Codi Kilo: Afegit {{source}} {{configType}}: {{name}}{{modeStr}}"
 	}
 }

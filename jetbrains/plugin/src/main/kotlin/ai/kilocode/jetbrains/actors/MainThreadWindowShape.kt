@@ -4,20 +4,12 @@
 
 package ai.kilocode.jetbrains.actors
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
-import ai.kilocode.jetbrains.plugin.SystemObjectProvider
-import ai.kilocode.jetbrains.plugin.WecoderPluginService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.future.future
-import java.awt.Desktop
 import java.net.URI
-import java.util.concurrent.CompletableFuture
 
 /**
  * Main thread window service interface
@@ -29,7 +21,7 @@ interface MainThreadWindowShape : Disposable {
      * @return Initial window state including focus and active status
      */
     fun getInitialState(): Map<String, Boolean>
-    
+
     /**
      * Open URI
      * @param uri URI component
@@ -38,7 +30,7 @@ interface MainThreadWindowShape : Disposable {
      * @return Whether successfully opened
      */
     fun openUri(uri: Map<String, Any?>, uriString: String?, options: Map<String, Any?>): Boolean
-    
+
     /**
      * Convert to external URI
      * @param uri URI component
@@ -59,28 +51,20 @@ class MainThreadWindow(val project: Project) : MainThreadWindowShape {
         try {
             logger.info("Getting window initial state")
 
-            if (project != null) {
-                // Get current project window state
-                val frame = WindowManager.getInstance().getFrame(project)
-                val isFocused = frame?.isFocused ?: false
-                val isActive = frame?.isActive ?: false
-                
-                return mapOf(
-                    "isFocused" to isFocused,
-                    "isActive" to isActive
-                )
-            } else {
-                logger.warn("Cannot get current project, returning default window state")
-                return mapOf(
-                    "isFocused" to false,
-                    "isActive" to false
-                )
-            }
+            // Get current project window state
+            val frame = WindowManager.getInstance().getFrame(project)
+            val isFocused = frame?.isFocused ?: false
+            val isActive = frame?.isActive ?: false
+
+            return mapOf(
+                "isFocused" to isFocused,
+                "isActive" to isActive,
+            )
         } catch (e: Exception) {
             logger.error("Failed to get window initial state", e)
             return mapOf(
                 "isFocused" to false,
-                "isActive" to false
+                "isActive" to false,
             )
         }
     }
@@ -88,30 +72,23 @@ class MainThreadWindow(val project: Project) : MainThreadWindowShape {
     override fun openUri(uri: Map<String, Any?>, uriString: String?, options: Map<String, Any?>): Boolean {
         try {
             logger.info("Opening URI: $uriString")
-            
-            // Try to get URI
-            val actualUri = if (uriString != null) {
-                try {
-                    URI(uriString)
-                } catch (e: Exception) {
-                    // If URI string is invalid, try to build from URI components
-                    createUriFromComponents(uri)
-                }
+
+            // Try to get URI string
+            val urlToOpen = if (uriString != null) {
+                uriString
             } else {
-                createUriFromComponents(uri)
+                // Build from URI components
+                val actualUri = createUriFromComponents(uri)
+                actualUri?.toString()
             }
 
-            return if (actualUri != null) {
-                // Check if Desktop operation is supported
-                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                    Desktop.getDesktop().browse(actualUri)
-                    true
-                } else {
-                    logger.warn("System does not support opening URI")
-                    false
-                }
+            return if (urlToOpen != null) {
+                // Use IntelliJ's BrowserUtil which works reliably in JetBrains IDEs
+                BrowserUtil.browse(urlToOpen)
+                logger.info("Successfully opened URI in browser: $urlToOpen")
+                true
             } else {
-                logger.warn("Cannot create valid URI")
+                logger.warn("Cannot create valid URI from components: $uri")
                 false
             }
         } catch (e: Exception) {
@@ -145,7 +122,7 @@ class MainThreadWindow(val project: Project) : MainThreadWindowShape {
             val path = components["path"] as? String ?: ""
             val query = components["query"] as? String ?: ""
             val fragment = components["fragment"] as? String ?: ""
-            
+
             URI(scheme, authority, path, query, fragment)
         } catch (e: Exception) {
             logger.warn("Failed to create URI from components: $components", e)
@@ -156,4 +133,4 @@ class MainThreadWindow(val project: Project) : MainThreadWindowShape {
     override fun dispose() {
         logger.info("Disposing MainThreadWindow")
     }
-} 
+}

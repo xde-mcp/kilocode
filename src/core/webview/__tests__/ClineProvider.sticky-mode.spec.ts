@@ -81,6 +81,7 @@ vi.mock("../../task/Task", () => ({
 		setRootTask: vi.fn(),
 		emit: vi.fn(),
 		parentTask: options.parentTask,
+		updateApiConfiguration: vi.fn(),
 	})),
 }))
 
@@ -92,7 +93,6 @@ vi.mock("../../../api", () => ({
 	buildApiHandler: vi.fn().mockReturnValue({
 		getModel: vi.fn().mockReturnValue({
 			id: "claude-3-sonnet",
-			info: { supportsComputerUse: false },
 		}),
 	}),
 }))
@@ -127,6 +127,17 @@ vi.mock("@roo-code/cloud", () => ({
 	getRooCodeApiUrl: vi.fn().mockReturnValue("https://app.roocode.com"),
 }))
 
+vi.mock("../../../shared/kilocode/cli-sessions/core/SessionManager", () => ({
+	SessionManager: {
+		init: vi.fn().mockReturnValue({
+			startTimer: vi.fn(),
+			setPath: vi.fn(),
+			setWorkspaceDirectory: vi.fn(),
+			destroy: vi.fn().mockResolvedValue(undefined),
+		}),
+	},
+}))
+
 vi.mock("../../../shared/modes", () => ({
 	modes: [
 		{
@@ -159,6 +170,7 @@ vi.mock("../../prompts/system", () => ({
 vi.mock("../../../api/providers/fetchers/modelCache", () => ({
 	getModels: vi.fn().mockResolvedValue({}),
 	flushModels: vi.fn(),
+	getModelsFromCache: vi.fn().mockReturnValue(undefined),
 }))
 
 vi.mock("../../../integrations/misc/extract-text", () => ({
@@ -346,6 +358,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -798,6 +811,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -864,6 +878,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				}),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -915,6 +930,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -949,6 +965,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -1004,6 +1021,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add task to provider stack
@@ -1050,6 +1068,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			const task2 = {
@@ -1059,6 +1078,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			const task3 = {
@@ -1068,6 +1088,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}
 
 			// Add tasks to provider stack
@@ -1209,6 +1230,7 @@ describe("ClineProvider - Sticky Mode", () => {
 				saveClineMessages: vi.fn(),
 				clineMessages: [],
 				apiConversationHistory: [],
+				updateApiConfiguration: vi.fn(),
 			}))
 
 			// Add all tasks to provider

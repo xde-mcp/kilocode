@@ -4,7 +4,6 @@ import { z } from "zod"
 import {
 	type ModelInfo,
 	isModelParameter,
-	OPEN_ROUTER_COMPUTER_USE_MODELS,
 	OPEN_ROUTER_REASONING_BUDGET_MODELS,
 	OPEN_ROUTER_REQUIRED_REASONING_BUDGET_MODELS,
 	anthropicModels,
@@ -13,6 +12,13 @@ import {
 import type { ApiHandlerOptions } from "../../../shared/api"
 import { parseApiPrice } from "../../../shared/cost"
 import { DEFAULT_HEADERS } from "../constants" // kilocode_change
+import {
+	ModelSettings,
+	ModelSettingsSchema,
+	parseModelSettings,
+	VersionedModelSettingsSchema,
+} from "../kilocode/model-settings"
+import { resolveVersionedSettings } from "./versionedSettings" // kilocode_change
 
 /**
  * OpenRouterBaseModel
@@ -36,8 +42,13 @@ const modelRouterBaseModelSchema = z.object({
 	description: z.string().optional(),
 	context_length: z.number(),
 	max_completion_tokens: z.number().nullish(),
-	preferredIndex: z.number().nullish(), // kilocode_change
 	pricing: openRouterPricingSchema.optional(),
+
+	// kilocode_change start
+	preferredIndex: z.number().nullish(),
+	settings: ModelSettingsSchema.nullish(),
+	versioned_settings: VersionedModelSettingsSchema.nullish(),
+	// kilocode_change end
 })
 
 export type OpenRouterBaseModel = z.infer<typeof modelRouterBaseModelSchema>
@@ -130,7 +141,7 @@ export async function getOpenRouterModels(
 				continue
 			}
 
-			models[id] = parseOpenRouterModel({
+			const parsedModel = parseOpenRouterModel({
 				id,
 				model,
 				displayName: model.name, // kilocode_change
@@ -139,6 +150,8 @@ export async function getOpenRouterModels(
 				maxTokens: top_provider?.max_completion_tokens,
 				supportedParameters: supported_parameters,
 			})
+
+			models[id] = parsedModel
 		}
 	} catch (error) {
 		console.error(
@@ -225,6 +238,14 @@ export const parseOpenRouterModel = ({
 
 	const supportsPromptCache = typeof cacheReadsPrice !== "undefined" // some models support caching but don't charge a cacheWritesPrice, e.g. GPT-5
 
+	const supportsNativeTools = supportedParameters ? supportedParameters.includes("tools") : undefined
+
+	// kilocode_change start
+	const resolvedVersionedSettings = model.versioned_settings
+		? resolveVersionedSettings<ModelSettings>(model.versioned_settings)
+		: {}
+	// kilocode_change end
+
 	const modelInfo: ModelInfo = {
 		maxTokens: maxTokens || Math.ceil(model.context_length * 0.2),
 		contextWindow: model.context_length,
@@ -236,17 +257,18 @@ export const parseOpenRouterModel = ({
 		cacheReadsPrice,
 		description: model.description,
 		supportsReasoningEffort: supportedParameters ? supportedParameters.includes("reasoning") : undefined,
+		supportsNativeTools,
 		supportedParameters: supportedParameters ? supportedParameters.filter(isModelParameter) : undefined,
 		// kilocode_change start
 		displayName,
 		preferredIndex: model.preferredIndex,
+		supportsVerbosity: !!supportedParameters?.includes("verbosity") || undefined,
+		...parseModelSettings(
+			Object.keys(resolvedVersionedSettings).length > 0 ? resolvedVersionedSettings : (model.settings ?? {}),
+		),
 		// kilocode_change end
-	}
-
-	// The OpenRouter model definition doesn't give us any hints about
-	// computer use, so we need to set that manually.
-	if (OPEN_ROUTER_COMPUTER_USE_MODELS.has(id)) {
-		modelInfo.supportsComputerUse = true
+		// Default to native tool protocol when native tools are supported
+		defaultToolProtocol: supportsNativeTools ? ("native" as const) : undefined,
 	}
 
 	if (OPEN_ROUTER_REASONING_BUDGET_MODELS.has(id)) {
@@ -274,6 +296,13 @@ export const parseOpenRouterModel = ({
 	// Set claude-opus-4.1 model to use the correct configuration
 	if (id === "anthropic/claude-opus-4.1") {
 		modelInfo.maxTokens = anthropicModels["claude-opus-4-1-20250805"].maxTokens
+	}
+
+	// Ensure correct reasoning handling for Claude Haiku 4.5 on OpenRouter
+	// Use budget control and disable effort-based reasoning fallback
+	if (id === "anthropic/claude-haiku-4.5") {
+		modelInfo.supportsReasoningBudget = true
+		modelInfo.supportsReasoningEffort = false
 	}
 
 	// Set horizon-alpha model to 32k max tokens

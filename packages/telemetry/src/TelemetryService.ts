@@ -101,7 +101,10 @@ export class TelemetryService {
 			cacheWriteTokens: number
 			cacheReadTokens: number
 			cost?: number
-			completionTime?: number // kilocode_change
+			// kilocode_change start
+			completionTime?: number
+			inferenceProvider?: string
+			// kilocode_change end
 		},
 	): void {
 		this.captureEvent(TelemetryEventName.LLM_COMPLETION, { taskId, ...properties })
@@ -111,8 +114,8 @@ export class TelemetryService {
 		this.captureEvent(TelemetryEventName.MODE_SWITCH, { taskId, newMode })
 	}
 
-	public captureToolUsage(taskId: string, tool: string): void {
-		this.captureEvent(TelemetryEventName.TOOL_USED, { taskId, tool })
+	public captureToolUsage(taskId: string, tool: string, toolProtocol: string): void {
+		this.captureEvent(TelemetryEventName.TOOL_USED, { taskId, tool, toolProtocol })
 	}
 
 	public captureCheckpointCreated(taskId: string): void {

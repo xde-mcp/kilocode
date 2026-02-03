@@ -15,6 +15,7 @@
 		"noAssistantMessages": "Die Antwort des Modells endete unerwartet (keine Assistant-Nachrichten). Dies könnte ein Hinweis auf Raten-Limitierung sein.",
 		"notLoggedInError": "Anfrage kann nicht abgeschlossen werden. Stelle sicher, dass du mit dem ausgewählten Anbieter verbunden und angemeldet bist.\n\n{{error}}",
 		"maxCompletionTokens": "Die maximale Anzahl an Completion-Tokens wurde erreicht.",
+		"contentFilter": "Die Anfrage wurde durch den Inhaltsfilter blockiert.",
 		"disableApplyDiff": "Falls dieser Fehler weiterhin auftritt, deaktiviere bitte 'Bearbeitung durch Diffs' in den erweiterten Einstellungen.",
 		"disableEditFile": "Falls dieser Fehler weiterhin auftritt, deaktiviere bitte die experimentelle Funktion 'Schnelles Anwenden'."
 	},
@@ -60,20 +61,59 @@
 		"generationFailed": "Kilo: Fehler beim Generieren der Commit-Nachricht: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: Nachricht mit nicht bereitgestellten Änderungen generieren",
 		"activationFailed": "Kilo: Der Nachrichtengenerator konnte nicht aktiviert werden: {{error}}",
-		"providerRegistered": "Kilo: Commit-Nachrichtenanbieter registriert"
+		"providerRegistered": "Kilo: Commit-Nachrichtenanbieter registriert",
+		"errors": {
+			"noProject": "Kein Projekt verfügbar",
+			"connectionFailed": "Verbindung zur Kilo Code-Erweiterung fehlgeschlagen",
+			"missingMessage": "Keine Commit-Nachricht von der Erweiterung erhalten",
+			"timeout": "Anfrage nach 30 Sekunden abgelaufen",
+			"invalidResponse": "Ungültiges Antwortformat vom Erweiterung erhalten",
+			"noChanges": "Keine Änderungen zum Committen gefunden",
+			"noWorkspacePath": "Konnte Arbeitsbereichspfad für Git-Repository nicht ermitteln",
+			"workspaceNotFound": "Konnte den Arbeitsbereichspfad für das Git-Repository nicht ermitteln",
+			"processingError": "Fehler bei der Verarbeitung der Commit-Nachrichtengenerierung: {{error}}"
+		},
+		"error": {
+			"title": "Fehler",
+			"workspacePathNotFound": "Workspace-Pfad für Git-Repository konnte nicht ermittelt werden",
+			"unknown": "Unbekannter Fehler",
+			"processingFailed": "Fehler bei der Verarbeitung der Commit-Nachrichtengenerierung: {{error}}",
+			"generationFailed": "Fehler beim Generieren der Commit-Nachricht: {{error}}"
+		},
+		"dialogs": {
+			"info": "KI-Commit-Nachricht",
+			"success": "Erfolg",
+			"title": "KI-Commit-Nachricht",
+			"error": "Fehler"
+		},
+		"progress": {
+			"title": "Commit-Nachricht generieren",
+			"analyzing": "Änderungen werden analysiert...",
+			"connecting": "Verbindung mit Kilo Code wird hergestellt...",
+			"generating": "Commit-Nachricht wird generiert..."
+		},
+		"ui": {
+			"generateButtonTooltip": "Generiert Commit-Nachrichten mittels KI zur Analyse Ihrer Code-Änderungen",
+			"generateButton": "Commit-Nachricht generieren"
+		}
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "pausiert",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (deaktiviert)",
-				"tokenError": "Ein gültiger Token muss gesetzt werden, um Autocomplete zu verwenden",
-				"lastCompletion": "Letzter Vorschlag:",
+				"noCredits": "**Kein Guthaben auf deinem Konto**\n\nDein Kilo Code Konto hat kein Guthaben. Um Autocomplete zu nutzen, füge bitte Guthaben zu deinem Konto hinzu.\n\n[Einstellungen öffnen](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**Kein Autocomplete-Modell konfiguriert**\n\nUm Autocomplete zu aktivieren, füge ein Profil mit einem dieser unterstützten Anbieter hinzu: {{providers}}.\n\n[Einstellungen öffnen](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "Sitzungsgesamtkosten:",
-				"model": "Modell:"
+				"provider": "Anbieter:",
+				"model": "Modell:",
+				"profile": "Profil: ",
+				"defaultProfile": "Standard",
+				"completionSummary": "{{count}} Vervollständigungen zwischen {{startTime}} und {{endTime}} durchgeführt, für Gesamtkosten von {{cost}}.",
+				"providerInfo": "Autovervollständigungen bereitgestellt von {{model}} über {{provider}}."
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -98,7 +138,6 @@
 			"cancelSuggestions": "Bearbeitungsvorschläge abbrechen",
 			"applyCurrentSuggestion": "Aktuellen Bearbeitungsvorschlag anwenden",
 			"applyAllSuggestions": "Alle Bearbeitungsvorschläge anwenden",
-			"promptCodeSuggestion": "Schnellaufgabe",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +174,39 @@
 		"checkpointsUnavailable": "Kann neue Änderungen nicht anzeigen, Checkpoints sind nicht verfügbar.",
 		"noChanges": "Kann neue Änderungen nicht anzeigen, keine Änderungen gefunden.",
 		"error": "Kann neue Änderungen nicht anzeigen, ein Fehler ist aufgetreten."
+	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "Deine Kilocode CLI-Version ist veraltet und unterstützt den Agent Manager nicht. Bitte aktualisiere auf die neueste Version.",
+			"cliMisconfigured": "Kilocode CLI ist nicht konfiguriert. Bitte führe 'kilocode auth' aus, um dich anzumelden, oder 'kilocode config' zum Konfigurieren.",
+			"sessionFailed": "Agent-Sitzung konnte nicht gestartet werden",
+			"sessionFailedWithMessage": "Agent-Sitzung konnte nicht gestartet werden: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "Update-Anleitung",
+			"installInstructions": "Installationsanleitung",
+			"getHelp": "Hilfe erhalten",
+			"runInTerminal": "Im Terminal ausführen",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Global Aktualisieren",
+			"updateLocal": "Lokal Aktualisieren",
+			"installGlobal": "Global Installieren",
+			"installLocal": "Lokal Installieren"
+		},
+		"terminal": {
+			"installMessage": "Führe npm install aus, um die Kilocode CLI zu installieren. Sobald die Installation abgeschlossen ist, kannst du dieses Terminal schließen und versuchen, den Agent Manager erneut zu starten.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "Ihr OpenAI API-Schlüssel ist ungültig oder hat keinen Zugriff auf die Realtime API. Bitte überprüfen Sie Ihren API-Schlüssel und versuchen Sie es erneut.",
+			"unknown": "Verbindung fehlgeschlagen. Bitte überprüfen Sie Ihre Konfiguration und versuchen Sie es erneut."
+		}
+	},
+	"configDiscovery": {
+		"added": "Kilo-Code: Hinzugefügt {{source}} {{configType}}: {{name}}{{modeStr}}",
+		"removed": "Kilo-Code: Entfernt {{source}} {{configType}}: {{name}}{{modeStr}}"
 	}
 }

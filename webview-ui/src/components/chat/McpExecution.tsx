@@ -3,13 +3,20 @@ import { Server, ChevronDown, ChevronRight } from "lucide-react"
 import { useEvent } from "react-use"
 import { useTranslation } from "react-i18next"
 
-import { McpExecutionStatus, mcpExecutionStatusSchema } from "@roo-code/types"
-import { ExtensionMessage, ClineAskUseMcpServer } from "../../../../src/shared/ExtensionMessage"
-import { safeJsonParse } from "../../../../src/shared/safeJsonParse"
+import {
+	type ExtensionMessage,
+	type ClineAskUseMcpServer,
+	type McpExecutionStatus,
+	mcpExecutionStatusSchema,
+} from "@roo-code/types"
+
+import { safeJsonParse } from "@roo/core"
+
 import { cn } from "@src/lib/utils"
 import { Button } from "@src/components/ui"
 import CodeBlock from "../kilocode/common/CodeBlock" // kilocode_change
 import McpToolRow from "../mcp/McpToolRow"
+
 import { Markdown } from "./Markdown"
 
 interface McpExecutionProps {
@@ -29,6 +36,13 @@ interface McpExecutionProps {
 	useMcpServer?: ClineAskUseMcpServer
 	alwaysAllowMcp?: boolean
 	initiallyExpanded?: boolean // kilocode_change: For Storybook stories only
+}
+
+function removeRenamedPrefix_kilocode(text: string): string {
+	// Remove "renamed_" prefix from property names in JSON (native tool calling)
+	const prefix = "renamed_"
+	if (!text || !text.startsWith(prefix)) return text
+	return text.substring(prefix.length)
 }
 
 export const McpExecution = ({
@@ -186,7 +200,8 @@ export const McpExecution = ({
 				<div className="flex flex-row items-center gap-1 flex-wrap">
 					<Server size={16} className="text-vscode-descriptionForeground" />
 					<div className="flex items-center gap-1 flex-wrap">
-						{serverName && <span className="font-bold text-vscode-foreground">{serverName}</span>}
+						{/* kilocode_change: Show tool name instead of server name since server is already shown above */}
+						{toolName && <span className="font-bold text-vscode-foreground">{toolName}</span>}
 					</div>
 				</div>
 				<div className="flex flex-row items-center justify-between gap-2 px-1">
@@ -275,7 +290,7 @@ export const McpExecution = ({
 							"mt-1 pt-1":
 								!isArguments && (useMcpServer?.type === "use_mcp_tool" || (toolName && serverName)),
 						})}>
-						<CodeBlock source={formattedArgumentsText} language="json" />
+						<CodeBlock source={removeRenamedPrefix_kilocode(formattedArgumentsText)} language="json" />
 					</div>
 				)}
 

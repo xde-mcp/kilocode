@@ -4,6 +4,9 @@ vi.mock("vscode", () => ({
 		getConfiguration: vi.fn(),
 	},
 	window: {
+		// Required by modules that are imported transitively (e.g. editor integrations)
+		// which create decorations at module initialization time.
+		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
 		showInformationMessage: vi.fn(),
 		showWarningMessage: vi.fn(),
 	},
@@ -17,29 +20,55 @@ vi.mock("fs/promises", () => ({
 	readFile: vi.fn(),
 }))
 
-vi.mock("path", () => ({
-	join: vi.fn((...args: string[]) => args.join("/")),
-	isAbsolute: vi.fn((p: string) => p.startsWith("/")),
-	basename: vi.fn((p: string) => p.split("/").pop() || ""),
-}))
+vi.mock("path", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("path")>()
+	return {
+		...actual,
+		default: {
+			...actual,
+			join: vi.fn((...args: string[]) => args.join("/")),
+			isAbsolute: vi.fn((p: string) => p.startsWith("/")),
+			basename: vi.fn((p: string) => p.split("/").pop() || ""),
+		},
+		join: vi.fn((...args: string[]) => args.join("/")),
+		isAbsolute: vi.fn((p: string) => p.startsWith("/")),
+		basename: vi.fn((p: string) => p.split("/").pop() || ""),
+	}
+})
 
-vi.mock("os", () => ({
-	homedir: vi.fn(() => "/home/user"),
-}))
+vi.mock("os", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("os")>()
+	return {
+		...actual,
+		default: {
+			...actual,
+			homedir: vi.fn(() => "/home/user"),
+		},
+		homedir: vi.fn(() => "/home/user"),
+	}
+})
 
 vi.mock("../fs", () => ({
 	fileExistsAtPath: vi.fn(),
 }))
 
-vi.mock("../../core/config/ProviderSettingsManager", async (importOriginal) => {
-	const originalModule = await importOriginal()
+vi.mock("../../core/config/ProviderSettingsManager", async () => {
+	const { z } = await import("zod")
+
+	// Keep this schema lightweight and permissive for unit testing.
+	// The production schema is more strict, but importing it here pulls in a
+	// large dependency graph (tools/providers/etc) which isn't needed for
+	// autoImportSettings unit tests.
+	const providerProfilesSchema = z.object({
+		currentApiConfigName: z.string(),
+		apiConfigs: z.record(z.any()).default({}),
+		modeApiConfigs: z.record(z.any()).default({}),
+	})
+
 	return {
 		__esModule: true,
-		// We need to mock the class constructor and its methods,
-		// but keep other exports (like schemas) as their original values.
-		...(originalModule || {}), // Spread original exports
+		providerProfilesSchema,
 		ProviderSettingsManager: vi.fn().mockImplementation(() => ({
-			// Mock the class
 			export: vi.fn().mockResolvedValue({
 				apiConfigs: {},
 				modeApiConfigs: {},

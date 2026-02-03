@@ -194,6 +194,7 @@ describe("ProfileValidator", () => {
 			"chutes",
 			"sambanova",
 			"fireworks",
+			"synthetic", // kilocode_change
 			"featherless",
 		]
 
@@ -306,6 +307,7 @@ describe("ProfileValidator", () => {
 			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
 		})
 
+		// kilocode_change start
 		it("should extract glamaModelId for glama provider", () => {
 			const allowList: OrganizationAllowList = {
 				allowAll: false,
@@ -320,6 +322,7 @@ describe("ProfileValidator", () => {
 
 			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
 		})
+		// kilocode_change end
 
 		it("should extract requestyModelId for requesty provider", () => {
 			const allowList: OrganizationAllowList = {
@@ -335,6 +338,23 @@ describe("ProfileValidator", () => {
 
 			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
 		})
+
+		// kilocode_change start
+		it("should extract ovhCloudAiEndpointsModelId for ovhcloud provider", () => {
+			const allowList: OrganizationAllowList = {
+				allowAll: false,
+				providers: {
+					ovhcloud: { allowAll: false, models: ["ovhcloud-model"] },
+				},
+			}
+			const profile: ProviderSettings = {
+				apiProvider: "ovhcloud",
+				ovhCloudAiEndpointsModelId: "ovhcloud-model",
+			}
+
+			expect(ProfileValidator.isProfileAllowed(profile, allowList)).toBe(true)
+		})
+		// kilocode_change end
 
 		it("should handle providers with undefined models list gracefully", () => {
 			const allowList: OrganizationAllowList = {

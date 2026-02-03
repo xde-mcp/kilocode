@@ -1,13 +1,12 @@
-import { useState, memo } from "react"
+import { memo, type ReactNode, useState } from "react"
 import { Trans } from "react-i18next"
+import { SiDiscord, SiReddit, SiX } from "react-icons/si"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
 import { Package } from "@roo/package"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { vscode } from "@src/utils/vscode"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@src/components/ui"
-import { Button } from "@src/components/ui"
 
 interface AnnouncementProps {
 	hideAnnouncement: () => void
@@ -25,7 +24,6 @@ interface AnnouncementProps {
 const Announcement = ({ hideAnnouncement }: AnnouncementProps) => {
 	const { t } = useAppTranslation()
 	const [open, setOpen] = useState(true)
-	const { cloudIsAuthenticated } = useExtensionState()
 
 	return (
 		<Dialog
@@ -37,69 +35,51 @@ const Announcement = ({ hideAnnouncement }: AnnouncementProps) => {
 					hideAnnouncement()
 				}
 			}}>
-			<DialogContent className="max-w-96">
+			<DialogContent>
 				<DialogHeader>
 					<DialogTitle>{t("chat:announcement.title", { version: Package.version })}</DialogTitle>
 				</DialogHeader>
 				<div>
-					<div className="mb-3">
-						<Trans
-							i18nKey="chat:announcement.stealthModel.feature"
-							components={{
-								bold: <b />,
-							}}
-						/>
+					{/* Regular Release Highlights */}
+					<div className="mb-4">
+						<p className="mb-3">{t("chat:announcement.release.heading")}</p>
+						<ul className="list-disc list-inside text-sm space-y-1.5">
+							<li>{t("chat:announcement.release.openaiCodexProvider")}</li>
+							<li>{t("chat:announcement.release.gpt52codexModel")}</li>
+							<li>{t("chat:announcement.release.bugFixes")}</li>
+						</ul>
 					</div>
 
-					<p className="mt-3 text-sm text-vscode-descriptionForeground">
-						{t("chat:announcement.stealthModel.note")}
-					</p>
-
-					<div className="mt-4">
-						{!cloudIsAuthenticated ? (
-							<Button
-								onClick={() => {
-									vscode.postMessage({
-										type: "cloudLandingPageSignIn",
-										text: "supernova",
-									})
-								}}
-								className="w-full">
-								{t("chat:announcement.stealthModel.connectButton")}
-							</Button>
-						) : (
-							<>
-								<p className="mb-3">
-									<Trans
-										i18nKey="chat:announcement.stealthModel.selectModel"
-										components={{
-											code: <code />,
-										}}
-									/>
-								</p>
-								<Button
-									onClick={() => {
-										setOpen(false)
-										hideAnnouncement()
-										vscode.postMessage({
-											type: "switchTab",
-											tab: "settings",
-										})
-									}}
-									className="w-full">
-									{t("chat:announcement.stealthModel.goToSettingsButton")}
-								</Button>
-							</>
-						)}
+					<div className="mt-4 text-sm text-center text-vscode-descriptionForeground">
+						<div className="flex items-center justify-center gap-4">
+							<SocialLink
+								icon={<SiX className="w-4 h-4" aria-hidden />}
+								label="X"
+								href="https://x.com/roocode"
+							/>
+							<SocialLink
+								icon={<SiDiscord className="w-4 h-4" aria-hidden />}
+								label="Discord"
+								href="https://discord.gg/rCQcvT7Fnt"
+							/>
+							<SocialLink
+								icon={<SiReddit className="w-4 h-4" aria-hidden />}
+								label="Reddit"
+								href="https://www.reddit.com/r/RooCode/"
+							/>
+						</div>
 					</div>
 
-					<div className="mt-4 text-sm text-center">
+					<div className="mt-3 text-sm text-center text-vscode-descriptionForeground">
+						<Trans i18nKey="chat:announcement.support" components={{ githubLink: <GitHubLink /> }} />
+					</div>
+
+					{/* Careers Section */}
+					<div className="mt-2 text-sm text-center">
 						<Trans
-							i18nKey="chat:announcement.socialLinks"
+							i18nKey="chat:announcement.careers"
 							components={{
-								xLink: <XLink />,
-								discordLink: <DiscordLink />,
-								redditLink: <RedditLink />,
+								careersLink: <CareersLink />,
 							}}
 						/>
 					</div>
@@ -109,36 +89,38 @@ const Announcement = ({ hideAnnouncement }: AnnouncementProps) => {
 	)
 }
 
-const XLink = () => (
+const SocialLink = ({ icon, label, href }: { icon: ReactNode; label: string; href: string }) => (
 	<VSCodeLink
-		href="https://x.com/roo_code"
+		href={href}
+		className="inline-flex items-center gap-1"
 		onClick={(e) => {
 			e.preventDefault()
-			vscode.postMessage({ type: "openExternal", url: "https://x.com/roo_code" })
+			vscode.postMessage({ type: "openExternal", url: href })
 		}}>
-		X
+		{icon}
+		<span className="sr-only">{label}</span>
 	</VSCodeLink>
 )
 
-const DiscordLink = () => (
+const GitHubLink = ({ children }: { children?: ReactNode }) => (
 	<VSCodeLink
-		href="https://discord.gg/rCQcvT7Fnt"
+		href="https://github.com/RooCodeInc/Roo-Code"
 		onClick={(e) => {
 			e.preventDefault()
-			vscode.postMessage({ type: "openExternal", url: "https://discord.gg/rCQcvT7Fnt" })
+			vscode.postMessage({ type: "openExternal", url: "https://github.com/RooCodeInc/Roo-Code" })
 		}}>
-		Discord
+		{children}
 	</VSCodeLink>
 )
 
-const RedditLink = () => (
+const CareersLink = ({ children }: { children?: ReactNode }) => (
 	<VSCodeLink
-		href="https://www.reddit.com/r/RooCode/"
+		href="https://careers.roocode.com"
 		onClick={(e) => {
 			e.preventDefault()
-			vscode.postMessage({ type: "openExternal", url: "https://www.reddit.com/r/RooCode/" })
+			vscode.postMessage({ type: "openExternal", url: "https://careers.roocode.com" })
 		}}>
-		r/RooCode
+		{children}
 	</VSCodeLink>
 )
 

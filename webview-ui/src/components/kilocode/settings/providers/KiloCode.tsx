@@ -1,16 +1,14 @@
 import { useCallback } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
-import { getKiloCodeBackendSignInUrl } from "../../helpers"
 import { Button } from "@src/components/ui"
 import { type ProviderSettings, type OrganizationAllowList } from "@roo-code/types"
 import type { RouterModels } from "@roo/api"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { VSCodeButtonLink } from "@src/components/common/VSCodeButtonLink"
 import { inputEventTransform } from "../../../settings/transforms"
 import { ModelPicker } from "../../../settings/ModelPicker"
 import { vscode } from "@src/utils/vscode"
 import { OrganizationSelector } from "../../common/OrganizationSelector"
-import { KiloCodeWrapperProperties } from "../../../../../../src/shared/kilocode/wrapper"
+import { getAppUrl } from "@roo-code/types"
 import { useKiloIdentity } from "@src/utils/kilocode/useKiloIdentity"
 
 type KiloCodeProps = {
@@ -20,9 +18,6 @@ type KiloCodeProps = {
 	hideKiloCodeButton?: boolean
 	routerModels?: RouterModels
 	organizationAllowList: OrganizationAllowList
-	uriScheme: string | undefined
-	kiloCodeWrapperProperties: KiloCodeWrapperProperties | undefined
-	uiKind: string | undefined
 	kilocodeDefaultModel: string
 }
 
@@ -33,13 +28,10 @@ export const KiloCode = ({
 	hideKiloCodeButton,
 	routerModels,
 	organizationAllowList,
-	uriScheme,
-	uiKind,
-	kiloCodeWrapperProperties,
 	kilocodeDefaultModel,
 }: KiloCodeProps) => {
 	const { t } = useAppTranslation()
-	
+
 	const handleInputChange = useCallback(
 		<K extends keyof ProviderSettings, E>(
 			field: K,
@@ -53,7 +45,7 @@ export const KiloCode = ({
 
 	// Use the existing hook to get user identity
 	const userIdentity = useKiloIdentity(apiConfiguration.kilocodeToken || "", "")
-	const isKiloCodeAiUser = userIdentity.endsWith("@kilocode.ai")
+	const isKiloCodeAiUser = userIdentity.endsWith("@kilo.ai")
 
 	const areKilocodeWarningsDisabled = apiConfiguration.kilocodeTesterWarningsDisabledUntil
 		? apiConfiguration.kilocodeTesterWarningsDisabledUntil > Date.now()
@@ -91,11 +83,23 @@ export const KiloCode = ({
 						</Button>
 					</div>
 				) : (
-					<VSCodeButtonLink
-						variant="secondary"
-						href={getKiloCodeBackendSignInUrl(uriScheme, uiKind, kiloCodeWrapperProperties)}>
-						{t("kilocode:settings.provider.login")}
-					</VSCodeButtonLink>
+					<>
+						<div className="flex flex-row items-center gap-1 text-vscode-charts-green text-sm">
+							<div className="codicon codicon-info" />
+							<div>{t("kilocode:settings.provider.loginForPremiumModels")}</div>
+						</div>
+						<Button
+							variant="secondary"
+							onClick={() => {
+								vscode.postMessage({
+									type: "switchTab",
+									tab: "auth",
+									values: { returnTo: "settings", profileName: currentApiConfigName },
+								})
+							}}>
+							{t("kilocode:settings.provider.login")}
+						</Button>
+					</>
 				))}
 
 			<VSCodeTextField
@@ -115,14 +119,14 @@ export const KiloCode = ({
 				apiConfiguration={apiConfiguration}
 				setApiConfigurationField={setApiConfigurationField}
 				defaultModelId={kilocodeDefaultModel}
-				models={routerModels?.["kilocode-openrouter"] ?? {}}
+				models={routerModels?.kilocode ?? {}}
 				modelIdKey="kilocodeModel"
 				serviceName="Kilo Code"
-				serviceUrl="https://kilocode.ai"
+				serviceUrl={getAppUrl()}
 				organizationAllowList={organizationAllowList}
 			/>
 
-			{/* KILOCODE-TESTER warnings setting - only visible for @kilocode.ai users */}
+			{/* KILOCODE-TESTER warnings setting - only visible for @kilo.ai users */}
 			{isKiloCodeAiUser && (
 				<div className="mb-4">
 					<label className="block font-medium mb-2">Disable KILOCODE-TESTER warnings</label>

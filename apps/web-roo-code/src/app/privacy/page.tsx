@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
 import { SEO } from "@/lib/seo"
+import { ogImageUrl } from "@/lib/og"
 
-const TITLE = "Privacy Policy"
+const TITLE = "Our Privacy Policy"
 const DESCRIPTION =
 	"Privacy policy for Roo Code Cloud and marketing website. Learn how we handle your data and protect your privacy."
+const OG_DESCRIPTION = ""
 const PATH = "/privacy"
-const OG_IMAGE = SEO.ogImage
 
 export const metadata: Metadata = {
 	title: TITLE,
@@ -20,10 +21,10 @@ export const metadata: Metadata = {
 		siteName: SEO.name,
 		images: [
 			{
-				url: OG_IMAGE.url,
-				width: OG_IMAGE.width,
-				height: OG_IMAGE.height,
-				alt: OG_IMAGE.alt,
+				url: ogImageUrl(TITLE, OG_DESCRIPTION),
+				width: 1200,
+				height: 630,
+				alt: TITLE,
 			},
 		],
 		locale: SEO.locale,
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
 		card: SEO.twitterCard,
 		title: TITLE,
 		description: DESCRIPTION,
-		images: [OG_IMAGE.url],
+		images: [ogImageUrl(TITLE, OG_DESCRIPTION)],
 	},
 	keywords: [...SEO.keywords, "privacy", "data protection", "GDPR", "security"],
 }
@@ -282,7 +283,8 @@ export default function Privacy() {
 						</li>
 						<li>
 							<strong>Delete your Cloud account</strong> at any time from{" "}
-							<strong>Security Settings</strong> inside Roo Code Cloud.
+							<strong>Security Settings</strong> inside Roo Code Cloud (User Menu &rarr; My Settings
+							&rarr; Open Profile).
 						</li>
 						<li>
 							<strong>Marketing communications:</strong> You can unsubscribe from marketing and

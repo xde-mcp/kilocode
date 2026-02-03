@@ -2,6 +2,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import { z } from "zod"
 import * as vscode from "vscode"
+import EventEmitter from "events"
 import type { ModelInfo, ProviderSettings } from "@roo-code/types"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { ContextProxy } from "../../core/config/ContextProxy"
@@ -27,7 +28,7 @@ interface HandlerConfig {
  * Virtual Quota Fallback Provider API processor.
  * This handler is designed to call other API handlers with automatic fallback when quota limits are reached.
  */
-export class VirtualQuotaFallbackHandler implements ApiHandler {
+export class VirtualQuotaFallbackHandler extends EventEmitter implements ApiHandler {
 	private settingsManager: ProviderSettingsManager
 	private settings: ProviderSettings
 
@@ -38,6 +39,7 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 	private isInitialized: boolean = false
 
 	constructor(options: ProviderSettings) {
+		super()
 		this.settings = options
 		this.settingsManager = new ProviderSettingsManager(ContextProxy.instance.rawContext)
 		this.usage = UsageTracker.getInstance()
@@ -97,12 +99,12 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 					yield chunk
 				}
 			} catch (error) {
-				// Check if this is a retryable
+				// Check if this is a retryable error (rate limit or overload)
 				if (this.isRateLimitError(error) || this.isOverloadError(error)) {
-					// Set cooldown for the current provider
-					await this.usage.setCooldown(this.activeProfileId, 10 * 60 * 1000)
+					// Set a short cooldown (10 seconds) to prevent rapid cycling
+					await this.usage.setCooldown(this.activeProfileId, 10 * 1000)
 
-					// Switch to a different provider
+					// Switch to a different provider and retry
 					await this.adjustActiveHandler("Retryable Error")
 
 					// Retry the request with the new provider
@@ -110,8 +112,8 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 					return
 				}
 
-				// For non-rate limit errors, set cooldown and rethrow
-				await this.usage.setCooldown(this.activeProfileId, 10 * 60 * 1000)
+				// For non-retryable errors, set cooldown and rethrow
+				await this.usage.setCooldown(this.activeProfileId, 10 * 1000)
 				throw error
 			}
 		} catch (error) {
@@ -121,17 +123,35 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 	}
 
 	getModel(): { id: string; info: ModelInfo } {
+		// This is a synchronous method, so we can't await adjustActiveHandler here.
+		// The handler should be adjusted before this method is called.
 		if (!this.activeHandler) {
 			return {
-				id: "unknown",
+				id: "",
 				info: {
-					maxTokens: 100000,
-					contextWindow: 100000,
+					maxTokens: 1,
+					contextWindow: 1000000,
 					supportsPromptCache: false,
 				},
 			}
 		}
 		return this.activeHandler.getModel()
+	}
+
+	getActiveProfileNumber(): number | undefined {
+		if (!this.activeProfileId) {
+			return undefined
+		}
+		const index = this.handlerConfigs.findIndex((c) => c.profileId === this.activeProfileId)
+		return index >= 0 ? index + 1 : undefined
+	}
+
+	get contextWindow(): number {
+		if (!this.activeHandler) {
+			return 1000000 // Default fallback
+		}
+		const model = this.activeHandler.getModel()
+		return model.info.contextWindow
 	}
 
 	private async loadConfiguredProfiles(): Promise<void> {
@@ -234,6 +254,7 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 			}
 			this.activeHandler = handler
 			this.activeProfileId = profileId
+			this.emit("handlerChanged", this.activeHandler)
 			return
 		}
 
@@ -243,6 +264,7 @@ export class VirtualQuotaFallbackHandler implements ApiHandler {
 		}
 		this.activeHandler = undefined
 		this.activeProfileId = undefined
+		this.emit("handlerChanged", this.activeHandler)
 	}
 
 	private async notifyHandlerSwitch(newProfileId: string | undefined, reason?: string): Promise<void> {

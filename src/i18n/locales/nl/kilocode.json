@@ -15,6 +15,7 @@
 		"noAssistantMessages": "Het model reageerde onverwacht (geen assistent berichten). Dit kan een teken zijn van snelheidsbeperking.",
 		"notLoggedInError": "Kan verzoek niet voltooien, zorg ervoor dat je verbonden bent en bent aangemeld bij de geselecteerde provider.\n\n{{error}}",
 		"maxCompletionTokens": "Het maximum aantal completion tokens is bereikt.",
+		"contentFilter": "Het verzoek is geblokkeerd door het inhoudsfilter.",
 		"disableApplyDiff": "Als deze fout zich blijft voordoen, schakel dan Bewerken via Diffs uit in de Geavanceerde Instellingen.",
 		"disableEditFile": "Als deze fout zich blijft voordoen, schakel dan de experimentele Fast Apply functie uit."
 	},
@@ -60,20 +61,59 @@
 		"generationFailed": "Kilo: Fout bij het genereren van commit bericht: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: Bericht genereren met niet-gestage wijzigingen",
 		"activationFailed": "Kilo: Fout bij het activeren van berichtgenerator: {{error}}",
-		"providerRegistered": "Kilo: Commit bericht provider geregistreerd"
+		"providerRegistered": "Kilo: Commit bericht provider geregistreerd",
+		"errors": {
+			"noProject": "Geen project beschikbaar",
+			"timeout": "Verzoek is verlopen na 30 seconden",
+			"connectionFailed": "Verbinding maken met Kilo Code-extensie mislukt",
+			"invalidResponse": "Ongeldig responsformaat ontvangen van extensie",
+			"missingMessage": "Geen commit-bericht ontvangen van extensie",
+			"noChanges": "Geen wijzigingen gevonden om te committen",
+			"noWorkspacePath": "Kon het werkruimtepad voor de Git-repository niet bepalen",
+			"processingError": "Fout bij het verwerken van het genereren van het commit-bericht: {{error}}",
+			"workspaceNotFound": "Kon geen werkruimtepad bepalen voor Git-repository"
+		},
+		"error": {
+			"title": "Fout",
+			"workspacePathNotFound": "Kon het werkruimtepad voor de Git-repository niet bepalen",
+			"processingFailed": "Fout bij het verwerken van commit-berichtgeneratie: {{error}}",
+			"generationFailed": "Genereren van commit-bericht mislukt: {{error}}",
+			"unknown": "Onbekende fout"
+		},
+		"dialogs": {
+			"info": "AI Commit-Bericht",
+			"error": "Fout",
+			"success": "Succes",
+			"title": "AI Commit Bericht"
+		},
+		"progress": {
+			"title": "Commit-bericht genereren",
+			"analyzing": "Wijzigingen analyseren...",
+			"generating": "Commit-bericht genereren...",
+			"connecting": "Verbinding maken met Kilo Code..."
+		},
+		"ui": {
+			"generateButton": "Commit Bericht Genereren",
+			"generateButtonTooltip": "Genereert commit-berichten met behulp van AI om je codewijzigingen te analyseren"
+		}
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "gepauzeerd",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (uitgeschakeld)",
-				"tokenError": "Een geldig token moet worden ingesteld om Autocomplete te gebruiken",
-				"lastCompletion": "Laatste suggestie:",
+				"noCredits": "**Geen tegoed op je account**\n\nJe Kilo Code account heeft geen tegoed. Om autocomplete te gebruiken, voeg tegoed toe aan je account.\n\n[Instellingen openen](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**Geen autocomplete model geconfigureerd**\n\nOm autocomplete in te schakelen, voeg een profiel toe met een van deze ondersteunde providers: {{providers}}.\n\n[Instellingen openen](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "Totale sessiekosten:",
-				"model": "Model:"
+				"provider": "Provider:",
+				"model": "Model:",
+				"profile": "Profiel: ",
+				"defaultProfile": "Standaard",
+				"completionSummary": "{{count}} voltooiingen uitgevoerd tussen {{startTime}} en {{endTime}}, voor een totale kostprijs van {{cost}}.",
+				"providerInfo": "Automatische aanvullingen geleverd door {{model}} via {{provider}}."
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -98,7 +138,6 @@
 			"cancelSuggestions": "Voorgestelde Bewerkingen Annuleren",
 			"applyCurrentSuggestion": "Huidige Voorgestelde Bewerking Toepassen",
 			"applyAllSuggestions": "Alle Voorgestelde Bewerkingen Toepassen",
-			"promptCodeSuggestion": "Snelle Taak",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +174,39 @@
 		"checkpointsUnavailable": "Kan nieuwe wijzigingen niet weergeven, controlepunten zijn niet beschikbaar.",
 		"noChanges": "Kan nieuwe wijzigingen niet weergeven, er zijn geen wijzigingen gevonden.",
 		"error": "Kan nieuwe wijzigingen niet weergeven, er is een fout opgetreden."
+	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "Je Kilocode CLI-versie is verouderd en ondersteunt de Agent Manager niet. Update naar de nieuwste versie.",
+			"cliMisconfigured": "Kilocode CLI is niet geconfigureerd. Voer 'kilocode auth' uit om in te loggen of 'kilocode config' om te configureren.",
+			"sessionFailed": "Kon agentsessie niet starten",
+			"sessionFailedWithMessage": "Kon agentsessie niet starten: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "Update-instructies",
+			"installInstructions": "Installatie-instructies",
+			"getHelp": "Hulp krijgen",
+			"runInTerminal": "Uitvoeren in Terminal",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Globaal Bijwerken",
+			"updateLocal": "Lokaal Bijwerken",
+			"installGlobal": "Globaal Installeren",
+			"installLocal": "Lokaal Installeren"
+		},
+		"terminal": {
+			"installMessage": "npm install uitvoeren om Kilocode CLI te installeren. Zodra voltooid, kun je dit terminal sluiten en proberen de Agent Manager opnieuw te starten.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "Uw OpenAI API-sleutel is ongeldig of heeft geen toegang tot de Realtime API. Controleer uw API-sleutel en probeer het opnieuw.",
+			"unknown": "Verbinding mislukt. Controleer uw configuratie en probeer het opnieuw."
+		}
+	},
+	"configDiscovery": {
+		"added": "Kilo Code: Toegevoegd {{source}} {{configType}}: {{name}}{{modeStr}}",
+		"removed": "Kilo code: Verwijderd {{source}} {{configType}}: {{name}}{{modeStr}}"
 	}
 }

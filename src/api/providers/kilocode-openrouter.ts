@@ -1,13 +1,26 @@
+import crypto from "crypto"
 import { ApiHandlerOptions, ModelRecord } from "../../shared/api"
-import { CompletionUsage, OpenRouterHandler } from "./openrouter"
+import { OpenRouterHandler } from "./openrouter"
+import type { CompletionUsage } from "./openrouter"
 import { getModelParams } from "../transform/model-params"
 import { getModels } from "./fetchers/modelCache"
 import { DEEP_SEEK_DEFAULT_TEMPERATURE, openRouterDefaultModelId, openRouterDefaultModelInfo } from "@roo-code/types"
-import { getKiloBaseUriFromToken } from "../../shared/kilocode/token"
-import { ApiHandlerCreateMessageMetadata } from ".."
+import { getKiloUrlFromToken } from "@roo-code/types"
+import type { ApiHandlerCreateMessageMetadata } from ".."
 import { getModelEndpoints } from "./fetchers/modelEndpointCache"
 import { getKilocodeDefaultModel } from "./kilocode/getKilocodeDefaultModel"
-import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TASKID, X_KILOCODE_TESTER } from "../../shared/kilocode/headers"
+import {
+	X_KILOCODE_ORGANIZATIONID,
+	X_KILOCODE_TASKID,
+	X_KILOCODE_PROJECTID,
+	X_KILOCODE_TESTER,
+	X_KILOCODE_EDITORNAME,
+} from "../../shared/kilocode/headers"
+import { KILOCODE_TOKEN_REQUIRED_ERROR } from "../../shared/kilocode/errorUtils"
+import { DEFAULT_HEADERS } from "./constants"
+import { streamSse } from "../../services/continuedev/core/fetch/stream"
+import { getEditorNameHeader } from "../../core/kilocode/wrapper"
+import type { FimHandler } from "./kilocode/FimHandler"
 
 /**
  * A custom OpenRouter handler that overrides the getModel function
@@ -16,24 +29,35 @@ import { X_KILOCODE_ORGANIZATIONID, X_KILOCODE_TASKID, X_KILOCODE_TESTER } from 
 export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	protected override models: ModelRecord = {}
 	defaultModel: string = openRouterDefaultModelId
+	private apiFIMBase: string
 
 	protected override get providerName() {
-		return "KiloCode"
+		return "KiloCode" as const
 	}
 
 	constructor(options: ApiHandlerOptions) {
-		const baseUri = getKiloBaseUriFromToken(options.kilocodeToken ?? "")
+		const baseApiUrl = getKiloUrlFromToken("https://api.kilo.ai/api/", options.kilocodeToken ?? "")
+
 		options = {
 			...options,
-			openRouterBaseUrl: `${baseUri}/api/openrouter/`,
+			openRouterBaseUrl: `${baseApiUrl}openrouter/`,
 			openRouterApiKey: options.kilocodeToken,
 		}
 
 		super(options)
+
+		this.apiFIMBase = baseApiUrl
+	}
+
+	public getRolloutHash(): number | undefined {
+		const token = this.options.kilocodeToken
+		return !token ? undefined : crypto.createHash("sha256").update(token).digest().readUInt32BE(0)
 	}
 
 	override customRequestOptions(metadata?: ApiHandlerCreateMessageMetadata) {
-		const headers: Record<string, string> = {}
+		const headers: Record<string, string> = {
+			[X_KILOCODE_EDITORNAME]: getEditorNameHeader(),
+		}
 
 		if (metadata?.taskId) {
 			headers[X_KILOCODE_TASKID] = metadata.taskId
@@ -43,6 +67,10 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 
 		if (kilocodeOptions.kilocodeOrganizationId) {
 			headers[X_KILOCODE_ORGANIZATIONID] = kilocodeOptions.kilocodeOrganizationId
+
+			if (metadata?.projectId) {
+				headers[X_KILOCODE_PROJECTID] = metadata.projectId
+			}
 		}
 
 		// Add X-KILOCODE-TESTER: SUPPRESS header if the setting is enabled
@@ -65,6 +93,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		if (lastUsage.is_byok) {
 			return lastUsage.cost_details?.upstream_inference_cost || 0
 		}
+
 		return lastUsage.cost || 0
 	}
 
@@ -91,13 +120,13 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	}
 
 	public override async fetchModel() {
-		if (!this.options.kilocodeToken || !this.options.openRouterBaseUrl) {
-			throw new Error("KiloCode token + baseUrl is required to fetch models")
+		if (!this.options.openRouterBaseUrl) {
+			throw new Error("OpenRouter base URL is required")
 		}
 
 		const [models, endpoints, defaultModel] = await Promise.all([
 			getModels({
-				provider: "kilocode-openrouter",
+				provider: "kilocode",
 				kilocodeToken: this.options.kilocodeToken,
 				kilocodeOrganizationId: this.options.kilocodeOrganizationId,
 			}),
@@ -106,12 +135,76 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 				modelId: this.options.kilocodeModel,
 				endpoint: this.options.openRouterSpecificProvider,
 			}),
-			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId, this.options),
+			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId),
 		])
 
 		this.models = models
 		this.endpoints = endpoints
-		this.defaultModel = defaultModel
+		this.defaultModel = defaultModel.defaultModel
 		return this.getModel()
+	}
+
+	fimSupport(): FimHandler | undefined {
+		const modelId = this.options.kilocodeModel ?? this.defaultModel
+		if (!modelId.includes("codestral")) {
+			return undefined
+		}
+
+		return this
+	}
+
+	async *streamFim(
+		prefix: string,
+		suffix: string,
+		taskId?: string,
+		onUsage?: (usage: CompletionUsage) => void,
+	): AsyncGenerator<string> {
+		const model = await this.fetchModel()
+		const endpoint = new URL("fim/completions", this.apiFIMBase)
+
+		// Build headers using customRequestOptions for consistency
+		const headers: Record<string, string> = {
+			...DEFAULT_HEADERS,
+			"Content-Type": "application/json",
+			Accept: "application/json",
+			"x-api-key": this.options.kilocodeToken ?? "",
+			Authorization: `Bearer ${this.options.kilocodeToken}`,
+			...this.customRequestOptions(taskId ? { taskId, mode: "code" } : undefined)?.headers,
+		}
+
+		// temperature: 0.2 is mentioned as a sane example in mistral's docs and is what continue uses.
+		const temperature = 0.2
+		const maxTokens = 256
+
+		const response = await fetch(endpoint, {
+			method: "POST",
+			body: JSON.stringify({
+				model: model.id,
+				prompt: prefix,
+				suffix,
+				max_tokens: Math.min(maxTokens, model.maxTokens ?? maxTokens),
+				temperature,
+				top_p: model.topP,
+				stream: true,
+			}),
+			headers,
+		})
+
+		if (!response.ok) {
+			const errorText = await response.text()
+			throw new Error(`FIM streaming failed: ${response.status} ${response.statusText} - ${errorText}`)
+		}
+
+		for await (const data of streamSse(response)) {
+			const content = data.choices?.[0]?.delta?.content
+			if (content) {
+				yield content
+			}
+
+			// Call usage callback when available
+			if (data.usage && onUsage) {
+				onUsage(data.usage)
+			}
+		}
 	}
 }

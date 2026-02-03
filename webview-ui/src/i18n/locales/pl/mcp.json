@@ -25,12 +25,13 @@
 	"tabs": {
 		"tools": "Narzędzia",
 		"resources": "Zasoby",
-		"errors": "Błędy"
+		"logs": "Logi",
+		"authDebug": "Debugowanie uwierzytelniania"
 	},
 	"emptyState": {
 		"noTools": "Nie znaleziono narzędzi",
 		"noResources": "Nie znaleziono zasobów",
-		"noErrors": "Nie znaleziono błędów"
+		"noLogs": "Brak logów"
 	},
 	"networkTimeout": {
 		"label": "Limit czasu sieci",
@@ -54,12 +55,28 @@
 	},
 	"serverStatus": {
 		"retrying": "Ponawianie...",
-		"retryConnection": "Ponów połączenie"
+		"retryConnection": "Ponów połączenie",
+		"signIn": "Zaloguj się",
+		"signingIn": "Logowanie..."
 	},
 	"refreshMCP": "Odśwież serwery MCP",
 	"execution": {
 		"running": "Uruchomione",
 		"completed": "Zakończone",
 		"error": "Błąd"
+	},
+	"authDebug": {
+		"title": "Informacje debugowania OAuth",
+		"status": "Status",
+		"tokenExpires": "Token wygasa",
+		"scopes": "Zakresy",
+		"refreshInfo": "Informacje o tokenie odświeżania",
+		"hasRefreshToken": "Posiada token odświeżania",
+		"canRefresh": "Może automatycznie odświeżać",
+		"tokenIssuedAt": "Token wydany o",
+		"nextRefreshAt": "Następne odświeżenie o",
+		"lastRefreshAt": "Ostatnie odświeżenie o",
+		"tokenEndpoint": "Punkt końcowy tokenu",
+		"clientId": "ID klienta"
 	}
 }

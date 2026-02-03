@@ -4,6 +4,7 @@
 vitest.mock("vscode", () => ({
 	window: {
 		showInformationMessage: vitest.fn(),
+		createTextEditorDecorationType: vitest.fn(() => ({ dispose: vitest.fn() })),
 	},
 	globalState: {
 		get: vitest.fn(),
@@ -17,6 +18,30 @@ vitest.mock("vscode", () => ({
 				},
 			},
 		],
+	},
+	Range: class {
+		constructor(startLine: number, startChar: number, endLine: number, endChar: number) {
+			;(this as any).start = { line: startLine, character: startChar }
+			;(this as any).end = { line: endLine, character: endChar }
+		}
+	},
+	Position: class {
+		constructor(line: number, character: number) {
+			;(this as any).line = line
+			;(this as any).character = character
+		}
+	},
+}))
+
+// Mock the openrouter module to prevent import chain issues
+vitest.mock("../openrouter", () => ({
+	OpenRouterHandler: class MockOpenRouterHandler {
+		getModel() {
+			return { id: "mock-model", info: {} }
+		}
+		fetchModel() {
+			return Promise.resolve({ id: "mock-model", info: {} })
+		}
 	},
 }))
 
@@ -524,10 +549,10 @@ describe("VirtualQuotaFallbackProvider", () => {
 				;(handler as any).activeHandler = undefined
 				const result = handler.getModel()
 				expect(result).toEqual({
-					id: "unknown",
+					id: "",
 					info: {
-						maxTokens: 100000,
-						contextWindow: 100000,
+						maxTokens: 1,
+						contextWindow: 1000000,
 						supportsPromptCache: false,
 					},
 				})

@@ -16,6 +16,7 @@ export class AssistantMessageParser {
 	private currentParamValueStartIndex = 0
 	private readonly MAX_ACCUMULATOR_SIZE = 1024 * 1024 // 1MB limit
 	private readonly MAX_PARAM_LENGTH = 1024 * 100 // 100KB per parameter limit
+
 	private accumulator = ""
 
 	/**
@@ -47,6 +48,7 @@ export class AssistantMessageParser {
 		// Return a shallow copy to prevent external mutation
 		return this.contentBlocks.slice()
 	}
+
 	/**
 	 * Process a new chunk of text and update the parser state.
 	 * @param chunk The new chunk of text to process.

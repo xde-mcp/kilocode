@@ -22,41 +22,29 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 	const {
 		autoApprovalEnabled,
 		setAutoApprovalEnabled,
-		alwaysApproveResubmit,
 		allowedMaxRequests, // kilocode_change
 		allowedMaxCost, // kilocode_change
 		setAlwaysAllowReadOnly,
 		setAlwaysAllowWrite,
+		setAlwaysAllowDelete, // kilocode_change
 		setAlwaysAllowExecute,
 		setAlwaysAllowBrowser,
 		setAlwaysAllowMcp,
 		setAlwaysAllowModeSwitch,
 		setAlwaysAllowSubtasks,
-		setAlwaysApproveResubmit,
 		setAlwaysAllowFollowupQuestions,
-		setAlwaysAllowUpdateTodoList,
 		setAllowedMaxRequests, // kilocode_change
 		setAllowedMaxCost, // kilocode_change
 	} = useExtensionState()
 
 	const { t } = useAppTranslation()
 
-	const baseToggles = useAutoApprovalToggles()
-
-	// AutoApproveMenu needs alwaysApproveResubmit in addition to the base toggles
-	const toggles = useMemo(
-		() => ({
-			...baseToggles,
-			alwaysApproveResubmit: alwaysApproveResubmit,
-		}),
-		[baseToggles, alwaysApproveResubmit],
-	)
-
+	const toggles = useAutoApprovalToggles()
 	const { hasEnabledOptions, effectiveAutoApprovalEnabled } = useAutoApprovalState(toggles, autoApprovalEnabled)
 
 	const onAutoApproveToggle = useCallback(
 		(key: AutoApproveSetting, value: boolean) => {
-			vscode.postMessage({ type: key, bool: value })
+			vscode.postMessage({ type: "updateSettings", updatedSettings: { [key]: value } })
 
 			// Update the specific toggle state
 			switch (key) {
@@ -66,6 +54,11 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 				case "alwaysAllowWrite":
 					setAlwaysAllowWrite(value)
 					break
+				// kilocode_change start
+				case "alwaysAllowDelete":
+					setAlwaysAllowDelete(value)
+					break
+				// kilocode_change end
 				case "alwaysAllowExecute":
 					setAlwaysAllowExecute(value)
 					break
@@ -81,14 +74,8 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 				case "alwaysAllowSubtasks":
 					setAlwaysAllowSubtasks(value)
 					break
-				case "alwaysApproveResubmit":
-					setAlwaysApproveResubmit(value)
-					break
 				case "alwaysAllowFollowupQuestions":
 					setAlwaysAllowFollowupQuestions(value)
-					break
-				case "alwaysAllowUpdateTodoList":
-					setAlwaysAllowUpdateTodoList(value)
 					break
 			}
 
@@ -104,12 +91,12 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			// If enabling the first option, enable master auto-approval
 			if (value && !hasEnabledOptions && willHaveEnabledOptions) {
 				setAutoApprovalEnabled(true)
-				vscode.postMessage({ type: "autoApprovalEnabled", bool: true })
+				vscode.postMessage({ type: "updateSettings", updatedSettings: { autoApprovalEnabled: true } })
 			}
 			// If disabling the last option, disable master auto-approval
 			else if (!value && hasEnabledOptions && !willHaveEnabledOptions) {
 				setAutoApprovalEnabled(false)
-				vscode.postMessage({ type: "autoApprovalEnabled", bool: false })
+				vscode.postMessage({ type: "updateSettings", updatedSettings: { autoApprovalEnabled: false } })
 			}
 		},
 		[
@@ -117,14 +104,13 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 			hasEnabledOptions,
 			setAlwaysAllowReadOnly,
 			setAlwaysAllowWrite,
+			setAlwaysAllowDelete, // kilocode_change
 			setAlwaysAllowExecute,
 			setAlwaysAllowBrowser,
 			setAlwaysAllowMcp,
 			setAlwaysAllowModeSwitch,
 			setAlwaysAllowSubtasks,
-			setAlwaysApproveResubmit,
 			setAlwaysAllowFollowupQuestions,
-			setAlwaysAllowUpdateTodoList,
 			setAutoApprovalEnabled,
 		],
 	)
@@ -219,7 +205,10 @@ const AutoApproveMenu = ({ style }: AutoApproveMenuProps) => {
 								if (hasEnabledOptions) {
 									const newValue = !(autoApprovalEnabled ?? false)
 									setAutoApprovalEnabled(newValue)
-									vscode.postMessage({ type: "autoApprovalEnabled", bool: newValue })
+									vscode.postMessage({
+										type: "updateSettings",
+										updatedSettings: { autoApprovalEnabled: newValue },
+									})
 								}
 								// If no options enabled, do nothing
 							}}

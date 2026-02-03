@@ -26,12 +26,13 @@
 	"tabs": {
 		"tools": "Tools",
 		"resources": "Resources",
-		"errors": "Errors"
+		"logs": "Logs",
+		"authDebug": "Auth Debug"
 	},
 	"emptyState": {
 		"noTools": "No tools found",
 		"noResources": "No resources found",
-		"noErrors": "No errors found"
+		"noLogs": "No logs yet"
 	},
 	"networkTimeout": {
 		"label": "Network Timeout",
@@ -55,11 +56,27 @@
 	},
 	"serverStatus": {
 		"retrying": "Retrying...",
-		"retryConnection": "Retry Connection"
+		"retryConnection": "Retry Connection",
+		"signIn": "Sign in",
+		"signingIn": "Signing in..."
 	},
 	"execution": {
 		"running": "Running",
 		"completed": "Completed",
 		"error": "Error"
+	},
+	"authDebug": {
+		"title": "OAuth Authentication Details",
+		"status": "Auth Status",
+		"tokenExpires": "Token Expires",
+		"scopes": "Scopes",
+		"refreshInfo": "Refresh Token Info",
+		"hasRefreshToken": "Has Refresh Token",
+		"canRefresh": "Can Auto-Refresh",
+		"tokenIssuedAt": "Token Issued At",
+		"nextRefreshAt": "Next Auto-Refresh",
+		"lastRefreshAt": "Last Refresh",
+		"tokenEndpoint": "Token Endpoint",
+		"clientId": "Client ID"
 	}
 }

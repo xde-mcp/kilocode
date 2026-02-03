@@ -2,9 +2,7 @@ import { useState, useCallback } from "react"
 import { useEvent } from "react-use"
 import { LanguageModelChatSelector } from "vscode"
 
-import type { ProviderSettings } from "@roo-code/types"
-
-import { ExtensionMessage } from "@roo/ExtensionMessage"
+import type { ProviderSettings, ExtensionMessage } from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@src/components/ui"
@@ -76,9 +74,12 @@ export const VSCodeLM = ({ apiConfiguration, setApiConfigurationField }: VSCodeL
 						</SelectContent>
 					</Select>
 				) : (
+					/* kilocode_change start */
 					<div className="text-sm text-vscode-descriptionForeground">
-						{t("settings:providers.vscodeLmDescription")}
+						<p>{t("settings:providers.vscodeLmUnavailable")}</p>
+						<p className="mt-2">{t("settings:providers.vscodeLmUnavailableInstructions")}</p>
 					</div>
+					/* kilocode_change end */
 				)}
 			</div>
 			<div className="text-sm text-vscode-errorForeground">{t("settings:providers.vscodeLmWarning")}</div>

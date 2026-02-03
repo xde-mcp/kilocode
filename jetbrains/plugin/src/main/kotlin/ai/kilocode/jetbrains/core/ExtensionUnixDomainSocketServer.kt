@@ -4,6 +4,7 @@
 
 package ai.kilocode.jetbrains.core
 
+import ai.kilocode.jetbrains.plugin.SystemObjectProvider
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import java.io.IOException
@@ -16,18 +17,23 @@ import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
-    // ExtensionUnixDomainSocketServer is responsible for communication between extension process and IDEA plugin process via Unix Domain Socket
+// ExtensionUnixDomainSocketServer is responsible for communication between extension process and IDEA plugin process via Unix Domain Socket
 class ExtensionUnixDomainSocketServer : ISocketServer {
     // Logger
     private val logger = Logger.getInstance(ExtensionUnixDomainSocketServer::class.java)
+
     // UDS server channel
     private var udsServerChannel: ServerSocketChannel? = null
+
     // UDS socket file path
     private var udsSocketPath: Path? = null
+
     // Mapping of client connections and managers
     private val clientManagers = ConcurrentHashMap<SocketChannel, ExtensionHostManager>()
+
     // Server listening thread
     private var serverThread: Thread? = null
+
     // Current project path
     private var projectPath: String = ""
 
@@ -57,9 +63,9 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
             logger.info("[UDS] Listening on: $sockPath")
             // Start listening thread, asynchronously accept client connections
             serverThread =
-                    thread(start = true, name = "ExtensionUDSSocketServer") {
-                        acceptUdsConnections()
-                    }
+                thread(start = true, name = "ExtensionUDSSocketServer") {
+                    acceptUdsConnections()
+                }
             return sockPath.toString()
         } catch (e: Exception) {
             logger.error("[UDS] Failed to start server", e)
@@ -134,13 +140,31 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
     // Listen and accept UDS client connections
     private fun acceptUdsConnections() {
         val server = udsServerChannel ?: return
-        logger.info("[UDS] Waiting for connections..., tid: ${Thread.currentThread().id}")
+        logger.info("[UDS] Waiting for connections..., tid: ${Thread.currentThread().threadId()}")
         while (isRunning && !Thread.currentThread().isInterrupted) {
             try {
                 val clientChannel = server.accept() // Block and wait for new connection
                 logger.info("[UDS] New client connected")
-                val manager = ExtensionHostManager(clientChannel, projectPath,project)
+                val manager = ExtensionHostManager(clientChannel, projectPath, project)
                 clientManagers[clientChannel] = manager
+                
+                // Register ExtensionHostManager in SystemObjectProvider for access by other components
+                try {
+                    val systemObjectProvider = SystemObjectProvider.getInstance(project)
+                    systemObjectProvider.register("extensionHostManager", manager)
+                    logger.info("[UDS] Registered ExtensionHostManager in SystemObjectProvider")
+                } catch (e: Exception) {
+                    logger.error("[UDS] Failed to register ExtensionHostManager in SystemObjectProvider", e)
+                }
+                
+                // Also register with PluginContext for UI access
+                try {
+                    project.getService(PluginContext::class.java).setExtensionHostManager(manager)
+                    logger.info("[UDS] Registered ExtensionHostManager in PluginContext")
+                } catch (e: Exception) {
+                    logger.error("[UDS] Failed to register ExtensionHostManager in PluginContext", e)
+                }
+                
                 handleClient(clientChannel, manager) // Start client handler thread
             } catch (e: Exception) {
                 if (isRunning) {
@@ -197,6 +221,24 @@ class ExtensionUnixDomainSocketServer : ISocketServer {
             // Connection close and resource release
             manager.dispose()
             clientManagers.remove(clientChannel)
+            
+            // Remove ExtensionHostManager from SystemObjectProvider
+            try {
+                val systemObjectProvider = SystemObjectProvider.getInstance(project)
+                systemObjectProvider.remove("extensionHostManager")
+                logger.info("[UDS] Removed ExtensionHostManager from SystemObjectProvider")
+            } catch (e: Exception) {
+                logger.warn("[UDS] Failed to remove ExtensionHostManager from SystemObjectProvider", e)
+            }
+            
+            // Also clear from PluginContext
+            try {
+                project.getService(PluginContext::class.java).clear()
+                logger.info("[UDS] Cleared PluginContext")
+            } catch (e: Exception) {
+                logger.warn("[UDS] Failed to clear PluginContext", e)
+            }
+            
             try {
                 clientChannel.close()
             } catch (e: IOException) {

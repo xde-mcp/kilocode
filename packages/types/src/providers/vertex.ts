@@ -6,23 +6,58 @@ export type VertexModelId = keyof typeof vertexModels
 export const vertexDefaultModelId: VertexModelId = "claude-sonnet-4-5@20250929"
 
 export const vertexModels = {
-	"claude-4.5-sonnet": {
-		maxTokens: 8192,
-		contextWindow: 200_000,
+	"gemini-3-pro-preview": {
+		maxTokens: 65_536,
+		contextWindow: 1_048_576,
 		supportsImages: true,
-		supportsComputerUse: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
-		inputPrice: 3.0,
-		outputPrice: 15.0,
-		cacheWritesPrice: 3.75,
-		cacheReadsPrice: 0.3,
-		supportsReasoningBudget: true,
+		supportsReasoningEffort: ["low", "high"],
+		reasoningEffort: "low",
+
+		supportsTemperature: true,
+		defaultTemperature: 1,
+		inputPrice: 4.0,
+		outputPrice: 18.0,
+		tiers: [
+			{
+				contextWindow: 200_000,
+				inputPrice: 2.0,
+				outputPrice: 12.0,
+			},
+			{
+				contextWindow: Infinity,
+				inputPrice: 4.0,
+				outputPrice: 18.0,
+			},
+		],
+	},
+	"gemini-3-flash-preview": {
+		maxTokens: 65_536,
+		contextWindow: 1_048_576,
+		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		supportsPromptCache: true,
+		supportsReasoningEffort: ["minimal", "low", "medium", "high"],
+		reasoningEffort: "medium",
+
+		supportsTemperature: true,
+		defaultTemperature: 1,
+		inputPrice: 0.3,
+		outputPrice: 2.5,
+		cacheReadsPrice: 0.075,
+		cacheWritesPrice: 1.0,
 	},
 	"gemini-2.5-flash-preview-05-20:thinking": {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.15,
 		outputPrice: 3.5,
 		maxThinkingTokens: 24_576,
@@ -33,7 +68,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.15,
 		outputPrice: 0.6,
 	},
@@ -41,7 +79,10 @@ export const vertexModels = {
 		maxTokens: 64_000,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.3,
 		outputPrice: 2.5,
 		cacheReadsPrice: 0.075,
@@ -53,7 +94,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0.15,
 		outputPrice: 3.5,
 		maxThinkingTokens: 24_576,
@@ -64,7 +108,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0.15,
 		outputPrice: 0.6,
 	},
@@ -72,7 +119,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 2.5,
 		outputPrice: 15,
 	},
@@ -80,7 +130,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 2.5,
 		outputPrice: 15,
 	},
@@ -88,7 +141,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 2.5,
 		outputPrice: 15,
 		maxThinkingTokens: 32_768,
@@ -98,7 +154,10 @@ export const vertexModels = {
 		maxTokens: 64_000,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 2.5,
 		outputPrice: 15,
 		maxThinkingTokens: 32_768,
@@ -123,7 +182,10 @@ export const vertexModels = {
 		maxTokens: 65_535,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0,
 		outputPrice: 0,
 	},
@@ -131,7 +193,10 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 2_097_152,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0,
 		outputPrice: 0,
 	},
@@ -139,7 +204,10 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.15,
 		outputPrice: 0.6,
 	},
@@ -147,7 +215,10 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0.075,
 		outputPrice: 0.3,
 	},
@@ -155,7 +226,10 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 32_768,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 0,
 		outputPrice: 0,
 	},
@@ -163,7 +237,10 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.075,
 		outputPrice: 0.3,
 	},
@@ -171,40 +248,92 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 2_097_152,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: false,
+
 		inputPrice: 1.25,
 		outputPrice: 5,
 	},
 	"claude-sonnet-4@20250514": {
 		maxTokens: 8192,
-		contextWindow: 200_000,
+		contextWindow: 200_000, // Default 200K, extendable to 1M with beta flag 'context-1m-2025-08-07'
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
-		inputPrice: 3.0,
-		outputPrice: 15.0,
-		cacheWritesPrice: 3.75,
-		cacheReadsPrice: 0.3,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 3.0, // $3 per million input tokens (≤200K context)
+		outputPrice: 15.0, // $15 per million output tokens (≤200K context)
+		cacheWritesPrice: 3.75, // $3.75 per million tokens
+		cacheReadsPrice: 0.3, // $0.30 per million tokens
 		supportsReasoningBudget: true,
+		// Tiered pricing for extended context (requires beta flag 'context-1m-2025-08-07')
+		tiers: [
+			{
+				contextWindow: 1_000_000, // 1M tokens with beta flag
+				inputPrice: 6.0, // $6 per million input tokens (>200K context)
+				outputPrice: 22.5, // $22.50 per million output tokens (>200K context)
+				cacheWritesPrice: 7.5, // $7.50 per million tokens (>200K context)
+				cacheReadsPrice: 0.6, // $0.60 per million tokens (>200K context)
+			},
+		],
 	},
 	"claude-sonnet-4-5@20250929": {
 		maxTokens: 8192,
+		contextWindow: 200_000, // Default 200K, extendable to 1M with beta flag 'context-1m-2025-08-07'
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 3.0, // $3 per million input tokens (≤200K context)
+		outputPrice: 15.0, // $15 per million output tokens (≤200K context)
+		cacheWritesPrice: 3.75, // $3.75 per million tokens
+		cacheReadsPrice: 0.3, // $0.30 per million tokens
+		supportsReasoningBudget: true,
+		// Tiered pricing for extended context (requires beta flag 'context-1m-2025-08-07')
+		tiers: [
+			{
+				contextWindow: 1_000_000, // 1M tokens with beta flag
+				inputPrice: 6.0, // $6 per million input tokens (>200K context)
+				outputPrice: 22.5, // $22.50 per million output tokens (>200K context)
+				cacheWritesPrice: 7.5, // $7.50 per million tokens (>200K context)
+				cacheReadsPrice: 0.6, // $0.60 per million tokens (>200K context)
+			},
+		],
+	},
+	"claude-haiku-4-5@20251001": {
+		maxTokens: 8192,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
-		inputPrice: 3.0,
-		outputPrice: 15.0,
-		cacheWritesPrice: 3.75,
-		cacheReadsPrice: 0.3,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 1.0,
+		outputPrice: 5.0,
+		cacheWritesPrice: 1.25,
+		cacheReadsPrice: 0.1,
+		supportsReasoningBudget: true,
+	},
+	"claude-opus-4-5@20251101": {
+		maxTokens: 8192,
+		contextWindow: 200_000,
+		supportsImages: true,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
+		inputPrice: 5.0,
+		outputPrice: 25.0,
+		cacheWritesPrice: 6.25,
+		cacheReadsPrice: 0.5,
 		supportsReasoningBudget: true,
 	},
 	"claude-opus-4-1@20250805": {
 		maxTokens: 8192,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 15.0,
 		outputPrice: 75.0,
 		cacheWritesPrice: 18.75,
@@ -215,8 +344,9 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 15.0,
 		outputPrice: 75.0,
 		cacheWritesPrice: 18.75,
@@ -226,8 +356,9 @@ export const vertexModels = {
 		maxTokens: 64_000,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 3.0,
 		outputPrice: 15.0,
 		cacheWritesPrice: 3.75,
@@ -239,8 +370,9 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 3.0,
 		outputPrice: 15.0,
 		cacheWritesPrice: 3.75,
@@ -250,8 +382,9 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 200_000,
 		supportsImages: true,
-		supportsComputerUse: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 3.0,
 		outputPrice: 15.0,
 		cacheWritesPrice: 3.75,
@@ -262,6 +395,8 @@ export const vertexModels = {
 		contextWindow: 200_000,
 		supportsImages: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 3.0,
 		outputPrice: 15.0,
 		cacheWritesPrice: 3.75,
@@ -272,6 +407,8 @@ export const vertexModels = {
 		contextWindow: 200_000,
 		supportsImages: false,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 1.0,
 		outputPrice: 5.0,
 		cacheWritesPrice: 1.25,
@@ -282,6 +419,8 @@ export const vertexModels = {
 		contextWindow: 200_000,
 		supportsImages: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 15.0,
 		outputPrice: 75.0,
 		cacheWritesPrice: 18.75,
@@ -292,6 +431,8 @@ export const vertexModels = {
 		contextWindow: 200_000,
 		supportsImages: true,
 		supportsPromptCache: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0.25,
 		outputPrice: 1.25,
 		cacheWritesPrice: 0.3,
@@ -301,7 +442,10 @@ export const vertexModels = {
 		maxTokens: 64_000,
 		contextWindow: 1_048_576,
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
+
 		inputPrice: 0.1,
 		outputPrice: 0.4,
 		cacheReadsPrice: 0.025,
@@ -314,6 +458,7 @@ export const vertexModels = {
 		contextWindow: 131072,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 0.35,
 		outputPrice: 1.15,
 		description: "Meta Llama 4 Maverick 17B Instruct model, 128K context.",
@@ -323,6 +468,7 @@ export const vertexModels = {
 		contextWindow: 163_840,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 1.35,
 		outputPrice: 5.4,
 		description: "DeepSeek R1 (0528). Available in us-central1",
@@ -332,6 +478,7 @@ export const vertexModels = {
 		contextWindow: 163_840,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 0.6,
 		outputPrice: 1.7,
 		description: "DeepSeek V3.1. Available in us-west2",
@@ -341,6 +488,7 @@ export const vertexModels = {
 		contextWindow: 131_072,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 0.15,
 		outputPrice: 0.6,
 		description: "OpenAI gpt-oss 120B. Available in us-central1",
@@ -350,6 +498,7 @@ export const vertexModels = {
 		contextWindow: 131_072,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 0.075,
 		outputPrice: 0.3,
 		description: "OpenAI gpt-oss 20B. Available in us-central1",
@@ -359,6 +508,7 @@ export const vertexModels = {
 		contextWindow: 262_144,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 1.0,
 		outputPrice: 4.0,
 		description: "Qwen3 Coder 480B A35B Instruct. Available in us-south1",
@@ -368,11 +518,16 @@ export const vertexModels = {
 		contextWindow: 262_144,
 		supportsImages: false,
 		supportsPromptCache: false,
+		supportsNativeTools: true,
 		inputPrice: 0.25,
 		outputPrice: 1.0,
 		description: "Qwen3 235B A22B Instruct. Available in us-south1",
 	},
 } as const satisfies Record<string, ModelInfo>
+
+// Vertex AI models that support 1M context window beta
+// Uses the same beta header 'context-1m-2025-08-07' as Anthropic and Bedrock
+export const VERTEX_1M_CONTEXT_MODEL_IDS = ["claude-sonnet-4@20250514", "claude-sonnet-4-5@20250929"] as const
 
 export const VERTEX_REGIONS = [
 	{ value: "global", label: "global" },

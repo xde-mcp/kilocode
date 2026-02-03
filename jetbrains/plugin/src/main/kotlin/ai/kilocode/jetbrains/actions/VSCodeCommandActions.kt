@@ -4,12 +4,12 @@
 
 package ai.kilocode.jetbrains.actions
 
+import ai.kilocode.jetbrains.core.PluginContext
+import ai.kilocode.jetbrains.core.ServiceProxyRegistry
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import ai.kilocode.jetbrains.core.PluginContext
-import ai.kilocode.jetbrains.core.ServiceProxyRegistry
 /**
  * Executes a VSCode command with the given command ID.
  * This function uses the RPC protocol to communicate with the extension host.
@@ -38,7 +38,7 @@ class PlusButtonClickAction : AnAction() {
      */
     override fun actionPerformed(e: AnActionEvent) {
         logger.info("Plus button clicked")
-        executeCommand(commandId,e.project)
+        executeCommand(commandId, e.project)
     }
 }
 
@@ -57,25 +57,6 @@ class PromptsButtonClickAction : AnAction() {
      */
     override fun actionPerformed(e: AnActionEvent) {
         logger.info("Prompts button clicked")
-        executeCommand(commandId, e.project)
-    }
-}
-
-/**
- * Action that handles clicks on the MCP button in the UI.
- * Executes the corresponding VSCode command when triggered.
- */
-class MCPButtonClickAction : AnAction() {
-    private val logger: Logger = Logger.getInstance(MCPButtonClickAction::class.java)
-    private val commandId: String = "kilo-code.mcpButtonClicked"
-
-    /**
-     * Performs the action when the MCP button is clicked.
-     *
-     * @param e The action event containing context information
-     */
-    override fun actionPerformed(e: AnActionEvent) {
-        logger.info("MCP button clicked")
         executeCommand(commandId, e.project)
     }
 }
@@ -102,6 +83,7 @@ class HistoryButtonClickAction : AnAction() {
 class ProfileButtonClickAction : AnAction() {
     private val logger: Logger = Logger.getInstance(ProfileButtonClickAction::class.java)
     private val commandId: String = "kilo-code.profileButtonClicked"
+
     /**
      * Performs the action when the Profile button is clicked.
      *

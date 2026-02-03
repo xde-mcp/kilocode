@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 import { ZodError } from "zod"
+import { EventEmitter } from "events"
 
 import {
 	PROVIDER_SETTINGS_KEYS,
@@ -15,10 +16,19 @@ import {
 	providerSettingsSchema,
 	globalSettingsSchema,
 	isSecretStateKey,
+	isProviderName,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
 import { logger } from "../../utils/logging"
+
+// kilocode_change start: Configuration change event types
+export interface ManagedIndexerConfig {
+	kilocodeToken: string | null
+	kilocodeOrganizationId: string | null
+	kilocodeTesterWarningsDisabledUntil: number | null
+}
+// kilocode_change end
 
 type GlobalStateKey = keyof GlobalState
 type SecretStateKey = keyof SecretState
@@ -40,6 +50,9 @@ export class ContextProxy {
 	private stateCache: GlobalState
 	private secretCache: SecretState
 	private _isInitialized = false
+	// kilocode_change start: Event emitter for configuration changes
+	private readonly configEmitter = new EventEmitter()
+	// kilocode_change end
 
 	constructor(context: vscode.ExtensionContext) {
 		this.originalContext = context
@@ -92,7 +105,31 @@ export class ContextProxy {
 		// Migration: Check for old nested image generation settings and migrate them
 		await this.migrateImageGenerationSettings()
 
+		// Migration: Sanitize invalid/removed API providers
+		await this.migrateInvalidApiProvider()
+
 		this._isInitialized = true
+	}
+
+	/**
+	 * Migrates invalid/removed apiProvider values by clearing them from storage.
+	 * This handles cases where a user had a provider selected that was later removed
+	 * from the extension (e.g., "glama").
+	 */
+	private async migrateInvalidApiProvider() {
+		try {
+			const apiProvider = this.stateCache.apiProvider
+			if (apiProvider !== undefined && !isProviderName(apiProvider)) {
+				logger.info(`[ContextProxy] Found invalid provider "${apiProvider}" in storage - clearing it`)
+				// Clear the invalid provider from both cache and storage
+				this.stateCache.apiProvider = undefined
+				await this.originalContext.globalState.update("apiProvider", undefined)
+			}
+		} catch (error) {
+			logger.error(
+				`Error during invalid API provider migration: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
 	}
 
 	/**
@@ -283,18 +320,60 @@ export class ContextProxy {
 	public getProviderSettings(): ProviderSettings {
 		const values = this.getValues()
 
+		// Sanitize invalid/removed apiProvider values before parsing
+		// This handles cases where a user had a provider selected that was later removed
+		// from the extension (e.g., "glama"). We sanitize here to avoid repeated
+		// schema validation errors that can cause infinite loops in telemetry.
+		const sanitizedValues = this.sanitizeProviderValues(values)
+
 		try {
-			return providerSettingsSchema.parse(values)
+			return providerSettingsSchema.parse(sanitizedValues)
 		} catch (error) {
 			if (error instanceof ZodError) {
 				TelemetryService.instance.captureSchemaValidationError({ schemaName: "ProviderSettings", error })
 			}
 
-			return PROVIDER_SETTINGS_KEYS.reduce((acc, key) => ({ ...acc, [key]: values[key] }), {} as ProviderSettings)
+			return PROVIDER_SETTINGS_KEYS.reduce(
+				(acc, key) => ({ ...acc, [key]: sanitizedValues[key] }),
+				{} as ProviderSettings,
+			)
 		}
 	}
 
+	/**
+	 * Sanitizes provider values by resetting invalid/removed apiProvider values.
+	 * This prevents schema validation errors for removed providers.
+	 */
+	private sanitizeProviderValues(values: RooCodeSettings): RooCodeSettings {
+		// Remove legacy Claude Code CLI wrapper keys that may still exist in global state.
+		// These keys were used by a removed local CLI runner and are no longer part of ProviderSettings.
+		const legacyKeys = ["claudeCodePath", "claudeCodeMaxOutputTokens"] as const
+
+		let sanitizedValues = values
+		for (const key of legacyKeys) {
+			if (key in sanitizedValues) {
+				const copy = { ...sanitizedValues } as Record<string, unknown>
+				delete copy[key as string]
+				sanitizedValues = copy as RooCodeSettings
+			}
+		}
+
+		if (values.apiProvider !== undefined && !isProviderName(values.apiProvider)) {
+			logger.info(`[ContextProxy] Sanitizing invalid provider "${values.apiProvider}" - resetting to undefined`)
+			// Return a new values object without the invalid apiProvider
+			const { apiProvider, ...restValues } = sanitizedValues
+			return restValues as RooCodeSettings
+		}
+		return sanitizedValues
+	}
+
 	public async setProviderSettings(values: ProviderSettings) {
+		// kilocode_change start: Capture old values for change detection
+		const oldToken = this.secretCache.kilocodeToken
+		const oldOrgId = this.stateCache.kilocodeOrganizationId
+		const oldTesterWarnings = this.stateCache.kilocodeTesterWarningsDisabledUntil
+		// kilocode_change end
+
 		// Explicitly clear out any old API configuration values before that
 		// might not be present in the new configuration.
 		// If a value is not present in the new configuration, then it is assumed
@@ -316,6 +395,20 @@ export class ContextProxy {
 				.reduce((acc, key) => ({ ...acc, [key]: undefined }), {} as ProviderSettings),
 			...values,
 		})
+
+		// kilocode_change start: Emit event if managed indexer config changed
+		const newToken = this.secretCache.kilocodeToken
+		const newOrgId = this.stateCache.kilocodeOrganizationId
+		const newTesterWarnings = this.stateCache.kilocodeTesterWarningsDisabledUntil
+
+		if (oldToken !== newToken || oldOrgId !== newOrgId || oldTesterWarnings !== newTesterWarnings) {
+			this.configEmitter.emit("managed-indexer-config-changed", {
+				kilocodeToken: newToken ?? null,
+				kilocodeOrganizationId: newOrgId ?? null,
+				kilocodeTesterWarningsDisabledUntil: newTesterWarnings ?? null,
+			} as ManagedIndexerConfig)
+		}
+		// kilocode_change end
 	}
 
 	/**
@@ -386,6 +479,20 @@ export class ContextProxy {
 
 		await this.initialize()
 	}
+
+	// kilocode_change start: Public API for managed indexer configuration changes
+	/**
+	 * Subscribe to managed indexer configuration changes
+	 * @param listener Callback function that receives the new configuration
+	 * @returns Disposable to unsubscribe from the event
+	 */
+	public onManagedIndexerConfigChange(listener: (config: ManagedIndexerConfig) => void): vscode.Disposable {
+		this.configEmitter.on("managed-indexer-config-changed", listener)
+		return {
+			dispose: () => this.configEmitter.off("managed-indexer-config-changed", listener),
+		}
+	}
+	// kilocode_change end
 
 	private static _instance: ContextProxy | null = null
 

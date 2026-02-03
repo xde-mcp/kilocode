@@ -1,26 +1,29 @@
 import * as vscode from "vscode"
 import * as os from "os"
 
-import type {
-	ModeConfig,
-	PromptComponent,
-	CustomModePrompts,
-	TodoItem,
+import {
+	type ModeConfig,
+	type PromptComponent,
+	type CustomModePrompts,
+	type TodoItem,
+	getEffectiveProtocol,
+	isNativeProtocol,
 	Experiments, // kilocode_change
 } from "@roo-code/types"
 
-import type { SystemPromptSettings } from "./types"
+import { customToolRegistry, formatXml } from "@roo-code/core"
 
 import { Mode, modes, defaultModeSlug, getModeBySlug, getGroupName, getModeSelection } from "../../shared/modes"
 import { DiffStrategy } from "../../shared/tools"
 import { formatLanguage } from "../../shared/language"
 import { isEmpty } from "../../utils/object"
-
 import { McpHub } from "../../services/mcp/McpHub"
 import { CodeIndexManager } from "../../services/code-index/manager"
+import { SkillsManager } from "../../services/skills/SkillsManager"
 
 import { PromptVariables, loadSystemPromptFile } from "./sections/custom-system-prompt"
 
+import type { SystemPromptSettings } from "./types"
 import { getToolDescriptionsForMode } from "./tools"
 import {
 	getRulesSection,
@@ -33,6 +36,7 @@ import {
 	getModesSection,
 	addCustomInstructions,
 	markdownFormattingSection,
+	getSkillsSection,
 } from "./sections"
 import { type ClineProviderState } from "../webview/ClineProvider" // kilocode_change
 
@@ -69,6 +73,7 @@ async function generatePrompt(
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
+	skillsManager?: SkillsManager,
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> {
 	if (!context) {
@@ -87,51 +92,75 @@ async function generatePrompt(
 	const hasMcpServers = mcpHub && mcpHub.getServers().length > 0
 	const shouldIncludeMcp = hasMcpGroup && hasMcpServers
 
-	const [modesSection, mcpServersSection] = await Promise.all([
+	const codeIndexManager = CodeIndexManager.getInstance(context, cwd)
+
+	// Determine the effective protocol (defaults to 'xml')
+	const effectiveProtocol = getEffectiveProtocol(settings?.toolProtocol)
+
+	const [modesSection, mcpServersSection, skillsSection] = await Promise.all([
 		getModesSection(context),
 		shouldIncludeMcp
-			? getMcpServersSection(mcpHub, effectiveDiffStrategy, enableMcpServerCreation)
+			? getMcpServersSection(
+					mcpHub,
+					effectiveDiffStrategy,
+					enableMcpServerCreation,
+					!isNativeProtocol(effectiveProtocol),
+				)
 			: Promise.resolve(""),
+		getSkillsSection(skillsManager, mode as string),
 	])
 
-	const codeIndexManager = CodeIndexManager.getInstance(context, cwd)
+	// Build tools catalog section only for XML protocol
+	const builtInToolsCatalog = isNativeProtocol(effectiveProtocol)
+		? ""
+		: `\n\n${getToolDescriptionsForMode(
+				mode,
+				cwd,
+				supportsComputerUse,
+				codeIndexManager,
+				effectiveDiffStrategy,
+				browserViewportSize,
+				shouldIncludeMcp ? mcpHub : undefined,
+				customModeConfigs,
+				experiments,
+				partialReadsEnabled,
+				settings,
+				enableMcpServerCreation,
+				modelId,
+				clineProviderState, // kilocode_change
+			)}`
+
+	let customToolsSection = ""
+
+	if (experiments?.customTools && !isNativeProtocol(effectiveProtocol)) {
+		const customTools = customToolRegistry.getAllSerialized()
+
+		if (customTools.length > 0) {
+			customToolsSection = `\n\n${formatXml(customTools)}`
+		}
+	}
+
+	const toolsCatalog = builtInToolsCatalog + customToolsSection
 
 	const basePrompt = `${roleDefinition}
 
 ${markdownFormattingSection()}
 
-${getSharedToolUseSection()}
+${getSharedToolUseSection(effectiveProtocol, experiments)}${toolsCatalog}
 
-${getToolDescriptionsForMode(
-	mode,
-	cwd,
-	supportsComputerUse,
-	codeIndexManager,
-	effectiveDiffStrategy,
-	browserViewportSize,
-	shouldIncludeMcp ? mcpHub : undefined,
-	customModeConfigs,
-	experiments,
-	partialReadsEnabled,
-	settings,
-	enableMcpServerCreation,
-	modelId,
-	clineProviderState, // kilocode_change
-)}
-
-${getToolUseGuidelinesSection(codeIndexManager)}
+${getToolUseGuidelinesSection(effectiveProtocol, experiments)}
 
 ${mcpServersSection}
 
-${getCapabilitiesSection(cwd, supportsComputerUse, shouldIncludeMcp ? mcpHub : undefined, effectiveDiffStrategy, codeIndexManager, clineProviderState /* kilocode_change */)}
+${getCapabilitiesSection(cwd, shouldIncludeMcp ? mcpHub : undefined)}
 
 ${modesSection}
-
-${getRulesSection(cwd, supportsComputerUse, effectiveDiffStrategy, codeIndexManager, clineProviderState /* kilocode_change */)}
+${skillsSection ? `\n${skillsSection}` : ""}
+${getRulesSection(cwd, settings, clineProviderState /* kilocode_change */)}
 
 ${getSystemInfoSection(cwd)}
 
-${getObjectiveSection(codeIndexManager, experiments)}
+${getObjectiveSection()}
 
 ${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", cwd, mode, {
 	language: language ?? formatLanguage(vscode.env.language),
@@ -140,6 +169,13 @@ ${await addCustomInstructions(baseInstructions, globalCustomInstructions || "", 
 	globalRulesToggleState: context.globalState.get("globalRulesToggles"), // kilocode_change
 	settings,
 })}`
+
+	// kilocode_change start: Append custom system prompt from CLI if provided
+	const appendSystemPrompt = clineProviderState?.appendSystemPrompt
+	if (appendSystemPrompt) {
+		return `${basePrompt}\n\n${appendSystemPrompt}`
+	}
+	// kilocode_change end
 
 	return basePrompt
 }
@@ -164,6 +200,7 @@ export const SYSTEM_PROMPT = async (
 	settings?: SystemPromptSettings,
 	todoList?: TodoItem[],
 	modelId?: string,
+	skillsManager?: SkillsManager,
 	clineProviderState?: ClineProviderState, // kilocode_change
 ): Promise<string> => {
 	if (!context) {
@@ -240,6 +277,7 @@ ${customInstructions}`
 		settings,
 		todoList,
 		modelId,
+		skillsManager,
 		clineProviderState, // kilocode_change
 	)
 }

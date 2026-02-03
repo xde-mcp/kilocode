@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 type MoonshotProps = {
 	apiConfiguration: ProviderSettings
 	setApiConfigurationField: (field: keyof ProviderSettings, value: ProviderSettings[keyof ProviderSettings]) => void
+	simplifySettings?: boolean
 }
 
 export const Moonshot = ({ apiConfiguration, setApiConfigurationField }: MoonshotProps) => {
@@ -41,6 +42,9 @@ export const Moonshot = ({ apiConfiguration, setApiConfigurationField }: Moonsho
 					</VSCodeOption>
 					<VSCodeOption value="https://api.moonshot.cn/v1" className="p-2">
 						api.moonshot.cn
+					</VSCodeOption>
+					<VSCodeOption value="https://api.kimi.com/coding/v1" className="p-2">
+						api.kimi.com/coding/v1
 					</VSCodeOption>
 				</VSCodeDropdown>
 			</div>

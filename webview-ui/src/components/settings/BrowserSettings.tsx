@@ -1,13 +1,22 @@
-import { VSCodeButton, VSCodeCheckbox, VSCodeTextField, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
-import { SquareMousePointer } from "lucide-react"
+import { VSCodeCheckbox, VSCodeTextField, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 import { HTMLAttributes, useEffect, useMemo, useState } from "react"
 import { Trans } from "react-i18next"
 
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue, Slider } from "@/components/ui"
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Slider,
+	Button,
+} from "@/components/ui"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import { vscode } from "@/utils/vscode"
 import { buildDocLink } from "@src/utils/docLinks"
 
+import { SearchableSetting } from "./SearchableSetting"
 import { Section } from "./Section"
 import { SectionHeader } from "./SectionHeader"
 import { SetCachedStateField } from "./types"
@@ -99,15 +108,13 @@ export const BrowserSettings = ({
 
 	return (
 		<div {...props}>
-			<SectionHeader>
-				<div className="flex items-center gap-2">
-					<SquareMousePointer className="w-4" />
-					<div>{t("settings:sections.browser")}</div>
-				</div>
-			</SectionHeader>
+			<SectionHeader>{t("settings:sections.browser")}</SectionHeader>
 
 			<Section>
-				<div>
+				<SearchableSetting
+					settingId="browser-enable"
+					section="browser"
+					label={t("settings:browser.enable.label")}>
 					<VSCodeCheckbox
 						checked={browserToolEnabled}
 						onChange={(e: any) => setCachedStateField("browserToolEnabled", e.target.checked)}>
@@ -122,11 +129,14 @@ export const BrowserSettings = ({
 							</VSCodeLink>
 						</Trans>
 					</div>
-				</div>
+				</SearchableSetting>
 
 				{browserToolEnabled && (
 					<div className="flex flex-col gap-3 pl-3 border-l-2 border-vscode-button-background">
-						<div>
+						<SearchableSetting
+							settingId="browser-viewport"
+							section="browser"
+							label={t("settings:browser.viewport.label")}>
 							<label className="block font-medium mb-1">{t("settings:browser.viewport.label")}</label>
 							<Select
 								value={browserViewportSize}
@@ -147,9 +157,12 @@ export const BrowserSettings = ({
 							<div className="text-vscode-descriptionForeground text-sm mt-1">
 								{t("settings:browser.viewport.description")}
 							</div>
-						</div>
+						</SearchableSetting>
 
-						<div>
+						<SearchableSetting
+							settingId="browser-screenshot-quality"
+							section="browser"
+							label={t("settings:browser.screenshotQuality.label")}>
 							<label className="block font-medium mb-1">
 								{t("settings:browser.screenshotQuality.label")}
 							</label>
@@ -166,9 +179,12 @@ export const BrowserSettings = ({
 							<div className="text-vscode-descriptionForeground text-sm mt-1">
 								{t("settings:browser.screenshotQuality.description")}
 							</div>
-						</div>
+						</SearchableSetting>
 
-						<div>
+						<SearchableSetting
+							settingId="browser-remote"
+							section="browser"
+							label={t("settings:browser.remote.label")}>
 							<VSCodeCheckbox
 								checked={remoteBrowserEnabled}
 								onChange={(e: any) => {
@@ -185,7 +201,7 @@ export const BrowserSettings = ({
 							<div className="text-vscode-descriptionForeground text-sm mt-1">
 								{t("settings:browser.remote.description")}
 							</div>
-						</div>
+						</SearchableSetting>
 
 						{remoteBrowserEnabled && (
 							<>
@@ -198,11 +214,11 @@ export const BrowserSettings = ({
 										placeholder={t("settings:browser.remote.urlPlaceholder")}
 										style={{ flexGrow: 1 }}
 									/>
-									<VSCodeButton disabled={testingConnection} onClick={testConnection}>
+									<Button disabled={testingConnection} onClick={testConnection}>
 										{testingConnection || discovering
 											? t("settings:browser.remote.testingButton")
 											: t("settings:browser.remote.testButton")}
-									</VSCodeButton>
+									</Button>
 								</div>
 								{testResult && (
 									<div

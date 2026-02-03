@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { generateImageTool } from "../generateImageTool"
+import { generateImageTool } from "../GenerateImageTool"
 import { ToolUse } from "../../../shared/tools"
 import { Task } from "../../task/Task"
 import * as fs from "fs/promises"
@@ -14,7 +14,14 @@ vi.mock("fs/promises")
 vi.mock("../../../utils/pathUtils")
 vi.mock("../../../utils/fs")
 vi.mock("../../../utils/safeWriteJson")
-vi.mock("../../../api/providers/openrouter")
+// IMPORTANT: Provide a manual mock so other modules (e.g. `kilocode-openrouter.ts`) can
+// safely `extends OpenRouterHandler` during module evaluation.
+vi.mock("../../../api/providers/openrouter", () => {
+	const OpenRouterHandler = vi.fn()
+	return {
+		OpenRouterHandler,
+	}
+})
 
 describe("generateImageTool", () => {
 	let mockCline: any
@@ -47,7 +54,7 @@ describe("generateImageTool", () => {
 							[EXPERIMENT_IDS.IMAGE_GENERATION]: true,
 						},
 						openRouterImageApiKey: "test-api-key",
-						openRouterImageGenerationSelectedModel: "google/gemini-2.5-flash-image-preview",
+						openRouterImageGenerationSelectedModel: "google/gemini-2.5-flash-image",
 					}),
 				}),
 			},
@@ -82,14 +89,13 @@ describe("generateImageTool", () => {
 				partial: true,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				partialBlock,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, partialBlock as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			// Should not process anything when partial
 			expect(mockAskApproval).not.toHaveBeenCalled()
@@ -109,14 +115,13 @@ describe("generateImageTool", () => {
 				partial: true,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				partialBlock,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, partialBlock as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			// Should not process anything when partial
 			expect(mockAskApproval).not.toHaveBeenCalled()
@@ -149,14 +154,13 @@ describe("generateImageTool", () => {
 					}) as any,
 			)
 
-			await generateImageTool(
-				mockCline as Task,
-				completeBlock,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, completeBlock as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			// Should process the complete block
 			expect(mockAskApproval).toHaveBeenCalled()
@@ -192,14 +196,13 @@ describe("generateImageTool", () => {
 					}) as any,
 			)
 
-			await generateImageTool(
-				mockCline as Task,
-				completeBlock,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, completeBlock as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			// Check that cline.say was called with image data containing cache-busting parameter
 			expect(mockCline.say).toHaveBeenCalledWith("image", expect.stringMatching(/"imageUri":"[^"]+\?t=\d+"/))
@@ -230,14 +233,13 @@ describe("generateImageTool", () => {
 				partial: false,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				block,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, block as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockCline.consecutiveMistakeCount).toBe(1)
 			expect(mockCline.recordToolError).toHaveBeenCalledWith("generate_image")
@@ -255,14 +257,13 @@ describe("generateImageTool", () => {
 				partial: false,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				block,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, block as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockCline.consecutiveMistakeCount).toBe(1)
 			expect(mockCline.recordToolError).toHaveBeenCalledWith("generate_image")
@@ -290,14 +291,13 @@ describe("generateImageTool", () => {
 				partial: false,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				block,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, block as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockPushToolResult).toHaveBeenCalledWith(
 				formatResponse.toolError(
@@ -322,14 +322,13 @@ describe("generateImageTool", () => {
 				partial: false,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				block,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, block as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("Input image not found"))
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Input image not found"))
@@ -347,14 +346,13 @@ describe("generateImageTool", () => {
 				partial: false,
 			}
 
-			await generateImageTool(
-				mockCline as Task,
-				block,
-				mockAskApproval,
-				mockHandleError,
-				mockPushToolResult,
-				mockRemoveClosingTag,
-			)
+			await generateImageTool.handle(mockCline as Task, block as ToolUse<"generate_image">, {
+				askApproval: mockAskApproval,
+				handleError: mockHandleError,
+				pushToolResult: mockPushToolResult,
+				removeClosingTag: mockRemoveClosingTag,
+				toolProtocol: "xml",
+			})
 
 			expect(mockCline.say).toHaveBeenCalledWith("error", expect.stringContaining("Unsupported image format"))
 			expect(mockPushToolResult).toHaveBeenCalledWith(expect.stringContaining("Unsupported image format"))

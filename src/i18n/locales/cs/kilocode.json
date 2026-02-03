@@ -15,6 +15,7 @@
 		"noAssistantMessages": "Odpověď modelu neočekávaně skončila (žádné zprávy asistenta). Může to být známka omezení počtu požadavků.",
 		"notLoggedInError": "Požadavek nelze dokončit, ujisti se, že jsi připojen a přihlášen u vybraného poskytovatele.\n\n{{error}}",
 		"maxCompletionTokens": "Bylo dosaženo maximálního počtu completion tokenů.",
+		"contentFilter": "Požadavek byl zablokován filtrem obsahu.",
 		"disableApplyDiff": "Pokud se tato chyba opakuje, zakažte prosím Úpravy pomocí rozdílů v pokročilém nastavení.",
 		"disableEditFile": "Pokud se tato chyba opakuje, zakažte prosím experimentální funkci Rychlé použití."
 	},
@@ -60,7 +61,41 @@
 		"generationFailed": "Kilo: Nepodařilo se vygenerovat zprávu commitu: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: Generování zprávy s použitím nenapojených změn",
 		"activationFailed": "Kilo: Aktivace generátoru zpráv se nezdařila: {{error}}",
-		"providerRegistered": "Kilo: Poskytovatel zpráv commitů zaregistrován"
+		"providerRegistered": "Kilo: Poskytovatel zpráv commitů zaregistrován",
+		"errors": {
+			"noProject": "Žádný projekt k dispozici",
+			"connectionFailed": "Nepodařilo se připojit k rozšíření Kilo Code",
+			"timeout": "Časový limit požadavku vypršel po 30 sekundách",
+			"invalidResponse": "Neplatný formát odpovědi obdržen od rozšíření",
+			"missingMessage": "Z rozšíření nebyla přijata žádná zpráva o commitu",
+			"noChanges": "Nenalezeny žádné změny k zapsání",
+			"noWorkspacePath": "Nebylo možné určit cestu pracovního prostoru pro Git repozitář",
+			"workspaceNotFound": "Nelze určit cestu k pracovnímu prostoru pro Git repozitář",
+			"processingError": "Chyba při zpracování generování zprávy o commitu: {{error}}"
+		},
+		"error": {
+			"title": "Chyba",
+			"workspacePathNotFound": "Nelze určit cestu pracovního prostoru pro Git repozitář",
+			"generationFailed": "Nepodařilo se vygenerovat zprávu o commitu: {{error}}",
+			"processingFailed": "Chyba při zpracování generování zprávy o commitu: {{error}}",
+			"unknown": "Neznámá chyba"
+		},
+		"dialogs": {
+			"info": "Zpráva commitu AI",
+			"success": "Úspěch",
+			"error": "Chyba",
+			"title": "Commit zpráva AI"
+		},
+		"progress": {
+			"title": "Generování Commit Message",
+			"connecting": "Připojování k Kilo Code...",
+			"analyzing": "Analyzuji změny...",
+			"generating": "Generuji zprávu commitu..."
+		},
+		"ui": {
+			"generateButton": "Vygenerovat zprávu pro commit",
+			"generateButtonTooltip": "Generuje zprávy pro commit pomocí umělé inteligence pro analýzu změn ve vašem kódu"
+		}
 	},
 	"seeNewChanges": {
 		"title": "Zobrazování nových změn",
@@ -68,18 +103,47 @@
 		"noChanges": "Nelze zobrazit nové změny, nebyly nalezeny žádné změny.",
 		"error": "Nelze zobrazit nové změny, došlo k chybě."
 	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "Tvoje verze Kilocode CLI je zastaralá a nepodporuje Agent Manager. Prosím aktualizuj na nejnovější verzi.",
+			"cliMisconfigured": "Kilocode CLI není nakonfigurováno. Spusť 'kilocode auth' pro přihlášení nebo 'kilocode config' pro konfiguraci.",
+			"sessionFailed": "Nepodařilo se spustit relaci agenta",
+			"sessionFailedWithMessage": "Nepodařilo se spustit relaci agenta: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "Instrukce k Aktualizaci",
+			"installInstructions": "Instrukce k Instalaci",
+			"getHelp": "Získat Pomoc",
+			"runInTerminal": "Spustit v Terminálu",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "Aktualizovat Globálně",
+			"updateLocal": "Aktualizovat Lokálně",
+			"installGlobal": "Instalovat Globálně",
+			"installLocal": "Instalovat Lokálně"
+		},
+		"terminal": {
+			"installMessage": "Spouštím npm install pro instalaci Kilocode CLI. Po dokončení můžeš tento terminál zavřít a zkusit Agent Manager spustit znovu.",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "pozastaveno",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete (zakázáno)",
-				"tokenError": "Pro použití Autocomplete musí být nastaven platný token",
-				"lastCompletion": "Poslední návrh:",
+				"noCredits": "**Na tvém účtu nejsou žádné kredity**\n\nTvůj účet Kilo Code nemá žádné kredity. Pro použití automatického doplňování prosím přidej kredity na svůj účet.\n\n[Otevřít Nastavení](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**Není nakonfigurován žádný model automatického doplňování**\n\nPro povolení automatického doplňování přidej profil s jedním z těchto podporovaných poskytovatelů: {{providers}}.\n\n[Otevřít Nastavení](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "Celkové náklady relace:",
-				"model": "Model:"
+				"provider": "Poskytovatel:",
+				"model": "Model:",
+				"profile": "Profil: ",
+				"defaultProfile": "Výchozí",
+				"completionSummary": "Provedeno {{count}} dokončení mezi {{startTime}} a {{endTime}}, s celkovými náklady {{cost}}.",
+				"providerInfo": "Automatické dokončování poskytuje {{model}} přes {{provider}}."
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -104,7 +168,6 @@
 			"cancelSuggestions": "Zrušit navrhované úpravy",
 			"applyCurrentSuggestion": "Použít aktuální navrhovanou úpravu",
 			"applyAllSuggestions": "Použít všechny navrhované úpravy",
-			"promptCodeSuggestion": "Rychlý úkol",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +198,15 @@
 			"cancelButton": "Zrušit"
 		},
 		"tipMessage": "Kilo: Stiskněte {{shortcut}} pro generování příkazů v terminálu"
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "Váš OpenAI API klíč je neplatný nebo nemá přístup k Realtime API. Zkontrolujte prosím svůj API klíč a zkuste to znovu.",
+			"unknown": "Připojení se nezdařilo. Zkontrolujte prosím svou konfiguraci a zkuste to znovu."
+		}
+	},
+	"configDiscovery": {
+		"added": "Kód kilo: Přidáno {{source}} {{configType}}: {{name}}{{modeStr}}",
+		"removed": "Kód Kilo: Odstraněno {{source}} {{configType}}: {{name}}{{modeStr}}"
 	}
 }

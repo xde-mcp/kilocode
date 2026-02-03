@@ -15,6 +15,7 @@
 		"noAssistantMessages": "モデルの応答が予期せず終了しました（アシスタントメッセージなし）。これは制限に達している兆候である可能性があります。",
 		"notLoggedInError": "リクエストを完了できません。選択したプロバイダーに接続してログインしていることを確認してください。\n\n{{error}}",
 		"maxCompletionTokens": "完了トークンの最大数に達しました。",
+		"contentFilter": "リクエストがコンテンツフィルターによってブロックされました。",
 		"disableApplyDiff": "このエラーが繰り返し発生する場合は、詳細設定で「差分による編集」を無効にしてください。",
 		"disableEditFile": "このエラーが繰り返し発生する場合は、実験的機能「高速適用」を無効にしてください。"
 	},
@@ -60,20 +61,59 @@
 		"generationFailed": "Kilo: コミットメッセージの生成に失敗しました: {{errorMessage}}",
 		"generatingFromUnstaged": "Kilo: ステージされていない変更を使用してメッセージを生成中",
 		"activationFailed": "Kilo: メッセージジェネレーターのアクティブ化に失敗しました: {{error}}",
-		"providerRegistered": "Kilo: コミットメッセージプロバイダーが登録されました"
+		"providerRegistered": "Kilo: コミットメッセージプロバイダーが登録されました",
+		"errors": {
+			"noProject": "利用可能なプロジェクトがありません",
+			"timeout": "リクエストが30秒後にタイムアウトしました",
+			"connectionFailed": "Kilo Code拡張機能への接続に失敗しました",
+			"invalidResponse": "拡張機能から無効な応答フォーマットを受信しました",
+			"missingMessage": "拡張機能からコミットメッセージを受信できませんでした",
+			"noChanges": "コミットする変更が見つかりません",
+			"noWorkspacePath": "Gitリポジトリのワークスペースパスを特定できませんでした",
+			"processingError": "コミットメッセージ生成の処理エラー: {{error}}",
+			"workspaceNotFound": "Gitリポジトリのワークスペースパスを特定できませんでした"
+		},
+		"error": {
+			"title": "エラー",
+			"workspacePathNotFound": "Gitリポジトリのワークスペースパスを特定できませんでした",
+			"generationFailed": "コミットメッセージの生成に失敗しました: {{error}}",
+			"processingFailed": "コミットメッセージ生成の処理エラー: {{error}}",
+			"unknown": "不明なエラー"
+		},
+		"dialogs": {
+			"info": "AIコミットメッセージ",
+			"error": "エラー",
+			"success": "成功",
+			"title": "AIコミットメッセージ"
+		},
+		"progress": {
+			"analyzing": "変更を分析中...",
+			"title": "コミットメッセージの生成中",
+			"connecting": "Kilo Codeに接続しています...",
+			"generating": "コミットメッセージを生成中..."
+		},
+		"ui": {
+			"generateButton": "コミットメッセージを生成する",
+			"generateButtonTooltip": "AIを使用してコード変更を分析し、コミットメッセージを生成します"
+		}
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(sparkle) Kilo Code Autocomplete",
-			"disabled": "$(circle-slash) Kilo Code Autocomplete",
-			"warning": "$(warning) Kilo Code Autocomplete",
+			"enabled": "$(kilo-logo) Autocomplete",
+			"snoozed": "一時停止中",
+			"warning": "$(warning) Autocomplete",
 			"tooltip": {
 				"basic": "Kilo Code Autocomplete",
 				"disabled": "Kilo Code Autocomplete（無効）",
-				"tokenError": "Autocompleteを使用するには有効なトークンを設定する必要があります",
-				"lastCompletion": "最後の提案:",
+				"noCredits": "**アカウントにクレジットがありません**\n\nKilo Code アカウントにクレジットがありません。オートコンプリートを使用するには、アカウントにクレジットを追加してください。\n\n[設定を開く](command:kilo-code.settingsButtonClicked)",
+				"noUsableProvider": "**オートコンプリートモデルが設定されていません**\n\nオートコンプリートを有効にするには、これらのサポートされているプロバイダーのいずれかでプロファイルを追加してください: {{providers}}。\n\n[設定を開く](command:kilo-code.settingsButtonClicked)",
 				"sessionTotal": "セッション合計コスト:",
-				"model": "モデル:"
+				"provider": "プロバイダー:",
+				"model": "モデル:",
+				"profile": "プロファイル: ",
+				"defaultProfile": "デフォルト",
+				"completionSummary": "{{startTime}}から{{endTime}}の間に{{count}}回の補完を実行し、合計コストは{{cost}}です。",
+				"providerInfo": "オートコンプリートは{{provider}}経由で{{model}}によって提供されています。"
 			},
 			"cost": {
 				"zero": "$0.00",
@@ -98,7 +138,6 @@
 			"cancelSuggestions": "編集提案をキャンセル",
 			"applyCurrentSuggestion": "現在の編集提案を適用",
 			"applyAllSuggestions": "すべての編集提案を適用",
-			"promptCodeSuggestion": "クイックタスク",
 			"category": "Kilo Code"
 		},
 		"codeAction": {
@@ -135,5 +174,39 @@
 		"checkpointsUnavailable": "新しい変更を表示できません。チェックポイントが利用できません。",
 		"noChanges": "新しい変更を表示できません。変更が見つかりませんでした。",
 		"error": "新しい変更を表示できません。エラーが発生しました。"
+	},
+	"agentManager": {
+		"errors": {
+			"cliOutdated": "Kilocode CLIのバージョンが古く、Agent Managerをサポートしていません。最新バージョンに更新してください。",
+			"cliMisconfigured": "Kilocode CLIが設定されていません。'kilocode auth'でサインインするか、'kilocode config'で設定してください。",
+			"sessionFailed": "エージェントセッションの開始に失敗しました",
+			"sessionFailedWithMessage": "エージェントセッションの開始に失敗しました: {{message}}"
+		},
+		"actions": {
+			"updateInstructions": "更新手順",
+			"installInstructions": "インストール手順",
+			"getHelp": "ヘルプを表示",
+			"runInTerminal": "ターミナルで実行",
+			"loginCli": "Run kilocode auth",
+			"configureCli": "Run kilocode config",
+			"updateGlobal": "グローバル更新",
+			"updateLocal": "ローカル更新",
+			"installGlobal": "グローバルインストール",
+			"installLocal": "ローカルインストール"
+		},
+		"terminal": {
+			"installMessage": "Kilocode CLIをインストールするためにnpm installを実行しています。完了したら、このターミナルを閉じてAgent Managerを再度起動してみてください。",
+			"authReminder": "If this is your first install, run `kilocode auth` to sign in before starting the Agent Manager."
+		}
+	},
+	"speechToText": {
+		"errors": {
+			"invalidApiKey": "OpenAI APIキーが無効であるか、Realtime APIへのアクセス権限がありません。APIキーを確認して再度お試しください。",
+			"unknown": "接続に失敗しました。設定を確認してもう一度お試しください。"
+		}
+	},
+	"configDiscovery": {
+		"added": "Kiloコード: {{source}} {{configType}}: {{name}}{{modeStr}} を追加しました。",
+		"removed": "Kiloコード: {{source}} {{configType}}: {{name}}{{modeStr}} を削除しました"
 	}
 }

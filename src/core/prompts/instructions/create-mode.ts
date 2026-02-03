@@ -1,11 +1,12 @@
 import * as path from "path"
 import * as vscode from "vscode"
 import { GlobalFileNames } from "../../../shared/globalFileNames"
+import { getSettingsDirectoryPath } from "../../../utils/storage"
 
 export async function createModeInstructions(context: vscode.ExtensionContext | undefined): Promise<string> {
 	if (!context) throw new Error("Missing VSCode Extension Context")
 
-	const settingsDir = path.join(context.globalStorageUri.fsPath, "settings")
+	const settingsDir = await getSettingsDirectoryPath(context.globalStorageUri.fsPath)
 	const customModesPath = path.join(settingsDir, GlobalFileNames.customModes)
 
 	return `
@@ -48,7 +49,7 @@ customModes:
       or ensuring responsive web interfaces. This mode is especially effective with CSS,
       HTML, and modern frontend frameworks.  # Optional but recommended
     groups:  # Required: array of tool groups (can be empty)
-      - read     # Read files group (read_file, fetch_instructions, search_files, list_files, list_code_definition_names)
+      - read     # Read files group (read_file, fetch_instructions, search_files, list_files)
       - edit     # Edit files group (apply_diff, write_to_file) - allows editing any file
       # Or with file restrictions:
       # - - edit

@@ -13,11 +13,12 @@ type CheckpointSavedProps = {
 	checkpoint?: Record<string, unknown>
 }
 
-export const CheckpointSaved = ({ checkpoint, ...props }: CheckpointSavedProps) => {
+export const CheckpointSaved = ({ checkpoint, currentHash, ...props }: CheckpointSavedProps) => {
 	const { t } = useTranslation()
-	const isCurrent = props.currentHash === props.commitHash
+	const isCurrent = currentHash === props.commitHash
 	const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 	const [isClosing, setIsClosing] = useState(false)
+	const [isHovering, setIsHovering] = useState(false)
 	const closeTimer = useRef<number | null>(null)
 
 	useEffect(() => {
@@ -46,7 +47,16 @@ export const CheckpointSaved = ({ checkpoint, ...props }: CheckpointSavedProps) 
 		}
 	}
 
-	const menuVisible = isPopoverOpen || isClosing
+	const handleMouseEnter = () => {
+		setIsHovering(true)
+	}
+
+	const handleMouseLeave = () => {
+		setIsHovering(false)
+	}
+
+	// Menu is visible when hovering, popover is open, or briefly after popover closes
+	const menuVisible = isHovering || isPopoverOpen || isClosing
 
 	const metadata = useMemo(() => {
 		if (!checkpoint) {
@@ -75,7 +85,10 @@ export const CheckpointSaved = ({ checkpoint, ...props }: CheckpointSavedProps) 
 	}
 
 	return (
-		<div className="group flex items-center justify-between gap-2 pt-2 pb-3 ">
+		<div
+			className="flex items-center justify-between gap-2 pt-2 pb-3"
+			onMouseEnter={handleMouseEnter}
+			onMouseLeave={handleMouseLeave}>
 			<div className="flex items-center gap-2 text-blue-400 whitespace-nowrap">
 				<GitCommitVertical className="w-4" />
 				<span className="font-semibold">{t("chat:checkpoint.regular")}</span>
@@ -88,14 +101,12 @@ export const CheckpointSaved = ({ checkpoint, ...props }: CheckpointSavedProps) 
 						"linear-gradient(90deg, rgba(0, 188, 255, .65), rgba(0, 188, 255, .65) 80%, rgba(0, 188, 255, 0) 99%)",
 				}}></span>
 
-			{/* Keep menu visible while popover is open or briefly after close to prevent jump */}
-			<div
-				data-testid="checkpoint-menu-container"
-				className={cn("h-4 -mt-2", menuVisible ? "block" : "hidden group-hover:block")}>
+			{/* Keep menu visible while hovering, popover is open, or briefly after close to prevent jump */}
+			<div data-testid="checkpoint-menu-container" className={cn("h-4 -mt-2", menuVisible ? "block" : "hidden")}>
 				<CheckpointMenu
-					{...props}
+					ts={props.ts}
+					commitHash={props.commitHash}
 					checkpoint={metadata}
-					open={isPopoverOpen}
 					onOpenChange={handlePopoverOpenChange}
 				/>
 			</div>

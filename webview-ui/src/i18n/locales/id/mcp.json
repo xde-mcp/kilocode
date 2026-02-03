@@ -26,12 +26,13 @@
 	"tabs": {
 		"tools": "Tools",
 		"resources": "Resources",
-		"errors": "Error"
+		"logs": "Log",
+		"authDebug": "Debug Auth"
 	},
 	"emptyState": {
 		"noTools": "Tidak ada tools ditemukan",
 		"noResources": "Tidak ada resources ditemukan",
-		"noErrors": "Tidak ada error ditemukan"
+		"noLogs": "Belum ada log"
 	},
 	"networkTimeout": {
 		"label": "Network Timeout",
@@ -55,11 +56,27 @@
 	},
 	"serverStatus": {
 		"retrying": "Mencoba lagi...",
-		"retryConnection": "Coba Koneksi Lagi"
+		"retryConnection": "Coba Koneksi Lagi",
+		"signIn": "Masuk",
+		"signingIn": "Sedang Masuk..."
 	},
 	"execution": {
 		"running": "Berjalan",
 		"completed": "Selesai",
 		"error": "Error"
+	},
+	"authDebug": {
+		"title": "Informasi Debug OAuth",
+		"status": "Status",
+		"tokenExpires": "Token Kedaluwarsa",
+		"scopes": "Scopes",
+		"refreshInfo": "Info Refresh Token",
+		"hasRefreshToken": "Punya Refresh Token",
+		"canRefresh": "Bisa Auto-Refresh",
+		"tokenIssuedAt": "Token Diterbitkan Pada",
+		"nextRefreshAt": "Refresh Berikutnya Pada",
+		"lastRefreshAt": "Refresh Terakhir Pada",
+		"tokenEndpoint": "Token Endpoint",
+		"clientId": "Client ID"
 	}
 }

@@ -1,12 +1,10 @@
-// SPDX-FileCopyrightText: 2025 Weibo, Inc.
-//
-// SPDX-License-Identifier: Apache-2.0
-
 package ai.kilocode.jetbrains.actors
 
+import ai.kilocode.jetbrains.core.ExtensionIdentifier
+import ai.kilocode.jetbrains.inline.InlineCompletionManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
-import ai.kilocode.jetbrains.core.ExtensionIdentifier
+import com.intellij.openapi.project.Project
 
 /**
  * Language features related interface.
@@ -145,7 +143,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         metadata: Map<String, Any?>,
         displayName: String,
         extensionID: String,
-        supportsResolve: Boolean
+        supportsResolve: Boolean,
     )
 
     /**
@@ -157,7 +155,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
     fun registerPasteEditProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>
+        metadata: Map<String, Any?>,
     )
 
     /**
@@ -171,7 +169,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        displayName: String
+        displayName: String,
     )
 
     /**
@@ -187,7 +185,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
         displayName: String,
-        supportRanges: Boolean
+        supportRanges: Boolean,
     )
 
     /**
@@ -201,7 +199,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         handle: Int,
         selector: List<Map<String, Any?>>,
         autoFormatTriggerCharacters: List<String>,
-        extensionId: ExtensionIdentifier
+        extensionId: ExtensionIdentifier,
     )
 
     /**
@@ -237,7 +235,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         handle: Int,
         selector: List<Map<String, Any?>>,
         legend: Map<String, Any?>,
-        eventHandle: Int?
+        eventHandle: Int?,
     )
 
     /**
@@ -255,7 +253,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
     fun registerDocumentRangeSemanticTokensProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        legend: Map<String, Any?>
+        legend: Map<String, Any?>,
     )
 
     /**
@@ -271,7 +269,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         selector: List<Map<String, Any?>>,
         triggerCharacters: List<String>,
         supportsResolveDetails: Boolean,
-        extensionId: ExtensionIdentifier
+        extensionId: ExtensionIdentifier,
     )
 
     /**
@@ -291,7 +289,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         extensionId: String,
         yieldsToExtensionIds: List<String>,
         displayName: String?,
-        debounceDelayMs: Int?
+        debounceDelayMs: Int?,
     )
 
     /**
@@ -305,7 +303,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        displayName: String
+        displayName: String,
     )
 
     /**
@@ -317,7 +315,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
     fun registerSignatureHelpProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>
+        metadata: Map<String, Any?>,
     )
 
     /**
@@ -333,7 +331,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         selector: List<Map<String, Any?>>,
         supportsResolve: Boolean,
         eventHandle: Int?,
-        displayName: String?
+        displayName: String?,
     )
 
     /**
@@ -351,7 +349,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
     fun registerDocumentLinkProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        supportsResolve: Boolean
+        supportsResolve: Boolean,
     )
 
     /**
@@ -372,7 +370,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        eventHandle: Int?
+        eventHandle: Int?,
     )
 
     /**
@@ -412,7 +410,7 @@ interface MainThreadLanguageFeaturesShape : Disposable {
     fun registerDocumentOnDropEditProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>?
+        metadata: Map<String, Any?>?,
     )
 
     /**
@@ -448,11 +446,26 @@ interface MainThreadLanguageFeaturesShape : Disposable {
  * concrete implementations for all language feature registration methods.
  * It acts as a bridge between the extension host and the IDE's language services.
  */
-class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
+class MainThreadLanguageFeatures(private val project: Project) : MainThreadLanguageFeaturesShape {
     private val logger = Logger.getInstance(MainThreadLanguageFeatures::class.java)
+    
+    /**
+     * Manager for inline completion providers.
+     * Handles registration, unregistration, and lifecycle management.
+     */
+    private val inlineCompletionManager: InlineCompletionManager by lazy {
+        InlineCompletionManager(project)
+    }
 
     override fun unregister(handle: Int) {
         logger.info("Unregistering service: handle=$handle")
+        
+        // Try to unregister from inline completion manager
+        try {
+            inlineCompletionManager.unregisterProvider(handle)
+        } catch (e: Exception) {
+            logger.warn("Failed to unregister inline completion provider: handle=$handle", e)
+        }
     }
 
     override fun registerDocumentSymbolProvider(handle: Int, selector: List<Map<String, Any?>>, label: String) {
@@ -521,7 +534,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         metadata: Map<String, Any?>,
         displayName: String,
         extensionID: String,
-        supportsResolve: Boolean
+        supportsResolve: Boolean,
     ) {
         logger.info("Registering code action support: handle=$handle, selector=$selector, metadata=$metadata, displayName=$displayName, extensionID=$extensionID, supportsResolve=$supportsResolve")
     }
@@ -529,7 +542,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     override fun registerPasteEditProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>
+        metadata: Map<String, Any?>,
     ) {
         logger.info("Registering paste edit provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
@@ -538,7 +551,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        displayName: String
+        displayName: String,
     ) {
         logger.info("Registering document formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
     }
@@ -548,7 +561,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
         displayName: String,
-        supportRanges: Boolean
+        supportRanges: Boolean,
     ) {
         logger.info("Registering range formatting support: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName, supportRanges=$supportRanges")
     }
@@ -557,7 +570,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         handle: Int,
         selector: List<Map<String, Any?>>,
         autoFormatTriggerCharacters: List<String>,
-        extensionId: ExtensionIdentifier
+        extensionId: ExtensionIdentifier,
     ) {
         logger.info("Registering on-type formatting support: handle=$handle, selector=$selector, autoFormatTriggerCharacters=$autoFormatTriggerCharacters, extensionId=${extensionId.value}")
     }
@@ -578,7 +591,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         handle: Int,
         selector: List<Map<String, Any?>>,
         legend: Map<String, Any?>,
-        eventHandle: Int?
+        eventHandle: Int?,
     ) {
         logger.info("Registering document semantic tokens provider: handle=$handle, selector=$selector, legend=$legend, eventHandle=$eventHandle")
     }
@@ -590,7 +603,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     override fun registerDocumentRangeSemanticTokensProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        legend: Map<String, Any?>
+        legend: Map<String, Any?>,
     ) {
         logger.info("Registering document range semantic tokens provider: handle=$handle, selector=$selector, legend=$legend")
     }
@@ -600,7 +613,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         triggerCharacters: List<String>,
         supportsResolveDetails: Boolean,
-        extensionId: ExtensionIdentifier
+        extensionId: ExtensionIdentifier,
     ) {
         logger.info("Registering completions provider: handle=$handle, selector=$selector, triggerCharacters=$triggerCharacters, supportsResolveDetails=$supportsResolveDetails, extensionId=${extensionId.value}")
     }
@@ -612,16 +625,31 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         extensionId: String,
         yieldsToExtensionIds: List<String>,
         displayName: String?,
-        debounceDelayMs: Int?
+        debounceDelayMs: Int?,
     ) {
-        logger.info("Registering inline completions support: handle=$handle, selector=$selector, supportsHandleDidShowCompletionItem=$supportsHandleDidShowCompletionItem, extensionId=$extensionId, yieldsToExtensionIds=$yieldsToExtensionIds, displayName=$displayName, debounceDelayMs=$debounceDelayMs")
+        logger.info("Registering inline completions support: handle=$handle, extensionId=$extensionId, displayName=$displayName")
+        
+        try {
+            inlineCompletionManager.registerProvider(
+                handle = handle,
+                selector = selector,
+                supportsHandleDidShowCompletionItem = supportsHandleDidShowCompletionItem,
+                extensionId = extensionId,
+                yieldsToExtensionIds = yieldsToExtensionIds,
+                displayName = displayName,
+                debounceDelayMs = debounceDelayMs
+            )
+            logger.info("Successfully registered inline completion provider: handle=$handle")
+        } catch (e: Exception) {
+            logger.error("Failed to register inline completion provider: handle=$handle", e)
+        }
     }
 
     override fun registerInlineEditProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        displayName: String
+        displayName: String,
     ) {
         logger.info("Registering inline edit provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, displayName=$displayName")
     }
@@ -629,7 +657,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     override fun registerSignatureHelpProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>
+        metadata: Map<String, Any?>,
     ) {
         logger.info("Registering signature help provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
@@ -639,7 +667,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         selector: List<Map<String, Any?>>,
         supportsResolve: Boolean,
         eventHandle: Int?,
-        displayName: String?
+        displayName: String?,
     ) {
         logger.info("Registering inlay hints provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve, eventHandle=$eventHandle, displayName=$displayName")
     }
@@ -651,7 +679,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     override fun registerDocumentLinkProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        supportsResolve: Boolean
+        supportsResolve: Boolean,
     ) {
         logger.info("Registering document link provider: handle=$handle, selector=$selector, supportsResolve=$supportsResolve")
     }
@@ -664,7 +692,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
         handle: Int,
         selector: List<Map<String, Any?>>,
         extensionId: ExtensionIdentifier,
-        eventHandle: Int?
+        eventHandle: Int?,
     ) {
         logger.info("Registering folding range provider: handle=$handle, selector=$selector, extensionId=${extensionId.value}, eventHandle=$eventHandle")
     }
@@ -688,7 +716,7 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
     override fun registerDocumentOnDropEditProvider(
         handle: Int,
         selector: List<Map<String, Any?>>,
-        metadata: Map<String, Any?>?
+        metadata: Map<String, Any?>?,
     ) {
         logger.info("Registering document on drop edit provider: handle=$handle, selector=$selector, metadata=$metadata")
     }
@@ -709,5 +737,12 @@ class MainThreadLanguageFeatures : MainThreadLanguageFeaturesShape {
 
     override fun dispose() {
         logger.info("Disposing MainThreadLanguageFeatures resources")
+        
+        // Dispose inline completion manager
+        try {
+            inlineCompletionManager.dispose()
+        } catch (e: Exception) {
+            logger.error("Error disposing inline completion manager", e)
+        }
     }
 }

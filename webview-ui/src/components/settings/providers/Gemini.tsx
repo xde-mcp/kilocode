@@ -2,20 +2,44 @@ import { useCallback, useState } from "react"
 import { Checkbox } from "vscrui"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 
-import type { ProviderSettings } from "@roo-code/types"
+import type {
+	OrganizationAllowList, // kilocode_change
+	ProviderSettings,
+} from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { VSCodeButtonLink } from "@src/components/common/VSCodeButtonLink"
 
 import { inputEventTransform } from "../transforms"
 
+// kilocode_change start
+import { geminiDefaultModelId } from "@roo-code/types"
+import type { RouterModels } from "@roo/api"
+import { ModelPicker } from "../ModelPicker"
+// kilocode_change end
+
 type GeminiProps = {
 	apiConfiguration: ProviderSettings
 	setApiConfigurationField: (field: keyof ProviderSettings, value: ProviderSettings[keyof ProviderSettings]) => void
 	fromWelcomeView?: boolean
+	// kilocode_change start
+	routerModels?: RouterModels
+	organizationAllowList?: OrganizationAllowList
+	modelValidationError?: string
+	// kilocode_change end
+	simplifySettings?: boolean
 }
 
-export const Gemini = ({ apiConfiguration, setApiConfigurationField, fromWelcomeView }: GeminiProps) => {
+export const Gemini = ({
+	apiConfiguration,
+	setApiConfigurationField,
+	simplifySettings,
+	// kilocode_change start
+	routerModels,
+	organizationAllowList,
+	modelValidationError,
+	// kilocode_change end
+}: GeminiProps) => {
 	const { t } = useAppTranslation()
 
 	const [googleGeminiBaseUrlSelected, setGoogleGeminiBaseUrlSelected] = useState(
@@ -32,6 +56,8 @@ export const Gemini = ({ apiConfiguration, setApiConfigurationField, fromWelcome
 			},
 		[setApiConfigurationField],
 	)
+
+	const allowList = organizationAllowList ?? { allowAll: true, providers: {} } // kilocode_change
 
 	return (
 		<>
@@ -74,7 +100,7 @@ export const Gemini = ({ apiConfiguration, setApiConfigurationField, fromWelcome
 					/>
 				)}
 
-				{!fromWelcomeView && (
+				{!simplifySettings && (
 					<>
 						<Checkbox
 							className="mt-6"
@@ -98,6 +124,19 @@ export const Gemini = ({ apiConfiguration, setApiConfigurationField, fromWelcome
 						</div>
 					</>
 				)}
+
+				{/* kilocode_change: ModelPicker added */}
+				<ModelPicker
+					apiConfiguration={apiConfiguration}
+					setApiConfigurationField={setApiConfigurationField}
+					defaultModelId={geminiDefaultModelId}
+					models={routerModels?.gemini ?? {}}
+					modelIdKey="apiModelId"
+					serviceName="Google Gemini"
+					serviceUrl="https://ai.google.dev/gemini-api/docs/models/gemini"
+					organizationAllowList={allowList}
+					errorMessage={modelValidationError}
+				/>
 			</div>
 		</>
 	)

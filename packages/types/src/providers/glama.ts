@@ -1,3 +1,4 @@
+// kilocode_change: kilo file
 import type { ModelInfo } from "../model.js"
 
 // https://glama.ai/models
@@ -7,7 +8,6 @@ export const glamaDefaultModelInfo: ModelInfo = {
 	maxTokens: 8192,
 	contextWindow: 200_000,
 	supportsImages: true,
-	supportsComputerUse: true,
 	supportsPromptCache: true,
 	inputPrice: 3.0,
 	outputPrice: 15.0,

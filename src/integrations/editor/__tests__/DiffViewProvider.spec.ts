@@ -187,7 +187,7 @@ describe("DiffViewProvider", () => {
 			// Setup
 			const mockEditor = {
 				document: {
-					uri: { fsPath: `${mockCwd}/test.md` },
+					uri: { fsPath: `${mockCwd}/test.md`, scheme: "file" },
 					getText: vi.fn().mockReturnValue(""),
 					lineCount: 0,
 				},
@@ -220,7 +220,7 @@ describe("DiffViewProvider", () => {
 			vi.mocked(vscode.workspace.onDidOpenTextDocument).mockImplementation((callback) => {
 				// Trigger the callback immediately with the document
 				setTimeout(() => {
-					callback({ uri: { fsPath: `${mockCwd}/test.md` } } as any)
+					callback({ uri: { fsPath: `${mockCwd}/test.md`, scheme: "file" } } as any)
 				}, 0)
 				return { dispose: vi.fn() }
 			})
@@ -358,10 +358,23 @@ describe("DiffViewProvider", () => {
 	})
 
 	describe("saveDirectly method", () => {
+		const originalCliMode = process.env.KILO_CLI_MODE
+
 		beforeEach(() => {
+			// Ensure tests run in non-CLI mode by default
+			delete process.env.KILO_CLI_MODE
 			// Mock vscode functions
 			vi.mocked(vscode.window.showTextDocument).mockResolvedValue({} as any)
 			vi.mocked(vscode.languages.getDiagnostics).mockReturnValue([])
+		})
+
+		afterEach(() => {
+			// Restore original environment
+			if (originalCliMode === undefined) {
+				delete process.env.KILO_CLI_MODE
+			} else {
+				process.env.KILO_CLI_MODE = originalCliMode
+			}
 		})
 
 		it("should write content directly to file without opening diff view", async () => {
@@ -515,6 +528,94 @@ describe("DiffViewProvider", () => {
 			// Verify custom delay was used
 			expect(mockDelay).toHaveBeenCalledWith(5000)
 			expect(vscode.languages.getDiagnostics).toHaveBeenCalled()
+		})
+	})
+
+	describe("CLI mode optimization", () => {
+		const originalEnv = process.env.KILO_CLI_MODE
+
+		afterEach(() => {
+			// Restore original environment
+			if (originalEnv === undefined) {
+				delete process.env.KILO_CLI_MODE
+			} else {
+				process.env.KILO_CLI_MODE = originalEnv
+			}
+		})
+
+		describe("saveDirectly in CLI mode", () => {
+			beforeEach(() => {
+				vi.mocked(vscode.window.showTextDocument).mockResolvedValue({} as any)
+				vi.mocked(vscode.languages.getDiagnostics).mockReturnValue([])
+			})
+
+			it("should skip diagnostic delay when KILO_CLI_MODE is true", async () => {
+				process.env.KILO_CLI_MODE = "true"
+				const mockDelay = vi.mocked(delay)
+				mockDelay.mockClear()
+				vi.mocked(vscode.languages.getDiagnostics).mockClear()
+
+				await diffViewProvider.saveDirectly("test.ts", "new content", true, true, 2000)
+
+				// In CLI mode, delay should NOT be called even when diagnosticsEnabled is true
+				expect(mockDelay).not.toHaveBeenCalled()
+				// getDiagnostics should only be called once for pre-diagnostics, not for post-diagnostics
+				expect(vscode.languages.getDiagnostics).toHaveBeenCalledTimes(1)
+			})
+
+			it("should apply diagnostic delay when KILO_CLI_MODE is not set", async () => {
+				delete process.env.KILO_CLI_MODE
+				const mockDelay = vi.mocked(delay)
+				mockDelay.mockClear()
+
+				await diffViewProvider.saveDirectly("test.ts", "new content", true, true, 2000)
+
+				// Without CLI mode, delay should be called
+				expect(mockDelay).toHaveBeenCalledWith(2000)
+			})
+
+			it("should skip document opening in CLI mode when openFile is false", async () => {
+				process.env.KILO_CLI_MODE = "true"
+				vi.mocked(vscode.workspace.openTextDocument).mockClear()
+
+				await diffViewProvider.saveDirectly("test.ts", "new content", false, true, 1000)
+
+				// In CLI mode with openFile=false, should not open document at all
+				expect(vscode.workspace.openTextDocument).not.toHaveBeenCalled()
+			})
+		})
+
+		describe("update in CLI mode", () => {
+			it("should avoid delete edit when finalizing in CLI mode", async () => {
+				process.env.KILO_CLI_MODE = "true"
+				mockWorkspaceEdit.delete.mockClear()
+				vi.mocked(vscode.workspace.applyEdit).mockClear()
+				;(diffViewProvider as any).originalContent = "old\ncontent\n"
+				await diffViewProvider.update("new\ncontent\n", true)
+
+				// In CLI mode, finalization should skip the delete edit path
+				expect(mockWorkspaceEdit.delete).not.toHaveBeenCalled()
+				expect(vscode.workspace.applyEdit).toHaveBeenCalledTimes(2)
+			})
+
+			it("should preserve CRLF line endings when finalizing in CLI mode", async () => {
+				process.env.KILO_CLI_MODE = "true"
+				mockWorkspaceEdit.delete.mockClear()
+				mockWorkspaceEdit.replace.mockClear()
+				vi.mocked(vscode.workspace.applyEdit).mockClear()
+
+				// Original content has CRLF line endings
+				;(diffViewProvider as any).originalContent = "old\r\ncontent\r\n"
+				// New content doesn't have trailing newline
+				await diffViewProvider.update("new\r\ncontent", true)
+
+				// In CLI mode, should preserve CRLF when adding trailing newline
+				expect(mockWorkspaceEdit.replace).toHaveBeenCalled()
+				const replaceCall = mockWorkspaceEdit.replace.mock.calls.find(
+					(call: [unknown, unknown, string]) => call[2] && call[2].endsWith("\r\n"),
+				)
+				expect(replaceCall).toBeDefined()
+			})
 		})
 	})
 })

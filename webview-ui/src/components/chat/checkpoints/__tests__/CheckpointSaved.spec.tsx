@@ -1,30 +1,37 @@
 // npx vitest run src/components/chat/checkpoints/__tests__/CheckpointSaved.spec.tsx
 
+// Capture onOpenChange from Popover to control open/close in tests
+let lastOnOpenChange: ((open: boolean) => void) | undefined
+
 vi.mock("@/components/ui", () => {
 	// Minimal UI primitives to ensure deterministic behavior in tests
 	return {
 		Button: ({ children, ...rest }: any) => <button {...rest}>{children}</button>,
 		StandardTooltip: ({ children }: any) => <>{children}</>,
-		Popover: ({ children, onOpenChange, open }: any) => {
-			lastOnOpenChange = onOpenChange
+		Popover: (props: any) => {
+			const { children, onOpenChange, open, ...rest } = props
+			if (rest["data-testid"] === "restore-popover") {
+				lastOnOpenChange = onOpenChange
+			}
 			return (
-				<div data-testid="popover-root" data-open={open}>
+				<div data-testid={rest["data-testid"]} data-open={open}>
 					{children}
 				</div>
 			)
 		},
 		PopoverTrigger: ({ children }: any) => <div data-testid="popover-trigger">{children}</div>,
-		PopoverContent: ({ children }: any) => <div data-testid="popover-content">{children}</div>,
+		PopoverContent: ({ children, className, ...rest }: any) => (
+			<div data-testid="popover-content" className={className} {...rest}>
+				{children}
+			</div>
+		),
 	}
 })
 
-import { render, waitFor, screen } from "@/utils/test-utils"
+import { render, waitFor, screen, fireEvent } from "@/utils/test-utils"
 import React from "react"
 import userEvent from "@testing-library/user-event"
 import { CheckpointSaved } from "../CheckpointSaved"
-
-// Capture onOpenChange from Popover to control open/close in tests
-let lastOnOpenChange: ((open: boolean) => void) | undefined
 
 const waitForOpenHandler = async () => {
 	await waitFor(() => {
@@ -47,7 +54,7 @@ describe("CheckpointSaved popover visibility", () => {
 
 		const getMenu = () => getByTestId("checkpoint-menu-container") as HTMLElement
 
-		// Initially hidden (relies on group-hover)
+		// Initially hidden (not hovering)
 		expect(getMenu()).toBeTruthy()
 		expect(getMenu().className).toContain("hidden")
 
@@ -73,7 +80,12 @@ describe("CheckpointSaved popover visibility", () => {
 	})
 
 	it("resets confirm state when popover closes", async () => {
-		const { getByTestId } = render(<CheckpointSaved {...baseProps} />)
+		const { getByTestId, container } = render(<CheckpointSaved {...baseProps} />)
+		const getParentDiv = () =>
+			container.querySelector("[class*='flex items-center justify-between']") as HTMLElement
+
+		// Hover to make menu visible
+		fireEvent.mouseEnter(getParentDiv())
 
 		// Open the popover
 		await waitForOpenHandler()
@@ -99,10 +111,12 @@ describe("CheckpointSaved popover visibility", () => {
 	})
 
 	it("closes popover after preview and after confirm restore", async () => {
-		const { getByTestId } = render(<CheckpointSaved {...baseProps} />)
+		const { getByTestId, container } = render(<CheckpointSaved {...baseProps} />)
 
-		const popoverRoot = () => getByTestId("popover-root")
+		const popoverRoot = () => getByTestId("restore-popover")
 		const menuContainer = () => getByTestId("checkpoint-menu-container")
+		const getParentDiv = () =>
+			container.querySelector("[class*='flex items-center justify-between']") as HTMLElement
 
 		// Open
 		await waitForOpenHandler()
@@ -118,11 +132,16 @@ describe("CheckpointSaved popover visibility", () => {
 			expect(popoverRoot().getAttribute("data-open")).toBe("false")
 			expect(menuContainer().className).toContain("block")
 		})
+
+		// Simulate mouse leaving the component to trigger hide
+		fireEvent.mouseLeave(getParentDiv())
+
 		await waitFor(() => {
 			expect(menuContainer().className).toContain("hidden")
 		})
 
-		// Reopen
+		// Hover to make menu visible again, then reopen
+		fireEvent.mouseEnter(getParentDiv())
 		lastOnOpenChange?.(true)
 		await waitFor(() => {
 			expect(popoverRoot().getAttribute("data-open")).toBe("true")
@@ -134,8 +153,36 @@ describe("CheckpointSaved popover visibility", () => {
 		await waitFor(() => {
 			expect(popoverRoot().getAttribute("data-open")).toBe("false")
 		})
+
+		// Simulate mouse leaving the component to trigger hide
+		fireEvent.mouseLeave(getParentDiv())
+
 		await waitFor(() => {
 			expect(menuContainer().className).toContain("hidden")
+		})
+	})
+
+	it("shows menu on hover and hides when mouse leaves", async () => {
+		const { getByTestId, container } = render(<CheckpointSaved {...baseProps} />)
+
+		const getMenu = () => getByTestId("checkpoint-menu-container") as HTMLElement
+		const getParentDiv = () =>
+			container.querySelector("[class*='flex items-center justify-between']") as HTMLElement
+
+		// Initially hidden (not hovering)
+		expect(getMenu().className).toContain("hidden")
+
+		// Hover over the component
+		fireEvent.mouseEnter(getParentDiv())
+		await waitFor(() => {
+			expect(getMenu().className).toContain("block")
+			expect(getMenu().className).not.toContain("hidden")
+		})
+
+		// Mouse leaves the component
+		fireEvent.mouseLeave(getParentDiv())
+		await waitFor(() => {
+			expect(getMenu().className).toContain("hidden")
 		})
 	})
 })
