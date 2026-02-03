@@ -21,8 +21,17 @@ export const GettingStartedNav: NavSection[] = [
 				children: "Bring Your Own Key (BYOK)",
 			},
 			{ href: "/ai-providers", children: "AI Providers" },
-			{ href: "/getting-started/settings", children: "Settings" },
+			{
+				href: "/getting-started/settings",
+				children: "Settings",
+				subLinks: [
+					{ href: "/getting-started/settings/auto-approving-actions", children: "Auto-Approving Actions" },
+					{ href: "/getting-started/settings/auto-cleanup", children: "Auto Cleanup" },
+					{ href: "/getting-started/settings/system-notifications", children: "System Notifications" },
+				],
+			},
 			{ href: "/getting-started/adding-credits", children: "Adding Credits" },
+			{ href: "/getting-started/rate-limits-and-costs", children: "Rate Limits and Costs" },
 		],
 	},
 	{
