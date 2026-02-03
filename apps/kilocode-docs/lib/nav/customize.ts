@@ -33,7 +33,6 @@ export const CustomizeNav: NavSection[] = [
 				href: "/customize/context/codebase-indexing",
 				children: "Codebase Indexing",
 			},
-			{ href: "/customize/context/memory-bank", children: "Memory Bank" },
 			{
 				href: "/customize/context/large-projects",
 				children: "Large Projects",
