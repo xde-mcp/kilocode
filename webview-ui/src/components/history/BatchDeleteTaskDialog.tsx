@@ -67,7 +67,7 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 						<Checkbox
 							checked={includeFavorited}
 							onCheckedChange={(checked) => setIncludeFavorited(Boolean(checked))}
-							className="h-[14px] w-[14px] rounded-[3px] border-vscode-descriptionForeground data-[state=checked]:border-vscode-button-background data-[state=checked]:bg-vscode-button-background data-[state=checked]:text-vscode-button-foreground data-[state=checked]:[&_svg]:text-vscode-button-foreground"
+							className="h-[14px] w-[14px] rounded-[3px] border-vscode-descriptionForeground data-[state=checked]:border-vscode-button-background data-[state=checked]:bg-vscode-button-background data-[state=checked]:text-vscode-button-foreground data-[state=checked]:[&_svg]:text-vscode-button-foreground [&_svg]:h-3 [&_svg]:w-3 [&_svg]:translate-y-[0.5px]"
 							data-testid="include-favorited-checkbox"
 						/>
 						<span className="leading-none">{t("history:deleteFavoritedCheckbox")}</span>
