@@ -942,6 +942,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				setCursorPosition(newCursorPosition)
 
 				let showMenu = shouldShowContextMenu(newValue, newCursorPosition) // kilocode_change start: Slash command menu logic
+				// kilocode_change start: Pass workflow toggles to slash command menu
 				const showSlashCommandsMenu = shouldShowSlashCommandsMenu(
 					newValue,
 					newCursorPosition,
@@ -949,6 +950,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					localWorkflows,
 					globalWorkflows,
 				)
+				// kilocode_change end
 
 				// we do not allow both menus to be shown at the same time
 				// the slash commands menu has precedence bc its a narrower component
@@ -1022,9 +1024,11 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				}
 			},
 			[
+				// kilocode_change start: workflow toggles dependencies
 				customModes,
 				localWorkflows,
 				globalWorkflows,
+				// kilocode_change end
 				setInputValue,
 				setSearchRequestId,
 				setFileSearchResults,

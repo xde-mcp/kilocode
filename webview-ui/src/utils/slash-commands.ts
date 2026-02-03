@@ -59,6 +59,7 @@ export const slashCommandRegexGlobal = new RegExp(slashCommandRegex.source, "g")
 /**
  * Determines whether the slash command menu should be displayed based on text input
  */
+// kilocode_change start: Added workflow toggles parameters
 export function shouldShowSlashCommandsMenu(
 	text: string,
 	cursorPosition: number,
@@ -66,6 +67,7 @@ export function shouldShowSlashCommandsMenu(
 	localWorkflowToggles: ClineRulesToggles = {},
 	globalWorkflowToggles: ClineRulesToggles = {},
 ): boolean {
+	// kilocode_change end
 	const beforeCursor = text.slice(0, cursorPosition)
 
 	// first check if there is a slash before the cursor
@@ -89,10 +91,11 @@ export function shouldShowSlashCommandsMenu(
 		return false
 	}
 
-	// If there are no matching commands for the current query, don't show the menu.
+	// kilocode_change start: If there are no matching commands for the current query, don't show the menu.
 	// This prevents an empty menu from capturing Enter/Tab and blocking message submission.
 	const matches = getMatchingSlashCommands(textAfterSlash, customModes, localWorkflowToggles, globalWorkflowToggles)
 	return matches.length > 0
+	// kilocode_change end
 }
 
 function enabledWorkflowToggles(workflowToggles: ClineRulesToggles): SlashCommand[] {

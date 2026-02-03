@@ -29,12 +29,13 @@ export function getGlobalRooDirectory(): string {
 	const kiloDir = path.join(homeDir, ".kilocode") // kilocode_change
 	const rooDir = path.join(homeDir, ".roo") // kilocode_change
 
-	// Prefer .kilocode; fallback to legacy .roo for backwards compatibility. // kilocode_change
+	// kilocode_change start: Prefer .kilocode; fallback to legacy .roo for backwards compatibility.
 	if (fsSync.existsSync(rooDir) && !fsSync.existsSync(kiloDir)) {
 		return rooDir
 	}
 
 	return kiloDir
+	// kilocode_change end
 }
 
 /**

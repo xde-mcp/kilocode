@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { defaultModeSlug } from "@roo/modes"
 
 import React from "react"
