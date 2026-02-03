@@ -2,8 +2,17 @@ export function stringifyError(error: unknown) {
 	return error instanceof Error ? error.stack || error.message : String(error)
 }
 
+/**
+ * Error message thrown when the KiloCode token is missing or invalid.
+ */
+export const KILOCODE_TOKEN_REQUIRED_ERROR = "KiloCode token + baseUrl is required to fetch models"
+
 export function isPaymentRequiredError(error: any) {
 	return !!(error && error.status === 402)
+}
+
+export function isUnauthorizedError(error: any) {
+	return !!(error && error.status === 401)
 }
 
 export function isAlphaPeriodEndedError(error: any) {
@@ -27,6 +36,7 @@ export function isModelNotAllowedForTeamError(error: any) {
 export function isAnyRecognizedKiloCodeError(error: any) {
 	return (
 		isPaymentRequiredError(error) ||
+		isUnauthorizedError(error) ||
 		isOpenRouterInvalidModelError(error) ||
 		isAlphaPeriodEndedError(error) ||
 		isModelNotAllowedForTeamError(error)

@@ -6,13 +6,13 @@ import stripBom from "strip-bom"
 import { XMLBuilder } from "fast-xml-parser"
 import delay from "delay"
 
+import { type ClineSayTool, DEFAULT_WRITE_DELAY_MS, isNativeProtocol } from "@roo-code/types"
+
 import { createDirectoriesForFile } from "../../utils/fs"
 import { arePathsEqual, getReadablePath } from "../../utils/path"
 import { formatResponse } from "../../core/prompts/responses"
 import { diagnosticsToProblemsString, getNewDiagnostics } from "../diagnostics"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { Task } from "../../core/task/Task"
-import { DEFAULT_WRITE_DELAY_MS, isNativeProtocol } from "@roo-code/types"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 
 import { DecorationController } from "./DecorationController"
@@ -159,6 +159,33 @@ export class DiffViewProvider {
 		this.streamedLines = accumulatedLines
 
 		if (isFinal) {
+			// In CLI mode, avoid multiple applyEdit calls that can duplicate content in the mock workspace
+			// (VS Code applies WorkspaceEdit in-memory; the CLI mock writes to disk, so multiple passes risk duplication)
+			if (process.env.KILO_CLI_MODE === "true") {
+				// Detect original EOL style to preserve it
+				const originalEOL = this.originalContent?.includes("\r\n") ? "\r\n" : "\n"
+
+				// Preserve empty last line if original content had one.
+				const hasEmptyLastLine = this.originalContent?.endsWith("\n")
+
+				if (hasEmptyLastLine && !accumulatedContent.endsWith("\n")) {
+					accumulatedContent += originalEOL
+				}
+
+				const finalEdit = new vscode.WorkspaceEdit()
+				finalEdit.replace(
+					document.uri,
+					new vscode.Range(0, 0, document.lineCount, 0),
+					this.stripAllBOMs(accumulatedContent),
+				)
+				await vscode.workspace.applyEdit(finalEdit)
+
+				// Clear all decorations at the end (after applying final edit).
+				this.fadedOverlayController.clear()
+				this.activeLineController.clear()
+				return
+			}
+
 			// Handle any remaining lines if the new content is shorter than the
 			// original.
 			if (this.streamedLines.length < document.lineCount) {
@@ -326,8 +353,8 @@ export class DiffViewProvider {
 			await task.say("user_feedback_diff", JSON.stringify(say))
 		}
 
-		// Check which protocol we're using
-		const toolProtocol = resolveToolProtocol(task.apiConfiguration, task.api.getModel().info)
+		// Check which protocol we're using - use the task's locked protocol for consistency
+		const toolProtocol = resolveToolProtocol(task.apiConfiguration, task.api.getModel().info, task.taskToolProtocol)
 		const useNative = isNativeProtocol(toolProtocol)
 
 		// Build notices array
@@ -687,6 +714,10 @@ export class DiffViewProvider {
 	}> {
 		const absolutePath = path.resolve(this.cwd, relPath)
 
+		// kilocode_change start: In CLI mode, skip VSCode-specific operations (diagnostics are mocked)
+		const skipVscodeOps = process.env.KILO_CLI_MODE === "true"
+		// kilocode_change end
+
 		// Get diagnostics before editing the file
 		this.preDiagnostics = vscode.languages.getDiagnostics()
 
@@ -696,28 +727,34 @@ export class DiffViewProvider {
 
 		// Open the document to ensure diagnostics are loaded
 		// When openFile is false (PREVENT_FOCUS_DISRUPTION enabled), we only open in memory
-		if (openFile) {
-			// Show the document in the editor
-			await vscode.window.showTextDocument(vscode.Uri.file(absolutePath), {
-				preview: false,
-				preserveFocus: true,
-			})
-		} else {
-			// Just open the document in memory to trigger diagnostics without showing it
-			const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absolutePath))
+		// kilocode_change start: Skip document opening in CLI mode
+		if (!skipVscodeOps) {
+			// kilocode_change end
+			if (openFile) {
+				// Show the document in the editor
+				await vscode.window.showTextDocument(vscode.Uri.file(absolutePath), {
+					preview: false,
+					preserveFocus: true,
+				})
+			} else {
+				// Just open the document in memory to trigger diagnostics without showing it
+				const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(absolutePath))
 
-			// Save the document to ensure VSCode recognizes it as saved and triggers diagnostics
-			if (doc.isDirty) {
-				await doc.save()
+				// Save the document to ensure VSCode recognizes it as saved and triggers diagnostics
+				if (doc.isDirty) {
+					await doc.save()
+				}
+
+				// Force a small delay to ensure diagnostics are triggered
+				await new Promise((resolve) => setTimeout(resolve, 100))
 			}
-
-			// Force a small delay to ensure diagnostics are triggered
-			await new Promise((resolve) => setTimeout(resolve, 100))
 		}
 
 		let newProblemsMessage = ""
 
-		if (diagnosticsEnabled) {
+		// kilocode_change start: Skip diagnostic delay in CLI mode
+		if (diagnosticsEnabled && !skipVscodeOps) {
+			// kilocode_change end
 			// Add configurable delay to allow linters time to process
 			const safeDelayMs = Math.max(0, writeDelayMs)
 

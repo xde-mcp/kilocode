@@ -10,7 +10,6 @@ import { Package } from "../../shared/package"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 
 import { ClineProvider } from "./ClineProvider"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
 
 export const generateSystemPrompt = async (provider: ClineProvider, message: WebviewMessage) => {
 	const state = await provider.getState() // kilocode_change
@@ -29,7 +28,8 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 		language,
 		maxReadFileLine,
 		maxConcurrentFileReads,
-	} = state // kilocode_change
+		enableSubfolderRules,
+	} = await provider.getState()
 
 	// Check experiment to determine which diff strategy to use
 	const isMultiFileApplyDiffEnabled = experimentsModule.isEnabled(
@@ -95,16 +95,17 @@ export const generateSystemPrompt = async (provider: ClineProvider, message: Web
 			maxConcurrentFileReads: maxConcurrentFileReads ?? 5,
 			todoListEnabled: apiConfiguration?.todoListEnabled ?? true,
 			useAgentRules: vscode.workspace.getConfiguration(Package.name).get<boolean>("useAgentRules") ?? true,
+			enableSubfolderRules: enableSubfolderRules ?? false,
 			newTaskRequireTodos: vscode.workspace
 				.getConfiguration(Package.name)
 				.get<boolean>("newTaskRequireTodos", false),
 			toolProtocol,
+			isStealthModel: modelInfo?.isStealthModel,
 		},
-		// kilocode_change start
-		undefined,
-		undefined,
-		state,
-		// kilocode_change end
+		undefined, // todoList
+		undefined, // modelId
+		provider.getSkillsManager(),
+		state, // kilocode_change
 	)
 
 	return systemPrompt

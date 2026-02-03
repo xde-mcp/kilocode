@@ -15,6 +15,8 @@ import {
 	mistralModels,
 	openAiNativeDefaultModelId,
 	openAiNativeModels,
+	openAiCodexDefaultModelId,
+	openAiCodexModels,
 	vertexDefaultModelId,
 	vertexModels,
 	xaiDefaultModelId,
@@ -31,7 +33,6 @@ import {
 	litellmDefaultModelId,
 	qwenCodeModels,
 	qwenCodeDefaultModelId,
-	geminiCliModels,
 	claudeCodeModels,
 	claudeCodeDefaultModelId,
 	doubaoModels,
@@ -54,6 +55,10 @@ import {
 	inceptionDefaultModelId,
 	minimaxModels,
 	minimaxDefaultModelId,
+	internationalZAiModels,
+	internationalZAiDefaultModelId,
+	mainlandZAiModels,
+	mainlandZAiDefaultModelId,
 } from "@roo-code/types"
 import type { ModelRecord, RouterModels } from "@roo/api"
 import { useRouterModels } from "../../ui/hooks/useRouterModels"
@@ -68,10 +73,12 @@ export const getModelsByProvider = ({
 	provider,
 	routerModels,
 	kilocodeDefaultModel,
+	options = { isChina: false },
 }: {
 	provider: ProviderName
 	routerModels: RouterModels
 	kilocodeDefaultModel: string
+	options: { isChina?: boolean }
 }): { models: ModelRecord; defaultModel: string } => {
 	switch (provider) {
 		case "openrouter": {
@@ -161,6 +168,12 @@ export const getModelsByProvider = ({
 				defaultModel: openAiNativeDefaultModelId,
 			}
 		}
+		case "openai-codex": {
+			return {
+				models: openAiCodexModels,
+				defaultModel: openAiCodexDefaultModelId,
+			}
+		}
 		case "mistral": {
 			return {
 				models: mistralModels,
@@ -208,12 +221,6 @@ export const getModelsByProvider = ({
 			return {
 				models: qwenCodeModels,
 				defaultModel: qwenCodeDefaultModelId,
-			}
-		}
-		case "gemini-cli": {
-			return {
-				models: geminiCliModels,
-				defaultModel: geminiDefaultModelId,
 			}
 		}
 		case "anthropic": {
@@ -310,11 +317,34 @@ export const getModelsByProvider = ({
 				defaultModel: basetenDefaultModelId,
 			}
 		}
+		case "zai": {
+			if (options.isChina) {
+				return {
+					models: mainlandZAiModels,
+					defaultModel: mainlandZAiDefaultModelId,
+				}
+			} else {
+				return {
+					models: internationalZAiModels,
+					defaultModel: internationalZAiDefaultModelId,
+				}
+			}
+		}
 		default:
 			return {
 				models: {},
 				defaultModel: "",
 			}
+	}
+}
+
+export const getOptionsForProvider = (provider: ProviderName, apiConfiguration?: ProviderSettings) => {
+	switch (provider) {
+		case "zai":
+			// Determine which Z.AI model set to use based on the API line configuration
+			return { isChina: apiConfiguration?.zaiApiLine === "china_coding" }
+		default:
+			return {}
 	}
 }
 
@@ -337,12 +367,15 @@ export const useProviderModels = (apiConfiguration?: ProviderSettings) => {
 		syntheticApiKey: apiConfiguration?.syntheticApiKey, // kilocode_change
 	})
 
+	const options = getOptionsForProvider(provider, apiConfiguration)
+
 	const { models, defaultModel } =
 		apiConfiguration && typeof routerModels.data !== "undefined"
 			? getModelsByProvider({
 					provider,
 					routerModels: routerModels.data,
 					kilocodeDefaultModel,
+					options,
 				})
 			: FALLBACK_MODELS
 

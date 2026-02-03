@@ -12,10 +12,7 @@ import {
 import * as ProgressPrimitive from "@radix-ui/react-progress"
 import { AlertTriangle } from "lucide-react"
 
-import { CODEBASE_INDEX_DEFAULTS } from "@roo-code/types"
-
-import type { EmbedderProvider } from "@roo/embeddingModels"
-import type { IndexingStatus } from "@roo/ExtensionMessage"
+import { type IndexingStatus, type EmbedderProvider, CODEBASE_INDEX_DEFAULTS } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
@@ -45,6 +42,14 @@ import {
 } from "@src/components/ui"
 import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
+// kilocode_change start
+import { EmbeddingBatchSizeSlider } from "./kilocode/EmbeddingBatchSizeSlider"
+import { MaxBatchRetriesSlider } from "./kilocode/MaxBatchRetriesSlider"
+// kilocode_change end
+import {
+	useOpenRouterModelProviders,
+	OPENROUTER_DEFAULT_PROVIDER_NAME,
+} from "@src/components/ui/hooks/useOpenRouterModelProviders"
 
 // Default URLs for providers
 const DEFAULT_QDRANT_URL = "http://localhost:6333"
@@ -75,6 +80,8 @@ interface LocalCodeIndexSettings {
 	codebaseIndexEmbedderModelDimension?: number // Generic dimension for all providers
 	codebaseIndexSearchMaxResults?: number
 	codebaseIndexSearchMinScore?: number
+	codebaseIndexEmbeddingBatchSize?: number
+	codebaseIndexScannerMaxBatchRetries?: number
 
 	// Bedrock-specific settings
 	codebaseIndexBedrockRegion?: string
@@ -89,6 +96,7 @@ interface LocalCodeIndexSettings {
 	codebaseIndexMistralApiKey?: string
 	codebaseIndexVercelAiGatewayApiKey?: string
 	codebaseIndexOpenRouterApiKey?: string
+	codebaseIndexOpenRouterSpecificProvider?: string
 }
 
 // Validation schema for codebase index settings
@@ -241,6 +249,8 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexEmbedderModelDimension: undefined,
 		codebaseIndexSearchMaxResults: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 		codebaseIndexSearchMinScore: CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+		codebaseIndexEmbeddingBatchSize: CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_BATCH_SIZE,
+		codebaseIndexScannerMaxBatchRetries: CODEBASE_INDEX_DEFAULTS.DEFAULT_SCANNER_MAX_BATCH_RETRIES,
 		codebaseIndexBedrockRegion: "",
 		codebaseIndexBedrockProfile: "",
 		codeIndexOpenAiKey: "",
@@ -251,6 +261,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexMistralApiKey: "",
 		codebaseIndexVercelAiGatewayApiKey: "",
 		codebaseIndexOpenRouterApiKey: "",
+		codebaseIndexOpenRouterSpecificProvider: "",
 	})
 
 	// Initial settings state - stores the settings when popover opens
@@ -291,6 +302,12 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					codebaseIndexConfig.codebaseIndexSearchMaxResults ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_RESULTS,
 				codebaseIndexSearchMinScore:
 					codebaseIndexConfig.codebaseIndexSearchMinScore ?? CODEBASE_INDEX_DEFAULTS.DEFAULT_SEARCH_MIN_SCORE,
+				codebaseIndexEmbeddingBatchSize:
+					codebaseIndexConfig.codebaseIndexEmbeddingBatchSize ??
+					CODEBASE_INDEX_DEFAULTS.DEFAULT_EMBEDDING_BATCH_SIZE,
+				codebaseIndexScannerMaxBatchRetries:
+					codebaseIndexConfig.codebaseIndexScannerMaxBatchRetries ??
+					CODEBASE_INDEX_DEFAULTS.DEFAULT_SCANNER_MAX_BATCH_RETRIES,
 				codebaseIndexBedrockRegion: codebaseIndexConfig.codebaseIndexBedrockRegion || "",
 				codebaseIndexBedrockProfile: codebaseIndexConfig.codebaseIndexBedrockProfile || "",
 				codeIndexOpenAiKey: "",
@@ -301,6 +318,8 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				codebaseIndexMistralApiKey: "",
 				codebaseIndexVercelAiGatewayApiKey: "",
 				codebaseIndexOpenRouterApiKey: "",
+				codebaseIndexOpenRouterSpecificProvider:
+					codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider || "",
 			}
 			setInitialSettings(settings)
 			setCurrentSettings(settings)
@@ -675,6 +694,23 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 			codebaseIndexModels[currentSettings.codebaseIndexEmbedderProvider as keyof typeof codebaseIndexModels]
 		return models ? Object.keys(models) : []
 	}
+
+	// Fetch OpenRouter model providers for embedding model
+	const { data: openRouterEmbeddingProviders } = useOpenRouterModelProviders(
+		currentSettings.codebaseIndexEmbedderProvider === "openrouter"
+			? currentSettings.codebaseIndexEmbedderModelId
+			: undefined,
+		// kilocode_change start
+		apiConfiguration?.apiProvider === "openrouter" ? apiConfiguration?.openRouterBaseUrl : undefined,
+		apiConfiguration?.apiKey,
+		apiConfiguration?.kilocodeOrganizationId ?? "personal",
+		// kilocode_change end
+		{
+			enabled:
+				currentSettings.codebaseIndexEmbedderProvider === "openrouter" &&
+				!!currentSettings.codebaseIndexEmbedderModelId,
+		},
+	)
 
 	const portalContainer = useRooPortal("roo-portal")
 
@@ -1489,6 +1525,55 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 													</p>
 												)}
 											</div>
+
+											{/* Provider Routing for OpenRouter */}
+											{openRouterEmbeddingProviders &&
+												Object.keys(openRouterEmbeddingProviders).length > 0 && (
+													<div className="space-y-2">
+														<label className="text-sm font-medium">
+															<a
+																href="https://openrouter.ai/docs/features/provider-routing"
+																target="_blank"
+																rel="noopener noreferrer"
+																className="flex items-center gap-1 hover:underline">
+																{t("settings:codeIndex.openRouterProviderRoutingLabel")}
+																<span className="codicon codicon-link-external text-xs" />
+															</a>
+														</label>
+														<Select
+															value={
+																currentSettings.codebaseIndexOpenRouterSpecificProvider ||
+																OPENROUTER_DEFAULT_PROVIDER_NAME
+															}
+															onValueChange={(value) =>
+																updateSetting(
+																	"codebaseIndexOpenRouterSpecificProvider",
+																	value,
+																)
+															}>
+															<SelectTrigger className="w-full">
+																<SelectValue />
+															</SelectTrigger>
+															<SelectContent>
+																<SelectItem value={OPENROUTER_DEFAULT_PROVIDER_NAME}>
+																	{OPENROUTER_DEFAULT_PROVIDER_NAME}
+																</SelectItem>
+																{Object.entries(openRouterEmbeddingProviders).map(
+																	([value, { label }]) => (
+																		<SelectItem key={value} value={value}>
+																			{label}
+																		</SelectItem>
+																	),
+																)}
+															</SelectContent>
+														</Select>
+														<p className="text-xs text-vscode-descriptionForeground mt-1 mb-0">
+															{t(
+																"settings:codeIndex.openRouterProviderRoutingDescription",
+															)}
+														</p>
+													</div>
+												)}
 										</>
 									)}
 
@@ -1681,6 +1766,20 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 											</VSCodeButton>
 										</div>
 									</div>
+
+									{/* kilocode_change start */}
+									<EmbeddingBatchSizeSlider
+										value={currentSettings.codebaseIndexEmbeddingBatchSize}
+										onChange={(value) => updateSetting("codebaseIndexEmbeddingBatchSize", value)}
+									/>
+
+									<MaxBatchRetriesSlider
+										value={currentSettings.codebaseIndexScannerMaxBatchRetries}
+										onChange={(value) =>
+											updateSetting("codebaseIndexScannerMaxBatchRetries", value)
+										}
+									/>
+									{/* kilocode_change end */}
 								</div>
 							)}
 						</div>

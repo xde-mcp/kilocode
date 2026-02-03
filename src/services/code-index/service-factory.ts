@@ -1,4 +1,17 @@
 import * as vscode from "vscode"
+import { Ignore } from "ignore"
+
+import type { EmbedderProvider } from "@roo-code/types"
+import { TelemetryService } from "@roo-code/telemetry"
+import { TelemetryEventName } from "@roo-code/types"
+
+import { t } from "../../i18n"
+
+import { getDefaultModelId, getModelDimension } from "../../shared/embeddingModels"
+import { Package } from "../../shared/package"
+
+import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
+
 import { OpenAiEmbedder } from "./embedders/openai"
 import { CodeIndexOllamaEmbedder } from "./embedders/ollama"
 import { OpenAICompatibleEmbedder } from "./embedders/openai-compatible"
@@ -7,19 +20,12 @@ import { MistralEmbedder } from "./embedders/mistral"
 import { VercelAiGatewayEmbedder } from "./embedders/vercel-ai-gateway"
 import { BedrockEmbedder } from "./embedders/bedrock"
 import { OpenRouterEmbedder } from "./embedders/openrouter"
-import { EmbedderProvider, getDefaultModelId, getModelDimension } from "../../shared/embeddingModels"
 import { QdrantVectorStore } from "./vector-store/qdrant-client"
 import { LanceDBVectorStore } from "./vector-store/lancedb-vector-store"
 import { codeParser, DirectoryScanner, FileWatcher } from "./processors"
 import { ICodeParser, IEmbedder, IFileWatcher, IVectorStore } from "./interfaces"
 import { CodeIndexConfigManager } from "./config-manager"
 import { CacheManager } from "./cache-manager"
-import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
-import { Ignore } from "ignore"
-import { t } from "../../i18n"
-import { TelemetryService } from "@roo-code/telemetry"
-import { TelemetryEventName } from "@roo-code/types"
-import { Package } from "../../shared/package"
 import { BATCH_SEGMENT_THRESHOLD } from "./constants"
 import { getLancedbVectorStoreDirectoryPath } from "../../utils/storage"
 import { LanceDBManager } from "../../utils/lancedb-manager"
@@ -94,7 +100,12 @@ export class CodeIndexServiceFactory {
 			if (!config.openRouterOptions?.apiKey) {
 				throw new Error(t("embeddings:serviceFactory.openRouterConfigMissing"))
 			}
-			return new OpenRouterEmbedder(config.openRouterOptions.apiKey, config.modelId)
+			return new OpenRouterEmbedder(
+				config.openRouterOptions.apiKey,
+				config.modelId,
+				undefined, // maxItemTokens
+				config.openRouterOptions.specificProvider,
+			)
 		}
 
 		throw new Error(
@@ -191,17 +202,20 @@ export class CodeIndexServiceFactory {
 		parser: ICodeParser,
 		ignoreInstance: Ignore,
 	): DirectoryScanner {
-		// Get the configurable batch size from VSCode settings
-		let batchSize: number
-		try {
-			batchSize = vscode.workspace
-				.getConfiguration(Package.name)
-				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
-		} catch {
-			// In test environment, vscode.workspace might not be available
-			batchSize = BATCH_SEGMENT_THRESHOLD
-		}
-		return new DirectoryScanner(embedder, vectorStore, parser, this.cacheManager, ignoreInstance, batchSize)
+		// kilocode_change start: Get the configurable batch size and max retries from config manager
+		const config = this.configManager.getConfig()
+		const batchSize = config.embeddingBatchSize
+		const maxBatchRetries = config.scannerMaxBatchRetries
+		return new DirectoryScanner(
+			embedder,
+			vectorStore,
+			parser,
+			this.cacheManager,
+			ignoreInstance,
+			batchSize,
+			maxBatchRetries,
+		)
+		// kilocode_change end
 	}
 
 	/**
@@ -215,16 +229,11 @@ export class CodeIndexServiceFactory {
 		ignoreInstance: Ignore,
 		rooIgnoreController?: RooIgnoreController,
 	): IFileWatcher {
-		// Get the configurable batch size from VSCode settings
-		let batchSize: number
-		try {
-			batchSize = vscode.workspace
-				.getConfiguration(Package.name)
-				.get<number>("codeIndex.embeddingBatchSize", BATCH_SEGMENT_THRESHOLD)
-		} catch {
-			// In test environment, vscode.workspace might not be available
-			batchSize = BATCH_SEGMENT_THRESHOLD
-		}
+		// kilocode_change start: Get the configurable batch size from config manager
+		const config = this.configManager.getConfig()
+		const batchSize = config.embeddingBatchSize
+		const maxBatchRetries = config.scannerMaxBatchRetries
+
 		return new FileWatcher(
 			this.workspacePath,
 			context,
@@ -234,7 +243,9 @@ export class CodeIndexServiceFactory {
 			ignoreInstance,
 			rooIgnoreController,
 			batchSize,
+			maxBatchRetries,
 		)
+		// kilocode_change end
 	}
 
 	/**

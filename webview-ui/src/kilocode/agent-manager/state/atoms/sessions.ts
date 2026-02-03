@@ -1,7 +1,16 @@
 import { atom } from "jotai"
+import { atomFamily } from "jotai/utils"
 
 export type AgentStatus = "creating" | "running" | "done" | "error" | "stopped"
 export type SessionSource = "local" | "remote"
+
+export interface ParallelModeInfo {
+	enabled: boolean
+	branch?: string
+	worktreePath?: string
+	parentBranch?: string
+	completionMessage?: string
+}
 
 export interface AgentSession {
 	sessionId: string
@@ -14,7 +23,11 @@ export interface AgentSession {
 	error?: string
 	pid?: number
 	source: SessionSource
+	parallelMode?: ParallelModeInfo
 	gitUrl?: string
+	autoMode?: boolean // True if session was started with --auto flag (non-interactive)
+	model?: string // Model ID used for this session
+	mode?: string // Mode slug used for this session (e.g., "code", "architect")
 }
 
 /**
@@ -24,7 +37,9 @@ export interface PendingSession {
 	prompt: string
 	label: string
 	startTime: number
+	parallelMode?: boolean
 	gitUrl?: string
+	autoMode?: boolean // True if session will be started with --auto flag
 }
 
 export interface RemoteSession {
@@ -33,6 +48,7 @@ export interface RemoteSession {
 	created_at: string
 	updated_at: string
 	git_url?: string
+	last_model?: string | null
 }
 
 // Core atoms
@@ -45,6 +61,39 @@ export const pendingSessionAtom = atom<PendingSession | null>(null)
 
 export const startSessionFailedCounterAtom = atom(0)
 
+// Per-session input value for the chat input field
+export const sessionInputAtomFamily = atomFamily((_sessionId: string) => atom(""))
+
+// Per-session images (data URLs) for the chat input field
+export const sessionImagesAtomFamily = atomFamily((_sessionId: string) => atom<string[]>([]))
+
+// Maximum images per message (limited to fit in the input field UI)
+export const MAX_IMAGES_PER_MESSAGE = 4
+
+// User preference for run mode (persisted across new agent forms)
+export type RunMode = "local" | "worktree"
+// Default to local until worktree mode is ready to ship
+export const preferredRunModeAtom = atom<RunMode>("local")
+
+// Version count for multi-version mode (1 = single, 2-4 = multi-version with worktrees)
+export type VersionCount = 1 | 2 | 3 | 4
+export const MAX_VERSION_COUNT = 4
+// Derive options from MAX_VERSION_COUNT to ensure consistency
+export const VERSION_COUNT_OPTIONS = Array.from({ length: MAX_VERSION_COUNT }, (_, i) => (i + 1) as VersionCount)
+export const versionCountAtom = atom<VersionCount>(1)
+
+/**
+ * Generate version labels with (v1), (v2), etc. suffixes for multi-version mode.
+ * Single version (count=1) returns the original label without suffix.
+ */
+export function generateVersionLabels(baseLabel: string, count: VersionCount): string[] {
+	if (count === 1) {
+		return [baseLabel]
+	}
+
+	return Array.from({ length: count }, (_, i) => `${baseLabel} (v${i + 1})`)
+}
+
 // Derived - local sessions only
 export const sessionsArrayAtom = atom((get) => {
 	const map = get(sessionsMapAtom)
@@ -53,15 +102,21 @@ export const sessionsArrayAtom = atom((get) => {
 })
 
 function toAgentSession(remote: RemoteSession): AgentSession {
+	// Parse dates safely - invalid dates will produce NaN from getTime()
+	const createdTime = remote.created_at ? new Date(remote.created_at).getTime() : 0
+	const updatedTime = remote.updated_at ? new Date(remote.updated_at).getTime() : 0
+
 	return {
 		sessionId: remote.session_id,
 		label: remote.title || "Untitled",
 		prompt: "",
 		status: "done",
-		startTime: new Date(remote.created_at).getTime(),
-		endTime: new Date(remote.updated_at).getTime(),
+		// Use 0 as fallback if dates are invalid (NaN)
+		startTime: Number.isNaN(createdTime) ? 0 : createdTime,
+		endTime: Number.isNaN(updatedTime) ? 0 : updatedTime,
 		source: "remote",
 		gitUrl: remote.git_url,
+		model: remote.last_model ?? undefined,
 	}
 }
 
@@ -153,6 +208,20 @@ export const updateSessionStatusAtom = atom(
 		})
 	},
 )
+
+export const updateSessionModeAtom = atom(null, (get, set, payload: { sessionId: string; mode: string }) => {
+	const current = get(sessionsMapAtom)
+	const session = current[payload.sessionId]
+	if (!session) return
+
+	set(sessionsMapAtom, {
+		...current,
+		[payload.sessionId]: {
+			...session,
+			mode: payload.mode,
+		},
+	})
+})
 
 export const setRemoteSessionsAtom = atom(null, (_get, set, sessions: RemoteSession[]) => {
 	set(remoteSessionsAtom, sessions)

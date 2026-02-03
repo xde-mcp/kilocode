@@ -13,8 +13,9 @@ import {
 	updateRouterModelsAtom,
 	chatMessagesAtom,
 	updateChatMessagesAtom,
+	taskResumedViaContinueOrSessionAtom,
 } from "./extension.js"
-import { ciCompletionDetectedAtom } from "./ci.js"
+import { ciCompletionDetectedAtom, ciCompletionIgnoreBeforeTimestampAtom } from "./ci.js"
 import {
 	updateProfileDataAtom,
 	updateBalanceDataAtom,
@@ -31,6 +32,7 @@ import {
 	taskHistoryErrorAtom,
 	resolveTaskHistoryRequestAtom,
 } from "./taskHistory.js"
+import { resolveCondenseRequestAtom } from "./condense.js"
 import { validateModelOnRouterModelsUpdateAtom } from "./modelValidation.js"
 import { validateModeOnCustomModesUpdateAtom } from "./modeValidation.js"
 import { logs } from "../../services/logs.js"
@@ -174,6 +176,23 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 			const buffer = get(messageBufferAtom)
 			set(messageBufferAtom, [...buffer, message])
 			return
+		}
+
+		// NOTE: Copied from ClineProvider - make sure the two match.
+		if (message.type === "apiMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init()?.handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
+		} else if (message.type === "taskMessagesSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init()?.handleFileUpdate(taskId, "uiMessagesPath", filePath)
+		} else if (message.type === "taskMetadataSaved" && message.payload) {
+			const [taskId, filePath] = message.payload as [string, string]
+
+			SessionManager.init()?.handleFileUpdate(taskId, "taskMetadataPath", filePath)
+		} else if (message.type === "currentCheckpointUpdated") {
+			SessionManager.init()?.doSync()
 		}
 
 		// Handle different message types
@@ -377,43 +396,16 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 				break
 			}
 
-			case "apiMessagesSaved": {
-				const payload = message.payload as [string, string] | undefined
-
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid apiMessagesSaved payload`, "effects", { payload })
+			case "condenseTaskContextResponse": {
+				const taskId = message.text
+				logs.info(`Context condensation completed for task: ${taskId || "current task"}`, "effects")
+				// Resolve any pending condense request for this task
+				if (taskId) {
+					set(resolveCondenseRequestAtom, { taskId })
 				}
 				break
 			}
 
-			case "taskMessagesSaved": {
-				const payload = message.payload as [string, string] | undefined
-
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "uiMessagesPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid taskMessagesSaved payload`, "effects", { payload })
-				}
-				break
-			}
-
-			case "taskMetadataSaved": {
-				const payload = message.payload as [string, string] | undefined
-				if (payload && Array.isArray(payload) && payload.length === 2) {
-					const [taskId, filePath] = payload
-
-					SessionManager.init().handleFileUpdate(taskId, "taskMetadataPath", filePath)
-				} else {
-					logs.warn(`[DEBUG] Invalid taskMetadataSaved payload`, "effects", { payload })
-				}
-				break
-			}
 			case "commandExecutionStatus": {
 				// Handle command execution status messages
 				// Store output updates and apply them when the ask appears
@@ -580,12 +572,17 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 
 						if (messageIndex !== -1) {
 							const pendingUpdate = newPendingUpdates.get(statusData.executionId)
+							const exitCode =
+								statusData.status === "exited" && "exitCode" in statusData
+									? statusData.exitCode
+									: undefined
 							const updatedAsk: ExtensionChatMessage = {
 								...currentMessages[messageIndex]!,
 								text: JSON.stringify({
 									executionId: statusData.executionId,
 									command: pendingUpdate?.command || "",
 									output: pendingUpdate?.output || "",
+									...(exitCode !== undefined && { exitCode }),
 								}),
 								partial: false, // Command completed
 								isAnswered: false, // Still needs user response
@@ -620,8 +617,22 @@ export const messageHandlerEffectAtom = atom(null, (get, set, message: Extension
 		if (message.state?.chatMessages) {
 			const lastMessage = message.state.chatMessages[message.state.chatMessages.length - 1]
 			if (lastMessage?.type === "ask" && lastMessage?.ask === "completion_result") {
-				logs.info("Completion result detected in state update", "effects")
-				set(ciCompletionDetectedAtom, true)
+				const completionIgnoreBeforeTimestamp = get(ciCompletionIgnoreBeforeTimestampAtom)
+				const taskResumedViaSession = get(taskResumedViaContinueOrSessionAtom)
+				const isHistoricalCompletion =
+					lastMessage.ts !== undefined && lastMessage.ts <= completionIgnoreBeforeTimestamp
+
+				// Skip completion detection if session was just restored via --session or --continue
+				// The historical completion_result from the previous task should not trigger CI exit
+				if (taskResumedViaSession || isHistoricalCompletion) {
+					logs.debug("Skipping completion_result detection - historical completion_result", "effects")
+				} else {
+					logs.info("Completion result detected in state update", "effects")
+
+					set(ciCompletionDetectedAtom, true)
+
+					SessionManager.init()?.doSync(true)
+				}
 			}
 		}
 	} catch (error) {

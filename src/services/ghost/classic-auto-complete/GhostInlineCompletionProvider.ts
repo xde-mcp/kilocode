@@ -5,15 +5,13 @@ import {
 	contextToAutocompleteInput,
 	GhostContextProvider,
 	FillInAtCursorSuggestion,
-	FimGhostPrompt,
-	HoleFillerGhostPrompt,
 	GhostPrompt,
 	MatchingSuggestionResult,
 	CostTrackingCallback,
 	LLMRetrievalResult,
 	PendingRequest,
 	AutocompleteContext,
-	CacheMatchType,
+	LastSuggestionInfo,
 } from "../types"
 import { HoleFiller } from "./HoleFiller"
 import { FimPromptBuilder } from "./FillInTheMiddle"
@@ -24,11 +22,19 @@ import { RecentlyVisitedRangesService } from "../../continuedev/core/vscode-test
 import { RecentlyEditedTracker } from "../../continuedev/core/vscode-test-harness/src/autocomplete/recentlyEdited"
 import type { GhostServiceSettings } from "@roo-code/types"
 import { postprocessGhostSuggestion } from "./uselessSuggestionFilter"
+import { shouldSkipAutocomplete } from "./contextualSkip"
 import { RooIgnoreController } from "../../../core/ignore/RooIgnoreController"
 import { ClineProvider } from "../../../core/webview/ClineProvider"
-import * as telemetry from "./AutocompleteTelemetry"
+import { AutocompleteTelemetry } from "./AutocompleteTelemetry"
 
 const MAX_SUGGESTIONS_HISTORY = 20
+
+/**
+ * Minimum debounce delay in milliseconds.
+ * The adaptive debounce delay will never go below this value, even when
+ * average latencies are very fast.
+ */
+const MIN_DEBOUNCE_DELAY_MS = 150
 
 /**
  * Initial debounce delay in milliseconds.
@@ -37,6 +43,13 @@ const MAX_SUGGESTIONS_HISTORY = 20
  * is dynamically adjusted to the average of recent request latencies.
  */
 const INITIAL_DEBOUNCE_DELAY_MS = 300
+
+/**
+ * Maximum debounce delay in milliseconds.
+ * This caps the adaptive debounce delay to prevent excessive waiting times
+ * even when latencies are high.
+ */
+const MAX_DEBOUNCE_DELAY_MS = 1000
 
 /**
  * Number of latency samples to collect before using adaptive debounce delay.
@@ -48,24 +61,37 @@ const LATENCY_SAMPLE_SIZE = 10
 export type { CostTrackingCallback, GhostPrompt, MatchingSuggestionResult, LLMRetrievalResult }
 
 /**
- * Find a matching suggestion from the history based on current prefix and suffix
+ * Result from findMatchingSuggestion including the original suggestion for telemetry tracking
+ */
+export interface MatchingSuggestionWithFillIn extends MatchingSuggestionResult {
+	/** The original FillInAtCursorSuggestion for telemetry tracking */
+	fillInAtCursor: FillInAtCursorSuggestion
+}
+
+/**
+ * Find a matching suggestion from the history based on current prefix and suffix.
+ *
  * @param prefix - The text before the cursor position
  * @param suffix - The text after the cursor position
  * @param suggestionsHistory - Array of previous suggestions (most recent last)
- * @returns The matching suggestion with match type, or null if no match found
+ * @returns The matching suggestion with match type and the original FillInAtCursorSuggestion, or null if no match found
  */
 export function findMatchingSuggestion(
 	prefix: string,
 	suffix: string,
 	suggestionsHistory: FillInAtCursorSuggestion[],
-): MatchingSuggestionResult | null {
+): MatchingSuggestionWithFillIn | null {
 	// Search from most recent to least recent
 	for (let i = suggestionsHistory.length - 1; i >= 0; i--) {
 		const fillInAtCursor = suggestionsHistory[i]
 
 		// First, try exact prefix/suffix match
 		if (prefix === fillInAtCursor.prefix && suffix === fillInAtCursor.suffix) {
-			return { text: fillInAtCursor.text, matchType: "exact" }
+			return {
+				text: fillInAtCursor.text,
+				matchType: "exact",
+				fillInAtCursor,
+			}
 		}
 
 		// If no exact match, but suggestion is available, check for partial typing
@@ -81,18 +107,31 @@ export function findMatchingSuggestion(
 			// Check if the typed content matches the beginning of the suggestion
 			if (fillInAtCursor.text.startsWith(typedContent)) {
 				// Return the remaining part of the suggestion (with already-typed portion removed)
-				return { text: fillInAtCursor.text.substring(typedContent.length), matchType: "partial_typing" }
+				return {
+					text: fillInAtCursor.text.substring(typedContent.length),
+					matchType: "partial_typing",
+					fillInAtCursor,
+				}
 			}
 		}
 
 		// Check for backward deletion: user deleted characters from the end of the prefix
 		// The stored prefix should start with the current prefix (current is shorter)
-		if (fillInAtCursor.prefix.startsWith(prefix) && suffix === fillInAtCursor.suffix) {
+		// Only use this logic if the original suggestion is non-empty
+		if (
+			fillInAtCursor.text !== "" &&
+			fillInAtCursor.prefix.startsWith(prefix) &&
+			suffix === fillInAtCursor.suffix
+		) {
 			// Extract the deleted portion of the prefix
 			const deletedContent = fillInAtCursor.prefix.substring(prefix.length)
 
 			// Return the deleted portion plus the original suggestion text
-			return { text: deletedContent + fillInAtCursor.text, matchType: "backward_deletion" }
+			return {
+				text: deletedContent + fillInAtCursor.text,
+				matchType: "backward_deletion",
+				fillInAtCursor,
+			}
 		}
 	}
 
@@ -100,10 +139,109 @@ export function findMatchingSuggestion(
 }
 
 /**
+ * Transforms a matching suggestion result by applying first-line-only logic if needed.
+ * Use this at call sites where you want to show only the first line of multi-line completions
+ * when the cursor is in the middle of a line.
+ *
+ * @param result - The result from findMatchingSuggestion
+ * @param prefix - The text before the cursor position
+ * @returns A new result with potentially truncated text, or null if input was null
+ */
+export function applyFirstLineOnly(
+	result: MatchingSuggestionWithFillIn | null,
+	prefix: string,
+): MatchingSuggestionWithFillIn | null {
+	if (result === null || result.text === "") {
+		return result
+	}
+	if (shouldShowOnlyFirstLine(prefix, result.text)) {
+		const firstLineText = getFirstLine(result.text)
+		return {
+			text: firstLineText,
+			matchType: result.matchType,
+			fillInAtCursor: result.fillInAtCursor,
+		}
+	}
+	return result
+}
+
+/**
  * Command ID for tracking inline completion acceptance.
  * This command is executed after the user accepts an inline completion.
  */
 export const INLINE_COMPLETION_ACCEPTED_COMMAND = "kilocode.ghost.inline-completion.accepted"
+
+/**
+ * Counts the number of lines in a text string.
+ *
+ * Notes:
+ * - Returns 0 for an empty string
+ * - A single trailing newline (or CRLF) does not count as an additional line
+ *
+ * @param text - The text to count lines in
+ * @returns The number of lines
+ */
+export function countLines(text: string): number {
+	if (text === "") {
+		return 0
+	}
+
+	// Count line breaks and add 1 for the first line.
+	// If the text ends with a line break, don't count the implicit trailing empty line.
+	const lineBreakCount = (text.match(/\r?\n/g) || []).length
+	const endsWithLineBreak = text.endsWith("\n")
+
+	return lineBreakCount + 1 - (endsWithLineBreak ? 1 : 0)
+}
+
+/**
+ * Determines if only the first line of a completion should be shown.
+ *
+ * The logic is:
+ * - If the suggestion starts with a newline → show the whole block
+ * - If the prefix's last line has non-whitespace text → show only the first line
+ * - If at start of line and suggestion is 3+ lines → show only the first line
+ * - Otherwise → show the whole block
+ *
+ * @param prefix - The text before the cursor position
+ * @param suggestion - The completion text being suggested
+ * @returns true if only the first line should be shown
+ */
+export function shouldShowOnlyFirstLine(prefix: string, suggestion: string): boolean {
+	// If the suggestion starts with a newline, show the whole block
+	if (suggestion.startsWith("\n") || suggestion.startsWith("\r\n")) {
+		return false
+	}
+
+	// Check if the current line (before cursor) has non-whitespace text
+	const lastNewlineIndex = prefix.lastIndexOf("\n")
+	const currentLinePrefix = prefix.slice(lastNewlineIndex + 1)
+
+	// if the first line contains no word characters, show the whole block
+	if (!currentLinePrefix.match(/\w/)) {
+		return false
+	}
+
+	// If the current line prefix contains non-whitespace, only show the first line
+	if (currentLinePrefix.trim().length > 0) {
+		return true
+	}
+
+	// At start of line (only whitespace before cursor on this line)
+	// Show only first line if suggestion is 3 or more lines
+	const lineCount = countLines(suggestion)
+	return lineCount >= 3
+}
+
+/**
+ * Extracts the first line from a completion text.
+ *
+ * @param text - The full completion text
+ * @returns The first line of the completion (without the newline)
+ */
+export function getFirstLine(text: string): string {
+	return text.split(/\r?\n/, 1)[0]
+}
 
 export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
 	if (text === "") {
@@ -121,8 +259,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	public suggestionsHistory: FillInAtCursorSuggestion[] = []
 	/** Tracks all pending/in-flight requests */
 	private pendingRequests: PendingRequest[] = []
-	private holeFiller: HoleFiller
-	private fimPromptBuilder: FimPromptBuilder
+	public holeFiller: HoleFiller // publicly exposed for Jetbrains autocomplete code
+	public fimPromptBuilder: FimPromptBuilder // publicly exposed for Jetbrains autocomplete code
 	private model: GhostModel
 	private costTrackingCallback: CostTrackingCallback
 	private getSettings: () => GhostServiceSettings | null
@@ -134,6 +272,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	private acceptedCommand: vscode.Disposable | null = null
 	private debounceDelayMs: number = INITIAL_DEBOUNCE_DELAY_MS
 	private latencyHistory: number[] = []
+	private telemetry: AutocompleteTelemetry | null
+	/** Information about the last suggestion shown to the user */
+	private lastSuggestion: LastSuggestionInfo | null = null
 
 	constructor(
 		context: vscode.ExtensionContext,
@@ -141,7 +282,9 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		costTrackingCallback: CostTrackingCallback,
 		getSettings: () => GhostServiceSettings | null,
 		cline: ClineProvider,
+		telemetry: AutocompleteTelemetry | null = null,
 	) {
+		this.telemetry = telemetry
 		this.model = model
 		this.costTrackingCallback = costTrackingCallback
 		this.getSettings = getSettings
@@ -168,7 +311,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		this.recentlyEditedTracker = new RecentlyEditedTracker(ide)
 
 		this.acceptedCommand = vscode.commands.registerCommand(INLINE_COMPLETION_ACCEPTED_COMMAND, () =>
-			telemetry.captureAcceptSuggestion(),
+			this.telemetry?.captureAcceptSuggestion(this.lastSuggestion?.length),
 		)
 	}
 
@@ -227,9 +370,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 		suffix: string,
 		model: GhostModel,
 		telemetryContext: AutocompleteContext,
+		languageId?: string,
 	): FillInAtCursorSuggestion {
 		if (!suggestionText) {
-			telemetry.captureSuggestionFiltered("empty_response", telemetryContext)
+			this.telemetry?.captureSuggestionFiltered("empty_response", telemetryContext)
 			return { text: "", prefix, suffix }
 		}
 
@@ -238,13 +382,14 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			prefix,
 			suffix,
 			model: model.getModelName() || "",
+			languageId,
 		})
 
 		if (processedText) {
 			return { text: processedText, prefix, suffix }
 		}
 
-		telemetry.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
+		this.telemetry?.captureSuggestionFiltered("filtered_by_postprocessing", telemetryContext)
 		return { text: "", prefix, suffix }
 	}
 
@@ -260,7 +405,8 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 	 * Records a latency measurement and updates the adaptive debounce delay.
 	 * Maintains a rolling window of the last LATENCY_SAMPLE_SIZE latencies.
 	 * Once enough samples are collected, the debounce delay is set to the
-	 * average of all stored latencies.
+	 * average of all stored latencies, clamped between MIN_DEBOUNCE_DELAY_MS
+	 * and MAX_DEBOUNCE_DELAY_MS.
 	 *
 	 * @param latencyMs - The latency of the most recent request in milliseconds
 	 */
@@ -274,7 +420,10 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			// Once we have enough samples, update the debounce delay to the average
 			const sum = this.latencyHistory.reduce((acc, val) => acc + val, 0)
-			this.debounceDelayMs = Math.round(sum / this.latencyHistory.length)
+			const averageLatency = Math.round(sum / this.latencyHistory.length)
+
+			// Clamp the debounce delay between MIN and MAX
+			this.debounceDelayMs = Math.max(MIN_DEBOUNCE_DELAY_MS, Math.min(averageLatency, MAX_DEBOUNCE_DELAY_MS))
 		}
 	}
 
@@ -283,6 +432,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			clearTimeout(this.debounceTimer)
 			this.debounceTimer = null
 		}
+		this.telemetry?.dispose()
 		this.recentlyVisitedRangesService.dispose()
 		this.recentlyEditedTracker.dispose()
 		void this.disposeIgnoreController()
@@ -321,7 +471,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			provider: this.model?.getProviderDisplayName(),
 		}
 
-		telemetry.captureSuggestionRequested(telemetryContext)
+		this.telemetry?.captureSuggestionRequested(telemetryContext)
 
 		if (!this.model || !this.model.hasValidCredentials()) {
 			// bail if no model is available or no valid API credentials configured
@@ -362,11 +512,28 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const { prefix, suffix } = extractPrefixSuffix(document, position)
 
-			const matchingResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+			// Check cache first - allow mid-word lookups from cache
+			const matchingResult = applyFirstLineOnly(
+				findMatchingSuggestion(prefix, suffix, this.suggestionsHistory),
+				prefix,
+			)
 
 			if (matchingResult !== null) {
-				telemetry.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				this.lastSuggestion = {
+					...telemetryContext,
+					length: matchingResult.text.length,
+				}
+				this.telemetry?.captureCacheHit(matchingResult.matchType, telemetryContext, matchingResult.text.length)
+				this.telemetry?.startVisibilityTracking(matchingResult.fillInAtCursor, "cache", telemetryContext)
 				return stringToInlineCompletions(matchingResult.text, position)
+			}
+
+			this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
+
+			// Only skip new LLM requests during mid-word typing or at end of statement
+			// Cache lookups above are still allowed
+			if (shouldSkipAutocomplete(prefix, suffix, document.languageId)) {
+				return []
 			}
 
 			const { prompt, prefix: promptPrefix, suffix: promptSuffix } = await this.getPrompt(document, position)
@@ -376,9 +543,19 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			await this.debouncedFetchAndCacheSuggestion(prompt, promptPrefix, promptSuffix, document.languageId)
 
-			const cachedResult = findMatchingSuggestion(prefix, suffix, this.suggestionsHistory)
+			const cachedResult = applyFirstLineOnly(
+				findMatchingSuggestion(prefix, suffix, this.suggestionsHistory),
+				prefix,
+			)
 			if (cachedResult) {
-				telemetry.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
+				this.lastSuggestion = {
+					...telemetryContext,
+					length: cachedResult.text.length,
+				}
+				this.telemetry?.captureLlmSuggestionReturned(telemetryContext, cachedResult.text.length)
+				this.telemetry?.startVisibilityTracking(cachedResult.fillInAtCursor, "llm", telemetryContext)
+			} else {
+				this.telemetry?.cancelVisibilityTracking() // No suggestion to show - cancel any pending visibility tracking
 			}
 
 			return stringToInlineCompletions(cachedResult?.text ?? "", position)
@@ -498,10 +675,17 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			strategy: prompt.strategy,
 		}
 
+		// Defense-in-depth: credentials may become invalid between the provider gate and the actual
+		// debounced execution (e.g., profile reload calling GhostModel.cleanup()).
+		// In that case, do not attempt an LLM call at all.
+		if (!this.model || !this.model.hasValidCredentials()) {
+			return
+		}
+
 		try {
-			// Curry processSuggestion with prefix, suffix, model, and telemetry context
+			// Curry processSuggestion with prefix, suffix, model, telemetry context, and languageId
 			const curriedProcessSuggestion = (text: string) =>
-				this.processSuggestion(text, prefix, suffix, this.model, telemetryContext)
+				this.processSuggestion(text, prefix, suffix, this.model, telemetryContext, languageId)
 
 			const result =
 				prompt.strategy === "fim"
@@ -510,7 +694,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 
 			const latencyMs = performance.now() - startTime
 
-			telemetry.captureLlmRequestCompleted(
+			this.telemetry?.captureLlmRequestCompleted(
 				{
 					latencyMs,
 					cost: result.cost,
@@ -529,7 +713,7 @@ export class GhostInlineCompletionProvider implements vscode.InlineCompletionIte
 			this.updateSuggestions(result.suggestion)
 		} catch (error) {
 			const latencyMs = performance.now() - startTime
-			telemetry.captureLlmRequestFailed(
+			this.telemetry?.captureLlmRequestFailed(
 				{
 					latencyMs,
 					error: error instanceof Error ? error.message : String(error),

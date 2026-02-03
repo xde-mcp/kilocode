@@ -56,6 +56,7 @@ export class ProfileValidator {
 	private static getModelIdFromProfile(profile: ProviderSettings): string | undefined {
 		switch (profile.apiProvider) {
 			case "openai":
+			case "openai-responses": // kilocode_change
 				return profile.openAiModelId
 			case "anthropic":
 			case "openai-native":
@@ -85,8 +86,10 @@ export class ProfileValidator {
 				return profile.vsCodeLmModelSelector?.id
 			case "openrouter":
 				return profile.openRouterModelId
+			// kilocode_change start
 			case "glama":
 				return profile.glamaModelId
+			// kilocode_change end
 			case "ollama":
 				return profile.ollamaModelId
 			case "requesty":

@@ -1,14 +1,14 @@
 /* eslint-disable no-undef */
 import esbuild from "esbuild"
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { chmodSync, mkdirSync, copyFileSync } from "fs"
 import { rimrafSync } from "rimraf"
-import reactCompiler from "./esbuild-plugin-react-compiler.js";
+import reactCompiler from "./esbuild-plugin-react-compiler.js"
 
 // ESM Polyfill
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Function to copy post-build files
 function copyPostBuildFiles() {
@@ -57,6 +57,23 @@ const afterBuildPlugin = {
 	},
 }
 
+// Problem matcher plugin for VS Code task integration
+const esbuildProblemMatcherPlugin = {
+	name: "esbuild-problem-matcher",
+	setup(build) {
+		build.onStart(() => console.log("[esbuild-problem-matcher#onStart]"))
+		build.onEnd((result) => {
+			result.errors.forEach(({ text, location }) => {
+				console.error(`✘ [ERROR] ${text}`)
+				if (location && location.file) {
+					console.error(`    ${location.file}:${location.line}:${location.column}:`)
+				}
+			})
+			console.log("[esbuild-problem-matcher#onEnd]")
+		})
+	},
+}
+
 const config = {
 	entryPoints: ["src/index.ts"],
 	bundle: true,
@@ -75,6 +92,8 @@ const __dirname = __dirname__(__filename);
 	},
 	external: [
 		// Keep these as external dependencies (will be installed via npm)
+		// NOTE: @kilocode/agent-runtime is intentionally NOT external - it must be bundled
+		// so that import.meta.url in extension-paths.ts resolves to the CLI's dist folder
 		"@anthropic-ai/bedrock-sdk",
 		"@anthropic-ai/sdk",
 		"@anthropic-ai/vertex-sdk",
@@ -99,7 +118,6 @@ const __dirname = __dirname__(__filename);
 		"diff",
 		"diff-match-patch",
 		"dotenv",
-		"eventemitter3",
 		"fast-deep-equal",
 		"fast-glob",
 		"fast-xml-parser",
@@ -153,13 +171,10 @@ const __dirname = __dirname__(__filename);
 		"tiktoken",
 		"tmp",
 		"tree-sitter-wasms",
-		"ts-node",
 		"turndown",
-		"undici",
 		"uri-js",
 		"uuid",
 		"vscode-material-icons",
-		"vscode-uri",
 		"web-tree-sitter",
 		"workerpool",
 		"xlsx",
@@ -170,13 +185,10 @@ const __dirname = __dirname__(__filename);
 	minify: false,
 	treeShaking: true,
 	logLevel: "info",
-	plugins: [
-		reactCompiler(), 
-		afterBuildPlugin
-	],
+	plugins: [esbuildProblemMatcherPlugin, reactCompiler(), afterBuildPlugin],
 	alias: {
-		'is-in-ci': path.resolve(__dirname, 'src/patches/is-in-ci.ts'),
-	}
+		"is-in-ci": path.resolve(__dirname, "src/patches/is-in-ci.ts"),
+	},
 }
 
 if (process.argv.includes("--watch")) {

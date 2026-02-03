@@ -15,13 +15,6 @@ vi.mock("../ApplyDiffTool", () => ({
 	},
 }))
 
-// kilocode_change start
-vi.mock("../kilocode/searchAndReplaceTool", () => ({
-	searchAndReplaceTool: vi.fn(),
-}))
-import { searchAndReplaceTool } from "../kilocode/searchAndReplaceTool"
-// kilocode_change end
-
 // Import after mocking to get the mocked version
 import { applyDiffTool as multiApplyDiffTool } from "../MultiApplyDiffTool"
 import { applyDiffTool as applyDiffToolClass } from "../ApplyDiffTool"
@@ -91,7 +84,7 @@ describe("applyDiffTool experiment routing", () => {
 		mockRemoveClosingTag = vi.fn((tag, value) => value)
 	})
 
-	it("should use legacy tool when MULTI_FILE_APPLY_DIFF experiment is disabled", async () => {
+	it("should always use class-based tool with native protocol (XML deprecated)", async () => {
 		mockProvider.getState.mockResolvedValue({
 			experiments: {
 				[EXPERIMENT_IDS.MULTI_FILE_APPLY_DIFF]: false,
@@ -110,16 +103,17 @@ describe("applyDiffTool experiment routing", () => {
 			mockRemoveClosingTag,
 		)
 
+		// Always uses native protocol now (XML deprecated)
 		expect(applyDiffToolClass.handle).toHaveBeenCalledWith(mockCline, mockBlock, {
 			askApproval: mockAskApproval,
 			handleError: mockHandleError,
 			pushToolResult: mockPushToolResult,
 			removeClosingTag: mockRemoveClosingTag,
-			toolProtocol: "xml",
+			toolProtocol: "native",
 		})
 	})
 
-	it("should use legacy tool when experiments are not defined", async () => {
+	it("should use class-based tool when experiments are not defined", async () => {
 		mockProvider.getState.mockResolvedValue({})
 
 		// Mock the class-based tool to resolve successfully
@@ -134,24 +128,26 @@ describe("applyDiffTool experiment routing", () => {
 			mockRemoveClosingTag,
 		)
 
+		// Always uses native protocol now (XML deprecated)
 		expect(applyDiffToolClass.handle).toHaveBeenCalledWith(mockCline, mockBlock, {
 			askApproval: mockAskApproval,
 			handleError: mockHandleError,
 			pushToolResult: mockPushToolResult,
 			removeClosingTag: mockRemoveClosingTag,
-			toolProtocol: "xml",
+			toolProtocol: "native",
 		})
 	})
 
-	it("should use multi-file tool when MULTI_FILE_APPLY_DIFF experiment is enabled and using XML protocol", async () => {
+	it("should use class-based tool when MULTI_FILE_APPLY_DIFF experiment is enabled (native protocol always used)", async () => {
 		mockProvider.getState.mockResolvedValue({
 			experiments: {
 				[EXPERIMENT_IDS.MULTI_FILE_APPLY_DIFF]: true,
 			},
 		})
 
-		// Mock the new tool behavior - it should continue with the multi-file implementation
-		// Since we're not mocking the entire function, we'll just verify it doesn't call the class-based tool
+		// Mock the class-based tool to resolve successfully
+		;(applyDiffToolClass.handle as any).mockResolvedValue(undefined)
+
 		await multiApplyDiffTool(
 			mockCline,
 			mockBlock,
@@ -161,7 +157,14 @@ describe("applyDiffTool experiment routing", () => {
 			mockRemoveClosingTag,
 		)
 
-		expect(applyDiffToolClass.handle).not.toHaveBeenCalled()
+		// Native protocol is always used now, so class-based tool is always called
+		expect(applyDiffToolClass.handle).toHaveBeenCalledWith(mockCline, mockBlock, {
+			askApproval: mockAskApproval,
+			handleError: mockHandleError,
+			pushToolResult: mockPushToolResult,
+			removeClosingTag: mockRemoveClosingTag,
+			toolProtocol: "native",
+		})
 	})
 
 	it("should use class-based tool when model defaults to native protocol", async () => {
@@ -182,7 +185,7 @@ describe("applyDiffTool experiment routing", () => {
 				[EXPERIMENT_IDS.MULTI_FILE_APPLY_DIFF]: true,
 			},
 		})
-		;(searchAndReplaceTool as any).mockResolvedValue(undefined)
+		;(applyDiffToolClass.handle as any).mockResolvedValue(undefined)
 
 		await multiApplyDiffTool(
 			mockCline,
@@ -193,13 +196,13 @@ describe("applyDiffTool experiment routing", () => {
 			mockRemoveClosingTag,
 		)
 
-		// When native protocol is enabled, should always use class-based tool
-		expect(searchAndReplaceTool).toHaveBeenCalledWith(
-			mockCline,
-			mockBlock,
-			mockAskApproval,
-			mockHandleError,
-			mockPushToolResult,
-		)
+		// When native protocol is used, should always use class-based tool
+		expect(applyDiffToolClass.handle).toHaveBeenCalledWith(mockCline, mockBlock, {
+			askApproval: mockAskApproval,
+			handleError: mockHandleError,
+			pushToolResult: mockPushToolResult,
+			removeClosingTag: mockRemoveClosingTag,
+			toolProtocol: "native",
+		})
 	})
 })

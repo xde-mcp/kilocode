@@ -1,10 +1,9 @@
 import path from "path"
 import fs from "fs/promises"
 
+import { type ClineSayTool, DEFAULT_WRITE_DELAY_MS, isNativeProtocol } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
-import { DEFAULT_WRITE_DELAY_MS } from "@roo-code/types"
 
-import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { getReadablePath } from "../../utils/path"
 import { Task } from "../task/Task"
 import { ToolUse, RemoveClosingTag, AskApproval, HandleError, PushToolResult } from "../../shared/tools"
@@ -16,12 +15,8 @@ import { parseXmlForDiff } from "../../utils/xml"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { applyDiffTool as applyDiffToolClass } from "./ApplyDiffTool"
 import { computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
-import * as vscode from "vscode"
-import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
-import { Package } from "../../shared/package"
-import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
-import { searchAndReplaceTool } from "./kilocode/searchAndReplaceTool"
 import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { trackContribution } from "../../services/contribution-tracking/ContributionTrackingService" // kilocode_change
 
 export interface DiffOperation {
 	path: string
@@ -66,9 +61,16 @@ export async function applyDiffTool(
 	removeClosingTag: RemoveClosingTag,
 ) {
 	// Check if native protocol is enabled - if so, always use single-file class-based tool
-	const toolProtocol = resolveToolProtocol(cline.apiConfiguration, cline.api.getModel().info)
+	// Use the task's locked protocol for consistency throughout the task lifetime
+	const toolProtocol = resolveToolProtocol(cline.apiConfiguration, cline.api.getModel().info, cline.taskToolProtocol)
 	if (isNativeProtocol(toolProtocol)) {
-		return searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult) // kilocode_change
+		return applyDiffToolClass.handle(cline, block as ToolUse<"apply_diff">, {
+			askApproval,
+			handleError,
+			pushToolResult,
+			removeClosingTag,
+			toolProtocol,
+		})
 	}
 
 	// Check if MULTI_FILE_APPLY_DIFF experiment is enabled
@@ -636,6 +638,20 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					const isWriteProtected = cline.rooProtectedController?.isWriteProtected(relPath) || false
 					didApprove = await askApproval("tool", operationMessage, toolProgressStatus, isWriteProtected)
 
+					// kilocode_change start
+					// Track contribution for single file operation (fire-and-forget)
+					trackContribution({
+						cwd: cline.cwd,
+						filePath: relPath,
+						originalContent: beforeContent!,
+						newContent: originalContent!,
+						status: didApprove ? "accepted" : "rejected",
+						taskId: cline.taskId,
+						organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+						kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+					})
+					// kilocode_change end
+
 					if (!didApprove) {
 						// Revert changes if diff view was shown
 						if (!isPreventFocusDisruptionEnabled) {
@@ -661,6 +677,20 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 					}
 				} else {
 					// Batch operations - already approved above
+					// kilocode_change start
+					// Track contribution for batch file operation (fire-and-forget)
+					trackContribution({
+						cwd: cline.cwd,
+						filePath: relPath,
+						originalContent: beforeContent!,
+						newContent: originalContent!,
+						status: "accepted", // Batch operations are already approved at this point
+						taskId: cline.taskId,
+						organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+						kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+					})
+					// kilocode_change end
+
 					if (isPreventFocusDisruptionEnabled) {
 						// Direct file write without diff view or opening the file
 						cline.diffViewProvider.editType = "modify"
@@ -734,11 +764,15 @@ ${errorDetails ? `\nTechnical details:\n${errorDetails}\n` : ""}
 			}
 		}
 
-		// Check protocol for notice formatting
-		const toolProtocol = resolveToolProtocol(cline.apiConfiguration, cline.api.getModel().info)
+		// Check protocol for notice formatting - reuse the task's locked protocol
+		const noticeProtocol = resolveToolProtocol(
+			cline.apiConfiguration,
+			cline.api.getModel().info,
+			cline.taskToolProtocol,
+		)
 		const singleBlockNotice =
 			totalSearchBlocks === 1
-				? isNativeProtocol(toolProtocol)
+				? isNativeProtocol(noticeProtocol)
 					? "\n" +
 						JSON.stringify({
 							notice: "Making multiple related changes in a single apply_diff is more efficient. If other changes are needed in this file, please include them as additional SEARCH/REPLACE blocks.",

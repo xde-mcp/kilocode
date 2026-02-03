@@ -1,5 +1,5 @@
 /**
- * StatusBar component - displays project info, git branch, mode, model, and context usage
+ * StatusBar component - displays project info, git branch, mode, model, context usage, and session cost
  */
 
 import React, { useEffect, useMemo, useState } from "react"
@@ -12,9 +12,11 @@ import {
 	apiConfigurationAtom,
 	chatMessagesAtom,
 	routerModelsAtom,
+	yoloModeAtom,
 } from "../../state/atoms/index.js"
 import { useGitInfo } from "../../state/hooks/useGitInfo.js"
 import { useContextUsage } from "../../state/hooks/useContextUsage.js"
+import { useSessionCost, formatSessionCost } from "../../state/hooks/useSessionCost.js"
 import { useTheme } from "../../state/hooks/useTheme.js"
 import { formatContextUsage } from "../../utils/context.js"
 import {
@@ -102,12 +104,16 @@ export const StatusBar: React.FC = () => {
 	const apiConfig = useAtomValue(apiConfigurationAtom)
 	const messages = useAtomValue(chatMessagesAtom)
 	const routerModels = useAtomValue(routerModelsAtom)
+	const yoloMode = useAtomValue(yoloModeAtom)
 
 	// Get git info
 	const gitInfo = useGitInfo(cwd)
 
 	// Calculate context usage
 	const contextUsage = useContextUsage(messages, apiConfig)
+
+	// Calculate session cost
+	const sessionCost = useSessionCost()
 
 	const [isWorktree, setIsWorktree] = useState(false)
 
@@ -142,7 +148,7 @@ export const StatusBar: React.FC = () => {
 	// Prepare display values
 	// In parallel mode, show the original directory (process.cwd()) instead of the worktree path
 	const displayCwd = isParallelMode ? process.cwd() : cwd
-	const projectName = `${getProjectName(displayCwd)}${isWorktree ? " (git worktree)" : ""}`
+	const projectName = `${getProjectName(displayCwd)}${isWorktree ? " ⎇" : ""}`
 	const modelName = useMemo(() => getModelDisplayName(apiConfig, routerModels), [apiConfig, routerModels])
 
 	// Get context color based on percentage using theme colors
@@ -181,8 +187,20 @@ export const StatusBar: React.FC = () => {
 				) : null}
 			</Box>
 
-			{/* Right side: Mode, Model, and Context */}
+			{/* Right side: YOLO indicator, Mode, Model, and Context */}
 			<Box>
+				{/* YOLO Mode Indicator */}
+				{yoloMode && (
+					<>
+						<Text color="red" bold>
+							⚡ YOLO
+						</Text>
+						<Text color={theme.ui.text.dimmed} dimColor>
+							{" | "}
+						</Text>
+					</>
+				)}
+
 				{/* Mode */}
 				<Text color={theme.ui.text.highlight} bold>
 					{mode ? mode.charAt(0).toUpperCase() + mode.slice(1) : "N/A"}
@@ -203,6 +221,16 @@ export const StatusBar: React.FC = () => {
 				<Text color={contextColor} bold>
 					{contextText}
 				</Text>
+
+				{/* Session Cost */}
+				{sessionCost.hasCostData && (
+					<>
+						<Text color={theme.ui.text.dimmed} dimColor>
+							{" | "}
+						</Text>
+						<Text color={theme.semantic.info}>{formatSessionCost(sessionCost.totalCost)}</Text>
+					</>
+				)}
 			</Box>
 		</Box>
 	)

@@ -25,11 +25,15 @@ export class CodeIndexConfigManager {
 	private mistralOptions?: { apiKey: string }
 	private vercelAiGatewayOptions?: { apiKey: string }
 	private bedrockOptions?: { region: string; profile?: string }
-	private openRouterOptions?: { apiKey: string }
+	private openRouterOptions?: { apiKey: string; specificProvider?: string }
 	private qdrantUrl?: string = "http://localhost:6333"
 	private qdrantApiKey?: string
 	private searchMinScore?: number
 	private searchMaxResults?: number
+	// kilocode_change start
+	private embeddingBatchSize?: number
+	private scannerMaxBatchRetries?: number
+	// kilocode_change end
 
 	// kilocode_change start: Kilo org indexing props
 	private _kiloOrgProps: {
@@ -96,6 +100,10 @@ export class CodeIndexConfigManager {
 			codebaseIndexEmbedderModelId: "",
 			codebaseIndexSearchMinScore: undefined,
 			codebaseIndexSearchMaxResults: undefined,
+			// kilocode_change start
+			codebaseIndexEmbeddingBatchSize: undefined,
+			codebaseIndexScannerMaxBatchRetries: undefined,
+			// kilocode_change end
 			codebaseIndexBedrockRegion: "us-east-1",
 			codebaseIndexBedrockProfile: "",
 		}
@@ -109,6 +117,10 @@ export class CodeIndexConfigManager {
 			codebaseIndexLancedbVectorStoreDirectory, // kilocode_change
 			codebaseIndexSearchMinScore,
 			codebaseIndexSearchMaxResults,
+			// kilocode_change start
+			codebaseIndexEmbeddingBatchSize,
+			codebaseIndexScannerMaxBatchRetries,
+			// kilocode_change end
 		} = codebaseIndexConfig
 		// kilocode_change
 		const codebaseIndexVectorStoreProvider = codebaseIndexConfig.codebaseIndexVectorStoreProvider ?? "qdrant"
@@ -124,6 +136,7 @@ export class CodeIndexConfigManager {
 		const bedrockRegion = codebaseIndexConfig.codebaseIndexBedrockRegion ?? "us-east-1"
 		const bedrockProfile = codebaseIndexConfig.codebaseIndexBedrockProfile ?? ""
 		const openRouterApiKey = this.contextProxy?.getSecret("codebaseIndexOpenRouterApiKey") ?? ""
+		const openRouterSpecificProvider = codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider ?? ""
 
 		// Update instance variables with configuration
 		this.codebaseIndexEnabled = codebaseIndexEnabled ?? false
@@ -135,6 +148,10 @@ export class CodeIndexConfigManager {
 		this.qdrantApiKey = qdrantApiKey ?? ""
 		this.searchMinScore = codebaseIndexSearchMinScore
 		this.searchMaxResults = codebaseIndexSearchMaxResults
+		// kilocode_change start
+		this.embeddingBatchSize = codebaseIndexEmbeddingBatchSize
+		this.scannerMaxBatchRetries = codebaseIndexScannerMaxBatchRetries
+		// kilocode_change end
 
 		// Validate and set model dimension
 		const rawDimension = codebaseIndexConfig.codebaseIndexEmbedderModelDimension
@@ -190,7 +207,9 @@ export class CodeIndexConfigManager {
 		this.geminiOptions = geminiApiKey ? { apiKey: geminiApiKey } : undefined
 		this.mistralOptions = mistralApiKey ? { apiKey: mistralApiKey } : undefined
 		this.vercelAiGatewayOptions = vercelAiGatewayApiKey ? { apiKey: vercelAiGatewayApiKey } : undefined
-		this.openRouterOptions = openRouterApiKey ? { apiKey: openRouterApiKey } : undefined
+		this.openRouterOptions = openRouterApiKey
+			? { apiKey: openRouterApiKey, specificProvider: openRouterSpecificProvider || undefined }
+			: undefined
 		// Set bedrockOptions if region is provided (profile is optional)
 		this.bedrockOptions = bedrockRegion
 			? { region: bedrockRegion, profile: bedrockProfile || undefined }
@@ -242,6 +261,7 @@ export class CodeIndexConfigManager {
 			bedrockRegion: this.bedrockOptions?.region ?? "",
 			bedrockProfile: this.bedrockOptions?.profile ?? "",
 			openRouterApiKey: this.openRouterOptions?.apiKey ?? "",
+			openRouterSpecificProvider: this.openRouterOptions?.specificProvider ?? "",
 			qdrantUrl: this.qdrantUrl ?? "",
 			qdrantApiKey: this.qdrantApiKey ?? "",
 		}
@@ -367,6 +387,7 @@ export class CodeIndexConfigManager {
 		const prevBedrockRegion = prev?.bedrockRegion ?? ""
 		const prevBedrockProfile = prev?.bedrockProfile ?? ""
 		const prevOpenRouterApiKey = prev?.openRouterApiKey ?? ""
+		const prevOpenRouterSpecificProvider = prev?.openRouterSpecificProvider ?? ""
 		const prevQdrantUrl = prev?.qdrantUrl ?? ""
 		const prevQdrantApiKey = prev?.qdrantApiKey ?? ""
 		// kilocode_change - start
@@ -424,6 +445,7 @@ export class CodeIndexConfigManager {
 		const currentBedrockRegion = this.bedrockOptions?.region ?? ""
 		const currentBedrockProfile = this.bedrockOptions?.profile ?? ""
 		const currentOpenRouterApiKey = this.openRouterOptions?.apiKey ?? ""
+		const currentOpenRouterSpecificProvider = this.openRouterOptions?.specificProvider ?? ""
 		const currentQdrantUrl = this.qdrantUrl ?? ""
 		const currentQdrantApiKey = this.qdrantApiKey ?? ""
 
@@ -459,6 +481,11 @@ export class CodeIndexConfigManager {
 		}
 
 		if (prevOpenRouterApiKey !== currentOpenRouterApiKey) {
+			return true
+		}
+
+		// OpenRouter specific provider change
+		if (prevOpenRouterSpecificProvider !== currentOpenRouterSpecificProvider) {
 			return true
 		}
 
@@ -530,6 +557,10 @@ export class CodeIndexConfigManager {
 			qdrantApiKey: this.qdrantApiKey,
 			searchMinScore: this.currentSearchMinScore,
 			searchMaxResults: this.currentSearchMaxResults,
+			// kilocode_change start
+			embeddingBatchSize: this.currentEmbeddingBatchSize,
+			scannerMaxBatchRetries: this.currentScannerMaxBatchRetries,
+			// kilocode_change end
 		}
 	}
 
@@ -611,4 +642,22 @@ export class CodeIndexConfigManager {
 	public get currentSearchMaxResults(): number {
 		return this.searchMaxResults ?? DEFAULT_MAX_SEARCH_RESULTS
 	}
+
+	// kilocode_change start
+	/**
+	 * Gets the configured embedding batch size.
+	 * Returns user setting if configured, otherwise returns undefined (will use default from constants).
+	 */
+	public get currentEmbeddingBatchSize(): number | undefined {
+		return this.embeddingBatchSize
+	}
+
+	/**
+	 * Gets the configured scanner max batch retries.
+	 * Returns user setting if configured, otherwise returns undefined (will use default from constants).
+	 */
+	public get currentScannerMaxBatchRetries(): number | undefined {
+		return this.scannerMaxBatchRetries
+	}
+	// kilocode_change end
 }

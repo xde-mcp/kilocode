@@ -1,4 +1,11 @@
-import { AgentSession, AgentStatus, AgentManagerState, PendingSession } from "./types"
+import { AgentSession, AgentStatus, AgentManagerState, PendingSession, ParallelModeInfo } from "./types"
+import { DEFAULT_MODE_SLUG } from "@roo-code/types"
+
+export interface CreateSessionOptions {
+	parallelMode?: boolean
+	model?: string
+	mode?: string
+}
 
 const MAX_SESSIONS = 10
 const MAX_LOGS = 100
@@ -23,12 +30,13 @@ export class AgentRegistry {
 	/**
 	 * Set a pending session while waiting for CLI's session_created event
 	 */
-	public setPendingSession(prompt: string, options?: { gitUrl?: string }): PendingSession {
+	public setPendingSession(prompt: string, options?: CreateSessionOptions & { gitUrl?: string }): PendingSession {
 		const label = this.truncatePrompt(prompt)
 		this._pendingSession = {
 			prompt,
 			label,
 			startTime: Date.now(),
+			parallelMode: options?.parallelMode,
 			gitUrl: options?.gitUrl,
 		}
 		return this._pendingSession
@@ -48,9 +56,9 @@ export class AgentRegistry {
 		sessionId: string,
 		prompt: string,
 		startTime?: number,
-		options?: { gitUrl?: string },
+		options?: CreateSessionOptions & { labelOverride?: string; gitUrl?: string },
 	): AgentSession {
-		const label = this.truncatePrompt(prompt)
+		const label = options?.labelOverride ?? this.truncatePrompt(prompt)
 
 		const session: AgentSession = {
 			sessionId,
@@ -60,7 +68,10 @@ export class AgentRegistry {
 			startTime: startTime ?? Date.now(),
 			logs: ["Starting agent..."],
 			source: "local",
+			...(options?.parallelMode && { parallelMode: { enabled: true } }),
 			gitUrl: options?.gitUrl,
+			model: options?.model,
+			mode: options?.mode ?? DEFAULT_MODE_SLUG,
 		}
 
 		this.sessions.set(sessionId, session)
@@ -85,8 +96,13 @@ export class AgentRegistry {
 		if (!session) return undefined
 
 		session.status = status
-		if (status === "done" || status === "error") {
+		if (status === "done" || status === "error" || status === "stopped") {
 			session.endTime = Date.now()
+		} else if (status === "running") {
+			// Clear end state when resuming
+			session.endTime = undefined
+			session.exitCode = undefined
+			session.error = undefined
 		}
 		if (exitCode !== undefined) {
 			session.exitCode = exitCode
@@ -133,6 +149,41 @@ export class AgentRegistry {
 		}
 	}
 
+	/**
+	 * Update the mode for a session.
+	 */
+	public updateSessionMode(sessionId: string, mode: string): AgentSession | undefined {
+		const session = this.sessions.get(sessionId)
+		if (!session) {
+			return undefined
+		}
+		session.mode = mode
+		return session
+	}
+
+	/**
+	 * Update parallel mode info on a session.
+	 */
+	public updateParallelModeInfo(
+		id: string,
+		info: Partial<Omit<ParallelModeInfo, "enabled">>,
+	): AgentSession | undefined {
+		const session = this.sessions.get(id)
+		if (!session) {
+			return undefined
+		}
+
+		const currentParallelMode = session.parallelMode ?? { enabled: true }
+
+		session.parallelMode = {
+			...currentParallelMode,
+			...info,
+			enabled: true,
+		}
+
+		return session
+	}
+
 	public getState(): AgentManagerState {
 		return {
 			sessions: this.getSessions(),
@@ -166,6 +217,48 @@ export class AgentRegistry {
 			}
 		}
 		return count
+	}
+
+	/**
+	 * Remove a session from the registry
+	 */
+	public removeSession(sessionId: string): boolean {
+		if (this._selectedId === sessionId) {
+			this._selectedId = null
+		}
+		return this.sessions.delete(sessionId)
+	}
+
+	/**
+	 * Rename a session from one ID to another.
+	 * Used when upgrading a provisional session to a real session ID.
+	 */
+	public renameSession(oldId: string, newId: string): boolean {
+		if (oldId === newId) {
+			return this.sessions.has(oldId)
+		}
+
+		const oldSession = this.sessions.get(oldId)
+		if (!oldSession) {
+			return false
+		}
+
+		const targetSession = this.sessions.get(newId)
+		if (targetSession) {
+			// Prefer keeping the target session object (e.g. resuming an existing session),
+			// but merge in any provisional logs so early streaming isn't lost.
+			targetSession.logs = [...oldSession.logs, ...targetSession.logs]
+			this.sessions.delete(oldId)
+		} else {
+			this.sessions.delete(oldId)
+			oldSession.sessionId = newId
+			this.sessions.set(newId, oldSession)
+		}
+		if (this._selectedId === oldId) {
+			this._selectedId = newId
+		}
+
+		return true
 	}
 
 	private pruneOldSessions(): void {

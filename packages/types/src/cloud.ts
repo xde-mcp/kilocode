@@ -121,14 +121,25 @@ export const organizationDefaultSettingsSchema = globalSettingsSchema
 export type OrganizationDefaultSettings = z.infer<typeof organizationDefaultSettingsSchema>
 
 /**
+ * WorkspaceTaskVisibility
+ */
+
+const workspaceTaskVisibilitySchema = z.enum(["all", "list-only", "admins-and-creator", "creator", "full-lockdown"])
+
+export type WorkspaceTaskVisibility = z.infer<typeof workspaceTaskVisibilitySchema>
+
+/**
  * OrganizationCloudSettings
  */
 
 export const organizationCloudSettingsSchema = z.object({
 	recordTaskMessages: z.boolean().optional(),
 	enableTaskSharing: z.boolean().optional(),
+	allowPublicTaskSharing: z.boolean().optional(),
 	taskShareExpirationDays: z.number().int().positive().optional(),
 	allowMembersViewAllTasks: z.boolean().optional(),
+	workspaceTaskVisibility: workspaceTaskVisibilitySchema.optional(),
+	llmEnhancedFeaturesEnabled: z.boolean().optional(),
 })
 
 export type OrganizationCloudSettings = z.infer<typeof organizationCloudSettingsSchema>
@@ -174,6 +185,7 @@ export type UserFeatures = z.infer<typeof userFeaturesSchema>
 export const userSettingsConfigSchema = z.object({
 	extensionBridgeEnabled: z.boolean().optional(),
 	taskSyncEnabled: z.boolean().optional(),
+	llmEnhancedFeaturesEnabled: z.boolean().optional(),
 })
 
 export type UserSettingsConfig = z.infer<typeof userSettingsConfigSchema>
@@ -200,8 +212,10 @@ export const ORGANIZATION_DEFAULT: OrganizationSettings = {
 	cloudSettings: {
 		recordTaskMessages: true,
 		enableTaskSharing: true,
+		allowPublicTaskSharing: true,
 		taskShareExpirationDays: 30,
 		allowMembersViewAllTasks: true,
+		llmEnhancedFeaturesEnabled: false,
 	},
 	defaultSettings: {},
 	allowList: ORGANIZATION_ALLOW_ALL,
@@ -440,6 +454,9 @@ export enum ExtensionBridgeEventName {
 	TaskPaused = RooCodeEventName.TaskPaused,
 	TaskUnpaused = RooCodeEventName.TaskUnpaused,
 	TaskSpawned = RooCodeEventName.TaskSpawned,
+	TaskDelegated = RooCodeEventName.TaskDelegated,
+	TaskDelegationCompleted = RooCodeEventName.TaskDelegationCompleted,
+	TaskDelegationResumed = RooCodeEventName.TaskDelegationResumed,
 
 	TaskUserMessage = RooCodeEventName.TaskUserMessage,
 
@@ -517,6 +534,21 @@ export const extensionBridgeEventSchema = z.discriminatedUnion("type", [
 	}),
 	z.object({
 		type: z.literal(ExtensionBridgeEventName.TaskSpawned),
+		instance: extensionInstanceSchema,
+		timestamp: z.number(),
+	}),
+	z.object({
+		type: z.literal(ExtensionBridgeEventName.TaskDelegated),
+		instance: extensionInstanceSchema,
+		timestamp: z.number(),
+	}),
+	z.object({
+		type: z.literal(ExtensionBridgeEventName.TaskDelegationCompleted),
+		instance: extensionInstanceSchema,
+		timestamp: z.number(),
+	}),
+	z.object({
+		type: z.literal(ExtensionBridgeEventName.TaskDelegationResumed),
 		instance: extensionInstanceSchema,
 		timestamp: z.number(),
 	}),

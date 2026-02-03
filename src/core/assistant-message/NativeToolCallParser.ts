@@ -1,17 +1,22 @@
+import { parseJSON } from "partial-json"
+
 import { type ToolName, toolNames, type FileEntry } from "@roo-code/types"
+import { customToolRegistry } from "@roo-code/core"
+
 import {
 	type ToolUse,
 	type McpToolUse,
 	type ToolParamName,
-	toolParamNames,
 	type NativeToolArgs,
+	toolParamNames,
 } from "../../shared/tools"
-import { parseJSON } from "partial-json"
+import { resolveToolAlias } from "../../shared/tool-aliases" // kilocode_change: prevent circular dependency
 import type {
 	ApiStreamToolCallStartChunk,
 	ApiStreamToolCallDeltaChunk,
 	ApiStreamToolCallEndChunk,
 } from "../../api/transform/stream"
+import { MCP_TOOL_PREFIX, MCP_TOOL_SEPARATOR, parseMcpToolName, normalizeMcpToolName } from "../../utils/mcp-name"
 
 /**
  * Helper type to extract properly typed native arguments for a given tool.
@@ -47,7 +52,7 @@ export type ToolCallStreamEvent = ApiStreamToolCallStartChunk | ApiStreamToolCal
  */
 export class NativeToolCallParser {
 	// Streaming state management for argument accumulation (keyed by tool call id)
-	// Note: name is string to accommodate dynamic MCP tools (mcp_serverName_toolName)
+	// Note: name is string to accommodate dynamic MCP tools (mcp--serverName--toolName)
 	private static streamingToolCalls = new Map<
 		string,
 		{
@@ -156,7 +161,6 @@ export class NativeToolCallParser {
 					id: tracked.id,
 				})
 			}
-			this.rawChunkTracker.clear()
 		}
 
 		return events
@@ -195,7 +199,7 @@ export class NativeToolCallParser {
 	/**
 	 * Start streaming a new tool call.
 	 * Initializes tracking for incremental argument parsing.
-	 * Accepts string to support both ToolName and dynamic MCP tools (mcp_serverName_toolName).
+	 * Accepts string to support both ToolName and dynamic MCP tools (mcp--serverName--toolName).
 	 */
 	public static startStreamingToolCall(id: string, name: string): void {
 		this.streamingToolCalls.set(id, {
@@ -238,7 +242,8 @@ export class NativeToolCallParser {
 		toolCall.argumentsAccumulator += chunk
 
 		// For dynamic MCP tools, we don't return partial updates - wait for final
-		if (toolCall.name.startsWith("mcp_")) {
+		const mcpPrefix = MCP_TOOL_PREFIX + MCP_TOOL_SEPARATOR
+		if (toolCall.name.startsWith(mcpPrefix)) {
 			return null
 		}
 
@@ -247,12 +252,18 @@ export class NativeToolCallParser {
 		try {
 			const partialArgs = parseJSON(toolCall.argumentsAccumulator)
 
+			// Resolve tool alias to canonical name
+			const resolvedName = resolveToolAlias(toolCall.name) as ToolName
+			// Preserve original name if it differs from resolved (i.e., it was an alias)
+			const originalName = toolCall.name !== resolvedName ? toolCall.name : undefined
+
 			// Create partial ToolUse with extracted values
 			return this.createPartialToolUse(
 				toolCall.id,
-				toolCall.name as ToolName,
+				resolvedName,
 				partialArgs || {},
 				true, // partial
+				originalName,
 			)
 		} catch {
 			// Even partial-json-parser can fail on severely malformed JSON
@@ -299,8 +310,11 @@ export class NativeToolCallParser {
 	private static convertFileEntries(files: any[]): FileEntry[] {
 		return files.map((file: any) => {
 			const entry: FileEntry = { path: file.path }
-			if (file.line_ranges && Array.isArray(file.line_ranges)) {
-				entry.lineRanges = file.line_ranges
+			// kilocode_change: support lineRanges spelling, often preferred by Claude
+			const lineRanges = file.line_ranges ?? file.lineRanges
+			if (lineRanges && Array.isArray(lineRanges)) {
+				entry.lineRanges = lineRanges
+					// kilocode_change end
 					.map((range: any) => {
 						// Handle tuple format: [start, end]
 						if (Array.isArray(range) && range.length >= 2) {
@@ -319,7 +333,7 @@ export class NativeToolCallParser {
 						}
 						return null
 					})
-					.filter(Boolean)
+					.filter((range) => range !== null) // kilocode_change
 			}
 			return entry
 		})
@@ -328,12 +342,14 @@ export class NativeToolCallParser {
 	/**
 	 * Create a partial ToolUse from currently parsed arguments.
 	 * Used during streaming to show progress.
+	 * @param originalName - The original tool name as called by the model (if different from canonical name)
 	 */
 	private static createPartialToolUse(
 		id: string,
 		name: ToolName,
 		partialArgs: Record<string, any>,
 		partial: boolean,
+		originalName?: string,
 	): ToolUse | null {
 		// Build legacy params for display
 		// NOTE: For streaming partial updates, we MUST populate params even for complex types
@@ -371,39 +387,11 @@ export class NativeToolCallParser {
 				}
 				break
 
-			case "insert_content":
-				// For partial tool calls, we build nativeArgs incrementally as fields arrive.
-				// Unlike parseToolCall which validates all required fields, partial parsing
-				// needs to show progress as each field streams in.
-				if (
-					partialArgs.path !== undefined ||
-					partialArgs.line !== undefined ||
-					partialArgs.content !== undefined
-				) {
-					nativeArgs = {
-						path: partialArgs.path,
-						line:
-							typeof partialArgs.line === "number"
-								? partialArgs.line
-								: partialArgs.line !== undefined
-									? parseInt(String(partialArgs.line), 10)
-									: undefined,
-						content: partialArgs.content,
-					}
-				}
-				break
-
 			case "write_to_file":
-				if (partialArgs.path || partialArgs.content || partialArgs.line_count !== undefined) {
+				if (partialArgs.path || partialArgs.content) {
 					nativeArgs = {
 						path: partialArgs.path,
 						content: partialArgs.content,
-						line_count:
-							typeof partialArgs.line_count === "number"
-								? partialArgs.line_count
-								: partialArgs.line_count
-									? parseInt(String(partialArgs.line_count), 10)
-									: undefined,
 					}
 				}
 				break
@@ -434,6 +422,7 @@ export class NativeToolCallParser {
 						coordinate: partialArgs.coordinate,
 						size: partialArgs.size,
 						text: partialArgs.text,
+						path: partialArgs.path,
 					}
 				}
 				break
@@ -461,14 +450,6 @@ export class NativeToolCallParser {
 						prompt: partialArgs.prompt,
 						path: partialArgs.path,
 						image: partialArgs.image,
-					}
-				}
-				break
-
-			case "list_code_definition_names":
-				if (partialArgs.path !== undefined) {
-					nativeArgs = {
-						path: partialArgs.path,
 					}
 				}
 				break
@@ -519,18 +500,86 @@ export class NativeToolCallParser {
 				}
 				break
 
-			// Add other tools as needed
+			case "apply_patch":
+				if (partialArgs.patch !== undefined) {
+					nativeArgs = {
+						patch: partialArgs.patch,
+					}
+				}
+				break
+
+			case "search_replace":
+				if (
+					partialArgs.file_path !== undefined ||
+					partialArgs.old_string !== undefined ||
+					partialArgs.new_string !== undefined
+				) {
+					nativeArgs = {
+						file_path: partialArgs.file_path,
+						old_string: partialArgs.old_string,
+						new_string: partialArgs.new_string,
+					}
+				}
+				break
+
+			case "search_and_replace":
+				if (partialArgs.path !== undefined || partialArgs.operations !== undefined) {
+					nativeArgs = {
+						path: partialArgs.path,
+						operations: partialArgs.operations,
+					}
+				}
+				break
+
+			case "edit_file":
+				if (
+					partialArgs.file_path !== undefined ||
+					partialArgs.old_string !== undefined ||
+					partialArgs.new_string !== undefined
+				) {
+					nativeArgs = {
+						file_path: partialArgs.file_path,
+						old_string: partialArgs.old_string,
+						new_string: partialArgs.new_string,
+						expected_replacements: partialArgs.expected_replacements,
+					}
+				}
+				break
+
+			// kilocode_change start: Fast Apply
+			case "fast_edit_file":
+				if (
+					partialArgs.target_file !== undefined ||
+					partialArgs.instructions !== undefined ||
+					partialArgs.code_edit !== undefined
+				) {
+					nativeArgs = {
+						target_file: partialArgs.target_file,
+						instructions: partialArgs.instructions,
+						code_edit: partialArgs.code_edit,
+					}
+				}
+				break
+			// kilocode_change end
+
 			default:
 				break
 		}
 
-		return {
+		const result: ToolUse = {
 			type: "tool_use" as const,
 			name,
 			params,
 			partial,
 			nativeArgs,
 		}
+
+		// Preserve original name for API history when an alias was used
+		if (originalName) {
+			result.originalName = originalName
+		}
+
+		return result
 	}
 
 	/**
@@ -544,21 +593,32 @@ export class NativeToolCallParser {
 		name: TName
 		arguments: string
 	}): ToolUse<TName> | McpToolUse | null {
-		// Check if this is a dynamic MCP tool (mcp_serverName_toolName)
-		if (typeof toolCall.name === "string" && toolCall.name.startsWith("mcp_")) {
-			return this.parseDynamicMcpTool(toolCall)
+		// Check if this is a dynamic MCP tool (mcp--serverName--toolName)
+		// Also handle models that output underscores instead of hyphens (mcp__serverName__toolName)
+		const mcpPrefix = MCP_TOOL_PREFIX + MCP_TOOL_SEPARATOR
+
+		if (typeof toolCall.name === "string") {
+			// Normalize the tool name to handle models that output underscores instead of hyphens
+			const normalizedName = normalizeMcpToolName(toolCall.name)
+			if (normalizedName.startsWith(mcpPrefix)) {
+				// Pass the original tool call but with normalized name for parsing
+				return this.parseDynamicMcpTool({ ...toolCall, name: normalizedName })
+			}
 		}
 
-		// Validate tool name
-		if (!toolNames.includes(toolCall.name as ToolName)) {
-			console.error(`Invalid tool name: ${toolCall.name}`)
+		// Resolve tool alias to canonical name
+		const resolvedName = resolveToolAlias(toolCall.name as string) as TName
+
+		// Validate tool name (after alias resolution).
+		if (!toolNames.includes(resolvedName as ToolName) && !customToolRegistry.has(resolvedName)) {
+			console.error(`Invalid tool name: ${toolCall.name} (resolved: ${resolvedName})`)
 			console.error(`Valid tool names:`, toolNames)
 			return null
 		}
 
 		try {
 			// Parse the arguments JSON string
-			const args = JSON.parse(toolCall.arguments)
+			const args = toolCall.arguments === "" ? {} : JSON.parse(toolCall.arguments)
 
 			// Build legacy params object for backward compatibility with XML protocol and UI.
 			// Native execution path uses nativeArgs instead, which has proper typing.
@@ -568,13 +628,13 @@ export class NativeToolCallParser {
 				// Skip complex parameters that have been migrated to nativeArgs.
 				// For read_file, the 'files' parameter is a FileEntry[] array that can't be
 				// meaningfully stringified. The properly typed data is in nativeArgs instead.
-				if (toolCall.name === "read_file" && key === "files") {
+				if (resolvedName === "read_file" && key === "files") {
 					continue
 				}
 
 				// Validate parameter name
-				if (!toolParamNames.includes(key as ToolParamName)) {
-					console.warn(`Unknown parameter '${key}' for tool '${toolCall.name}'`)
+				if (!toolParamNames.includes(key as ToolParamName) && !customToolRegistry.has(resolvedName)) {
+					console.warn(`Unknown parameter '${key}' for tool '${resolvedName}'`)
 					console.warn(`Valid param names:`, toolParamNames)
 					continue
 				}
@@ -594,7 +654,7 @@ export class NativeToolCallParser {
 			// will fall back to legacy parameter parsing if supported.
 			let nativeArgs: NativeArgsFor<TName> | undefined = undefined
 
-			switch (toolCall.name) {
+			switch (resolvedName) {
 				case "read_file":
 					if (args.files && Array.isArray(args.files)) {
 						nativeArgs = { files: this.convertFileEntries(args.files) } as NativeArgsFor<TName>
@@ -616,26 +676,32 @@ export class NativeToolCallParser {
 					}
 					break
 
-				case "insert_content":
-					if (args.path !== undefined && args.line !== undefined && args.content !== undefined) {
+				// kilocode_change start
+				// case "edit_file":
+				case "condense":
+				case "delete_file":
+				case "new_rule":
+				case "report_bug":
+					break
+				// kilocode_change end
+
+				case "apply_diff":
+					if (args.path !== undefined && args.diff !== undefined) {
 						nativeArgs = {
 							path: args.path,
-							line: typeof args.line === "number" ? args.line : parseInt(String(args.line), 10),
-							content: args.content,
+							diff: args.diff,
 						} as NativeArgsFor<TName>
 					}
 					break
 
-				// kilocode_change start
-				case "condense":
-				case "edit_file":
-				case "delete_file":
-				case "new_rule":
-				case "report_bug":
-				case "apply_diff":
-					nativeArgs = args
+				case "search_and_replace":
+					if (args.path !== undefined && args.operations !== undefined && Array.isArray(args.operations)) {
+						nativeArgs = {
+							path: args.path,
+							operations: args.operations,
+						} as NativeArgsFor<TName>
+					}
 					break
-				// kilocode_change end
 
 				case "ask_followup_question":
 					if (args.question !== undefined && args.follow_up !== undefined) {
@@ -654,6 +720,7 @@ export class NativeToolCallParser {
 							coordinate: args.coordinate,
 							size: args.size,
 							text: args.text,
+							path: args.path,
 						} as NativeArgsFor<TName>
 					}
 					break
@@ -681,14 +748,6 @@ export class NativeToolCallParser {
 							prompt: args.prompt,
 							path: args.path,
 							image: args.image,
-						} as NativeArgsFor<TName>
-					}
-					break
-
-				case "list_code_definition_names":
-					if (args.path !== undefined) {
-						nativeArgs = {
-							path: args.path,
 						} as NativeArgsFor<TName>
 					}
 					break
@@ -730,14 +789,10 @@ export class NativeToolCallParser {
 					break
 
 				case "write_to_file":
-					if (args.path !== undefined && args.content !== undefined && args.line_count !== undefined) {
+					if (args.path !== undefined && args.content !== undefined) {
 						nativeArgs = {
 							path: args.path,
 							content: args.content,
-							line_count:
-								typeof args.line_count === "number"
-									? args.line_count
-									: parseInt(String(args.line_count), 10),
 						} as NativeArgsFor<TName>
 					}
 					break
@@ -761,28 +816,93 @@ export class NativeToolCallParser {
 					}
 					break
 
+				case "apply_patch":
+					if (args.patch !== undefined) {
+						nativeArgs = {
+							patch: args.patch,
+						} as NativeArgsFor<TName>
+					}
+					break
+
+				case "search_replace":
+					if (
+						args.file_path !== undefined &&
+						args.old_string !== undefined &&
+						args.new_string !== undefined
+					) {
+						nativeArgs = {
+							file_path: args.file_path,
+							old_string: args.old_string,
+							new_string: args.new_string,
+						} as NativeArgsFor<TName>
+					}
+					break
+
+				case "edit_file":
+					if (
+						args.file_path !== undefined &&
+						args.old_string !== undefined &&
+						args.new_string !== undefined
+					) {
+						nativeArgs = {
+							file_path: args.file_path,
+							old_string: args.old_string,
+							new_string: args.new_string,
+							expected_replacements: args.expected_replacements,
+						} as NativeArgsFor<TName>
+					}
+					break
+
+				// kilocode_change start: Fast Apply
+				case "fast_edit_file":
+					if (
+						args.target_file !== undefined &&
+						args.instructions !== undefined &&
+						args.code_edit !== undefined
+					) {
+						nativeArgs = {
+							target_file: args.target_file,
+							instructions: args.instructions,
+							code_edit: args.code_edit,
+						} as NativeArgsFor<TName>
+					}
+					break
+				// kilocode_change end
+
 				default:
+					if (customToolRegistry.has(resolvedName)) {
+						nativeArgs = args as NativeArgsFor<TName>
+					}
+
 					break
 			}
 
 			const result: ToolUse<TName> = {
 				type: "tool_use" as const,
-				name: toolCall.name,
+				name: resolvedName,
 				params,
 				partial: false, // Native tool calls are always complete when yielded
 				nativeArgs,
 			}
 
+			// Preserve original name for API history when an alias was used
+			if (toolCall.name !== resolvedName) {
+				result.originalName = toolCall.name
+			}
+
 			return result
 		} catch (error) {
-			console.error(`Failed to parse tool call arguments:`, error)
-			console.error(`Error details:`, error instanceof Error ? error.message : String(error))
+			console.error(
+				`Failed to parse tool call arguments: ${error instanceof Error ? error.message : String(error)}`,
+			)
+
+			console.error(`Tool call: ${JSON.stringify(toolCall, null, 2)}`)
 			return null
 		}
 	}
 
 	/**
-	 * Parse dynamic MCP tools (named mcp_serverName_toolName).
+	 * Parse dynamic MCP tools (named mcp--serverName--toolName).
 	 * These are generated dynamically by getMcpServerTools() and are returned
 	 * as McpToolUse objects that preserve the original tool name.
 	 *
@@ -795,27 +915,24 @@ export class NativeToolCallParser {
 			// Parse the arguments - these are the actual tool arguments passed directly
 			const args = JSON.parse(toolCall.arguments || "{}")
 
+			// Normalize the tool name to handle models that output underscores instead of hyphens
+			// e.g., mcp__serverName__toolName -> mcp--serverName--toolName
+			const normalizedName = normalizeMcpToolName(toolCall.name)
+
 			// Extract server_name and tool_name from the tool name itself
-			// Format: mcp_serverName_toolName
-			const nameParts = toolCall.name.split("_")
-			if (nameParts.length < 3 || nameParts[0] !== "mcp") {
-				console.error(`Invalid dynamic MCP tool name format: ${toolCall.name}`)
+			// Format: mcp--serverName--toolName (using -- separator)
+			const parsed = parseMcpToolName(normalizedName)
+			if (!parsed) {
+				console.error(`Invalid dynamic MCP tool name format: ${toolCall.name} (normalized: ${normalizedName})`)
 				return null
 			}
 
-			// Server name is the second part, tool name is everything after
-			const serverName = nameParts[1]
-			const toolName = nameParts.slice(2).join("_")
-
-			if (!serverName || !toolName) {
-				console.error(`Could not extract server_name or tool_name from: ${toolCall.name}`)
-				return null
-			}
+			const { serverName, toolName } = parsed
 
 			const result: McpToolUse = {
 				type: "mcp_tool_use" as const,
 				id: toolCall.id,
-				// Keep the original tool name (e.g., "mcp_serverName_toolName") for API history
+				// Keep the original tool name (e.g., "mcp--serverName--toolName") for API history
 				name: toolCall.name,
 				serverName,
 				toolName,

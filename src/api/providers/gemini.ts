@@ -7,24 +7,23 @@ import {
 	type GroundingMetadata,
 	FinishReason, // kilocode_change
 	FunctionCallingConfigMode,
-	Content,
 } from "@google/genai"
 import type { JWTInput } from "google-auth-library"
 
 import {
 	type ModelInfo,
-	// type GeminiModelId, // kilocode_change
+	type GeminiModelId,
 	geminiDefaultModelId,
 	geminiModels,
+	ApiProviderError,
 } from "@roo-code/types"
+import { safeJsonParse } from "@roo-code/core"
+import { TelemetryService } from "@roo-code/telemetry"
 
-import type {
-	ApiHandlerOptions,
-	ModelRecord, // kilocode_change
-} from "../../shared/api"
-import { safeJsonParse } from "../../shared/safeJsonParse"
+import type { ApiHandlerOptions } from "../../shared/api"
+import { ModelRecord } from "@roo-code/types" // kilocode_change
 
-import { convertAnthropicContentToGemini, convertAnthropicMessageToGemini } from "../transform/gemini-format"
+import { convertAnthropicMessageToGemini } from "../transform/gemini-format"
 import { t } from "i18next"
 import type { ApiStream, GroundingSource } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
@@ -44,6 +43,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	private client: GoogleGenAI
 	private lastThoughtSignature?: string
 	private lastResponseId?: string
+	private readonly providerName = "Gemini"
 
 	// kilocode_change start
 	private models: ModelRecord = { ...geminiModels }
@@ -136,10 +136,11 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			? (this.options.modelMaxTokens ?? maxTokens ?? undefined)
 			: (maxTokens ?? undefined)
 
-		// Only forward encrypted reasoning continuations (thoughtSignature) when we are
-		// using reasoning (thinkingConfig is present). Both effort-based (thinkingLevel)
-		// and budget-based (thinkingBudget) models require this for active loops.
-		const includeThoughtSignatures = Boolean(thinkingConfig)
+		// Gemini 3 validates thought signatures for tool/function calling steps.
+		// We must round-trip the signature when tools are in use, even if the user chose
+		// a minimal thinking level (or thinkingConfig is otherwise absent).
+		const usingNativeTools = Boolean(metadata?.tools && metadata.tools.length > 0)
+		const includeThoughtSignatures = Boolean(thinkingConfig) || usingNativeTools
 
 		// The message list can include provider-specific meta entries such as
 		// `{ type: "reasoning", ... }` that are intended only for providers like
@@ -217,7 +218,19 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			...(tools.length > 0 ? { tools } : {}),
 		}
 
-		if (metadata?.tool_choice) {
+		// Handle allowedFunctionNames for mode-restricted tool access.
+		// When provided, all tool definitions are passed to the model (so it can reference
+		// historical tool calls in conversation), but only the specified tools can be invoked.
+		// This takes precedence over tool_choice to ensure mode restrictions are honored.
+		if (metadata?.allowedFunctionNames && metadata.allowedFunctionNames.length > 0) {
+			config.toolConfig = {
+				functionCallingConfig: {
+					// Use ANY mode to allow calling any of the allowed functions
+					mode: FunctionCallingConfigMode.ANY,
+					allowedFunctionNames: metadata.allowedFunctionNames,
+				},
+			}
+		} else if (metadata?.tool_choice) {
 			const choice = metadata.tool_choice
 			let mode: FunctionCallingConfigMode
 			let allowedFunctionNames: string[] | undefined
@@ -253,13 +266,17 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 			let lastUsageMetadata: GenerateContentResponseUsageMetadata | undefined
 			let pendingGroundingMetadata: GroundingMetadata | undefined
 			let finalResponse: { responseId?: string } | undefined
+			let finishReason: string | undefined
 
 			let toolCallCounter = 0
+			let hasContent = false
+			let hasReasoning = false
 
 			for await (const chunk of result) {
 				// Track the final structured response (per SDK pattern: candidate.finishReason)
 				if (chunk.candidates && chunk.candidates[0]?.finishReason) {
 					finalResponse = chunk as { responseId?: string }
+					finishReason = chunk.candidates[0].finishReason
 				}
 				// Process candidates and their parts to separate thoughts from content
 				if (chunk.candidates && chunk.candidates.length > 0) {
@@ -284,18 +301,21 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 						}>) {
 							// Capture thought signatures so they can be persisted into API history.
 							const thoughtSignature = part.thoughtSignature
-							// Persist encrypted reasoning when using reasoning. Both effort-based
-							// and budget-based models require this for active loops.
-							if (thinkingConfig && thoughtSignature) {
+							// Persist thought signatures so they can be round-tripped in the next step.
+							// Gemini 3 requires this during tool calling; other Gemini thinking models
+							// benefit from it for continuity.
+							if (includeThoughtSignatures && thoughtSignature) {
 								this.lastThoughtSignature = thoughtSignature
 							}
 
 							if (part.thought) {
 								// This is a thinking/reasoning part
 								if (part.text) {
+									hasReasoning = true
 									yield { type: "reasoning", text: part.text }
 								}
 							} else if (part.functionCall) {
+								hasContent = true
 								// Gemini sends complete function calls in a single chunk
 								// Emit as partial chunks for consistent handling with NativeToolCallParser
 								const callId = `${part.functionCall.name}-${toolCallCounter}`
@@ -323,6 +343,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 							} else {
 								// This is regular content
 								if (part.text) {
+									hasContent = true
 									yield { type: "text", text: part.text }
 								}
 							}
@@ -332,6 +353,7 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 				// Fallback to the original text property if no candidates structure
 				else if (chunk.text) {
+					hasContent = true
 					yield { type: "text", text: chunk.text }
 				}
 
@@ -375,6 +397,10 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 				}
 			}
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "createMessage")
+			TelemetryService.instance.captureException(apiError)
+
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_stream", { error: error.message }))
 			}
@@ -446,10 +472,10 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 	}
 
 	async completePrompt(prompt: string): Promise<string> {
-		try {
-			await this.ensureModelsLoaded() // kilocode_change
-			const { id: model, info } = this.getModel()
+		await this.ensureModelsLoaded() // kilocode_change
+		const { id: model, info } = this.getModel()
 
+		try {
 			const tools: GenerateContentConfig["tools"] = []
 			if (this.options.enableUrlContext) {
 				tools.push({ urlContext: {} })
@@ -491,36 +517,15 @@ export class GeminiHandler extends BaseProvider implements SingleCompletionHandl
 
 			return text
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			const apiError = new ApiProviderError(errorMessage, this.providerName, model, "completePrompt")
+			TelemetryService.instance.captureException(apiError)
+
 			if (error instanceof Error) {
 				throw new Error(t("common:errors.gemini.generate_complete_prompt", { error: error.message }))
 			}
 
 			throw error
-		}
-	}
-
-	override async countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number> {
-		try {
-			await this.ensureModelsLoaded() // kilocode_change
-			const { id: model } = this.getModel()
-
-			const countTokensRequest = {
-				model,
-				// Token counting does not need encrypted continuation; always drop thoughtSignature.
-				contents: convertAnthropicContentToGemini(content, { includeThoughtSignatures: false }),
-			}
-
-			const response = await this.client.models.countTokens(countTokensRequest)
-
-			if (response.totalTokens === undefined) {
-				console.warn("Gemini token counting returned undefined, using fallback")
-				return super.countTokens(content)
-			}
-
-			return response.totalTokens
-		} catch (error) {
-			console.warn("Gemini token counting failed, using fallback", error)
-			return super.countTokens(content)
 		}
 	}
 

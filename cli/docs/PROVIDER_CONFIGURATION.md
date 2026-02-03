@@ -6,6 +6,7 @@ This guide provides detailed information on how to configure each provider in Ki
 
 - [Introduction](#introduction)
 - [Configuration Methods](#configuration-methods)
+- [Common Parameters](#common-parameters)
 - [Provider Details](#provider-details)
     - [Kilo Code](#kilocode)
     - [Anthropic](#anthropic)
@@ -36,7 +37,6 @@ This guide provides detailed information on how to configure each provider in Ki
     - [DeepInfra](#deepinfra)
     - [IO Intelligence](#io-intelligence)
     - [Qwen Code](#qwen-code)
-    - [Gemini CLI](#gemini-cli)
     - [ZAI](#zai)
     - [Minimax](#minimax)
     - [Unbound](#unbound)
@@ -63,6 +63,17 @@ You can configure providers using:
 3. **Environment Variables**: Some providers support environment variable configuration
 
 ---
+
+## Common Parameters
+
+**Description**: Parameters that are shared by all providers.
+
+**Optional Fields**:
+
+- `enableReasoningEffort` (boolean): Enable or disable reasoning for supported models. Many models have no, dynamic or compulsive reasoning regardless of this setting. Must be set to `true` for `reasoningEffort` or `modelMaxThinkingTokens` to take effect.
+- `reasoningEffort` (text): Specify reasoning effort for supported models. Can be `"low"`, `"medium"`, `"high"` or `"xhigh"`. Requires `enableReasoningEffort` to be `true`, mutually exclusive with `modelMaxThinkingTokens`.
+- `modelMaxThinkingTokens` (number): Specify reasoning token limit for supported models (mainly Claude models). Requires `enableReasoningEffort` to be `true`, mutually exclusive with `reasoningEffort`.
+- `verbosity` (text): Controls the verbosity and length of the model response for supported models (mainly GPT-5.x and Claude Opus 4.5). Also known as output effort. Supported values are `"low"`, `"medium"` and `"high"`.
 
 ## Provider Details
 
@@ -1267,39 +1278,6 @@ Qwen Code AI models.
 
 - Requires OAuth credentials file
 - Optimized for code generation tasks
-
----
-
-### gemini-cli
-
-Gemini CLI integration.
-
-**Description**: Use Google's Gemini models through CLI with OAuth authentication.
-
-**Required Fields**:
-
-- `geminiCliOAuthPath` (text): Path to OAuth credentials file (default: `~/.gemini/oauth_creds.json`)
-- `geminiCliProjectId` (text): Google Cloud project ID
-- `apiModelId` (text): The model to use (default: `gemini-2.5-flash-preview-04-17`)
-
-**Example Configuration**:
-
-```json
-{
-	"id": "default",
-	"provider": "gemini-cli",
-	"geminiCliOAuthPath": "~/.gemini/oauth_creds.json",
-	"geminiCliProjectId": "my-project-123",
-	"apiModelId": "gemini-2.5-flash-preview-04-17"
-}
-```
-
-**Default Model**: `gemini-2.5-flash-preview-04-17`
-
-**Notes**:
-
-- Requires OAuth credentials file
-- Requires Google Cloud project
 
 ---
 

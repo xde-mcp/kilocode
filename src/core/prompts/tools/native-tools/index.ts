@@ -1,5 +1,7 @@
 import type OpenAI from "openai"
 import accessMcpResource from "./access_mcp_resource"
+import { apply_diff } from "./apply_diff"
+import applyPatch from "./apply_patch"
 import askFollowupQuestion from "./ask_followup_question"
 import attemptCompletion from "./attempt_completion"
 import browserAction from "./browser_action"
@@ -7,42 +9,64 @@ import codebaseSearch from "./codebase_search"
 import executeCommand from "./execute_command"
 import fetchInstructions from "./fetch_instructions"
 import generateImage from "./generate_image"
-import insertContent from "./insert_content"
-import listCodeDefinitionNames from "./list_code_definition_names"
 import listFiles from "./list_files"
 import newTask from "./new_task"
-import { createReadFileTool } from "./read_file"
+import { createReadFileTool, type ReadFileToolOptions } from "./read_file"
 import runSlashCommand from "./run_slash_command"
+import searchAndReplace from "./search_and_replace"
+import searchReplace from "./search_replace"
+import edit_file from "./edit_file"
 import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
-import { apply_diff_single_file } from "./apply_diff"
 
 import deleteFile from "./kilocode/delete_file"
-import editFile from "./kilocode/edit_file"
+import fastEditFile from "./kilocode/fast_edit_file"
 
 export { getMcpServerTools } from "./mcp_server"
 export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./converters"
+export type { ReadFileToolOptions } from "./read_file"
+
+/**
+ * Options for customizing the native tools array.
+ */
+export interface NativeToolsOptions {
+	/** Whether to include line_ranges support in read_file tool (default: true) */
+	partialReadsEnabled?: boolean
+	/** Maximum number of files that can be read in a single read_file request (default: 5) */
+	maxConcurrentFileReads?: number
+	/** Whether the model supports image processing (default: false) */
+	supportsImages?: boolean
+}
 
 /**
  * Get native tools array, optionally customizing based on settings.
  *
- * @param partialReadsEnabled - Whether to include line_ranges support in read_file tool (default: true)
+ * @param options - Configuration options for the tools
  * @returns Array of native tool definitions
  */
-export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat.ChatCompletionTool[] {
+export function getNativeTools(options: NativeToolsOptions = {}): OpenAI.Chat.ChatCompletionTool[] {
+	const { partialReadsEnabled = true, maxConcurrentFileReads = 5, supportsImages = false } = options
+
+	const readFileOptions: ReadFileToolOptions = {
+		partialReadsEnabled,
+		maxConcurrentFileReads,
+		supportsImages,
+	}
+
 	return [
 		// kilocode_change start
 		deleteFile,
-		editFile,
+		fastEditFile,
 		// todo:
 		// condenseTool,
 		// newRuleTool,
 		// reportBugTool,
 		// kilocode_change end
 		accessMcpResource,
-		apply_diff_single_file,
+		apply_diff,
+		applyPatch,
 		askFollowupQuestion,
 		attemptCompletion,
 		browserAction,
@@ -50,12 +74,13 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 		executeCommand,
 		fetchInstructions,
 		generateImage,
-		insertContent,
-		listCodeDefinitionNames,
 		listFiles,
 		newTask,
-		createReadFileTool(partialReadsEnabled),
+		createReadFileTool(readFileOptions),
 		runSlashCommand,
+		searchAndReplace,
+		searchReplace,
+		edit_file,
 		searchFiles,
 		switchMode,
 		updateTodoList,
@@ -64,4 +89,4 @@ export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat
 }
 
 // Backward compatibility: export default tools with line ranges enabled
-export const nativeTools = getNativeTools(true)
+export const nativeTools = getNativeTools()

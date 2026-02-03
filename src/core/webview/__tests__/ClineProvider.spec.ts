@@ -8,12 +8,13 @@ import {
 	type ProviderSettingsEntry,
 	type ClineMessage,
 	openRouterDefaultModelId, // kilocode_change: openRouterDefaultModelId
+	type ExtensionMessage,
+	type ExtensionState,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
-import { ExtensionMessage, ExtensionState } from "../../../shared/ExtensionMessage"
 import { defaultModeSlug } from "../../../shared/modes"
 import { experimentDefault } from "../../../shared/experiments"
 import { setTtsEnabled } from "../../../utils/tts"
@@ -22,6 +23,7 @@ import { Task, TaskOptions } from "../../task/Task"
 import { safeWriteJson } from "../../../utils/safeWriteJson"
 
 import { ClineProvider } from "../ClineProvider"
+import { MessageManager } from "../../message-manager"
 
 // Mock setup must come before imports.
 vi.mock("../../prompts/sections/custom-instructions")
@@ -219,25 +221,21 @@ vi.mock("../../../integrations/workspace/WorkspaceTracker", () => {
 })
 
 vi.mock("../../task/Task", () => ({
-	Task: vi
-		.fn()
-		.mockImplementation(
-			(_provider, _apiConfiguration, _customInstructions, _diffEnabled, _fuzzyMatchThreshold, _task, taskId) => ({
-				api: undefined,
-				abortTask: vi.fn(),
-				handleWebviewAskResponse: vi.fn(),
-				clineMessages: [],
-				apiConversationHistory: [],
-				overwriteClineMessages: vi.fn(),
-				overwriteApiConversationHistory: vi.fn(),
-				getTaskNumber: vi.fn().mockReturnValue(0),
-				setTaskNumber: vi.fn(),
-				setParentTask: vi.fn(),
-				setRootTask: vi.fn(),
-				taskId: taskId || "test-task-id",
-				emit: vi.fn(),
-			}),
-		),
+	Task: vi.fn().mockImplementation((options: any) => ({
+		api: undefined,
+		abortTask: vi.fn(),
+		handleWebviewAskResponse: vi.fn(),
+		clineMessages: [],
+		apiConversationHistory: [],
+		overwriteClineMessages: vi.fn(),
+		overwriteApiConversationHistory: vi.fn(),
+		getTaskNumber: vi.fn().mockReturnValue(0),
+		setTaskNumber: vi.fn(),
+		setParentTask: vi.fn(),
+		setRootTask: vi.fn(),
+		taskId: options?.historyItem?.id || "test-task-id",
+		emit: vi.fn(),
+	})),
 }))
 
 vi.mock("../../../integrations/misc/extract-text", () => ({
@@ -251,6 +249,7 @@ vi.mock("../../../integrations/misc/extract-text", () => ({
 vi.mock("../../../api/providers/fetchers/modelCache", () => ({
 	getModels: vi.fn().mockResolvedValue({}),
 	flushModels: vi.fn(),
+	getModelsFromCache: vi.fn().mockReturnValue(undefined),
 }))
 
 vi.mock("../../../shared/modes", () => ({
@@ -322,6 +321,7 @@ vi.mock("../../../integrations/misc/extract-text", () => ({
 vi.mock("../../../api/providers/fetchers/modelCache", () => ({
 	getModels: vi.fn().mockResolvedValue({}),
 	flushModels: vi.fn(),
+	getModelsFromCache: vi.fn().mockReturnValue(undefined),
 }))
 
 vi.mock("../diff/strategies/multi-search-replace", () => ({
@@ -363,6 +363,32 @@ afterAll(() => {
 })
 
 describe("ClineProvider", () => {
+	beforeAll(() => {
+		vi.mocked(Task).mockImplementation((options: any) => {
+			const task: any = {
+				api: undefined,
+				abortTask: vi.fn(),
+				handleWebviewAskResponse: vi.fn(),
+				clineMessages: [],
+				apiConversationHistory: [],
+				overwriteClineMessages: vi.fn(),
+				overwriteApiConversationHistory: vi.fn(),
+				getTaskNumber: vi.fn().mockReturnValue(0),
+				setTaskNumber: vi.fn(),
+				setParentTask: vi.fn(),
+				setRootTask: vi.fn(),
+				taskId: options?.historyItem?.id || "test-task-id",
+				emit: vi.fn(),
+			}
+
+			Object.defineProperty(task, "messageManager", {
+				get: () => new MessageManager(task),
+			})
+
+			return task
+		})
+	})
+
 	let defaultTaskOptions: TaskOptions
 
 	let provider: ClineProvider
@@ -570,7 +596,6 @@ describe("ClineProvider", () => {
 			fuzzyMatchThreshold: 1.0,
 			mcpEnabled: true,
 			enableMcpServerCreation: false,
-			requestDelaySeconds: 5,
 			mode: defaultModeSlug,
 			customModes: [],
 			experiments: experimentDefault,
@@ -579,6 +604,7 @@ describe("ClineProvider", () => {
 			browserToolEnabled: true,
 			telemetrySetting: "unset",
 			showRooIgnoredFiles: false,
+			enableSubfolderRules: false,
 			renderContext: "sidebar",
 			maxReadFileLine: 500,
 			showAutoApproveMenu: false, // kilocode_change
@@ -590,6 +616,7 @@ describe("ClineProvider", () => {
 			autoCondenseContextPercent: 100,
 			cloudIsAuthenticated: false,
 			sharingEnabled: false,
+			publicSharingEnabled: false,
 			profileThresholds: {},
 			hasOpenedModeSelector: false,
 			diagnosticsEnabled: true,
@@ -651,14 +678,12 @@ describe("ClineProvider", () => {
 			await provider.resolveWebviewView(mockWebviewView)
 		})
 
-		test("calls clearTask when there is no parent task", async () => {
+		test("calls clearTask (delegation handled via metadata)", async () => {
 			// Setup a single task without parent
 			const mockCline = new Task(defaultTaskOptions)
-			// No need to set parentTask - it's undefined by default
 
 			// Mock the provider methods
 			const clearTaskSpy = vi.spyOn(provider, "clearTask").mockResolvedValue(undefined)
-			const finishSubTaskSpy = vi.spyOn(provider, "finishSubTask").mockResolvedValue(undefined)
 			const postStateToWebviewSpy = vi.spyOn(provider, "postStateToWebview").mockResolvedValue(undefined)
 
 			// Add task to stack
@@ -670,25 +695,22 @@ describe("ClineProvider", () => {
 			// Trigger clearTask message
 			await messageHandler({ type: "clearTask" })
 
-			// Verify clearTask was called (not finishSubTask)
+			// Verify clearTask was called
 			expect(clearTaskSpy).toHaveBeenCalled()
-			expect(finishSubTaskSpy).not.toHaveBeenCalled()
 			expect(postStateToWebviewSpy).toHaveBeenCalled()
 		})
 
-		test("calls finishSubTask when there is a parent task", async () => {
+		test("calls clearTask even with parent task (delegation via metadata)", async () => {
 			// Setup parent and child tasks
 			const parentTask = new Task(defaultTaskOptions)
 			const childTask = new Task(defaultTaskOptions)
 
-			// Set up parent-child relationship by setting the parentTask property
-			// The mock allows us to set properties directly
+			// Set up parent-child relationship
 			;(childTask as any).parentTask = parentTask
 			;(childTask as any).rootTask = parentTask
 
 			// Mock the provider methods
 			const clearTaskSpy = vi.spyOn(provider, "clearTask").mockResolvedValue(undefined)
-			const finishSubTaskSpy = vi.spyOn(provider, "finishSubTask").mockResolvedValue(undefined)
 			const postStateToWebviewSpy = vi.spyOn(provider, "postStateToWebview").mockResolvedValue(undefined)
 
 			// Add both tasks to stack (parent first, then child)
@@ -701,9 +723,8 @@ describe("ClineProvider", () => {
 			// Trigger clearTask message
 			await messageHandler({ type: "clearTask" })
 
-			// Verify finishSubTask was called (not clearTask)
-			expect(finishSubTaskSpy).toHaveBeenCalledWith(expect.stringContaining("canceled"))
-			expect(clearTaskSpy).not.toHaveBeenCalled()
+			// Verify clearTask was called (delegation happens via metadata, not finishSubTask)
+			expect(clearTaskSpy).toHaveBeenCalled()
 			expect(postStateToWebviewSpy).toHaveBeenCalled()
 		})
 
@@ -712,7 +733,6 @@ describe("ClineProvider", () => {
 
 			// Mock the provider methods
 			const clearTaskSpy = vi.spyOn(provider, "clearTask").mockResolvedValue(undefined)
-			const finishSubTaskSpy = vi.spyOn(provider, "finishSubTask").mockResolvedValue(undefined)
 			const postStateToWebviewSpy = vi.spyOn(provider, "postStateToWebview").mockResolvedValue(undefined)
 
 			// Get the message handler
@@ -723,21 +743,17 @@ describe("ClineProvider", () => {
 
 			// When there's no current task, clearTask is still called (it handles the no-task case internally)
 			expect(clearTaskSpy).toHaveBeenCalled()
-			expect(finishSubTaskSpy).not.toHaveBeenCalled()
-			// State should still be posted
 			expect(postStateToWebviewSpy).toHaveBeenCalled()
 		})
 
-		test("correctly identifies subtask scenario for issue #4602", async () => {
-			// This test specifically validates the fix for issue #4602
-			// where canceling during API retry was incorrectly treating a single task as a subtask
+		test("correctly identifies task scenario for issue #4602", async () => {
+			// This test validates the fix for issue #4602
+			// where canceling during API retry correctly uses clearTask
 
 			const mockCline = new Task(defaultTaskOptions)
-			// No parent task by default - no need to explicitly set
 
 			// Mock the provider methods
 			const clearTaskSpy = vi.spyOn(provider, "clearTask").mockResolvedValue(undefined)
-			const finishSubTaskSpy = vi.spyOn(provider, "finishSubTask").mockResolvedValue(undefined)
 
 			// Add only one task to stack
 			await provider.addClineToStack(mockCline)
@@ -751,9 +767,8 @@ describe("ClineProvider", () => {
 			// Trigger clearTask message (simulating cancel during API retry)
 			await messageHandler({ type: "clearTask" })
 
-			// The fix ensures clearTask is called, not finishSubTask
+			// clearTask should be called (delegation handled via metadata)
 			expect(clearTaskSpy).toHaveBeenCalled()
-			expect(finishSubTaskSpy).not.toHaveBeenCalled()
 		})
 	})
 
@@ -860,27 +875,6 @@ describe("ClineProvider", () => {
 		expect(mockPostMessage).toHaveBeenCalled()
 	})
 
-	test("requestDelaySeconds defaults to 10 seconds", async () => {
-		// Mock globalState.get to return undefined for requestDelaySeconds
-		;(mockContext.globalState.get as any).mockImplementation((key: string) => {
-			if (key === "requestDelaySeconds") {
-				return undefined
-			}
-			return null
-		})
-
-		const state = await provider.getState()
-		expect(state.requestDelaySeconds).toBe(10)
-	})
-
-	test("alwaysApproveResubmit defaults to false", async () => {
-		// Mock globalState.get to return undefined for alwaysApproveResubmit
-		;(mockContext.globalState.get as any).mockReturnValue(undefined)
-
-		const state = await provider.getState()
-		expect(state.alwaysApproveResubmit).toBe(false)
-	})
-
 	test("autoCondenseContext defaults to true", async () => {
 		// Mock globalState.get to return undefined for autoCondenseContext
 		;(mockContext.globalState.get as any).mockImplementation((key: string) =>
@@ -931,6 +925,7 @@ describe("ClineProvider", () => {
 			listConfig: vi.fn().mockResolvedValue([profile]),
 			activateProfile: vi.fn().mockResolvedValue(profile),
 			setModeConfig: vi.fn(),
+			getProfile: vi.fn().mockResolvedValue(profile),
 		} as any
 
 		// Switch to architect mode
@@ -1049,22 +1044,6 @@ describe("ClineProvider", () => {
 		expect(mockContext.globalState.update).toHaveBeenCalledWith("showRooIgnoredFiles", false)
 		expect(mockPostMessage).toHaveBeenCalled()
 		expect((await provider.getState()).showRooIgnoredFiles).toBe(false)
-	})
-
-	test("handles request delay settings messages", async () => {
-		await provider.resolveWebviewView(mockWebviewView)
-		const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-		// Test alwaysApproveResubmit
-		await messageHandler({ type: "updateSettings", updatedSettings: { alwaysApproveResubmit: true } })
-		expect(updateGlobalStateSpy).toHaveBeenCalledWith("alwaysApproveResubmit", true)
-		expect(mockContext.globalState.update).toHaveBeenCalledWith("alwaysApproveResubmit", true)
-		expect(mockPostMessage).toHaveBeenCalled()
-
-		// Test requestDelaySeconds
-		await messageHandler({ type: "updateSettings", updatedSettings: { requestDelaySeconds: 10 } })
-		expect(mockContext.globalState.update).toHaveBeenCalledWith("requestDelaySeconds", 10)
-		expect(mockPostMessage).toHaveBeenCalled()
 	})
 
 	test("handles updatePrompt message correctly", async () => {
@@ -1677,6 +1656,7 @@ describe("ClineProvider", () => {
 				listConfig: vi.fn().mockResolvedValue([profile]),
 				activateProfile: vi.fn().mockResolvedValue(profile),
 				setModeConfig: vi.fn(),
+				getProfile: vi.fn().mockResolvedValue(profile),
 			} as any
 
 			// Switch to architect mode
@@ -2738,7 +2718,6 @@ describe("ClineProvider - Router Models", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
 				unboundApiKey: "unbound-key",
 				litellmApiKey: "litellm-key",
 				litellmBaseUrl: "http://localhost:4000",
@@ -2789,7 +2768,7 @@ describe("ClineProvider - Router Models", () => {
 		})
 		// kilocode_change end
 		expect(getModels).toHaveBeenCalledWith({ provider: "requesty", apiKey: "requesty-key" })
-		expect(getModels).toHaveBeenCalledWith({ provider: "glama" })
+		expect(getModels).toHaveBeenCalledWith({ provider: "glama" }) // kilocode_change
 		expect(getModels).toHaveBeenCalledWith({ provider: "unbound", apiKey: "unbound-key" })
 		expect(getModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
 		expect(getModels).toHaveBeenCalledWith({ provider: "deepinfra" })
@@ -2814,7 +2793,7 @@ describe("ClineProvider - Router Models", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
 				synthetic: mockModels, // kilocode_change
 				unbound: mockModels,
 				roo: mockModels,
@@ -2843,7 +2822,7 @@ describe("ClineProvider - Router Models", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
+				glamaApiKey: "glama-key", // kilocode_change
 				unboundApiKey: "unbound-key",
 				litellmApiKey: "litellm-key",
 				litellmBaseUrl: "http://localhost:4000",
@@ -2869,8 +2848,8 @@ describe("ClineProvider - Router Models", () => {
 		vi.mocked(getModels)
 			.mockResolvedValueOnce(mockModels) // openrouter success
 			.mockResolvedValueOnce(mockModels) // kilocode_change: gemini success
-			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty fail
-			.mockResolvedValueOnce(mockModels) // glama success
+			.mockRejectedValueOnce(new Error("Requesty API error")) //
+			.mockResolvedValueOnce(mockModels) // kilocode_change glama success
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound fail
 			.mockRejectedValueOnce(new Error("Kilocode-OpenRouter API error")) // kilocode-openrouter fail
 			.mockRejectedValueOnce(new Error("Ollama API error")) // kilocode_change
@@ -2894,7 +2873,7 @@ describe("ClineProvider - Router Models", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: {},
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
 				unbound: {},
 				roo: mockModels,
 				chutes: {},
@@ -2976,7 +2955,7 @@ describe("ClineProvider - Router Models", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
+				glamaApiKey: "glama-key", // kilocode_change
 				unboundApiKey: "unbound-key",
 				// kilocode_change start
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
@@ -3016,7 +2995,7 @@ describe("ClineProvider - Router Models", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
+				glamaApiKey: "glama-key", // kilocode_change
 				unboundApiKey: "unbound-key",
 				// kilocode_change start
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
@@ -3050,7 +3029,7 @@ describe("ClineProvider - Router Models", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
 				unbound: mockModels,
 				roo: mockModels,
 				chutes: mockModels,
@@ -3249,7 +3228,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			expect(mockCline.overwriteClineMessages).toHaveBeenCalledWith([mockMessages[0]])
 			expect(mockCline.overwriteApiConversationHistory).toHaveBeenCalledWith([{ ts: 1000 }])
 			// Verify submitUserMessage was called with the edited content
-			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with preserved images", undefined)
+			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with preserved images", [])
 		})
 
 		test("handles editing messages with file attachments", async () => {
@@ -3302,7 +3281,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 			})
 
 			expect(mockCline.overwriteClineMessages).toHaveBeenCalled()
-			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with file attachment", undefined)
+			expect(mockCline.submitUserMessage).toHaveBeenCalledWith("Edited message with file attachment", [])
 		})
 	})
 
@@ -3833,7 +3812,7 @@ describe("ClineProvider - Comprehensive Edit/Delete Edge Cases", () => {
 				await messageHandler({ type: "editMessageConfirm", messageTs: 2000, text: largeEditedContent })
 
 				expect(mockCline.overwriteClineMessages).toHaveBeenCalled()
-				expect(mockCline.submitUserMessage).toHaveBeenCalledWith(largeEditedContent, undefined)
+				expect(mockCline.submitUserMessage).toHaveBeenCalledWith(largeEditedContent, [])
 			})
 
 			test("handles deleting messages with large payloads", async () => {

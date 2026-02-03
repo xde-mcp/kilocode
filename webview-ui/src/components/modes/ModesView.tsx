@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
-import BottomControls from "../kilocode/BottomControls" // kilocode_change
 import { KiloShareModesBanner } from "../kilocode/KiloShareModesBanner" // kilocode_change
 import {
 	VSCodeCheckbox,
@@ -10,7 +9,7 @@ import {
 	VSCodeTextField,
 } from "@vscode/webview-ui-toolkit/react"
 import { Trans } from "react-i18next"
-import { ChevronDown, X, Upload, Download } from "lucide-react"
+import { ChevronDown, X, Upload, Download, MessageSquare } from "lucide-react"
 
 import { ModeConfig, GroupEntry, PromptComponent, ToolGroup, modeConfigSchema } from "@roo-code/types"
 
@@ -30,7 +29,7 @@ import { vscode } from "@src/utils/vscode"
 import { buildDocLink } from "@src/utils/docLinks"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { useExtensionState } from "@src/context/ExtensionStateContext"
-import { Tab, TabContent, TabHeader } from "@src/components/common/Tab"
+import { Section } from "@src/components/settings/Section"
 import {
 	Button,
 	Select,
@@ -53,6 +52,7 @@ import {
 import { DeleteModeDialog } from "@src/components/modes/DeleteModeDialog"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
 import { OrganizationModeWarning } from "../kilocode/OrganizationModeWarning"
+import { SectionHeader } from "../settings/SectionHeader"
 
 // Get all available groups that should show in prompts view
 const availableGroups = (Object.keys(TOOL_GROUPS) as ToolGroup[]).filter((group) => !TOOL_GROUPS[group].alwaysAvailable)
@@ -61,16 +61,14 @@ type ModeSource = "global" | "project"
 
 type ImportModeResult = { type: "importModeResult"; success: boolean; slug?: string; error?: string }
 
-type ModesViewProps = {
-	onDone: () => void
-}
-
 // Helper to get group name regardless of format
 function getGroupName(group: GroupEntry): ToolGroup {
 	return Array.isArray(group) ? group[0] : group
 }
 
-const ModesView = ({ onDone }: ModesViewProps) => {
+// kilocode_change start - add hideHeader prop
+const ModesView = ({ hideHeader = false }: { hideHeader?: boolean }) => {
+	// kilocode_change end
 	const { t } = useAppTranslation()
 
 	const {
@@ -604,16 +602,24 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 	}
 
 	return (
-		<Tab>
-			<TabHeader className="flex justify-between items-center">
-				<h3 className="text-vscode-foreground m-0">{t("prompts:title")}</h3>
-				<Button onClick={onDone}>{t("prompts:done")}</Button>
-			</TabHeader>
+		<div>
+			{/* kilocode_change start - conditionally render header */}
+			{!hideHeader && (
+				<SectionHeader>
+					<div className="flex items-center gap-2">
+						<MessageSquare className="w-4" />
+						<div>{t("prompts:title")}</div>
+					</div>
+				</SectionHeader>
+			)}
+			{/* kilocode_change end */}
 
-			<TabContent>
+			<Section>
 				<div>
 					<div onClick={(e) => e.stopPropagation()} className="flex justify-between items-center mb-3">
-						<h3 className="text-vscode-foreground m-0">{t("prompts:modes.title")}</h3>
+						<h3 className="text-[1.25em] font-semibold text-vscode-foreground mt-4 mb-2">
+							{t("prompts:modes.title")}
+						</h3>
 						<div className="flex gap-2">
 							<div className="relative inline-block">
 								<StandardTooltip content={t("prompts:modes.editModesConfig")}>
@@ -719,9 +725,6 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 					</div>
 
 					<div className="flex items-center gap-1 mb-3">
-						{isOrganizationMode && <OrganizationModeWarning />} {/* kilocode_change start */}
-						{/* Only show name and delete for custom modes that are not organization modes */}
-						{/* kilocode_change end */}
 						{isRenamingMode ? (
 							<>
 								<VSCodeTextField
@@ -925,6 +928,10 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 							</>
 						)}
 					</div>
+
+					{/* kilocode_change start */}
+					{isOrganizationMode && <OrganizationModeWarning />}
+					{/* kilocode_change end */}
 
 					{/* API Configuration - Moved Here */}
 					<div className="mb-3">
@@ -1292,7 +1299,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 											// Open or create an empty file
 											vscode.postMessage({
 												type: "openFile",
-												text: `./.roo/rules-${currentMode.slug}/rules.md`,
+												text: `./.kilocode/rules-${currentMode.slug}/rules.md`, // kilocode_change
 												values: {
 													create: true,
 													content: "",
@@ -1477,7 +1484,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 						/>
 					</div>
 				</div>
-			</TabContent>
+			</Section>
 
 			{isCreateModeDialogOpen && (
 				<div className="fixed inset-0 flex justify-end bg-black/50 z-[1000]">
@@ -1780,10 +1787,7 @@ const ModesView = ({ onDone }: ModesViewProps) => {
 					}
 				}}
 			/>
-
-			{/* kilocode_change */}
-			<BottomControls />
-		</Tab>
+		</div>
 	)
 }
 

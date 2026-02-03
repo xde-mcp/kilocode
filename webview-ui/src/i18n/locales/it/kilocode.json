@@ -2,7 +2,7 @@
 	"welcome": {
 		"greeting": "Benvenuto in Kilo Code!",
 		"introText1": "Kilo Code è un agente di coding AI gratuito e open source.",
-		"introText2": "Funziona con i più recenti modelli AI come Claude Sonnet 4.5, Gemini 2.5 Pro, GPT-5, e oltre 450 altri.",
+		"introText2": "Funziona con i più recenti modelli AI come Claude Opus 4.5, Gemini 3 Pro, GPT-5.2, e oltre 450 altri.",
 		"introText3": "Crea un account gratuito e ottieni $20 di crediti bonus quando ricarichi per la prima volta.",
 		"ctaButton": "Inizia",
 		"manualModeButton": "Usa la tua chiave API",
@@ -12,7 +12,7 @@
 	"lowCreditWarning": {
 		"addCredit": "Aggiungi credito",
 		"lowBalance": "Il tuo saldo Kilo Code è basso",
-		"newOrganization": "Usi Kilo per lavoro?"
+		"switchToFreeModel": "Passa a un modello gratuito"
 	},
 	"pagination": {
 		"previous": "Precedente",
@@ -26,6 +26,11 @@
 		"continueWith": "Continua con {{model}}",
 		"continue": "Continua"
 	},
+	"unauthorizedError": {
+		"title": "Devi accedere per usare il modello {{modelId}}",
+		"message": "Accedi o crea un account per accedere a oltre 500 modelli, utilizzare crediti al costo effettivo o portare la tua chiave.",
+		"loginButton": "Accedi"
+	},
 	"pricing": {
 		"costUnknown": "costo sconosciuto",
 		"costUnknownDescription": "Il Provider API non ha fornito dati sui costi o la richiesta è stata annullata.",
@@ -38,14 +43,16 @@
 	},
 	"settings": {
 		"sections": {
-			"mcp": "Server MCP"
+			"mcp": "Server MCP",
+			"agentBehaviour": "Comportamento dell'Agente",
+			"skills": "Competenze"
 		},
 		"provider": {
 			"account": "Account Kilo Code",
 			"apiKey": "Chiave API Kilo Code",
 			"login": "Accedi a Kilo Code",
 			"logout": "Disconnetti da Kilo Code",
-			"automaticFetch": "I modelli più recenti sono automaticamente disponibili in Kilo Code. Se non sei sicuro di quale modello scegliere, Kilo Code funziona meglio con i modelli consigliati elencati in alto in <strong>grassetto</strong>.",
+			"loginForPremiumModels": "Accedi per sbloccare modelli e funzionalità premium",
 			"providerRouting": {
 				"title": "Routing dei provider",
 				"managedByOrganization": "Gestisci routing dei provider a livello di organizzazione",
@@ -101,6 +108,12 @@
 					"description": "Seleziona quale configurazione API utilizzare per generare comandi terminali. Lascia come 'Usa configurazione attuale' per utilizzare le tue impostazioni predefinite."
 				}
 			}
+		},
+		"codeIndex": {
+			"embeddingBatchSizeLabel": "Dimensione Batch Embedding",
+			"embeddingBatchSizeDescription": "Numero di segmenti di codice da raggruppare insieme per la generazione degli embedding e gli aggiornamenti del vector store. Valori più alti possono migliorare la velocità di indicizzazione ma potrebbero aumentare l'utilizzo della memoria. Valori più bassi riducono l'utilizzo della memoria ma potrebbero rallentare l'indicizzazione.",
+			"scannerMaxBatchRetriesLabel": "Tentativi Massimi Batch Scanner",
+			"scannerMaxBatchRetriesDescription": "Numero massimo di tentativi per riprovare un batch fallito durante la scansione delle directory. Valori più alti aumentano la resilienza agli errori transitori ma potrebbero rallentare l'indicizzazione se gli errori persistono. Valori più bassi falliscono più rapidamente ma potrebbero saltare contenuti in caso di problemi temporanei."
 		}
 	},
 	"chat": {
@@ -136,7 +149,14 @@
 	},
 	"docs": "Documentazione",
 	"rules": {
-		"tooltip": "Gestisci Regole e Flussi di Lavoro di Kilo Code",
+		"tooltip": "Gestisci il comportamento dell'agente ({{types}})",
+		"agentBehaviourTypes": {
+			"rules": "Regole",
+			"workflows": "Flussi di Lavoro",
+			"mcps": "MCPs",
+			"modes": "Modalità",
+			"skills": "Competenze"
+		},
 		"ariaLabel": "Regole di Kilo Code",
 		"tabs": {
 			"rules": "Regole",
@@ -196,6 +216,7 @@
 	},
 	"ideaSuggestionsBox": {
 		"newHere": "Nuovo qui?",
+		"tryOneOfThese": "Prova una di queste idee per iniziare:",
 		"suggestionText": "<suggestionButton>Clicca qui</suggestionButton> per un'idea fantastica, poi tocca <sendIcon /> e guardami fare magie!",
 		"ideas": {
 			"idea1": "Crea una sfera 3D rotante e luminosa che risponde ai movimenti del mouse. Fai funzionare l'app nel browser.",
@@ -210,7 +231,8 @@
 	"ghost": {
 		"title": "Autocomplete",
 		"settings": {
-			"triggers": "Trigger",
+			"codeEditorSuggestions": "Suggerimenti Editor di Codice",
+			"chatSuggestions": "Suggerimenti Chat",
 			"keybindingDescription": "Le funzionalità Autocomplete possono essere attivate tramite comandi. Puoi configurare le <DocsLink>Scorciatoie da Tastiera qui</DocsLink>.",
 			"enableAutoTrigger": {
 				"label": "Pausa per Completare",
@@ -220,19 +242,42 @@
 				"label": "Ritardo Attivazione Automatica",
 				"description": "Il ritardo in secondi prima che Kilo Code attivi Autocomplete dopo che hai smesso di digitare. Un ritardo più breve significa suggerimenti più veloci, ma può essere più intensivo in termini di risorse."
 			},
-			"enableQuickInlineTaskKeybinding": {
-				"label": "Attività Rapida ({{keybinding}})",
-				"description": "Hai bisogno solo di una modifica rapida? Seleziona del codice (o no!) e premi Cmd+I. Descrivi il tuo obiettivo in italiano semplice (\"crea un componente React con queste props\", \"aggiungi gestione errori a questa funzione\"), e ottieni più suggerimenti pronti all'uso direttamente nel tuo editor. <DocsLink>Modifica scorciatoia</DocsLink>"
-			},
 			"enableSmartInlineTaskKeybinding": {
 				"label": "Completamento Automatico Manuale ({{keybinding}})",
 				"description": "Hai bisogno di una correzione rapida, completamento o refactoring? Kilo userà il contesto circostante per offrire miglioramenti immediati, mantenendoti nel flusso. <DocsLink>Modifica scorciatoia</DocsLink>"
 			},
 			"keybindingNotFound": "non trovato",
-			"noModelConfigured": "Nessun modello di autocompletamento adatto trovato. Configura un provider nelle impostazioni API.",
 			"configureAutocompleteProfile": "Usa qualsiasi modello andando nei profili e configurando un Profilo del Tipo di Profilo Autocompletamento.",
 			"model": "Modello",
-			"provider": "Provider"
+			"provider": "Provider",
+			"enableChatAutocomplete": {
+				"label": "Completamento Automatico dell'Input della Chat",
+				"description": "Quando abilitato, Kilo Code suggerirà completamenti mentre digiti nell'area di chat. Premi Tab per accettare i suggerimenti."
+			},
+			"snooze": {
+				"label": "Sospendi Autocomplete",
+				"description": "Metti in pausa temporaneamente i suggerimenti di autocompletamento per una durata specificata.",
+				"button": "Sospendi",
+				"unsnooze": "Riattiva",
+				"currentlySnoozed": "L'autocompletamento è attualmente sospeso.",
+				"duration": {
+					"1min": "1 minuto",
+					"5min": "5 minuti",
+					"15min": "15 minuti",
+					"30min": "30 minuti",
+					"1hour": "1 ora"
+				}
+			},
+			"noModelConfigured": {
+				"title": "Nessun modello di autocompletamento configurato",
+				"description": "Per abilitare l'autocompletamento, aggiungi un profilo con uno di questi provider supportati:",
+				"learnMore": "Scopri di più sulla configurazione dell'autocompletamento →"
+			},
+			"noCredits": {
+				"title": "Nessun credito nel tuo account",
+				"description": "Il tuo account Kilo Code non ha crediti. Per utilizzare l'autocompletamento, aggiungi crediti al tuo account.",
+				"buyCredits": "Acquista crediti →"
+			}
 		}
 	},
 	"virtualProvider": {
@@ -278,9 +323,64 @@
 		},
 		"modes": {
 			"description": "Queste modalità sono disponibili dalla community. Clicca <1>qui</1> per modificare le tue modalità personalizzate."
+		},
+		"skills": {
+			"description": "Esplora e scopri skill dalla community. Le skill forniscono istruzioni specializzate per compiti specifici."
 		}
 	},
 	"modes": {
 		"shareModesNewBanner": "Novità: Condividi le modalità creando un'organizzazione"
+	},
+	"deviceAuth": {
+		"title": "Accedi a Kilo Code",
+		"step1": "Apri il seguente URL nel tuo browser",
+		"step2": "Verifica il codice e autorizza questo dispositivo nel tuo browser",
+		"scanQr": "Oppure scansiona questo codice QR con il tuo telefono",
+		"openBrowser": "Apri Browser",
+		"copyUrl": "Copia URL",
+		"waiting": "In attesa di autorizzazione...",
+		"timeRemaining": "Il codice scade tra {{time}}",
+		"success": "Accesso effettuato con successo!",
+		"authenticatedAs": "Autenticato come {{email}}",
+		"error": "Errore di autenticazione",
+		"unknownError": "Si è verificato un errore. Riprova.",
+		"cancel": "Annulla",
+		"retry": "Riprova",
+		"tryAgain": "Riprova",
+		"cancelled": "Autenticazione annullata",
+		"initiating": "Avvio autenticazione..."
+	},
+	"speechToText": {
+		"startRecording": "Avvia input vocale",
+		"stopRecording": "Interrompi input vocale",
+		"setupPopover": {
+			"title": "Sintesi vocale",
+			"description": "La sintesi vocale non è disponibile. La sintesi vocale richiede sia FFmpeg che un provider OpenAI valido configurato. <moreInfoLink>Clicca qui per maggiori informazioni</moreInfoLink>.",
+			"openAiReason": "È necessario un provider OpenAI valido con una chiave API per utilizzare la trascrizione vocale.",
+			"ffmpegReason": "È necessario avere FFmpeg installato. <ffmpegLink>Clicca qui</ffmpegLink> per far sì che Kilo ti aiuti a installare FFmpeg.",
+			"ffmpegMessage": "Aiutami a installare FFmpeg"
+		},
+		"misconfiguredState": "Non disponibile a causa della configurazione",
+		"errorState": "Non disponibile a causa di un errore",
+		"microphone": {
+			"label": "Microfono",
+			"noDevices": "Nessun dispositivo microfono trovato",
+			"loading": "Caricamento dei dispositivi microfono...",
+			"refresh": "Aggiorna",
+			"defaultOption": "Impostazione predefinita del sistema",
+			"description": "Seleziona il dispositivo microfono per il riconoscimento vocale"
+		}
+	},
+	"skills": {
+		"description": "Le competenze forniscono istruzioni specializzate per compiti specifici. Vengono applicate automaticamente quando sono pertinenti alla tua richiesta.",
+		"noSkills": "Nessuna competenza installata",
+		"projectSkills": "Competenze del Progetto",
+		"globalSkills": "Competenze Globali",
+		"deleteDialog": {
+			"title": "Elimina Competenza",
+			"description": "Sei sicuro di voler eliminare la competenza \"{{skillName}}\"? Questa azione non può essere annullata.",
+			"cancel": "Annulla",
+			"delete": "Elimina"
+		}
 	}
 }

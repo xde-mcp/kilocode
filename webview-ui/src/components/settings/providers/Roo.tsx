@@ -1,6 +1,9 @@
-import { type ProviderSettings, type OrganizationAllowList, rooDefaultModelId } from "@roo-code/types"
-
-import type { RouterModels } from "@roo/api"
+import {
+	type ProviderSettings,
+	type OrganizationAllowList,
+	type RouterModels,
+	rooDefaultModelId,
+} from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { vscode } from "@src/utils/vscode"
@@ -15,6 +18,7 @@ type RooProps = {
 	cloudIsAuthenticated: boolean
 	organizationAllowList: OrganizationAllowList
 	modelValidationError?: string
+	simplifySettings?: boolean
 }
 
 export const Roo = ({
@@ -24,6 +28,7 @@ export const Roo = ({
 	cloudIsAuthenticated,
 	organizationAllowList,
 	modelValidationError,
+	simplifySettings,
 }: RooProps) => {
 	const { t } = useAppTranslation()
 
@@ -51,10 +56,11 @@ export const Roo = ({
 				defaultModelId={rooDefaultModelId}
 				models={routerModels?.roo ?? {}}
 				modelIdKey="apiModelId"
-				serviceName="Roo Code Cloud"
-				serviceUrl="https://roocode.com"
+				serviceName="Roo Code Router"
+				serviceUrl="https://app.roocode.com"
 				organizationAllowList={organizationAllowList}
 				errorMessage={modelValidationError}
+				simplifySettings={simplifySettings}
 			/>
 		</>
 	)

@@ -9,6 +9,7 @@
 		"tokens": "Tokens",
 		"cache": "Caché",
 		"apiCost": "Cost d'API",
+		"changes": "Canvis",
 		"size": "Mida",
 		"contextWindow": "Finestra de context",
 		"closeAndStart": "Tancar tasca i iniciar-ne una de nova",
@@ -26,7 +27,9 @@
 		"shareSuccessOrganization": "Enllaç d'organització copiat al porta-retalls",
 		"shareSuccessPublic": "Enllaç públic copiat al porta-retalls",
 		"openInCloud": "Obrir tasca a Roo Code Cloud",
-		"openInCloudIntro": "Continua monitoritzant o interactuant amb Roo des de qualsevol lloc. Escaneja, fes clic o copia per obrir."
+		"openInCloudIntro": "Continua monitoritzant o interactuant amb Roo des de qualsevol lloc. Escaneja, fes clic o copia per obrir.",
+		"openApiHistory": "Obrir historial d'API",
+		"openUiHistory": "Obrir historial d'UI"
 	},
 	"history": {
 		"title": "Historial"
@@ -86,10 +89,15 @@
 		"title": "Finalitzar",
 		"tooltip": "Finalitza la tasca actual"
 	},
+	"stop": {
+		"title": "Atura",
+		"tooltip": "Atura la tasca actual"
+	},
 	"cancel": {
 		"title": "Cancel·lar",
 		"tooltip": "Cancel·la l'operació actual"
 	},
+	"enqueueMessage": "Afegeix el missatge a la cua (s'enviarà quan acabi la tasca actual)",
 	"scrollToBottom": "Desplaça't al final del xat",
 	"about": "Genera, refactoritza i depura codi amb l'ajuda de la IA. Consulta la nostra <DocsLink>documentació</DocsLink> per a més informació.",
 	"docs": "Consulta els nostres <DocsLink>documents</DocsLink> per a més informació.",
@@ -110,6 +118,7 @@
 	"enhancePrompt": "Millora la sol·licitud amb context addicional",
 	"addImages": "Afegeix imatges al missatge",
 	"sendMessage": "Envia el missatge",
+	"pressToSend": "Prem {{keyCombination}} per enviar",
 	"stopTts": "Atura la síntesi de veu",
 	"typeMessage": "Escriu un missatge...",
 	"typeTask": "Escriu la teva tasca aquí...",
@@ -142,7 +151,22 @@
 		"failed": "Sol·licitud API ha fallat",
 		"streaming": "Sol·licitud API...",
 		"cancelled": "Sol·licitud API cancel·lada",
-		"streamingFailed": "Transmissió API ha fallat"
+		"streamingFailed": "Transmissió API ha fallat",
+		"rateLimitWait": "Limitació de taxa",
+		"errorTitle": "Error de proveïdor {{code}}",
+		"errorMessage": {
+			"docs": "Documentació",
+			"goToSettings": "Configuració",
+			"400": "El proveïdor no ha pogut processar la sol·licitud tal com es va fer. Interromp la tasca i prova una abordatge diferent.",
+			"401": "No s'ha pogut autenticar amb el proveïdor. Si us plau, verifica la teva configuració de clau API.",
+			"402": "Sembla que se t'han acabat els fons/crèdits al teu compte. Vés al teu proveïdor i afegeix més per continuar.",
+			"403": "No autoritzat. La teva clau API és vàlida, però el proveïdor ha rebutjat completar aquesta sol·licitud.",
+			"429": "Massa sol·licituds. Estàs sent limitat pel proveïdor. Si us plau espera una mica abans de la teva propera crida API.",
+			"500": "Error del servidor del proveïdor. Quelcom va malament del costat del proveïdor, no hi ha res de malament amb la teva sol·licitud.",
+			"connection": "Error de connexió. Assegureu-vos que teniu una connexió a Internet funcional.",
+			"claudeCodeNotAuthenticated": "Has d'iniciar sessió per utilitzar Claude Code. Vés a Configuració i fes clic a \"Iniciar sessió a Claude Code\" per autenticar-te.",
+			"unknown": "Error API desconegut, fes clic a Detalls per a més informació."
+		}
 	},
 	"checkpoint": {
 		"regular": "Punt de control",
@@ -255,6 +279,21 @@
 		"hasQuestion": "Kilo Code té una pregunta"
 	},
 	"taskCompleted": "Tasca completada",
+	"modelResponseIncomplete": "Resposta del model incompleta",
+	"modelResponseErrors": {
+		"noToolsUsed": "El model no ha utilitzat cap eina en la seva resposta. Això sol passar quan el model només proporciona text/raonament sense cridar les eines necessàries per completar la tasca.",
+		"noToolsUsedDetails": "El model ha proporcionat text/raonament però no ha cridat cap de les eines necessàries. Això sol indicar que el model ha entès malament la tasca o té dificultats per determinar quina eina utilitzar. El model ha estat sol·licitat automàticament per tornar-ho a provar amb l'ús adequat de les eines.",
+		"noAssistantMessages": "El model no ha proporcionat cap contingut de resposta. Això pot indicar un problema amb l'API o la sortida del model.",
+		"noAssistantMessagesDetails": "El model de llenguatge ha retornat una resposta buida sense text ni crides a eines. Això pot passar a causa de problemes d'API, limitació de velocitat o problemes específics del model. El model ha estat sol·licitat automàticament per tornar-ho a provar."
+	},
+	"errorDetails": {
+		"link": "Detalls",
+		"title": "Detalls de l'error",
+		"copyToClipboard": "Copiar al porta-retalls",
+		"copied": "Copiat!",
+		"diagnostics": "Obtenir informació d'error detallada",
+		"proxyProvider": "Sembla que estàs utilitzant un proveïdor basat en proxy. Assegura't de comprovar els seus registres i de garantir que no estàs reescrivint les sol·licituds de Roo."
+	},
 	"powershell": {
 		"issues": "Sembla que estàs tenint problemes amb Windows PowerShell, si us plau consulta aquesta documentació per a més informació."
 	},
@@ -274,25 +313,34 @@
 		"triggerLabel_zero": "0 aprovacions automàtiques",
 		"triggerLabel_one": "1 aprovació automàtica",
 		"triggerLabel_other": "{{count}} aprovacions automàtiques",
-		"triggerLabelAll": "YOLO"
+		"triggerLabelAll": "BRRR"
 	},
 	"reasoning": {
 		"thinking": "Pensant",
 		"seconds": "{{count}}s"
 	},
-	"contextCondense": {
-		"title": "Context condensat",
-		"condensing": "Condensant context...",
-		"errorHeader": "Error en condensar el context",
-		"tokens": "tokens"
+	"contextManagement": {
+		"tokens": "tokens",
+		"condensation": {
+			"title": "Context condensat",
+			"inProgress": "Condensant context...",
+			"errorHeader": "Error en condensar el context"
+		},
+		"truncation": {
+			"title": "Context truncat",
+			"inProgress": "Truncant context...",
+			"messagesRemoved": "{{count}} missatge eliminat",
+			"messagesRemoved_other": "{{count}} missatges eliminats",
+			"description": "S'han eliminat missatges més antics de la conversa per mantenir-se dins del límit de la finestra de context. Aquest és un enfocament ràpid però menys conservador del context en comparació amb la condensació."
+		}
 	},
 	"followUpSuggest": {
 		"copyToInput": "Copiar a l'entrada (o Shift + clic)",
-		"autoSelectCountdown": "Selecció automàtica en {{count}}s",
-		"countdownDisplay": "{{count}}s"
+		"timerPrefix": "Aprovació automàtica habilitada. Seleccionant en {{seconds}}s…"
 	},
 	"announcement": {
-		"title": "🎉 Roo Code {{version}} Llançat",
+		"title": "Roo Code {{version}} Llançat",
+		"support": "Si us plau, dona suport a Roo Code fent una estrella al nostre <githubLink>GitHub</githubLink>.",
 		"stealthModel": {
 			"feature": "<bold>Model stealth GRATUÏT per temps limitat</bold> - Code Supernova: Ara actualitzat amb una <bold>finestra de context d'1M tokens</bold>! Un model de codificació agèntica versàtil que suporta entrades d'imatges, disponible a través de Roo Code Cloud.",
 			"note": "(Nota: els prompts i completacions són registrats pel creador del model i utilitzats per millorar-lo)",
@@ -301,9 +349,10 @@
 			"goToSettingsButton": "Anar a Configuració"
 		},
 		"release": {
-			"heading": "Novetats:",
-			"browserUse": "Browser Use 2.0 millora l'experiència de navegació dins del xat amb sessions persistents, comentaris més clars, un panell de navegador dedicat i descripcions d'accions més naturals",
-			"cloudPaid": "El proveïdor de Roo Code Cloud ara ofereix models de pagament: compra crèdits i utilitza'ls tant per a agents al núvol com per a inferència"
+			"heading": "Què hi ha de nou:",
+			"openaiCodexProvider": "S'ha afegit el Proveïdor OpenAI - ChatGPT Plus/Pro que ofereix accés basat en subscripció als models Codex sense costos per token.",
+			"gpt52codexModel": "S'ha afegit el nou model gpt-5.2-codex al Roo Code Router, al proveïdor estàndard OpenAI i més.",
+			"bugFixes": "S'han corregit fuites de memòria que causaven pantalles grises, problemes de signatura de pensament de Gemini i més millores d'estabilitat."
 		},
 		"cloudAgents": {
 			"heading": "Novetats al núvol:",
@@ -312,10 +361,16 @@
 			"tryButton": "Prova els Agents al Núvol"
 		},
 		"careers": "A més, <careersLink>estem contractant!</careersLink>",
-		"socialLinks": "Uneix-te a nosaltres a <xLink>X</xLink>, <discordLink>Discord</discordLink>, o <redditLink>r/RooCode</redditLink> 🚀"
+		"socialLinks": "Uneix-te a nosaltres a <xLink>X</xLink>, <discordLink>Discord</discordLink>, o <redditLink>r/KiloCode</redditLink> 🚀"
+	},
+	"costs": {
+		"totalWithSubtasks": "Cost total (subtasques incloses): ${{cost}}",
+		"total": "Cost total: ${{cost}}",
+		"includesSubtasks": "Inclou els costos de les subtasques"
 	},
 	"browser": {
 		"session": "Sessió del navegador",
+		"active": "Actiu",
 		"rooWantsToUse": "Kilo Code vol utilitzar el navegador",
 		"consoleLogs": "Registres de consola",
 		"noNewLogs": "(Cap registre nou)",
@@ -329,13 +384,25 @@
 		"sessionStarted": "Sessió de navegador iniciada",
 		"actions": {
 			"title": "Acció del navegador: ",
+			"launched": "Navegador iniciat",
 			"launch": "Iniciar navegador a {{url}}",
+			"clicked": "Fet clic ({{coordinate}})",
 			"click": "Clic ({{coordinate}})",
+			"typed": "Escrit: {{text}}",
 			"type": "Escriure \"{{text}}\"",
+			"pressed": "Premut: {{key}}",
 			"press": "Prem {{key}}",
+			"scrolledDown": "Desplaçat avall",
 			"scrollDown": "Desplaçar avall",
+			"scrolledUp": "Desplaçat amunt",
 			"scrollUp": "Desplaçar amunt",
+			"hovered": "Planat sobre ({{coordinate}})",
 			"hover": "Plana sobre ({{coordinate}})",
+			"resized": "Mida canviada a: {{size}}",
+			"resize": "Canvia la mida a {{size}}",
+			"screenshotSaved": "Captura de pantalla guardada",
+			"screenshot": "Guarda la captura de pantalla a {{path}}",
+			"closed": "Navegador tancat",
 			"close": "Tancar navegador"
 		}
 	},

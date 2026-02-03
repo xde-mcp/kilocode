@@ -8,11 +8,10 @@ import {
 	type ModelInfo,
 	type ReasoningEffort,
 	type OrganizationAllowList,
+	type ExtensionMessage,
 	azureOpenAiDefaultApiVersion,
 	openAiModelInfoSaneDefaults,
 } from "@roo-code/types"
-
-import { ExtensionMessage } from "@roo/ExtensionMessage"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { Button, StandardTooltip } from "@src/components/ui"
@@ -28,6 +27,7 @@ type OpenAICompatibleProps = {
 	setApiConfigurationField: (field: keyof ProviderSettings, value: ProviderSettings[keyof ProviderSettings]) => void
 	organizationAllowList: OrganizationAllowList
 	modelValidationError?: string
+	simplifySettings?: boolean
 }
 
 export const OpenAICompatible = ({
@@ -35,11 +35,11 @@ export const OpenAICompatible = ({
 	setApiConfigurationField,
 	organizationAllowList,
 	modelValidationError,
+	simplifySettings,
 }: OpenAICompatibleProps) => {
 	const { t } = useAppTranslation()
 
 	const [azureApiVersionSelected, setAzureApiVersionSelected] = useState(!!apiConfiguration?.azureApiVersion)
-	const [openAiLegacyFormatSelected, setOpenAiLegacyFormatSelected] = useState(!!apiConfiguration?.openAiLegacyFormat)
 
 	const [openAiModels, setOpenAiModels] = useState<Record<string, ModelInfo> | null>(null)
 
@@ -147,21 +147,12 @@ export const OpenAICompatible = ({
 				serviceUrl="https://platform.openai.com"
 				organizationAllowList={organizationAllowList}
 				errorMessage={modelValidationError}
+				simplifySettings={simplifySettings}
 			/>
 			<R1FormatSetting
 				onChange={handleInputChange("openAiR1FormatEnabled", noTransform)}
 				openAiR1FormatEnabled={apiConfiguration?.openAiR1FormatEnabled ?? false}
 			/>
-			<div>
-				<Checkbox
-					checked={openAiLegacyFormatSelected}
-					onChange={(checked: boolean) => {
-						setOpenAiLegacyFormatSelected(checked)
-						setApiConfigurationField("openAiLegacyFormat", checked)
-					}}>
-					{t("settings:providers.useLegacyFormat")}
-				</Checkbox>
-			</div>
 			<Checkbox
 				checked={apiConfiguration?.openAiStreamingEnabled ?? true}
 				onChange={handleInputChange("openAiStreamingEnabled", noTransform)}>
@@ -277,7 +268,7 @@ export const OpenAICompatible = ({
 						}}
 						modelInfo={{
 							...(apiConfiguration.openAiCustomModelInfo || openAiModelInfoSaneDefaults),
-							supportsReasoningEffort: true,
+							supportsReasoningEffort: ["low", "medium", "high", "xhigh"],
 						}}
 					/>
 				)}

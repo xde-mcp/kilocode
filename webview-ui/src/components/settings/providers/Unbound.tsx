@@ -2,9 +2,12 @@ import { useCallback, useState, useRef } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { type ProviderSettings, type OrganizationAllowList, unboundDefaultModelId } from "@roo-code/types"
-
-import type { RouterModels } from "@roo/api"
+import {
+	type ProviderSettings,
+	type OrganizationAllowList,
+	type RouterModels,
+	unboundDefaultModelId,
+} from "@roo-code/types"
 
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 import { VSCodeButtonLink } from "@src/components/common/VSCodeButtonLink"
@@ -24,6 +27,7 @@ type UnboundProps = {
 	routerModels?: RouterModels
 	organizationAllowList: OrganizationAllowList
 	modelValidationError?: string
+	simplifySettings?: boolean
 }
 
 export const Unbound = ({
@@ -32,6 +36,7 @@ export const Unbound = ({
 	routerModels,
 	organizationAllowList,
 	modelValidationError,
+	simplifySettings,
 }: UnboundProps) => {
 	const { t } = useAppTranslation()
 	const [didRefetch, setDidRefetch] = useState<boolean>()
@@ -185,6 +190,7 @@ export const Unbound = ({
 				setApiConfigurationField={setApiConfigurationField}
 				organizationAllowList={organizationAllowList}
 				errorMessage={modelValidationError}
+				simplifySettings={simplifySettings}
 			/>
 		</>
 	)

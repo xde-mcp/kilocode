@@ -123,14 +123,17 @@ export default defineConfig(({ mode }) => {
 			// Ensure source maps are properly included in the build
 			minify: mode === "production" ? "esbuild" : false,
 			// Use a single combined CSS bundle so both webviews share styles
-			cssCodeSplit: false,
+			cssCodeSplit: true, // kilocode_change: changed to true to enable cssPerEntryPlugin
 			rollupOptions: {
+				// Externalize vscode module - it's imported by file-search.ts which is
+				// dynamically imported by roo-config/index.ts, but should never be bundled
+				// in the webview since it's not available in the browser context
+				external: ["vscode"],
 				input: {
-					main: resolve(__dirname, "index.html"),
+					index: resolve(__dirname, "index.html"), // kilocode_change - DO NOT CHANGE
 					"agent-manager": resolve(__dirname, "agent-manager.html"), // kilocode_change
 					"browser-panel": resolve(__dirname, "browser-panel.html"),
 				},
-				external: ["vscode"], // kilocode_change: we inadvertently import vscode into the webview: @roo/modes => src/shared/modes => ../core/prompts/sections/custom-instructions
 				output: {
 					entryFileNames: `assets/[name].js`,
 					chunkFileNames: (chunkInfo) => {
@@ -143,10 +146,12 @@ export default defineConfig(({ mode }) => {
 					assetFileNames: (assetInfo) => {
 						const name = assetInfo.name || ""
 
+						// kilocode_change start -  cssPerEntryPlugin
 						// Force all CSS into a single predictable file used by both webviews
-						if (name.endsWith(".css")) {
-							return "assets/index.css"
-						}
+						// if (name.endsWith(".css")) {
+						// 	return "assets/index.css"
+						//}
+						// kilocode_change end
 
 						if (name.endsWith(".woff2") || name.endsWith(".woff") || name.endsWith(".ttf")) {
 							return "assets/fonts/[name][extname]"
