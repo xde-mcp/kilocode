@@ -26,8 +26,8 @@
 
 ## Quick Links
 
-- [VS Code Marketplace](https://kilocode.ai/vscode-marketplace?utm_source=Readme) (download)
-- [Official KiloCode.ai Home page](https://kilo.ai) (learn more)
+- [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
+- [Official Kilo.ai Home page](https://kilo.ai) (learn more)
 
 ## Key Features
 
