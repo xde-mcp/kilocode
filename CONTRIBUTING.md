@@ -66,7 +66,7 @@ Please use our issues templates that provide hints on what information we need t
 
 Custom modes are a powerful way to extend Kilo Code's capabilities. To create and share a custom mode:
 
-- Follow the [Custom Modes documentation](https://kilocode.ai/docs/features/custom-modes) to create your mode.
+- Follow the [Custom Modes documentation](https://kilo.ai/docs/customize/custom-modes) to create your mode.
 
 - Test your mode thoroughly
 
@@ -131,7 +131,7 @@ When you’re ready to contribute your changes, follow these steps to create a c
 
     - Notes for reviewers, if special attention is needed
 
-For more context, kindly read the official [contributing docs](https://kilocode.ai/docs/extending/contributing-to-kilo).
+For more context, kindly read the official [contributing docs](https://kilo.ai/docs/contributing).
 
 Your contributions, big or small help make Kilo Code better for everyone!🫶
 
