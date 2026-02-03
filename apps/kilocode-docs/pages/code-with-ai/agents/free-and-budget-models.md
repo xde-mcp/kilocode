@@ -98,7 +98,7 @@ When you need more capability than free models provide, these options deliver ex
 
 **Reuse context effectively:**
 
-- Keep key project notes in your repository (e.g., a README or docs folder)
+- Keep key project notes in your repository (e.g., a AGENTS.md or docs folder)
 - Reduces need to re-explain project details
 - Saves tokens per conversation
 
