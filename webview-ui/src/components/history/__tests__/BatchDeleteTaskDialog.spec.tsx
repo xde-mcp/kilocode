@@ -11,10 +11,10 @@ vi.mock("@/i18n/TranslationContext", () => ({
 		t: (key: string, options?: Record<string, any>) => {
 			const translations: Record<string, string> = {
 				"history:deleteTasks": "Delete Tasks",
-				"history:confirmDeleteTasks": `Are you sure you want to delete ${options?.count || 0} tasks?`,
+				"history:confirmDeleteTasks": `Are you sure you want to delete ${options?.count || 0} task(s)?`,
 				"history:deleteTasksWarning": "This action cannot be undone.",
 				"history:cancel": "Cancel",
-				"history:deleteItems": `Delete ${options?.count || 0} items`,
+				"history:deleteItems": `Delete ${options?.count || 0} Item(s)`,
 				"history:deleteFavoritedCheckbox": "Include favorited tasks",
 			}
 			return translations[key] || key
@@ -47,18 +47,18 @@ describe("BatchDeleteTaskDialog", () => {
 		render(<BatchDeleteTaskDialog taskIds={mockTaskIds} open={true} onOpenChange={mockOnOpenChange} />)
 
 		expect(screen.getByText("Delete Tasks")).toBeInTheDocument()
-		expect(screen.getByText("Are you sure you want to delete 2 tasks?")).toBeInTheDocument()
+		expect(screen.getByText("Are you sure you want to delete 2 task(s)?")).toBeInTheDocument()
 		expect(screen.getByText("This action cannot be undone.")).toBeInTheDocument()
 		expect(screen.getByText("Cancel")).toBeInTheDocument()
 		// With favorited tasks in selection, shows checkbox and deletes non-favorited by default
 		expect(screen.getByText("Include favorited tasks")).toBeInTheDocument()
-		expect(screen.getByText("Delete 2 items")).toBeInTheDocument()
+		expect(screen.getByText("Delete 2 Item(s)")).toBeInTheDocument()
 	})
 
 	it("calls vscode.postMessage when delete is confirmed", () => {
 		render(<BatchDeleteTaskDialog taskIds={mockTaskIds} open={true} onOpenChange={mockOnOpenChange} />)
 
-		const deleteButton = screen.getByText("Delete 2 items")
+		const deleteButton = screen.getByText("Delete 2 Item(s)")
 		fireEvent.click(deleteButton)
 
 		expect(vscode.postMessage).toHaveBeenCalledWith({
@@ -82,7 +82,7 @@ describe("BatchDeleteTaskDialog", () => {
 	it("does not call vscode.postMessage when taskIds is empty", () => {
 		render(<BatchDeleteTaskDialog taskIds={[]} open={true} onOpenChange={mockOnOpenChange} />)
 
-		const deleteButton = screen.getByText("Delete 0 items")
+		const deleteButton = screen.getByText("Delete 0 Item(s)")
 		fireEvent.click(deleteButton)
 
 		expect(vscode.postMessage).not.toHaveBeenCalled()
@@ -93,9 +93,9 @@ describe("BatchDeleteTaskDialog", () => {
 		const singleTaskId = ["task-1"]
 		render(<BatchDeleteTaskDialog taskIds={singleTaskId} open={true} onOpenChange={mockOnOpenChange} />)
 
-		expect(screen.getByText("Are you sure you want to delete 1 tasks?")).toBeInTheDocument()
+		expect(screen.getByText("Are you sure you want to delete 1 task(s)?")).toBeInTheDocument()
 		// task-1 is not favorited, so only shows single delete button
-		expect(screen.getByText("Delete 1 items")).toBeInTheDocument()
+		expect(screen.getByText("Delete 1 Item(s)")).toBeInTheDocument()
 	})
 
 	it("toggles include favorited checkbox to delete all items", () => {
@@ -104,8 +104,8 @@ describe("BatchDeleteTaskDialog", () => {
 		const checkbox = screen.getByRole("checkbox")
 		fireEvent.click(checkbox)
 
-		expect(screen.getByText("Are you sure you want to delete 3 tasks?")).toBeInTheDocument()
-		const deleteButton = screen.getByText("Delete 3 items")
+		expect(screen.getByText("Are you sure you want to delete 3 task(s)?")).toBeInTheDocument()
+		const deleteButton = screen.getByText("Delete 3 Item(s)")
 		fireEvent.click(deleteButton)
 
 		expect(vscode.postMessage).toHaveBeenCalledWith({
@@ -119,7 +119,7 @@ describe("BatchDeleteTaskDialog", () => {
 	it("renders trash icon in delete button", () => {
 		render(<BatchDeleteTaskDialog taskIds={mockTaskIds} open={true} onOpenChange={mockOnOpenChange} />)
 
-		const deleteButton = screen.getByText("Delete 2 items")
+		const deleteButton = screen.getByText("Delete 2 Item(s)")
 		const trashIcon = deleteButton.querySelector(".codicon-trash")
 		expect(trashIcon).toBeInTheDocument()
 	})
