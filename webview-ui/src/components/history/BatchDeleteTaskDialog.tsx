@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 import {
 	AlertDialog,
@@ -9,6 +9,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 	Button,
+	Checkbox,
 } from "@/components/ui"
 import { vscode } from "@/utils/vscode"
 import { AlertDialogProps } from "@radix-ui/react-alert-dialog"
@@ -22,27 +23,31 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 	const { t } = useAppTranslation()
 	const { data: tasks } = useTaskWithId(taskIds) // kilocode_change
 	const { onOpenChange } = props
+	const [includeFavorited, setIncludeFavorited] = useState(false) // kilocode_change
 
 	const favoritedTasks = tasks?.filter((task) => taskIds.includes(task.id) && task.isFavorited) ?? [] // kilocode_change
 	const hasFavoritedTasks = favoritedTasks.length > 0 // kilocode_change
 	const nonFavoritedTaskIds = taskIds.filter((id) => !favoritedTasks.some((task) => task.id === id)) // kilocode_change
-	const hasNonFavoritedTasks = nonFavoritedTaskIds.length > 0 // kilocode_change
-
-	const onDeleteAll = useCallback(() => {
-		if (taskIds.length > 0) {
-			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: taskIds, excludeFavorites: false })
-		}
-		onOpenChange?.(false)
-	}, [taskIds, onOpenChange])
 
 	// kilocode_change start
-	const onDeleteNonFavorited = useCallback(() => {
-		if (nonFavoritedTaskIds.length > 0) {
-			vscode.postMessage({ type: "deleteMultipleTasksWithIds", ids: nonFavoritedTaskIds, excludeFavorites: true })
+	const deleteTaskIds = useMemo(() => {
+		if (!hasFavoritedTasks) {
+			return taskIds
+		}
+		return includeFavorited ? taskIds : nonFavoritedTaskIds
+	}, [hasFavoritedTasks, includeFavorited, nonFavoritedTaskIds, taskIds])
+	// kilocode_change end
+
+	const onDelete = useCallback(() => {
+		if (deleteTaskIds.length > 0) {
+			vscode.postMessage({
+				type: "deleteMultipleTasksWithIds",
+				ids: taskIds,
+				excludeFavorites: hasFavoritedTasks && !includeFavorited,
+			})
 		}
 		onOpenChange?.(false)
-	}, [nonFavoritedTaskIds, onOpenChange])
-	// kilocode_change end
+	}, [deleteTaskIds.length, hasFavoritedTasks, includeFavorited, onOpenChange, taskIds])
 
 	return (
 		<AlertDialog {...props}>
@@ -50,52 +55,41 @@ export const BatchDeleteTaskDialog = ({ taskIds, ...props }: BatchDeleteTaskDial
 				<AlertDialogHeader>
 					<AlertDialogTitle>{t("history:deleteTasks")}</AlertDialogTitle>
 					<AlertDialogDescription className="text-vscode-foreground">
-						<div className="mb-2">{t("history:confirmDeleteTasks", { count: taskIds.length })}</div>
-						{/* kilocode_change start */}
-						{hasFavoritedTasks && (
-							<div className="text-yellow-500 mb-2">
-								{t("history:deleteTasksFavoritedWarning", { count: favoritedTasks.length })}
-							</div>
-						)}
-						{/* kilocode_change end */}
+						<div className="mb-2">{t("history:confirmDeleteTasks", { count: deleteTaskIds.length })}</div>
 						<div className="text-vscode-editor-foreground bg-vscode-editor-background rounded text-sm">
 							{t("history:deleteTasksWarning")}
 						</div>
 					</AlertDialogDescription>
 				</AlertDialogHeader>
-				<AlertDialogFooter className="flex-row justify-between items-end">
-					{/* kilocode_change start */}
-					{/* Left side: Delete buttons stacked vertically */}
-					<div className="flex flex-col gap-2">
-						{hasFavoritedTasks ? (
-							<>
-								{hasNonFavoritedTasks && (
-									<Button
-										variant="primary"
-										onClick={onDeleteNonFavorited}
-										className="flex justify-start">
-										<span className="codicon codicon-trash size-4 align-middle"></span>
-										{t("history:deleteNonFavorites", { count: nonFavoritedTaskIds.length })}
-									</Button>
-								)}
-								<Button variant="destructive" onClick={onDeleteAll} className="flex justify-start">
-									<span className="codicon codicon-trash size-4 align-middle"></span>
-									{t("history:deleteAllItems", { count: taskIds.length })}
-								</Button>
-							</>
-						) : (
-							<Button variant="destructive" onClick={onDeleteAll}>
-								<span className="codicon codicon-trash size-4 align-middle"></span>
-								{t("history:deleteItems", { count: taskIds.length })}
+				{/* kilocode_change start */}
+				{hasFavoritedTasks && (
+					<label className="inline-flex items-center gap-2 text-sm text-vscode-foreground mb-2 w-fit">
+						<Checkbox
+							checked={includeFavorited}
+							onCheckedChange={(checked) => setIncludeFavorited(Boolean(checked))}
+							className="h-[14px] w-[14px] rounded-[3px] border-vscode-descriptionForeground data-[state=checked]:border-vscode-button-background data-[state=checked]:bg-vscode-button-background data-[state=checked]:text-vscode-button-foreground data-[state=checked]:[&_svg]:text-vscode-button-foreground"
+							data-testid="include-favorited-checkbox"
+						/>
+						<span className="leading-none">{t("history:deleteFavoritedCheckbox")}</span>
+					</label>
+				)}
+				<AlertDialogFooter className="flex-row items-end justify-end">
+					<div className="flex items-center space-x-2">
+						<AlertDialogCancel asChild>
+							<Button variant="secondary" className="min-w-[140px] h-7 px-2.5 justify-center text-sm">
+								{t("history:cancel")}
 							</Button>
-						)}
+						</AlertDialogCancel>
+						<Button
+							variant="destructive"
+							onClick={onDelete}
+							className="flex items-center justify-center gap-2 min-w-[140px] h-7 px-2.5 text-sm">
+							<span className="codicon codicon-trash size-4 align-middle"></span>
+							{t("history:deleteItems", { count: deleteTaskIds.length })}
+						</Button>
 					</div>
-					{/* Right side: Cancel button aligned with bottom */}
-					<AlertDialogCancel asChild>
-						<Button variant="secondary">{t("history:cancel")}</Button>
-					</AlertDialogCancel>
-					{/* kilocode_change end */}
 				</AlertDialogFooter>
+				{/* kilocode_change end */}
 			</AlertDialogContent>
 		</AlertDialog>
 	)
