@@ -73,7 +73,7 @@ export const parseOllamaModel = (
 		supportsPromptCache: true,
 		supportsImages: rawModel.capabilities?.includes("vision"),
 		maxTokens: contextWindow || ollamaDefaultModelInfo.contextWindow,
-		supportsNativeTools, // Set based on actual capability (allows non-tool models for autocomplete)
+		supportsNativeTools, // kilocode_change: Set based on actual capability (allows non-tool models for autocomplete)
 	})
 
 	return modelInfo
