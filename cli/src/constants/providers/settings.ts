@@ -1083,7 +1083,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	synthetic: "synthetic-model",
 	"sap-ai-core": "gpt-4o",
 	baseten: "zai-org/GLM-4.6",
-	aihubmix: "claude-3-5-sonnet-20241022",
+	aihubmix: "claude-opus-4-5",
 }
 
 /**
