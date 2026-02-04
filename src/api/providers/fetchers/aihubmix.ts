@@ -4,7 +4,7 @@ import axios from "axios"
 import type { ModelInfo } from "@roo-code/types"
 
 /**
- * 解析 features 字段（可能是逗号分隔的字符串或数组）
+ * Parse features field (may be comma-separated string or array)
  */
 function parseFeatures(features: string | string[] | undefined): string[] {
 	if (!features) return []
@@ -13,7 +13,7 @@ function parseFeatures(features: string | string[] | undefined): string[] {
 }
 
 /**
- * 解析 input_modalities 字段（可能是逗号分隔的字符串或数组）
+ * Parse input_modalities field (may be comma-separated string or array)
  */
 function parseModalities(modalities: string | string[] | undefined): string[] {
 	if (!modalities) return []
@@ -27,7 +27,7 @@ export interface GetAihubmixModelsOptions {
 }
 
 /**
- * 从 AIhubmix API 获取可用模型列表
+ * Fetch available models from AIhubmix API
  * API: https://aihubmix.com/api/v1/models?type=llm&sort_by=coding
  */
 export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Promise<Record<string, ModelInfo>> {
@@ -54,13 +54,13 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 			const inputModalities = parseModalities(rawModel.input_modalities)
 			const pricing = rawModel.pricing || {}
 
-			// 检查是否支持图片
+			// Check if model supports images
 			const supportsImages = inputModalities.includes("image")
 
-			// 检查是否支持 thinking/reasoning
+			// Check if model supports thinking/reasoning
 			const supportsThinking = features.includes("thinking")
 
-			// 检查是否支持 prompt cache：cache_read 价格与 input 价格不同
+			// Check if model supports prompt cache: cache_read price differs from input price
 			const supportsPromptCache =
 				pricing.cache_read !== undefined && pricing.input !== undefined && pricing.cache_read !== pricing.input
 
@@ -76,8 +76,8 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 				cacheWritesPrice: pricing.cache_write,
 				cacheReadsPrice: pricing.cache_read,
 				description: rawModel.desc || "",
-				preferredIndex, // 保持 API 返回的顺序（sort_by=coding）
-				// 如果支持 thinking，可能需要设置 reasoning 相关属性
+				preferredIndex, // Preserve API return order (sort_by=coding)
+				// If thinking is supported, set reasoning-related properties
 				...(supportsThinking && rawModel.thinking_config
 					? {
 							supportsReasoningBudget: true,

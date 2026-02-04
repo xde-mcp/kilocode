@@ -1,6 +1,6 @@
 // kilocode_change - new file
-// AIhubmix 是动态 provider，模型从 API 获取
-// 这里只定义 fallback 类型
+// AIhubmix is a dynamic provider, models are fetched from API
+// Only fallback types are defined here
 
 export type AihubmixModelId = string
 

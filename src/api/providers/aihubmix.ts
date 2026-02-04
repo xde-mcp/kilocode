@@ -8,30 +8,16 @@ import { ApiStream } from "../transform/stream"
 import { BaseProvider } from "./base-provider"
 import type { ApiHandler, SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
-// 复用现有的 Handler
+// Reuse existing handlers via delegation pattern
 import { AnthropicHandler } from "./anthropic"
 import { OpenAiHandler } from "./openai"
 import { GeminiHandler } from "./gemini"
 import { OpenAiCompatibleResponsesHandler } from "./openai-responses"
 
 const AIHUBMIX_DEFAULT_BASE_URL = "https://aihubmix.com"
-const AIHUBMIX_DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+const AIHUBMIX_DEFAULT_MODEL = "claude-opus-4-5"
 
 type ModelRoute = "anthropic" | "openai" | "openai-responses" | "gemini"
-
-/**
- * AIhubmix Handler - 多模型聚合平台
- *
- * 采用委托模式，根据模型 ID 前缀路由到对应的现有 Handler：
- * - claude-* → AnthropicHandler
- * - gemini-* → GeminiHandler
- * - 其他 (gpt-*, o1-*, deepseek-*, etc.) → OpenAiHandler
- *
- * 这种设计的优点：
- * 1. 零重复代码 - 完全复用现有 Handler 的流式处理逻辑
- * 2. 自动受益 - 当现有 Handler 更新时，AihubmixHandler 自动受益
- * 3. 易于维护 - 不用担心流式处理逻辑不同步
- */
 export class AihubmixHandler extends BaseProvider implements SingleCompletionHandler {
 	private options: ApiHandlerOptions
 	private delegateHandler: ApiHandler | null = null
@@ -43,7 +29,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	/**
-	 * 根据模型 ID 前缀路由到对应的 Handler
+	 * Route to the appropriate handler based on model ID prefix
 	 */
 	private routeModel(modelId: string): ModelRoute {
 		const id = modelId.toLowerCase()
@@ -53,7 +39,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 		if (id.startsWith("gemini") && !id.endsWith("-nothink") && !id.endsWith("-search")) {
 			return "gemini"
 		}
-		// gpt-5-pro 和 gpt-5-codex 需要使用 OpenAI Responses API
+		// gpt-5-pro and gpt-5-codex require OpenAI Responses API
 		if (id === "gpt-5-pro" || id === "gpt-5-codex") {
 			return "openai-responses"
 		}
@@ -61,13 +47,13 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 	}
 
 	/**
-	 * 创建委托 Handler - 复用现有的 Handler 实现
-	 * 通过配置映射，将 aihubmix 配置转换为对应 Handler 的配置
+	 * Create delegate handler - reuses existing handler implementations
+	 * Maps aihubmix configuration to the corresponding handler's configuration
 	 */
 	private getDelegateHandler(): ApiHandler {
 		const modelId = this.options.aihubmixModelId || AIHUBMIX_DEFAULT_MODEL
 
-		// 缓存：同一模型复用同一 handler
+		// Cache: reuse the same handler for the same model
 		if (this.delegateHandler && this.lastModelId === modelId) {
 			return this.delegateHandler
 		}
@@ -77,7 +63,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 
 		switch (route) {
 			case "anthropic":
-				// 复用 AnthropicHandler，映射配置
+				// Reuse AnthropicHandler with mapped configuration
 				this.delegateHandler = new AnthropicHandler({
 					...this.options,
 					apiKey: this.options.aihubmixApiKey,
@@ -87,7 +73,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 				break
 
 			case "gemini":
-				// 复用 GeminiHandler，映射配置
+				// Reuse GeminiHandler with mapped configuration
 				this.delegateHandler = new GeminiHandler({
 					...this.options,
 					geminiApiKey: this.options.aihubmixApiKey,
@@ -97,10 +83,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 				break
 
 			case "openai-responses":
-				// 复用 OpenAiCompatibleResponsesHandler，用于 gpt-5-pro/gpt-5-codex 等模型
-				console.log("[aihubmix] Routing to OpenAI Responses API")
-				console.log("[aihubmix] baseUrl:", `${baseUrl}/v1`)
-				console.log("[aihubmix] modelId:", modelId)
+				// Reuse OpenAiCompatibleResponsesHandler for gpt-5-pro/gpt-5-codex models
 				this.delegateHandler = new OpenAiCompatibleResponsesHandler({
 					...this.options,
 					openAiApiKey: this.options.aihubmixApiKey,
@@ -111,7 +94,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 
 			case "openai":
 			default:
-				// 复用 OpenAiHandler，映射配置
+				// Reuse OpenAiHandler with mapped configuration
 				this.delegateHandler = new OpenAiHandler({
 					...this.options,
 					openAiApiKey: this.options.aihubmixApiKey,
@@ -125,7 +108,7 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 		return this.delegateHandler
 	}
 
-	// ==================== 委托给对应的 Handler ====================
+	// ==================== Delegate to the corresponding handler ====================
 
 	async *createMessage(
 		systemPrompt: string,
