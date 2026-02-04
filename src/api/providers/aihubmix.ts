@@ -12,11 +12,12 @@ import type { ApiHandler, SingleCompletionHandler, ApiHandlerCreateMessageMetada
 import { AnthropicHandler } from "./anthropic"
 import { OpenAiHandler } from "./openai"
 import { GeminiHandler } from "./gemini"
+import { OpenAiCompatibleResponsesHandler } from "./openai-responses"
 
 const AIHUBMIX_DEFAULT_BASE_URL = "https://aihubmix.com"
 const AIHUBMIX_DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
 
-type ModelRoute = "anthropic" | "openai" | "gemini"
+type ModelRoute = "anthropic" | "openai" | "openai-responses" | "gemini"
 
 /**
  * AIhubmix Handler - 多模型聚合平台
@@ -51,6 +52,10 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 		}
 		if (id.startsWith("gemini") && !id.endsWith("-nothink") && !id.endsWith("-search")) {
 			return "gemini"
+		}
+		// gpt-5-pro 和 gpt-5-codex 需要使用 OpenAI Responses API
+		if (id === "gpt-5-pro" || id === "gpt-5-codex") {
+			return "openai-responses"
 		}
 		return "openai"
 	}
@@ -88,6 +93,19 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 					geminiApiKey: this.options.aihubmixApiKey,
 					googleGeminiBaseUrl: `${baseUrl}/gemini`,
 					apiModelId: this.options.aihubmixModelId,
+				})
+				break
+
+			case "openai-responses":
+				// 复用 OpenAiCompatibleResponsesHandler，用于 gpt-5-pro/gpt-5-codex 等模型
+				console.log("[aihubmix] Routing to OpenAI Responses API")
+				console.log("[aihubmix] baseUrl:", `${baseUrl}/v1`)
+				console.log("[aihubmix] modelId:", modelId)
+				this.delegateHandler = new OpenAiCompatibleResponsesHandler({
+					...this.options,
+					openAiApiKey: this.options.aihubmixApiKey,
+					openAiBaseUrl: `${baseUrl}/v1`,
+					openAiModelId: this.options.aihubmixModelId,
 				})
 				break
 
