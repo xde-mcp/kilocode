@@ -34,6 +34,10 @@ export const CustomizeNav: NavSection[] = [
 				children: "Codebase Indexing",
 			},
 			{
+				href: "/customize/context/kilocodeignore",
+				children: ".kilocodeignore",
+			},
+			{
 				href: "/customize/context/large-projects",
 				children: "Large Projects",
 			},
