@@ -306,8 +306,8 @@ describe("MoonshotHandler", () => {
 			const testHandler = new TestMoonshotHandler(mockOptions)
 			const result = testHandler.testGetMaxOutputTokens()
 
-			// Default model maxTokens is 16384
-			expect(result).toBe(16384)
+			// Default model maxTokens is 16000 (kimi-k2-thinking)
+			expect(result).toBe(16000)
 		})
 
 		it("should use modelMaxTokens when provided", () => {
@@ -337,8 +337,8 @@ describe("MoonshotHandler", () => {
 			const testHandler = new TestMoonshotHandler(mockOptions)
 			const result = testHandler.testGetMaxOutputTokens()
 
-			// moonshot-chat has maxTokens of 16384
-			expect(result).toBe(16384)
+			// moonshot-chat is not present in moonshotModels and falls back to default model info (maxTokens 16000)
+			expect(result).toBe(16000)
 		})
 	})
 
