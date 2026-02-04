@@ -49,8 +49,14 @@ Uses the more economical Sonnet for implementation tasks where speed matters, wh
 
 Auto Model always routes to Claude's latest and most capable models:
 
-- **Claude Opus 4.5** for reasoning-intensive tasks
-- **Claude Sonnet 4.5** for implementation-focused tasks
+- **Claude Opus** for reasoning-intensive tasks
+- **Claude Sonnet** for implementation-focused tasks
+
+## Requirements
+
+{% callout type="warning" title="Version Requirements" %}
+Auto Model requires **VS Code/JetBrains extension v5.2.3+** or **CLI v1.0.15+** for automatic mode-based switching. On older versions, `kilo/auto` will default to Claude Sonnet for all requests.
+{% /callout %}
 
 ## Getting Started
 
@@ -80,6 +86,12 @@ You may want to select a specific model instead when:
 - You need a particular model's unique capabilities (e.g., very long context windows)
 - You're working with a specialized provider or local model
 - You want full control over model selection
+
+## Feedback
+
+{% callout type="note" title="Help Us Improve" %}
+Auto Model is a new feature and we're actively improving it. We'd love to hear how it's working for you! Share feedback in our [Discord](https://discord.gg/kilocode) or [open an issue on GitHub](https://github.com/Kilo-Org/kilocode/issues).
+{% /callout %}
 
 ## Related
 
