@@ -4,7 +4,7 @@
 
 export type AihubmixModelId = string
 
-export const aihubmixDefaultModelId = "claude-3-5-sonnet"
+export const aihubmixDefaultModelId = "claude-opus-4-5"
 
 export const aihubmixDefaultModelInfo = {
 	maxTokens: 8192,

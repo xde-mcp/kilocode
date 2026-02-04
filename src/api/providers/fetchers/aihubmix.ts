@@ -3,8 +3,6 @@ import axios from "axios"
 
 import type { ModelInfo } from "@roo-code/types"
 
-import { parseApiPrice } from "../../../shared/cost"
-
 /**
  * 解析 features 字段（可能是逗号分隔的字符串或数组）
  */
@@ -46,6 +44,7 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 
 		const rawModels = response.data.data
 
+		let preferredIndex = 0
 		for (const rawModel of rawModels) {
 			if (!rawModel.model_id || typeof rawModel.model_id !== "string") {
 				continue
@@ -72,11 +71,12 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 				supportsPromptCache,
 				supportsNativeTools: true,
 				defaultToolProtocol: "native",
-				inputPrice: parseApiPrice(pricing.input),
-				outputPrice: parseApiPrice(pricing.output),
-				cacheWritesPrice: parseApiPrice(pricing.cache_write),
-				cacheReadsPrice: parseApiPrice(pricing.cache_read),
+				inputPrice: pricing.input,
+				outputPrice: pricing.output,
+				cacheWritesPrice: pricing.cache_write,
+				cacheReadsPrice: pricing.cache_read,
 				description: rawModel.desc || "",
+				preferredIndex, // 保持 API 返回的顺序（sort_by=coding）
 				// 如果支持 thinking，可能需要设置 reasoning 相关属性
 				...(supportsThinking && rawModel.thinking_config
 					? {
@@ -86,6 +86,7 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 			}
 
 			models[rawModel.model_id] = modelInfo
+			preferredIndex++
 		}
 
 		console.log(`Fetched ${Object.keys(models).length} AIhubmix models`)
