@@ -213,6 +213,12 @@ module.exports = [
 	},
 	// Removed memory bank page redirects to Agents.md
 	{
+		source: "/docs/advanced-usage/memory-bank",
+		destination: "/docs/customize/agents-md",
+		basePath: false,
+		permanent: true,
+	},
+	{
 		source: "/docs/customize/context/memory-bank",
 		destination: "/docs/customize/agents-md",
 		basePath: false,
