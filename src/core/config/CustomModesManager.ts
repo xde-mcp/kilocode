@@ -190,27 +190,10 @@ export class CustomModesManager {
 			const content = await fs.readFile(filePath, "utf-8")
 			const settings = this.parseYamlSafely(content, filePath)
 
-			// Ensure settings is an object so schema validation can handle missing customModes
-			// kilocode_change start
-			if (!settings || typeof settings !== "object") {
+			// Ensure settings has customModes property
+			if (!settings || typeof settings !== "object" || !settings.customModes) {
 				return []
 			}
-			// kilocode_change end
-
-			// kilocode_change start
-			// Extra guard based on raw settings to ensure missing required fields are surfaced
-			// (prevents schema drift or module resolution issues from masking errors in tests)
-			if (filePath.endsWith(ROOMODES_FILENAME) && Array.isArray((settings as any).customModes)) {
-				const hasMissingRoleDefinition = (settings as any).customModes.some(
-					(mode: Partial<ModeConfig>) => !mode?.roleDefinition || mode.roleDefinition.trim().length === 0,
-				)
-				if (hasMissingRoleDefinition) {
-					console.error(`[CustomModesManager] Schema validation failed for ${filePath}: missing roleDefinition`)
-					vscode.window.showErrorMessage(t("common:customModes.errors.schemaValidationError"))
-					return []
-				}
-			}
-			// kilocode_change end
 
 			const result = customModesSettingsSchema.safeParse(settings)
 
@@ -228,6 +211,7 @@ export class CustomModesManager {
 
 				return []
 			}
+
 			// Determine source based on file path
 			const isRoomodes = filePath.endsWith(ROOMODES_FILENAME)
 			const source = isRoomodes ? ("project" as const) : ("global" as const)
