@@ -1,5 +1,5 @@
-## <!-- kilocode_change - new file -->
+---
+"kilo-code": patch
+---
 
-## "kilo-code": patch
-
-Fix contrast on the ideas intro screen.
+Fix contrast on "ideas" intro screen (thanks @bernaferrari!)
