@@ -1,14 +1,13 @@
 /* eslint-disable no-undef */
 import esbuild from "esbuild"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chmodSync, mkdirSync, copyFileSync } from "fs"
 import { rimrafSync } from "rimraf"
-import reactCompiler from "./esbuild-plugin-react-compiler.js"
 
 // ESM Polyfill
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Function to copy post-build files
 function copyPostBuildFiles() {
@@ -185,10 +184,10 @@ const __dirname = __dirname__(__filename);
 	minify: false,
 	treeShaking: true,
 	logLevel: "info",
-	plugins: [esbuildProblemMatcherPlugin, reactCompiler(), afterBuildPlugin],
+	plugins: [esbuildProblemMatcherPlugin, afterBuildPlugin],
 	alias: {
-		"is-in-ci": path.resolve(__dirname, "src/patches/is-in-ci.ts"),
-	},
+		'is-in-ci': path.resolve(__dirname, 'src/patches/is-in-ci.ts'),
+	}
 }
 
 if (process.argv.includes("--watch")) {
