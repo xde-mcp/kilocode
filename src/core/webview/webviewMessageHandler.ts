@@ -2,6 +2,7 @@ import { safeWriteJson } from "../../utils/safeWriteJson"
 import * as path from "path"
 import * as os from "os"
 import * as fs from "fs/promises"
+import { getRooDirectoriesForCwd } from "../../services/roo-config/index.js"
 import pWaitFor from "p-wait-for"
 import * as vscode from "vscode"
 // kilocode_change start
@@ -24,6 +25,9 @@ import {
 	type ClineMessage,
 	type TelemetrySetting,
 	type UserSettingsConfig,
+	type ModelRecord,
+	type WebviewMessage,
+	type EditQueuedMessagePayload,
 	TelemetryEventName,
 	// kilocode_change start
 	ghostServiceSettingsSchema,
@@ -31,9 +35,12 @@ import {
 	// kilocode_change end
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	RooCodeSettings,
-	Experiments,
 	ExperimentId,
+	checkoutDiffPayloadSchema,
+	checkoutRestorePayloadSchema,
+	requestCheckpointRestoreApprovalPayloadSchema, // kilocode_change
 } from "@roo-code/types"
+import { customToolRegistry } from "@roo-code/core"
 import { CloudService } from "@roo-code/cloud"
 import { TelemetryService } from "@roo-code/telemetry"
 
@@ -41,19 +48,14 @@ import { type ApiMessage } from "../task-persistence/apiMessages"
 import { saveTaskMessages } from "../task-persistence"
 
 import { ClineProvider } from "./ClineProvider"
+import { BrowserSessionPanelManager } from "./BrowserSessionPanelManager"
 import { handleCheckpointRestoreOperation } from "./checkpointRestoreHandler"
+import { generateErrorDiagnostics } from "./diagnosticsHandler"
 import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
-import { type RouterName, type ModelRecord, toRouterName } from "../../shared/api"
+import { type RouterName, toRouterName } from "../../shared/api"
 import { MessageEnhancer } from "./messageEnhancer"
 
-import {
-	type WebviewMessage,
-	type EditQueuedMessagePayload,
-	checkoutDiffPayloadSchema,
-	checkoutRestorePayloadSchema,
-	requestCheckpointRestoreApprovalPayloadSchema,
-} from "../../shared/WebviewMessage"
 import { checkExistKey } from "../../shared/checkExistApiConfig"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
@@ -72,6 +74,8 @@ import { exportSettings, importSettingsWithFeedback } from "../config/importExpo
 import { getOpenAiModels } from "../../api/providers/openai"
 import { getVsCodeLmModels } from "../../api/providers/vscode-lm"
 import { openMention } from "../mentions"
+import { resolveImageMentions } from "../mentions/resolveImageMentions"
+import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { getWorkspacePath } from "../../utils/path"
 import { Mode, defaultModeSlug } from "../../shared/modes"
 import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
@@ -80,7 +84,16 @@ import { generateSystemPrompt } from "./generateSystemPrompt"
 import { getCommand } from "../../utils/commands"
 import { toggleWorkflow, toggleRule, createRuleFile, deleteRuleFile } from "./kilorules"
 import { mermaidFixPrompt } from "../prompts/utilities/mermaid" // kilocode_change
-import { editMessageHandler, fetchKilocodeNotificationsHandler } from "../kilocode/webview/webviewMessageHandlerUtils" // kilocode_change
+// kilocode_change start
+import {
+	editMessageHandler,
+	fetchKilocodeNotificationsHandler,
+	deviceAuthMessageHandler,
+} from "../kilocode/webview/webviewMessageHandlerUtils"
+import { GhostServiceManager } from "../../services/ghost/GhostServiceManager"
+import { handleChatCompletionRequest } from "../../services/ghost/chat-autocomplete/handleChatCompletionRequest"
+import { handleChatCompletionAccepted } from "../../services/ghost/chat-autocomplete/handleChatCompletionAccepted"
+// kilocode_change end
 
 const ALLOWED_VSCODE_SETTINGS = new Set(["terminal.integrated.inheritEnv"])
 
@@ -88,12 +101,13 @@ import { MarketplaceManager, MarketplaceItemType } from "../../services/marketpl
 import { UsageTracker } from "../../utils/usage-tracker" // kilocode_change
 import { seeNewChanges } from "../checkpoints/kilocode/seeNewChanges" // kilocode_change
 import { getTaskHistory } from "../../shared/kilocode/getTaskHistory" // kilocode_change
-import { fetchAndRefreshOrganizationModesOnStartup, refreshOrganizationModes } from "./kiloWebviewMessgeHandlerHelpers"
+import { fetchAndRefreshOrganizationModesOnStartup, refreshOrganizationModes } from "./kiloWebviewMessgeHandlerHelpers" // kilocode_change
 import { getSapAiCoreDeployments } from "../../api/providers/fetchers/sap-ai-core" // kilocode_change
 import { AutoPurgeScheduler } from "../../services/auto-purge" // kilocode_change
 import { setPendingTodoList } from "../tools/UpdateTodoListTool"
 import { ManagedIndexer } from "../../services/code-index/managed/ManagedIndexer"
 import { SessionManager } from "../../shared/kilocode/cli-sessions/core/SessionManager" // kilocode_change
+import { getEffectiveTelemetrySetting } from "../kilocode/wrapper"
 
 export const webviewMessageHandler = async (
 	provider: ClineProvider,
@@ -108,15 +122,45 @@ export const webviewMessageHandler = async (
 	const getCurrentCwd = () => {
 		return provider.getCurrentTask()?.cwd || provider.cwd
 	}
+
 	/**
-	 * Shared utility to find message indices based on timestamp
+	 * Resolves image file mentions in incoming messages.
+	 * Matches read_file behavior: respects size limits and model capabilities.
+	 */
+	const resolveIncomingImages = async (payload: { text?: string; images?: string[] }) => {
+		const text = payload.text ?? ""
+		const images = payload.images
+		const currentTask = provider.getCurrentTask()
+		const state = await provider.getState()
+		const resolved = await resolveImageMentions({
+			text,
+			images,
+			cwd: getCurrentCwd(),
+			rooIgnoreController: currentTask?.rooIgnoreController,
+			maxImageFileSize: state.maxImageFileSize,
+			maxTotalImageSize: state.maxTotalImageSize,
+		})
+		return resolved
+	}
+	/**
+	 * Shared utility to find message indices based on timestamp.
+	 * When multiple messages share the same timestamp (e.g., after condense),
+	 * this function prefers non-summary messages to ensure user operations
+	 * target the intended message rather than the summary.
 	 */
 	const findMessageIndices = (messageTs: number, currentCline: any) => {
 		// Find the exact message by timestamp, not the first one after a cutoff
 		const messageIndex = currentCline.clineMessages.findIndex((msg: ClineMessage) => msg.ts === messageTs)
-		const apiConversationHistoryIndex = currentCline.apiConversationHistory.findIndex(
-			(msg: ApiMessage) => msg.ts === messageTs,
-		)
+
+		// Find all matching API messages by timestamp
+		const allApiMatches = currentCline.apiConversationHistory
+			.map((msg: ApiMessage, idx: number) => ({ msg, idx }))
+			.filter(({ msg }: { msg: ApiMessage }) => msg.ts === messageTs)
+
+		// Prefer non-summary message if multiple matches exist (handles timestamp collision after condense)
+		const preferred = allApiMatches.find(({ msg }: { msg: ApiMessage }) => !msg.isSummary) || allApiMatches[0]
+		const apiConversationHistoryIndex = preferred?.idx ?? -1
+
 		return { messageIndex, apiConversationHistoryIndex }
 	}
 
@@ -129,24 +173,6 @@ export const webviewMessageHandler = async (
 		return currentCline.apiConversationHistory.findIndex(
 			(msg: ApiMessage) => typeof msg?.ts === "number" && (msg.ts as number) >= ts,
 		)
-	}
-
-	/**
-	 * Removes the target message and all subsequent messages
-	 */
-	const removeMessagesThisAndSubsequent = async (
-		currentCline: any,
-		messageIndex: number,
-		apiConversationHistoryIndex: number,
-	) => {
-		// Delete this message and all that follow
-		await currentCline.overwriteClineMessages(currentCline.clineMessages.slice(0, messageIndex))
-
-		if (apiConversationHistoryIndex !== -1) {
-			await currentCline.overwriteApiConversationHistory(
-				currentCline.apiConversationHistory.slice(0, apiConversationHistoryIndex),
-			)
-		}
 	}
 
 	/**
@@ -240,8 +266,8 @@ export const webviewMessageHandler = async (
 					}
 				}
 
-				// Delete this message and all subsequent messages
-				await removeMessagesThisAndSubsequent(currentCline, messageIndex, apiIndexToUse)
+				// Delete this message and all subsequent messages using MessageManager
+				await currentCline.messageManager.rewindToTimestamp(targetMessage.ts!, { includeTargetMessage: false })
 
 				// Restore checkpoint associations for preserved messages
 				for (const [ts, checkpoint] of preservedCheckpoints) {
@@ -407,8 +433,11 @@ export const webviewMessageHandler = async (
 				}
 			}
 
-			// Delete the original (user) message and all subsequent messages
-			await removeMessagesThisAndSubsequent(currentCline, deleteFromMessageIndex, deleteFromApiIndex)
+			// Delete the original (user) message and all subsequent messages using MessageManager
+			const rewindTs = currentCline.clineMessages[deleteFromMessageIndex]?.ts
+			if (rewindTs) {
+				await currentCline.messageManager.rewindToTimestamp(rewindTs, { includeTargetMessage: false })
+			}
 
 			// Restore checkpoint associations for preserved messages
 			for (const [ts, checkpoint] of preservedCheckpoints) {
@@ -538,7 +567,7 @@ export const webviewMessageHandler = async (
 			// If user already opted in to telemetry, enable telemetry service
 			provider.getStateToPostToWebview().then(async (/*kilocode_change*/ state) => {
 				const { telemetrySetting } = state
-				const isOptedIn = telemetrySetting !== "disabled"
+				const isOptedIn = getEffectiveTelemetrySetting(telemetrySetting) === "enabled" // kilocode_change
 				TelemetryService.instance.updateTelemetryState(isOptedIn)
 				await TelemetryService.instance.updateIdentity(state.apiConfiguration.kilocodeToken ?? "") // kilocode_change
 			})
@@ -550,7 +579,8 @@ export const webviewMessageHandler = async (
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
 			try {
-				await provider.createTask(message.text, message.images)
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+				await provider.createTask(resolved.text, resolved.images)
 				// Task created successfully - notify the UI to reset
 				await provider.postMessageToWebview({ type: "invoke", invoke: "newChat" })
 			} catch (error) {
@@ -572,7 +602,12 @@ export const webviewMessageHandler = async (
 			break
 
 		case "askResponse":
-			provider.getCurrentTask()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
+			{
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+				provider
+					.getCurrentTask()
+					?.handleWebviewAskResponse(message.askResponse!, resolved.text, resolved.images)
+			}
 			break
 
 		case "updateSettings":
@@ -681,19 +716,10 @@ export const webviewMessageHandler = async (
 			}
 			break
 		case "clearTask":
-			// Clear task resets the current session and allows for a new task
-			// to be started, if this session is a subtask - it allows the
-			// parent task to be resumed.
-			// Check if the current task actually has a parent task.
-			const currentTask = provider.getCurrentTask()
-
-			if (currentTask && currentTask.parentTask) {
-				await provider.finishSubTask(t("common:tasks.canceled"))
-			} else {
-				// Regular task - just clear it
-				await provider.clearTask()
-			}
-
+			// Clear task resets the current session. Delegation flows are
+			// handled via metadata; parent resumption occurs through
+			// reopenParentFromDelegation, not via finishSubTask.
+			await provider.clearTask()
 			await provider.postStateToWebview()
 			break
 		case "didShowAnnouncement":
@@ -816,6 +842,32 @@ export const webviewMessageHandler = async (
 		case "exportTaskWithId":
 			provider.exportTaskWithId(message.text!)
 			break
+		case "getTaskWithAggregatedCosts": {
+			try {
+				const taskId = message.text
+				if (!taskId) {
+					throw new Error("Task ID is required")
+				}
+				const result = await provider.getTaskWithAggregatedCosts(taskId)
+				await provider.postMessageToWebview({
+					type: "taskWithAggregatedCosts",
+					// IMPORTANT: ChatView stores aggregatedCostsMap keyed by message.text (taskId)
+					// so we must include it here.
+					text: taskId,
+					historyItem: result.historyItem,
+					aggregatedCosts: result.aggregatedCosts,
+				})
+			} catch (error) {
+				console.error("Error getting task with aggregated costs:", error)
+				await provider.postMessageToWebview({
+					type: "taskWithAggregatedCosts",
+					// Include taskId when available for correlation in UI logs.
+					text: message.text,
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+			break
+		}
 		case "importSettings": {
 			await importSettingsWithFeedback({
 				providerSettingsManager: provider.providerSettingsManager,
@@ -838,7 +890,9 @@ export const webviewMessageHandler = async (
 			break
 		case "flushRouterModels":
 			const routerNameFlush: RouterName = toRouterName(message.text)
-			await flushModels(routerNameFlush)
+			// Note: flushRouterModels is a generic flush without credentials
+			// For providers that need credentials, use their specific handlers
+			await flushModels({ provider: routerNameFlush } as GetModelsOptions, true)
 			break
 		case "requestRouterModels":
 			const { apiConfiguration } = await provider.getState()
@@ -846,6 +900,9 @@ export const webviewMessageHandler = async (
 			// Optional single provider filter from webview
 			const requestedProvider = message?.values?.provider
 			const providerFilter = requestedProvider ? toRouterName(requestedProvider) : undefined
+
+			// Optional refresh flag to flush cache before fetching (useful for providers requiring credentials)
+			const shouldRefresh = message?.values?.refresh === true
 
 			const routerModels: Record<RouterName, ModelRecord> = providerFilter
 				? ({} as Record<RouterName, ModelRecord>)
@@ -864,7 +921,7 @@ export const webviewMessageHandler = async (
 						"io-intelligence": {},
 						requesty: {},
 						unbound: {},
-						glama: {},
+						glama: {}, // kilocode_change
 						ollama: {},
 						lmstudio: {},
 						roo: {},
@@ -913,7 +970,7 @@ export const webviewMessageHandler = async (
 						baseUrl: apiConfiguration.requestyBaseUrl,
 					},
 				},
-				{ key: "glama", options: { provider: "glama" } },
+				{ key: "glama", options: { provider: "glama" } }, // kilocode_change
 				{ key: "unbound", options: { provider: "unbound", apiKey: apiConfiguration.unboundApiKey } },
 				{
 					key: "kilocode",
@@ -990,6 +1047,12 @@ export const webviewMessageHandler = async (
 			const litellmBaseUrl = apiConfiguration.litellmBaseUrl || message?.values?.litellmBaseUrl
 
 			if (litellmApiKey && litellmBaseUrl) {
+				// If explicit credentials are provided in message.values (from Refresh Models button),
+				// flush the cache first to ensure we fetch fresh data with the new credentials
+				if (message?.values?.litellmApiKey || message?.values?.litellmBaseUrl) {
+					await flushModels({ provider: "litellm", apiKey: litellmApiKey, baseUrl: litellmBaseUrl }, true)
+				}
+
 				candidates.push({
 					key: "litellm",
 					options: { provider: "litellm", apiKey: litellmApiKey, baseUrl: litellmBaseUrl },
@@ -1000,6 +1063,12 @@ export const webviewMessageHandler = async (
 			const modelFetchPromises = providerFilter
 				? candidates.filter(({ key }) => key === providerFilter)
 				: candidates
+
+			// If refresh flag is set and we have a specific provider, flush its cache first
+			if (shouldRefresh && providerFilter && modelFetchPromises.length > 0) {
+				const targetCandidate = modelFetchPromises[0]
+				await flushModels(targetCandidate.options, true)
+			}
 
 			const results = await Promise.allSettled(
 				modelFetchPromises.map(async ({ key, options }) => {
@@ -1041,15 +1110,16 @@ export const webviewMessageHandler = async (
 			// Specific handler for Ollama models only.
 			const { apiConfiguration: ollamaApiConfig } = await provider.getState()
 			try {
-				// Flush cache first to ensure fresh models.
-				await flushModels("ollama")
-
-				const ollamaModels = await getModels({
-					provider: "ollama",
+				const ollamaOptions = {
+					provider: "ollama" as const,
 					baseUrl: ollamaApiConfig.ollamaBaseUrl,
 					apiKey: ollamaApiConfig.ollamaApiKey,
 					numCtx: ollamaApiConfig.ollamaNumCtx, // kilocode_change
-				})
+				}
+				// Flush cache and refresh to ensure fresh models.
+				await flushModels(ollamaOptions, true)
+
+				const ollamaModels = await getModels(ollamaOptions)
 
 				if (Object.keys(ollamaModels).length > 0) {
 					provider.postMessageToWebview({ type: "ollamaModels", ollamaModels: ollamaModels })
@@ -1064,13 +1134,14 @@ export const webviewMessageHandler = async (
 			// Specific handler for LM Studio models only.
 			const { apiConfiguration: lmStudioApiConfig } = await provider.getState()
 			try {
-				// Flush cache first to ensure fresh models.
-				await flushModels("lmstudio")
-
-				const lmStudioModels = await getModels({
-					provider: "lmstudio",
+				const lmStudioOptions = {
+					provider: "lmstudio" as const,
 					baseUrl: lmStudioApiConfig.lmStudioBaseUrl,
-				})
+				}
+				// Flush cache and refresh to ensure fresh models.
+				await flushModels(lmStudioOptions, true)
+
+				const lmStudioModels = await getModels(lmStudioOptions)
 
 				if (Object.keys(lmStudioModels).length > 0) {
 					provider.postMessageToWebview({
@@ -1087,16 +1158,17 @@ export const webviewMessageHandler = async (
 		case "requestRooModels": {
 			// Specific handler for Roo models only - flushes cache to ensure fresh auth token is used
 			try {
-				// Flush cache first to ensure fresh models with current auth state
-				await flushModels("roo")
-
-				const rooModels = await getModels({
-					provider: "roo",
+				const rooOptions = {
+					provider: "roo" as const,
 					baseUrl: process.env.ROO_CODE_PROVIDER_URL ?? "https://api.roocode.com/proxy",
 					apiKey: CloudService.hasInstance()
 						? CloudService.instance.authService?.getSessionToken()
 						: undefined,
-				})
+				}
+				// Flush cache and refresh to ensure fresh models with current auth state
+				await flushModels(rooOptions, true)
+
+				const rooModels = await getModels(rooOptions)
 
 				// Always send a response, even if no models are returned
 				provider.postMessageToWebview({
@@ -1112,6 +1184,31 @@ export const webviewMessageHandler = async (
 					success: false,
 					error: errorMessage,
 					values: { provider: "roo" },
+				})
+			}
+			break
+		}
+		case "requestRooCreditBalance": {
+			// Fetch Roo credit balance using CloudAPI
+			const requestId = message.requestId
+			try {
+				if (!CloudService.hasInstance() || !CloudService.instance.cloudAPI) {
+					throw new Error("Cloud service not available")
+				}
+
+				const balance = await CloudService.instance.cloudAPI.creditBalance()
+
+				provider.postMessageToWebview({
+					type: "rooCreditBalance",
+					requestId,
+					values: { balance },
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.postMessageToWebview({
+					type: "rooCreditBalance",
+					requestId,
+					values: { error: errorMessage },
 				})
 			}
 			break
@@ -1154,13 +1251,15 @@ export const webviewMessageHandler = async (
 			if (message?.values?.sapAiCoreServiceKey) {
 				try {
 					// Flush cache first to ensure fresh models.
-					await flushModels("sap-ai-core")
+					await flushModels(
+						{
+							provider: "sap-ai-core",
+						},
+						true,
+					)
 
 					const sapAiCoreModels = await getModels({
 						provider: "sap-ai-core",
-						sapAiCoreServiceKey: message?.values?.sapAiCoreServiceKey,
-						sapAiCoreResourceGroup: message?.values?.sapAiCoreResourceGroup,
-						sapAiCoreUseOrchestration: message?.values?.sapAiCoreUseOrchestration,
 					})
 
 					if (Object.keys(sapAiCoreModels).length > 0) {
@@ -1183,7 +1282,9 @@ export const webviewMessageHandler = async (
 					if (Object.keys(sapAiCoreDeployments).length > 0) {
 						provider.postMessageToWebview({
 							type: "sapAiCoreDeployments",
-							sapAiCoreDeployments: sapAiCoreDeployments,
+							sapAiCoreDeployments:
+								// Cast to canonical type from @roo-code/types to avoid drift.
+								sapAiCoreDeployments as unknown as import("@roo-code/types").DeploymentRecord, // kilocode_change
 						})
 					}
 				} catch (error) {
@@ -1303,6 +1404,105 @@ export const webviewMessageHandler = async (
 		case "cancelTask":
 			await provider.cancelTask()
 			break
+		case "cancelAutoApproval":
+			// Cancel any pending auto-approval timeout for the current task
+			provider.getCurrentTask()?.cancelAutoApprovalTimeout()
+			break
+		case "killBrowserSession":
+			{
+				const task = provider.getCurrentTask()
+				if (task?.browserSession) {
+					await task.browserSession.closeBrowser()
+					await provider.postStateToWebview()
+				}
+			}
+			break
+		case "openBrowserSessionPanel":
+			{
+				// Toggle the Browser Session panel (open if closed, close if open)
+				const panelManager = BrowserSessionPanelManager.getInstance(provider)
+				await panelManager.toggle()
+			}
+			break
+		case "showBrowserSessionPanelAtStep":
+			{
+				const panelManager = BrowserSessionPanelManager.getInstance(provider)
+
+				// If this is a launch action, reset the manual close flag
+				if (message.isLaunchAction) {
+					panelManager.resetManualCloseFlag()
+				}
+
+				// Show panel if:
+				// 1. Manual click (forceShow) - always show
+				// 2. Launch action - always show and reset flag
+				// 3. Auto-open for non-launch action - only if user hasn't manually closed
+				if (message.forceShow || message.isLaunchAction || panelManager.shouldAllowAutoOpen()) {
+					// Ensure panel is shown and populated
+					await panelManager.show()
+
+					// Navigate to a specific step if provided
+					// For launch actions: navigate to step 0
+					// For manual clicks: navigate to the clicked step
+					// For auto-opens of regular actions: don't navigate, let BrowserSessionRow's
+					// internal auto-advance logic handle it (only advances if user is on most recent step)
+					if (typeof message.stepIndex === "number" && message.stepIndex >= 0) {
+						await panelManager.navigateToStep(message.stepIndex)
+					}
+				}
+			}
+			break
+		case "refreshBrowserSessionPanel":
+			{
+				// Re-send the latest browser session snapshot to the panel
+				const panelManager = BrowserSessionPanelManager.getInstance(provider)
+				const task = provider.getCurrentTask()
+				if (task) {
+					const messages = task.clineMessages || []
+					const browserSessionStartIndex = messages.findIndex(
+						(m) =>
+							m.ask === "browser_action_launch" ||
+							(m.say === "browser_session_status" && m.text?.includes("opened")),
+					)
+					const browserSessionMessages =
+						browserSessionStartIndex !== -1 ? messages.slice(browserSessionStartIndex) : []
+					const isBrowserSessionActive = task.browserSession?.isSessionActive() ?? false
+					await panelManager.updateBrowserSession(browserSessionMessages, isBrowserSessionActive)
+				}
+			}
+			break
+		case "allowedCommands": {
+			// Validate and sanitize the commands array
+			const commands = message.commands ?? []
+			const validCommands = Array.isArray(commands)
+				? commands.filter((cmd) => typeof cmd === "string" && cmd.trim().length > 0)
+				: []
+
+			await updateGlobalState("allowedCommands", validCommands)
+
+			// Also update workspace settings.
+			await vscode.workspace
+				.getConfiguration(Package.name)
+				.update("allowedCommands", validCommands, vscode.ConfigurationTarget.Global)
+
+			break
+		}
+		case "deniedCommands": {
+			// Validate and sanitize the commands array
+			const commands = message.commands ?? []
+			const validCommands = Array.isArray(commands)
+				? commands.filter((cmd) => typeof cmd === "string" && cmd.trim().length > 0)
+				: []
+
+			await updateGlobalState("deniedCommands", validCommands)
+
+			// Also update workspace settings.
+			await vscode.workspace
+				.getConfiguration(Package.name)
+				.update("deniedCommands", validCommands, vscode.ConfigurationTarget.Global)
+
+			break
+		}
 		case "openCustomModesSettings": {
 			const customModesFilePath = await provider.customModesManager.getCustomModesFilePath()
 
@@ -1387,6 +1587,29 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
+		// kilocode_change start: MCP OAuth sign-in handler
+		case "mcpServerOAuthSignIn": {
+			try {
+				const mcpHub = provider.getMcpHub()
+				if (!mcpHub) {
+					provider.log("MCP Hub not available for OAuth sign-in")
+					break
+				}
+				if (!message.serverName) {
+					provider.log("Server name required for OAuth sign-in")
+					break
+				}
+				// Trigger OAuth flow for the specified server
+				await mcpHub.initiateOAuthSignIn(message.serverName, message.source as "global" | "project")
+			} catch (error) {
+				provider.log(
+					`Failed to initiate OAuth sign-in for ${message.serverName}: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`,
+				)
+				vscode.window.showErrorMessage(t("mcp:errors.oauth_signin_failed"))
+			}
+			break
+		}
+		// kilocode_change end
 		case "toggleToolAlwaysAllow": {
 			try {
 				await provider
@@ -1686,6 +1909,10 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		// kilocode_change start
+		case "hasCompletedOnboarding":
+			await updateGlobalState("hasCompletedOnboarding", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)
 			await provider.postStateToWebview()
@@ -1698,7 +1925,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "sendMessageOnEnter":
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
@@ -1708,6 +1934,12 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTimestamps", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
+		// kilocode_change start
+		case "showDiffStats":
+			await updateGlobalState("showDiffStats", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
+		// kilocode_change end
 		case "hideCostBelowThreshold":
 			await updateGlobalState("hideCostBelowThreshold", message.value)
 			await provider.postStateToWebview()
@@ -1767,6 +1999,13 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("ghostServiceSettings", ghostServiceSettings)
 			await provider.postStateToWebview()
 			vscode.commands.executeCommand("kilo-code.ghost.reload")
+			break
+		case "snoozeAutocomplete":
+			if (typeof message.value === "number" && message.value > 0) {
+				await GhostServiceManager.getInstance()?.snooze(message.value)
+			} else {
+				await GhostServiceManager.getInstance()?.unsnooze()
+			}
 			break
 		// kilocode_change end
 		// kilocode_change start: AI gatekeeper for YOLO mode
@@ -1930,12 +2169,39 @@ export const webviewMessageHandler = async (
 					20, // Use default limit, as filtering is now done in the backend
 				)
 
-				// Send results back to webview
-				await provider.postMessageToWebview({
-					type: "fileSearchResults",
-					results,
-					requestId: message.requestId,
-				})
+				// Get the RooIgnoreController from the current task, or create a new one
+				const currentTask = provider.getCurrentTask()
+				let rooIgnoreController = currentTask?.rooIgnoreController
+				let tempController: RooIgnoreController | undefined
+
+				// If no current task or no controller, create a temporary one
+				if (!rooIgnoreController) {
+					tempController = new RooIgnoreController(workspacePath)
+					await tempController.initialize()
+					rooIgnoreController = tempController
+				}
+
+				try {
+					// Get showRooIgnoredFiles setting from state
+					const { showRooIgnoredFiles = false } = (await provider.getState()) ?? {}
+
+					// Filter results using RooIgnoreController if showRooIgnoredFiles is false
+					let filteredResults = results
+					if (!showRooIgnoredFiles && rooIgnoreController) {
+						const allowedPaths = rooIgnoreController.filterPaths(results.map((r) => r.path))
+						filteredResults = results.filter((r) => allowedPaths.includes(r.path))
+					}
+
+					// Send results back to webview
+					await provider.postMessageToWebview({
+						type: "fileSearchResults",
+						results: filteredResults,
+						requestId: message.requestId,
+					})
+				} finally {
+					// Dispose temporary controller to prevent resource leak
+					tempController?.dispose()
+				}
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 
@@ -1955,6 +2221,25 @@ export const webviewMessageHandler = async (
 			if (Array.isArray(todos)) {
 				await setPendingTodoList(todos)
 			}
+			break
+		}
+		case "refreshCustomTools": {
+			try {
+				const toolDirs = getRooDirectoriesForCwd(getCurrentCwd()).map((dir) => path.join(dir, "tools"))
+				await customToolRegistry.loadFromDirectories(toolDirs)
+
+				await provider.postMessageToWebview({
+					type: "customToolsResult",
+					tools: customToolRegistry.getAllSerialized(),
+				})
+			} catch (error) {
+				await provider.postMessageToWebview({
+					type: "customToolsResult",
+					tools: [],
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+
 			break
 		}
 		case "saveApiConfiguration":
@@ -2000,7 +2285,14 @@ export const webviewMessageHandler = async (
 						await refreshOrganizationModes(message, provider, updateGlobalState)
 
 						// Flush and refetch models
-						await flushModels("kilocode")
+						await flushModels(
+							{
+								provider: "kilocode",
+								kilocodeOrganizationId: message.apiConfiguration.kilocodeOrganizationId,
+								kilocodeToken: message.apiConfiguration.kilocodeToken,
+							},
+							true,
+						)
 						const models = await getModels({
 							provider: "kilocode",
 							kilocodeOrganizationId: message.apiConfiguration.kilocodeOrganizationId,
@@ -2016,7 +2308,7 @@ export const webviewMessageHandler = async (
 				}
 
 				// kilocode_change start: If we're updating the active profile, we need to activate it to ensure it's persisted
-				const currentApiConfigName = getGlobalState("currentApiConfigName")
+				const currentApiConfigName = getGlobalState("currentApiConfigName") || "default"
 				const isActiveProfile = message.text === currentApiConfigName
 				await provider.upsertProviderProfile(message.text, configToSave, isActiveProfile) // Activate if it's the current active profile
 				vscode.commands.executeCommand("kilo-code.ghost.reload")
@@ -2157,11 +2449,12 @@ export const webviewMessageHandler = async (
 			break
 		case "editMessageConfirm":
 			if (message.messageTs && message.text) {
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
 				await handleEditMessageConfirm(
 					message.messageTs,
-					message.text,
+					resolved.text,
 					message.restoreCheckpoint,
-					message.images,
+					resolved.images,
 				)
 			}
 			break
@@ -2258,14 +2551,14 @@ export const webviewMessageHandler = async (
 				if (scope === "project") {
 					const workspacePath = getWorkspacePath()
 					if (workspacePath) {
-						rulesFolderPath = path.join(workspacePath, ".roo", `rules-${message.slug}`)
+						rulesFolderPath = path.join(workspacePath, ".kilocode", `rules-${message.slug}`)
 					} else {
-						rulesFolderPath = path.join(".roo", `rules-${message.slug}`)
+						rulesFolderPath = path.join(".kilocode", `rules-${message.slug}`)
 					}
 				} else {
 					// Global scope - use OS home directory
 					const homeDir = os.homedir()
-					rulesFolderPath = path.join(homeDir, ".roo", `rules-${message.slug}`)
+					rulesFolderPath = path.join(homeDir, ".kilocode", `rules-${message.slug}`)
 				}
 
 				// Check if the rules folder exists
@@ -2498,6 +2791,7 @@ export const webviewMessageHandler = async (
 				})
 			}
 			break
+
 		case "humanRelayResponse":
 			if (message.requestId && message.text) {
 				vscode.commands.executeCommand(getCommand("handleHumanRelayResponse"), {
@@ -2546,12 +2840,12 @@ export const webviewMessageHandler = async (
 					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 				}
 
-				const url = getKiloUrlFromToken("https://api.kilocode.ai/api/profile", kilocodeToken)
+				const url = getKiloUrlFromToken("https://api.kilo.ai/api/profile", kilocodeToken)
 				const response = await axios.get<Omit<ProfileData, "kilocodeToken">>(url, { headers })
 
 				// Go back to Personal when no longer part of the current set organization
 				const organizationExists = (response.data.organizations ?? []).some(
-					({ id }) => id === apiConfiguration?.kilocodeOrganizationId,
+					({ id }: { id: string }) => id === apiConfiguration?.kilocodeOrganizationId,
 				)
 				if (apiConfiguration?.kilocodeOrganizationId && !organizationExists) {
 					provider.upsertProviderProfile(currentApiConfigName ?? "default", {
@@ -2644,7 +2938,7 @@ export const webviewMessageHandler = async (
 					headers["X-KILOCODE-TESTER"] = "SUPPRESS"
 				}
 
-				const url = getKiloUrlFromToken("https://api.kilocode.ai/api/profile/balance", kilocodeToken)
+				const url = getKiloUrlFromToken("https://api.kilo.ai/api/profile/balance", kilocodeToken)
 				const response = await axios.get(url, { headers })
 				provider.postMessageToWebview({
 					type: "balanceDataResponse", // New response type
@@ -2674,7 +2968,7 @@ export const webviewMessageHandler = async (
 				const source = uiKind === "Web" ? "web" : uriScheme
 
 				const url = getKiloUrlFromToken(
-					`https://api.kilocode.ai/payments/topup?origin=extension&source=${source}&amount=${credits}`,
+					`https://api.kilo.ai/payments/topup?origin=extension&source=${source}&amount=${credits}`,
 					kilocodeToken,
 				)
 				const response = await axios.post(
@@ -2739,6 +3033,13 @@ export const webviewMessageHandler = async (
 			break
 		}
 
+		// kilocode_change start
+		case "refreshSkills": {
+			await provider.postSkillsDataToWebview()
+			break
+		}
+		// kilocode_change end
+
 		case "toggleRule": {
 			if (message.rulePath && typeof message.enabled === "boolean" && typeof message.isGlobal === "boolean") {
 				await toggleRule(
@@ -2790,7 +3091,7 @@ export const webviewMessageHandler = async (
 		case "telemetrySetting": {
 			const telemetrySetting = message.text as TelemetrySetting
 			const previousSetting = getGlobalState("telemetrySetting") || "unset"
-			const isOptedIn = telemetrySetting !== "disabled"
+			const isOptedIn = getEffectiveTelemetrySetting(telemetrySetting) === "enabled" // kilocode_change
 			const wasPreviouslyOptedIn = previousSetting !== "disabled"
 
 			// If turning telemetry OFF, fire event BEFORE disabling
@@ -2814,6 +3115,13 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		}
+		case "debugSetting": {
+			await vscode.workspace
+				.getConfiguration(Package.name)
+				.update("debug", message.bool ?? false, vscode.ConfigurationTarget.Global)
+			await provider.postStateToWebview()
+			break
+		}
 		case "cloudButtonClicked": {
 			// Navigate to the cloud tab.
 			provider.postMessageToWebview({ type: "action", action: "cloudButtonClicked" })
@@ -2822,7 +3130,8 @@ export const webviewMessageHandler = async (
 		case "rooCloudSignIn": {
 			try {
 				TelemetryService.instance.captureEvent(TelemetryEventName.AUTHENTICATION_INITIATED)
-				await CloudService.instance.login()
+				// Use provider signup flow if useProviderSignup is explicitly true
+				await CloudService.instance.login(undefined, message.useProviderSignup ?? false)
 			} catch (error) {
 				provider.log(`AuthService#login failed: ${error}`)
 				vscode.window.showErrorMessage("Sign in failed.")
@@ -2851,6 +3160,84 @@ export const webviewMessageHandler = async (
 				vscode.window.showErrorMessage("Sign out failed.")
 			}
 
+			break
+		}
+		case "claudeCodeSignIn": {
+			try {
+				const { claudeCodeOAuthManager } = await import("../../integrations/claude-code/oauth")
+				const authUrl = claudeCodeOAuthManager.startAuthorizationFlow()
+
+				// Open the authorization URL in the browser
+				await vscode.env.openExternal(vscode.Uri.parse(authUrl))
+
+				// Wait for the callback in a separate promise (non-blocking)
+				claudeCodeOAuthManager
+					.waitForCallback()
+					.then(async () => {
+						vscode.window.showInformationMessage("Successfully signed in to Claude Code")
+						await provider.postStateToWebview()
+					})
+					.catch((error) => {
+						provider.log(`Claude Code OAuth callback failed: ${error}`)
+						if (!String(error).includes("timed out")) {
+							vscode.window.showErrorMessage(`Claude Code sign in failed: ${error.message || error}`)
+						}
+					})
+			} catch (error) {
+				provider.log(`Claude Code OAuth failed: ${error}`)
+				vscode.window.showErrorMessage("Claude Code sign in failed.")
+			}
+			break
+		}
+		case "claudeCodeSignOut": {
+			try {
+				const { claudeCodeOAuthManager } = await import("../../integrations/claude-code/oauth")
+				await claudeCodeOAuthManager.clearCredentials()
+				vscode.window.showInformationMessage("Signed out from Claude Code")
+				await provider.postStateToWebview()
+			} catch (error) {
+				provider.log(`Claude Code sign out failed: ${error}`)
+				vscode.window.showErrorMessage("Claude Code sign out failed.")
+			}
+			break
+		}
+		case "openAiCodexSignIn": {
+			try {
+				const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+				const authUrl = openAiCodexOAuthManager.startAuthorizationFlow()
+
+				// Open the authorization URL in the browser
+				await vscode.env.openExternal(vscode.Uri.parse(authUrl))
+
+				// Wait for the callback in a separate promise (non-blocking)
+				openAiCodexOAuthManager
+					.waitForCallback()
+					.then(async () => {
+						vscode.window.showInformationMessage("Successfully signed in to OpenAI Codex")
+						await provider.postStateToWebview()
+					})
+					.catch((error) => {
+						provider.log(`OpenAI Codex OAuth callback failed: ${error}`)
+						if (!String(error).includes("timed out")) {
+							vscode.window.showErrorMessage(`OpenAI Codex sign in failed: ${error.message || error}`)
+						}
+					})
+			} catch (error) {
+				provider.log(`OpenAI Codex OAuth failed: ${error}`)
+				vscode.window.showErrorMessage("OpenAI Codex sign in failed.")
+			}
+			break
+		}
+		case "openAiCodexSignOut": {
+			try {
+				const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+				await openAiCodexOAuthManager.clearCredentials()
+				vscode.window.showInformationMessage("Signed out from OpenAI Codex")
+				await provider.postStateToWebview()
+			} catch (error) {
+				provider.log(`OpenAI Codex sign out failed: ${error}`)
+				vscode.window.showErrorMessage("OpenAI Codex sign out failed.")
+			}
 			break
 		}
 		case "rooCloudManualUrl": {
@@ -2893,6 +3280,12 @@ export const webviewMessageHandler = async (
 				vscode.window.showErrorMessage(`${t("common:errors.manual_url_auth_error")}: ${errorMessage}`)
 			}
 
+			break
+		}
+		case "clearCloudAuthSkipModel": {
+			// Clear the flag that indicates auth completed without model selection
+			await provider.context.globalState.update("roo-auth-skip-model", undefined)
+			await provider.postStateToWebview()
 			break
 		}
 		case "switchOrganization": {
@@ -2955,12 +3348,28 @@ export const webviewMessageHandler = async (
 					codebaseIndexEmbedderModelId: settings.codebaseIndexEmbedderModelId,
 					codebaseIndexEmbedderModelDimension: settings.codebaseIndexEmbedderModelDimension, // Generic dimension
 					codebaseIndexOpenAiCompatibleBaseUrl: settings.codebaseIndexOpenAiCompatibleBaseUrl,
+					codebaseIndexBedrockRegion: settings.codebaseIndexBedrockRegion,
+					codebaseIndexBedrockProfile: settings.codebaseIndexBedrockProfile,
 					codebaseIndexSearchMaxResults: settings.codebaseIndexSearchMaxResults,
 					codebaseIndexSearchMinScore: settings.codebaseIndexSearchMinScore,
+					// kilocode_change start
+					codebaseIndexEmbeddingBatchSize: settings.codebaseIndexEmbeddingBatchSize,
+					codebaseIndexScannerMaxBatchRetries: settings.codebaseIndexScannerMaxBatchRetries,
+					// kilocode_change end
+					codebaseIndexOpenRouterSpecificProvider: settings.codebaseIndexOpenRouterSpecificProvider,
 				}
 
 				// Save global state first
 				await updateGlobalState("codebaseIndexConfig", globalStateConfig)
+
+				// kilocode_change start: Update the batch size in the running scanner and file watcher
+				if (settings.codebaseIndexEmbeddingBatchSize !== undefined) {
+					const currentCodeIndexManager = provider.getCurrentWorkspaceCodeIndexManager()
+					if (currentCodeIndexManager) {
+						currentCodeIndexManager.updateBatchSegmentThreshold(settings.codebaseIndexEmbeddingBatchSize)
+					}
+				}
+				// kilocode_change end
 
 				// Save secrets directly using context proxy
 				if (settings.codeIndexOpenAiKey !== undefined) {
@@ -3244,6 +3653,16 @@ export const webviewMessageHandler = async (
 					})
 					return
 				}
+
+				// kilocode_change start
+				// Clear any prior error banner in UI even if config is still invalid.
+				manager.clearErrorState()
+				provider.postMessageToWebview({
+					type: "indexingStatusUpdate",
+					values: manager.getCurrentStatus(),
+				})
+				// kilocode_change end
+
 				await manager.clearIndexData()
 				provider.postMessageToWebview({ type: "indexCleared", values: { success: true } })
 			} catch (error) {
@@ -3388,6 +3807,19 @@ export const webviewMessageHandler = async (
 			if (marketplaceManager && message.mpItem && message.mpInstallOptions) {
 				try {
 					await marketplaceManager.removeInstalledMarketplaceItem(message.mpItem, message.mpInstallOptions)
+
+					// kilocode_change start: Force skills refresh after skill deletion
+					// If the removed item is a skill, force a refresh of the SkillsManager
+					// to ensure the cache is updated before sending data to the webview
+					if (message.mpItem.type === "skill") {
+						const skillsManager = provider.getSkillsManager()
+						if (skillsManager) {
+							await skillsManager.discoverSkills()
+						}
+						await provider.postSkillsDataToWebview()
+					}
+					// kilocode_change end
+
 					await provider.postStateToWebview()
 
 					// Send success message to webview
@@ -3453,7 +3885,7 @@ export const webviewMessageHandler = async (
 
 		case "switchTab": {
 			if (message.tab) {
-				// Capture tab shown event for all switchTab messages (which are user-initiated)
+				// Capture tab shown event for all switchTab messages (which are user-initiated).
 				if (TelemetryService.hasInstance()) {
 					TelemetryService.instance.captureTabShown(message.tab)
 				}
@@ -3498,6 +3930,18 @@ export const webviewMessageHandler = async (
 			break
 		}
 		// kilocode_change end: Type-safe global state handler
+		// kilocode_change start: STT (Speech-to-Text) handlers
+		case "stt:start":
+		case "stt:stop":
+		case "stt:cancel":
+		case "stt:listDevices":
+		case "stt:selectDevice":
+		case "stt:checkAvailability": {
+			const { handleSTTCommand } = await import("./sttHandlers")
+			await handleSTTCommand(provider, message as any)
+			break
+		}
+		// kilocode_change end: STT (Speech-to-Text) handlers
 		case "insertTextToChatArea":
 			provider.postMessageToWebview({ type: "insertTextToChatArea", text: message.text })
 			break
@@ -3506,7 +3950,6 @@ export const webviewMessageHandler = async (
 				const { getCommands } = await import("../../services/command/commands")
 				const commands = await getCommands(getCurrentCwd())
 
-				// Convert to the format expected by the frontend
 				const commandList = commands.map((command) => ({
 					name: command.name,
 					source: command.source,
@@ -3515,17 +3958,20 @@ export const webviewMessageHandler = async (
 					argumentHint: command.argumentHint,
 				}))
 
-				await provider.postMessageToWebview({
-					type: "commands",
-					commands: commandList,
-				})
+				await provider.postMessageToWebview({ type: "commands", commands: commandList })
 			} catch (error) {
 				provider.log(`Error fetching commands: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`)
-				// Send empty array on error
-				await provider.postMessageToWebview({
-					type: "commands",
-					commands: [],
-				})
+				await provider.postMessageToWebview({ type: "commands", commands: [] })
+			}
+			break
+		}
+		case "requestModes": {
+			try {
+				const modes = await provider.getModes()
+				await provider.postMessageToWebview({ type: "modes", modes })
+			} catch (error) {
+				provider.log(`Error fetching modes: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`)
+				await provider.postMessageToWebview({ type: "modes", modes: [] })
 			}
 			break
 		}
@@ -3539,7 +3985,20 @@ export const webviewMessageHandler = async (
 				await provider.postMessageToWebview({ type: "keybindingsResponse", keybindings: {} })
 			}
 			break
+		} // kilocode_change start: Chat text area FIM autocomplete
+		case "requestChatCompletion": {
+			await handleChatCompletionRequest(
+				message as WebviewMessage & { type: "requestChatCompletion" },
+				provider,
+				getCurrentCwd,
+			)
+			break
 		}
+		case "chatCompletionAccepted": {
+			handleChatCompletionAccepted(message as WebviewMessage & { type: "chatCompletionAccepted" })
+			break
+		}
+		// kilocode_change end: Chat text area FIM autocomplete
 		case "openCommandFile": {
 			try {
 				if (message.text) {
@@ -3593,7 +4052,7 @@ export const webviewMessageHandler = async (
 				// Determine the commands directory based on source
 				let commandsDir: string
 				if (source === "global") {
-					const globalConfigDir = path.join(os.homedir(), ".roo")
+					const globalConfigDir = path.join(os.homedir(), ".kilocode")
 					commandsDir = path.join(globalConfigDir, "commands")
 				} else {
 					if (!vscode.workspace.workspaceFolders?.length) {
@@ -3606,7 +4065,7 @@ export const webviewMessageHandler = async (
 						vscode.window.showErrorMessage(t("common:errors.no_workspace_for_project_command"))
 						break
 					}
-					commandsDir = path.join(workspaceRoot, ".roo", "commands")
+					commandsDir = path.join(workspaceRoot, ".kilocode", "commands")
 				}
 
 				// Ensure the commands directory exists
@@ -3785,7 +4244,8 @@ export const webviewMessageHandler = async (
 		 */
 
 		case "queueMessage": {
-			provider.getCurrentTask()?.messageQueueService.addMessage(message.text ?? "", message.images)
+			const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+			provider.getCurrentTask()?.messageQueueService.addMessage(resolved.text, resolved.images)
 			break
 		}
 		case "removeQueuedMessage": {
@@ -3843,22 +4303,46 @@ export const webviewMessageHandler = async (
 			}
 			break
 		}
-		case "sessionShare": {
+		case "sessionShow": {
 			try {
 				const sessionService = SessionManager.init()
 
-				if (!sessionService.sessionId) {
+				if (!sessionService?.sessionId) {
 					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
 					break
 				}
 
-				const result = await sessionService.shareSession()
+				vscode.window.showInformationMessage(`Session ID: ${sessionService.sessionId}`)
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to copy session ID: ${errorMessage}`)
+			}
+			break
+		}
+		case "sessionShare": {
+			try {
+				const sessionService = SessionManager.init()
+
+				const sessionId = message.sessionId || sessionService?.sessionId
+
+				if (!sessionId) {
+					vscode.window.showErrorMessage("No active session. Start a new task to create a session.")
+					break
+				}
+
+				const result = await sessionService?.shareSession(sessionId)
+
+				if (!result) {
+					throw new Error("SessionManager not initialized")
+				}
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
 				// Copy URL to clipboard and show success notification
 				await vscode.env.clipboard.writeText(shareUrl)
-				vscode.window.showInformationMessage(`Session shared! Link copied to clipboard: ${shareUrl}`)
+				vscode.window.showInformationMessage(
+					t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
+				)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to share session: ${errorMessage}`)
@@ -3875,14 +4359,20 @@ export const webviewMessageHandler = async (
 				const taskId = message.text
 				const sessionService = SessionManager.init()
 
-				const sessionId = await sessionService.getSessionFromTask(taskId, provider)
+				const sessionId = await sessionService?.getSessionFromTask(taskId, provider)
 
-				const result = await sessionService.shareSession(sessionId)
+				const result = await sessionService?.shareSession(sessionId)
+
+				if (!result) {
+					throw new Error("SessionManager not initialized")
+				}
 
 				const shareUrl = `https://app.kilo.ai/share/${result.share_id}`
 
 				await vscode.env.clipboard.writeText(shareUrl)
-				vscode.window.showInformationMessage(`Session shared! Link copied to clipboard.`)
+				vscode.window.showInformationMessage(
+					t("common:info.session_share_link_copied_with_url", { url: shareUrl }),
+				)
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to share task session: ${errorMessage}`)
@@ -3898,7 +4388,9 @@ export const webviewMessageHandler = async (
 
 				const sessionService = SessionManager.init()
 
-				await sessionService.forkSession(message.shareId, true)
+				await provider.clearTask()
+
+				await sessionService?.forkSession(message.shareId, true)
 
 				await provider.postStateToWebview()
 
@@ -3906,6 +4398,26 @@ export const webviewMessageHandler = async (
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				vscode.window.showErrorMessage(`Failed to fork session: ${errorMessage}`)
+			}
+			break
+		}
+		case "sessionSelect": {
+			try {
+				if (!message.sessionId) {
+					vscode.window.showErrorMessage("Session ID is required for selecting a session")
+					break
+				}
+
+				const sessionService = SessionManager.init()
+
+				await provider.clearTask()
+
+				await sessionService?.restoreSession(message.sessionId, true)
+
+				await provider.postStateToWebview()
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				vscode.window.showErrorMessage(`Failed to restore session: ${errorMessage}`)
 			}
 			break
 		}
@@ -3952,6 +4464,181 @@ export const webviewMessageHandler = async (
 			break
 		}
 		// kilocode_change end
+
+		case "openMarkdownPreview": {
+			if (message.text) {
+				try {
+					const tmpDir = os.tmpdir()
+					const timestamp = Date.now()
+					const tempFileName = `roo-preview-${timestamp}.md`
+					const tempFilePath = path.join(tmpDir, tempFileName)
+
+					await fs.writeFile(tempFilePath, message.text, "utf8")
+
+					const doc = await vscode.workspace.openTextDocument(tempFilePath)
+					await vscode.commands.executeCommand("markdown.showPreview", doc.uri)
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error)
+					provider.log(`Error opening markdown preview: ${errorMessage}`)
+					vscode.window.showErrorMessage(`Failed to open markdown preview: ${errorMessage}`)
+				}
+			}
+			break
+		}
+
+		case "requestClaudeCodeRateLimits": {
+			try {
+				const { claudeCodeOAuthManager } = await import("../../integrations/claude-code/oauth")
+				const accessToken = await claudeCodeOAuthManager.getAccessToken()
+
+				if (!accessToken) {
+					provider.postMessageToWebview({
+						type: "claudeCodeRateLimits",
+						error: "Not authenticated with Claude Code",
+					})
+					break
+				}
+
+				const { fetchRateLimitInfo } = await import("../../integrations/claude-code/streaming-client")
+				const rateLimits = await fetchRateLimitInfo(accessToken)
+
+				provider.postMessageToWebview({
+					type: "claudeCodeRateLimits",
+					values: rateLimits,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Error fetching Claude Code rate limits: ${errorMessage}`)
+				provider.postMessageToWebview({
+					type: "claudeCodeRateLimits",
+					error: errorMessage,
+				})
+			}
+			break
+		}
+
+		case "requestOpenAiCodexRateLimits": {
+			try {
+				const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+				const accessToken = await openAiCodexOAuthManager.getAccessToken()
+
+				if (!accessToken) {
+					provider.postMessageToWebview({
+						type: "openAiCodexRateLimits",
+						error: "Not authenticated with OpenAI Codex",
+					})
+					break
+				}
+
+				const accountId = await openAiCodexOAuthManager.getAccountId()
+				const { fetchOpenAiCodexRateLimitInfo } = await import("../../integrations/openai-codex/rate-limits")
+				const rateLimits = await fetchOpenAiCodexRateLimitInfo(accessToken, { accountId })
+
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
+					values: rateLimits,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Error fetching OpenAI Codex rate limits: ${errorMessage}`)
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
+					error: errorMessage,
+				})
+			}
+			break
+		}
+
+		case "openDebugApiHistory":
+		case "openDebugUiHistory": {
+			const currentTask = provider.getCurrentTask()
+			if (!currentTask) {
+				vscode.window.showErrorMessage("No active task to view history for")
+				break
+			}
+
+			try {
+				const { getTaskDirectoryPath } = await import("../../utils/storage")
+				const globalStoragePath = provider.contextProxy.globalStorageUri.fsPath
+				const taskDirPath = await getTaskDirectoryPath(globalStoragePath, currentTask.taskId)
+
+				const fileName =
+					message.type === "openDebugApiHistory" ? "api_conversation_history.json" : "ui_messages.json"
+				const sourceFilePath = path.join(taskDirPath, fileName)
+
+				// Check if file exists
+				if (!(await fileExistsAtPath(sourceFilePath))) {
+					vscode.window.showErrorMessage(`File not found: ${fileName}`)
+					break
+				}
+
+				// Read the source file
+				const content = await fs.readFile(sourceFilePath, "utf8")
+				let jsonContent: unknown
+
+				try {
+					jsonContent = JSON.parse(content)
+				} catch {
+					vscode.window.showErrorMessage(`Failed to parse ${fileName}`)
+					break
+				}
+
+				// Prettify the JSON
+				const prettifiedContent = JSON.stringify(jsonContent, null, 2)
+
+				// Create a temporary file
+				const tmpDir = os.tmpdir()
+				const timestamp = Date.now()
+				const tempFileName = `roo-debug-${message.type === "openDebugApiHistory" ? "api" : "ui"}-${currentTask.taskId.slice(0, 8)}-${timestamp}.json`
+				const tempFilePath = path.join(tmpDir, tempFileName)
+
+				await fs.writeFile(tempFilePath, prettifiedContent, "utf8")
+
+				// Open the temp file in VS Code
+				const doc = await vscode.workspace.openTextDocument(tempFilePath)
+				await vscode.window.showTextDocument(doc, { preview: true })
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Error opening debug history: ${errorMessage}`)
+				vscode.window.showErrorMessage(`Failed to open debug history: ${errorMessage}`)
+			}
+			break
+		}
+
+		// kilocode_change start - Device Auth handlers
+		case "startDeviceAuth":
+		case "cancelDeviceAuth":
+		case "deviceAuthCompleteWithProfile": {
+			await deviceAuthMessageHandler(provider, message)
+			break
+		}
+		// kilocode_change end
+		case "downloadErrorDiagnostics": {
+			const currentTask = provider.getCurrentTask()
+			if (!currentTask) {
+				vscode.window.showErrorMessage("No active task to generate diagnostics for")
+				break
+			}
+
+			await generateErrorDiagnostics({
+				taskId: currentTask.taskId,
+				globalStoragePath: provider.contextProxy.globalStorageUri.fsPath,
+				values: message.values,
+				log: (msg) => provider.log(msg),
+			})
+			break
+		}
+
+		// kilocode_change start: Review mode scope selection
+		case "reviewScopeSelected": {
+			const scope = message.reviewScope
+			if (scope === "uncommitted" || scope === "branch") {
+				await provider.handleReviewScopeSelected(scope)
+			}
+			break
+		}
+		// kilocode_change end
+
 		default: {
 			// console.log(`Unhandled message type: ${message.type}`)
 			//

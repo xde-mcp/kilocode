@@ -170,7 +170,31 @@ export async function loadConfig(): Promise<ConfigLoadResult> {
 
 		// Read and parse config
 		const content = await fs.readFile(configFile, "utf-8")
-		const loadedConfig = JSON.parse(content)
+
+		// Handle empty or whitespace-only config files
+		if (!content || content.trim().length === 0) {
+			logs.warn("Config file is empty, returning default config", "ConfigPersistence")
+			const validation = await validateConfig(DEFAULT_CONFIG)
+			return {
+				config: DEFAULT_CONFIG,
+				validation,
+			}
+		}
+
+		// Parse JSON with error handling for corrupted files
+		let loadedConfig: Partial<CLIConfig>
+		try {
+			loadedConfig = JSON.parse(content) as Partial<CLIConfig>
+		} catch (parseError) {
+			logs.error("Config file contains invalid JSON, returning default config", "ConfigPersistence", {
+				error: parseError,
+			})
+			const validation = await validateConfig(DEFAULT_CONFIG)
+			return {
+				config: DEFAULT_CONFIG,
+				validation,
+			}
+		}
 
 		// Merge with defaults to fill in missing keys
 		const config = mergeWithDefaults(loadedConfig)
@@ -202,6 +226,14 @@ export async function loadConfig(): Promise<ConfigLoadResult> {
 }
 
 export async function saveConfig(config: CLIConfig, skipValidation: boolean = false): Promise<void> {
+	// Don't write to disk in ephemeral mode - this prevents environment variable
+	// values from being persisted to config.json during integration tests or
+	// when running in ephemeral/Docker environments
+	if (isEphemeralMode()) {
+		logs.debug("Skipping config save in ephemeral mode", "ConfigPersistence")
+		return
+	}
+
 	try {
 		await ensureConfigDir()
 

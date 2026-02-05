@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react"
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 
-import { OrganizationAllowList, type ProviderSettings, deepInfraDefaultModelId } from "@roo-code/types"
-
-import type { RouterModels } from "@roo/api"
+import {
+	type OrganizationAllowList,
+	type ProviderSettings,
+	type RouterModels,
+	deepInfraDefaultModelId,
+} from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
@@ -19,6 +22,7 @@ type DeepInfraProps = {
 	refetchRouterModels: () => void
 	organizationAllowList: OrganizationAllowList
 	modelValidationError?: string
+	simplifySettings?: boolean
 }
 
 export const DeepInfra = ({
@@ -28,6 +32,7 @@ export const DeepInfra = ({
 	refetchRouterModels,
 	organizationAllowList,
 	modelValidationError,
+	simplifySettings,
 }: DeepInfraProps) => {
 	const { t } = useAppTranslation()
 
@@ -88,6 +93,7 @@ export const DeepInfra = ({
 				serviceUrl="https://deepinfra.com/models"
 				organizationAllowList={organizationAllowList}
 				errorMessage={modelValidationError}
+				simplifySettings={simplifySettings}
 			/>
 		</>
 	)

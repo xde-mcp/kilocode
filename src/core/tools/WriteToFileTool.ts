@@ -1,28 +1,27 @@
 import path from "path"
 import delay from "delay"
-import * as vscode from "vscode"
 import fs from "fs/promises"
 
+import { type ClineSayTool, DEFAULT_WRITE_DELAY_MS } from "@roo-code/types"
+
 import { Task } from "../task/Task"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
 import { RecordSource } from "../context-tracking/FileContextTrackerTypes"
-import { fileExistsAtPath } from "../../utils/fs"
+import { fileExistsAtPath, createDirectoriesForFile } from "../../utils/fs"
 import { stripLineNumbers, everyLineHasLineNumbers } from "../../integrations/misc/extract-text"
 import { getReadablePath } from "../../utils/path"
 import { isPathOutsideWorkspace } from "../../utils/pathUtils"
-import { detectCodeOmission } from "../../integrations/editor/detect-omission"
 import { unescapeHtmlEntities } from "../../utils/text-normalization"
-import { DEFAULT_WRITE_DELAY_MS } from "@roo-code/types"
 import { EXPERIMENT_IDS, experiments } from "../../shared/experiments"
 import { convertNewFileToUnifiedDiff, computeDiffStats, sanitizeUnifiedDiff } from "../diff/stats"
-import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
+import { trackContribution } from "../../services/contribution-tracking/ContributionTrackingService" // kilocode_change
+
+import { BaseTool, ToolCallbacks } from "./BaseTool"
 
 interface WriteToFileParams {
 	path: string
 	content: string
-	line_count: number
 }
 
 export class WriteToFileTool extends BaseTool<"write_to_file"> {
@@ -32,7 +31,6 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		return {
 			path: params.path || "",
 			content: params.content || "",
-			line_count: parseInt(params.line_count ?? "0", 10),
 		}
 	}
 
@@ -40,7 +38,6 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		const { pushToolResult, handleError, askApproval, removeClosingTag } = callbacks
 		const relPath = params.path
 		let newContent = params.content
-		const predictedLineCount = params.line_count
 
 		if (!relPath) {
 			task.consecutiveMistakeCount++
@@ -62,22 +59,27 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 
 		if (!accessAllowed) {
 			await task.say("rooignore_error", relPath)
-			pushToolResult(formatResponse.toolError(formatResponse.rooIgnoreError(relPath)))
+			pushToolResult(formatResponse.rooIgnoreError(relPath))
 			return
 		}
 
 		const isWriteProtected = task.rooProtectedController?.isWriteProtected(relPath) || false
 
 		let fileExists: boolean
+		const absolutePath = path.resolve(task.cwd, relPath)
 
 		if (task.diffViewProvider.editType !== undefined) {
 			fileExists = task.diffViewProvider.editType === "modify"
 		} else {
-			const absolutePath = path.resolve(task.cwd, relPath)
 			fileExists = await fileExistsAtPath(absolutePath)
 			task.diffViewProvider.editType = fileExists ? "modify" : "create"
 		}
 
+		// Create parent directories early for new files to prevent ENOENT errors
+		// in subsequent operations (e.g., diffViewProvider.open, fs.readFile)
+		if (!fileExists) {
+			await createDirectoriesForFile(absolutePath)
+		}
 		// kilocode_change start
 		if (typeof newContent !== "string") {
 			console.warn(`[WriteToFileTool] converting incorrect model output ${typeof newContent} to string`)
@@ -109,30 +111,6 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		}
 
 		try {
-			if (predictedLineCount === undefined || predictedLineCount === 0) {
-				task.consecutiveMistakeCount++
-				task.recordToolError("write_to_file")
-
-				const actualLineCount = newContent.split("\n").length
-				const isNewFile = !fileExists
-				const diffStrategyEnabled = !!task.diffStrategy
-
-				await task.say(
-					"error",
-					`Kilo tried to use write_to_file${
-						relPath ? ` for '${relPath.toPosix()}'` : ""
-					} but the required parameter 'line_count' was missing or truncated after ${actualLineCount} lines of content were written. Retrying...`,
-				)
-
-				pushToolResult(
-					formatResponse.toolError(
-						formatResponse.lineCountTruncationError(actualLineCount, isNewFile, diffStrategyEnabled),
-					),
-				)
-				await task.diffViewProvider.revertChanges()
-				return
-			}
-
 			task.consecutiveMistakeCount = 0
 
 			const provider = task.providerRef.deref()
@@ -153,34 +131,6 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 					task.diffViewProvider.originalContent = ""
 				}
 
-				if (detectCodeOmission(task.diffViewProvider.originalContent || "", newContent, predictedLineCount)) {
-					if (task.diffStrategy) {
-						pushToolResult(
-							formatResponse.toolError(
-								`Content appears to be truncated (file has ${
-									newContent.split("\n").length
-								} lines but was predicted to have ${predictedLineCount} lines), and found comments indicating omitted code (e.g., '// rest of code unchanged', '/* previous code */'). Please provide the complete file content without any omissions if possible, or otherwise use the 'apply_diff' tool to apply the diff to the original file.`,
-							),
-						)
-						return
-					} else {
-						vscode.window
-							.showWarningMessage(
-								"Potential code truncation detected. cline happens when the AI reaches its max output limit.",
-								"Follow cline guide to fix the issue",
-							)
-							.then((selection) => {
-								if (selection === "Follow cline guide to fix the issue") {
-									vscode.env.openExternal(
-										vscode.Uri.parse(
-											"https://github.com/cline/cline/wiki/Troubleshooting-%E2%80%90-Cline-Deleting-Code-with-%22Rest-of-Code-Here%22-Comments",
-										),
-									)
-								}
-							})
-					}
-				}
-
 				let unified = fileExists
 					? formatResponse.createPrettyPatch(relPath, task.diffViewProvider.originalContent, newContent)
 					: convertNewFileToUnifiedDiff(newContent, relPath)
@@ -192,6 +142,20 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 				} satisfies ClineSayTool)
 
 				const didApprove = await askApproval("tool", completeMessage, undefined, isWriteProtected)
+
+				// kilocode_change start
+				// Track contribution (fire-and-forget, never blocks user workflow)
+				trackContribution({
+					cwd: task.cwd,
+					filePath: relPath,
+					originalContent: task.diffViewProvider.originalContent || "",
+					newContent,
+					status: didApprove ? "accepted" : "rejected",
+					taskId: task.taskId,
+					organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+					kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+				})
+				// kilocode_change end
 
 				if (!didApprove) {
 					return
@@ -213,36 +177,6 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 				await delay(300)
 				task.diffViewProvider.scrollToFirstDiff()
 
-				if (detectCodeOmission(task.diffViewProvider.originalContent || "", newContent, predictedLineCount)) {
-					if (task.diffStrategy) {
-						await task.diffViewProvider.revertChanges()
-
-						pushToolResult(
-							formatResponse.toolError(
-								`Content appears to be truncated (file has ${
-									newContent.split("\n").length
-								} lines but was predicted to have ${predictedLineCount} lines), and found comments indicating omitted code (e.g., '// rest of code unchanged', '/* previous code */'). Please provide the complete file content without any omissions if possible, or otherwise use the 'apply_diff' tool to apply the diff to the original file.`,
-							),
-						)
-						return
-					} else {
-						vscode.window
-							.showWarningMessage(
-								"Potential code truncation detected. cline happens when the AI reaches its max output limit.",
-								"Follow cline guide to fix the issue",
-							)
-							.then((selection) => {
-								if (selection === "Follow cline guide to fix the issue") {
-									vscode.env.openExternal(
-										vscode.Uri.parse(
-											"https://github.com/cline/cline/wiki/Troubleshooting-%E2%80%90-Cline-Deleting-Code-with-%22Rest-of-Code-Here%22-Comments",
-										),
-									)
-								}
-							})
-					}
-				}
-
 				let unified = fileExists
 					? formatResponse.createPrettyPatch(relPath, task.diffViewProvider.originalContent, newContent)
 					: convertNewFileToUnifiedDiff(newContent, relPath)
@@ -254,6 +188,20 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 				} satisfies ClineSayTool)
 
 				const didApprove = await askApproval("tool", completeMessage, undefined, isWriteProtected)
+
+				// kilocode_change start
+				// Track contribution (fire-and-forget, never blocks user workflow)
+				trackContribution({
+					cwd: task.cwd,
+					filePath: relPath,
+					originalContent: task.diffViewProvider.originalContent || "",
+					newContent,
+					status: didApprove ? "accepted" : "rejected",
+					taskId: task.taskId,
+					organizationId: state?.apiConfiguration?.kilocodeOrganizationId,
+					kilocodeToken: state?.apiConfiguration?.kilocodeToken || "",
+				})
+				// kilocode_change end
 
 				if (!didApprove) {
 					await task.diffViewProvider.revertChanges()
@@ -274,6 +222,7 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 			pushToolResult(message)
 
 			await task.diffViewProvider.reset()
+			this.resetPartialState()
 
 			task.processQueuedMessages()
 
@@ -281,6 +230,7 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		} catch (error) {
 			await handleError("writing file", error as Error)
 			await task.diffViewProvider.reset()
+			this.resetPartialState()
 			return
 		}
 	}
@@ -289,7 +239,8 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		const relPath: string | undefined = block.params.path
 		let newContent: string | undefined = block.params.content
 
-		if (!relPath || newContent === undefined) {
+		// Wait for path to stabilize before showing UI (prevents truncated paths)
+		if (!this.hasPathStabilized(relPath) || newContent === undefined) {
 			return
 		}
 
@@ -304,23 +255,30 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 			return
 		}
 
+		// relPath is guaranteed non-null after hasPathStabilized
 		let fileExists: boolean
+		const absolutePath = path.resolve(task.cwd, relPath!)
+
 		if (task.diffViewProvider.editType !== undefined) {
 			fileExists = task.diffViewProvider.editType === "modify"
 		} else {
-			const absolutePath = path.resolve(task.cwd, relPath)
 			fileExists = await fileExistsAtPath(absolutePath)
 			task.diffViewProvider.editType = fileExists ? "modify" : "create"
 		}
 
-		const isWriteProtected = task.rooProtectedController?.isWriteProtected(relPath) || false
-		const fullPath = path.resolve(task.cwd, relPath)
-		const isOutsideWorkspace = isPathOutsideWorkspace(fullPath)
+		// Create parent directories early for new files to prevent ENOENT errors
+		// in subsequent operations (e.g., diffViewProvider.open)
+		if (!fileExists) {
+			await createDirectoriesForFile(absolutePath)
+		}
+
+		const isWriteProtected = task.rooProtectedController?.isWriteProtected(relPath!) || false
+		const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
 
 		const sharedMessageProps: ClineSayTool = {
 			tool: fileExists ? "editedExistingFile" : "newFileCreated",
-			path: getReadablePath(task.cwd, relPath),
-			content: newContent,
+			path: getReadablePath(task.cwd, relPath!),
+			content: newContent || "",
 			isOutsideWorkspace,
 			isProtected: isWriteProtected,
 		}
@@ -328,14 +286,16 @@ export class WriteToFileTool extends BaseTool<"write_to_file"> {
 		const partialMessage = JSON.stringify(sharedMessageProps)
 		await task.ask("tool", partialMessage, block.partial).catch(() => {})
 
-		if (!task.diffViewProvider.isEditing) {
-			await task.diffViewProvider.open(relPath)
-		}
+		if (newContent) {
+			if (!task.diffViewProvider.isEditing) {
+				await task.diffViewProvider.open(relPath!)
+			}
 
-		await task.diffViewProvider.update(
-			everyLineHasLineNumbers(newContent) ? stripLineNumbers(newContent) : newContent,
-			false,
-		)
+			await task.diffViewProvider.update(
+				everyLineHasLineNumbers(newContent) ? stripLineNumbers(newContent) : newContent,
+				false,
+			)
+		}
 	}
 }
 

@@ -38,7 +38,7 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 
 	async execute(params: ExecuteCommandParams, task: Task, callbacks: ToolCallbacks): Promise<void> {
 		const { command, cwd: customCwd } = params
-		const { handleError, pushToolResult, askApproval, removeClosingTag } = callbacks
+		const { handleError, pushToolResult, askApproval, removeClosingTag, toolProtocol } = callbacks
 
 		try {
 			if (!command) {
@@ -52,7 +52,7 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 
 			if (ignoredFileAttemptedToAccess) {
 				await task.say("rooignore_error", ignoredFileAttemptedToAccess)
-				pushToolResult(formatResponse.toolError(formatResponse.rooIgnoreError(ignoredFileAttemptedToAccess)))
+				pushToolResult(formatResponse.rooIgnoreError(ignoredFileAttemptedToAccess, toolProtocol))
 				return
 			}
 
@@ -115,6 +115,9 @@ export class ExecuteCommandTool extends BaseTool<"execute_command"> {
 				const status: CommandExecutionStatus = { executionId, status: "fallback" }
 				provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 				await task.say("shell_integration_warning")
+
+				// Invalidate pending ask from first execution to prevent race condition
+				task.supersedePendingAsk()
 
 				if (error instanceof ShellIntegrationError) {
 					const [rejected, result] = await executeCommandInTerminal(task, {
@@ -291,6 +294,7 @@ export async function executeCommandInTerminal(
 				const status: CommandExecutionStatus = { executionId, status: "timeout" }
 				provider?.postMessageToWebview({ type: "commandExecutionStatus", text: JSON.stringify(status) })
 				await task.say("error", t("common:errors:command_timeout", { seconds: commandExecutionTimeoutSeconds }))
+				task.didToolFailInCurrentTurn = true
 				task.terminalProcess = undefined
 
 				return [

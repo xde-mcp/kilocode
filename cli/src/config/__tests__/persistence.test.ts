@@ -24,6 +24,15 @@ vi.mock("../../services/logs.js", () => ({
 	},
 }))
 
+// Mock env-config to control ephemeral mode behavior
+vi.mock("../env-config.js", async () => {
+	const actual = await vi.importActual<typeof import("../env-config.js")>("../env-config.js")
+	return {
+		...actual,
+		isEphemeralMode: vi.fn(() => false), // Default to false, tests can override
+	}
+})
+
 // Mock fs/promises to handle schema.json reads
 vi.mock("fs/promises", async () => {
 	const actual = await vi.importActual<typeof import("fs/promises")>("fs/promises")
@@ -180,6 +189,64 @@ describe("Config Persistence", () => {
 			expect(result.validation.valid).toBe(false)
 			expect(result.validation.errors).toBeDefined()
 			expect(result.validation.errors!.length).toBeGreaterThan(0)
+		})
+
+		it("should return default config when config file is empty", async () => {
+			// Create an empty config file
+			await ensureConfigDir()
+			await fs.writeFile(TEST_CONFIG_FILE, "")
+
+			// Verify file exists
+			const exists = await configExists()
+			expect(exists).toBe(true)
+
+			// Load config - should return default config instead of throwing
+			const result = await loadConfig()
+			expect(result.config).toEqual(DEFAULT_CONFIG)
+			// Default config has empty credentials, so validation should fail
+			expect(result.validation.valid).toBe(false)
+		})
+
+		it("should return default config when config file contains only whitespace", async () => {
+			// Create a config file with only whitespace
+			await ensureConfigDir()
+			await fs.writeFile(TEST_CONFIG_FILE, "   \n\t  \n  ")
+
+			// Verify file exists
+			const exists = await configExists()
+			expect(exists).toBe(true)
+
+			// Load config - should return default config instead of throwing
+			const result = await loadConfig()
+			expect(result.config).toEqual(DEFAULT_CONFIG)
+		})
+
+		it("should return default config when config file contains invalid JSON", async () => {
+			// Create a config file with invalid JSON
+			await ensureConfigDir()
+			await fs.writeFile(TEST_CONFIG_FILE, '{ "version": "1.0.0", invalid json }')
+
+			// Verify file exists
+			const exists = await configExists()
+			expect(exists).toBe(true)
+
+			// Load config - should return default config instead of throwing
+			const result = await loadConfig()
+			expect(result.config).toEqual(DEFAULT_CONFIG)
+		})
+
+		it("should return default config when config file is truncated JSON", async () => {
+			// Create a config file with truncated JSON (simulating interrupted write)
+			await ensureConfigDir()
+			await fs.writeFile(TEST_CONFIG_FILE, '{ "version": "1.0.0", "mode": "code"')
+
+			// Verify file exists
+			const exists = await configExists()
+			expect(exists).toBe(true)
+
+			// Load config - should return default config instead of throwing
+			const result = await loadConfig()
+			expect(result.config).toEqual(DEFAULT_CONFIG)
 		})
 	})
 
@@ -356,6 +423,114 @@ describe("Config Persistence", () => {
 
 			const token = getKiloToken(config)
 			expect(token).toBeNull()
+		})
+	})
+
+	describe("ephemeral mode", () => {
+		it("should not write config file when in ephemeral mode", async () => {
+			// Import the mocked module to control ephemeral mode
+			const envConfig = await import("../env-config.js")
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(true)
+
+			const testConfig: CLIConfig = {
+				version: "1.0.0",
+				mode: "code",
+				telemetry: false,
+				provider: "test",
+				providers: [
+					{
+						id: "test",
+						provider: "kilocode",
+						kilocodeToken: "env-token-should-not-be-saved",
+						kilocodeModel: "test-model",
+					},
+				],
+			}
+
+			// This should NOT create a file because we're in ephemeral mode
+			await saveConfig(testConfig)
+
+			// Verify file was NOT created
+			const exists = await configExists()
+			expect(exists).toBe(false)
+
+			// Reset mock
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(false)
+		})
+
+		it("should write config file when not in ephemeral mode", async () => {
+			// Import the mocked module to control ephemeral mode
+			const envConfig = await import("../env-config.js")
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(false)
+
+			const testConfig: CLIConfig = {
+				version: "1.0.0",
+				mode: "code",
+				telemetry: false,
+				provider: "test",
+				providers: [
+					{
+						id: "test",
+						provider: "kilocode",
+						kilocodeToken: "real-token-should-be-saved",
+						kilocodeModel: "test-model",
+					},
+				],
+			}
+
+			// This should create a file because we're NOT in ephemeral mode
+			await saveConfig(testConfig)
+
+			// Verify file WAS created
+			const exists = await configExists()
+			expect(exists).toBe(true)
+
+			// Verify content was written correctly
+			const content = await fs.readFile(TEST_CONFIG_FILE, "utf-8")
+			const parsed = JSON.parse(content)
+			expect(parsed.providers[0].kilocodeToken).toBe("real-token-should-be-saved")
+		})
+
+		it("should not persist merged config during loadConfig when in ephemeral mode", async () => {
+			// Import the mocked module to control ephemeral mode
+			const envConfig = await import("../env-config.js")
+
+			// First, create a config file while NOT in ephemeral mode
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(false)
+
+			const initialConfig: CLIConfig = {
+				version: "1.0.0",
+				mode: "code",
+				telemetry: true,
+				provider: "test",
+				providers: [
+					{
+						id: "test",
+						provider: "kilocode",
+						kilocodeToken: "original-token-1234567890",
+						kilocodeModel: "test-model",
+					},
+				],
+				autoApproval: DEFAULT_CONFIG.autoApproval,
+				theme: "dark",
+				customThemes: {},
+			}
+			await saveConfig(initialConfig)
+
+			// Now switch to ephemeral mode
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(true)
+
+			// Load the config - this would normally trigger a save after merging
+			const result = await loadConfig()
+			expect(result.config.providers[0]).toHaveProperty("kilocodeToken", "original-token-1234567890")
+
+			// Verify the file still has the original content (not re-saved in ephemeral mode)
+			const content = await fs.readFile(TEST_CONFIG_FILE, "utf-8")
+			const parsed = JSON.parse(content)
+			expect(parsed.providers[0].kilocodeToken).toBe("original-token-1234567890")
+
+			// Reset mock
+			vi.mocked(envConfig.isEphemeralMode).mockReturnValue(false)
 		})
 	})
 })

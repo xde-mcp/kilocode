@@ -1,9 +1,11 @@
+import { type ClineSayTool } from "@roo-code/types"
+
 import { Task } from "../task/Task"
 import { fetchInstructions } from "../prompts/instructions/instructions"
-import { ClineSayTool } from "../../shared/ExtensionMessage"
 import { formatResponse } from "../prompts/responses"
-import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
+
+import { BaseTool, ToolCallbacks } from "./BaseTool"
 
 interface FetchInstructionsParams {
 	task: string
@@ -19,13 +21,14 @@ export class FetchInstructionsTool extends BaseTool<"fetch_instructions"> {
 	}
 
 	async execute(params: FetchInstructionsParams, task: Task, callbacks: ToolCallbacks): Promise<void> {
-		const { handleError, pushToolResult, askApproval } = callbacks
+		const { handleError, pushToolResult, askApproval, toolProtocol } = callbacks
 		const { task: taskParam } = params
 
 		try {
 			if (!taskParam) {
 				task.consecutiveMistakeCount++
 				task.recordToolError("fetch_instructions")
+				task.didToolFailInCurrentTurn = true
 				pushToolResult(await task.sayAndCreateMissingParamError("fetch_instructions", "task"))
 				return
 			}

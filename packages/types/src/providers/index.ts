@@ -1,4 +1,5 @@
 export * from "./anthropic.js"
+export * from "./baseten.js"
 export * from "./bedrock.js"
 export * from "./cerebras.js"
 export * from "./chutes.js"
@@ -9,13 +10,12 @@ export * from "./featherless.js"
 export * from "./fireworks.js"
 export * from "./gemini.js"
 // kilocode_change start
-export * from "./gemini-cli.js"
 export * from "./ovhcloud.js"
 export * from "./synthetic.js"
 export * from "./inception.js"
 export * from "./minimax.js"
-// kilocode_change end
 export * from "./glama.js"
+// kilocode_change end
 export * from "./groq.js"
 export * from "./huggingface.js"
 export * from "./io-intelligence.js"
@@ -26,6 +26,8 @@ export * from "./moonshot.js"
 export * from "./nano-gpt.js" // kilocode_change
 export * from "./ollama.js"
 export * from "./openai.js"
+export * from "./openai-codex.js"
+export * from "./openai-codex-rate-limits.js"
 export * from "./openrouter.js"
 export * from "./qwen-code.js"
 export * from "./requesty.js"
@@ -41,6 +43,7 @@ export * from "./deepinfra.js"
 export * from "./minimax.js"
 
 import { anthropicDefaultModelId } from "./anthropic.js"
+import { basetenDefaultModelId } from "./baseten.js"
 import { bedrockDefaultModelId } from "./bedrock.js"
 import { cerebrasDefaultModelId } from "./cerebras.js"
 import { chutesDefaultModelId } from "./chutes.js"
@@ -50,12 +53,13 @@ import { doubaoDefaultModelId } from "./doubao.js"
 import { featherlessDefaultModelId } from "./featherless.js"
 import { fireworksDefaultModelId } from "./fireworks.js"
 import { geminiDefaultModelId } from "./gemini.js"
-import { glamaDefaultModelId } from "./glama.js"
+import { glamaDefaultModelId } from "./glama.js" // kilocode_change
 import { groqDefaultModelId } from "./groq.js"
 import { ioIntelligenceDefaultModelId } from "./io-intelligence.js"
 import { litellmDefaultModelId } from "./lite-llm.js"
 import { mistralDefaultModelId } from "./mistral.js"
 import { moonshotDefaultModelId } from "./moonshot.js"
+import { openAiCodexDefaultModelId } from "./openai-codex.js"
 import { openRouterDefaultModelId } from "./openrouter.js"
 import { qwenCodeDefaultModelId } from "./qwen-code.js"
 import { requestyDefaultModelId } from "./requesty.js"
@@ -87,8 +91,10 @@ export function getProviderDefaultModelId(
 			return openRouterDefaultModelId
 		case "requesty":
 			return requestyDefaultModelId
+		// kilocode_change start
 		case "glama":
 			return glamaDefaultModelId
+		// kilocode_change end
 		case "unbound":
 			return unboundDefaultModelId
 		case "litellm":
@@ -101,6 +107,8 @@ export function getProviderDefaultModelId(
 			return "meta-llama/Llama-3.3-70B-Instruct"
 		case "chutes":
 			return chutesDefaultModelId
+		case "baseten":
+			return basetenDefaultModelId
 		case "bedrock":
 			return bedrockDefaultModelId
 		case "vertex":
@@ -119,6 +127,10 @@ export function getProviderDefaultModelId(
 			return options?.isChina ? mainlandZAiDefaultModelId : internationalZAiDefaultModelId
 		case "openai-native":
 			return "gpt-4o" // Based on openai-native patterns
+		case "openai-responses": // kilocode_change
+			return "gpt-4o" // OpenAI-compatible Responses API // kilocode_change
+		case "openai-codex":
+			return openAiCodexDefaultModelId
 		case "mistral":
 			return mistralDefaultModelId
 		case "openai":
@@ -150,7 +162,6 @@ export function getProviderDefaultModelId(
 		case "vercel-ai-gateway":
 			return vercelAiGatewayDefaultModelId
 		case "anthropic":
-		case "gemini-cli":
 		case "human-relay":
 		case "fake-ai":
 		default:

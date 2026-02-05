@@ -1,7 +1,7 @@
 {
 	"extension": {
 		"name": "Kilo Code",
-		"description": "Open-Source-KI-Codierungsassistent zum Planen, Erstellen und Korrigieren von Code."
+		"description": "Open-Source-KI-Coding-Agent, der Code aus natürlicher Sprache generiert, Aufgaben automatisiert und Terminal-Befehle ausführt. Mit Inline-Autovervollständigung, Browser-Automatisierung, automatischem Refactoring und benutzerdefinierten Modi für Planung, Programmierung und Debugging. Unterstützt über 500 KI-Modelle, darunter Claude (Anthropic), Gemini, Grok, GPT, Codex und GLM."
 	},
 	"number_format": {
 		"thousand_suffix": "k",
@@ -64,7 +64,7 @@
 		"custom_storage_path_unusable": "Benutzerdefinierter Speicherpfad \"{{path}}\" ist nicht verwendbar, Standardpfad wird verwendet",
 		"cannot_access_path": "Zugriff auf Pfad {{path}} nicht möglich: {{error}}",
 		"settings_import_failed": "Fehler beim Importieren der Einstellungen: {{error}}.",
-		"mistake_limit_guidance": "Dies kann auf einen Fehler im Denkprozess des Modells oder die Unfähigkeit hinweisen, ein Tool richtig zu verwenden, was durch Benutzerführung behoben werden kann (z.B. \"Versuche, die Aufgabe in kleinere Schritte zu unterteilen\").",
+		"mistake_limit_guidance": "Dies kann auf einen Fehler im Denkprozess des Modells oder die Unfähigkeit hinweisen, ein Tool richtig zu verwenden. Versuche Folgendes:\n\n• Verwende ein intelligenteres Modell oder einfach ein anderes Modell (jedes Modell hat seine eigenen Schwächen)\n• Reduziere die Menge an Kontext (vereinfache den Prompt für das LLM)\n• Gib zusätzliche Anweisungen, die dem LLM helfen (z. B. \"Versuche, die Aufgabe in kleinere Schritte zu unterteilen\")",
 		"violated_organization_allowlist": "Aufgabe konnte nicht ausgeführt werden: Das aktuelle Profil ist nicht kompatibel mit den Einstellungen deiner Organisation",
 		"condense_failed": "Fehler beim Verdichten des Kontexts",
 		"condense_not_enough_messages": "Nicht genügend Nachrichten zum Verdichten des Kontexts von {{prevContextTokens}} Token. Mindestens {{minimumMessageCount}} Nachrichten sind erforderlich, aber nur {{messageCount}} sind verfügbar.",
@@ -99,18 +99,7 @@
 			"errorOutput": "Fehlerausgabe: {{output}}",
 			"processExitedWithError": "Claude Code Prozess wurde mit Code {{exitCode}} beendet. Fehlerausgabe: {{output}}",
 			"stoppedWithReason": "Claude Code wurde mit Grund gestoppt: {{reason}}",
-			"apiKeyModelPlanMismatch": "API-Schlüssel und Abonnement-Pläne erlauben verschiedene Modelle. Stelle sicher, dass das ausgewählte Modell in deinem Plan enthalten ist.",
-			"notFound": "Claude Code ausführbare Datei '{{claudePath}}' nicht gefunden.\n\nBitte installiere Claude Code CLI:\n1. Besuche {{installationUrl}} um Claude Code herunterzuladen\n2. Folge den Installationsanweisungen für dein Betriebssystem\n3. Stelle sicher, dass der 'claude' Befehl in deinem PATH verfügbar ist\n4. Alternativ konfiguriere einen benutzerdefinierten Pfad in den Kilo Code-Einstellungen unter 'Claude Code Pfad'\n\nUrsprünglicher Fehler: {{originalError}}"
-		},
-		"geminiCli": {
-			"oauthLoadFailed": "Fehler beim Laden der OAuth-Anmeldedaten. Bitte authentifiziere dich zuerst: {{error}}",
-			"tokenRefreshFailed": "Fehler beim Aktualisieren des OAuth-Tokens: {{error}}",
-			"onboardingTimeout": "Onboarding-Vorgang nach 60 Sekunden abgebrochen. Bitte versuche es später erneut.",
-			"projectDiscoveryFailed": "Projekt-ID konnte nicht ermittelt werden. Stelle sicher, dass du mit 'gemini auth' authentifiziert bist.",
-			"rateLimitExceeded": "Anfragenlimit überschritten. Die Limits des kostenlosen Tarifs wurden erreicht.",
-			"badRequest": "Ungültige Anfrage: {{details}}",
-			"apiError": "Gemini CLI API-Fehler: {{error}}",
-			"completionError": "Gemini CLI Vervollständigungsfehler: {{error}}"
+			"apiKeyModelPlanMismatch": "API-Schlüssel und Abonnement-Pläne erlauben verschiedene Modelle. Stelle sicher, dass das ausgewählte Modell in deinem Plan enthalten ist."
 		},
 		"message": {
 			"no_active_task_to_delete": "Keine aktive Aufgabe, aus der Nachrichten gelöscht werden können",
@@ -124,7 +113,11 @@
 		"gemini": {
 			"generate_stream": "Fehler beim Generieren des Kontext-Streams von Gemini: {{error}}",
 			"generate_complete_prompt": "Fehler bei der Vervollständigung durch Gemini: {{error}}",
-			"sources": "Quellen:"
+			"sources": "Quellen:",
+			"thinking_complete_no_output": "(Denken abgeschlossen, aber es wurde keine Ausgabe generiert.)",
+			"thinking_complete_truncated": "(Denken abgeschlossen, aber die Ausgabe wurde aufgrund des Token-Limits gekürzt.)",
+			"thinking_complete_safety": "(Denken abgeschlossen, aber die Ausgabe wurde aufgrund von Sicherheitseinstellungen blockiert.)",
+			"thinking_complete_recitation": "(Denken abgeschlossen, aber die Ausgabe wurde aufgrund der Rezitationsprüfung blockiert.)"
 		},
 		"cerebras": {
 			"authenticationFailed": "Cerebras API-Authentifizierung fehlgeschlagen. Bitte überprüfe, ob dein API-Schlüssel gültig und nicht abgelaufen ist.",
@@ -141,8 +134,27 @@
 		"roo": {
 			"authenticationRequired": "Roo-Anbieter erfordert Cloud-Authentifizierung. Bitte melde dich bei Roo Code Cloud an."
 		},
+		"openAiCodex": {
+			"notAuthenticated": "Nicht bei OpenAI Codex authentifiziert. Bitte melde dich über den OpenAI Codex OAuth-Flow an.",
+			"invalidRequest": "Ungültige Anfrage an die Codex-API. Bitte überprüfe deine Eingabeparameter.",
+			"authenticationFailed": "Authentifizierung fehlgeschlagen. Bitte authentifiziere dich erneut bei OpenAI Codex.",
+			"accessDenied": "Zugriff verweigert. Dein ChatGPT-Abonnement enthält möglicherweise keinen Codex-Zugang.",
+			"endpointNotFound": "Codex-API-Endpunkt nicht gefunden.",
+			"rateLimitExceeded": "Ratenlimit überschritten. Bitte versuche es später erneut.",
+			"serviceError": "OpenAI Codex Dienstfehler. Bitte versuche es später erneut.",
+			"genericError": "Codex-API-Fehler ({{status}})",
+			"noResponseBody": "Codex-API-Fehler: Kein Antworttext",
+			"connectionFailed": "Verbindung zur Codex-API fehlgeschlagen: {{message}}",
+			"unexpectedConnectionError": "Unerwarteter Fehler beim Verbinden mit der Codex-API",
+			"apiError": "Codex-API-Fehler: {{message}}",
+			"responseFailed": "Antwort fehlgeschlagen: {{message}}",
+			"streamProcessingError": "Fehler beim Verarbeiten des Antwort-Streams: {{message}}",
+			"unexpectedStreamError": "Unerwarteter Fehler beim Verarbeiten des Antwort-Streams",
+			"completionError": "OpenAI Codex Vervollständigungsfehler: {{message}}"
+		},
 		"api": {
-			"invalidKeyInvalidChars": "API-Schlüssel enthält ungültige Zeichen."
+			"invalidKeyInvalidChars": "API-Schlüssel enthält ungültige Zeichen.",
+			"apiRequestFailed": "API-Anfrage fehlgeschlagen ({{status}})"
 		},
 		"manual_url_empty": "Bitte gib eine gültige Callback-URL ein",
 		"manual_url_no_query": "Ungültige Callback-URL: Query-Parameter fehlen",
@@ -168,6 +180,7 @@
 		"image_saved": "Bild gespeichert unter {{path}}",
 		"organization_share_link_copied": "Organisations-Freigabelink in die Zwischenablage kopiert!",
 		"public_share_link_copied": "Öffentlicher Freigabelink in die Zwischenablage kopiert!",
+		"session_share_link_copied_with_url": "Sitzung geteilt! Link in die Zwischenablage kopiert: {{url}}",
 		"mode_exported": "Modus '{{mode}}' erfolgreich exportiert",
 		"mode_imported": "Modus erfolgreich importiert"
 	},
@@ -190,7 +203,8 @@
 	},
 	"interruption": {
 		"responseInterruptedByUser": "Antwort vom Benutzer unterbrochen",
-		"responseInterruptedByApiError": "Antwort durch API-Fehler unterbrochen"
+		"responseInterruptedByApiError": "Antwort durch API-Fehler unterbrochen",
+		"streamTerminatedByProvider": "Der Anbieter hat die Anfrage beendet"
 	},
 	"storage": {
 		"prompt_custom_path": "Gib den benutzerdefinierten Speicherpfad für den Gesprächsverlauf ein, leer lassen für Standardspeicherort",
@@ -205,12 +219,7 @@
 	"settings": {
 		"providers": {
 			"groqApiKey": "Groq API-Schlüssel",
-			"getGroqApiKey": "Groq API-Schlüssel erhalten",
-			"claudeCode": {
-				"pathLabel": "Claude Code Pfad",
-				"description": "Optionaler Pfad zu deiner Claude Code CLI. Standardmäßig 'claude', falls nicht festgelegt.",
-				"placeholder": "Standard: claude"
-			}
+			"getGroqApiKey": "Groq API-Schlüssel erhalten"
 		}
 	},
 	"customModes": {
@@ -260,7 +269,7 @@
 	},
 	"docsLink": {
 		"label": "Docs",
-		"url": "https://kilocode.ai/docs"
+		"url": "https://kilo.ai/docs"
 	},
 	"errorBoundary": {
 		"title": "Fehler",

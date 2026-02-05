@@ -1,20 +1,33 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
+import { z } from "zod"
 
 import {
+	type ModelRecord,
+	ApiProviderError,
 	openRouterDefaultModelId,
 	openRouterDefaultModelInfo,
 	OPENROUTER_DEFAULT_PROVIDER_NAME,
 	OPEN_ROUTER_PROMPT_CACHING_MODELS,
 	DEEP_SEEK_DEFAULT_TEMPERATURE,
 } from "@roo-code/types"
+import { TelemetryService } from "@roo-code/telemetry"
 
-import type { ApiHandlerOptions, ModelRecord } from "../../shared/api"
+import { NativeToolCallParser } from "../../core/assistant-message/NativeToolCallParser"
 
-import { convertToOpenAiMessages } from "../transform/openai-format"
+import type { ApiHandlerOptions } from "../../shared/api"
+
+import {
+	convertToOpenAiMessages,
+	sanitizeGeminiMessages,
+	consolidateReasoningDetails,
+} from "../transform/openai-format"
+import { normalizeMistralToolCallId } from "../transform/mistral-format"
+import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { TOOL_PROTOCOL } from "@roo-code/types"
 import { ApiStreamChunk } from "../transform/stream"
 import { convertToR1Format } from "../transform/r1-format"
-import { addCacheBreakpoints as addAnthropicCacheBreakpoints } from "../transform/caching/anthropic"
+import { addAnthropicCacheBreakpoints } from "../transform/caching/kilocode" // kilocode_change: own implementation that supports tool results
 import { addCacheBreakpoints as addGeminiCacheBreakpoints } from "../transform/caching/gemini"
 import type { OpenRouterReasoningParams } from "../transform/reasoning"
 import { getModelParams } from "../transform/model-params"
@@ -29,47 +42,22 @@ import { verifyFinishReason } from "./kilocode/verifyFinishReason"
 // kilocode_change start
 type OpenRouterProviderParams = {
 	order?: string[]
-	only?: string[]
 	allow_fallbacks?: boolean
 	data_collection?: "allow" | "deny"
 	sort?: "price" | "throughput" | "latency"
 	zdr?: boolean
 }
 
-import { safeJsonParse } from "../../shared/safeJsonParse"
+import { safeJsonParse } from "@roo-code/core" // kilocode_change
 import { isAnyRecognizedKiloCodeError } from "../../shared/kilocode/errorUtils"
-import { ReasoningDetail } from "../transform/kilocode/reasoning-details"
+import { OpenAIError } from "openai"
 // kilocode_change end
 
 import type { ApiHandlerCreateMessageMetadata, SingleCompletionHandler } from "../index"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-
-// Image generation types
-interface ImageGenerationResponse {
-	choices?: Array<{
-		message?: {
-			content?: string
-			images?: Array<{
-				type?: string
-				image_url?: {
-					url?: string
-				}
-			}>
-		}
-	}>
-	error?: {
-		message?: string
-		type?: string
-		code?: string
-	}
-}
-
-export interface ImageGenerationResult {
-	success: boolean
-	imageData?: string
-	imageFormat?: string
-	error?: string
-}
+import { generateImageWithProvider, ImageGenerationResult } from "./utils/image-generation"
+import { KiloCodeChunkSchema } from "./kilocode/chunk-schema"
+import { applyRouterToolPreferences } from "./utils/router-tool-preferences"
 
 // Add custom interface for OpenRouter params.
 type OpenRouterChatCompletionParams = OpenAI.Chat.ChatCompletionCreateParams & {
@@ -78,6 +66,77 @@ type OpenRouterChatCompletionParams = OpenAI.Chat.ChatCompletionCreateParams & {
 	// https://openrouter.ai/docs/use-cases/reasoning-tokens
 	reasoning?: OpenRouterReasoningParams
 	provider?: OpenRouterProviderParams // kilocode_change
+}
+
+// Zod schema for OpenRouter error response structure (for caught exceptions)
+const OpenRouterErrorResponseSchema = z.object({
+	error: z
+		.object({
+			message: z.string().optional(),
+			code: z.number().optional(),
+			metadata: z
+				.object({
+					raw: z.string().optional(),
+				})
+				.optional(),
+		})
+		.optional(),
+})
+
+// OpenRouter error structure that may include error.metadata.raw with actual upstream error
+// This is for caught exceptions which have the error wrapped in an "error" property
+interface OpenRouterErrorResponse {
+	error?: {
+		message?: string
+		code?: number
+		metadata?: { raw?: string }
+	}
+}
+
+// Direct error object structure (for streaming errors passed directly)
+interface OpenRouterError {
+	message?: string
+	code?: number
+	metadata?: { raw?: string }
+}
+
+/**
+ * Helper function to parse and extract error message from metadata.raw
+ * metadata.raw is often a JSON encoded string that may contain .message or .error fields
+ * Example structures:
+ * - {"message": "Error text"}
+ * - {"error": "Error text"}
+ * - {"error": {"message": "Error text"}}
+ * - {"type":"error","error":{"type":"invalid_request_error","message":"tools: Tool names must be unique."}}
+ */
+function extractErrorFromMetadataRaw(raw: string | undefined): string | undefined {
+	if (!raw) {
+		return undefined
+	}
+
+	try {
+		const parsed = JSON.parse(raw)
+		// Check for common error message fields
+		if (typeof parsed === "object" && parsed !== null) {
+			// Check for direct message field
+			if (typeof parsed.message === "string") {
+				return parsed.message
+			}
+			// Check for nested error.message field (e.g., Anthropic error format)
+			if (typeof parsed.error === "object" && parsed.error !== null && typeof parsed.error.message === "string") {
+				return parsed.error.message
+			}
+			// Check for error as a string
+			if (typeof parsed.error === "string") {
+				return parsed.error
+			}
+		}
+		// If we can't extract a specific field, return the raw string
+		return raw
+	} catch {
+		// If it's not valid JSON, return as-is
+		return raw
+	}
 }
 
 // See `OpenAI.Chat.Completions.ChatCompletionChunk["usage"]`
@@ -112,6 +171,7 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		return "OpenRouter" as const
 	}
 	// kilocode_change end
+	private currentReasoningDetails: any[] = []
 
 	constructor(options: ApiHandlerOptions) {
 		super()
@@ -167,9 +227,8 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			return {
 				provider: {
 					order: [this.options.openRouterSpecificProvider],
-					only: [this.options.openRouterSpecificProvider],
-					allow_fallbacks: false,
 					data_collection: this.options.openRouterProviderDataCollection,
+					sort: this.options.openRouterProviderSort,
 					zdr: this.options.openRouterZdr,
 				},
 			}
@@ -191,7 +250,52 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 	}
 	// kilocode_change end
 
+	getReasoningDetails(): any[] | undefined {
+		return this.currentReasoningDetails.length > 0 ? this.currentReasoningDetails : undefined
+	}
+
+	/**
+	 * Handle OpenRouter streaming error response and report to telemetry.
+	 * OpenRouter may include metadata.raw with the actual upstream provider error.
+	 * @param error The error object (not wrapped - receives the error directly)
+	 */
+	private handleStreamingError(error: OpenRouterError, modelId: string, operation: string): never {
+		const rawString = error?.metadata?.raw
+		const parsedError = extractErrorFromMetadataRaw(rawString)
+		const rawErrorMessage = parsedError || error?.message || "Unknown error"
+
+		const apiError = Object.assign(
+			new ApiProviderError(rawErrorMessage, this.providerName, modelId, operation, error?.code),
+			{ status: error?.code, error },
+		)
+
+		TelemetryService.instance.captureException(apiError)
+
+		throw new Error(`OpenRouter API Error ${error?.code}: ${rawErrorMessage}`)
+	}
+
+	// kilocode_change start
+	// the comment below seems incorrect, errors in the stream are still thrown as exceptions
 	override async *createMessage(
+		systemPrompt: string,
+		messages: Anthropic.Messages.MessageParam[],
+		metadata?: ApiHandlerCreateMessageMetadata,
+	): AsyncGenerator<ApiStreamChunk> {
+		try {
+			yield* this.createMessage_implementationRenamedForKilocode(systemPrompt, messages, metadata)
+		} catch (error) {
+			if (
+				error instanceof OpenAIError &&
+				(this.providerName !== "KiloCode" || !isAnyRecognizedKiloCodeError(error))
+			) {
+				throw new Error(makeOpenRouterErrorReadable(error))
+			}
+			throw error
+		}
+	}
+	// kilocode_change end
+
+	private async *createMessage_implementationRenamedForKilocode(
 		systemPrompt: string,
 		messages: Anthropic.Messages.MessageParam[],
 		metadata?: ApiHandlerCreateMessageMetadata,
@@ -200,11 +304,15 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 
 		let { id: modelId, maxTokens, temperature, topP, reasoning } = model
 
-		// OpenRouter sends reasoning tokens by default for Gemini 2.5 Pro
-		// Preview even if you don't request them. This is not the default for
+		// Reset reasoning_details accumulator for this request
+		this.currentReasoningDetails = []
+
+		// OpenRouter sends reasoning tokens by default for Gemini 2.5 Pro models
+		// even if you don't request them. This is not the default for
 		// other providers (including Gemini), so we need to explicitly disable
-		// i We should generalize this using the logic in `getModelParams`, but
-		// this is easier for now.
+		// them unless the user has explicitly configured reasoning.
+		// Note: Gemini 3 models use reasoning_details format with thought signatures,
+		// but we handle this via skip_thought_signature_validator injection below.
 		if (
 			(modelId === "google/gemini-2.5-pro-preview" || modelId === "google/gemini-2.5-pro") &&
 			typeof reasoning === "undefined"
@@ -213,9 +321,14 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 		}
 
 		// Convert Anthropic messages to OpenAI format.
+		// Pass normalization function for Mistral compatibility (requires 9-char alphanumeric IDs)
+		const isMistral = modelId.toLowerCase().includes("mistral")
 		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
 			{ role: "system", content: systemPrompt },
-			...convertToOpenAiMessages(messages),
+			...convertToOpenAiMessages(
+				messages,
+				isMistral ? { normalizeToolCallId: normalizeMistralToolCallId } : undefined,
+			),
 		]
 
 		// DeepSeek highly recommends using user instead of system role.
@@ -223,15 +336,73 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			openAiMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
 		}
 
-		// kilocode_change start
-		if (modelId.startsWith("google/gemini")) {
-			addGeminiCacheBreakpoints(systemPrompt, openAiMessages)
-		} else if (modelId.startsWith("anthropic/claude") || OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)) {
-			addAnthropicCacheBreakpoints(systemPrompt, openAiMessages)
+		// Process reasoning_details when switching models to Gemini for native tool call compatibility
+		// IMPORTANT: Use metadata.toolProtocol if provided (task's locked protocol) for consistency
+		const toolProtocol = resolveToolProtocol(this.options, model.info, metadata?.toolProtocol)
+		const isNativeProtocol = toolProtocol === TOOL_PROTOCOL.NATIVE
+		const isGemini = modelId.startsWith("google/gemini")
+
+		// For Gemini models with native protocol:
+		// 1. Sanitize messages to handle thought signature validation issues.
+		//    This must happen BEFORE fake encrypted block injection to avoid injecting for
+		//    tool calls that will be dropped due to missing/mismatched reasoning_details.
+		// 2. Inject fake reasoning.encrypted block for tool calls without existing encrypted reasoning.
+		//    This is required when switching from other models to Gemini to satisfy API validation.
+		//    Per OpenRouter documentation (conversation with Toven, Nov 2025):
+		//    - Create ONE reasoning_details entry per assistant message with tool calls
+		//    - Set `id` to the FIRST tool call's ID from the tool_calls array
+		//    - Set `data` to "skip_thought_signature_validator" to bypass signature validation
+		//    - Set `index` to 0
+		// See: https://github.com/cline/cline/issues/8214
+		if (isNativeProtocol && isGemini) {
+			// Step 1: Sanitize messages - filter out tool calls with missing/mismatched reasoning_details
+			openAiMessages = sanitizeGeminiMessages(openAiMessages, modelId)
+
+			// Step 2: Inject fake reasoning.encrypted block for tool calls that survived sanitization
+			openAiMessages = openAiMessages.map((msg) => {
+				if (msg.role === "assistant") {
+					const toolCalls = (msg as any).tool_calls as any[] | undefined
+					const existingDetails = (msg as any).reasoning_details as any[] | undefined
+
+					// Only inject if there are tool calls and no existing encrypted reasoning
+					if (toolCalls && toolCalls.length > 0) {
+						const hasEncrypted = existingDetails?.some((d) => d.type === "reasoning.encrypted") ?? false
+
+						if (!hasEncrypted) {
+							// Create ONE fake encrypted block with the FIRST tool call's ID
+							// This is the documented format from OpenRouter for skipping thought signature validation
+							const fakeEncrypted = {
+								type: "reasoning.encrypted",
+								data: "skip_thought_signature_validator",
+								id: toolCalls[0].id,
+								format: "google-gemini-v1",
+								index: 0,
+							}
+
+							return {
+								...msg,
+								reasoning_details: [...(existingDetails ?? []), fakeEncrypted],
+							}
+						}
+					}
+				}
+				return msg
+			})
+		}
+
+		// https://openrouter.ai/docs/features/prompt-caching
+		// TODO: Add a `promptCacheStratey` field to `ModelInfo`.
+		if (
+			modelId.startsWith("anthropic/claude") /* kilocode_change */ ||
+			OPEN_ROUTER_PROMPT_CACHING_MODELS.has(modelId)
+		) {
+			if (modelId.startsWith("google")) {
+				addGeminiCacheBreakpoints(systemPrompt, openAiMessages)
+			} else {
+				addAnthropicCacheBreakpoints(systemPrompt, openAiMessages)
+			}
 		}
 		// kilocode_change end
-
-		const transforms = (this.options.openRouterUseMiddleOutTransform ?? true) ? ["middle-out"] : undefined
 
 		// https://openrouter.ai/docs/transforms
 		const completionParams: OpenRouterChatCompletionParams = {
@@ -243,45 +414,99 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			stream: true,
 			stream_options: { include_usage: true },
 			...this.getProviderParams(), // kilocode_change: original expression was moved into function
-			parallel_tool_calls: false, // Ensure only one tool call at a time
-			...(transforms && { transforms }),
 			...(reasoning && { reasoning }),
-			...(metadata?.tools && { tools: metadata.tools }),
+			...(metadata?.tools && { tools: this.convertToolsForOpenAI(metadata.tools) }),
 			...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
 			verbosity: model.verbosity, // kilocode_change
 		}
 
+		// kilocode_change start
+		const requestOptions = this.customRequestOptions(metadata) ?? { headers: {} }
+		if (modelId.startsWith("anthropic/")) {
+			requestOptions.headers["x-anthropic-beta"] = "fine-grained-tool-streaming-2025-05-14"
+		}
+		// kilocode_change end
+
 		let stream
 		try {
-			stream = await this.client.chat.completions.create(
-				completionParams,
-				this.customRequestOptions(metadata), // kilocode_change
-			)
+			stream = await this.client.chat.completions.create(completionParams, requestOptions)
 		} catch (error) {
 			// kilocode_change start
-			if (this.providerName == "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
+			// KiloCode backend errors are already user-readable and should be handled upstream.
+			if (this.providerName === "KiloCode" && isAnyRecognizedKiloCodeError(error)) {
 				throw error
 			}
-			throw new Error(makeOpenRouterErrorReadable(error))
 			// kilocode_change end
+
+			// Try to parse as OpenRouter error structure using Zod
+			const parseResult = OpenRouterErrorResponseSchema.safeParse(error)
+
+			if (parseResult.success && parseResult.data.error) {
+				const openRouterError = parseResult.data
+				const rawString = openRouterError.error?.metadata?.raw
+				const parsedError = extractErrorFromMetadataRaw(rawString)
+				const rawErrorMessage = parsedError || openRouterError.error?.message || "Unknown error"
+
+				const apiError = Object.assign(
+					new ApiProviderError(
+						rawErrorMessage,
+						this.providerName,
+						modelId,
+						"createMessage",
+						openRouterError.error?.code,
+					),
+					{
+						status: openRouterError.error?.code,
+						error: openRouterError.error,
+					},
+				)
+
+				TelemetryService.instance.captureException(apiError)
+				throw handleOpenAIError(error, this.providerName)
+			} else {
+				// Fallback for non-OpenRouter errors
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				const apiError = new ApiProviderError(errorMessage, this.providerName, modelId, "createMessage")
+				TelemetryService.instance.captureException(apiError)
+				throw handleOpenAIError(error, this.providerName)
+			}
 		}
 
 		let lastUsage: CompletionUsage | undefined = undefined
 		let inferenceProvider: string | undefined // kilocode_change
-		const toolCallAccumulator = new Map<number, { id: string; name: string; arguments: string }>()
+		// Accumulator for reasoning_details FROM the API.
+		// We preserve the original shape of reasoning_details to prevent malformed responses.
+		const reasoningDetailsAccumulator = new Map<
+			string,
+			{
+				type: string
+				text?: string
+				summary?: string
+				data?: string
+				id?: string | null
+				format?: string
+				signature?: string
+				index: number
+			}
+		>()
+
+		// Track whether we've yielded displayable text from reasoning_details.
+		// When reasoning_details has displayable content (reasoning.text or reasoning.summary),
+		// we skip yielding the top-level reasoning field to avoid duplicate display.
+		let hasYieldedReasoningFromDetails = false
 
 		for await (const chunk of stream) {
 			// OpenRouter returns an error object instead of the OpenAI SDK throwing an error.
 			if ("error" in chunk) {
-				const error = chunk.error as { message?: string; code?: number }
-				console.error(`OpenRouter API Error: ${error?.code} - ${error?.message}`)
-				throw new Error(`OpenRouter API Error ${error?.code}: ${error?.message}`)
+				this.handleStreamingError(chunk.error as OpenRouterError, modelId, "createMessage")
 			}
 
 			// kilocode_change start
-			if ("provider" in chunk && typeof chunk.provider === "string") {
-				inferenceProvider = chunk.provider
-			}
+			const kiloCodeChunk = KiloCodeChunkSchema.safeParse(chunk).data
+			inferenceProvider =
+				kiloCodeChunk?.choices?.[0]?.delta?.provider_metadata?.gateway?.routing?.resolvedProvider ??
+				kiloCodeChunk?.provider ??
+				inferenceProvider
 			// kilocode_change end
 
 			verifyFinishReason(chunk.choices[0]) // kilocode_change
@@ -289,43 +514,99 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			const finishReason = chunk.choices[0]?.finish_reason
 
 			if (delta) {
-				if ("reasoning" in delta && delta.reasoning && typeof delta.reasoning === "string") {
-					yield { type: "reasoning", text: delta.reasoning }
+				// Handle reasoning_details array format (used by Gemini 3, Claude, OpenAI o-series, etc.)
+				// See: https://openrouter.ai/docs/use-cases/reasoning-tokens#preserving-reasoning-blocks
+				// Priority: Check for reasoning_details first, as it's the newer format
+				const deltaWithReasoning = delta as typeof delta & {
+					reasoning_details?: Array<{
+						type: string
+						text?: string
+						summary?: string
+						data?: string
+						id?: string | null
+						format?: string
+						signature?: string
+						index?: number
+					}>
 				}
 
-				// kilocode_change start
+				if (deltaWithReasoning.reasoning_details && Array.isArray(deltaWithReasoning.reasoning_details)) {
+					for (const detail of deltaWithReasoning.reasoning_details) {
+						const index = detail.index ?? 0
+						const key = `${detail.type}-${index}`
+						const existing = reasoningDetailsAccumulator.get(key)
 
-				// OpenRouter passes reasoning details that we can pass back unmodified in api requests to preserve reasoning traces for model
-				// See: https://openrouter.ai/docs/use-cases/reasoning-tokens#preserving-reasoning-blocks
-				if (delta && "reasoning_details" in delta && delta.reasoning_details) {
-					yield {
-						type: "reasoning_details",
-						reasoning_details: delta.reasoning_details as ReasoningDetail,
+						if (existing) {
+							// Accumulate text/summary/data for existing reasoning detail
+							if (detail.text !== undefined) {
+								existing.text = (existing.text || "") + detail.text
+							}
+							if (detail.summary !== undefined) {
+								existing.summary = (existing.summary || "") + detail.summary
+							}
+							if (detail.data !== undefined) {
+								existing.data = (existing.data || "") + detail.data
+							}
+							// Update other fields if provided
+							if (detail.id !== undefined) existing.id = detail.id
+							if (detail.format !== undefined) existing.format = detail.format
+							if (detail.signature !== undefined) existing.signature = detail.signature
+						} else {
+							// Start new reasoning detail accumulation
+							reasoningDetailsAccumulator.set(key, {
+								type: detail.type,
+								text: detail.text,
+								summary: detail.summary,
+								data: detail.data,
+								id: detail.id,
+								format: detail.format,
+								signature: detail.signature,
+								index,
+							})
+						}
+
+						// Yield text for display (still fragmented for live streaming)
+						// Only reasoning.text and reasoning.summary have displayable content
+						// reasoning.encrypted is intentionally skipped as it contains redacted content
+						let reasoningText: string | undefined
+						if (detail.type === "reasoning.text" && typeof detail.text === "string") {
+							reasoningText = detail.text
+						} else if (detail.type === "reasoning.summary" && typeof detail.summary === "string") {
+							reasoningText = detail.summary
+						}
+
+						if (reasoningText) {
+							hasYieldedReasoningFromDetails = true
+							yield { type: "reasoning", text: reasoningText }
+						}
 					}
 				}
-				if (delta && "reasoning_content" in delta && typeof delta.reasoning_content === "string") {
-					yield { type: "reasoning", text: delta.reasoning_content }
+
+				// Handle top-level reasoning field for UI display.
+				// Skip if we've already yielded from reasoning_details to avoid duplicate display.
+				if ("reasoning" in delta && delta.reasoning && typeof delta.reasoning === "string") {
+					if (!hasYieldedReasoningFromDetails) {
+						yield { type: "reasoning", text: delta.reasoning }
+					}
+				}
+				// kilocode_change start
+				else if ("reasoning_content" in delta && typeof delta.reasoning_content === "string") {
+					if (!hasYieldedReasoningFromDetails) {
+						yield { type: "reasoning", text: delta.reasoning_content }
+					}
 				}
 				// kilocode_change end
 
 				// Check for tool calls in delta
+				// Emit raw tool call chunks - NativeToolCallParser handles state management
 				if ("tool_calls" in delta && Array.isArray(delta.tool_calls)) {
 					for (const toolCall of delta.tool_calls) {
-						const index = toolCall.index
-						const existing = toolCallAccumulator.get(index)
-
-						if (existing) {
-							// Accumulate arguments for existing tool call
-							if (toolCall.function?.arguments) {
-								existing.arguments += toolCall.function.arguments
-							}
-						} else {
-							// Start new tool call accumulation
-							toolCallAccumulator.set(index, {
-								id: toolCall.id || "",
-								name: toolCall.function?.name || "",
-								arguments: toolCall.function?.arguments || "",
-							})
+						yield {
+							type: "tool_call_partial",
+							index: toolCall.index,
+							id: toolCall.id,
+							name: toolCall.function?.name,
+							arguments: toolCall.function?.arguments,
 						}
 					}
 				}
@@ -335,23 +616,25 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 				}
 			}
 
-			// When finish_reason is 'tool_calls', yield all accumulated tool calls
-			if (finishReason === "tool_calls" && toolCallAccumulator.size > 0) {
-				for (const toolCall of toolCallAccumulator.values()) {
-					yield {
-						type: "tool_call",
-						id: toolCall.id,
-						name: toolCall.name,
-						arguments: toolCall.arguments,
-					}
+			// Process finish_reason to emit tool_call_end events
+			// This ensures tool calls are finalized even if the stream doesn't properly close
+			if (finishReason) {
+				const endEvents = NativeToolCallParser.processFinishReason(finishReason)
+				for (const event of endEvents) {
+					yield event
 				}
-				// Clear accumulator after yielding
-				toolCallAccumulator.clear()
 			}
 
 			if (chunk.usage) {
 				lastUsage = chunk.usage
 			}
+		}
+
+		// After streaming completes, consolidate and store reasoning_details from the API.
+		// This filters out corrupted encrypted blocks (missing `data`) and consolidates by index.
+		if (reasoningDetailsAccumulator.size > 0) {
+			const rawDetails = Array.from(reasoningDetailsAccumulator.values())
+			this.currentReasoningDetails = consolidateReasoningDetails(rawDetails)
 		}
 
 		if (lastUsage) {
@@ -394,6 +677,9 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			info = this.endpoints[this.options.openRouterSpecificProvider]
 		}
 
+		// Apply tool preferences for models accessed through routers (OpenAI, Gemini)
+		info = applyRouterToolPreferences(id, info)
+
 		const isDeepSeekR1 = id.startsWith("deepseek/deepseek-r1") || id === "perplexity/sonar-reasoning"
 
 		const params = getModelParams({
@@ -427,19 +713,54 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			verbosity, // kilocode_change
 		}
 
+		// kilocode_change start
+		const requestOptions = this.customRequestOptions() ?? { headers: {} }
+		if (modelId.startsWith("anthropic/")) {
+			requestOptions.headers["x-anthropic-beta"] = "fine-grained-tool-streaming-2025-05-14"
+		}
+		// kilocode_change end
+
 		let response
+
 		try {
-			response = await this.client.chat.completions.create(
-				completionParams,
-				this.customRequestOptions(), // kilocode_change
-			)
+			response = await this.client.chat.completions.create(completionParams, requestOptions)
 		} catch (error) {
-			throw handleOpenAIError(error, this.providerName)
+			// Try to parse as OpenRouter error structure using Zod
+			const parseResult = OpenRouterErrorResponseSchema.safeParse(error)
+
+			if (parseResult.success && parseResult.data.error) {
+				const openRouterError = parseResult.data
+				const rawString = openRouterError.error?.metadata?.raw
+				const parsedError = extractErrorFromMetadataRaw(rawString)
+				const rawErrorMessage = parsedError || openRouterError.error?.message || "Unknown error"
+
+				const apiError = Object.assign(
+					new ApiProviderError(
+						rawErrorMessage,
+						this.providerName,
+						modelId,
+						"completePrompt",
+						openRouterError.error?.code,
+					),
+					{
+						status: openRouterError.error?.code,
+						error: openRouterError.error,
+					},
+				)
+
+				TelemetryService.instance.captureException(apiError)
+				throw handleOpenAIError(error, this.providerName)
+			} else {
+				// Fallback for non-OpenRouter errors
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				const apiError = new ApiProviderError(errorMessage, this.providerName, modelId, "completePrompt")
+				TelemetryService.instance.captureException(apiError)
+				throw handleOpenAIError(error, this.providerName)
+			}
 		}
 
 		if ("error" in response) {
-			const error = response.error as { message?: string; code?: number }
-			throw new Error(`OpenRouter API Error ${error?.code}: ${error?.message}`)
+			this.handleStreamingError(response.error as OpenRouterError, modelId, "completePrompt")
 		}
 
 		const completion = response as OpenAI.Chat.ChatCompletion
@@ -447,7 +768,8 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 	}
 
 	/**
-	 * Generate an image using OpenRouter's image generation API
+	 * Generate an image using OpenRouter's image generation API (chat completions with modalities)
+	 * Note: OpenRouter only supports the chat completions approach, not the /images/generations endpoint
 	 * @param prompt The text prompt for image generation
 	 * @param model The model to use for generation
 	 * @param apiKey The OpenRouter API key (must be explicitly provided)
@@ -468,108 +790,17 @@ export class OpenRouterHandler extends BaseProvider implements SingleCompletionH
 			}
 		}
 
-		try {
-			const response = await fetch(
-				`${this.options.openRouterBaseUrl || "https://openrouter.ai/api/v1/"}chat/completions`, // kilocode_change: support baseUrl
-				{
-					method: "POST",
-					headers: {
-						// kilocode_change start
-						...DEFAULT_HEADERS,
-						...this.getCustomRequestHeaders(taskId),
-						// kilocode_change end
-						Authorization: `Bearer ${apiKey}`,
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						model,
-						messages: [
-							{
-								role: "user",
-								content: inputImage
-									? [
-											{
-												type: "text",
-												text: prompt,
-											},
-											{
-												type: "image_url",
-												image_url: {
-													url: inputImage,
-												},
-											},
-										]
-									: prompt,
-							},
-						],
-						modalities: ["image", "text"],
-					}),
-				},
-			)
+		const baseURL = this.options.openRouterBaseUrl || "https://openrouter.ai/api/v1"
 
-			if (!response.ok) {
-				const errorText = await response.text()
-				let errorMessage = `Failed to generate image: ${response.status} ${response.statusText}`
-				try {
-					const errorJson = JSON.parse(errorText)
-					if (errorJson.error?.message) {
-						errorMessage = `Failed to generate image: ${errorJson.error.message}`
-					}
-				} catch {
-					// Use default error message
-				}
-				return {
-					success: false,
-					error: errorMessage,
-				}
-			}
-
-			const result: ImageGenerationResponse = await response.json()
-
-			if (result.error) {
-				return {
-					success: false,
-					error: `Failed to generate image: ${result.error.message}`,
-				}
-			}
-
-			// Extract the generated image from the response
-			const images = result.choices?.[0]?.message?.images
-			if (!images || images.length === 0) {
-				return {
-					success: false,
-					error: "No image was generated in the response",
-				}
-			}
-
-			const imageData = images[0]?.image_url?.url
-			if (!imageData) {
-				return {
-					success: false,
-					error: "Invalid image data in response",
-				}
-			}
-
-			// Extract base64 data from data URL
-			const base64Match = imageData.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/)
-			if (!base64Match) {
-				return {
-					success: false,
-					error: "Invalid image format received",
-				}
-			}
-
-			return {
-				success: true,
-				imageData: imageData,
-				imageFormat: base64Match[1],
-			}
-		} catch (error) {
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error occurred",
-			}
-		}
+		// OpenRouter only supports chat completions approach for image generation
+		return generateImageWithProvider({
+			baseURL,
+			authToken: apiKey,
+			model,
+			prompt,
+			inputImage,
+			headers: { ...DEFAULT_HEADERS, ...this.getCustomRequestHeaders(taskId) }, // kilocode_change
+		})
 	}
 }
 
@@ -589,7 +820,7 @@ function makeOpenRouterErrorReadable(error: any) {
 			rawError?.message ??
 			metadata?.raw ??
 			error?.message
-		throw new Error(`${metadata?.provider_name ?? "Provider"} error: ${errorMessage ?? "unknown error"}`)
+		return `${metadata?.provider_name ?? "Provider"} error: ${errorMessage ?? "unknown error"}`
 	}
 
 	try {

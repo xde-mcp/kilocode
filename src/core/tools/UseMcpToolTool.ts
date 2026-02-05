@@ -1,10 +1,11 @@
+import type { ClineAskUseMcpServer, McpExecutionStatus } from "@roo-code/types"
+
 import { Task } from "../task/Task"
 import { formatResponse } from "../prompts/responses"
-import { ClineAskUseMcpServer } from "../../shared/ExtensionMessage"
-import { McpExecutionStatus } from "@roo-code/types"
 import { t } from "../../i18n"
-import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
+
+import { BaseTool, ToolCallbacks } from "./BaseTool"
 
 interface UseMcpToolParams {
 	server_name: string
@@ -35,7 +36,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 	}
 
 	async execute(params: UseMcpToolParams, task: Task, callbacks: ToolCallbacks): Promise<void> {
-		const { askApproval, handleError, pushToolResult } = callbacks
+		const { askApproval, handleError, pushToolResult, toolProtocol } = callbacks
 
 		try {
 			// Validate parameters
@@ -130,6 +131,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 					task.consecutiveMistakeCount++
 					task.recordToolError("use_mcp_tool")
 					await task.say("error", t("mcp:errors.invalidJsonArgument", { toolName: params.tool_name }))
+					task.didToolFailInCurrentTurn = true
 
 					pushToolResult(
 						formatResponse.toolError(
@@ -178,6 +180,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 				task.consecutiveMistakeCount++
 				task.recordToolError("use_mcp_tool")
 				await task.say("error", t("mcp:errors.serverNotFound", { serverName, availableServers }))
+				task.didToolFailInCurrentTurn = true
 
 				pushToolResult(formatResponse.unknownMcpServerError(serverName, availableServersArray))
 				return { isValid: false, availableTools: [] }
@@ -196,6 +199,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 						availableTools: "No tools available",
 					}),
 				)
+				task.didToolFailInCurrentTurn = true
 
 				pushToolResult(formatResponse.unknownMcpToolError(serverName, toolName, []))
 				return { isValid: false, availableTools: [] }
@@ -218,6 +222,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 						availableTools: availableToolNames.join(", "),
 					}),
 				)
+				task.didToolFailInCurrentTurn = true
 
 				pushToolResult(formatResponse.unknownMcpToolError(serverName, toolName, availableToolNames))
 				return { isValid: false, availableTools: availableToolNames }
@@ -240,6 +245,7 @@ export class UseMcpToolTool extends BaseTool<"use_mcp_tool"> {
 							enabledToolNames.length > 0 ? enabledToolNames.join(", ") : "No enabled tools available",
 					}),
 				)
+				task.didToolFailInCurrentTurn = true
 
 				pushToolResult(formatResponse.unknownMcpToolError(serverName, toolName, enabledToolNames))
 				return { isValid: false, availableTools: enabledToolNames }

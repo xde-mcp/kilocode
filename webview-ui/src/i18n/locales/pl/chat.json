@@ -9,6 +9,7 @@
 		"tokens": "Tokeny",
 		"cache": "Pamięć podręczna",
 		"apiCost": "Koszt API",
+		"changes": "Zmiany",
 		"size": "Rozmiar",
 		"contextWindow": "Okno kontekstu",
 		"closeAndStart": "Zamknij zadanie i rozpocznij nowe",
@@ -26,7 +27,9 @@
 		"shareSuccessOrganization": "Link organizacji skopiowany do schowka",
 		"shareSuccessPublic": "Link publiczny skopiowany do schowka",
 		"openInCloud": "Otwórz zadanie w Roo Code Cloud",
-		"openInCloudIntro": "Kontynuuj monitorowanie lub interakcję z Roo z dowolnego miejsca. Zeskanuj, kliknij lub skopiuj, aby otworzyć."
+		"openInCloudIntro": "Kontynuuj monitorowanie lub interakcję z Roo z dowolnego miejsca. Zeskanuj, kliknij lub skopiuj, aby otworzyć.",
+		"openApiHistory": "Otwórz historię API",
+		"openUiHistory": "Otwórz historię UI"
 	},
 	"history": {
 		"title": "Historia"
@@ -86,10 +89,15 @@
 		"title": "Zakończ",
 		"tooltip": "Zakończ bieżące zadanie"
 	},
+	"stop": {
+		"title": "Zatrzymaj",
+		"tooltip": "Zatrzymaj bieżące zadanie"
+	},
 	"cancel": {
 		"title": "Anuluj",
 		"tooltip": "Anuluj bieżącą operację"
 	},
+	"enqueueMessage": "Dodaj wiadomość do kolejki (zostanie wysłana po zakończeniu bieżącego zadania)",
 	"scrollToBottom": "Przewiń do dołu czatu",
 	"about": "Generuj, refaktoryzuj i debuguj kod z pomocą sztucznej inteligencji. Sprawdź naszą <DocsLink>dokumentację</DocsLink>, żeby dowiedzieć się więcej.",
 	"docs": "Sprawdź naszą <DocsLink>dokumentację</DocsLink>, aby dowiedzieć się więcej.",
@@ -110,6 +118,7 @@
 	"enhancePrompt": "Ulepsz podpowiedź dodatkowym kontekstem",
 	"addImages": "Dodaj obrazy do wiadomości",
 	"sendMessage": "Wyślij wiadomość",
+	"pressToSend": "Naciśnij {{keyCombination}}, aby wysłać",
 	"stopTts": "Zatrzymaj syntezę mowy",
 	"typeMessage": "Wpisz wiadomość...",
 	"typeTask": "Wpisz swoje zadanie tutaj...",
@@ -142,7 +151,22 @@
 		"failed": "Zapytanie API nie powiodło się",
 		"streaming": "Zapytanie API...",
 		"cancelled": "Zapytanie API anulowane",
-		"streamingFailed": "Strumieniowanie API nie powiodło się"
+		"streamingFailed": "Strumieniowanie API nie powiodło się",
+		"rateLimitWait": "Ograniczenie szybkości",
+		"errorTitle": "Błąd dostawcy {{code}}",
+		"errorMessage": {
+			"docs": "Dokumentacja",
+			"goToSettings": "Ustawienia",
+			"400": "Dostawca nie mógł przetworzyć żądania. Zatrzymaj zadanie i spróbuj innego podejścia.",
+			"401": "Nie można uwierzytelnić u dostawcy. Sprawdź konfigurację klucza API.",
+			"402": "Wygląda na to, że wyczerpałeś środki/kredyty na swoim koncie. Przejdź do dostawcy i dodaj więcej, aby kontynuować.",
+			"403": "Brak autoryzacji. Twój klucz API jest ważny, ale dostawca odmówił ukończenia tego żądania.",
+			"429": "Zbyt wiele żądań. Dostawca ogranicza Ci szybkość żądań. Poczekaj chwilę przed następnym wywołaniem API.",
+			"500": "Błąd serwera dostawcy. Po stronie dostawcy coś się nie powiodło, w Twoim żądaniu nie ma nic złego.",
+			"unknown": "Nieznany błąd API, kliknij Szczegóły, aby uzyskać więcej informacji.",
+			"connection": "Błąd połączenia. Upewnij się, że masz działające połączenie internetowe.",
+			"claudeCodeNotAuthenticated": "Musisz się zalogować, aby korzystać z Claude Code. Przejdź do Ustawień i kliknij \"Zaloguj się do Claude Code\", aby się uwierzytelnić."
+		}
 	},
 	"checkpoint": {
 		"regular": "Punkt kontrolny",
@@ -255,6 +279,21 @@
 		"hasQuestion": "Kilo Code ma pytanie"
 	},
 	"taskCompleted": "Zadanie zakończone",
+	"modelResponseIncomplete": "Odpowiedź modelu niekompletna",
+	"modelResponseErrors": {
+		"noToolsUsed": "Model nie użył żadnych narzędzi w swojej odpowiedzi. Zwykle dzieje się tak, gdy model dostarcza tylko tekst/rozumowanie bez wywołania wymaganych narzędzi do wykonania zadania.",
+		"noToolsUsedDetails": "Model dostarczył tekst/rozumowanie, ale nie wywołał żadnego z wymaganych narzędzi. Zazwyczaj oznacza to, że model źle zrozumiał zadanie lub ma trudności z określeniem, którego narzędzia użyć. Model został automatycznie poproszony o ponowną próbę z odpowiednim użyciem narzędzi.",
+		"noAssistantMessages": "Model nie dostarczył żadnej odpowiedzi. Może to wskazywać na problem z API lub wyjściem modelu.",
+		"noAssistantMessagesDetails": "Model językowy zwrócił pustą odpowiedź bez żadnego tekstu ani wywołań narzędzi. Może się to zdarzyć z powodu problemów z API, limitów szybkości lub problemów specyficznych dla modelu. Model został automatycznie poproszony o ponowną próbę."
+	},
+	"errorDetails": {
+		"link": "Szczegóły",
+		"title": "Szczegóły błędu",
+		"copyToClipboard": "Kopiuj do schowka",
+		"copied": "Skopiowano!",
+		"diagnostics": "Uzyskaj szczegółowe informacje o błędzie",
+		"proxyProvider": "Wygląda na to, że używasz dostawcy opartego na proxy. Pamiętaj, aby sprawdzić jego dzienniki i upewnić się, że nie przepisuje żądań Roo."
+	},
 	"powershell": {
 		"issues": "Wygląda na to, że masz problemy z Windows PowerShell, proszę zapoznaj się z tym"
 	},
@@ -274,25 +313,34 @@
 		"triggerLabel_zero": "0 automatycznie zatwierdzone",
 		"triggerLabel_one": "1 automatycznie zatwierdzony",
 		"triggerLabel_other": "{{count}} automatycznie zatwierdzonych",
-		"triggerLabelAll": "YOLO"
+		"triggerLabelAll": "BRRR"
 	},
 	"reasoning": {
 		"thinking": "Myślenie",
 		"seconds": "{{count}} s"
 	},
-	"contextCondense": {
-		"title": "Kontekst skondensowany",
-		"condensing": "Kondensowanie kontekstu...",
-		"errorHeader": "Nie udało się skondensować kontekstu",
-		"tokens": "tokeny"
+	"contextManagement": {
+		"tokens": "tokeny",
+		"condensation": {
+			"title": "Kontekst skondensowany",
+			"inProgress": "Kondensowanie kontekstu...",
+			"errorHeader": "Nie udało się skondensować kontekstu"
+		},
+		"truncation": {
+			"title": "Kontekst obcięty",
+			"inProgress": "Obcinanie kontekstu...",
+			"messagesRemoved": "{{count}} wiadomość usunięta",
+			"messagesRemoved_other": "{{count}} wiadomości usunięte",
+			"description": "Starsze wiadomości zostały usunięte z konwersacji, aby pozostać w granicach okna kontekstu. To szybsze, ale mniej zachowujące kontekst podejście w porównaniu z kondensacją."
+		}
 	},
 	"followUpSuggest": {
 		"copyToInput": "Kopiuj do pola wprowadzania (lub Shift + kliknięcie)",
-		"autoSelectCountdown": "Automatyczny wybór za {{count}}s",
-		"countdownDisplay": "{{count}}s"
+		"timerPrefix": "Automatyczne zatwierdzanie włączone. Zaznaczanie za {{seconds}}s…"
 	},
 	"announcement": {
-		"title": "🎉 Roo Code {{version}} wydany",
+		"title": "Roo Code {{version}} wydany",
+		"support": "Wesprzyj Roo Code, dając nam gwiazdkę na <githubLink>GitHub</githubLink>.",
 		"stealthModel": {
 			"feature": "<bold>Darmowy model stealth na ograniczony czas</bold> - Code Supernova: Teraz ulepszony z <bold>oknem kontekstu 1M tokenów</bold>! Wszechstronny model kodowania agentowego, który obsługuje wprowadzanie obrazów, dostępny przez Roo Code Cloud.",
 			"note": "(Uwaga: prompty i uzupełnienia są rejestrowane przez twórcę modelu i używane do jego ulepszania)",
@@ -301,21 +349,28 @@
 			"goToSettingsButton": "Przejdź do Ustawień"
 		},
 		"release": {
-			"heading": "Nowości w rozszerzeniu:",
-			"openRouterEmbeddings": "Wsparcie dla modeli osadzania OpenRouter",
-			"chutesDynamic": "Chutes teraz dynamicznie ładuje najnowsze modele",
-			"queuedMessagesFix": "Poprawki dla gubienia się wiadomości w kolejce"
+			"heading": "Co nowego:",
+			"openaiCodexProvider": "Dodano dostawcę OpenAI - ChatGPT Plus/Pro, który zapewnia dostęp oparty na subskrypcji do modeli Codex bez kosztów per-token.",
+			"gpt52codexModel": "Nowy model gpt-5.2-codex został dodany do Roo Code Router, standardowego dostawcy OpenAI i więcej.",
+			"bugFixes": "Naprawiono wycieki pamięci powodujące szare ekrany, problemy z podpisami myśli Gemini i inne ulepszenia stabilności."
 		},
 		"cloudAgents": {
 			"heading": "Nowości w chmurze:",
-			"prFixer": "Przedstawiamy agenta chmurowego <bold>PR Fixer</bold> uzupełniającego PR Reviewer.",
-			"prFixerDescription": "PR Fixer Roo Code stosuje wysokiej jakości zmiany do Twoich PR, bezpośrednio z GitHub. Wywołaj go przez komentarz PR, a on przeczyta całą historię komentarzy, aby zrozumieć kontekst, uzgodnienia i kompromisy - następnie wdroży właściwą poprawkę.",
-			"tryPrFixerButton": "Wypróbuj PR Fixer"
+			"specialized": "Przedstawiamy <bold>Explainer</bold>, <bold>Planner</bold> i <bold>Coder</bold> - trzech wyspecjalizowanych agentów chmurowych, aby ulepszyć Twoje przepływy pracy.",
+			"description": "Agenci pracują razem w chmurze i mogą być uruchamiani z sieci lub przez Slack.",
+			"tryButton": "Wypróbuj agentów chmurowych"
 		},
 		"careers": "Dodatkowo, <careersLink>zatrudniamy!</careersLink>",
-		"socialLinks": "Dołącz do nas na <xLink>X</xLink>, <discordLink>Discord</discordLink>, lub <redditLink>r/RooCode</redditLink> 🚀"
+		"socialLinks": "Dołącz do nas na <xLink>X</xLink>, <discordLink>Discord</discordLink>, lub <redditLink>r/KiloCode</redditLink> 🚀"
+	},
+	"costs": {
+		"totalWithSubtasks": "Całkowity koszt (w tym podzadania): ${{cost}}",
+		"total": "Całkowity koszt: ${{cost}}",
+		"includesSubtasks": "Zawiera koszty podzadań"
 	},
 	"browser": {
+		"session": "Sesja przeglądarki",
+		"active": "Aktywna",
 		"rooWantsToUse": "Kilo Code chce użyć przeglądarki",
 		"consoleLogs": "Logi konsoli",
 		"noNewLogs": "(Brak nowych logów)",
@@ -329,11 +384,25 @@
 		"sessionStarted": "Sesja przeglądarki rozpoczęta",
 		"actions": {
 			"title": "Akcja przeglądarki: ",
+			"launched": "Przeglądarka uruchomiona",
 			"launch": "Uruchom przeglądarkę na {{url}}",
+			"clicked": "Kliknięto ({{coordinate}})",
 			"click": "Kliknij ({{coordinate}})",
+			"typed": "Wpisano: {{text}}",
 			"type": "Wpisz \"{{text}}\"",
+			"pressed": "Naciśnięto: {{key}}",
+			"press": "Naciśnij {{key}}",
+			"scrolledDown": "Przewinięto w dół",
 			"scrollDown": "Przewiń w dół",
+			"scrolledUp": "Przewinięto w górę",
 			"scrollUp": "Przewiń w górę",
+			"hovered": "Najechano ({{coordinate}})",
+			"hover": "Najedź ({{coordinate}})",
+			"resized": "Zmieniono rozmiar na: {{size}}",
+			"resize": "Zmień rozmiar na {{size}}",
+			"screenshotSaved": "Zrzut ekranu zapisany",
+			"screenshot": "Zapisz zrzut ekranu do {{path}}",
+			"closed": "Przeglądarka zamknięta",
 			"close": "Zamknij przeglądarkę"
 		}
 	},

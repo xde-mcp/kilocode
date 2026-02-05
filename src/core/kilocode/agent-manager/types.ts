@@ -1,42 +1,39 @@
 /**
  * Agent Manager Types
+ *
+ * Re-exports types from @kilocode/core-schemas for consistency
+ * and backward compatibility.
  */
 
-export type AgentStatus = "running" | "done" | "error" | "stopped"
+import type { Session as RemoteSession } from "../../../shared/kilocode/cli-sessions/core/SessionClient"
 
-export interface AgentSession {
-	id: string
-	label: string // Truncated prompt (first ~30 chars)
-	prompt: string // Full prompt
-	status: AgentStatus
-	startTime: number
-	endTime?: number
-	exitCode?: number
-	error?: string
-	logs: string[] // Log lines from the agent runner
-	pid?: number // Child process PID
-}
+// Re-export all agent manager types from core-schemas
+export {
+	// Schemas
+	agentStatusSchema,
+	sessionSourceSchema,
+	parallelModeInfoSchema,
+	agentSessionSchema,
+	pendingSessionSchema,
+	agentManagerStateSchema,
+	agentManagerMessageSchema,
+	agentManagerExtensionMessageSchema,
+	availableModelSchema,
+	availableModeSchema,
+	startSessionMessageSchema,
+	// Types
+	type AgentStatus,
+	type SessionSource,
+	type ParallelModeInfo,
+	type AgentSession,
+	type PendingSession,
+	type AgentManagerState,
+	type AgentManagerMessage,
+	type AgentManagerExtensionMessage,
+	type AvailableModel,
+	type AvailableMode,
+	type StartSessionMessage,
+} from "@kilocode/core-schemas"
 
-export interface AgentManagerState {
-	sessions: AgentSession[]
-	selectedId: string | null
-}
-
-/**
- * Messages from Webview to Extension
- */
-export type AgentManagerMessage =
-	| { type: "agentManager.webviewReady" }
-	| { type: "agentManager.startSession"; prompt: string }
-	| { type: "agentManager.stopSession"; sessionId: string }
-	| { type: "agentManager.removeSession"; sessionId: string }
-	| { type: "agentManager.selectSession"; sessionId: string }
-
-/**
- * Messages from Extension to Webview
- */
-export type AgentManagerExtensionMessage =
-	| { type: "agentManager.state"; state: AgentManagerState }
-	| { type: "agentManager.sessionUpdated"; session: AgentSession }
-	| { type: "agentManager.sessionRemoved"; sessionId: string }
-	| { type: "agentManager.error"; error: string }
+// Re-export remote session shape from shared session client for consistency
+export type { RemoteSession }

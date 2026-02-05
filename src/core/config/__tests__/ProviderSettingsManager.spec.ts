@@ -26,7 +26,7 @@ const mockContext = {
 describe("ProviderSettingsManager", () => {
 	let providerSettingsManager: ProviderSettingsManager
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		vi.clearAllMocks()
 		// Reset all mock implementations to default successful behavior
 		mockSecrets.get.mockResolvedValue(null)
@@ -43,6 +43,12 @@ describe("ProviderSettingsManager", () => {
 		// then reinitializing, and spying on internals of said initialization.
 		// I'm not convinced this test coverage means very much, so this fix makes a complicated puzzle happen to fall in place
 		// Also this override resets itself, but fortunately no test required triple initialization...
+
+		// Wait for the first manager's initialization to complete, then clear mock calls
+		// This is needed because new users get the default kilocode config stored
+		await providerSettingsManager.initialize()
+		vi.clearAllMocks()
+
 		providerSettingsManager.initialize = async () => {
 			providerSettingsManager = new ProviderSettingsManager(mockContext)
 			await providerSettingsManager.initialize()
@@ -51,15 +57,21 @@ describe("ProviderSettingsManager", () => {
 	})
 
 	describe("initialize", () => {
-		it("should not write to storage when secrets.get returns null", async () => {
+		// kilocode_change start: test updated to expect kilocode default profile for new users
+		it("should initialize kilocode default profile when secrets.get returns null", async () => {
 			// Mock readConfig to return null
 			mockSecrets.get.mockResolvedValueOnce(null)
 
 			await providerSettingsManager.initialize()
 
-			// Should not write to storage because readConfig returns defaultConfig
-			expect(mockSecrets.store).not.toHaveBeenCalled()
+			// Should write to storage with default kilocode profile for new users
+			expect(mockSecrets.store).toHaveBeenCalled()
+			const calls = mockSecrets.store.mock.calls
+			const storedConfig = JSON.parse(calls[calls.length - 1][1])
+			expect(storedConfig.apiConfigs.default.apiProvider).toBe("kilocode")
+			expect(storedConfig.apiConfigs.default.kilocodeModel).toBe("minimax/minimax-m2.1:free")
 		})
+		// kilocode_change end
 
 		it("should not initialize config if it exists and migrations are complete", async () => {
 			mockSecrets.get.mockResolvedValue(
@@ -80,6 +92,7 @@ describe("ProviderSettingsManager", () => {
 						openAiHeadersMigrated: true,
 						consecutiveMistakeLimitMigrated: true,
 						todoListEnabledMigrated: true,
+						claudeCodeLegacySettingsMigrated: true,
 					},
 				}),
 			)
@@ -136,6 +149,7 @@ describe("ProviderSettingsManager", () => {
 						consecutiveMistakeLimitMigrated: true,
 						todoListEnabledMigrated: true,
 						morphApiKeyMigrated: true,
+						claudeCodeLegacySettingsMigrated: true,
 					},
 				}),
 			)
@@ -435,7 +449,7 @@ describe("ProviderSettingsManager", () => {
 			mockSecrets.get.mockRejectedValue(new Error("Storage failed"))
 
 			await expect(providerSettingsManager.initialize()).rejects.toThrow(
-				"Failed to initialize config: Error: Failed to read provider profiles from secrets: Error: Storage failed",
+				"Failed to initialize config: Error: Storage failed",
 			)
 		})
 	})
@@ -496,7 +510,7 @@ describe("ProviderSettingsManager", () => {
 			mockSecrets.get.mockRejectedValue(new Error("Read failed"))
 
 			await expect(providerSettingsManager.listConfig()).rejects.toThrow(
-				"Failed to list configs: Error: Failed to read provider profiles from secrets: Error: Read failed",
+				"Failed to list configs: Error: Read failed",
 			)
 		})
 	})
@@ -792,7 +806,55 @@ describe("ProviderSettingsManager", () => {
 			)
 		})
 
-		it("should remove invalid profiles during load", async () => {
+		it("should sanitize invalid/removed providers by resetting apiProvider to undefined", async () => {
+			// This tests the fix for the infinite loop issue when a provider is removed
+			const configWithRemovedProvider = {
+				currentApiConfigName: "valid",
+				apiConfigs: {
+					valid: {
+						apiProvider: "anthropic",
+						apiKey: "valid-key",
+						apiModelId: "claude-3-opus-20240229",
+						id: "valid-id",
+					},
+					removedProvider: {
+						// Provider that was removed from the extension (e.g., "invalid-removed-provider")
+						id: "removed-id",
+						apiProvider: "invalid-removed-provider",
+						apiKey: "some-key",
+						apiModelId: "some-model",
+					},
+				},
+				migrations: {
+					rateLimitSecondsMigrated: true,
+					diffSettingsMigrated: true,
+					openAiHeadersMigrated: true,
+					consecutiveMistakeLimitMigrated: true,
+					todoListEnabledMigrated: true,
+				},
+			}
+
+			mockSecrets.get.mockResolvedValue(JSON.stringify(configWithRemovedProvider))
+
+			await providerSettingsManager.initialize()
+
+			const storeCalls = mockSecrets.store.mock.calls
+			expect(storeCalls.length).toBeGreaterThan(0)
+			const finalStoredConfigJson = storeCalls[storeCalls.length - 1][1]
+
+			const storedConfig = JSON.parse(finalStoredConfigJson)
+			// The valid provider should be untouched
+			expect(storedConfig.apiConfigs.valid).toBeDefined()
+			expect(storedConfig.apiConfigs.valid.apiProvider).toBe("anthropic")
+
+			// The config with the removed provider should have its apiProvider reset to undefined
+			// but still be present (not filtered out entirely)
+			expect(storedConfig.apiConfigs.removedProvider).toBeDefined()
+			expect(storedConfig.apiConfigs.removedProvider.apiProvider).toBeUndefined()
+			expect(storedConfig.apiConfigs.removedProvider.id).toBe("removed-id")
+		})
+
+		it("should sanitize invalid providers and remove non-object profiles during load", async () => {
 			const invalidConfig = {
 				currentApiConfigName: "valid",
 				apiConfigs: {
@@ -802,12 +864,12 @@ describe("ProviderSettingsManager", () => {
 						apiModelId: "claude-3-opus-20240229",
 						rateLimitSeconds: 0,
 					},
-					invalid: {
-						// Invalid API provider.
+					invalidProvider: {
+						// Invalid API provider - should be sanitized (kept but apiProvider reset to undefined)
 						id: "x.ai",
 						apiProvider: "x.ai",
 					},
-					// Incorrect type.
+					// Incorrect type - should be completely removed
 					anotherInvalid: "not an object",
 				},
 				migrations: {
@@ -824,10 +886,19 @@ describe("ProviderSettingsManager", () => {
 			const finalStoredConfigJson = storeCalls[storeCalls.length - 1][1]
 
 			const storedConfig = JSON.parse(finalStoredConfigJson)
+			// Valid config should be untouched
 			expect(storedConfig.apiConfigs.valid).toBeDefined()
-			expect(storedConfig.apiConfigs.invalid).toBeUndefined()
+			expect(storedConfig.apiConfigs.valid.apiProvider).toBe("anthropic")
+
+			// Invalid provider config should be sanitized - kept but apiProvider reset to undefined
+			expect(storedConfig.apiConfigs.invalidProvider).toBeDefined()
+			expect(storedConfig.apiConfigs.invalidProvider.apiProvider).toBeUndefined()
+			expect(storedConfig.apiConfigs.invalidProvider.id).toBe("x.ai")
+
+			// Non-object config should be completely removed
 			expect(storedConfig.apiConfigs.anotherInvalid).toBeUndefined()
-			expect(Object.keys(storedConfig.apiConfigs)).toEqual(["valid"])
+
+			expect(Object.keys(storedConfig.apiConfigs)).toEqual(["valid", "invalidProvider"])
 			expect(storedConfig.currentApiConfigName).toBe("valid")
 		})
 	})
@@ -876,7 +947,7 @@ describe("ProviderSettingsManager", () => {
 			mockSecrets.get.mockRejectedValue(new Error("Storage failed"))
 
 			await expect(providerSettingsManager.hasConfig("test")).rejects.toThrow(
-				"Failed to check config existence: Error: Failed to read provider profiles from secrets: Error: Storage failed",
+				"Failed to check config existence: Error: Storage failed",
 			)
 		})
 	})
