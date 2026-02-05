@@ -8,7 +8,9 @@ description: "Project-level configuration with agents.md files"
 AGENTS.md files provide a standardized way to configure AI agent behavior across different AI coding tools. They allow you to define project-specific instructions, coding standards, and guidelines that AI agents should follow when working with your codebase.
 
 {% callout type="note" title="Memory Bank Deprecation" %}
-The Kilo Code **memory bank** feature has been deprecated in favor of AGENTS.md. **Existing memory bank rules will continue to work just fine** — migration is optional, not required.
+The Kilo Code **memory bank** feature has been deprecated in favor of AGENTS.md. 
+
+**Existing memory bank rules will continue to work.**
 
 If you'd like to migrate your memory bank content to AGENTS.md:
 
