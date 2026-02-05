@@ -52,6 +52,7 @@ export const mistralModels = {
 		supportsImages: true,
 		supportsPromptCache: false,
 		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		inputPrice: 0.4,
 		outputPrice: 2.0,
 	},
