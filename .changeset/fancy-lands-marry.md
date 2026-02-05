@@ -2,4 +2,4 @@
 "kilo-code": patch
 ---
 
-Added contributing.md file for onboarding new contributors
+Added CONTRIBUTING.md file for onboarding new contributors
