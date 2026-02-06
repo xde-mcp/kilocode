@@ -3394,7 +3394,7 @@ export class ClineProvider
 			// Phase 1: Show dialog immediately with loading state
 			await this.postMessageToWebview({
 				type: "askReviewScope",
-				reviewScopeInfo: null,
+				reviewScopeInfo: undefined,
 			})
 
 			// Phase 2: Compute scope info and hydrate
