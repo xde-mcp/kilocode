@@ -61,6 +61,8 @@ export const openAiCodexModels = {
 	"gpt-5.3-codex": {
 		maxTokens: 128000,
 		contextWindow: 400000,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		includedTools: ["apply_patch"],
 		excludedTools: ["apply_diff", "write_to_file"],
 		supportsImages: true,
