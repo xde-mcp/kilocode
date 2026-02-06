@@ -394,7 +394,7 @@
 	padding: 0;
 	display: flex;
 	flex-direction: column;
-	position: relative;
+	position: relative; /* kilocode_change */
 	background: var(--vscode-sideBar-background);
 	color: var(--vscode-sideBar-foreground);
 }
