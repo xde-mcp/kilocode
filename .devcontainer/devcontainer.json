@@ -59,7 +59,7 @@
 	"mounts": [
 		"source=${localWorkspaceFolder}/.git,target=/workspace/.git,type=bind,consistency=cached",
 		"source=kilocode-global-storage,target=/root/.vscode-remote/data/User/globalStorage/kilocode.kilo-code,type=volume",
-		"source=kilocode-settings,target=/root/.vscode-remote/data/User/settings,type=volume"
+		"source=kilocode-settings,target=/root/.vscode-remote/data/User,type=volume"
 	],
 
 	// Configure custom properties for workspace storage
