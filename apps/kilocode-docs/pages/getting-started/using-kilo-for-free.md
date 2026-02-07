@@ -5,80 +5,47 @@ description: "Learn how to use Kilo Code without spending money through free mod
 
 # Using Kilo for Free
 
-Kilo Code offers several ways to use AI-powered coding assistance without spending money. This guide covers free models for agentic tasks, free autocomplete setup, and how the CLI handles background tasks.
+Kilo Code lets you perform agentic coding tasks for free by choosing free models. In addition to agentic tasks, Kilo also provides features like autocomplete and CLI background tasks that use credits by default. If you run out of credits, these features won't work—but you can configure them to use free alternatives instead.
 
 ## Free Models for Agentic Tasks
 
 Kilo Code provides access to free models that you can use for your coding tasks. These models are available through the Kilo Gateway and partner providers.
 
-### Kilo Gateway Free Models
+### Finding Free Models
 
-From time to time, Kilo works with AI inference providers to offer free models. Currently available free models include:
+Free models are clearly labeled in the model picker. To find and use them:
 
-- **MiniMax M2.1 (free)** - A capable model with strong general-purpose performance
-- **Z.AI: GLM 4.7 (free)** - Purpose-built for agent-centric applications
-- **MoonshotAI: Kimi K2.5 (free)** - Optimized for tool use, reasoning, and code synthesis
-- **Giga Potato (free)** - A stealth release model free during its evaluation period
-- **Arcee AI: Trinity Large Preview (free)** - A preview model with strong capabilities
-
-### How to Select Free Models
+**In the VS Code Extension:**
 
 1. Open Kilo Code settings
 2. Navigate to **Providers**
 3. Select **Kilo Code** as your provider
-4. Browse the model list and look for models marked as "(free)"
+4. Browse the model list—free models are labeled as "(free)"
 5. Select your preferred free model
 
-### OpenRouter Free Tier
+**In the CLI:**
 
-OpenRouter also offers several models with generous free tiers:
+1. Run `kilo config` to open configuration
+2. Browse available models—free models are labeled as "free"
+3. Select a free model for your tasks
 
-1. Create a free [OpenRouter account](https://openrouter.ai)
-2. Get your API key from the dashboard
-3. Configure Kilo Code with the OpenRouter provider
-4. Select from available free models like:
-   - **Qwen3 Coder (free)** - Optimized for agentic coding tasks
-   - **DeepSeek: R1 0528 (free)** - Open-sourced with fully open reasoning tokens
-   - **MoonshotAI: Kimi K2 (free)** - Advanced tool use and reasoning
+{% callout type="tip" %}
+The available free models change over time as Kilo partners with different AI inference providers. Check the model picker regularly to see current free options.
+{% /callout %}
 
-For more details on free and budget-friendly options, see our [Free & Budget Models](/docs/code-with-ai/agents/free-and-budget-models) guide.
+## Free Autocomplete
 
-## Free Autocomplete with Mistral
+Kilo Code's autocomplete feature provides AI-powered code completions as you type.
 
-Kilo Code's autocomplete feature uses **Codestral** (`codestral-latest`), a model by Mistral AI specifically optimized for code completion. Mistral offers a free tier for Codestral that's perfect for getting started with AI-powered code completions.
+### How It Works
+
+By default, autocomplete is routed through the Kilo Code provider, which uses credits. However, if you configure Mistral directly for autocomplete, that configuration takes precedence and provides free completions through Mistral's Codestral model.
 
 ### Setting Up Free Autocomplete
 
-To use autocomplete for free, you can get a Codestral API key directly from Mistral:
+To use autocomplete for free, configure Mistral as your autocomplete provider. Mistral offers a free tier for their Codestral model that's perfect for code completions.
 
-1. **Open Kilo Code Settings** - Click the gear icon in the Kilo Code panel
-2. **Add a New Configuration Profile** - Navigate to **Settings → Providers** and click **Add Profile**
-3. **Name Your Profile** - Enter a name like "Mistral Autocomplete"
-4. **Select Mistral as Provider** - Choose "Mistral" from the API Provider dropdown
-5. **Get Your Free API Key** - Click "Get Mistral / Codestral API Key" to open the Mistral console
-6. **Navigate to Codestral** - In Mistral AI Studio, click **Codestral** under the Code section
-7. **Generate and Copy Your Key** - Click "Generate API Key" and copy it
-8. **Paste and Save** - Return to Kilo Code, paste your API key, and save
-
-{% callout type="tip" %}
-For a detailed step-by-step walkthrough with screenshots, see our [Mistral Setup Guide](/docs/code-with-ai/features/autocomplete/mistral-setup).
-{% /callout %}
-
-### Supported Autocomplete Providers
-
-Autocomplete works with these providers (in priority order):
-
-| Provider | Model |
-|----------|-------|
-| Mistral | `codestral-latest` |
-| Kilo Code | `mistralai/codestral-2508` |
-| OpenRouter | `mistralai/codestral-2508` |
-| Requesty | `mistral/codestral-latest` |
-| Bedrock | `mistral.codestral-2508-v1:0` |
-| Hugging Face | `mistralai/Codestral-22B-v0.1` |
-| LiteLLM | `codestral/codestral-latest` |
-| LM Studio | `mistralai/codestral-22b-v0.1` |
-| Ollama | `codestral:latest` |
+For step-by-step instructions with screenshots, see our [Mistral Setup Guide](/docs/code-with-ai/features/autocomplete/mistral-setup).
 
 ## CLI Background Tasks
 
@@ -105,29 +72,28 @@ Background tasks are designed to fail gracefully. If they can't run, Kilo simply
 
 ### Configuring Background Tasks
 
-Background tasks use your configured provider. To ensure these features work:
+You can configure which model the CLI uses for background tasks by setting the `small_model` parameter in `~/.kilocode/config.json`. By default, this is set to `gpt-5-nano`, which is not free.
 
-1. **Set up any provider** - Background tasks will use your active provider configuration
-2. **Use a cost-effective model** - Consider using a free or budget model for your default provider
+If you run out of credits, background tasks will fall back to using your main model. However, you can also configure `small_model` to use a free model if you prefer to avoid using credits entirely:
 
-If you want these features but want to minimize costs:
+```json
+{
+  "small_model": "your-preferred-free-model"
+}
+```
 
-- Use a free model from the Kilo Gateway as your default
-- Background tasks will automatically use this model
-- Switch to a more powerful model only when needed for complex tasks
+Replace `your-preferred-free-model` with any free model available in the model picker.
 
 ## Summary
 
-| Feature | Free Option | Fallback Behavior |
-|---------|-------------|-------------------|
-| Agentic Tasks | Kilo Gateway free models, OpenRouter free tier | N/A - requires a model |
-| Autocomplete | Mistral Codestral (free tier) | Disabled without provider |
-| Session Titles | Uses your configured provider | Truncates first message |
-| Context Summarization | Uses your configured provider | Simple truncation |
+| Feature | Default Behavior | Free Alternative |
+|---------|------------------|------------------|
+| Agentic Tasks | Uses selected model | Select a free model from the model picker |
+| Autocomplete | Routed through Kilo Code (uses credits) | Configure Mistral directly ([setup guide](/docs/code-with-ai/features/autocomplete/mistral-setup)) |
+| CLI Background Tasks | Uses `gpt-5-nano` (uses credits) | Set `small_model` to a free model in config |
 
 ## Related Resources
 
-- [Free & Budget Models](/docs/code-with-ai/agents/free-and-budget-models) - Comprehensive guide to cost-effective AI usage
-- [Mistral Setup Guide](/docs/code-with-ai/features/autocomplete/mistral-setup) - Step-by-step autocomplete setup
+- [Mistral Setup Guide](/docs/code-with-ai/features/autocomplete/mistral-setup) - Step-by-step free autocomplete setup
 - [Autocomplete](/docs/code-with-ai/features/autocomplete) - Full autocomplete documentation
 - [CLI Documentation](/docs/code-with-ai/platforms/cli) - Complete CLI reference
