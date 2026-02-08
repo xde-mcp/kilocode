@@ -17,6 +17,9 @@
 		"modelNotEmbeddingCapable": "Ollama model nepodporuje embeddings: {{modelId}}",
 		"hostNotFound": "Ollama host nebol nájdený: {{baseUrl}}"
 	},
+	"openai": {
+		"invalidResponseFormat": "Neplatný formát odpovede z OpenAI"
+	},
 	"bedrock": {
 		"invalidResponseFormat": "Neplatný formát odpovede z Amazon Bedrock",
 		"invalidCredentials": "Neplatné AWS prihlasovacie údaje. Skontroluj prosím svoju konfiguráciu AWS.",

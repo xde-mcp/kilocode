@@ -27,6 +27,11 @@
 		"discord": "Pripojiť sa k našej komunite na Discorde",
 		"customerSupport": "Zákaznícka podpora"
 	},
+	"docsLink": {
+		"label": "Dokumentácia"
+	},
+	"dismiss": "Zavrieť",
+	"dismissAndDontShowAgain": "Zavrieť a viac nezobrazovať",
 	"ui": {
 		"search_placeholder": "Hľadať...",
 		"no_results": "Neboli nájdené žiadne výsledky"
@@ -39,10 +44,10 @@
 		"original_code": "Pôvodný kód:",
 		"errors": {
 			"unknown_syntax": "Neznáma chyba syntaxe",
-			"fix_timeout": "Vypršal časový limit požiadavky na opravu LLM",
+			"fix_timeout": "Časový limit požiadavky na opravu LLM vypršal",
 			"fix_failed": "Oprava LLM zlyhala",
 			"fix_attempts": "Nepodarilo sa opraviť syntax po {{attempts}} pokusoch. Posledná chyba: {{error}}",
-			"no_fix_provided": "LLM neposkytol opravu",
+			"no_fix_provided": "LLM neposkytlo žiadnu opravu",
 			"fix_request_failed": "Požiadavka na opravu zlyhala"
 		},
 		"buttons": {
@@ -53,7 +58,7 @@
 			"save": "Uložiť obrázok",
 			"viewCode": "Zobraziť kód",
 			"viewDiagram": "Zobraziť diagram",
-			"close": "Zavrieť"
+			"close": "Zatvoriť"
 		},
 		"modal": {
 			"codeTitle": "Kód Mermaid"
@@ -75,7 +80,7 @@
 	},
 	"file": {
 		"errors": {
-			"invalidDataUri": "Neplatný formát dát URI",
+			"invalidDataUri": "Neplatný formát dáta URI",
 			"copyingImage": "Chyba pri kopírovaní obrázka: {{error}}",
 			"openingImage": "Chyba pri otváraní obrázka: {{error}}",
 			"pathNotExists": "Cesta neexistuje: {{path}}",
@@ -100,6 +105,8 @@
 		"deleteOnly": "Nie, iba zmazať správu",
 		"restoreToCheckpoint": "Áno, obnoviť kontrolný bod",
 		"dontShowAgain": "Už nezobrazovať",
+		"confirm": "Potvrdiť",
+		"cancel": "Zrušiť",
 		"proceed": "Pokračovať",
 		"title": "Potvrdenie"
 	},
@@ -121,8 +128,8 @@
 	},
 	"errors": {
 		"wait_checkpoint_long_time": "Čakalo sa {{timeout}} sekúnd na inicializáciu kontrolného bodu. Ak funkciu kontrolných bodov nepotrebuješ, vypni ju v <settingsLink>nastavení kontrolných bodov</settingsLink>.",
-		"init_checkpoint_fail_long_time": "Inicializácia kontrolného bodu trvá dlhšie než {{timeout}} sekúnd, preto sú kontrolné body pre túto úlohu zakázané. Môžeš zakázať kontrolné body alebo predĺžiť čakaciu dobu v <settingsLink>nastavení kontrolných bodov</settingsLink>.",
-		"attempt_completion_tool_failed": "Nedá sa vykonať attempt_completion, pretože predchádzajúce volanie nástroja v tomto kole zlyhalo. Vyrieš prosím najprv zlyhanie nástroja pred pokusom o dokončenie."
+		"init_checkpoint_fail_long_time": "Inicializácia kontrolného bodu trvá dlhšie ako {{timeout}} sekúnd, preto sú kontrolné body pre túto úlohu zakázané. Môžeš zakázať kontrolné body alebo predĺžiť čakaciu dobu v <settingsLink>nastavení kontrolných bodov</settingsLink>.",
+		"attempt_completion_tool_failed": "Nie je možné vykonať attempt_completion, pretože predchádzajúce volanie nástroja v tomto kole zlyhalo. Vyrieš prosím najprv zlyhanie nástroja pred pokusom o dokončenie."
 	},
 	"tasks": {
 		"delegated": "Delegované na podúlohu",
@@ -133,5 +140,13 @@
 	"costs": {
 		"own": "Vlastné",
 		"subtasks": "Podúlohy"
-	}
+	},
+	"gemini": {
+		"sources": "Zdroje"
+	},
+	"info": {
+		"path_copied_to_clipboard": "Cesta skopírovaná do schránky"
+	},
+	"cancel": "Zrušiť",
+	"confirm": "Potvrdiť"
 }

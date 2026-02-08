@@ -6,7 +6,7 @@
 		"cancel": "Zrušiť",
 		"reset": "Resetovať",
 		"select": "Vybrať",
-		"add": "Pridať záhlavie",
+		"add": "Pridať hlavičku",
 		"remove": "Odstrániť"
 	},
 	"header": {
@@ -37,8 +37,8 @@
 		"contextManagement": "Kontext",
 		"terminal": "Terminál",
 		"slashCommands": "Slash príkazy",
-		"prompts": "Podporné výzvy",
-		"ui": "Užívateľské rozhranie",
+		"prompts": "Podporné prompty",
+		"ui": "Používateľské rozhranie",
 		"experimental": "Experimentálne",
 		"language": "Jazyk",
 		"about": "O Kilo Code",
@@ -88,7 +88,7 @@
 		}
 	},
 	"prompts": {
-		"description": "Nakonfigurujte podporné výzvy, ktoré sa používajú pre rýchle akcie, ako je vylepšenie výziev, vysvetlenie kódu a oprava problémov. Tieto výzvy pomáhajú Kilo Code poskytovať lepšiu pomoc pri bežných vývojových úlohách."
+		"description": "Nakonfigurujte podporné prompty, ktoré sa používajú pre rýchle akcie, ako je vylepšenie promptov, vysvetlenie kódu a oprava problémov. Tieto prompty pomáhajú Kilo Code poskytovať lepšiu pomoc pri bežných vývojových úlohách."
 	},
 	"codeIndex": {
 		"title": "Indexovanie kódovej bázy",
@@ -123,11 +123,11 @@
 		"openRouterApiKeyPlaceholder": "Zadajte svoj kľúč API OpenRouter",
 		"openRouterProviderRoutingLabel": "Smerovanie poskytovateľa OpenRouter",
 		"openRouterProviderRoutingDescription": "OpenRouter smeruje požiadavky na najlepších dostupných poskytovateľov pre váš model vkladania. V predvolenom nastavení sú požiadavky vyrovnávané záťažou medzi najlepších poskytovateľov, aby sa maximalizovala doba prevádzky. Môžete si však vybrať konkrétneho poskytovateľa, ktorého chcete pre tento model použiť.",
-		"openaiCompatibleProvider": "Kompatibilné s OpenAI",
-		"openaiCompatibleResponsesProvider": "Kompatibilné s OpenAI (Responses)",
+		"openaiCompatibleProvider": "Kompatibilný s OpenAI",
+		"openaiCompatibleResponsesProvider": "Kompatibilný s OpenAI (Responses)",
 		"openAiKeyLabel": "Kľúč API OpenAI",
 		"openAiKeyPlaceholder": "Zadajte svoj kľúč API OpenAI",
-		"openAiCompatibleBaseUrlLabel": "Základné URL",
+		"openAiCompatibleBaseUrlLabel": "Základná URL",
 		"openAiCompatibleApiKeyLabel": "Kľúč API",
 		"openAiCompatibleApiKeyPlaceholder": "Zadajte svoj kľúč API",
 		"openAiCompatibleModelDimensionLabel": "Dimenzia vkladania:",
@@ -139,7 +139,7 @@
 		"selectModel": "Vyberte model",
 		"selectModelPlaceholder": "Vyberte model",
 		"ollamaUrlLabel": "URL Ollama:",
-		"ollamaBaseUrlLabel": "Základné URL Ollama",
+		"ollamaBaseUrlLabel": "Základná URL Ollama",
 		"vectorStoreProviderLabel": "Poskytovateľ úložiska vektorov",
 		"qdrantUrlLabel": "URL Qdrant",
 		"qdrantKeyLabel": "Kľúč Qdrant:",
@@ -148,13 +148,13 @@
 		"lancedbVectorStoreDirectoryLabel": "Cesta k LanceDB úložisku vektorov",
 		"lancedbVectorStoreDirectoryPlaceholder": "Zadajte vlastnú cestu k úložisku vektorov (voliteľné)",
 		"lancedbVectorStoreDirectoryDescription": "Cesta pre uloženie LanceDB databázy vektorov. Ak je prázdna, použije sa predvolené umiestnenie v globalStorageUri/vector.",
-		"setupConfigLabel": "Nastavenia",
+		"setupConfigLabel": "Nastavenie",
 		"advancedConfigLabel": "Pokročilá konfigurácia",
 		"searchMinScoreLabel": "Prahová hodnota skóre vyhľadávania",
 		"searchMinScoreDescription": "Minimálne skóre podobnosti (0.0-1.0) požadované pre výsledky vyhľadávania. Nižšie hodnoty vrátia viac výsledkov, ale môžu byť menej relevantné. Vyššie hodnoty vrátia menej, ale relevantnejšie výsledky.",
 		"searchMinScoreResetTooltip": "Obnoviť na predvolenú hodnotu (0.4)",
 		"searchMaxResultsLabel": "Maximálny počet výsledkov vyhľadávania",
-		"searchMaxResultsDescription": "Maximálny počet výsledkov vyhľadávania, ktoré sa vrátia pri dotazovaní indexu kódovej bázy. Vyššie hodnoty poskytujú viac kontextu, ale môžu zahŕňať menej relevantné výsledky.",
+		"searchMaxResultsDescription": "Maximálny počet výsledkov vyhľadávania, ktoré sa vrátia pri dopytovaní indexu kódovej bázy. Vyššie hodnoty poskytujú viac kontextu, ale môžu zahŕňať menej relevantné výsledky.",
 		"resetToDefault": "Obnoviť na predvolené",
 		"startIndexingButton": "Spustiť indexovanie",
 		"clearIndexDataButton": "Vymazať dáta indexu",
@@ -185,7 +185,7 @@
 			"qdrantUrlRequired": "URL Qdrant je povinné",
 			"invalidQdrantUrl": "Neplatné URL Qdrant",
 			"invalidOllamaUrl": "Neplatné URL Ollama",
-			"invalidBaseUrl": "Neplatné základné URL",
+			"invalidBaseUrl": "Neplatná základná URL",
 			"openaiApiKeyRequired": "Kľúč API OpenAI je povinný",
 			"modelSelectionRequired": "Výber modelu je povinný",
 			"apiKeyRequired": "Kľúč API je povinný",
@@ -195,11 +195,19 @@
 			"mistralApiKeyRequired": "Kľúč API Mistral je povinný",
 			"vercelAiGatewayApiKeyRequired": "Je vyžadovaný kľúč API Vercel AI Gateway",
 			"openRouterApiKeyRequired": "Kľúč API OpenRouter je povinný",
-			"ollamaBaseUrlRequired": "Základné URL Ollama je povinné",
-			"baseUrlRequired": "Základné URL je povinné",
-			"modelDimensionMinValue": "Dimenzia modelu musí byť väčšia než 0",
+			"ollamaBaseUrlRequired": "Základná URL Ollama je povinná",
+			"baseUrlRequired": "Základná URL je povinná",
+			"modelDimensionMinValue": "Dimenzia modelu musí byť väčšia ako 0",
 			"bedrockRegionRequired": "AWS región je povinný",
-			"bedrockProfileRequired": "AWS profil je povinný"
+			"bedrockProfileRequired": "AWS profil je povinný",
+			"apiKey": "Musíte zadať platný kľúč API.",
+			"awsRegion": "Musíte vybrať región pre použitie s Amazon Bedrock.",
+			"googleCloud": "Musíte zadať platné ID projektu Google Cloud a región.",
+			"modelId": "Musíte zadať platné ID modelu.",
+			"modelSelector": "Musíte zadať platný selektor modelu.",
+			"openAi": "Musíte zadať platnú základnú URL, kľúč API a ID modelu.",
+			"sapAiCore": "Musíte zadať platný kľúč služby SAP AI Core.",
+			"qwenCodeOauthPath": "Musíte poskytnúť platnú cestu k OAuth povereniam."
 		},
 		"optional": "voliteľné",
 		"cancelling": "Prebieha rušenie...",
@@ -215,19 +223,19 @@
 		"enabled": "Automatické schválenie povolené",
 		"readOnly": {
 			"label": "Čítať",
-			"description": "Ak je povolené, Kilo Code automaticky zobrazí obsah adresára a prečíta súbory, bez toho aby ste museli klikať na tlačidlo Schváliť.",
+			"description": "Ak je povolené, Kilo Code automaticky zobrazí obsah adresára a prečíta súbory bez toho, aby ste museli klikať na tlačidlo Schváliť.",
 			"outsideWorkspace": {
-				"label": "Zahrnúť súbory mimo pracovný priestor",
-				"description": "Povoliť Kilo Code čítať súbory mimo aktuálny pracovný priestor bez nutnosti schválenia."
+				"label": "Zahrnúť súbory mimo pracovného priestoru",
+				"description": "Povoliť Kilo Code čítať súbory mimo aktuálneho pracovného priestoru bez nutnosti schválenia."
 			}
 		},
 		"write": {
 			"label": "Písať",
 			"description": "Automaticky vytvárať a upravovať súbory bez nutnosti schválenia",
-			"delayLabel": "Oneskorenie po zápise, aby diagnostika mohla detegovať potenciálne problémy",
+			"delayLabel": "Oneskorenie po zápise, aby diagnostika mohla detekovať potenciálne problémy",
 			"outsideWorkspace": {
-				"label": "Zahrnúť súbory mimo pracovný priestor",
-				"description": "Povoliť Kilo Code vytvárať a upravovať súbory mimo aktuálny pracovný priestor bez nutnosti schválenia."
+				"label": "Zahrnúť súbory mimo pracovného priestoru",
+				"description": "Povoliť Kilo Code vytvárať a upravovať súbory mimo aktuálneho pracovného priestoru bez nutnosti schválenia."
 			},
 			"protected": {
 				"label": "Zahrnúť chránené súbory",
@@ -293,7 +301,7 @@
 			"unlimited": "Neobmedzene"
 		},
 		"maxLimits": {
-			"description": "Automaticky vykonávať požiadavky až do týchto limitov pred žiadosťou o schválenie k pokračovaniu."
+			"description": "Automaticky vykonávať požiadavky až do týchto limitov pred žiadosťou o schválenie na pokračovanie."
 		},
 		"toggleAriaLabel": "Prepnúť automatické schválenie",
 		"disabledAriaLabel": "Automatické schválenie zakázané - najprv vyberte možnosti",
@@ -366,7 +374,7 @@
 				"minutes": "{{minutes}}m limit"
 			}
 		},
-		"useCustomBaseUrl": "Použiť vlastné základné URL",
+		"useCustomBaseUrl": "Použiť vlastnú základnú URL",
 		"useReasoning": "Povoliť uvažovanie",
 		"useHostHeader": "Použiť vlastnú hlavičku Host",
 		"useLegacyFormat": "Použiť starší formát API OpenAI",
@@ -377,15 +385,16 @@
 		"requestyApiKey": "Kľúč API Requesty",
 		"refreshModels": {
 			"label": "Obnoviť modely",
-			"hint": "Znova otvorte nastavenia, aby ste videli najnovšie modely.",
+			"hint": "Znovu otvorte nastavenia, aby ste videli najnovšie modely.",
 			"loading": "Obnovovanie zoznamu modelov...",
 			"success": "Zoznam modelov bol úspešne obnovený!",
-			"error": "Nepodarilo sa obnoviť zoznam modelov. Skúste to prosím znova."
+			"error": "Nepodarilo sa obnoviť zoznam modelov. Skúste to prosím znova.",
+			"missingConfig": "Váš profil nie je úplne nakonfigurovaný. Vyplňte prosím všetky povinné polia pred obnovením modelov."
 		},
 		"getRequestyApiKey": "Získať kľúč API Requesty",
-		"getRequestyBaseUrl": "Základné URL",
-		"requestyUseCustomBaseUrl": "Použiť vlastné základné URL",
-		"openRouterTransformsText": "Komprimovať výzvy a reťazce správ na veľkosť kontextu (<a>Transformácie OpenRouter</a>)",
+		"getRequestyBaseUrl": "Základná URL",
+		"requestyUseCustomBaseUrl": "Použiť vlastnú základnú URL",
+		"openRouterTransformsText": "Komprimovať prompty a reťazce správ na veľkosť kontextu (<a>Transformácie OpenRouter</a>)",
 		"anthropicApiKey": "Kľúč API Anthropic",
 		"getAnthropicApiKey": "Získať kľúč API Anthropic",
 		"anthropicUseAuthToken": "Odovzdávať kľúč API Anthropic ako hlavičku Authorization namiesto X-Api-Key",
@@ -444,8 +453,8 @@
 		"huggingFaceApiKey": "Kľúč API Hugging Face",
 		"getOvhCloudAiEndpointsApiKey": "Získať kľúč API OVHcloud AI Endpoints",
 		"ovhCloudAiEndpointsApiKey": "Kľúč API OVHcloud AI Endpoints",
-		"ovhCloudAiEndpointsBaseUrl": "Základné URL",
-		"getOvhCloudAiEndpointsBaseUrl": "Použiť vlastné základné URL",
+		"ovhCloudAiEndpointsBaseUrl": "Základná URL",
+		"getOvhCloudAiEndpointsBaseUrl": "Použiť vlastnú základnú URL",
 		"huggingFaceModelId": "ID modelu",
 		"huggingFaceLoading": "Načítanie...",
 		"huggingFaceModelsCount": "({{count}} modelov)",
@@ -474,41 +483,41 @@
 			"selectModel": "Vyberte model...",
 			"selectDeployment": "Vyberte nasadenie...",
 			"searchModels": "Hľadať modely...",
-			"searchDeployments": "Hľadať nasadenie...",
+			"searchDeployments": "Hľadať nasadenia...",
 			"noModelsFound": "Nenájdené žiadne modely",
 			"noDeploymentFound": "Nenájdené žiadne nasadenie",
 			"getStarted": "Začnite so SAP AI Core",
 			"supportedProviders": "Podporovaní poskytovatelia",
 			"supportedProvidersDesc1": "Poskytovateľ SAP AI Core v súčasnosti podporuje iba základné modely pre nasledujúcich poskytovateľov LLM:",
-			"supportedProvidersDesc2": "Zvážte prepnutie do režimu orchestrácie pre prístup k viac modelom.",
+			"supportedProvidersDesc2": "Zvážte prepnutie do režimu orchestrácie pre prístup k viacerým modelom.",
 			"supportedProvidersDesc3": "Viac informácií o režime orchestrácie"
 		},
 		"awsApiKey": "Kľúč API Amazon Bedrock",
 		"apiKey": "Kľúč API",
 		"anthropic": {
-			"baseUrl": "Základné URL",
-			"baseUrlDescription": "Vlastné základné URL pre Anthropic API (voliteľné)"
+			"baseUrl": "Základná URL",
+			"baseUrlDescription": "Vlastná základná URL pre Anthropic API (voliteľné)"
 		},
 		"anthropicUseAzureDeployment": "Použiť názov nasadenia Azure",
 		"anthropicAzureDeploymentPlaceholder": "Zadajte názov nasadenia...",
 		"openai": {
-			"baseUrl": "Základné URL",
-			"baseUrlDescription": "Vlastné základné URL pre OpenAI API (voliteľné)"
+			"baseUrl": "Základná URL",
+			"baseUrlDescription": "Vlastná základná URL pre OpenAI API (voliteľné)"
 		},
 		"openrouter": {
-			"baseUrl": "Základné URL",
-			"baseUrlDescription": "Vlastné základné URL pre OpenRouter API (voliteľné)"
+			"baseUrl": "Základná URL",
+			"baseUrlDescription": "Vlastná základná URL pre OpenRouter API (voliteľné)"
 		},
-		"openAiBaseUrl": "Základné URL",
+		"openAiBaseUrl": "Základná URL",
 		"getOpenAiApiKey": "Získať kľúč API OpenAI",
 		"mistralApiKey": "Kľúč API Mistral",
 		"getMistralApiKey": "Získať kľúč API Mistral / Codestral",
-		"codestralBaseUrl": "Základné URL Codestral (voliteľné)",
-		"codestralBaseUrlDesc": "Nastavte alternatívne URL pre model Codestral.",
+		"codestralBaseUrl": "Základná URL Codestral (voliteľné)",
+		"codestralBaseUrlDesc": "Nastavte alternatívnu URL pre model Codestral.",
 		"xaiApiKey": "Kľúč API xAI",
 		"getXaiApiKey": "Získať kľúč API xAI",
 		"litellmApiKey": "Kľúč API LiteLLM",
-		"litellmBaseUrl": "Základné URL LiteLLM",
+		"litellmBaseUrl": "Základná URL LiteLLM",
 		"awsCredentials": "Prihlasovacie údaje AWS",
 		"awsProfile": "Profil AWS",
 		"awsProfileName": "Názov profilu AWS",
@@ -531,8 +540,8 @@
 			"vpcEndpointUrlPlaceholder": "Zadajte URL koncového bodu VPC (voliteľné)",
 			"examples": "Príklady:"
 		},
-		"enablePromptCaching": "Povoliť ukladanie výziev do medzipamäte",
-		"enablePromptCachingTitle": "Povoľte ukladanie výziev do medzipamäte, aby ste zlepšili výkon a znížili náklady na podporované modely.",
+		"enablePromptCaching": "Povoliť ukladanie promptov do medzipamäte",
+		"enablePromptCachingTitle": "Povoľte ukladanie promptov do medzipamäte, aby ste zlepšili výkon a znížili náklady na podporované modely.",
 		"cacheUsageNote": "Poznámka: Ak nevidíte využitie medzipamäte, skúste vybrať iný model a potom znova vybrať požadovaný model.",
 		"vscodeLmModel": "Jazykový model",
 		"vscodeLmWarning": "Poznámka: Modely prístupné prostredníctvom API jazykového modelu VS Code môžu byť zabalené alebo doladené poskytovateľom, takže sa správanie môže líšiť od použitia rovnakého modelu priamo od typického poskytovateľa alebo routera. Ak chcete použiť model z rozbaľovacej ponuky jazykového modelu, najprv prepnite na tento model a potom kliknite na Prijať v prompte Copilot Chat; inak môže dôjsť k chybe, ako je 400 \"Požadovaný model nie je podporovaný\".",
@@ -557,26 +566,26 @@
 		"googleCloudProjectId": "ID projektu Google Cloud",
 		"googleCloudRegion": "Región Google Cloud",
 		"lmStudio": {
-			"baseUrl": "Základné URL (voliteľné)",
+			"baseUrl": "Základná URL (voliteľné)",
 			"modelId": "ID modelu",
 			"speculativeDecoding": "Povoliť špekulatívne dekódovanie",
 			"draftModelId": "ID modelu konceptu",
 			"draftModelDesc": "Model konceptu musí byť z rovnakej rodiny modelov, aby špekulatívne dekódovanie fungovalo správne.",
 			"selectDraftModel": "Vybrať model konceptu",
 			"noModelsFound": "Neboli nájdené žiadne modely konceptu. Uistite sa, že LM Studio beží s povoleným režimom servera.",
-			"description": "LM Studio vám umožňuje spúšťať modely lokálne na vašom počítači. Pokyny na začatie práce nájdete v ich <a>sprievodcovi rýchlym štartom</a>. Budete tiež musieť spustiť funkciu <b>lokálneho servera</b> LM Studio, aby ste ho mohli používať s týmto rozšírením. <span>Poznámka:</span> Kilo Code používa zložité výzvy a najlepšie funguje s modelmi Claude. Menej schopné modely nemusia fungovať podľa očakávania."
+			"description": "LM Studio vám umožňuje spúšťať modely lokálne na vašom počítači. Pokyny na začatie práce nájdete v ich <a>sprievodcovi rýchlym štartom</a>. Budete tiež musieť spustiť funkciu <b>lokálneho servera</b> LM Studio, aby ste ho mohli používať s týmto rozšírením. <span>Poznámka:</span> Kilo Code používa zložité prompty a najlepšie funguje s modelmi Claude. Menej schopné modely nemusia fungovať podľa očakávania."
 		},
 		"ollama": {
-			"baseUrl": "Základné URL (voliteľné)",
+			"baseUrl": "Základná URL (voliteľné)",
 			"modelId": "ID modelu",
 			"apiKey": "Kľúč API",
 			"apiKeyPlaceholder": "Zadajte svoj kľúč API",
 			"apiKeyInfo": "Kľúč API bude odoslaný ako Authorization hlavička",
-			"apiKeyHelp": "Voliteľný kľúč API pre autentizované inštancie Ollama alebo cloudové služby. Ponechajte prázdne pre miestne inštalácie.",
+			"apiKeyHelp": "Voliteľný kľúč API pre autentifikované inštancie Ollama alebo cloudové služby. Ponechajte prázdne pre miestne inštalácie.",
 			"numCtx": "Veľkosť kontextového okna (num_ctx)",
 			"numCtxHelp": "Prepísať predvolenú veľkosť kontextového okna modelu. Ponechajte prázdne pre použitie konfigurácie Modelfile modelu. Minimálna hodnota je 128.",
 			"description": "Ollama vám umožňuje spúšťať modely lokálne na vašom počítači. Pokyny na začatie práce nájdete v ich sprievodcovi rýchlym štartom.",
-			"warning": "Poznámka: Kilo Code používa zložité výzvy a najlepšie funguje s modelmi Claude. Menej schopné modely nemusia fungovať podľa očakávania."
+			"warning": "Poznámka: Kilo Code používa zložité prompty a najlepšie funguje s modelmi Claude. Menej schopné modely nemusia fungovať podľa očakávania."
 		},
 		"unboundApiKey": "Kľúč API Unbound",
 		"getUnboundApiKey": "Získať kľúč API Unbound",
@@ -587,7 +596,7 @@
 			"instructions": "Počas používania sa zobrazí dialógové okno a aktuálna správa sa automaticky skopíruje do schránky. Musíte ich vložiť do webových verzií AI (napríklad ChatGPT alebo Claude), potom skopírovať odpoveď AI späť do dialógového okna a kliknúť na tlačidlo potvrdiť."
 		},
 		"roo": {
-			"authenticatedMessage": "Bezpečne autentizované prostredníctvom vášho účtu Kilo Code Cloud.",
+			"authenticatedMessage": "Bezpečne autentifikované prostredníctvom vášho účtu Kilo Code Cloud.",
 			"connectButton": "Pripojiť sa k Kilo Code Cloud"
 		},
 		"openRouter": {
@@ -616,13 +625,13 @@
 				"description": "Je tento model schopný interagovať s prehliadačom? (napr. Claude 3.7 Sonnet)."
 			},
 			"promptCache": {
-				"label": "Ukladanie výziev do medzipamäte",
-				"description": "Je tento model schopný ukladať výzvy do medzipamäte?"
+				"label": "Ukladanie promptov do medzipamäte",
+				"description": "Je tento model schopný ukladať prompty do medzipamäte?"
 			},
 			"pricing": {
 				"input": {
 					"label": "Cena vstupu",
-					"description": "Cena za milión tokenov vo vstupe/výzve. To ovplyvňuje náklady na odoslanie kontextu a pokynov do modelu."
+					"description": "Cena za milión tokenov vo vstupe/prompte. To ovplyvňuje náklady na odoslanie kontextu a pokynov do modelu."
 				},
 				"output": {
 					"label": "Cena výstupu",
@@ -634,7 +643,7 @@
 				},
 				"cacheWrites": {
 					"label": "Cena zápisu do medzipamäte",
-					"description": "Cena za milión tokenov za zápis do medzipamäte. Toto je cena účtovaná pri prvom uložení výzvy do medzipamäte."
+					"description": "Cena za milión tokenov za zápis do medzipamäte. Toto je cena účtovaná pri prvom uložení promptu do medzipamäte."
 				}
 			},
 			"resetDefaults": "Obnoviť predvolené"
@@ -692,7 +701,7 @@
 		"qwenCode": {
 			"oauthPath": "Cesta k OAuth prihlasovacím údajom (voliteľné)",
 			"oauthPathDescription": "Cesta k súboru prihlasovacích údajov OAuth. Ponechajte prázdne pre použitie predvoleného umiestnenia (~/.qwen/oauth_creds.json).",
-			"description": "Tento poskytovateľ používa OAuth autentizáciu zo služby Qwen a nevyžaduje kľúče API.",
+			"description": "Tento poskytovateľ používa OAuth autentifikáciu zo služby Qwen a nevyžaduje kľúče API.",
 			"instructions": "Postupujte prosím podľa oficiálnej dokumentácie pre získanie autorizačného súboru a umiestnite ho do zadanej cesty.",
 			"setupLink": "Oficiálna dokumentácia Qwen"
 		},
@@ -722,7 +731,7 @@
 	"browser": {
 		"enable": {
 			"label": "Povoliť nástroj prehliadača",
-			"description": "Ak je povolené, Kilo Code môže používať prehliadač k interakcii s webovými stránkami pri používaní modelov, ktoré podporujú používanie počítača. <0>Dozvedieť sa viac</0>"
+			"description": "Ak je povolené, Kilo Code môže používať prehliadač na interakciu s webovými stránkami pri používaní modelov, ktoré podporujú používanie počítača. <0>Dozvedieť sa viac</0>"
 		},
 		"viewport": {
 			"label": "Veľkosť zobrazenia",
@@ -741,10 +750,10 @@
 		"remote": {
 			"label": "Použiť vzdialené pripojenie prehliadača",
 			"description": "Pripojte sa k prehliadaču Chrome, ktorý beží s povoleným vzdialeným ladením (--remote-debugging-port=9222).",
-			"urlPlaceholder": "Vlastné URL (napr. http://localhost:9222)",
+			"urlPlaceholder": "Vlastná URL (napr. http://localhost:9222)",
 			"testButton": "Testovať pripojenie",
 			"testingButton": "Testovanie...",
-			"instructions": "Zadajte adresu hostiteľa protokolu DevTools alebo ponechajte prázdne pre automatické zistenie miestnych inštancií Chrome. Tlačidlo Testovať pripojenie sa pokúsi o vlastné URL, ak je zadané, alebo o automatické zistenie, ak je pole prázdne."
+			"instructions": "Zadajte adresu hostiteľa protokolu DevTools alebo ponechajte prázdne pre automatické zistenie miestnych inštancií Chrome. Tlačidlo Testovať pripojenie sa pokúsi o vlastnú URL, ak je zadaná, alebo o automatické zistenie, ak je pole prázdne."
 		}
 	},
 	"checkpoints": {
@@ -780,7 +789,7 @@
 		},
 		"incompleteRetention": {
 			"label": "Uchovávanie nedokončených úloh (dni)",
-			"description": "Počet dní pre uchovávanie úloh, ktoré neboli dokončené (zvyčajne kratšie než dokončené úlohy)"
+			"description": "Počet dní pre uchovávanie úloh, ktoré neboli dokončené (zvyčajne kratšie ako dokončené úlohy)"
 		},
 		"lastRun": {
 			"label": "Posledné čistenie"
@@ -851,7 +860,7 @@
 		},
 		"autoCondenseContext": {
 			"name": "Automaticky spúšťať inteligentné zhusťovanie kontextu",
-			"description": "Ak je povolené, Kilo Code automaticky zhustí kontext, keď je dosiahnuté prahovej hodnoty. Ak je zakázané, môžete stále ručne spúšťať zhusťovanie kontextu."
+			"description": "Ak je povolené, Kilo Code automaticky zhustí kontext, keď je dosiahnutá prahová hodnota. Ak je zakázané, môžete stále ručne spúšťať zhusťovanie kontextu."
 		},
 		"openTabs": {
 			"label": "Limit kontextu otvorených kariet",
@@ -875,11 +884,11 @@
 		},
 		"maxConcurrentFileReads": {
 			"label": "Limit súbežného čítania súborov",
-			"description": "Maximálny počet súborov, ktoré môže nástroj 'read_file' spracovávať súbežne. Vyššie hodnoty môžu urýchliť čítanie viac malých súborov, ale zvyšujú využitie pamäte."
+			"description": "Maximálny počet súborov, ktoré môže nástroj 'read_file' spracovávať súbežne. Vyššie hodnoty môžu urýchliť čítanie viacerých malých súborov, ale zvyšujú využitie pamäte."
 		},
 		"maxReadFile": {
 			"label": "Prahová hodnota automatického skrátenia pri čítaní súboru",
-			"description": "Kilo Code načíta tento počet riadkov, keď model vynechá počiatočné/koncové hodnoty. Ak je toto číslo menšie než celkový počet riadkov súboru, Kilo Code vygeneruje index čísel riadkov definícií kódu. Špeciálne prípady: -1 inštruuje Kilo Code, aby prečítal celý súbor (bez indexovania), a 0 ho inštruuje, aby nenačítal žiadne riadky a poskytoval iba indexy riadkov pre minimálny kontext. Nižšie hodnoty minimalizujú počiatočné využitie kontextu, čo umožňuje presné následné čítanie rozsahu riadkov. Explicitné požiadavky na začiatok/koniec nie sú týmto nastavením obmedzené.",
+			"description": "Kilo Code načíta tento počet riadkov, keď model vynechá počiatočné/koncové hodnoty. Ak je toto číslo menšie ako celkový počet riadkov súboru, Kilo Code vygeneruje index čísel riadkov definícií kódu. Špeciálne prípady: -1 inštruuje Kilo Code, aby prečítal celý súbor (bez indexovania), a 0 ho inštruuje, aby nenačítal žiadne riadky a poskytoval iba indexy riadkov pre minimálny kontext. Nižšie hodnoty minimalizujú počiatočné využitie kontextu, čo umožňuje presné následné čítanie rozsahu riadkov. Explicitné požiadavky na začiatok/koniec nie sú týmto nastavením obmedzené.",
 			"lines": "riadky",
 			"always_full_read": "Vždy čítať celý súbor"
 		},
@@ -891,16 +900,16 @@
 		"maxTotalImageSize": {
 			"label": "Maximálna celková veľkosť obrázkov",
 			"mb": "MB",
-			"description": "Maximálny kumulatívny limit veľkosti (v MB) pre všetky obrázky spracované v jednej operácii read_file. Pri čítaní viac obrázkov sa veľkosť každého obrázka pripočíta k celkovej veľkosti. Ak by zahrnutie ďalšieho obrázka prekročilo tento limit, bude preskočený."
+			"description": "Maximálny kumulatívny limit veľkosti (v MB) pre všetky obrázky spracované v jednej operácii read_file. Pri čítaní viacerých obrázkov sa veľkosť každého obrázka pripočíta k celkovej veľkosti. Ak by zahrnutie ďalšieho obrázka prekročilo tento limit, bude preskočený."
 		},
 		"condensingThreshold": {
 			"label": "Prahová hodnota spúšťania zhusťovania",
 			"selectProfile": "Nakonfigurovať prahovú hodnotu pre profil",
 			"defaultProfile": "Globálne predvolené (všetky profily)",
-			"defaultDescription": "Keď kontext dosiahne tohto percenta, bude automaticky zhustený pre všetky profily, ak nemajú vlastné nastavenie",
+			"defaultDescription": "Keď kontext dosiahne toto percento, bude automaticky zhustený pre všetky profily, ak nemajú vlastné nastavenie",
 			"profileDescription": "Vlastná prahová hodnota iba pre tento profil (prepisuje globálne predvolené)",
 			"inheritDescription": "Tento profil dedí globálnu predvolenú prahovú hodnotu ({{threshold}}%)",
-			"usesGlobal": "(používa globálnu {{threshold}}%)"
+			"usesGlobal": "(používa globálne {{threshold}}%)"
 		},
 		"diagnostics": {
 			"includeMessages": {
@@ -914,17 +923,17 @@
 				"unlimitedLabel": "Neobmedzene"
 			},
 			"delayAfterWrite": {
-				"label": "Oneskorenie po zápise, aby diagnostika mohla detegovať potenciálne problémy",
+				"label": "Oneskorenie po zápise, aby diagnostika mohla detekovať potenciálne problémy",
 				"description": "Čas čakania po zápise súborov pred pokračovaním (v milisekundách). Vyššie hodnoty môžu zlepšiť presnosť, ale spomaľujú detekciu chýb."
 			}
 		},
 		"includeCurrentTime": {
 			"label": "Zahrnúť aktuálny čas do kontextu",
-			"description": "Ak je povolené, aktuálny čas a informácie o časovom pásme budú zahrnuté do systémovej výzvy. Zakážte toto, ak modely prestávajú pracovať kvôli obavám o čas."
+			"description": "Ak je povolené, aktuálny čas a informácie o časovom pásme budú zahrnuté do systémového promptu. Zakážte toto, ak modely prestávajú pracovať kvôli obavám o čas."
 		},
 		"includeCurrentCost": {
 			"label": "Zahrnúť aktuálne náklady do kontextu",
-			"description": "Ak je povolené, aktuálne náklady na využitie API budú zahrnuté do systémovej výzvy. Zakážte toto, ak modely prestávajú pracovať kvôli obavám o náklady."
+			"description": "Ak je povolené, aktuálne náklady na využitie API budú zahrnuté do systémového promptu. Zakážte toto, ak modely prestávajú pracovať kvôli obavám o náklady."
 		},
 		"apiProviderDocs": "Dokumentácia poskytovateľa"
 	},
@@ -1047,7 +1056,7 @@
 				"auto": "Automaticky (predvolené - vyberie najlepší dostupný)",
 				"morphFast": "Morph v3 Fast (rýchlejší, nižšie náklady)",
 				"morphLarge": "Morph v3 Large (schopnejší)",
-				"relace": "Relace Apply v3"
+				"relace": "Relácia Apply v3"
 			}
 		},
 		"INSERT_BLOCK": {
@@ -1105,11 +1114,11 @@
 		},
 		"RUN_SLASH_COMMAND": {
 			"name": "Povoliť slash príkazy iniciované modelom",
-			"description": "Keď je povolené, Kilo Code môže spúšťať vaše slash príkazy k vykonaniu pracovných tokov."
+			"description": "Keď je povolené, Kilo Code môže spúšťať vaše slash príkazy na vykonanie pracovných tokov."
 		},
 		"INLINE_ASSIST": {
 			"name": "Autocomplete",
-			"description": "Povoliť funkcie Autocomplete pre rýchle návrhy kódu a vylepšenia priamo vo tvojom editore. Zahŕňa Rýchlu úlohu (Cmd+I) pre cielené zmeny a Autocomplete pre kontextové vylepšenia."
+			"description": "Povoliť funkcie Autocomplete pre rýchle návrhy kódu a vylepšenia priamo v tvojom editore. Zahŕňa Rýchlu úlohu (Cmd+I) pre cielené zmeny a Autocomplete pre kontextové vylepšenia."
 		},
 		"MULTIPLE_NATIVE_TOOL_CALLS": {
 			"name": "Paralelné volanie nástrojov",
@@ -1132,8 +1141,8 @@
 		}
 	},
 	"promptCaching": {
-		"label": "Zakázať ukladanie výziev do medzipamäte",
-		"description": "Ak je zaškrtnuté, Kilo Code nebude používať ukladanie výziev do medzipamäte pre tento model."
+		"label": "Zakázať ukladanie promptov do medzipamäte",
+		"description": "Ak je zaškrtnuté, Kilo Code nebude používať ukladanie promptov do medzipamäte pre tento model."
 	},
 	"temperature": {
 		"useCustom": "Použiť vlastnú teplotu",
@@ -1145,8 +1154,8 @@
 		"noImages": "Nepodporuje obrázky",
 		"supportsComputerUse": "Podporuje používanie počítača",
 		"noComputerUse": "Nepodporuje používanie počítača",
-		"supportsPromptCache": "Podporuje ukladanie výziev do medzipamäte",
-		"noPromptCache": "Nepodporuje ukladanie výziev do medzipamäte",
+		"supportsPromptCache": "Podporuje ukladanie promptov do medzipamäte",
+		"noPromptCache": "Nepodporuje ukladanie promptov do medzipamäte",
 		"contextWindow": "Kontextové okno:",
 		"maxOutput": "Maximálny výstup",
 		"inputPrice": "Cena vstupu",
@@ -1159,9 +1168,9 @@
 		"useAzure": "Použiť Azure",
 		"azureApiVersion": "Nastaviť verziu Azure API",
 		"gemini": {
-			"freeRequests": "* Zadarmo až {{count}} požiadaviek za minútu. Potom závisí fakturácia na veľkosti výzvy.",
+			"freeRequests": "* Zadarmo až {{count}} požiadaviek za minútu. Potom závisí fakturácia na veľkosti promptu.",
 			"pricingDetails": "Ďalšie informácie nájdete v podrobnostiach o cenách.",
-			"billingEstimate": "* Fakturácia je odhad - presná cena závisí na veľkosti výzvy."
+			"billingEstimate": "* Fakturácia je odhad - presná cena závisí na veľkosti promptu."
 		}
 	},
 	"modelPicker": {
@@ -1179,7 +1188,7 @@
 		"support": "Pre finančné otázky kontaktujte prosím zákaznícku podporu na <supportLink>https://kilo.ai/support</supportLink>",
 		"telemetry": {
 			"label": "Povoliť hlásenie chýb a používania",
-			"description": "Pomôžte vylepšiť Kilo Code odosielaním dát o používaní a hlásení chýb. Nikdy sa neodosiela žiadny kód, výzvy ani osobné informácie. Ďalšie podrobnosti nájdete v našich zásadách ochrany osobných údajov."
+			"description": "Pomôžte vylepšiť Kilo Code odosielaním dát o používaní a hlásení chýb. Nikdy sa neodosiela žiadny kód, prompty ani osobné informácie. Ďalšie podrobnosti nájdete v našich zásadách ochrany osobných údajov."
 		},
 		"settings": {
 			"import": "Importovať",
@@ -1197,7 +1206,7 @@
 		"googleCloud": "Musíte zadať platné ID projektu Google Cloud a región.",
 		"modelId": "Musíte zadať platné ID modelu.",
 		"modelSelector": "Musíte zadať platný selektor modelu.",
-		"openAi": "Musíte zadať platné základné URL, kľúč API a ID modelu.",
+		"openAi": "Musíte zadať platnú základnú URL, kľúč API a ID modelu.",
 		"arn": {
 			"invalidFormat": "Neplatný formát ARN. Skontrolujte prosím požiadavky na formát.",
 			"regionMismatch": "Upozornenie: Región vo vašom ARN ({{arnRegion}}) nezodpovedá vybranému regiónu ({{region}}). To môže spôsobiť problémy s prístupom. Poskytovateľ použije región z ARN."
@@ -1221,7 +1230,7 @@
 		"keyFilePath": "Zadajte cestu k súboru kľúča...",
 		"projectId": "Zadajte ID projektu...",
 		"customArn": "Zadajte ARN (napr. arn:aws:bedrock:us-east-1:123456789012:foundation-model/my-model)",
-		"baseUrl": "Zadajte základné URL...",
+		"baseUrl": "Zadajte základnú URL...",
 		"modelId": {
 			"lmStudio": "napr. meta-llama-3.1-8b-instruct",
 			"lmStudioDraft": "napr. lmstudio-community/llama-3.2-1b-instruct",
@@ -1265,9 +1274,9 @@
 	},
 	"toolProtocol": {
 		"label": "Protokol volania nástrojov",
-		"description": "Vyberte, ako Kilo Code komunikuje s API. Natívne používa API pre volanie funkcií poskytovateľa, zatiaľ čo XML používa definície nástrojov vo formáte XML.",
+		"description": "Vyberte, ako Kilo Code komunikuje s API. Natívny používa API pre volanie funkcií poskytovateľa, zatiaľ čo XML používa definície nástrojov vo formáte XML.",
 		"toolProtocolDesc": "Riadi spôsob, akým AI komunikuje s nástrojmi a API",
-		"toolProtocolAuto": "Automaticky",
+		"toolProtocolAuto": "Automatické",
 		"toolProtocolAutoDesc": "Nechať systém automaticky vybrať najlepší protokol",
 		"toolProtocolFunctionCall": "Volanie funkcií",
 		"toolProtocolFunctionCallDesc": "Použiť natívne API pre volanie funkcií od poskytovateľa",
@@ -1281,7 +1290,7 @@
 	"gitStatusIncludeUntracked": "Zahrnúť nesledované súbory do Git stavu",
 	"gitStatusIncludeUntrackedDesc": "Zobraziť nesledované súbory v informáciách o Git stave",
 	"experimentalParallelToolCalls": "Experimentálne paralelné volanie nástrojov",
-	"experimentalParallelToolCallsDesc": "Povoliť súbežné vykonávanie viac operácií nástrojov",
+	"experimentalParallelToolCallsDesc": "Povoliť súbežné vykonávanie viacerých operácií nástrojov",
 	"experimentalParallelToolCallsInfo": "Táto funkcia môže zrýchliť vykonávanie úloh, ale je experimentálna",
 	"experimentalParallelToolCallsWarning": "⚠️ Experimentálna funkcia - môže spôsobiť neočakávané správanie"
 }

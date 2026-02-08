@@ -20,7 +20,7 @@
 		"sharePublicly": "Zdieľať verejne",
 		"sharePubliclyDescription": "Ktokoľvek s odkazom má prístup",
 		"connectToCloud": "Pripojiť ku cloudu",
-		"connectToCloudDescription": "Prihláste sa do Kilo Code Cloud pre zdieľanie úloh",
+		"connectToCloudDescription": "Prihlás sa do Kilo Code Cloud pre zdieľanie úloh",
 		"sharingDisabledByOrganization": "Zdieľanie zakázané organizáciou",
 		"shareSuccessOrganization": "Odkaz organizácie skopírovaný do schránky",
 		"shareSuccessPublic": "Verejný odkaz skopírovaný do schránky",
@@ -149,7 +149,7 @@
 	"pressToSend": "Stlač {{keyCombination}} pre odoslanie",
 	"stopTts": "Zastaviť prevod textu na reč",
 	"typeMessage": "Napíš správu...",
-	"typeTask": "Vytvor, nájdi, opýtaj sa na niečo",
+	"typeTask": "Vytvor, nájdi, spýtaj sa na niečo",
 	"addContext": "@ pre pridanie kontextu, / pre prepnutie režimov",
 	"dragFiles": "drž shift pre pretiahnutie súborov",
 	"dragFilesImages": "drž shift pre pretiahnutie súborov/obrázkov",
@@ -171,13 +171,13 @@
 			"docs": "Dokumentácia",
 			"goToSettings": "Nastavenia",
 			"400": "Poskytovateľ nemohol spracovať požiadavku ako bola zadaná. Zastav úlohu a skús iný prístup.",
-			"401": "Nepodarilo sa autentizovať u poskytovateľa. Skontroluj konfiguráciu svojho API kľúča.",
-			"402": "Zdá sa, že ti došli prostriedky/kredity na účte. Choď ku svojmu poskytovateľovi a pridaj viac pre pokračovanie.",
+			"401": "Nepodarilo sa autentifikovať u poskytovateľa. Skontroluj konfiguráciu svojho API kľúča.",
+			"402": "Zdá sa, že ti došli prostriedky/kredity na účte. Choď k svojmu poskytovateľovi a pridaj viac pre pokračovanie.",
 			"403": "Neautorizované. Tvoj API kľúč je platný, ale poskytovateľ odmietol dokončiť túto požiadavku.",
 			"429": "Príliš veľa požiadaviek. Poskytovateľ ťa obmedzuje rýchlosťou. Počkaj chvíľu pred ďalším API volaním.",
 			"500": "Chyba servera poskytovateľa. Niečo je zle na strane poskytovateľa, s tvojou požiadavkou nie je nič v neporiadku.",
 			"connection": "Chyba pripojenia. Uisti sa, že máš funkčné pripojenie k internetu.",
-			"claudeCodeNotAuthenticated": "Musíš sa prihlásiť, aby si mohol používať Claude Code. Choď do Nastavení a klikni na \"Prihlásiť sa ku Claude Code\" pre autentizáciu.",
+			"claudeCodeNotAuthenticated": "Musíš sa prihlásiť, aby si mohol používať Claude Code. Choď do Nastavení a klikni na \"Prihlásiť sa ku Claude Code\" pre autentifikáciu.",
 			"unknown": "Neznáma API chyba, klikni na Detaily pre viac informácií."
 		}
 	},
@@ -223,14 +223,14 @@
 		"wantsToRead": "Kilo Code chce prečítať tento súbor:",
 		"wantsToReadMultiple": "Kilo Code chce prečítať viac súborov:",
 		"wantsToReadAndXMore": "Kilo Code chce prečítať tento súbor a {{count}} ďalších:",
-		"wantsToReadOutsideWorkspace": "Kilo Code chce prečítať tento súbor mimo pracovný priestor:",
+		"wantsToReadOutsideWorkspace": "Kilo Code chce prečítať tento súbor mimo pracovného priestoru:",
 		"didRead": "Kilo Code prečítal tento súbor:",
 		"wantsToEdit": "Kilo Code chce upraviť tento súbor:",
-		"wantsToEditOutsideWorkspace": "Kilo Code chce upraviť tento súbor mimo pracovný priestor:",
+		"wantsToEditOutsideWorkspace": "Kilo Code chce upraviť tento súbor mimo pracovného priestoru:",
 		"wantsToEditProtected": "Kilo Code chce upraviť chránený konfiguračný súbor:",
 		"wantsToApplyBatchChanges": "Kilo Code chce aplikovať zmeny na viac súborov:",
 		"wantsToGenerateImage": "Kilo Code chce vygenerovať obrázok:",
-		"wantsToGenerateImageOutsideWorkspace": "Kilo Code chce vygenerovať obrázok mimo pracovný priestor:",
+		"wantsToGenerateImageOutsideWorkspace": "Kilo Code chce vygenerovať obrázok mimo pracovného priestoru:",
 		"wantsToGenerateImageProtected": "Kilo Code chce vygenerovať obrázok v chránenom umiestnení:",
 		"didGenerateImage": "Kilo Code vygeneroval obrázok:",
 		"wantsToCreate": "Kilo Code chce vytvoriť nový súbor:",
@@ -245,26 +245,27 @@
 	"directoryOperations": {
 		"wantsToViewTopLevel": "Kilo Code chce zobraziť súbory najvyššej úrovne v tomto adresári:",
 		"didViewTopLevel": "Kilo Code zobrazil súbory najvyššej úrovne v tomto adresári:",
-		"wantsToViewTopLevelOutsideWorkspace": "Kilo Code chce zobraziť súbory najvyššej úrovne v tomto adresári (mimo pracovný priestor):",
-		"didViewTopLevelOutsideWorkspace": "Kilo Code zobrazil súbory najvyššej úrovne v tomto adresári (mimo pracovný priestor):",
+		"wantsToViewTopLevelOutsideWorkspace": "Kilo Code chce zobraziť súbory najvyššej úrovne v tomto adresári (mimo pracovného priestoru):",
+		"didViewTopLevelOutsideWorkspace": "Kilo Code zobrazil súbory najvyššej úrovne v tomto adresári (mimo pracovného priestoru):",
 		"wantsToViewRecursive": "Kilo Code chce rekurzívne zobraziť všetky súbory v tomto adresári:",
 		"didViewRecursive": "Kilo Code rekurzívne zobrazil všetky súbory v tomto adresári:",
-		"wantsToViewRecursiveOutsideWorkspace": "Kilo Code chce rekurzívne zobraziť všetky súbory v tomto adresári (mimo pracovný priestor):",
-		"didViewRecursiveOutsideWorkspace": "Kilo Code rekurzívne zobrazil všetky súbory v tomto adresári (mimo pracovný priestor):",
+		"wantsToViewRecursiveOutsideWorkspace": "Kilo Code chce rekurzívne zobraziť všetky súbory v tomto adresári (mimo pracovného priestoru):",
+		"didViewRecursiveOutsideWorkspace": "Kilo Code rekurzívne zobrazil všetky súbory v tomto adresári (mimo pracovného priestoru):",
 		"wantsToViewDefinitions": "Kilo Code chce zobraziť názvy definícií zdrojového kódu použité v tomto adresári:",
 		"didViewDefinitions": "Kilo Code zobrazil názvy definícií zdrojového kódu použité v tomto adresári:",
-		"wantsToViewDefinitionsOutsideWorkspace": "Kilo Code chce zobraziť názvy definícií zdrojového kódu použité v tomto adresári (mimo pracovný priestor):",
-		"didViewDefinitionsOutsideWorkspace": "Kilo Code zobrazil názvy definícií zdrojového kódu použité v tomto adresári (mimo pracovný priestor):",
+		"wantsToViewDefinitionsOutsideWorkspace": "Kilo Code chce zobraziť názvy definícií zdrojového kódu použité v tomto adresári (mimo pracovného priestoru):",
+		"didViewDefinitionsOutsideWorkspace": "Kilo Code zobrazil názvy definícií zdrojového kódu použité v tomto adresári (mimo pracovného priestoru):",
 		"wantsToSearch": "Kilo Code chce hľadať v tomto adresári <code>{{regex}}</code>:",
 		"didSearch": "Kilo Code hľadal v tomto adresári <code>{{regex}}</code>:",
-		"wantsToSearchOutsideWorkspace": "Kilo Code chce hľadať v tomto adresári (mimo pracovný priestor) <code>{{regex}}</code>:",
-		"didSearchOutsideWorkspace": "Kilo Code hľadal v tomto adresári (mimo pracovný priestor) <code>{{regex}}</code>:"
+		"wantsToSearchOutsideWorkspace": "Kilo Code chce hľadať v tomto adresári (mimo pracovného priestoru) <code>{{regex}}</code>:",
+		"didSearchOutsideWorkspace": "Kilo Code hľadal v tomto adresári (mimo pracovného priestoru) <code>{{regex}}</code>:"
 	},
 	"codebaseSearch": {
 		"wantsToSearch": "Kilo Code chce hľadať v kódovej základni <code>{{query}}</code>:",
 		"wantsToSearchWithPath": "Kilo Code chce hľadať v kódovej základni <code>{{query}}</code> v <code>{{path}}</code>:",
 		"didSearch_one": "Nájdený 1 výsledok",
 		"didSearch_other": "Nájdených {{count}} výsledkov",
+		"didSearch": "Vyhľadané {{query}}",
 		"resultTooltip": "Skóre podobnosti: {{score}} (klikni pre otvorenie súboru)"
 	},
 	"costs": {
@@ -326,9 +327,9 @@
 	"modelResponseIncomplete": "Odpoveď modelu neúplná",
 	"modelResponseErrors": {
 		"noToolsUsed": "Model nepoužil žiadne nástroje vo svojej odpovedi. To sa zvyčajne stáva, keď model poskytne iba text/uvažovanie bez volania požadovaných nástrojov na dokončenie úlohy.",
-		"noToolsUsedDetails": "Model poskytol text/uvažovanie, ale nevolal žiadne požadované nástroje. To zvyčajne naznačuje, že model nepochopil úlohu alebo má problémy s určením, ktorý nástroj použiť. Model bol automaticky vyzvaný k opakovaniu s riadnym použitím nástrojov.",
+		"noToolsUsedDetails": "Model poskytol text/uvažovanie, ale nevolal žiadne požadované nástroje. To zvyčajne naznačuje, že model nepochopil úlohu alebo má ťažkosti s určením, ktorý nástroj použiť. Model bol automaticky vyzvaný na opakovanie s riadnym použitím nástrojov.",
 		"noAssistantMessages": "Model neposkytol žiadny obsah odpovede. To môže naznačovať problém s API alebo výstupom modelu.",
-		"noAssistantMessagesDetails": "Jazykový model vrátil prázdnu odpoveď bez akéhokoľvek textu alebo volania nástrojov. To sa môže stať kvôli problémom s API, obmedzeniu rýchlosti alebo problémom špecifickým pre model. Model bol automaticky vyzvaný k opakovaniu."
+		"noAssistantMessagesDetails": "Jazykový model vrátil prázdnu odpoveď bez akéhokoľvek textu alebo volania nástrojov. To sa môže stať kvôli problémom s API, obmedzeniu rýchlosti alebo problémom špecifickým pre model. Model bol automaticky vyzvaný na opakovanie."
 	},
 	"errorDetails": {
 		"link": "Detaily",
@@ -341,7 +342,7 @@
 	"diffError": {
 		"title": "Úprava neúspešná"
 	},
-	"troubleMessage": "Kilo Code má problémy...",
+	"troubleMessage": "Kilo Code má ťažkosti...",
 	"powershell": {
 		"issues": "Zdá sa, že máš problémy s Windows PowerShell, prosím pozri sa na toto"
 	},
@@ -356,6 +357,8 @@
 		"tooltipManage": "Spravovať nastavenia automatického schvaľovania",
 		"tooltipStatus": "Automatické schvaľovanie povolené pre: {{toggles}}",
 		"all": "Všetko",
+		"selectAll": "Vybrať všetko",
+		"selectNone": "Zrušiť výber",
 		"triggerLabel_zero": "Automatické schválenie: vypnuté",
 		"triggerLabel_one": "Automatické schválenie: 1",
 		"triggerLabel_other": "Automatické schválenie: {{count}}",
@@ -376,10 +379,10 @@
 		"title": "🎉 Vydaný Kilo Code {{version}}",
 		"support": "Prosím podpor Kilo Code tým, že nám dáš hviezdičku na <githubLink>GitHube</githubLink>.",
 		"stealthModel": {
-			"feature": "<bold>Časovo obmedzený ZADARMO stealth model</bold> - Code Supernova: Teraz vylepšený s <bold>kontextovým oknom 1M tokenov</bold>! Všestranný agentný model pre kódovanie, ktorý podporuje obrazové vstupy, dostupný prostredníctvom Kilo Code Cloud.",
+			"feature": "<bold>Časovo obmedzený ZDARMA stealth model</bold> - Code Supernova: Teraz vylepšený s <bold>kontextovým oknom 1M tokenov</bold>! Všestranný agentný model pre kódovanie, ktorý podporuje obrazové vstupy, dostupný prostredníctvom Kilo Code Cloud.",
 			"note": "(Poznámka: prompty a dokončenia sú zaznamenávané tvorcom modelu a používané na vylepšenie modelu)",
 			"connectButton": "Pripojiť sa k Kilo Code Cloud",
-			"selectModel": "Vyber <code>roo/code-supernova</code> z poskytovateľa Kilo Code Cloud v Nastaveniach pre začiatok.",
+			"selectModel": "Vyber <code>kilo/code-supernova</code> z poskytovateľa Kilo Code Cloud v Nastaveniach pre začiatok.",
 			"goToSettingsButton": "Ísť do Nastavení"
 		},
 		"release": {
@@ -426,7 +429,7 @@
 		"noNewLogs": "(Žiadne nové záznamy)",
 		"screenshot": "Snímka obrazovky prehliadača",
 		"cursor": "kurzor",
-		"active": "Aktívny",
+		"active": "Aktívne",
 		"navigation": {
 			"step": "Krok {{current}} z {{total}}",
 			"previous": "Predchádzajúci",
@@ -454,12 +457,12 @@
 			"screenshotSaved": "Snímka obrazovky uložená",
 			"screenshot": "Uložiť snímku obrazovky do {{path}}",
 			"closed": "Prehliadač zatvorený",
-			"close": "Zavrieť prehliadač"
+			"close": "Zatvoriť prehliadač"
 		}
 	},
 	"browserAnnouncement": {
 		"title": "🌐 Vylepšenie Prechádzania 2.0",
-		"description": "Nová aktualizácia prináša vylepšené prechádzanie s trvalými reláciami a jasnejšími popismi akcií."
+		"description": "Nová aktualizácia prináša vylepšené prechádzanie s trvalými reláciami a jasnejšími popiskami akcií."
 	},
 	"browserAnnouncementDesc": "Preskúmaj vylepšené možnosti prechádzania s lepším ovládaním a spätnou väzbou.",
 	"browserSession": "Relácia prehliadača",
@@ -484,18 +487,18 @@
 	"profileViolationWarning": "Aktuálny profil porušuje nastavenia tvojej organizácie",
 	"shellIntegration": {
 		"title": "Varovanie vykonávania príkazu",
-		"description": "Tvoj príkaz sa vykonáva bez integrácie shellu terminálu VSCode. Pre potlačenie tohto varovania môžeš vypnúť integráciu shellu v sekcii <strong>Terminal</strong> <settingsLink>nastavenia Kilo Code</settingsLink> alebo vyriešiť integráciu terminálu VSCode pomocou odkazu nižšie.",
+		"description": "Tvoj príkaz sa vykonáva bez integrácie shellu terminálu VSCode. Pre potlačenie tohto varovania môžeš vypnúť integráciu shellu v sekcii <strong>Terminal</strong> <settingsLink>nastavení Kilo Code</settingsLink> alebo vyriešiť integráciu terminálu VSCode pomocou odkazu nižšie.",
 		"troubleshooting": "Klikni tu pre dokumentáciu integrácie shellu."
 	},
 	"ask": {
 		"autoApprovedRequestLimitReached": {
 			"title": "Dosiahnutý limit automaticky schválených požiadaviek",
-			"description": "Kilo Code dosiahol automaticky schváleného limitu {{count}} API požiadaviek. Chceš resetovať počítadlo a pokračovať v úlohe?",
+			"description": "Kilo Code dosiahol automaticky schválený limit {{count}} API požiadaviek. Chceš resetovať počítadlo a pokračovať v úlohe?",
 			"button": "Resetovať a pokračovať"
 		},
 		"autoApprovedCostLimitReached": {
 			"title": "Dosiahnutý limit automaticky schválených nákladov",
-			"description": "Kilo Code dosiahol limitu automaticky schválených nákladov ${{count}}. Chceš resetovať náklady a pokračovať v úlohe?",
+			"description": "Kilo Code dosiahol limit automaticky schválených nákladov ${{count}}. Chceš resetovať náklady a pokračovať v úlohe?",
 			"button": "Resetovať a pokračovať"
 		}
 	},
@@ -511,7 +514,7 @@
 	},
 	"rooCloudCTA": {
 		"title": "Kilo Code Cloud prichádza čoskoro!",
-		"description": "Spúšťaj vzdialených agentov v cloude, pristupuj ku svojim úlohám odkiaľkoľvek, spolupracuj s ostatnými a mnoho ďalšieho.",
+		"description": "Spúšťaj vzdialených agentov v cloude, pristupuj k svojim úlohám odkiaľkoľvek, spolupracuj s ostatnými a mnoho ďalšieho.",
 		"joinWaitlist": "Pripoj sa na čakaciu listinu pre získanie prednostného prístupu."
 	},
 	"command": {

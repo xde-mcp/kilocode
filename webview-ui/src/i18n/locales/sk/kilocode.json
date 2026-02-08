@@ -30,8 +30,8 @@
 		"switchToFreeModel": "Prepnúť na bezplatný model"
 	},
 	"pagination": {
-		"previous": "Predchádzajúci",
-		"next": "Ďalší",
+		"previous": "Predchádzajúca",
+		"next": "Ďalšia",
 		"page": "Stránka {{page}} / {{count}}"
 	},
 	"invalidModel": {
@@ -75,9 +75,9 @@
 				"description": "Kilo Code smeruje požiadavky na najlepších dostupných poskytovateľov pre váš model. V predvolenom nastavení sú požiadavky rozložené medzi najlepších poskytovateľov, aby sa maximalizovala doba prevádzky. Môžete si však vybrať konkrétneho poskytovateľa, ktorého chcete pre tento model použiť.",
 				"sorting": {
 					"default": "Predvolené radenie poskytovateľov",
-					"price": "Uprednostniť poskytovateľa s nižšou cenou",
-					"throughput": "Uprednostniť poskytovateľa s vyššou priepustnosťou",
-					"latency": "Uprednostniť poskytovateľa s nižšou latenciou"
+					"price": "Uprednostniť poskytovateľov s nižšou cenou",
+					"throughput": "Uprednostniť poskytovateľov s vyššou priepustnosťou",
+					"latency": "Uprednostniť poskytovateľov s nižšou latenciou"
 				},
 				"dataCollection": {
 					"default": "Nie je nastavená zásada dát",
@@ -91,7 +91,7 @@
 		"modelInfo": {
 			"contextWindow": "Kontextové okno",
 			"providerBreakdown": "Rozpis cien a schopností poskytovateľov",
-			"averageKiloCodeCost": "Toto sú priemerné skutočné náklady za použitie tohto modelu v Kilo Code za posledný týždeň. Môže byť nižšia než uvedená cena vďaka využitiu cache pre prompty.",
+			"averageKiloCodeCost": "Toto sú priemerné skutočné náklady za použitie tohto modelu v Kilo Code za posledný týždeň. Môže byť nižšia ako uvedená cena vďaka využitiu cache pre prompty.",
 			"table": {
 				"provider": "Poskytovateľ",
 				"context": "Endpoint môže spracovať tento počet tokenov (vstup + výstup).",
@@ -126,7 +126,7 @@
 		},
 		"codeIndex": {
 			"embeddingBatchSizeLabel": "Veľkosť dávky embeddingu",
-			"embeddingBatchSizeDescription": "Počet segmentov kódu, ktoré sa zoskupia pre generovanie embeddingov a vektové upserty. Vyššie hodnoty môžu zlepšiť rýchlosť indexovania, ale môžu zvýšiť spotrebu pamäte. Nižšie hodnoty znižujú spotrebu pamäte, ale môžu spomaliť indexovanie.",
+			"embeddingBatchSizeDescription": "Počet segmentov kódu, ktoré sa zoskupia pre generovanie embeddingov a vektorové upserty. Vyššie hodnoty môžu zlepšiť rýchlosť indexovania, ale môžu zvýšiť spotrebu pamäte. Nižšie hodnoty znižujú spotrebu pamäte, ale môžu spomaliť indexovanie.",
 			"scannerMaxBatchRetriesLabel": "Maximálny počet opakovaní dávky skenera",
 			"scannerMaxBatchRetriesDescription": "Maximálny počet pokusov o opakovanie neúspešnej dávky počas skenovania adresárov. Vyššie hodnoty zvyšujú odolnosť voči prechodným chybám, ale môžu spomaliť indexovanie, ak chyby pretrvávajú. Nižšie hodnoty zlyhávajú rýchlejšie, ale môžu pri dočasných problémoch preskočiť obsah."
 		}
@@ -178,7 +178,7 @@
 			"workflows": "Pracovné postupy"
 		},
 		"description": {
-			"rules": "Pravidlá ti umožňujú poskytnúť Kilo Code pokyny, ktoré by mal dodržiavať vo všetkých režimoch a pre všetky prompty. Je to trvalý spôsob, ako zahrnúť kontext a preferencie pre všetky konverzácie vo tvojom pracovnom priestore alebo globálne.",
+			"rules": "Pravidlá ti umožňujú poskytnúť Kilo Code pokyny, ktoré by mal dodržiavať vo všetkých režimoch a pre všetky prompty. Je to trvalý spôsob, ako zahrnúť kontext a preferencie pre všetky konverzácie v tvojom pracovnom priestore alebo globálne.",
 			"workflows": "Pracovné postupy sú pripravená šablóna pre konverzáciu. Pracovné postupy ti môžu umožniť definovať prompty, ktoré často používaš, a môžu zahŕňať rad krokov na vedenie Kilo Code cez opakujúce sa úlohy, ako je nasadenie služby alebo odoslanie PR. Pre vyvolanie pracovného postupu napíš",
 			"workflowsInChat": "v chate."
 		},
@@ -246,7 +246,7 @@
 	"toolCallStyle": {
 		"title": "Štýl volania nástrojov",
 		"description": "Vyber, ako sú volania nástrojov formátované v systémovom prompte. JSON je momentálne experimentálny a je určený predovšetkým pre používateľov, ktorí majú záujem prispieť k jeho vývoju.",
-		"automatic": "Nech Kilo rozhodnúť",
+		"automatic": "Nechaj Kilo rozhodnúť",
 		"xml": "XML",
 		"json": "JSON"
 	},
@@ -331,6 +331,11 @@
 	"memoryWarning": {
 		"message": "Využitie pamäte je na {{percentage}}%. Reštartuj prosím svoje IDE, aby sa predišlo pádom."
 	},
+	"commitMessage": {
+		"discoveringFiles": "Vyhľadávanie súborov na potvrdenie...",
+		"gettingContext": "Získavanie kontextu zo súborov...",
+		"initializing": "Inicializácia pre potvrdenie..."
+	},
 	"marketplace": {
 		"mcp": {
 			"description": "Tieto servery MCP sú spravované komunitou. Kliknite <1>tu</1> pre úpravu vašich vlastných nastavení MCP."
@@ -347,7 +352,7 @@
 	},
 	"deviceAuth": {
 		"title": "Prihlásiť sa do Kilo Code",
-		"step1": "Otvor nasledujúcu URL vo svojom prehliadači",
+		"step1": "Otvori nasledujúcu URL vo svojom prehliadači",
 		"step2": "Over kód a autorizuj toto zariadenie vo svojom prehliadači",
 		"scanQr": "Alebo naskenuj tento QR kód svojím telefónom",
 		"openBrowser": "Otvoriť prehliadač",

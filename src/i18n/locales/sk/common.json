@@ -50,6 +50,7 @@
 		"checkpoint_diff_to_current": "Zmeny k aktuálnemu workspace",
 		"nested_git_repos_warning": "Varovanie: Nájdené vnorené git repozitáre v týchto cestách. To môže spôsobiť neočakávané správanie s kontrolnými bodmi: {{paths}}",
 		"no_workspace": "Najprv prosím otvor priečinok projektu",
+		"attempt_completion_tool_failed": "Nie je možné vykonať attempt_completion, pretože predchádzajúce volanie nástroja v tomto kole zlyhalo. Vyrieš prosím najprv zlyhanie nástroja pred pokusom o dokončenie.",
 		"update_support_prompt": "Aktualizácia support promptu zlyhala",
 		"reset_support_prompt": "Reset support promptu zlyhal",
 		"enhance_prompt": "Vylepšenie promptu zlyhalo",
@@ -175,6 +176,7 @@
 	},
 	"info": {
 		"no_changes": "Neboli nájdené žiadne zmeny.",
+		"path_copied_to_clipboard": "Cesta skopírovaná do schránky",
 		"clipboard_copy": "System prompt bol úspešne skopírovaný do schránky",
 		"history_cleanup": "Vyčistených {{count}} úloh s chýbajúcimi súbormi z histórie.",
 		"custom_storage_path_set": "Nastavená vlastná cesta úložiska: {{path}}",

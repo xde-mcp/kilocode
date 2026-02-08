@@ -2,7 +2,7 @@
 	"title": "MCP Servery",
 	"done": "Hotovo",
 	"marketplace": "MCP Trhovisko",
-	"description": "<0>Model Context Protocol</0> umožňuje komunikáciu s lokálnymi MCP servermi, ktoré poskytujú ďalšie nástroje a zdroje pre rozšírenie schopností Kilo Code. Môžeš používať <1>servery vytvorené komunitou</1> alebo požiadať Kilo Code o vytvorenie nových nástrojov špecifických pre tvoj pracovný postup (napr. \"pridaj nástroj, ktorý načítava najnovšie npm docs\").",
+	"description": "<0>Model Context Protocol</0> umožňuje komunikáciu s lokálnymi MCP servermi, ktoré poskytujú ďalšie nástroje a zdroje pre rozšírenie schopností Kilo Code. Môžeš používať <1>servery vytvorené komunitou</1> alebo požiadať Kilo Code o vytvorenie nových nástrojov špecifických pre tvoj pracovný postup (napr. \"pridaj nástroj, ktorý načíta najnovšie npm docs\").",
 	"instructions": "Pokyny",
 	"enableToggle": {
 		"title": "Povoliť MCP Servery",

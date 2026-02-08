@@ -28,7 +28,7 @@
 		"heading": "Vyber svojho poskytovateľa",
 		"chooseProvider": "Kilo potrebuje poskytovateľa LLM na fungovanie. Vyber jeden pre začiatok, neskôr môžeš pridať ďalšie.",
 		"rooCloudProvider": "Kilo Code Cloud Provider",
-		"rooCloudDescription": "Najjednoduchší spôsob použitia Kilo. Kurátorovaná zmes bezplatných a platených modelov za nízku cenu",
+		"rooCloudDescription": "Najjednoduchší spôsob použitia Kilo. Kurátorská zmes bezplatných a platených modelov za nízku cenu",
 		"learnMore": "dozvedieť sa viac",
 		"useAnotherProvider": "Použiť iného poskytovateľa",
 		"useAnotherProviderDescription": "Zadajte API kľúč a môžete začať.",
@@ -41,17 +41,17 @@
 	"waitingForCloud": {
 		"heading": "Presmerovávam vás do Kilo Code Cloud...",
 		"description": "Dokončite registráciu vo svojom prehliadači, potom sa sem automaticky vrátite.",
-		"noPrompt": "Ak sa nezobrazí výzva na otvorenie URL, <clickHere>kliknite tu</clickHere>.",
-		"havingTrouble": "Ak ste dokončili registráciu, ale máte problémy, <clickHere>kliknite tu</clickHere>.",
+		"noPrompt": "Ak sa nezobrazí výzva na otvorenie URL, <clickHere>kliknite sem</clickHere>.",
+		"havingTrouble": "Ak ste dokončili registráciu, ale máte problémy, <clickHere>kliknite sem</clickHere>.",
 		"pasteUrl": "Vložte spätnú URL z vášho prehliadača:",
 		"docsLink": "Nefunguje? <DocsLink>Skontroluj dokumentáciu</DocsLink>.",
-		"invalidURL": "To nevyzerá ako platná spätná URL. Skopíruj prosím to, čo ukazuje Kilo Code Cloud vo tvojom prehliadači.",
+		"invalidURL": "To nevyzerá ako platná spätná URL. Skopíruj prosím to, čo ukazuje Kilo Code Cloud v tvojom prehliadači.",
 		"goBack": "Ísť späť"
 	},
 	"startRouter": "Odporúčame použiť LLM Router:",
 	"startCustom": "Alebo môžeš priniesť svoj vlastný API kľúč poskytovateľa:",
 	"rooCloudProviderHeading": "Kilo Code Cloud Provider",
-	"rooCloudProviderBody": "Najjednoduchší spôsob začiatku s kurátorovanými modelmi",
+	"rooCloudProviderBody": "Najjednoduchší spôsob začiatku s kurátorskými modelmi",
 	"rooCloudProviderSignUp": "Registrovať sa do cloudu",
 	"rooCloudProviderSignUpDesc": "Vytvorte si účet pre prístup ku cloudovým modelom",
 	"rooCloudProviderAuthButtonText": "Pripojiť sa ku cloudu",
@@ -65,7 +65,7 @@
 	"rooCloudProviderCoderDesc": "Špecializovaný agent pre písanie a refaktoring kódu",
 	"telemetry": {
 		"helpImprove": "Pomôž vylepšiť Kilo Code",
-		"helpImproveMessage": "Kilo Code zbiera dáta o chybách a používaní, aby nám pomohol opraviť chyby a vylepšiť rozšírenie. Táto telemetria nezbiera kód, prompty ani osobné informácie. Môžeš to vypnúť v <settingsLink>nastaveniach</settingsLink>.",
+		"helpImproveMessage": "Kilo Code zbiera dáta o chybách a používaní, aby nám pomohol opraviť chyby a vylepšiť rozšírenie. Táto telemetria nezbiera kód, prompty ani osobné informácie. Môžeš to vypnúť v <settingsLink>nastavení</settingsLink>.",
 		"changeSettings": "Toto môžete neskôr zmeniť v dolnej časti <settingsLink>nastavení</settingsLink>"
 	},
 	"importSettings": "Importovať Nastavenia"

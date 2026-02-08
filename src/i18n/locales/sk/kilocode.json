@@ -52,6 +52,9 @@
 		}
 	},
 	"commitMessage": {
+		"initializing": "Inicializujem...",
+		"discoveringFiles": "Zisťujem súbory...",
+		"gettingContext": "Získavam kontext...",
 		"activated": "Generátor správ pre commit Kilo Code aktivovaný",
 		"gitNotFound": "⚠️ Git repozitár nebol nájdený alebo git nie je dostupný",
 		"gitInitError": "⚠️ Chyba inicializácie Gitu: {{error}}",

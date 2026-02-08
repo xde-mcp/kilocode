@@ -12,7 +12,7 @@
 		"mainWorkspace": "Hlavný pracovný priestor",
 		"readyToMerge": "Pripravené na zlúčenie",
 		"shareSession": "Zdieľať reláciu",
-		"shareConfirmMessage": "Chcete verejne zdieľať snímku tejto relácie?",
+		"shareConfirmMessage": "Chceš verejne zdieľať snímku tejto relácie?",
 		"shareConfirmYes": "Áno",
 		"shareConfirmNo": "Nie",
 		"options": "Možnosti",
@@ -20,7 +20,7 @@
 	},
 	"sessionDetail": {
 		"startNewAgent": "Spustiť nového agenta",
-		"describeTask": "Popíšte úlohu, ktorú má agent vykonať.",
+		"describeTask": "Popíš úlohu, ktorú má agent vykonať.",
 		"placeholderTask": "Napíš svoju úlohu tu...",
 		"stopButton": "Zastaviť",
 		"newButton": "Nový",
@@ -84,7 +84,7 @@
 	},
 	"chatInput": {
 		"autoMode": "Agent beží v plne automatickom režime - vstup nie je povolený",
-		"sessionEnded": "Relácia skončila, prosím začnite novú reláciu",
+		"sessionEnded": "Relácia skončila, prosím začni novú reláciu",
 		"placeholderTypeTask": "Napíš svoju úlohu tu...",
 		"ariaLabel": "Vstup správy",
 		"cancelTitle": "Zrušiť agenta",
