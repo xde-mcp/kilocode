@@ -285,6 +285,43 @@ describe("MoonshotHandler", () => {
 			)
 		})
 
+		it("should enforce strict thinking temperature/provider options for kimi-for-coding by default", async () => {
+			const strictHandler = new MoonshotHandler({
+				...mockOptions,
+				apiModelId: "kimi-for-coding",
+				modelTemperature: 0.1,
+			})
+
+			async function* mockFullStream() {
+				yield { type: "text-delta", text: "Test response" }
+			}
+
+			mockStreamText.mockReturnValue({
+				fullStream: mockFullStream(),
+				usage: Promise.resolve({
+					inputTokens: 1,
+					outputTokens: 1,
+					details: {},
+					raw: {},
+				}),
+			})
+
+			for await (const _chunk of strictHandler.createMessage(systemPrompt, messages)) {
+				// Drain stream
+			}
+
+			expect(mockStreamText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					temperature: 1.0,
+					providerOptions: {
+						moonshot: {
+							thinking: { type: "enabled" },
+						},
+					},
+				}),
+			)
+		})
+
 		it("should enforce strict non-thinking temperature/provider options when reasoning is disabled", async () => {
 			const strictHandler = new MoonshotHandler({
 				...mockOptions,

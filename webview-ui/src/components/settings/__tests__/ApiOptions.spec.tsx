@@ -361,6 +361,7 @@ describe("ApiOptions", () => {
 		})
 
 		expect(screen.getByRole("option", { name: "kimi-for-coding" })).toBeInTheDocument()
+		expect(screen.queryByRole("option", { name: "kimi-k2-thinking" })).not.toBeInTheDocument() // kilocode_change
 	})
 
 	it("shows diff settings, temperature and rate limit controls by default", () => {
