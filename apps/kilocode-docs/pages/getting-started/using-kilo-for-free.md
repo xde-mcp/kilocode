@@ -19,7 +19,7 @@ Each of these can consume credits by default. **For a completely free Kilo exper
 
 ## Free Agentic Usage
 
-Kilo Code provides access to free models for your coding tasks through the Kilo Gateway and partner providers.
+Kilo Code provides access to [free models](/docs/code-with-ai/agents/free-and-budget-models) for your coding tasks through the Kilo Gateway and partner providers.
 
 ### Finding Free Models
 
@@ -47,7 +47,7 @@ Kilo's cloud services—including App Builder, Code Reviewer, and other cloud-ba
 3. Select any free model to avoid using credits
 
 {% callout type="tip" %}
-The available free models change over time as Kilo partners with different AI inference providers. Subscribe to our blog, join our Discord, and check the model picker regularly to see current free options.
+The available free models change over time as Kilo partners with different AI inference providers. Check our [free and budget models guide](/docs/code-with-ai/agents/free-and-budget-models) for the latest options, and subscribe to our blog or join our Discord for updates.
 {% /callout %}
 
 ## Free Autocomplete
@@ -98,6 +98,7 @@ Replace `your-preferred-free-model` with any free model available in the model p
 
 ## Related Resources
 
+- [Free and Budget Models](/docs/code-with-ai/agents/free-and-budget-models) - Complete guide to free and budget-friendly model options
 - [Mistral Setup Guide](/docs/code-with-ai/features/autocomplete/mistral-setup) - Step-by-step free autocomplete setup
 - [Autocomplete](/docs/code-with-ai/features/autocomplete) - Full autocomplete documentation
 - [CLI Documentation](/docs/code-with-ai/platforms/cli) - Complete CLI reference
