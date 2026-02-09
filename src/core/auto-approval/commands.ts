@@ -273,7 +273,29 @@ export function getCommandDecision(
 		// Remove simple PowerShell-like redirections (e.g. 2>&1) before checking
 		const cmdWithoutRedirection = cmd.replace(/\d*>&\d*/, "").trim()
 
-		return getSingleCommandDecision(cmdWithoutRedirection, allowedCommands, deniedCommands)
+		// Try matching both the original command and the stripped command.
+		// This handles the case where the allowlist contains a pattern with redirection
+		// (e.g., "pnpm compile 2>&1") but the stripped command doesn't match it.
+		const decisionWithoutRedirection = getSingleCommandDecision(
+			cmdWithoutRedirection,
+			allowedCommands,
+			deniedCommands,
+		)
+		const decisionWithRedirection = getSingleCommandDecision(cmd, allowedCommands, deniedCommands)
+
+		// If either version is auto-approved, use that decision (prefer approval)
+		// If either version is auto-denied, use that decision (prefer denial over ask_user)
+		if (decisionWithoutRedirection === "auto_approve" || decisionWithRedirection === "auto_approve") {
+			// But if one is denied, denial takes precedence
+			if (decisionWithoutRedirection === "auto_deny" || decisionWithRedirection === "auto_deny") {
+				return "auto_deny"
+			}
+			return "auto_approve"
+		}
+		if (decisionWithoutRedirection === "auto_deny" || decisionWithRedirection === "auto_deny") {
+			return "auto_deny"
+		}
+		return "ask_user"
 	})
 
 	// If any sub-command is denied, deny the whole command
