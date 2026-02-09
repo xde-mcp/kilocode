@@ -117,24 +117,36 @@ export class MoonshotHandler extends OpenAICompatibleHandler {
 		metadata?: Parameters<OpenAICompatibleHandler["getProviderOptions"]>[1],
 	): ReturnType<OpenAICompatibleHandler["getProviderOptions"]> {
 		const inheritedProviderOptions = super.getProviderOptions(model, metadata)
-		if (!this.isStrictKimiModel(model.id)) {
-			return inheritedProviderOptions
-		}
-
-		const thinking = {
-			type: (this.isStrictKimiThinkingEnabled() ? "enabled" : "disabled") as "enabled" | "disabled",
-		}
 		const existingMoonshotOptions =
 			inheritedProviderOptions?.moonshot &&
 			typeof inheritedProviderOptions.moonshot === "object" &&
 			!Array.isArray(inheritedProviderOptions.moonshot)
 				? inheritedProviderOptions.moonshot
 				: {}
+		const moonshotOptions = {
+			...existingMoonshotOptions,
+			...(metadata?.taskId ? { prompt_cache_key: metadata.taskId } : {}),
+		}
+
+		if (!this.isStrictKimiModel(model.id)) {
+			if (Object.keys(moonshotOptions).length === 0) {
+				return inheritedProviderOptions
+			}
+
+			return {
+				...inheritedProviderOptions,
+				moonshot: moonshotOptions,
+			}
+		}
+
+		const thinking = {
+			type: (this.isStrictKimiThinkingEnabled() ? "enabled" : "disabled") as "enabled" | "disabled",
+		}
 
 		return {
 			...inheritedProviderOptions,
 			moonshot: {
-				...existingMoonshotOptions,
+				...moonshotOptions,
 				thinking,
 			},
 		}

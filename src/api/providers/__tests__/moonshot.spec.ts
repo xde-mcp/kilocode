@@ -248,6 +248,36 @@ describe("MoonshotHandler", () => {
 		})
 
 		// kilocode_change start
+		it("should include prompt_cache_key for moonshot requests when taskId is provided", async () => {
+			async function* mockFullStream() {
+				yield { type: "text-delta", text: "Test response" }
+			}
+
+			mockStreamText.mockReturnValue({
+				fullStream: mockFullStream(),
+				usage: Promise.resolve({
+					inputTokens: 1,
+					outputTokens: 1,
+					details: {},
+					raw: {},
+				}),
+			})
+
+			for await (const _chunk of handler.createMessage(systemPrompt, messages, { taskId: "task-cache-1" })) {
+				// Drain stream
+			}
+
+			expect(mockStreamText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					providerOptions: {
+						moonshot: {
+							prompt_cache_key: "task-cache-1",
+						},
+					},
+				}),
+			)
+		})
+
 		it("should enforce strict thinking temperature/provider options for kimi-k2.5 by default", async () => {
 			const strictHandler = new MoonshotHandler({
 				...mockOptions,
@@ -278,6 +308,43 @@ describe("MoonshotHandler", () => {
 					temperature: 1.0,
 					providerOptions: {
 						moonshot: {
+							thinking: { type: "enabled" },
+						},
+					},
+				}),
+			)
+		})
+
+		it("should include prompt_cache_key alongside strict thinking controls when taskId is provided", async () => {
+			const strictHandler = new MoonshotHandler({
+				...mockOptions,
+				apiModelId: "kimi-for-coding",
+			})
+
+			async function* mockFullStream() {
+				yield { type: "text-delta", text: "Test response" }
+			}
+
+			mockStreamText.mockReturnValue({
+				fullStream: mockFullStream(),
+				usage: Promise.resolve({
+					inputTokens: 1,
+					outputTokens: 1,
+					details: {},
+					raw: {},
+				}),
+			})
+
+			for await (const _chunk of strictHandler.createMessage(systemPrompt, messages, { taskId: "task-cache-2" })) {
+				// Drain stream
+			}
+
+			expect(mockStreamText).toHaveBeenCalledWith(
+				expect.objectContaining({
+					temperature: 1.0,
+					providerOptions: {
+						moonshot: {
+							prompt_cache_key: "task-cache-2",
 							thinking: { type: "enabled" },
 						},
 					},
