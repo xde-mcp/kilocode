@@ -8,7 +8,19 @@ import { getModelParams } from "../transform/model-params"
 import { OpenAICompatibleHandler, OpenAICompatibleConfig } from "./openai-compatible"
 
 // kilocode_change start
-const STRICT_KIMI_MODELS = new Set(["kimi-k2.5", "kimi-for-coding"])
+const STRICT_KIMI_TEMPERATURES = {
+	"kimi-k2.5": {
+		thinkingEnabled: 1.0,
+		thinkingDisabled: moonshotModels["kimi-k2.5"].defaultTemperature ?? 0.6,
+	},
+	"kimi-for-coding": {
+		thinkingEnabled: 1.0,
+		thinkingDisabled: moonshotModels["kimi-for-coding"].defaultTemperature ?? 0.6,
+	},
+} as const
+
+type StrictKimiModelId = keyof typeof STRICT_KIMI_TEMPERATURES
+const STRICT_KIMI_MODELS = new Set(Object.keys(STRICT_KIMI_TEMPERATURES))
 // kilocode_change end
 
 export class MoonshotHandler extends OpenAICompatibleHandler {
@@ -77,13 +89,24 @@ export class MoonshotHandler extends OpenAICompatibleHandler {
 		return STRICT_KIMI_MODELS.has(modelId)
 	}
 
+	private getStrictKimiTemperatureConfig(modelId: string) {
+		if (!this.isStrictKimiModel(modelId)) {
+			return undefined
+		}
+
+		return STRICT_KIMI_TEMPERATURES[modelId as StrictKimiModelId]
+	}
+
 	private isStrictKimiThinkingEnabled(): boolean {
 		return this.options.enableReasoningEffort !== false
 	}
 
 	protected override getRequestTemperature(model: { id: string; temperature?: number }): number | undefined {
-		if (this.isStrictKimiModel(model.id)) {
-			return this.isStrictKimiThinkingEnabled() ? 1.0 : 0.6
+		const strictTemperatureConfig = this.getStrictKimiTemperatureConfig(model.id)
+		if (strictTemperatureConfig) {
+			return this.isStrictKimiThinkingEnabled()
+				? strictTemperatureConfig.thinkingEnabled
+				: strictTemperatureConfig.thinkingDisabled
 		}
 
 		return super.getRequestTemperature(model)
