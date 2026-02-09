@@ -210,7 +210,7 @@ For most permissions, you can use an object to apply different actions based on 
 
 ```json
 {
-	"$schema": "https://kilo.ai/config.json",
+	"$schema": "https://opencode.ai/config.json",
 	"permission": {
 		"bash": {
 			"*": "ask",
