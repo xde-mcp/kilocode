@@ -286,15 +286,11 @@ export function getCommandDecision(
 
 		// If either version is auto-approved, use that decision (prefer approval)
 		// If either version is auto-denied, use that decision (prefer denial over ask_user)
-		if (decisionWithoutRedirection === "auto_approve" || decisionWithRedirection === "auto_approve") {
-			// But if one is denied, denial takes precedence
-			if (decisionWithoutRedirection === "auto_deny" || decisionWithRedirection === "auto_deny") {
-				return "auto_deny"
-			}
-			return "auto_approve"
-		}
 		if (decisionWithoutRedirection === "auto_deny" || decisionWithRedirection === "auto_deny") {
 			return "auto_deny"
+		}
+		if (decisionWithoutRedirection === "auto_approve" || decisionWithRedirection === "auto_approve") {
+			return "auto_approve"
 		}
 		return "ask_user"
 		// kilocode_change end
