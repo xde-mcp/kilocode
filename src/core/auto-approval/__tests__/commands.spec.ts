@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import { getCommandDecision } from "../commands"
 
 describe("getCommandDecision", () => {

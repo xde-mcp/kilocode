@@ -273,6 +273,7 @@ export function getCommandDecision(
 		// Remove simple PowerShell-like redirections (e.g. 2>&1) before checking
 		const cmdWithoutRedirection = cmd.replace(/\d*>&\d*/, "").trim()
 
+		// kilocode_change start
 		// Try matching both the original command and the stripped command.
 		// This handles the case where the allowlist contains a pattern with redirection
 		// (e.g., "pnpm compile 2>&1") but the stripped command doesn't match it.
@@ -296,6 +297,7 @@ export function getCommandDecision(
 			return "auto_deny"
 		}
 		return "ask_user"
+		// kilocode_change end
 	})
 
 	// If any sub-command is denied, deny the whole command
