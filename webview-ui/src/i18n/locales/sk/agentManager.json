@@ -16,7 +16,8 @@
 		"shareConfirmYes": "Áno",
 		"shareConfirmNo": "Nie",
 		"options": "Možnosti",
-		"configureSetupScript": "Setup skript worktree"
+		"configureSetupScript": "Setup skript worktree",
+		"yoloMode": "YOLO režim (automatické schvaľovanie)"
 	},
 	"sessionDetail": {
 		"startNewAgent": "Spustiť nového agenta",
@@ -63,7 +64,14 @@
 		"defaultModel": "Predvolený model",
 		"loadingModels": "Načítanie...",
 		"selectMode": "Vybrať režim",
-		"modeTooltip": "Režim: {{mode}}"
+		"modeTooltip": "Režim: {{mode}}",
+		"yoloModeToggle": "Prepnúť YOLO režim",
+		"yoloModeEnabled": "YOLO režim zapnutý - nástroje automaticky schválené",
+		"yoloModeDisabled": "YOLO režim vypnutý - nástroje vyžadujú schválenie",
+		"yoloModeOn": "YOLO režim - nástroje automaticky schválené",
+		"renameSession": "Premenovať reláciu",
+		"confirmRename": "Potvrdiť premenovanie",
+		"clickToRename": "Klikni pre premenovanie"
 	},
 	"messages": {
 		"waiting": "Čakanie na odpoveď agenta...",
@@ -80,7 +88,9 @@
 		"collapseOutput": "Zbaliť výstup",
 		"copyCommand": "Kopírovať príkaz",
 		"thinking": "Premýšľanie",
-		"thinkingSeconds": "{{count}}s"
+		"thinkingSeconds": "{{count}}s",
+		"approve": "Schváliť",
+		"deny": "Zamietnuť"
 	},
 	"chatInput": {
 		"autoMode": "Agent beží v plne automatickom režime - vstup nie je povolený",
