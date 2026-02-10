@@ -797,45 +797,18 @@ export const webviewMessageHandler = async (
 			break
 		case "deleteMultipleTasksWithIds": {
 			const ids = message.ids
+			const excludeFavorites = message.excludeFavorites
 
 			if (Array.isArray(ids)) {
-				// Process in batches of 20 (or another reasonable number)
-				const batchSize = 20
-				const results = []
-
-				// Only log start and end of the operation
-				console.log(`Batch deletion started: ${ids.length} tasks total`)
-
-				for (let i = 0; i < ids.length; i += batchSize) {
-					const batch = ids.slice(i, i + batchSize)
-
-					const batchPromises = batch.map(async (id) => {
-						try {
-							await provider.deleteTaskWithId(id)
-							return { id, success: true }
-						} catch (error) {
-							// Keep error logging for debugging purposes
-							console.log(
-								`Failed to delete task ${id}: ${error instanceof Error ? error.message : String(error)}`,
-							)
-							return { id, success: false }
-						}
-					})
-
-					// Process each batch in parallel but wait for completion before starting the next batch
-					const batchResults = await Promise.all(batchPromises)
-					results.push(...batchResults)
-
-					// Update the UI after each batch to show progress
+				// kilocode_change start: Use deleteMultipleTasks which handles excludeFavorites
+				try {
+					await provider.deleteMultipleTasks(ids, excludeFavorites)
 					await provider.postStateToWebview()
+					console.log(`Batch deletion completed: ${ids.length} tasks processed`)
+				} catch (error) {
+					console.log(`Batch deletion failed: ${error instanceof Error ? error.message : String(error)}`)
 				}
-
-				// Log final results
-				const successCount = results.filter((r) => r.success).length
-				const failCount = results.length - successCount
-				console.log(
-					`Batch deletion completed: ${successCount}/${ids.length} tasks successful, ${failCount} tasks failed`,
-				)
+				// kilocode_change end
 			}
 			break
 		}
@@ -875,7 +848,7 @@ export const webviewMessageHandler = async (
 				customModesManager: provider.customModesManager,
 				provider: provider,
 			})
-
+			await provider.postMessageToWebview({ type: "settingsImported" })
 			break
 		}
 		case "exportSettings":
@@ -1909,6 +1882,10 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		// kilocode_change start
+		case "hasCompletedOnboarding":
+			await updateGlobalState("hasCompletedOnboarding", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)
 			await provider.postStateToWebview()
@@ -1921,7 +1898,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "sendMessageOnEnter":
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
@@ -2305,7 +2281,7 @@ export const webviewMessageHandler = async (
 				}
 
 				// kilocode_change start: If we're updating the active profile, we need to activate it to ensure it's persisted
-				const currentApiConfigName = getGlobalState("currentApiConfigName")
+				const currentApiConfigName = getGlobalState("currentApiConfigName") || "default"
 				const isActiveProfile = message.text === currentApiConfigName
 				await provider.upsertProviderProfile(message.text, configToSave, isActiveProfile) // Activate if it's the current active profile
 				vscode.commands.executeCommand("kilo-code.ghost.reload")
@@ -4514,6 +4490,38 @@ export const webviewMessageHandler = async (
 			break
 		}
 
+		case "requestOpenAiCodexRateLimits": {
+			try {
+				const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+				const accessToken = await openAiCodexOAuthManager.getAccessToken()
+
+				if (!accessToken) {
+					provider.postMessageToWebview({
+						type: "openAiCodexRateLimits",
+						error: "Not authenticated with OpenAI Codex",
+					})
+					break
+				}
+
+				const accountId = await openAiCodexOAuthManager.getAccountId()
+				const { fetchOpenAiCodexRateLimitInfo } = await import("../../integrations/openai-codex/rate-limits")
+				const rateLimits = await fetchOpenAiCodexRateLimitInfo(accessToken, { accountId })
+
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
+					values: rateLimits,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Error fetching OpenAI Codex rate limits: ${errorMessage}`)
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
+					error: errorMessage,
+				})
+			}
+			break
+		}
+
 		case "openDebugApiHistory":
 		case "openDebugUiHistory": {
 			const currentTask = provider.getCurrentTask()
@@ -4593,6 +4601,16 @@ export const webviewMessageHandler = async (
 			})
 			break
 		}
+
+		// kilocode_change start: Review mode scope selection
+		case "reviewScopeSelected": {
+			const scope = message.reviewScope
+			if (scope === "uncommitted" || scope === "branch") {
+				await provider.handleReviewScopeSelected(scope)
+			}
+			break
+		}
+		// kilocode_change end
 
 		default: {
 			// console.log(`Unhandled message type: ${message.type}`)

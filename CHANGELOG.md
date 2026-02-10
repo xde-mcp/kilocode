@@ -1,5 +1,211 @@
 # kilo-code
 
+## 5.5.0
+
+### Minor Changes
+
+- [#4890](https://github.com/Kilo-Org/kilocode/pull/4890) [`535e3d1`](https://github.com/Kilo-Org/kilocode/commit/535e3d1751255487b4a0217fbae6e7b357b85a56) Thanks [@Drilmo](https://github.com/Drilmo)! - feat(agent-manager): add YOLO mode toggle and session rename
+
+    **New Features:**
+
+    - Add YOLO mode toggle button in new agent form to enable/disable auto-approval of tools
+    - Add YOLO mode indicator (⚡) in session header and sidebar for sessions running in YOLO mode
+    - Add inline session rename - click on session title to edit
+
+    **Technical Details:**
+
+    - `yoloMode` maps to `autoApprove` config in agent-runtime
+    - Added translations for all 22 supported locales
+
+### Patch Changes
+
+- [#5744](https://github.com/Kilo-Org/kilocode/pull/5744) [`870cdd5`](https://github.com/Kilo-Org/kilocode/commit/870cdd57e7b096caca536ca0aa0da393a68eb730) Thanks [@fstanis](https://github.com/fstanis)! - Fix Opus 4.6 model name
+
+- [#5767](https://github.com/Kilo-Org/kilocode/pull/5767) [`57daae1`](https://github.com/Kilo-Org/kilocode/commit/57daae1c3765bd1c37ee5791cb465edc7bd9a861) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Update Discord link in docs footer to use kilo.ai/discord
+
+- [#5758](https://github.com/Kilo-Org/kilocode/pull/5758) [`25f0043`](https://github.com/Kilo-Org/kilocode/commit/25f0043f66248cb12c1c353c9cd9935a0d2d9d60) Thanks [@markijbema](https://github.com/markijbema)! - Minor improvement of auto-execute commands with input redirection
+
+## 5.4.1
+
+### Patch Changes
+
+- [#5695](https://github.com/Kilo-Org/kilocode/pull/5695) [`8097ad6`](https://github.com/Kilo-Org/kilocode/commit/8097ad63b455dca2224f2811af69a0333a43fd79) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Add support for GPT 5.3 codex in OpenAI Codex provider
+
+- [#5584](https://github.com/Kilo-Org/kilocode/pull/5584) [`bd34af4`](https://github.com/Kilo-Org/kilocode/commit/bd34af4170ec3146f1c9c8ca8d8df28502b4b1fa) Thanks [@Neonsy](https://github.com/Neonsy)! - Add a favorited-task checkbox to batch delete in task history.
+
+- [#4770](https://github.com/Kilo-Org/kilocode/pull/4770) [`abaf633`](https://github.com/Kilo-Org/kilocode/commit/abaf6334f22d14496e38151c329887346525f090) Thanks [@JustinReyes28](https://github.com/JustinReyes28)! - feat: Add new "devstral-2512" Mistral model configuration
+
+## 5.4.0
+
+### Minor Changes
+
+- [#4096](https://github.com/Kilo-Org/kilocode/pull/4096) [`4eb0646`](https://github.com/Kilo-Org/kilocode/commit/4eb06462f78ab7446b319e1736fa837e86e3f1df) Thanks [@OlivierBarbier](https://github.com/OlivierBarbier)! - Fix: Importing a configuration file blocks the configuration of provider parameters #2349
+
+### Patch Changes
+
+- [#5686](https://github.com/Kilo-Org/kilocode/pull/5686) [`e6c26b7`](https://github.com/Kilo-Org/kilocode/commit/e6c26b7e8e468a565017fb05958cd4814d69daa1) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Add Claude Opus 4.6 model with adaptive thinking support
+
+- [#4021](https://github.com/Kilo-Org/kilocode/pull/4021) [`b8a6c4e`](https://github.com/Kilo-Org/kilocode/commit/b8a6c4e6b4eab9397efbbaa04202f92816e5afd4) Thanks [@In-line](https://github.com/In-line)! - Add React Compiler integration to improve UI responsiveness
+
+## 5.3.0
+
+### Minor Changes
+
+- [#5649](https://github.com/Kilo-Org/kilocode/pull/5649) [`6fbb740`](https://github.com/Kilo-Org/kilocode/commit/6fbb74084f4090d42ad583dd6ce62c2d3f7826f2) Thanks [@iscekic](https://github.com/iscekic)! - send x-kilocode-mode header
+
+- [#5531](https://github.com/Kilo-Org/kilocode/pull/5531) [`66dbaf2`](https://github.com/Kilo-Org/kilocode/commit/66dbaf2dac3f0d1163b7a9409805d32a9a80af1c) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Add new welcome screen for improved onboarding
+
+### Patch Changes
+
+- [#5582](https://github.com/Kilo-Org/kilocode/pull/5582) [`dc669ab`](https://github.com/Kilo-Org/kilocode/commit/dc669ab484a3d015cea1cadb57271b58a23ef796) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Use brand-colored Kilo Code icons throughout the extension for better visibility
+
+- [#5616](https://github.com/Kilo-Org/kilocode/pull/5616) [`9e139f5`](https://github.com/Kilo-Org/kilocode/commit/9e139f50bc52913fa7e42d3ba4c9090263a14f0b) Thanks [@EloiRamos](https://github.com/EloiRamos)! - fix(ui): prevent TypeError when trimming input during model switching
+
+- [#2792](https://github.com/Kilo-Org/kilocode/pull/2792) [`907fb53`](https://github.com/Kilo-Org/kilocode/commit/907fb53aca1f70b1e3e2f91fbb3bcbdc6b514a48) Thanks [@Honyii](https://github.com/Honyii)! - Added CONTRIBUTING.md file for onboarding new contributors
+
+- [#5638](https://github.com/Kilo-Org/kilocode/pull/5638) [`a5b9106`](https://github.com/Kilo-Org/kilocode/commit/a5b9106e6cebc1a63c1ef5fa507cfaab65aa8ebc) Thanks [@Drilmo](https://github.com/Drilmo)! - fix(agent-manager): sync messages when panel is reopened
+
+    Fixed a bug where closing and reopening the Agent Manager panel would show "Waiting for agent response..." instead of the conversation messages.
+
+- [#5644](https://github.com/Kilo-Org/kilocode/pull/5644) [`e3f353f`](https://github.com/Kilo-Org/kilocode/commit/e3f353f596288b9b8e60b00fa88e60f179160c9a) Thanks [@bernaferrari](https://github.com/bernaferrari)! - Fix contrast on "ideas" intro screen
+
+- [#5583](https://github.com/Kilo-Org/kilocode/pull/5583) [`a23c936`](https://github.com/Kilo-Org/kilocode/commit/a23c9361a5a15cf7bd59efd9c8ea9987e2ec82cc) Thanks [@crazyrabbit0](https://github.com/crazyrabbit0)! - Fix double scroll bar in ModelSelector and KiloProfileSelector by increasing max-height.
+
+- [#5567](https://github.com/Kilo-Org/kilocode/pull/5567) [`9729ab2`](https://github.com/Kilo-Org/kilocode/commit/9729ab2c808a69fadbb8c095e5a626fa75e42859) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Updated chat UI theme to use muted, theme-aware colors for Checkpoint, Thinking, and user message styling
+
+- [#5577](https://github.com/Kilo-Org/kilocode/pull/5577) [`a57f9ac`](https://github.com/Kilo-Org/kilocode/commit/a57f9acb2c07b0888fcfa566c2d345879f890941) Thanks [@Patel230](https://github.com/Patel230)! - fix: allow Ollama models without tool support for autocomplete
+
+- [#5628](https://github.com/Kilo-Org/kilocode/pull/5628) [`84c6db2`](https://github.com/Kilo-Org/kilocode/commit/84c6db2ff906b6d18625dc0de21a77a0e573f4ac) Thanks [@Githubguy132010](https://github.com/Githubguy132010)! - Prevent chat auto-scroll from jumping while you read older messages.
+
+- [#5214](https://github.com/Kilo-Org/kilocode/pull/5214) [`28a46d1`](https://github.com/Kilo-Org/kilocode/commit/28a46d17fe91f13ec0687bb6834b31e2ec454687) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Add GLM-4.7 Flash model to recommended models list for Z.ai provider
+
+- [#5662](https://github.com/Kilo-Org/kilocode/pull/5662) [`228745b`](https://github.com/Kilo-Org/kilocode/commit/228745b4159cd28b7a8fb8d1db1b89e9beb49539) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Add improved support for Kimi 2.5 reasoning through AI SDK
+
+## 5.2.2
+
+### Patch Changes
+
+- [#5497](https://github.com/Kilo-Org/kilocode/pull/5497) [`95f9214`](https://github.com/Kilo-Org/kilocode/commit/95f92143d254741e6e0628f43ad90a3464fa7a09) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Show sign in prompt when trying paid model when not logged in
+
+- [#5529](https://github.com/Kilo-Org/kilocode/pull/5529) [`1fe7b92`](https://github.com/Kilo-Org/kilocode/commit/1fe7b929e1c218614b9ae71270b304ab47dbf894) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Streamline getting started view: move logo to top, reduce suggestions to 2, remove footer hint text
+
+## 5.2.1
+
+### Patch Changes
+
+- [#5501](https://github.com/Kilo-Org/kilocode/pull/5501) [`cecefc1`](https://github.com/Kilo-Org/kilocode/commit/cecefc1dd660100631eecf8517f2c0c918f6cdb3) Thanks [@Neonsy](https://github.com/Neonsy)! - Adding Kimi K2.5
+
+## 5.2.0
+
+### Minor Changes
+
+- [#5477](https://github.com/Kilo-Org/kilocode/pull/5477) [`59a792e`](https://github.com/Kilo-Org/kilocode/commit/59a792eeb461497fe2968ca17e2858389c55894a) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Improve idea box during onboarding experience
+
+### Patch Changes
+
+- [#5503](https://github.com/Kilo-Org/kilocode/pull/5503) [`e53f086`](https://github.com/Kilo-Org/kilocode/commit/e53f0865d32296cb5e4db5f853466f5fa7671371) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Fix mode selection after anonymous usage
+
+- [#5426](https://github.com/Kilo-Org/kilocode/pull/5426) [`56d086b`](https://github.com/Kilo-Org/kilocode/commit/56d086b4853abfeebff6b1afb6c8d0431c232542) Thanks [@lambertjosh](https://github.com/lambertjosh)! - OpenAI Codex: Add ChatGPT subscription usage limits dashboard
+
+- [#4947](https://github.com/Kilo-Org/kilocode/pull/4947) [`53080fd`](https://github.com/Kilo-Org/kilocode/commit/53080fddfc62a171ebae09fe38629aec8b0e6098) Thanks [@CaiDingxian](https://github.com/CaiDingxian)! - feat(moonshot): add new Kimi models and coding API endpoint
+
+- [#5451](https://github.com/Kilo-Org/kilocode/pull/5451) [`af25644`](https://github.com/Kilo-Org/kilocode/commit/af25644f8482bd1a10e6645ed3061421ac23045e) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Updated welcome screen model names in all translations
+
+## 5.1.0
+
+### Minor Changes
+
+- [`8140071`](https://github.com/Kilo-Org/kilocode/commit/8140071cf0235906d06e14034372af5941b0b9cc) Thanks [@markijbema](https://github.com/markijbema)! - New users can now start using Kilo Code immediately without any configuration - a default Kilo Code Gateway profile with a free model is automatically set up on first launch
+
+- [#5288](https://github.com/Kilo-Org/kilocode/pull/5288) [`016ea49`](https://github.com/Kilo-Org/kilocode/commit/016ea49a3a875a8e60c846b314a7040852701262) Thanks [@lambertjosh](https://github.com/lambertjosh)! - Remove Gemini CLI provider support.
+
+### Patch Changes
+
+- [#5420](https://github.com/Kilo-Org/kilocode/pull/5420) [`ebcfca8`](https://github.com/Kilo-Org/kilocode/commit/ebcfca8ea1dd3aad87e3a2598370208a1daaddc6) Thanks [@pedroheyerdahl](https://github.com/pedroheyerdahl)! - Improved Portuguese (Brazil) translation
+
+## 5.0.0
+
+### Major Changes
+
+- [#5400](https://github.com/Kilo-Org/kilocode/pull/5400) [`5a49128`](https://github.com/Kilo-Org/kilocode/commit/5a49128a570f1725b705b2da7b19486649e526ed) Thanks [@Sureshkumars](https://github.com/Sureshkumars)! - Add Local review mode
+
+### Minor Changes
+
+- [#5234](https://github.com/Kilo-Org/kilocode/pull/5234) [`796e188`](https://github.com/Kilo-Org/kilocode/commit/796e188f6213f8093e3e6cadd5b019d55993f948) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Include changes from Roo Code v3.39.0-v3.41.2
+
+    - Add button to open markdown in VSCode preview for easier reading of formatted content (PR #10773 by @brunobergher)
+    - Fix: Add openai-codex to providers that don't require an API key (PR #10786 by @roomote)
+    - Fix: Detect Gemini models with space-separated names for proper thought signature injection in LiteLLM (PR #10787 by @daniel-lxs)
+    - Feat: Aggregate subtask costs in parent task (#5376 by @hannesrudolph, PR #10757 by @taltas)
+    - Fix: Prevent duplicate tool_use IDs causing API 400 errors (PR #10760 by @daniel-lxs)
+    - Fix: Handle missing tool identity in OpenAI Native streams (PR #10719 by @hannesrudolph)
+    - Fix: Truncate call_id to 64 chars for OpenAI Responses API (PR #10763 by @daniel-lxs)
+    - Fix: Gemini thought signature validation errors (PR #10694 by @daniel-lxs)
+    - Fix: Filter out empty text blocks from user messages for Gemini compatibility (PR #10728 by @daniel-lxs)
+    - Fix: Flatten top-level anyOf/oneOf/allOf in MCP tool schemas (PR #10726 by @daniel-lxs)
+    - Fix: Filter Ollama models without native tool support (PR #10735 by @daniel-lxs)
+    - Feat: Add settings tab titles to search index (PR #10761 by @roomote)
+    - Fix: Clear terminal output buffers to prevent memory leaks that could cause gray screens and performance degradation (#10666, PR #7666 by @hannesrudolph)
+    - Fix: Inject dummy thought signatures on ALL tool calls for Gemini models, resolving issues with Gemini tool call handling through LiteLLM (PR #10743 by @daniel-lxs)
+    - Fix: Add allowedFunctionNames support for Gemini to prevent mode switch errors (#10711 by @hannesrudolph, PR #10708 by @hannesrudolph)
+    - Add settings search functionality to quickly find and navigate to specific settings (PR #10619 by @mrubens)
+    - Improve settings search UI with better styling and usability (PR #10633 by @brunobergher)
+    - Display edit_file errors in UI after consecutive failures for better debugging feedback (PR #10581 by @daniel-lxs)
+    - Improve error display styling and visibility in chat messages (PR #10692 by @brunobergher)
+    - Improve stop button visibility and streamline error handling (PR #10696 by @brunobergher)
+    - Fix: Omit parallel_tool_calls when not explicitly enabled to prevent API errors (#10553 by @Idlebrand, PR #10671 by @daniel-lxs)
+    - Fix: Encode hyphens in MCP tool names before sanitization (#10642 by @pdecat, PR #10644 by @pdecat)
+    - Fix: Correct Gemini 3 thought signature injection format via OpenRouter (PR #10640 by @daniel-lxs)
+    - Fix: Sanitize tool_use IDs to match API validation pattern (PR #10649 by @daniel-lxs)
+    - Fix: Use placeholder for empty tool result content to fix Gemini API validation (PR #10672 by @daniel-lxs)
+    - Fix: Return empty string from getReadablePath when path is empty (PR #10638 by @daniel-lxs)
+    - Optimize message block cloning in presentAssistantMessage for better performance (PR #10616 by @ArchimedesCrypto)
+    - Improve ExtensionHost code organization and cleanup (PR #10600 by @cte)
+    - Fix: Ensure all tools have consistent strict mode values for Cerebras compatibility (#10334 by @brianboysen51, PR #10589 by @app/roomote)
+    - Fix: Remove convertToSimpleMessages to restore tool calling for OpenAI-compatible providers (PR #10575 by @daniel-lxs)
+    - Fix: Make edit_file matching more resilient to prevent false negatives (PR #10585 by @hannesrudolph)
+    - Fix: Order text parts before tool calls in assistant messages for vscode-lm (PR #10573 by @daniel-lxs)
+    - Fix: Ensure assistant message content is never undefined for Gemini compatibility (PR #10559 by @daniel-lxs)
+    - Fix: Merge approval feedback into tool result instead of pushing duplicate messages (PR #10519 by @daniel-lxs)
+    - Fix: Round-trip Gemini thought signatures for tool calls (PR #10590 by @hannesrudolph)
+    - Feature: Improve error messaging for stream termination errors from provider (PR #10548 by @daniel-lxs)
+    - Feature: Add debug setting to settings page for easier troubleshooting (PR #10580 by @hannesrudolph)
+    - Chore: Disable edit_file tool for Gemini/Vertex providers (PR #10594 by @hannesrudolph)
+    - Chore: Stop overriding tool allow/deny lists for Gemini (PR #10592 by @hannesrudolph)
+    - Fix: Stabilize file paths during native tool call streaming to prevent path corruption (PR #10555 by @daniel-lxs)
+    - Fix: Disable Gemini thought signature persistence to prevent corrupted signature errors (PR #10554 by @daniel-lxs)
+    - Fix: Change minItems from 2 to 1 for Anthropic API compatibility (PR #10551 by @daniel-lxs)
+    - Implement sticky provider profile for task-level API config persistence (#8010 by @hannesrudolph, PR #10018 by @hannesrudolph)
+    - Add support for image file @mentions (PR #10189 by @hannesrudolph)
+    - Add debug-mode proxy routing for debugging API calls (#7042 by @SleeperSmith, PR #10467 by @hannesrudolph)
+    - Add Kimi K2 thinking model to Fireworks AI provider (#9201 by @kavehsfv, PR #9202 by @roomote)
+    - Add image support documentation to read_file native tool description (#10440 by @nabilfreeman, PR #10442 by @roomote)
+    - Add zai-glm-4.7 to Cerebras models (PR #10500 by @sebastiand-cerebras)
+    - Tweak the style of follow up suggestion modes (PR #9260 by @mrubens)
+    - Fix: Handle PowerShell ENOENT error in os-name on Windows (#9859 by @Yang-strive, PR #9897 by @roomote)
+    - Fix: Make command chaining examples shell-aware for Windows compatibility (#10352 by @AlexNek, PR #10434 by @roomote)
+    - Fix: Preserve tool_use blocks for all tool_results in kept messages during condensation (PR #10471 by @daniel-lxs)
+    - Fix: Add additionalProperties: false to MCP tool schemas for OpenAI Responses API (PR #10472 by @daniel-lxs)
+    - Fix: Prevent duplicate tool_result blocks causing API errors (PR #10497 by @daniel-lxs)
+    - Fix: Add explicit deduplication for duplicate tool_result blocks (#10465 by @nabilfreeman, PR #10466 by @roomote)
+    - Fix: Use task stored API config as fallback for rate limit (PR #10266 by @roomote)
+    - Fix: Remove legacy Claude 2 series models from Bedrock provider (#9220 by @KevinZhao, PR #10501 by @roomote)
+    - Fix: Add missing description fields for debugProxy configuration (PR #10505 by @roomote) @objectiveSee)
+
+### Patch Changes
+
+- [#5354](https://github.com/Kilo-Org/kilocode/pull/5354) [`7156a35`](https://github.com/Kilo-Org/kilocode/commit/7156a35649d97a10694229a8a89fd10c5a9f9607) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Fixed broken image display in Agent Manager message list. Images pasted or attached to messages now render correctly as thumbnails in both user feedback messages and queued messages.
+
+- [#5373](https://github.com/Kilo-Org/kilocode/pull/5373) [`cb41705`](https://github.com/Kilo-Org/kilocode/commit/cb41705691d4be7dc915d9d2f42fbcfaa033d9a8) Thanks [@sebastiand-cerebras](https://github.com/sebastiand-cerebras)! - Set default temperature to 1.0 for Cerebras zai-glm-4.7 model
+
+- [#5402](https://github.com/Kilo-Org/kilocode/pull/5402) [`930931e`](https://github.com/Kilo-Org/kilocode/commit/930931eefe2d5da11ef1b98dc2f8145cb26feb2f) Thanks [@PeterDaveHello](https://github.com/PeterDaveHello)! - Improve zh-TW translations
+
+- [#5407](https://github.com/Kilo-Org/kilocode/pull/5407) [`77cfa54`](https://github.com/Kilo-Org/kilocode/commit/77cfa54e05dbd57d8c2e333da67b1b049bdebdf8) Thanks [@chrarnoldus](https://github.com/chrarnoldus)! - Add native tool calling support to Nano-GPT provider
+
+- [#5396](https://github.com/Kilo-Org/kilocode/pull/5396) [`fdae881`](https://github.com/Kilo-Org/kilocode/commit/fdae881bfb3483066117db54bb85c7497d4bff5f) Thanks [@markijbema](https://github.com/markijbema)! - Revert "Using Kilo for work?" button in low credit warning, restore free models link
+
+- [#5364](https://github.com/Kilo-Org/kilocode/pull/5364) [`5e8ed35`](https://github.com/Kilo-Org/kilocode/commit/5e8ed3526110f6868b8b8af203eb3e733493a387) Thanks [@huangdaxianer](https://github.com/huangdaxianer)! - Removed forced context compression for volces.com
+
 ## 4.153.0
 
 ### Minor Changes

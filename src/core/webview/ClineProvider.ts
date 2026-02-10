@@ -1285,6 +1285,7 @@ export class ClineProvider
 					<link href="${codiconsUri}" rel="stylesheet" />
 					<script nonce="${nonce}">
 						window.IMAGES_BASE_URI = "${imagesUri}"
+						window.ICONS_BASE_URI = "${iconsUri}"
 						window.AUDIO_BASE_URI = "${audioUri}"
 						window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 						window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1367,6 +1368,7 @@ export class ClineProvider
 			<link href="${codiconsUri}" rel="stylesheet" />
 			<script nonce="${nonce}">
 				window.IMAGES_BASE_URI = "${imagesUri}"
+				window.ICONS_BASE_URI = "${iconsUri}"
 				window.AUDIO_BASE_URI = "${audioUri}"
 				window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 				window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1493,6 +1495,12 @@ export class ClineProvider
 		}
 
 		await this.postStateToWebview()
+
+		// kilocode_change start: Review mode scope selection
+		if (newMode === "review") {
+			await this.triggerReviewScopeSelection()
+		}
+		// kilocode_change end
 	}
 
 	// Provider Profile Management
@@ -1986,15 +1994,6 @@ export class ClineProvider
 			// get the task directory full path
 			const { taskDirPath } = await this.getTaskWithId(id)
 
-			// kilocode_change start
-			// Check if task is favorited
-			const history = this.getGlobalState("taskHistory") ?? []
-			const task = history.find((item) => item.id === id)
-			if (task?.isFavorited) {
-				throw new Error("Cannot delete a favorited task. Please unfavorite it first.")
-			}
-			// kilocode_change end
-
 			// remove task from stack if it's the current task
 			if (id === this.getCurrentTask()?.taskId) {
 				// Close the current task instance; delegation flows will be handled via metadata if applicable.
@@ -2390,10 +2389,9 @@ export class ClineProvider
 			uriScheme: vscode.env.uriScheme,
 			uiKind: vscode.UIKind[vscode.env.uiKind], // kilocode_change
 			kiloCodeWrapperProperties, // kilocode_change wrapper information
-			kilocodeDefaultModel: await getKilocodeDefaultModel(
-				apiConfiguration.kilocodeToken,
-				apiConfiguration.kilocodeOrganizationId,
-			),
+			kilocodeDefaultModel: (
+				await getKilocodeDefaultModel(apiConfiguration.kilocodeToken, apiConfiguration.kilocodeOrganizationId)
+			).defaultModel,
 			currentTaskItem: this.getCurrentTask()?.taskId
 				? (taskHistory || []).find((item: HistoryItem) => item.id === this.getCurrentTask()?.taskId)
 				: undefined,
@@ -2514,6 +2512,7 @@ export class ClineProvider
 			profileThresholds: profileThresholds ?? {},
 			cloudApiUrl: getRooCodeApiUrl(),
 			hasOpenedModeSelector: this.getGlobalState("hasOpenedModeSelector") ?? false,
+			hasCompletedOnboarding: this.getGlobalState("hasCompletedOnboarding"), // kilocode_change: Track onboarding completion - undefined means new user
 			systemNotificationsEnabled: systemNotificationsEnabled ?? false, // kilocode_change
 			dismissedNotificationIds: dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey, // kilocode_change
@@ -2582,6 +2581,7 @@ export class ClineProvider
 			| "clineMessages"
 			| "renderContext"
 			| "hasOpenedModeSelector"
+			| "hasCompletedOnboarding" // kilocode_change
 			| "version"
 			| "shouldShowAnnouncement"
 			| "hasSystemPromptOverride"
@@ -2684,10 +2684,9 @@ export class ClineProvider
 		// Return the same structure as before.
 		return {
 			apiConfiguration: providerSettings,
-			kilocodeDefaultModel: await getKilocodeDefaultModel(
-				providerSettings.kilocodeToken,
-				providerSettings.kilocodeOrganizationId,
-			), // kilocode_change
+			kilocodeDefaultModel: (
+				await getKilocodeDefaultModel(providerSettings.kilocodeToken, providerSettings.kilocodeOrganizationId)
+			).defaultModel, // kilocode_change
 			lastShownAnnouncementId: stateValues.lastShownAnnouncementId,
 			customInstructions: stateValues.customInstructions,
 			apiModelId: stateValues.apiModelId,
@@ -3379,6 +3378,71 @@ export class ClineProvider
 		await this.setValues({ mode })
 	}
 
+	// kilocode_change start: Review mode
+	/**
+	 * Triggers the review scope selection UI
+	 * Called when user enters review mode
+	 */
+	public async triggerReviewScopeSelection(): Promise<void> {
+		try {
+			const cwd = getWorkspacePath()
+			if (!cwd) {
+				this.log("Cannot start review: no workspace folder open")
+				return
+			}
+
+			// Phase 1: Show dialog immediately with loading state
+			await this.postMessageToWebview({
+				type: "askReviewScope",
+				reviewScopeInfo: undefined,
+			})
+
+			// Phase 2: Compute scope info and hydrate
+			const { ReviewService } = await import("../../services/review")
+			const reviewService = new ReviewService({ cwd })
+			const scopeInfo = await reviewService.getScopeInfo()
+
+			await this.postMessageToWebview({
+				type: "askReviewScope",
+				reviewScopeInfo: scopeInfo,
+			})
+		} catch (error) {
+			this.log(
+				`Error triggering review scope selection: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+	}
+
+	/**
+	 * Handles the user's review scope selection
+	 * Gets lightweight summary and starts the review task
+	 * The agent will dynamically explore changes using tools
+	 */
+	public async handleReviewScopeSelected(scope: "uncommitted" | "branch"): Promise<void> {
+		try {
+			const cwd = getWorkspacePath()
+			if (!cwd) {
+				this.log("Cannot start review: no workspace folder open")
+				vscode.window.showErrorMessage("Cannot start review: no workspace folder open")
+				return
+			}
+
+			const { ReviewService, buildReviewPrompt } = await import("../../services/review")
+			const reviewService = new ReviewService({ cwd })
+
+			// Get lightweight summary - agent will explore details with tools
+			const summary = await reviewService.getReviewSummary(scope)
+
+			// Build the review prompt and start the task
+			// Let the agent handle cases with no changes - it can explain and offer alternatives
+			const reviewPrompt = buildReviewPrompt(summary)
+			await this.createTask(reviewPrompt)
+		} catch (error) {
+			this.log(`Error handling review scope selection: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	}
+	// kilocode_change end: Review mode
+
 	// Provider Profiles
 
 	public async getProviderProfiles(): Promise<{ name: string; provider?: string }[]> {
@@ -3814,15 +3878,18 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 	}
 
 	// Modify batch delete to respect favorites
-	async deleteMultipleTasks(taskIds: string[]) {
+	async deleteMultipleTasks(taskIds: string[], excludeFavorites?: boolean) {
 		const history = this.getGlobalState("taskHistory") ?? []
-		const favoritedTaskIds = taskIds.filter((id) => history.find((item) => item.id === id)?.isFavorited)
 
-		if (favoritedTaskIds.length > 0) {
-			throw new Error("Cannot delete favorited tasks. Please unfavorite them first.")
+		// kilocode_change start
+		// Filter out favorited tasks if excludeFavorites is true
+		let idsToDelete = taskIds
+		if (excludeFavorites) {
+			idsToDelete = taskIds.filter((id) => !history.find((item) => item.id === id)?.isFavorited)
 		}
+		// kilocode_change end
 
-		for (const id of taskIds) {
+		for (const id of idsToDelete) {
 			await this.deleteTaskWithId(id)
 		}
 	}
