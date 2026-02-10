@@ -7,6 +7,7 @@
 		"tokens": "Tokeny:",
 		"cache": "Cache:",
 		"apiCost": "Cena API:",
+		"changes": "Změny",
 		"size": "Velikost",
 		"condenseContext": "Inteligentně zhustit kontext",
 		"contextWindow": "Délka kontextu:",
@@ -38,6 +39,10 @@
 	"retry": {
 		"title": "Zkusit znovu",
 		"tooltip": "Zkusit operaci znovu"
+	},
+	"stop": {
+		"title": "Stop",
+		"tooltip": "Zastavit aktuální úkol"
 	},
 	"startNewTask": {
 		"title": "Začít nový úkol",
@@ -140,6 +145,7 @@
 	"enhancePromptDescription": "Tlačítko 'Vylepšit prompt' pomáhá zlepšit tvůj prompt poskytnutím dodatečného kontextu, vyjasnění nebo přeformulování. Zkus sem napsat prompt a znovu kliknout na tlačítko, abys viděl, jak to funguje.",
 	"addImages": "Přidat obrázky do zprávy",
 	"sendMessage": "Odeslat zprávu",
+	"enqueueMessage": "Přidat zprávu do fronty (bude odeslána po dokončení aktuálního úkolu)",
 	"pressToSend": "Stiskni {{keyCombination}} pro odeslání",
 	"stopTts": "Zastavit převod textu na řeč",
 	"typeMessage": "Napiš zprávu...",
@@ -172,7 +178,7 @@
 			"500": "Chyba serveru poskytovatele. Něco je špatně na straně poskytovatele, s tvým požadavkem není nic v nepořádku.",
 			"connection": "Chyba připojení. Ujisti se, že máš funkční připojení k internetu.",
 			"claudeCodeNotAuthenticated": "Musíš se přihlásit, abys mohl používat Claude Code. Jdi do Nastavení a klikni na \"Přihlásit se ke Claude Code\" pro autentizaci.",
-			"unknown": "Neznámá API chyba. Kontaktuj prosím podporu Kilo."
+			"unknown": "Neznámá API chyba, klikni na Detaily pro více informací."
 		}
 	},
 	"checkpoint": {
@@ -261,6 +267,11 @@
 		"didSearch_other": "Nalezeno {{count}} výsledků",
 		"resultTooltip": "Skóre podobnosti: {{score}} (klikni pro otevření souboru)"
 	},
+	"costs": {
+		"totalWithSubtasks": "Celkové náklady (včetně podúkolů): ${{cost}}",
+		"total": "Celkové náklady: ${{cost}}",
+		"includesSubtasks": "Zahrnuje náklady na podúkoly"
+	},
 	"commandOutput": "Výstup příkazu",
 	"commandExecution": {
 		"abort": "Přerušit",
@@ -324,7 +335,8 @@
 		"title": "Detaily chyby",
 		"copyToClipboard": "Kopírovat základní informace o chybě",
 		"copied": "Zkopírováno!",
-		"diagnostics": "Získat podrobné informace o chybě"
+		"diagnostics": "Získat podrobné informace o chybě",
+		"proxyProvider": "Zdá se, že používáš proxy-založeného poskytovatele. Ujisti se, že kontroluješ jeho logy a že nepřepisuje požadavky Roo."
 	},
 	"diffError": {
 		"title": "Úprava neúspěšná"
@@ -380,7 +392,10 @@
 			"browserUse": "Browser Use 2.0 vylepšuje chatové procházení s trvalými relacemi, jasnější zpětnou vazbou, vyhrazeným panelem prohlížeče a přirozenějšími popisy akcí",
 			"cloudPaid": "Poskytovatel Roo Code Cloud nyní nabízí placené modely: kup si kredity a používej je jak pro cloudové agenty, tak pro inferenci",
 			"contextRewind": "Vylepšené zhušťování kontextu nyní umožňuje obnovit plný předchozí kontext při vracení ke kontrolnímu bodu",
-			"rooProvider": "Poskytovatel Roo Code Cloud nyní zachovává obsah uvažování a používá nativní nástroje pro lepší výkon"
+			"rooProvider": "Poskytovatel Roo Code Cloud nyní zachovává obsah uvažování a používá nativní nástroje pro lepší výkon",
+			"openaiCodexProvider": "Přidán poskytovatel OpenAI - ChatGPT Plus/Pro, který poskytuje předplatné založený přístup k modelům Codex bez nákladů na tokeny.",
+			"gpt52codexModel": "Přidán nový model gpt-5.2-codex do Roo Code Router, standardního poskytovatele OpenAI a dalších.",
+			"bugFixes": "Opraveny úniky paměti způsobující šedé obrazovky, problémy s podpisem myšlenek Gemini a další vylepšení stability."
 		},
 		"cloudAgents": {
 			"heading": "Nové v cloudu:",
@@ -411,6 +426,7 @@
 		"noNewLogs": "(Žádné nové záznamy)",
 		"screenshot": "Snímek obrazovky prohlížeče",
 		"cursor": "kurzor",
+		"active": "Aktivní",
 		"navigation": {
 			"step": "Krok {{current}} z {{total}}",
 			"previous": "Předchozí",

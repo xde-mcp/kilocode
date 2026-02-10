@@ -45,6 +45,9 @@ export const agentSessionSchema = z.object({
 	source: sessionSourceSchema,
 	parallelMode: parallelModeInfoSchema.optional(),
 	gitUrl: z.string().optional(),
+	model: z.string().optional(), // Model ID used for this session
+	mode: z.string().optional(), // Mode slug used for this session (e.g., "code", "architect")
+	yoloMode: z.boolean().optional(), // True if session was started with auto-approval enabled
 })
 
 /**
@@ -56,6 +59,7 @@ export const pendingSessionSchema = z.object({
 	startTime: z.number(),
 	parallelMode: z.boolean().optional(),
 	gitUrl: z.string().optional(),
+	yoloMode: z.boolean().optional(), // True if session will be started with auto-approval enabled
 })
 
 /**
@@ -69,18 +73,31 @@ export const agentManagerStateSchema = z.object({
 /**
  * Messages from Webview to Extension
  */
+/**
+ * Start session message schema - used for runtime validation of webview messages
+ */
+export const startSessionMessageSchema = z.object({
+	type: z.literal("agentManager.startSession"),
+	prompt: z.string(),
+	parallelMode: z.boolean().optional(),
+	existingBranch: z.string().optional(),
+	model: z.string().optional(), // Model ID to use for this session
+	mode: z.string().optional(), // Mode slug (e.g., "code", "architect")
+	versions: z.number().optional(), // Number of versions for multi-version mode
+	labels: z.array(z.string()).optional(), // Labels for multi-version sessions
+	images: z.array(z.string()).optional(), // Image data URLs to include with the prompt
+	yoloMode: z.boolean().optional(), // True to enable auto-approval (default: true)
+})
+
 export const agentManagerMessageSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("agentManager.webviewReady") }),
-	z.object({
-		type: z.literal("agentManager.startSession"),
-		prompt: z.string(),
-		parallelMode: z.boolean().optional(),
-		existingBranch: z.string().optional(),
-	}),
+	startSessionMessageSchema,
 	z.object({ type: z.literal("agentManager.stopSession"), sessionId: z.string() }),
 	z.object({ type: z.literal("agentManager.selectSession"), sessionId: z.string() }),
 	z.object({ type: z.literal("agentManager.refreshRemoteSessions") }),
 	z.object({ type: z.literal("agentManager.listBranches") }),
+	z.object({ type: z.literal("agentManager.refreshModels") }),
+	z.object({ type: z.literal("agentManager.setMode"), sessionId: z.string(), mode: z.string() }),
 ])
 
 /**
@@ -93,6 +110,29 @@ export const remoteSessionSchema = z
 		status: z.string().optional(),
 	})
 	.passthrough() // Allow additional fields from the full RemoteSession type
+
+/**
+ * Available model schema (from CLI models command)
+ */
+export const availableModelSchema = z.object({
+	id: z.string(),
+	displayName: z.string().nullable(),
+	contextWindow: z.number(),
+	supportsImages: z.boolean().optional(),
+	inputPrice: z.number().optional(),
+	outputPrice: z.number().optional(),
+})
+
+/**
+ * Available mode schema (for mode selection)
+ */
+export const availableModeSchema = z.object({
+	slug: z.string(),
+	name: z.string(),
+	description: z.string().optional(),
+	iconName: z.string().optional(),
+	source: z.enum(["global", "project", "organization"]).optional(),
+})
 
 /**
  * Messages from Extension to Webview
@@ -108,14 +148,38 @@ export const agentManagerExtensionMessageSchema = z.discriminatedUnion("type", [
 		branches: z.array(z.string()),
 		currentBranch: z.string().optional(),
 	}),
+	z.object({
+		type: z.literal("agentManager.availableModels"),
+		provider: z.string(),
+		currentModel: z.string(),
+		models: z.array(availableModelSchema),
+	}),
+	z.object({
+		type: z.literal("agentManager.modelsLoadFailed"),
+		error: z.string().optional(),
+	}),
+	z.object({
+		type: z.literal("agentManager.availableModes"),
+		modes: z.array(availableModeSchema),
+		currentMode: z.string(),
+	}),
+	z.object({
+		type: z.literal("agentManager.modeChanged"),
+		sessionId: z.string(),
+		mode: z.string(),
+		previousMode: z.string().optional(),
+	}),
 ])
 
 // Inferred types
 export type AgentStatus = z.infer<typeof agentStatusSchema>
 export type SessionSource = z.infer<typeof sessionSourceSchema>
+export type AvailableModel = z.infer<typeof availableModelSchema>
+export type AvailableMode = z.infer<typeof availableModeSchema>
 export type ParallelModeInfo = z.infer<typeof parallelModeInfoSchema>
 export type AgentSession = z.infer<typeof agentSessionSchema>
 export type PendingSession = z.infer<typeof pendingSessionSchema>
 export type AgentManagerState = z.infer<typeof agentManagerStateSchema>
 export type AgentManagerMessage = z.infer<typeof agentManagerMessageSchema>
 export type AgentManagerExtensionMessage = z.infer<typeof agentManagerExtensionMessageSchema>
+export type StartSessionMessage = z.infer<typeof startSessionMessageSchema>

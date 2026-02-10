@@ -1,10 +1,10 @@
 import type { ModelInfo } from "../model.js"
 
 export type FireworksModelId =
-	| "accounts/fireworks/models/kimi-k2-thinking"
+	| "accounts/fireworks/models/kimi-k2p5"
 	| "accounts/fireworks/models/kimi-k2-instruct"
 	| "accounts/fireworks/models/kimi-k2-instruct-0905"
-	| "accounts/fireworks/models/kimi-k2p5"
+	| "accounts/fireworks/models/kimi-k2-thinking"
 	| "accounts/fireworks/models/minimax-m2"
 	| "accounts/fireworks/models/minimax-m2p1"
 	| "accounts/fireworks/models/qwen3-235b-a22b"
@@ -25,17 +25,6 @@ export type FireworksModelId =
 export const fireworksDefaultModelId: FireworksModelId = "accounts/fireworks/models/kimi-k2-instruct-0905"
 
 export const fireworksModels = {
-	"accounts/fireworks/models/kimi-k2-thinking": {
-		maxTokens: 256000,
-		contextWindow: 256000,
-		supportsImages: false,
-		supportsPromptCache: true,
-		supportsNativeTools: true,
-		inputPrice: 0.6,
-		outputPrice: 2.5,
-		cacheReadsPrice: 0.3,
-		displayName: "Kimi K2 Thinking",
-	},
 	"accounts/fireworks/models/kimi-k2-instruct-0905": {
 		maxTokens: 16384,
 		contextWindow: 262144,
@@ -71,6 +60,21 @@ export const fireworksModels = {
 		outputPrice: 3,
 		cacheReadsPrice: 0.1,
 		displayName: "Kimi K2.5",
+	},
+	"accounts/fireworks/models/kimi-k2-thinking": {
+		maxTokens: 16000,
+		contextWindow: 256000,
+		supportsImages: false,
+		supportsPromptCache: true,
+		supportsNativeTools: true,
+		supportsTemperature: true,
+		preserveReasoning: true,
+		defaultTemperature: 1.0,
+		inputPrice: 0.6,
+		outputPrice: 2.5,
+		cacheReadsPrice: 0.15,
+		description:
+			"The kimi-k2-thinking model is a general-purpose agentic reasoning model developed by Moonshot AI. Thanks to its strength in deep reasoning and multi-turn tool use, it can solve even the hardest problems.",
 	},
 	"accounts/fireworks/models/minimax-m2": {
 		maxTokens: 192000,

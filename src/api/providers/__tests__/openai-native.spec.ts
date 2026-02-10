@@ -227,6 +227,7 @@ describe("OpenAiNativeHandler", () => {
 			const testModels = [
 				"gpt-5.1-codex-max",
 				"gpt-5.2",
+				"gpt-5.2-codex",
 				"gpt-5.1",
 				"gpt-5",
 				"gpt-5-mini",
@@ -319,7 +320,6 @@ describe("OpenAiNativeHandler", () => {
 					headers: expect.objectContaining({
 						"Content-Type": "application/json",
 						Authorization: "Bearer test-api-key",
-						Accept: "text/event-stream",
 					}),
 					body: expect.any(String),
 				}),
@@ -1325,7 +1325,6 @@ describe("GPT-5 streaming event coverage (additional)", () => {
 					headers: expect.objectContaining({
 						"Content-Type": "application/json",
 						Authorization: "Bearer test-api-key",
-						Accept: "text/event-stream",
 					}),
 					body: expect.any(String),
 				}),

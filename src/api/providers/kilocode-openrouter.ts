@@ -13,6 +13,7 @@ import {
 	X_KILOCODE_ORGANIZATIONID,
 	X_KILOCODE_TASKID,
 	X_KILOCODE_PROJECTID,
+	X_KILOCODE_MODE,
 	X_KILOCODE_TESTER,
 	X_KILOCODE_EDITORNAME,
 } from "../../shared/kilocode/headers"
@@ -57,6 +58,10 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	override customRequestOptions(metadata?: ApiHandlerCreateMessageMetadata) {
 		const headers: Record<string, string> = {
 			[X_KILOCODE_EDITORNAME]: getEditorNameHeader(),
+		}
+
+		if (metadata?.mode) {
+			headers[X_KILOCODE_MODE] = metadata.mode
 		}
 
 		if (metadata?.taskId) {
@@ -120,8 +125,8 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	}
 
 	public override async fetchModel() {
-		if (!this.options.kilocodeToken || !this.options.openRouterBaseUrl) {
-			throw new Error(KILOCODE_TOKEN_REQUIRED_ERROR)
+		if (!this.options.openRouterBaseUrl) {
+			throw new Error("OpenRouter base URL is required")
 		}
 
 		const [models, endpoints, defaultModel] = await Promise.all([
@@ -135,12 +140,12 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 				modelId: this.options.kilocodeModel,
 				endpoint: this.options.openRouterSpecificProvider,
 			}),
-			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId, this.options),
+			getKilocodeDefaultModel(this.options.kilocodeToken, this.options.kilocodeOrganizationId),
 		])
 
 		this.models = models
 		this.endpoints = endpoints
-		this.defaultModel = defaultModel
+		this.defaultModel = defaultModel.defaultModel
 		return this.getModel()
 	}
 

@@ -13,7 +13,7 @@ interface ModelSelectorProps {
 	currentApiConfigName?: string
 	apiConfiguration: ProviderSettings
 	fallbackText: string
-	virtualQuotaActiveModel?: { id: string; name: string } // kilocode_change: Add virtual quota active model for UI display
+	virtualQuotaActiveModel?: { id: string; name: string; activeProfileNumber?: number } // kilocode_change: Add virtual quota active model for UI display
 }
 
 export const ModelSelector = ({
@@ -123,6 +123,9 @@ export const ModelSelector = ({
 		return (
 			<span className="text-xs text-vscode-descriptionForeground opacity-70 truncate">
 				{prettyModelName(virtualQuotaActiveModel.id)}
+				{virtualQuotaActiveModel.activeProfileNumber !== undefined && (
+					<> ({virtualQuotaActiveModel.activeProfileNumber})</>
+				)}
 			</span>
 		)
 	}
@@ -139,7 +142,7 @@ export const ModelSelector = ({
 			title={t("chat:selectApiConfig")}
 			options={options}
 			onChange={onChange}
-			contentClassName="max-h-[300px] overflow-y-auto"
+			contentClassName="max-h-[400px] overflow-y-auto"
 			triggerClassName={cn(
 				"w-full text-ellipsis overflow-hidden p-0",
 				"bg-transparent border-transparent hover:bg-transparent hover:border-transparent",
