@@ -1,5 +1,52 @@
 # kilo-code
 
+## 5.5.0
+
+### Minor Changes
+
+- [#4890](https://github.com/Kilo-Org/kilocode/pull/4890) [`535e3d1`](https://github.com/Kilo-Org/kilocode/commit/535e3d1751255487b4a0217fbae6e7b357b85a56) Thanks [@Drilmo](https://github.com/Drilmo)! - feat(agent-manager): add YOLO mode toggle and session rename
+
+    **New Features:**
+
+    - Add YOLO mode toggle button in new agent form to enable/disable auto-approval of tools
+    - Add YOLO mode indicator (⚡) in session header and sidebar for sessions running in YOLO mode
+    - Add inline session rename - click on session title to edit
+
+    **Technical Details:**
+
+    - `yoloMode` maps to `autoApprove` config in agent-runtime
+    - Added translations for all 22 supported locales
+
+### Patch Changes
+
+- [#5744](https://github.com/Kilo-Org/kilocode/pull/5744) [`870cdd5`](https://github.com/Kilo-Org/kilocode/commit/870cdd57e7b096caca536ca0aa0da393a68eb730) Thanks [@fstanis](https://github.com/fstanis)! - Fix Opus 4.6 model name
+
+- [#5767](https://github.com/Kilo-Org/kilocode/pull/5767) [`57daae1`](https://github.com/Kilo-Org/kilocode/commit/57daae1c3765bd1c37ee5791cb465edc7bd9a861) Thanks [@kiloconnect](https://github.com/apps/kiloconnect)! - Update Discord link in docs footer to use kilo.ai/discord
+
+- [#5758](https://github.com/Kilo-Org/kilocode/pull/5758) [`25f0043`](https://github.com/Kilo-Org/kilocode/commit/25f0043f66248cb12c1c353c9cd9935a0d2d9d60) Thanks [@markijbema](https://github.com/markijbema)! - Minor improvement of auto-execute commands with input redirection
+
+## 5.4.1
+
+### Patch Changes
+
+- [#5695](https://github.com/Kilo-Org/kilocode/pull/5695) [`8097ad6`](https://github.com/Kilo-Org/kilocode/commit/8097ad63b455dca2224f2811af69a0333a43fd79) Thanks [@kevinvandijk](https://github.com/kevinvandijk)! - Add support for GPT 5.3 codex in OpenAI Codex provider
+
+- [#5584](https://github.com/Kilo-Org/kilocode/pull/5584) [`bd34af4`](https://github.com/Kilo-Org/kilocode/commit/bd34af4170ec3146f1c9c8ca8d8df28502b4b1fa) Thanks [@Neonsy](https://github.com/Neonsy)! - Add a favorited-task checkbox to batch delete in task history.
+
+- [#4770](https://github.com/Kilo-Org/kilocode/pull/4770) [`abaf633`](https://github.com/Kilo-Org/kilocode/commit/abaf6334f22d14496e38151c329887346525f090) Thanks [@JustinReyes28](https://github.com/JustinReyes28)! - feat: Add new "devstral-2512" Mistral model configuration
+
+## 5.4.0
+
+### Minor Changes
+
+- [#4096](https://github.com/Kilo-Org/kilocode/pull/4096) [`4eb0646`](https://github.com/Kilo-Org/kilocode/commit/4eb06462f78ab7446b319e1736fa837e86e3f1df) Thanks [@OlivierBarbier](https://github.com/OlivierBarbier)! - Fix: Importing a configuration file blocks the configuration of provider parameters #2349
+
+### Patch Changes
+
+- [#5686](https://github.com/Kilo-Org/kilocode/pull/5686) [`e6c26b7`](https://github.com/Kilo-Org/kilocode/commit/e6c26b7e8e468a565017fb05958cd4814d69daa1) Thanks [@marius-kilocode](https://github.com/marius-kilocode)! - Add Claude Opus 4.6 model with adaptive thinking support
+
+- [#4021](https://github.com/Kilo-Org/kilocode/pull/4021) [`b8a6c4e`](https://github.com/Kilo-Org/kilocode/commit/b8a6c4e6b4eab9397efbbaa04202f92816e5afd4) Thanks [@In-line](https://github.com/In-line)! - Add React Compiler integration to improve UI responsiveness
+
 ## 5.3.0
 
 ### Minor Changes
