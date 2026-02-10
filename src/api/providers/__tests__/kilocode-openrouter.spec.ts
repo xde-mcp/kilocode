@@ -8,6 +8,7 @@ vitest.mock("vscode", () => ({
 		language: "en",
 		uiKind: 1,
 		appName: "Visual Studio Code",
+		isTelemetryEnabled: true,
 		machineId: "test-machine-id",
 	},
 	version: "1.85.0",
