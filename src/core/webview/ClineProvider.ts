@@ -3391,6 +3391,13 @@ export class ClineProvider
 				return
 			}
 
+			// Phase 1: Show dialog immediately with loading state
+			await this.postMessageToWebview({
+				type: "askReviewScope",
+				reviewScopeInfo: undefined,
+			})
+
+			// Phase 2: Compute scope info and hydrate
 			const { ReviewService } = await import("../../services/review")
 			const reviewService = new ReviewService({ cwd })
 			const scopeInfo = await reviewService.getScopeInfo()
