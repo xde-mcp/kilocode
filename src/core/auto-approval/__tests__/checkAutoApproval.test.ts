@@ -1,5 +1,5 @@
 import { checkAutoApproval } from "../index"
-import { ExtensionState } from "../../../shared/ExtensionMessage"
+import { ExtensionState } from "@roo-code/types"
 
 describe("checkAutoApproval", () => {
 	const mockAsk = "tool"
