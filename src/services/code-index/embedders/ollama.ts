@@ -68,8 +68,8 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 			// Add timeout to prevent indefinite hanging
 			const controller = new AbortController()
 			// kilocode_change start
-			const timeoutMs = getApiRequestTimeout()
-			const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : undefined
+			const timeoutMs = getApiRequestTimeout() ?? 0
+			const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 			// kilocode_change end
 
 			const response = await fetch(url, {
@@ -151,8 +151,8 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 				// Add timeout to prevent indefinite hanging
 				const controller = new AbortController()
 				// kilocode_change start
-				const timeoutMs = getApiRequestTimeout()
-				const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : undefined
+				const timeoutMs = getApiRequestTimeout() ?? 0
+				const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 				// kilocode_change end
 
 				const modelsResponse = await fetch(modelsUrl, {
@@ -211,7 +211,7 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 				// Add timeout for test request too
 				// kilocode_change start
 				const testController = new AbortController()
-				const testTimeoutId = timeoutMs > 0 ? setTimeout(() => testController.abort(), timeoutMs) : undefined
+				const testTimeoutId = setTimeout(() => testController.abort(), timeoutMs)
 				// kilocode_change end
 
 				const testResponse = await fetch(testUrl, {
