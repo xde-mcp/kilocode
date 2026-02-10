@@ -44,6 +44,10 @@ export const getEditorNameHeader = () => {
 		.join(" ")
 }
 
+export const getMachineIdHeader = () => {
+	return vscode.env.machineId
+}
+
 export function getEffectiveTelemetrySetting(telemetrySetting: TelemetrySetting | undefined) {
 	const isVsCode = !getKiloCodeWrapperProperties().kiloCodeWrapped
 	return isVsCode && vscode.env.isTelemetryEnabled

@@ -16,11 +16,12 @@ import {
 	X_KILOCODE_MODE,
 	X_KILOCODE_TESTER,
 	X_KILOCODE_EDITORNAME,
+	X_KILOCODE_MACHINEID,
 } from "../../shared/kilocode/headers"
 import { KILOCODE_TOKEN_REQUIRED_ERROR } from "../../shared/kilocode/errorUtils"
 import { DEFAULT_HEADERS } from "./constants"
 import { streamSse } from "../../services/continuedev/core/fetch/stream"
-import { getEditorNameHeader } from "../../core/kilocode/wrapper"
+import { getEditorNameHeader, getMachineIdHeader } from "../../core/kilocode/wrapper"
 import type { FimHandler } from "./kilocode/FimHandler"
 
 /**
@@ -58,6 +59,7 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 	override customRequestOptions(metadata?: ApiHandlerCreateMessageMetadata) {
 		const headers: Record<string, string> = {
 			[X_KILOCODE_EDITORNAME]: getEditorNameHeader(),
+			[X_KILOCODE_MACHINEID]: getMachineIdHeader(),
 		}
 
 		if (metadata?.mode) {
