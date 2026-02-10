@@ -126,11 +126,11 @@ async function selectProvider(context: CommandContext, providerId: string): Prom
 		const providerLabel = getProviderLabel(provider.provider)
 		const modelInfo = getModelIdForProvider(provider)
 
-		let content = `✓ Switched to **${providerId}**\n`
-		content += `  Type: ${providerLabel}\n`
+		let content = `Switched to **${providerId}**\n`
+		content += `Type: ${providerLabel}\n`
 
 		if (modelInfo) {
-			content += `  Model: ${modelInfo}\n`
+			content += `Model: ${modelInfo}\n`
 		}
 
 		addMessage({
@@ -199,6 +199,7 @@ export const providerCommand: Command = {
 			name: "provider-id",
 			description: "Provider ID (for select)",
 			required: false,
+			provider: providerAutocompleteProvider,
 			conditionalProviders: [
 				{
 					condition: (context) => {

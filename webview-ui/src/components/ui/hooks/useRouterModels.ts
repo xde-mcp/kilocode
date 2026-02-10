@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { RouterModels } from "@roo/api"
-import { ExtensionMessage } from "@roo/ExtensionMessage"
+import { type RouterModels, type ExtensionMessage } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
 
@@ -63,6 +62,9 @@ type RouterModelsQueryKey = {
 	geminiApiKey?: string
 	googleGeminiBaseUrl?: string
 	chutesApiKey?: string
+	nanoGptApiKey?: string
+	nanoGptModelList?: "all" | "personalized" | "subscription"
+	syntheticApiKey?: string
 	// Requesty, Unbound, etc should perhaps also be here, but they already have their own hacks for reloading
 }
 // kilocode_change end

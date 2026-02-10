@@ -251,8 +251,8 @@ function buildGatekeeperPrompt(
 	switch (toolName) {
 		case "write_to_file":
 		case "apply_diff":
-		case "insert_content":
 		case "search_and_replace":
+		case "fast_edit_file":
 		case "edit_file": {
 			const filePath = toolParams.path || toolParams.target_file || "unknown"
 			actionDescription += `File: ${filePath}\n`

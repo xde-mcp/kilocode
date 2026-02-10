@@ -7,6 +7,7 @@
 		"tokens": "Tokeny:",
 		"cache": "Cache:",
 		"apiCost": "Cena API:",
+		"changes": "Změny",
 		"size": "Velikost",
 		"condenseContext": "Inteligentně zhustit kontext",
 		"contextWindow": "Délka kontextu:",
@@ -26,7 +27,9 @@
 		"expand": "Rozbalit úkol",
 		"collapse": "Sbalit úkol",
 		"openInCloud": "Otevřít v cloudu",
-		"openInCloudIntro": "Monitoruj a spravuj tento úkol vzdáleně"
+		"openInCloudIntro": "Monitoruj a spravuj tento úkol vzdáleně",
+		"openApiHistory": "Otevřít API historii",
+		"openUiHistory": "Otevřít historii UI"
 	},
 	"history": {
 		"title": "Historie"
@@ -36,6 +39,10 @@
 	"retry": {
 		"title": "Zkusit znovu",
 		"tooltip": "Zkusit operaci znovu"
+	},
+	"stop": {
+		"title": "Stop",
+		"tooltip": "Zastavit aktuální úkol"
 	},
 	"startNewTask": {
 		"title": "Začít nový úkol",
@@ -106,7 +113,8 @@
 		"noResults": "Nebyly nalezeny žádné výsledky"
 	},
 	"scrollToBottom": "Posunout se na konec chatu",
-	"about": "Generuj, refaktoruj a ladí kód s pomocí AI. Podívej se na naši <DocsLink>dokumentaci</DocsLink> pro více informací.",
+	"about": "Generuj, refaktoruj a ladí kód s pomocí AI. Podívej se na naši <DocsLink>dokumentaci</DocsLink>, abys se dozvěděl více.",
+	"docs": "Pro začátek se podívej na naši <DocsLink>dokumentaci</DocsLink>",
 	"onboarding": "Tvůj seznam úkolů v tomto pracovním prostoru je prázdný.",
 	"rooTips": {
 		"boomerangTasks": {
@@ -124,6 +132,10 @@
 		"customizableModes": {
 			"title": "Přizpůsobitelné režimy",
 			"description": "Specializované persony s vlastním chováním a přiřazenými modely"
+		},
+		"modelAgnostic": {
+			"title": "Přines si vlastní model, bez přirážky nebo závazků",
+			"description": "Používej svůj vlastní klíč poskytovatele nebo dokonce lokální inferenci — Kilo za to neúčtuje"
 		}
 	},
 	"selectMode": "Vyber režim pro interakci",
@@ -133,6 +145,8 @@
 	"enhancePromptDescription": "Tlačítko 'Vylepšit prompt' pomáhá zlepšit tvůj prompt poskytnutím dodatečného kontextu, vyjasnění nebo přeformulování. Zkus sem napsat prompt a znovu kliknout na tlačítko, abys viděl, jak to funguje.",
 	"addImages": "Přidat obrázky do zprávy",
 	"sendMessage": "Odeslat zprávu",
+	"enqueueMessage": "Přidat zprávu do fronty (bude odeslána po dokončení aktuálního úkolu)",
+	"pressToSend": "Stiskni {{keyCombination}} pro odeslání",
 	"stopTts": "Zastavit převod textu na řeč",
 	"typeMessage": "Napiš zprávu...",
 	"typeTask": "Vytvoř, najdi, zeptej se na něco",
@@ -150,7 +164,22 @@
 		"failed": "API požadavek selhal",
 		"streaming": "API požadavek...",
 		"cancelled": "API požadavek zrušen",
-		"streamingFailed": "Streamování API selhalo"
+		"streamingFailed": "Streamování API selhalo",
+		"rateLimitWait": "Omezení rychlosti",
+		"errorTitle": "Chyba poskytovatele {{code}}",
+		"errorMessage": {
+			"docs": "Dokumentace",
+			"goToSettings": "Nastavení",
+			"400": "Poskytovatel nemohl zpracovat požadavek jak byl zadán. Zastav úkol a zkus jiný přístup.",
+			"401": "Nepodařilo se autentizovat u poskytovatele. Zkontroluj konfiguraci svého API klíče.",
+			"402": "Zdá se, že ti došly prostředky/kredity na účtu. Jdi ke svému poskytovateli a přidej více pro pokračování.",
+			"403": "Neautorizováno. Tvůj API klíč je platný, ale poskytovatel odmítl dokončit tento požadavek.",
+			"429": "Příliš mnoho požadavků. Poskytovatel tě omezuje rychlostí. Počkej chvíli před dalším API voláním.",
+			"500": "Chyba serveru poskytovatele. Něco je špatně na straně poskytovatele, s tvým požadavkem není nic v nepořádku.",
+			"connection": "Chyba připojení. Ujisti se, že máš funkční připojení k internetu.",
+			"claudeCodeNotAuthenticated": "Musíš se přihlásit, abys mohl používat Claude Code. Jdi do Nastavení a klikni na \"Přihlásit se ke Claude Code\" pro autentizaci.",
+			"unknown": "Neznámá API chyba, klikni na Detaily pro více informací."
+		}
 	},
 	"checkpoint": {
 		"initial": "Počáteční kontrolní bod",
@@ -172,11 +201,20 @@
 		},
 		"current": "Aktuální"
 	},
-	"contextCondense": {
-		"title": "Kontext zhušťěn",
-		"condensing": "Zhušťování kontextu...",
-		"errorHeader": "Nepodařilo se zhuštit kontext",
-		"tokens": "tokeny"
+	"contextManagement": {
+		"tokens": "tokeny",
+		"condensation": {
+			"title": "Kontext zhušťěn",
+			"inProgress": "Zhušťování kontextu...",
+			"errorHeader": "Nepodařilo se zhuštit kontext"
+		},
+		"truncation": {
+			"title": "Kontext zkrácen",
+			"inProgress": "Zkracování kontextu...",
+			"messagesRemoved": "{{count}} zpráva odstraněna",
+			"messagesRemoved_other": "{{count}} zprávy odstraněny",
+			"description": "Starší zprávy byly odstraněny z konverzace, aby zůstala v rámci limitu kontextového okna. Toto je rychlý, ale méně kontextově zachovávající přístup ve srovnání se zhušťováním."
+		}
 	},
 	"instructions": {
 		"wantsToFetch": "Kilo Code chce načíst podrobné instrukce pro pomoc s aktuálním úkolem"
@@ -200,7 +238,9 @@
 		"didSearchReplace": "Kilo Code provedl hledání a nahrazení v tomto souboru:",
 		"wantsToInsert": "Kilo Code chce vložit obsah do tohoto souboru:",
 		"wantsToInsertWithLineNumber": "Kilo Code chce vložit obsah do tohoto souboru na řádek {{lineNumber}}:",
-		"wantsToInsertAtEnd": "Kilo Code chce přidat obsah na konec tohoto souboru:"
+		"wantsToInsertAtEnd": "Kilo Code chce přidat obsah na konec tohoto souboru:",
+		"wantsToDelete": "Kilo Code chce smazat tento soubor:",
+		"wantsToDeleteDirectory": "Kilo Code chce smazat tento adresář:"
 	},
 	"directoryOperations": {
 		"wantsToViewTopLevel": "Kilo Code chce zobrazit soubory nejvyšší úrovně v tomto adresáři:",
@@ -226,6 +266,11 @@
 		"didSearch_one": "Nalezen 1 výsledek",
 		"didSearch_other": "Nalezeno {{count}} výsledků",
 		"resultTooltip": "Skóre podobnosti: {{score}} (klikni pro otevření souboru)"
+	},
+	"costs": {
+		"totalWithSubtasks": "Celkové náklady (včetně podúkolů): ${{cost}}",
+		"total": "Celkové náklady: ${{cost}}",
+		"includesSubtasks": "Zahrnuje náklady na podúkoly"
 	},
 	"commandOutput": "Výstup příkazu",
 	"commandExecution": {
@@ -278,6 +323,21 @@
 	},
 	"taskCompleted": "Úkol dokončen",
 	"error": "Chyba",
+	"modelResponseIncomplete": "Odpověď modelu neúplná",
+	"modelResponseErrors": {
+		"noToolsUsed": "Model nepoužil žádné nástroje ve své odpovědi. To se obvykle stává, když model poskytne pouze text/uvažování bez volání požadovaných nástrojů k dokončení úkolu.",
+		"noToolsUsedDetails": "Model poskytl text/uvažování, ale nevolal žádné požadované nástroje. To obvykle naznačuje, že model nepochopil úkol nebo má potíže s určením, který nástroj použít. Model byl automaticky vyzván k opakování s řádným použitím nástrojů.",
+		"noAssistantMessages": "Model neposkytl žádný obsah odpovědi. To může naznačovat problém s API nebo výstupem modelu.",
+		"noAssistantMessagesDetails": "Jazykový model vrátil prázdnou odpověď bez jakéhokoli textu nebo volání nástrojů. To se může stát kvůli problémům s API, omezení rychlosti nebo problémům specifickým pro model. Model byl automaticky vyzván k opakování."
+	},
+	"errorDetails": {
+		"link": "Detaily",
+		"title": "Detaily chyby",
+		"copyToClipboard": "Kopírovat základní informace o chybě",
+		"copied": "Zkopírováno!",
+		"diagnostics": "Získat podrobné informace o chybě",
+		"proxyProvider": "Zdá se, že používáš proxy-založeného poskytovatele. Ujisti se, že kontroluješ jeho logy a že nepřepisuje požadavky Roo."
+	},
 	"diffError": {
 		"title": "Úprava neúspěšná"
 	},
@@ -314,6 +374,7 @@
 	},
 	"announcement": {
 		"title": "🎉 Vydán Roo Code {{version}}",
+		"support": "Prosím podpoř Roo Code tím, že nám dáš hvězdičku na <githubLink>GitHubu</githubLink>.",
 		"stealthModel": {
 			"feature": "<bold>Časově omezený ZDARMA stealth model</bold> - Code Supernova: Nyní vylepšen s <bold>kontextovým oknem 1M tokenů</bold>! Všestranný agentní model pro kódování, který podporuje obrazové vstupy, dostupný prostřednictvím Roo Code Cloud.",
 			"note": "(Poznámka: prompty a dokončení jsou zaznamenávány tvůrcem modelu a používány k vylepšení modelu)",
@@ -322,19 +383,31 @@
 			"goToSettingsButton": "Jít do Nastavení"
 		},
 		"release": {
-			"heading": "Nové v rozšíření:",
+			"heading": "Co je nového:",
+			"skills": "Roo nyní podporuje <skillsLink>Agent Skills</skillsLink> - znovupoužitelné balíčky promptů, nástrojů a zdrojů pro rozšíření schopností Roo.",
+			"nativeToolCalling": "Nativní volání nástrojů je nyní vyžadováno pro všechny nové úkoly. <blogLink>Přečti si více</blogLink> o motivaci a co dělat, pokud narazíš na problémy.",
 			"openRouterEmbeddings": "Podpora pro embedding modely OpenRouter",
 			"chutesDynamic": "Chutes nyní dynamicky načítá nejnovější modely",
-			"queuedMessagesFix": "Opravy pro ztracené zprávy ve frontě"
+			"queuedMessagesFix": "Opravy pro ztracené zprávy ve frontě",
+			"browserUse": "Browser Use 2.0 vylepšuje chatové procházení s trvalými relacemi, jasnější zpětnou vazbou, vyhrazeným panelem prohlížeče a přirozenějšími popisy akcí",
+			"cloudPaid": "Poskytovatel Roo Code Cloud nyní nabízí placené modely: kup si kredity a používej je jak pro cloudové agenty, tak pro inferenci",
+			"contextRewind": "Vylepšené zhušťování kontextu nyní umožňuje obnovit plný předchozí kontext při vracení ke kontrolnímu bodu",
+			"rooProvider": "Poskytovatel Roo Code Cloud nyní zachovává obsah uvažování a používá nativní nástroje pro lepší výkon",
+			"openaiCodexProvider": "Přidán poskytovatel OpenAI - ChatGPT Plus/Pro, který poskytuje předplatné založený přístup k modelům Codex bez nákladů na tokeny.",
+			"gpt52codexModel": "Přidán nový model gpt-5.2-codex do Roo Code Router, standardního poskytovatele OpenAI a dalších.",
+			"bugFixes": "Opraveny úniky paměti způsobující šedé obrazovky, problémy s podpisem myšlenek Gemini a další vylepšení stability."
 		},
 		"cloudAgents": {
 			"heading": "Nové v cloudu:",
 			"prFixer": "Představujeme cloudového agenta <bold>PR Fixer</bold> jako doplněk k PR Reviewer.",
 			"prFixerDescription": "PR Fixer aplikuje vysoce kvalitní změny na tvé PR přímo z GitHubu. Vyvolej ho pomocí komentáře k PR a přečte si celou historii komentářů, aby pochopil kontext, dohody a kompromisy - a pak implementuje správnou opravu.",
-			"tryPrFixerButton": "Vyzkoušet PR Fixer"
+			"tryPrFixerButton": "Vyzkoušet PR Fixer",
+			"specialized": "Představujeme <bold>Explainer</bold>, <bold>Planner</bold> a <bold>Coder</bold> - tři specializované cloudové agenty pro vylepšení tvých pracovních postupů.",
+			"description": "Agenti spolupracují v cloudu a lze je spustit z webu nebo přes Slack.",
+			"tryButton": "Vyzkoušet cloudové agenty"
 		},
 		"careers": "Také <careersLink>nabíráme!</careersLink>",
-		"socialLinks": "Připoj se k nám na <xLink>X</xLink>, <discordLink>Discord</discordLink> nebo <redditLink>r/RooCode</redditLink> 🚀"
+		"socialLinks": "Připoj se k nám na <xLink>X</xLink>, <discordLink>Discord</discordLink> nebo <redditLink>r/KiloCode</redditLink> 🚀"
 	},
 	"reasoning": {
 		"thinking": "Přemýšlím",
@@ -342,15 +415,18 @@
 	},
 	"followUpSuggest": {
 		"copyToInput": "Kopírovat do vstupu (stejné jako shift + klik)",
+		"timerPrefix": "Automatické schvalování povoleno. Výběr za {{seconds}}s…",
 		"autoSelectCountdown": "Automatický výběr za {{count}}s",
 		"countdownDisplay": "{{count}}s"
 	},
 	"browser": {
+		"session": "Relace prohlížeče",
 		"rooWantsToUse": "Kilo Code chce použít prohlížeč:",
 		"consoleLogs": "Záznamy konzole",
 		"noNewLogs": "(Žádné nové záznamy)",
 		"screenshot": "Snímek obrazovky prohlížeče",
 		"cursor": "kurzor",
+		"active": "Aktivní",
 		"navigation": {
 			"step": "Krok {{current}} z {{total}}",
 			"previous": "Předchozí",
@@ -359,13 +435,41 @@
 		"sessionStarted": "Relace prohlížeče zahájena",
 		"actions": {
 			"title": "Akce procházení: ",
+			"launched": "Prohlížeč spuštěn",
 			"launch": "Spustit prohlížeč na {{url}}",
+			"clicked": "Kliknuto na: {{coordinate}}",
 			"click": "Kliknout ({{coordinate}})",
+			"typed": "Napsáno: {{text}}",
 			"type": "Napsat \"{{text}}\"",
+			"pressed": "Stisknuta klávesa: {{key}}",
+			"press": "Stisknout {{key}}",
+			"scrolledDown": "Posunuto dolů",
 			"scrollDown": "Posunout dolů",
+			"scrolledUp": "Posunuto nahoru",
 			"scrollUp": "Posunout nahoru",
+			"hovered": "Přejetí kurzorem na: {{coordinate}}",
+			"hover": "Přejet kurzorem ({{coordinate}})",
+			"resized": "Změněna velikost na: {{size}}",
+			"resize": "Změnit velikost na {{size}}",
+			"screenshotSaved": "Snímek obrazovky uložen",
+			"screenshot": "Uložit snímek obrazovky do {{path}}",
+			"closed": "Prohlížeč zavřen",
 			"close": "Zavřít prohlížeč"
 		}
+	},
+	"browserAnnouncement": {
+		"title": "🌐 Vylepšení Procházení 2.0",
+		"description": "Nová aktualizace přináší vylepšené procházení s trvalými relacemi a jasnějšími popisky akcí."
+	},
+	"browserAnnouncementDesc": "Prozkoumej vylepšené možnosti procházení s lepším ovládáním a zpětnou vazbou.",
+	"browserSession": "Relace prohlížeče",
+	"browserActionPress": "Stisknout klávesy",
+	"browserActionPressDesc": "Stisknout konkrétní klávesy na klávesnici",
+	"browserActionHover": "Přejetí kurzorem",
+	"browserActionHoverDesc": "Přejetí kurzorem přes prvky na stránce",
+	"rooCloudAnnouncement": {
+		"title": "☁️ Roo Code Cloud nyní aktivní!",
+		"description": "Přístup ke cloudovým agentům a pokročilým funkcím prostřednictvím Roo Code Cloud."
 	},
 	"codeblock": {
 		"tooltips": {
@@ -437,9 +541,6 @@
 		"title": "Zprávy ve frontě:",
 		"clickToEdit": "Klikni pro úpravu zprávy"
 	},
-	"editMessage": {
-		"placeholder": "Upravit tvou zprávu..."
-	},
 	"generateCommitMessage": "Vygenerovat commit zprávu",
 	"slashCommand": {
 		"wantsToRun": "Kilo Code chce spustit slash příkaz:",
@@ -450,5 +551,12 @@
 		"problems": "Problémy",
 		"terminal": "Terminál",
 		"url": "Vložit URL pro získání obsahu"
+	},
+	"todo": {
+		"partial": "{{completed}} z {{total}} úkolů hotovo",
+		"complete": "{{total}} úkolů hotovo",
+		"updated": "Aktualizován seznam úkolů",
+		"completed": "Dokončeno",
+		"started": "Zahájeno"
 	}
 }

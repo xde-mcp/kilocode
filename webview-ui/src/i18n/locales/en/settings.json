@@ -1,4 +1,5 @@
 {
+	"back": "Back to tasks view",
 	"common": {
 		"save": "Save",
 		"done": "Done",
@@ -12,7 +13,11 @@
 		"title": "Settings",
 		"saveButtonTooltip": "Save changes",
 		"nothingChangedTooltip": "Nothing changed",
-		"doneButtonTooltip": "Discard unsaved changes and close settings panel"
+		"doneButtonTooltip": "Discard unsaved changes and go back to tasks view"
+	},
+	"search": {
+		"placeholder": "Search settings...",
+		"noResults": "No settings found"
 	},
 	"unsavedChangesDialog": {
 		"title": "Unsaved Changes",
@@ -22,6 +27,8 @@
 	},
 	"sections": {
 		"providers": "Providers",
+		"modes": "Modes",
+		"mcp": "MCP Servers",
 		"autoApprove": "Auto-Approve",
 		"browser": "Browser",
 		"checkpoints": "Checkpoints",
@@ -35,7 +42,33 @@
 		"experimental": "Experimental",
 		"language": "Language",
 		"about": "About Kilo Code",
-		"autoPurge": "Auto-Cleanup"
+		"autoPurge": "Auto-Cleanup",
+		"agentBehaviour": "Agent Behaviour",
+		"ghost": "Autocomplete"
+	},
+	"about": {
+		"bugReport": {
+			"label": "Found a bug?",
+			"link": "Report on GitHub"
+		},
+		"featureRequest": {
+			"label": "Have an idea?",
+			"link": "Share it with us"
+		},
+		"securityIssue": {
+			"label": "Discovered a vulnerability?",
+			"link": "Follow our disclosure process"
+		},
+		"contact": {
+			"label": "Need to talk to us? Write"
+		},
+		"community": "Want tips or to just hang out with other Kilo Code users? Join <redditLink>reddit.com/r/kilocode</redditLink> or <discordLink>kilo.ai/discord</discordLink>",
+		"contactAndCommunity": "Contact & Community",
+		"manageSettings": "Manage Settings",
+		"debugMode": {
+			"label": "Enable debug mode",
+			"description": "Enable debug mode to show additional buttons in the task header for viewing API conversation history and UI messages as prettified JSON in temporary files."
+		}
 	},
 	"slashCommands": {
 		"description": "Manage your slash commands to quickly execute custom workflows and actions. <DocsLink>Learn more</DocsLink>"
@@ -44,6 +77,10 @@
 		"collapseThinking": {
 			"label": "Collapse Thinking messages by default",
 			"description": "When enabled, thinking blocks will be collapsed by default until you interact with them"
+		},
+		"requireCtrlEnterToSend": {
+			"label": "Require {{primaryMod}}+Enter to send messages",
+			"description": "When enabled, you must press {{primaryMod}}+Enter to send messages instead of just Enter"
 		}
 	},
 	"prompts": {
@@ -71,10 +108,19 @@
 		"vercelAiGatewayProvider": "Vercel AI Gateway",
 		"vercelAiGatewayApiKeyLabel": "API Key",
 		"vercelAiGatewayApiKeyPlaceholder": "Enter your Vercel AI Gateway API key",
+		"bedrockProvider": "Amazon Bedrock",
+		"bedrockRegionLabel": "AWS Region",
+		"bedrockRegionPlaceholder": "us-east-1",
+		"bedrockProfileLabel": "AWS Profile",
+		"bedrockProfilePlaceholder": "default",
+		"bedrockProfileDescription": "AWS profile name from ~/.aws/credentials (required).",
 		"openRouterProvider": "OpenRouter",
 		"openRouterApiKeyLabel": "OpenRouter API Key",
 		"openRouterApiKeyPlaceholder": "Enter your OpenRouter API key",
+		"openRouterProviderRoutingLabel": "OpenRouter Provider Routing",
+		"openRouterProviderRoutingDescription": "OpenRouter routes requests to the best available providers for your embedding model. By default, requests are load balanced across the top providers to maximize uptime. However, you can choose a specific provider to use for this model.",
 		"openaiCompatibleProvider": "OpenAI Compatible",
+		"openaiCompatibleResponsesProvider": "OpenAI Compatible (Responses)",
 		"openAiKeyLabel": "OpenAI API Key",
 		"openAiKeyPlaceholder": "Enter your OpenAI API key",
 		"openAiCompatibleBaseUrlLabel": "Base URL",
@@ -90,10 +136,14 @@
 		"selectModelPlaceholder": "Select model",
 		"ollamaUrlLabel": "Ollama URL:",
 		"ollamaBaseUrlLabel": "Ollama Base URL",
+		"vectorStoreProviderLabel": "Vector Store Provider",
 		"qdrantUrlLabel": "Qdrant URL",
 		"qdrantKeyLabel": "Qdrant Key:",
 		"qdrantApiKeyLabel": "Qdrant API Key",
 		"qdrantApiKeyPlaceholder": "Enter your Qdrant API key (optional)",
+		"lancedbVectorStoreDirectoryLabel": "LanceDB Vector Store Path",
+		"lancedbVectorStoreDirectoryPlaceholder": "Enter custom vector store path (optional)",
+		"lancedbVectorStoreDirectoryDescription": "Path to store the lancedb vector database. If empty, uses the default location in the globalStorageUri/vector.",
 		"setupConfigLabel": "Setup",
 		"advancedConfigLabel": "Advanced Configuration",
 		"searchMinScoreLabel": "Search Score Threshold",
@@ -140,13 +190,16 @@
 			"geminiApiKeyRequired": "Gemini API key is required",
 			"mistralApiKeyRequired": "Mistral API key is required",
 			"vercelAiGatewayApiKeyRequired": "Vercel AI Gateway API key is required",
+			"bedrockRegionRequired": "AWS region is required",
+			"bedrockProfileRequired": "AWS profile is required",
 			"openRouterApiKeyRequired": "OpenRouter API key is required",
 			"ollamaBaseUrlRequired": "Ollama base URL is required",
 			"baseUrlRequired": "Base URL is required",
 			"modelDimensionMinValue": "Model dimension must be greater than 0"
 		},
 		"cancelling": "Cancelling...",
-		"cancelIndexingButton": "Cancel Indexing"
+		"cancelIndexingButton": "Cancel Indexing",
+		"optional": "optional"
 	},
 	"autoApprove": {
 		"description": "Run these actions without asking for permission. Only enable for actions you fully trust and if you understand the security risks.",
@@ -173,14 +226,13 @@
 				"description": "Allow Kilo Code to create and edit protected files (like .kilocodeignore and .kilocode/ configuration files) without requiring approval."
 			}
 		},
+		"delete": {
+			"label": "Delete",
+			"description": "Automatically delete files and directories without requiring approval"
+		},
 		"browser": {
 			"label": "Browser",
 			"description": "Automatically perform browser actions without requiring approval. Note: Only applies when the model supports computer use"
-		},
-		"retry": {
-			"label": "Retry",
-			"description": "Automatically retry failed API requests when server returns an error response",
-			"delayLabel": "Delay before retrying the request"
 		},
 		"mcp": {
 			"label": "MCP",
@@ -238,7 +290,10 @@
 		"providerDocumentation": "{{provider}} documentation",
 		"configProfile": "Configuration Profile",
 		"description": "Save different API configurations to quickly switch between providers and settings.",
+		"makeActiveProfile": "Make Active Profile",
+		"makeActiveTooltip": "Activate this profile to use it for API requests",
 		"apiProvider": "API Provider",
+		"apiProviderDocs": "Provider Docs",
 		"model": "Model",
 		"nameEmpty": "Name cannot be empty",
 		"nameExists": "A profile with this name already exists",
@@ -255,6 +310,15 @@
 		"searchProviderPlaceholder": "Search providers",
 		"noProviderMatchFound": "No providers found",
 		"noMatchFound": "No matching profiles found",
+		"profileName": "Profile Name",
+		"profileType": "Profile Type",
+		"profileTypeChat": "Chat",
+		"profileTypeAutocomplete": "Autocomplete",
+		"profileTypeDescription": "Chat profiles are used for conversations. Only one autocomplete profile is allowed.",
+		"autocompleteLabel": "(Autocomplete)",
+		"autocomplete": {
+			"onlyOneAllowed": "Only one autocomplete profile is allowed. Profile \"{{existingName}}\" is already configured for autocomplete. Please change its type first or delete it."
+		},
 		"vscodeLmDescription": " The VS Code Language Model API allows you to run models provided by other VS Code extensions (including but not limited to GitHub Copilot). The easiest way to get started is to install the Copilot and Copilot Chat extensions from the VS Code Marketplace.",
 		"vscodeLmUnavailable": "VS Code Language Model support is only available on Visual Studio Code. Forks such as VSCodium and others may not work. Further, this capability is not available in JetBrains tools.",
 		"vscodeLmUnavailableInstructions": "Ensure you are using a supported tool and that VS Code Chat is installed and enabled",
@@ -267,10 +331,40 @@
 		"apiKeyStorageNotice": "API keys are stored securely in VSCode's Secret Storage",
 		"glamaApiKey": "Glama API Key",
 		"getGlamaApiKey": "Get Glama API Key",
+		"openAiCodexRateLimits": {
+			"title": "Usage Limits for Codex{{planLabel}}",
+			"loading": "Loading usage limits...",
+			"loadError": "Failed to load usage limits",
+			"retry": "Retry",
+			"usedPercent": "{{percent}}% used",
+			"resetsIn": "Resets in {{time}}",
+			"plan": {
+				"default": "",
+				"withType": " ({{planType}})"
+			},
+			"time": {
+				"now": "Now",
+				"notAvailable": "N/A"
+			},
+			"duration": {
+				"daysHours": "{{days}}d {{hours}}h",
+				"hoursMinutes": "{{hours}}h {{minutes}}m",
+				"minutes": "{{minutes}}m"
+			},
+			"window": {
+				"usage": "Usage",
+				"fiveHour": "5h limit",
+				"oneHour": "1h limit",
+				"daily": "Daily limit",
+				"weekly": "Weekly limit",
+				"days": "{{days}}d limit",
+				"hours": "{{hours}}h limit",
+				"minutes": "{{minutes}}m limit"
+			}
+		},
 		"useCustomBaseUrl": "Use custom base URL",
 		"useReasoning": "Enable reasoning",
 		"useHostHeader": "Use custom Host header",
-		"useLegacyFormat": "Use legacy OpenAI API format",
 		"customHeaders": "Custom Headers",
 		"headerName": "Header name",
 		"headerValue": "Header value",
@@ -286,14 +380,19 @@
 		"getRequestyApiKey": "Create new Requesty API Key",
 		"getRequestyBaseUrl": "Base URL",
 		"requestyUseCustomBaseUrl": "Use custom base URL",
-		"openRouterTransformsText": "Compress prompts and message chains to the context size (<a>OpenRouter Transforms</a>)",
 		"anthropicApiKey": "Anthropic API Key",
 		"getAnthropicApiKey": "Get Anthropic API Key",
 		"anthropicUseAuthToken": "Pass Anthropic API Key as Authorization header instead of X-Api-Key",
 		"anthropic1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"anthropic1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4",
+		"anthropicUseAzureDeployment": "Use Azure deployment name",
+		"anthropicAzureDeploymentPlaceholder": "Enter deployment name...",
 		"awsBedrock1MContextBetaLabel": "Enable 1M context window (Beta)",
 		"awsBedrock1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4",
+		"vertex1MContextBetaLabel": "Enable 1M context window (Beta)",
+		"vertex1MContextBetaDescription": "Extends context window to 1 million tokens for Claude Sonnet 4",
+		"basetenApiKey": "Baseten API Key",
+		"getBasetenApiKey": "Get Baseten API Key",
 		"cerebrasApiKey": "Cerebras API Key",
 		"getCerebrasApiKey": "Get Cerebras API Key",
 		"chutesApiKey": "Chutes API Key",
@@ -327,6 +426,14 @@
 		"geminiApiKey": "Gemini API Key",
 		"getGroqApiKey": "Get Groq API Key",
 		"groqApiKey": "Groq API Key",
+		"nanoGptApiKey": "Nano-GPT API Key",
+		"getNanoGptApiKey": "Get Nano-GPT API Key",
+		"nanoGptModelList": "Model List",
+		"nanoGptModelListOptions": {
+			"all": "All Models",
+			"personalized": "Personalized Models",
+			"subscription": "Subscription Models"
+		},
 		"getSambaNovaApiKey": "Get SambaNova API Key",
 		"sambaNovaApiKey": "SambaNova API Key",
 		"getHuggingFaceApiKey": "Get Hugging Face API Key",
@@ -346,6 +453,32 @@
 		"huggingFaceSelectProvider": "Select a provider...",
 		"huggingFaceSearchProviders": "Search providers...",
 		"huggingFaceNoProvidersFound": "No providers found",
+		"sapAiCore": {
+			"serviceKey": "AI Core Service Key",
+			"serviceKeyJson": "Enter Service Key JSON...",
+			"resourceGroup": "AI Core Resource Group",
+			"credentialsNote": "These credentials are stored locally and only used to make API requests from this extension.",
+			"learnMore": "You can find more information about SAP AI Core API access here.",
+			"orchestrationMode": "Orchestration Mode",
+			"orchestrationEnabledDesc": "When enabled, provides access to all available models without requiring individual deployments.",
+			"orchestrationDisabledDesc": "When disabled, provides access only to deployed foundation models in your AI Core service instance.",
+			"modelDeploymentDesc": "You may only select models with available deployments.",
+			"deployment": "Deployment",
+			"loading": "Loading...",
+			"modelsCount": "({{count}} models)",
+			"deploymentsCount": "({{count}} deployments)",
+			"selectModel": "Select a model...",
+			"selectDeployment": "Select a deployment...",
+			"searchModels": "Search models...",
+			"searchDeployments": "Search deployments...",
+			"noModelsFound": "No models found",
+			"noDeploymentFound": "No deployment found",
+			"getStarted": "Get Started with SAP AI Core",
+			"supportedProviders": "Supported Providers",
+			"supportedProvidersDesc1": "The SAP AI Core provider currently only supports foundation models for the following LLM providers:",
+			"supportedProvidersDesc2": "Consider switching to Orchestration Mode for access to more models.",
+			"supportedProvidersDesc3": "Learn more about Orchestration Mode"
+		},
 		"getGeminiApiKey": "Get Gemini API Key",
 		"openAiApiKey": "OpenAI API Key",
 		"apiKey": "API Key",
@@ -368,6 +501,15 @@
 		"awsSessionToken": "AWS Session Token",
 		"awsRegion": "AWS Region",
 		"awsCrossRegion": "Use cross-region inference",
+		"awsGlobalInference": "Use Global inference (auto-select optimal AWS Region)",
+		"awsServiceTier": "Service Tier",
+		"awsServiceTierStandard": "Standard",
+		"awsServiceTierStandardDesc": "Balanced performance and cost",
+		"awsServiceTierFlex": "Flex (50% discount)",
+		"awsServiceTierFlexDesc": "Lower cost, higher latency for non-critical tasks",
+		"awsServiceTierPriority": "Priority (75% premium)",
+		"awsServiceTierPriorityDesc": "Fastest performance for mission-critical applications",
+		"awsServiceTierNote": "Service tiers affect pricing and performance. Flex offers 50% discount with higher latency, Priority offers 25% better performance with 75% premium.",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "Use custom VPC endpoint",
 			"vpcEndpointUrlPlaceholder": "Enter VPC Endpoint URL (optional)",
@@ -490,7 +632,7 @@
 		},
 		"consecutiveMistakeLimit": {
 			"label": "Error & Repetition Limit",
-			"description": "Number of consecutive errors or repeated actions before showing 'Kilo Code is having trouble' dialog",
+			"description": "Number of consecutive errors or repeated actions before showing 'Kilo is having trouble' dialog. Set to 0 to disable this safety mechanism (it will never trigger).",
 			"unlimitedDescription": "Unlimited retries enabled (auto-proceed). The dialog will never appear.",
 			"warning": "⚠️ Setting to 0 allows unlimited retries which may consume significant API usage"
 		},
@@ -500,10 +642,12 @@
 			"minimal": "Minimal (Fastest)",
 			"low": "Low",
 			"medium": "Medium",
-			"high": "High"
+			"high": "High",
+			"xhigh": "Extra High"
 		},
 		"verbosity": {
 			"label": "Output Verbosity",
+			"max": "Max",
 			"high": "High",
 			"medium": "Medium",
 			"low": "Low",
@@ -516,21 +660,6 @@
 			"placeholder": "Default: claude",
 			"maxTokensLabel": "Max Output Tokens",
 			"maxTokensDescription": "Maximum number of output tokens for Claude Code responses. Default is 8000."
-		},
-		"geminiCli": {
-			"description": "This provider uses OAuth authentication from the Gemini CLI tool and does not require API keys.",
-			"oauthPath": "OAuth Credentials Path (optional)",
-			"oauthPathDescription": "Path to the OAuth credentials file. Leave empty to use the default location (~/.gemini/oauth_creds.json).",
-			"instructions": "If you haven't authenticated yet, please run",
-			"instructionsContinued": "in your terminal first.",
-			"setupLink": "Gemini CLI Setup Instructions",
-			"requirementsTitle": "Important Requirements",
-			"requirement1": "First, you need to install the Gemini CLI tool",
-			"requirement2": "Then, run gemini in your terminal and make sure you Log in with Google",
-			"requirement3": "Only works with personal Google accounts (not Google Workspace accounts)",
-			"requirement4": "Does not use API keys - authentication is handled via OAuth",
-			"requirement5": "Requires the Gemini CLI tool to be installed and authenticated first",
-			"freeAccess": "Free tier access via OAuth authentication"
 		},
 		"qwenCode": {
 			"oauthPath": "OAuth Credentials Path (optional)",
@@ -627,6 +756,10 @@
 		"showTimestamps": {
 			"label": "Show timestamps",
 			"description": "Show timestamp for every message in the chat view"
+		},
+		"showDiffStats": {
+			"label": "Show diff stats",
+			"description": "Display lines added/removed statistics in the task header"
 		}
 	},
 	"ghost": {
@@ -734,6 +867,14 @@
 		"includeCurrentCost": {
 			"label": "Include current cost in context",
 			"description": "When enabled, the current API usage cost will be included in the system prompt. Disable this if models are stopping work due to cost concerns."
+		},
+		"maxGitStatusFiles": {
+			"label": "Git status max files",
+			"description": "Maximum number of file entries to include in git status context. Set to 0 to disable. Branch info is always shown when > 0."
+		},
+		"enableSubfolderRules": {
+			"label": "Enable subfolder rules",
+			"description": "Recursively discover and load .roo/rules and AGENTS.md files from subdirectories. Useful for monorepos with per-package rules."
 		}
 	},
 	"terminal": {
@@ -797,6 +938,14 @@
 	"advancedSettings": {
 		"title": "Advanced settings"
 	},
+	"toolProtocol": {
+		"label": "Tool Call Protocol",
+		"description": "Choose how Kilo Code communicates with the API. Native uses the provider's function calling API, while XML uses XML-formatted tool definitions.",
+		"default": "Default",
+		"xml": "XML",
+		"native": "Native",
+		"currentDefault": "Default: {{protocol}}"
+	},
 	"advanced": {
 		"diff": {
 			"label": "Enable editing through diffs",
@@ -853,11 +1002,19 @@
 			"name": "Enable concurrent file edits",
 			"description": "When enabled, Kilo Code can edit multiple files in a single request. When disabled, Kilo Code must edit files one at a time. Disabling this can help when working with less capable models or when you want more control over file modifications."
 		},
+		"SPEECH_TO_TEXT": {
+			"name": "Speech-to-Text (STT)",
+			"description": "When enabled, Kilo Code can transcribe your voice into text using OpenAI's Whisper model. Click the microphone button in the chat to start recording. Requires FFmpeg to be installed and a configured OpenAI API provider."
+		},
 		"MORPH_FAST_APPLY": {
 			"name": "Enable Fast Apply",
 			"description": "When enabled, Kilo Code can edit files using Fast Apply with specialized models optimized for code modifications. Requires the Kilo Gateway Provider, OpenRouter, or a Morph API key.",
-			"apiKey": "Morph API key (optional)",
-			"placeholder": "Enter your Morph API key (optional)",
+			"apiProvider": "API Provider",
+			"apiProviderList": {
+				"current": "Current"
+			},
+			"apiKey": "API key (optional)",
+			"placeholder": "Enter your API key (optional)",
 			"modelLabel": "Model Selection",
 			"modelDescription": "Choose which Fast Apply model to use for file edits",
 			"models": {
@@ -883,6 +1040,8 @@
 			"name": "Enable AI image generation",
 			"description": "When enabled, Kilo Code can generate images from text prompts. Requires a Kilo Code or OpenRouter API key to be configured.",
 			"apiProvider": "API Provider",
+			"providerLabel": "Provider",
+			"providerDescription": "Select which provider to use for image generation.",
 			"openRouterApiKeyLabel": "OpenRouter API Key",
 			"openRouterApiKeyPlaceholder": "Enter your OpenRouter API key",
 			"kiloCodeApiKeyLabel": "Kilo Code API Key",
@@ -897,6 +1056,21 @@
 		"RUN_SLASH_COMMAND": {
 			"name": "Enable model-initiated slash commands",
 			"description": "When enabled, Kilo Code can run your slash commands to execute workflows."
+		},
+		"MULTIPLE_NATIVE_TOOL_CALLS": {
+			"name": "Parallel tool calls",
+			"description": "When enabled, the native protocol can execute multiple tools in a single assistant message turn."
+		},
+		"CUSTOM_TOOLS": {
+			"name": "Enable custom tools",
+			"description": "When enabled, Kilo can load and use custom TypeScript/JavaScript tools from your project's .kilocode/tools directory or ~/.kilocode/tools for global tools. Note: these tools will automatically be auto-approved.",
+			"toolsHeader": "Available Custom Tools",
+			"noTools": "No custom tools loaded. Add .ts or .js files to your project's .kilocode/tools directory or ~/.kilocode/tools for global tools.",
+			"refreshButton": "Refresh",
+			"refreshing": "Refreshing...",
+			"refreshSuccess": "Tools refreshed successfully",
+			"refreshError": "Failed to refresh tools",
+			"toolParameters": "Parameters"
 		}
 	},
 	"promptCaching": {
@@ -935,11 +1109,14 @@
 		"label": "Model",
 		"searchPlaceholder": "Search",
 		"noMatchFound": "No match found",
-		"useCustomModel": "Use custom: {{modelId}}"
+		"useCustomModel": "Use custom: {{modelId}}",
+		"simplifiedExplanation": "You can adjust detailed model settings later.",
+		"recommendedModels": "Recommended models",
+		"allModels": "All models"
 	},
 	"footer": {
-		"feedback": "If you have any questions or feedback, feel free to open an issue at <githubLink>github.com/Kilo-Org/kilocode</githubLink> or join <redditLink>reddit.com/r/kilocode</redditLink> or <discordLink>kilocode.ai/discord</discordLink>.",
-		"support": "For financial questions, please contact Customer Support at <supportLink>https://kilocode.ai/support</supportLink>",
+		"feedback": "If you have any questions or feedback, feel free to open an issue at <githubLink>github.com/Kilo-Org/kilocode</githubLink> or join <redditLink>reddit.com/r/kilocode</redditLink> or <discordLink>kilo.ai/discord</discordLink>.",
+		"support": "For financial questions, please contact Customer Support at <supportLink>https://kilo.ai/support</supportLink>",
 		"telemetry": {
 			"label": "Allow error and usage reporting",
 			"description": "Help improve Kilo Code by sending usage data and error reports. No code, prompts, or personal information is ever sent. See our privacy policy for more details."
@@ -970,7 +1147,9 @@
 		"providerNotAllowed": "Provider '{{provider}}' is not allowed by your organization",
 		"modelNotAllowed": "Model '{{model}}' is not allowed for provider '{{provider}}' by your organization",
 		"profileInvalid": "This profile contains a provider or model that is not allowed by your organization",
-		"qwenCodeOauthPath": "You must provide a valid OAuth credentials path."
+		"qwenCodeOauthPath": "You must provide a valid OAuth credentials path.",
+		"sapAiCore": "You must provide a valid SAP AI Core Service Key.",
+		"sapAiCoreDeploymentId": "You must select a running deployment for model '{{model}}'."
 	},
 	"placeholders": {
 		"apiKey": "Enter API Key...",

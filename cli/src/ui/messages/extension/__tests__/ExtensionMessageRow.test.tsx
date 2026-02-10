@@ -183,21 +183,6 @@ describe("ExtensionMessageRow", () => {
 			expect(lastFrame()).not.toContain("Unknown message type")
 		})
 
-		it("should route 'say' message with type 'command_output' to SayCommandOutputMessage", () => {
-			const message: ExtensionChatMessage = {
-				ts: Date.now(),
-				type: "say",
-				say: "command_output",
-				text: "Command executed successfully",
-			}
-
-			const { lastFrame } = render(<ExtensionMessageRow message={message} />)
-
-			expect(lastFrame()).toBeDefined()
-			expect(lastFrame()).toContain("Command executed successfully")
-			expect(lastFrame()).not.toContain("Unknown say type")
-		})
-
 		it("should show default message for unknown 'say' type", () => {
 			const message: ExtensionChatMessage = {
 				ts: Date.now(),
@@ -428,6 +413,52 @@ describe("ExtensionMessageRow", () => {
 
 			expect(lastFrame()).toBeDefined()
 			expect(lastFrame()).not.toContain("Unknown message type")
+		})
+
+		it("should handle 'ask' deleteFile tool messages for single file", () => {
+			const message: ExtensionChatMessage = {
+				ts: Date.now(),
+				type: "ask",
+				ask: "tool",
+				text: JSON.stringify({
+					tool: "deleteFile",
+					path: "src/test.ts",
+				}),
+			}
+
+			const { lastFrame } = render(<ExtensionMessageRow message={message} />)
+
+			expect(lastFrame()).toBeDefined()
+			expect(lastFrame()).not.toContain("Unknown tool")
+			expect(lastFrame()).toContain("Delete")
+			expect(lastFrame()).toContain("src/test.ts")
+		})
+
+		it("should handle 'ask' deleteFile tool messages for directory with stats", () => {
+			const message: ExtensionChatMessage = {
+				ts: Date.now(),
+				type: "ask",
+				ask: "tool",
+				text: JSON.stringify({
+					tool: "deleteFile",
+					path: "src/components",
+					stats: {
+						files: 5,
+						directories: 2,
+						size: 1024,
+						isComplete: true,
+					},
+				}),
+			}
+
+			const { lastFrame } = render(<ExtensionMessageRow message={message} />)
+
+			expect(lastFrame()).toBeDefined()
+			expect(lastFrame()).not.toContain("Unknown tool")
+			expect(lastFrame()).toContain("Delete")
+			expect(lastFrame()).toContain("src/components")
+			expect(lastFrame()).toContain("5 files")
+			expect(lastFrame()).toContain("2 dirs")
 		})
 	})
 

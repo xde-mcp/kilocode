@@ -33,17 +33,23 @@ import {
 	type CloudOrganizationMembership,
 	type CreateTaskOptions,
 	type TokenUsage,
+	type ToolUsage,
+	type ExtensionMessage,
+	type ExtensionState,
+	type MarketplaceInstalledMetadata,
 	RooCodeEventName,
+	TelemetryEventName, // kilocode_change
 	requestyDefaultModelId,
 	openRouterDefaultModelId,
-	glamaDefaultModelId,
+	glamaDefaultModelId, // kilocode_change
 	DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 	DEFAULT_WRITE_DELAY_MS,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_MODES,
-	getActiveToolUseStyle, // kilocode_change
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+	getModelId,
 } from "@roo-code/types"
+import { aggregateTaskCostsRecursive, type AggregatedCosts } from "./aggregateTaskCosts"
 import { TelemetryService } from "@roo-code/telemetry"
 import { CloudService, BridgeOrchestrator, getRooCodeApiUrl } from "@roo-code/cloud"
 
@@ -51,7 +57,6 @@ import { Package } from "../../shared/package"
 import { findLast } from "../../shared/array"
 import { supportPrompt } from "../../shared/support-prompt"
 import { GlobalFileNames } from "../../shared/globalFileNames"
-import type { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } from "../../shared/ExtensionMessage"
 import { Mode, defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import { experimentDefault } from "../../shared/experiments"
 import { formatLanguage } from "../../shared/language"
@@ -71,6 +76,8 @@ import { ShadowCheckpointService } from "../../services/checkpoints/ShadowCheckp
 import { CodeIndexManager } from "../../services/code-index/manager"
 import type { IndexProgressUpdate } from "../../services/code-index/interfaces/manager"
 import { MdmService } from "../../services/mdm/MdmService"
+import { SessionManager } from "../../shared/kilocode/cli-sessions/core/SessionManager"
+import { SkillsManager } from "../../services/skills/SkillsManager"
 
 import { fileExistsAtPath } from "../../utils/fs"
 import { setTtsEnabled, setTtsSpeed } from "../../utils/tts"
@@ -84,6 +91,7 @@ import { t } from "../../i18n"
 
 import { buildApiHandler } from "../../api"
 import { forceFullModelDetailsLoad, hasLoadedFullDetails } from "../../api/providers/fetchers/lmstudio"
+import { VirtualQuotaFallbackHandler } from "../../api/providers/virtual-quota-fallback"
 
 import { ContextProxy } from "../config/ContextProxy"
 import { getEnabledRules } from "./kilorules"
@@ -93,9 +101,13 @@ import { Task } from "../task/Task"
 import { getSystemPromptFilePath } from "../prompts/sections/custom-system-prompt"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
+import type { ClineMessage, TodoItem } from "@roo-code/types"
+import { readApiMessages, saveApiMessages, saveTaskMessages } from "../task-persistence"
+import { readTaskMessages } from "../task-persistence/taskMessages"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
 import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
+import { validateAndFixToolResultIds } from "../task/validateToolResultIds"
 
 //kilocode_change start
 import { McpDownloadResponse, McpMarketplaceCatalog } from "../../shared/kilocode/mcp"
@@ -104,9 +116,11 @@ import { OpenRouterHandler } from "../../api/providers"
 import { stringifyError } from "../../shared/kilocode/errorUtils"
 import isWsl from "is-wsl"
 import { getKilocodeDefaultModel } from "../../api/providers/kilocode/getKilocodeDefaultModel"
-import { getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
-import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file" // kilocode_change
-import { updateCodeIndexWithKiloProps } from "../../services/code-index/managed/webview" // kilocode_change
+import { getEffectiveTelemetrySetting, getKiloCodeWrapperProperties } from "../../core/kilocode/wrapper"
+import { getKilocodeConfig, KilocodeConfig } from "../../utils/kilo-config-file"
+import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
+import { kilo_execIfExtension } from "../../shared/kilocode/cli-sessions/extension/session-manager-utils"
+import { DeviceAuthHandler } from "../kilocode/webview/deviceAuthHandler"
 
 export type ClineProviderState = Awaited<ReturnType<ClineProvider["getState"]>>
 // kilocode_change end
@@ -148,20 +162,26 @@ export class ClineProvider
 	private codeIndexManager?: CodeIndexManager
 	private _workspaceTracker?: WorkspaceTracker // workSpaceTracker read-only for access outside this class
 	protected mcpHub?: McpHub // Change from private to protected
+	protected skillsManager?: SkillsManager
 	private marketplaceManager: MarketplaceManager
 	private mdmService?: MdmService
 	private taskCreationCallback: (task: Task) => void
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
+	private deviceAuthHandler?: DeviceAuthHandler // kilocode_change - Device auth handler
 
 	private recentTasksCache?: string[]
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
 	private static readonly PENDING_OPERATION_TIMEOUT_MS = 30000 // 30 seconds
 
+	private cloudOrganizationsCache: CloudOrganizationMembership[] | null = null
+	private cloudOrganizationsCacheTimestamp: number | null = null
+	private static readonly CLOUD_ORGANIZATIONS_CACHE_DURATION_MS = 5 * 1000 // 5 seconds
+
 	public isViewLaunched = false
 	public settingsImportedAt?: number
-	public readonly latestAnnouncementId = "nov-2025-v3.30.0-pr-fixer" // v3.30.0 PR Fixer announcement
+	public readonly latestAnnouncementId = "jan-2026-v3.41.0-openai-codex-provider-gpt52-fixes" // v3.41.0 OpenAI Codex Provider, GPT-5.2-codex, Bug Fixes
 	public readonly providerSettingsManager: ProviderSettingsManager
 	public readonly customModesManager: CustomModesManager
 
@@ -205,6 +225,12 @@ export class ClineProvider
 				this.log(`Failed to initialize MCP Hub: ${error}`)
 			})
 
+		// Initialize Skills Manager for skill discovery
+		this.skillsManager = new SkillsManager(this)
+		this.skillsManager.initialize().catch((error) => {
+			this.log(`Failed to initialize Skills Manager: ${error}`)
+		})
+
 		this.marketplaceManager = new MarketplaceManager(this.context, this.customModesManager)
 
 		// Forward <most> task events to the provider.
@@ -214,8 +240,13 @@ export class ClineProvider
 
 			// Create named listener functions so we can remove them later.
 			const onTaskStarted = () => this.emit(RooCodeEventName.TaskStarted, instance.taskId)
-			const onTaskCompleted = (taskId: string, tokenUsage: any, toolUsage: any) =>
-				this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage)
+			const onTaskCompleted = (taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage) => {
+				kilo_execIfExtension(() => {
+					SessionManager.init()?.doSync(true)
+				})
+
+				return this.emit(RooCodeEventName.TaskCompleted, taskId, tokenUsage, toolUsage) // kilocode_change: return
+			}
 			const onTaskAborted = async () => {
 				this.emit(RooCodeEventName.TaskAborted, instance.taskId)
 
@@ -255,8 +286,8 @@ export class ClineProvider
 			const onTaskUnpaused = (taskId: string) => this.emit(RooCodeEventName.TaskUnpaused, taskId)
 			const onTaskSpawned = (taskId: string) => this.emit(RooCodeEventName.TaskSpawned, taskId)
 			const onTaskUserMessage = (taskId: string) => this.emit(RooCodeEventName.TaskUserMessage, taskId)
-			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage) =>
-				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage)
+			const onTaskTokenUsageUpdated = (taskId: string, tokenUsage: TokenUsage, toolUsage: ToolUsage) =>
+				this.emit(RooCodeEventName.TaskTokenUsageUpdated, taskId, tokenUsage, toolUsage)
 			const onModelChanged = () => this.postStateToWebview() // kilocode_change: Listen for model changes in virtual quota fallback
 
 			// Attach the listeners.
@@ -541,19 +572,6 @@ export class ClineProvider
 		return this.clineStack.map((cline) => cline.taskId)
 	}
 
-	// Remove the current task/cline instance (at the top of the stack), so this
-	// task is finished and resume the previous task/cline instance (if it
-	// exists).
-	// This is used when a subtask is finished and the parent task needs to be
-	// resumed.
-	async finishSubTask(lastMessage: string) {
-		// Remove the last cline instance from the stack (this is the finished
-		// subtask).
-		await this.removeClineFromStack()
-		// Resume the last cline instance in the stack (if it exists - this is
-		// the 'parent' calling task).
-		await this.getCurrentTask()?.completeSubtask(lastMessage)
-	}
 	// Pending Edit Operations Management
 
 	/**
@@ -672,10 +690,12 @@ export class ClineProvider
 		this._workspaceTracker = undefined
 		await this.mcpHub?.unregisterClient()
 		this.mcpHub = undefined
+		await this.skillsManager?.dispose()
+		this.skillsManager = undefined
 		this.marketplaceManager?.cleanup()
 		this.customModesManager?.dispose()
 
-		// kilocode_change start - Stop auto-purge scheduler
+		// kilocode_change start - Stop auto-purge scheduler and device auth service
 		if (this.autoPurgeScheduler) {
 			this.autoPurgeScheduler.stop()
 			this.autoPurgeScheduler = undefined
@@ -757,39 +777,6 @@ export class ClineProvider
 			await visibleProvider.postMessageToWebview({ type: "action", action: "focusInput" })
 			return
 		}
-
-		//kilocode_change start
-		if (command === "addToContextAndFocus") {
-			let messageText = prompt
-
-			const editor = vscode.window.activeTextEditor
-			if (editor) {
-				const fullContent = editor.document.getText()
-				const filePath = params.filePath as string
-
-				messageText = `
-For context, we are working within this file:
-
-'${filePath}' (see below for file content)
-<file_content path="${filePath}">
-${fullContent}
-</file_content>
-
-Heed this prompt:
-
-${prompt}
-`
-			}
-
-			await visibleProvider.postMessageToWebview({
-				type: "invoke",
-				invoke: "setChatBoxMessage",
-				text: messageText,
-			})
-			await vscode.commands.executeCommand("kilo-code.focusChatInput")
-			return
-		}
-		// kilocode_change end
 
 		await visibleProvider.createTask(prompt)
 	}
@@ -894,7 +881,7 @@ ${prompt}
 		webviewView.webview.html =
 			this.contextProxy.extensionMode === vscode.ExtensionMode.Development
 				? await this.getHMRHtmlContent(webviewView.webview)
-				: this.getHtmlContent(webviewView.webview)
+				: await this.getHtmlContent(webviewView.webview)
 
 		// Sets up an event listener to listen for messages passed from the webview view context
 		// and executes code based on the message that is received.
@@ -965,8 +952,17 @@ ${prompt}
 		await this.removeClineFromStack()
 	}
 
-	public async createTaskWithHistoryItem(historyItem: HistoryItem & { rootTask?: Task; parentTask?: Task }) {
-		await this.removeClineFromStack()
+	public async createTaskWithHistoryItem(
+		historyItem: HistoryItem & { rootTask?: Task; parentTask?: Task },
+		options?: { startTask?: boolean },
+	) {
+		// Check if we're rehydrating the current task to avoid flicker
+		const currentTask = this.getCurrentTask()
+		const isRehydratingCurrentTask = currentTask && currentTask.taskId === historyItem.id
+
+		if (!isRehydratingCurrentTask) {
+			await this.removeClineFromStack()
+		}
 
 		// If the history item has a saved mode, restore it and its associated API configuration.
 		if (historyItem.mode) {
@@ -985,29 +981,75 @@ ${prompt}
 			await this.updateGlobalState("mode", historyItem.mode)
 
 			// Load the saved API config for the restored mode if it exists.
-			const savedConfigId = await this.providerSettingsManager.getModeConfigId(historyItem.mode)
-			const listApiConfig = await this.providerSettingsManager.listConfig()
+			// Skip mode-based profile activation if historyItem.apiConfigName exists,
+			// since the task's specific provider profile will override it anyway.
+			if (!historyItem.apiConfigName) {
+				const savedConfigId = await this.providerSettingsManager.getModeConfigId(historyItem.mode)
+				const listApiConfig = await this.providerSettingsManager.listConfig()
 
-			// Update listApiConfigMeta first to ensure UI has latest data.
-			await this.updateGlobalState("listApiConfigMeta", listApiConfig)
+				// Update listApiConfigMeta first to ensure UI has latest data.
+				await this.updateGlobalState("listApiConfigMeta", listApiConfig)
 
-			// If this mode has a saved config, use it.
-			if (savedConfigId) {
-				const profile = listApiConfig.find(({ id }) => id === savedConfigId)
+				// If this mode has a saved config, use it.
+				if (savedConfigId) {
+					const profile = listApiConfig.find(({ id }) => id === savedConfigId)
 
-				if (profile?.name) {
-					try {
-						await this.activateProviderProfile({ name: profile.name })
-					} catch (error) {
-						// Log the error but continue with task restoration.
-						this.log(
-							`Failed to restore API configuration for mode '${historyItem.mode}': ${
-								error instanceof Error ? error.message : String(error)
-							}. Continuing with default configuration.`,
-						)
-						// The task will continue with the current/default configuration.
+					if (profile?.name) {
+						try {
+							// Check if the profile has actual API configuration (not just an id).
+							// In CLI mode, the ProviderSettingsManager may return empty default profiles
+							// that only contain 'id' and 'name' fields. Activating such a profile would
+							// overwrite the CLI's working API configuration with empty settings.
+							const fullProfile = await this.providerSettingsManager.getProfile({ name: profile.name })
+							const hasActualSettings = !!fullProfile.apiProvider
+
+							if (hasActualSettings) {
+								await this.activateProviderProfile({ name: profile.name })
+							} else {
+								// The task will continue with the current/default configuration.
+							}
+						} catch (error) {
+							// Log the error but continue with task restoration.
+							this.log(
+								`Failed to restore API configuration for mode '${historyItem.mode}': ${
+									error instanceof Error ? error.message : String(error)
+								}. Continuing with default configuration.`,
+							)
+							// The task will continue with the current/default configuration.
+						}
 					}
 				}
+			}
+		}
+
+		// If the history item has a saved API config name (provider profile), restore it.
+		// This overrides any mode-based config restoration above, because the task's
+		// specific provider profile takes precedence over mode defaults.
+		if (historyItem.apiConfigName) {
+			const listApiConfig = await this.providerSettingsManager.listConfig()
+			// Keep global state/UI in sync with latest profiles for parity with mode restoration above.
+			await this.updateGlobalState("listApiConfigMeta", listApiConfig)
+			const profile = listApiConfig.find(({ name }) => name === historyItem.apiConfigName)
+
+			if (profile?.name) {
+				try {
+					await this.activateProviderProfile(
+						{ name: profile.name },
+						{ persistModeConfig: false, persistTaskHistory: false },
+					)
+				} catch (error) {
+					// Log the error but continue with task restoration.
+					this.log(
+						`Failed to restore API configuration '${historyItem.apiConfigName}' for task: ${
+							error instanceof Error ? error.message : String(error)
+						}. Continuing with current configuration.`,
+					)
+				}
+			} else {
+				// Profile no longer exists, log warning but continue
+				this.log(
+					`Provider profile '${historyItem.apiConfigName}' from history no longer exists. Using current configuration.`,
+				)
 			}
 		}
 
@@ -1038,14 +1080,52 @@ ${prompt}
 			taskNumber: historyItem.number,
 			workspacePath: historyItem.workspace,
 			onCreated: this.taskCreationCallback,
+			startTask: options?.startTask ?? true,
 			enableBridge: BridgeOrchestrator.isEnabled(cloudUserInfo, taskSyncEnabled),
+			// Preserve the status from the history item to avoid overwriting it when the task saves messages
+			initialStatus: historyItem.status,
 		})
 
-		await this.addClineToStack(task)
+		if (isRehydratingCurrentTask) {
+			// Replace the current task in-place to avoid UI flicker
+			const stackIndex = this.clineStack.length - 1
 
-		this.log(
-			`[createTaskWithHistoryItem] ${task.parentTask ? "child" : "parent"} task ${task.taskId}.${task.instanceId} instantiated`,
-		)
+			// Properly dispose of the old task to ensure garbage collection
+			const oldTask = this.clineStack[stackIndex]
+
+			// Abort the old task to stop running processes and mark as abandoned
+			try {
+				await oldTask.abortTask(true)
+			} catch (e) {
+				this.log(
+					`[createTaskWithHistoryItem] abortTask() failed for old task ${oldTask.taskId}.${oldTask.instanceId}: ${e.message}`,
+				)
+			}
+
+			// Remove event listeners from the old task
+			const cleanupFunctions = this.taskEventListeners.get(oldTask)
+			if (cleanupFunctions) {
+				cleanupFunctions.forEach((cleanup) => cleanup())
+				this.taskEventListeners.delete(oldTask)
+			}
+
+			// Replace the task in the stack
+			this.clineStack[stackIndex] = task
+			task.emit(RooCodeEventName.TaskFocused)
+
+			// Perform preparation tasks and set up event listeners
+			await this.performPreparationTasks(task)
+
+			this.log(
+				`[createTaskWithHistoryItem] rehydrated task ${task.taskId}.${task.instanceId} in-place (flicker-free)`,
+			)
+		} else {
+			await this.addClineToStack(task)
+
+			this.log(
+				`[createTaskWithHistoryItem] ${task.parentTask ? "child" : "parent"} task ${task.taskId}.${task.instanceId} instantiated`,
+			)
+		}
 
 		// Check if there's a pending edit after checkpoint restoration
 		const operationId = `task-${task.taskId}`
@@ -1094,6 +1174,25 @@ ${prompt}
 	}
 
 	public async postMessageToWebview(message: ExtensionMessage) {
+		// NOTE: Changing this? Update effects.ts in the cli too.
+		kilo_execIfExtension(() => {
+			if (message.type === "apiMessagesSaved" && message.payload) {
+				const [taskId, filePath] = message.payload as [string, string]
+
+				SessionManager.init()?.handleFileUpdate(taskId, "apiConversationHistoryPath", filePath)
+			} else if (message.type === "taskMessagesSaved" && message.payload) {
+				const [taskId, filePath] = message.payload as [string, string]
+
+				SessionManager.init()?.handleFileUpdate(taskId, "uiMessagesPath", filePath)
+			} else if (message.type === "taskMetadataSaved" && message.payload) {
+				const [taskId, filePath] = message.payload as [string, string]
+
+				SessionManager.init()?.handleFileUpdate(taskId, "taskMetadataPath", filePath)
+			} else if (message.type === "currentCheckpointUpdated") {
+				SessionManager.init()?.doSync()
+			}
+		})
+
 		await this.view?.webview.postMessage(message)
 	}
 
@@ -1128,6 +1227,12 @@ ${prompt}
 		}
 
 		const nonce = getNonce()
+
+		// Get the OpenRouter base URL from configuration
+		const { apiConfiguration } = await this.getState()
+		const openRouterBaseUrl = apiConfiguration.openRouterBaseUrl || "https://openrouter.ai"
+		// Extract the domain for CSP
+		const openRouterDomain = openRouterBaseUrl.match(/^(https?:\/\/[^\/]+)/)?.[1] || "https://openrouter.ai"
 
 		const stylesUri = getUri(webview, this.contextProxy.extensionUri, [
 			"webview-ui",
@@ -1166,7 +1271,7 @@ ${prompt}
 			`img-src ${webview.cspSource} https://storage.googleapis.com https://img.clerk.com data: https://*.googleusercontent.com https://*.googleapis.com https://*.githubusercontent.com`, // kilocode_change: add https://*.googleusercontent.com and https://*.googleapis.com and https://*.githubusercontent.com
 			`media-src ${webview.cspSource}`,
 			`script-src 'unsafe-eval' ${webview.cspSource} https://* https://*.posthog.com http://${localServerUrl} http://0.0.0.0:${localPort} 'nonce-${nonce}'`,
-			`connect-src ${webview.cspSource} https://* http://localhost:3000 https://*.posthog.com ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`, // kilocode_change: add http://localhost:3000
+			`connect-src ${webview.cspSource} ${openRouterDomain} https://* http://localhost:3000 https://*.posthog.com ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`, // kilocode_change: add http://localhost:3000
 		]
 
 		return /*html*/ `
@@ -1180,6 +1285,7 @@ ${prompt}
 					<link href="${codiconsUri}" rel="stylesheet" />
 					<script nonce="${nonce}">
 						window.IMAGES_BASE_URI = "${imagesUri}"
+						window.ICONS_BASE_URI = "${iconsUri}"
 						window.AUDIO_BASE_URI = "${audioUri}"
 						window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 						window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1206,7 +1312,7 @@ ${prompt}
 	 * @returns A template string literal containing the HTML that should be
 	 * rendered within the webview panel
 	 */
-	private getHtmlContent(webview: vscode.Webview): string {
+	private async getHtmlContent(webview: vscode.Webview): Promise<string> {
 		// Get the local path to main script run in the webview,
 		// then convert it to a uri we can use in the webview.
 
@@ -1242,6 +1348,12 @@ ${prompt}
 		*/
 		const nonce = getNonce()
 
+		// Get the OpenRouter base URL from configuration
+		const { apiConfiguration } = await this.getState()
+		const openRouterBaseUrl = apiConfiguration.openRouterBaseUrl || "https://openrouter.ai"
+		// Extract the domain for CSP
+		const openRouterDomain = openRouterBaseUrl.match(/^(https?:\/\/[^\/]+)/)?.[1] || "https://openrouter.ai"
+
 		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
 		return /*html*/ `
         <!DOCTYPE html>
@@ -1251,11 +1363,12 @@ ${prompt}
             <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
             <meta name="theme-color" content="#000000">
 			<!-- kilocode_change: add https://*.googleusercontent.com https://*.googleapis.com https://*.githubusercontent.com to img-src, https://*, http://localhost:3000 to connect-src -->
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https://*.googleusercontent.com https://storage.googleapis.com https://*.githubusercontent.com https://img.clerk.com data: https://*.googleapis.com; media-src ${webview.cspSource}; script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' https://us-assets.i.posthog.com 'strict-dynamic'; connect-src ${webview.cspSource} https://* http://localhost:3000 https://openrouter.ai https://api.requesty.ai https://us.i.posthog.com https://us-assets.i.posthog.com;">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https://*.googleusercontent.com https://storage.googleapis.com https://*.githubusercontent.com https://img.clerk.com data: https://*.googleapis.com; media-src ${webview.cspSource}; script-src ${webview.cspSource} 'wasm-unsafe-eval' 'nonce-${nonce}' ${openRouterDomain} https://us-assets.i.posthog.com 'strict-dynamic'; connect-src ${webview.cspSource} https://* http://localhost:3000 https://api.requesty.ai https://us.i.posthog.com https://us-assets.i.posthog.com;">
             <link rel="stylesheet" type="text/css" href="${stylesUri}">
 			<link href="${codiconsUri}" rel="stylesheet" />
 			<script nonce="${nonce}">
 				window.IMAGES_BASE_URI = "${imagesUri}"
+				window.ICONS_BASE_URI = "${iconsUri}"
 				window.AUDIO_BASE_URI = "${audioUri}"
 				window.MATERIAL_ICONS_BASE_URI = "${materialIconsUri}"
 				window.KILOCODE_BACKEND_BASE_URL = "${process.env.KILOCODE_BACKEND_BASE_URL ?? ""}"
@@ -1351,14 +1464,29 @@ ${prompt}
 			const profile = listApiConfig.find(({ id }) => id === savedConfigId)
 
 			if (profile?.name) {
-				await this.activateProviderProfile({ name: profile.name })
+				// Check if the profile has actual API configuration (not just an id).
+				// In CLI mode, the ProviderSettingsManager may return empty default profiles
+				// that only contain 'id' and 'name' fields. Activating such a profile would
+				// overwrite the CLI's working API configuration with empty settings.
+				// Skip activation if the profile has no apiProvider set - this indicates
+				// an unconfigured/empty profile.
+				const fullProfile = await this.providerSettingsManager.getProfile({ name: profile.name })
+				const hasActualSettings = !!fullProfile.apiProvider
+
+				if (hasActualSettings) {
+					await this.activateProviderProfile({ name: profile.name })
+				} else {
+					// The task will continue with the current/default configuration.
+				}
+			} else {
+				// The task will continue with the current/default configuration.
 			}
 		} else {
 			// If no saved config for this mode, save current config as default.
-			const currentApiConfigName = this.getGlobalState("currentApiConfigName")
+			const currentApiConfigNameAfter = this.getGlobalState("currentApiConfigName")
 
-			if (currentApiConfigName) {
-				const config = listApiConfig.find((c) => c.name === currentApiConfigName)
+			if (currentApiConfigNameAfter) {
+				const config = listApiConfig.find((c) => c.name === currentApiConfigNameAfter)
 
 				if (config?.id) {
 					await this.providerSettingsManager.setModeConfig(newMode, config.id)
@@ -1367,9 +1495,61 @@ ${prompt}
 		}
 
 		await this.postStateToWebview()
+
+		// kilocode_change start: Review mode scope selection
+		if (newMode === "review") {
+			await this.triggerReviewScopeSelection()
+		}
+		// kilocode_change end
 	}
 
 	// Provider Profile Management
+
+	/**
+	 * Updates the current task's API handler.
+	 * Rebuilds when:
+	 * - provider or model changes, OR
+	 * - explicitly forced (e.g., user-initiated profile switch/save to apply changed settings like headers/baseUrl/tier).
+	 * Always synchronizes task.apiConfiguration with latest provider settings.
+	 * @param providerSettings The new provider settings to apply
+	 * @param options.forceRebuild Force rebuilding the API handler regardless of provider/model equality
+	 */
+	private updateTaskApiHandlerIfNeeded(
+		providerSettings: ProviderSettings,
+		options: { forceRebuild?: boolean } = {},
+	): void {
+		const task = this.getCurrentTask()
+		if (!task) return
+
+		const { forceRebuild = false } = options
+
+		// Determine if we need to rebuild using the previous configuration snapshot
+		const prevConfig = task.apiConfiguration
+		const prevProvider = prevConfig?.apiProvider
+		const prevModelId = prevConfig ? getModelId(prevConfig) : undefined
+		const prevToolProtocol = prevConfig?.toolProtocol
+		const newProvider = providerSettings.apiProvider
+		const newModelId = getModelId(providerSettings)
+		const newToolProtocol = providerSettings.toolProtocol
+
+		const needsRebuild =
+			forceRebuild ||
+			prevProvider !== newProvider ||
+			prevModelId !== newModelId ||
+			prevToolProtocol !== newToolProtocol
+
+		if (needsRebuild) {
+			// Use updateApiConfiguration which handles both API handler rebuild and parser sync.
+			// This is important when toolProtocol changes - the assistantMessageParser needs to be
+			// created/destroyed to match the new protocol (XML vs native).
+			// Note: updateApiConfiguration is declared async but has no actual async operations,
+			// so we can safely call it without awaiting.
+			task.updateApiConfiguration(providerSettings)
+		} else {
+			// No rebuild needed, just sync apiConfiguration
+			;(task as any).apiConfiguration = providerSettings
+		}
+	}
 
 	getProviderProfileEntries(): ProviderSettingsEntry[] {
 		return this.contextProxy.getValues().listApiConfigMeta || []
@@ -1425,7 +1605,11 @@ ${prompt}
 				}
 
 				await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
-				await updateCodeIndexWithKiloProps(this) // kilocode_change
+
+				this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
+
+				// Keep the current task's sticky provider profile in sync with the newly-activated profile.
+				await this.persistStickyProviderProfileToCurrentTask(name)
 			} else {
 				await this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig())
 			}
@@ -1465,8 +1649,41 @@ ${prompt}
 		await this.postStateToWebview()
 	}
 
-	async activateProviderProfile(args: { name: string } | { id: string }) {
+	private async persistStickyProviderProfileToCurrentTask(apiConfigName: string): Promise<void> {
+		const task = this.getCurrentTask()
+		if (!task) {
+			return
+		}
+
+		try {
+			// Update in-memory state immediately so sticky behavior works even before the task has
+			// been persisted into taskHistory (it will be captured on the next save).
+			task.setTaskApiConfigName(apiConfigName)
+
+			const history = this.getGlobalState("taskHistory") ?? []
+			const taskHistoryItem = history.find((item) => item.id === task.taskId)
+
+			if (taskHistoryItem) {
+				await this.updateTaskHistory({ ...taskHistoryItem, apiConfigName })
+			}
+		} catch (error) {
+			// If persistence fails, log the error but don't fail the profile switch.
+			this.log(
+				`Failed to persist provider profile switch for task ${task.taskId}: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			)
+		}
+	}
+
+	async activateProviderProfile(
+		args: { name: string } | { id: string },
+		options?: { persistModeConfig?: boolean; persistTaskHistory?: boolean },
+	) {
 		const { name, id, ...providerSettings } = await this.providerSettingsManager.activateProfile(args)
+
+		const persistModeConfig = options?.persistModeConfig ?? true
+		const persistTaskHistory = options?.persistTaskHistory ?? true
 
 		// See `upsertProviderProfile` for a description of what this is doing.
 		await Promise.all([
@@ -1477,20 +1694,21 @@ ${prompt}
 
 		const { mode } = await this.getState()
 
-		if (id) {
+		if (id && persistModeConfig) {
 			await this.providerSettingsManager.setModeConfig(mode, id)
 		}
 
 		// Change the provider for the current task.
-		const task = this.getCurrentTask()
+		this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
 
-		if (task) {
-			task.api = buildApiHandler(providerSettings)
+		// Update the current task's sticky provider profile, unless this activation is
+		// being used purely as a non-persisting restoration (e.g., reopening a task from history).
+		if (persistTaskHistory) {
+			await this.persistStickyProviderProfileToCurrentTask(name)
 		}
 
 		await this.postStateToWebview()
 		await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
-		await updateCodeIndexWithKiloProps(this) // kilocode_change
 
 		if (providerSettings.apiProvider) {
 			this.emit(RooCodeEventName.ProviderProfileChanged, { name, provider: providerSettings.apiProvider })
@@ -1570,7 +1788,7 @@ ${prompt}
 		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
 	}
 
-	// Glama
+	// kilocode_change: Glama
 
 	async handleGlamaCallback(code: string) {
 		let apiKey: string
@@ -1602,6 +1820,7 @@ ${prompt}
 
 		await this.upsertProviderProfile(currentApiConfigName, newConfiguration)
 	}
+	// kilocode_change end
 
 	// Requesty
 
@@ -1627,7 +1846,7 @@ ${prompt}
 		await this.upsertProviderProfile(profileName, newConfiguration)
 	}
 
-	// kilocode_change:
+	// kilocode_change start
 	async handleKiloCodeCallback(token: string) {
 		const kilocode: ProviderName = "kilocode"
 		let { apiConfiguration, currentApiConfigName = "default" } = await this.getState()
@@ -1647,10 +1866,31 @@ ${prompt}
 			})
 		}
 	}
+	// kilocode_change end
+
+	// kilocode_change start - Device Auth Flow
+	async startDeviceAuth() {
+		if (!this.deviceAuthHandler) {
+			this.deviceAuthHandler = new DeviceAuthHandler({
+				postMessageToWebview: (msg) => this.postMessageToWebview(msg),
+				log: (msg) => this.log(msg),
+				showInformationMessage: (msg) => vscode.window.showInformationMessage(msg),
+			})
+		}
+		await this.deviceAuthHandler.startDeviceAuth()
+	}
+
+	cancelDeviceAuth() {
+		this.deviceAuthHandler?.cancelDeviceAuth()
+	}
+	// kilocode_change end
 
 	// Task history
 
-	async getTaskWithId(id: string): Promise<{
+	async getTaskWithId(
+		id: string,
+		kilo_withMessage = true, // kilocode_change session manager uses this method in the background
+	): Promise<{
 		historyItem: HistoryItem
 		taskDirPath: string
 		apiConversationHistoryFilePath: string
@@ -1679,19 +1919,42 @@ ${prompt}
 					apiConversationHistory,
 				}
 			} else {
-				vscode.window.showErrorMessage(
-					`Task file not found for task ID: ${id} (file ${apiConversationHistoryFilePath})`,
-				) //kilocode_change show extra debugging information to debug task not found issues
+				if (kilo_withMessage) {
+					vscode.window.showErrorMessage(
+						`Task file not found for task ID: ${id} (file ${apiConversationHistoryFilePath})`,
+					) //kilocode_change show extra debugging information to debug task not found issues
+				}
 			}
 		} else {
-			vscode.window.showErrorMessage(`Task with ID: ${id} not found in history.`) // kilocode_change show extra debugging information to debug task not found issues
+			if (kilo_withMessage) {
+				vscode.window.showErrorMessage(`Task with ID: ${id} not found in history.`) // kilocode_change show extra debugging information to debug task not found issues
+			}
 		}
 
 		// if we tried to get a task that doesn't exist, remove it from state
 		// FIXME: this seems to happen sometimes when the json file doesnt save to disk for some reason
-		// await this.deleteTaskFromState(id) // kilocode_change disable confusing behaviour
-		await this.setTaskFileNotFound(id) // kilocode_change
+		// kilocode_change start
+		// commented out deleting the task, because in the previous version we made this task red
+		// instead of deleting, and people were confused because the task was actually working fine
+		// which leads us to believe that this is triggered to often somehow, or that the task will turn up later
+		// via some sync ( context https://github.com/Kilo-Org/kilocode/pull/4880 )
+		// await this.deleteTaskFromState(id)
+		// kilocode_change end
 		throw new Error("Task not found")
+	}
+
+	async getTaskWithAggregatedCosts(taskId: string): Promise<{
+		historyItem: HistoryItem
+		aggregatedCosts: AggregatedCosts
+	}> {
+		const { historyItem } = await this.getTaskWithId(taskId)
+
+		const aggregatedCosts = await aggregateTaskCostsRecursive(taskId, async (id: string) => {
+			const result = await this.getTaskWithId(id)
+			return result.historyItem
+		})
+
+		return { historyItem, aggregatedCosts }
 	}
 
 	async showTaskWithId(id: string) {
@@ -1730,21 +1993,11 @@ ${prompt}
 		try {
 			// get the task directory full path
 			const { taskDirPath } = await this.getTaskWithId(id)
-
-			// kilocode_change start
-			// Check if task is favorited
-			const history = this.getGlobalState("taskHistory") ?? []
-			const task = history.find((item) => item.id === id)
-			if (task?.isFavorited) {
-				throw new Error("Cannot delete a favorited task. Please unfavorite it first.")
-			}
-			// kilocode_change end
-
-			// remove task from stack if it's the current task
+	
+				// remove task from stack if it's the current task
 			if (id === this.getCurrentTask()?.taskId) {
-				// if we found the taskid to delete - call finish to abort this task and allow a new task to be started,
-				// if we are deleting a subtask and parent task is still waiting for subtask to finish - it allows the parent to resume (this case should neve exist)
-				await this.finishSubTask(t("common:tasks.deleted"))
+				// Close the current task instance; delegation flows will be handled via metadata if applicable.
+				await this.removeClineFromStack()
 			}
 
 			// delete task from the task history state
@@ -1793,6 +2046,13 @@ ${prompt}
 
 	async refreshWorkspace() {
 		this.currentWorkspacePath = getWorkspacePath()
+
+		await kilo_execIfExtension(() => {
+			if (this.currentWorkspacePath) {
+				SessionManager.init()?.setWorkspaceDirectory(this.currentWorkspacePath)
+			}
+		})
+
 		await this.postStateToWebview()
 	}
 
@@ -1816,6 +2076,11 @@ ${prompt}
 				...(await getEnabledRules(workspacePath, this.contextProxy, this.context)),
 			})
 		}
+	}
+
+	async postSkillsDataToWebview() {
+		const skills = this.skillsManager?.getAllSkills() ?? []
+		this.postMessageToWebview({ type: "skillsData", skills })
 	}
 	// kilocode_change end
 
@@ -1937,6 +2202,7 @@ ${prompt}
 			alwaysAllowWrite,
 			alwaysAllowWriteOutsideWorkspace,
 			alwaysAllowWriteProtected,
+			alwaysAllowDelete, // kilocode_change
 			alwaysAllowExecute,
 			allowedCommands,
 			deniedCommands,
@@ -1944,7 +2210,6 @@ ${prompt}
 			alwaysAllowMcp,
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
-			alwaysAllowUpdateTodoList,
 			allowedMaxRequests,
 			allowedMaxCost,
 			autoCondenseContext,
@@ -1976,7 +2241,6 @@ ${prompt}
 			fuzzyMatchThreshold,
 			// mcpEnabled,  // kilocode_change: always true
 			enableMcpServerCreation,
-			alwaysApproveResubmit,
 			requestDelaySeconds,
 			currentApiConfigName,
 			listApiConfigMeta,
@@ -1995,6 +2259,7 @@ ${prompt}
 			browserToolEnabled,
 			telemetrySetting,
 			showRooIgnoredFiles,
+			enableSubfolderRules,
 			language,
 			showAutoApproveMenu, // kilocode_change
 			showTaskTimeline, // kilocode_change
@@ -2007,9 +2272,11 @@ ${prompt}
 			terminalCompressProgressBar,
 			historyPreviewCollapsed,
 			reasoningBlockCollapsed,
+			enterBehavior,
 			cloudUserInfo,
 			cloudIsAuthenticated,
 			sharingEnabled,
+			publicSharingEnabled,
 			organizationAllowList,
 			organizationSettingsVersion,
 			maxConcurrentFileReads,
@@ -2024,6 +2291,7 @@ ${prompt}
 			dismissedNotificationIds, // kilocode_change
 			morphApiKey, // kilocode_change
 			fastApplyModel, // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider, // kilocode_change: Fast Apply model api base url
 			alwaysAllowFollowupQuestions,
 			followupAutoApproveTimeoutMs,
 			includeDiagnosticMessages,
@@ -2031,21 +2299,30 @@ ${prompt}
 			includeTaskHistoryInEnhance,
 			includeCurrentTime,
 			includeCurrentCost,
+			maxGitStatusFiles,
 			taskSyncEnabled,
 			remoteControlEnabled,
+			imageGenerationProvider,
 			openRouterImageApiKey,
 			kiloCodeImageApiKey,
 			openRouterImageGenerationSelectedModel,
-			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
 			yoloMode, // kilocode_change
 			yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
+			selectedMicrophoneDevice, // kilocode_change: Selected microphone device for STT
+			isBrowserSessionActive,
 		} = await this.getState()
 
 		// kilocode_change start: Get active model for virtual quota fallback UI display
 		const virtualQuotaActiveModel =
 			apiConfiguration?.apiProvider === "virtual-quota-fallback" && this.getCurrentTask()
-				? this.getCurrentTask()!.api.getModel()
+				? {
+						...this.getCurrentTask()!.api.getModel(),
+						activeProfileNumber:
+							this.getCurrentTask()!.api instanceof VirtualQuotaFallbackHandler
+								? (this.getCurrentTask()!.api as VirtualQuotaFallbackHandler).getActiveProfileNumber()
+								: undefined,
+					}
 				: undefined
 		// kilocode_change end
 
@@ -2053,7 +2330,19 @@ ${prompt}
 
 		try {
 			if (!CloudService.instance.isCloudAgent) {
-				cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+				const now = Date.now()
+
+				if (
+					this.cloudOrganizationsCache !== null &&
+					this.cloudOrganizationsCacheTimestamp !== null &&
+					now - this.cloudOrganizationsCacheTimestamp < ClineProvider.CLOUD_ORGANIZATIONS_CACHE_DURATION_MS
+				) {
+					cloudOrganizations = this.cloudOrganizationsCache!
+				} else {
+					cloudOrganizations = await CloudService.instance.getOrganizationMemberships()
+					this.cloudOrganizationsCache = cloudOrganizations
+					this.cloudOrganizationsCacheTimestamp = now
+				}
 			}
 		} catch (error) {
 			// Ignore this error.
@@ -2081,16 +2370,17 @@ ${prompt}
 			apiConfiguration,
 			customInstructions,
 			alwaysAllowReadOnly: alwaysAllowReadOnly ?? true,
-			alwaysAllowReadOnlyOutsideWorkspace: alwaysAllowReadOnlyOutsideWorkspace ?? true,
+			alwaysAllowReadOnlyOutsideWorkspace: alwaysAllowReadOnlyOutsideWorkspace ?? false,
 			alwaysAllowWrite: alwaysAllowWrite ?? true,
 			alwaysAllowWriteOutsideWorkspace: alwaysAllowWriteOutsideWorkspace ?? false,
 			alwaysAllowWriteProtected: alwaysAllowWriteProtected ?? false,
-			alwaysAllowExecute: alwaysAllowExecute ?? true,
-			alwaysAllowBrowser: alwaysAllowBrowser ?? true,
-			alwaysAllowMcp: alwaysAllowMcp ?? true,
-			alwaysAllowModeSwitch: alwaysAllowModeSwitch ?? true,
-			alwaysAllowSubtasks: alwaysAllowSubtasks ?? true,
-			alwaysAllowUpdateTodoList: alwaysAllowUpdateTodoList ?? true,
+			alwaysAllowDelete: alwaysAllowDelete ?? false, // kilocode_change
+			alwaysAllowExecute: alwaysAllowExecute ?? false,
+			alwaysAllowBrowser: alwaysAllowBrowser ?? false,
+			alwaysAllowMcp: alwaysAllowMcp ?? false,
+			alwaysAllowModeSwitch: alwaysAllowModeSwitch ?? false,
+			alwaysAllowSubtasks: alwaysAllowSubtasks ?? false,
+			isBrowserSessionActive,
 			yoloMode: yoloMode ?? false, // kilocode_change
 			allowedMaxRequests,
 			allowedMaxCost,
@@ -2099,10 +2389,9 @@ ${prompt}
 			uriScheme: vscode.env.uriScheme,
 			uiKind: vscode.UIKind[vscode.env.uiKind], // kilocode_change
 			kiloCodeWrapperProperties, // kilocode_change wrapper information
-			kilocodeDefaultModel: await getKilocodeDefaultModel(
-				apiConfiguration.kilocodeToken,
-				apiConfiguration.kilocodeOrganizationId,
-			),
+			kilocodeDefaultModel: (
+				await getKilocodeDefaultModel(apiConfiguration.kilocodeToken, apiConfiguration.kilocodeOrganizationId)
+			).defaultModel,
 			currentTaskItem: this.getCurrentTask()?.taskId
 				? (taskHistory || []).find((item: HistoryItem) => item.id === this.getCurrentTask()?.taskId)
 				: undefined,
@@ -2130,7 +2419,7 @@ ${prompt}
 			terminalOutputLineLimit: terminalOutputLineLimit ?? 500,
 			terminalOutputCharacterLimit: terminalOutputCharacterLimit ?? DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 			terminalShellIntegrationTimeout: terminalShellIntegrationTimeout ?? Terminal.defaultShellIntegrationTimeout,
-			terminalShellIntegrationDisabled: terminalShellIntegrationDisabled ?? true, // kilocode_change: default
+			terminalShellIntegrationDisabled: terminalShellIntegrationDisabled ?? true,
 			terminalCommandDelay: terminalCommandDelay ?? 0,
 			terminalPowershellCounter: terminalPowershellCounter ?? false,
 			terminalZshClearEolMark: terminalZshClearEolMark ?? true,
@@ -2140,8 +2429,6 @@ ${prompt}
 			fuzzyMatchThreshold: fuzzyMatchThreshold ?? 1.0,
 			mcpEnabled: true, // kilocode_change: always true
 			enableMcpServerCreation: enableMcpServerCreation ?? true,
-			alwaysApproveResubmit: alwaysApproveResubmit ?? false,
-			requestDelaySeconds: requestDelaySeconds ?? 10,
 			currentApiConfigName: currentApiConfigName ?? "default",
 			listApiConfigMeta: listApiConfigMeta ?? [],
 			pinnedApiConfigs: pinnedApiConfigs ?? {},
@@ -2169,8 +2456,9 @@ ${prompt}
 			showTimestamps: showTimestamps ?? true, // kilocode_change
 			hideCostBelowThreshold, // kilocode_change
 			language, // kilocode_change
+			enableSubfolderRules: enableSubfolderRules ?? false,
 			renderContext: this.renderContext,
-			maxReadFileLine: maxReadFileLine ?? -1,
+			maxReadFileLine: maxReadFileLine ?? 500 /*kilocode_change*/,
 			maxImageFileSize: maxImageFileSize ?? 5,
 			maxTotalImageSize: maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: maxConcurrentFileReads ?? 5,
@@ -2180,10 +2468,13 @@ ${prompt}
 			hasSystemPromptOverride,
 			historyPreviewCollapsed: historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: reasoningBlockCollapsed ?? true,
+			enterBehavior: enterBehavior ?? "send",
 			cloudUserInfo,
 			cloudIsAuthenticated: cloudIsAuthenticated ?? false,
+			cloudAuthSkipModel: this.context.globalState.get<boolean>("roo-auth-skip-model") ?? false,
 			cloudOrganizations,
 			sharingEnabled: sharingEnabled ?? false,
+			publicSharingEnabled: publicSharingEnabled ?? false,
 			organizationAllowList,
 			// kilocode_change start
 			ghostServiceSettings: ghostServiceSettings,
@@ -2194,8 +2485,12 @@ ${prompt}
 			yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 			codebaseIndexModels: codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
 			codebaseIndexConfig: {
-				codebaseIndexEnabled: codebaseIndexConfig?.codebaseIndexEnabled ?? true,
+				codebaseIndexEnabled: codebaseIndexConfig?.codebaseIndexEnabled ?? false,
 				codebaseIndexQdrantUrl: codebaseIndexConfig?.codebaseIndexQdrantUrl ?? "http://localhost:6333",
+				// kilocode_change start
+				codebaseIndexVectorStoreProvider: codebaseIndexConfig?.codebaseIndexVectorStoreProvider ?? "qdrant",
+				codebaseIndexLancedbVectorStoreDirectory: codebaseIndexConfig?.codebaseIndexLancedbVectorStoreDirectory,
+				// kilocode_change end
 				codebaseIndexEmbedderProvider: codebaseIndexConfig?.codebaseIndexEmbedderProvider ?? "openai",
 				codebaseIndexEmbedderBaseUrl: codebaseIndexConfig?.codebaseIndexEmbedderBaseUrl ?? "",
 				codebaseIndexEmbedderModelId: codebaseIndexConfig?.codebaseIndexEmbedderModelId ?? "",
@@ -2203,6 +2498,13 @@ ${prompt}
 				codebaseIndexOpenAiCompatibleBaseUrl: codebaseIndexConfig?.codebaseIndexOpenAiCompatibleBaseUrl,
 				codebaseIndexSearchMaxResults: codebaseIndexConfig?.codebaseIndexSearchMaxResults,
 				codebaseIndexSearchMinScore: codebaseIndexConfig?.codebaseIndexSearchMinScore,
+				// kilocode_change start
+				codebaseIndexEmbeddingBatchSize: codebaseIndexConfig?.codebaseIndexEmbeddingBatchSize,
+				codebaseIndexScannerMaxBatchRetries: codebaseIndexConfig?.codebaseIndexScannerMaxBatchRetries,
+				// kilocode_change end
+				codebaseIndexBedrockRegion: codebaseIndexConfig?.codebaseIndexBedrockRegion,
+				codebaseIndexBedrockProfile: codebaseIndexConfig?.codebaseIndexBedrockProfile,
+				codebaseIndexOpenRouterSpecificProvider: codebaseIndexConfig?.codebaseIndexOpenRouterSpecificProvider,
 			},
 			// Only set mdmCompliant if there's an actual MDM policy
 			// undefined means no MDM policy, true means compliant, false means non-compliant
@@ -2210,10 +2512,12 @@ ${prompt}
 			profileThresholds: profileThresholds ?? {},
 			cloudApiUrl: getRooCodeApiUrl(),
 			hasOpenedModeSelector: this.getGlobalState("hasOpenedModeSelector") ?? false,
+			hasCompletedOnboarding: this.getGlobalState("hasCompletedOnboarding"), // kilocode_change: Track onboarding completion - undefined means new user
 			systemNotificationsEnabled: systemNotificationsEnabled ?? false, // kilocode_change
 			dismissedNotificationIds: dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey, // kilocode_change
 			fastApplyModel: fastApplyModel ?? "auto", // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider: fastApplyApiProvider ?? "current", // kilocode_change: Fast Apply model api base url
 			alwaysAllowFollowupQuestions: alwaysAllowFollowupQuestions ?? false,
 			followupAutoApproveTimeoutMs: followupAutoApproveTimeoutMs ?? 60000,
 			includeDiagnosticMessages: includeDiagnosticMessages ?? true,
@@ -2221,8 +2525,10 @@ ${prompt}
 			includeTaskHistoryInEnhance: includeTaskHistoryInEnhance ?? true,
 			includeCurrentTime: includeCurrentTime ?? true,
 			includeCurrentCost: includeCurrentCost ?? true,
+			maxGitStatusFiles: maxGitStatusFiles ?? 0,
 			taskSyncEnabled,
 			remoteControlEnabled,
+			imageGenerationProvider,
 			openRouterImageApiKey,
 			// kilocode_change start - Auto-purge settings
 			autoPurgeEnabled: await this.getState().then((s) => s.autoPurgeEnabled),
@@ -2237,12 +2543,29 @@ ${prompt}
 				(s) => s.autoPurgeIncompleteTaskRetentionDays,
 			),
 			autoPurgeLastRunTimestamp: await this.getState().then((s) => s.autoPurgeLastRunTimestamp),
+			selectedMicrophoneDevice, // kilocode_change: Selected microphone device for STT
 			// kilocode_change end
 			kiloCodeImageApiKey,
 			openRouterImageGenerationSelectedModel,
-			openRouterUseMiddleOutTransform,
 			featureRoomoteControlEnabled,
 			virtualQuotaActiveModel, // kilocode_change: Include virtual quota active model in state
+			claudeCodeIsAuthenticated: await (async () => {
+				try {
+					const { claudeCodeOAuthManager } = await import("../../integrations/claude-code/oauth")
+					return await claudeCodeOAuthManager.isAuthenticated()
+				} catch {
+					return false
+				}
+			})(),
+			openAiCodexIsAuthenticated: await (async () => {
+				try {
+					const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+					return await openAiCodexOAuthManager.isAuthenticated()
+				} catch {
+					return false
+				}
+			})(),
+			debug: vscode.workspace.getConfiguration(Package.name).get<boolean>("debug", false),
 		}
 	}
 
@@ -2258,6 +2581,7 @@ ${prompt}
 			| "clineMessages"
 			| "renderContext"
 			| "hasOpenedModeSelector"
+			| "hasCompletedOnboarding" // kilocode_change
 			| "version"
 			| "shouldShowAnnouncement"
 			| "hasSystemPromptOverride"
@@ -2321,6 +2645,16 @@ ${prompt}
 			)
 		}
 
+		let publicSharingEnabled: boolean = false
+
+		try {
+			publicSharingEnabled = await CloudService.instance.canSharePublicly()
+		} catch (error) {
+			console.error(
+				`[getState] failed to get public sharing enabled state: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+
 		let organizationSettingsVersion: number = -1
 
 		try {
@@ -2344,28 +2678,31 @@ ${prompt}
 			)
 		}
 
+		// Get actual browser session state
+		const isBrowserSessionActive = this.getCurrentTask()?.browserSession?.isSessionActive() ?? false
+
 		// Return the same structure as before.
 		return {
 			apiConfiguration: providerSettings,
-			kilocodeDefaultModel: await getKilocodeDefaultModel(
-				providerSettings.kilocodeToken,
-				providerSettings.kilocodeOrganizationId,
-			), // kilocode_change
+			kilocodeDefaultModel: (
+				await getKilocodeDefaultModel(providerSettings.kilocodeToken, providerSettings.kilocodeOrganizationId)
+			).defaultModel, // kilocode_change
 			lastShownAnnouncementId: stateValues.lastShownAnnouncementId,
 			customInstructions: stateValues.customInstructions,
 			apiModelId: stateValues.apiModelId,
 			alwaysAllowReadOnly: stateValues.alwaysAllowReadOnly ?? true,
-			alwaysAllowReadOnlyOutsideWorkspace: stateValues.alwaysAllowReadOnlyOutsideWorkspace ?? true,
+			alwaysAllowReadOnlyOutsideWorkspace: stateValues.alwaysAllowReadOnlyOutsideWorkspace ?? false,
 			alwaysAllowWrite: stateValues.alwaysAllowWrite ?? true,
 			alwaysAllowWriteOutsideWorkspace: stateValues.alwaysAllowWriteOutsideWorkspace ?? false,
 			alwaysAllowWriteProtected: stateValues.alwaysAllowWriteProtected ?? false,
+			alwaysAllowDelete: stateValues.alwaysAllowDelete ?? false, // kilocode_change
 			alwaysAllowExecute: stateValues.alwaysAllowExecute ?? true,
 			alwaysAllowBrowser: stateValues.alwaysAllowBrowser ?? true,
 			alwaysAllowMcp: stateValues.alwaysAllowMcp ?? true,
 			alwaysAllowModeSwitch: stateValues.alwaysAllowModeSwitch ?? true,
 			alwaysAllowSubtasks: stateValues.alwaysAllowSubtasks ?? true,
 			alwaysAllowFollowupQuestions: stateValues.alwaysAllowFollowupQuestions ?? false,
-			alwaysAllowUpdateTodoList: stateValues.alwaysAllowUpdateTodoList ?? true, // kilocode_change
+			isBrowserSessionActive,
 			yoloMode: stateValues.yoloMode ?? false, // kilocode_change
 			followupAutoApproveTimeoutMs: stateValues.followupAutoApproveTimeoutMs ?? 60000,
 			diagnosticsEnabled: stateValues.diagnosticsEnabled ?? true,
@@ -2395,7 +2732,7 @@ ${prompt}
 				stateValues.terminalOutputCharacterLimit ?? DEFAULT_TERMINAL_OUTPUT_CHARACTER_LIMIT,
 			terminalShellIntegrationTimeout:
 				stateValues.terminalShellIntegrationTimeout ?? Terminal.defaultShellIntegrationTimeout,
-			terminalShellIntegrationDisabled: stateValues.terminalShellIntegrationDisabled ?? true, // kilocode_change: default
+			terminalShellIntegrationDisabled: stateValues.terminalShellIntegrationDisabled ?? true,
 			terminalCommandDelay: stateValues.terminalCommandDelay ?? 0,
 			terminalPowershellCounter: stateValues.terminalPowershellCounter ?? false,
 			terminalZshClearEolMark: stateValues.terminalZshClearEolMark ?? true,
@@ -2407,8 +2744,7 @@ ${prompt}
 			language: stateValues.language ?? formatLanguage(vscode.env.language),
 			mcpEnabled: true, // kilocode_change: always true
 			enableMcpServerCreation: stateValues.enableMcpServerCreation ?? true,
-			alwaysApproveResubmit: stateValues.alwaysApproveResubmit ?? false,
-			requestDelaySeconds: Math.max(5, stateValues.requestDelaySeconds ?? 10),
+			mcpServers: this.mcpHub?.getAllServers() ?? [],
 			currentApiConfigName: stateValues.currentApiConfigName ?? "default",
 			listApiConfigMeta: stateValues.listApiConfigMeta ?? [],
 			pinnedApiConfigs: stateValues.pinnedApiConfigs ?? {},
@@ -2428,22 +2764,23 @@ ${prompt}
 			autoPurgeCompletedTaskRetentionDays: stateValues.autoPurgeCompletedTaskRetentionDays ?? 30,
 			autoPurgeIncompleteTaskRetentionDays: stateValues.autoPurgeIncompleteTaskRetentionDays ?? 7,
 			autoPurgeLastRunTimestamp: stateValues.autoPurgeLastRunTimestamp,
+			selectedMicrophoneDevice: stateValues.selectedMicrophoneDevice, // kilocode_change: Selected microphone device for STT
 			// kilocode_change end
 			experiments: stateValues.experiments ?? experimentDefault,
 			autoApprovalEnabled: stateValues.autoApprovalEnabled ?? true,
 			customModes,
 			maxOpenTabsContext: stateValues.maxOpenTabsContext ?? 20,
 			maxWorkspaceFiles: stateValues.maxWorkspaceFiles ?? 200,
-			openRouterUseMiddleOutTransform: stateValues.openRouterUseMiddleOutTransform,
 			browserToolEnabled: stateValues.browserToolEnabled ?? true,
-			telemetrySetting: stateValues.telemetrySetting || "unset",
+			telemetrySetting: getEffectiveTelemetrySetting(stateValues.telemetrySetting), // kilocode_change
 			showRooIgnoredFiles: stateValues.showRooIgnoredFiles ?? false,
 			showAutoApproveMenu: stateValues.showAutoApproveMenu ?? false, // kilocode_change
 			showTaskTimeline: stateValues.showTaskTimeline ?? true, // kilocode_change
 			sendMessageOnEnter: stateValues.sendMessageOnEnter ?? true, // kilocode_change
 			showTimestamps: stateValues.showTimestamps ?? true, // kilocode_change
 			hideCostBelowThreshold: stateValues.hideCostBelowThreshold ?? 0, // kilocode_change
-			maxReadFileLine: stateValues.maxReadFileLine ?? -1,
+			enableSubfolderRules: stateValues.enableSubfolderRules ?? false,
+			maxReadFileLine: stateValues.maxReadFileLine ?? 500 /*kilocode_change*/,
 			maxImageFileSize: stateValues.maxImageFileSize ?? 5,
 			maxTotalImageSize: stateValues.maxTotalImageSize ?? 20,
 			maxConcurrentFileReads: stateValues.maxConcurrentFileReads ?? 5,
@@ -2452,11 +2789,14 @@ ${prompt}
 			dismissedNotificationIds: stateValues.dismissedNotificationIds ?? [], // kilocode_change
 			morphApiKey: stateValues.morphApiKey, // kilocode_change
 			fastApplyModel: stateValues.fastApplyModel ?? "auto", // kilocode_change: Fast Apply model selection
+			fastApplyApiProvider: stateValues.fastApplyApiProvider ?? "current", // kilocode_change: Fast Apply model api config id
 			historyPreviewCollapsed: stateValues.historyPreviewCollapsed ?? false,
 			reasoningBlockCollapsed: stateValues.reasoningBlockCollapsed ?? true,
+			enterBehavior: stateValues.enterBehavior ?? "send",
 			cloudUserInfo,
 			cloudIsAuthenticated,
 			sharingEnabled,
+			publicSharingEnabled,
 			organizationAllowList,
 			organizationSettingsVersion,
 			condensingApiConfigId: stateValues.condensingApiConfigId,
@@ -2464,11 +2804,17 @@ ${prompt}
 			yoloGatekeeperApiConfigId: stateValues.yoloGatekeeperApiConfigId, // kilocode_change: AI gatekeeper for YOLO mode
 			codebaseIndexModels: stateValues.codebaseIndexModels ?? EMBEDDING_MODEL_PROFILES,
 			codebaseIndexConfig: {
-				codebaseIndexEnabled: stateValues.codebaseIndexConfig?.codebaseIndexEnabled ?? true,
+				codebaseIndexEnabled: stateValues.codebaseIndexConfig?.codebaseIndexEnabled ?? false,
 				codebaseIndexQdrantUrl:
 					stateValues.codebaseIndexConfig?.codebaseIndexQdrantUrl ?? "http://localhost:6333",
 				codebaseIndexEmbedderProvider:
 					stateValues.codebaseIndexConfig?.codebaseIndexEmbedderProvider ?? "openai",
+				// kilocode_change start
+				codebaseIndexVectorStoreProvider:
+					stateValues.codebaseIndexConfig?.codebaseIndexVectorStoreProvider ?? "qdrant",
+				codebaseIndexLancedbVectorStoreDirectory:
+					stateValues.codebaseIndexConfig?.codebaseIndexLancedbVectorStoreDirectory,
+				// kilocode_change end
 				codebaseIndexEmbedderBaseUrl: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderBaseUrl ?? "",
 				codebaseIndexEmbedderModelId: stateValues.codebaseIndexConfig?.codebaseIndexEmbedderModelId ?? "",
 				codebaseIndexEmbedderModelDimension:
@@ -2477,6 +2823,15 @@ ${prompt}
 					stateValues.codebaseIndexConfig?.codebaseIndexOpenAiCompatibleBaseUrl,
 				codebaseIndexSearchMaxResults: stateValues.codebaseIndexConfig?.codebaseIndexSearchMaxResults,
 				codebaseIndexSearchMinScore: stateValues.codebaseIndexConfig?.codebaseIndexSearchMinScore,
+				// kilocode_change start
+				codebaseIndexEmbeddingBatchSize: stateValues.codebaseIndexConfig?.codebaseIndexEmbeddingBatchSize,
+				codebaseIndexScannerMaxBatchRetries:
+					stateValues.codebaseIndexConfig?.codebaseIndexScannerMaxBatchRetries,
+				// kilocode_change end
+				codebaseIndexBedrockRegion: stateValues.codebaseIndexConfig?.codebaseIndexBedrockRegion,
+				codebaseIndexBedrockProfile: stateValues.codebaseIndexConfig?.codebaseIndexBedrockProfile,
+				codebaseIndexOpenRouterSpecificProvider:
+					stateValues.codebaseIndexConfig?.codebaseIndexOpenRouterSpecificProvider,
 			},
 			profileThresholds: stateValues.profileThresholds ?? {},
 			includeDiagnosticMessages: stateValues.includeDiagnosticMessages ?? true,
@@ -2484,6 +2839,7 @@ ${prompt}
 			includeTaskHistoryInEnhance: stateValues.includeTaskHistoryInEnhance ?? true,
 			includeCurrentTime: stateValues.includeCurrentTime ?? true,
 			includeCurrentCost: stateValues.includeCurrentCost ?? true,
+			maxGitStatusFiles: stateValues.maxGitStatusFiles ?? 0,
 			taskSyncEnabled,
 			remoteControlEnabled: (() => {
 				try {
@@ -2496,6 +2852,7 @@ ${prompt}
 					return false
 				}
 			})(),
+			imageGenerationProvider: stateValues.imageGenerationProvider,
 			openRouterImageApiKey: stateValues.openRouterImageApiKey,
 			kiloCodeImageApiKey: stateValues.kiloCodeImageApiKey,
 			openRouterImageGenerationSelectedModel: stateValues.openRouterImageGenerationSelectedModel,
@@ -2511,6 +2868,7 @@ ${prompt}
 					return false
 				}
 			})(),
+			appendSystemPrompt: stateValues.appendSystemPrompt, // kilocode_change: CLI append system prompt
 		}
 	}
 
@@ -2519,7 +2877,13 @@ ${prompt}
 		const existingItemIndex = history.findIndex((h) => h.id === item.id)
 
 		if (existingItemIndex !== -1) {
-			history[existingItemIndex] = item
+			// Preserve existing metadata (e.g., delegation fields) unless explicitly overwritten.
+			// This prevents loss of status/awaitingChildId/delegatedToId when tasks are reopened,
+			// terminated, or when routine message persistence occurs.
+			history[existingItemIndex] = {
+				...history[existingItemIndex],
+				...item,
+			}
 		} else {
 			history.push(item)
 		}
@@ -2613,6 +2977,10 @@ ${prompt}
 
 	public getMcpHub(): McpHub | undefined {
 		return this.mcpHub
+	}
+
+	public getSkillsManager(): SkillsManager | undefined {
+		return this.skillsManager
 	}
 
 	/**
@@ -2858,6 +3226,15 @@ ${prompt}
 			remoteControlEnabled,
 		} = await this.getState()
 
+		// Single-open-task invariant: always enforce for user-initiated top-level tasks
+		if (!parentTask) {
+			try {
+				await this.removeClineFromStack()
+			} catch {
+				// Non-fatal
+			}
+		}
+
 		if (!ProfileValidator.isProfileAllowed(apiConfiguration, organizationAllowList)) {
 			throw new OrganizationAllowListViolationError(t("common:errors.violated_organization_allowlist"))
 		}
@@ -2912,6 +3289,10 @@ ${prompt}
 
 		// Capture the current instance to detect if rehydrate already occurred elsewhere
 		const originalInstanceId = task.instanceId
+
+		// Immediately cancel the underlying HTTP request if one is in progress
+		// This ensures the stream fails quickly rather than waiting for network timeout
+		task.cancelCurrentRequest()
 
 		// Begin abort (non-blocking)
 		task.abortTask()
@@ -2997,6 +3378,64 @@ ${prompt}
 		await this.setValues({ mode })
 	}
 
+	// kilocode_change start: Review mode
+	/**
+	 * Triggers the review scope selection UI
+	 * Called when user enters review mode
+	 */
+	public async triggerReviewScopeSelection(): Promise<void> {
+		try {
+			const cwd = getWorkspacePath()
+			if (!cwd) {
+				this.log("Cannot start review: no workspace folder open")
+				return
+			}
+
+			const { ReviewService } = await import("../../services/review")
+			const reviewService = new ReviewService({ cwd })
+			const scopeInfo = await reviewService.getScopeInfo()
+
+			await this.postMessageToWebview({
+				type: "askReviewScope",
+				reviewScopeInfo: scopeInfo,
+			})
+		} catch (error) {
+			this.log(
+				`Error triggering review scope selection: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+	}
+
+	/**
+	 * Handles the user's review scope selection
+	 * Gets lightweight summary and starts the review task
+	 * The agent will dynamically explore changes using tools
+	 */
+	public async handleReviewScopeSelected(scope: "uncommitted" | "branch"): Promise<void> {
+		try {
+			const cwd = getWorkspacePath()
+			if (!cwd) {
+				this.log("Cannot start review: no workspace folder open")
+				vscode.window.showErrorMessage("Cannot start review: no workspace folder open")
+				return
+			}
+
+			const { ReviewService, buildReviewPrompt } = await import("../../services/review")
+			const reviewService = new ReviewService({ cwd })
+
+			// Get lightweight summary - agent will explore details with tools
+			const summary = await reviewService.getReviewSummary(scope)
+
+			// Build the review prompt and start the task
+			// Let the agent handle cases with no changes - it can explain and offer alternatives
+			const reviewPrompt = buildReviewPrompt(summary)
+			await this.createTask(reviewPrompt)
+		} catch (error) {
+			this.log(`Error handling review scope selection: ${error instanceof Error ? error.message : String(error)}`)
+		}
+	}
+	// kilocode_change end: Review mode
+
 	// Provider Profiles
 
 	public async getProviderProfiles(): Promise<{ name: string; provider?: string }[]> {
@@ -3036,12 +3475,16 @@ ${prompt}
 				appVersion: packageJSON?.version ?? Package.version,
 				vscodeVersion: vscode.version,
 				platform: isWsl ? "wsl" /* kilocode_change */ : process.platform,
-				editorName: kiloCodeWrapperTitle ? kiloCodeWrapperTitle : vscode.env.appName, // kilocode_change
-				wrapped: kiloCodeWrapped, // kilocode_change
-				wrapper: kiloCodeWrapper, // kilocode_change
-				wrapperCode: kiloCodeWrapperCode, // kilocode_change
-				wrapperVersion: kiloCodeWrapperVersion, // kilocode_change
-				wrapperTitle: kiloCodeWrapperTitle, // kilocode_change
+				// kilocode_change start
+				editorName: kiloCodeWrapperTitle ? kiloCodeWrapperTitle : vscode.env.appName,
+				wrapped: kiloCodeWrapped,
+				wrapper: kiloCodeWrapper,
+				wrapperCode: kiloCodeWrapperCode,
+				wrapperVersion: kiloCodeWrapperVersion,
+				wrapperTitle: kiloCodeWrapperTitle,
+				machineId: vscode.env.machineId,
+				vscodeIsTelemetryEnabled: vscode.env.isTelemetryEnabled,
+				// kilocode_change end
 			}
 		}
 
@@ -3089,15 +3532,15 @@ ${prompt}
 			language,
 			mode,
 			taskId: task?.taskId,
-			parentTaskId: task?.parentTask?.taskId,
+			parentTaskId: task?.parentTaskId,
 			apiProvider: apiConfiguration?.apiProvider,
 			diffStrategy: task?.diffStrategy?.getName(),
-			isSubtask: task ? !!task.parentTask : undefined,
+			isSubtask: task ? !!task.parentTaskId : undefined,
 			...(todos && { todos }),
 			// kilocode_change start
 			currentTaskSize: task?.clineMessages.length,
 			taskHistorySize: this.kiloCodeTaskHistorySizeForTelemetryOnly || undefined,
-			toolStyle: getActiveToolUseStyle(apiConfiguration),
+			toolStyle: resolveToolProtocol(apiConfiguration, task?.api?.getModel().info),
 			// kilocode_change end
 		}
 	}
@@ -3128,7 +3571,8 @@ ${prompt}
 
 	public async getTelemetryProperties(): Promise<TelemetryProperties> {
 		// kilocode_change start
-		const { apiConfiguration, experiments } = await this.getState()
+		const state = await this.getState()
+		const { apiConfiguration, experiments } = state
 		const task = this.getCurrentTask()
 
 		async function getModelId() {
@@ -3178,11 +3622,40 @@ ${prompt}
 						morphFastApply: Boolean(experiments.morphFastApply),
 						morphApiKey: Boolean(this.contextProxy.getValue("morphApiKey")),
 						selectedModel: this.contextProxy.getValue("fastApplyModel") || "auto",
+						fastApplyApiProvider: this.contextProxy.getValue("fastApplyApiProvider") || "current",
 					},
 				}
 			} catch (error) {
 				return {
 					fastApplyException: stringifyError(error),
+				}
+			}
+		}
+
+		const getAutoApproveSettings = () => {
+			try {
+				return {
+					autoApprove: {
+						autoApprovalEnabled: !!state.autoApprovalEnabled,
+						alwaysAllowBrowser: !!state.alwaysAllowBrowser,
+						alwaysAllowExecute: !!state.alwaysAllowExecute,
+						alwaysAllowFollowupQuestions: !!state.alwaysAllowFollowupQuestions,
+						alwaysAllowMcp: !!state.alwaysAllowMcp,
+						alwaysAllowModeSwitch: !!state.alwaysAllowModeSwitch,
+						alwaysAllowReadOnly: !!state.alwaysAllowReadOnly,
+						alwaysAllowReadOnlyOutsideWorkspace: !!state.alwaysAllowReadOnlyOutsideWorkspace,
+						alwaysAllowSubtasks: !!state.alwaysAllowSubtasks,
+
+						alwaysAllowWrite: !!state.alwaysAllowWrite,
+						alwaysAllowWriteOutsideWorkspace: !!state.alwaysAllowWriteOutsideWorkspace,
+						alwaysAllowWriteProtected: !!state.alwaysAllowWriteProtected,
+						alwaysAllowDelete: !!state.alwaysAllowDelete, // kilocode_change
+						yoloMode: !!state.yoloMode,
+					},
+				}
+			} catch (error) {
+				return {
+					autoApproveException: stringifyError(error),
 				}
 			}
 		}
@@ -3196,6 +3669,11 @@ ${prompt}
 			...getMemory(),
 			...getFastApply(),
 			...getOpenRouter(),
+			...getAutoApproveSettings(),
+			// Add organization ID if available
+			...(apiConfiguration.kilocodeOrganizationId && {
+				kilocodeOrganizationId: apiConfiguration.kilocodeOrganizationId,
+			}),
 			// kilocode_change end
 			...(await this.getTaskProperties()),
 			...(await this.getGitProperties()),
@@ -3393,30 +3871,20 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 	}
 
 	// Modify batch delete to respect favorites
-	async deleteMultipleTasks(taskIds: string[]) {
+	async deleteMultipleTasks(taskIds: string[], excludeFavorites?: boolean) {
 		const history = this.getGlobalState("taskHistory") ?? []
-		const favoritedTaskIds = taskIds.filter((id) => history.find((item) => item.id === id)?.isFavorited)
 
-		if (favoritedTaskIds.length > 0) {
-			throw new Error("Cannot delete favorited tasks. Please unfavorite them first.")
+		// kilocode_change start
+		// Filter out favorited tasks if excludeFavorites is true
+		let idsToDelete = taskIds
+		if (excludeFavorites) {
+			idsToDelete = taskIds.filter((id) => !history.find((item) => item.id === id)?.isFavorited)
 		}
+		// kilocode_change end
 
-		for (const id of taskIds) {
+		for (const id of idsToDelete) {
 			await this.deleteTaskWithId(id)
 		}
-	}
-
-	async setTaskFileNotFound(id: string) {
-		const history = this.getGlobalState("taskHistory") ?? []
-		const updatedHistory = history.map((item) => {
-			if (item.id === id) {
-				return { ...item, fileNotfound: true }
-			}
-			return item
-		})
-		await this.updateGlobalState("taskHistory", updatedHistory)
-		this.kiloCodeTaskHistoryVersion++
-		await this.postStateToWebview()
 	}
 
 	private kiloCodeTaskHistoryVersion = 0
@@ -3429,6 +3897,314 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 
 	public get cwd() {
 		return this.currentWorkspacePath || getWorkspacePath()
+	}
+
+	/**
+	 * Delegate parent task and open child task.
+	 *
+	 * - Enforce single-open invariant
+	 * - Persist parent delegation metadata
+	 * - Emit TaskDelegated (task-level; API forwards to provider/bridge)
+	 * - Create child as sole active and switch mode to child's mode
+	 */
+	public async delegateParentAndOpenChild(params: {
+		parentTaskId: string
+		message: string
+		initialTodos: TodoItem[]
+		mode: string
+	}): Promise<Task> {
+		const { parentTaskId, message, initialTodos, mode } = params
+
+		// Metadata-driven delegation is always enabled
+
+		// 1) Get parent (must be current task)
+		const parent = this.getCurrentTask()
+		if (!parent) {
+			throw new Error("[delegateParentAndOpenChild] No current task")
+		}
+		if (parent.taskId !== parentTaskId) {
+			throw new Error(
+				`[delegateParentAndOpenChild] Parent mismatch: expected ${parentTaskId}, current ${parent.taskId}`,
+			)
+		}
+		// 2) Flush pending tool results to API history BEFORE disposing the parent.
+		//    This is critical for native tool protocol: when tools are called before new_task,
+		//    their tool_result blocks are in userMessageContent but not yet saved to API history.
+		//    If we don't flush them, the parent's API conversation will be incomplete and
+		//    cause 400 errors when resumed (missing tool_result for tool_use blocks).
+		//
+		//    NOTE: We do NOT pass the assistant message here because the assistant message
+		//    is already added to apiConversationHistory by the normal flow in
+		//    recursivelyMakeClineRequests BEFORE tools start executing. We only need to
+		//    flush the pending user message with tool_results.
+		try {
+			await parent.flushPendingToolResultsToHistory()
+		} catch (error) {
+			this.log(
+				`[delegateParentAndOpenChild] Error flushing pending tool results (non-fatal): ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			)
+		}
+
+		// 3) Enforce single-open invariant by closing/disposing the parent first
+		//    This ensures we never have >1 tasks open at any time during delegation.
+		//    Await abort completion to ensure clean disposal and prevent unhandled rejections.
+		try {
+			await this.removeClineFromStack()
+		} catch (error) {
+			this.log(
+				`[delegateParentAndOpenChild] Error during parent disposal (non-fatal): ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			)
+			// Non-fatal: proceed with child creation even if parent cleanup had issues
+		}
+
+		// 3) Switch provider mode to child's requested mode BEFORE creating the child task
+		//    This ensures the child's system prompt and configuration are based on the correct mode.
+		//    The mode switch must happen before createTask() because the Task constructor
+		//    initializes its mode from provider.getState() during initializeTaskMode().
+		try {
+			await this.handleModeSwitch(mode as any)
+		} catch (e) {
+			this.log(
+				`[delegateParentAndOpenChild] handleModeSwitch failed for mode '${mode}': ${
+					(e as Error)?.message ?? String(e)
+				}`,
+			)
+		}
+
+		// 4) Create child as sole active (parent reference preserved for lineage)
+		// Pass initialStatus: "active" to ensure the child task's historyItem is created
+		// with status from the start, avoiding race conditions where the task might
+		// call attempt_completion before status is persisted separately.
+		const child = await this.createTask(message, undefined, parent as any, {
+			initialTodos,
+			initialStatus: "active",
+		})
+
+		// 5) Persist parent delegation metadata
+		try {
+			const { historyItem } = await this.getTaskWithId(parentTaskId)
+			const childIds = Array.from(new Set([...(historyItem.childIds ?? []), child.taskId]))
+			const updatedHistory: typeof historyItem = {
+				...historyItem,
+				status: "delegated",
+				delegatedToId: child.taskId,
+				awaitingChildId: child.taskId,
+				childIds,
+			}
+			await this.updateTaskHistory(updatedHistory)
+		} catch (err) {
+			this.log(
+				`[delegateParentAndOpenChild] Failed to persist parent metadata for ${parentTaskId} -> ${child.taskId}: ${
+					(err as Error)?.message ?? String(err)
+				}`,
+			)
+		}
+
+		// 6) Emit TaskDelegated (provider-level)
+		try {
+			this.emit(RooCodeEventName.TaskDelegated, parentTaskId, child.taskId)
+		} catch {
+			// non-fatal
+		}
+
+		return child
+	}
+
+	/**
+	 * Reopen parent task from delegation with write-back and events.
+	 */
+	public async reopenParentFromDelegation(params: {
+		parentTaskId: string
+		childTaskId: string
+		completionResultSummary: string
+	}): Promise<void> {
+		const { parentTaskId, childTaskId, completionResultSummary } = params
+		const globalStoragePath = this.contextProxy.globalStorageUri.fsPath
+
+		// 1) Load parent from history and current persisted messages
+		const { historyItem } = await this.getTaskWithId(parentTaskId)
+
+		let parentClineMessages: ClineMessage[] = []
+		try {
+			parentClineMessages = await readTaskMessages({
+				taskId: parentTaskId,
+				globalStoragePath,
+			})
+		} catch {
+			parentClineMessages = []
+		}
+
+		let parentApiMessages: any[] = []
+		try {
+			parentApiMessages = (await readApiMessages({
+				taskId: parentTaskId,
+				globalStoragePath,
+			})) as any[]
+		} catch {
+			parentApiMessages = []
+		}
+
+		// 2) Inject synthetic records: UI subtask_result and update API tool_result
+		const ts = Date.now()
+
+		// Defensive: ensure arrays
+		if (!Array.isArray(parentClineMessages)) parentClineMessages = []
+		if (!Array.isArray(parentApiMessages)) parentApiMessages = []
+
+		const subtaskUiMessage: ClineMessage = {
+			type: "say",
+			say: "subtask_result",
+			text: completionResultSummary,
+			ts,
+		}
+		parentClineMessages.push(subtaskUiMessage)
+		await saveTaskMessages({ messages: parentClineMessages, taskId: parentTaskId, globalStoragePath })
+
+		// Find the tool_use_id from the last assistant message's new_task tool_use
+		let toolUseId: string | undefined
+		for (let i = parentApiMessages.length - 1; i >= 0; i--) {
+			const msg = parentApiMessages[i]
+			if (msg.role === "assistant" && Array.isArray(msg.content)) {
+				for (const block of msg.content) {
+					if (block.type === "tool_use" && block.name === "new_task") {
+						toolUseId = block.id
+						break
+					}
+				}
+				if (toolUseId) break
+			}
+		}
+
+		// The API expects: user → assistant (with tool_use) → user (with tool_result)
+		// We need to add a NEW user message with the tool_result AFTER the assistant's tool_use
+		// NOT add it to an existing user message
+		if (toolUseId) {
+			// Check if the last message is already a user message with a tool_result for this tool_use_id
+			// (in case this is a retry or the history was already updated)
+			const lastMsg = parentApiMessages[parentApiMessages.length - 1]
+			let alreadyHasToolResult = false
+			if (lastMsg?.role === "user" && Array.isArray(lastMsg.content)) {
+				for (const block of lastMsg.content) {
+					if (block.type === "tool_result" && block.tool_use_id === toolUseId) {
+						// Update the existing tool_result content
+						block.content = `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`
+						alreadyHasToolResult = true
+						break
+					}
+				}
+			}
+
+			// If no existing tool_result found, create a NEW user message with the tool_result
+			if (!alreadyHasToolResult) {
+				parentApiMessages.push({
+					role: "user",
+					content: [
+						{
+							type: "tool_result" as const,
+							tool_use_id: toolUseId,
+							content: `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`,
+						},
+					],
+					ts,
+				})
+			}
+		} else {
+			// Fallback for XML protocol or when toolUseId couldn't be found:
+			// Add a text block (not ideal but maintains backward compatibility)
+			parentApiMessages.push({
+				role: "user",
+				content: [
+					{
+						type: "text",
+						text: `Subtask ${childTaskId} completed.\n\nResult:\n${completionResultSummary}`,
+					},
+				],
+				ts,
+			})
+		}
+
+		// Validate the newly injected tool_result against the preceding assistant message.
+		// This ensures the tool_result's tool_use_id matches a tool_use in the immediately
+		// preceding assistant message (Anthropic API requirement).
+		const lastMessage = parentApiMessages[parentApiMessages.length - 1]
+		if (lastMessage?.role === "user") {
+			const validatedMessage = validateAndFixToolResultIds(lastMessage, parentApiMessages.slice(0, -1))
+			parentApiMessages[parentApiMessages.length - 1] = validatedMessage
+		}
+
+		await saveApiMessages({ messages: parentApiMessages as any, taskId: parentTaskId, globalStoragePath })
+
+		// 3) Update child metadata to "completed" status
+		try {
+			const { historyItem: childHistory } = await this.getTaskWithId(childTaskId)
+			await this.updateTaskHistory({
+				...childHistory,
+				status: "completed",
+			})
+		} catch (err) {
+			this.log(
+				`[reopenParentFromDelegation] Failed to persist child completed status for ${childTaskId}: ${
+					(err as Error)?.message ?? String(err)
+				}`,
+			)
+		}
+
+		// 4) Update parent metadata and persist BEFORE emitting completion event
+		const childIds = Array.from(new Set([...(historyItem.childIds ?? []), childTaskId]))
+		const updatedHistory: typeof historyItem = {
+			...historyItem,
+			status: "active",
+			completedByChildId: childTaskId,
+			completionResultSummary,
+			awaitingChildId: undefined,
+			childIds,
+		}
+		await this.updateTaskHistory(updatedHistory)
+
+		// 5) Emit TaskDelegationCompleted (provider-level)
+		try {
+			this.emit(RooCodeEventName.TaskDelegationCompleted, parentTaskId, childTaskId, completionResultSummary)
+		} catch {
+			// non-fatal
+		}
+
+		// 6) Close child instance if still open (single-open-task invariant)
+		const current = this.getCurrentTask()
+		if (current?.taskId === childTaskId) {
+			await this.removeClineFromStack()
+		}
+
+		// 7) Reopen the parent from history as the sole active task (restores saved mode)
+		//    IMPORTANT: startTask=false to suppress resume-from-history ask scheduling
+		const parentInstance = await this.createTaskWithHistoryItem(updatedHistory, { startTask: false })
+
+		// 8) Inject restored histories into the in-memory instance before resuming
+		if (parentInstance) {
+			try {
+				await parentInstance.overwriteClineMessages(parentClineMessages)
+			} catch {
+				// non-fatal
+			}
+			try {
+				await parentInstance.overwriteApiConversationHistory(parentApiMessages as any)
+			} catch {
+				// non-fatal
+			}
+
+			// Auto-resume parent without ask("resume_task")
+			await parentInstance.resumeAfterDelegation()
+		}
+
+		// 9) Emit TaskDelegationResumed (provider-level)
+		try {
+			this.emit(RooCodeEventName.TaskDelegationResumed, parentTaskId, childTaskId)
+		} catch {
+			// non-fatal
+		}
 	}
 
 	/**

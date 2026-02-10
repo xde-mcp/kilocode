@@ -22,9 +22,16 @@ import { getMemoryPercentage } from "@/kilocode/helpers"
 type AboutProps = HTMLAttributes<HTMLDivElement> & {
 	telemetrySetting: TelemetrySetting
 	setTelemetrySetting: (setting: TelemetrySetting) => void
+	isVsCode: boolean // kilocode_change
 }
 
-export const About = ({ telemetrySetting, setTelemetrySetting, className, ...props }: AboutProps) => {
+export const About = ({
+	telemetrySetting,
+	setTelemetrySetting,
+	className,
+	isVsCode, // kilocode_change
+	...props
+}: AboutProps) => {
 	const { t } = useAppTranslation()
 
 	const [kiloCodeBloat, setKiloCodeBloat] = useState<number[][]>([])
@@ -44,7 +51,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 			</SectionHeader>
 
 			<Section>
-				<div>
+				<div style={{ display: isVsCode ? "none" : undefined }}>
 					<VSCodeCheckbox
 						checked={telemetrySetting !== "disabled"}
 						onChange={(e: any) => {
@@ -57,7 +64,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						<Trans
 							i18nKey="settings:footer.telemetry.description"
 							components={{
-								privacyLink: <VSCodeLink href="https://kilocode.ai/privacy" />,
+								privacyLink: <VSCodeLink href="https://kilo.ai/privacy" />,
 							}}
 						/>
 					</p>
@@ -69,7 +76,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 						components={{
 							githubLink: <VSCodeLink href="https://github.com/Kilo-Org/kilocode" />,
 							redditLink: <VSCodeLink href="https://reddit.com/r/kilocode" />,
-							discordLink: <VSCodeLink href="https://kilocode.ai/discord" />,
+							discordLink: <VSCodeLink href="https://kilo.ai/discord" />,
 						}}
 					/>
 				</div>
@@ -79,7 +86,7 @@ export const About = ({ telemetrySetting, setTelemetrySetting, className, ...pro
 					<Trans
 						i18nKey="settings:footer.support"
 						components={{
-							supportLink: <VSCodeLink href="https://kilocode.ai/support" />,
+							supportLink: <VSCodeLink href="https://kilo.ai/support" />,
 						}}
 					/>
 				</div>

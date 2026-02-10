@@ -1,13 +1,14 @@
 import React from "react"
 import { Box, Text } from "ink"
 import type { MessageComponentProps } from "./types.js"
-import { parseToolData } from "./utils.js"
+import { parseToolData, formatUnknownMessageContent } from "./utils.js"
 import { ToolRouter } from "./tools/ToolRouter.js"
 import { useTheme } from "../../../state/hooks/useTheme.js"
 import {
 	AskToolMessage,
 	AskMistakeLimitMessage,
 	AskCommandMessage,
+	AskCommandOutputMessage,
 	AskUseMcpServerMessage,
 	AskFollowupMessage,
 	AskCondenseMessage,
@@ -22,12 +23,15 @@ import {
 
 /**
  * Default component for unknown ask message types
+ * Handles graceful fallback for unknown or future ask types
  */
-const DefaultAskMessage: React.FC<MessageComponentProps> = ({ message }) => {
+export const DefaultAskMessage: React.FC<MessageComponentProps> = ({ message }) => {
 	const theme = useTheme()
+	const displayContent = formatUnknownMessageContent(message.text, `Unknown ask type: ${message.ask}`)
+
 	return (
 		<Box marginY={1}>
-			<Text color={theme.semantic.warning}>{message.text || `Unknown ask type: ${message.ask}`}</Text>
+			<Text color={theme.semantic.warning}>{displayContent}</Text>
 		</Box>
 	)
 }
@@ -52,7 +56,7 @@ export const AskMessageRouter: React.FC<MessageComponentProps> = ({ message }) =
 			return <AskCommandMessage message={message} />
 
 		case "command_output":
-			return null
+			return <AskCommandOutputMessage message={message} />
 
 		case "browser_action_launch":
 			return <AskBrowserActionLaunchMessage message={message} />

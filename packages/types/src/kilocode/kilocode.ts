@@ -9,15 +9,34 @@ declare global {
 export const ghostServiceSettingsSchema = z
 	.object({
 		enableAutoTrigger: z.boolean().optional(),
-		enableQuickInlineTaskKeybinding: z.boolean().optional(),
 		enableSmartInlineTaskKeybinding: z.boolean().optional(),
-		useNewAutocomplete: z.boolean().optional(),
+		enableChatAutocomplete: z.boolean().optional(),
 		provider: z.string().optional(),
 		model: z.string().optional(),
+		snoozeUntil: z.number().optional(),
+		hasKilocodeProfileWithNoBalance: z.boolean().optional(),
 	})
 	.optional()
 
 export type GhostServiceSettings = z.infer<typeof ghostServiceSettingsSchema>
+
+/**
+ * Map of provider names to their default autocomplete models.
+ * These are the providers that support autocomplete functionality.
+ */
+export const AUTOCOMPLETE_PROVIDER_MODELS = new Map([
+	["mistral", "codestral-latest"],
+	["kilocode", "mistralai/codestral-2508"],
+	["openrouter", "mistralai/codestral-2508"],
+	["requesty", "mistral/codestral-latest"],
+	["bedrock", "mistral.codestral-2508-v1:0"],
+	["huggingface", "mistralai/Codestral-22B-v0.1"],
+	["litellm", "codestral/codestral-latest"],
+	["lmstudio", "mistralai/codestral-22b-v0.1"],
+	["ollama", "codestral:latest"],
+] as const)
+
+export type AutocompleteProviderKey = typeof AUTOCOMPLETE_PROVIDER_MODELS extends Map<infer K, unknown> ? K : never
 
 export const commitRangeSchema = z.object({
 	from: z.string(),
@@ -42,24 +61,37 @@ export const fastApplyModelSchema = z.enum([
 
 export type FastApplyModel = z.infer<typeof fastApplyModelSchema>
 
-export const DEFAULT_KILOCODE_BACKEND_URL = "https://kilocode.ai"
+export const fastApplyApiProviderSchema = z.enum(["current", "morph", "kilocode", "openrouter"])
+
+export type FastApplyApiProvider = z.infer<typeof fastApplyApiProviderSchema>
+
+export const DEFAULT_KILOCODE_BACKEND_URL = "https://kilo.ai"
 
 export function getKiloBaseUriFromToken(kilocodeToken?: string) {
 	if (kilocodeToken) {
 		try {
 			const payload_string = kilocodeToken.split(".")[1]
-			if (!payload_string) return "https://api.kilocode.ai"
+			if (!payload_string) return "https://api.kilo.ai"
 
 			const payload_json =
 				typeof atob !== "undefined" ? atob(payload_string) : Buffer.from(payload_string, "base64").toString()
 			const payload = JSON.parse(payload_json)
 			//note: this is UNTRUSTED, so we need to make sure we're OK with this being manipulated by an attacker; e.g. we should not read uri's from the JWT directly.
-			if (payload.env === "development") return "http://localhost:3000"
+			// For dev tokens, check if KILOCODE_BACKEND_BASE_URL is set to a custom value
+			if (payload.env === "development") {
+				const baseUrl = getGlobalKilocodeBackendUrl()
+				// This allows pointing to custom dev backends beyond just those accessible on localhost
+				// (e.g., 192.168.x.x, staging servers)
+				if (baseUrl !== DEFAULT_KILOCODE_BACKEND_URL) {
+					return baseUrl
+				}
+				return "http://localhost:3000"
+			}
 		} catch (_error) {
 			console.warn("Failed to get base URL from Kilo Code token")
 		}
 	}
-	return "https://api.kilocode.ai"
+	return "https://api.kilo.ai"
 }
 
 /**
@@ -92,27 +124,45 @@ function getGlobalKilocodeBackendUrl(): string {
 /**
  * Gets the app/web URL for the current environment.
  * In development: http://localhost:3000
- * In production: https://kilocode.ai
+ * In production: https://kilo.ai
  */
 export function getAppUrl(path: string = ""): string {
 	return new URL(path, getGlobalKilocodeBackendUrl()).toString()
 }
 
 /**
+ * Gets the API URL for the current environment.
+ * Respects KILOCODE_BACKEND_BASE_URL environment variable for local development.
+ * In development: http://localhost:3000
+ * In production: https://api.kilo.ai
+ */
+export function getApiUrl(path: string = ""): string {
+	const backend = getGlobalKilocodeBackendUrl()
+
+	// If using a custom backend (not the default production URL), use it directly
+	if (backend !== DEFAULT_KILOCODE_BACKEND_URL) {
+		return new URL(path, backend).toString()
+	}
+
+	// In production, use the api subdomain
+	return new URL(path, "https://api.kilo.ai").toString()
+}
+
+/**
  * Gets the extension config URL, which uses a legacy subdomain structure.
  * In development: http://localhost:3000/extension-config.json
- * In production: https://api.kilocode.ai/extension-config.json
+ * In production: https://api.kilo.ai/extension-config.json
  */
 export function getExtensionConfigUrl(): string {
 	try {
 		const backend = getGlobalKilocodeBackendUrl()
-		if (backend.includes("localhost")) {
+		if (backend !== DEFAULT_KILOCODE_BACKEND_URL) {
 			return getAppUrl("/extension-config.json")
 		} else {
-			return "https://api.kilocode.ai/extension-config.json"
+			return "https://api.kilo.ai/extension-config.json"
 		}
 	} catch (error) {
 		console.warn("Failed to build extension config URL:", error)
-		return "https://api.kilocode.ai/extension-config.json"
+		return "https://api.kilo.ai/extension-config.json"
 	}
 }

@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { Database } from "lucide-react"
 
+import type { IndexingStatus, IndexingStatusUpdateMessage } from "@roo-code/types"
+
 import { cn } from "@src/lib/utils"
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@/i18n/TranslationContext"
 
-import type { IndexingStatus, IndexingStatusUpdateMessage } from "@roo/ExtensionMessage"
-
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { PopoverTrigger, StandardTooltip, Button } from "@src/components/ui"
 
-import { CodeIndexPopover } from "./CodeIndexPopover"
-import { ManagedCodeIndexPopover } from "./kilocode/ManagedCodeIndexPopover"
+import { CodeIndexPopover } from "./CodeIndexPopover" // kilocode_change
+import { useManagedIndexerState, useIsIndexing } from "./hooks/useManagedIndexerState" // kilocode_change
+import { ManagedCodeIndexPopover } from "./kilocode/ManagedCodeIndexPopover" // kilocode_change
 
 interface IndexingStatusBadgeProps {
 	className?: string
@@ -19,12 +20,13 @@ interface IndexingStatusBadgeProps {
 
 export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ className }) => {
 	const { t } = useAppTranslation()
-	const { cwd, apiConfiguration } = useExtensionState()
+	const { cwd } = useExtensionState()
 
-	// Check if organization indexing is available
-	const hasOrganization = !!apiConfiguration?.kilocodeOrganizationId
+	// Get managed indexer state
+	const managedIndexerState = useManagedIndexerState() // kilocode_change
+	const isManagedIndexing = useIsIndexing() // kilocode_change
 
-	const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>({
+	const [localIndexingStatus, setLocalIndexingStatus] = useState<IndexingStatus>({
 		systemStatus: "Standby",
 		processedItems: 0,
 		totalItems: 0,
@@ -32,15 +34,17 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 	})
 
 	useEffect(() => {
-		// Request initial indexing status.
-		vscode.postMessage({ type: "requestIndexingStatus" })
+		// Only request local indexing status if managed indexing is not enabled
+		if (!managedIndexerState.isEnabled) {
+			vscode.postMessage({ type: "requestIndexingStatus" })
+		}
 
 		// Set up message listener for status updates.
 		const handleMessage = (event: MessageEvent<IndexingStatusUpdateMessage>) => {
 			if (event.data.type === "indexingStatusUpdate") {
 				const status = event.data.values
 				if (!status.workspacePath || status.workspacePath === cwd) {
-					setIndexingStatus(status)
+					setLocalIndexingStatus(status)
 				}
 			}
 		}
@@ -50,7 +54,30 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 		return () => {
 			window.removeEventListener("message", handleMessage)
 		}
-	}, [cwd])
+	}, [cwd, managedIndexerState.isEnabled])
+
+	// Determine which indexing status to use
+	const indexingStatus = useMemo(() => {
+		if (managedIndexerState.isEnabled) {
+			// Use managed indexer state
+			const hasErrors = managedIndexerState.workspaceFolders.some((folder) => folder.error !== undefined)
+			const hasManifests = managedIndexerState.workspaceFolders.some((folder) => folder.hasManifest)
+
+			return {
+				systemStatus: hasErrors
+					? "Error"
+					: isManagedIndexing
+						? "Indexing"
+						: hasManifests
+							? "Indexed"
+							: "Standby",
+				processedItems: 0,
+				totalItems: 0,
+				currentItemUnit: "items" as const,
+			}
+		}
+		return localIndexingStatus
+	}, [managedIndexerState, isManagedIndexing, localIndexingStatus])
 
 	const progressPercentage = useMemo(
 		() =>
@@ -61,6 +88,25 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 	)
 
 	const tooltipText = useMemo(() => {
+		if (managedIndexerState.isEnabled) {
+			// Custom tooltips for managed indexing
+			const folderCount = managedIndexerState.workspaceFolders.length
+			const indexingCount = managedIndexerState.workspaceFolders.filter((f) => f.isIndexing).length
+			const errorCount = managedIndexerState.workspaceFolders.filter((f) => f.error).length
+
+			if (errorCount > 0) {
+				return `Managed indexing error (${errorCount} folder${errorCount > 1 ? "s" : ""})`
+			}
+			if (indexingCount > 0) {
+				return `Indexing ${indexingCount} of ${folderCount} workspace folder${folderCount > 1 ? "s" : ""}`
+			}
+			if (folderCount > 0) {
+				return `Managed indexing ready (${folderCount} folder${folderCount > 1 ? "s" : ""})`
+			}
+			return "Managed indexing enabled"
+		}
+
+		// Local indexing tooltips
 		switch (indexingStatus.systemStatus) {
 			case "Standby":
 				return t("chat:indexingStatus.ready")
@@ -73,7 +119,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 			default:
 				return t("chat:indexingStatus.status")
 		}
-	}, [indexingStatus.systemStatus, progressPercentage, t])
+	}, [managedIndexerState, indexingStatus.systemStatus, progressPercentage, t])
 
 	const statusColorClass = useMemo(() => {
 		const statusColors = {
@@ -87,7 +133,7 @@ export const IndexingStatusBadge: React.FC<IndexingStatusBadgeProps> = ({ classN
 	}, [indexingStatus.systemStatus])
 
 	// Use ManagedCodeIndexPopover when organization is available, otherwise use regular CodeIndexPopover
-	const PopoverComponent = hasOrganization ? ManagedCodeIndexPopover : CodeIndexPopover
+	const PopoverComponent = managedIndexerState.isEnabled ? ManagedCodeIndexPopover : CodeIndexPopover // kilocode_change
 
 	return (
 		<PopoverComponent indexingStatus={indexingStatus}>

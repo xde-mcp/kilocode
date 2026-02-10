@@ -42,6 +42,7 @@ export async function execWithStdin({ cmd, cwd, uid, env }: ExecOptions): Promis
 		cwd,
 		uid,
 		shell: true,
+		windowsHide: true,
 		stdio: ["pipe", 1, 2],
 		env,
 	})
@@ -56,6 +57,7 @@ export async function exec({ cmd, cwd, context, uid, env }: ExecOptions): Promis
 		cwd,
 		uid,
 		shell: true,
+		windowsHide: true,
 		stdio: ["inherit", "inherit", "inherit"],
 		env,
 	})
@@ -77,14 +79,22 @@ export async function* execGetLines({
 		cwd,
 		uid,
 		shell: true,
+		windowsHide: true,
 		stdio: ["ignore", "pipe", "inherit"],
 		env,
 	})
 
 	const exit = onChildProcessExit(proc, context)
 
-	for await (const line of chunksToLinesAsync(proc.stdout)) {
-		yield line
+	try {
+		for await (const line of chunksToLinesAsync(proc.stdout)) {
+			yield line
+		}
+	} finally {
+		// CRITICAL: Kill the process if the loop breaks, returns, or throws.
+		if (!proc.killed) {
+			proc.kill()
+		}
 	}
 
 	await exit
@@ -104,6 +114,7 @@ export async function* execGetLinesStdoutStderr({
 		cwd,
 		uid,
 		shell: true,
+		windowsHide: true,
 		stdio: ["ignore", "pipe", "pipe"],
 		env,
 	})
@@ -114,9 +125,16 @@ export async function* execGetLinesStdoutStderr({
 	const stderr = withIOType("stderr", chunksToLinesAsync(proc.stderr))
 	const exit = onChildProcessExit(proc, context)
 
-	// Yield each line object from the combined iterable from stdout/stderr
-	for await (const line of combine(stdout, stderr)) {
-		yield line
+	try {
+		// Yield each line object from the combined iterable from stdout/stderr
+		for await (const line of combine(stdout, stderr)) {
+			yield line
+		}
+	} finally {
+		// CRITICAL: Kill the process if the loop breaks, returns, or throws.
+		if (!proc.killed) {
+			proc.kill()
+		}
 	}
 
 	await exit

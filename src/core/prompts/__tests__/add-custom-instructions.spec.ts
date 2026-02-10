@@ -118,6 +118,16 @@ __setMockImplementation(
 	},
 )
 
+// Mock ManagedIndexer before importing anything that uses it
+vi.mock("../../../services/code-index/managed/ManagedIndexer", () => ({
+	ManagedIndexer: {
+		getInstance: vi.fn().mockReturnValue({
+			isEnabled: vi.fn().mockReturnValue(false),
+			organization: null,
+		}),
+	},
+}))
+
 // Mock vscode language
 vi.mock("vscode", () => ({
 	env: {
@@ -170,7 +180,16 @@ const mockContext = {
 // Instead of extending McpHub, create a mock that implements just what we need
 const createMockMcpHub = (withServers: boolean = false): McpHub =>
 	({
-		getServers: () => (withServers ? [{ name: "test-server", disabled: false }] : []),
+		getServers: () =>
+			withServers
+				? [
+						{
+							name: "test-server",
+							disabled: false,
+							resources: [{ uri: "test://resource", name: "Test Resource" }],
+						},
+					]
+				: [],
 		getMcpServersPath: async () => "/mock/mcp/path",
 		getMcpSettingsFilePath: async () => "/mock/settings/path",
 		dispose: async () => {},

@@ -1,13 +1,35 @@
-import { modelIdKeysByProvider, ProviderSettingsEntry } from "@roo-code/types"
-import { ApiHandler, buildApiHandler } from "../../api"
+// kilocode_change new file
+import { modelIdKeysByProvider, ProviderName } from "@roo-code/types"
+import { ApiHandler, buildApiHandler, FimHandler } from "../../api"
 import { ProviderSettingsManager } from "../../core/config/ProviderSettingsManager"
 import { OpenRouterHandler } from "../../api/providers"
+import { CompletionUsage } from "../../api/providers/openrouter"
 import { ApiStreamChunk } from "../../api/transform/stream"
 import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
+import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrouter"
+import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
+import { ResponseMetaData } from "./types"
+
+function getFimHandler(handler: ApiHandler): FimHandler | undefined {
+	if (typeof handler.fimSupport === "function") {
+		return handler.fimSupport()
+	}
+	return undefined
+}
+
+// Convert PROVIDERS array to a lookup map for display names
+const PROVIDER_DISPLAY_NAMES = Object.fromEntries(PROVIDERS.map(({ value, label }) => [value, label])) as Record<
+	ProviderName,
+	string
+>
 
 export class GhostModel {
 	private apiHandler: ApiHandler | null = null
+	public profileName: string | null = null
+	public profileType: string | null = null
+	private currentProvider: ProviderName | null = null
 	public loaded = false
+	public hasKilocodeProfileWithNoBalance = false
 
 	constructor(apiHandler: ApiHandler | null = null) {
 		if (apiHandler) {
@@ -17,7 +39,11 @@ export class GhostModel {
 	}
 	private cleanup(): void {
 		this.apiHandler = null
+		this.profileName = null
+		this.profileType = null
+		this.currentProvider = null
 		this.loaded = false
+		this.hasKilocodeProfileWithNoBalance = false
 	}
 
 	public async reload(providerSettingsManager: ProviderSettingsManager): Promise<boolean> {
@@ -25,29 +51,100 @@ export class GhostModel {
 
 		this.cleanup()
 
-		// Check providers in order, but skip unusable ones (e.g., kilocode with zero balance)
+		const selectedProfile = profiles.find((x) => x.profileType === "autocomplete")
+		if (selectedProfile) {
+			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
+			if (profile.apiProvider) {
+				await useProfile(this, profile, profile.apiProvider)
+				return true
+			}
+		}
+
 		for (const [provider, model] of AUTOCOMPLETE_PROVIDER_MODELS) {
-			const selectedProfile = profiles.find((x) => x?.apiProvider === provider)
+			const selectedProfile = profiles.find(
+				(x) => x?.apiProvider === provider && !(x.profileType === "autocomplete"),
+			)
 			if (!selectedProfile) continue
 			const profile = await providerSettingsManager.getProfile({ id: selectedProfile.id })
 
 			if (provider === "kilocode") {
 				// For all other providers, assume they are usable
 				if (!profile.kilocodeToken) continue
-				if (!(await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId))) continue
+				const hasBalance = await checkKilocodeBalance(profile.kilocodeToken, profile.kilocodeOrganizationId)
+				if (!hasBalance) {
+					// Track that we found a kilocode profile but it has no balance
+					this.hasKilocodeProfileWithNoBalance = true
+					continue
+				}
 			}
-
-			this.apiHandler = buildApiHandler({ ...profile, [modelIdKeysByProvider[provider]]: model })
-
-			if (this.apiHandler instanceof OpenRouterHandler) {
-				await this.apiHandler.fetchModel()
-			}
-			this.loaded = true
+			await useProfile(this, { ...profile, [modelIdKeysByProvider[provider]]: model }, provider)
 			return true
 		}
 
 		this.loaded = true // we loaded, and found nothing, but we do not wish to reload
 		return false
+
+		type ProfileWithIdAndName = Awaited<ReturnType<typeof providerSettingsManager.getProfile>>
+		async function useProfile(self: GhostModel, profile: ProfileWithIdAndName, provider: ProviderName) {
+			self.profileName = profile.name || null
+			self.profileType = profile.profileType || null
+			self.currentProvider = provider
+			self.apiHandler = buildApiHandler(profile)
+			if (self.apiHandler instanceof OpenRouterHandler) await self.apiHandler.fetchModel()
+			self.loaded = true
+		}
+	}
+
+	public supportsFim(): boolean {
+		if (!this.apiHandler) {
+			return false
+		}
+
+		return getFimHandler(this.apiHandler) !== undefined
+	}
+
+	/**
+	 * Generate FIM completion using the FIM API endpoint.
+	 */
+	public async generateFimResponse(
+		prefix: string,
+		suffix: string,
+		onChunk: (text: string) => void,
+		taskId?: string,
+	): Promise<ResponseMetaData> {
+		if (!this.apiHandler) {
+			console.error("API handler is not initialized")
+			throw new Error("API handler is not initialized. Please check your configuration.")
+		}
+
+		const fimHandler = getFimHandler(this.apiHandler)
+		if (!fimHandler) {
+			throw new Error("Current provider/model does not support FIM completions")
+		}
+
+		console.log("USED MODEL (FIM)", fimHandler.getModel())
+
+		let usage: CompletionUsage | undefined
+
+		for await (const chunk of fimHandler.streamFim(prefix, suffix, taskId, (u: CompletionUsage) => {
+			usage = u
+		})) {
+			onChunk(chunk)
+		}
+
+		// Calculate cost using the FimHandler's getTotalCost method
+		const cost = usage ? fimHandler.getTotalCost(usage) : 0
+		const inputTokens = usage?.prompt_tokens ?? 0
+		const outputTokens = usage?.completion_tokens ?? 0
+		const cacheReadTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0
+
+		return {
+			cost,
+			inputTokens,
+			outputTokens,
+			cacheWriteTokens: 0, // FIM doesn't support cache writes
+			cacheReadTokens,
+		}
 	}
 
 	/**
@@ -57,13 +154,7 @@ export class GhostModel {
 		systemPrompt: string,
 		userPrompt: string,
 		onChunk: (chunk: ApiStreamChunk) => void,
-	): Promise<{
-		cost: number
-		inputTokens: number
-		outputTokens: number
-		cacheWriteTokens: number
-		cacheReadTokens: number
-	}> {
+	): Promise<ResponseMetaData> {
 		if (!this.apiHandler) {
 			console.error("API handler is not initialized")
 			throw new Error("API handler is not initialized. Please check your configuration.")
@@ -116,14 +207,12 @@ export class GhostModel {
 	}
 
 	public getProviderDisplayName(): string | undefined {
-		if (!this.apiHandler) return undefined
+		if (!this.currentProvider) return undefined
+		return PROVIDER_DISPLAY_NAMES[this.currentProvider]
+	}
 
-		const handler = this.apiHandler as any
-		if (handler.providerName && typeof handler.providerName === "string") {
-			return handler.providerName
-		} else {
-			return undefined
-		}
+	public getRolloutHash_IfLoggedInToKilo(): number | undefined {
+		return this.apiHandler instanceof KilocodeOpenrouterHandler ? this.apiHandler.getRolloutHash() : undefined
 	}
 
 	public hasValidCredentials(): boolean {

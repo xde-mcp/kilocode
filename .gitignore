@@ -53,6 +53,10 @@ logs
 # Nix / Direnv
 .direnv
 
+# Mise
+mise.toml
+mise.local.toml
+
 # Exclude Conport Directory (MCP server)
 context_portal/
 
@@ -66,3 +70,10 @@ qdrant_storage/
 # allow multiple local clones with different workspaces with different colors
 # to make it easier to work on features in parallel
 *.code-workspace
+
+# Act Secret Files
+.secrets
+# Architect plans
+./plans/
+
+roo-cli-*.tar.gz*

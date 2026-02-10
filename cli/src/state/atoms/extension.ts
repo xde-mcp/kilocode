@@ -11,7 +11,9 @@ import type {
 	RouterModels,
 	ProviderSettings,
 	McpServer,
+	ModeConfig,
 } from "../../types/messages.js"
+import { pendingOutputUpdatesAtom } from "./effects.js"
 
 /**
  * Atom to hold the complete ExtensionState
@@ -65,7 +67,7 @@ export const extensionModeAtom = atom<string>("code")
 /**
  * Atom to hold custom modes
  */
-export const customModesAtom = atom<unknown[]>([])
+export const customModesAtom = atom<ModeConfig[]>([])
 
 /**
  * Atom to hold MCP servers configuration
@@ -150,7 +152,7 @@ export const hasActiveTaskAtom = atom<boolean>((get) => {
  * Atom to track if the task was resumed via --continue flag
  * Prevents showing "Task ready to resume" message when already resumed
  */
-export const taskResumedViaContinueAtom = atom<boolean>(false)
+export const taskResumedViaContinueOrSessionAtom = atom<boolean>(false)
 
 /**
  * Derived atom to check if there's a resume_task ask pending
@@ -158,7 +160,7 @@ export const taskResumedViaContinueAtom = atom<boolean>(false)
  * But doesn't show the message if the task was already resumed via --continue
  */
 export const hasResumeTaskAtom = atom<boolean>((get) => {
-	const taskResumedViaContinue = get(taskResumedViaContinueAtom)
+	const taskResumedViaContinue = get(taskResumedViaContinueOrSessionAtom)
 	if (taskResumedViaContinue) {
 		return false
 	}
@@ -201,6 +203,7 @@ export const updateExtensionStateAtom = atom(null, (get, set, state: ExtensionSt
 	const currentMessages = get(chatMessagesAtom)
 	const versionMap = get(messageVersionMapAtom)
 	const streamingSet = get(streamingMessagesSetAtom)
+	const pendingUpdates = get(pendingOutputUpdatesAtom)
 
 	set(extensionStateAtom, state)
 
@@ -209,10 +212,21 @@ export const updateExtensionStateAtom = atom(null, (get, set, state: ExtensionSt
 		const incomingMessages = state.clineMessages || state.chatMessages || []
 
 		// Reconcile with current messages to preserve streaming state
-		let reconciledMessages = reconcileMessages(currentMessages, incomingMessages, versionMap, streamingSet)
+		// Pass pending updates to apply them to new command_output asks
+		let reconciledMessages = reconcileMessages(
+			currentMessages,
+			incomingMessages,
+			versionMap,
+			streamingSet,
+			pendingUpdates,
+		)
 
 		// Auto-complete orphaned partial ask messages (CLI-only workaround for extension bug)
 		reconciledMessages = autoCompleteOrphanedPartialAsks(reconciledMessages)
+
+		// Auto-complete orphaned partial tool messages (CLI-only workaround for extension bug)
+		// This fixes the issue where list_files and search_files show "Total: 0 items"
+		reconciledMessages = autoCompleteOrphanedPartialTools(reconciledMessages)
 
 		set(chatMessagesAtom, reconciledMessages)
 
@@ -319,13 +333,36 @@ export const updateChatMessageByTsAtom = atom(null, (get, set, updatedMessage: E
 	const currentVersion = versionMap.get(existingMessage.ts) || 0
 	const newVersion = getMessageContentLength(updatedMessage)
 
+	// Detect content changes that may not affect length (e.g. numeric JSON fields like costs)
+	const contentChanged =
+		existingMessage.text !== updatedMessage.text ||
+		existingMessage.say !== updatedMessage.say ||
+		existingMessage.ask !== updatedMessage.ask ||
+		existingMessage.isAnswered !== updatedMessage.isAnswered ||
+		existingMessage.metadata !== updatedMessage.metadata
+
 	// Always update if:
-	// 1. Message is partial (streaming update)
+	// 1. Message is partial (streaming update) - BUT NOT if existing message is already complete
 	// 2. New version has more content
-	// 3. Partial flag changed (partial=true -> partial=false transition)
+	// 3. Partial flag changed from partial=true -> partial=false (completion)
+	// 4. Content changed but length stayed the same (e.g. cost updated from 0.0010 -> 0.0020)
 	const partialFlagChanged = existingMessage.partial !== updatedMessage.partial
 
-	if (updatedMessage.partial || newVersion > currentVersion || partialFlagChanged) {
+	// BUG FIX: Don't allow stale partial updates to overwrite completed messages
+	// This prevents context drops when delayed IPC messages arrive after a message has completed
+	const isStalePartialUpdate = existingMessage.partial === false && updatedMessage.partial === true
+
+	// Skip stale partial updates that would revert a completed message back to partial
+	if (isStalePartialUpdate && newVersion <= currentVersion) {
+		return
+	}
+
+	if (
+		(updatedMessage.partial && !isStalePartialUpdate) ||
+		newVersion > currentVersion ||
+		partialFlagChanged ||
+		(contentChanged && newVersion === currentVersion)
+	) {
 		const newMessages = [...messages]
 		newMessages[messageIndex] = updatedMessage
 		set(updateChatMessagesAtom, newMessages)
@@ -523,17 +560,77 @@ function autoCompleteOrphanedPartialAsks(messages: ExtensionChatMessage[]): Exte
 }
 
 /**
+ * Auto-complete orphaned partial tool messages (CLI-only workaround)
+ *
+ * This handles the case where tool messages (ask type with ask="tool") can get stuck
+ * with partial=true when the complete message update is missed or arrives out of order.
+ *
+ * Detection logic (mark as complete if ANY of these conditions are true):
+ * 1. If a tool message has partial=true AND there's a subsequent message
+ *    → The tool has completed but the complete message was missed
+ * 2. If a tool message has partial=true AND has non-empty text content
+ *    → The tool has content but the partial flag wasn't cleared
+ *
+ * This ensures tool messages don't get stuck in partial state indefinitely,
+ * which would cause them to be filtered out by hidePartialMessages and show
+ * "Total: 0 items" or "Found: 0 matches" in the CLI.
+ */
+function autoCompleteOrphanedPartialTools(messages: ExtensionChatMessage[]): ExtensionChatMessage[] {
+	const result = [...messages]
+
+	for (let i = 0; i < result.length; i++) {
+		const msg = result[i]
+
+		// Only process partial tool messages (ask type with ask="tool")
+		if (!msg || msg.type !== "ask" || msg.ask !== "tool" || !msg.partial) {
+			continue
+		}
+
+		// Condition 1: Check if there's a subsequent message
+		let hasSubsequentMessage = false
+		for (let j = i + 1; j < result.length; j++) {
+			const nextMsg = result[j]
+			if (!nextMsg) continue
+
+			// Found a subsequent message
+			hasSubsequentMessage = true
+			break
+		}
+
+		// Condition 2: Check if the tool message has non-empty content
+		// Tool messages store their content as JSON in the 'text' field with a 'content' property
+		let hasContent = false
+		try {
+			const parsed = JSON.parse(msg.text || "{}")
+			hasContent = parsed.content && parsed.content.trim().length > 0
+		} catch {
+			// If parsing fails, fall back to checking text directly
+			hasContent = Boolean(msg.text && msg.text.trim().length > 0)
+		}
+
+		// If either condition is true, mark the partial tool as complete
+		if (hasSubsequentMessage || hasContent) {
+			result[i] = { ...msg, partial: false }
+		}
+	}
+
+	return result
+}
+
+/**
  * Helper function to reconcile messages from state updates with existing messages
  * Strategy:
  * - State is the source of truth for WHICH messages exist (count/list)
  * - Real-time updates are the source of truth for CONTENT of partial messages
  * - Only preserve content of actively streaming messages if they have more data
+ * - Merge duplicate command_output asks with the same executionId
  */
 function reconcileMessages(
 	current: ExtensionChatMessage[],
 	incoming: ExtensionChatMessage[],
 	versionMap: Map<number, number>,
 	streamingSet: Set<number>,
+	pendingUpdates?: Map<string, { output: string; command?: string; completed?: boolean }>,
 ): ExtensionChatMessage[] {
 	// Create lookup map for current messages
 	const currentMap = new Map<number, ExtensionChatMessage>()
@@ -541,8 +638,33 @@ function reconcileMessages(
 		currentMap.set(msg.ts, msg)
 	})
 
+	// Identify synthetic command_output asks (CLI-created, not from extension)
+	// These have executionId in their text and don't exist in incoming messages
+	const syntheticAsks: ExtensionChatMessage[] = []
+	current.forEach((msg) => {
+		if (msg.type === "ask" && msg.ask === "command_output" && msg.text) {
+			try {
+				const data = JSON.parse(msg.text)
+				if (data.executionId) {
+					// Check if this message exists in incoming
+					const existsInIncoming = incoming.some((incomingMsg) => incomingMsg.ts === msg.ts)
+					if (!existsInIncoming) {
+						// This is a synthetic ask created by CLI
+						syntheticAsks.push(msg)
+					}
+				}
+			} catch {
+				// Ignore parse errors
+			}
+		}
+	})
+
+	// First, deduplicate command_output asks
+	// Since extension creates asks with empty text, we keep only the first unanswered one
+	const deduplicatedIncoming = deduplicateCommandOutputAsks(incoming, pendingUpdates)
+
 	// Process ALL incoming messages - state determines which messages exist
-	const resultMessages: ExtensionChatMessage[] = incoming.map((incomingMsg) => {
+	const resultMessages: ExtensionChatMessage[] = deduplicatedIncoming.map((incomingMsg) => {
 		const existingMsg = currentMap.get(incomingMsg.ts)
 
 		// PRIORITY 1: Prevent completed messages from being overwritten by stale partial updates
@@ -586,6 +708,91 @@ function reconcileMessages(
 		return incomingMsg
 	})
 
+	// Add synthetic asks back to the result
+	// These are CLI-created asks that the extension doesn't know about
+	const finalMessages = [...resultMessages, ...syntheticAsks]
+
 	// Return sorted array by timestamp
-	return resultMessages.sort((a, b) => a.ts - b.ts)
+	return finalMessages.sort((a, b) => a.ts - b.ts)
+}
+
+/**
+ * Deduplicate command_output asks
+ * Since the extension creates asks with empty text (no executionId), we can't match by executionId
+ * Instead, keep only the MOST RECENT unanswered command_output ask and discard older ones
+ * This allows multiple sequential commands to work correctly
+ * The component will read from pendingOutputUpdatesAtom for real-time output
+ */
+function deduplicateCommandOutputAsks(
+	messages: ExtensionChatMessage[],
+	pendingUpdates?: Map<string, { output: string; command?: string; completed?: boolean }>,
+): ExtensionChatMessage[] {
+	const result: ExtensionChatMessage[] = []
+	let mostRecentUnansweredAsk: ExtensionChatMessage | null = null
+	let mostRecentUnansweredAskIndex = -1
+
+	// First pass: find the most recent unanswered command_output ask
+	for (let i = 0; i < messages.length; i++) {
+		const msg = messages[i]
+		if (msg && msg.type === "ask" && msg.ask === "command_output" && !msg.isAnswered) {
+			if (!mostRecentUnansweredAsk || msg.ts > mostRecentUnansweredAsk.ts) {
+				mostRecentUnansweredAsk = msg
+				mostRecentUnansweredAskIndex = i
+			}
+		}
+	}
+
+	// Second pass: build result, keeping only the most recent unanswered ask
+	for (let i = 0; i < messages.length; i++) {
+		const msg = messages[i]
+
+		if (msg && msg.type === "ask" && msg.ask === "command_output" && !msg.isAnswered) {
+			if (i === mostRecentUnansweredAskIndex) {
+				// This is the most recent unanswered ask - keep it with pending updates
+				let processedMsg = msg
+
+				// If we have pending updates, find the one that's NOT completed (the active command)
+				if (pendingUpdates && pendingUpdates.size > 0) {
+					// Find the active (non-completed) pending update
+					let activeExecutionId: string | null = null
+					let activeUpdate: { output: string; command?: string; completed?: boolean } | null = null
+
+					for (const [execId, update] of pendingUpdates.entries()) {
+						if (!update.completed) {
+							activeExecutionId = execId
+							activeUpdate = update
+							break
+						}
+					}
+
+					// If no active update found, use the most recent one (fallback)
+					if (!activeExecutionId && pendingUpdates.size > 0) {
+						const entries = Array.from(pendingUpdates.entries())
+						;[activeExecutionId, activeUpdate] = entries[entries.length - 1]!
+					}
+
+					if (activeExecutionId && activeUpdate) {
+						processedMsg = {
+							...msg,
+							text: JSON.stringify({
+								executionId: activeExecutionId,
+								command: activeUpdate.command || "",
+								output: activeUpdate.output || "",
+							}),
+							partial: !activeUpdate.completed,
+							isAnswered: activeUpdate.completed || false,
+						}
+					}
+				}
+
+				result.push(processedMsg)
+			}
+			// Discard older unanswered command_output asks (no logging needed)
+		} else if (msg) {
+			// Not an unanswered command_output ask, keep as-is
+			result.push(msg)
+		}
+	}
+
+	return result
 }

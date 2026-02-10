@@ -1,7 +1,13 @@
 /* eslint-disable no-undef */
 import esbuild from "esbuild"
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { chmodSync, mkdirSync, copyFileSync } from "fs"
 import { rimrafSync } from "rimraf"
+
+// ESM Polyfill
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Function to copy post-build files
 function copyPostBuildFiles() {
@@ -50,6 +56,23 @@ const afterBuildPlugin = {
 	},
 }
 
+// Problem matcher plugin for VS Code task integration
+const esbuildProblemMatcherPlugin = {
+	name: "esbuild-problem-matcher",
+	setup(build) {
+		build.onStart(() => console.log("[esbuild-problem-matcher#onStart]"))
+		build.onEnd((result) => {
+			result.errors.forEach(({ text, location }) => {
+				console.error(`✘ [ERROR] ${text}`)
+				if (location && location.file) {
+					console.error(`    ${location.file}:${location.line}:${location.column}:`)
+				}
+			})
+			console.log("[esbuild-problem-matcher#onEnd]")
+		})
+	},
+}
+
 const config = {
 	entryPoints: ["src/index.ts"],
 	bundle: true,
@@ -68,6 +91,8 @@ const __dirname = __dirname__(__filename);
 	},
 	external: [
 		// Keep these as external dependencies (will be installed via npm)
+		// NOTE: @kilocode/agent-runtime is intentionally NOT external - it must be bundled
+		// so that import.meta.url in extension-paths.ts resolves to the CLI's dist folder
 		"@anthropic-ai/bedrock-sdk",
 		"@anthropic-ai/sdk",
 		"@anthropic-ai/vertex-sdk",
@@ -92,8 +117,6 @@ const __dirname = __dirname__(__filename);
 		"diff",
 		"diff-match-patch",
 		"dotenv",
-		"eventemitter3",
-		"exceljs",
 		"fast-deep-equal",
 		"fast-glob",
 		"fast-xml-parser",
@@ -106,13 +129,6 @@ const __dirname = __dirname__(__filename);
 		"gray-matter",
 		"i18next",
 		"ignore",
-		"ink",
-		"ink-big-text",
-		"ink-gradient",
-		"ink-select-input",
-		"ink-spinner",
-		"ink-table",
-		"ink-text-input",
 		"is-wsl",
 		"isbinaryfile",
 		"jotai",
@@ -149,21 +165,18 @@ const __dirname = __dirname__(__filename);
 		"simple-git",
 		"socket.io-client",
 		"sound-play",
-		"sqlite3",
 		"stream-json",
 		"strip-bom",
 		"tiktoken",
 		"tmp",
 		"tree-sitter-wasms",
-		"ts-node",
 		"turndown",
-		"undici",
 		"uri-js",
 		"uuid",
 		"vscode-material-icons",
-		"vscode-uri",
 		"web-tree-sitter",
 		"workerpool",
+		"xlsx",
 		"yaml",
 		"zod",
 	],
@@ -171,7 +184,10 @@ const __dirname = __dirname__(__filename);
 	minify: false,
 	treeShaking: true,
 	logLevel: "info",
-	plugins: [afterBuildPlugin],
+	plugins: [esbuildProblemMatcherPlugin, afterBuildPlugin],
+	alias: {
+		'is-in-ci': path.resolve(__dirname, 'src/patches/is-in-ci.ts'),
+	}
 }
 
 if (process.argv.includes("--watch")) {

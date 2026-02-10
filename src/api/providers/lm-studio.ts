@@ -2,15 +2,11 @@ import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 import axios from "axios"
 
-import {
-	type ModelInfo,
-	openAiModelInfoSaneDefaults,
-	LMSTUDIO_DEFAULT_TEMPERATURE,
-	getActiveToolUseStyle, // kilocode_change
-} from "@roo-code/types"
+import { type ModelInfo, openAiModelInfoSaneDefaults, LMSTUDIO_DEFAULT_TEMPERATURE } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 
+import { NativeToolCallParser } from "../../core/assistant-message/NativeToolCallParser"
 import { XmlMatcher } from "../../utils/xml-matcher"
 
 import { convertToOpenAiMessages } from "../transform/openai-format"
@@ -18,11 +14,9 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
-import { fetchWithTimeout, HeadersTimeoutError } from "./kilocode/fetchWithTimeout"
-import { addNativeToolCallsToParams, processNativeToolCallsFromDelta } from "./kilocode/nativeToolCallHelpers"
-import { getModels, getModelsFromCache } from "./fetchers/modelCache"
+import { getModelsFromCache } from "./fetchers/modelCache"
+import { getApiRequestTimeout } from "./utils/timeout-config"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { getApiRequestTimeout } from "./utils/timeout-config" // kilocode_change
 
 export class LmStudioHandler extends BaseProvider implements SingleCompletionHandler {
 	protected options: ApiHandlerOptions
@@ -32,14 +26,14 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 	constructor(options: ApiHandlerOptions) {
 		super()
 		this.options = options
-		const timeout = getApiRequestTimeout() // kilocode_change
+
+		// LM Studio uses "noop" as a placeholder API key
+		const apiKey = "noop"
+
 		this.client = new OpenAI({
 			baseURL: (this.options.lmStudioBaseUrl || "http://localhost:1234") + "/v1",
-			apiKey: "noop",
-			// kilocode_change start
-			timeout: timeout,
-			fetch: fetchWithTimeout(timeout),
-			// kilocode_change end
+			apiKey: apiKey,
+			timeout: getApiRequestTimeout(),
 		})
 	}
 
@@ -52,6 +46,9 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 			{ role: "system", content: systemPrompt },
 			...convertToOpenAiMessages(messages),
 		]
+
+		// LM Studio always supports native tools (https://lmstudio.ai/docs/developer/core/tools)
+		const useNativeTools = metadata?.tools && metadata.tools.length > 0 && metadata?.toolProtocol !== "xml"
 
 		// -------------------------
 		// Track token usage
@@ -94,14 +91,14 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 				messages: openAiMessages,
 				temperature: this.options.modelTemperature ?? LMSTUDIO_DEFAULT_TEMPERATURE,
 				stream: true,
+				...(useNativeTools && { tools: this.convertToolsForOpenAI(metadata.tools) }),
+				...(useNativeTools && metadata.tool_choice && { tool_choice: metadata.tool_choice }),
+				...(useNativeTools && { parallel_tool_calls: metadata?.parallelToolCalls ?? false }),
 			}
 
 			if (this.options.lmStudioSpeculativeDecodingEnabled && this.options.lmStudioDraftModelId) {
 				params.draft_model = this.options.lmStudioDraftModelId
 			}
-			// kilocode_change start: Add native tool call support when toolStyle is "json"
-			addNativeToolCallsToParams(params, this.options, metadata)
-			// kilocode_change end
 
 			let results
 			try {
@@ -121,15 +118,33 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 
 			for await (const chunk of results) {
 				const delta = chunk.choices[0]?.delta
-
-				// kilocode_change start: Handle native tool calls when toolStyle is "json"
-				yield* processNativeToolCallsFromDelta(delta, getActiveToolUseStyle(this.options))
-				// kilocode_change end
+				const finishReason = chunk.choices[0]?.finish_reason
 
 				if (delta?.content) {
 					assistantText += delta.content
 					for (const processedChunk of matcher.update(delta.content)) {
 						yield processedChunk
+					}
+				}
+
+				// Handle tool calls in stream - emit partial chunks for NativeToolCallParser
+				if (delta?.tool_calls) {
+					for (const toolCall of delta.tool_calls) {
+						yield {
+							type: "tool_call_partial",
+							index: toolCall.index,
+							id: toolCall.id,
+							name: toolCall.function?.name,
+							arguments: toolCall.function?.arguments,
+						}
+					}
+				}
+
+				// Process finish_reason to emit tool_call_end events
+				if (finishReason) {
+					const endEvents = NativeToolCallParser.processFinishReason(finishReason)
+					for (const event of endEvents) {
+						yield event
 					}
 				}
 			}
@@ -152,11 +167,6 @@ export class LmStudioHandler extends BaseProvider implements SingleCompletionHan
 				outputTokens,
 			} as const
 		} catch (error) {
-			// kilocode_change start
-			if (error.cause instanceof HeadersTimeoutError) {
-				throw new Error("Headers timeout", { cause: error })
-			}
-			// kilocode_change end
 			throw new Error(
 				"Please check the LM Studio developer logs to debug what went wrong. You may need to load the model with a larger context length to work with Kilo Code's prompts.",
 			)

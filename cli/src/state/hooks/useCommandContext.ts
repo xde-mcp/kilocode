@@ -25,7 +25,13 @@ import {
 	selectProviderAtom,
 	configAtom,
 } from "../atoms/config.js"
-import { routerModelsAtom, extensionStateAtom, isParallelModeAtom, chatMessagesAtom } from "../atoms/extension.js"
+import {
+	routerModelsAtom,
+	extensionStateAtom,
+	isParallelModeAtom,
+	chatMessagesAtom,
+	currentTaskAtom,
+} from "../atoms/extension.js"
 import { requestRouterModelsAtom } from "../atoms/actions.js"
 import { profileDataAtom, balanceDataAtom, profileLoadingAtom, balanceLoadingAtom } from "../atoms/profile.js"
 import {
@@ -34,8 +40,16 @@ import {
 	taskHistoryLoadingAtom,
 	taskHistoryErrorAtom,
 } from "../atoms/taskHistory.js"
+import {
+	modelListPageIndexAtom,
+	modelListFiltersAtom,
+	updateModelListFiltersAtom,
+	changeModelListPageAtom,
+	resetModelListStateAtom,
+} from "../atoms/modelList.js"
 import { useWebviewMessage } from "./useWebviewMessage.js"
 import { useTaskHistory } from "./useTaskHistory.js"
+import { useCondense } from "./useCondense.js"
 import { getModelIdKey } from "../../constants/providers/models.js"
 
 const TERMINAL_CLEAR_DELAY_MS = 500
@@ -96,9 +110,11 @@ export function useCommandContext(): UseCommandContextReturn {
 	const currentProvider = useAtomValue(providerAtom)
 	const extensionState = useAtomValue(extensionStateAtom)
 	const kilocodeDefaultModel = (extensionState?.kilocodeDefaultModel as string) || ""
+	const customModes = extensionState?.customModes || []
 	const isParallelMode = useAtomValue(isParallelModeAtom)
 	const config = useAtomValue(configAtom)
 	const chatMessages = useAtomValue(chatMessagesAtom)
+	const currentTask = useAtomValue(currentTaskAtom)
 
 	// Get profile state
 	const profileData = useAtomValue(profileDataAtom)
@@ -118,6 +134,16 @@ export function useCommandContext(): UseCommandContextReturn {
 		nextPage: nextTaskHistoryPage,
 		previousPage: previousTaskHistoryPage,
 	} = useTaskHistory()
+
+	// Get model list state and functions
+	const modelListPageIndex = useAtomValue(modelListPageIndexAtom)
+	const modelListFilters = useAtomValue(modelListFiltersAtom)
+	const updateModelListFilters = useSetAtom(updateModelListFiltersAtom)
+	const changeModelListPage = useSetAtom(changeModelListPageAtom)
+	const resetModelListState = useSetAtom(resetModelListStateAtom)
+
+	// Get condense function
+	const { condenseAndWait } = useCondense()
 
 	// Create the factory function
 	const createContext = useCallback<CommandContextFactory>(
@@ -201,6 +227,8 @@ export function useCommandContext(): UseCommandContextReturn {
 				balanceData,
 				profileLoading,
 				balanceLoading,
+				// Custom modes context
+				customModes,
 				// Task history context
 				taskHistoryData,
 				taskHistoryFilters,
@@ -213,6 +241,16 @@ export function useCommandContext(): UseCommandContextReturn {
 				previousTaskHistoryPage,
 				sendWebviewMessage: sendMessage,
 				chatMessages: chatMessages as unknown as ExtensionMessage[],
+				// Current task context
+				currentTask,
+				// Model list context
+				modelListPageIndex,
+				modelListFilters,
+				updateModelListFilters,
+				changeModelListPage,
+				resetModelListState,
+				// Condense context
+				condenseAndWait,
 			}
 		},
 		[
@@ -238,6 +276,7 @@ export function useCommandContext(): UseCommandContextReturn {
 			balanceLoading,
 			setCommittingParallelMode,
 			isParallelMode,
+			customModes,
 			taskHistoryData,
 			taskHistoryFilters,
 			taskHistoryLoading,
@@ -248,6 +287,13 @@ export function useCommandContext(): UseCommandContextReturn {
 			nextTaskHistoryPage,
 			previousTaskHistoryPage,
 			chatMessages,
+			currentTask,
+			modelListPageIndex,
+			modelListFilters,
+			updateModelListFilters,
+			changeModelListPage,
+			resetModelListState,
+			condenseAndWait,
 		],
 	)
 

@@ -38,9 +38,9 @@ export async function processKiloUserContentMentions({
 	// Track if we need to check kilorules file
 	let needsRulesFileCheck = false
 
-	/**
-	 * Process mentions in user content, specifically within task and feedback tags
-	 */
+	// kilocode_change
+	const mentionTagRegex = /<(?:task|feedback|answer|user_message)>/
+
 	const processUserContentMentions = async () => {
 		// Process userContent array, which contains various block types:
 		// TextBlockParam, ImageBlockParam, ToolUseBlockParam, and ToolResultBlockParam.
@@ -57,7 +57,8 @@ export async function processKiloUserContentMentions({
 
 		return await Promise.all(
 			userContent.map(async (block) => {
-				const shouldProcessMentions = (text: string) => text.includes("<task>") || text.includes("<feedback>")
+				// kilocode_change
+				const shouldProcessMentions = (text: string) => mentionTagRegex.test(text)
 
 				if (block.type === "text") {
 					if (shouldProcessMentions(block.text)) {
@@ -76,7 +77,7 @@ export async function processKiloUserContentMentions({
 
 						// when parsing slash commands, we still want to allow the user to provide their desired context
 						const { processedText, needsRulesFileCheck: needsCheck } = await parseKiloSlashCommands(
-							parsedText,
+							parsedText.text,
 							localWorkflowToggles, // kilocode_change
 							globalWorkflowToggles, // kilocode_change
 						)
@@ -96,19 +97,20 @@ export async function processKiloUserContentMentions({
 				} else if (block.type === "tool_result") {
 					if (typeof block.content === "string") {
 						if (shouldProcessMentions(block.content)) {
+							const parsedResult = await parseMentions(
+								block.content,
+								cwd,
+								urlContentFetcher,
+								fileContextTracker,
+								rooIgnoreController,
+								showRooIgnoredFiles,
+								includeDiagnosticMessages,
+								maxDiagnosticMessages,
+								maxReadFileLine,
+							)
 							return {
 								...block,
-								content: await parseMentions(
-									block.content,
-									cwd,
-									urlContentFetcher,
-									fileContextTracker,
-									rooIgnoreController,
-									showRooIgnoredFiles,
-									includeDiagnosticMessages,
-									maxDiagnosticMessages,
-									maxReadFileLine,
-								),
+								content: parsedResult.text,
 							}
 						}
 
@@ -117,19 +119,20 @@ export async function processKiloUserContentMentions({
 						const parsedContent = await Promise.all(
 							block.content.map(async (contentBlock) => {
 								if (contentBlock.type === "text" && shouldProcessMentions(contentBlock.text)) {
+									const parsedResult = await parseMentions(
+										contentBlock.text,
+										cwd,
+										urlContentFetcher,
+										fileContextTracker,
+										rooIgnoreController,
+										showRooIgnoredFiles,
+										includeDiagnosticMessages,
+										maxDiagnosticMessages,
+										maxReadFileLine,
+									)
 									return {
 										...contentBlock,
-										text: await parseMentions(
-											contentBlock.text,
-											cwd,
-											urlContentFetcher,
-											fileContextTracker,
-											rooIgnoreController,
-											showRooIgnoredFiles,
-											includeDiagnosticMessages,
-											maxDiagnosticMessages,
-											maxReadFileLine,
-										),
+										text: parsedResult.text,
 									}
 								}
 

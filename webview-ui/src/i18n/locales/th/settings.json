@@ -1,4 +1,9 @@
 {
+	"back": "กลับไปยังมุมมองงาน",
+	"search": {
+		"placeholder": "ค้นหาการตั้งค่า...",
+		"noResults": "ไม่พบการตั้งค่า"
+	},
 	"common": {
 		"save": "บันทึก",
 		"done": "เสร็จสิ้น",
@@ -22,6 +27,8 @@
 	},
 	"sections": {
 		"providers": "ผู้ให้บริการ",
+		"modes": "โหมด",
+		"mcp": "เซิร์ฟเวอร์ MCP",
 		"autoApprove": "อนุมัติอัตโนมัติ",
 		"browser": "เบราว์เซอร์",
 		"checkpoints": "จุดตรวจสอบ",
@@ -36,7 +43,36 @@
 		"experimental": "ทดลอง",
 		"language": "ภาษา",
 		"about": "เกี่ยวกับ Kilo Code",
-		"autoPurge": "ทำความสะอาดอัตโนมัติ"
+		"autoPurge": "ทำความสะอาดอัตโนมัติ",
+		"agentBehaviour": "พฤติกรรม Agent"
+	},
+	"about": {
+		"debugMode": {
+			"label": "เปิดใช้งานโหมดดีบัก",
+			"description": "เปิดใช้งานโหมดดีบักเพื่อแสดงปุ่มเพิ่มเติมในส่วนหัวของงานสำหรับการดูประวัติการสนทนา API และข้อความ UI ในรูปแบบ JSON ที่อ่านง่ายในไฟล์ชั่วคราว"
+		},
+		"bugReport": {
+			"label": "พบข้อผิดพลาด?",
+			"link": "รายงานบน GitHub"
+		},
+		"featureRequest": {
+			"label": "มีไอเดีย?",
+			"link": "แบ่งปันกับเรา"
+		},
+		"securityIssue": {
+			"label": "ค้นพบช่องโหว่?",
+			"link": "ปฏิบัติตามกระบวนการเปิดเผยของเรา"
+		},
+		"contact": {
+			"label": "ต้องการพูดคุยกับเรา? เขียน"
+		},
+		"contactSupport": "ติดต่อฝ่ายสนับสนุน",
+		"contactSupportDesc": "สำหรับคำถามทั่วไป การแก้ไขปัญหา และความช่วยเหลือด้านเทคนิค",
+		"joinCommunity": "เข้าร่วมชุมชน",
+		"joinCommunityDesc": "ต้องการเทคนิคหรือแค่ใช้เวลาร่วมกับผู้ใช้ Kilo Code คนอื่นๆ? เข้าร่วม <redditLink>reddit.com/r/kilocode</redditLink> หรือ <discordLink>kilo.ai/discord</discordLink>",
+		"community": "ต้องการเทคนิคหรือแค่ใช้เวลาร่วมกับผู้ใช้ Kilo Code คนอื่นๆ? เข้าร่วม <redditLink>reddit.com/r/kilocode</redditLink> หรือ <discordLink>kilo.ai/discord</discordLink>",
+		"contactAndCommunity": "ติดต่อและชุมชน",
+		"manageSettings": "จัดการการตั้งค่า"
 	},
 	"slashCommands": {
 		"description": "จัดการคำสั่งแบบ slash ของคุณเพื่อดำเนินการเวิร์กโฟลว์และการกระทำแบบกำหนดเองอย่างรวดเร็ว <DocsLink>เรียนรู้เพิ่มเติม</DocsLink>"
@@ -45,6 +81,10 @@
 		"collapseThinking": {
 			"label": "ย่อข้อความ Thinking โดยค่าเริ่มต้น",
 			"description": "เมื่อเปิดใช้งาน บล็อก thinking จะถูกย่อโดยค่าเริ่มต้นจนกว่าคุณจะโต้ตอบกับมัน"
+		},
+		"requireCtrlEnterToSend": {
+			"label": "ต้องใช้ {{primaryMod}}+Enter เพื่อส่งข้อความ",
+			"description": "เมื่อเปิดใช้งาน คุณต้องกด {{primaryMod}}+Enter เพื่อส่งข้อความแทนที่จะกด Enter เพียงอย่างเดียว"
 		}
 	},
 	"prompts": {
@@ -72,10 +112,33 @@
 		"vercelAiGatewayProvider": "Vercel AI Gateway",
 		"vercelAiGatewayApiKeyLabel": "คีย์ API",
 		"vercelAiGatewayApiKeyPlaceholder": "ป้อนคีย์ API Vercel AI Gateway ของคุณ",
+		"bedrockProvider": "Amazon Bedrock",
+		"bedrockConfigTitle": "การกำหนดค่า Amazon Bedrock",
+		"bedrockConfigDesc": "กำหนดค่าการตั้งค่า Amazon Bedrock สำหรับการสร้างดัชนี",
+		"bedrockEmbeddingModel": "โมเดล Embedding ของ Bedrock",
+		"bedrockEmbeddingModelDesc": "เลือกโมเดล embedding ของ Amazon Bedrock ที่จะใช้",
+		"bedrockEmbeddingModelPlaceholder": "เลือกโมเดล embedding",
+		"bedrockRegionLabel": "AWS Region",
+		"bedrockRegionPlaceholder": "us-east-1",
+		"bedrockProfileLabel": "AWS Profile",
+		"bedrockProfilePlaceholder": "default",
+		"bedrockProfileDescription": "ชื่อโปรไฟล์ AWS จาก ~/.aws/credentials (จำเป็น)",
+		"bedrockAccessKeyId": "AWS Access Key ID",
+		"bedrockAccessKeyIdDesc": "รหัสคีย์การเข้าถึง AWS ของคุณ",
+		"bedrockAccessKeyIdPlaceholder": "ป้อน AWS Access Key ID",
+		"bedrockSecretAccessKey": "AWS Secret Access Key",
+		"bedrockSecretAccessKeyDesc": "คีย์การเข้าถึงลับ AWS ของคุณ",
+		"bedrockSecretAccessKeyPlaceholder": "ป้อน AWS Secret Access Key",
+		"bedrockSessionToken": "AWS Session Token",
+		"bedrockSessionTokenDesc": "โทเค็นเซสชัน AWS (ไม่บังคับ)",
+		"bedrockSessionTokenPlaceholder": "ป้อน AWS Session Token (ไม่บังคับ)",
 		"openRouterProvider": "OpenRouter",
 		"openRouterApiKeyLabel": "คีย์ API OpenRouter",
 		"openRouterApiKeyPlaceholder": "ป้อนคีย์ API OpenRouter ของคุณ",
+		"openRouterProviderRoutingLabel": "การกำหนดเส้นทางผู้ให้บริการ OpenRouter",
+		"openRouterProviderRoutingDescription": "OpenRouter กำหนดเส้นทางคำขอไปยังผู้ให้บริการที่ดีที่สุดสำหรับโมเดล embedding ของคุณ โดยค่าเริ่มต้น คำขอจะถูกกระจายโหลดไปยังผู้ให้บริการชั้นนำเพื่อเพิ่มเวลาทำงานสูงสุด อย่างไรก็ตาม คุณสามารถเลือกผู้ให้บริการเฉพาะสำหรับโมเดลนี้ได้",
 		"openaiCompatibleProvider": "เข้ากันได้กับ OpenAI",
+		"openaiCompatibleResponsesProvider": "เข้ากันได้กับ OpenAI (Responses)",
 		"openAiKeyLabel": "คีย์ API OpenAI",
 		"openAiKeyPlaceholder": "ป้อนคีย์ API OpenAI ของคุณ",
 		"openAiCompatibleBaseUrlLabel": "URL พื้นฐาน",
@@ -91,10 +154,14 @@
 		"selectModelPlaceholder": "เลือกโมเดล",
 		"ollamaUrlLabel": "URL ของ Ollama:",
 		"ollamaBaseUrlLabel": "URL พื้นฐาน Ollama",
+		"vectorStoreProviderLabel": "ผู้ให้บริการ Vector Store",
 		"qdrantUrlLabel": "URL ของ Qdrant",
 		"qdrantKeyLabel": "คีย์ Qdrant:",
 		"qdrantApiKeyLabel": "คีย์ API Qdrant",
 		"qdrantApiKeyPlaceholder": "ป้อนคีย์ API Qdrant ของคุณ (ไม่บังคับ)",
+		"lancedbVectorStoreDirectoryLabel": "เส้นทาง LanceDB Vector Store",
+		"lancedbVectorStoreDirectoryPlaceholder": "กรอกเส้นทาง Vector Store (ถ้ามี)",
+		"lancedbVectorStoreDirectoryDescription": "เส้นทางสำหรับจัดเก็บฐานข้อมูล LanceDB Vector หากเว้นว่างจะใช้ตำแหน่งเริ่มต้นใน globalStorageUri/vector",
 		"setupConfigLabel": "การตั้งค่า",
 		"advancedConfigLabel": "การกำหนดค่าขั้นสูง",
 		"searchMinScoreLabel": "เกณฑ์คะแนนการค้นหา",
@@ -103,6 +170,7 @@
 		"searchMaxResultsLabel": "ผลการค้นหาสูงสุด",
 		"searchMaxResultsDescription": "จำนวนผลการค้นหาสูงสุดที่จะส่งคืนเมื่อสอบถามดัชนี codebase ค่าที่สูงขึ้นจะให้บริบทมากขึ้นแต่อาจรวมผลลัพธ์ที่เกี่ยวข้องน้อยลง",
 		"resetToDefault": "รีเซ็ตเป็นค่าเริ่มต้น",
+		"optional": "ไม่บังคับ",
 		"startIndexingButton": "เริ่มการสร้างดัชนี",
 		"clearIndexDataButton": "ล้างข้อมูลดัชนี",
 		"unsavedSettingsMessage": "โปรดบันทึกการตั้งค่าของคุณก่อนเริ่มกระบวนการสร้างดัชนี",
@@ -144,7 +212,9 @@
 			"ollamaBaseUrlRequired": "จำเป็นต้องมี URL พื้นฐาน Ollama",
 			"baseUrlRequired": "จำเป็นต้องมี URL พื้นฐาน",
 			"modelDimensionMinValue": "มิติโมเดลต้องมากกว่า 0",
-			"vercelAiGatewayApiKeyRequired": "จำเป็นต้องมีคีย์ API Vercel AI Gateway"
+			"vercelAiGatewayApiKeyRequired": "จำเป็นต้องมีคีย์ API Vercel AI Gateway",
+			"bedrockRegionRequired": "จำเป็นต้องมี AWS region",
+			"bedrockProfileRequired": "จำเป็นต้องมี AWS profile"
 		},
 		"cancelling": "กำลังยกเลิก...",
 		"cancelIndexingButton": "ยกเลิกการจัดทำดัชนี"
@@ -153,6 +223,10 @@
 		"description": "อนุญาตให้ Kilo Code ดำเนินการโดยอัตโนมัติโดยไม่ต้องขออนุมัติ เปิดใช้งานการตั้งค่าเหล่านี้เฉพาะเมื่อคุณเชื่อถือ AI อย่างเต็มที่และเข้าใจความเสี่ยงด้านความปลอดภัยที่เกี่ยวข้อง",
 		"toggleShortcut": "คุณสามารถกำหนดค่าแป้นพิมพ์ลัดสำหรับการตั้งค่านี้ <SettingsLink>ในการตั้งค่า IDE ของคุณ</SettingsLink>",
 		"enabled": "เปิดใช้งานการอนุมัติอัตโนมัติ",
+		"delete": {
+			"label": "ลบ",
+			"description": "ลบไฟล์และไดเรกทอรีโดยอัตโนมัติโดยไม่ต้องขออนุมัติ"
+		},
 		"readOnly": {
 			"label": "อ่าน",
 			"description": "เมื่อเปิดใช้งาน Kilo Code จะดูเนื้อหาไดเรกทอรีและอ่านไฟล์โดยอัตโนมัติโดยไม่ต้องให้คุณคลิกปุ่มอนุมัติ",
@@ -239,7 +313,10 @@
 		"providerDocumentation": "เอกสารประกอบ {{provider}}",
 		"configProfile": "โปรไฟล์การกำหนดค่า",
 		"description": "บันทึกการกำหนดค่า API ต่างๆ เพื่อสลับระหว่างผู้ให้บริการและการตั้งค่าต่างๆ ได้อย่างรวดเร็ว",
+		"makeActiveProfile": "ทำให้เป็นโปรไฟล์ที่ใช้งาน",
+		"makeActiveTooltip": "เปิดใช้งานโปรไฟล์นี้เพื่อใช้สำหรับคำขอ API",
 		"apiProvider": "ผู้ให้บริการ API",
+		"apiProviderDocs": "เอกสารผู้ให้บริการ",
 		"model": "โมเดล",
 		"nameEmpty": "ชื่อต้องไม่ว่างเปล่า",
 		"nameExists": "มีโปรไฟล์ชื่อนี้อยู่แล้ว",
@@ -268,6 +345,37 @@
 		"apiKeyStorageNotice": "คีย์ API จะถูกเก็บไว้อย่างปลอดภัยในที่เก็บข้อมูลลับของ VSCode",
 		"glamaApiKey": "คีย์ API ของ Glama",
 		"getGlamaApiKey": "รับคีย์ API ของ Glama",
+		"openAiCodexRateLimits": {
+			"title": "ขีดจำกัดการใช้งานสำหรับ Codex{{planLabel}}",
+			"loading": "กำลังโหลดขีดจำกัดการใช้งาน...",
+			"loadError": "ไม่สามารถโหลดขีดจำกัดการใช้งาน",
+			"retry": "ลองอีกครั้ง",
+			"usedPercent": "ใช้ไป {{percent}}%",
+			"resetsIn": "รีเซ็ตใน {{time}}",
+			"plan": {
+				"default": "",
+				"withType": " ({{planType}})"
+			},
+			"time": {
+				"now": "ตอนนี้",
+				"notAvailable": "ไม่พร้อมใช้งาน"
+			},
+			"duration": {
+				"daysHours": "{{days}} วัน {{hours}} ชม.",
+				"hoursMinutes": "{{hours}} ชม. {{minutes}} นาที",
+				"minutes": "{{minutes}} นาที"
+			},
+			"window": {
+				"usage": "การใช้งาน",
+				"fiveHour": "ขีดจำกัด 5 ชม.",
+				"oneHour": "ขีดจำกัด 1 ชม.",
+				"daily": "ขีดจำกัดรายวัน",
+				"weekly": "ขีดจำกัดรายสัปดาห์",
+				"days": "ขีดจำกัด {{days}} วัน",
+				"hours": "ขีดจำกัด {{hours}} ชม.",
+				"minutes": "ขีดจำกัด {{minutes}} นาที"
+			}
+		},
 		"useCustomBaseUrl": "ใช้ URL พื้นฐานที่กำหนดเอง",
 		"useReasoning": "เปิดใช้งานการให้เหตุผล",
 		"useHostHeader": "ใช้ส่วนหัวโฮสต์ที่กำหนดเอง",
@@ -291,10 +399,14 @@
 		"anthropicApiKey": "คีย์ API ของ Anthropic",
 		"getAnthropicApiKey": "รับคีย์ API ของ Anthropic",
 		"anthropicUseAuthToken": "ส่งคีย์ API ของ Anthropic เป็นส่วนหัว Authorization แทน X-Api-Key",
+		"anthropicUseAzureDeployment": "ใช้ชื่อการปรับใช้ Azure",
+		"anthropicAzureDeploymentPlaceholder": "ป้อนชื่อการปรับใช้...",
 		"anthropic1MContextBetaLabel": "เปิดใช้งาน context window 1M (Beta)",
 		"anthropic1MContextBetaDescription": "ขยาย context window เป็น 1 ล้าน tokens สำหรับ Claude Sonnet 4",
 		"awsBedrock1MContextBetaLabel": "เปิดใช้งาน context window 1M (Beta)",
 		"awsBedrock1MContextBetaDescription": "ขยาย context window เป็น 1 ล้าน tokens สำหรับ Claude Sonnet 4",
+		"basetenApiKey": "คีย์ API ของ Baseten",
+		"getBasetenApiKey": "รับคีย์ API ของ Baseten",
 		"cerebrasApiKey": "คีย์ API ของ Cerebras",
 		"getCerebrasApiKey": "รับคีย์ API ของ Cerebras",
 		"chutesApiKey": "คีย์ API ของ Chutes",
@@ -316,11 +428,10 @@
 		"minimaxApiKey": "คีย์ API ของ MiniMax",
 		"getMiniMaxApiKey": "รับคีย์ API ของ MiniMax",
 		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
+		"zaiApiKey": "คีย์ API ของ Z AI",
+		"getZaiApiKey": "รับคีย์ API ของ Z AI",
 		"zaiEntrypoint": "จุดเข้าใช้งาน Z AI",
 		"zaiEntrypointDescription": "โปรดเลือกจุดเข้าใช้งาน API ที่เหมาะสมตามตำแหน่งของคุณ หากคุณอยู่ในจีน ให้เลือก open.bigmodel.cn มิฉะนั้น ให้เลือก api.z.ai",
-		"minimaxApiKey": "คีย์ API ของ MiniMax",
-		"getMiniMaxApiKey": "รับคีย์ API ของ MiniMax",
-		"minimaxBaseUrl": "จุดเข้าใช้งาน MiniMax",
 		"geminiApiKey": "คีย์ API ของ Gemini",
 		"geminiParameters": {
 			"urlContext": {
@@ -373,6 +484,15 @@
 		"awsSessionToken": "โทเค็นเซสชัน AWS",
 		"awsRegion": "ภูมิภาค AWS",
 		"awsCrossRegion": "ใช้การอนุมานข้ามภูมิภาค",
+		"awsGlobalInference": "ใช้การอนุมานแบบ Global (เลือกภูมิภาค AWS ที่เหมาะสมโดยอัตโนมัติ)",
+		"awsServiceTier": "ระดับบริการ",
+		"awsServiceTierStandard": "มาตรฐาน",
+		"awsServiceTierStandardDesc": "ประสิทธิภาพและค่าใช้จ่ายที่สมดุล",
+		"awsServiceTierFlex": "ยืดหยุ่น (ส่วนลด 50%)",
+		"awsServiceTierFlexDesc": "ค่าใช้จ่ายต่ำกว่า เวลาตอบสนองสูงขึ้น สำหรับงานที่ไม่สำคัญ",
+		"awsServiceTierPriority": "ลำดับความสำคัญ (ค่าใช้จ่ายเพิ่ม 75%)",
+		"awsServiceTierPriorityDesc": "ประสิทธิภาพที่เร็วที่สุดสำหรับแอปพลิเคชันที่สำคัญ",
+		"awsServiceTierNote": "ระดับบริการส่งผลต่อราคาและประสิทธิภาพ ยืดหยุ่นให้ส่วนลด 50% แต่มีเวลาตอบสนองสูงขึ้น ลำดับความสำคัญให้ประสิทธิภาพที่ดีขึ้น 25% แต่มีค่าใช้จ่ายเพิ่ม 75%",
 		"awsBedrockVpc": {
 			"useCustomVpcEndpoint": "ใช้ปลายทาง VPC ที่กำหนดเอง",
 			"vpcEndpointUrlPlaceholder": "ป้อน URL ปลายทาง VPC (ไม่บังคับ)",
@@ -382,7 +502,9 @@
 		"enablePromptCachingTitle": "เปิดใช้งานการแคชพรอมต์เพื่อปรับปรุงประสิทธิภาพและลดค่าใช้จ่ายสำหรับโมเดลที่รองรับ",
 		"cacheUsageNote": "หมายเหตุ: หากคุณไม่เห็นการใช้งานแคช ให้ลองเลือกโมเดลอื่นแล้วเลือกโมเดลที่คุณต้องการอีกครั้ง",
 		"vscodeLmModel": "โมเดลภาษา",
-		"vscodeLmWarning": "หมายเหตุ: นี่เป็นการผสานรวมที่ทดลองมากและการสนับสนุนจากผู้ให้บริการจะแตกต่างกันไป หากคุณได้รับข้อผิดพลาดเกี่ยวกับโมเดลที่ไม่รองรับ นั่นเป็นปัญหาจากฝั่งผู้ให้บริการ",
+		"vscodeLmWarning": "หมายเหตุ: โมเดลที่เข้าถึงผ่าน VS Code Language Model API อาจถูกแพ็คหรือปรับแต่งโดยผู้ให้บริการ ดังนั้นพฤติกรรมอาจแตกต่างจากการใช้โมเดลเดียวกันโดยตรงจากผู้ให้บริการหรือ router ทั่วไป หากต้องการใช้โมเดลจากเมนู Language Model ให้เปลี่ยนไปใช้โมเดลนั้นก่อน จากนั้นคลิก Accept ใน Copilot Chat prompt มิฉะนั้นคุณอาจเห็นข้อผิดพลาดเช่น 400 \"The requested model is not supported\"",
+		"vertex1MContextBetaLabel": "เปิดใช้งาน context window 1M (Beta)",
+		"vertex1MContextBetaDescription": "ขยาย context window เป็น 1 ล้าน tokens สำหรับ Claude Sonnet 4",
 		"googleCloudSetup": {
 			"title": "ในการใช้ Google Cloud Vertex AI คุณต้อง:",
 			"step1": "1. สร้างบัญชี Google Cloud เปิดใช้งาน Vertex AI API และเปิดใช้งานโมเดล Claude ที่ต้องการ",
@@ -432,6 +554,14 @@
 		},
 		"doubaoApiKey": "คีย์ API ของ Doubao",
 		"getDoubaoApiKey": "รับคีย์ API ของ Doubao",
+		"nanoGptApiKey": "คีย์ API ของ Nano-GPT",
+		"getNanoGptApiKey": "รับคีย์ API ของ Nano-GPT",
+		"nanoGptModelList": "รายการโมเดล",
+		"nanoGptModelListOptions": {
+			"all": "โมเดลทั้งหมด",
+			"personalized": "โมเดลส่วนตัว",
+			"subscription": "โมเดลตามการสมัครสมาชิก"
+		},
 		"zaiApiKey": "คีย์ API ของ Z.AI",
 		"getZaiApiKey": "รับคีย์ API ของ Z.AI",
 		"sambaNovaApiKey": "คีย์ API ของ SambaNova",
@@ -498,10 +628,12 @@
 			"minimal": "น้อยที่สุด (เร็วที่สุด)",
 			"low": "ต่ำ",
 			"medium": "ปานกลาง",
-			"high": "สูง"
+			"high": "สูง",
+			"xhigh": "สูงพิเศษ"
 		},
 		"verbosity": {
 			"label": "ระดับความละเอียดของผลลัพธ์",
+			"max": "Max",
 			"high": "สูง",
 			"medium": "ปานกลาง",
 			"low": "ต่ำ",
@@ -514,21 +646,6 @@
 			"placeholder": "ค่าเริ่มต้น: claude",
 			"maxTokensLabel": "โทเค็นเอาต์พุตสูงสุด",
 			"maxTokensDescription": "จำนวนโทเค็นเอาต์พุตสูงสุดสำหรับการตอบสนองของ Claude Code ค่าเริ่มต้นคือ 8000"
-		},
-		"geminiCli": {
-			"description": "ผู้ให้บริการนี้ใช้การยืนยันตัวตน OAuth จากเครื่องมือ Gemini CLI และไม่ต้องการกุญแจ API",
-			"oauthPath": "เส้นทางข้อมูลประจำตัว OAuth (ไม่บังคับ)",
-			"oauthPathDescription": "เส้นทางไปยังไฟล์ข้อมูลประจำตัว OAuth ปล่อยว่างไว้เพื่อใช้ตำแหน่งเริ่มต้น (~/.gemini/oauth_creds.json)",
-			"instructions": "หากคุณยังไม่ได้ยืนยันตัวตน โปรดรัน",
-			"instructionsContinued": "ใน terminal ของคุณก่อน",
-			"setupLink": "คำแนะนำการตั้งค่า Gemini CLI",
-			"requirementsTitle": "ข้อกำหนดที่สำคัญ",
-			"requirement1": "ก่อนอื่น คุณต้องติดตั้งเครื่องมือ Gemini CLI",
-			"requirement2": "จากนั้น รัน gemini ใน terminal ของคุณและตรวจสอบให้แน่ใจว่าคุณเข้าสู่ระบบด้วย Google",
-			"requirement3": "ใช้งานได้เฉพาะกับบัญชี Google ส่วนตัว (ไม่ใช่บัญชี Google Workspace)",
-			"requirement4": "ไม่ใช้กุญแจ API - การยืนยันตัวตนจัดการผ่าน OAuth",
-			"requirement5": "ต้องการให้เครื่องมือ Gemini CLI ถูกติดตั้งและยืนยันตัวตนก่อน",
-			"freeAccess": "การเข้าถึงระดับฟรีผ่านการยืนยันตัวตน OAuth"
 		},
 		"io_intelligence": {
 			"name": "IO Intelligence",
@@ -551,6 +668,41 @@
 		"roo": {
 			"authenticatedMessage": "ยืนยันตัวตนอย่างปลอดภัยผ่านบัญชี Roo Code Cloud ของคุณ",
 			"connectButton": "เชื่อมต่อกับ Roo Code Cloud"
+		},
+		"profileName": "ชื่อโปรไฟล์",
+		"profileType": "ประเภทโปรไฟล์",
+		"profileTypeChat": "แชท",
+		"profileTypeAutocomplete": "เติมข้อความอัตโนมัติ",
+		"profileTypeDescription": "โปรไฟล์แชทใช้สำหรับการสนทนา อนุญาตให้มีโปรไฟล์เติมข้อความอัตโนมัติเพียงหนึ่งโปรไฟล์เท่านั้น",
+		"autocompleteLabel": "(เติมข้อความอัตโนมัติ)",
+		"autocomplete": {
+			"onlyOneAllowed": "อนุญาตให้มีโปรไฟล์เติมข้อความอัตโนมัติเพียงหนึ่งโปรไฟล์เท่านั้น โปรไฟล์ \"{{existingName}}\" ถูกกำหนดค่าสำหรับเติมข้อความอัตโนมัติแล้ว กรุณาเปลี่ยนประเภทก่อนหรือลบออก"
+		},
+		"sapAiCore": {
+			"serviceKey": "คีย์บริการ AI Core",
+			"serviceKeyJson": "ป้อน JSON คีย์บริการ...",
+			"resourceGroup": "กลุ่มทรัพยากร AI Core",
+			"credentialsNote": "ข้อมูลรับรองเหล่านี้ถูกจัดเก็บไว้ในเครื่องและใช้เฉพาะสำหรับการส่งคำขอ API จากส่วนขยายนี้เท่านั้น",
+			"learnMore": "คุณสามารถค้นหาข้อมูลเพิ่มเติมเกี่ยวกับการเข้าถึง API ของ SAP AI Core ได้ที่นี่",
+			"orchestrationMode": "โหมด Orchestration",
+			"orchestrationEnabledDesc": "เมื่อเปิดใช้งาน จะให้สิทธิ์เข้าถึงโมเดลทั้งหมดที่มีโดยไม่ต้องมีการ deploy แต่ละรายการ",
+			"orchestrationDisabledDesc": "เมื่อปิดใช้งาน จะให้สิทธิ์เข้าถึงเฉพาะโมเดลพื้นฐานที่ถูก deploy ในอินสแตนซ์บริการ AI Core ของคุณเท่านั้น",
+			"modelDeploymentDesc": "คุณสามารถเลือกได้เฉพาะโมเดลที่มีการ deploy พร้อมใช้งานเท่านั้น",
+			"deployment": "การ Deploy",
+			"loading": "กำลังโหลด...",
+			"modelsCount": "({{count}} โมเดล)",
+			"deploymentsCount": "({{count}} การ deploy)",
+			"selectModel": "เลือกโมเดล...",
+			"selectDeployment": "เลือกการ deploy...",
+			"searchModels": "ค้นหาโมเดล...",
+			"searchDeployments": "ค้นหาการ deploy...",
+			"noModelsFound": "ไม่พบโมเดล",
+			"noDeploymentFound": "ไม่พบการ deploy",
+			"getStarted": "เริ่มต้นใช้งาน SAP AI Core",
+			"supportedProviders": "ผู้ให้บริการที่รองรับ",
+			"supportedProvidersDesc1": "ผู้ให้บริการ SAP AI Core ปัจจุบันรองรับเฉพาะโมเดลพื้นฐานสำหรับผู้ให้บริการ LLM ต่อไปนี้เท่านั้น:",
+			"supportedProvidersDesc2": "พิจารณาเปลี่ยนไปใช้โหมด Orchestration เพื่อเข้าถึงโมเดลเพิ่มเติม",
+			"supportedProvidersDesc3": "เรียนรู้เพิ่มเติมเกี่ยวกับโหมด Orchestration"
 		}
 	},
 	"contextWindow": {
@@ -653,6 +805,10 @@
 		"showTimestamps": {
 			"label": "แสดงตราเวลา",
 			"description": "แสดงตราเวลาสำหรับข้อความแต่ละข้อในมุมมองแชต"
+		},
+		"showDiffStats": {
+			"label": "แสดงสถิติ diff",
+			"description": "แสดงสถิติบรรทัดที่เพิ่ม/ลบในส่วนหัวของงาน"
 		}
 	},
 	"ghost": {
@@ -760,6 +916,18 @@
 		"includeCurrentCost": {
 			"label": "รวมค่าใช้จ่ายปัจจุบันในบริบท",
 			"description": "เมื่อเปิดใช้งาน ค่าใช้จ่ายการใช้งาน API ปัจจุบันจะถูกรวมในพรอมต์ระบบ ปิดใช้งานหากโมเดลหยุดทำงานเนื่องจากข้อกังวลเรื่องค่าใช้จ่าย"
+		},
+		"maxGitStatusFiles": {
+			"label": "ไฟล์สถานะ Git สูงสุด",
+			"description": "จำนวนรายการไฟล์สูงสุดที่จะรวมไว้ในบริบทสถานะ git ตั้งค่าเป็น 0 เพื่อปิดใช้งาน ข้อมูลสาขาจะแสดงเสมอเมื่อ > 0"
+		},
+		"enableSubfolderRules": {
+			"label": "เปิดใช้งานกฎโฟลเดอร์ย่อย",
+			"description": "ค้นหาและโหลดไฟล์ .roo/rules และ AGENTS.md จากไดเรกทอรีย่อยแบบเรียกซ้ำ มีประโยชน์สำหรับ monorepos ที่มีกฎต่อแพ็คเกจ"
+		},
+		"gitStatusIncludeUntracked": {
+			"label": "รวมไฟล์ที่ไม่ได้ติดตาม",
+			"description": "รวมไฟล์ที่ไม่ได้ติดตามใน git status ในบริบท"
 		}
 	},
 	"terminal": {
@@ -822,6 +990,20 @@
 	},
 	"advancedSettings": {
 		"title": "การตั้งค่าขั้นสูง"
+	},
+	"toolProtocol": {
+		"label": "โปรโตคอล Tool Call",
+		"description": "เลือกวิธีที่ Kilo Code สื่อสารกับ API Native ใช้ function calling API ของผู้ให้บริการ ในขณะที่ XML ใช้คำจำกัดความเครื่องมือในรูปแบบ XML",
+		"default": "ค่าเริ่มต้น",
+		"xml": "XML",
+		"native": "Native",
+		"currentDefault": "ค่าเริ่มต้น: {{protocol}}",
+		"toolProtocolAuto": "อัตโนมัติ",
+		"toolProtocolAutoDesc": "ใช้โปรโตคอลที่แนะนำสำหรับผู้ให้บริการนี้",
+		"toolProtocolFunctionCall": "Function Call",
+		"toolProtocolFunctionCallDesc": "ใช้ function calling API ของผู้ให้บริการ",
+		"toolProtocolToolUse": "Tool Use",
+		"toolProtocolToolUseDesc": "ใช้โปรโตคอล tool use ของ Anthropic"
 	},
 	"advanced": {
 		"diff": {
@@ -893,8 +1075,10 @@
 		},
 		"IMAGE_GENERATION": {
 			"name": "เปิดใช้งานการสร้างภาพด้วย AI",
-			"description": "เมื่อเปิดใช้งาน Kilo Code สามารถสร้างภาพจากข้อความ prompt ต้องการ API key ของ Kilo Code หรือ OpenRouter",
+			"description": "เมื่อเปิดใส้งาน Kilo Code สามารถสร้างภาพจากข้อความ prompt ต้องการ API key ของ Kilo Code หรือ OpenRouter",
 			"apiProvider": "ผู้ให้บริการ API",
+			"providerLabel": "ผู้ให้บริการ",
+			"providerDescription": "เลือกผู้ให้บริการที่จะใช้สำหรับการสร้างภาพ",
 			"openRouterApiKeyLabel": "OpenRouter API Key",
 			"openRouterApiKeyPlaceholder": "ป้อน OpenRouter API key ของคุณ",
 			"kiloCodeApiKeyLabel": "Kilo Code API Key",
@@ -910,11 +1094,21 @@
 			"name": "เปิดใช้งานคำสั่ง slash ที่เริ่มต้นโดยโมเดล",
 			"description": "เมื่อเปิดใช้งาน Kilo Code สามารถรันคำสั่ง slash ของคุณเพื่อดำเนินการตามเวิร์กโฟลว์"
 		},
+		"experimentalParallelToolCalls": {
+			"label": "การเรียกใช้เครื่องมือแบบขนาน",
+			"description": "เมื่อเปิดใช้งาน โปรโตคอล native สามารถดำเนินการเครื่องมือหลายรายการในข้อความของผู้ช่วยเดียว"
+		},
+		"experimentalParallelToolCallsInfo": "ฟีเจอร์นี้อนุญาตให้ประมวลผลเครื่องมือหลายรายการพร้อมกัน ซึ่งอาจปรับปรุงประสิทธิภาพได้",
+		"experimentalParallelToolCallsWarning": "⚠️ นี่เป็นฟีเจอร์เบต้า และอาจส่งผลต่อพฤติกรรมของแอปพลิเคชัน",
 		"MORPH_FAST_APPLY": {
 			"name": "เปิดใช้งาน Fast Apply",
 			"description": "เมื่อเปิดใช้งาน Kilo Code สามารถแก้ไขไฟล์โดยใช้ Fast Apply กับโมเดลเฉพาะทางที่ปรับแต่งสำหรับการแก้ไขโค้ด ต้องใช้ Kilo Gateway Provider, OpenRouter หรือ Morph API key",
-			"apiKey": "Morph API key (ไม่บังคับ)",
-			"placeholder": "ป้อน Morph API key ของคุณ (ไม่บังคับ)",
+			"apiProvider": "ผู้ให้บริการ API",
+			"apiProviderList": {
+				"current": "ปัจจุบัน"
+			},
+			"apiKey": "คีย์ API (ไม่บังคับ)",
+			"placeholder": "ป้อนคีย์ API ของคุณ (ไม่บังคับ)",
 			"modelLabel": "การเลือกโมเดล",
 			"modelDescription": "เลือกโมเดล Fast Apply ที่จะใช้สำหรับการแก้ไขไฟล์",
 			"models": {
@@ -927,6 +1121,25 @@
 		"INLINE_ASSIST": {
 			"name": "Autocomplete",
 			"description": "เปิดใช้งานฟีเจอร์ Autocomplete สำหรับคำแนะนำโค้ดที่รวดเร็วและการปรับปรุงโดยตรงในเอดิเตอร์ของคุณ รวมถึงงานด่วน (Cmd+I) สำหรับการเปลี่ยนแปลงที่เป็นเป้าหมายและ Autocomplete สำหรับการปรับปรุงตามบริบท"
+		},
+		"MULTIPLE_NATIVE_TOOL_CALLS": {
+			"name": "การเรียกใช้เครื่องมือแบบขนาน",
+			"description": "เมื่อเปิดใช้งาน โปรโตคอล native สามารถดำเนินการเครื่องมือหลายรายการในข้อความของผู้ช่วยเดียว"
+		},
+		"SPEECH_TO_TEXT": {
+			"name": "การแปลงเสียงพูดเป็นข้อความ (STT)",
+			"description": "เมื่อเปิดใช้งาน Kilo Code สามารถแปลงเสียงของคุณเป็นข้อความได้โดยใช้โมเดล Whisper ของ OpenAI คลิกปุ่มไมโครโฟนในแชทเพื่อเริ่มบันทึกเสียง ต้องติดตั้ง FFmpeg และกำหนดค่าผู้ให้บริการ OpenAI API แล้ว"
+		},
+		"CUSTOM_TOOLS": {
+			"name": "เปิดใช้งานเครื่องมือที่กำหนดเอง",
+			"description": "เมื่อเปิดใช้งาน Kilo สามารถโหลดและใช้เครื่องมือ TypeScript/JavaScript ที่กำหนดเองจากไดเรกทอรี .kilocode/tools ของโปรเจ็กต์ของคุณ หรือ ~/.kilocode/tools สำหรับเครื่องมือทั่วไป หมายเหตุ: เครื่องมือเหล่านี้จะได้รับการอนุมัติอัตโนมัติ",
+			"toolsHeader": "เครื่องมือที่กำหนดเองที่มี",
+			"noTools": "ไม่มีเครื่องมือที่กำหนดเองที่โหลด เพิ่มไฟล์ .ts หรือ .js ไปยังไดเรกทอรี .kilocode/tools ของโปรเจ็กต์ของคุณ หรือ ~/.kilocode/tools สำหรับเครื่องมือทั่วไป",
+			"refreshButton": "รีเฟรช",
+			"refreshing": "กำลังรีเฟรช...",
+			"refreshSuccess": "รีเฟรชเครื่องมือสำเร็จ",
+			"refreshError": "ไม่สามารถรีเฟรชเครื่องมือได้",
+			"toolParameters": "พารามิเตอร์"
 		}
 	},
 	"promptCaching": {
@@ -967,11 +1180,14 @@
 		"label": "โมเดล",
 		"searchPlaceholder": "ค้นหา",
 		"noMatchFound": "ไม่พบรายการที่ตรงกัน",
-		"useCustomModel": "ใช้แบบกำหนดเอง: {{modelId}}"
+		"useCustomModel": "ใช้แบบกำหนดเอง: {{modelId}}",
+		"simplifiedExplanation": "คุณสามารถปรับการตั้งค่าโมเดลโดยละเอียดได้ภายหลัง",
+		"recommendedModels": "โมเดลที่แนะนำ",
+		"allModels": "โมเดลทั้งหมด"
 	},
 	"footer": {
-		"feedback": "หากคุณมีคำถามหรือข้อเสนอแนะ โปรดเปิด issue ที่ <githubLink>github.com/Kilo-Org/kilocode</githubLink> หรือเข้าร่วม <redditLink>reddit.com/r/kilocode</redditLink> หรือ <discordLink>kilocode.ai/discord</discordLink>",
-		"support": "สำหรับคำถามด้านการเงิน โปรดติดต่อฝ่ายสนับสนุนลูกค้าที่ <supportLink>https://kilocode.ai/support</supportLink>",
+		"feedback": "หากคุณมีคำถามหรือข้อเสนอแนะ โปรดเปิด issue ที่ <githubLink>github.com/Kilo-Org/kilocode</githubLink> หรือเข้าร่วม <redditLink>reddit.com/r/kilocode</redditLink> หรือ <discordLink>kilo.ai/discord</discordLink>",
+		"support": "สำหรับคำถามด้านการเงิน โปรดติดต่อฝ่ายสนับสนุนลูกค้าที่ <supportLink>https://kilo.ai/support</supportLink>",
 		"telemetry": {
 			"label": "อนุญาตการรายงานข้อผิดพลาดและการใช้งาน",
 			"description": "ช่วยปรับปรุง Kilo Code โดยการส่งข้อมูลการใช้งานและรายงานข้อผิดพลาด ไม่มีการส่งโค้ด พรอมต์ หรือข้อมูลส่วนบุคคล ดูนโยบายความเป็นส่วนตัวของเราสำหรับรายละเอียดเพิ่มเติม"
@@ -1002,7 +1218,9 @@
 		"modelNotAllowed": "โมเดล '{{model}}' ไม่ได้รับอนุญาตสำหรับผู้ให้บริการ '{{provider}}' จากองค์กรของคุณ",
 		"profileInvalid": "โปรไฟล์นี้มีผู้ให้บริการหรือโมเดลที่ไม่ได้รับอนุญาตจากองค์กรของคุณ",
 		"qwenCodeOauthPath": "คุณต้องระบุเส้นทางข้อมูลประจำตัว OAuth ที่ถูกต้อง",
-		"modelDeprecated": "โมเดลนี้ไม่สามารถใช้งานได้อีกต่อไป โปรดเลือกโมเดลอื่น"
+		"modelDeprecated": "โมเดลนี้ไม่สามารถใช้งานได้อีกต่อไป โปรดเลือกโมเดลอื่น",
+		"sapAiCore": "คุณต้องระบุคีย์บริการ SAP AI Core ที่ถูกต้อง",
+		"sapAiCoreDeploymentId": "คุณต้องเลือกการ deploy ที่กำลังทำงานสำหรับโมเดล '{{model}}'"
 	},
 	"placeholders": {
 		"apiKey": "ป้อนคีย์ API...",

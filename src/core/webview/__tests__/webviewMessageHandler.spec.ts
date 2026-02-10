@@ -5,12 +5,34 @@ import type { Mock } from "vitest"
 // Mock dependencies - must come before imports
 vi.mock("../../../api/providers/fetchers/modelCache")
 
+vi.mock("../../../integrations/openai-codex/oauth", () => ({
+	openAiCodexOAuthManager: {
+		getAccessToken: vi.fn(),
+		getAccountId: vi.fn(),
+	},
+}))
+
+vi.mock("../../../integrations/openai-codex/rate-limits", () => ({
+	fetchOpenAiCodexRateLimitInfo: vi.fn(),
+}))
+
+// Mock the diagnosticsHandler module
+vi.mock("../diagnosticsHandler", () => ({
+	generateErrorDiagnostics: vi.fn().mockResolvedValue({ success: true, filePath: "/tmp/diagnostics.json" }),
+}))
+
+import type { ModelRecord } from "@roo-code/types"
+
 import { webviewMessageHandler } from "../webviewMessageHandler"
 import type { ClineProvider } from "../ClineProvider"
 import { getModels } from "../../../api/providers/fetchers/modelCache"
-import type { ModelRecord } from "../../../shared/api"
+const { openAiCodexOAuthManager } = await import("../../../integrations/openai-codex/oauth")
+const { fetchOpenAiCodexRateLimitInfo } = await import("../../../integrations/openai-codex/rate-limits")
 
 const mockGetModels = getModels as Mock<typeof getModels>
+const mockGetAccessToken = vi.mocked(openAiCodexOAuthManager.getAccessToken)
+const mockGetAccountId = vi.mocked(openAiCodexOAuthManager.getAccountId)
+const mockFetchOpenAiCodexRateLimitInfo = vi.mocked(fetchOpenAiCodexRateLimitInfo)
 
 // Mock ClineProvider
 const mockClineProvider = {
@@ -41,16 +63,25 @@ const mockClineProvider = {
 
 import { t } from "../../../i18n"
 
-vi.mock("vscode", () => ({
-	window: {
-		showInformationMessage: vi.fn(),
-		showErrorMessage: vi.fn(),
-		createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })), // kilocode_change
-	},
-	workspace: {
-		workspaceFolders: [{ uri: { fsPath: "/mock/workspace" } }],
-	},
-}))
+vi.mock("vscode", () => {
+	const showInformationMessage = vi.fn()
+	const showErrorMessage = vi.fn()
+	const openTextDocument = vi.fn().mockResolvedValue({})
+	const showTextDocument = vi.fn().mockResolvedValue(undefined)
+
+	return {
+		window: {
+			showInformationMessage,
+			showErrorMessage,
+			showTextDocument,
+			createTextEditorDecorationType: vi.fn(() => ({ dispose: vi.fn() })), // kilocode_change
+		},
+		workspace: {
+			workspaceFolders: [{ uri: { fsPath: "/mock/workspace" } }],
+			openTextDocument,
+		},
+	}
+})
 
 vi.mock("../../../i18n", () => ({
 	t: vi.fn((key: string, args?: Record<string, any>) => {
@@ -73,14 +104,20 @@ vi.mock("../../../i18n", () => ({
 vi.mock("fs/promises", () => {
 	const mockRm = vi.fn().mockResolvedValue(undefined)
 	const mockMkdir = vi.fn().mockResolvedValue(undefined)
+	const mockReadFile = vi.fn().mockResolvedValue("[]")
+	const mockWriteFile = vi.fn().mockResolvedValue(undefined)
 
 	return {
 		default: {
 			rm: mockRm,
 			mkdir: mockMkdir,
+			readFile: mockReadFile,
+			writeFile: mockWriteFile,
 		},
 		rm: mockRm,
 		mkdir: mockMkdir,
+		readFile: mockReadFile,
+		writeFile: mockWriteFile,
 	}
 })
 
@@ -91,11 +128,21 @@ import * as path from "path"
 import * as fsUtils from "../../../utils/fs"
 import { getWorkspacePath } from "../../../utils/path"
 import { ensureSettingsDirectoryExists } from "../../../utils/globalContext"
+import { generateErrorDiagnostics } from "../diagnosticsHandler"
 import type { ModeConfig } from "@roo-code/types"
 
 vi.mock("../../../utils/fs")
 vi.mock("../../../utils/path")
 vi.mock("../../../utils/globalContext")
+
+vi.mock("../../mentions/resolveImageMentions", () => ({
+	resolveImageMentions: vi.fn(async ({ text, images }: { text: string; images?: string[] }) => ({
+		text,
+		images: [...(images ?? []), "data:image/png;base64,from-mention"],
+	})),
+}))
+
+import { resolveImageMentions } from "../../mentions/resolveImageMentions"
 
 describe("webviewMessageHandler - requestLmStudioModels", () => {
 	beforeEach(() => {
@@ -136,6 +183,37 @@ describe("webviewMessageHandler - requestLmStudioModels", () => {
 			type: "lmStudioModels",
 			lmStudioModels: mockModels,
 		})
+	})
+})
+
+describe("webviewMessageHandler - image mentions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+		mockClineProvider.getState = vi.fn().mockResolvedValue({
+			maxImageFileSize: 5,
+			maxTotalImageSize: 20,
+		})
+	})
+
+	it("should resolve image mentions for askResponse payloads", async () => {
+		const mockHandleWebviewAskResponse = vi.fn()
+		vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue({
+			cwd: "/mock/workspace",
+			rooIgnoreController: undefined,
+			handleWebviewAskResponse: mockHandleWebviewAskResponse,
+		} as any)
+
+		await webviewMessageHandler(mockClineProvider, {
+			type: "askResponse",
+			askResponse: "messageResponse",
+			text: "See @/img.png",
+			images: [],
+		})
+
+		expect(vi.mocked(resolveImageMentions)).toHaveBeenCalled()
+		expect(mockHandleWebviewAskResponse).toHaveBeenCalledWith("messageResponse", "See @/img.png", [
+			"data:image/png;base64,from-mention",
+		])
 	})
 })
 
@@ -188,7 +266,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
+				glamaApiKey: "glama-key", // kilocode_change
 				unboundApiKey: "unbound-key",
 				litellmApiKey: "litellm-key",
 				litellmBaseUrl: "http://localhost:4000",
@@ -196,6 +274,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				chutesApiKey: "chutes-key",
 				geminiApiKey: "gemini-key",
 				googleGeminiBaseUrl: "https://gemini.example.com",
+				nanoGptApiKey: "nano-gpt-key",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
 				inceptionLabsApiKey: "inception-key",
 				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",
@@ -229,7 +308,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		// Verify getModels was called for each provider
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "openrouter", apiKey: "openrouter-key" }) // kilocode_change: apiKey
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "requesty", apiKey: "requesty-key" })
-		expect(mockGetModels).toHaveBeenCalledWith({ provider: "glama" })
+		expect(mockGetModels).toHaveBeenCalledWith({ provider: "glama" }) // kilocode_change
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "unbound", apiKey: "unbound-key" })
 		// kilocode_change start
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "chutes", apiKey: "chutes-key" })
@@ -242,6 +321,11 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			provider: "inception",
 			apiKey: "inception-key",
 			baseUrl: "https://api.inceptionlabs.ai/v1/",
+		})
+		expect(mockGetModels).toHaveBeenCalledWith({
+			provider: "nano-gpt",
+			apiKey: "nano-gpt-key",
+			nanoGptModelList: undefined,
 		})
 		// kilocode_change end
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
@@ -268,10 +352,12 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
+				synthetic: mockModels, // kilocode_change
 				unbound: mockModels,
 				litellm: mockModels,
 				kilocode: mockModels,
+				"nano-gpt": mockModels, // kilocode_change
 				roo: mockModels,
 				chutes: mockModels,
 				ollama: mockModels, // kilocode_change
@@ -281,6 +367,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"io-intelligence": {},
 				ovhcloud: mockModels, // kilocode_change
 				inception: mockModels, // kilocode_change
+				"sap-ai-core": {}, // kilocode_change
 			},
 			values: undefined,
 		})
@@ -291,7 +378,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
+				glamaApiKey: "glama-key", // kilocode_change
 				unboundApiKey: "unbound-key",
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key", // kilocode_change
 				// Missing litellm config
@@ -330,11 +417,11 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			apiConfiguration: {
 				openRouterApiKey: "openrouter-key",
 				requestyApiKey: "requesty-key",
-				glamaApiKey: "glama-key",
 				unboundApiKey: "unbound-key",
 				// kilocode_change start
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
 				chutesApiKey: "chutes-key",
+				nanoGptApiKey: "nano-gpt-key",
 				// kilocode_change end
 				// Missing litellm config
 			},
@@ -371,12 +458,14 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				openrouter: mockModels,
 				gemini: mockModels, // kilocode_change
 				requesty: mockModels,
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
+				synthetic: mockModels, // kilocode_change
 				unbound: mockModels,
 				roo: mockModels,
 				chutes: mockModels,
 				litellm: {},
 				kilocode: mockModels,
+				"nano-gpt": mockModels, // kilocode_change
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
@@ -384,6 +473,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"io-intelligence": {},
 				ovhcloud: mockModels, // kilocode_change
 				inception: mockModels, // kilocode_change
+				"sap-ai-core": {}, // kilocode_change
 			},
 			values: undefined,
 		})
@@ -404,14 +494,16 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockResolvedValueOnce(mockModels) // openrouter
 			.mockResolvedValueOnce(mockModels) // kilocode_change: gemini
 			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty
-			.mockResolvedValueOnce(mockModels) // glama
+			.mockResolvedValueOnce(mockModels) // kilocode_change: glama
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound
 			.mockResolvedValueOnce(mockModels) // kilocode-openrouter
 			.mockRejectedValueOnce(new Error("Ollama API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway
 			.mockResolvedValueOnce(mockModels) // deepinfra
+			.mockResolvedValueOnce(mockModels) // nano-gpt // kilocode_change
 			.mockResolvedValueOnce(mockModels) // kilocode_change ovhcloud
 			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change
+			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // roo
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
@@ -442,6 +534,13 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			error: "Inception API error",
 			values: { provider: "inception" },
 		})
+
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Synthetic API error",
+			values: { provider: "synthetic" },
+		})
 		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
@@ -465,7 +564,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				deepinfra: mockModels,
 				openrouter: mockModels,
 				requesty: {},
-				glama: mockModels,
+				glama: mockModels, // kilocode_change
 				unbound: {},
 				roo: mockModels,
 				chutes: {},
@@ -477,9 +576,12 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				"io-intelligence": {},
 				// kilocode_change start
 				kilocode: mockModels,
+				"nano-gpt": mockModels,
 				inception: {},
+				synthetic: {},
 				gemini: mockModels,
 				ovhcloud: mockModels,
+				"sap-ai-core": {},
 				// kilocode_change end
 			},
 			values: undefined,
@@ -492,14 +594,16 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Structured error message")) // openrouter
 			.mockRejectedValueOnce(new Error("Gemini API error")) // // kilocode_change: gemini
 			.mockRejectedValueOnce(new Error("Requesty API error")) // requesty
-			.mockRejectedValueOnce(new Error("Glama API error")) // glama
+			.mockRejectedValueOnce(new Error("Glama API error")) // kilocode_change: glama
 			.mockRejectedValueOnce(new Error("Unbound API error")) // unbound
 			.mockResolvedValueOnce({}) // kilocode-openrouter - Success
 			.mockRejectedValueOnce(new Error("Ollama API error")) // ollama
 			.mockRejectedValueOnce(new Error("Vercel AI Gateway error")) // vercel-ai-gateway
 			.mockRejectedValueOnce(new Error("DeepInfra API error")) // deepinfra
+			.mockRejectedValueOnce(new Error("Nano-GPT API error")) // nano-gpt // kilocode_change
 			.mockRejectedValueOnce(new Error("OVHcloud AI Endpoints error")) // ovhcloud // kilocode_change
 			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change inception
+			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change synthetic
 			.mockRejectedValueOnce(new Error("Roo API error")) // roo
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
@@ -532,12 +636,14 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			values: { provider: "requesty" },
 		})
 
+		// kilocode_change start
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Glama API error",
 			values: { provider: "glama" },
 		})
+		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
@@ -575,6 +681,15 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			error: "DeepInfra API error",
 			values: { provider: "deepinfra" },
 		})
+
+		// kilocode_change start
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Nano-GPT API error",
+			values: { provider: "nano-gpt" },
+		})
+		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
@@ -641,17 +756,54 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 	})
 })
 
+describe("webviewMessageHandler - requestOpenAiCodexRateLimits", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+		mockGetAccessToken.mockResolvedValue(null)
+		mockGetAccountId.mockResolvedValue(null)
+	})
+
+	it("posts error when not authenticated", async () => {
+		await webviewMessageHandler(mockClineProvider, { type: "requestOpenAiCodexRateLimits" } as any)
+
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "openAiCodexRateLimits",
+			error: "Not authenticated with OpenAI Codex",
+		})
+	})
+
+	it("posts values when authenticated", async () => {
+		mockGetAccessToken.mockResolvedValue("token")
+		mockGetAccountId.mockResolvedValue("acct_123")
+		mockFetchOpenAiCodexRateLimitInfo.mockResolvedValue({
+			primary: { usedPercent: 10, resetsAt: 1700000000000 },
+			fetchedAt: 1700000000000,
+		})
+
+		await webviewMessageHandler(mockClineProvider, { type: "requestOpenAiCodexRateLimits" } as any)
+
+		expect(mockFetchOpenAiCodexRateLimitInfo).toHaveBeenCalledWith("token", { accountId: "acct_123" })
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "openAiCodexRateLimits",
+			values: {
+				primary: { usedPercent: 10, resetsAt: 1700000000000 },
+				fetchedAt: 1700000000000,
+			},
+		})
+	})
+})
+
 describe("webviewMessageHandler - deleteCustomMode", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		vi.mocked(getWorkspacePath).mockReturnValue("/mock/workspace")
 		vi.mocked(vscode.window.showErrorMessage).mockResolvedValue(undefined)
-		vi.mocked(ensureSettingsDirectoryExists).mockResolvedValue("/mock/global/storage/.roo")
+		vi.mocked(ensureSettingsDirectoryExists).mockResolvedValue("/mock/global/storage/.kilocode")
 	})
 
 	it("should delete a project mode and its rules folder", async () => {
 		const slug = "test-project-mode"
-		const rulesFolderPath = path.join("/mock/workspace", ".roo", `rules-${slug}`)
+		const rulesFolderPath = path.join("/mock/workspace", ".kilocode", `rules-${slug}`)
 
 		vi.mocked(mockClineProvider.customModesManager.getCustomModes).mockResolvedValue([
 			{
@@ -676,7 +828,7 @@ describe("webviewMessageHandler - deleteCustomMode", () => {
 	it("should delete a global mode and its rules folder", async () => {
 		const slug = "test-global-mode"
 		const homeDir = os.homedir()
-		const rulesFolderPath = path.join(homeDir, ".roo", `rules-${slug}`)
+		const rulesFolderPath = path.join(homeDir, ".kilocode", `rules-${slug}`)
 
 		vi.mocked(mockClineProvider.customModesManager.getCustomModes).mockResolvedValue([
 			{
@@ -722,7 +874,7 @@ describe("webviewMessageHandler - deleteCustomMode", () => {
 
 	it("should handle errors when deleting rules folder", async () => {
 		const slug = "test-mode-error"
-		const rulesFolderPath = path.join("/mock/workspace", ".roo", `rules-${slug}`)
+		const rulesFolderPath = path.join("/mock/workspace", ".kilocode", `rules-${slug}`)
 		const error = new Error("Permission denied")
 
 		vi.mocked(mockClineProvider.customModesManager.getCustomModes).mockResolvedValue([
@@ -828,8 +980,8 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 
 	it("delegates enable=true to McpHub and posts updated state", async () => {
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: true },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
@@ -840,8 +992,8 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 
 	it("delegates enable=false to McpHub and posts updated state", async () => {
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: false,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: false },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
@@ -854,11 +1006,65 @@ describe("webviewMessageHandler - mcpEnabled", () => {
 		;(mockClineProvider as any).getMcpHub = vi.fn().mockReturnValue(undefined)
 
 		await webviewMessageHandler(mockClineProvider, {
-			type: "mcpEnabled",
-			bool: true,
+			type: "updateSettings",
+			updatedSettings: { mcpEnabled: true },
 		})
 
 		expect((mockClineProvider as any).getMcpHub).toHaveBeenCalledTimes(1)
 		expect(mockClineProvider.postStateToWebview).toHaveBeenCalledTimes(1)
+	})
+})
+
+describe("webviewMessageHandler - downloadErrorDiagnostics", () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+
+		// Ensure contextProxy has a globalStorageUri for the handler
+		;(mockClineProvider as any).contextProxy.globalStorageUri = { fsPath: "/mock/global/storage" }
+
+		// Provide a current task with a stable ID
+		vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue({
+			taskId: "test-task-id",
+		} as any)
+	})
+
+	it("calls generateErrorDiagnostics with correct parameters", async () => {
+		await webviewMessageHandler(mockClineProvider, {
+			type: "downloadErrorDiagnostics",
+			values: {
+				timestamp: "2025-01-01T00:00:00.000Z",
+				version: "1.2.3",
+				provider: "test-provider",
+				model: "test-model",
+				details: "Sample error details",
+			},
+		} as any)
+
+		// Verify generateErrorDiagnostics was called with the correct parameters
+		expect(generateErrorDiagnostics).toHaveBeenCalledTimes(1)
+		expect(generateErrorDiagnostics).toHaveBeenCalledWith({
+			taskId: "test-task-id",
+			globalStoragePath: "/mock/global/storage",
+			values: {
+				timestamp: "2025-01-01T00:00:00.000Z",
+				version: "1.2.3",
+				provider: "test-provider",
+				model: "test-model",
+				details: "Sample error details",
+			},
+			log: expect.any(Function),
+		})
+	})
+
+	it("shows error when no active task", async () => {
+		vi.mocked(mockClineProvider.getCurrentTask).mockReturnValue(null as any)
+
+		await webviewMessageHandler(mockClineProvider, {
+			type: "downloadErrorDiagnostics",
+			values: {},
+		} as any)
+
+		expect(vscode.window.showErrorMessage).toHaveBeenCalledWith("No active task to generate diagnostics for")
+		expect(generateErrorDiagnostics).not.toHaveBeenCalled()
 	})
 })

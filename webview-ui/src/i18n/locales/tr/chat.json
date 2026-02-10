@@ -9,6 +9,7 @@
 		"tokens": "Tokenlar",
 		"cache": "Önbellek",
 		"apiCost": "API Maliyeti",
+		"changes": "Değişiklikler",
 		"size": "Boyut",
 		"contextWindow": "Bağlam Uzunluğu",
 		"closeAndStart": "Görevi kapat ve yeni bir görev başlat",
@@ -26,7 +27,9 @@
 		"shareSuccessOrganization": "Organizasyon bağlantısı panoya kopyalandı",
 		"shareSuccessPublic": "Genel bağlantı panoya kopyalandı",
 		"openInCloud": "Görevi Roo Code Cloud'da aç",
-		"openInCloudIntro": "Roo'yu her yerden izlemeye veya etkileşime devam et. Açmak için tara, tıkla veya kopyala."
+		"openInCloudIntro": "Roo'yu her yerden izlemeye veya etkileşime devam et. Açmak için tara, tıkla veya kopyala.",
+		"openApiHistory": "API Geçmişini Aç",
+		"openUiHistory": "UI Geçmişini Aç"
 	},
 	"history": {
 		"title": "Geçmiş"
@@ -86,29 +89,27 @@
 		"title": "Sonlandır",
 		"tooltip": "Mevcut görevi sonlandır"
 	},
+	"stop": {
+		"title": "Durdur",
+		"tooltip": "Mevcut görevi durdur"
+	},
 	"cancel": {
 		"title": "İptal",
 		"tooltip": "Mevcut işlemi iptal et"
 	},
+	"enqueueMessage": "Mesajı kuyruğa ekle (mevcut görev tamamlandıktan sonra gönderilecek)",
 	"scrollToBottom": "Sohbetin altına kaydır",
-	"about": "AI yardımıyla kod oluşturun, yeniden düzenleyin ve hatalarını ayıklayın. Daha fazla bilgi edinmek için <DocsLink>belgelerimize</DocsLink> göz atın.",
+	"about": "AI yardımıyla kod oluşturun, yeniden düzenleyin ve hatalarını ayıklayın. Daha fazla bilgi için <DocsLink>belgelerimize</DocsLink> göz atın.",
+	"docs": "Daha fazla bilgi için <DocsLink>belgelerimize</DocsLink> göz atın.",
 	"onboarding": "<strong>Bu çalışma alanındaki görev listeniz boş.</strong> Aşağıya bir görev yazarak başlayın. Nasıl başlayacağınızdan emin değil misiniz? Kilo Code'nun sizin için neler yapabileceği hakkında daha fazla bilgiyi <DocsLink>belgelerde</DocsLink> okuyun.",
 	"rooTips": {
-		"boomerangTasks": {
-			"title": "Görev Orkestrasyonu",
-			"description": "Görevleri daha küçük, yönetilebilir parçalara ayırın."
-		},
-		"stickyModels": {
-			"title": "Yapışkan Modlar",
-			"description": "Her mod, en son kullandığınız modeli hatırlar"
-		},
-		"tools": {
-			"title": "Araçlar",
-			"description": "AI'nın web'e göz atarak, komutlar çalıştırarak ve daha fazlasını yaparak sorunları çözmesine izin verin."
-		},
 		"customizableModes": {
-			"title": "Özelleştirilebilir Modlar",
-			"description": "Kendi davranışları ve atanmış modelleri ile özelleştirilmiş kişilikler"
+			"title": "Özelleştirilebilir modlar",
+			"description": "Göreve odaklanan ve sonuç veren özel kişilikler."
+		},
+		"modelAgnostic": {
+			"title": "Kendi modelinizi getirin",
+			"description": "Kendi sağlayıcı anahtarınızı kullanın veya hatta yerel çıkarım yapın — ek ücret yok, kilitlenme yok, kısıtlama yok"
 		}
 	},
 	"selectMode": "Etkileşim modunu seçin",
@@ -117,6 +118,7 @@
 	"enhancePrompt": "Ek bağlamla istemi geliştir",
 	"addImages": "Mesaja resim ekle",
 	"sendMessage": "Mesaj gönder",
+	"pressToSend": "Göndermek için {{keyCombination}} tuşuna bas",
 	"stopTts": "Metin okumayı durdur",
 	"typeMessage": "Bir mesaj yazın...",
 	"typeTask": "Görevinizi buraya yazın...",
@@ -149,7 +151,22 @@
 		"failed": "API İsteği Başarısız",
 		"streaming": "API İsteği...",
 		"cancelled": "API İsteği İptal Edildi",
-		"streamingFailed": "API Akışı Başarısız"
+		"streamingFailed": "API Akışı Başarısız",
+		"rateLimitWait": "Hız sınırlaması",
+		"errorTitle": "Sağlayıcı Hatası {{code}}",
+		"errorMessage": {
+			"docs": "Belgeler",
+			"goToSettings": "Ayarlar",
+			"400": "Sağlayıcı isteği bu şekilde işleyemedi. Görevi durdur ve farklı bir yaklaşım dene.",
+			"401": "Sağlayıcı ile kimlik doğrulaması yapılamadı. Lütfen API anahtarı yapılandırmanızı kontrol edin.",
+			"402": "Hesabınızda para/kredi bitti gibi görünüyor. Sağlayıcıya git ve devam etmek için daha fazla ekle.",
+			"403": "Yetkisiz. API anahtarınız geçerli ama sağlayıcı bu isteği tamamlamayı reddetti.",
+			"429": "Çok fazla istek. Sağlayıcı tarafından oran sınırlaması uygulanıyor. Lütfen sonraki API çağrısından önce biraz bekle.",
+			"500": "Sağlayıcı sunucu hatası. Sağlayıcı tarafında bir sorun var, isteğinizde sorun yok.",
+			"unknown": "Bilinmeyen API hatası, daha fazla bilgi için Ayrıntılar'a tıklayın.",
+			"connection": "Bağlantı hatası. Çalışan bir internet bağlantınız olduğundan emin olun.",
+			"claudeCodeNotAuthenticated": "Claude Code'u kullanmak için oturum açmanız gerekiyor. Ayarlar'a gidin ve kimlik doğrulaması yapmak için \"Claude Code'da Oturum Aç\" seçeneğine tıklayın."
+		}
 	},
 	"checkpoint": {
 		"regular": "Kontrol Noktası",
@@ -186,6 +203,8 @@
 		"wantsToInsert": "Kilo Code bu dosyaya içerik eklemek istiyor",
 		"wantsToInsertWithLineNumber": "Kilo Code bu dosyanın {{lineNumber}}. satırına içerik eklemek istiyor",
 		"wantsToInsertAtEnd": "Kilo Code bu dosyanın sonuna içerik eklemek istiyor",
+		"wantsToDelete": "Kilo Code bu dosyayı silmek istiyor",
+		"wantsToDeleteDirectory": "Kilo Code bu dizini silmek istiyor",
 		"wantsToReadAndXMore": "Kilo Code bu dosyayı ve {{count}} tane daha okumak istiyor",
 		"wantsToReadMultiple": "Kilo Code birden fazla dosya okumak istiyor",
 		"wantsToApplyBatchChanges": "Kilo Code birden fazla dosyaya değişiklik uygulamak istiyor",
@@ -261,6 +280,21 @@
 		"hasQuestion": "Kilo Code'nun bir sorusu var"
 	},
 	"taskCompleted": "Görev Tamamlandı",
+	"modelResponseIncomplete": "Model yanıtı eksik",
+	"modelResponseErrors": {
+		"noToolsUsed": "Model yanıtında herhangi bir araç kullanamadı. Bu genellikle model, görevi tamamlamak için gerekli araçları çağırmadan yalnızca metin/akıl yürütme sağladığında olur.",
+		"noToolsUsedDetails": "Model metin/akıl yürütme sağladı ancak gerekli araçlardan hiçbirini çağırmadı. Bu genellikle modelin görevi yanlış anladığını veya hangi aracı kullanacağını belirlemekte zorlandığını gösterir. Model, uygun araç kullanımıyla yeniden denemesi için otomatik olarak istenmiştir.",
+		"noAssistantMessages": "Model herhangi bir yanıt içeriği sağlamadı. Bu, API veya modelin çıktısıyla ilgili bir sorunu gösterebilir.",
+		"noAssistantMessagesDetails": "Dil modeli herhangi bir metin veya araç çağrısı olmadan boş bir yanıt döndürdü. Bu, API sorunları, hız sınırlaması veya modele özgü sorunlar nedeniyle olabilir. Model otomatik olarak yeniden denemeye yönlendirildi."
+	},
+	"errorDetails": {
+		"link": "Ayrıntılar",
+		"title": "Hata Detayları",
+		"copyToClipboard": "Panoya Kopyala",
+		"copied": "Kopyalandı!",
+		"diagnostics": "Ayrıntılı hata bilgisi al",
+		"proxyProvider": "Proxy tabanlı bir sağlayıcı kullanıyor gibi görünüyorsun. Günlüklerini kontrol ettiğinden ve Roo'nun isteklerini yeniden yazmadığından emin ol."
+	},
 	"powershell": {
 		"issues": "Windows PowerShell ile ilgili sorunlar yaşıyor gibi görünüyorsunuz, lütfen şu konuya bakın"
 	},
@@ -280,25 +314,34 @@
 		"triggerLabel_zero": "0 otomatik onaylandı",
 		"triggerLabel_one": "1 otomatik onaylandı",
 		"triggerLabel_other": "{{count}} otomatik onaylandı",
-		"triggerLabelAll": "YOLO"
+		"triggerLabelAll": "BRRR"
 	},
 	"reasoning": {
 		"thinking": "Düşünüyor",
 		"seconds": "{{count}}sn"
 	},
-	"contextCondense": {
-		"title": "Bağlam Özetlendi",
-		"condensing": "Bağlam yoğunlaştırılıyor...",
-		"errorHeader": "Bağlam yoğunlaştırılamadı",
-		"tokens": "token"
+	"contextManagement": {
+		"tokens": "token",
+		"condensation": {
+			"title": "Bağlam Özetlendi",
+			"inProgress": "Bağlam yoğunlaştırılıyor...",
+			"errorHeader": "Bağlam yoğunlaştırılamadı"
+		},
+		"truncation": {
+			"title": "Bağlam Kısaltıldı",
+			"inProgress": "Bağlam kısaltılıyor...",
+			"messagesRemoved": "{{count}} mesaj kaldırıldı",
+			"messagesRemoved_other": "{{count}} mesaj kaldırıldı",
+			"description": "Bağlam penceresi sınırında kalmak için eski mesajlar konuşmadan kaldırıldı. Bu, yoğunlaştırmaya kıyasla hızlı ancak daha az bağlam koruyucu bir yaklaşımdır."
+		}
 	},
 	"followUpSuggest": {
 		"copyToInput": "Giriş alanına kopyala (veya Shift + tıklama)",
-		"autoSelectCountdown": "{{count}}s içinde otomatik seçilecek",
-		"countdownDisplay": "{{count}}sn"
+		"timerPrefix": "Otomatik onay etkinleştirildi. {{seconds}}s içinde seçim yapılıyor…"
 	},
 	"announcement": {
-		"title": "🎉 Roo Code {{version}} Yayınlandı",
+		"title": "Roo Code {{version}} Yayınlandı",
+		"support": "<githubLink>GitHub</githubLink>'da yıldız vererek Roo Code'u destekle.",
 		"stealthModel": {
 			"feature": "<bold>Sınırlı süre ÜCRETSİZ gizli model</bold> - Code Supernova: Artık <bold>1M token bağlam penceresi</bold> ile yükseltildi! Görüntü girişlerini destekleyen çok amaçlı acentik kodlama modeli, Roo Code Cloud üzerinden kullanılabilir.",
 			"note": "(Not: istemler ve tamamlamalar model yaratıcısı tarafından kaydedilir ve modeli geliştirmek için kullanılır)",
@@ -307,21 +350,28 @@
 			"goToSettingsButton": "Ayarlar'a Git"
 		},
 		"release": {
-			"heading": "Uzantıdaki yenilikler:",
-			"openRouterEmbeddings": "OpenRouter gömme modelleri desteği",
-			"chutesDynamic": "Chutes artık en son modelleri dinamik olarak yüklüyor",
-			"queuedMessagesFix": "Sıradaki mesajların kaybolması için düzeltmeler"
+			"heading": "Yenilikler:",
+			"openaiCodexProvider": "Codex modellerine abonelik tabanlı erişim sağlayan OpenAI - ChatGPT Plus/Pro Sağlayıcısı eklendi, token başına maliyet yok.",
+			"gpt52codexModel": "Yeni gpt-5.2-codex modeli Roo Code Router, standart OpenAI sağlayıcısı ve diğerlerine eklendi.",
+			"bugFixes": "Gri ekranlara neden olan bellek sızıntıları, Gemini düşünce imzası sorunları ve diğer stabilite iyileştirmeleri düzeltildi."
 		},
 		"cloudAgents": {
 			"heading": "Cloud'daki yenilikler:",
-			"prFixer": "PR Reviewer'ı tamamlamak için <bold>PR Fixer</bold> bulut ajanını tanıtıyoruz.",
-			"prFixerDescription": "Roo Code'un PR Fixer'ı, PR'larınıza doğrudan GitHub'dan yüksek kaliteli değişiklikler uygular. Bir PR yorumu aracılığıyla çağırın ve bağlamı, anlaşmaları ve ödünleri anlamak için tüm yorum geçmişini okuyacak - sonra doğru düzeltmeyi uygulayacaktır.",
-			"tryPrFixerButton": "PR Fixer'ı Dene"
+			"specialized": "<bold>Explainer</bold>, <bold>Planner</bold> ve <bold>Coder</bold> tanıtımı - iş akışlarını geliştirmek için üç özel bulut ajanı.",
+			"description": "Ajanlar bulutta birlikte çalışır ve web'den veya Slack üzerinden tetiklenebilir.",
+			"tryButton": "Bulut Ajanlarını Dene"
 		},
 		"careers": "Ayrıca, <careersLink>işe alım yapıyoruz!</careersLink>",
-		"socialLinks": "Bize <xLink>X</xLink>, <discordLink>Discord</discordLink>, veya <redditLink>r/RooCode</redditLink>'da katılın 🚀"
+		"socialLinks": "Bize <xLink>X</xLink>, <discordLink>Discord</discordLink>, veya <redditLink>r/KiloCode</redditLink>'da katılın 🚀"
+	},
+	"costs": {
+		"totalWithSubtasks": "Toplam Maliyet (alt görevler dahil): ${{cost}}",
+		"total": "Toplam Maliyet: ${{cost}}",
+		"includesSubtasks": "Alt görev maliyetlerini içerir"
 	},
 	"browser": {
+		"session": "Tarayıcı Oturumu",
+		"active": "Aktif",
 		"rooWantsToUse": "Kilo Code tarayıcıyı kullanmak istiyor",
 		"consoleLogs": "Konsol Kayıtları",
 		"noNewLogs": "(Yeni kayıt yok)",
@@ -334,12 +384,26 @@
 		},
 		"sessionStarted": "Tarayıcı Oturumu Başlatıldı",
 		"actions": {
-			"title": "Tarayıcı İşlemi: ",
+			"title": "Tarayıcı Eylemi: ",
+			"launched": "Tarayıcı başlatıldı",
 			"launch": "{{url}} adresinde tarayıcı başlat",
+			"clicked": "Tıklandı ({{coordinate}})",
 			"click": "Tıkla ({{coordinate}})",
+			"typed": "Yazıldı: {{text}}",
 			"type": "Yaz \"{{text}}\"",
+			"pressed": "Basıldı: {{key}}",
+			"press": "{{key}} tuşuna bas",
+			"scrolledDown": "Aşağı kaydırıldı",
 			"scrollDown": "Aşağı kaydır",
+			"scrolledUp": "Yukarı kaydırıldı",
 			"scrollUp": "Yukarı kaydır",
+			"hovered": "Üzerine gelinildi ({{coordinate}})",
+			"hover": "Üzerine gel ({{coordinate}})",
+			"resized": "Boyut değiştirildi: {{size}}",
+			"resize": "Boyutu değiştir {{size}}",
+			"screenshotSaved": "Ekran görüntüsü kaydedildi",
+			"screenshot": "Ekran görüntüsünü {{path}} yoluna kaydet",
+			"closed": "Tarayıcı kapatıldı",
 			"close": "Tarayıcıyı kapat"
 		}
 	},
@@ -440,5 +504,12 @@
 	"slashCommand": {
 		"wantsToRun": "Kilo Code bir slash komutu çalıştırmak istiyor",
 		"didRun": "Kilo Code bir slash komutu çalıştırdı"
+	},
+	"todo": {
+		"partial": "{{total}} yapılacaklar listesinden {{completed}} tanesi tamamlandı",
+		"complete": "{{total}} yapılacaklar listesi tamamlandı",
+		"updated": "Yapılacaklar listesi güncellendi",
+		"completed": "Tamamlandı",
+		"started": "Başladı"
 	}
 }

@@ -1,6 +1,7 @@
 import React from "react"
 import { Box, Text } from "ink"
 import type { MessageComponentProps } from "./types.js"
+import { formatUnknownMessageContent } from "./utils.js"
 import { useTheme } from "../../../state/hooks/useTheme.js"
 import {
 	SayTextMessage,
@@ -24,17 +25,19 @@ import {
 	SayMcpServerResponseMessage,
 	SayApiReqFinishedMessage,
 	SayApiReqRetryDelayedMessage,
-	SayCommandOutputMessage,
 } from "./say/index.js"
 
 /**
  * Default component for unknown say message types
+ * Handles graceful fallback for unknown or future say types
  */
-const DefaultSayMessage: React.FC<MessageComponentProps> = ({ message }) => {
+export const DefaultSayMessage: React.FC<MessageComponentProps> = ({ message }) => {
 	const theme = useTheme()
+	const displayContent = formatUnknownMessageContent(message.text, `Unknown say type: ${message.say}`)
+
 	return (
 		<Box marginY={1}>
-			<Text color={theme.semantic.success}>{message.text || `Unknown say type: ${message.say}`}</Text>
+			<Text color={theme.semantic.success}>{displayContent}</Text>
 		</Box>
 	)
 }
@@ -108,7 +111,7 @@ export const SayMessageRouter: React.FC<MessageComponentProps> = ({ message }) =
 			return <SayApiReqRetryDelayedMessage message={message} />
 
 		case "command_output":
-			return <SayCommandOutputMessage message={message} />
+			return null // Handled in AskMessageRouter
 
 		default:
 			return <DefaultSayMessage message={message} />

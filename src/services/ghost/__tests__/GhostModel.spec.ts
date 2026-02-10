@@ -3,6 +3,7 @@ import { GhostModel } from "../GhostModel"
 import { ProviderSettingsManager } from "../../../core/config/ProviderSettingsManager"
 import { AUTOCOMPLETE_PROVIDER_MODELS } from "../utils/kilocode-utils"
 import * as apiIndex from "../../../api"
+import { TelemetryService } from "../../../../packages/telemetry/src/TelemetryService"
 
 describe("GhostModel", () => {
 	let mockProviderSettingsManager: ProviderSettingsManager
@@ -92,13 +93,13 @@ describe("GhostModel", () => {
 
 		it("returns true when profile found", async () => {
 			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
-			const profiles = [{ id: "1", name: "profile1", apiProvider: supportedProviders[0] }] as any
+			const profiles = [{ id: "1", name: "mistral-profile", apiProvider: "mistral" }] as any
 
 			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
 			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
 				id: "1",
-				name: "profile1",
-				apiProvider: supportedProviders[0],
+				name: "mistral-profile",
+				apiProvider: "mistral",
 				mistralApiKey: "test-key",
 			} as any)
 
@@ -114,11 +115,24 @@ describe("GhostModel", () => {
 		beforeEach(() => {
 			// Mock fetch globally for these tests
 			vi.stubGlobal("fetch", vi.fn())
+
+			// Mock TelemetryService
+			const mockTelemetryService = {
+				captureEvent: vi.fn(),
+				captureException: vi.fn(),
+				isTelemetryEnabled: vi.fn().mockReturnValue(false),
+				shutdown: vi.fn(),
+			}
+			vi.spyOn(TelemetryService, "hasInstance").mockReturnValue(true)
+			vi.spyOn(TelemetryService, "instance", "get").mockReturnValue(mockTelemetryService as any)
 		})
 
 		afterEach(() => {
 			// Restore fetch
 			vi.unstubAllGlobals()
+
+			// Restore TelemetryService mocks
+			vi.restoreAllMocks()
 		})
 
 		it("should skip kilocode provider when balance is zero and use openrouter instead", async () => {
@@ -295,6 +309,162 @@ describe("GhostModel", () => {
 			expect(result).toBe(true)
 			expect(model.loaded).toBe(true)
 		})
+
+		it("should set hasKilocodeProfileWithNoBalance when kilocode profile exists but has no balance", async () => {
+			const profiles = [{ id: "1", name: "kilocode-profile", apiProvider: "kilocode" }] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+
+			// Mock profile with token
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "kilocode-profile",
+				apiProvider: "kilocode",
+				kilocodeToken: "test-token",
+			} as any)
+
+			// Mock fetch to return zero balance for kilocode
+			;(global.fetch as any).mockImplementation(async (url: string) => {
+				if (url.includes("/api/profile/balance")) {
+					return {
+						ok: true,
+						json: async () => ({ balance: 0 }),
+					} as any
+				}
+				return {
+					ok: true,
+					json: async () => ({}),
+				} as any
+			})
+
+			const model = new GhostModel()
+			const result = await model.reload(mockProviderSettingsManager)
+
+			// Should not find a usable provider
+			expect(result).toBe(false)
+			expect(model.loaded).toBe(true)
+			// Should have set the flag indicating kilocode profile exists but has no balance
+			expect(model.hasKilocodeProfileWithNoBalance).toBe(true)
+		})
+
+		it("should not set hasKilocodeProfileWithNoBalance when kilocode profile has balance", async () => {
+			const profiles = [{ id: "1", name: "kilocode-profile", apiProvider: "kilocode" }] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+
+			// Mock profile with token
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "kilocode-profile",
+				apiProvider: "kilocode",
+				kilocodeToken: "test-token",
+			} as any)
+
+			// Mock fetch to return positive balance for kilocode and valid models response
+			;(global.fetch as any).mockImplementation(async (url: string) => {
+				if (url.includes("/api/profile/balance")) {
+					return {
+						ok: true,
+						json: async () => ({ balance: 10.5 }),
+					} as any
+				}
+				// For OpenRouter/Kilocode models endpoint
+				if (url.includes("/models")) {
+					return {
+						ok: true,
+						json: async () => ({
+							data: [
+								{
+									id: "mistralai/codestral-2508",
+									name: "Codestral",
+									context_length: 32000,
+									pricing: { prompt: "0.0001", completion: "0.0003" },
+								},
+							],
+						}),
+					} as any
+				}
+				return {
+					ok: true,
+					json: async () => ({}),
+				} as any
+			})
+
+			const model = new GhostModel()
+			const result = await model.reload(mockProviderSettingsManager)
+
+			// Should find a usable provider
+			expect(result).toBe(true)
+			expect(model.loaded).toBe(true)
+			// Should not have set the flag
+			expect(model.hasKilocodeProfileWithNoBalance).toBe(false)
+		})
+
+		it("should clear hasKilocodeProfileWithNoBalance on reload", async () => {
+			const profiles = [{ id: "1", name: "kilocode-profile", apiProvider: "kilocode" }] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+
+			// Mock profile with token
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "kilocode-profile",
+				apiProvider: "kilocode",
+				kilocodeToken: "test-token",
+			} as any)
+
+			// First reload: zero balance
+			;(global.fetch as any).mockImplementation(async (url: string) => {
+				if (url.includes("/api/profile/balance")) {
+					return {
+						ok: true,
+						json: async () => ({ balance: 0 }),
+					} as any
+				}
+				return {
+					ok: true,
+					json: async () => ({}),
+				} as any
+			})
+
+			const model = new GhostModel()
+			await model.reload(mockProviderSettingsManager)
+			expect(model.hasKilocodeProfileWithNoBalance).toBe(true)
+
+			// Second reload: positive balance with valid models response
+			;(global.fetch as any).mockImplementation(async (url: string) => {
+				if (url.includes("/api/profile/balance")) {
+					return {
+						ok: true,
+						json: async () => ({ balance: 10.5 }),
+					} as any
+				}
+				// For OpenRouter/Kilocode models endpoint
+				if (url.includes("/models")) {
+					return {
+						ok: true,
+						json: async () => ({
+							data: [
+								{
+									id: "mistralai/codestral-2508",
+									name: "Codestral",
+									context_length: 32000,
+									pricing: { prompt: "0.0001", completion: "0.0003" },
+								},
+							],
+						}),
+					} as any
+				}
+				return {
+					ok: true,
+					json: async () => ({}),
+				} as any
+			})
+
+			await model.reload(mockProviderSettingsManager)
+			// Flag should be cleared after reload with positive balance
+			expect(model.hasKilocodeProfileWithNoBalance).toBe(false)
+		})
 	})
 
 	describe("getProviderDisplayName", () => {
@@ -317,8 +487,8 @@ describe("GhostModel", () => {
 
 			// Mock buildApiHandler to return a handler with providerName
 			const mockApiHandler = {
-				providerName: "Test Provider",
-				getModel: vi.fn().mockReturnValue({ id: "test-model", info: {} }),
+				providerName: "Mistral",
+				getModel: vi.fn().mockReturnValue({ id: "mistral-model", info: {} }),
 				createMessage: vi.fn(),
 				countTokens: vi.fn(),
 			}
@@ -330,10 +500,233 @@ describe("GhostModel", () => {
 			const providerName = model.getProviderDisplayName()
 			expect(providerName).toBeTruthy()
 			expect(typeof providerName).toBe("string")
-			expect(providerName).toBe("Test Provider")
+			expect(providerName).toBe("Mistral")
 
 			// Restore the spy
 			vi.restoreAllMocks()
+		})
+
+		describe("profile information", () => {
+			it("returns null for profile name when no profile is loaded", () => {
+				const model = new GhostModel()
+				expect(model.profileName).toBeNull()
+			})
+
+			it("returns null for profile type when no profile is loaded", () => {
+				const model = new GhostModel()
+				expect(model.profileType).toBeNull()
+			})
+
+			it("stores and returns profile name after loading", async () => {
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+				const profiles = [
+					{
+						id: "1",
+						name: "My Autocomplete Profile",
+						apiProvider: supportedProviders[0],
+						profileType: "autocomplete",
+					},
+				] as any
+
+				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+				vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+					id: "1",
+					name: "My Autocomplete Profile",
+					apiProvider: supportedProviders[0],
+					profileType: "autocomplete",
+					mistralApiKey: "test-key",
+				} as any)
+
+				const model = new GhostModel()
+				await model.reload(mockProviderSettingsManager)
+
+				expect(model.profileName).toBe("My Autocomplete Profile")
+			})
+
+			it("stores and returns profile type after loading", async () => {
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+				const profiles = [
+					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "autocomplete" },
+				] as any
+
+				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+				vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+					id: "1",
+					name: "My Profile",
+					apiProvider: supportedProviders[0],
+					profileType: "autocomplete",
+					mistralApiKey: "test-key",
+				} as any)
+
+				const model = new GhostModel()
+				await model.reload(mockProviderSettingsManager)
+
+				expect(model.profileType).toBe("autocomplete")
+			})
+
+			it("clears profile information on cleanup", async () => {
+				const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+				const profiles = [
+					{ id: "1", name: "My Profile", apiProvider: supportedProviders[0], profileType: "autocomplete" },
+				] as any
+
+				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+				vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+					id: "1",
+					name: "My Profile",
+					apiProvider: supportedProviders[0],
+					profileType: "autocomplete",
+					mistralApiKey: "test-key",
+				} as any)
+
+				const model = new GhostModel()
+				await model.reload(mockProviderSettingsManager)
+
+				expect(model.profileName).toBe("My Profile")
+				expect(model.profileType).toBe("autocomplete")
+
+				// Reload with empty profiles to trigger cleanup
+				vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue([])
+				await model.reload(mockProviderSettingsManager)
+
+				expect(model.profileName).toBeNull()
+				expect(model.profileType).toBeNull()
+			})
+		})
+	})
+
+	describe("reload model override behavior", () => {
+		beforeEach(() => {
+			// Mock buildApiHandler to return a handler with getModel
+			const mockApiHandler = {
+				getModel: vi.fn().mockReturnValue({ id: "test-model", info: {} }),
+				createMessage: vi.fn(),
+				countTokens: vi.fn(),
+			}
+			vi.spyOn(apiIndex, "buildApiHandler").mockReturnValue(mockApiHandler as any)
+		})
+
+		afterEach(() => {
+			vi.restoreAllMocks()
+		})
+
+		it("should use custom model for explicit autocomplete profiles", async () => {
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+			const provider = supportedProviders[0]
+			const customModelId = "custom-autocomplete-model"
+
+			const profiles = [
+				{
+					id: "1",
+					name: "My Autocomplete Profile",
+					apiProvider: provider,
+					profileType: "autocomplete",
+				},
+			] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "My Autocomplete Profile",
+				apiProvider: provider,
+				profileType: "autocomplete",
+				mistralApiKey: "test-key",
+				apiModelId: customModelId, // Custom model set by user
+			} as any)
+
+			// Mock buildApiHandler to return the custom model
+			const mockApiHandler = {
+				getModel: vi.fn().mockReturnValue({ id: customModelId, info: {} }),
+				createMessage: vi.fn(),
+				countTokens: vi.fn(),
+			}
+			vi.spyOn(apiIndex, "buildApiHandler").mockReturnValue(mockApiHandler as any)
+
+			const model = new GhostModel()
+			await model.reload(mockProviderSettingsManager)
+
+			// The model should use the custom model from the profile
+			const modelName = model.getModelName()
+			expect(modelName).toBe(customModelId)
+		})
+
+		it("should override model for non-autocomplete profiles", async () => {
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+			const provider = supportedProviders[0]
+			const defaultAutocompleteModel = AUTOCOMPLETE_PROVIDER_MODELS.get(provider)
+
+			const profiles = [
+				{
+					id: "1",
+					name: "My Chat Profile",
+					apiProvider: provider,
+					profileType: "chat", // Not an autocomplete profile
+				},
+			] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "My Chat Profile",
+				apiProvider: provider,
+				profileType: "chat",
+				mistralApiKey: "test-key",
+				apiModelId: "custom-chat-model", // This should be overridden
+			} as any)
+
+			// Mock buildApiHandler to return the overridden model
+			const mockApiHandler = {
+				getModel: vi.fn().mockReturnValue({ id: defaultAutocompleteModel, info: {} }),
+				createMessage: vi.fn(),
+				countTokens: vi.fn(),
+			}
+			vi.spyOn(apiIndex, "buildApiHandler").mockReturnValue(mockApiHandler as any)
+
+			const model = new GhostModel()
+			await model.reload(mockProviderSettingsManager)
+
+			// The model should be overridden with the default autocomplete model
+			const modelName = model.getModelName()
+			expect(modelName).toBe(defaultAutocompleteModel)
+		})
+
+		it("should override model for profiles without profileType", async () => {
+			const supportedProviders = [...AUTOCOMPLETE_PROVIDER_MODELS.keys()]
+			const provider = supportedProviders[0]
+			const defaultAutocompleteModel = AUTOCOMPLETE_PROVIDER_MODELS.get(provider)
+
+			const profiles = [
+				{
+					id: "1",
+					name: "My Generic Profile",
+					apiProvider: provider,
+					// No profileType specified
+				},
+			] as any
+
+			vi.mocked(mockProviderSettingsManager.listConfig).mockResolvedValue(profiles)
+			vi.mocked(mockProviderSettingsManager.getProfile).mockResolvedValue({
+				id: "1",
+				name: "My Generic Profile",
+				apiProvider: provider,
+				mistralApiKey: "test-key",
+				apiModelId: "custom-model", // This should be overridden
+			} as any)
+
+			// Mock buildApiHandler to return the overridden model
+			const mockApiHandler = {
+				getModel: vi.fn().mockReturnValue({ id: defaultAutocompleteModel, info: {} }),
+				createMessage: vi.fn(),
+				countTokens: vi.fn(),
+			}
+			vi.spyOn(apiIndex, "buildApiHandler").mockReturnValue(mockApiHandler as any)
+
+			const model = new GhostModel()
+			await model.reload(mockProviderSettingsManager)
+
+			// The model should be overridden with the default autocomplete model
+			const modelName = model.getModelName()
+			expect(modelName).toBe(defaultAutocompleteModel)
 		})
 	})
 })

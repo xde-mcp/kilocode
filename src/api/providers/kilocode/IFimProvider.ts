@@ -1,4 +1,5 @@
 import { ApiHandlerCreateMessageMetadata } from "../.."
+import { CompletionUsage } from "../openrouter"
 
 /**
  * Interface for FIM (Fill-In-the-Middle) completion providers.
@@ -13,22 +14,19 @@ export interface IFimProvider {
 	supportsFim(): boolean
 
 	/**
-	 * Complete code between a prefix and suffix (non-streaming)
-	 * @param prefix - The code before the cursor/insertion point
-	 * @param suffix - The code after the cursor/insertion point
-	 * @param taskId - Optional task ID for tracking
-	 * @returns The completed code string
-	 */
-	completeFim(prefix: string, suffix: string, taskId?: string): Promise<string>
-
-	/**
 	 * Stream code completion between a prefix and suffix
 	 * @param prefix - The code before the cursor/insertion point
 	 * @param suffix - The code after the cursor/insertion point
 	 * @param taskId - Optional task ID for tracking
-	 * @returns An async generator yielding code chunks
+	 * @param onUsage - Optional callback invoked with usage information when available
+	 * @returns An async generator yielding code chunks as strings
 	 */
-	streamFim(prefix: string, suffix: string, taskId?: string): AsyncGenerator<string>
+	streamFim(
+		prefix: string,
+		suffix: string,
+		taskId?: string,
+		onUsage?: (usage: CompletionUsage) => void,
+	): AsyncGenerator<string>
 
 	/**
 	 * Get custom request options for API calls

@@ -9,40 +9,37 @@ export function useAutoApprovalToggles() {
 	const {
 		alwaysAllowReadOnly,
 		alwaysAllowWrite,
+		alwaysAllowDelete, // kilocode_change
 		alwaysAllowExecute,
 		alwaysAllowBrowser,
 		alwaysAllowMcp,
 		alwaysAllowModeSwitch,
 		alwaysAllowSubtasks,
-		alwaysApproveResubmit,
 		alwaysAllowFollowupQuestions,
-		alwaysAllowUpdateTodoList,
 	} = useExtensionState()
 
 	const toggles = useMemo(
 		() => ({
 			alwaysAllowReadOnly,
 			alwaysAllowWrite,
+			alwaysAllowDelete, // kilocode_change
 			alwaysAllowExecute,
 			alwaysAllowBrowser,
 			alwaysAllowMcp,
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
-			alwaysApproveResubmit,
 			alwaysAllowFollowupQuestions,
-			alwaysAllowUpdateTodoList,
 		}),
 		[
 			alwaysAllowReadOnly,
 			alwaysAllowWrite,
+			alwaysAllowDelete, // kilocode_change
 			alwaysAllowExecute,
 			alwaysAllowBrowser,
 			alwaysAllowMcp,
 			alwaysAllowModeSwitch,
 			alwaysAllowSubtasks,
-			alwaysApproveResubmit,
 			alwaysAllowFollowupQuestions,
-			alwaysAllowUpdateTodoList,
 		],
 	)
 

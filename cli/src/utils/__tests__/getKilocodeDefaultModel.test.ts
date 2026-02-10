@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
-import { getKilocodeDefaultModel } from "../getKilocodeDefaultModel.js"
+import { getKilocodeDefaultModel } from "../../auth/providers/kilocode/shared.js"
 import { openRouterDefaultModelId } from "@roo-code/types"
 
 // Mock the logs module
@@ -14,10 +14,10 @@ vi.mock("../../services/logs.js", () => ({
 
 // Mock fetch globally
 const mockFetch = vi.fn()
-global.fetch = mockFetch as typeof fetch
 
 describe("getKilocodeDefaultModel", () => {
 	beforeEach(() => {
+		vi.spyOn(globalThis, "fetch").mockImplementation((...args: unknown[]) => mockFetch(...(args as never[])))
 		vi.clearAllMocks()
 	})
 

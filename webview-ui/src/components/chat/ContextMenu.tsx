@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { getIconForFilePath, getIconUrlByName, getIconForDirectoryPath } from "vscode-material-icons"
+import { Trans } from "react-i18next"
+import { t } from "i18next"
 import { Settings } from "lucide-react"
 
-import type { ModeConfig } from "@roo-code/types"
-import type { Command } from "@roo/ExtensionMessage"
+import type { ModeConfig, Command } from "@roo-code/types"
 
 import {
 	ContextMenuOptionType,
@@ -13,9 +14,8 @@ import {
 } from "@src/utils/context-mentions"
 import { removeLeadingNonAlphanumeric } from "@src/utils/removeLeadingNonAlphanumeric"
 import { vscode } from "@src/utils/vscode"
+
 import { buildDocLink } from "@/utils/docLinks"
-import { Trans } from "react-i18next"
-import { t } from "i18next"
 
 interface ContextMenuProps {
 	onSelect: (type: ContextMenuOptionType, value?: string) => void
@@ -32,6 +32,9 @@ interface ContextMenuProps {
 	commands?: Command[]
 }
 
+const EMPTY_COMMANDS: Command[] = [] // kilocode_change - maintain stable references for React props
+const EMPTY_SEARCH_RESULTS: SearchResult[] = [] // kilocode_change - maintain stable references for React props
+
 const ContextMenu: React.FC<ContextMenuProps> = ({
 	onSelect,
 	searchQuery,
@@ -41,8 +44,8 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 	selectedType,
 	queryItems,
 	modes,
-	dynamicSearchResults = [],
-	commands = [],
+	dynamicSearchResults = EMPTY_SEARCH_RESULTS, // kilocode_change
+	commands = EMPTY_COMMANDS, // kilocode_change
 }) => {
 	const [materialIconsBaseUri, setMaterialIconsBaseUri] = useState("")
 	const menuRef = useRef<HTMLDivElement>(null)
@@ -50,6 +53,22 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 	const filteredOptions = useMemo(() => {
 		return getContextMenuOptions(searchQuery, selectedType, queryItems, dynamicSearchResults, modes, commands)
 	}, [searchQuery, selectedType, queryItems, dynamicSearchResults, modes, commands])
+
+	// kilocode_change start - disable hover selection briefly when items change to prevent accidental selections
+	const [allowSelection, setAllowSelection] = useState(false)
+	const prevOptionsRef = useRef<ContextMenuQueryItem[] | null>(null)
+
+	useEffect(() => {
+		if (prevOptionsRef.current === null || filteredOptions !== prevOptionsRef.current) {
+			setAllowSelection(false)
+			const timer = setTimeout(() => {
+				setAllowSelection(true)
+			}, 100)
+			return () => clearTimeout(timer)
+		}
+		prevOptionsRef.current = filteredOptions
+	}, [filteredOptions])
+	// kilocode_change end - disable hover selection briefly when items change to prevent accidental selections
 
 	useEffect(() => {
 		if (menuRef.current) {
@@ -373,7 +392,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
 										}
 									: {}),
 							}}
-							onMouseEnter={() => isOptionSelectable(option) && setSelectedIndex(index)}>
+							onMouseEnter={() => {
+								// kilocode_change start - add allowEvents check
+								if (allowSelection && isOptionSelectable(option)) {
+									setSelectedIndex(index)
+								}
+								// kilocode_change end - add allowEvents check
+							}}>
 							<div
 								style={{
 									display: "flex",

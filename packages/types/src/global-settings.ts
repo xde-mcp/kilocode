@@ -14,7 +14,7 @@ import { telemetrySettingsSchema } from "./telemetry.js"
 import { modeConfigSchema } from "./mode.js"
 import { customModePromptsSchema, customSupportPromptsSchema } from "./mode.js"
 import { languagesSchema } from "./vscode.js"
-import { fastApplyModelSchema, ghostServiceSettingsSchema } from "./kilocode/kilocode.js"
+import { fastApplyModelSchema, ghostServiceSettingsSchema, fastApplyApiProviderSchema } from "./kilocode/kilocode.js"
 
 /**
  * Default delay in milliseconds after writes to allow diagnostics to detect potential problems.
@@ -60,6 +60,7 @@ export const globalSettingsSchema = z.object({
 	dismissedUpsells: z.array(z.string()).optional(),
 
 	// Image generation settings (experimental) - flattened for simplicity
+	imageGenerationProvider: z.enum(["openrouter", "kilocode"]).optional(), // kilocode_change: Updated from "roo" to "kilocode"
 	openRouterImageApiKey: z.string().optional(),
 	openRouterImageGenerationSelectedModel: z.string().optional(),
 	kiloCodeImageApiKey: z.string().optional(),
@@ -75,9 +76,9 @@ export const globalSettingsSchema = z.object({
 	alwaysAllowWrite: z.boolean().optional(),
 	alwaysAllowWriteOutsideWorkspace: z.boolean().optional(),
 	alwaysAllowWriteProtected: z.boolean().optional(),
+	alwaysAllowDelete: z.boolean().optional(), // kilocode_change
 	writeDelayMs: z.number().min(0).optional(),
 	alwaysAllowBrowser: z.boolean().optional(),
-	alwaysApproveResubmit: z.boolean().optional(),
 	requestDelaySeconds: z.number().optional(),
 	alwaysAllowMcp: z.boolean().optional(),
 	alwaysAllowModeSwitch: z.boolean().optional(),
@@ -85,7 +86,6 @@ export const globalSettingsSchema = z.object({
 	alwaysAllowExecute: z.boolean().optional(),
 	alwaysAllowFollowupQuestions: z.boolean().optional(),
 	followupAutoApproveTimeoutMs: z.number().optional(),
-	alwaysAllowUpdateTodoList: z.boolean().optional(),
 	allowedCommands: z.array(z.string()).optional(),
 	deniedCommands: z.array(z.string()).optional(),
 	commandExecutionTimeout: z.number().optional(),
@@ -108,6 +108,12 @@ export const globalSettingsSchema = z.object({
 	 * @default true
 	 */
 	includeCurrentCost: z.boolean().optional(),
+	/**
+	 * Maximum number of git status file entries to include in the environment details.
+	 * Set to 0 to disable git status. The header (branch, commits) is always included when > 0.
+	 * @default 0
+	 */
+	maxGitStatusFiles: z.number().optional(),
 
 	/**
 	 * Whether to include diagnostic messages (errors, warnings) in tool outputs
@@ -126,6 +132,7 @@ export const globalSettingsSchema = z.object({
 	showTaskTimeline: z.boolean().optional(), // kilocode_change
 	sendMessageOnEnter: z.boolean().optional(), // kilocode_change: Enter key behavior
 	showTimestamps: z.boolean().optional(), // kilocode_change
+	showDiffStats: z.boolean().optional(), // kilocode_change
 	hideCostBelowThreshold: z.number().min(0).optional(), // kilocode_change
 	localWorkflowToggles: z.record(z.string(), z.boolean()).optional(), // kilocode_change
 	globalWorkflowToggles: z.record(z.string(), z.boolean()).optional(), // kilocode_change
@@ -158,10 +165,19 @@ export const globalSettingsSchema = z.object({
 	soundEnabled: z.boolean().optional(),
 	soundVolume: z.number().optional(),
 	systemNotificationsEnabled: z.boolean().optional(), // kilocode_change
+	selectedMicrophoneDevice: z
+		.object({
+			id: z.string(),
+			name: z.string(),
+			platform: z.string(),
+		})
+		.nullable()
+		.optional(), // kilocode_change: Selected microphone device for STT (matches MicrophoneDevice from sttContract.ts)
 
 	maxOpenTabsContext: z.number().optional(),
 	maxWorkspaceFiles: z.number().optional(),
 	showRooIgnoredFiles: z.boolean().optional(),
+	enableSubfolderRules: z.boolean().optional(),
 	maxReadFileLine: z.number().optional(),
 	maxImageFileSize: z.number().optional(),
 	maxTotalImageSize: z.number().optional(),
@@ -188,6 +204,7 @@ export const globalSettingsSchema = z.object({
 	// kilocode_change start: Morph fast apply
 	morphApiKey: z.string().optional(),
 	fastApplyModel: fastApplyModelSchema.optional(),
+	fastApplyApiProvider: fastApplyApiProviderSchema.optional(),
 	// kilocode_change end
 
 	codebaseIndexModels: codebaseIndexModelsSchema.optional(),
@@ -215,10 +232,19 @@ export const globalSettingsSchema = z.object({
 	includeTaskHistoryInEnhance: z.boolean().optional(),
 	historyPreviewCollapsed: z.boolean().optional(),
 	reasoningBlockCollapsed: z.boolean().optional(),
+	/**
+	 * Controls the keyboard behavior for sending messages in the chat input.
+	 * - "send": Enter sends message, Shift+Enter creates newline (default)
+	 * - "newline": Enter creates newline, Shift+Enter/Ctrl+Enter sends message
+	 * @default "send"
+	 */
+	enterBehavior: z.enum(["send", "newline"]).optional(),
 	profileThresholds: z.record(z.string(), z.number()).optional(),
 	hasOpenedModeSelector: z.boolean().optional(),
+	hasCompletedOnboarding: z.boolean().optional(), // kilocode_change: Track if user has completed onboarding flow
 	lastModeExportPath: z.string().optional(),
 	lastModeImportPath: z.string().optional(),
+	appendSystemPrompt: z.string().optional(), // kilocode_change: Custom text to append to system prompt (CLI only)
 })
 
 export type GlobalSettings = z.infer<typeof globalSettingsSchema>
@@ -238,7 +264,7 @@ export type RooCodeSettings = GlobalSettings & ProviderSettings
  */
 export const SECRET_STATE_KEYS = [
 	"apiKey",
-	"glamaApiKey",
+	"glamaApiKey", // kilocode_change
 	"openRouterApiKey",
 	"awsAccessKey",
 	"awsApiKey",
@@ -282,6 +308,8 @@ export const SECRET_STATE_KEYS = [
 	"featherlessApiKey",
 	"ioIntelligenceApiKey",
 	"vercelAiGatewayApiKey",
+	"sapAiCoreServiceKey", // kilocode_change
+	"basetenApiKey",
 ] as const
 
 // Global secrets that are part of GlobalSettings (not ProviderSettings)
@@ -322,7 +350,6 @@ export const isGlobalStateKey = (key: string): key is Keys<GlobalState> =>
 // Default settings when running evals (unless overridden).
 export const EVALS_SETTINGS: RooCodeSettings = {
 	apiProvider: "openrouter",
-	openRouterUseMiddleOutTransform: false,
 
 	lastShownAnnouncementId: "jul-09-2025-3-23-0",
 
@@ -334,16 +361,15 @@ export const EVALS_SETTINGS: RooCodeSettings = {
 	alwaysAllowWrite: true,
 	alwaysAllowWriteOutsideWorkspace: false,
 	alwaysAllowWriteProtected: false,
+	alwaysAllowDelete: true, // kilocode_change
 	writeDelayMs: 1000,
 	alwaysAllowBrowser: true,
-	alwaysApproveResubmit: true,
 	requestDelaySeconds: 10,
 	alwaysAllowMcp: true,
 	alwaysAllowModeSwitch: true,
 	alwaysAllowSubtasks: true,
 	alwaysAllowExecute: true,
 	alwaysAllowFollowupQuestions: true,
-	alwaysAllowUpdateTodoList: true,
 	followupAutoApproveTimeoutMs: 0,
 	allowedCommands: ["*"],
 	commandExecutionTimeout: 20,
@@ -393,8 +419,9 @@ export const EVALS_SETTINGS: RooCodeSettings = {
 	rateLimitSeconds: 0,
 	maxOpenTabsContext: 20,
 	maxWorkspaceFiles: 200,
+	maxGitStatusFiles: 20,
 	showRooIgnoredFiles: true,
-	maxReadFileLine: -1, // -1 to enable full file reading.
+	maxReadFileLine: 500 /*kilocode_change*/, // -1 to enable full file reading.
 
 	includeDiagnosticMessages: true,
 	maxDiagnosticMessages: 50,

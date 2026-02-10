@@ -1,93 +1,44 @@
 // kilocode_change - new file
-import React, { useState, useEffect, useCallback } from "react"
-import { Trans } from "react-i18next"
+import React, { useState, useRef, useEffect } from "react"
 import { VSCodeLink } from "@vscode/webview-ui-toolkit/react"
 
 import type { IndexingStatus } from "@roo/ExtensionMessage"
 
-import { vscode } from "@src/utils/vscode"
-import { useExtensionState } from "@src/context/ExtensionStateContext"
-import { useAppTranslation } from "@src/i18n/TranslationContext"
-import { buildDocLink } from "@src/utils/docLinks"
 import { Popover, PopoverContent } from "@src/components/ui"
 import { useRooPortal } from "@src/components/ui/hooks/useRooPortal"
 import { useEscapeKey } from "@src/hooks/useEscapeKey"
-import { OrganizationIndexingTab } from "./OrganizationIndexingTab"
+import { vscode } from "@src/utils/vscode"
+import { ManagedIndexerStatus } from "./ManagedIndexerStatus"
+import { type WorkspaceFolderState } from "./managedIndexerSchema"
+import { useExtensionState } from "../../../context/ExtensionStateContext"
 
 interface CodeIndexPopoverProps {
 	children: React.ReactNode
 	indexingStatus: IndexingStatus
 }
 
-export const ManagedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
-	children,
-	indexingStatus: externalIndexingStatus,
-}) => {
-	const { t } = useAppTranslation()
-	const { cwd } = useExtensionState()
+export const ManagedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({ children }) => {
 	const [open, setOpen] = useState(false)
+	const closeHandlerRef = useRef<() => void>(() => setOpen(false))
 
-	const [indexingStatus, setIndexingStatus] = useState<IndexingStatus>(externalIndexingStatus)
-
-	// Update indexing status from parent
-	useEffect(() => {
-		setIndexingStatus(externalIndexingStatus)
-	}, [externalIndexingStatus])
-
-	// Request initial indexing status
-	useEffect(() => {
-		if (open) {
-			vscode.postMessage({ type: "requestIndexingStatus" })
+	const handlePopoverOpenChange = (newOpen: boolean) => {
+		if (newOpen) {
+			setOpen(true)
+		} else {
+			// Don't close immediately - ask child to handle it if registered
+			closeHandlerRef.current?.()
 		}
-		const handleMessage = (event: MessageEvent) => {
-			if (event.data.type === "workspaceUpdated") {
-				// When workspace changes, request updated indexing status
-				if (open) {
-					vscode.postMessage({ type: "requestIndexingStatus" })
-				}
-			}
-		}
+	}
 
-		window.addEventListener("message", handleMessage)
-		return () => window.removeEventListener("message", handleMessage)
-	}, [open])
-
-	// Listen for indexing status updates
-	useEffect(() => {
-		const handleMessage = (event: MessageEvent<any>) => {
-			if (event.data.type === "indexingStatusUpdate") {
-				if (!event.data.values.workspacePath || event.data.values.workspacePath === cwd) {
-					setIndexingStatus({
-						systemStatus: event.data.values.systemStatus,
-						message: event.data.values.message || "",
-						processedItems: event.data.values.processedItems,
-						totalItems: event.data.values.totalItems,
-						currentItemUnit: event.data.values.currentItemUnit || "items",
-					})
-				}
-			}
-		}
-
-		window.addEventListener("message", handleMessage)
-		return () => window.removeEventListener("message", handleMessage)
-	}, [cwd])
-
-	// Use the shared ESC key handler hook
-	useEscapeKey(open, () => setOpen(false))
-
-	const handleCancelIndexing = useCallback(() => {
-		// Optimistically update UI while backend cancels
-		setIndexingStatus((prev) => ({
-			...prev,
-			message: t("settings:codeIndex.cancelling"),
-		}))
-		vscode.postMessage({ type: "cancelIndexing" })
-	}, [t])
+	// Use the shared ESC key handler hook - delegate to child if possible
+	useEscapeKey(open, () => {
+		closeHandlerRef.current?.()
+	})
 
 	const portalContainer = useRooPortal("roo-portal")
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={handlePopoverOpenChange}>
 			{children}
 			<PopoverContent
 				className="w-[calc(100vw-32px)] max-w-[450px] max-h-[80vh] overflow-y-auto p-0"
@@ -98,24 +49,74 @@ export const ManagedCodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				collisionPadding={16}
 				avoidCollisions={true}
 				container={portalContainer}>
-				<div className="p-3 border-b border-vscode-dropdown-border cursor-default">
+				<Content />
+			</PopoverContent>
+		</Popover>
+	)
+}
+
+const Content = () => {
+	const state = useExtensionState()
+	const orgId = state.apiConfiguration?.kilocodeOrganizationId
+	const href = `https://kilo.ai/organizations/${orgId}/code-indexing`
+	const [workspaceFolders, setWorkspaceFolders] = useState<WorkspaceFolderState[]>([])
+
+	// Request initial state when popover opens
+	// Listen for managed indexer state updates
+	useEffect(() => {
+		console.log("[ManagedCodeIndexPopoverContent] requesting managed indexer state")
+		vscode.postMessage({ type: "requestManagedIndexerState" })
+
+		const handleMessage = (event: MessageEvent<any>) => {
+			console.log("[ManagedCodeIndexPopoverContent] received event", event)
+			if (event.data.type === "managedIndexerState") {
+				setWorkspaceFolders(event.data.managedIndexerState || [])
+			}
+		}
+
+		window.addEventListener("message", handleMessage)
+		return () => window.removeEventListener("message", handleMessage)
+	}, [])
+
+	if (workspaceFolders.length === 0) {
+		return (
+			<>
+				<div className="p-3 cursor-default">
 					<div className="flex flex-row items-center gap-1 p-0 mt-0 mb-1 w-full">
-						<h4 className="m-0 pb-2 flex-1">{t("settings:codeIndex.title")}</h4>
+						<h4 className="m-0 pb-2 flex-1">Managed Code Indexing</h4>
 					</div>
-					<p className="my-0 pr-4 text-sm w-full">
-						<Trans i18nKey="settings:codeIndex.description">
-							<VSCodeLink
-								href={buildDocLink("features/codebase-indexing", "settings")}
-								style={{ display: "inline" }}
-							/>
-						</Trans>
+					<p className="my-0 pr-4 text-sm w-full mb-3">
+						<VSCodeLink href={href}>Configure on kilo.ai</VSCodeLink>
 					</p>
 				</div>
 
+				<div className="border-t border-vscode-dropdown-border" />
+
 				<div className="p-4">
-					<OrganizationIndexingTab indexingStatus={indexingStatus} onCancelIndexing={handleCancelIndexing} />
+					<p className="text-sm text-vscode-descriptionForeground">
+						Managed code indexing is only available when workspace folders are git repositories.
+					</p>
 				</div>
-			</PopoverContent>
-		</Popover>
+			</>
+		)
+	}
+
+	return (
+		<>
+			<div className="p-3 cursor-default">
+				<div className="flex flex-row items-center gap-1 p-0 mt-0 mb-1 w-full">
+					<h4 className="m-0 pb-2 flex-1">Managed Code Indexing</h4>
+				</div>
+				<p className="my-0 pr-4 text-sm w-full mb-3">
+					<VSCodeLink href={href}>Configure on kilo.ai</VSCodeLink>
+				</p>
+			</div>
+
+			<div className="border-t border-vscode-dropdown-border" />
+
+			<div className="p-4">
+				<ManagedIndexerStatus workspaceFolders={workspaceFolders} />
+			</div>
+		</>
 	)
 }
