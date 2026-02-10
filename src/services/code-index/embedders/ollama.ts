@@ -67,8 +67,10 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 
 			// Add timeout to prevent indefinite hanging
 			const controller = new AbortController()
+			// kilocode_change start
 			const timeoutMs = getApiRequestTimeout()
 			const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : undefined
+			// kilocode_change end
 
 			const response = await fetch(url, {
 				method: "POST",
@@ -81,9 +83,8 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 				}),
 				signal: controller.signal,
 			})
-			if (timeoutId) {
-				clearTimeout(timeoutId)
-			}
+
+			clearTimeout(timeoutId)
 
 			if (!response.ok) {
 				let errorBody = t("embeddings:ollama.couldNotReadErrorBody")
@@ -149,8 +150,10 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 
 				// Add timeout to prevent indefinite hanging
 				const controller = new AbortController()
+				// kilocode_change start
 				const timeoutMs = getApiRequestTimeout()
 				const timeoutId = timeoutMs > 0 ? setTimeout(() => controller.abort(), timeoutMs) : undefined
+				// kilocode_change end
 
 				const modelsResponse = await fetch(modelsUrl, {
 					method: "GET",
@@ -159,9 +162,7 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 					},
 					signal: controller.signal,
 				})
-				if (timeoutId) {
-					clearTimeout(timeoutId)
-				}
+				clearTimeout(timeoutId)
 
 				if (!modelsResponse.ok) {
 					if (modelsResponse.status === 404) {
@@ -208,8 +209,10 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 				const testUrl = `${this.baseUrl}/api/embed`
 
 				// Add timeout for test request too
+				// kilocode_change start
 				const testController = new AbortController()
 				const testTimeoutId = timeoutMs > 0 ? setTimeout(() => testController.abort(), timeoutMs) : undefined
+				// kilocode_change end
 
 				const testResponse = await fetch(testUrl, {
 					method: "POST",
@@ -222,9 +225,7 @@ export class CodeIndexOllamaEmbedder implements IEmbedder {
 					}),
 					signal: testController.signal,
 				})
-				if (testTimeoutId) {
-					clearTimeout(testTimeoutId)
-				}
+				clearTimeout(testTimeoutId)
 
 				if (!testResponse.ok) {
 					return {

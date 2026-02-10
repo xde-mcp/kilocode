@@ -24,6 +24,5 @@
 	"markdown.copyFiles.destination": {
 		"**/*": "/static/img/${documentBaseName}/${documentBaseName}.${fileName/(.*)\\.(.*)/$2/}"
 	},
-	"java.configuration.updateBuildConfiguration": "interactive",
-	"kilo-code.apiRequestTimeout": 600
+	"java.configuration.updateBuildConfiguration": "interactive"
 }
