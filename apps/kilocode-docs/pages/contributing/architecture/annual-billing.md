@@ -16,7 +16,7 @@ we want to switch to doing annual billing for teams and enterprise with a 1 mont
     - no credit card required
     - self-serve enterprise comes with no self-serve SSO. There's a button that puts them in touch with sales. (it costs us 125 a month for SSO per org)
 - monthly plan is not accessible via the UI but is still in effect for existing customers and can be flagged back on easily.
-- trial users can only upgrade to annual plans, 348/teams seat or $3588/ent seat, but we always talk about pricing in monthly terms.
+- trial users can only upgrade to annual plans, 348/teams seat or contact sales for enterprise seat pricing, but we always talk about pricing in monthly terms.
 - once trial expires, the organization will be denied access to the openrouter proxy endpoint, effectively disabling their kilocode usage w/ our API provider, and any existing outstanding credits they purchased will be locked up until they subscribe.
 
 ### Non-requirements
