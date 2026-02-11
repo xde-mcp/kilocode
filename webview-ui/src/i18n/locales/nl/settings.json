@@ -359,6 +359,8 @@
 			"success": "Modellenlijst succesvol vernieuwd!",
 			"error": "Kan modellenlijst niet vernieuwen. Probeer het opnieuw."
 		},
+		"getZenmuxApiKey": "Zenmux API-sleutel ophalen",
+		"zenmuxTransformsText": "Gebruik Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Requesty API-sleutel ophalen",
 		"getRequestyBaseUrl": "Basis-URL",
 		"requestyUseCustomBaseUrl": "Gebruik aangepaste basis-URL",

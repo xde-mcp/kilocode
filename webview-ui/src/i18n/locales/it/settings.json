@@ -373,6 +373,8 @@
 			"success": "Elenco dei modelli aggiornato con successo!",
 			"error": "Impossibile aggiornare l'elenco dei modelli. Riprova."
 		},
+		"getZenmuxApiKey": "Ottieni chiave API Zenmux",
+		"zenmuxTransformsText": "Usa Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Ottieni chiave API Requesty",
 		"getRequestyBaseUrl": "URL base",
 		"requestyUseCustomBaseUrl": "Utilizza URL di base personalizzato",

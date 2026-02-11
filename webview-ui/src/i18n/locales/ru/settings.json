@@ -359,6 +359,8 @@
 			"success": "Список моделей успешно обновлен!",
 			"error": "Не удалось обновить список моделей. Пожалуйста, попробуйте снова."
 		},
+		"getZenmuxApiKey": "Получить Zenmux API-ключ",
+		"zenmuxTransformsText": "Использовать Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Получить Requesty API-ключ",
 		"getRequestyBaseUrl": "Базовый URL",
 		"requestyUseCustomBaseUrl": "Использовать пользовательский базовый URL",
