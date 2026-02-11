@@ -6,6 +6,7 @@ import { profileTypeSchema } from "./profile-type.js" // kilocode_change
 import {
 	anthropicModels,
 	basetenModels,
+	corethinkModels,
 	bedrockModels,
 	cerebrasModels,
 	claudeCodeModels,
@@ -21,6 +22,7 @@ import {
 	ioIntelligenceModels,
 	mistralModels,
 	moonshotModels,
+	openAiCodexModels,
 	openAiNativeModels,
 	qwenCodeModels,
 	sambaNovaModels,
@@ -103,7 +105,10 @@ export const isInternalProvider = (key: string): key is InternalProvider =>
  * Custom providers are completely configurable within Roo Code settings.
  */
 
-export const customProviders = ["openai"] as const
+export const customProviders = [
+	"openai",
+	"openai-responses", // kilocode_change
+] as const
 
 export type CustomProvider = (typeof customProviders)[number]
 
@@ -135,6 +140,7 @@ export const providerNames = [
 	"anthropic",
 	"bedrock",
 	"baseten",
+	"corethink",
 	"cerebras",
 	"claude-code",
 	"doubao",
@@ -142,18 +148,18 @@ export const providerNames = [
 	"featherless",
 	"fireworks",
 	"gemini",
-	"gemini-cli",
 	"groq",
 	"mistral",
 	"moonshot",
 	"minimax",
+	"openai-codex",
 	"openai-native",
+	"openai-responses", // kilocode_change
 	"qwen-code",
 	"roo",
 	// kilocode_change start
 	"kilocode",
 	"minimax",
-	"gemini-cli",
 	"virtual-quota-fallback",
 	"synthetic",
 	"inception",
@@ -226,10 +232,7 @@ const anthropicSchema = apiModelIdProviderModelSchema.extend({
 	anthropicBeta1MContext: z.boolean().optional(), // Enable 'context-1m-2025-08-07' beta for 1M context window.
 })
 
-const claudeCodeSchema = apiModelIdProviderModelSchema.extend({
-	claudeCodePath: z.string().optional(),
-	claudeCodeMaxOutputTokens: z.number().int().min(1).max(200000).optional(),
-})
+const claudeCodeSchema = apiModelIdProviderModelSchema.extend({})
 
 // kilocode_change start
 const glamaSchema = baseProviderSettingsSchema.extend({
@@ -254,7 +257,6 @@ const openRouterSchema = baseProviderSettingsSchema.extend({
 	openRouterModelId: z.string().optional(),
 	openRouterBaseUrl: z.string().optional(),
 	openRouterSpecificProvider: z.string().optional(),
-	openRouterUseMiddleOutTransform: z.boolean().optional(),
 	// kilocode_change start
 	openRouterProviderDataCollection: openRouterProviderDataCollectionSchema.optional(),
 	openRouterProviderSort: openRouterProviderSortSchema.optional(),
@@ -279,6 +281,7 @@ const bedrockSchema = apiModelIdProviderModelSchema.extend({
 	awsBedrockEndpointEnabled: z.boolean().optional(),
 	awsBedrockEndpoint: z.string().optional(),
 	awsBedrock1MContext: z.boolean().optional(), // Enable 'context-1m-2025-08-07' beta for 1M context window.
+	awsBedrockServiceTier: z.enum(["STANDARD", "FLEX", "PRIORITY"]).optional(), // AWS Bedrock service tier selection
 })
 
 const vertexSchema = apiModelIdProviderModelSchema.extend({
@@ -288,9 +291,24 @@ const vertexSchema = apiModelIdProviderModelSchema.extend({
 	vertexRegion: z.string().optional(),
 	enableUrlContext: z.boolean().optional(),
 	enableGrounding: z.boolean().optional(),
+	vertex1MContext: z.boolean().optional(), // Enable 'context-1m-2025-08-07' beta for 1M context window.
 })
 
 const openAiSchema = baseProviderSettingsSchema.extend({
+	openAiBaseUrl: z.string().optional(),
+	openAiApiKey: z.string().optional(),
+	openAiR1FormatEnabled: z.boolean().optional(),
+	openAiModelId: z.string().optional(),
+	openAiCustomModelInfo: modelInfoSchema.nullish(),
+	openAiUseAzure: z.boolean().optional(),
+	azureApiVersion: z.string().optional(),
+	openAiStreamingEnabled: z.boolean().optional(),
+	openAiHostHeader: z.string().optional(), // Keep temporarily for backward compatibility during migration.
+	openAiHeaders: z.record(z.string(), z.string()).optional(),
+})
+
+// kilocode_change start
+const openAiResponsesSchema = baseProviderSettingsSchema.extend({
 	openAiBaseUrl: z.string().optional(),
 	openAiApiKey: z.string().optional(),
 	openAiLegacyFormat: z.boolean().optional(),
@@ -303,6 +321,7 @@ const openAiSchema = baseProviderSettingsSchema.extend({
 	openAiHostHeader: z.string().optional(), // Keep temporarily for backward compatibility during migration.
 	openAiHeaders: z.record(z.string(), z.string()).optional(),
 })
+// kilocode_change end
 
 const ollamaSchema = baseProviderSettingsSchema.extend({
 	ollamaModelId: z.string().optional(),
@@ -336,12 +355,9 @@ const geminiSchema = apiModelIdProviderModelSchema.extend({
 	enableGrounding: z.boolean().optional(),
 })
 
-// kilocode_change start
-const geminiCliSchema = apiModelIdProviderModelSchema.extend({
-	geminiCliOAuthPath: z.string().optional(),
-	geminiCliProjectId: z.string().optional(),
+const openAiCodexSchema = apiModelIdProviderModelSchema.extend({
+	// No additional settings needed - uses OAuth authentication
 })
-// kilocode_change end
 
 const openAiNativeSchema = apiModelIdProviderModelSchema.extend({
 	openAiNativeApiKey: z.string().optional(),
@@ -374,7 +390,11 @@ const doubaoSchema = apiModelIdProviderModelSchema.extend({
 
 const moonshotSchema = apiModelIdProviderModelSchema.extend({
 	moonshotBaseUrl: z
-		.union([z.literal("https://api.moonshot.ai/v1"), z.literal("https://api.moonshot.cn/v1")])
+		.union([
+			z.literal("https://api.moonshot.ai/v1"),
+			z.literal("https://api.moonshot.cn/v1"),
+			z.literal("https://api.kimi.com/coding/v1"),
+		])
 		.optional(),
 	moonshotApiKey: z.string().optional(),
 })
@@ -513,7 +533,8 @@ const qwenCodeSchema = apiModelIdProviderModelSchema.extend({
 })
 
 const rooSchema = apiModelIdProviderModelSchema.extend({
-	// No additional fields needed - uses cloud authentication.
+	// Can use cloud authentication or provide an API key (cli).
+	rooApiKey: z.string().optional(),
 })
 
 const vercelAiGatewaySchema = baseProviderSettingsSchema.extend({
@@ -536,6 +557,10 @@ const basetenSchema = apiModelIdProviderModelSchema.extend({
 	basetenApiKey: z.string().optional(),
 })
 
+const corethinkSchema = apiModelIdProviderModelSchema.extend({
+	corethinkApiKey: z.string().optional(),
+})
+
 const defaultSchema = z.object({
 	apiProvider: z.undefined(),
 })
@@ -549,10 +574,12 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	bedrockSchema.merge(z.object({ apiProvider: z.literal("bedrock") })),
 	vertexSchema.merge(z.object({ apiProvider: z.literal("vertex") })),
 	openAiSchema.merge(z.object({ apiProvider: z.literal("openai") })),
+	openAiResponsesSchema.merge(z.object({ apiProvider: z.literal("openai-responses") })), // kilocode_change
 	ollamaSchema.merge(z.object({ apiProvider: z.literal("ollama") })),
 	vsCodeLmSchema.merge(z.object({ apiProvider: z.literal("vscode-lm") })),
 	lmStudioSchema.merge(z.object({ apiProvider: z.literal("lmstudio") })),
 	geminiSchema.merge(z.object({ apiProvider: z.literal("gemini") })),
+	openAiCodexSchema.merge(z.object({ apiProvider: z.literal("openai-codex") })),
 	openAiNativeSchema.merge(z.object({ apiProvider: z.literal("openai-native") })),
 	ovhcloudSchema.merge(z.object({ apiProvider: z.literal("ovhcloud") })), // kilocode_change
 	mistralSchema.merge(z.object({ apiProvider: z.literal("mistral") })),
@@ -567,7 +594,6 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	fakeAiSchema.merge(z.object({ apiProvider: z.literal("fake-ai") })),
 	xaiSchema.merge(z.object({ apiProvider: z.literal("xai") })),
 	// kilocode_change start
-	geminiCliSchema.merge(z.object({ apiProvider: z.literal("gemini-cli") })),
 	kilocodeSchema.merge(z.object({ apiProvider: z.literal("kilocode") })),
 	virtualQuotaFallbackSchema.merge(z.object({ apiProvider: z.literal("virtual-quota-fallback") })),
 	syntheticSchema.merge(z.object({ apiProvider: z.literal("synthetic") })),
@@ -575,6 +601,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	// kilocode_change end
 	groqSchema.merge(z.object({ apiProvider: z.literal("groq") })),
 	basetenSchema.merge(z.object({ apiProvider: z.literal("baseten") })),
+	corethinkSchema.merge(z.object({ apiProvider: z.literal("corethink") })),
 	huggingFaceSchema.merge(z.object({ apiProvider: z.literal("huggingface") })),
 	chutesSchema.merge(z.object({ apiProvider: z.literal("chutes") })),
 	litellmSchema.merge(z.object({ apiProvider: z.literal("litellm") })),
@@ -601,18 +628,19 @@ export const providerSettingsSchema = z.object({
 	...bedrockSchema.shape,
 	...vertexSchema.shape,
 	...openAiSchema.shape,
+	...openAiResponsesSchema.shape, // kilocode_change
 	...ollamaSchema.shape,
 	...vsCodeLmSchema.shape,
 	...lmStudioSchema.shape,
 	...geminiSchema.shape,
 	// kilocode_change start
-	...geminiCliSchema.shape,
 	...kilocodeSchema.shape,
 	...virtualQuotaFallbackSchema.shape,
 	...syntheticSchema.shape,
 	...ovhcloudSchema.shape,
 	...inceptionSchema.shape,
 	// kilocode_change end
+	...openAiCodexSchema.shape,
 	...openAiNativeSchema.shape,
 	...mistralSchema.shape,
 	...deepSeekSchema.shape,
@@ -627,6 +655,7 @@ export const providerSettingsSchema = z.object({
 	...xaiSchema.shape,
 	...groqSchema.shape,
 	...basetenSchema.shape,
+	...corethinkSchema.shape,
 	...huggingFaceSchema.shape,
 	...chutesSchema.shape,
 	...litellmSchema.shape,
@@ -641,6 +670,7 @@ export const providerSettingsSchema = z.object({
 	...vercelAiGatewaySchema.shape,
 	...sapAiCoreSchema.shape, // kilocode_change
 	...codebaseIndexProviderSchema.shape,
+	...inceptionSchema.shape,
 })
 
 export type ProviderSettings = z.infer<typeof providerSettingsSchema>
@@ -706,11 +736,11 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	kilocode: "kilocodeModel",
 	bedrock: "apiModelId",
 	vertex: "apiModelId",
+	"openai-codex": "apiModelId",
 	"openai-native": "openAiModelId",
 	ollama: "ollamaModelId",
 	lmstudio: "lmStudioModelId",
 	gemini: "apiModelId",
-	"gemini-cli": "apiModelId",
 	mistral: "apiModelId",
 	moonshot: "apiModelId",
 	minimax: "apiModelId",
@@ -729,6 +759,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	// kilocode_change end
 	groq: "apiModelId",
 	baseten: "apiModelId",
+	corethink: "apiModelId",
 	chutes: "apiModelId",
 	litellm: "litellmModelId",
 	huggingface: "huggingFaceModelId",
@@ -777,7 +808,14 @@ export const getApiProtocol = (provider: ProviderName | undefined, modelId?: str
  */
 
 export const MODELS_BY_PROVIDER: Record<
-	Exclude<ProviderName, "fake-ai" | "human-relay" | "gemini-cli" | "openai" | "gemini">, // kilocode_change: add gemini
+	Exclude<
+		ProviderName,
+		| "fake-ai"
+		| "human-relay"
+		| "openai"
+		| "openai-responses" // kilocode_change
+		| "gemini"
+	>,
 	{ id: ProviderName; label: string; models: string[] }
 > = {
 	anthropic: {
@@ -845,13 +883,18 @@ export const MODELS_BY_PROVIDER: Record<
 		label: "MiniMax",
 		models: Object.keys(minimaxModels),
 	},
+	"openai-codex": {
+		id: "openai-codex",
+		label: "OpenAI - ChatGPT Plus/Pro",
+		models: Object.keys(openAiCodexModels),
+	},
 	"openai-native": {
 		id: "openai-native",
 		label: "OpenAI",
 		models: Object.keys(openAiNativeModels),
 	},
 	"qwen-code": { id: "qwen-code", label: "Qwen Code", models: Object.keys(qwenCodeModels) },
-	roo: { id: "roo", label: "Roo Code Cloud", models: [] },
+	roo: { id: "roo", label: "Roo Code Router", models: [] },
 	sambanova: {
 		id: "sambanova",
 		label: "SambaNova",
@@ -870,6 +913,7 @@ export const MODELS_BY_PROVIDER: Record<
 	xai: { id: "xai", label: "xAI (Grok)", models: Object.keys(xaiModels) },
 	zai: { id: "zai", label: "Z.ai", models: Object.keys(internationalZAiModels) },
 	baseten: { id: "baseten", label: "Baseten", models: Object.keys(basetenModels) },
+	corethink: { id: "corethink", label: "Corethink", models: Object.keys(corethinkModels) },
 
 	// Dynamic providers; models pulled from remote APIs.
 	glama: { id: "glama", label: "Glama", models: [] }, // kilocode_change

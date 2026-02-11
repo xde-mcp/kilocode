@@ -32,7 +32,6 @@ export const commandIds = [
 
 	"plusButtonClicked",
 	"promptsButtonClicked",
-	"mcpButtonClicked",
 
 	"historyButtonClicked",
 	"marketplaceButtonClicked",
@@ -89,6 +88,7 @@ export const languages = [
 	"pl",
 	"pt-BR",
 	"ru",
+	"sk",
 	"tr",
 	"vi",
 	"zh-CN",

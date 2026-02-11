@@ -8,6 +8,8 @@ vitest.mock("vscode", () => ({
 		language: "en",
 		uiKind: 1,
 		appName: "Visual Studio Code",
+		isTelemetryEnabled: true,
+		machineId: "test-machine-id",
 	},
 	version: "1.85.0",
 }))
@@ -22,11 +24,13 @@ import {
 	X_KILOCODE_ORGANIZATIONID,
 	X_KILOCODE_PROJECTID,
 	X_KILOCODE_EDITORNAME,
+	X_KILOCODE_MACHINEID,
+	X_KILOCODE_MODE,
 } from "../../../shared/kilocode/headers"
-import { streamSse } from "../../../services/continuedev/core/fetch/stream"
+import { streamSse } from "../../../services/ghost/continuedev/core/fetch/stream"
 
 // Mock the stream module
-vitest.mock("../../../services/continuedev/core/fetch/stream", () => ({
+vitest.mock("../../../services/ghost/continuedev/core/fetch/stream", () => ({
 	streamSse: vitest.fn(),
 }))
 
@@ -81,8 +85,10 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 		})
@@ -96,9 +102,11 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 		})
@@ -116,10 +124,12 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
 					[X_KILOCODE_PROJECTID]: "https://github.com/user/repo.git",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 		})
@@ -137,10 +147,12 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_PROJECTID]: "https://github.com/user/repo.git",
 					[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 		})
@@ -154,9 +166,11 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 			expect(result?.headers).not.toHaveProperty(X_KILOCODE_PROJECTID)
@@ -172,20 +186,23 @@ describe("KilocodeOpenrouterHandler", () => {
 
 			expect(result).toEqual({
 				headers: {
+					[X_KILOCODE_MODE]: "code",
 					[X_KILOCODE_TASKID]: "test-task-id",
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 			expect(result?.headers).not.toHaveProperty(X_KILOCODE_PROJECTID)
 		})
 
-		it("returns only editorName header when no other headers are needed", () => {
+		it("returns editorName and machineId headers when no other headers are needed", () => {
 			const handler = new KilocodeOpenrouterHandler(mockOptions)
 			const result = handler.customRequestOptions()
 
 			expect(result).toEqual({
 				headers: {
 					[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+					[X_KILOCODE_MACHINEID]: "test-machine-id",
 				},
 			})
 		})
@@ -229,10 +246,12 @@ describe("KilocodeOpenrouterHandler", () => {
 				// kilocode_change start
 				expect.objectContaining({
 					headers: expect.objectContaining({
+						[X_KILOCODE_MODE]: "code",
 						[X_KILOCODE_TASKID]: "test-task-id",
 						[X_KILOCODE_PROJECTID]: "https://github.com/user/repo.git",
 						[X_KILOCODE_ORGANIZATIONID]: "test-org-id",
 						[X_KILOCODE_EDITORNAME]: "Visual Studio Code 1.85.0",
+						[X_KILOCODE_MACHINEID]: "test-machine-id",
 					}),
 				}),
 				// kilocode_change end
@@ -241,86 +260,101 @@ describe("KilocodeOpenrouterHandler", () => {
 	})
 
 	describe("FIM support", () => {
-		it("supportsFim returns true for codestral models", () => {
-			const handler = new KilocodeOpenrouterHandler({
-				...mockOptions,
-				kilocodeModel: "mistral/codestral-latest",
+		describe("fimSupport", () => {
+			it("returns FimHandler for codestral models", () => {
+				const handler = new KilocodeOpenrouterHandler({
+					...mockOptions,
+					kilocodeModel: "mistral/codestral-latest",
+				})
+
+				const fimHandler = handler.fimSupport()
+				expect(fimHandler).toBeDefined()
+				expect(typeof fimHandler?.streamFim).toBe("function")
+				expect(typeof fimHandler?.getModel).toBe("function")
+				expect(typeof fimHandler?.getTotalCost).toBe("function")
 			})
 
-			expect(handler.supportsFim()).toBe(true)
+			it("returns undefined for non-codestral models", () => {
+				const handler = new KilocodeOpenrouterHandler({
+					...mockOptions,
+					kilocodeModel: "anthropic/claude-sonnet-4",
+				})
+
+				expect(handler.fimSupport()).toBeUndefined()
+			})
 		})
 
-		it("supportsFim returns false for non-codestral models", () => {
-			const handler = new KilocodeOpenrouterHandler({
-				...mockOptions,
-				kilocodeModel: "anthropic/claude-sonnet-4",
-			})
+		describe("streamFim via fimSupport()", () => {
+			it("yields chunks correctly", async () => {
+				const handler = new KilocodeOpenrouterHandler({
+					...mockOptions,
+					kilocodeModel: "mistral/codestral-latest",
+				})
 
-			expect(handler.supportsFim()).toBe(false)
-		})
+				// Mock streamSse to return the expected data
+				;(streamSse as any).mockImplementation(async function* () {
+					yield { choices: [{ delta: { content: "chunk1" } }] }
+					yield { choices: [{ delta: { content: "chunk2" } }] }
+					yield {
+						usage: {
+							prompt_tokens: 10,
+							completion_tokens: 5,
+							total_tokens: 15,
+						},
+					}
+				})
 
-		it("streamFim yields chunks correctly", async () => {
-			const handler = new KilocodeOpenrouterHandler({
-				...mockOptions,
-				kilocodeModel: "mistral/codestral-latest",
-			})
+				const mockResponse = {
+					ok: true,
+					status: 200,
+					statusText: "OK",
+				} as Response
 
-			// Mock streamSse to return the expected data
-			;(streamSse as any).mockImplementation(async function* () {
-				yield { choices: [{ delta: { content: "chunk1" } }] }
-				yield { choices: [{ delta: { content: "chunk2" } }] }
-				yield {
-					usage: {
-						prompt_tokens: 10,
-						completion_tokens: 5,
-						total_tokens: 15,
-					},
+				global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+
+				const chunks: string[] = []
+				let receivedUsage: any = null
+
+				const fimHandler = handler.fimSupport()
+				expect(fimHandler).toBeDefined()
+
+				for await (const chunk of fimHandler!.streamFim("prefix", "suffix", undefined, (usage) => {
+					receivedUsage = usage
+				})) {
+					chunks.push(chunk)
 				}
+
+				expect(chunks).toEqual(["chunk1", "chunk2"])
+				expect(receivedUsage).toEqual({
+					prompt_tokens: 10,
+					completion_tokens: 5,
+					total_tokens: 15,
+				})
+				expect(streamSse).toHaveBeenCalledWith(mockResponse)
 			})
 
-			const mockResponse = {
-				ok: true,
-				status: 200,
-				statusText: "OK",
-			} as Response
+			it("handles errors correctly", async () => {
+				const handler = new KilocodeOpenrouterHandler({
+					...mockOptions,
+					kilocodeModel: "mistral/codestral-latest",
+				})
 
-			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
+				const mockResponse = {
+					ok: false,
+					status: 400,
+					statusText: "Bad Request",
+					text: vitest.fn().mockResolvedValue("Invalid request"),
+				}
 
-			const chunks: string[] = []
-			let receivedUsage: any = null
+				global.fetch = vitest.fn().mockResolvedValue(mockResponse)
 
-			for await (const chunk of handler.streamFim("prefix", "suffix", undefined, (usage) => {
-				receivedUsage = usage
-			})) {
-				chunks.push(chunk)
-			}
-
-			expect(chunks).toEqual(["chunk1", "chunk2"])
-			expect(receivedUsage).toEqual({
-				prompt_tokens: 10,
-				completion_tokens: 5,
-				total_tokens: 15,
+				const fimHandler = handler.fimSupport()
+				expect(fimHandler).toBeDefined()
+				const generator = fimHandler!.streamFim("prefix", "suffix")
+				await expect(generator.next()).rejects.toThrow(
+					"FIM streaming failed: 400 Bad Request - Invalid request",
+				)
 			})
-			expect(streamSse).toHaveBeenCalledWith(mockResponse)
-		})
-
-		it("streamFim handles errors correctly", async () => {
-			const handler = new KilocodeOpenrouterHandler({
-				...mockOptions,
-				kilocodeModel: "mistral/codestral-latest",
-			})
-
-			const mockResponse = {
-				ok: false,
-				status: 400,
-				statusText: "Bad Request",
-				text: vitest.fn().mockResolvedValue("Invalid request"),
-			}
-
-			global.fetch = vitest.fn().mockResolvedValue(mockResponse)
-
-			const generator = handler.streamFim("prefix", "suffix")
-			await expect(generator.next()).rejects.toThrow("FIM streaming failed: 400 Bad Request - Invalid request")
 		})
 	})
 })

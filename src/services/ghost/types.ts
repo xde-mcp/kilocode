@@ -1,14 +1,14 @@
 import * as vscode from "vscode"
-import type { AutocompleteCodeSnippet } from "../continuedev/core/autocomplete/types"
+import type { AutocompleteCodeSnippet } from "./continuedev/core/autocomplete/types"
 import type {
 	Position,
 	Range,
 	RangeInFile,
 	TabAutocompleteOptions as CoreTabAutocompleteOptions,
-} from "../continuedev/core"
+} from "./continuedev/core"
 import { RooIgnoreController } from "../../core/ignore/RooIgnoreController"
-import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
-import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
+import { ContextRetrievalService } from "./continuedev/core/autocomplete/context/ContextRetrievalService"
+import { VsCodeIde } from "./continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { GhostModel } from "./GhostModel"
 
 export interface ResponseMetaData {
@@ -137,7 +137,8 @@ export interface GhostStatusBarStateProps {
 	model?: string
 	provider?: string
 	profileName?: string | null
-	hasValidToken: boolean
+	hasKilocodeProfileWithNoBalance?: boolean
+	hasNoUsableProvider?: boolean
 	totalSessionCost: number
 	completionCount: number
 	sessionStartTime: number

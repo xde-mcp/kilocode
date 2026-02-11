@@ -2,18 +2,18 @@ import {
 	type ProviderName,
 	type ProviderSettings,
 	type ModelInfo,
-	anthropicDefaultModelId,
+	type ModelRecord,
+	type RouterModels,
 	anthropicModels,
 	bedrockModels,
 	cerebrasModels,
 	deepSeekModels,
 	moonshotModels,
+	moonshotDefaultModelId,
 	minimaxModels,
 	geminiModels,
 	geminiDefaultModelId,
 	// kilocode_change start
-	geminiCliDefaultModelId,
-	geminiCliModels,
 	syntheticDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
@@ -28,6 +28,8 @@ import {
 	vscodeLlmDefaultModelId,
 	openRouterDefaultModelId,
 	claudeCodeModels,
+	normalizeClaudeCodeModelId,
+	openAiCodexModels,
 	sambaNovaModels,
 	doubaoModels,
 	internationalZAiModels,
@@ -36,14 +38,15 @@ import {
 	featherlessModels,
 	ioIntelligenceModels,
 	basetenModels,
+	corethinkModels,
 	qwenCodeModels,
 	litellmDefaultModelInfo,
+	lMStudioDefaultModelInfo,
 	BEDROCK_1M_CONTEXT_MODEL_IDS,
 	isDynamicProvider,
 	getProviderDefaultModelId,
+	NATIVE_TOOL_DEFAULTS,
 } from "@roo-code/types"
-
-import type { ModelRecord, RouterModels } from "@roo/api"
 
 import { useRouterModels } from "./useRouterModels"
 import { useOpenRouterModelProviders } from "./useOpenRouterModelProviders"
@@ -202,7 +205,9 @@ function getSelectedModel({
 		}
 		case "requesty": {
 			const id = getValidatedModelId(apiConfiguration.requestyModelId, routerModels.requesty, defaultModelId)
-			const info = routerModels.requesty?.[id]
+			const routerInfo = routerModels.requesty?.[id]
+			// Merge native tool defaults for cached models that may lack these fields
+			const info = routerInfo ? { ...NATIVE_TOOL_DEFAULTS, ...routerInfo } : undefined
 			return { id, info }
 		}
 		// kilocode_change start
@@ -214,12 +219,16 @@ function getSelectedModel({
 		// kilocode_change end
 		case "unbound": {
 			const id = getValidatedModelId(apiConfiguration.unboundModelId, routerModels.unbound, defaultModelId)
-			const info = routerModels.unbound?.[id]
+			const routerInfo = routerModels.unbound?.[id]
+			// Merge native tool defaults for cached models that may lack these fields
+			const info = routerInfo ? { ...NATIVE_TOOL_DEFAULTS, ...routerInfo } : undefined
 			return { id, info }
 		}
 		case "litellm": {
 			const id = getValidatedModelId(apiConfiguration.litellmModelId, routerModels.litellm, defaultModelId)
-			const info = routerModels.litellm?.[id] ?? litellmDefaultModelInfo
+			const routerInfo = routerModels.litellm?.[id]
+			// Merge native tool defaults for cached models that may lack these fields
+			const info = routerInfo ? { ...NATIVE_TOOL_DEFAULTS, ...routerInfo } : litellmDefaultModelInfo
 			return { id, info }
 		}
 		case "xai": {
@@ -250,6 +259,11 @@ function getSelectedModel({
 		case "baseten": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const info = basetenModels[id as keyof typeof basetenModels]
+			return { id, info }
+		}
+		case "corethink": {
+			const id = apiConfiguration.apiModelId ?? defaultModelId
+			const info = corethinkModels[id as keyof typeof corethinkModels]
 			return { id, info }
 		}
 		case "bedrock": {
@@ -300,7 +314,17 @@ function getSelectedModel({
 			return { id, info }
 		}
 		case "moonshot": {
-			const id = apiConfiguration.apiModelId ?? defaultModelId
+			// kilocode_change start
+			const configuredId = apiConfiguration.apiModelId ?? defaultModelId
+			const isKimiCodingEndpoint = apiConfiguration.moonshotBaseUrl === "https://api.kimi.com/coding/v1"
+			const firstNonCodingMoonshotModelId =
+				Object.keys(moonshotModels).find((modelId) => modelId !== "kimi-for-coding") ?? moonshotDefaultModelId
+			const id = isKimiCodingEndpoint
+				? "kimi-for-coding"
+				: configuredId === "kimi-for-coding"
+					? firstNonCodingMoonshotModelId
+					: configuredId
+			// kilocode_change end
 			const info = moonshotModels[id as keyof typeof moonshotModels]
 			return { id, info }
 		}
@@ -329,9 +353,27 @@ function getSelectedModel({
 		}
 		case "openai": {
 			const id = apiConfiguration.openAiModelId ?? ""
-			const info = apiConfiguration?.openAiCustomModelInfo ?? openAiModelInfoSaneDefaults
+			const customInfo = apiConfiguration?.openAiCustomModelInfo
+			// Only merge native tool call defaults, not prices or other model-specific info
+			const nativeToolDefaults = {
+				supportsNativeTools: openAiModelInfoSaneDefaults.supportsNativeTools,
+				defaultToolProtocol: openAiModelInfoSaneDefaults.defaultToolProtocol,
+			}
+			const info = customInfo ? { ...nativeToolDefaults, ...customInfo } : openAiModelInfoSaneDefaults
 			return { id, info }
 		}
+		// kilocode_change start
+		case "openai-responses": {
+			const id = apiConfiguration.openAiModelId ?? ""
+			const customInfo = apiConfiguration?.openAiCustomModelInfo
+			const nativeToolDefaults = {
+				supportsNativeTools: openAiModelInfoSaneDefaults.supportsNativeTools,
+				defaultToolProtocol: openAiModelInfoSaneDefaults.defaultToolProtocol,
+			}
+			const info = customInfo ? { ...nativeToolDefaults, ...customInfo } : openAiModelInfoSaneDefaults
+			return { id, info }
+		}
+		// kilocode_change end
 		// kilocode_change start - improved context window handling
 		case "ollama": {
 			const id = apiConfiguration.ollamaModelId ?? ""
@@ -362,10 +404,16 @@ function getSelectedModel({
 		// kilocode_change end
 		case "lmstudio": {
 			const id = apiConfiguration.lmStudioModelId ?? ""
-			const info = lmStudioModels && lmStudioModels[apiConfiguration.lmStudioModelId!]
+			const modelInfo = lmStudioModels && lmStudioModels[apiConfiguration.lmStudioModelId!]
+			// Only merge native tool call defaults, not prices or other model-specific info
+			const nativeToolDefaults = {
+				supportsNativeTools: lMStudioDefaultModelInfo.supportsNativeTools,
+				defaultToolProtocol: lMStudioDefaultModelInfo.defaultToolProtocol,
+			}
+			const info = modelInfo ? { ...nativeToolDefaults, ...modelInfo } : undefined
 			return {
 				id,
-				info: info || undefined,
+				info,
 			}
 		}
 		case "deepinfra": {
@@ -415,11 +463,6 @@ function getSelectedModel({
 				info: routerModels["kilocode"][invalidOrDefaultModel],
 			}
 		}
-		case "gemini-cli": {
-			const id = apiConfiguration.apiModelId ?? geminiCliDefaultModelId
-			const info = geminiCliModels[id as keyof typeof geminiCliModels]
-			return { id, info }
-		}
 		case "virtual-quota-fallback": {
 			if (virtualQuotaActiveModel) {
 				return virtualQuotaActiveModel
@@ -438,9 +481,11 @@ function getSelectedModel({
 
 		case "claude-code": {
 			// Claude Code models extend anthropic models but with images and prompt caching disabled
-			const id = apiConfiguration.apiModelId ?? defaultModelId
-			const info = claudeCodeModels[id as keyof typeof claudeCodeModels]
-			return { id, info: { ...openAiModelInfoSaneDefaults, ...info } }
+			// Normalize legacy model IDs to current canonical model IDs for backward compatibility
+			const rawId = apiConfiguration.apiModelId ?? defaultModelId
+			const normalizedId = normalizeClaudeCodeModelId(rawId)
+			const info = claudeCodeModels[normalizedId]
+			return { id: normalizedId, info: { ...openAiModelInfoSaneDefaults, ...info } }
 		}
 		case "cerebras": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
@@ -489,6 +534,11 @@ function getSelectedModel({
 			const info = qwenCodeModels[id as keyof typeof qwenCodeModels]
 			return { id, info }
 		}
+		case "openai-codex": {
+			const id = apiConfiguration.apiModelId ?? defaultModelId
+			const info = openAiCodexModels[id as keyof typeof openAiCodexModels]
+			return { id, info }
+		}
 		case "vercel-ai-gateway": {
 			const id = getValidatedModelId(
 				apiConfiguration.vercelAiGatewayModelId,
@@ -530,8 +580,8 @@ function getSelectedModel({
 		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "human-relay" | "fake-ai" | "kilocode"
-			const id = apiConfiguration.apiModelId ?? anthropicDefaultModelId
+			provider satisfies "anthropic" | "fake-ai" | "human-relay" | "kilocode"
+			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 
 			// Apply 1M context beta tier pricing for Claude Sonnet 4
