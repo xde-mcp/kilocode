@@ -24,20 +24,24 @@ export interface AutocompleteFileringTestInput {
 }
 
 export async function testAutocompleteFiltering(test: AutocompleteFileringTestInput) {
-	const { prefix } = parseFimExample(test.input)
+	// Normalize line endings to LF for cross-platform compatibility (Windows Git may check out CRLF)
+	const normalizedInput = test.input.replace(/\r\n/g, "\n")
+	const normalizedLlmOutput = test.llmOutput.replace(/\r\n/g, "\n")
+
+	const { prefix } = parseFimExample(normalizedInput)
 
 	// Setup necessary objects
 	const llm = new MockLLM({
 		model: "mock",
 	})
-	llm.completion = test.llmOutput
+	llm.completion = normalizedLlmOutput
 	const ide = testIde
 	const configHandler = testMinimalConfigProvider
 
 	// Create a real file
 	const [workspaceDir] = await ide.getWorkspaceDirs()
 	const fileUri = joinPathsToUri(workspaceDir, test.filename)
-	await ide.writeFile(fileUri, test.input.replace(FIM_DELIMITER, ""))
+	await ide.writeFile(fileUri, normalizedInput.replace(FIM_DELIMITER, ""))
 
 	// Prepare completion input and provider
 	const completionProvider = new CompletionProvider(
