@@ -368,6 +368,8 @@
 			"success": "¡Lista de modelos actualizada correctamente!",
 			"error": "Error al actualizar la lista de modelos. Por favor, inténtalo de nuevo."
 		},
+		"getZenmuxApiKey": "Obtener clave API de Zenmux",
+		"zenmuxTransformsText": "Usar Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Obtener clave API de Requesty",
 		"getRequestyBaseUrl": "URL base",
 		"requestyUseCustomBaseUrl": "Utilice una URL base personalizada",

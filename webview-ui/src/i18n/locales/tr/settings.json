@@ -359,6 +359,8 @@
 			"success": "Model listesi başarıyla yenilendi!",
 			"error": "Model listesi yenilenemedi. Lütfen tekrar deneyin."
 		},
+		"getZenmuxApiKey": "Zenmux API Anahtarı Al",
+		"zenmuxTransformsText": "Zenmux Middle Out Transform'u Kullan",
 		"getRequestyApiKey": "Requesty API Anahtarı Al",
 		"getRequestyBaseUrl": "Temel URL",
 		"requestyUseCustomBaseUrl": "Özel temel URL kullan",
