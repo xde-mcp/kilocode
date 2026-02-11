@@ -1360,10 +1360,10 @@ export const ChatRowContent = ({
 							<div
 								className={cn(
 									"ml-6 border rounded-sm whitespace-pre-wrap",
-									isEditing ? "overflow-visible" : "overflow-hidden",
+									isEditing ? "overflow-visible" : "overflow-hidden", // kilocode_change
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
-										: "cursor-text p-1 bg-vscode-inputValidation-infoBackground text-vscode-inputValidation-infoForeground border-vscode-inputValidation-infoBorder",
+										: "cursor-text p-1 bg-vscode-inputValidation-infoBackground text-vscode-inputValidation-infoForeground border-vscode-inputValidation-infoBorder", // kilocode_change
 								)}>
 								{isEditing ? (
 									<div className="flex flex-col gap-2">
