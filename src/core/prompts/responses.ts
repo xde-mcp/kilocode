@@ -1,7 +1,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import * as path from "path"
 import * as diff from "diff"
-import * as fs from "fs"
+import * as fs from "fs" // kilocode_change
 import { RooIgnoreController, LOCK_TEXT_SYMBOL } from "../ignore/RooIgnoreController"
 import { RooProtectedController } from "../protect/RooProtectedController"
 import * as vscode from "vscode"
@@ -235,7 +235,7 @@ Otherwise, if you have not completed the task and do not need additional informa
 			}
 		}
 
-		// Append character count to each file in the list
+		// kilocode_change start: Append character count to each file in the list
 		rooIgnoreParsed = rooIgnoreParsed.map((entry) => {
 			// Extract actual path by removing prefix symbols
 			let actualPath = entry
@@ -260,6 +260,7 @@ Otherwise, if you have not completed the task and do not need additional informa
 				return entry
 			}
 		})
+		// kilocode_change end
 
 		if (didHitLimit) {
 			return `${rooIgnoreParsed.join(
