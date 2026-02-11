@@ -12,18 +12,22 @@ import {
 	type TelemetrySetting,
 	type OrganizationAllowList,
 	type CloudOrganizationMembership,
+	type ExtensionMessage,
+	type ExtensionState,
+	type MarketplaceInstalledMetadata,
+	type Command,
+	type McpServer,
+	RouterModels,
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 } from "@roo-code/types"
 
-import { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata, Command } from "@roo/ExtensionMessage"
 import { findLastIndex } from "@roo/array"
-import { McpServer } from "@roo/mcp"
+
 import { checkExistKey } from "@roo/checkExistApiConfig"
 import { Mode, defaultModeSlug, defaultPrompts } from "@roo/modes"
 import { CustomSupportPrompts } from "@roo/support-prompt"
 import { experimentDefault } from "@roo/experiments"
-import { RouterModels } from "@roo/api"
 import { McpMarketplaceCatalog } from "../../../src/shared/kilocode/mcp" // kilocode_change
 
 import { vscode } from "@src/utils/vscode"
@@ -38,6 +42,8 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setSendMessageOnEnter: (value: boolean) => void // kilocode_change
 	showTimestamps?: boolean // kilocode_change
 	setShowTimestamps: (value: boolean) => void // kilocode_change
+	showDiffStats?: boolean // kilocode_change
+	setShowDiffStats: (value: boolean) => void // kilocode_change
 	hideCostBelowThreshold?: number // kilocode_change
 	setHideCostBelowThreshold: (value: number) => void // kilocode_change
 	hoveringTaskTimeline?: boolean // kilocode_change
@@ -89,6 +95,8 @@ export interface ExtensionStateContextType extends ExtensionState {
 	mdmCompliant?: boolean
 	hasOpenedModeSelector: boolean // New property to track if user has opened mode selector
 	setHasOpenedModeSelector: (value: boolean) => void // Setter for the new property
+	hasCompletedOnboarding?: boolean // kilocode_change: Track if user has completed onboarding flow
+	setHasCompletedOnboarding: (value: boolean) => void // kilocode_change
 	alwaysAllowFollowupQuestions: boolean // New property for follow-up questions auto-approve
 	setAlwaysAllowFollowupQuestions: (value: boolean) => void // Setter for the new property
 	followupAutoApproveTimeoutMs: number | undefined // Timeout in ms for auto-approving follow-up questions
@@ -271,6 +279,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		featureRoomoteControlEnabled: false,
 		alwaysAllowWrite: true, // kilocode_change
 		alwaysAllowReadOnly: true, // kilocode_change
+		alwaysAllowDelete: false, // kilocode_change
 		requestDelaySeconds: 5,
 		currentApiConfigName: "default",
 		listApiConfigMeta: [],
@@ -286,6 +295,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		customCondensingPrompt: "", // Default empty string for custom condensing prompt
 		yoloGatekeeperApiConfigId: "", // kilocode_change: Default empty string for gatekeeper API config ID
 		hasOpenedModeSelector: false, // Default to false (not opened yet)
+		hasCompletedOnboarding: undefined, // kilocode_change: Leave unset until extension sends value
 		autoApprovalEnabled: true,
 		customModes: [],
 		maxOpenTabsContext: 20,
@@ -311,6 +321,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		showTaskTimeline: true, // kilocode_change
 		sendMessageOnEnter: true, // kilocode_change
 		showTimestamps: true, // kilocode_change
+		showDiffStats: true, // kilocode_change
 		kilocodeDefaultModel: openRouterDefaultModelId,
 		reasoningBlockCollapsed: true, // Default to collapsed
 		enterBehavior: "send", // Default: Enter sends, Shift+Enter creates newline
@@ -660,6 +671,7 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 			setState((prevState) => ({ ...prevState, hideCostBelowThreshold: value })),
 		setHoveringTaskTimeline: (value) => setState((prevState) => ({ ...prevState, hoveringTaskTimeline: value })),
 		setShowTimestamps: (value) => setState((prevState) => ({ ...prevState, showTimestamps: value })),
+		setShowDiffStats: (value) => setState((prevState) => ({ ...prevState, showDiffStats: value })), // kilocode_change
 		setYoloMode: (value) => setState((prevState) => ({ ...prevState, yoloMode: value })), // kilocode_change
 		// kilocode_change end
 		setAutoApprovalEnabled: (value) => setState((prevState) => ({ ...prevState, autoApprovalEnabled: value })),
@@ -700,6 +712,9 @@ export const ExtensionStateContextProvider: React.FC<{ children: React.ReactNode
 		enterBehavior: state.enterBehavior ?? "send",
 		setEnterBehavior: (value) => setState((prevState) => ({ ...prevState, enterBehavior: value })),
 		setHasOpenedModeSelector: (value) => setState((prevState) => ({ ...prevState, hasOpenedModeSelector: value })),
+		hasCompletedOnboarding: state.hasCompletedOnboarding, // kilocode_change
+		setHasCompletedOnboarding: (value) =>
+			setState((prevState) => ({ ...prevState, hasCompletedOnboarding: value })), // kilocode_change
 		setAutoCondenseContext: (value) => setState((prevState) => ({ ...prevState, autoCondenseContext: value })),
 		setAutoCondenseContextPercent: (value) =>
 			setState((prevState) => ({ ...prevState, autoCondenseContextPercent: value })),
