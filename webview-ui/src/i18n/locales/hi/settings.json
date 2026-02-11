@@ -367,6 +367,8 @@
 			"success": "मॉडल सूची सफलतापूर्वक अपडेट की गई!",
 			"error": "मॉडल सूची अपडेट करने में विफल। कृपया पुनः प्रयास करें।"
 		},
+		"getZenmuxApiKey": "Zenmux API कुंजी प्राप्त करें",
+		"zenmuxTransformsText": "Zenmux Middle Out Transform का उपयोग करें",
 		"getRequestyApiKey": "Requesty API कुंजी प्राप्त करें",
 		"getRequestyBaseUrl": "बेस URL",
 		"requestyUseCustomBaseUrl": "कस्टम बेस URL का उपयोग करें",

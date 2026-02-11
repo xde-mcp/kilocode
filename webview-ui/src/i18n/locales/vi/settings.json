@@ -367,6 +367,8 @@
 			"success": "Danh sách mô hình đã được làm mới thành công!",
 			"error": "Không thể làm mới danh sách mô hình. Vui lòng thử lại."
 		},
+		"getZenmuxApiKey": "Lấy khóa API Zenmux",
+		"zenmuxTransformsText": "Sử dụng Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Lấy khóa API Requesty",
 		"getRequestyBaseUrl": "URL cơ sở",
 		"requestyUseCustomBaseUrl": "Sử dụng URL cơ sở tùy chỉnh",
