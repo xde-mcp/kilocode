@@ -198,16 +198,16 @@ export async function getQueryForFile(filepathOrUri: string, queryPath: string):
 	}
 
 	// Resolve the query file from tree-sitter directory.
-	// The tree-sitter directory is at src/services/ghost/continuedev/tree-sitter/
+	// The tree-sitter directory is at src/services/autocomplete/continuedev/tree-sitter/
 	const repoRoot = path.resolve(__dirname, "..", "..", "..", "..", "..")
 
 	const candidatePaths: string[] = [
-		// Development: from src/services/ghost/continuedev/core/util -> src/services/ghost/continuedev/tree-sitter
+		// Development: from src/services/autocomplete/continuedev/core/util -> src/services/autocomplete/continuedev/tree-sitter
 		path.join(__dirname, "..", "..", "tree-sitter", queryPath),
 		// Production: tree-sitter might be copied alongside compiled code
 		path.join(__dirname, "tree-sitter", queryPath),
 		// Alternative: from repo root
-		path.join(repoRoot, "src", "services", "ghost", "continuedev", "tree-sitter", queryPath),
+		path.join(repoRoot, "src", "services", "autocomplete", "continuedev", "tree-sitter", queryPath),
 		// Fallback: dist directory
 		path.join(repoRoot, "dist", "tree-sitter", queryPath),
 	]
@@ -231,11 +231,11 @@ async function loadLanguageForFileExt(fileExtension: string): Promise<Language> 
 
 	// The WASM files are copied to src/dist/ during build
 	// In production (compiled): __dirname = /path/to/kilocode/src/dist or dist/
-	// In development: __dirname = /path/to/kilocode/src/services/ghost/continuedev/core/util
+	// In development: __dirname = /path/to/kilocode/src/services/autocomplete/continuedev/core/util
 	const candidatePaths: string[] = [
 		// Production: WASM files are in the same directory as the compiled code
 		path.join(__dirname, filename),
-		// Development: from src/services/ghost/continuedev/core/util -> src/dist
+		// Development: from src/services/autocomplete/continuedev/core/util -> src/dist
 		path.join(repoRoot, "dist", filename),
 		// Fallback: repo root
 		path.join(repoRoot, filename),
