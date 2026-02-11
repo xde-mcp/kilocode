@@ -491,18 +491,6 @@ export const FIELD_REGISTRY: Record<string, FieldMetadata> = {
 		placeholder: "Enter OAuth credentials path...",
 	},
 
-	// Gemini CLI fields
-	geminiCliOAuthPath: {
-		label: "OAuth Credentials Path",
-		type: "text",
-		placeholder: "Enter OAuth credentials path...",
-	},
-	geminiCliProjectId: {
-		label: "Project ID",
-		type: "text",
-		placeholder: "Enter project ID...",
-	},
-
 	// ZAI fields
 	zaiApiKey: {
 		label: "API Key",
@@ -810,6 +798,9 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				createFieldConfig("openAiNativeBaseUrl", config, "Default"),
 			]
 
+		case "openai-codex":
+			return [createFieldConfig("apiModelId", config, "gpt-4o")]
+
 		case "bedrock":
 			return [
 				createFieldConfig("awsAccessKey", config),
@@ -946,12 +937,6 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 		case "qwen-code":
 			return [createFieldConfig("qwenCodeOauthPath", config, "~/.qwen/oauth_creds.json")]
 
-		case "gemini-cli":
-			return [
-				createFieldConfig("geminiCliOAuthPath", config, "~/.gemini/oauth_creds.json"),
-				createFieldConfig("geminiCliProjectId", config),
-			]
-
 		case "zai":
 			return [
 				createFieldConfig("zaiApiKey", config),
@@ -1055,6 +1040,8 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	kilocode: "anthropic/claude-sonnet-4",
 	anthropic: "claude-3-5-sonnet-20241022",
 	"openai-native": "gpt-4o",
+	"openai-codex": "gpt-4o",
+	"openai-responses": "gpt-4o",
 	openrouter: "anthropic/claude-3-5-sonnet",
 	bedrock: "anthropic.claude-3-5-sonnet-20241022-v2:0",
 	gemini: "gemini-1.5-pro-latest",
@@ -1082,7 +1069,6 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	deepinfra: "meta-llama/Meta-Llama-3.1-70B-Instruct",
 	"io-intelligence": "gpt-4o",
 	"qwen-code": "qwen-coder-plus-latest",
-	"gemini-cli": "gemini-1.5-pro-latest",
 	zai: "gpt-4o",
 	unbound: "gpt-4o",
 	requesty: "gpt-4o",
@@ -1097,6 +1083,7 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	synthetic: "synthetic-model",
 	"sap-ai-core": "gpt-4o",
 	baseten: "zai-org/GLM-4.6",
+	corethink: "corethink"
 }
 
 /**

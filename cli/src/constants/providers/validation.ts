@@ -8,6 +8,7 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	kilocode: ["kilocodeToken", "kilocodeModel"],
 	anthropic: ["apiKey", "apiModelId"],
 	"openai-native": ["openAiNativeApiKey", "apiModelId"],
+	"openai-codex": ["apiModelId"],
 	openrouter: ["openRouterApiKey", "openRouterModelId"],
 	ollama: ["ollamaBaseUrl", "ollamaModelId"],
 	lmstudio: ["lmStudioBaseUrl", "lmStudioModelId"],
@@ -19,6 +20,7 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	deepseek: ["deepSeekApiKey", "apiModelId"],
 	xai: ["xaiApiKey", "apiModelId"],
 	openai: ["openAiApiKey"],
+	"openai-responses": ["openAiApiKey"],
 	cerebras: ["cerebrasApiKey", "apiModelId"],
 	glama: ["glamaApiKey", "glamaModelId"],
 	"nano-gpt": ["nanoGptApiKey", "nanoGptModelId"],
@@ -33,7 +35,6 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	deepinfra: ["deepInfraApiKey", "deepInfraModelId"],
 	"io-intelligence": ["ioIntelligenceApiKey", "ioIntelligenceModelId"],
 	"qwen-code": ["qwenCodeOauthPath", "apiModelId"],
-	"gemini-cli": ["geminiCliOAuthPath", "geminiCliProjectId", "apiModelId"],
 	zai: ["zaiApiKey", "zaiApiLine", "apiModelId"],
 	unbound: ["unboundApiKey", "unboundModelId"],
 	requesty: ["requestyApiKey", "requestyModelId"],
@@ -51,4 +52,5 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	"virtual-quota-fallback": [], // Has array validation
 	minimax: ["minimaxBaseUrl", "minimaxApiKey", "apiModelId"],
 	baseten: ["basetenApiKey", "apiModelId"],
+	corethink: ["corethinkApiKey", "corethinkModelId"]
 }
