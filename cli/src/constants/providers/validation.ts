@@ -35,7 +35,6 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	deepinfra: ["deepInfraApiKey", "deepInfraModelId"],
 	"io-intelligence": ["ioIntelligenceApiKey", "ioIntelligenceModelId"],
 	"qwen-code": ["qwenCodeOauthPath", "apiModelId"],
-	"gemini-cli": ["geminiCliOAuthPath", "geminiCliProjectId", "apiModelId"],
 	zai: ["zaiApiKey", "zaiApiLine", "apiModelId"],
 	unbound: ["unboundApiKey", "unboundModelId"],
 	requesty: ["requestyApiKey", "requestyModelId"],
@@ -53,4 +52,5 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	"virtual-quota-fallback": [], // Has array validation
 	minimax: ["minimaxBaseUrl", "minimaxApiKey", "apiModelId"],
 	baseten: ["basetenApiKey", "apiModelId"],
+	corethink: ["corethinkApiKey", "corethinkModelId"]
 }

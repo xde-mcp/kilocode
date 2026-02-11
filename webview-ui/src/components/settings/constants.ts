@@ -9,7 +9,6 @@ import {
 	moonshotModels,
 	// kilocode_change start
 	// geminiModels,
-	geminiCliModels,
 	// kilocode_change end
 	mistralModels,
 	openAiNativeModels,
@@ -26,6 +25,7 @@ import {
 	featherlessModels,
 	minimaxModels,
 	basetenModels,
+	corethinkModels,
 } from "@roo-code/types"
 
 export const MODELS_BY_PROVIDER: Partial<Record<ProviderName, Record<string, ModelInfo>>> = {
@@ -38,7 +38,6 @@ export const MODELS_BY_PROVIDER: Partial<Record<ProviderName, Record<string, Mod
 	moonshot: moonshotModels,
 	// kilocode_change start
 	// gemini: geminiModels,
-	"gemini-cli": geminiCliModels,
 	// kilocode_change end
 	mistral: mistralModels,
 	"openai-native": openAiNativeModels,
@@ -55,6 +54,7 @@ export const MODELS_BY_PROVIDER: Partial<Record<ProviderName, Record<string, Mod
 	featherless: featherlessModels,
 	minimax: minimaxModels,
 	baseten: basetenModels,
+	corethink: corethinkModels,
 }
 
 export const PROVIDERS = [
@@ -67,7 +67,6 @@ export const PROVIDERS = [
 	{ value: "doubao", label: "Doubao", proxy: false },
 	// kilocode_change start
 	{ value: "inception", label: "Inception", proxy: false },
-	{ value: "gemini-cli", label: "Gemini CLI", proxy: false },
 	{ value: "virtual-quota-fallback", label: "Virtual Quota Fallback", proxy: false },
 	{ value: "synthetic", label: "Synthetic", proxy: false },
 	{ value: "ovhcloud", label: "OVHcloud AI Endpoints", proxy: false },
@@ -101,12 +100,11 @@ export const PROVIDERS = [
 	{ value: "fireworks", label: "Fireworks AI", proxy: false },
 	{ value: "featherless", label: "Featherless AI", proxy: false },
 	{ value: "io-intelligence", label: "IO Intelligence", proxy: false },
-	// kilocode_change start
-	// { value: "roo", label: "Roo Code Cloud", proxy: false },
-	// kilocode_change end
+	// { value: "roo", label: "Roo Code Router", proxy: false }, // kilocode_change
 	{ value: "vercel-ai-gateway", label: "Vercel AI Gateway", proxy: false },
 	{ value: "minimax", label: "MiniMax", proxy: false },
 	{ value: "baseten", label: "Baseten", proxy: false },
+	{ value: "corethink", label: "Corethink", proxy: false },
 ].sort((a, b) => a.label.localeCompare(b.label))
 
 PROVIDERS.unshift({ value: "kilocode", label: "Kilo Gateway", proxy: false }) // kilocode_change

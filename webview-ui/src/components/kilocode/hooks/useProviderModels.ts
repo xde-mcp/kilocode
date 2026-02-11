@@ -5,6 +5,8 @@ import {
 	anthropicModels,
 	basetenModels,
 	basetenDefaultModelId,
+	corethinkModels,
+	corethinkDefaultModelId,
 	bedrockDefaultModelId,
 	bedrockModels,
 	deepSeekDefaultModelId,
@@ -33,7 +35,6 @@ import {
 	litellmDefaultModelId,
 	qwenCodeModels,
 	qwenCodeDefaultModelId,
-	geminiCliModels,
 	claudeCodeModels,
 	claudeCodeDefaultModelId,
 	doubaoModels,
@@ -169,14 +170,12 @@ export const getModelsByProvider = ({
 				defaultModel: openAiNativeDefaultModelId,
 			}
 		}
-
 		case "openai-codex": {
 			return {
 				models: openAiCodexModels,
 				defaultModel: openAiCodexDefaultModelId,
 			}
 		}
-
 		case "mistral": {
 			return {
 				models: mistralModels,
@@ -224,12 +223,6 @@ export const getModelsByProvider = ({
 			return {
 				models: qwenCodeModels,
 				defaultModel: qwenCodeDefaultModelId,
-			}
-		}
-		case "gemini-cli": {
-			return {
-				models: geminiCliModels,
-				defaultModel: geminiDefaultModelId,
 			}
 		}
 		case "anthropic": {
@@ -324,6 +317,12 @@ export const getModelsByProvider = ({
 			return {
 				models: basetenModels,
 				defaultModel: basetenDefaultModelId,
+			}
+		}
+		case "corethink": {
+			return {
+				models: corethinkModels,
+				defaultModel: corethinkDefaultModelId,
 			}
 		}
 		case "zai": {

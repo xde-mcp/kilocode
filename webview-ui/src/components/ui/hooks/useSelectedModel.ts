@@ -2,17 +2,18 @@ import {
 	type ProviderName,
 	type ProviderSettings,
 	type ModelInfo,
+	type ModelRecord,
+	type RouterModels,
 	anthropicModels,
 	bedrockModels,
 	cerebrasModels,
 	deepSeekModels,
 	moonshotModels,
+	moonshotDefaultModelId,
 	minimaxModels,
 	geminiModels,
 	geminiDefaultModelId,
 	// kilocode_change start
-	geminiCliDefaultModelId,
-	geminiCliModels,
 	syntheticDefaultModelId,
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
@@ -37,6 +38,7 @@ import {
 	featherlessModels,
 	ioIntelligenceModels,
 	basetenModels,
+	corethinkModels,
 	qwenCodeModels,
 	litellmDefaultModelInfo,
 	lMStudioDefaultModelInfo,
@@ -45,8 +47,6 @@ import {
 	getProviderDefaultModelId,
 	NATIVE_TOOL_DEFAULTS,
 } from "@roo-code/types"
-
-import type { ModelRecord, RouterModels } from "@roo/api"
 
 import { useRouterModels } from "./useRouterModels"
 import { useOpenRouterModelProviders } from "./useOpenRouterModelProviders"
@@ -261,6 +261,11 @@ function getSelectedModel({
 			const info = basetenModels[id as keyof typeof basetenModels]
 			return { id, info }
 		}
+		case "corethink": {
+			const id = apiConfiguration.apiModelId ?? defaultModelId
+			const info = corethinkModels[id as keyof typeof corethinkModels]
+			return { id, info }
+		}
 		case "bedrock": {
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const baseInfo = bedrockModels[id as keyof typeof bedrockModels]
@@ -309,7 +314,17 @@ function getSelectedModel({
 			return { id, info }
 		}
 		case "moonshot": {
-			const id = apiConfiguration.apiModelId ?? defaultModelId
+			// kilocode_change start
+			const configuredId = apiConfiguration.apiModelId ?? defaultModelId
+			const isKimiCodingEndpoint = apiConfiguration.moonshotBaseUrl === "https://api.kimi.com/coding/v1"
+			const firstNonCodingMoonshotModelId =
+				Object.keys(moonshotModels).find((modelId) => modelId !== "kimi-for-coding") ?? moonshotDefaultModelId
+			const id = isKimiCodingEndpoint
+				? "kimi-for-coding"
+				: configuredId === "kimi-for-coding"
+					? firstNonCodingMoonshotModelId
+					: configuredId
+			// kilocode_change end
 			const info = moonshotModels[id as keyof typeof moonshotModels]
 			return { id, info }
 		}
@@ -448,11 +463,6 @@ function getSelectedModel({
 				info: routerModels["kilocode"][invalidOrDefaultModel],
 			}
 		}
-		case "gemini-cli": {
-			const id = apiConfiguration.apiModelId ?? geminiCliDefaultModelId
-			const info = geminiCliModels[id as keyof typeof geminiCliModels]
-			return { id, info }
-		}
 		case "virtual-quota-fallback": {
 			if (virtualQuotaActiveModel) {
 				return virtualQuotaActiveModel
@@ -570,7 +580,7 @@ function getSelectedModel({
 		// case "human-relay":
 		// case "fake-ai":
 		default: {
-			provider satisfies "anthropic" | "gemini-cli" | "qwen-code" | "fake-ai" | "human-relay" | "kilocode"
+			provider satisfies "anthropic" | "fake-ai" | "human-relay" | "kilocode"
 			const id = apiConfiguration.apiModelId ?? defaultModelId
 			const baseInfo = anthropicModels[id as keyof typeof anthropicModels]
 

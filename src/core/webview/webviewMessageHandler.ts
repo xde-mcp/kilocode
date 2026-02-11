@@ -25,6 +25,9 @@ import {
 	type ClineMessage,
 	type TelemetrySetting,
 	type UserSettingsConfig,
+	type ModelRecord,
+	type WebviewMessage,
+	type EditQueuedMessagePayload,
 	TelemetryEventName,
 	// kilocode_change start
 	ghostServiceSettingsSchema,
@@ -33,6 +36,9 @@ import {
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	RooCodeSettings,
 	ExperimentId,
+	checkoutDiffPayloadSchema,
+	checkoutRestorePayloadSchema,
+	requestCheckpointRestoreApprovalPayloadSchema, // kilocode_change
 } from "@roo-code/types"
 import { customToolRegistry } from "@roo-code/core"
 import { CloudService } from "@roo-code/cloud"
@@ -47,16 +53,9 @@ import { handleCheckpointRestoreOperation } from "./checkpointRestoreHandler"
 import { generateErrorDiagnostics } from "./diagnosticsHandler"
 import { changeLanguage, t } from "../../i18n"
 import { Package } from "../../shared/package"
-import { type RouterName, type ModelRecord, toRouterName } from "../../shared/api"
+import { type RouterName, toRouterName } from "../../shared/api"
 import { MessageEnhancer } from "./messageEnhancer"
 
-import {
-	type WebviewMessage,
-	type EditQueuedMessagePayload,
-	checkoutDiffPayloadSchema,
-	checkoutRestorePayloadSchema,
-	requestCheckpointRestoreApprovalPayloadSchema,
-} from "../../shared/WebviewMessage"
 import { checkExistKey } from "../../shared/checkExistApiConfig"
 import { experimentDefault } from "../../shared/experiments"
 import { Terminal } from "../../integrations/terminal/Terminal"
@@ -75,6 +74,8 @@ import { exportSettings, importSettingsWithFeedback } from "../config/importExpo
 import { getOpenAiModels } from "../../api/providers/openai"
 import { getVsCodeLmModels } from "../../api/providers/vscode-lm"
 import { openMention } from "../mentions"
+import { resolveImageMentions } from "../mentions/resolveImageMentions"
+import { RooIgnoreController } from "../ignore/RooIgnoreController"
 import { getWorkspacePath } from "../../utils/path"
 import { Mode, defaultModeSlug } from "../../shared/modes"
 import { getModels, flushModels } from "../../api/providers/fetchers/modelCache"
@@ -120,6 +121,26 @@ export const webviewMessageHandler = async (
 
 	const getCurrentCwd = () => {
 		return provider.getCurrentTask()?.cwd || provider.cwd
+	}
+
+	/**
+	 * Resolves image file mentions in incoming messages.
+	 * Matches read_file behavior: respects size limits and model capabilities.
+	 */
+	const resolveIncomingImages = async (payload: { text?: string; images?: string[] }) => {
+		const text = payload.text ?? ""
+		const images = payload.images
+		const currentTask = provider.getCurrentTask()
+		const state = await provider.getState()
+		const resolved = await resolveImageMentions({
+			text,
+			images,
+			cwd: getCurrentCwd(),
+			rooIgnoreController: currentTask?.rooIgnoreController,
+			maxImageFileSize: state.maxImageFileSize,
+			maxTotalImageSize: state.maxTotalImageSize,
+		})
+		return resolved
 	}
 	/**
 	 * Shared utility to find message indices based on timestamp.
@@ -558,7 +579,8 @@ export const webviewMessageHandler = async (
 			// agentically running promises in old instance don't affect our new
 			// task. This essentially creates a fresh slate for the new task.
 			try {
-				await provider.createTask(message.text, message.images)
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+				await provider.createTask(resolved.text, resolved.images)
 				// Task created successfully - notify the UI to reset
 				await provider.postMessageToWebview({ type: "invoke", invoke: "newChat" })
 			} catch (error) {
@@ -580,7 +602,12 @@ export const webviewMessageHandler = async (
 			break
 
 		case "askResponse":
-			provider.getCurrentTask()?.handleWebviewAskResponse(message.askResponse!, message.text, message.images)
+			{
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+				provider
+					.getCurrentTask()
+					?.handleWebviewAskResponse(message.askResponse!, resolved.text, resolved.images)
+			}
 			break
 
 		case "updateSettings":
@@ -770,51 +797,50 @@ export const webviewMessageHandler = async (
 			break
 		case "deleteMultipleTasksWithIds": {
 			const ids = message.ids
+			const excludeFavorites = message.excludeFavorites
 
 			if (Array.isArray(ids)) {
-				// Process in batches of 20 (or another reasonable number)
-				const batchSize = 20
-				const results = []
-
-				// Only log start and end of the operation
-				console.log(`Batch deletion started: ${ids.length} tasks total`)
-
-				for (let i = 0; i < ids.length; i += batchSize) {
-					const batch = ids.slice(i, i + batchSize)
-
-					const batchPromises = batch.map(async (id) => {
-						try {
-							await provider.deleteTaskWithId(id)
-							return { id, success: true }
-						} catch (error) {
-							// Keep error logging for debugging purposes
-							console.log(
-								`Failed to delete task ${id}: ${error instanceof Error ? error.message : String(error)}`,
-							)
-							return { id, success: false }
-						}
-					})
-
-					// Process each batch in parallel but wait for completion before starting the next batch
-					const batchResults = await Promise.all(batchPromises)
-					results.push(...batchResults)
-
-					// Update the UI after each batch to show progress
+				// kilocode_change start: Use deleteMultipleTasks which handles excludeFavorites
+				try {
+					await provider.deleteMultipleTasks(ids, excludeFavorites)
 					await provider.postStateToWebview()
+					console.log(`Batch deletion completed: ${ids.length} tasks processed`)
+				} catch (error) {
+					console.log(`Batch deletion failed: ${error instanceof Error ? error.message : String(error)}`)
 				}
-
-				// Log final results
-				const successCount = results.filter((r) => r.success).length
-				const failCount = results.length - successCount
-				console.log(
-					`Batch deletion completed: ${successCount}/${ids.length} tasks successful, ${failCount} tasks failed`,
-				)
+				// kilocode_change end
 			}
 			break
 		}
 		case "exportTaskWithId":
 			provider.exportTaskWithId(message.text!)
 			break
+		case "getTaskWithAggregatedCosts": {
+			try {
+				const taskId = message.text
+				if (!taskId) {
+					throw new Error("Task ID is required")
+				}
+				const result = await provider.getTaskWithAggregatedCosts(taskId)
+				await provider.postMessageToWebview({
+					type: "taskWithAggregatedCosts",
+					// IMPORTANT: ChatView stores aggregatedCostsMap keyed by message.text (taskId)
+					// so we must include it here.
+					text: taskId,
+					historyItem: result.historyItem,
+					aggregatedCosts: result.aggregatedCosts,
+				})
+			} catch (error) {
+				console.error("Error getting task with aggregated costs:", error)
+				await provider.postMessageToWebview({
+					type: "taskWithAggregatedCosts",
+					// Include taskId when available for correlation in UI logs.
+					text: message.text,
+					error: error instanceof Error ? error.message : String(error),
+				})
+			}
+			break
+		}
 		case "importSettings": {
 			await importSettingsWithFeedback({
 				providerSettingsManager: provider.providerSettingsManager,
@@ -822,7 +848,7 @@ export const webviewMessageHandler = async (
 				customModesManager: provider.customModesManager,
 				provider: provider,
 			})
-
+			await provider.postMessageToWebview({ type: "settingsImported" })
 			break
 		}
 		case "exportSettings":
@@ -1229,7 +1255,9 @@ export const webviewMessageHandler = async (
 					if (Object.keys(sapAiCoreDeployments).length > 0) {
 						provider.postMessageToWebview({
 							type: "sapAiCoreDeployments",
-							sapAiCoreDeployments: sapAiCoreDeployments,
+							sapAiCoreDeployments:
+								// Cast to canonical type from @roo-code/types to avoid drift.
+								sapAiCoreDeployments as unknown as import("@roo-code/types").DeploymentRecord, // kilocode_change
 						})
 					}
 				} catch (error) {
@@ -1854,6 +1882,10 @@ export const webviewMessageHandler = async (
 			await provider.postStateToWebview()
 			break
 		// kilocode_change start
+		case "hasCompletedOnboarding":
+			await updateGlobalState("hasCompletedOnboarding", message.bool ?? true)
+			await provider.postStateToWebview()
+			break
 		case "kiloCodeImageApiKey":
 			await provider.contextProxy.setValue("kiloCodeImageApiKey", message.text)
 			await provider.postStateToWebview()
@@ -1866,7 +1898,6 @@ export const webviewMessageHandler = async (
 			await updateGlobalState("showTaskTimeline", message.bool ?? false)
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start
 		case "sendMessageOnEnter":
 			await updateGlobalState("sendMessageOnEnter", message.bool ?? false)
 			await provider.postStateToWebview()
@@ -2111,12 +2142,39 @@ export const webviewMessageHandler = async (
 					20, // Use default limit, as filtering is now done in the backend
 				)
 
-				// Send results back to webview
-				await provider.postMessageToWebview({
-					type: "fileSearchResults",
-					results,
-					requestId: message.requestId,
-				})
+				// Get the RooIgnoreController from the current task, or create a new one
+				const currentTask = provider.getCurrentTask()
+				let rooIgnoreController = currentTask?.rooIgnoreController
+				let tempController: RooIgnoreController | undefined
+
+				// If no current task or no controller, create a temporary one
+				if (!rooIgnoreController) {
+					tempController = new RooIgnoreController(workspacePath)
+					await tempController.initialize()
+					rooIgnoreController = tempController
+				}
+
+				try {
+					// Get showRooIgnoredFiles setting from state
+					const { showRooIgnoredFiles = false } = (await provider.getState()) ?? {}
+
+					// Filter results using RooIgnoreController if showRooIgnoredFiles is false
+					let filteredResults = results
+					if (!showRooIgnoredFiles && rooIgnoreController) {
+						const allowedPaths = rooIgnoreController.filterPaths(results.map((r) => r.path))
+						filteredResults = results.filter((r) => allowedPaths.includes(r.path))
+					}
+
+					// Send results back to webview
+					await provider.postMessageToWebview({
+						type: "fileSearchResults",
+						results: filteredResults,
+						requestId: message.requestId,
+					})
+				} finally {
+					// Dispose temporary controller to prevent resource leak
+					tempController?.dispose()
+				}
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error)
 
@@ -2223,7 +2281,7 @@ export const webviewMessageHandler = async (
 				}
 
 				// kilocode_change start: If we're updating the active profile, we need to activate it to ensure it's persisted
-				const currentApiConfigName = getGlobalState("currentApiConfigName")
+				const currentApiConfigName = getGlobalState("currentApiConfigName") || "default"
 				const isActiveProfile = message.text === currentApiConfigName
 				await provider.upsertProviderProfile(message.text, configToSave, isActiveProfile) // Activate if it's the current active profile
 				vscode.commands.executeCommand("kilo-code.ghost.reload")
@@ -2364,11 +2422,12 @@ export const webviewMessageHandler = async (
 			break
 		case "editMessageConfirm":
 			if (message.messageTs && message.text) {
+				const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
 				await handleEditMessageConfirm(
 					message.messageTs,
-					message.text,
+					resolved.text,
 					message.restoreCheckpoint,
-					message.images,
+					resolved.images,
 				)
 			}
 			break
@@ -2759,7 +2818,7 @@ export const webviewMessageHandler = async (
 
 				// Go back to Personal when no longer part of the current set organization
 				const organizationExists = (response.data.organizations ?? []).some(
-					({ id }) => id === apiConfiguration?.kilocodeOrganizationId,
+					({ id }: { id: string }) => id === apiConfiguration?.kilocodeOrganizationId,
 				)
 				if (apiConfiguration?.kilocodeOrganizationId && !organizationExists) {
 					provider.upsertProviderProfile(currentApiConfigName ?? "default", {
@@ -3026,6 +3085,13 @@ export const webviewMessageHandler = async (
 			}
 
 			TelemetryService.instance.updateTelemetryState(isOptedIn)
+			await provider.postStateToWebview()
+			break
+		}
+		case "debugSetting": {
+			await vscode.workspace
+				.getConfiguration(Package.name)
+				.update("debug", message.bool ?? false, vscode.ConfigurationTarget.Global)
 			await provider.postStateToWebview()
 			break
 		}
@@ -3792,7 +3858,7 @@ export const webviewMessageHandler = async (
 
 		case "switchTab": {
 			if (message.tab) {
-				// Capture tab shown event for all switchTab messages (which are user-initiated)
+				// Capture tab shown event for all switchTab messages (which are user-initiated).
 				if (TelemetryService.hasInstance()) {
 					TelemetryService.instance.captureTabShown(message.tab)
 				}
@@ -3857,7 +3923,6 @@ export const webviewMessageHandler = async (
 				const { getCommands } = await import("../../services/command/commands")
 				const commands = await getCommands(getCurrentCwd())
 
-				// Convert to the format expected by the frontend
 				const commandList = commands.map((command) => ({
 					name: command.name,
 					source: command.source,
@@ -3866,17 +3931,20 @@ export const webviewMessageHandler = async (
 					argumentHint: command.argumentHint,
 				}))
 
-				await provider.postMessageToWebview({
-					type: "commands",
-					commands: commandList,
-				})
+				await provider.postMessageToWebview({ type: "commands", commands: commandList })
 			} catch (error) {
 				provider.log(`Error fetching commands: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`)
-				// Send empty array on error
-				await provider.postMessageToWebview({
-					type: "commands",
-					commands: [],
-				})
+				await provider.postMessageToWebview({ type: "commands", commands: [] })
+			}
+			break
+		}
+		case "requestModes": {
+			try {
+				const modes = await provider.getModes()
+				await provider.postMessageToWebview({ type: "modes", modes })
+			} catch (error) {
+				provider.log(`Error fetching modes: ${JSON.stringify(error, Object.getOwnPropertyNames(error), 2)}`)
+				await provider.postMessageToWebview({ type: "modes", modes: [] })
 			}
 			break
 		}
@@ -4149,7 +4217,8 @@ export const webviewMessageHandler = async (
 		 */
 
 		case "queueMessage": {
-			provider.getCurrentTask()?.messageQueueService.addMessage(message.text ?? "", message.images)
+			const resolved = await resolveIncomingImages({ text: message.text, images: message.images })
+			provider.getCurrentTask()?.messageQueueService.addMessage(resolved.text, resolved.images)
 			break
 		}
 		case "removeQueuedMessage": {
@@ -4369,6 +4438,27 @@ export const webviewMessageHandler = async (
 		}
 		// kilocode_change end
 
+		case "openMarkdownPreview": {
+			if (message.text) {
+				try {
+					const tmpDir = os.tmpdir()
+					const timestamp = Date.now()
+					const tempFileName = `roo-preview-${timestamp}.md`
+					const tempFilePath = path.join(tmpDir, tempFileName)
+
+					await fs.writeFile(tempFilePath, message.text, "utf8")
+
+					const doc = await vscode.workspace.openTextDocument(tempFilePath)
+					await vscode.commands.executeCommand("markdown.showPreview", doc.uri)
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : String(error)
+					provider.log(`Error opening markdown preview: ${errorMessage}`)
+					vscode.window.showErrorMessage(`Failed to open markdown preview: ${errorMessage}`)
+				}
+			}
+			break
+		}
+
 		case "requestClaudeCodeRateLimits": {
 			try {
 				const { claudeCodeOAuthManager } = await import("../../integrations/claude-code/oauth")
@@ -4394,6 +4484,38 @@ export const webviewMessageHandler = async (
 				provider.log(`Error fetching Claude Code rate limits: ${errorMessage}`)
 				provider.postMessageToWebview({
 					type: "claudeCodeRateLimits",
+					error: errorMessage,
+				})
+			}
+			break
+		}
+
+		case "requestOpenAiCodexRateLimits": {
+			try {
+				const { openAiCodexOAuthManager } = await import("../../integrations/openai-codex/oauth")
+				const accessToken = await openAiCodexOAuthManager.getAccessToken()
+
+				if (!accessToken) {
+					provider.postMessageToWebview({
+						type: "openAiCodexRateLimits",
+						error: "Not authenticated with OpenAI Codex",
+					})
+					break
+				}
+
+				const accountId = await openAiCodexOAuthManager.getAccountId()
+				const { fetchOpenAiCodexRateLimitInfo } = await import("../../integrations/openai-codex/rate-limits")
+				const rateLimits = await fetchOpenAiCodexRateLimitInfo(accessToken, { accountId })
+
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
+					values: rateLimits,
+				})
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error)
+				provider.log(`Error fetching OpenAI Codex rate limits: ${errorMessage}`)
+				provider.postMessageToWebview({
+					type: "openAiCodexRateLimits",
 					error: errorMessage,
 				})
 			}
@@ -4479,6 +4601,16 @@ export const webviewMessageHandler = async (
 			})
 			break
 		}
+
+		// kilocode_change start: Review mode scope selection
+		case "reviewScopeSelected": {
+			const scope = message.reviewScope
+			if (scope === "uncommitted" || scope === "branch") {
+				await provider.handleReviewScopeSelected(scope)
+			}
+			break
+		}
+		// kilocode_change end
 
 		default: {
 			// console.log(`Unhandled message type: ${message.type}`)
