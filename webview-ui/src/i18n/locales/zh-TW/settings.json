@@ -369,6 +369,8 @@
 			"success": "模型列表重新整理成功！",
 			"error": "重新整理模型列表失敗。請再試一次。"
 		},
+		"getZenmuxApiKey": "取得 Zenmux API 金鑰",
+		"zenmuxTransformsText": "使用 Zenmux Middle Out Transform",
 		"getRequestyApiKey": "取得 Requesty API 金鑰",
 		"getRequestyBaseUrl": "基礎 URL",
 		"requestyUseCustomBaseUrl": "使用自訂基礎 URL",

@@ -61,6 +61,7 @@ import {
 	internationalZAiDefaultModelId,
 	mainlandZAiModels,
 	mainlandZAiDefaultModelId,
+	zenmuxDefaultModelId,
 } from "@roo-code/types"
 import type { ModelRecord, RouterModels } from "@roo/api"
 import { useRouterModels } from "../../ui/hooks/useRouterModels"
@@ -336,6 +337,12 @@ export const getModelsByProvider = ({
 					models: internationalZAiModels,
 					defaultModel: internationalZAiDefaultModelId,
 				}
+			}
+		}
+		case "zenmux": {
+			return {
+				models: routerModels.zenmux,
+				defaultModel: zenmuxDefaultModelId,
 			}
 		}
 		default:

@@ -367,6 +367,8 @@
 			"success": "模型列表刷新成功！",
 			"error": "刷新模型列表失败。请重试。"
 		},
+		"getZenmuxApiKey": "获取 Zenmux API 密钥",
+		"zenmuxTransformsText": "使用 Zenmux Middle Out Transform",
 		"getRequestyApiKey": "获取 Requesty API 密钥",
 		"getRequestyBaseUrl": "基础 URL",
 		"requestyUseCustomBaseUrl": "使用自定义基础 URL",

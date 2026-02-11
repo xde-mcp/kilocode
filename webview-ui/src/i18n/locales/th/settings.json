@@ -392,6 +392,8 @@
 			"success": "รีเฟรชรายการโมเดลสำเร็จ!",
 			"error": "ไม่สามารถรีเฟรชรายการโมเดลได้ โปรดลองอีกครั้ง"
 		},
+		"getZenmuxApiKey": "รับ Zenmux API Key",
+		"zenmuxTransformsText": "ใช้ Zenmux Middle Out Transform",
 		"getRequestyApiKey": "รับคีย์ API ของ Requesty",
 		"getRequestyBaseUrl": "Base URL",
 		"requestyUseCustomBaseUrl": "ใช้ Base URL ที่กำหนดเอง",
