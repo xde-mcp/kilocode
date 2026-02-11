@@ -77,7 +77,14 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		}
 
 		// kilocode_change start
-		if (verbosity) {
+		if (thinking?.type === "adaptive") {
+			betas.push(
+				"adaptive-thinking-2026-01-28",
+				"interleaved-thinking-2025-05-14",
+				"effort-2025-11-24",
+				"max-effort-2026-01-24",
+			)
+		} else if (verbosity) {
 			betas.push("effort-2025-11-24")
 		}
 		// kilocode_change end
@@ -94,14 +101,23 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 			toolProtocol === TOOL_PROTOCOL.NATIVE &&
 			metadata?.tool_choice !== "none"
 
+		const isHaikuInstruct = modelId.toLowerCase().includes("haiku") && thinking?.type !== "enabled" // kilocode_change
+
 		const nativeToolParams = shouldIncludeNativeTools
 			? {
 					tools: convertOpenAIToolsToAnthropic(metadata.tools!),
-					tool_choice: convertOpenAIToolChoiceToAnthropic(metadata.tool_choice, metadata.parallelToolCalls),
+					tool_choice:
+						// kilocode_change start
+						// Haiku will often forget to call tools and output random XML when tool_choice is not any
+						isHaikuInstruct
+							? { type: "any" as const, disable_parallel_tool_use: !metadata.parallelToolCalls }
+							: // kilocode_change end
+								convertOpenAIToolChoiceToAnthropic(metadata.tool_choice, metadata.parallelToolCalls),
 				}
 			: {}
 
 		switch (modelId) {
+			case "claude-opus-4-6": // kilocode_change
 			case "claude-sonnet-4-5":
 			case "claude-sonnet-4-20250514":
 			case "claude-opus-4-5-20251101":
@@ -137,7 +153,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 							model: apiModelId, // kilocode_change
 							max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 							temperature,
-							thinking,
+							thinking: thinking as Anthropic.Messages.ThinkingConfigParam | undefined, // kilocode_change
 							// Setting cache breakpoint for system prompt so new tasks can reuse it.
 							system: [{ text: systemPrompt, type: "text", cache_control: cacheControl }],
 							messages: sanitizedMessages.map((message, index) => {
@@ -175,6 +191,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 
 							// Then check for models that support prompt caching
 							switch (modelId) {
+								case "claude-opus-4-6": // kilocode_change
 								case "claude-sonnet-4-5":
 								case "claude-sonnet-4-20250514":
 								case "claude-opus-4-5-20251101":

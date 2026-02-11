@@ -241,6 +241,7 @@ export const globalSettingsSchema = z.object({
 	enterBehavior: z.enum(["send", "newline"]).optional(),
 	profileThresholds: z.record(z.string(), z.number()).optional(),
 	hasOpenedModeSelector: z.boolean().optional(),
+	hasCompletedOnboarding: z.boolean().optional(), // kilocode_change: Track if user has completed onboarding flow
 	lastModeExportPath: z.string().optional(),
 	lastModeImportPath: z.string().optional(),
 	appendSystemPrompt: z.string().optional(), // kilocode_change: Custom text to append to system prompt (CLI only)
@@ -309,6 +310,7 @@ export const SECRET_STATE_KEYS = [
 	"vercelAiGatewayApiKey",
 	"sapAiCoreServiceKey", // kilocode_change
 	"basetenApiKey",
+	"corethinkApiKey",
 ] as const
 
 // Global secrets that are part of GlobalSettings (not ProviderSettings)

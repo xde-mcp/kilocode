@@ -3,7 +3,7 @@
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
 	"publisher": "kilocode",
-	"version": "4.150.0",
+	"version": "5.6.0",
 	"icon": "assets/icons/logo-outline-black.png",
 	"galleryBanner": {
 		"color": "#FFFFFF",
@@ -132,11 +132,6 @@
 				"command": "kilo-code.plusButtonClicked",
 				"title": "%command.newTask.title%",
 				"icon": "$(add)"
-			},
-			{
-				"command": "kilo-code.mcpButtonClicked",
-				"title": "%command.mcpServers.title%",
-				"icon": "$(server)"
 			},
 			{
 				"command": "kilo-code.importSettings",
@@ -365,11 +360,6 @@
 					"when": "view == kilo-code.SidebarProvider"
 				},
 				{
-					"command": "kilo-code.mcpButtonClicked",
-					"group": "navigation@2",
-					"when": "view == kilo-code.SidebarProvider"
-				},
-				{
 					"command": "kilo-code.marketplaceButtonClicked",
 					"group": "navigation@3",
 					"when": "view == kilo-code.SidebarProvider"
@@ -404,11 +394,6 @@
 				{
 					"command": "kilo-code.plusButtonClicked",
 					"group": "navigation@1",
-					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
-				},
-				{
-					"command": "kilo-code.mcpButtonClicked",
-					"group": "navigation@2",
 					"when": "activeWebviewPanelId == kilo-code.TabPanelProvider"
 				},
 				{
@@ -622,6 +607,24 @@
 					"type": "boolean",
 					"default": false,
 					"description": "%settings.debug.description%"
+				},
+				"kilo-code.debugProxy.enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "%settings.debugProxy.enabled.description%",
+					"markdownDescription": "%settings.debugProxy.enabled.description%"
+				},
+				"kilo-code.debugProxy.serverUrl": {
+					"type": "string",
+					"default": "http://127.0.0.1:8888",
+					"description": "%settings.debugProxy.serverUrl.description%",
+					"markdownDescription": "%settings.debugProxy.serverUrl.description%"
+				},
+				"kilo-code.debugProxy.tlsInsecure": {
+					"type": "boolean",
+					"default": false,
+					"description": "%settings.debugProxy.tlsInsecure.description%",
+					"markdownDescription": "%settings.debugProxy.tlsInsecure.description%"
 				}
 			}
 		},
@@ -699,6 +702,7 @@
 		"fuse.js": "^7.1.0",
 		"fzf": "^0.5.2",
 		"get-folder-size": "^5.0.0",
+		"global-agent": "^3.0.0",
 		"google-auth-library": "^9.15.1",
 		"gray-matter": "^4.0.3",
 		"i18next": "^25.0.0",
@@ -753,6 +757,7 @@
 		"tree-sitter-wasms": "^0.1.12",
 		"turndown": "^7.2.0",
 		"uri-js": "^4.4.1",
+		"undici": "^6.21.3",
 		"uuid": "^11.1.0",
 		"vscode-material-icons": "^0.1.1",
 		"web-tree-sitter": "^0.25.6",
@@ -760,9 +765,11 @@
 		"ws": "^8.18.0",
 		"xlsx": "^0.18.5",
 		"yaml": "^2.8.0",
-		"zod": "3.25.61"
+		"zod": "3.25.76"
 	},
 	"devDependencies": {
+		"@ai-sdk/openai-compatible": "^1.0.0",
+		"@openrouter/ai-sdk-provider": "^2.0.4",
 		"@roo-code/build": "workspace:^",
 		"@roo-code/config-eslint": "workspace:^",
 		"@roo-code/config-typescript": "workspace:^",
@@ -793,6 +800,7 @@
 		"@vscode/vsce": "3.3.2",
 		"dotenv": "^16.4.7",
 		"esbuild": "^0.25.0",
+		"ai": "^6.0.0",
 		"esbuild-wasm": "^0.25.0",
 		"execa": "^9.5.2",
 		"glob": "^11.1.0",
@@ -804,7 +812,6 @@
 		"rimraf": "^6.1.0",
 		"tsup": "^8.4.0",
 		"tsx": "^4.19.3",
-		"typescript": "5.8.3",
 		"vitest": "^3.2.3",
 		"zod-to-ts": "^1.2.0"
 	}
