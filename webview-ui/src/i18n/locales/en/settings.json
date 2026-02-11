@@ -377,6 +377,8 @@
 			"success": "Models list refreshed successfully!",
 			"error": "Failed to refresh models list. Please try again."
 		},
+		"getZenmuxApiKey": "Get Zenmux API Key",
+		"zenmuxTransformsText": "Use Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Create new Requesty API Key",
 		"getRequestyBaseUrl": "Base URL",
 		"requestyUseCustomBaseUrl": "Use custom base URL",

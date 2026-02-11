@@ -359,6 +359,8 @@
 			"success": "Daftar model berhasil direfresh!",
 			"error": "Gagal merefresh daftar model. Silakan coba lagi."
 		},
+		"getZenmuxApiKey": "Dapatkan Zenmux API Key",
+		"zenmuxTransformsText": "Gunakan Zenmux Middle Out Transform",
 		"getRequestyApiKey": "Dapatkan Requesty API Key",
 		"getRequestyBaseUrl": "Base URL",
 		"requestyUseCustomBaseUrl": "Gunakan URL dasar khusus",

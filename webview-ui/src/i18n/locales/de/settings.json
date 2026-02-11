@@ -370,6 +370,8 @@
 			"success": "Modellliste erfolgreich aktualisiert!",
 			"error": "Fehler beim Aktualisieren der Modellliste. Bitte versuche es erneut."
 		},
+		"getZenmuxApiKey": "Zenmux API-Schlüssel erhalten",
+		"zenmuxTransformsText": "Zenmux Middle Out Transform verwenden",
 		"getRequestyApiKey": "Requesty API-Schlüssel erhalten",
 		"getRequestyBaseUrl": "Basis-URL",
 		"requestyUseCustomBaseUrl": "Benutzerdefinierte Basis-URL verwenden",
