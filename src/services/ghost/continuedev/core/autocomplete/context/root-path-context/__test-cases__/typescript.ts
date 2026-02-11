@@ -235,7 +235,7 @@ const ARROW_FUNCTIONS = [
 		nodeType: "arrow_function with two arguments",
 		fileName: "typescript/arrowFunctions.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 27, character: 11 },
+		cursorPosition: { line: 27, character: 7 },
 		definitionPositions: [
 			{ row: 26, column: 43 }, // Person
 			{ row: 26, column: 61 }, // Address
@@ -248,81 +248,81 @@ const CLASS_METHODS = [
 		nodeType: "method_declaration with a param and a return type",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 4, character: 11 },
+		cursorPosition: { line: 4, character: 8 },
 		definitionPositions: [
-			{ row: 3, column: 33 }, // Person
-			{ row: 3, column: 43 }, // Address
+			{ row: 3, column: 32 }, // Person
+			{ row: 3, column: 42 }, // Address
 		],
 	},
 	{
 		nodeType: "method_declaration without arguments",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 8, character: 11 },
+		cursorPosition: { line: 8, character: 8 },
 		definitionPositions: [
-			{ row: 7, column: 32 }, // Address
+			{ row: 7, column: 31 }, // Address
 		],
 	},
 	{
 		nodeType: "method_declaration without return type",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 12, character: 11 },
+		cursorPosition: { line: 12, character: 8 },
 		definitionPositions: [
-			{ row: 11, column: 26 }, // Person
+			{ row: 11, column: 25 }, // Person
 		],
 	},
 	{
 		nodeType: "method_declaration with array type arguments",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 16, character: 11 },
+		cursorPosition: { line: 16, character: 8 },
 		definitionPositions: [
-			{ row: 15, column: 26 }, // Person
+			{ row: 15, column: 25 }, // Person
 		],
 	},
 	{
 		nodeType: "method_declaration with array type arguments and array type return",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 20, character: 11 },
+		cursorPosition: { line: 20, character: 8 },
 		definitionPositions: [
-			{ row: 19, column: 29 }, // Person
-			{ row: 19, column: 41 }, // Address
+			{ row: 19, column: 28 }, // Person
+			{ row: 19, column: 40 }, // Address
 		],
 	},
 	{
 		nodeType: "method_declaration with with generic params and generic return type",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 24, character: 11 },
+		cursorPosition: { line: 24, character: 8 },
 		definitionPositions: [
-			{ row: 23, column: 37 }, // Person
-			{ row: 23, column: 45 }, // Address
-			{ row: 23, column: 55 }, // Person
-			{ row: 23, column: 63 }, // Address
+			{ row: 23, column: 36 }, // Person
+			{ row: 23, column: 44 }, // Address
+			{ row: 23, column: 54 }, // Person
+			{ row: 23, column: 62 }, // Address
 		],
 	},
 	{
 		nodeType: "method_declaration with union type params and union return type",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 28, character: 11 },
+		cursorPosition: { line: 28, character: 8 },
 		definitionPositions: [
-			{ row: 27, column: 35 }, // Person
-			{ row: 27, column: 45 }, // Address
-			{ row: 27, column: 54 }, // Person
-			{ row: 27, column: 64 }, // Address
+			{ row: 27, column: 34 }, // Person
+			{ row: 27, column: 44 }, // Address
+			{ row: 27, column: 53 }, // Person
+			{ row: 27, column: 63 }, // Address
 		],
 	},
 	{
 		nodeType: "method_declaration with two arguments",
 		fileName: "typescript/classMethods.ts",
 		language: "TypeScript",
-		cursorPosition: { line: 32, character: 11 },
+		cursorPosition: { line: 32, character: 8 },
 		definitionPositions: [
-			{ row: 31, column: 36 }, // Person
-			{ row: 31, column: 54 }, // Address
+			{ row: 31, column: 35 }, // Person
+			{ row: 31, column: 53 }, // Address
 		],
 	},
 ]

@@ -198,16 +198,16 @@ export async function getQueryForFile(filepathOrUri: string, queryPath: string):
 	}
 
 	// Resolve the query file from tree-sitter directory.
-	// The tree-sitter directory is at src/services/continuedev/tree-sitter/
-	const repoRoot = path.resolve(__dirname, "..", "..", "..", "..")
+	// The tree-sitter directory is at src/services/ghost/continuedev/tree-sitter/
+	const repoRoot = path.resolve(__dirname, "..", "..", "..", "..", "..")
 
 	const candidatePaths: string[] = [
-		// Development: from src/services/continuedev/core/util -> src/services/continuedev/tree-sitter
+		// Development: from src/services/ghost/continuedev/core/util -> src/services/ghost/continuedev/tree-sitter
 		path.join(__dirname, "..", "..", "tree-sitter", queryPath),
 		// Production: tree-sitter might be copied alongside compiled code
 		path.join(__dirname, "tree-sitter", queryPath),
 		// Alternative: from repo root
-		path.join(repoRoot, "src", "services", "continuedev", "tree-sitter", queryPath),
+		path.join(repoRoot, "src", "services", "ghost", "continuedev", "tree-sitter", queryPath),
 		// Fallback: dist directory
 		path.join(repoRoot, "dist", "tree-sitter", queryPath),
 	]
@@ -227,15 +227,15 @@ async function loadLanguageForFileExt(fileExtension: string): Promise<Language> 
 	const { Language } = require("web-tree-sitter")
 
 	const filename = `tree-sitter-${supportedLanguages[fileExtension]}.wasm`
-	const repoRoot = path.resolve(__dirname, "..", "..", "..", "..")
+	const repoRoot = path.resolve(__dirname, "..", "..", "..", "..", "..")
 
 	// The WASM files are copied to src/dist/ during build
 	// In production (compiled): __dirname = /path/to/kilocode/src/dist or dist/
-	// In development: __dirname = /path/to/kilocode/src/services/continuedev/core/util
+	// In development: __dirname = /path/to/kilocode/src/services/ghost/continuedev/core/util
 	const candidatePaths: string[] = [
 		// Production: WASM files are in the same directory as the compiled code
 		path.join(__dirname, filename),
-		// Development: from src/services/continuedev/core/util -> src/dist
+		// Development: from src/services/ghost/continuedev/core/util -> src/dist
 		path.join(repoRoot, "dist", filename),
 		// Fallback: repo root
 		path.join(repoRoot, filename),
