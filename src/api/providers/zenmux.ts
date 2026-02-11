@@ -465,6 +465,11 @@ export class ZenMuxHandler extends BaseProvider implements SingleCompletionHandl
 	async completePrompt(prompt: string) {
 		let { id: modelId, maxTokens, temperature, reasoning, verbosity } = await this.fetchModel()
 
+		// ZenMux `verbosity` supports "low" | "medium" | "high" (and sometimes null),
+		// while our shared model params may include "max". Map "max" to the closest
+		// supported value to satisfy the API/SDK typing.
+		const zenMuxVerbosity: "low" | "medium" | "high" | null | undefined = verbosity === "max" ? "high" : verbosity
+
 		const completionParams: ZenMuxChatCompletionParams = {
 			model: modelId,
 			max_tokens: maxTokens,
@@ -472,7 +477,7 @@ export class ZenMuxHandler extends BaseProvider implements SingleCompletionHandl
 			messages: [{ role: "user", content: prompt }],
 			stream: false,
 			...(reasoning && { reasoning }),
-			verbosity,
+			verbosity: zenMuxVerbosity,
 		}
 
 		let response

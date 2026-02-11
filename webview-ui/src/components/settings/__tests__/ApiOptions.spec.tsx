@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from "@/utils/test-utils"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { type ModelInfo, type ProviderSettings, openAiModelInfoSaneDefaults } from "@roo-code/types"
+import { openAiCodexDefaultModelId } from "@roo-code/types"
 
 import * as ExtensionStateContext from "@src/context/ExtensionStateContext"
 const { ExtensionStateContextProvider } = ExtensionStateContext
@@ -313,6 +314,56 @@ const renderApiOptions = (props: Partial<ApiOptionsProps> = {}) => {
 }
 
 describe("ApiOptions", () => {
+	it("resets model to provider default when switching to openai-codex with an invalid prior apiModelId", () => {
+		const mockSetApiConfigurationField = vi.fn()
+
+		renderApiOptions({
+			apiConfiguration: {
+				apiProvider: "anthropic",
+				// Simulate a previously-selected model ID from another provider.
+				// When switching to OpenAI - ChatGPT Plus/Pro, this is invalid and should be reset.
+				apiModelId: "claude-3-5-sonnet-20241022",
+			},
+			setApiConfigurationField: mockSetApiConfigurationField,
+		})
+
+		const providerSelectContainer = screen.getByTestId("provider-select")
+		const providerSelect = providerSelectContainer.querySelector("select") as HTMLSelectElement
+		expect(providerSelect).toBeInTheDocument()
+
+		fireEvent.change(providerSelect, { target: { value: "openai-codex" } })
+
+		// Provider is updated
+		expect(mockSetApiConfigurationField).toHaveBeenCalledWith("apiProvider", "openai-codex")
+		// Model is reset to the provider default since the previous value is invalid for this provider
+		expect(mockSetApiConfigurationField).toHaveBeenCalledWith("apiModelId", openAiCodexDefaultModelId, false)
+	})
+
+	it("hides kimi-for-coding from model options when Moonshot endpoint is not coding", () => {
+		renderApiOptions({
+			apiConfiguration: {
+				apiProvider: "moonshot",
+				apiModelId: "kimi-k2-thinking",
+				moonshotBaseUrl: "https://api.moonshot.ai/v1",
+			},
+		})
+
+		expect(screen.queryByRole("option", { name: "kimi-for-coding" })).not.toBeInTheDocument()
+	})
+
+	it("shows kimi-for-coding in model options when Moonshot endpoint is coding", () => {
+		renderApiOptions({
+			apiConfiguration: {
+				apiProvider: "moonshot",
+				apiModelId: "kimi-k2-thinking",
+				moonshotBaseUrl: "https://api.kimi.com/coding/v1",
+			},
+		})
+
+		expect(screen.getByRole("option", { name: "kimi-for-coding" })).toBeInTheDocument()
+		expect(screen.queryByRole("option", { name: "kimi-k2-thinking" })).not.toBeInTheDocument() // kilocode_change
+	})
+
 	it("shows diff settings, temperature and rate limit controls by default", () => {
 		renderApiOptions({
 			apiConfiguration: {
@@ -705,7 +756,7 @@ describe("ApiOptions", () => {
 			useExtensionStateMock.mockRestore()
 		})
 
-		it("does not pin roo provider to the top on welcome screen", () => {
+		it("filters out roo provider on welcome screen", () => {
 			// Mock useExtensionState to ensure no filtering
 			const useExtensionStateMock = vi.spyOn(ExtensionStateContext, "useExtensionState")
 			useExtensionStateMock.mockReturnValue({
@@ -725,13 +776,9 @@ describe("ApiOptions", () => {
 			// Filter out the placeholder option (empty value)
 			const providerOptions = options.filter((opt) => opt.value !== "")
 
-			// Check that roo is in the list
+			// Check that roo is NOT in the list when on welcome screen
 			const rooOption = providerOptions.find((opt) => opt.value === "roo")
-
-			if (rooOption) {
-				// If roo exists, verify it's NOT at the top (should be in alphabetical order)
-				expect(providerOptions[0].value).not.toBe("roo")
-			}
+			expect(rooOption).toBeUndefined()
 
 			useExtensionStateMock.mockRestore()
 		})

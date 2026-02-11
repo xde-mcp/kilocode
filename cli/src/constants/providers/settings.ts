@@ -510,18 +510,6 @@ export const FIELD_REGISTRY: Record<string, FieldMetadata> = {
 		placeholder: "Enter OAuth credentials path...",
 	},
 
-	// Gemini CLI fields
-	geminiCliOAuthPath: {
-		label: "OAuth Credentials Path",
-		type: "text",
-		placeholder: "Enter OAuth credentials path...",
-	},
-	geminiCliProjectId: {
-		label: "Project ID",
-		type: "text",
-		placeholder: "Enter project ID...",
-	},
-
 	// ZAI fields
 	zaiApiKey: {
 		label: "API Key",
@@ -836,6 +824,9 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				createFieldConfig("openAiNativeBaseUrl", config, "Default"),
 			]
 
+		case "openai-codex":
+			return [createFieldConfig("apiModelId", config, "gpt-4o")]
+
 		case "bedrock":
 			return [
 				createFieldConfig("awsAccessKey", config),
@@ -972,12 +963,6 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 		case "qwen-code":
 			return [createFieldConfig("qwenCodeOauthPath", config, "~/.qwen/oauth_creds.json")]
 
-		case "gemini-cli":
-			return [
-				createFieldConfig("geminiCliOAuthPath", config, "~/.gemini/oauth_creds.json"),
-				createFieldConfig("geminiCliProjectId", config),
-			]
-
 		case "zai":
 			return [
 				createFieldConfig("zaiApiKey", config),
@@ -1014,16 +999,6 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 				},
 			]
 
-		case "human-relay":
-			return [
-				{
-					field: "apiModelId",
-					label: "Model",
-					value: "human",
-					actualValue: "human",
-					type: "text",
-				},
-			]
 		case "minimax":
 			return [
 				createFieldConfig("minimaxBaseUrl", config, "https://api.minimax.io/anthropic"),
@@ -1036,6 +1011,17 @@ export const getProviderSettings = (provider: ProviderName, config: ProviderSett
 					label: "Model",
 					value: "fake-model",
 					actualValue: "fake-model",
+					type: "text",
+				},
+			]
+
+		case "human-relay":
+			return [
+				{
+					field: "apiModelId",
+					label: "Model",
+					value: "human-relay-model",
+					actualValue: "human-relay-model",
 					type: "text",
 				},
 			]
@@ -1080,6 +1066,8 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	kilocode: "anthropic/claude-sonnet-4",
 	anthropic: "claude-3-5-sonnet-20241022",
 	"openai-native": "gpt-4o",
+	"openai-codex": "gpt-4o",
+	"openai-responses": "gpt-4o",
 	openrouter: "anthropic/claude-3-5-sonnet",
 	zenmux: "openai/gpt-5", // kilocode_change
 	bedrock: "anthropic.claude-3-5-sonnet-20241022-v2:0",
@@ -1108,21 +1096,21 @@ export const PROVIDER_DEFAULT_MODELS: Record<ProviderName, string> = {
 	deepinfra: "meta-llama/Meta-Llama-3.1-70B-Instruct",
 	"io-intelligence": "gpt-4o",
 	"qwen-code": "qwen-coder-plus-latest",
-	"gemini-cli": "gemini-1.5-pro-latest",
 	zai: "gpt-4o",
 	unbound: "gpt-4o",
 	requesty: "gpt-4o",
 	roo: "gpt-4o",
 	"vercel-ai-gateway": "gpt-4o",
 	"virtual-quota-fallback": "gpt-4o",
-	"human-relay": "human",
 	minimax: "MiniMax-M2",
 	"fake-ai": "fake-model",
+	"human-relay": "human-relay-model",
 	ovhcloud: "gpt-oss-120b",
 	inception: "gpt-4o",
 	synthetic: "synthetic-model",
 	"sap-ai-core": "gpt-4o",
 	baseten: "zai-org/GLM-4.6",
+	corethink: "corethink"
 }
 
 /**
