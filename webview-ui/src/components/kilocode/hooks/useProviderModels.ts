@@ -5,6 +5,8 @@ import {
 	anthropicModels,
 	basetenModels,
 	basetenDefaultModelId,
+	corethinkModels,
+	corethinkDefaultModelId,
 	bedrockDefaultModelId,
 	bedrockModels,
 	deepSeekDefaultModelId,
@@ -33,7 +35,6 @@ import {
 	litellmDefaultModelId,
 	qwenCodeModels,
 	qwenCodeDefaultModelId,
-	geminiCliModels,
 	claudeCodeModels,
 	claudeCodeDefaultModelId,
 	doubaoModels,
@@ -60,6 +61,7 @@ import {
 	internationalZAiDefaultModelId,
 	mainlandZAiModels,
 	mainlandZAiDefaultModelId,
+	zenmuxDefaultModelId,
 } from "@roo-code/types"
 import type { ModelRecord, RouterModels } from "@roo/api"
 import { useRouterModels } from "../../ui/hooks/useRouterModels"
@@ -169,14 +171,12 @@ export const getModelsByProvider = ({
 				defaultModel: openAiNativeDefaultModelId,
 			}
 		}
-
 		case "openai-codex": {
 			return {
 				models: openAiCodexModels,
 				defaultModel: openAiCodexDefaultModelId,
 			}
 		}
-
 		case "mistral": {
 			return {
 				models: mistralModels,
@@ -224,12 +224,6 @@ export const getModelsByProvider = ({
 			return {
 				models: qwenCodeModels,
 				defaultModel: qwenCodeDefaultModelId,
-			}
-		}
-		case "gemini-cli": {
-			return {
-				models: geminiCliModels,
-				defaultModel: geminiDefaultModelId,
 			}
 		}
 		case "anthropic": {
@@ -326,6 +320,12 @@ export const getModelsByProvider = ({
 				defaultModel: basetenDefaultModelId,
 			}
 		}
+		case "corethink": {
+			return {
+				models: corethinkModels,
+				defaultModel: corethinkDefaultModelId,
+			}
+		}
 		case "zai": {
 			if (options.isChina) {
 				return {
@@ -337,6 +337,12 @@ export const getModelsByProvider = ({
 					models: internationalZAiModels,
 					defaultModel: internationalZAiDefaultModelId,
 				}
+			}
+		}
+		case "zenmux": {
+			return {
+				models: routerModels.zenmux,
+				defaultModel: zenmuxDefaultModelId,
 			}
 		}
 		default:
@@ -351,7 +357,12 @@ export const getOptionsForProvider = (provider: ProviderName, apiConfiguration?:
 	switch (provider) {
 		case "zai":
 			// Determine which Z.AI model set to use based on the API line configuration
-			return { isChina: apiConfiguration?.zaiApiLine === "china_coding" }
+			// kilocode_change start
+			return {
+				isChina:
+					apiConfiguration?.zaiApiLine === "china_coding" || apiConfiguration?.zaiApiLine === "china_api",
+			}
+			// kilocode_change end
 		default:
 			return {}
 	}
