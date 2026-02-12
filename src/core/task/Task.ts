@@ -377,7 +377,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	 * this ensures the total cost displayed to the user reflects all API usage,
 	 * even if messages are removed from the conversation history.
 	 */
-	private _deletedApiCost: number = 0
+	private _deletedApiCost: number = 0 // kilocode_change
 
 	// Ask
 	private askResponse?: ClineAskResponse
@@ -1330,7 +1330,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				apiConfigName: this._taskApiConfigName, // Use the task's own provider profile, not the current provider profile.
 				initialStatus: this.initialStatus,
 				toolProtocol: this._taskToolProtocol, // Persist the locked tool protocol.
-				cumulativeTotalCost: this.getCumulativeTotalCost(), // include deleted message costs.
+				cumulativeTotalCost: this.getCumulativeTotalCost(), // kilocode_change: include deleted message costs.
 			})
 
 			// Emit token/tool usage updates using debounced function
@@ -4991,6 +4991,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return combineApiRequests(combineCommandSequences(messages))
 	}
 
+	// kilocod_change start
 	public getTokenUsage(): TokenUsage {
 		const metrics = getApiMetrics(this.combineMessages(this.clineMessages.slice(1)))
 		// add deleted API costs to the total cost
@@ -5018,6 +5019,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			this._deletedApiCost += cost
 		}
 	}
+	// kilocod_change end
 
 	public recordToolUsage(toolName: ToolName) {
 		if (!this.toolUsage[toolName]) {

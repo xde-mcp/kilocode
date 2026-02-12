@@ -256,7 +256,7 @@ export const webviewMessageHandler = async (
 					vscode.window.showWarningMessage("No checkpoint found before this message")
 				}
 			} else {
-				// calculate the cost of messages being deleted before removing them
+				// kilocode_change start: calculate the cost of messages being deleted before removing them
 				const messagesToDelete = currentCline.clineMessages.slice(messageIndex)
 				let deletedCost = 0
 				for (const msg of messagesToDelete) {
@@ -276,6 +276,7 @@ export const webviewMessageHandler = async (
 				if (deletedCost > 0) {
 					currentCline.addDeletedApiCost(deletedCost)
 				}
+				// kilocode_change end
 
 				// For non-checkpoint deletes, preserve checkpoint associations for remaining messages
 				// Store checkpoints from messages that will be preserved
