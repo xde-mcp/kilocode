@@ -34,6 +34,8 @@ describe("getZenmuxModels", () => {
 			contextWindow: 200000,
 			supportsImages: true,
 			supportsPromptCache: false,
+			supportsNativeTools: true,
+			defaultToolProtocol: "native",
 			inputPrice: 0,
 			outputPrice: 0,
 			description: "anthropic model",
@@ -62,5 +64,7 @@ describe("getZenmuxModels", () => {
 
 		expect(models["openai/gpt-5"].contextWindow).toBe(zenmuxDefaultModelInfo.contextWindow)
 		expect(models["openai/gpt-5"].displayName).toBe("openai/gpt-5")
+		expect(models["openai/gpt-5"].supportsNativeTools).toBe(true)
+		expect(models["openai/gpt-5"].defaultToolProtocol).toBe("native")
 	})
 })
