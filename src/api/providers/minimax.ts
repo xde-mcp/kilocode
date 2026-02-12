@@ -189,11 +189,14 @@ export class MiniMaxHandler extends BaseProvider implements SingleCompletionHand
 							yield { type: "text", text: chunk.content_block.text }
 							break
 						case "tool_use": {
-							// Emit initial tool call partial with id and name
+							// Emit initial tool call partial with id and name.
+							// MiniMax API may return content_block.id as a number; coerce to string.
+							const rawId = chunk.content_block.id
+							const id = rawId != null ? String(rawId) : undefined
 							yield {
 								type: "tool_call_partial",
 								index: chunk.index,
-								id: chunk.content_block.id,
+								id,
 								name: chunk.content_block.name,
 								arguments: undefined,
 							}
