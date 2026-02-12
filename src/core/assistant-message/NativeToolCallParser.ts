@@ -87,7 +87,10 @@ export class NativeToolCallParser {
 		arguments?: string
 	}): ToolCallStreamEvent[] {
 		const events: ToolCallStreamEvent[] = []
-		const { index, id, name, arguments: args } = chunk
+		const { index, id: rawId, name, arguments: args } = chunk
+
+		// Some providers (e.g. MiniMax) return tool call id as a number; coerce to string.
+		const id = rawId != null ? String(rawId) : undefined
 
 		let tracked = this.rawChunkTracker.get(index)
 
