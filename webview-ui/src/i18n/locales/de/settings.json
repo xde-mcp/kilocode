@@ -44,7 +44,7 @@
 		"about": "Über Kilo Code",
 		"autoPurge": "Auto-Bereinigung",
 		"agentBehaviour": "Agentenverhalten",
-		"ghost": "Autovervollständigung"
+		"autocomplete": "Autovervollständigung"
 	},
 	"about": {
 		"bugReport": {
@@ -324,6 +324,37 @@
 		"apiKeyStorageNotice": "API-Schlüssel werden sicher im VSCode Secret Storage gespeichert",
 		"glamaApiKey": "Glama API-Schlüssel",
 		"getGlamaApiKey": "Glama API-Schlüssel erhalten",
+		"openAiCodexRateLimits": {
+			"title": "Usage Limits for Codex{{planLabel}}",
+			"loading": "Loading usage limits...",
+			"loadError": "Failed to load usage limits",
+			"retry": "Retry",
+			"usedPercent": "{{percent}}% used",
+			"resetsIn": "Resets in {{time}}",
+			"plan": {
+				"default": "",
+				"withType": " ({{planType}})"
+			},
+			"time": {
+				"now": "Now",
+				"notAvailable": "N/A"
+			},
+			"duration": {
+				"daysHours": "{{days}}d {{hours}}h",
+				"hoursMinutes": "{{hours}}h {{minutes}}m",
+				"minutes": "{{minutes}}m"
+			},
+			"window": {
+				"usage": "Usage",
+				"fiveHour": "5h limit",
+				"oneHour": "1h limit",
+				"daily": "Daily limit",
+				"weekly": "Weekly limit",
+				"days": "{{days}}d limit",
+				"hours": "{{hours}}h limit",
+				"minutes": "{{minutes}}m limit"
+			}
+		},
 		"useCustomBaseUrl": "Benutzerdefinierte Basis-URL verwenden",
 		"useReasoning": "Reasoning aktivieren",
 		"useHostHeader": "Benutzerdefinierten Host-Header verwenden",
@@ -339,6 +370,8 @@
 			"success": "Modellliste erfolgreich aktualisiert!",
 			"error": "Fehler beim Aktualisieren der Modellliste. Bitte versuche es erneut."
 		},
+		"getZenmuxApiKey": "Zenmux API-Schlüssel erhalten",
+		"zenmuxTransformsText": "Zenmux Middle Out Transform verwenden",
 		"getRequestyApiKey": "Requesty API-Schlüssel erhalten",
 		"getRequestyBaseUrl": "Basis-URL",
 		"requestyUseCustomBaseUrl": "Benutzerdefinierte Basis-URL verwenden",
@@ -355,6 +388,8 @@
 		"vertex1MContextBetaDescription": "Erweitert das Kontextfenster für Claude Sonnet 4 auf 1 Million Token",
 		"basetenApiKey": "Baseten API-Schlüssel",
 		"getBasetenApiKey": "Baseten API-Schlüssel erhalten",
+		"corethinkApiKey": "Corethink API-Schlüssel",
+		"getCorethinkApiKey": "Corethink API-Schlüssel erhalten",
 		"cerebrasApiKey": "Cerebras API-Schlüssel",
 		"getCerebrasApiKey": "Cerebras API-Schlüssel erhalten",
 		"chutesApiKey": "Chutes API-Schlüssel",
@@ -605,6 +640,7 @@
 		},
 		"verbosity": {
 			"label": "Ausgabe-Ausführlichkeit",
+			"max": "Max",
 			"high": "Hoch",
 			"medium": "Mittel",
 			"low": "Niedrig",
@@ -617,21 +653,6 @@
 			"placeholder": "Standard: claude",
 			"maxTokensLabel": "Maximale Ausgabe-Tokens",
 			"maxTokensDescription": "Maximale Anzahl an Ausgabe-Tokens für Claude Code-Antworten. Standard ist 8000."
-		},
-		"geminiCli": {
-			"description": "Dieser Anbieter verwendet OAuth-Authentifizierung vom Gemini CLI-Tool und benötigt keine API-Schlüssel.",
-			"oauthPath": "OAuth-Anmeldedaten-Pfad (optional)",
-			"oauthPathDescription": "Pfad zur OAuth-Anmeldedaten-Datei. Leer lassen, um den Standardort zu verwenden (~/.gemini/oauth_creds.json).",
-			"instructions": "Falls du dich noch nicht authentifiziert hast, führe bitte",
-			"instructionsContinued": "in deinem Terminal zuerst aus.",
-			"setupLink": "Gemini CLI Setup-Anweisungen",
-			"requirementsTitle": "Wichtige Anforderungen",
-			"requirement1": "Zuerst musst du das Gemini CLI-Tool installieren",
-			"requirement2": "Dann führe gemini in deinem Terminal aus und stelle sicher, dass du dich mit Google anmeldest",
-			"requirement3": "Funktioniert nur mit persönlichen Google-Konten (nicht mit Google Workspace-Konten)",
-			"requirement4": "Verwendet keine API-Schlüssel - Authentifizierung wird über OAuth abgewickelt",
-			"requirement5": "Erfordert, dass das Gemini CLI-Tool zuerst installiert und authentifiziert wird",
-			"freeAccess": "Kostenloser Zugang über OAuth-Authentifizierung"
 		},
 		"qwenCode": {
 			"oauthPath": "OAuth-Anmeldedaten-Pfad (optional)",
@@ -1149,7 +1170,7 @@
 			"description": "Statistiken zu hinzugefügten/entfernten Zeilen im Aufgaben-Header anzeigen"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"showGutterAnimation": {
 			"label": "Randanimation bei Autovervollständigung anzeigen",
 			"description": "Zeigt eine animierte Anzeige im Editor-Rand an, wenn die Autovervollständigung läuft",

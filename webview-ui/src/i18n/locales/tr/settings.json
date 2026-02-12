@@ -42,7 +42,7 @@
 		"experimental": "Deneysel",
 		"language": "Dil",
 		"about": "Kilo Code Hakkında",
-		"ghost": "Ghost",
+		"autocomplete": "Ghost",
 		"autoPurge": "Otomatik Temizlik",
 		"agentBehaviour": "Ajan Davranışı"
 	},
@@ -313,6 +313,37 @@
 		"glamaApiKey": "Glama API Anahtarı",
 		"getGlamaApiKey": "Glama API Anahtarı Al",
 		"apiKeyStorageNotice": "API anahtarları VSCode'un Gizli Depolamasında güvenli bir şekilde saklanır",
+		"openAiCodexRateLimits": {
+			"title": "Usage Limits for Codex{{planLabel}}",
+			"loading": "Loading usage limits...",
+			"loadError": "Failed to load usage limits",
+			"retry": "Retry",
+			"usedPercent": "{{percent}}% used",
+			"resetsIn": "Resets in {{time}}",
+			"plan": {
+				"default": "",
+				"withType": " ({{planType}})"
+			},
+			"time": {
+				"now": "Now",
+				"notAvailable": "N/A"
+			},
+			"duration": {
+				"daysHours": "{{days}}d {{hours}}h",
+				"hoursMinutes": "{{hours}}h {{minutes}}m",
+				"minutes": "{{minutes}}m"
+			},
+			"window": {
+				"usage": "Usage",
+				"fiveHour": "5h limit",
+				"oneHour": "1h limit",
+				"daily": "Daily limit",
+				"weekly": "Weekly limit",
+				"days": "{{days}}d limit",
+				"hours": "{{hours}}h limit",
+				"minutes": "{{minutes}}m limit"
+			}
+		},
 		"useCustomBaseUrl": "Özel temel URL kullan",
 		"useReasoning": "Akıl yürütmeyi etkinleştir",
 		"useHostHeader": "Özel Host başlığı kullan",
@@ -328,6 +359,8 @@
 			"success": "Model listesi başarıyla yenilendi!",
 			"error": "Model listesi yenilenemedi. Lütfen tekrar deneyin."
 		},
+		"getZenmuxApiKey": "Zenmux API Anahtarı Al",
+		"zenmuxTransformsText": "Zenmux Middle Out Transform'u Kullan",
 		"getRequestyApiKey": "Requesty API Anahtarı Al",
 		"getRequestyBaseUrl": "Temel URL",
 		"requestyUseCustomBaseUrl": "Özel temel URL kullan",
@@ -344,6 +377,8 @@
 		"vertex1MContextBetaDescription": "Claude Sonnet 4 için bağlam penceresini 1 milyon token'a genişletir",
 		"basetenApiKey": "Baseten API Anahtarı",
 		"getBasetenApiKey": "Baseten API Anahtarı Al",
+		"corethinkApiKey": "Corethink API Anahtarı",
+		"getCorethinkApiKey": "Corethink API Anahtarı Al",
 		"cerebrasApiKey": "Cerebras API Anahtarı",
 		"getCerebrasApiKey": "Cerebras API Anahtarını Al",
 		"chutesApiKey": "Chutes API Anahtarı",
@@ -570,6 +605,7 @@
 		},
 		"verbosity": {
 			"label": "Çıktı Ayrıntı Düzeyi",
+			"max": "Max",
 			"high": "Yüksek",
 			"medium": "Orta",
 			"low": "Düşük",
@@ -582,21 +618,6 @@
 			"placeholder": "Varsayılan: claude",
 			"maxTokensLabel": "Maksimum Çıktı Token sayısı",
 			"maxTokensDescription": "Claude Code yanıtları için maksimum çıktı token sayısı. Varsayılan 8000'dir."
-		},
-		"geminiCli": {
-			"description": "Bu sağlayıcı Gemini CLI aracından OAuth kimlik doğrulaması kullanır ve API anahtarları gerektirmez.",
-			"oauthPath": "OAuth Kimlik Bilgileri Yolu (isteğe bağlı)",
-			"oauthPathDescription": "OAuth kimlik bilgileri dosyasının yolu. Varsayılan konumu kullanmak için boş bırakın (~/.gemini/oauth_creds.json).",
-			"instructions": "Henüz kimlik doğrulaması yapmadıysanız, önce",
-			"instructionsContinued": "komutunu terminalinizde çalıştırın.",
-			"setupLink": "Gemini CLI Kurulum Talimatları",
-			"requirementsTitle": "Önemli Gereksinimler",
-			"requirement1": "Önce Gemini CLI aracını yüklemeniz gerekir",
-			"requirement2": "Sonra terminalinizde gemini çalıştırın ve Google ile giriş yaptığınızdan emin olun",
-			"requirement3": "Sadece kişisel Google hesaplarıyla çalışır (Google Workspace hesapları değil)",
-			"requirement4": "API anahtarları kullanmaz - kimlik doğrulama OAuth ile yapılır",
-			"requirement5": "Gemini CLI aracının önce yüklenmesi ve kimlik doğrulaması yapılması gerekir",
-			"freeAccess": "OAuth kimlik doğrulaması ile ücretsiz erişim"
 		},
 		"qwenCode": {
 			"oauthPath": "OAuth Kimlik Bilgileri Yolu (isteğe bağlı)",
@@ -1154,7 +1175,7 @@
 			"description": "Görev başlığında eklenen/silinen satır istatistiklerini görüntüle"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"showGutterAnimation": {
 			"label": "Otomatik tamamlama sırasında kenar çubuğu animasyonunu göster",
 			"description": "Otomatik tamamlama çalışırken editörün kenar çubuğunda animasyonlu gösterge görüntüle",

@@ -44,7 +44,7 @@
 		"about": "關於 Kilo Code",
 		"autoPurge": "自動清理",
 		"agentBehaviour": "Agent 行為",
-		"ghost": "自動補全"
+		"autocomplete": "自動補全"
 	},
 	"about": {
 		"bugReport": {
@@ -323,6 +323,37 @@
 		"glamaApiKey": "Glama API 金鑰",
 		"getGlamaApiKey": "取得 Glama API 金鑰",
 		"apiKeyStorageNotice": "API 金鑰會安全地儲存在 VS Code 的 Secret Storage 中",
+		"openAiCodexRateLimits": {
+			"title": "Usage Limits for Codex{{planLabel}}",
+			"loading": "Loading usage limits...",
+			"loadError": "Failed to load usage limits",
+			"retry": "Retry",
+			"usedPercent": "{{percent}}% used",
+			"resetsIn": "Resets in {{time}}",
+			"plan": {
+				"default": "",
+				"withType": " ({{planType}})"
+			},
+			"time": {
+				"now": "Now",
+				"notAvailable": "N/A"
+			},
+			"duration": {
+				"daysHours": "{{days}}d {{hours}}h",
+				"hoursMinutes": "{{hours}}h {{minutes}}m",
+				"minutes": "{{minutes}}m"
+			},
+			"window": {
+				"usage": "Usage",
+				"fiveHour": "5h limit",
+				"oneHour": "1h limit",
+				"daily": "Daily limit",
+				"weekly": "Weekly limit",
+				"days": "{{days}}d limit",
+				"hours": "{{hours}}h limit",
+				"minutes": "{{minutes}}m limit"
+			}
+		},
 		"useCustomBaseUrl": "使用自訂基礎 URL",
 		"useReasoning": "啟用推理",
 		"useHostHeader": "使用自訂 Host 標頭",
@@ -338,6 +369,8 @@
 			"success": "模型列表重新整理成功！",
 			"error": "重新整理模型列表失敗。請再試一次。"
 		},
+		"getZenmuxApiKey": "取得 Zenmux API 金鑰",
+		"zenmuxTransformsText": "使用 Zenmux Middle Out Transform",
 		"getRequestyApiKey": "取得 Requesty API 金鑰",
 		"getRequestyBaseUrl": "基礎 URL",
 		"requestyUseCustomBaseUrl": "使用自訂基礎 URL",
@@ -354,6 +387,8 @@
 		"vertex1MContextBetaDescription": "為 Claude Sonnet 4 將上下文視窗擴展至 100 萬個 token",
 		"basetenApiKey": "Baseten API 金鑰",
 		"getBasetenApiKey": "取得 Baseten API 金鑰",
+		"corethinkApiKey": "Corethink API 金鑰",
+		"getCorethinkApiKey": "取得 Corethink API 金鑰",
 		"cerebrasApiKey": "Cerebras API 金鑰",
 		"getCerebrasApiKey": "取得 Cerebras API 金鑰",
 		"chutesApiKey": "Chutes API 金鑰",
@@ -580,6 +615,7 @@
 		},
 		"verbosity": {
 			"label": "輸出詳細程度",
+			"max": "Max",
 			"high": "高",
 			"medium": "中",
 			"low": "低",
@@ -592,21 +628,6 @@
 			"placeholder": "預設：claude",
 			"maxTokensLabel": "最大輸出 Token",
 			"maxTokensDescription": "Claude Code 回應的最大輸出 Token 數量。預設為 8000。"
-		},
-		"geminiCli": {
-			"description": "此供應商使用 Gemini CLI 工具的 OAuth 身份驗證，不需要 API 金鑰。",
-			"oauthPath": "OAuth 憑證路徑（可選）",
-			"oauthPathDescription": "OAuth 憑證檔案的路徑。留空以使用預設位置（~/.gemini/oauth_creds.json）。",
-			"instructions": "如果您尚未進行身份驗證，請先執行",
-			"instructionsContinued": "在您的終端機中。",
-			"setupLink": "Gemini CLI 設定說明",
-			"requirementsTitle": "重要要求",
-			"requirement1": "首先，您需要安裝 Gemini CLI 工具",
-			"requirement2": "然後，在終端機中執行 gemini 並確保使用 Google 登入",
-			"requirement3": "僅適用於個人 Google 帳戶（不支援 Google Workspace 帳戶）",
-			"requirement4": "不使用 API 金鑰 - 身份驗證透過 OAuth 處理",
-			"requirement5": "需要先安裝並驗證 Gemini CLI 工具",
-			"freeAccess": "透過 OAuth 身份驗證免費存取"
 		},
 		"qwenCode": {
 			"oauthPath": "OAuth 憑證路徑（選用）",
@@ -1164,7 +1185,7 @@
 			"description": "在任務標題中顯示新增/刪除的行數統計"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"showGutterAnimation": {
 			"label": "自動完成時顯示編輯器邊欄動畫",
 			"description": "在自動完成執行時於編輯器邊欄顯示動畫指示",
