@@ -99,7 +99,6 @@ export function consolidateTokenUsage(messages: ClineMessage[]): TokenUsage {
 	// with only apiProtocol (no token data). We need to skip these placeholders and
 	// find the last message with actual token data to avoid showing 0% context.
 	result.contextTokens = 0
-	let foundValidTokenData = false
 
 	for (let i = messages.length - 1; i >= 0; i--) {
 		const message = messages[i]
@@ -113,7 +112,6 @@ export function consolidateTokenUsage(messages: ClineMessage[]): TokenUsage {
 
 				if (hasTokenData) {
 					result.contextTokens = (tokensIn || 0) + (tokensOut || 0)
-					foundValidTokenData = true
 					break
 				}
 			} catch {
@@ -121,7 +119,6 @@ export function consolidateTokenUsage(messages: ClineMessage[]): TokenUsage {
 			}
 		} else if (message.type === "say" && message.say === "condense_context") {
 			result.contextTokens = message.contextCondense?.newContextTokens ?? 0
-			foundValidTokenData = true
 			break
 		}
 	}
