@@ -57,7 +57,7 @@ Kilo Code analyzes your request and proposes specific actions. These may include
 {% callout type="tip" %}
 The level of autonomy is configurable, allowing you to make the agent more or less autonomous.
 
-You can learn more about [using modes](/docs/basic-usage/using-modes) and [auto-approving actions](/docs/features/auto-approving-actions).
+You can learn more about [using modes](/docs/code-with-ai/agents/using-modes) and [auto-approving actions](/docs/features/auto-approving-actions).
 {% /callout %}
 
 ### Step 5: Iterate
@@ -79,3 +79,7 @@ Ready for more? Here are some next steps:
 - **[Autocomplete](/docs/code-with-ai/features/autocomplete)** — Get inline code suggestions as you type
 - **[Modes](/docs/code-with-ai/agents/using-modes)** — Explore different modes for different tasks
 - **[Git commit generation](/docs/code-with-ai/features/git-commit-generation)** — Automatically generate commit messages
+
+{% callout type="tip" %}
+**Accelerate development:** Check out multiple copies of your repository and run Kilo Code on all of them in parallel (using git to resolve any conflicts, same as with human devs). This can dramatically speed up development on large projects.
+{% /callout %}

@@ -33,19 +33,11 @@ A typical browser interaction follows this pattern:
 
 For example:
 
-```
-Open the browser and view our site.
-```
+- `Open the browser and view our site.`
+- `Can you check if my website at https://kilocode.ai is displaying correctly?`
+- `Browse http://localhost:3000, scroll down to the bottom of the page and check if the footer information is displaying correctly.`
 
-```
-Can you check if my website at https://kilocode.ai is displaying correctly?
-```
-
-```
-Browse http://localhost:3000, scroll down to the bottom of the page and check if the footer information is displaying correctly.
-```
-
-{% image src="/docs/features/KiloCodeBrowser.png" alt="Browser use example" width="300" /%}
+{% image src="/docs/img/browser-use/KiloCodeBrowser.png" alt="Browser use example" width="300" /%}
 
 ## How Browser Actions Work
 
@@ -77,7 +69,8 @@ Key characteristics:
 - **Viewport size**: Small Desktop (900x600)
 - **Screenshot quality**: 75%
 - **Use remote browser connection**: Disabled
-  {% /callout %}
+
+{% /callout %}
 
 ### Accessing Settings
 

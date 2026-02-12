@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useMemo } from "react"
 import { telemetryClient } from "@/utils/TelemetryClient"
 import { vscode } from "@/utils/vscode"
 import { TelemetryEventName } from "@roo-code/types"
@@ -10,11 +10,6 @@ import { Lightbulb, Sparkles, ArrowRight } from "lucide-react"
 export const IdeaSuggestionsBox = () => {
 	const { t } = useTranslation("kilocode")
 	const { taskHistoryVersion } = useExtensionState()
-
-	const [iconsBaseUri] = useState(() => {
-		const w = window as any
-		return w.ICONS_BASE_URI || ""
-	})
 
 	// Check if current workspace has any tasks
 	const { data } = useTaskHistory(
@@ -28,13 +23,13 @@ export const IdeaSuggestionsBox = () => {
 	)
 	const hasWorkspaceTasks = (data?.historyItems?.length ?? 0) > 0
 
-	// Show 3-4 random ideas - memoized to prevent re-shuffling on re-renders
+	// Show 2 random ideas - memoized to prevent re-shuffling on re-renders
 	// Must be called before early return to satisfy React hooks rules
 	const shuffledIdeas = useMemo(
 		() =>
 			[...Object.values(t("ideaSuggestionsBox.ideas", { returnObjects: true }) as Record<string, string>)]
 				.sort(() => Math.random() - 0.5)
-				.slice(0, 4),
+				.slice(0, 2),
 		[t],
 	)
 
@@ -57,33 +52,16 @@ export const IdeaSuggestionsBox = () => {
 
 	return (
 		<div className="flex flex-col items-center">
-			{/* Kilo Logo */}
-			<div
-				className="mb-5 flex items-center justify-center"
-				style={{
-					width: "56px",
-					height: "56px",
-				}}>
-				<img
-					src={`${iconsBaseUri}/kilo-dark.svg`}
-					alt="Kilo Code"
-					className="w-full h-full object-contain"
-					style={{
-						opacity: 0.85,
-					}}
-				/>
-			</div>
-
 			{/* Content Box */}
 			<div className="w-full p-5 rounded-md border border-vscode-panel-border bg-vscode-input-background">
 				{/* Header section */}
 				<div className="text-center mb-5">
 					<div className="inline-flex items-center gap-2 mb-2">
-						<Sparkles className="w-4 h-4 text-vscode-focusBorder" />
+						<Sparkles className="w-4 h-4 text-vscode-foreground" />
 						<p className="text-base font-semibold text-vscode-foreground m-0">
 							{t("ideaSuggestionsBox.newHere")}
 						</p>
-						<Sparkles className="w-4 h-4 text-vscode-focusBorder" />
+						<Sparkles className="w-4 h-4 text-vscode-foreground" />
 					</div>
 					<p className="text-sm text-vscode-descriptionForeground m-0">
 						{t("ideaSuggestionsBox.tryOneOfThese")}
@@ -103,21 +81,13 @@ export const IdeaSuggestionsBox = () => {
 									style={{
 										background: "color-mix(in srgb, var(--vscode-focusBorder) 15%, transparent)",
 									}}>
-									<Lightbulb className="w-4 h-4 text-vscode-focusBorder transition-colors duration-200 group-hover:text-vscode-button-foreground" />
+									<Lightbulb className="w-4 h-4 text-vscode-foreground transition-colors duration-200 group-hover:text-vscode-button-foreground" />
 								</div>
 								<span className="flex-1 text-vscode-foreground leading-relaxed pt-0.5">{idea}</span>
 								<ArrowRight className="w-4 h-4 text-vscode-descriptionForeground opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-1" />
 							</div>
 						</button>
 					))}
-				</div>
-
-				{/* Footer hint */}
-				<div className="mt-4">
-					<p className="text-center text-xs text-vscode-descriptionForeground m-0 flex items-center justify-center gap-1.5">
-						<span className="codicon codicon-info" />
-						{t("ideaSuggestionsBox.clickToInsert")}
-					</p>
 				</div>
 			</div>
 		</div>
