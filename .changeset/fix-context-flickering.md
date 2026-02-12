@@ -1,5 +1,5 @@
 ---
-"@roo-code/core": patch
+"kilo-code": patch
 ---
 
 fix: prevent context token indicator flickering
