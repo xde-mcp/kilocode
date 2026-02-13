@@ -423,7 +423,7 @@ const ApiOptions = ({
 				ollama: { field: "ollamaModelId" },
 				lmstudio: { field: "lmStudioModelId" },
 				// kilocode_change start
-				apertis: { field: "apiModelId", default: apertisDefaultModelId },
+				apertis: { field: "apertisModelId", default: apertisDefaultModelId },
 				kilocode: { field: "kilocodeModel", default: kilocodeDefaultModel },
 				"gemini-cli": { field: "apiModelId", default: geminiCliDefaultModelId },
 				synthetic: { field: "apiModelId", default: syntheticDefaultModelId },
