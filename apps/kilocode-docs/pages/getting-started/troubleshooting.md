@@ -54,4 +54,5 @@ If you're unable to resolve the issue, please send your console logs and a descr
 
 - The error messages from the console
 - Steps to reproduce the issue
+- Screenshots or screen recordings of the issue
 - Your IDE and Kilo Code version
