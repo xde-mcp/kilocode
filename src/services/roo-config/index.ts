@@ -86,7 +86,7 @@ export async function directoryExists(dirPath: string): Promise<boolean> {
 		const stat = await fs.stat(dirPath)
 		return stat.isDirectory()
 	} catch (error: any) {
-		// Handle errors that can occur with symlinks: ENOENT (not found), ENOTDIR (not a directory),
+		// kilocode_change start: Handle errors that can occur with symlinks: ENOENT (not found), ENOTDIR (not a directory),
 		// ELOOP (too many symlinks), ENOTCONN (network connection issue for network drives)
 		if (
 			error.code === "ENOENT" ||
@@ -96,6 +96,7 @@ export async function directoryExists(dirPath: string): Promise<boolean> {
 		) {
 			return false
 		}
+		// kilocode_change end
 		// Re-throw unexpected errors (permission, I/O, etc.)
 		throw error
 	}
@@ -109,7 +110,7 @@ export async function fileExists(filePath: string): Promise<boolean> {
 		const stat = await fs.stat(filePath)
 		return stat.isFile()
 	} catch (error: any) {
-		// Handle errors that can occur with symlinks: ENOENT (not found), ENOTDIR (not a directory),
+		// kilocode_change start: Handle errors that can occur with symlinks: ENOENT (not found), ENOTDIR (not a directory),
 		// ELOOP (too many symlinks), ENOTCONN (network connection issue for network drives)
 		if (
 			error.code === "ENOENT" ||
@@ -119,6 +120,7 @@ export async function fileExists(filePath: string): Promise<boolean> {
 		) {
 			return false
 		}
+		// kilocode_change end
 		// Re-throw unexpected errors (permission, I/O, etc.)
 		throw error
 	}

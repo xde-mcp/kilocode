@@ -62,7 +62,7 @@ export class SkillsManager {
 
 		try {
 			// Get the real path (resolves if dirPath is a symlink)
-			// If the symlink is broken, this will throw ENOENT
+			// If the symlink is broken, this will throw ENOENT // kilocode_change
 			const realDirPath = await fs.realpath(dirPath)
 
 			// Read directory entries
@@ -78,6 +78,7 @@ export class SkillsManager {
 				// Load skill metadata - the skill name comes from the entry name (symlink name if symlinked)
 				await this.loadSkillMetadata(entryPath, source, mode, entryName)
 			}
+			// kilocode_change start: Handle symlink-related errors gracefully
 		} catch (error: any) {
 			// Handle symlink-related errors gracefully:
 			// - ENOENT: Directory/symlink target doesn't exist
@@ -90,6 +91,7 @@ export class SkillsManager {
 			// Log other unexpected errors for debugging
 			console.error(`Error scanning skills directory ${dirPath}:`, error)
 		}
+		// kilocode_change end
 	}
 
 	/**
