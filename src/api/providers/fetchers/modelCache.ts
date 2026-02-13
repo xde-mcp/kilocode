@@ -5,7 +5,7 @@ import * as fsSync from "fs"
 import NodeCache from "node-cache"
 import { z } from "zod"
 
-import type { ProviderName } from "@roo-code/types"
+import type { ProviderName, ModelRecord } from "@roo-code/types"
 import { modelInfoSchema, TelemetryEventName } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 
@@ -13,7 +13,7 @@ import { safeWriteJson } from "../../../utils/safeWriteJson"
 
 import { ContextProxy } from "../../../core/config/ContextProxy"
 import { getCacheDirectoryPath } from "../../../utils/storage"
-import type { RouterName, ModelRecord } from "../../../shared/api"
+import type { RouterName } from "../../../shared/api"
 import { fileExistsAtPath } from "../../../utils/fs"
 
 import { getOpenRouterModels } from "./openrouter"
@@ -41,6 +41,7 @@ import { getHuggingFaceModels } from "./huggingface"
 import { getRooModels } from "./roo"
 import { getChutesModels } from "./chutes"
 import { getNanoGptModels } from "./nano-gpt" //kilocode_change
+import { getZenmuxModels } from "./zenmux"
 
 const memoryCache = new NodeCache({ stdTTL: 5 * 60, checkperiod: 5 * 60 })
 
@@ -76,7 +77,6 @@ async function fetchModelsFromProvider(options: GetModelsOptions): Promise<Model
 	const { provider } = options
 
 	let models: ModelRecord
-
 	switch (provider) {
 		case "openrouter":
 			// kilocode_change start: base url and bearer token
@@ -85,6 +85,12 @@ async function fetchModelsFromProvider(options: GetModelsOptions): Promise<Model
 				headers: options.apiKey ? { Authorization: `Bearer ${options.apiKey}` } : undefined,
 			})
 			// kilocode_change end
+			break
+		case "zenmux":
+			models = await getZenmuxModels({
+				openRouterBaseUrl: options.baseUrl || "https://zenmux.ai/api/v1",
+				headers: options.apiKey ? { Authorization: `Bearer ${options.apiKey}` } : undefined,
+			})
 			break
 		case "requesty":
 			// Requesty models endpoint requires an API key for per-user custom policies.

@@ -102,14 +102,19 @@ export function getModelIdForProvider(provider: ProviderConfig): string {
 		case "anthropic":
 			return provider.apiModelId || ""
 		case "openai-native":
+		case "openai-codex":
 			return provider.apiModelId || ""
 		case "openrouter":
 			return provider.openRouterModelId || ""
+		case "zenmux":
+			return provider.zenmuxModelId || ""
 		case "ollama":
 			return provider.ollamaModelId || ""
 		case "lmstudio":
 			return provider.lmStudioModelId || ""
 		case "openai":
+			return provider.openAiModelId || ""
+		case "openai-responses":
 			return provider.openAiModelId || ""
 		case "glama":
 			return provider.glamaModelId || ""
@@ -132,7 +137,6 @@ export function getModelIdForProvider(provider: ProviderConfig): string {
 		case "bedrock":
 		case "vertex":
 		case "gemini":
-		case "gemini-cli":
 		case "mistral":
 		case "moonshot":
 		case "minimax":
