@@ -87,10 +87,11 @@ export class NativeToolCallParser {
 		arguments?: string
 	}): ToolCallStreamEvent[] {
 		const events: ToolCallStreamEvent[] = []
+		// kilocode_change start: Some providers (e.g. MiniMax) return tool call id as a number; coerce to string.
 		const { index, id: rawId, name, arguments: args } = chunk
 
-		// Some providers (e.g. MiniMax) return tool call id as a number; coerce to string.
 		const id = rawId != null ? String(rawId) : undefined
+		// kilocode_change end
 
 		let tracked = this.rawChunkTracker.get(index)
 
