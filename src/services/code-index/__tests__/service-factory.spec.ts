@@ -4,7 +4,7 @@ import { OpenAiEmbedder } from "../embedders/openai"
 import { CodeIndexOllamaEmbedder } from "../embedders/ollama"
 import { OpenAICompatibleEmbedder } from "../embedders/openai-compatible"
 import { GeminiEmbedder } from "../embedders/gemini"
-import { VoyageEmbedder } from "../embedders/voyage"
+import { VoyageEmbedder } from "../embedders/voyage" // kilocode_change
 import { QdrantVectorStore } from "../vector-store/qdrant-client"
 
 // Mock the embedders and vector store
@@ -12,7 +12,7 @@ vitest.mock("../embedders/openai")
 vitest.mock("../embedders/ollama")
 vitest.mock("../embedders/openai-compatible")
 vitest.mock("../embedders/gemini")
-vitest.mock("../embedders/voyage")
+vitest.mock("../embedders/voyage") // kilocode_change
 vitest.mock("../vector-store/qdrant-client")
 
 // Mock the embedding models module
@@ -34,7 +34,7 @@ const MockedOpenAiEmbedder = OpenAiEmbedder as MockedClass<typeof OpenAiEmbedder
 const MockedCodeIndexOllamaEmbedder = CodeIndexOllamaEmbedder as MockedClass<typeof CodeIndexOllamaEmbedder>
 const MockedOpenAICompatibleEmbedder = OpenAICompatibleEmbedder as MockedClass<typeof OpenAICompatibleEmbedder>
 const MockedGeminiEmbedder = GeminiEmbedder as MockedClass<typeof GeminiEmbedder>
-const MockedVoyageEmbedder = VoyageEmbedder as MockedClass<typeof VoyageEmbedder>
+const MockedVoyageEmbedder = VoyageEmbedder as MockedClass<typeof VoyageEmbedder> // kilocode_change
 const MockedQdrantVectorStore = QdrantVectorStore as MockedClass<typeof QdrantVectorStore>
 
 // Import the mocked functions
@@ -341,6 +341,7 @@ describe("CodeIndexServiceFactory", () => {
 			expect(() => factory.createEmbedder()).toThrow("serviceFactory.invalidEmbedderType")
 		})
 
+		// kilocode_change start
 		it("should pass model ID to Voyage embedder when using Voyage provider", () => {
 			// Arrange
 			const testModelId = "voyage-code-3"
@@ -405,6 +406,7 @@ describe("CodeIndexServiceFactory", () => {
 			// Act & Assert
 			expect(() => factory.createEmbedder()).toThrow("serviceFactory.voyageConfigMissing")
 		})
+		// kilocode_change end
 	})
 
 	describe("createVectorStore", () => {
@@ -853,6 +855,7 @@ describe("CodeIndexServiceFactory", () => {
 			expect(mockEmbedderInstance.validateConfiguration).toHaveBeenCalled()
 		})
 
+		// kilocode_change start
 		it("should validate Voyage embedder successfully", async () => {
 			// Arrange
 			const testConfig = {
@@ -874,6 +877,7 @@ describe("CodeIndexServiceFactory", () => {
 			expect(result).toEqual({ valid: true })
 			expect(mockEmbedderInstance.validateConfiguration).toHaveBeenCalled()
 		})
+		// kilocode_change end
 
 		it("should handle validation exceptions", async () => {
 			// Arrange

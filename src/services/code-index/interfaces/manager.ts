@@ -79,7 +79,7 @@ export type EmbedderProvider =
 	| "vercel-ai-gateway"
 	| "bedrock"
 	| "openrouter"
-	| "voyage"
+	| "voyage" // kilocode_change
 
 export interface IndexProgressUpdate {
 	systemStatus: IndexingState

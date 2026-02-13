@@ -314,7 +314,7 @@ export const SECRET_STATE_KEYS = [
 	"vercelAiGatewayApiKey",
 	"sapAiCoreServiceKey", // kilocode_change
 	"basetenApiKey",
-	"codebaseIndexVoyageApiKey",
+	"codebaseIndexVoyageApiKey", // kilocode_change
 	"corethinkApiKey",
 ] as const
 

@@ -97,7 +97,7 @@ interface LocalCodeIndexSettings {
 	codebaseIndexVercelAiGatewayApiKey?: string
 	codebaseIndexOpenRouterApiKey?: string
 	codebaseIndexOpenRouterSpecificProvider?: string
-	codebaseIndexVoyageApiKey?: string
+	codebaseIndexVoyageApiKey?: string // kilocode_change
 }
 
 // Validation schema for codebase index settings
@@ -193,6 +193,7 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
 			})
 
+		// kilocode_change start
 		case "voyage":
 			return baseSchema.extend({
 				codebaseIndexVoyageApiKey: z.string().min(1, t("settings:codeIndex.validation.voyageApiKeyRequired")),
@@ -200,6 +201,7 @@ const createValidationSchema = (provider: EmbedderProvider, t: any) => {
 					.string()
 					.min(1, t("settings:codeIndex.validation.modelSelectionRequired")),
 			})
+		// kilocode_change end
 
 		default:
 			return baseSchema
@@ -271,7 +273,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 		codebaseIndexVercelAiGatewayApiKey: "",
 		codebaseIndexOpenRouterApiKey: "",
 		codebaseIndexOpenRouterSpecificProvider: "",
-		codebaseIndexVoyageApiKey: "",
+		codebaseIndexVoyageApiKey: "", // kilocode_change
 	})
 
 	// Initial settings state - stores the settings when popover opens
@@ -330,7 +332,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 				codebaseIndexOpenRouterApiKey: "",
 				codebaseIndexOpenRouterSpecificProvider:
 					codebaseIndexConfig.codebaseIndexOpenRouterSpecificProvider || "",
-				codebaseIndexVoyageApiKey: "",
+				codebaseIndexVoyageApiKey: "", // kilocode_change
 			}
 			setInitialSettings(settings)
 			setCurrentSettings(settings)
@@ -455,9 +457,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 							? SECRET_PLACEHOLDER
 							: ""
 					}
+					// kilocode_change start
 					if (!prev.codebaseIndexVoyageApiKey || prev.codebaseIndexVoyageApiKey === SECRET_PLACEHOLDER) {
 						updated.codebaseIndexVoyageApiKey = secretStatus.hasVoyageApiKey ? SECRET_PLACEHOLDER : ""
 					}
+					// kilocode_change end
 
 					return updated
 				}
@@ -542,7 +546,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 					key === "codebaseIndexMistralApiKey" ||
 					key === "codebaseIndexVercelAiGatewayApiKey" ||
 					key === "codebaseIndexOpenRouterApiKey" ||
-					key === "codebaseIndexVoyageApiKey"
+					key === "codebaseIndexVoyageApiKey" // kilocode_change
 				) {
 					dataToValidate[key] = "placeholder-valid"
 				}
@@ -901,9 +905,11 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 												<SelectItem value="openrouter">
 													{t("settings:codeIndex.openRouterProvider")}
 												</SelectItem>
+												{/* kilocode_change start */}
 												<SelectItem value="voyage">
 													{t("settings:codeIndex.voyageProvider")}
 												</SelectItem>
+												{/* kilocode_change end */}
 											</SelectContent>
 										</Select>
 									</div>
@@ -1595,6 +1601,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 										</>
 									)}
 
+									{/* kilocode_change start */}
 									{/* Voyage AI Settings */}
 									{currentSettings.codebaseIndexEmbedderProvider === "voyage" && (
 										<>
@@ -1660,6 +1667,7 @@ export const CodeIndexPopover: React.FC<CodeIndexPopoverProps> = ({
 											</div>
 										</>
 									)}
+									{/* kilocode_change end */}
 
 									{/* Qdrant Settings */}
 									{currentSettings.codebaseIndexVectorStoreProvider === "qdrant" && (

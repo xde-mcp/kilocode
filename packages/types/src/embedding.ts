@@ -7,7 +7,7 @@ export type EmbedderProvider =
 	| "vercel-ai-gateway"
 	| "bedrock"
 	| "openrouter"
-	| "voyage" // Add other providers as needed.
+	| "voyage" // kilocode_change // Add other providers as needed.
 
 export interface EmbeddingModelProfile {
 	dimension: number

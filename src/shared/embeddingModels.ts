@@ -83,6 +83,7 @@ export const EMBEDDING_MODEL_PROFILES: EmbeddingModelProfiles = {
 		"qwen/qwen3-embedding-4b": { dimension: 2560, scoreThreshold: 0.4 },
 		"qwen/qwen3-embedding-8b": { dimension: 4096, scoreThreshold: 0.4 },
 	},
+	// kilocode_change start
 	voyage: {
 		// Voyage AI embedding models - code-specific and general purpose
 		"voyage-code-3": { dimension: 1024, scoreThreshold: 0.4 },
@@ -92,6 +93,7 @@ export const EMBEDDING_MODEL_PROFILES: EmbeddingModelProfiles = {
 		"voyage-finance-2": { dimension: 1024, scoreThreshold: 0.4 },
 		"voyage-law-2": { dimension: 1024, scoreThreshold: 0.4 },
 	},
+	// kilocode_change end
 }
 
 /**
@@ -190,8 +192,10 @@ export function getDefaultModelId(provider: EmbedderProvider): string {
 		case "openrouter":
 			return "openai/text-embedding-3-large"
 
+		// kilocode_change start
 		case "voyage":
 			return "voyage-code-3"
+		// kilocode_change end
 
 		default:
 			// Fallback for unknown providers
