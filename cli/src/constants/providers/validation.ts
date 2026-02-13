@@ -10,6 +10,7 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	"openai-native": ["openAiNativeApiKey", "apiModelId"],
 	"openai-codex": ["apiModelId"],
 	openrouter: ["openRouterApiKey", "openRouterModelId"],
+	zenmux: ["zenmuxApiKey", "zenmuxModelId"], // kilocode_change
 	ollama: ["ollamaBaseUrl", "ollamaModelId"],
 	lmstudio: ["lmStudioBaseUrl", "lmStudioModelId"],
 	bedrock: ["awsRegion", "apiModelId"], // Auth fields handled in handleSpecialValidations (supports API key, profile, or direct credentials)
@@ -35,7 +36,6 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	deepinfra: ["deepInfraApiKey", "deepInfraModelId"],
 	"io-intelligence": ["ioIntelligenceApiKey", "ioIntelligenceModelId"],
 	"qwen-code": ["qwenCodeOauthPath", "apiModelId"],
-	"gemini-cli": ["geminiCliOAuthPath", "geminiCliProjectId", "apiModelId"],
 	zai: ["zaiApiKey", "zaiApiLine", "apiModelId"],
 	unbound: ["unboundApiKey", "unboundModelId"],
 	requesty: ["requestyApiKey", "requestyModelId"],
@@ -53,4 +53,5 @@ export const PROVIDER_REQUIRED_FIELDS: Record<ProviderName, string[]> = {
 	"virtual-quota-fallback": [], // Has array validation
 	minimax: ["minimaxBaseUrl", "minimaxApiKey", "apiModelId"],
 	baseten: ["basetenApiKey", "apiModelId"],
+	corethink: ["corethinkApiKey", "corethinkModelId"],
 }

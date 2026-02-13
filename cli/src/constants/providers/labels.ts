@@ -11,6 +11,7 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
 	"openai-codex": "OpenAI - ChatGPT Plus/Pro",
 	"openai-responses": "OpenAI Compatible (Responses)",
 	openrouter: "OpenRouter",
+	zenmux: "ZenMux",
 	bedrock: "Amazon Bedrock",
 	gemini: "Google Gemini",
 	vertex: "GCP Vertex AI",
@@ -37,7 +38,6 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
 	deepinfra: "DeepInfra",
 	"io-intelligence": "IO Intelligence",
 	"qwen-code": "Qwen Code",
-	"gemini-cli": "Gemini CLI",
 	zai: "Zai",
 	minimax: "MiniMax",
 	unbound: "Unbound",
@@ -52,6 +52,7 @@ export const PROVIDER_LABELS: Record<ProviderName, string> = {
 	synthetic: "Synthetic",
 	"sap-ai-core": "SAP AI Core",
 	baseten: "BaseTen",
+	corethink: "Corethink",
 }
 
 /**

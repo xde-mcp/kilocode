@@ -1,5 +1,6 @@
 export * from "./anthropic.js"
 export * from "./baseten.js"
+export * from "./corethink.js"
 export * from "./bedrock.js"
 export * from "./cerebras.js"
 export * from "./chutes.js"
@@ -10,12 +11,12 @@ export * from "./featherless.js"
 export * from "./fireworks.js"
 export * from "./gemini.js"
 // kilocode_change start
-export * from "./gemini-cli.js"
 export * from "./ovhcloud.js"
 export * from "./synthetic.js"
 export * from "./inception.js"
 export * from "./minimax.js"
 export * from "./glama.js"
+export * from "./zenmux.js"
 // kilocode_change end
 export * from "./groq.js"
 export * from "./huggingface.js"
@@ -28,6 +29,7 @@ export * from "./nano-gpt.js" // kilocode_change
 export * from "./ollama.js"
 export * from "./openai.js"
 export * from "./openai-codex.js"
+export * from "./openai-codex-rate-limits.js"
 export * from "./openrouter.js"
 export * from "./qwen-code.js"
 export * from "./requesty.js"
@@ -44,6 +46,7 @@ export * from "./minimax.js"
 
 import { anthropicDefaultModelId } from "./anthropic.js"
 import { basetenDefaultModelId } from "./baseten.js"
+import { corethinkDefaultModelId } from "./corethink.js"
 import { bedrockDefaultModelId } from "./bedrock.js"
 import { cerebrasDefaultModelId } from "./cerebras.js"
 import { chutesDefaultModelId } from "./chutes.js"
@@ -54,6 +57,7 @@ import { featherlessDefaultModelId } from "./featherless.js"
 import { fireworksDefaultModelId } from "./fireworks.js"
 import { geminiDefaultModelId } from "./gemini.js"
 import { glamaDefaultModelId } from "./glama.js" // kilocode_change
+import { zenmuxDefaultModelId } from "./zenmux.js" // kilocode_change
 import { groqDefaultModelId } from "./groq.js"
 import { ioIntelligenceDefaultModelId } from "./io-intelligence.js"
 import { litellmDefaultModelId } from "./lite-llm.js"
@@ -89,6 +93,8 @@ export function getProviderDefaultModelId(
 	switch (provider) {
 		case "openrouter":
 			return openRouterDefaultModelId
+		case "zenmux": // kilocode_change
+			return zenmuxDefaultModelId // kilocode_change
 		case "requesty":
 			return requestyDefaultModelId
 		// kilocode_change start
@@ -109,6 +115,8 @@ export function getProviderDefaultModelId(
 			return chutesDefaultModelId
 		case "baseten":
 			return basetenDefaultModelId
+		case "corethink":
+			return corethinkDefaultModelId
 		case "bedrock":
 			return bedrockDefaultModelId
 		case "vertex":
@@ -162,7 +170,6 @@ export function getProviderDefaultModelId(
 		case "vercel-ai-gateway":
 			return vercelAiGatewayDefaultModelId
 		case "anthropic":
-		case "gemini-cli":
 		case "human-relay":
 		case "fake-ai":
 		default:
