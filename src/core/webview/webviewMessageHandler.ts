@@ -256,6 +256,28 @@ export const webviewMessageHandler = async (
 					vscode.window.showWarningMessage("No checkpoint found before this message")
 				}
 			} else {
+				// kilocode_change start: calculate the cost of messages being deleted before removing them
+				const messagesToDelete = currentCline.clineMessages.slice(messageIndex)
+				let deletedCost = 0
+				for (const msg of messagesToDelete) {
+					if (msg.say === "api_req_started" && msg.text) {
+						try {
+							const apiReqInfo = JSON.parse(msg.text)
+							if (apiReqInfo.cost && typeof apiReqInfo.cost === "number") {
+								deletedCost += apiReqInfo.cost
+							}
+						} catch {
+							// ignore parse errors
+						}
+					}
+				}
+
+				// add the deleted cost to the task's cumulative total
+				if (deletedCost > 0) {
+					currentCline.addDeletedApiCost(deletedCost)
+				}
+				// kilocode_change end
+
 				// For non-checkpoint deletes, preserve checkpoint associations for remaining messages
 				// Store checkpoints from messages that will be preserved
 				const preservedCheckpoints = new Map<number, any>()
@@ -3388,6 +3410,14 @@ export const webviewMessageHandler = async (
 						settings.codebaseIndexOpenRouterApiKey,
 					)
 				}
+				// kilocode_change start
+				if (settings.codebaseIndexVoyageApiKey !== undefined) {
+					await provider.contextProxy.storeSecret(
+						"codebaseIndexVoyageApiKey",
+						settings.codebaseIndexVoyageApiKey,
+					)
+				}
+				// kilocode_change end
 
 				// Send success response first - settings are saved regardless of validation
 				await provider.postMessageToWebview({
@@ -3526,6 +3556,7 @@ export const webviewMessageHandler = async (
 				"codebaseIndexVercelAiGatewayApiKey",
 			))
 			const hasOpenRouterApiKey = !!(await provider.context.secrets.get("codebaseIndexOpenRouterApiKey"))
+			const hasVoyageApiKey = !!(await provider.context.secrets.get("codebaseIndexVoyageApiKey")) // kilocode_change
 
 			provider.postMessageToWebview({
 				type: "codeIndexSecretStatus",
@@ -3537,6 +3568,7 @@ export const webviewMessageHandler = async (
 					hasMistralApiKey,
 					hasVercelAiGatewayApiKey,
 					hasOpenRouterApiKey,
+					hasVoyageApiKey, // kilocode_change
 				},
 			})
 			break
