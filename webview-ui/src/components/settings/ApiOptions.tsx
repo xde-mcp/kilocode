@@ -460,7 +460,8 @@ const ApiOptions = ({
 				zai: {
 					field: "apiModelId",
 					default:
-						apiConfiguration.zaiApiLine === "china_coding"
+						// kilocode_change - china_api uses mainland model catalog too.
+						apiConfiguration.zaiApiLine === "china_coding" || apiConfiguration.zaiApiLine === "china_api"
 							? mainlandZAiDefaultModelId
 							: internationalZAiDefaultModelId,
 				},
