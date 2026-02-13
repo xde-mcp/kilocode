@@ -1663,7 +1663,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 								</div>
 							</div>
 						)}
-						{!showTelemetryBanner && <OrganizationSelector className="w-40 shrink-0" />}
+						{!showTelemetryBanner && <OrganizationSelector className="w-40 shrink-0 ml-auto" />}
 					</div>
 					{/* kilocode_change start: changed the classes to support notifications */}
 					<div className="w-full h-full flex flex-col gap-4 px-3.5 transition-all duration-300">
