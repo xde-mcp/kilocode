@@ -4712,6 +4712,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			}
 		})
 
+		try { // Outer try/finally to ensure abort listener cleanup on all exit paths
 		try {
 			// Awaiting first chunk to see if it will throw an error.
 			this.isWaitingForFirstChunk = true
@@ -4835,11 +4836,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			Task.lastGlobalApiRequestTime = performance.now()
 		}
 		// kilocode_change end
-
-		// Clean up abort listeners to prevent memory leaks
-		abortSignal.removeEventListener("abort", abortCleanupListener)
-		if (firstChunkAbortListener) {
-			abortSignal.removeEventListener("abort", firstChunkAbortListener)
+		} finally {
+			// Clean up abort listeners to prevent memory leaks.
+			// This must be in a finally block to ensure cleanup on all exit paths
+			// (errors, returns from catch block, mid-stream abort, etc.).
+			abortSignal.removeEventListener("abort", abortCleanupListener)
+			if (firstChunkAbortListener) {
+				abortSignal.removeEventListener("abort", firstChunkAbortListener)
+			}
 		}
 	}
 
