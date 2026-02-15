@@ -91,7 +91,7 @@ export const minimaxModels = {
 		cacheWritesPrice: 0.375,
 		cacheReadsPrice: 0.03,
 		description:
-			"MiniMax M2.5 builds on M2.1 with improved overall performance for agentic coding tasks and significantly faster response times.",
+			"MiniMax M2.5 builds on M2.1 with improved overall performance for agentic coding tasks and the same response times.",
 	},
 	"MiniMax-M2.5-highspeed": {
 		maxTokens: 16_384,
