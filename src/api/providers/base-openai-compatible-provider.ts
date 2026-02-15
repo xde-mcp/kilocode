@@ -101,7 +101,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			}),
 		}
 
-		// Add thinking parameter if reasoning is enabled and model supports it
+		// kilocode_change start - Add reasoning effort and thinking parameters
 		if (this.options.enableReasoningEffort) {
 			const effort = this.options.reasoningEffort || info.reasoningEffort
 			const isExplicitlyDisabled = effort === "disable"
@@ -116,6 +116,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				}
 			}
 		}
+		// kilocode_change end
 
 		try {
 			return this.client.chat.completions.create(params, requestOptions)
@@ -243,7 +244,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 			messages: [{ role: "user", content: prompt }],
 		}
 
-		// Add thinking parameter if reasoning is enabled and model supports it
+		// kilocode_change start - Add reasoning effort and thinking parameters
 		if (this.options.enableReasoningEffort) {
 			const effort = this.options.reasoningEffort || modelInfo.reasoningEffort
 			const isExplicitlyDisabled = effort === "disable"
@@ -258,6 +259,7 @@ export abstract class BaseOpenAiCompatibleProvider<ModelName extends string>
 				}
 			}
 		}
+		// kilocode_change end
 
 		try {
 			const response = await this.client.chat.completions.create(params)
