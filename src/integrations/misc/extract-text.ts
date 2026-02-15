@@ -63,7 +63,7 @@ export function getSupportedBinaryFormats(): string[] {
  */
 export async function extractTextFromFile(filePath: string, maxReadFileLine?: number): Promise<string> {
 	// Validate maxReadFileLine parameter
-	// 0 is treated as unlimited (same as -1) for backward compatibility
+	// kilocode_change start - 0 is treated as unlimited (same as -1) for backward compatibility
 	if (maxReadFileLine !== undefined && maxReadFileLine !== -1 && maxReadFileLine !== 0) {
 		if (!Number.isInteger(maxReadFileLine) || maxReadFileLine < 1) {
 			throw new Error(
@@ -71,6 +71,7 @@ export async function extractTextFromFile(filePath: string, maxReadFileLine?: nu
 			)
 		}
 	}
+	// kilocode_change end
 
 	try {
 		await fs.access(filePath)
@@ -91,7 +92,7 @@ export async function extractTextFromFile(filePath: string, maxReadFileLine?: nu
 
 	if (!isBinary) {
 		// Check if we need to apply line limit
-		// 0 is treated as unlimited (same as -1) for backward compatibility
+		// kilocode_change - 0 is treated as unlimited (same as -1) for backward compatibility
 		if (maxReadFileLine !== undefined && maxReadFileLine !== -1 && maxReadFileLine !== 0) {
 			const totalLines = await countFileLines(filePath)
 			if (totalLines > maxReadFileLine) {

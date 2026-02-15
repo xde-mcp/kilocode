@@ -152,6 +152,7 @@ describe("extractTextFromFile - Large File Handling", () => {
 		expect(result).toContain("[File truncated: showing 500 of 10000 total lines")
 	})
 
+	// kilocode_change start - 0 is treated as unlimited for backward compatibility
 	it("should handle maxReadFileLine of 0 by treating as unlimited", async () => {
 		const fileContent = "Line 1\nLine 2\nLine 3"
 
@@ -166,6 +167,7 @@ describe("extractTextFromFile - Large File Handling", () => {
 		expect(result).toContain("3 | Line 3")
 		expect(result).not.toContain("[File truncated:")
 	})
+	// kilocode_change end
 
 	it("should handle negative maxReadFileLine by treating as undefined", async () => {
 		const fileContent = "Line 1\nLine 2\nLine 3"
