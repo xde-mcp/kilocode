@@ -32,6 +32,28 @@ describe("anthropic-filter", () => {
 			expect(result).toEqual(messages)
 		})
 
+		it("should strip non-Anthropic top-level fields like reasoning_details", () => {
+			const messages: Anthropic.Messages.MessageParam[] = [
+				{
+					role: "assistant",
+					content: "Hello",
+					reasoning_details: [{ type: "reasoning.summary", summary: "internal" }],
+				} as any,
+				{
+					role: "assistant",
+					content: [{ type: "text", text: "World" }],
+					reasoning_details: [{ type: "reasoning.encrypted", data: "secret" }],
+				} as any,
+			]
+
+			const result = filterNonAnthropicBlocks(messages)
+
+			expect(result).toEqual([
+				{ role: "assistant", content: "Hello" },
+				{ role: "assistant", content: [{ type: "text", text: "World" }] },
+			])
+		})
+
 		it("should pass through messages with valid Anthropic blocks", () => {
 			const messages: Anthropic.Messages.MessageParam[] = [
 				{

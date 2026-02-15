@@ -28,8 +28,13 @@ export function filterNonAnthropicBlocks(
 ): Anthropic.Messages.MessageParam[] {
 	return messages
 		.map((message) => {
+			const baseMessage = { role: message.role }
+
 			if (typeof message.content === "string") {
-				return message
+				return {
+					...baseMessage,
+					content: message.content,
+				}
 			}
 
 			const filteredContent = message.content.filter((block) => {
@@ -44,7 +49,7 @@ export function filterNonAnthropicBlocks(
 			}
 
 			return {
-				...message,
+				...baseMessage,
 				content: filteredContent,
 			}
 		})
