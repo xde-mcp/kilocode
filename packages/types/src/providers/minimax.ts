@@ -72,7 +72,7 @@ export const minimaxModels = {
 		inputPrice: 0.6,
 		outputPrice: 2.4,
 		cacheWritesPrice: 0.375,
-		cacheReadsPrice: 0.06,
+		cacheReadsPrice: 0.03,
 		description:
 			"(high-speed) MiniMax M2.1 builds on M2 with improved overall performance for agentic coding tasks and significantly faster response times.",
 	},
@@ -106,7 +106,7 @@ export const minimaxModels = {
 		inputPrice: 0.6,
 		outputPrice: 2.4,
 		cacheWritesPrice: 0.375,
-		cacheReadsPrice: 0.06,
+		cacheReadsPrice: 0.03,
 		description:
 			"(high-speed) MiniMax M2.5 builds on M2.1 with improved overall performance for agentic coding tasks and significantly faster response times.",
 	},
