@@ -18,6 +18,10 @@ Each mode—including custom ones—features **Sticky Models**. This means Kilo 
 - **Experimentation:** Safely experiment with different prompts and configurations without affecting other modes
 - **Team Collaboration:** Share custom modes with your team to standardize workflows
 
+{% callout type="tip" %}
+**Keep custom modes on track:** Limit the types of files that they're allowed to edit using the `fileRegex` option in the `groups` configuration. This prevents modes from accidentally modifying files outside their intended scope.
+{% /callout %}
+
 {% image src="/docs/img/custom-modes/custom-modes.png" alt="Overview of custom modes interface" width="600" caption="Overview of custom modes interface" /%}
 
 _Kilo Code's interface for creating and managing custom modes._
@@ -36,6 +40,12 @@ Custom modes are defined by several key properties. Understanding these concepts
 | **When to Use** (`whenToUse`)                  | _(Optional)_ Provides guidance for Kilo's automated decision-making, particularly for mode selection and task orchestration. Used by the Orchestrator mode for task coordination.    |
 | **Custom Instructions** (`customInstructions`) | _(Optional)_ Specific behavioral guidelines or rules for the mode. Added near the end of the system prompt to further refine Kilo's behavior.                                        |
 
+{% callout type="tip" %}
+**Power Steering for Better Mode Adherence**
+
+If you find that models aren't following your custom mode's role definition or instructions closely enough, enable the [Power Steering](/docs/getting-started/settings#power-steering) experimental feature. This reminds the model about mode details more frequently, leading to stronger adherence to your custom configurations at the cost of increased token usage.
+{% /callout %}
+
 ## Import/Export Modes
 
 Easily share, back up, and template your custom modes. This feature lets you export any mode—and its associated rules—into a single, portable YAML file that you can import into any project.
@@ -52,7 +62,9 @@ Easily share, back up, and template your custom modes. This feature lets you exp
 
 **Exporting a Mode:**
 
-1. Navigate to the Modes view
+Modes are accessed from the Prompts tab (notebook icon), which contains the Modes section.
+
+1. Open the Prompts Tab (click the <Codicon name="notebook" /> icon in the top menu bar)
 2. Select the mode you wish to export
 3. Click the Export Mode button (download icon)
 4. Choose a location to save the `.yaml` file
@@ -60,9 +72,10 @@ Easily share, back up, and template your custom modes. This feature lets you exp
 
 **Importing a Mode:**
 
-1. Click the Import Mode button (upload icon) in the Modes view
-2. Select the mode's YAML file
-3. Choose the import level:
+1. Open the Prompts Tab (click the <Codicon name="notebook" /> icon in the top menu bar)
+2. Click the Import Mode button (upload icon)
+3. Select the mode's YAML file
+4. Choose the import level:
     - **Project:** Available only in current workspace (saved to `.kilocodemodes` file)
     - **Global:** Available in all projects (saved to global settings)
 
@@ -87,6 +100,10 @@ Create a new mode called "Documentation Writer". It should only be able to read 
 ```
 
 Kilo Code will guide you through the process, prompting for necessary information and creating the mode using the preferred YAML format.
+
+{% callout type="tip" %}
+**Create modes from job postings:** If there's a real world job posting for something you want a custom mode to do, try asking Code mode to `Create a custom mode based on the job posting at @[url]`. This can help you quickly create specialized modes with realistic role definitions.
+{% /callout %}
 
 ### 2. Using the Prompts Tab
 

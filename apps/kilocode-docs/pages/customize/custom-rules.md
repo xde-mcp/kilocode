@@ -26,9 +26,9 @@ Kilo Code supports two types of custom rules:
 - **Project Rules**: Apply only to the current project workspace
 - **Global Rules**: Apply across all projects and workspaces
 
-:::note UI Support
+{% callout type="note" title="UI Support" %}
 The built-in rules management UI is available for general rules only. Mode-specific rules must be managed through the file system.
-:::
+{% /callout %}
 
 ## Rule Location
 
@@ -85,9 +85,9 @@ Rules are loaded in the following priority order:
 
 When both global and project rules exist, they are combined with project rules taking precedence over global rules for conflicting directives.
 
-:::note
+{% callout type="note" %}
 We strongly recommend keeping your rules in the `.kilocode/rules/` folder as it provides better organization and is the preferred approach for future versions. The folder-based structure allows for more granular rule organization and clearer separation of concerns. The legacy file-based approach is maintained for backward compatibility but may be subject to change in future releases.
-:::
+{% /callout %}
 
 ### Mode-Specific Rules
 
@@ -103,7 +103,7 @@ When both generic rules and mode-specific rules exist, the mode-specific rules a
 
 ### Using the UI Interface
 
-<img src="/docs/img/custom-rules/rules-ui.png" alt="Rules tab in Kilo Code" width="400" />
+{% image src="/docs/img/custom-rules/rules-ui.png" alt="Rules tab in Kilo Code" width="400" /%}
 
 The easiest way to create and manage rules is through the built-in UI:
 
@@ -158,7 +158,7 @@ Files in the list contain sensitive data, they MUST NOT be read
 
 This rule prevents the AI from reading or accessing sensitive files, even if explicitly requested to do so.
 
-<img src="/docs/img/custom-rules/custom-rules.png" alt="Kilo Code ignores request to read sensitive file" width="600" />
+{% image src="/docs/img/custom-rules/custom-rules.png" alt="Kilo Code ignores request to read sensitive file" width="600" /%}
 
 ## Use Cases
 
@@ -192,9 +192,9 @@ Custom rules can be applied to a wide variety of scenarios:
 - **Keep It Simple**: Rules should be concise and easy to understand
 - **Update Regularly**: Review and update rules as project requirements change
 
-:::tip Pro Tip: File-Based Team Standards
+{% callout type="tip" title="Pro Tip: File-Based Team Standards" %}
 When working in team environments, placing `.kilocode/rules/codestyle.md` files under version control allows you to standardize Kilo's behavior across your entire development team. This ensures consistent code style, documentation practices, and development workflows for everyone on the project.
-:::
+{% /callout %}
 
 ## Limitations
 

@@ -15,6 +15,7 @@ const sectionNavItems: SectionNav = {
 	"deploy-secure": Nav.DeploySecureNav,
 	contributing: Nav.ContributingNav,
 	"ai-providers": Nav.AiProvidersNav,
+	gateway: Nav.GatewayNav,
 }
 
 // Main nav items with their section keys
@@ -26,6 +27,7 @@ const mainNavItems = [
 	{ label: "Collaborate", href: "/collaborate", sectionKey: "collaborate" },
 	{ label: "Automate", href: "/automate", sectionKey: "automate" },
 	{ label: "Deploy & Secure", href: "/deploy-secure", sectionKey: "deploy-secure" },
+	{ label: "AI Gateway", href: "/gateway", sectionKey: "gateway" },
 	{ label: "Contributing", href: "/contributing", sectionKey: "contributing" },
 ]
 
@@ -48,6 +50,12 @@ function getSectionLabel(sectionKey: string): string {
 const ChevronRight = () => (
 	<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
 		<path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+	</svg>
+)
+
+const ChevronDown = () => (
+	<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+		<path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
 	</svg>
 )
 
@@ -78,6 +86,9 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 	// Track which section is being viewed (for animation purposes)
 	const [viewedSection, setViewedSection] = useState<string | null>(currentSection)
 
+	// Track which nav items are expanded (for nested navigation)
+	const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
 	// Update view when route changes
 	useEffect(() => {
 		const newSection = getCurrentSection(router.pathname)
@@ -88,6 +99,26 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 			setActiveView("main")
 		}
 	}, [router.pathname])
+
+	// Auto-expand parent items when their child is active or when the parent itself is active
+	useEffect(() => {
+		const sectionItems = viewedSection ? sectionNavItems[viewedSection] || [] : []
+		const newExpandedItems = new Set<string>()
+
+		sectionItems.forEach((group) => {
+			group.links.forEach((link) => {
+				if (link.subLinks) {
+					const hasActiveChild = link.subLinks.some((subLink) => router.pathname === subLink.href)
+					const isParentActive = router.pathname === link.href
+					if (hasActiveChild || isParentActive) {
+						newExpandedItems.add(link.href)
+					}
+				}
+			})
+		})
+
+		setExpandedItems(newExpandedItems)
+	}, [router.pathname, viewedSection])
 
 	const handleLinkClick = () => {
 		if (onMobileClose) {
@@ -106,6 +137,18 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 		setActiveView("main")
 	}
 
+	const toggleExpanded = (href: string) => {
+		setExpandedItems((prev) => {
+			const newSet = new Set(prev)
+			if (newSet.has(href)) {
+				newSet.delete(href)
+			} else {
+				newSet.add(href)
+			}
+			return newSet
+		})
+	}
+
 	const sectionItems = viewedSection ? sectionNavItems[viewedSection] || [] : []
 	const sectionLabel = viewedSection ? getSectionLabel(viewedSection) : ""
 
@@ -119,6 +162,7 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 				if (hasSubItems) {
 					return (
 						<button
+							type="button"
 							key={item.href}
 							onClick={() => handleSectionClick(item.sectionKey)}
 							className={`nav-item nav-item-button ${isActive ? "active" : ""}`}>
@@ -200,7 +244,7 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 	// Section navigation panel
 	const sectionNavPanel = (
 		<div className="nav-panel section-panel">
-			<button className="back-button mobile-only" onClick={handleBackClick}>
+			<button type="button" className="back-button mobile-only" onClick={handleBackClick}>
 				<span className="back-arrow">
 					<ChevronLeft />
 				</span>
@@ -213,12 +257,58 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 						<span className="nav-group-title">{group.title}</span>
 						<ul className="nav-links">
 							{group.links.map((link) => {
-								const active = router.pathname === link.href
+								const hasSubLinks = link.subLinks && link.subLinks.length > 0
+								const isExpanded = expandedItems.has(link.href)
+								const hasActiveChild = link.subLinks?.some(
+									(subLink) => router.pathname === subLink.href,
+								)
+								// Parent should only be active if it's the current page AND it has no active children
+								const active = router.pathname === link.href && !hasActiveChild
+
 								return (
-									<li key={link.href} className={active ? "active" : ""}>
-										<Link href={link.href} onClick={handleLinkClick}>
-											{link.children}
-										</Link>
+									<li
+										key={link.href}
+										className={`${active ? "active" : ""} ${hasSubLinks ? "has-children" : ""}`}>
+										{hasSubLinks ? (
+											<>
+												<div className="nav-item-with-toggle">
+													<Link href={link.href} onClick={handleLinkClick}>
+														{link.children}
+													</Link>
+													<button
+														type="button"
+														className="toggle-button"
+														onClick={(e) => {
+															e.preventDefault()
+															toggleExpanded(link.href)
+														}}
+														aria-label={isExpanded ? "Collapse" : "Expand"}>
+														{isExpanded ? <ChevronDown /> : <ChevronRight />}
+													</button>
+												</div>
+												{isExpanded && (
+													<ul className="sub-links">
+														{link.subLinks.map((subLink) => {
+															// Only mark sublink as active if it's an exact match
+															const subActive = router.pathname === subLink.href
+															return (
+																<li
+																	key={subLink.href}
+																	className={subActive ? "active" : ""}>
+																	<Link href={subLink.href} onClick={handleLinkClick}>
+																		{subLink.children}
+																	</Link>
+																</li>
+															)
+														})}
+													</ul>
+												)}
+											</>
+										) : (
+											<Link href={link.href} onClick={handleLinkClick}>
+												{link.children}
+											</Link>
+										)}
 									</li>
 								)
 							})}
@@ -315,7 +405,82 @@ export function SideNav({ isMobileOpen = false, onMobileClose }: SideNavProps) {
 					color: var(--text-color);
 				}
 
-				.nav-links li.active :global(a) {
+				.nav-links li.active > :global(a),
+				.nav-links li.active > :global(.nav-item-with-toggle) > :global(a) {
+					background-color: var(--bg-secondary);
+					color: var(--accent-color);
+					font-weight: 500;
+				}
+
+				/* Nested navigation styles */
+				.nav-links li.has-children {
+					margin: 0;
+				}
+
+				.nav-links :global(.nav-item-with-toggle) {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 0.25rem;
+				}
+
+				.nav-links :global(.nav-item-with-toggle a) {
+					flex: 1;
+					padding-right: 0.25rem;
+				}
+
+				.nav-links :global(.toggle-button) {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					padding: 0.375rem;
+					background: none;
+					border: none;
+					color: var(--text-secondary);
+					cursor: pointer;
+					border-radius: 0.25rem;
+					transition:
+						background-color 0.15s ease,
+						color 0.15s ease;
+					flex-shrink: 0;
+				}
+
+				.nav-links :global(.toggle-button:hover) {
+					background-color: var(--bg-secondary);
+					color: var(--text-color);
+				}
+
+				.nav-links :global(.sub-links) {
+					padding: 0;
+					margin: 0.25rem 0 0.5rem 0;
+					border-left: 2px solid var(--accent-color);
+					margin-left: 0.75rem;
+				}
+
+				.nav-links :global(.sub-links li) {
+					list-style: none;
+					margin: 0;
+				}
+
+				.nav-links :global(.sub-links a) {
+					display: block;
+					padding: 0.375rem 0.75rem;
+					padding-left: 1rem;
+					font-size: 0.8125rem;
+					text-decoration: none;
+					color: var(--text-secondary);
+					border-radius: 0 0.375rem 0.375rem 0;
+					transition:
+						background-color 0.15s ease,
+						color 0.15s ease;
+				}
+
+				.nav-links :global(.sub-links a:hover) {
+					background-color: var(--bg-secondary);
+					color: var(--text-color);
+				}
+
+				.nav-links :global(.sub-links li.active a) {
 					background-color: var(--bg-secondary);
 					color: var(--accent-color);
 					font-weight: 500;
