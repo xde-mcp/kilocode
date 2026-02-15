@@ -108,6 +108,7 @@ export const shouldUseReasoningEffort = ({
 export const DEFAULT_HYBRID_REASONING_MODEL_MAX_TOKENS = 16_384
 export const DEFAULT_HYBRID_REASONING_MODEL_THINKING_TOKENS = 8_192
 export const GEMINI_25_PRO_MIN_THINKING_TOKENS = 128
+const QWEN3_MAX_THINKING_OUTPUT_TOKEN_LIMIT = 32_768
 
 // Max Tokens
 
@@ -143,6 +144,8 @@ export const getModelMaxOutputTokens = ({
 		return ANTHROPIC_DEFAULT_MAX_TOKENS
 	}
 
+	const isQwen3MaxThinkingModel = modelId.toLowerCase().includes("qwen3-max-thinking")
+
 	// If model has explicit maxTokens, clamp it to 20% of the context window
 	// Exception: GPT-5 models should use their exact configured max output tokens
 	if (model.maxTokens) {
@@ -154,8 +157,15 @@ export const getModelMaxOutputTokens = ({
 			return model.maxTokens
 		}
 
+		const contextCappedMaxTokens = Math.min(model.maxTokens, Math.ceil(model.contextWindow * 0.2))
+
+		// qwen3-max-thinking currently rejects values above 32,768 (upstream provider constraint).
+		if (isQwen3MaxThinkingModel) {
+			return Math.min(contextCappedMaxTokens, QWEN3_MAX_THINKING_OUTPUT_TOKEN_LIMIT)
+		}
+
 		// All other models are clamped to 20% of context window
-		return Math.min(model.maxTokens, Math.ceil(model.contextWindow * 0.2))
+		return contextCappedMaxTokens
 	}
 
 	// For non-Anthropic formats without explicit maxTokens, return undefined
