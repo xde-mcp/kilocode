@@ -26,32 +26,32 @@ export const VALID_ANTHROPIC_BLOCK_TYPES = new Set([
 export function filterNonAnthropicBlocks(
 	messages: Anthropic.Messages.MessageParam[],
 ): Anthropic.Messages.MessageParam[] {
-	return messages
-		.map((message) => {
-			const baseMessage = { role: message.role }
+	const filteredMessages: Array<Anthropic.Messages.MessageParam | undefined> = messages.map((message) => {
+		const baseMessage = { role: message.role }
 
-			if (typeof message.content === "string") {
-				return {
-					...baseMessage,
-					content: message.content,
-				}
-			}
-
-			const filteredContent = message.content.filter((block) => {
-				const blockType = (block as { type: string }).type
-				// Only keep block types that Anthropic recognizes
-				return VALID_ANTHROPIC_BLOCK_TYPES.has(blockType)
-			})
-
-			// If all content was filtered out, return undefined to filter the message later
-			if (filteredContent.length === 0) {
-				return undefined
-			}
-
+		if (typeof message.content === "string") {
 			return {
 				...baseMessage,
-				content: filteredContent,
+				content: message.content,
 			}
+		}
+
+		const filteredContent = message.content.filter((block) => {
+			const blockType = (block as { type: string }).type
+			// Only keep block types that Anthropic recognizes
+			return VALID_ANTHROPIC_BLOCK_TYPES.has(blockType)
 		})
-		.filter((message): message is Anthropic.Messages.MessageParam => message !== undefined)
+
+		// If all content was filtered out, return undefined to filter the message later
+		if (filteredContent.length === 0) {
+			return undefined
+		}
+
+		return {
+			...baseMessage,
+			content: filteredContent,
+		}
+	})
+
+	return filteredMessages.filter((message): message is Anthropic.Messages.MessageParam => message !== undefined)
 }
