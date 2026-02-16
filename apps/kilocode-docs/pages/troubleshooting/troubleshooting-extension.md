@@ -5,7 +5,7 @@ description: "How to capture console logs and report issues with Kilo Code"
 
 # Troubleshooting Kilo Code
 
-When you encounter an issue with Kilo Code, console logs provide valuable debugging information that helps us identify and fix problems. This guide walks you through capturing those logs in your IDE.
+Providing console logs helps us pinpoint exactly what's going wrong with your installation, network, or MCP setup. This guide walks you through capturing those logs in your IDE.
 
 ## Opening Developer Tools
 
