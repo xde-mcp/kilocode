@@ -1356,7 +1356,6 @@ export const ChatRowContent = ({
 								<User className="w-4 shrink-0" aria-label="User icon" />
 								<span style={{ fontWeight: "bold" }}>{t("chat:feedback.youSaid")}</span>
 							</div>
-							{/* kilocode_change: distinctive user message styling with theme-aware colors for better visibility */}
 							<div
 								className={cn(
 									"ml-6 border rounded-sm whitespace-pre-wrap",
