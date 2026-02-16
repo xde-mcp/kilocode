@@ -211,6 +211,7 @@ describe("getModelMaxOutputTokens", () => {
 		})
 	})
 
+	// kilocode_change start
 	test("should cap qwen3-max-thinking to provider max output limit of 32,768", () => {
 		const model: ModelInfo = {
 			contextWindow: 300_000,
@@ -246,6 +247,7 @@ describe("getModelMaxOutputTokens", () => {
 		// 20% cap is 20,000 which is lower than 32,768.
 		expect(result).toBe(20_000)
 	})
+	// kilocode_change end
 
 	test("should handle GPT-5 models with various max token configurations", () => {
 		const testCases = [
