@@ -3,7 +3,7 @@ title: "Troubleshooting Kilo Code"
 description: "How to capture console logs and report issues with Kilo Code"
 ---
 
-# Troubleshooting Kilo Code
+# Capturing Console Logs
 
 Providing console logs helps us pinpoint exactly what's going wrong with your installation, network, or MCP setup. This guide walks you through capturing those logs in your IDE.
 
