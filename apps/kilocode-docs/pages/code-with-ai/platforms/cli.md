@@ -165,7 +165,7 @@ Review your code locally before pushing — catch issues early without waiting f
 Configuration is managed through:
 
 - `/connect` command for provider setup (interactive)
-- Config files directly at `~/.config/kilo/config.json`
+- Config files in **`~/.config/kilo/`**: the CLI (Kilo CLI 1.0 from [Kilo-Org/kilo](https://github.com/Kilo-Org/kilo)) merges `config.json`, `opencode.json`, and `opencode.jsonc`. Use **`opencode.json`** (or `opencode.jsonc`) for provider, model, permission, and **MCP** settings. Restart the CLI after editing. See [Using MCP in the CLI](/automate/mcp/using-in-cli) for MCP config format.
 - `kilo auth` for credential management
 
 ## Permissions
@@ -280,14 +280,14 @@ Any directory allowed here inherits the same defaults as the current workspace. 
 
 ## Configuration
 
-The Kilo CLI is a fork of [OpenCode](https://opencode.ai) and supports the same configuration options. For comprehensive configuration documentation, see the [OpenCode Config documentation](https://opencode.ai/docs/config).
+The Kilo CLI is a fork of [OpenCode](https://opencode.ai) and supports the same configuration options. The CLI you install with `npm install -g @kilocode/cli` (Kilo CLI 1.0) is built from [Kilo-Org/kilo](https://github.com/Kilo-Org/kilo). For comprehensive configuration documentation, see the [OpenCode Config documentation](https://opencode.ai/docs/config).
 
-### Config File Location
+### Config File Location (Kilo CLI 1.0)
 
-| Scope      | Path                                |
-| ---------- | ----------------------------------- |
-| **Global** | `~/.config/kilocode/kilocode.json`  |
-| **Project**| `./kilocode.json` (in project root) |
+| Scope      | Path                                                                 |
+| ---------- | -------------------------------------------------------------------- |
+| **Global** | `~/.config/kilo/opencode.json` or `opencode.jsonc` (Windows: config dir may vary; same filenames) |
+| **Project**| `./opencode.json` or `./.opencode/` in project root                  |
 
 Project-level configuration takes precedence over global settings.
 
