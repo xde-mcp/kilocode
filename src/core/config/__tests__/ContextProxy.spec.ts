@@ -333,6 +333,7 @@ describe("ContextProxy", () => {
 			expect(proxy.getGlobalState("modelTemperature")).toBeUndefined()
 		})
 
+		// kilocode_change start
 		it("should clear falsy provider settings when switching profiles", async () => {
 			// Regression: falsy values (0, false, "") must be recognized as "set"
 			// and cleared when switching. The old code used !!value (truthy check),
@@ -353,6 +354,7 @@ describe("ContextProxy", () => {
 				}),
 			)
 		})
+		// kilocode_change end
 
 		it("should handle empty API configuration", async () => {
 			// Set up initial API configuration values
