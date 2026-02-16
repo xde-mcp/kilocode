@@ -266,6 +266,7 @@ export function MessageList({ sessionId }: MessageListProps) {
 				atBottomStateChange={setIsAtBottom}
 				increaseViewportBy={{ top: 400, bottom: 400 }}
 				className="am-messages-list"
+				followOutput={isAtBottom ? "smooth" : false}
 			/>
 			{showScrollToBottom && (
 				<div className="am-scroll-to-bottom">
