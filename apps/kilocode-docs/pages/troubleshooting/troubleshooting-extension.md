@@ -1,5 +1,5 @@
 ---
-title: "Troubleshooting Kilo Code"
+title: "Troubleshooting IDE Extensions"
 description: "How to capture console logs and report issues with Kilo Code"
 ---
 
