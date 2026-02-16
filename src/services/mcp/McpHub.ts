@@ -1774,7 +1774,15 @@ export class McpHub {
 				} catch (error) {
 					this.showErrorMessage(`Failed to connect to new MCP server ${name}`, error)
 				}
-			} else if (!deepEqual(JSON.parse(currentConnection.server.config), config)) {
+			} else if (
+				!deepEqual(
+					JSON.parse(currentConnection.server.config),
+					await injectVariables(validatedConfig, {
+						env: process.env,
+						workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
+					}),
+				)
+			) {
 				// Existing server with changed config
 				try {
 					// Only setup file watcher for enabled servers
