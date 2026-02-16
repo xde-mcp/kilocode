@@ -8,6 +8,7 @@ import { DeploySecureNav } from "./deploy-secure"
 import { GatewayNav } from "./gateway"
 import { GettingStartedNav } from "./getting-started"
 import { ToolsNav } from "./tools"
+import { TroubleshootingNav } from "./troubleshooting"
 
 export const Nav = {
 	GettingStartedNav,
@@ -20,4 +21,5 @@ export const Nav = {
 	AiProvidersNav,
 	GatewayNav,
 	ToolsNav,
+	TroubleshootingNav,
 }
