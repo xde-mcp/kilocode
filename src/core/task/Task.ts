@@ -4712,7 +4712,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			}
 		})
 
-		try { // Outer try/finally to ensure abort listener cleanup on all exit paths
 		try {
 			// Awaiting first chunk to see if it will throw an error.
 			this.isWaitingForFirstChunk = true
@@ -4819,6 +4818,14 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				yield* this.attemptApiRequest()
 				return
 			}
+		} finally {
+			// Clean up abort listeners to prevent memory leaks.
+			// Both listeners are only needed during the first-chunk phase,
+			// so it's safe to remove them here before consuming the rest of the stream.
+			abortSignal.removeEventListener("abort", abortCleanupListener)
+			if (firstChunkAbortListener) {
+				abortSignal.removeEventListener("abort", firstChunkAbortListener)
+			}
 		}
 
 		// No error, so we can continue to yield all remaining chunks.
@@ -4836,15 +4843,6 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			Task.lastGlobalApiRequestTime = performance.now()
 		}
 		// kilocode_change end
-		} finally {
-			// Clean up abort listeners to prevent memory leaks.
-			// This must be in a finally block to ensure cleanup on all exit paths
-			// (errors, returns from catch block, mid-stream abort, etc.).
-			abortSignal.removeEventListener("abort", abortCleanupListener)
-			if (firstChunkAbortListener) {
-				abortSignal.removeEventListener("abort", firstChunkAbortListener)
-			}
-		}
 	}
 
 	// Shared exponential backoff for retries (first-chunk and mid-stream)
