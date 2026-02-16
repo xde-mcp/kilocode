@@ -13,6 +13,8 @@ Orchestrate agents from your terminal. Plan, debug, and code fast with keyboard-
 
 The Kilo Code CLI uses the same underlying technology that powers the IDE extensions, so you can expect the same workflow to handle agentic coding tasks from start to finish.
 
+**Source code & issues (Kilo CLI 1.0):** [Kilo-Org/kilo](https://github.com/Kilo-Org/kilo) · [Report an issue](https://github.com/Kilo-Org/kilo/issues)
+
 ## Getting Started
 
 ### Install
@@ -339,9 +341,9 @@ For full details on all configuration options including compaction, file watcher
 
 Kilo gives you the ability to bring your own keys for a number of model providers and AI gateways, like OpenRouter and Vercel AI Gateway. Each provider has unique configuration options and some let you set environment variables.
 
-You can reference the [Provider Configuration Guide](https://github.com/Kilo-Org/kilocode/blob/main/cli/docs/PROVIDER_CONFIGURATION.md) for examples if you want to edit .config files manually. You can also run:
+You can reference the [Provider Configuration Guide](https://github.com/Kilo-Org/kilocode/blob/main/cli/docs/PROVIDER_CONFIGURATION.md) for examples (same config format; for Kilo CLI 1.0 the file is `~/.config/kilo/opencode.json`). You can also run:
 
-`kilocode config`
+`kilo config`
 
 to complete configuration with an interactive workflow on the command line.
 
