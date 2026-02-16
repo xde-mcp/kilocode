@@ -147,6 +147,8 @@ The project is organized into several key directories:
 - **`scripts/`** - Utility scripts
 - **`assets/`** - Static assets like images and icons
 
+For details on where Kilo Code stores configuration, data, and cache files at runtime, see [File Locations](docs/file-locations.md).
+
 ## Development Workflow
 
 ### Running the Extension
