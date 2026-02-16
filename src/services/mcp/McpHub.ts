@@ -1775,6 +1775,7 @@ export class McpHub {
 					this.showErrorMessage(`Failed to connect to new MCP server ${name}`, error)
 				}
 			} else if (
+				/* kilocode_change start */
 				!deepEqual(
 					JSON.parse(currentConnection.server.config),
 					await injectVariables(validatedConfig, {
@@ -1782,6 +1783,7 @@ export class McpHub {
 						workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
 					}),
 				)
+				/* kilocode_change end */
 			) {
 				// Existing server with changed config
 				try {
