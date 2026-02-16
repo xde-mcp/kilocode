@@ -146,6 +146,9 @@ export function MessageList({ sessionId }: MessageListProps) {
 
 	// Auto-scroll to bottom when new messages arrive using Virtuoso API
 	useEffect(() => {
+		// Reset scroll state when switching sessions
+		prevMessageCountRef.current = combinedMessages.length
+
 		// Only auto-scroll if:
 		// 1. User is at bottom (isAtBottom is true)
 		// 2. A new message was added (not just content update)
@@ -157,7 +160,7 @@ export function MessageList({ sessionId }: MessageListProps) {
 		}
 		// Update the previous count for next render
 		prevMessageCountRef.current = combinedMessages.length
-	}, [combinedMessages.length, isAtBottom])
+	}, [combinedMessages.length, isAtBottom, sessionId])
 
 	const handleSuggestionClick = useCallback(
 		(suggestion: SuggestionItem) => {
