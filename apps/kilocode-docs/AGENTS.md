@@ -46,7 +46,7 @@ Use the Markdoc callout tag format:
 
 ```markdown
 {% callout type="info" %}
-You can report any bugs or feedbacks by chatting with us in our [Discord server](https://discord.gg/ovhcloud), in the AI Endpoints channel.
+You can report any bugs or feedback by chatting with us in our [Discord server](https://discord.gg/ovhcloud), in the AI Endpoints channel.
 {% /callout %}
 ```
 
