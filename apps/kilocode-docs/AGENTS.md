@@ -72,7 +72,7 @@ Use the Markdoc codicon tag format:
 
 1. Create your page in the appropriate directory under `pages/`
 2. **Always update navigation**: Add the page to the corresponding navigation file in `lib/nav/`
-    - Each section has its own nav file (e.g., `troubleshooting.ts`, `getting-started.ts`, `code-with-ai.ts`)
+    - Each section has its own nav file (e.g., `getting-started.ts`, `code-with-ai.ts`, `ai-providers.ts`)
     - Navigation structure is exported from `lib/nav/index.ts`
     - See `lib/types.ts` for the `NavSection` and `NavLink` interfaces
 
