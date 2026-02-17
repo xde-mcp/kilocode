@@ -32,9 +32,3 @@ https://kilo.ai/docs/api/raw-markdown?path=%2Fcode-with-ai
 ```
 
 The `path` parameter should be the URL-encoded path of the documentation page, without the `/docs` prefix.
-
-## Use cases
-
-- **AI coding agents**: Point your agent at `llms.txt` so it can look up Kilo Code features, configuration options, and troubleshooting steps.
-- **Custom MCP servers**: Build tools that fetch relevant documentation pages on demand using the raw Markdown API.
-- **RAG pipelines**: Ingest the full documentation into a retrieval-augmented generation system for context-aware answers about Kilo Code.
