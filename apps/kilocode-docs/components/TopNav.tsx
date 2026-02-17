@@ -48,7 +48,6 @@ const contributingItems: DropdownItem[] = [
 const helpItems: DropdownItem[] = [
 	{ label: "Documentation", href: "/", description: "Browse all documentation" },
 	{ label: "FAQ", href: "/getting-started/faq", description: "Frequently asked questions" },
-	{ label: "Troubleshooting", href: "/getting-started/troubleshooting", description: "Common issues and solutions" },
 	{ label: "Support", href: "https://kilo.ai/support", description: "Get help from the team" },
 	{
 		label: "Changelog",
