@@ -49,7 +49,7 @@ Once you have the Developer Tools console open:
 
 ## Contact Support
 
-If you're unable to resolve the issue, please inspect the console logs and remove any secrets and send them to **[hi@kilocode.ai](mailto:hi@kilocode.ai)** along with the following:
+If you're unable to resolve the issue, please inspect the console logs, remove any secrets, and send the logs to **[hi@kilocode.ai](mailto:hi@kilocode.ai)** along with the following:
 
 - The error messages from the console
 - Steps to reproduce the issue
