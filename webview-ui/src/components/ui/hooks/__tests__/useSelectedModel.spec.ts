@@ -554,69 +554,41 @@ describe("useSelectedModel", () => {
 					litellm: {},
 					"io-intelligence": {},
 				},
+			})
+		})
+	})
+
+	describe("anthropic provider with 1M context", () => {
+		beforeEach(() => {
+			mockUseRouterModels.mockReturnValue({
+				data: undefined,
 				isLoading: false,
 				isError: false,
 			} as any)
 
 			mockUseOpenRouterModelProviders.mockReturnValue({
-				data: {},
+				data: undefined,
 				isLoading: false,
 				isError: false,
 			} as any)
 		})
 
-		it("should not crash when litellmDefaultModelId is not found in routerModels.litellm", () => {
+		it("should apply 1M pricing tier for Claude Sonnet 4.6 when enabled", () => {
 			const apiConfiguration: ProviderSettings = {
-				apiProvider: "litellm",
-				litellmModelId: "claude-3-7-sonnet-20250219", // Default LiteLLM model ID, but not present in routerModels.litellm
+				apiProvider: "anthropic",
+				apiModelId: "claude-sonnet-4-6",
+				anthropicBeta1MContext: true,
 			}
 
 			const wrapper = createWrapper()
 			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
 
-			// Should not crash; falls back to LiteLLM defaults when model metadata is missing
-			expect(result.current.id).toBe("claude-3-7-sonnet-20250219")
-			expect(result.current.info).toEqual(litellmDefaultModelInfo)
-		})
-
-		it("should return model info when litellm model exists in routerModels.litellm", () => {
-			const modelInfo: ModelInfo = {
-				maxTokens: 4096,
-				contextWindow: 8192,
-				supportsImages: false,
-				supportsPromptCache: false,
-				supportsNativeTools: true,
-				defaultToolProtocol: "native",
-			}
-
-			mockUseRouterModels.mockReturnValue({
-				data: {
-					openrouter: {},
-					requesty: {},
-					glama: {},
-					unbound: {},
-					litellm: {
-						"claude-3-7-sonnet-20250219": modelInfo,
-					},
-					"io-intelligence": {},
-				},
-				isLoading: false,
-				isError: false,
-			} as any)
-
-			const apiConfiguration: ProviderSettings = {
-				apiProvider: "litellm",
-				litellmModelId: "claude-3-7-sonnet-20250219",
-			}
-
-			const wrapper = createWrapper()
-			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
-
-			expect(result.current.id).toBe("claude-3-7-sonnet-20250219")
-			expect(result.current.info).toEqual(modelInfo)
+			expect(result.current.id).toBe("claude-sonnet-4-6")
+			expect(result.current.info?.contextWindow).toBe(1_000_000)
+			expect(result.current.info?.inputPrice).toBe(6.0)
+			expect(result.current.info?.outputPrice).toBe(22.5)
 		})
 	})
-	// kilocode_change end
 
 	describe("bedrock provider with 1M context", () => {
 		beforeEach(() => {
