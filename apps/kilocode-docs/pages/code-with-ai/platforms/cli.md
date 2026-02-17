@@ -354,7 +354,6 @@ to complete configuration with an interactive workflow on the command line.
 You can also use the `/config` slash command during an interactive session, which is equivalent to running `kilocode config`.
 {% /callout %}
 
-## Parallel mode
 ### Available Permissions
 
 Permissions are keyed by tool name, plus a couple of safety guards:
