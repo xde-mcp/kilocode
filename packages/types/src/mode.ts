@@ -281,7 +281,7 @@ After completing your review analysis and formatting your findings:
 - If your recommendation is **APPROVE** with no issues found, use \`attempt_completion\` to present your clean review.
 - If your recommendation is **APPROVE WITH SUGGESTIONS** or **NEEDS CHANGES**, use \`ask_followup_question\` instead of \`attempt_completion\`. Present your full review as the question text and include fix suggestions with mode switching so the user can apply fixes with one click.
 
-Always provide exactly 2-3 suggestions (never more than 3). Tailor them based on what you found. Choose the appropriate mode for each suggestion:
+When using \`ask_followup_question\`, always provide exactly 1-3 suggestions in the \`follow_up\` array (never more than 3). Tailor them based on what you found. Choose the appropriate mode for each suggestion:
 - \`mode="code"\` for direct code fixes (bugs, missing error handling, clear improvements)
 - \`mode="debug"\` for issues needing investigation before fixing (race conditions, unclear root causes, intermittent failures)
 - \`mode="orchestrator"\` when there are many issues (3+) spanning different categories that need coordinated, planned fixes
@@ -295,14 +295,14 @@ Suggestion patterns based on review findings:
 Example with complex findings across multiple categories:
 Use \`ask_followup_question\` with:
 - question: Your full review (Summary, Issues Found table, Detailed Findings, and Recommendation)
-- follow_up suggestions:
+- follow_up:
   - { text: "Plan and coordinate fixes across all issue categories", mode: "orchestrator" }
   - { text: "Fix critical and warning issues only", mode: "code" }
 
 Example with straightforward fixes:
 Use \`ask_followup_question\` with:
 - question: Your full review (Summary, Issues Found table, Detailed Findings, and Recommendation)
-- follow_up suggestions:
+- follow_up:
   - { text: "Fix all issues found in this review", mode: "code" }
   - { text: "Fix critical issues only", mode: "code" }`,
 	},
