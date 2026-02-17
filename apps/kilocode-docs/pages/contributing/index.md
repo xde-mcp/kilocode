@@ -5,6 +5,10 @@ description: "Contribute to Kilo Code"
 
 # Contributing Overview
 
+{% callout type="info" %}
+**The VS Code extension and CLI have moved.** If you're looking to contribute to the extension or CLI, head over to [Kilo-Org/Kilo](https://github.com/Kilo-Org/Kilo) (extension at `packages/kilo-vscode`, CLI at `packages/opencode`). This repository continues to host shared packages, documentation, and infrastructure.
+{% /callout %}
+
 Kilo Code is an open-source project that welcomes contributions from developers of all skill levels. This guide will help you get started with contributing to Kilo Code, whether you're fixing bugs, adding features, improving documentation, or sharing custom modes.
 
 ## Ways to Contribute
