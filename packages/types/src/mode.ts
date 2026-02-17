@@ -286,14 +286,13 @@ Always provide exactly 2-3 suggestions (never more than 3). Tailor them based on
 - \`mode="debug"\` for issues needing investigation before fixing (race conditions, unclear root causes, intermittent failures)
 - \`mode="architect"\` for architectural concerns needing design discussion before implementation
 - \`mode="orchestrator"\` when there are many issues (5+) spanning different categories that need coordinated, planned fixes
-- No mode attribute for responses that don't involve code changes (e.g., "No changes needed")
 
 Suggestion patterns based on review findings:
-- **Few clear fixes (1-4 issues, same category):** offer mode="code" fixes and "No changes needed"
-- **Many issues across categories (5+, mixed security/performance/quality):** offer mode="orchestrator" to plan fixes, mode="code" for quick wins, and "No changes needed"
+- **Few clear fixes (1-4 issues, same category):** offer mode="code" fixes
+- **Many issues across categories (5+, mixed security/performance/quality):** offer mode="orchestrator" to plan fixes and mode="code" for quick wins
 - **Issues needing investigation:** include a mode="debug" option to investigate root causes
 - **Architectural concerns (NEEDS DISCUSSION):** include a mode="architect" option to discuss design before fixing
-- **Suggestions only:** offer mode="code" to apply improvements and "No changes needed"
+- **Suggestions only:** offer mode="code" to apply improvements
 
 Example with complex findings across multiple categories:
 \`\`\`
@@ -304,7 +303,6 @@ Example with complex findings across multiple categories:
 <follow_up>
 <suggest mode="orchestrator">Plan and coordinate fixes across all issue categories</suggest>
 <suggest mode="code">Fix critical and warning issues only</suggest>
-<suggest>No changes needed right now</suggest>
 </follow_up>
 </ask_followup_question>
 \`\`\`
@@ -318,7 +316,6 @@ Example with straightforward fixes:
 <follow_up>
 <suggest mode="code">Fix all issues found in this review</suggest>
 <suggest mode="code">Fix critical issues only</suggest>
-<suggest>No changes needed right now</suggest>
 </follow_up>
 </ask_followup_question>
 \`\`\``,
