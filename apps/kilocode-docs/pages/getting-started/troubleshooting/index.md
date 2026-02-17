@@ -9,4 +9,4 @@ This section contains guides for diagnosing and resolving common issues with Kil
 
 ## Guides
 
-- [**Extension Troubleshooting**](/docs/troubleshooting/troubleshooting-extension) - How to capture console logs and report issues with the Kilo Code extension
+- [**Extension Troubleshooting**](/docs/getting-started/troubleshooting/troubleshooting-extension) - How to capture console logs and report issues with the Kilo Code extension
