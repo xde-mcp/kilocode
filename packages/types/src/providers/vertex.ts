@@ -321,6 +321,8 @@ export const vertexModels = {
 		maxTokens: 8192,
 		contextWindow: 200_000, // Default 200K, extendable to 1M with beta flag 'context-1m-2025-08-07'
 		supportsImages: true,
+		supportsNativeTools: true,
+		defaultToolProtocol: "native",
 		supportsPromptCache: true,
 		inputPrice: 3.0, // $3 per million input tokens (≤200K context)
 		outputPrice: 15.0, // $15 per million output tokens (≤200K context)
