@@ -30,7 +30,6 @@ If you're using the [Kilo AI Gateway](/docs/gateway/) outside of the Kilo Code e
 3. Scroll to the bottom of the page
 4. Copy your API key
 
-
 ## Using Another API Provider
 
 If you prefer to use your own API key or existing subscription, Kilo Code supports **over 30 providers**. Here are some popular options to get started:
