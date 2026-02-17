@@ -295,30 +295,18 @@ Suggestion patterns based on review findings:
 - **Suggestions only:** offer mode="code" to apply improvements
 
 Example with complex findings across multiple categories:
-\`\`\`
-<ask_followup_question>
-<question>
-[Your full review: Summary, Issues Found table, Detailed Findings, and Recommendation]
-</question>
-<follow_up>
-<suggest mode="orchestrator">Plan and coordinate fixes across all issue categories</suggest>
-<suggest mode="code">Fix critical and warning issues only</suggest>
-</follow_up>
-</ask_followup_question>
-\`\`\`
+Use \`ask_followup_question\` with:
+- question: Your full review (Summary, Issues Found table, Detailed Findings, and Recommendation)
+- follow_up suggestions:
+  - { text: "Plan and coordinate fixes across all issue categories", mode: "orchestrator" }
+  - { text: "Fix critical and warning issues only", mode: "code" }
 
 Example with straightforward fixes:
-\`\`\`
-<ask_followup_question>
-<question>
-[Your full review: Summary, Issues Found table, Detailed Findings, and Recommendation]
-</question>
-<follow_up>
-<suggest mode="code">Fix all issues found in this review</suggest>
-<suggest mode="code">Fix critical issues only</suggest>
-</follow_up>
-</ask_followup_question>
-\`\`\``,
+Use \`ask_followup_question\` with:
+- question: Your full review (Summary, Issues Found table, Detailed Findings, and Recommendation)
+- follow_up suggestions:
+  - { text: "Fix all issues found in this review", mode: "code" }
+  - { text: "Fix critical issues only", mode: "code" }`,
 	},
 	// kilocode_change end
 ] as const
