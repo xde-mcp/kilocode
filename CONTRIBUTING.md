@@ -1,6 +1,6 @@
 # Contributing to Kilo Code
 
-> **Note**: The VS Code extension and CLI have moved to [Kilo-Org/Kilo](https://github.com/Kilo-Org/Kilo) (extension at `packages/kilo-vscode`, CLI at `packages/opencode`). If you're looking to contribute to the extension or CLI, please head over to that repository. This repository continues to host shared packages, documentation, and infrastructure.
+> **Note**: New versions of the VS Code extension and CLI are being developed in [Kilo-Org/Kilo](https://github.com/Kilo-Org/Kilo) (extension at `packages/kilo-vscode`, CLI at `packages/opencode`). If you're looking to contribute to the extension or CLI, please head over to that repository.
 
 First off, thanks for taking the time to contribute! ❤️
 

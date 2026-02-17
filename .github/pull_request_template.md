@@ -1,5 +1,5 @@
 <!--
-NOTE: The VS Code extension and CLI have moved to https://github.com/Kilo-Org/Kilo
+NOTE: New versions of the VS Code extension and CLI are being developed in https://github.com/Kilo-Org/Kilo
 (extension: packages/kilo-vscode, CLI: packages/opencode).
 If your changes are for the extension or CLI, please open your PR in that repository instead.
 -->
