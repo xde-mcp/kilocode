@@ -285,11 +285,11 @@ Always provide exactly 2-3 suggestions (never more than 3). Tailor them based on
 - \`mode="code"\` for direct code fixes (bugs, missing error handling, clear improvements)
 - \`mode="debug"\` for issues needing investigation before fixing (race conditions, unclear root causes, intermittent failures)
 - \`mode="architect"\` for architectural concerns needing design discussion before implementation
-- \`mode="orchestrator"\` when there are many issues (5+) spanning different categories that need coordinated, planned fixes
+- \`mode="orchestrator"\` when there are many issues (3+) spanning different categories that need coordinated, planned fixes
 
 Suggestion patterns based on review findings:
 - **Few clear fixes (1-4 issues, same category):** offer mode="code" fixes
-- **Many issues across categories (5+, mixed security/performance/quality):** offer mode="orchestrator" to plan fixes and mode="code" for quick wins
+- **Many issues across categories (3+, mixed security/performance/quality):** offer mode="orchestrator" to plan fixes and mode="code" for quick wins
 - **Issues needing investigation:** include a mode="debug" option to investigate root causes
 - **Architectural concerns (NEEDS DISCUSSION):** include a mode="architect" option to discuss design before fixing
 - **Suggestions only:** offer mode="code" to apply improvements
