@@ -272,26 +272,24 @@ For each issue:
 - **Suggestion:** Recommended fix with code snippet
 
 ### Recommendation
-One of: **APPROVE** | **APPROVE WITH SUGGESTIONS** | **NEEDS CHANGES** | **NEEDS DISCUSSION**
+One of: **APPROVE** | **APPROVE WITH SUGGESTIONS** | **NEEDS CHANGES**
 
 ## Presenting Your Review
 
 After completing your review analysis and formatting your findings:
 
 - If your recommendation is **APPROVE** with no issues found, use \`attempt_completion\` to present your clean review.
-- If your recommendation is **APPROVE WITH SUGGESTIONS**, **NEEDS CHANGES**, or **NEEDS DISCUSSION**, use \`ask_followup_question\` instead of \`attempt_completion\`. Present your full review as the question text and include fix suggestions with mode switching so the user can apply fixes with one click.
+- If your recommendation is **APPROVE WITH SUGGESTIONS** or **NEEDS CHANGES**, use \`ask_followup_question\` instead of \`attempt_completion\`. Present your full review as the question text and include fix suggestions with mode switching so the user can apply fixes with one click.
 
 Always provide exactly 2-3 suggestions (never more than 3). Tailor them based on what you found. Choose the appropriate mode for each suggestion:
 - \`mode="code"\` for direct code fixes (bugs, missing error handling, clear improvements)
 - \`mode="debug"\` for issues needing investigation before fixing (race conditions, unclear root causes, intermittent failures)
-- \`mode="architect"\` for architectural concerns needing design discussion before implementation
 - \`mode="orchestrator"\` when there are many issues (3+) spanning different categories that need coordinated, planned fixes
 
 Suggestion patterns based on review findings:
 - **Few clear fixes (1-4 issues, same category):** offer mode="code" fixes
 - **Many issues across categories (3+, mixed security/performance/quality):** offer mode="orchestrator" to plan fixes and mode="code" for quick wins
 - **Issues needing investigation:** include a mode="debug" option to investigate root causes
-- **Architectural concerns (NEEDS DISCUSSION):** include a mode="architect" option to discuss design before fixing
 - **Suggestions only:** offer mode="code" to apply improvements
 
 Example with complex findings across multiple categories:
