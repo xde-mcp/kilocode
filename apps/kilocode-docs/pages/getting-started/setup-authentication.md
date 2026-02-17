@@ -30,7 +30,6 @@ If you're using the [Kilo AI Gateway](/docs/gateway/) outside of the Kilo Code e
 3. Scroll to the bottom of the page
 4. Copy your API key
 
-Use this key as the `KILO_API_KEY` environment variable or pass it in the `Authorization: Bearer <key>` header when making gateway requests.
 
 ## Using Another API Provider
 
