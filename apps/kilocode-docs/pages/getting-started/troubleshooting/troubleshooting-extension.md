@@ -14,7 +14,6 @@ Providing console logs helps us pinpoint exactly what's going wrong with your in
 
 1. **Open the Command Palette**: Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (Mac)
 2. **Search for Developer Tools**: Type `Developer: Open Webview Developer Tools` and select it
-3. The Developer Tools panel will open, showing the Console tab
 
 {% /tab %}
 {% tab label="JetBrains" %}
@@ -26,7 +25,7 @@ Providing console logs helps us pinpoint exactly what's going wrong with your in
 3. Search for `jcef` and configure these settings:
     - `ide.browser.jcef.debug.port` → set to `9222`
     - `ide.browser.jcef.contextMenu.devTools.enabled` → check the box
-4. **Restart your IDE** after making these changes
+4. Restart your IDE after making these changes
 
 ### Connect Chrome DevTools
 
