@@ -47,6 +47,10 @@ export const ContributingNav: NavSection[] = [
 						children: "MCP OAuth Authorization",
 					},
 					{
+						href: "/contributing/architecture/model-provider-blocklist",
+						children: "Model/Provider Blocklist",
+					},
+					{
 						href: "/contributing/architecture/onboarding-improvements",
 						children: "Onboarding Improvements",
 					},
