@@ -169,6 +169,14 @@ Configuration is managed through:
 - `/connect` command for provider setup (interactive)
 - Config files in **`~/.config/kilo/`**: the CLI (Kilo CLI 1.0 from [Kilo-Org/kilo](https://github.com/Kilo-Org/kilo)) merges `config.json`, `opencode.json`, and `opencode.jsonc`. Use **`opencode.json`** (or `opencode.jsonc`) for provider, model, permission, and **MCP** settings. Restart the CLI after editing. See [Using MCP in the CLI](/automate/mcp/using-in-cli) for MCP config format.
 - `kilo auth` for credential management
+ 
+## Slash Commands
+
+The CLI's interactive mode supports slash commands for common operations. The main commands are documented above in the [Interactive Slash Commands](#interactive-slash-commands) section.
+
+{% callout type="tip" %}
+**Confused about /newtask vs /smol in the IDE?** See the [Using Modes](/docs/code-with-ai/agents/using-modes#understanding-newtask-vs-smol) documentation for details.
+{% /callout %}
 
 ## Permissions
 
@@ -349,108 +357,6 @@ to complete configuration with an interactive workflow on the command line.
 
 {% callout type="tip" %}
 You can also use the `/config` slash command during an interactive session, which is equivalent to running `kilocode config`.
-{% /callout %}
-
-## Parallel mode
-### Available Permissions
-
-Permissions are keyed by tool name, plus a couple of safety guards:
-
-- `read` — reading a file (matches the file path)
-- `edit` — all file modifications (covers edit, write, patch, multiedit)
-- `glob` — file globbing (matches the glob pattern)
-- `grep` — content search (matches the regex pattern)
-- `list` — listing files in a directory (matches the directory path)
-- `bash` — running shell commands (matches parsed commands like `git status --porcelain`)
-- `task` — launching subagents (matches the subagent type)
-- `skill` — loading a skill (matches the skill name)
-- `lsp` — running LSP queries (currently non-granular)
-- `todoread`, `todowrite` — reading/updating the todo list
-- `webfetch` — fetching a URL (matches the URL)
-- `websearch`, `codesearch` — web/code search (matches the query)
-- `external_directory` — triggered when a tool touches paths outside the project working directory
-- `doom_loop` — triggered when the same tool call repeats 3 times with identical input
-
-### Defaults
-
-If you don't specify anything, Kilo starts from permissive defaults:
-
-- Most permissions default to `"allow"`.
-- `doom_loop` and `external_directory` default to `"ask"`.
-- `read` is `"allow"`, but `.env` files are denied by default:
-
-```json
-{
-	"permission": {
-		"read": {
-			"*": "allow",
-			"*.env": "deny",
-			"*.env.*": "deny",
-			"*.env.example": "allow"
-		}
-	}
-}
-```
-
-### What "Ask" Does
-
-When Kilo prompts for approval, the UI offers three outcomes:
-
-- **once** — approve just this request
-- **always** — approve future requests matching the suggested patterns (for the rest of the current session)
-- **reject** — deny the request
-
-The set of patterns that "always" would approve is provided by the tool (for example, bash approvals typically whitelist a safe command prefix like `git status*`).
-
-### Agent Permissions
-
-You can override permissions per agent. Agent permissions are merged with the global config, and agent rules take precedence.
-
-```json
-{
-	"$schema": "https://kilo.ai/config.json",
-	"permission": {
-		"bash": {
-			"*": "ask",
-			"git *": "allow",
-			"git commit *": "deny",
-			"git push *": "deny",
-			"grep *": "allow"
-		}
-	},
-	"agent": {
-		"build": {
-			"permission": {
-				"bash": {
-					"*": "ask",
-					"git *": "allow",
-					"git commit *": "ask",
-					"git push *": "deny",
-					"grep *": "allow"
-				}
-			}
-		}
-	}
-}
-```
-
-You can also configure agent permissions in Markdown:
-
-```markdown
----
-description: Code review without edits
-mode: subagent
-permission:
-    edit: deny
-    bash: ask
-    webfetch: deny
----
-
-Only analyze code and suggest changes.
-```
-
-{% callout type="tip" %}
-Use pattern matching for commands with arguments. `"grep *"` allows `grep pattern file.txt`, while `"grep"` alone would block it. Commands like `git status` work for default behavior but require explicit permission (like `"git status *"`) when arguments are passed.
 {% /callout %}
 
 ## Interactive Mode
