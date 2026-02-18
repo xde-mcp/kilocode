@@ -5,6 +5,10 @@ description: "Set up your development environment for contributing"
 
 # Development Environment
 
+{% callout type="info" %}
+**New versions of the VS Code extension and CLI are being developed in [Kilo-Org/Kilo](https://github.com/Kilo-Org/Kilo)** (extension at `packages/kilo-vscode`, CLI at `packages/opencode`). For extension and CLI development, please head over to that repository.
+{% /callout %}
+
 <!-- Please refer to the [DEVELOPMENT.md](https://github.com/Kilo-Org/kilocode/blob/main/DEVELOPMENT.md) guide in the main repository for detailed instructions on setting up the development environment. -->
 
 This document will help you set up your development environment and understand how to work with the codebase. Whether you're fixing bugs, adding features, or just exploring the code, this guide will get you started.
@@ -100,7 +104,7 @@ In development mode (NODE_ENV="development"), changing the core code will trigge
 > 2. Kill any npm tasks running in the background (see screenshot below)
 > 3. Start debugging again
 
-<img width="600" alt="Stopping background tasks" src="https://github.com/user-attachments/assets/466fb76e-664d-4066-a3f2-0df4d57dd9a4" />
+{% image src="https://github.com/user-attachments/assets/466fb76e-664d-4066-a3f2-0df4d57dd9a4" alt="Stopping background tasks" width="600" /%}
 
 ### Installing the Built Extension
 
