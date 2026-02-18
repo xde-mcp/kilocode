@@ -243,9 +243,8 @@ If you use Fish in Cygwin, a minimal setup is usually enough:
 
 1. In your Cygwin Fish config (`~/.config/fish/config.fish`), add:
 
-```fish
-string match -q "$TERM_PROGRAM" "vscode"; and . (code --locate-shell-integration-path fish)
-```
+   ```fish
+   string match -q "$TERM_PROGRAM" "vscode"; and . (code --locate-shell-integration-path fish)
 
 2. Configure a terminal profile in VS Code that launches Fish (directly or via Cygwin bash).
 3. Restart VS Code and open a new terminal to verify integration.
