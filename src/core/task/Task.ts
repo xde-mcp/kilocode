@@ -150,6 +150,7 @@ import { MessageQueueService } from "../message-queue/MessageQueueService"
 import {
 	isAnyRecognizedKiloCodeError,
 	isPaymentRequiredError,
+	isUnauthorizedGenericError,
 	isUnauthorizedPaidModelError,
 	isUnauthorizedPromotionLimitError,
 } from "../../shared/kilocode/errorUtils"
@@ -4754,7 +4755,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 							modelId: apiConfiguration.kilocodeModel,
 						}),
 					)
-				} else if (isUnauthorizedPaidModelError(error)) {
+				} else if (isUnauthorizedPaidModelError(error) || isUnauthorizedGenericError(error)) {
 					askResponse = await this.ask(
 						"unauthorized_prompt",
 						JSON.stringify({
