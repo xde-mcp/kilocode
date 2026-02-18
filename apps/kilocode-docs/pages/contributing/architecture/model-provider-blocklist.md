@@ -50,43 +50,9 @@ Blocklist enforcement only applies to enterprise-plan organizations. For non-ent
 
 The mutation to update blocklists must remain gated behind organization owner permissions and an enterprise plan check, consistent with the existing allowlist mutation.
 
-### Data Model
+### Implementation design
 
-Replace the current allowlist fields in organization settings with blocklist equivalents:
-
-```ts
-const OrganizationSettingsSchema = z.object({
-	// New blocklist fields
-	model_block_list: z.array(z.string()).optional(), // e.g. ["chutes:anthropic/claude-opus-4.6"]
-	provider_block_list: z.array(z.string()).optional(), // e.g. ["chutes", "ambient"]
-
-	// Deprecated -- keep for migration, remove later
-	model_allow_list: z.array(z.string()).optional(),
-	provider_allow_list: z.array(z.string()).optional(),
-
-	// ... other settings unchanged
-})
-```
-
-**Entry formats:**
-
-- `provider_block_list`: Provider slug strings (e.g. `"chutes"`, `"ambient"`). Blocks all models routed through that provider.
-- `model_block_list`: Model/provider combination strings using a **colon separator** between the provider slug and model ID: `providerSlug:modelId` (e.g. `"chutes:anthropic/claude-opus-4.6"`). The colon is used because model IDs already contain slashes (e.g. `anthropic/claude-opus-4.6`), so using a slash as separator would be ambiguous. Blocks only that specific combination.
-
-### Enforcement Logic
-
-Server-side enforcement replaces the current multi-tier allowlist matching with a simpler blocklist check. Unlike the current system where the proxy and model listing use different matching logic, the new blocklist logic must be **identical** across all code paths:
-
-```
-1. If not an enterprise plan → ALLOW (skip all checks)
-2. If the requested provider is in provider_block_list → DENY
-3. If "requestedProvider:normalizedModelId" is in model_block_list → DENY
-4. Otherwise → ALLOW
-```
-
-For the model listing endpoint, the same logic applies: only exclude models where _all_ available providers are blocked.
-
-The current system sets a provider allow list on outgoing OpenRouter requests to restrict routing. With a blocklist, the equivalent is to tell OpenRouter to avoid blocked providers. The data collection setting is orthogonal and unchanged.
+TBD
 
 ### UI Design
 
@@ -97,7 +63,7 @@ Replace the current dual-tab (Models / Providers) layout with a **single unified
 - A flat list of all providers, each expandable to show its offered models.
 - Each provider row has a block/unblock toggle. Blocking a provider visually marks all its models as blocked.
 - Each model row (within an expanded provider) has a block/unblock toggle for that specific model/provider combination.
-- A **free-text search/filter box** at the top filters both providers and models. For example, typing "K2.5" filters the provider list to only those offering a matching model, and within each provider only shows the matching models. This makes it easy to block a specific model across select providers.
+- A **free-text search/filter box** at the top filters both providers and models. For example, typing "K2.5" filters the provider list to only those offering a matching model, and within each provider only shows the matching models. This makes it easy to block a specific model across select providers. Providers are auto-exanded to show the matching models.
 - Blocked items are visually distinct (e.g., a red/muted treatment) so the current block state is immediately clear.
 - A summary indicator shows total blocked count (e.g., "3 providers blocked, 7 model combinations blocked").
 
@@ -106,46 +72,7 @@ Replace the current dual-tab (Models / Providers) layout with a **single unified
 | Action                                   | Result                                                                                                                                                |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Block provider "Chutes"                  | All Chutes models become unavailable. Future models from Chutes are also blocked.                                                                     |
-| Block `chutes:anthropic/claude-opus-4.6` | Only Claude Opus 4.6 via Chutes is blocked. Claude Opus 4.6 via Anthropic or other providers remains available. Other Chutes models remain available. |
 | Search "K2.5", block it under Fireworks  | Only K2.5 via Fireworks is blocked. K2.5 via other providers is unaffected.                                                                           |
-
-### Migration
-
-For existing enterprise organizations with configured allowlists:
-
-1. Compute the inverse of the provider allow list: any provider slug NOT in the current list becomes a blocked provider entry.
-2. Compute the inverse of the model allow list: for each model/provider combination NOT currently allowed (considering all matching tiers, including provider-membership wildcards), add a `providerSlug:modelId` entry to the model block list.
-3. Write the new blocklist fields and clear the deprecated allowlist fields.
-4. Run as a one-time migration script with dry-run capability for validation.
-
-Organizations with empty allowlists (the default "allow all" state) require no migration -- the new default blocklist state is equivalent.
-
-**Note:** The migration must use the full matching logic (including provider-membership wildcards) to accurately reflect what users currently see in the UI, not the simpler matching used by the proxy.
-
-## Scope/Implementation
-
-- **Backend**
-    - Add `model_block_list` and `provider_block_list` fields to the organization settings schema
-    - Update LLM proxy enforcement to use blocklist logic (enterprise-only gating preserved)
-    - Create or update the tRPC mutation for persisting blocklist state (enterprise + owner gating)
-    - Replace allowlist predicate logic (server-side and client-side) with blocklist equivalents
-    - Update model listing query to filter based on blocklist
-    - Update OpenRouter provider routing to use blocklist
-    - Update audit log diffing for blocklist changes
-    - Write migration script to convert existing allowlist data to blocklist data
-- **Dashboard UI**
-    - Build new unified provider/model blocklist view component (replacing the current Models tab, Providers tab, and detail dialogs)
-    - Replace the current allowlist state management and domain logic with blocklist equivalents
-    - Implement provider-level and model/provider combination block toggles
-    - Add free-text search/filter with provider and model matching
-    - Add blocked-items summary indicator
-- **Extension**
-    - Update model selection to respect blocklist (if any client-side filtering exists)
-    - Ensure model listing API changes are transparent to the extension
-
-## Compliance Considerations
-
-No new compliance concerns. This change simplifies the enforcement model while maintaining equivalent access control. The enterprise-only gating is preserved. Audit logging for blocklist changes should use the existing audit log infrastructure.
 
 ## Features for the Future
 
