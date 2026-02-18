@@ -11,7 +11,6 @@ Enterprise organization administrators currently manage which models and provide
 
 - By default, an empty allowlist means "allow everything." Once an admin customizes any setting, new models added by providers are **not** automatically available -- the admin must manually approve each one.
 - An "Allow all current and future models" checkbox was added per-provider to address this. It works by adding a provider wildcard entry to the model allow list, which allows any model offered by that provider (including future ones). However, it has a critical flaw: if an admin disables one specific model that was allowed via the wildcard, the wildcard itself is removed. The admin is then forced back into manual per-model curation. Additionally, you have to set this manually for each provider.
-- The server-side enforcement is also inconsistent: the LLM proxy performs simpler 2-tier matching (exact + namespace wildcard), while the model listing endpoint performs full 3-tier matching (adding provider-membership wildcard). This means the model list shown to users can differ from what the proxy actually enforces.
 - The net result is that admins must either allow everything wholesale or commit to ongoing manual curation of hundreds of model/provider combinations.
 
 This proposal replaces the allowlist with a **blocklist** approach. The default behavior becomes "everything is allowed unless explicitly blocked," which eliminates the ongoing maintenance burden while still giving admins precise control.
