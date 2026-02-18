@@ -355,6 +355,7 @@ export async function initializeModelCacheRefresh(): Promise<void> {
 			{ provider: "ovhcloud", options: { provider: "ovhcloud" } }, // kilocode_change: Add ovhcloud to background refresh
 			{ provider: "litellm", options: { provider: "litellm" } }, // kilocode_change: Add litellm to background refresh
 			{ provider: "apertis", options: { provider: "apertis" } }, // kilocode_change: Add apertis to background refresh
+			{ provider: "aihubmix", options: { provider: "aihubmix" } }, // kilocode_change: Add aihubmix to background refresh
 		]
 
 		// Refresh each provider in background (fire and forget)
