@@ -1,3 +1,6 @@
+const PAID_MODEL_AUTH_REQUIRED = "PAID_MODEL_AUTH_REQUIRED"
+const PROMOTION_MODEL_LIMIT_REACHED = "PROMOTION_MODEL_LIMIT_REACHED"
+
 export function stringifyError(error: unknown) {
 	return error instanceof Error ? error.stack || error.message : String(error)
 }
@@ -11,8 +14,12 @@ export function isPaymentRequiredError(error: any) {
 	return !!(error && error.status === 402)
 }
 
-export function isUnauthorizedError(error: any) {
-	return !!(error && error.status === 401)
+export function isUnauthorizedPaidModelError(error: any) {
+	return !!(error && error.status === 401 && error.code === PAID_MODEL_AUTH_REQUIRED)
+}
+
+export function isUnauthorizedPromotionLimitError(error: any) {
+	return !!(error && error.status === 401 && error.code === PROMOTION_MODEL_LIMIT_REACHED)
 }
 
 export function isAlphaPeriodEndedError(error: any) {
@@ -36,7 +43,8 @@ export function isModelNotAllowedForTeamError(error: any) {
 export function isAnyRecognizedKiloCodeError(error: any) {
 	return (
 		isPaymentRequiredError(error) ||
-		isUnauthorizedError(error) ||
+		isUnauthorizedPaidModelError(error) ||
+		isUnauthorizedPromotionLimitError(error) ||
 		isOpenRouterInvalidModelError(error) ||
 		isAlphaPeriodEndedError(error) ||
 		isModelNotAllowedForTeamError(error)
