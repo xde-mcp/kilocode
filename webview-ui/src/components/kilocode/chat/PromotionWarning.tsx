@@ -3,21 +3,14 @@ import { ClineMessage } from "@roo-code/types"
 import { vscode } from "@src/utils/vscode"
 import { Button } from "@src/components/ui"
 import { useTranslation } from "react-i18next"
-import { safeJsonParse } from "@roo/safeJsonParse"
 
 type PromotionWarningProps = {
 	message: ClineMessage
 }
 
-type PromotionWarningData = {
-	modelId?: string
-}
-
 export const PromotionWarning = ({ message }: PromotionWarningProps) => {
 	const { t } = useTranslation()
 	const hasRetried = useRef(false)
-
-	const data = safeJsonParse<PromotionWarningData>(message.text)
 
 	const handleRetry = useCallback(() => {
 		if (hasRetried.current) {
@@ -56,15 +49,11 @@ export const PromotionWarning = ({ message }: PromotionWarningProps) => {
 		}
 	}, [handleRetry])
 
-	const modelId = data?.modelId || "(chosen)"
-
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center gap-2">
 				<span className="text-yellow-400 text-lg">✨</span>
-				<span className="font-semibold text-vscode-foreground">
-					{t("kilocode:promotionError.title", { modelId })}
-				</span>
+				<span className="font-semibold text-vscode-foreground">{t("kilocode:promotionError.title")}</span>
 			</div>
 			<p className="text-vscode-descriptionForeground text-sm m-0 break-words">
 				{t("kilocode:promotionError.message")}
