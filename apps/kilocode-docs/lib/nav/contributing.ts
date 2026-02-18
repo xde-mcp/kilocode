@@ -10,6 +10,10 @@ export const ContributingNav: NavSection[] = [
 				children: "Development Environment",
 			},
 			{
+				href: "/contributing/ecosystem",
+			    children: "Ecosystem",
+            },
+			{
 				href: "/contributing/cline-to-kilo-migration",
 				children: "Cline to Kilo Migration",
 			},
@@ -45,6 +49,10 @@ export const ContributingNav: NavSection[] = [
 					{
 						href: "/contributing/architecture/mcp-oauth-authorization",
 						children: "MCP OAuth Authorization",
+					},
+					{
+						href: "/contributing/architecture/model-provider-blocklist",
+						children: "Model/Provider Blocklist",
 					},
 					{
 						href: "/contributing/architecture/onboarding-improvements",
