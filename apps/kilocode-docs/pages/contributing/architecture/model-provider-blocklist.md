@@ -7,11 +7,11 @@ description: "Proposal to replace the model/provider allowlist with a blocklist 
 
 ## Overview
 
-Enterprise organization administrators currently manage which models and providers their team members can use through an **allowlist** system in the Providers & Models settings page. The current implementation stores two fields in `OrganizationSettings`: `model_allow_list` and `provider_allow_list`. This system has proven confusing and difficult to maintain:
+Enterprise organization administrators currently manage which models and providers their team members can use through an **allowlist** system in the Providers & Models settings page. This system stores two lists in organization settings: one for allowed models and one for allowed providers. It has proven confusing and difficult to maintain:
 
 - By default, an empty allowlist means "allow everything." Once an admin customizes any setting, new models added by providers are **not** automatically available -- the admin must manually approve each one.
-- An "Allow all current and future models" checkbox was added per-provider to address this. It works by adding a `providerSlug/*` wildcard entry to `model_allow_list`, which allows any model offered by that provider (including future ones) via a 3-tier matching system (exact match, namespace wildcard, provider-membership wildcard). However, it has a critical flaw: if an admin wants to block one specific model while keeping the wildcard active, disabling that model removes the provider wildcard entirely (see `toggleModelAllowed()` in `allowLists.domain.ts`). The admin is then forced back into manual per-model curation.
-- The current server-side enforcement is also inconsistent: `checkOrganizationModelRestrictions` in `llm-proxy-helpers.ts` only performs 2-tier matching (exact + namespace wildcard), while `listAvailableModels` uses `createProviderAwareModelAllowPredicate` which performs full 3-tier matching (exact + namespace wildcard + provider-membership wildcard). This means the model list shown to users can differ from what the proxy actually enforces.
+- An "Allow all current and future models" checkbox was added per-provider to address this. It works by adding a provider wildcard entry to the model allow list, which allows any model offered by that provider (including future ones). However, it has a critical flaw: if an admin disables one specific model that was allowed via the wildcard, the wildcard itself is removed. The admin is then forced back into manual per-model curation.
+- The server-side enforcement is also inconsistent: the LLM proxy performs simpler 2-tier matching (exact + namespace wildcard), while the model listing endpoint performs full 3-tier matching (adding provider-membership wildcard). This means the model list shown to users can differ from what the proxy actually enforces.
 - The net result is that admins must either allow everything wholesale or commit to ongoing manual curation of hundreds of model/provider combinations.
 
 This proposal replaces the allowlist with a **blocklist** approach. The default behavior becomes "everything is allowed unless explicitly blocked," which eliminates the ongoing maintenance burden while still giving admins precise control.
@@ -23,8 +23,8 @@ This proposal replaces the allowlist with a **blocklist** approach. The default 
 - Admins can block an entire provider (all current and future models from that provider).
 - Admins can block a specific model/provider combination without affecting other providers offering the same model.
 - The UI must make it easy to find and block specific models across a large catalog (300+ models, 65+ providers).
-- Blocked state must be enforced server-side at the LLM proxy layer, **consistently** across both the proxy enforcement path (`checkOrganizationModelRestrictions`) and the model listing path (`listAvailableModels`).
-- Migration from the existing allowlist data (`model_allow_list`, `provider_allow_list`) must be handled without disrupting current customer configurations.
+- Blocked state must be enforced server-side at the LLM proxy layer, **consistently** across both the proxy enforcement path and the model listing path (fixing the current inconsistency).
+- Migration from the existing allowlist data must be handled without disrupting current customer configurations.
 
 ### Non-requirements
 
@@ -46,13 +46,13 @@ The system shifts from "deny by default, explicitly allow" to **"allow by defaul
 
 ### Plan Gating
 
-Blocklist enforcement only applies to enterprise-plan organizations (`organizationPlan === 'enterprise'`). For non-enterprise organizations (including teams plans), the blocklist fields are ignored and all models/providers are available. This mirrors the current behavior where `checkOrganizationModelRestrictions` gates model allow list checks on `params.organizationPlan === 'enterprise'`.
+Blocklist enforcement only applies to enterprise-plan organizations. For non-enterprise organizations (including teams plans), the blocklist fields are ignored and all models/providers are available. This mirrors the current allowlist behavior.
 
-The `updateBlockLists` tRPC mutation must remain gated behind `organizationOwnerProcedure` and an enterprise plan check, consistent with the existing `updateAllowLists` mutation.
+The mutation to update blocklists must remain gated behind organization owner permissions and an enterprise plan check, consistent with the existing allowlist mutation.
 
 ### Data Model
 
-Replace the current allowlist fields in `OrganizationSettings` with blocklist equivalents:
+Replace the current allowlist fields in organization settings with blocklist equivalents:
 
 ```ts
 const OrganizationSettingsSchema = z.object({
@@ -71,28 +71,22 @@ const OrganizationSettingsSchema = z.object({
 **Entry formats:**
 
 - `provider_block_list`: Provider slug strings (e.g. `"chutes"`, `"ambient"`). Blocks all models routed through that provider.
-- `model_block_list`: Model/provider combination strings using a **colon separator** between the provider slug and model ID: `providerSlug:modelId` (e.g. `"chutes:anthropic/claude-opus-4.6"`). The colon is used because model IDs already contain slashes (e.g. `anthropic/claude-opus-4.6`), so using a slash as a separator would be ambiguous. Blocks only that specific combination.
+- `model_block_list`: Model/provider combination strings using a **colon separator** between the provider slug and model ID: `providerSlug:modelId` (e.g. `"chutes:anthropic/claude-opus-4.6"`). The colon is used because model IDs already contain slashes (e.g. `anthropic/claude-opus-4.6`), so using a slash as separator would be ambiguous. Blocks only that specific combination.
 
 ### Enforcement Logic
 
-Server-side enforcement replaces the current 3-tier allowlist matching with a simpler blocklist check. Unlike the current system where `checkOrganizationModelRestrictions` and `createProviderAwareModelAllowPredicate` use different matching tiers, the new blocklist logic must be **identical** across all code paths:
-
-**In the LLM proxy (`checkOrganizationModelRestrictions`):**
+Server-side enforcement replaces the current multi-tier allowlist matching with a simpler blocklist check. Unlike the current system where the proxy and model listing use different matching logic, the new blocklist logic must be **identical** across all code paths:
 
 ```
-1. If organizationPlan !== 'enterprise' → ALLOW (skip all checks)
+1. If not an enterprise plan → ALLOW (skip all checks)
 2. If the requested provider is in provider_block_list → DENY
 3. If "requestedProvider:normalizedModelId" is in model_block_list → DENY
 4. Otherwise → ALLOW
 ```
 
-**In `listAvailableModels`:**
+For the model listing endpoint, the same logic applies: only exclude models where _all_ available providers are blocked.
 
-The same logic applies. For each model, check if any of its providers are blocked (provider-level) or if the specific model/provider combination is blocked. Only exclude models where _all_ available providers are blocked.
-
-**Provider config behavior:**
-
-The current system sets `providerConfig.only = providerAllowList` to restrict OpenRouter routing. With a blocklist, the equivalent is to set `providerConfig.ignore = providerBlockList` (or compute the inverse), telling OpenRouter to avoid blocked providers. The `data_collection` setting on `providerConfig` is orthogonal and unchanged.
+The current system sets a provider allow list on outgoing OpenRouter requests to restrict routing. With a blocklist, the equivalent is to tell OpenRouter to avoid blocked providers. The data collection setting is orthogonal and unchanged.
 
 ### UI Design
 
@@ -119,41 +113,39 @@ Replace the current dual-tab (Models / Providers) layout with a **single unified
 
 For existing enterprise organizations with configured allowlists:
 
-1. Compute the inverse of `provider_allow_list`: any provider slug NOT in the current list becomes a `provider_block_list` entry.
-2. Compute the inverse of `model_allow_list`: for each model/provider combination NOT currently allowed (considering all 3 matching tiers: exact, namespace wildcard, and provider-membership wildcard via `createProviderAwareModelAllowPredicate`), add a `providerSlug:modelId` entry to `model_block_list`.
+1. Compute the inverse of the provider allow list: any provider slug NOT in the current list becomes a blocked provider entry.
+2. Compute the inverse of the model allow list: for each model/provider combination NOT currently allowed (considering all matching tiers, including provider-membership wildcards), add a `providerSlug:modelId` entry to the model block list.
 3. Write the new blocklist fields and clear the deprecated allowlist fields.
 4. Run as a one-time migration script with dry-run capability for validation.
 
 Organizations with empty allowlists (the default "allow all" state) require no migration -- the new default blocklist state is equivalent.
 
-**Note:** The migration must use the full 3-tier matching logic from `createProviderAwareModelAllowPredicate` (not the incomplete 2-tier logic from `checkOrganizationModelRestrictions`) to accurately reflect what users currently see in the UI.
+**Note:** The migration must use the full matching logic (including provider-membership wildcards) to accurately reflect what users currently see in the UI, not the simpler matching used by the proxy.
 
 ## Scope/Implementation
 
 - **Backend**
-    - Add `model_block_list` and `provider_block_list` fields to `OrganizationSettings` schema in `organization-base-types.ts`
-    - Update `checkOrganizationModelRestrictions` in `llm-proxy-helpers.ts` to use blocklist logic (enterprise-only gating preserved)
-    - Create new `updateBlockLists` tRPC mutation in `organization-settings-router.ts` (gated behind `organizationOwnerProcedure` + enterprise plan check), or update the existing `updateAllowLists` mutation in-place
-    - Create blocklist equivalents of `createProviderAwareModelAllowPredicate` (`model-allow.server.ts`) and `isModelAllowedProviderAwareClient` (`model-allow.client.ts`)
-    - Update `listAvailableModels` query to filter based on blocklist instead of allowlist
-    - Update OpenRouter proxy provider filtering (currently `providerConfig.only = providerAllowList`) to use blocklist
-    - Update `createAllowListsDiffMessage` audit log helper (or create blocklist equivalent) for audit logging
+    - Add `model_block_list` and `provider_block_list` fields to the organization settings schema
+    - Update LLM proxy enforcement to use blocklist logic (enterprise-only gating preserved)
+    - Create or update the tRPC mutation for persisting blocklist state (enterprise + owner gating)
+    - Replace allowlist predicate logic (server-side and client-side) with blocklist equivalents
+    - Update model listing query to filter based on blocklist
+    - Update OpenRouter provider routing to use blocklist
+    - Update audit log diffing for blocklist changes
     - Write migration script to convert existing allowlist data to blocklist data
 - **Dashboard UI**
-    - Build new unified provider/model blocklist view component (replacing `ModelsTab`, `ProvidersTab`, `ProviderDetailsDialog`, `ModelDetailsDialog`)
-    - Replace `useProvidersAndModelsAllowListsState` reducer and `allowLists.domain.ts` domain logic with blocklist equivalents
-    - Implement provider-level block toggle
-    - Implement model/provider combination block toggle
+    - Build new unified provider/model blocklist view component (replacing the current Models tab, Providers tab, and detail dialogs)
+    - Replace the current allowlist state management and domain logic with blocklist equivalents
+    - Implement provider-level and model/provider combination block toggles
     - Add free-text search/filter with provider and model matching
     - Add blocked-items summary indicator
-    - Remove or redirect old Models/Providers tab UI
 - **Extension**
     - Update model selection to respect blocklist (if any client-side filtering exists)
-    - Ensure `listAvailableModels` API changes are transparent to the extension
+    - Ensure model listing API changes are transparent to the extension
 
 ## Compliance Considerations
 
-No new compliance concerns. This change simplifies the enforcement model while maintaining equivalent access control. The enterprise-only gating is preserved. Audit logging for blocklist changes should use the existing audit log infrastructure (the `organization.settings.change` action type).
+No new compliance concerns. This change simplifies the enforcement model while maintaining equivalent access control. The enterprise-only gating is preserved. Audit logging for blocklist changes should use the existing audit log infrastructure.
 
 ## Features for the Future
 
