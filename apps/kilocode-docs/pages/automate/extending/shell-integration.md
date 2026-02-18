@@ -26,7 +26,7 @@ Shell integration is built into Kilo Code and works automatically in most cases.
 
 1. **Update VS Code/Cursor** to the latest version (VS Code 1.93+ required)
 2. **Ensure a compatible shell is selected**: Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) → "Terminal: Select Default Profile" → Choose bash, zsh, PowerShell, or fish
-3. **Windows PowerShell users**: Run `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` then restart VSCode
+3. **Windows PowerShell users**: Run `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` then restart VS Code
 4. **WSL users**: Add `. "$(code --locate-shell-integration-path bash)"` to your `~/.bashrc`
 
 ## Terminal Integration Settings
