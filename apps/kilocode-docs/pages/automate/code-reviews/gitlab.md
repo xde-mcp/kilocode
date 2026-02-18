@@ -21,9 +21,10 @@ Both **GitLab.com** and **self-hosted GitLab instances** are supported.
 
 ### Step 1: Connect GitLab
 
-You can connect using **OAuth** or a **Personal Access Token (PAT)**.
+You can connect using **OAuth** or a **Personal Access Token (PAT)**. Choose the method that matches your GitLab setup:
 
-#### Option A: OAuth (GitLab.com)
+{% tabs %}
+{% tab label="OAuth (GitLab.com)" %}
 
 1. Go to the **Integrations** page:
     - **Personal**: [app.kilo.ai/integrations/gitlab](https://app.kilo.ai/integrations/gitlab)
@@ -32,7 +33,8 @@ You can connect using **OAuth** or a **Personal Access Token (PAT)**.
 3. Authorize the application on GitLab
 4. You'll be redirected back to Kilo with the connection active
 
-#### Option A: OAuth (Self-Hosted)
+{% /tab %}
+{% tab label="OAuth (Self-Hosted)" %}
 
 For self-hosted GitLab instances using OAuth, you need to register an OAuth application first:
 
@@ -47,7 +49,8 @@ For self-hosted GitLab instances using OAuth, you need to register an OAuth appl
 5. Enter your **Instance URL**, **Client ID**, and **Client Secret**
 6. Click **Connect** and authorize
 
-#### Option B: Personal Access Token
+{% /tab %}
+{% tab label="Personal Access Token" %}
 
 1. In GitLab, go to **User Settings → Access Tokens**
 2. Create a token with the `api` scope
@@ -57,6 +60,9 @@ For self-hosted GitLab instances using OAuth, you need to register an OAuth appl
 6. Click **Connect**
 
 > PAT tokens cannot be refreshed automatically. When your token expires, create a new one in GitLab and reconnect in Kilo.
+
+{% /tab %}
+{% /tabs %}
 
 ### Step 2: Configure the Review Agent
 

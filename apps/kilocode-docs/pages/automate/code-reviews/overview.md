@@ -7,6 +7,14 @@ description: "Automate code reviews with AI assistance"
 
 Kilo's **Code Reviews** feature automatically analyzes your pull or merge requests using an AI model of your choice. It can review code the moment a PR/MR is opened or updated, surface issues, and provide structured feedback across performance, security, style, and test coverage.
 
+## What Code Reviews Enable
+
+- Automated AI review on every pull request
+- Consistent feedback based on your team’s standards
+- Automatic detection of bugs, security risks, and anti-patterns
+- Deep reasoning over changed files, diffs, and repo context
+- Customizable review strictness and focus areas
+
 ## Supported Platforms
 
 | Platform | Integration Type | Details                        |
@@ -68,7 +76,11 @@ When a pull request or merge request is opened or updated:
 1. The Review Agent receives the PR/MR metadata, diff, and file context.
 2. The selected model analyzes all changes.
 3. The agent applies your chosen review style and focus areas.
-4. It generates a structured review with: - Inline comments - Summary findings - Suggested fixes - Risk and severity tagging
+4. It generates a structured review with:
+    - Inline comments
+    - Summary findings
+    - Suggested fixes
+    - Risk and severity tagging
 5. Reviews respect the **maximum time limit** you set.
 6. Only repositories you’ve selected will trigger automatic analysis.
 
