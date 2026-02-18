@@ -22,7 +22,6 @@ This proposal replaces the allowlist with a **blocklist** approach. The default 
 - Admins can block an entire provider (all current and future models from that provider).
 - Admins can block a specific model/provider combination without affecting other providers offering the same model.
 - The UI must make it easy to find and block specific models across a large catalog (300+ models, 65+ providers).
-- Blocked state must be enforced server-side at the LLM proxy layer, **consistently** across both the proxy enforcement path and the model listing path (fixing the current inconsistency).
 - Migration from the existing allowlist data must be handled without disrupting current customer configurations.
 
 ### Non-requirements
