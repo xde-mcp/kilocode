@@ -266,7 +266,7 @@ If you use Fish in Cygwin, a minimal setup is usually enough:
 2. **Roll Back VS Code Version**:
 
     - Download VS Code v1.98 from [VS Code Updates](https://code.visualstudio.com/updates/v1_98)
-    - Replace your current VSCode installation
+    - Replace your current VS Code installation
     - No backup of Kilo settings needed
 
 3. **WSL-Specific Workaround**:
