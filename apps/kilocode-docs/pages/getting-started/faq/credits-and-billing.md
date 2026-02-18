@@ -22,7 +22,7 @@ Because Autocomplete needs to be ready the moment you start typing, the model st
 
 You can use Codestral 2508 for Autocomplete completely for free by configuring it through our Mistral integration.
 
-**Setup Guide:** [Setting up Mistral for Free Autocomplete](https://kilo.ai/docs/code-with-ai/features/autocomplete/mistral-setup#setting-up-mistral-for-free-autocomplete)
+**Setup Guide:** [Setting up Mistral for Free Autocomplete](/docs/code-with-ai/features/autocomplete/mistral-setup#setting-up-mistral-for-free-autocomplete)
 
 #### How to Disable These Requests
 
