@@ -2809,6 +2809,7 @@ describe("ClineProvider - Router Models", () => {
 				litellm: mockModels,
 				kilocode: mockModels,
 				"nano-gpt": mockModels, // kilocode_change
+				aihubmix: mockModels, // kilocode_change
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
@@ -2865,6 +2866,7 @@ describe("ClineProvider - Router Models", () => {
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway success
 			.mockResolvedValueOnce(mockModels) // deepinfra success
 			.mockResolvedValueOnce(mockModels) // nano-gpt success // kilocode_change
+			.mockResolvedValueOnce(mockModels) // kilocode_change: aihubmix
 			.mockResolvedValueOnce(mockModels) // kilocode_change: ovhcloud
 			.mockResolvedValueOnce(mockModels) // kilocode_change: inception success
 			.mockResolvedValueOnce(mockModels) // kilocode_change: synthetic success
@@ -2893,6 +2895,7 @@ describe("ClineProvider - Router Models", () => {
 				litellm: {},
 				kilocode: {},
 				"nano-gpt": mockModels, // kilocode_change
+				aihubmix: mockModels, // kilocode_change
 				"vercel-ai-gateway": mockModels,
 				ovhcloud: mockModels, // kilocode_change
 				inception: mockModels, // kilocode_change
@@ -3049,6 +3052,7 @@ describe("ClineProvider - Router Models", () => {
 				litellm: {},
 				kilocode: mockModels,
 				"nano-gpt": mockModels, // kilocode_change
+				aihubmix: mockModels, // kilocode_change
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,

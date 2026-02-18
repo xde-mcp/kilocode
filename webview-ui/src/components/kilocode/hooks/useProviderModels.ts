@@ -54,6 +54,7 @@ import {
 	cerebrasDefaultModelId,
 	nanoGptDefaultModelId, //kilocode_change
 	apertisDefaultModelId, // kilocode_change
+	aihubmixDefaultModelId, // kilocode_change
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
 	minimaxModels,
@@ -314,6 +315,12 @@ export const getModelsByProvider = ({
 			return {
 				models: routerModels["nano-gpt"],
 				defaultModel: nanoGptDefaultModelId,
+			}
+		}
+		case "aihubmix": {
+			return {
+				models: routerModels.aihubmix,
+				defaultModel: aihubmixDefaultModelId,
 			}
 		}
 		//kilocode_change end
