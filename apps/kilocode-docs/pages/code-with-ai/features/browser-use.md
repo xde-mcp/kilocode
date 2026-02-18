@@ -11,9 +11,6 @@ Kilo Code provides browser automation capabilities that let you interact with we
 Browser Use requires an advanced agentic model. It is typically most reliable with recent high-capability models (for example Claude Sonnet 4 class models).
 {% /callout %}
 
-{% callout type="note" title="Media Refresh" %}
-Legacy Roo-branded browser-use media has been retired. This page focuses on current Kilo terminology and settings.
-{% /callout %}
 
 ## How Browser Use Works
 
