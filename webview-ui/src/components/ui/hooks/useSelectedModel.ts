@@ -22,6 +22,7 @@ import {
 	openAiModelInfoSaneDefaults,
 	openAiNativeModels,
 	vertexModels,
+	normalizeVertexModelId,
 	xaiModels,
 	groqModels,
 	vscodeLlmModels,
@@ -293,7 +294,8 @@ function getSelectedModel({
 			return { id, info: baseInfo }
 		}
 		case "vertex": {
-			const id = apiConfiguration.apiModelId ?? defaultModelId
+			const rawId = apiConfiguration.apiModelId ?? defaultModelId
+			const id = normalizeVertexModelId(rawId)
 			const info = vertexModels[id as keyof typeof vertexModels]
 			return { id, info }
 		}

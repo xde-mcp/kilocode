@@ -792,6 +792,43 @@ describe("useSelectedModel", () => {
 		})
 	})
 
+	describe("vertex provider", () => {
+		beforeEach(() => {
+			mockUseRouterModels.mockReturnValue({
+				data: {
+					openrouter: {},
+					requesty: {},
+					glama: {},
+					unbound: {},
+					litellm: {},
+					"io-intelligence": {},
+				},
+				isLoading: false,
+				isError: false,
+			} as any)
+
+			mockUseOpenRouterModelProviders.mockReturnValue({
+				data: {},
+				isLoading: false,
+				isError: false,
+			} as any)
+		})
+
+		it("normalizes legacy claude-opus-4-6 aliases", () => {
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "vertex",
+				apiModelId: "claude-opus-4-6@default",
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.provider).toBe("vertex")
+			expect(result.current.id).toBe("claude-opus-4-6")
+			expect(result.current.info?.supportsImages).toBe(true)
+		})
+	})
+
 	describe("litellm provider", () => {
 		beforeEach(() => {
 			mockUseOpenRouterModelProviders.mockReturnValue({
