@@ -253,7 +253,7 @@ If you use Fish in Cygwin, a minimal setup is usually enough:
 
 ### Shell Integration Failures After VS Code 1.98
 
-**Issue**: After VSCode updates beyond version 1.98, shell integration may fail with the error "VSCE output start escape sequence (]633;C or ]133;C) not received".
+**Issue**: After VS Code updates beyond version 1.98, shell integration may fail with the error "VSCE output start escape sequence (]633;C or ]133;C) not received".
 
 **Solutions**:
 
