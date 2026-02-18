@@ -10,7 +10,7 @@ export const AutomateNav: NavSection[] = [
 				href: "/automate/code-reviews/overview",
 				children: "Code Reviews",
 				subLinks: [
-					{ href: "/automate/code-reviews/overview", children: "Code Reviews Overview" },
+					{ href: "/automate/code-reviews/overview", children: "Overview" },
 					{ href: "/automate/code-reviews/github", children: "GitHub" },
 					{ href: "/automate/code-reviews/gitlab", children: "GitLab" },
 				],
