@@ -540,6 +540,39 @@ describe("useSelectedModel", () => {
 			expect(result.current.info).toBeDefined()
 			expect(result.current.info?.supportsImages).toBe(true) // Claude Code now supports images
 		})
+
+		it("should normalize dated claude-code model ids and keep image support enabled", () => {
+			mockUseRouterModels.mockReturnValue({
+				data: {
+					openrouter: {},
+					requesty: {},
+					glama: {},
+					unbound: {},
+					litellm: {},
+					"io-intelligence": {},
+				},
+				isLoading: false,
+				isError: false,
+			} as any)
+
+			mockUseOpenRouterModelProviders.mockReturnValue({
+				data: {},
+				isLoading: false,
+				isError: false,
+			} as any)
+
+			const apiConfiguration: ProviderSettings = {
+				apiProvider: "claude-code",
+				apiModelId: "claude-opus-4-5-20251101",
+			}
+
+			const wrapper = createWrapper()
+			const { result } = renderHook(() => useSelectedModel(apiConfiguration), { wrapper })
+
+			expect(result.current.provider).toBe("claude-code")
+			expect(result.current.id).toBe("claude-opus-4-5")
+			expect(result.current.info?.supportsImages).toBe(true)
+		})
 	})
 
 	// kilocode_change start
