@@ -1,11 +1,11 @@
 ---
 title: "FAQ"
-description: "Frequent Ask questions in Kilo Code"
+description: "Frequently Asked Questions about Kilo Code"
 ---
 
 # FAQ
 
-This section contains the most frequent asked questions
+This section contains the most frequently asked questions.
 
 ## General
 
@@ -23,6 +23,6 @@ This section contains the most frequent asked questions
 
 - [**Account and Integration**](/docs/getting-started/faq/account-and-integration) - Questions about accounts and integrations
 
-## Know Issues
+## Known Issues
 
 - [**Known Issues**](/docs/getting-started/faq/known-issues) - Known issues and limitations of Kilo Code
