@@ -61,7 +61,7 @@ Replace the current dual-tab (Models / Providers) layout with a **single unified
 - A flat list of all providers, each expandable to show its offered models.
 - Each provider row has a block/unblock toggle. Blocking a provider visually marks all its models as blocked.
 - Each model row (within an expanded provider) has a block/unblock toggle for that specific model/provider combination.
-- A **free-text search/filter box** at the top filters both providers and models. For example, typing "K2.5" filters the provider list to only those offering a matching model, and within each provider only shows the matching models. This makes it easy to block a specific model across select providers. Providers are auto-exanded to show the matching models.
+- A **free-text search/filter box** at the top filters both providers and models. For example, typing "K2.5" filters the provider list to only those offering a matching model, and within each provider only shows the matching models. This makes it easy to block a specific model across select providers. Providers are auto-expanded to show the matching models.
 - Blocked items are visually distinct (e.g., a red/muted treatment) so the current block state is immediately clear.
 - A summary indicator shows total blocked count (e.g., "3 providers blocked, 7 model combinations blocked").
 
