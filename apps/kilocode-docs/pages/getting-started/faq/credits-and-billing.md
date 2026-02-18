@@ -66,7 +66,7 @@ Each environment maintains its own balance and usage tracking to ensure clear bi
 
 ## Billing
 
-### How to add VAT number to the invoices.
+### How do I add a VAT number to my invoices?
 
 You can add your VAT number during the credit purchase process.
 
