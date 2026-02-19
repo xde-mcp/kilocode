@@ -203,14 +203,14 @@ export class KilocodeOpenrouterHandler extends OpenRouterHandler {
 		const endpoint = new URL("fim/completions", this.apiFIMBase)
 
 		// Build headers using customRequestOptions for consistency
+		// kilocode_change: pass feature: "autocomplete" through metadata so resolveFeature() handles it centrally
 		const headers: Record<string, string> = {
 			...DEFAULT_HEADERS,
 			"Content-Type": "application/json",
 			Accept: "application/json",
 			"x-api-key": this.options.kilocodeToken ?? "",
 			Authorization: `Bearer ${this.options.kilocodeToken}`,
-			...this.customRequestOptions(taskId ? { taskId, mode: "code" } : undefined)?.headers,
-			[X_KILOCODE_FEATURE]: "autocomplete", // kilocode_change: override feature for FIM completions
+			...this.customRequestOptions({ taskId: taskId ?? "autocomplete", mode: "code", feature: "autocomplete" })?.headers,
 		}
 
 		// temperature: 0.2 is mentioned as a sane example in mistral's docs and is what continue uses.
