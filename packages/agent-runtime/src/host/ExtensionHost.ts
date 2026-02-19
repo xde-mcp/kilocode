@@ -1148,6 +1148,23 @@ export class ExtensionHost extends EventEmitter {
 	}
 
 	/**
+	 * Inject secrets (e.g. OAuth credentials) into the extension context's SecretStorage.
+	 * Used by the agent process so that providers like OpenAI Codex can access credentials
+	 * that were read from the main extension and passed via AGENT_CONFIG.
+	 */
+	public async injectSecrets(secrets: Record<string, string>): Promise<void> {
+		if (!this.vscodeAPI?.context?.secrets || Object.keys(secrets).length === 0) {
+			return
+		}
+		for (const [key, value] of Object.entries(secrets)) {
+			await this.vscodeAPI.context.secrets.store(key, value)
+		}
+		logs.info("Injected secrets into extension context", "ExtensionHost", {
+			keys: Object.keys(secrets),
+		})
+	}
+
+	/**
 	 * Write task history files to local storage so showTaskWithId can load them.
 	 * This is used for resuming sessions when the history is passed from the parent process.
 	 */

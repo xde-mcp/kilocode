@@ -105,6 +105,8 @@ interface AgentConfig {
 			mode: string | null
 		}
 	}
+	// Secrets (e.g. OAuth credentials) to inject so providers like OpenAI Codex work in the agent process
+	secrets?: Record<string, string>
 }
 
 /**
@@ -304,6 +306,10 @@ async function main(): Promise<void> {
 				}
 
 				await extensionHost.injectConfiguration(stateConfig)
+				// Inject OAuth/secrets so providers like OpenAI Codex can authenticate
+				if (config.secrets && Object.keys(config.secrets).length > 0) {
+					await extensionHost.injectSecrets(config.secrets)
+				}
 				logs.info("Configuration injected", "AgentProcess")
 			} catch (error) {
 				logs.error("Failed to inject configuration", "AgentProcess", { error })
