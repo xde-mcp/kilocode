@@ -31,7 +31,13 @@ export function isUnauthorizedPaidModelError(error: any) {
 }
 
 export function isUnauthorizedPromotionLimitError(error: any) {
-	return !!(error && error.status === 401 && error.code === errorCodes.PROMOTION_MODEL_LIMIT_REACHED)
+	// Accepts both 401 (current backend) and 429 (future backend) to support
+	// the transition. Keep 401 until the backend is updated to return 429.
+	return !!(
+		error &&
+		(error.status === 401 || error.status === 429) &&
+		error.code === errorCodes.PROMOTION_MODEL_LIMIT_REACHED
+	)
 }
 
 export function isAlphaPeriodEndedError(error: any) {

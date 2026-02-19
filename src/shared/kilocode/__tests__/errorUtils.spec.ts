@@ -37,9 +37,20 @@ describe("isUnauthorizedPromotionLimitError", () => {
 		)
 	})
 
+	it("returns true for status 429 with PROMOTION_MODEL_LIMIT_REACHED code (future backend)", () => {
+		expect(isUnauthorizedPromotionLimitError({ status: 429, code: errorCodes.PROMOTION_MODEL_LIMIT_REACHED })).toBe(
+			true,
+		)
+	})
+
 	it("returns false for status 401 without matching code", () => {
 		expect(isUnauthorizedPromotionLimitError({ status: 401 })).toBe(false)
 		expect(isUnauthorizedPromotionLimitError({ status: 401, code: "OTHER" })).toBe(false)
+	})
+
+	it("returns false for status 429 without matching code", () => {
+		expect(isUnauthorizedPromotionLimitError({ status: 429 })).toBe(false)
+		expect(isUnauthorizedPromotionLimitError({ status: 429, code: "OTHER" })).toBe(false)
 	})
 })
 
@@ -64,6 +75,7 @@ describe("isAnyRecognizedKiloCodeError", () => {
 		expect(isAnyRecognizedKiloCodeError({ status: 401 })).toBe(true)
 		expect(isAnyRecognizedKiloCodeError({ status: 401, code: errorCodes.PAID_MODEL_AUTH_REQUIRED })).toBe(true)
 		expect(isAnyRecognizedKiloCodeError({ status: 401, code: errorCodes.PROMOTION_MODEL_LIMIT_REACHED })).toBe(true)
+		expect(isAnyRecognizedKiloCodeError({ status: 429, code: errorCodes.PROMOTION_MODEL_LIMIT_REACHED })).toBe(true)
 	})
 
 	it("returns false for unrecognized errors", () => {
