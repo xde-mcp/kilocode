@@ -1380,6 +1380,39 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				markFollowUpAsAnswered()
 			}
 
+			// kilocode_change start - Handle review mode suggestions from completion
+			// When a suggestion targets review mode with a reviewScope, the mode switch
+			// itself starts the review (via handleReviewScopeSelected on the backend).
+			// We don't need to send a separate message or start a new task.
+			if (suggestion.mode === "review" && !event?.shiftKey) {
+				const isManualClick = !!event
+				if (isManualClick || alwaysAllowModeSwitch) {
+					if (suggestion.newTask) {
+						// Clear context first, then switch to review mode with scope.
+						// NOTE: clearTask is async on the backend (removes task from stack,
+						// posts state). We use setTimeout to give it time to complete before
+						// sending the mode switch. Sequential postMessage won't work because
+						// onDidReceiveMessage handlers fire independently and don't queue.
+						vscode.postMessage({ type: "clearTask" })
+						setTimeout(() => {
+							setMode("review")
+							vscode.postMessage({ type: "mode", text: "review", reviewScope: "uncommitted" })
+						}, 100)
+					} else {
+						// Close the pending completion_result ask before switching modes.
+						// askResponse resolves synchronously in the backend message handler,
+						// so the sequential postMessage ordering is safe here (unlike clearTask
+						// which is async and requires the setTimeout above).
+						vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+						// Switch to review mode with scope (skips dialog, starts review directly)
+						setMode("review")
+						vscode.postMessage({ type: "mode", text: "review", reviewScope: "uncommitted" })
+					}
+				}
+				return
+			}
+			// kilocode_change end
+
 			// Check if we need to switch modes
 			if (suggestion.mode) {
 				// Only switch modes if it's a manual click (event exists) or auto-approval is allowed
@@ -1404,7 +1437,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				setInputValue(preservedInput)
 			}
 		},
-		[handleSendMessage, setInputValue, switchToMode, alwaysAllowModeSwitch, clineAsk, markFollowUpAsAnswered],
+		[
+			handleSendMessage,
+			setInputValue,
+			switchToMode,
+			alwaysAllowModeSwitch,
+			clineAsk,
+			markFollowUpAsAnswered,
+			setMode,
+		],
 	)
 
 	const handleBatchFileResponse = useCallback((response: { [key: string]: boolean }) => {

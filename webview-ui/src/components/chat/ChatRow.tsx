@@ -457,6 +457,16 @@ export const ChatRowContent = ({
 		return null
 	}, [message.type, message.ask, message.partial, message.text])
 
+	// kilocode_change start - Parse completion suggestions from completion_result ask
+	const completionSuggestions = useMemo(() => {
+		if (message.type === "ask" && message.ask === "completion_result" && !message.partial && message.text) {
+			const parsed = safeJsonParse<{ suggest?: SuggestionItem[] }>(message.text)
+			return parsed?.suggest
+		}
+		return undefined
+	}, [message.type, message.ask, message.partial, message.text])
+	// kilocode_change end
+
 	if (tool) {
 		const toolIcon = (name: string) => (
 			<span
@@ -1804,6 +1814,24 @@ export const ChatRowContent = ({
 						</>
 					)
 				case "completion_result":
+					// kilocode_change start - Render completion suggestions when available
+					if (completionSuggestions && completionSuggestions.length > 0) {
+						return (
+							<div className="flex flex-col gap-2 ml-6">
+								<FollowUpSuggest
+									suggestions={completionSuggestions}
+									onSuggestionClick={onSuggestionClick}
+									ts={message?.ts}
+								/>
+							</div>
+						)
+					}
+					// kilocode_change - Guard: don't render JSON payloads as markdown
+					// when the suggest field is missing/empty in a completion_result
+					if (message.text && message.text.trimStart().startsWith("{")) {
+						return null
+					}
+					// kilocode_change end
 					if (message.text) {
 						return (
 							<div className="group">

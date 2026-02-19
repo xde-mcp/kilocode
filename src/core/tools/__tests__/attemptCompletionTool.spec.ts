@@ -30,7 +30,7 @@ vi.mock("../../../shared/package", () => ({
 	},
 }))
 
-import { attemptCompletionTool, AttemptCompletionCallbacks } from "../AttemptCompletionTool"
+import { attemptCompletionTool, AttemptCompletionCallbacks, getCompletionSuggestions } from "../AttemptCompletionTool"
 import { Task } from "../../task/Task"
 import * as vscode from "vscode"
 
@@ -478,4 +478,55 @@ describe("attemptCompletionTool", () => {
 			})
 		})
 	})
+
+	// kilocode_change start
+	describe("completion suggestions", () => {
+		function createMockTaskWithMode(mode: string): Partial<Task> {
+			return {
+				taskMode: mode,
+			} as Partial<Task>
+		}
+
+		it("should return review suggestions for code mode", () => {
+			const task = createMockTaskWithMode("code")
+			const suggestions = getCompletionSuggestions(task as Task)
+
+			expect(suggestions).toEqual([
+				{ answer: "Start code review", mode: "review" },
+				{ answer: "Clear context and start code review", mode: "review", newTask: true },
+			])
+		})
+
+		it("should return review suggestions for orchestrator mode", () => {
+			const task = createMockTaskWithMode("orchestrator")
+			const suggestions = getCompletionSuggestions(task as Task)
+
+			expect(suggestions).toEqual([
+				{ answer: "Start code review", mode: "review" },
+				{ answer: "Clear context and start code review", mode: "review", newTask: true },
+			])
+		})
+
+		it("should return undefined for review mode", () => {
+			const task = createMockTaskWithMode("review")
+			const suggestions = getCompletionSuggestions(task as Task)
+
+			expect(suggestions).toBeUndefined()
+		})
+
+		it("should return undefined for architect mode", () => {
+			const task = createMockTaskWithMode("architect")
+			const suggestions = getCompletionSuggestions(task as Task)
+
+			expect(suggestions).toBeUndefined()
+		})
+
+		it("should return undefined for debug mode", () => {
+			const task = createMockTaskWithMode("debug")
+			const suggestions = getCompletionSuggestions(task as Task)
+
+			expect(suggestions).toBeUndefined()
+		})
+	})
+	// kilocode_change end
 })

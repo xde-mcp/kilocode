@@ -20,6 +20,10 @@ export interface SuggestionItem {
 	answer: string
 	/** Optional mode to switch to when selecting this suggestion */
 	mode?: string
+	// kilocode_change start
+	/** When true, clicking this suggestion clears context and starts a new task instead of continuing the current one */
+	newTask?: boolean
+	// kilocode_change end
 }
 
 /**
@@ -28,6 +32,7 @@ export interface SuggestionItem {
 export const suggestionItemSchema = z.object({
 	answer: z.string(),
 	mode: z.string().optional(),
+	newTask: z.boolean().optional(), // kilocode_change
 })
 
 /**
