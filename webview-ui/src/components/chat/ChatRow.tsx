@@ -1827,9 +1827,10 @@ export const ChatRowContent = ({
 							</div>
 						)
 					}
-					// kilocode_change - Guard: don't render JSON payloads as markdown
-					// when the suggest field is missing/empty in a completion_result
-					if (message.text && message.text.trimStart().startsWith("{")) {
+					// kilocode_change - Guard: don't render structured JSON payloads as markdown.
+					// If the text is valid JSON (i.e. our suggestion payload) but has no suggestions
+					// to display, suppress rendering rather than showing raw JSON.
+					if (message.text && safeJsonParse(message.text) !== null) {
 						return null
 					}
 					// kilocode_change end

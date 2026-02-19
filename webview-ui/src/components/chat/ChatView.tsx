@@ -1386,7 +1386,9 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			// the review directly (via handleReviewScopeSelected). The mode switch
 			// itself creates a new task, which implicitly clears the old context.
 			// Shift+click is a no-op for review suggestions (they can't be appended to text).
-			if (suggestion.mode === "review") {
+			// Guard on clineAsk to ensure this only triggers for completion suggestions,
+			// not LLM-generated follow-up suggestions that might also have mode: "review".
+			if (suggestion.mode === "review" && clineAsk === "completion_result") {
 				if (!event?.shiftKey) {
 					const isManualClick = !!event
 					if (isManualClick || alwaysAllowModeSwitch) {
