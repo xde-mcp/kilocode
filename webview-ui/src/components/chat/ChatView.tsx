@@ -1388,16 +1388,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				const isManualClick = !!event
 				if (isManualClick || alwaysAllowModeSwitch) {
 					if (suggestion.newTask) {
-						// Clear context first, then switch to review mode with scope.
-						// NOTE: clearTask is async on the backend (removes task from stack,
-						// posts state). We use setTimeout to give it time to complete before
-						// sending the mode switch. Sequential postMessage won't work because
-						// onDidReceiveMessage handlers fire independently and don't queue.
-						vscode.postMessage({ type: "clearTask" })
-						setTimeout(() => {
-							setMode("review")
-							vscode.postMessage({ type: "mode", text: "review", reviewScope: "uncommitted" })
-						}, 100)
+						// Clear context and switch to review mode atomically on the backend.
+						// Using a single message avoids the race condition of sequential
+						// clearTask + mode switch where clearTask might not complete in time.
+						setMode("review")
+						vscode.postMessage({
+							type: "clearTaskAndSwitchMode",
+							text: "review",
+							reviewScope: "uncommitted",
+						})
 					} else {
 						// Close the pending completion_result ask before switching modes.
 						// askResponse resolves synchronously in the backend message handler,

@@ -721,6 +721,7 @@ export interface WebviewMessage {
 		| "askResponse"
 		| "terminalOperation"
 		| "clearTask"
+		| "clearTaskAndSwitchMode" // kilocode_change
 		| "didShowAnnouncement"
 		| "selectImages"
 		| "exportCurrentTask"

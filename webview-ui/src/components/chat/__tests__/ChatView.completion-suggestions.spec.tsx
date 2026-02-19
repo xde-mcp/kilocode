@@ -194,7 +194,7 @@ describe("ChatView - Completion Suggestion Click Handling", () => {
 		capturedOnSuggestionClick = undefined
 	})
 
-	it("handles newTask review suggestion by clearing task then switching to review with reviewScope", async () => {
+	it("handles newTask review suggestion by atomically clearing task and switching to review", async () => {
 		renderChatView()
 
 		// Hydrate state with a completed coding task that has suggestions
@@ -231,9 +231,6 @@ describe("ChatView - Completion Suggestion Click Handling", () => {
 		// Clear previous postMessage calls from state hydration
 		vi.mocked(vscode.postMessage).mockClear()
 
-		// Use fake timers for testing the delayed mode switch
-		vi.useFakeTimers()
-
 		// Simulate clicking the "Clear context and start code review" suggestion
 		act(() => {
 			capturedOnSuggestionClick!(
@@ -242,31 +239,22 @@ describe("ChatView - Completion Suggestion Click Handling", () => {
 			)
 		})
 
-		// Should post clearTask first
-		expect(vscode.postMessage).toHaveBeenCalledWith({ type: "clearTask" })
-
-		// Should NOT have sent the mode switch yet (it's delayed)
-		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "mode", text: "review" }))
-
-		// Advance timer to trigger the delayed mode switch
-		act(() => {
-			vi.advanceTimersByTime(100)
-		})
-
-		// Should send mode switch with reviewScope to skip the dialog
+		// Should send a single atomic message that clears and switches mode
 		expect(vscode.postMessage).toHaveBeenCalledWith({
-			type: "mode",
+			type: "clearTaskAndSwitchMode",
 			text: "review",
 			reviewScope: "uncommitted",
 		})
+
+		// Should NOT send separate clearTask or mode messages
+		expect(vscode.postMessage).not.toHaveBeenCalledWith({ type: "clearTask" })
+		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "mode" }))
 
 		// Should NOT send a separate newTask message
 		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "newTask" }))
 
 		// Should NOT send askResponse
 		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "askResponse" }))
-
-		vi.useRealTimers()
 	})
 
 	it("handles normal review suggestion by switching to review with reviewScope", async () => {
