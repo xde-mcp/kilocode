@@ -774,32 +774,6 @@ describe("ClineProvider", () => {
 		})
 	})
 
-	// kilocode_change start
-	describe("clearTaskAndSwitchMode message handler", () => {
-		beforeEach(async () => {
-			await provider.resolveWebviewView(mockWebviewView)
-		})
-
-		test("atomically clears task and switches mode with reviewScope", async () => {
-			const mockCline = new Task(defaultTaskOptions)
-
-			const clearTaskSpy = vi.spyOn(provider, "clearTask").mockResolvedValue(undefined)
-			const postStateToWebviewSpy = vi.spyOn(provider, "postStateToWebview").mockResolvedValue(undefined)
-			const handleModeSwitchSpy = vi.spyOn(provider, "handleModeSwitch").mockResolvedValue(undefined)
-
-			await provider.addClineToStack(mockCline)
-
-			const messageHandler = (mockWebviewView.webview.onDidReceiveMessage as any).mock.calls[0][0]
-
-			await messageHandler({ type: "clearTaskAndSwitchMode", text: "review", reviewScope: "uncommitted" })
-
-			expect(clearTaskSpy).toHaveBeenCalled()
-			expect(postStateToWebviewSpy).toHaveBeenCalled()
-			expect(handleModeSwitchSpy).toHaveBeenCalledWith("review", { reviewScope: "uncommitted" })
-		})
-	})
-	// kilocode_change end
-
 	test("addClineToStack adds multiple Cline instances to the stack", async () => {
 		// Setup Cline instance with auto-mock from the top of the file
 		const mockCline1 = new Task(defaultTaskOptions) // Create a new mocked instance

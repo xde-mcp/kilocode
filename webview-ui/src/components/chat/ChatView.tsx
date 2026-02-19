@@ -1380,30 +1380,17 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				markFollowUpAsAnswered()
 			}
 
-			// kilocode_change start - Handle review mode suggestions from completion
-			// When a suggestion targets review mode with a reviewScope, the mode switch
-			// itself starts the review (via handleReviewScopeSelected on the backend).
-			// We don't need to send a separate message or start a new task.
-			if (suggestion.mode === "review" && !event?.shiftKey) {
-				const isManualClick = !!event
-				if (isManualClick || alwaysAllowModeSwitch) {
-					if (suggestion.newTask) {
-						// Clear context and switch to review mode atomically on the backend.
-						// Using a single message avoids the race condition of sequential
-						// clearTask + mode switch where clearTask might not complete in time.
-						setMode("review")
-						vscode.postMessage({
-							type: "clearTaskAndSwitchMode",
-							text: "review",
-							reviewScope: "uncommitted",
-						})
-					} else {
-						// Close the pending completion_result ask before switching modes.
-						// askResponse resolves synchronously in the backend message handler,
-						// so the sequential postMessage ordering is safe here (unlike clearTask
-						// which is async and requires the setTimeout above).
+			// kilocode_change start - Handle review mode suggestions from completion.
+			// Close the pending completion_result ask, then switch to review mode
+			// with a reviewScope so the backend skips the scope dialog and starts
+			// the review directly (via handleReviewScopeSelected). The mode switch
+			// itself creates a new task, which implicitly clears the old context.
+			// Shift+click is a no-op for review suggestions (they can't be appended to text).
+			if (suggestion.mode === "review") {
+				if (!event?.shiftKey) {
+					const isManualClick = !!event
+					if (isManualClick || alwaysAllowModeSwitch) {
 						vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
-						// Switch to review mode with scope (skips dialog, starts review directly)
 						setMode("review")
 						vscode.postMessage({ type: "mode", text: "review", reviewScope: "uncommitted" })
 					}

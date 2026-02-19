@@ -194,70 +194,7 @@ describe("ChatView - Completion Suggestion Click Handling", () => {
 		capturedOnSuggestionClick = undefined
 	})
 
-	it("handles newTask review suggestion by atomically clearing task and switching to review", async () => {
-		renderChatView()
-
-		// Hydrate state with a completed coding task that has suggestions
-		await act(async () => {
-			mockPostMessage({
-				clineMessages: [
-					{
-						type: "say",
-						say: "task",
-						ts: Date.now() - 2000,
-						text: "Coding task",
-					},
-					{
-						type: "ask",
-						ask: "completion_result",
-						ts: Date.now(),
-						text: JSON.stringify({
-							suggest: [
-								{ answer: "Start code review", mode: "review" },
-								{ answer: "Clear context and start code review", mode: "review", newTask: true },
-							],
-						}),
-						partial: false,
-					},
-				],
-			})
-		})
-
-		// Wait for ChatRow to be rendered and onSuggestionClick to be captured
-		await waitFor(() => {
-			expect(capturedOnSuggestionClick).toBeDefined()
-		})
-
-		// Clear previous postMessage calls from state hydration
-		vi.mocked(vscode.postMessage).mockClear()
-
-		// Simulate clicking the "Clear context and start code review" suggestion
-		act(() => {
-			capturedOnSuggestionClick!(
-				{ answer: "Clear context and start code review", mode: "review", newTask: true },
-				{ shiftKey: false } as React.MouseEvent,
-			)
-		})
-
-		// Should send a single atomic message that clears and switches mode
-		expect(vscode.postMessage).toHaveBeenCalledWith({
-			type: "clearTaskAndSwitchMode",
-			text: "review",
-			reviewScope: "uncommitted",
-		})
-
-		// Should NOT send separate clearTask or mode messages
-		expect(vscode.postMessage).not.toHaveBeenCalledWith({ type: "clearTask" })
-		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "mode" }))
-
-		// Should NOT send a separate newTask message
-		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "newTask" }))
-
-		// Should NOT send askResponse
-		expect(vscode.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "askResponse" }))
-	})
-
-	it("handles normal review suggestion by switching to review with reviewScope", async () => {
+	it("handles review suggestion by closing the ask and switching to review with reviewScope", async () => {
 		renderChatView()
 
 		// Hydrate state with a completed coding task

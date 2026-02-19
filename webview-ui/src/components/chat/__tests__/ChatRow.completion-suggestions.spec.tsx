@@ -48,10 +48,7 @@ describe("ChatRow - completion suggestions", () => {
 	})
 
 	it("renders completion suggestions when completion_result ask contains suggestions", () => {
-		const suggestions = [
-			{ answer: "Start code review", mode: "review" },
-			{ answer: "Clear context and start code review", mode: "review", newTask: true },
-		]
+		const suggestions = [{ answer: "Start code review", mode: "review" }]
 
 		const message = {
 			type: "ask",
@@ -64,7 +61,6 @@ describe("ChatRow - completion suggestions", () => {
 		renderChatRow(message)
 
 		expect(screen.getByText("Start code review")).toBeInTheDocument()
-		expect(screen.getByText("Clear context and start code review")).toBeInTheDocument()
 	})
 
 	it("does not render suggestions when completion_result ask has no text", () => {

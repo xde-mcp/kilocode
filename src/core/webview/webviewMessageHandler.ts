@@ -744,15 +744,6 @@ export const webviewMessageHandler = async (
 			await provider.clearTask()
 			await provider.postStateToWebview()
 			break
-		// kilocode_change start: Atomically clear task and switch mode to avoid race conditions
-		case "clearTaskAndSwitchMode":
-			await provider.clearTask()
-			await provider.postStateToWebview()
-			await provider.handleModeSwitch(message.text as Mode, {
-				reviewScope: message.reviewScope as "uncommitted" | "branch" | undefined,
-			})
-			break
-		// kilocode_change end
 		case "didShowAnnouncement":
 			await updateGlobalState("lastShownAnnouncementId", provider.latestAnnouncementId)
 			await provider.postStateToWebview()
@@ -1856,7 +1847,7 @@ export const webviewMessageHandler = async (
 		case "mode":
 			// kilocode_change: pass reviewScope option to skip scope dialog when starting review from completion suggestion
 			await provider.handleModeSwitch(message.text as Mode, {
-				reviewScope: message.reviewScope as "uncommitted" | "branch" | undefined,
+				reviewScope: message.reviewScope,
 			})
 			break
 		case "updatePrompt":

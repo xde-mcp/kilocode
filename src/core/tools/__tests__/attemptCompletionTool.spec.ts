@@ -491,20 +491,14 @@ describe("attemptCompletionTool", () => {
 			const task = createMockTaskWithMode("code")
 			const suggestions = getCompletionSuggestions(task as Task)
 
-			expect(suggestions).toEqual([
-				{ answer: "Start code review", mode: "review" },
-				{ answer: "Clear context and start code review", mode: "review", newTask: true },
-			])
+			expect(suggestions).toEqual([{ answer: "Start code review", mode: "review" }])
 		})
 
 		it("should return review suggestions for orchestrator mode", () => {
 			const task = createMockTaskWithMode("orchestrator")
 			const suggestions = getCompletionSuggestions(task as Task)
 
-			expect(suggestions).toEqual([
-				{ answer: "Start code review", mode: "review" },
-				{ answer: "Clear context and start code review", mode: "review", newTask: true },
-			])
+			expect(suggestions).toEqual([{ answer: "Start code review", mode: "review" }])
 		})
 
 		it("should return undefined for review mode", () => {
