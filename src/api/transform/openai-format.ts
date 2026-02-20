@@ -502,7 +502,7 @@ export function convertToOpenAiMessages(
 				}
 
 				// Process tool use messages
-				// Use type assertion to access extra_content which may be added for Gemini 3 support
+				// kilocode_change start: Use type assertion to access extra_content which may be added for Gemini 3 support
 				let tool_calls: (OpenAI.Chat.ChatCompletionMessageToolCall & {
 					extra_content?: Record<string, unknown>
 				})[] = toolMessages.map((toolMessage) => {
@@ -524,6 +524,7 @@ export function convertToOpenAiMessages(
 					}
 					return toolCall
 				})
+				// kilocode_change end
 
 				// Check if the message has reasoning_details (used by Gemini 3, xAI, etc.)
 				const messageWithDetails = anthropicMessage as any

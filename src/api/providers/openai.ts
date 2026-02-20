@@ -509,7 +509,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				id?: string
 				name?: string
 				arguments?: string
-				extra_content?: Record<string, unknown>
+				extra_content?: Record<string, unknown> // kilocode_change
 		  }
 		| { type: "tool_call_end"; id: string }
 	> {
@@ -524,8 +524,9 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					id: toolCall.id,
 					name: toolCall.function?.name,
 					arguments: toolCall.function?.arguments,
-					// Preserve extra_content for Gemini 3 thought_signature support
+					// kilocode_change start: Preserve extra_content for Gemini 3 thought_signature support
 					extra_content: (toolCall as any).extra_content,
+					// kilocode_change end
 				}
 			}
 		}

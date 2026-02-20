@@ -59,7 +59,7 @@ export class NativeToolCallParser {
 			id: string
 			name: string
 			argumentsAccumulator: string
-			extra_content?: Record<string, unknown>
+			extra_content?: Record<string, unknown> // kilocode_change
 		}
 	>()
 
@@ -71,7 +71,7 @@ export class NativeToolCallParser {
 			name: string
 			hasStarted: boolean
 			deltaBuffer: string[]
-			extra_content?: Record<string, unknown>
+			extra_content?: Record<string, unknown> // kilocode_change
 		}
 	>()
 
@@ -87,7 +87,7 @@ export class NativeToolCallParser {
 		id?: string
 		name?: string
 		arguments?: string
-		extra_content?: Record<string, unknown>
+		extra_content?: Record<string, unknown> // kilocode_change
 	}): ToolCallStreamEvent[] {
 		const events: ToolCallStreamEvent[] = []
 		// kilocode_change start: Some providers (e.g. MiniMax) return tool call id as a number; coerce to string.
@@ -105,7 +105,7 @@ export class NativeToolCallParser {
 				name: name || "",
 				hasStarted: false,
 				deltaBuffer: [],
-				extra_content,
+				extra_content, // kilocode_change
 			}
 			this.rawChunkTracker.set(index, tracked)
 		}
@@ -119,10 +119,11 @@ export class NativeToolCallParser {
 			tracked.name = name
 		}
 
-		// Update extra_content if present (Gemini 3 sends it once in the first chunk)
+		// kilocode_change start: Update extra_content if present (Gemini 3 sends it once in the first chunk)
 		if (extra_content) {
 			tracked.extra_content = extra_content
 		}
+		// kilocode_change end
 
 		// Emit start event when we have the name
 		if (!tracked.hasStarted && tracked.name) {
@@ -130,7 +131,7 @@ export class NativeToolCallParser {
 				type: "tool_call_start",
 				id: tracked.id,
 				name: tracked.name,
-				extra_content: tracked.extra_content,
+				extra_content: tracked.extra_content, // kilocode_change
 			})
 			tracked.hasStarted = true
 
@@ -215,6 +216,7 @@ export class NativeToolCallParser {
 	 * Initializes tracking for incremental argument parsing.
 	 * Accepts string to support both ToolName and dynamic MCP tools (mcp--serverName--toolName).
 	 */
+	// kilocode_change start: extra_content parameter for Gemini 3 thought_signature support
 	public static startStreamingToolCall(id: string, name: string, extra_content?: Record<string, unknown>): void {
 		this.streamingToolCalls.set(id, {
 			id,
@@ -222,6 +224,7 @@ export class NativeToolCallParser {
 			argumentsAccumulator: "",
 			extra_content,
 		})
+		// kilocode_change end
 	}
 
 	/**
@@ -304,7 +307,7 @@ export class NativeToolCallParser {
 			id: toolCall.id,
 			name: toolCall.name as ToolName,
 			arguments: toolCall.argumentsAccumulator,
-			extra_content: toolCall.extra_content,
+			extra_content: toolCall.extra_content, // kilocode_change
 		})
 
 		// Clean up streaming state
@@ -608,7 +611,7 @@ export class NativeToolCallParser {
 		id: string
 		name: TName
 		arguments: string
-		extra_content?: Record<string, unknown>
+		extra_content?: Record<string, unknown> // kilocode_change
 	}): ToolUse<TName> | McpToolUse | null {
 		// Check if this is a dynamic MCP tool (mcp--serverName--toolName)
 		// Also handle models that output underscores instead of hyphens (mcp__serverName__toolName)
@@ -907,10 +910,11 @@ export class NativeToolCallParser {
 				result.originalName = toolCall.name
 			}
 
-			// Preserve extra_content for Gemini 3 thought_signature support
+			// kilocode_change start: Preserve extra_content for Gemini 3 thought_signature support
 			if (toolCall.extra_content) {
 				result.extra_content = toolCall.extra_content
 			}
+			// kilocode_change end
 
 			return result
 		} catch (error) {
@@ -936,7 +940,7 @@ export class NativeToolCallParser {
 		id: string
 		name: string
 		arguments: string
-		extra_content?: Record<string, unknown>
+		extra_content?: Record<string, unknown> // kilocode_change
 	}): McpToolUse | null {
 		try {
 			// Parse the arguments - these are the actual tool arguments passed directly
@@ -967,10 +971,11 @@ export class NativeToolCallParser {
 				partial: false,
 			}
 
-			// Preserve extra_content for Gemini 3 thought_signature support
+			// kilocode_change start: Preserve extra_content for Gemini 3 thought_signature support
 			if (toolCall.extra_content) {
 				result.extra_content = toolCall.extra_content
 			}
+			// kilocode_change end
 
 			return result
 		} catch (error) {
