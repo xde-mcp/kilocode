@@ -60,6 +60,9 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 			// Check if model supports thinking/reasoning
 			const supportsThinking = features.includes("thinking")
 
+			// Check if model supports native tools
+			const supportsNativeTools = features.includes("tools") || features.includes("function_calling")
+
 			// Check if model supports prompt cache: cache_read price differs from input price
 			const supportsPromptCache =
 				pricing.cache_read !== undefined && pricing.input !== undefined && pricing.cache_read !== pricing.input
@@ -69,7 +72,7 @@ export async function getAihubmixModels(options?: GetAihubmixModelsOptions): Pro
 				contextWindow: rawModel.context_length ?? 128000,
 				supportsImages,
 				supportsPromptCache,
-				supportsNativeTools: true,
+				supportsNativeTools,
 				defaultToolProtocol: "native",
 				inputPrice: pricing.input,
 				outputPrice: pricing.output,
