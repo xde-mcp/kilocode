@@ -64,11 +64,14 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 		switch (route) {
 			case "anthropic":
 				// Reuse AnthropicHandler with mapped configuration
+				// Explicitly set anthropicUseAuthToken: false to prevent Anthropic-specific
+				// auth settings from leaking through and causing silent auth failures.
 				this.delegateHandler = new AnthropicHandler({
 					...this.options,
 					apiKey: this.options.aihubmixApiKey,
 					anthropicBaseUrl: baseUrl,
 					apiModelId: this.options.aihubmixModelId,
+					anthropicUseAuthToken: false,
 				})
 				break
 
