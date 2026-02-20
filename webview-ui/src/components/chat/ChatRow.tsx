@@ -1830,7 +1830,7 @@ export const ChatRowContent = ({
 					// kilocode_change - Guard: don't render structured JSON payloads as markdown.
 					// If the text is valid JSON (i.e. our suggestion payload) but has no suggestions
 					// to display, suppress rendering rather than showing raw JSON.
-					if (message.text && safeJsonParse(message.text) !== null) {
+					if (message.text && safeJsonParse(message.text) !== undefined) {
 						return null
 					}
 					// kilocode_change end
