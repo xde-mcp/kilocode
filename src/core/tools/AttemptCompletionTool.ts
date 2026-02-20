@@ -32,7 +32,7 @@ async function getClineMessageOptions(
 export function getCompletionSuggestions(task: Task): SuggestionItem[] | undefined {
 	const mode = task.taskMode
 	if (mode === "code" || mode === "orchestrator") {
-		return [{ answer: "Start code review", mode: "review" }]
+		return [{ answer: t("common:suggestions.start_code_review"), mode: "review" }]
 	}
 	return undefined
 }

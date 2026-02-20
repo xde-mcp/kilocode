@@ -30,6 +30,17 @@ vi.mock("../../../shared/package", () => ({
 	},
 }))
 
+// kilocode_change start - Mock i18n for translated suggestion strings
+vi.mock("../../../i18n", () => ({
+	t: vi.fn((key: string) => {
+		const translations: Record<string, string> = {
+			"common:suggestions.start_code_review": "Start code review",
+		}
+		return translations[key] ?? key
+	}),
+}))
+// kilocode_change end
+
 import { attemptCompletionTool, AttemptCompletionCallbacks, getCompletionSuggestions } from "../AttemptCompletionTool"
 import { Task } from "../../task/Task"
 import * as vscode from "vscode"
