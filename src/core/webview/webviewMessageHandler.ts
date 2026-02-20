@@ -1854,7 +1854,10 @@ export const webviewMessageHandler = async (
 			break
 
 		case "mode":
-			await provider.handleModeSwitch(message.text as Mode)
+			// kilocode_change: pass reviewScope option to skip scope dialog when starting review from completion suggestion
+			await provider.handleModeSwitch(message.text as Mode, {
+				reviewScope: message.reviewScope,
+			})
 			break
 		case "updatePrompt":
 			if (message.promptMode && message.customPrompt !== undefined) {
