@@ -9,13 +9,13 @@ export type AihubmixModelId = string
 export const aihubmixDefaultModelId = "claude-opus-4-5"
 
 export const aihubmixDefaultModelInfo: ModelInfo = {
-	maxTokens: 8192,
-	contextWindow: 128000,
+	maxTokens: 32000,
+	contextWindow: 200000,
 	supportsImages: true,
-	supportsPromptCache: false,
+	supportsPromptCache: true,
 	supportsNativeTools: true,
 	defaultToolProtocol: "native" as const,
-	inputPrice: 3,
-	outputPrice: 15,
+	inputPrice: 5,
+	outputPrice: 25,
 	description: "AIhubmix unified model provider",
 }
