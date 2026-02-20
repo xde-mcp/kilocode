@@ -838,6 +838,7 @@ describe("VertexHandler", () => {
 			expect(modelInfo.info.contextWindow).toBe(200_000)
 		})
 
+		// kilocode_change start
 		it("should normalize legacy claude-opus-4-6 aliases", () => {
 			handler = new AnthropicVertexHandler({
 				apiModelId: "claude-opus-4-6@default",
@@ -849,6 +850,7 @@ describe("VertexHandler", () => {
 			expect(modelInfo.id).toBe("claude-opus-4-6")
 			expect(modelInfo.info.supportsImages).toBe(true)
 		})
+		// kilocode_change end
 
 		it("honors custom maxTokens for thinking models", () => {
 			const handler = new AnthropicVertexHandler({
