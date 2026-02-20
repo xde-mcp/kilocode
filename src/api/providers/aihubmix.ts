@@ -2,6 +2,7 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ModelInfo } from "@roo-code/types"
+import { aihubmixDefaultModelInfo } from "@roo-code/types"
 
 import type { ApiHandlerOptions } from "../../shared/api"
 import { ApiStream } from "../transform/stream"
@@ -121,8 +122,10 @@ export class AihubmixHandler extends BaseProvider implements SingleCompletionHan
 		yield* this.getDelegateHandler().createMessage(systemPrompt, messages, metadata)
 	}
 
-	getModel(): { id: string; info: ModelInfo } {
-		return this.getDelegateHandler().getModel()
+	override getModel(): { id: string; info: ModelInfo } {
+		const id = this.options.aihubmixModelId || AIHUBMIX_DEFAULT_MODEL
+		const info = this.options.aihubmixModelInfo ?? aihubmixDefaultModelInfo
+		return { id, info }
 	}
 
 	override async countTokens(content: Array<Anthropic.Messages.ContentBlockParam>): Promise<number> {
