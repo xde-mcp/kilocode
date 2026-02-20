@@ -76,10 +76,14 @@ const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0
 // kilocode_change start: KiloLogo component
 const KiloLogo = () => {
 	const iconsBaseUri = (window as any).ICONS_BASE_URI || ""
+	const isLightTheme =
+		document.body.classList.contains("vscode-light") ||
+		document.body.classList.contains("vscode-high-contrast-light")
+	const iconFile = isLightTheme ? "kilo-light.svg" : "kilo-dark.svg"
 	return (
 		<div className="flex items-center justify-center" style={{ width: "56px", height: "56px", margin: "0 auto" }}>
 			<img
-				src={`${iconsBaseUri}/kilo-dark.svg`}
+				src={`${iconsBaseUri}/${iconFile}`}
 				alt="Kilo Code"
 				className="w-full h-full object-contain"
 				style={{ opacity: 0.85 }}
@@ -107,6 +111,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 		clineMessages: messages,
 		currentTaskItem,
 		currentTaskTodos,
+		currentTaskCumulativeCost, // kilocode_change
 		taskHistoryFullLength, // kilocode_change
 		taskHistoryVersion, // kilocode_change
 		apiConfiguration,
@@ -172,7 +177,19 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 	const modifiedMessages = useMemo(() => combineApiRequests(combineCommandSequences(messages.slice(1))), [messages])
 
 	// Has to be after api_req_finished are all reduced into api_req_started messages.
-	const apiMetrics = useMemo(() => getApiMetrics(modifiedMessages), [modifiedMessages])
+	// kilocode_change start
+	const apiMetrics = useMemo(() => {
+		const metrics = getApiMetrics(modifiedMessages)
+		// use cumulative cost from backend if available, otherwise fall back to calculated cost
+		if (currentTaskCumulativeCost !== undefined) {
+			return {
+				...metrics,
+				totalCost: currentTaskCumulativeCost,
+			}
+		}
+		return metrics
+	}, [modifiedMessages, currentTaskCumulativeCost])
+	// kilocode_change end
 
 	const [inputValue, setInputValue] = useState("")
 	const inputValueRef = useRef(inputValue)
@@ -987,10 +1004,8 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 					break
 				// kilocode_change start: Review mode
 				case "askReviewScope":
-					if (message.reviewScopeInfo) {
-						setReviewScopeInfo(message.reviewScopeInfo)
-						setShowReviewScopeSelector(true)
-					}
+					setReviewScopeInfo(message.reviewScopeInfo ?? null)
+					setShowReviewScopeSelector(true)
 					break
 				// kilocode_change end: Review mode
 			}
@@ -1365,6 +1380,27 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				markFollowUpAsAnswered()
 			}
 
+			// kilocode_change start - Handle review mode suggestions from completion.
+			// Close the pending completion_result ask, then switch to review mode
+			// with a reviewScope so the backend skips the scope dialog and starts
+			// the review directly (via handleReviewScopeSelected). The mode switch
+			// itself creates a new task, which implicitly clears the old context.
+			// Shift+click is a no-op for review suggestions (they can't be appended to text).
+			// Guard on clineAsk to ensure this only triggers for completion suggestions,
+			// not LLM-generated follow-up suggestions that might also have mode: "review".
+			if (suggestion.mode === "review" && clineAsk === "completion_result") {
+				if (!event?.shiftKey) {
+					const isManualClick = !!event
+					if (isManualClick || alwaysAllowModeSwitch) {
+						vscode.postMessage({ type: "askResponse", askResponse: "yesButtonClicked" })
+						setMode("review")
+						vscode.postMessage({ type: "mode", text: "review", reviewScope: "uncommitted" })
+					}
+				}
+				return
+			}
+			// kilocode_change end
+
 			// Check if we need to switch modes
 			if (suggestion.mode) {
 				// Only switch modes if it's a manual click (event exists) or auto-approval is allowed
@@ -1389,7 +1425,15 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 				setInputValue(preservedInput)
 			}
 		},
-		[handleSendMessage, setInputValue, switchToMode, alwaysAllowModeSwitch, clineAsk, markFollowUpAsAnswered],
+		[
+			handleSendMessage,
+			setInputValue,
+			switchToMode,
+			alwaysAllowModeSwitch,
+			clineAsk,
+			markFollowUpAsAnswered,
+			setMode,
+		],
 	)
 
 	const handleBatchFileResponse = useCallback((response: { [key: string]: boolean }) => {
