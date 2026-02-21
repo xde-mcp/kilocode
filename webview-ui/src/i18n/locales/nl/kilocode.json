@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "Hoe wil je beginnen?",
+		"freeModels": {
+			"title": "Gratis modellen",
+			"description": "Begin direct met coderen"
+		},
+		"premiumModels": {
+			"title": "Premium modellen",
+			"description": "Meld je aan. Nieuwe gebruikers ontvangen $5 tegoed"
+		},
+		"byok": {
+			"title": "Gebruik je eigen sleutel",
+			"description": "Geavanceerd. Gebruik je eigen account of abonnement"
+		}
+	},
 	"welcome": {
 		"greeting": "Welkom bij Kilo Code!",
 		"introText1": "Kilo Code is een gratis, open source AI coding agent.",
@@ -30,6 +45,11 @@
 		"title": "Je moet inloggen om het {{modelId}} model te gebruiken",
 		"message": "Log in of maak een account aan om toegang te krijgen tot meer dan 500 modellen, gebruik credits tegen kostprijs of breng je eigen sleutel mee.",
 		"loginButton": "Inloggen"
+	},
+	"promotionError": {
+		"title": "Je moet je aanmelden om verder te gaan",
+		"message": "Meld je gratis aan om verder te gaan en 500 andere modellen te ontdekken. Duurt 2 minuten, geen creditcard nodig. Of kom later terug.",
+		"signUpButton": "Aanmelden"
 	},
 	"pricing": {
 		"costUnknown": "kosten onbekend",
@@ -234,7 +254,7 @@
 			"idea7": "Maak een rustgevend interactief sterrenveld dat beweegt met muisgebaren"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "Autocomplete",
 		"settings": {
 			"codeEditorSuggestions": "Code Editor Suggesties",

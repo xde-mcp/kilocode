@@ -5,7 +5,7 @@ import { GoogleAuth, JWTInput } from "google-auth-library"
 import {
 	type ModelInfo,
 	type VertexModelId,
-	vertexDefaultModelId,
+	normalizeVertexModelId,
 	vertexModels,
 	ANTHROPIC_DEFAULT_MAX_TOKENS,
 	TOOL_PROTOCOL,
@@ -113,7 +113,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			model: id,
 			max_tokens: maxTokens ?? ANTHROPIC_DEFAULT_MAX_TOKENS,
 			temperature,
-			thinking,
+			thinking: thinking as Anthropic.Messages.ThinkingConfigParam | undefined, // kilocode_change
 			// Cache the system prompt if caching is enabled.
 			system: supportsPromptCache
 				? [{ text: systemPrompt, type: "text" as const, cache_control: { type: "ephemeral" } }]
@@ -223,8 +223,10 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 
 	getModel() {
 		const modelId = this.options.apiModelId
-		let id = modelId && modelId in vertexModels ? (modelId as VertexModelId) : vertexDefaultModelId
+		// kilocode_change start
+		let id: VertexModelId = modelId ? normalizeVertexModelId(modelId) : normalizeVertexModelId("")
 		let info: ModelInfo = vertexModels[id]
+		// kilocode_change end
 
 		// Check if 1M context beta should be enabled for supported models
 		const supports1MContext = VERTEX_1M_CONTEXT_MODEL_IDS.includes(
@@ -257,6 +259,17 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 			betas.push("context-1m-2025-08-07")
 		}
 
+		// kilocode_change start
+		if (params.reasoning?.type === "adaptive") {
+			betas.push(
+				"adaptive-thinking-2026-01-28",
+				"interleaved-thinking-2025-05-14",
+				"effort-2025-11-24",
+				"max-effort-2026-01-24",
+			)
+		}
+		// kilocode_change end
+
 		// The `:thinking` suffix indicates that the model is a "Hybrid"
 		// reasoning model and that reasoning is required to be enabled.
 		// The actual model ID honored by Anthropic's API does not have this
@@ -283,7 +296,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 				model: id,
 				max_tokens: maxTokens,
 				temperature,
-				thinking,
+				thinking: thinking as Anthropic.Messages.ThinkingConfigParam | undefined, // kilocode_change
 				messages: [
 					{
 						role: "user",

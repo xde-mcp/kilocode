@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "Com vols començar?",
+		"freeModels": {
+			"title": "Models gratuïts",
+			"description": "Comença a programar immediatament"
+		},
+		"premiumModels": {
+			"title": "Models premium",
+			"description": "Registra't. Els nous usuaris reben 5 $ en crèdits"
+		},
+		"byok": {
+			"title": "Porta la teva pròpia clau",
+			"description": "Avançat. Utilitza el teu propi compte o subscripció"
+		}
+	},
 	"welcome": {
 		"greeting": "Benvingut a Kilo Code!",
 		"introText1": "Kilo Code és un agent de codificació d'IA gratuït i de codi obert.",
@@ -23,6 +38,11 @@
 		"title": "Has d'iniciar sessió per utilitzar el model {{modelId}}",
 		"message": "Inicia sessió o crea un compte per accedir a més de 500 models, utilitzar crèdits a preu de cost o portar la teva pròpia clau.",
 		"loginButton": "Iniciar Sessió"
+	},
+	"promotionError": {
+		"title": "Has de registrar-te per continuar",
+		"message": "Registra't gratuïtament per continuar i explorar 500 models més. Només 2 minuts, sense targeta de crèdit. O torna més tard.",
+		"signUpButton": "Registrar-se"
 	},
 	"pricing": {
 		"costUnknown": "cost desconegut",
@@ -221,7 +241,7 @@
 			"idea7": "Crea un camp d'estrelles interactiu i tranquil que es mogui amb gestos del ratolí"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "Autocomplete",
 		"settings": {
 			"codeEditorSuggestions": "Suggeriments de l'Editor de Codi",

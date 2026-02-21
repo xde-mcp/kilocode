@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "¿Cómo te gustaría empezar?",
+		"freeModels": {
+			"title": "Modelos gratuitos",
+			"description": "Empieza a programar de inmediato"
+		},
+		"premiumModels": {
+			"title": "Modelos premium",
+			"description": "Regístrate. Los nuevos usuarios reciben 5 $ en créditos"
+		},
+		"byok": {
+			"title": "Usa tu propia clave",
+			"description": "Avanzado. Usa tu propia cuenta o suscripción"
+		}
+	},
 	"welcome": {
 		"greeting": "¡Bienvenido a Kilo Code!",
 		"introText1": "Kilo Code es un agente de codificación de IA gratuito y de código abierto.",
@@ -23,6 +38,11 @@
 		"title": "Necesitas iniciar sesión para usar el modelo {{modelId}}",
 		"message": "Inicia sesión o crea una cuenta para acceder a más de 500 modelos, usar créditos a precio de coste o traer tu propia clave.",
 		"loginButton": "Iniciar Sesión"
+	},
+	"promotionError": {
+		"title": "Necesitas registrarte para continuar",
+		"message": "Regístrate gratis para continuar y explorar 500 modelos más. Solo 2 minutos, sin tarjeta de crédito. O vuelve más tarde.",
+		"signUpButton": "Registrarse"
 	},
 	"pricing": {
 		"costUnknown": "costo desconocido",
@@ -228,7 +248,7 @@
 			"idea7": "Crea un campo de estrellas interactivo y relajante que se mueva con gestos del ratón"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "Autocompletado",
 		"settings": {
 			"codeEditorSuggestions": "Sugerencias del Editor de Código",
