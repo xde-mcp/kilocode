@@ -1147,6 +1147,7 @@ export class ExtensionHost extends EventEmitter {
 		this.broadcastStateUpdate()
 	}
 
+	// kilocode_change start
 	/**
 	 * Inject secrets (e.g. OAuth credentials) into the extension context's SecretStorage.
 	 * Used by the agent process so that providers like OpenAI Codex can access credentials
@@ -1163,6 +1164,7 @@ export class ExtensionHost extends EventEmitter {
 			keys: Object.keys(secrets),
 		})
 	}
+	// kilocode_change end
 
 	/**
 	 * Write task history files to local storage so showTaskWithId can load them.
