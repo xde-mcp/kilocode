@@ -37,6 +37,7 @@ export { VirtualQuotaFallbackHandler } from "./virtual-quota-fallback"
 export { SyntheticHandler } from "./synthetic"
 export { InceptionLabsHandler } from "./inception"
 export { SapAiCoreHandler } from "./sap-ai-core"
+export { AihubmixHandler } from "./aihubmix"
 export { ApertisHandler } from "./apertis"
 // kilocode_change end
 export { VsCodeLmHandler } from "./vscode-lm"

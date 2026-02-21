@@ -54,6 +54,7 @@ import {
 	cerebrasDefaultModelId,
 	nanoGptDefaultModelId, //kilocode_change
 	apertisDefaultModelId, // kilocode_change
+	aihubmixDefaultModelId, // kilocode_change
 	ovhCloudAiEndpointsDefaultModelId,
 	inceptionDefaultModelId,
 	minimaxModels,
@@ -316,6 +317,12 @@ export const getModelsByProvider = ({
 				defaultModel: nanoGptDefaultModelId,
 			}
 		}
+		case "aihubmix": {
+			return {
+				models: routerModels.aihubmix,
+				defaultModel: aihubmixDefaultModelId,
+			}
+		}
 		//kilocode_change end
 		case "minimax": {
 			return {
@@ -371,7 +378,7 @@ export const getOptionsForProvider = (provider: ProviderName, apiConfiguration?:
 				isChina:
 					apiConfiguration?.zaiApiLine === "china_coding" || apiConfiguration?.zaiApiLine === "china_api",
 			}
-			// kilocode_change end
+		// kilocode_change end
 		default:
 			return {}
 	}

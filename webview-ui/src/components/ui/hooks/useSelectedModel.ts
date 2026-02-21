@@ -578,6 +578,11 @@ function getSelectedModel({
 			}
 			return { id, info }
 		}
+		case "aihubmix": {
+			const id = getValidatedModelId(apiConfiguration.aihubmixModelId, routerModels.aihubmix, defaultModelId)
+			const info = routerModels.aihubmix?.[id]
+			return { id, info }
+		}
 		case "zenmux": {
 			const id = getValidatedModelId(apiConfiguration.zenmuxModelId, routerModels.zenmux, defaultModelId)
 			const info = routerModels.zenmux?.[id]

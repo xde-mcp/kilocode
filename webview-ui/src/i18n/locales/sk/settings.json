@@ -347,6 +347,8 @@
 		"apiKeyStorageNotice": "Kľúče API sú bezpečne uložené v tajnom úložisku VSCode",
 		"glamaApiKey": "Kľúč API Glama",
 		"getGlamaApiKey": "Získať kľúč API Glama",
+		"aihubmixApiKey": "Kľúč API AIhubmix",
+		"getAihubmixApiKey": "Získať kľúč API AIhubmix",
 		"openAiCodexRateLimits": {
 			"title": "Limity využitia pre Codex{{planLabel}}",
 			"loading": "Načítanie limitov využitia...",

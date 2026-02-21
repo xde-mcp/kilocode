@@ -65,6 +65,7 @@ export const dynamicProviders = [
 	"requesty",
 	"unbound",
 	"glama", // kilocode_change
+	"aihubmix", // kilocode_change
 	"roo",
 	"chutes",
 	"nano-gpt", //kilocode_change
@@ -547,6 +548,13 @@ const fireworksSchema = apiModelIdProviderModelSchema.extend({
 const syntheticSchema = apiModelIdProviderModelSchema.extend({
 	syntheticApiKey: z.string().optional(),
 })
+
+const aihubmixSchema = baseProviderSettingsSchema.extend({
+	aihubmixApiKey: z.string().optional(),
+	aihubmixBaseUrl: z.string().optional(),
+	aihubmixModelId: z.string().optional(),
+	aihubmixModelInfo: modelInfoSchema.optional(),
+})
 // kilocode_change end
 
 const featherlessSchema = apiModelIdProviderModelSchema.extend({
@@ -630,6 +638,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	virtualQuotaFallbackSchema.merge(z.object({ apiProvider: z.literal("virtual-quota-fallback") })),
 	syntheticSchema.merge(z.object({ apiProvider: z.literal("synthetic") })),
 	inceptionSchema.merge(z.object({ apiProvider: z.literal("inception") })),
+	aihubmixSchema.merge(z.object({ apiProvider: z.literal("aihubmix") })),
 	// kilocode_change end
 	groqSchema.merge(z.object({ apiProvider: z.literal("groq") })),
 	basetenSchema.merge(z.object({ apiProvider: z.literal("baseten") })),
@@ -673,6 +682,7 @@ export const providerSettingsSchema = z.object({
 	...syntheticSchema.shape,
 	...ovhcloudSchema.shape,
 	...inceptionSchema.shape,
+	...aihubmixSchema.shape,
 	// kilocode_change end
 	...openAiCodexSchema.shape,
 	...openAiNativeSchema.shape,
@@ -745,6 +755,7 @@ export const modelIdKeys = [
 	"inceptionLabsModelId", // kilocode_change
 	"sapAiCoreModelId", // kilocode_change
 	"apertisModelId", // kilocode_change
+	"aihubmixModelId", // kilocode_change
 ] as const satisfies readonly (keyof ProviderSettings)[]
 
 export type ModelIdKey = (typeof modelIdKeys)[number]
@@ -792,6 +803,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	ovhcloud: "ovhCloudAiEndpointsModelId",
 	inception: "inceptionLabsModelId",
 	"sap-ai-core": "sapAiCoreModelId",
+	aihubmix: "aihubmixModelId",
 	apertis: "apertisModelId",
 	zenmux: "zenmuxModelId", // kilocode_change
 	// kilocode_change end
@@ -968,6 +980,7 @@ export const MODELS_BY_PROVIDER: Record<
 	inception: { id: "inception", label: "Inception", models: [] },
 	kilocode: { id: "kilocode", label: "Kilocode", models: [] },
 	"virtual-quota-fallback": { id: "virtual-quota-fallback", label: "Virtual Quota Fallback", models: [] },
+	aihubmix: { id: "aihubmix", label: "AIhubmix", models: [] },
 	apertis: { id: "apertis", label: "Apertis", models: [] },
 	zenmux: { id: "zenmux", label: "ZenMux", models: [] }, // kilocode_change
 	// kilocode_change end

@@ -364,6 +364,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				litellm: mockModels,
 				kilocode: mockModels,
 				"nano-gpt": mockModels, // kilocode_change
+				aihubmix: mockModels, // kilocode_change
 				roo: mockModels,
 				chutes: mockModels,
 				zenmux: mockModels,
@@ -475,6 +476,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				litellm: {},
 				kilocode: mockModels,
 				"nano-gpt": mockModels, // kilocode_change
+				aihubmix: mockModels, // kilocode_change
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
 				"vercel-ai-gateway": mockModels,
@@ -510,6 +512,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockResolvedValueOnce(mockModels) // vercel-ai-gateway
 			.mockResolvedValueOnce(mockModels) // deepinfra
 			.mockResolvedValueOnce(mockModels) // nano-gpt // kilocode_change
+			.mockResolvedValueOnce(mockModels) // kilocode_change aihubmix
 			.mockResolvedValueOnce(mockModels) // kilocode_change ovhcloud
 			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change
 			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change
@@ -589,6 +592,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				// kilocode_change start
 				kilocode: mockModels,
 				"nano-gpt": mockModels,
+				aihubmix: mockModels, // kilocode_change
 				inception: {},
 				synthetic: {},
 				gemini: mockModels,
@@ -613,6 +617,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Vercel AI Gateway error")) // vercel-ai-gateway
 			.mockRejectedValueOnce(new Error("DeepInfra API error")) // deepinfra
 			.mockRejectedValueOnce(new Error("Nano-GPT API error")) // nano-gpt // kilocode_change
+			.mockRejectedValueOnce(new Error("Aihubmix API error")) // aihubmix // kilocode_change
 			.mockRejectedValueOnce(new Error("OVHcloud AI Endpoints error")) // ovhcloud // kilocode_change
 			.mockRejectedValueOnce(new Error("Inception API error")) // kilocode_change inception
 			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change synthetic
@@ -733,6 +738,12 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 		})
 
 		// kilocode_change start
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Aihubmix API error",
+			values: { provider: "aihubmix" },
+		})
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
