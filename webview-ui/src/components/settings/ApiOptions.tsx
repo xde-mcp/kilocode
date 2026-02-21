@@ -50,7 +50,7 @@ import {
 	deepInfraDefaultModelId,
 	minimaxDefaultModelId,
 	nanoGptDefaultModelId, //kilocode_change
-	poeDefaultModelId,
+	poeDefaultModelId, // kilocode_change
 } from "@roo-code/types"
 
 import { vscode } from "@src/utils/vscode"
@@ -127,7 +127,7 @@ import {
 	VercelAiGateway,
 	DeepInfra,
 	MiniMax,
-	Poe,
+	Poe, // kilocode_change
 } from "./providers"
 
 import { MODELS_BY_PROVIDER, PROVIDERS } from "./constants"
@@ -303,7 +303,7 @@ const ApiOptions = ({
 				selectedProvider === "deepinfra" ||
 				selectedProvider === "chutes" || // kilocode_change
 				selectedProvider === "synthetic" || // kilocode_change
-				selectedProvider === "poe" ||
+				selectedProvider === "poe" || // kilocode_change
 				selectedProvider === "roo"
 			) {
 				vscode.postMessage({ type: "requestRouterModels" })
@@ -722,6 +722,7 @@ const ApiOptions = ({
 			)}
 			{/* kilocode_change end */}
 
+			{/* kilocode_change start */}
 			{selectedProvider === "poe" && (
 				<Poe
 					apiConfiguration={apiConfiguration}
@@ -732,6 +733,7 @@ const ApiOptions = ({
 					modelValidationError={modelValidationError}
 				/>
 			)}
+			{/* kilocode_change end */}
 
 			{selectedProvider === "anthropic" && (
 				<Anthropic

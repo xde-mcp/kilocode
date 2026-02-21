@@ -33,7 +33,7 @@ export * from "./openai.js"
 export * from "./openai-codex.js"
 export * from "./openai-codex-rate-limits.js"
 export * from "./openrouter.js"
-export * from "./poe.js"
+export * from "./poe.js" // kilocode_change
 export * from "./qwen-code.js"
 export * from "./requesty.js"
 export * from "./roo.js"
@@ -70,7 +70,7 @@ import { mistralDefaultModelId } from "./mistral.js"
 import { moonshotDefaultModelId } from "./moonshot.js"
 import { openAiCodexDefaultModelId } from "./openai-codex.js"
 import { openRouterDefaultModelId } from "./openrouter.js"
-import { poeDefaultModelId } from "./poe.js"
+import { poeDefaultModelId } from "./poe.js" // kilocode_change
 import { qwenCodeDefaultModelId } from "./qwen-code.js"
 import { requestyDefaultModelId } from "./requesty.js"
 import { rooDefaultModelId } from "./roo.js"
@@ -99,8 +99,8 @@ export function getProviderDefaultModelId(
 	switch (provider) {
 		case "openrouter":
 			return openRouterDefaultModelId
-		case "poe":
-			return poeDefaultModelId
+		case "poe": // kilocode_change
+			return poeDefaultModelId // kilocode_change
 		case "zenmux": // kilocode_change
 			return zenmuxDefaultModelId // kilocode_change
 		case "requesty":

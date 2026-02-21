@@ -1037,10 +1037,12 @@ export const webviewMessageHandler = async (
 					key: "chutes",
 					options: { provider: "chutes", apiKey: apiConfiguration.chutesApiKey },
 				},
+				// kilocode_change start
 				{
 					key: "poe",
 					options: { provider: "poe", apiKey: apiConfiguration.poeApiKey },
 				},
+				// kilocode_change end
 				{
 					key: "zenmux",
 					options: {

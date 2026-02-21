@@ -89,7 +89,7 @@ describe("Model Validation Functions", () => {
 		// kilocode_change end
 		roo: {},
 		chutes: {},
-		poe: {},
+		poe: {}, // kilocode_change
 		zenmux: {},
 	}
 

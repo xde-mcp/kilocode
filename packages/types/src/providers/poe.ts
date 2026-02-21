@@ -1,3 +1,4 @@
+// kilocode_change - new file
 import type { ModelInfo } from "../model.js"
 
 export const POE_BASE_URL = "https://api.poe.com/v1/"

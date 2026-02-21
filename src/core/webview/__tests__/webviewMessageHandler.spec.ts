@@ -741,12 +741,14 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			values: { provider: "chutes" },
 		})
 
+		// kilocode_change start
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
 			success: false,
 			error: "Poe API error",
 			values: { provider: "poe" },
 		})
+		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",
