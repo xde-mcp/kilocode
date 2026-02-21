@@ -34,6 +34,25 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 		},
 	]
 
+	const createMockSseResponse = () => ({
+		ok: true,
+		body: new ReadableStream({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode('data: {"type":"response.text.delta","delta":"Hello"}\n\n'))
+				controller.enqueue(
+					new TextEncoder().encode('data: {"type":"response.text.delta","delta":" world"}\n\n'),
+				)
+				controller.enqueue(
+					new TextEncoder().encode(
+						'data: {"type":"response.done","response":{"usage":{"prompt_tokens":10,"completion_tokens":2}}}\n\n',
+					),
+				)
+				controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
+				controller.close()
+			},
+		}),
+	})
+
 	beforeEach(() => {
 		mockResponsesCreate.mockReset()
 		if ((global as any).fetch) {
@@ -63,26 +82,7 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 			openAiModelId: "gpt-4o",
 		} satisfies ApiHandlerOptions)
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			body: new ReadableStream({
-				start(controller) {
-					controller.enqueue(
-						new TextEncoder().encode('data: {"type":"response.text.delta","delta":"Hello"}\n\n'),
-					)
-					controller.enqueue(
-						new TextEncoder().encode('data: {"type":"response.text.delta","delta":" world"}\n\n'),
-					)
-					controller.enqueue(
-						new TextEncoder().encode(
-							'data: {"type":"response.done","response":{"usage":{"prompt_tokens":10,"completion_tokens":2}}}\n\n',
-						),
-					)
-					controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
-					controller.close()
-				},
-			}),
-		})
+		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
 		global.fetch = mockFetch as any
 
 		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
