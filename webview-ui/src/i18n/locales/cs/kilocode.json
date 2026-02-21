@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "Jak chceš začít?",
+		"freeModels": {
+			"title": "Bezplatné modely",
+			"description": "Začni programovat ihned"
+		},
+		"premiumModels": {
+			"title": "Prémiové modely",
+			"description": "Zaregistruj se. Noví uživatelé získají kredit 5 $"
+		},
+		"byok": {
+			"title": "Použij vlastní klíč",
+			"description": "Pokročilé. Použij svůj vlastní účet nebo předplatné"
+		}
+	},
 	"welcome": {
 		"greeting": "Vítej v Kilo Code!",
 		"introText1": "Kilo Code je bezplatný open source AI coding agent.",
@@ -30,6 +45,11 @@
 		"title": "Musíš se přihlásit, abys mohl použít model {{modelId}}",
 		"message": "Přihlaš se nebo si vytvoř účet pro přístup k více než 500 modelům, použij kredity za pořizovací cenu nebo přines svůj vlastní klíč.",
 		"loginButton": "Přihlásit se"
+	},
+	"promotionError": {
+		"title": "Pro pokračování se musíš zaregistrovat",
+		"message": "Zaregistruj se zdarma, pokračuj a prozkoumej 500 dalších modelů. Zabere to 2 minuty, bez kreditní karty. Nebo se vrať později.",
+		"signUpButton": "Registrovat se"
 	},
 	"pricing": {
 		"costUnknown": "neznámé náklady",
@@ -235,7 +255,7 @@
 		"xml": "XML",
 		"json": "JSON"
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "Autocomplete",
 		"settings": {
 			"enableAutoTrigger": {

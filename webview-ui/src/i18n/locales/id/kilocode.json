@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "Bagaimana Anda ingin memulai?",
+		"freeModels": {
+			"title": "Model gratis",
+			"description": "Mulai coding segera"
+		},
+		"premiumModels": {
+			"title": "Model premium",
+			"description": "Daftar. Pengguna baru mendapatkan kredit $5"
+		},
+		"byok": {
+			"title": "Gunakan kunci sendiri",
+			"description": "Lanjutan. Gunakan akun atau langganan Anda sendiri"
+		}
+	},
 	"welcome": {
 		"greeting": "Selamat datang di Kilo Code!",
 		"introText1": "Kilo Code adalah agen coding AI gratis dan open source.",
@@ -23,6 +38,11 @@
 		"title": "Kamu perlu masuk untuk menggunakan model {{modelId}}",
 		"message": "Masuk atau buat akun untuk mengakses lebih dari 500 model, gunakan kredit dengan harga biaya, atau bawa kunci milikmu sendiri.",
 		"loginButton": "Masuk"
+	},
+	"promotionError": {
+		"title": "Kamu perlu mendaftar untuk melanjutkan",
+		"message": "Daftar gratis untuk melanjutkan dan menjelajahi 500 model lainnya. Hanya 2 menit, tanpa kartu kredit. Atau kembali lagi nanti.",
+		"signUpButton": "Daftar"
 	},
 	"pricing": {
 		"costUnknown": "biaya tidak diketahui",
@@ -221,7 +241,7 @@
 			"idea7": "Buat starfield interaktif yang menenangkan yang bergerak dengan gerakan mouse"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "Autocomplete",
 		"settings": {
 			"codeEditorSuggestions": "Saran Editor Kode",

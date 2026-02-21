@@ -1,4 +1,19 @@
 {
+	"onboarding": {
+		"title": "你想如何开始？",
+		"freeModels": {
+			"title": "免费模型",
+			"description": "立即开始编程"
+		},
+		"premiumModels": {
+			"title": "高级模型",
+			"description": "注册。新用户可获得 5 美元额度"
+		},
+		"byok": {
+			"title": "使用自己的密钥",
+			"description": "高级选项。使用你自己的账户或订阅"
+		}
+	},
 	"welcome": {
 		"greeting": "欢迎使用 Kilo Code！",
 		"introText1": "Kilo Code 是一个免费的开源 AI 编程代理。",
@@ -30,6 +45,11 @@
 		"title": "你需要登录才能使用 {{modelId}} 模型",
 		"message": "登录或创建账号即可访问 500+ 模型,按成本价使用额度,或使用自己的 API 密钥。",
 		"loginButton": "登录"
+	},
+	"promotionError": {
+		"title": "需要注册才能继续",
+		"message": "免费注册以继续使用并探索 500 多个其他模型。只需 2 分钟，无需信用卡。或稍后再来。",
+		"signUpButton": "注册"
 	},
 	"pricing": {
 		"costUnknown": "费用未知",
@@ -235,7 +255,7 @@
 			"idea7": "创建一个宁静的交互式星空，跟随鼠标手势移动"
 		}
 	},
-	"ghost": {
+	"autocomplete": {
 		"title": "自动补全",
 		"settings": {
 			"codeEditorSuggestions": "代码编辑器建议",
