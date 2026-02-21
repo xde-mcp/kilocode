@@ -1692,23 +1692,21 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 			) : (
 				<div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 relative">
 					{/* Moved Task Bar Header Here */}
-					{taskHistoryFullLength !== 0 && (
-						<div className="flex text-vscode-descriptionForeground w-full mx-auto px-5 pt-3">
-							<div className="flex items-center gap-1 cursor-pointer" onClick={toggleExpanded}>
-								{taskHistoryFullLength < 10 && (
-									<span className={`font-medium text-xs `}>{t("history:recentTasks")}</span>
-								)}
-								<span
-									className={`codicon  ${isExpanded ? "codicon-eye" : "codicon-eye-closed"} scale-90`}
-								/>
+					<div className="flex items-center justify-between w-full mx-auto px-5 pt-3">
+						{taskHistoryFullLength !== 0 && (
+							<div className="flex text-vscode-descriptionForeground">
+								<div className="flex items-center gap-1 cursor-pointer" onClick={toggleExpanded}>
+									{taskHistoryFullLength < 10 && (
+										<span className={`font-medium text-xs `}>{t("history:recentTasks")}</span>
+									)}
+									<span
+										className={`codicon  ${isExpanded ? "codicon-eye" : "codicon-eye-closed"} scale-90`}
+									/>
+								</div>
 							</div>
-						</div>
-					)}
-					{!showTelemetryBanner && (
-						<div>
-							<OrganizationSelector className="absolute top-2 right-3" />
-						</div>
-					)}
+						)}
+						{!showTelemetryBanner && <OrganizationSelector className="w-40 shrink-0 ml-auto" />}
+					</div>
 					{/* kilocode_change start: changed the classes to support notifications */}
 					<div className="w-full h-full flex flex-col gap-4 px-3.5 transition-all duration-300">
 						{/* kilocode_change end */}
