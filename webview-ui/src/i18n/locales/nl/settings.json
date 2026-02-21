@@ -427,6 +427,8 @@
 		"groqApiKey": "Groq API-sleutel",
 		"getSambaNovaApiKey": "SambaNova API-sleutel ophalen",
 		"sambaNovaApiKey": "SambaNova API-sleutel",
+		"poeApiKey": "Poe API-sleutel",
+		"getPoeApiKey": "Poe API-sleutel ophalen",
 		"getGeminiApiKey": "Gemini API-sleutel ophalen",
 		"getHuggingFaceApiKey": "Hugging Face API-sleutel ophalen",
 		"huggingFaceApiKey": "Hugging Face API-sleutel",

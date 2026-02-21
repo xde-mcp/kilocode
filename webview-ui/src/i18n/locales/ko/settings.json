@@ -427,6 +427,8 @@
 		},
 		"getSambaNovaApiKey": "SambaNova API 키 받기",
 		"sambaNovaApiKey": "SambaNova API 키",
+		"poeApiKey": "Poe API 키",
+		"getPoeApiKey": "Poe API 키 받기",
 		"getGeminiApiKey": "Gemini API 키 받기",
 		"getHuggingFaceApiKey": "Hugging Face API 키 받기",
 		"huggingFaceApiKey": "Hugging Face API 키",

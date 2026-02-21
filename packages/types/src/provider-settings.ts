@@ -69,6 +69,7 @@ export const dynamicProviders = [
 	"roo",
 	"chutes",
 	"nano-gpt", //kilocode_change
+	"poe", // kilocode_change
 ] as const
 
 export type DynamicProvider = (typeof dynamicProviders)[number]
@@ -414,6 +415,13 @@ const deepInfraSchema = apiModelIdProviderModelSchema.extend({
 	deepInfraModelId: z.string().optional(),
 })
 
+// kilocode_change start
+const poeSchema = baseProviderSettingsSchema.extend({
+	poeApiKey: z.string().optional(),
+	poeModelId: z.string().optional(),
+})
+// kilocode_change end
+
 const doubaoSchema = apiModelIdProviderModelSchema.extend({
 	doubaoBaseUrl: z.string().optional(),
 	doubaoApiKey: z.string().optional(),
@@ -624,6 +632,7 @@ export const providerSettingsSchemaDiscriminated = z.discriminatedUnion("apiProv
 	mistralSchema.merge(z.object({ apiProvider: z.literal("mistral") })),
 	deepSeekSchema.merge(z.object({ apiProvider: z.literal("deepseek") })),
 	deepInfraSchema.merge(z.object({ apiProvider: z.literal("deepinfra") })),
+	poeSchema.merge(z.object({ apiProvider: z.literal("poe") })), // kilocode_change
 	doubaoSchema.merge(z.object({ apiProvider: z.literal("doubao") })),
 	moonshotSchema.merge(z.object({ apiProvider: z.literal("moonshot") })),
 	minimaxSchema.merge(z.object({ apiProvider: z.literal("minimax") })),
@@ -689,6 +698,7 @@ export const providerSettingsSchema = z.object({
 	...mistralSchema.shape,
 	...deepSeekSchema.shape,
 	...deepInfraSchema.shape,
+	...poeSchema.shape, // kilocode_change
 	...doubaoSchema.shape,
 	...moonshotSchema.shape,
 	...minimaxSchema.shape,
@@ -750,6 +760,7 @@ export const modelIdKeys = [
 	"ioIntelligenceModelId",
 	"vercelAiGatewayModelId",
 	"deepInfraModelId",
+	"poeModelId", // kilocode_change
 	"kilocodeModel",
 	"ovhCloudAiEndpointsModelId", // kilocode_change
 	"inceptionLabsModelId", // kilocode_change
@@ -793,6 +804,7 @@ export const modelIdKeysByProvider: Record<TypicalProvider, ModelIdKey> = {
 	minimax: "apiModelId",
 	deepseek: "apiModelId",
 	deepinfra: "deepInfraModelId",
+	poe: "poeModelId", // kilocode_change
 	doubao: "apiModelId",
 	"qwen-code": "apiModelId",
 	unbound: "unboundModelId",
@@ -985,6 +997,7 @@ export const MODELS_BY_PROVIDER: Record<
 	zenmux: { id: "zenmux", label: "ZenMux", models: [] }, // kilocode_change
 	// kilocode_change end
 	deepinfra: { id: "deepinfra", label: "DeepInfra", models: [] },
+	poe: { id: "poe", label: "Poe", models: [] }, // kilocode_change
 	"vercel-ai-gateway": { id: "vercel-ai-gateway", label: "Vercel AI Gateway", models: [] },
 	chutes: { id: "chutes", label: "Chutes AI", models: [] },
 

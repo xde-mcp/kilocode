@@ -419,6 +419,8 @@
 		"groqApiKey": "Groq API Anahtarı",
 		"getSambaNovaApiKey": "SambaNova API Anahtarı Al",
 		"sambaNovaApiKey": "SambaNova API Anahtarı",
+		"poeApiKey": "Poe API Anahtarı",
+		"getPoeApiKey": "Poe API Anahtarı Al",
 		"getHuggingFaceApiKey": "Hugging Face API Anahtarı Al",
 		"huggingFaceApiKey": "Hugging Face API Anahtarı",
 		"getOvhCloudAiEndpointsApiKey": "OVHcloud AI Endpoints API Anahtarı Al",

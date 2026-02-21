@@ -424,6 +424,8 @@
 		"groqApiKey": "Groq APIキー",
 		"getSambaNovaApiKey": "SambaNova APIキーを取得",
 		"sambaNovaApiKey": "SambaNova APIキー",
+		"poeApiKey": "Poe APIキー",
+		"getPoeApiKey": "Poe APIキーを取得",
 		"getHuggingFaceApiKey": "Hugging Face APIキーを取得",
 		"huggingFaceApiKey": "Hugging Face APIキー",
 		"getOvhCloudAiEndpointsApiKey": "OVHcloud AI Endpoints APIキーを取得",

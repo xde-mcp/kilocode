@@ -42,6 +42,7 @@ type ModelIdKey = keyof Pick<
 	| "nanoGptModelId"
 	| "ovhCloudAiEndpointsModelId"
 	| "inceptionLabsModelId"
+	| "poeModelId"
 	| "aihubmixModelId"
 	// kilocode_change end
 	| "deepInfraModelId"

@@ -278,6 +278,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
 				inceptionLabsApiKey: "inception-key",
 				inceptionLabsBaseUrl: "https://api.inceptionlabs.ai/v1/",
+				poeApiKey: "poe-key",
 				// kilocode_change end
 			},
 		})
@@ -332,6 +333,10 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			apiKey: "nano-gpt-key",
 			nanoGptModelList: undefined,
 		})
+		expect(mockGetModels).toHaveBeenCalledWith({
+			provider: "poe",
+			apiKey: "poe-key",
+		})
 		// kilocode_change end
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "vercel-ai-gateway" })
 		expect(mockGetModels).toHaveBeenCalledWith({ provider: "deepinfra" })
@@ -367,6 +372,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				aihubmix: mockModels, // kilocode_change
 				roo: mockModels,
 				chutes: mockModels,
+				poe: mockModels, // kilocode_change
 				zenmux: mockModels,
 				ollama: mockModels, // kilocode_change
 				lmstudio: {},
@@ -430,6 +436,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				ovhCloudAiEndpointsApiKey: "ovhcloud-key",
 				chutesApiKey: "chutes-key",
 				nanoGptApiKey: "nano-gpt-key",
+				poeApiKey: "poe-key",
 				// kilocode_change end
 				// Missing litellm config
 			},
@@ -472,6 +479,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				unbound: mockModels,
 				roo: mockModels,
 				chutes: mockModels,
+				poe: mockModels, // kilocode_change
 				zenmux: mockModels,
 				litellm: {},
 				kilocode: mockModels,
@@ -518,6 +526,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change
 			.mockResolvedValueOnce(mockModels) // roo
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes
+			.mockResolvedValueOnce(mockModels) // poe // kilocode_change
 			.mockResolvedValueOnce(mockModels) // zenmux
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
 
@@ -582,6 +591,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 				unbound: {},
 				roo: mockModels,
 				chutes: {},
+				poe: mockModels, // kilocode_change
 				zenmux: mockModels,
 				litellm: {},
 				ollama: {},
@@ -623,6 +633,7 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			.mockRejectedValueOnce(new Error("Synthetic API error")) // kilocode_change synthetic
 			.mockRejectedValueOnce(new Error("Roo API error")) // roo
 			.mockRejectedValueOnce(new Error("Chutes API error")) // chutes
+			.mockRejectedValueOnce(new Error("Poe API error")) // poe // kilocode_change
 			.mockResolvedValueOnce({}) // zenmux
 			.mockRejectedValueOnce(new Error("LiteLLM connection failed")) // litellm
 
@@ -729,6 +740,15 @@ describe("webviewMessageHandler - requestRouterModels", () => {
 			error: "Chutes API error",
 			values: { provider: "chutes" },
 		})
+
+		// kilocode_change start
+		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
+			type: "singleRouterModelFetchResponse",
+			success: false,
+			error: "Poe API error",
+			values: { provider: "poe" },
+		})
+		// kilocode_change end
 
 		expect(mockClineProvider.postMessageToWebview).toHaveBeenCalledWith({
 			type: "singleRouterModelFetchResponse",

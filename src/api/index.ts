@@ -11,6 +11,7 @@ import {
 	AwsBedrockHandler,
 	CerebrasHandler,
 	OpenRouterHandler,
+	PoeHandler, // kilocode_change
 	ZenMuxHandler, // kilocode_change
 	VertexHandler,
 	AnthropicVertexHandler,
@@ -191,6 +192,10 @@ export function buildApiHandler(configuration: ProviderSettings): ApiHandler {
 		// kilocode_change end
 		case "openrouter":
 			return new OpenRouterHandler(options)
+		// kilocode_change start
+		case "poe":
+			return new PoeHandler(options)
+		// kilocode_change end
 		case "zenmux": // kilocode_change
 			return new ZenMuxHandler(options) // kilocode_change
 		case "bedrock":

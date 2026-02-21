@@ -459,6 +459,8 @@
 		"groqApiKey": "Kľúč API Groq",
 		"getSambaNovaApiKey": "Získať kľúč API SambaNova",
 		"sambaNovaApiKey": "Kľúč API SambaNova",
+		"poeApiKey": "Kľúč API Poe",
+		"getPoeApiKey": "Získať kľúč API Poe",
 		"getGeminiApiKey": "Získať kľúč API Gemini",
 		"openAiApiKey": "Kľúč API OpenAI",
 		"getHuggingFaceApiKey": "Získať kľúč API Hugging Face",

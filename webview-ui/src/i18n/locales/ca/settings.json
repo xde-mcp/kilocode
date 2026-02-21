@@ -427,6 +427,8 @@
 		},
 		"getSambaNovaApiKey": "Obtenir clau API de SambaNova",
 		"sambaNovaApiKey": "Clau API de SambaNova",
+		"poeApiKey": "Clau API de Poe",
+		"getPoeApiKey": "Obtenir clau API de Poe",
 		"getHuggingFaceApiKey": "Obtenir clau API de Hugging Face",
 		"huggingFaceApiKey": "Clau API de Hugging Face",
 		"getOvhCloudAiEndpointsApiKey": "Obtenir clau API de OVHcloud AI Endpoints",

@@ -53,6 +53,7 @@ import {
 	cerebrasModels,
 	cerebrasDefaultModelId,
 	nanoGptDefaultModelId, //kilocode_change
+	poeDefaultModelId, //kilocode_change
 	apertisDefaultModelId, // kilocode_change
 	aihubmixDefaultModelId, // kilocode_change
 	ovhCloudAiEndpointsDefaultModelId,
@@ -255,6 +256,12 @@ export const getModelsByProvider = ({
 			}
 		}
 		// kilocode_change start
+		case "poe": {
+			return {
+				models: routerModels.poe,
+				defaultModel: poeDefaultModelId,
+			}
+		}
 		case "synthetic": {
 			return {
 				models: routerModels.synthetic,

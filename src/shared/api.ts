@@ -202,6 +202,7 @@ const dynamicProviderExtras = {
 	synthetic: {} as { apiKey?: string }, // kilocode_change
 	roo: {} as { apiKey?: string; baseUrl?: string },
 	chutes: {} as { apiKey?: string },
+	poe: {} as { apiKey?: string }, // kilocode_change
 	// kilocode_change start
 	"sap-ai-core": {} as {
 		sapAiCoreServiceKey?: string
