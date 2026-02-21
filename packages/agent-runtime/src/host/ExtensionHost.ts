@@ -1,7 +1,7 @@
 import { EventEmitter } from "events"
 import { createVSCodeAPIMock, type IdentityInfo, type ExtensionContext } from "./VSCode.js"
 import { logs } from "../utils/logger.js"
-import type { ExtensionMessage, WebviewMessage, ExtensionState, ModeConfig, HistoryItem } from "../types/index.js"
+import type { ExtensionMessage, WebviewMessage, ExtensionState, ModeConfig, HistoryItem } from "../types/index.js" // kilocode_change
 import { argsToMessage } from "../utils/safe-stringify.js"
 
 export interface ExtensionHostOptions {
@@ -1229,6 +1229,7 @@ export class ExtensionHost extends EventEmitter {
 			throw new Error("Cannot add history item: globalState not available")
 		}
 
+		// kilocode_change start
 		// Get existing task history
 		type ResumeHistoryItem = Partial<HistoryItem> & { mentionCount?: number } & Record<string, unknown>
 		const taskHistory = ((globalState.get("taskHistory") as ResumeHistoryItem[]) || []).slice()
@@ -1260,6 +1261,7 @@ export class ExtensionHost extends EventEmitter {
 			mentionCount: getExistingNumber(existingItem?.mentionCount) ?? 0,
 			isFavorited: getExistingBoolean(existingItem?.isFavorited) ?? false,
 		}
+		// kilocode_change end
 
 		if (existingIndex >= 0) {
 			// Update existing entry
