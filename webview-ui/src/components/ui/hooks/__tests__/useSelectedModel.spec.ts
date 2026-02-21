@@ -792,7 +792,8 @@ describe("useSelectedModel", () => {
 		})
 	})
 
-	describe("vertex provider", () => {
+		// kilocode_change start
+		describe("vertex provider", () => {
 		beforeEach(() => {
 			mockUseRouterModels.mockReturnValue({
 				data: {
@@ -827,9 +828,10 @@ describe("useSelectedModel", () => {
 			expect(result.current.id).toBe("claude-opus-4-6")
 			expect(result.current.info?.supportsImages).toBe(true)
 		})
-	})
+		})
+		// kilocode_change end
 
-	describe("litellm provider", () => {
+		describe("litellm provider", () => {
 		beforeEach(() => {
 			mockUseOpenRouterModelProviders.mockReturnValue({
 				data: {},

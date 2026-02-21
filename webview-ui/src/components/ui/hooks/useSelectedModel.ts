@@ -22,7 +22,7 @@ import {
 	openAiModelInfoSaneDefaults,
 	openAiNativeModels,
 	vertexModels,
-	normalizeVertexModelId,
+	normalizeVertexModelId, // kilocode_change
 	xaiModels,
 	groqModels,
 	vscodeLlmModels,
@@ -294,10 +294,12 @@ function getSelectedModel({
 			return { id, info: baseInfo }
 		}
 		case "vertex": {
+			// kilocode_change start
 			const rawId = apiConfiguration.apiModelId ?? defaultModelId
 			const id = normalizeVertexModelId(rawId)
 			const info = vertexModels[id as keyof typeof vertexModels]
 			return { id, info }
+			// kilocode_change end
 		}
 		// kilocode_change start
 		case "gemini": {

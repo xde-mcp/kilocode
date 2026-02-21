@@ -150,6 +150,7 @@ describe("VertexHandler", () => {
 			expect(modelInfo.info.contextWindow).toBe(1048576)
 		})
 
+		// kilocode_change start
 		it("should normalize legacy claude-opus-4-6 aliases", () => {
 			const testHandler = new VertexHandler({
 				apiModelId: "claude-opus-4-6@default",
@@ -161,6 +162,7 @@ describe("VertexHandler", () => {
 			expect(modelInfo.id).toBe("claude-opus-4-6")
 			expect(modelInfo.info.supportsImages).toBe(true)
 		})
+		// kilocode_change end
 
 		// kilocode_change start
 		it("should expose native tools metadata for gemini-3.1-pro-preview", () => {
@@ -176,5 +178,5 @@ describe("VertexHandler", () => {
 			expect(modelInfo.info.defaultToolProtocol).toBe("native")
 		})
 		// kilocode_change end
-		})
 	})
+})
