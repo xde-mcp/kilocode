@@ -2,6 +2,7 @@
 // npx vitest run api/providers/__tests__/openai-responses.spec.ts
 
 import { Anthropic } from "@anthropic-ai/sdk"
+import OpenAI, { AzureOpenAI } from "openai"
 
 import { OpenAiCompatibleResponsesHandler } from "../openai-responses"
 import { ApiHandlerOptions } from "../../../shared/api"
@@ -101,20 +102,27 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 		)
 	})
 
-	it("does not duplicate /v1 when base URL already includes /v1", async () => {
+	it("normalizes fallback URL without duplicating /v1", async () => {
 		const handler = new OpenAiCompatibleResponsesHandler({
 			openAiApiKey: "test-key",
 			openAiBaseUrl: "https://api.example.com/v1",
 			openAiModelId: "gpt-4o",
 		} satisfies ApiHandlerOptions)
 
-		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			body: new ReadableStream({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
+					controller.close()
+				},
+			}),
+		})
 		global.fetch = mockFetch as any
-
 		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
 
-		// Consume the stream to trigger the fallback API call
-		for await (const _chunk of handler.createMessage(systemPrompt, messages)) {
+		const stream = handler.createMessage(systemPrompt, messages)
+		for await (const _chunk of stream) {
 		}
 
 		expect(mockFetch).toHaveBeenCalledWith(
@@ -125,27 +133,124 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 		)
 	})
 
-	it("normalizes duplicate /v1 suffixes and trailing slashes", async () => {
+	it("rejects Azure AI Inference endpoints for Responses API", async () => {
 		const handler = new OpenAiCompatibleResponsesHandler({
 			openAiApiKey: "test-key",
-			openAiBaseUrl: "https://api.example.com/v1/v1///",
-			openAiModelId: "gpt-4o",
+			openAiBaseUrl: "https://myresource.services.ai.azure.com/models",
+			openAiModelId: "gpt-5.2-codex",
 		} satisfies ApiHandlerOptions)
 
-		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
-		global.fetch = mockFetch as any
+		const stream = handler.createMessage(systemPrompt, messages)
 
-		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
+		await expect(async () => {
+			for await (const _chunk of stream) {
+			}
+		}).rejects.toThrow("Azure AI Inference endpoints")
 
-		// Consume the stream to trigger the fallback API call
-		for await (const _chunk of handler.createMessage(systemPrompt, messages)) {
+		await expect(handler.completePrompt("Test prompt")).rejects.toThrow("Azure AI Inference endpoints")
+	})
+
+	it("does not pass chat-completions path override for Azure OpenAI Responses calls", async () => {
+		const handler = new OpenAiCompatibleResponsesHandler({
+			openAiApiKey: "test-key",
+			openAiBaseUrl: "https://myresource.openai.azure.com/openai/v1",
+			openAiUseAzure: true,
+			openAiModelId: "my-deployment",
+		} satisfies ApiHandlerOptions)
+
+		mockResponsesCreate.mockResolvedValueOnce({
+			[Symbol.asyncIterator]: async function* () {
+				yield { type: "response.text.delta", delta: "hello" }
+				yield {
+					type: "response.done",
+					response: {
+						usage: {
+							prompt_tokens: 1,
+							completion_tokens: 1,
+						},
+					},
+				}
+			},
+		})
+
+		const stream = handler.createMessage(systemPrompt, messages)
+		for await (const _chunk of stream) {
 		}
 
-		expect(mockFetch).toHaveBeenCalledWith(
-			"https://api.example.com/v1/responses",
+		expect(mockResponsesCreate).toHaveBeenCalledWith(
+			expect.any(Object),
 			expect.objectContaining({
-				method: "POST",
+				signal: expect.any(AbortSignal),
 			}),
 		)
+		const options = mockResponsesCreate.mock.calls[0][1]
+		expect(options.path).toBeUndefined()
+	})
+
+	it("uses Azure fallback auth and normalizes Azure deployment chat URL to /openai/v1/responses without api-version", async () => {
+		const handler = new OpenAiCompatibleResponsesHandler({
+			openAiApiKey: "test-key",
+			openAiBaseUrl:
+				"https://myresource.openai.azure.com/openai/deployments/my-deployment/chat/completions?api-version=2024-05-01-preview",
+			openAiUseAzure: true,
+			azureApiVersion: "2024-08-01-preview",
+			openAiModelId: "my-deployment",
+		} satisfies ApiHandlerOptions)
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			body: new ReadableStream({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
+					controller.close()
+				},
+			}),
+		})
+		global.fetch = mockFetch as any
+		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
+
+		const stream = handler.createMessage(systemPrompt, messages)
+		for await (const _chunk of stream) {
+		}
+
+		expect(mockFetch).toHaveBeenCalledTimes(1)
+		const [requestUrl, requestOptions] = mockFetch.mock.calls[0]
+		expect(requestUrl).toBe("https://myresource.openai.azure.com/openai/v1/responses")
+		expect(requestUrl).not.toContain("api-version=")
+		expect(requestOptions.headers["api-key"]).toBe("test-key")
+		expect(requestOptions.headers.Authorization).toBeUndefined()
+	})
+
+	it("normalizes cognitiveservices Azure endpoint to /openai/v1/responses without api-version", async () => {
+		const handler = new OpenAiCompatibleResponsesHandler({
+			openAiApiKey: "test-key",
+			openAiBaseUrl: "https://myresource.cognitiveservices.azure.com",
+			openAiUseAzure: true,
+			azureApiVersion: "2024-08-01-preview",
+			openAiModelId: "my-deployment",
+		} satisfies ApiHandlerOptions)
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			body: new ReadableStream({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
+					controller.close()
+				},
+			}),
+		})
+		global.fetch = mockFetch as any
+		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
+
+		const stream = handler.createMessage(systemPrompt, messages)
+		for await (const _chunk of stream) {
+		}
+
+		expect(mockFetch).toHaveBeenCalledTimes(1)
+		const [requestUrl, requestOptions] = mockFetch.mock.calls[0]
+		expect(requestUrl).toBe("https://myresource.cognitiveservices.azure.com/openai/v1/responses")
+		expect(requestUrl).not.toContain("api-version=")
+		expect(requestOptions.headers["api-key"]).toBe("test-key")
+		expect(requestOptions.headers.Authorization).toBeUndefined()
 	})
 })
