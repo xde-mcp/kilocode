@@ -8,7 +8,6 @@ This is a pnpm monorepo using Turbo for task orchestration:
 
 - **`src/`** - VSCode extension (core logic, API providers, tools)
 - **`webview-ui/`** - React frontend (chat UI, settings)
-- **`cli/`** - Standalone CLI package
 - **`packages/`** - Shared packages (`types`, `ipc`, `telemetry`, `cloud`)
 - **`jetbrains/`** - JetBrains plugin (Kotlin + Node.js host)
 - **`apps/`** - E2E tests, Storybook, docs
@@ -28,7 +27,7 @@ The `@kilocode/agent-runtime` package enables running Kilo Code agents as isolat
 
 ```
 ┌─────────────────────┐     fork()      ┌─────────────────────┐
-│  CLI / Manager      │ ───────────────▶│  Agent Process      │
+│  Agent Manager      │ ───────────────▶│  Agent Process      │
 │                     │◀───── IPC ─────▶│  (extension host)   │
 └─────────────────────┘                 └─────────────────────┘
 ```
@@ -45,34 +44,34 @@ Agents are forked processes configured via the `AGENT_CONFIG` environment variab
 import { fork } from "child_process"
 
 const agent = fork(require.resolve("@kilocode/agent-runtime/process"), [], {
-  env: {
-    AGENT_CONFIG: JSON.stringify({
-      workspace: "/path/to/project",
-      providerSettings: { apiProvider: "anthropic", apiKey: "..." },
-      mode: "code",
-      autoApprove: false,
-    }),
-  },
-  stdio: ["pipe", "pipe", "pipe", "ipc"],
+	env: {
+		AGENT_CONFIG: JSON.stringify({
+			workspace: "/path/to/project",
+			providerSettings: { apiProvider: "anthropic", apiKey: "..." },
+			mode: "code",
+			autoApprove: false,
+		}),
+	},
+	stdio: ["pipe", "pipe", "pipe", "ipc"],
 })
 
 agent.on("message", (msg) => {
-  if (msg.type === "ready") {
-    agent.send({ type: "sendMessage", payload: { type: "newTask", text: "Fix the bug" } })
-  }
+	if (msg.type === "ready") {
+		agent.send({ type: "sendMessage", payload: { type: "newTask", text: "Fix the bug" } })
+	}
 })
 ```
 
 ### Message Protocol
 
-| Direction | Type | Description |
-|-----------|------|-------------|
-| Parent → Agent | `sendMessage` | Send user message to extension |
+| Direction      | Type           | Description                    |
+| -------------- | -------------- | ------------------------------ |
+| Parent → Agent | `sendMessage`  | Send user message to extension |
 | Parent → Agent | `injectConfig` | Update extension configuration |
-| Parent → Agent | `shutdown` | Gracefully terminate agent |
-| Agent → Parent | `ready` | Agent initialized |
-| Agent → Parent | `message` | Extension message |
-| Agent → Parent | `stateChange` | State updated |
+| Parent → Agent | `shutdown`     | Gracefully terminate agent     |
+| Agent → Parent | `ready`        | Agent initialized              |
+| Agent → Parent | `message`      | Extension message              |
+| Agent → Parent | `stateChange`  | State updated                  |
 
 ### Detecting Agent Context
 
@@ -80,7 +79,7 @@ Code running in agent processes can check for the `AGENT_CONFIG` environment var
 
 ```typescript
 if (process.env.AGENT_CONFIG) {
-  // Running as spawned agent - disable worker pools, etc.
+	// Running as spawned agent - disable worker pools, etc.
 }
 ```
 
@@ -93,7 +92,7 @@ The Agent Manager follows a **read-shared, write-isolated** pattern:
 
 ```typescript
 fork(agentRuntimePath, [], {
-  env: { AGENT_CONFIG: JSON.stringify({ workspace, providerSettings, mode, sessionId }) }
+	env: { AGENT_CONFIG: JSON.stringify({ workspace, providerSettings, mode, sessionId }) },
 })
 ```
 
@@ -135,7 +134,6 @@ Brief description of the change
 ```
 
 - Use `patch` for fixes, `minor` for features, `major` for breaking changes
-- For CLI changes, use `"@kilocode/cli": patch` instead
 
 Keep changesets concise and feature-oriented as they appear directly in release notes.
 
@@ -176,11 +174,10 @@ const bar = 2
 
 Code in these directories is Kilo Code-specific and doesn't need markers:
 
-- `cli/` - CLI package
 - `jetbrains/` - JetBrains plugin
 - `agent-manager/` directories
 - Any path containing `kilocode` in filename or directory name
-- `src/services/ghost/` - Ghost service
+- `src/services/autocomplete/ - Autocomplete service
 
 ### When markers ARE needed
 
@@ -208,7 +205,6 @@ Keep changes to core extension code minimal to reduce merge conflicts during ups
     - Example: For `src/tests/user.spec.ts`, run `cd src && pnpm test tests/user.spec.ts` NOT `pnpm test src/tests/user.spec.ts`
     - **Test File Naming Convention**:
         - Monorepo default: `.spec.ts` / `.spec.tsx`
-        - CLI package exception: `.test.ts` / `.test.tsx` (match existing CLI convention)
 
 2. Lint Rules:
 

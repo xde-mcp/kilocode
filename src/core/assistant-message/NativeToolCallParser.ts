@@ -16,7 +16,7 @@ import type {
 	ApiStreamToolCallDeltaChunk,
 	ApiStreamToolCallEndChunk,
 } from "../../api/transform/stream"
-import { MCP_TOOL_PREFIX, MCP_TOOL_SEPARATOR, parseMcpToolName } from "../../utils/mcp-name"
+import { MCP_TOOL_PREFIX, MCP_TOOL_SEPARATOR, parseMcpToolName, normalizeMcpToolName } from "../../utils/mcp-name"
 
 /**
  * Helper type to extract properly typed native arguments for a given tool.
@@ -52,13 +52,14 @@ export type ToolCallStreamEvent = ApiStreamToolCallStartChunk | ApiStreamToolCal
  */
 export class NativeToolCallParser {
 	// Streaming state management for argument accumulation (keyed by tool call id)
-	// Note: name is string to accommodate dynamic MCP tools (mcp_serverName_toolName)
+	// Note: name is string to accommodate dynamic MCP tools (mcp--serverName--toolName)
 	private static streamingToolCalls = new Map<
 		string,
 		{
 			id: string
 			name: string
 			argumentsAccumulator: string
+			extra_content?: Record<string, unknown> // kilocode_change
 		}
 	>()
 
@@ -70,6 +71,7 @@ export class NativeToolCallParser {
 			name: string
 			hasStarted: boolean
 			deltaBuffer: string[]
+			extra_content?: Record<string, unknown> // kilocode_change
 		}
 	>()
 
@@ -85,9 +87,14 @@ export class NativeToolCallParser {
 		id?: string
 		name?: string
 		arguments?: string
+		extra_content?: Record<string, unknown> // kilocode_change
 	}): ToolCallStreamEvent[] {
 		const events: ToolCallStreamEvent[] = []
-		const { index, id, name, arguments: args } = chunk
+		// kilocode_change start: Some providers (e.g. MiniMax) return tool call id as a number; coerce to string.
+		const { index, id: rawId, name, arguments: args, extra_content } = chunk
+
+		const id = rawId != null ? String(rawId) : undefined
+		// kilocode_change end
 
 		let tracked = this.rawChunkTracker.get(index)
 
@@ -98,6 +105,7 @@ export class NativeToolCallParser {
 				name: name || "",
 				hasStarted: false,
 				deltaBuffer: [],
+				extra_content, // kilocode_change
 			}
 			this.rawChunkTracker.set(index, tracked)
 		}
@@ -111,12 +119,19 @@ export class NativeToolCallParser {
 			tracked.name = name
 		}
 
+		// kilocode_change start: Update extra_content if present (Gemini 3 sends it once in the first chunk)
+		if (extra_content) {
+			tracked.extra_content = extra_content
+		}
+		// kilocode_change end
+
 		// Emit start event when we have the name
 		if (!tracked.hasStarted && tracked.name) {
 			events.push({
 				type: "tool_call_start",
 				id: tracked.id,
 				name: tracked.name,
+				extra_content: tracked.extra_content, // kilocode_change
 			})
 			tracked.hasStarted = true
 
@@ -199,14 +214,17 @@ export class NativeToolCallParser {
 	/**
 	 * Start streaming a new tool call.
 	 * Initializes tracking for incremental argument parsing.
-	 * Accepts string to support both ToolName and dynamic MCP tools (mcp_serverName_toolName).
+	 * Accepts string to support both ToolName and dynamic MCP tools (mcp--serverName--toolName).
 	 */
-	public static startStreamingToolCall(id: string, name: string): void {
+	// kilocode_change start: extra_content parameter for Gemini 3 thought_signature support
+	public static startStreamingToolCall(id: string, name: string, extra_content?: Record<string, unknown>): void {
 		this.streamingToolCalls.set(id, {
 			id,
 			name,
 			argumentsAccumulator: "",
+			extra_content,
 		})
+		// kilocode_change end
 	}
 
 	/**
@@ -289,6 +307,7 @@ export class NativeToolCallParser {
 			id: toolCall.id,
 			name: toolCall.name as ToolName,
 			arguments: toolCall.argumentsAccumulator,
+			extra_content: toolCall.extra_content, // kilocode_change
 		})
 
 		// Clean up streaming state
@@ -592,12 +611,19 @@ export class NativeToolCallParser {
 		id: string
 		name: TName
 		arguments: string
+		extra_content?: Record<string, unknown> // kilocode_change
 	}): ToolUse<TName> | McpToolUse | null {
 		// Check if this is a dynamic MCP tool (mcp--serverName--toolName)
+		// Also handle models that output underscores instead of hyphens (mcp__serverName__toolName)
 		const mcpPrefix = MCP_TOOL_PREFIX + MCP_TOOL_SEPARATOR
 
-		if (typeof toolCall.name === "string" && toolCall.name.startsWith(mcpPrefix)) {
-			return this.parseDynamicMcpTool(toolCall)
+		if (typeof toolCall.name === "string") {
+			// Normalize the tool name to handle models that output underscores instead of hyphens
+			const normalizedName = normalizeMcpToolName(toolCall.name)
+			if (normalizedName.startsWith(mcpPrefix)) {
+				// Pass the original tool call but with normalized name for parsing
+				return this.parseDynamicMcpTool({ ...toolCall, name: normalizedName })
+			}
 		}
 
 		// Resolve tool alias to canonical name
@@ -866,8 +892,6 @@ export class NativeToolCallParser {
 				default:
 					if (customToolRegistry.has(resolvedName)) {
 						nativeArgs = args as NativeArgsFor<TName>
-					} else {
-						console.error(`Unhandled tool: ${resolvedName}`)
 					}
 
 					break
@@ -885,6 +909,12 @@ export class NativeToolCallParser {
 			if (toolCall.name !== resolvedName) {
 				result.originalName = toolCall.name
 			}
+
+			// kilocode_change start: Preserve extra_content for Gemini 3 thought_signature support
+			if (toolCall.extra_content) {
+				result.extra_content = toolCall.extra_content
+			}
+			// kilocode_change end
 
 			return result
 		} catch (error) {
@@ -906,16 +936,25 @@ export class NativeToolCallParser {
 	 * their original name so it appears correctly in API conversation history.
 	 * The use_mcp_tool wrapper is only used in XML mode.
 	 */
-	public static parseDynamicMcpTool(toolCall: { id: string; name: string; arguments: string }): McpToolUse | null {
+	public static parseDynamicMcpTool(toolCall: {
+		id: string
+		name: string
+		arguments: string
+		extra_content?: Record<string, unknown> // kilocode_change
+	}): McpToolUse | null {
 		try {
 			// Parse the arguments - these are the actual tool arguments passed directly
 			const args = JSON.parse(toolCall.arguments || "{}")
 
+			// Normalize the tool name to handle models that output underscores instead of hyphens
+			// e.g., mcp__serverName__toolName -> mcp--serverName--toolName
+			const normalizedName = normalizeMcpToolName(toolCall.name)
+
 			// Extract server_name and tool_name from the tool name itself
 			// Format: mcp--serverName--toolName (using -- separator)
-			const parsed = parseMcpToolName(toolCall.name)
+			const parsed = parseMcpToolName(normalizedName)
 			if (!parsed) {
-				console.error(`Invalid dynamic MCP tool name format: ${toolCall.name}`)
+				console.error(`Invalid dynamic MCP tool name format: ${toolCall.name} (normalized: ${normalizedName})`)
 				return null
 			}
 
@@ -931,6 +970,12 @@ export class NativeToolCallParser {
 				arguments: args,
 				partial: false,
 			}
+
+			// kilocode_change start: Preserve extra_content for Gemini 3 thought_signature support
+			if (toolCall.extra_content) {
+				result.extra_content = toolCall.extra_content
+			}
+			// kilocode_change end
 
 			return result
 		} catch (error) {

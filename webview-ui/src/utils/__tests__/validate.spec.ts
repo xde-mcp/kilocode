@@ -1,6 +1,4 @@
-import type { ProviderSettings, OrganizationAllowList } from "@roo-code/types"
-
-import { RouterModels } from "@roo/api"
+import type { ProviderSettings, OrganizationAllowList, RouterModels } from "@roo-code/types"
 
 // Mock i18next to return translation keys with interpolated values
 vi.mock("i18next", () => ({
@@ -81,15 +79,18 @@ describe("Model Validation Functions", () => {
 		"vercel-ai-gateway": {},
 		huggingface: {},
 		// kilocode_change start
+		apertis: {},
 		ovhcloud: {},
 		gemini: {},
 		inception: {},
 		synthetic: {},
 		"sap-ai-core": {},
+		aihubmix: {},
 		// kilocode_change end
 		roo: {},
 		chutes: {},
 		poe: {},
+		zenmux: {},
 	}
 
 	const allowAllOrganization: OrganizationAllowList = {

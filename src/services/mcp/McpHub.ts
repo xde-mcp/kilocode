@@ -1,3 +1,7 @@
+import * as fs from "fs/promises"
+import * as path from "path"
+
+import * as vscode from "vscode"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
@@ -13,24 +17,24 @@ import {
 import chokidar, { FSWatcher } from "chokidar"
 import delay from "delay"
 import deepEqual from "fast-deep-equal"
-import * as fs from "fs/promises"
-import * as path from "path"
-import * as vscode from "vscode"
 import { z } from "zod"
-import { t } from "../../i18n"
 
-import { ClineProvider } from "../../core/webview/ClineProvider"
-import { GlobalFileNames } from "../../shared/globalFileNames"
-import {
-	McpAuthDebugInfo,
-	McpAuthStatus,
+import type {
 	McpResource,
 	McpResourceResponse,
 	McpResourceTemplate,
 	McpServer,
 	McpTool,
 	McpToolCallResponse,
-} from "../../shared/mcp"
+} from "@roo-code/types"
+
+import { McpAuthStatus, McpAuthDebugInfo } from "../../shared/mcp" // kilocode_change
+import { t } from "../../i18n"
+
+import { ClineProvider } from "../../core/webview/ClineProvider"
+
+import { GlobalFileNames } from "../../shared/globalFileNames"
+
 import { fileExistsAtPath } from "../../utils/fs"
 import { arePathsEqual, getWorkspacePath } from "../../utils/path"
 import { injectVariables } from "../../utils/config"
@@ -1770,7 +1774,17 @@ export class McpHub {
 				} catch (error) {
 					this.showErrorMessage(`Failed to connect to new MCP server ${name}`, error)
 				}
-			} else if (!deepEqual(JSON.parse(currentConnection.server.config), config)) {
+			} else if (
+				/* kilocode_change start */
+				!deepEqual(
+					JSON.parse(currentConnection.server.config),
+					await injectVariables(validatedConfig, {
+						env: process.env,
+						workspaceFolder: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? "",
+					}),
+				)
+				/* kilocode_change end */
+			) {
 				// Existing server with changed config
 				try {
 					// Only setup file watcher for enabled servers
@@ -2560,16 +2574,16 @@ export class McpHub {
 	async dispose(): Promise<void> {
 		// Prevent multiple disposals
 		if (this.isDisposed) {
-			console.log("McpHub: Already disposed.")
 			return
 		}
-		console.log("McpHub: Disposing...")
+
 		this.isDisposed = true
 
 		// Clear all debounce timers
 		for (const timer of this.configChangeDebounceTimers.values()) {
 			clearTimeout(timer)
 		}
+
 		this.configChangeDebounceTimers.clear()
 
 		// Clear flag reset timer and reset programmatic update flag
@@ -2577,16 +2591,18 @@ export class McpHub {
 			clearTimeout(this.flagResetTimer)
 			this.flagResetTimer = undefined
 		}
-		this.isProgrammaticUpdate = false
 
-		// kilocode_change - Clear all reconnect timers
+		this.isProgrammaticUpdate = false
+		// kilocode_change start: - Clear all reconnect timers
 		for (const timer of this.reconnectTimers.values()) {
 			clearTimeout(timer)
 		}
 		this.reconnectTimers.clear()
 		this.reconnectAttempts.clear()
+		// kilocode_change end
 
 		this.removeAllFileWatchers()
+
 		for (const connection of this.connections) {
 			try {
 				await this.deleteConnection(connection.server.name, connection.server.source)
@@ -2594,15 +2610,19 @@ export class McpHub {
 				console.error(`Failed to close connection for ${connection.server.name}:`, error)
 			}
 		}
+
 		this.connections = []
+
 		if (this.settingsWatcher) {
 			this.settingsWatcher.dispose()
 			this.settingsWatcher = undefined
 		}
+
 		if (this.projectMcpWatcher) {
 			this.projectMcpWatcher.dispose()
 			this.projectMcpWatcher = undefined
 		}
+
 		this.disposables.forEach((d) => d.dispose())
 	}
 }

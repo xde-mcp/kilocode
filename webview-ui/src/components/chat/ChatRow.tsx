@@ -4,12 +4,19 @@ import { useTranslation, Trans } from "react-i18next"
 import deepEqual from "fast-deep-equal"
 import { VSCodeBadge } from "@vscode/webview-ui-toolkit/react"
 
-import type { ClineMessage, FollowUpData, SuggestionItem } from "@roo-code/types"
+import type {
+	ClineMessage,
+	FollowUpData,
+	SuggestionItem,
+	ClineApiReqInfo,
+	ClineAskUseMcpServer,
+	ClineSayTool,
+} from "@roo-code/types"
+
 import { Mode } from "@roo/modes"
 
-import { ClineApiReqInfo, ClineAskUseMcpServer, ClineSayTool } from "@roo/ExtensionMessage"
 import { COMMAND_OUTPUT_STRING } from "@roo/combineCommandSequences"
-import { safeJsonParse } from "@roo/safeJsonParse"
+import { safeJsonParse } from "@roo/core"
 
 import { useExtensionState } from "@src/context/ExtensionStateContext"
 import { findMatchingResourceOrTemplate } from "@src/utils/mcp"
@@ -66,6 +73,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SeeNewChangesButtons } from "./kilocode/SeeNewChangesButtons"
 import { PathTooltip } from "../ui/PathTooltip"
+import { OpenMarkdownPreviewButton } from "./OpenMarkdownPreviewButton"
 
 // kilocode_change start
 import { LowCreditWarning } from "../kilocode/chat/LowCreditWarning"
@@ -74,10 +82,12 @@ import { KiloChatRowGutterBar } from "../kilocode/chat/KiloChatRowGutterBar"
 import { StandardTooltip } from "../ui"
 import { FastApplyChatDisplay } from "./kilocode/FastApplyChatDisplay"
 import { InvalidModelWarning } from "../kilocode/chat/InvalidModelWarning"
+import { UnauthorizedWarning } from "../kilocode/chat/UnauthorizedWarning"
 import { formatFileSize } from "@/lib/formatting-utils"
 import ChatTimestamps from "./ChatTimestamps"
 import { removeLeadingNonAlphanumeric } from "@/utils/removeLeadingNonAlphanumeric"
 import { KILOCODE_TOKEN_REQUIRED_ERROR } from "@roo/kilocode/errorUtils"
+import { PromotionWarning } from "../kilocode/chat/PromotionWarning"
 // kilocode_change end
 
 // Helper function to get previous todos before a specific message
@@ -426,7 +436,7 @@ export const ChatRowContent = ({
 		display: "flex",
 		alignItems: "center",
 		gap: "10px",
-		marginBottom: "10px",
+		marginBottom: "4px", // kilocode_change
 		wordBreak: "break-word",
 	}
 
@@ -447,6 +457,16 @@ export const ChatRowContent = ({
 		}
 		return null
 	}, [message.type, message.ask, message.partial, message.text])
+
+	// kilocode_change start - Parse completion suggestions from completion_result ask
+	const completionSuggestions = useMemo(() => {
+		if (message.type === "ask" && message.ask === "completion_result" && !message.partial && message.text) {
+			const parsed = safeJsonParse<{ suggest?: SuggestionItem[] }>(message.text)
+			return parsed?.suggest
+		}
+		return undefined
+	}, [message.type, message.ask, message.partial, message.text])
+	// kilocode_change end
 
 	if (tool) {
 		const toolIcon = (name: string) => (
@@ -1249,7 +1269,8 @@ export const ChatRowContent = ({
 									// }
 								} else {
 									body = t("chat:apiRequest.errorMessage.unknown")
-									docsURL = "mailto:support@roocode.com?subject=Unknown API Error"
+									docsURL =
+										"mailto:support@roocode.com?subject=Unknown API Error&body=[Please include full error details]"
 								}
 							} else if (message.text.indexOf("Connection error") === 0) {
 								body = t("chat:apiRequest.errorMessage.connection")
@@ -1320,10 +1341,12 @@ export const ChatRowContent = ({
 					return null // we should never see this message type
 				case "text":
 					return (
-						<div>
+						<div className="group">
 							<div style={headerStyle}>
 								<MessageCircle className="w-4 shrink-0" aria-label="Speech bubble icon" />
 								<span style={{ fontWeight: "bold" }}>{t("chat:text.rooSaid")}</span>
+								<div style={{ flexGrow: 1 }} />
+								<OpenMarkdownPreviewButton markdown={message.text} />
 							</div>
 							<div className="pl-6">
 								<Markdown markdown={message.text} partial={message.partial} />
@@ -1350,7 +1373,7 @@ export const ChatRowContent = ({
 									isEditing ? "overflow-visible" : "overflow-hidden", // kilocode_change
 									isEditing
 										? "bg-vscode-editor-background text-vscode-editor-foreground"
-										: "cursor-text p-1 bg-vscode-editor-foreground/70 text-vscode-editor-background",
+										: "cursor-text p-1 bg-vscode-editor-background text-vscode-editor-foreground border-vscode-editorGroup-border", // kilocode_change
 								)}>
 								{isEditing ? (
 									<div className="flex flex-col gap-2">
@@ -1478,17 +1501,20 @@ export const ChatRowContent = ({
 					}
 
 					// Fallback for generic errors
-					return <ErrorRow type="error" message={message.text || t("chat:error")} />
+					return (
+						<ErrorRow type="error" message={message.text || t("chat:error")} errorDetails={message.text} />
+					)
 				case "completion_result":
 					const commitRange = message.metadata?.kiloCode?.commitRange
 					return (
-						<>
+						<div className="group">
 							<div style={headerStyle}>
 								{icon}
 								{/* kilocode_change start */}
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
 									{title}
 									{showTimestamps && <ChatTimestamps ts={message.ts} />}
+									<OpenMarkdownPreviewButton markdown={message.text} />
 								</div>
 								{/* kilocode_change end */}
 							</div>
@@ -1504,7 +1530,7 @@ export const ChatRowContent = ({
 								)
 								// kilocode_change end
 							}
-						</>
+						</div>
 					)
 				case "shell_integration_warning":
 					return <CommandExecutionError />
@@ -1719,7 +1745,7 @@ export const ChatRowContent = ({
 		case "ask":
 			switch (message.ask) {
 				case "mistake_limit_reached":
-					return <ErrorRow type="mistake_limit" message={message.text || ""} />
+					return <ErrorRow type="mistake_limit" message={message.text || ""} errorDetails={message.text} />
 				case "command":
 					return (
 						<CommandExecution
@@ -1789,12 +1815,33 @@ export const ChatRowContent = ({
 						</>
 					)
 				case "completion_result":
+					// kilocode_change start - Render completion suggestions when available
+					if (completionSuggestions && completionSuggestions.length > 0) {
+						return (
+							<div className="flex flex-col gap-2 ml-6">
+								<FollowUpSuggest
+									suggestions={completionSuggestions}
+									onSuggestionClick={onSuggestionClick}
+									ts={message?.ts}
+								/>
+							</div>
+						)
+					}
+					// kilocode_change - Guard: don't render structured JSON payloads as markdown.
+					// If the text is valid JSON (i.e. our suggestion payload) but has no suggestions
+					// to display, suppress rendering rather than showing raw JSON.
+					if (message.text && safeJsonParse(message.text) !== undefined) {
+						return null
+					}
+					// kilocode_change end
 					if (message.text) {
 						return (
-							<div>
+							<div className="group">
 								<div style={headerStyle}>
 									{icon}
 									{title}
+									<div style={{ flexGrow: 1 }} />
+									<OpenMarkdownPreviewButton markdown={message.text} />
 								</div>
 								<div style={{ color: "var(--vscode-charts-green)", paddingTop: 10 }}>
 									<Markdown markdown={message.text} partial={message.partial} />
@@ -1854,12 +1901,13 @@ export const ChatRowContent = ({
 					)
 
 				case "payment_required_prompt": {
-					return (
-						<LowCreditWarning
-							message={message}
-							isOrganization={!!apiConfiguration.kilocodeOrganizationId}
-						/>
-					)
+					return <LowCreditWarning message={message} />
+				}
+				case "unauthorized_prompt": {
+					return <UnauthorizedWarning message={message} />
+				}
+				case "promotion_model_sign_up_required_prompt": {
+					return <PromotionWarning message={message} />
 				}
 				case "invalid_model": {
 					return <InvalidModelWarning message={message} isLast={isLast} />
