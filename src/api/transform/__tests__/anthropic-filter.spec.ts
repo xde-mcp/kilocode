@@ -32,6 +32,7 @@ describe("anthropic-filter", () => {
 			expect(result).toEqual(messages)
 		})
 
+		// kilocode_change start
 		it("should strip non-Anthropic top-level fields like reasoning_details", () => {
 			const messages: Anthropic.Messages.MessageParam[] = [
 				{
@@ -53,6 +54,7 @@ describe("anthropic-filter", () => {
 				{ role: "assistant", content: [{ type: "text", text: "World" }] },
 			])
 		})
+		// kilocode_change end
 
 		it("should pass through messages with valid Anthropic blocks", () => {
 			const messages: Anthropic.Messages.MessageParam[] = [
