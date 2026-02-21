@@ -22,6 +22,7 @@ import {
 	openAiModelInfoSaneDefaults,
 	openAiNativeModels,
 	vertexModels,
+	normalizeVertexModelId, // kilocode_change
 	xaiModels,
 	groqModels,
 	vscodeLlmModels,
@@ -293,9 +294,12 @@ function getSelectedModel({
 			return { id, info: baseInfo }
 		}
 		case "vertex": {
-			const id = apiConfiguration.apiModelId ?? defaultModelId
+			// kilocode_change start
+			const rawId = apiConfiguration.apiModelId ?? defaultModelId
+			const id = normalizeVertexModelId(rawId)
 			const info = vertexModels[id as keyof typeof vertexModels]
 			return { id, info }
+			// kilocode_change end
 		}
 		// kilocode_change start
 		case "gemini": {
@@ -424,6 +428,13 @@ function getSelectedModel({
 			const info = routerModels.deepinfra?.[id]
 			return { id, info }
 		}
+		// kilocode_change start
+		case "poe": {
+			const id = getValidatedModelId(apiConfiguration.poeModelId, routerModels.poe, defaultModelId)
+			const info = routerModels.poe?.[id]
+			return { id, info }
+		}
+		// kilocode_change end
 		case "vscode-lm": {
 			const id = apiConfiguration?.vsCodeLmModelSelector
 				? `${apiConfiguration.vsCodeLmModelSelector.vendor}/${apiConfiguration.vsCodeLmModelSelector.family}`
@@ -578,6 +589,11 @@ function getSelectedModel({
 			}
 			return { id, info }
 		}
+		case "aihubmix": {
+			const id = getValidatedModelId(apiConfiguration.aihubmixModelId, routerModels.aihubmix, defaultModelId)
+			const info = routerModels.aihubmix?.[id]
+			return { id, info }
+		}
 		case "zenmux": {
 			const id = getValidatedModelId(apiConfiguration.zenmuxModelId, routerModels.zenmux, defaultModelId)
 			const info = routerModels.zenmux?.[id]
@@ -595,11 +611,14 @@ function getSelectedModel({
 			// Apply 1M context beta tier pricing for Claude Sonnet 4
 			if (
 				provider === "anthropic" &&
-				(id === "claude-sonnet-4-20250514" || id === "claude-sonnet-4-5") &&
+				(id === "claude-sonnet-4-20250514" ||
+					id === "claude-sonnet-4-5" ||
+					id === "claude-sonnet-4-6" ||
+					id === "claude-opus-4-6") &&
 				apiConfiguration.anthropicBeta1MContext &&
 				baseInfo
 			) {
-				// Type assertion since we know claude-sonnet-4-20250514 and claude-sonnet-4-5 have tiers
+				// Type assertion since supported Claude 4 models include 1M context pricing tiers.
 				const modelWithTiers = baseInfo as typeof baseInfo & {
 					tiers?: Array<{
 						contextWindow: number
