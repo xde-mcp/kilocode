@@ -427,6 +427,8 @@
 		"groqApiKey": "Groq API Key",
 		"getSambaNovaApiKey": "Dapatkan SambaNova API Key",
 		"sambaNovaApiKey": "SambaNova API Key",
+		"poeApiKey": "Poe API Key",
+		"getPoeApiKey": "Dapatkan Poe API Key",
 		"getHuggingFaceApiKey": "Dapatkan Kunci API Hugging Face",
 		"huggingFaceApiKey": "Kunci API Hugging Face",
 		"getOvhCloudAiEndpointsApiKey": "Dapatkan Kunci API OVHcloud AI Endpoints",

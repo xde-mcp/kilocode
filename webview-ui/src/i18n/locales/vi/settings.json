@@ -427,6 +427,8 @@
 		"groqApiKey": "Khóa API Groq",
 		"getSambaNovaApiKey": "Lấy khóa API SambaNova",
 		"sambaNovaApiKey": "Khóa API SambaNova",
+		"poeApiKey": "Khóa API Poe",
+		"getPoeApiKey": "Lấy khóa API Poe",
 		"getHuggingFaceApiKey": "Lấy Khóa API Hugging Face",
 		"huggingFaceApiKey": "Khóa API Hugging Face",
 		"getOvhCloudAiEndpointsApiKey": "Lấy Khóa API OVHcloud AI Endpoints",

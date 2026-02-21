@@ -427,6 +427,8 @@
 		"groqApiKey": "Groq API कुंजी",
 		"getSambaNovaApiKey": "SambaNova API कुंजी प्राप्त करें",
 		"sambaNovaApiKey": "SambaNova API कुंजी",
+		"poeApiKey": "Poe API कुंजी",
+		"getPoeApiKey": "Poe API कुंजी प्राप्त करें",
 		"getHuggingFaceApiKey": "Hugging Face API कुंजी प्राप्त करें",
 		"huggingFaceApiKey": "Hugging Face API कुंजी",
 		"getOvhCloudAiEndpointsApiKey": "OVHcloud AI Endpoints API कुंजी प्राप्त करें",

@@ -608,6 +608,8 @@
 		"getZaiApiKey": "Отримати ключ API Z.AI",
 		"sambaNovaApiKey": "Ключ API SambaNova",
 		"getSambaNovaApiKey": "Отримати ключ API SambaNova",
+		"poeApiKey": "Ключ API Poe",
+		"getPoeApiKey": "Отримати ключ API Poe",
 		"nanoGptApiKey": "Ключ API Nano-GPT",
 		"getNanoGptApiKey": "Отримати ключ API Nano-GPT",
 		"nanoGptModelList": "Список моделей",

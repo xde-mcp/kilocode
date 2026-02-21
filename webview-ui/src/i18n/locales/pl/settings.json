@@ -419,6 +419,8 @@
 		"groqApiKey": "Klucz API Groq",
 		"getSambaNovaApiKey": "Uzyskaj klucz API SambaNova",
 		"sambaNovaApiKey": "Klucz API SambaNova",
+		"poeApiKey": "Klucz API Poe",
+		"getPoeApiKey": "Uzyskaj klucz API Poe",
 		"getGeminiApiKey": "Uzyskaj klucz API Gemini",
 		"getHuggingFaceApiKey": "Uzyskaj klucz API Hugging Face",
 		"huggingFaceApiKey": "Klucz API Hugging Face",
