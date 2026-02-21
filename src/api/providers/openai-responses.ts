@@ -286,8 +286,7 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 
 	private async *makeResponsesApiRequest(requestBody: any): ApiStream {
 		const apiKey = this.options.openAiApiKey ?? "not-provided"
-		const baseUrl = this.options.openAiBaseUrl || "https://api.openai.com"
-		const url = `${baseUrl}/v1/responses`
+		const url = this.getResponsesApiUrl()
 
 		this.abortController = new AbortController()
 
@@ -557,5 +556,18 @@ export class OpenAiCompatibleResponsesHandler extends BaseProvider implements Si
 	protected _isAzureAiInference(baseUrl?: string): boolean {
 		const urlHost = this._getUrlHost(baseUrl)
 		return urlHost.endsWith(".services.ai.azure.com")
+	}
+
+	private getResponsesApiUrl(): string {
+		const configuredBaseUrl = this.options.openAiBaseUrl?.trim()
+		const baseUrl = configuredBaseUrl && configuredBaseUrl.length > 0 ? configuredBaseUrl : "https://api.openai.com"
+
+		const normalizedBaseUrl = baseUrl
+			.replace(/\/+$/, "")
+			// Some OpenAI-compatible providers are configured with a /v1 suffix.
+			// Collapse repeated trailing /v1 segments so we always send one /v1/responses path.
+			.replace(/(?:\/v1)+$/i, "")
+
+		return `${normalizedBaseUrl}/v1/responses`
 	}
 }

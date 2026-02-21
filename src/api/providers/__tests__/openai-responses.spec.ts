@@ -33,6 +33,25 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 		},
 	]
 
+	const createMockSseResponse = () => ({
+		ok: true,
+		body: new ReadableStream({
+			start(controller) {
+				controller.enqueue(new TextEncoder().encode('data: {"type":"response.text.delta","delta":"Hello"}\n\n'))
+				controller.enqueue(
+					new TextEncoder().encode('data: {"type":"response.text.delta","delta":" world"}\n\n'),
+				)
+				controller.enqueue(
+					new TextEncoder().encode(
+						'data: {"type":"response.done","response":{"usage":{"prompt_tokens":10,"completion_tokens":2}}}\n\n',
+					),
+				)
+				controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
+				controller.close()
+			},
+		}),
+	})
+
 	beforeEach(() => {
 		mockResponsesCreate.mockReset()
 		if ((global as any).fetch) {
@@ -62,26 +81,7 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 			openAiModelId: "gpt-4o",
 		} satisfies ApiHandlerOptions)
 
-		const mockFetch = vi.fn().mockResolvedValue({
-			ok: true,
-			body: new ReadableStream({
-				start(controller) {
-					controller.enqueue(
-						new TextEncoder().encode('data: {"type":"response.text.delta","delta":"Hello"}\n\n'),
-					)
-					controller.enqueue(
-						new TextEncoder().encode('data: {"type":"response.text.delta","delta":" world"}\n\n'),
-					)
-					controller.enqueue(
-						new TextEncoder().encode(
-							'data: {"type":"response.done","response":{"usage":{"prompt_tokens":10,"completion_tokens":2}}}\n\n',
-						),
-					)
-					controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"))
-					controller.close()
-				},
-			}),
-		})
+		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
 		global.fetch = mockFetch as any
 
 		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
@@ -93,6 +93,54 @@ describe("OpenAiCompatibleResponsesHandler", () => {
 		}
 
 		expect(chunks.filter((chunk) => chunk.type === "text").map((c) => c.text)).toEqual(["Hello", " world"])
+		expect(mockFetch).toHaveBeenCalledWith(
+			"https://api.example.com/v1/responses",
+			expect.objectContaining({
+				method: "POST",
+			}),
+		)
+	})
+
+	it("does not duplicate /v1 when base URL already includes /v1", async () => {
+		const handler = new OpenAiCompatibleResponsesHandler({
+			openAiApiKey: "test-key",
+			openAiBaseUrl: "https://api.example.com/v1",
+			openAiModelId: "gpt-4o",
+		} satisfies ApiHandlerOptions)
+
+		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
+		global.fetch = mockFetch as any
+
+		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
+
+		// Consume the stream to trigger the fallback API call
+		for await (const _chunk of handler.createMessage(systemPrompt, messages)) {
+		}
+
+		expect(mockFetch).toHaveBeenCalledWith(
+			"https://api.example.com/v1/responses",
+			expect.objectContaining({
+				method: "POST",
+			}),
+		)
+	})
+
+	it("normalizes duplicate /v1 suffixes and trailing slashes", async () => {
+		const handler = new OpenAiCompatibleResponsesHandler({
+			openAiApiKey: "test-key",
+			openAiBaseUrl: "https://api.example.com/v1/v1///",
+			openAiModelId: "gpt-4o",
+		} satisfies ApiHandlerOptions)
+
+		const mockFetch = vi.fn().mockResolvedValue(createMockSseResponse())
+		global.fetch = mockFetch as any
+
+		mockResponsesCreate.mockRejectedValue(new Error("SDK not available"))
+
+		// Consume the stream to trigger the fallback API call
+		for await (const _chunk of handler.createMessage(systemPrompt, messages)) {
+		}
+
 		expect(mockFetch).toHaveBeenCalledWith(
 			"https://api.example.com/v1/responses",
 			expect.objectContaining({
