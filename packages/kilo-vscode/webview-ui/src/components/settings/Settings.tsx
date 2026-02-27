@@ -22,6 +22,7 @@ import { useServer } from "../../context/server"
 
 export interface SettingsProps {
   onBack?: () => void
+  onMigrateClick?: () => void // legacy-migration
 }
 
 const Settings: Component<SettingsProps> = (props) => {
@@ -107,6 +108,37 @@ const Settings: Component<SettingsProps> = (props) => {
             <Icon name="help" />
             {language.t("settings.aboutKiloCode.title")}
           </Tabs.Trigger>
+          {/* legacy-migration start */}
+          <div
+            style={{
+              padding: "8px 12px 4px",
+              "border-top": "1px solid var(--vscode-panel-border)",
+              "margin-top": "4px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => props.onMigrateClick?.()}
+              style={{
+                display: "flex",
+                "align-items": "center",
+                gap: "6px",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                color: "var(--vscode-foreground)",
+                cursor: "pointer",
+                "font-size": "12px",
+                padding: "4px 0",
+                opacity: "0.8",
+                "text-align": "left",
+              }}
+            >
+              <Icon name="arrow-right" />
+              {language.t("settings.legacyMigration.link")}
+            </button>
+          </div>
+          {/* legacy-migration end */}
         </Tabs.List>
 
         <Tabs.Content value="providers">

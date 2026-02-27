@@ -500,7 +500,7 @@ export interface DeviceAuthCancelledMessage {
 
 export interface NavigateMessage {
   type: "navigate"
-  view: "newTask" | "marketplace" | "history" | "cloudHistory" | "profile" | "settings"
+  view: "newTask" | "marketplace" | "history" | "cloudHistory" | "profile" | "settings" | "migration" // legacy-migration
 }
 
 export interface ProvidersLoadedMessage {
@@ -773,6 +773,78 @@ export interface AgentManagerSendInitialMessage {
   files?: Array<{ mime: string; url: string }>
 }
 
+// legacy-migration start
+export interface MigrationProviderInfo {
+  profileName: string
+  provider: string
+  model?: string
+  hasApiKey: boolean
+  supported: boolean
+  newProviderName?: string
+}
+
+export interface MigrationMcpServerInfo {
+  name: string
+  type: string
+}
+
+export interface MigrationCustomModeInfo {
+  name: string
+  slug: string
+}
+
+export interface MigrationResultItem {
+  item: string
+  category: "provider" | "mcpServer" | "customMode" | "defaultModel"
+  status: "success" | "warning" | "error"
+  message?: string
+}
+
+export interface LegacyMigrationDataMessage {
+  type: "legacyMigrationData"
+  data: {
+    providers: MigrationProviderInfo[]
+    mcpServers: MigrationMcpServerInfo[]
+    customModes: MigrationCustomModeInfo[]
+    defaultModel?: { provider: string; model: string }
+  }
+}
+
+export interface LegacyMigrationProgressMessage {
+  type: "legacyMigrationProgress"
+  item: string
+  status: "migrating" | "success" | "warning" | "error"
+  message?: string
+}
+
+export interface LegacyMigrationCompleteMessage {
+  type: "legacyMigrationComplete"
+  results: MigrationResultItem[]
+}
+
+export interface RequestLegacyMigrationDataMessage {
+  type: "requestLegacyMigrationData"
+}
+
+export interface StartLegacyMigrationMessage {
+  type: "startLegacyMigration"
+  selections: {
+    providers: string[]
+    mcpServers: string[]
+    customModes: string[]
+    defaultModel: boolean
+  }
+}
+
+export interface SkipLegacyMigrationMessage {
+  type: "skipLegacyMigration"
+}
+
+export interface ClearLegacyDataMessage {
+  type: "clearLegacyData"
+}
+// legacy-migration end
+
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
@@ -832,6 +904,11 @@ export type ExtensionMessage =
   | AgentManagerWorktreeDiffLoadingMessage
   | AgentManagerWorktreeStatsMessage
   | AgentManagerLocalStatsMessage
+  // legacy-migration start
+  | LegacyMigrationDataMessage
+  | LegacyMigrationProgressMessage
+  | LegacyMigrationCompleteMessage
+// legacy-migration end
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1315,6 +1392,12 @@ export type WebviewMessage =
   | RequestWorktreeDiffMessage
   | StartDiffWatchMessage
   | StopDiffWatchMessage
+  // legacy-migration start
+  | RequestLegacyMigrationDataMessage
+  | StartLegacyMigrationMessage
+  | SkipLegacyMigrationMessage
+  | ClearLegacyDataMessage
+// legacy-migration end
 
 // ============================================
 // VS Code API type
