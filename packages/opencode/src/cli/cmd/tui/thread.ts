@@ -260,7 +260,7 @@ export const TuiThreadCommand = cmd({
         url = server.url
       } else {
         // Use direct RPC communication (no HTTP)
-        url = "http://opencode.internal"
+        url = "http://kilo.internal"
         customFetch = createWorkerFetch(client)
         events = createEventSource(client)
       }
