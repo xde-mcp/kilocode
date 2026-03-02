@@ -4578,8 +4578,21 @@ export type KiloFimResponses = {
   /**
    * Streaming FIM completion response
    */
-  200: unknown
+  200: {
+    choices?: Array<{
+      delta?: {
+        content?: string
+      }
+    }>
+    usage?: {
+      prompt_tokens?: number
+      completion_tokens?: number
+    }
+    cost?: number
+  }
 }
+
+export type KiloFimResponse = KiloFimResponses[keyof KiloFimResponses]
 
 export type KiloNotificationsData = {
   body?: never

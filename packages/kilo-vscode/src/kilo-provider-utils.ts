@@ -1,4 +1,4 @@
-import type { Session, Agent, Provider, Event, ProviderListResponse } from "@kilocode/sdk/v2/client"
+import type { Session, Agent, Event, ProviderListResponse } from "@kilocode/sdk/v2/client"
 
 /** A single provider entry as returned by the /provider list endpoint. */
 export type ProviderInfo = ProviderListResponse["all"][number]

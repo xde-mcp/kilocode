@@ -95,18 +95,13 @@ export class AutocompleteModel {
     )
 
     for await (const chunk of stream) {
-      const event = chunk as {
-        choices?: Array<{ delta?: { content?: string } }>
-        usage?: { prompt_tokens?: number; completion_tokens?: number }
-        cost?: number
-      }
-      const content = event.choices?.[0]?.delta?.content
+      const content = chunk.choices?.[0]?.delta?.content
       if (content) onChunk(content)
-      if (event.usage) {
-        inputTokens = event.usage.prompt_tokens ?? 0
-        outputTokens = event.usage.completion_tokens ?? 0
+      if (chunk.usage) {
+        inputTokens = chunk.usage.prompt_tokens ?? 0
+        outputTokens = chunk.usage.completion_tokens ?? 0
       }
-      if (event.cost !== undefined) cost = event.cost
+      if (chunk.cost !== undefined) cost = chunk.cost
     }
 
     return {
