@@ -1,7 +1,7 @@
 /**
  * getToolInfo() return shape contract test.
  *
- * VscodeSessionTurn calls getToolInfo() from @kilocode/kilo-ui/message-part
+ * TaskToolExpanded calls getToolInfo() from @kilocode/kilo-ui/message-part
  * and relies on the returned ToolInfo having `icon` and `title` fields.
  *
  * This test verifies that the ToolInfo type exported from message-part.tsx

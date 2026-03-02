@@ -3,7 +3,7 @@
  *
  * The kilo-vscode webview overrides specific tool names in
  * VscodeToolOverrides.tsx (e.g. "bash") and TaskToolExpanded.tsx (e.g. "task").
- * VscodeSessionTurn also calls getToolInfo() from @kilocode/kilo-ui/message-part.
+ * VscodeSessionTurn imports Message/UserMessageDisplay from @kilocode/kilo-ui/message-part.
  *
  * This test verifies that the tool names we depend on are still registered
  * in the upstream ToolRegistry (message-part.tsx). If upstream removes or
@@ -22,7 +22,7 @@ const MESSAGE_PART_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/components/m
  * Sources:
  *   - VscodeToolOverrides.tsx: "bash"
  *   - TaskToolExpanded.tsx:    "task"
- *   - VscodeSessionTurn.tsx uses getToolInfo() which handles all of these
+ *   - TaskToolExpanded.tsx uses getToolInfo() which handles all of these
  */
 const TOOL_NAMES_WE_DEPEND_ON = ["bash", "task", "read", "write", "glob", "edit", "todowrite"]
 
