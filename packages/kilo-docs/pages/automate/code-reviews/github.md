@@ -17,7 +17,7 @@ Kilo's Code Reviews integrate with GitHub via a **GitHub App** to automatically 
 
 ### Step 1: Install the GitHub App
 
-Connect your GitHub account via the [Integrations page](../integrations#connecting-github). Once connected, return here to configure the Review Agent.
+Connect your GitHub account via the [Integrations page](/docs/automate/integrations#connecting-github). Once connected, return here to configure the Review Agent.
 
 The GitHub App requests the following permissions:
 

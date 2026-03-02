@@ -21,7 +21,7 @@ Both **GitLab.com** and **self-hosted GitLab instances** are supported.
 
 ### Step 1: Connect GitLab
 
-Connect your GitLab account via the [Integrations page](../integrations#connecting-gitlab). You can use **OAuth** (GitLab.com or self-hosted) or a **Personal Access Token (PAT)**.
+Connect your GitLab account via the [Integrations page](/docs/automate/integrations#connecting-gitlab). You can use **OAuth** (GitLab.com or self-hosted) or a **Personal Access Token (PAT)**.
 
 Once connected, return here to configure the Review Agent.
 
