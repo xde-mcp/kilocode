@@ -65,31 +65,34 @@ jobs:
         run: bun run build-storybook
         working-directory: packages/kilo-ui
 
-      - name: Generate missing baselines and run visual regression tests
-        run: |
-          # Write any missing platform-specific baselines (new stories, first run on linux, etc.)
-          bun run test:visual:update
-          # Compare — runs against the files now on disk; will pass if rendering is stable
-          bun run test:visual
+      - name: Generate baselines for new/missing stories
+        run: bun run test:visual:update
         working-directory: packages/kilo-ui
         env:
           CI: true
           PLAYWRIGHT_WORKERS: "4"
 
       - name: Commit and push new baselines (if any)
-        # Run even if tests fail so we can inspect what changed
-        if: always()
+        id: commit-baselines
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add packages/kilo-ui/tests/visual-regression.spec.ts-snapshots/
           if git diff --cached --quiet; then
             echo "No new baselines — nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "chore: add visual regression baselines for $(uname -s | tr '[:upper:]' '[:lower:]')"
+            git commit -m "chore: update visual regression baselines"
             git lfs push --all origin
             git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Fail if baselines changed
+        if: steps.commit-baselines.outputs.changed == 'true'
+        run: |
+          echo "::error::Visual regression baselines changed. New baselines have been committed to the branch. Please pull and review."
+          exit 1
 
       - name: Upload test results on failure
         if: failure()
