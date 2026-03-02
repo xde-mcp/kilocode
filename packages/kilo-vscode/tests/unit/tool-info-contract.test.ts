@@ -18,9 +18,9 @@ const MESSAGE_PART_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/components/m
 describe("getToolInfo() return shape contract", () => {
   it("getToolInfo still exports expected shape fields", () => {
     const src = fs.readFileSync(MESSAGE_PART_FILE, "utf-8")
-    // ToolInfo type must still have these fields
-    expect(src).toMatch(/icon\s*:/)
-    expect(src).toMatch(/title\s*:/)
+    // ToolInfo type definition must still have these fields
+    expect(src).toMatch(/export type ToolInfo\s*=\s*\{[^}]*icon\s*:/s)
+    expect(src).toMatch(/export type ToolInfo\s*=\s*\{[^}]*title\s*:/s)
   })
 
   it("getToolInfo function is exported", () => {

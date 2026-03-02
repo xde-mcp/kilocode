@@ -24,6 +24,6 @@ describe("DataProvider props contract", () => {
 
   it("openFile is exposed on the context return value", () => {
     const src = fs.readFileSync(DATA_CONTEXT_FILE, "utf-8")
-    expect(src).toContain("openFile:")
+    expect(src).toMatch(/openFile:\s*props\.onOpenFile/)
   })
 })
