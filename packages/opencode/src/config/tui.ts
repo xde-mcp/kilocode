@@ -54,7 +54,7 @@ export namespace TuiConfig {
     }
 
     for (const dir of unique(directories)) {
-      if (!dir.endsWith(".kilo") && dir !== Flag.KILO_CONFIG_DIR) continue // kilocode_change
+      if (!dir.endsWith(".kilo") || (dir.endsWith(".opencode") && dir !== Flag.KILO_CONFIG_DIR)) continue // kilocode_change
       for (const file of ConfigPaths.fileInDirectory(dir, "tui")) {
         result = mergeInfo(result, await loadFile(file))
       }
