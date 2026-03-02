@@ -123,7 +123,7 @@ Once your Git provider is connected, the following features are enabled in Kilo:
 
 - Automated AI review on every pull request or merge request
 - Consistent feedback based on your team's standards
-- See the [Code Reviews guide](/automate/code-reviews/overview) for setup
+- See the [Code Reviews guide](/docs/automate/code-reviews/overview) for setup
 
 ### Kilo Deploy
 
