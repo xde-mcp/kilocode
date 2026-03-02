@@ -9,7 +9,7 @@ export default defineConfig({
   // Number of parallel workers — defaults to half the CPU count locally,
   // override with PLAYWRIGHT_WORKERS env var or --workers CLI flag
   workers: process.env["PLAYWRIGHT_WORKERS"]
-    ? Number(process.env["PLAYWRIGHT_WORKERS"])
+    ? Number.parseInt(process.env["PLAYWRIGHT_WORKERS"]!, 10) || undefined
     : undefined,
   reporter: [["html", { open: "never" }], ["list"]],
   use: {

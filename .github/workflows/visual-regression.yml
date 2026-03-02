@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: packages/kilo-ui/storybook-static
-          key: storybook-${{ hashFiles('packages/kilo-ui/src/**', 'packages/kilo-ui/.storybook/**', 'packages/ui/src/**') }}
+          key: storybook-${{ hashFiles('packages/kilo-ui/src/**', 'packages/kilo-ui/.storybook/**', 'packages/ui/src/**', 'packages/kilo-ui/package.json') }}
 
       - name: Build Storybook
         if: steps.storybook-cache.outputs.cache-hit != 'true'

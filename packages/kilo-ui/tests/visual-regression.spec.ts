@@ -18,6 +18,7 @@ async function fetchStories(): Promise<Story[]> {
   const res = await fetch(`${STORYBOOK_URL}/index.json`).catch(() =>
     fetch(`${STORYBOOK_URL}/stories.json`),
   )
+  if (!res.ok) throw new Error(`Storybook index fetch failed: ${res.status} ${res.statusText}`)
   const data = (await res.json()) as StoriesIndex
   const map = data.entries ?? data.stories ?? {}
   return Object.values(map).filter((s) => s.id && !s.id.endsWith("--docs"))
@@ -68,8 +69,6 @@ for (const story of stories) {
     // Use [component, variant] path so snapshots are grouped per component dir.
     const [component, variant] = story.id.split("--")
     const root = page.locator("#storybook-root")
-    await expect(root).toHaveScreenshot([component, `${variant}.png`], {
-      maxDiffPixelRatio: 0.01,
-    })
+    await expect(root).toHaveScreenshot([component, `${variant}.png`])
   })
 }
