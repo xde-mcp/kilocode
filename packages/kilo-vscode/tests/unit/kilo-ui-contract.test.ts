@@ -5,19 +5,26 @@
  * that the exports kilo-vscode depends on still exist with the expected shape.
  *
  * Because the upstream modules use SolidJS JSX (jsxImportSource: "solid-js"),
- * they must be loaded from within packages/ui/ where bun picks up the correct
- * tsconfig. We use Bun.spawnSync to run a small check script in that context.
+ * they must be loaded from within packages/kilo-ui/ where bun picks up the
+ * correct tsconfig. We use Bun.spawnSync to run a small check script in that
+ * context.
+ *
+ * TypeScript types (OpenFileFn, ToolProps, ToolInfo) are erased at runtime,
+ * so those are verified via source analysis on the upstream file.
  */
 
 import { describe, it, expect } from "bun:test"
+import fs from "node:fs"
 import path from "node:path"
 
 const MONOREPO_ROOT = path.resolve(import.meta.dir, "../../../..")
-const UI_DIR = path.join(MONOREPO_ROOT, "packages/ui")
+const KILO_UI_DIR = path.join(MONOREPO_ROOT, "packages/kilo-ui")
+const DATA_CONTEXT_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/context/data.tsx")
+const MESSAGE_PART_FILE = path.join(MONOREPO_ROOT, "packages/ui/src/components/message-part.tsx")
 
 function check(code: string): { ok: boolean; output: string } {
   const result = Bun.spawnSync(["bun", "--conditions=browser", "-e", code], {
-    cwd: UI_DIR,
+    cwd: KILO_UI_DIR,
     stdout: "pipe",
     stderr: "pipe",
   })
@@ -57,6 +64,8 @@ describe("ToolRegistry tool name contract (runtime)", () => {
 
 describe("getToolInfo() export contract (runtime)", () => {
   it("getToolInfo is an exported function", () => {
+    // Note: getToolInfo() calls useI18n() internally, so we cannot invoke it
+    // outside a SolidJS rendering context. We verify it exists as a function.
     const result = check(`
       import { getToolInfo } from "./src/components/message-part.tsx"
       if (typeof getToolInfo !== "function") {
@@ -68,16 +77,11 @@ describe("getToolInfo() export contract (runtime)", () => {
     expect(result.ok, `getToolInfo check failed: ${result.output}`).toBe(true)
   })
 
-  it("ToolInfo type is exported (type re-exported as value via ToolRegistry)", () => {
-    const result = check(`
-      import { ToolRegistry } from "./src/components/message-part.tsx"
-      if (typeof ToolRegistry !== "object" || typeof ToolRegistry.register !== "function") {
-        console.error("ToolRegistry shape wrong")
-        process.exit(1)
-      }
-      console.log("ok")
-    `)
-    expect(result.ok, `ToolRegistry shape check failed: ${result.output}`).toBe(true)
+  it("ToolInfo type still declares icon and title fields (source)", () => {
+    // ToolInfo is a TypeScript type erased at runtime, so we verify via source
+    const src = fs.readFileSync(MESSAGE_PART_FILE, "utf-8")
+    expect(src).toMatch(/export type ToolInfo\s*=\s*\{[^}]*icon\s*:/s)
+    expect(src).toMatch(/export type ToolInfo\s*=\s*\{[^}]*title\s*:/s)
   })
 })
 
@@ -96,5 +100,14 @@ describe("DataProvider contract (runtime)", () => {
       console.log("ok")
     `)
     expect(result.ok, `DataProvider check failed: ${result.output}`).toBe(true)
+  })
+
+  it("DataProvider accepts onOpenFile prop and exports OpenFileFn (source)", () => {
+    // onOpenFile and OpenFileFn are kilocode_change additions — TypeScript types
+    // erased at runtime, so we verify via source analysis
+    const src = fs.readFileSync(DATA_CONTEXT_FILE, "utf-8")
+    expect(src).toContain("onOpenFile")
+    expect(src).toContain("OpenFileFn")
+    expect(src).toMatch(/openFile:\s*props\.onOpenFile/)
   })
 })
