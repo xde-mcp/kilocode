@@ -650,6 +650,7 @@ export interface AgentManagerStateMessage {
   type: "agentManager.state"
   worktrees: WorktreeState[]
   sessions: ManagedSessionState[]
+  staleWorktreeIds?: string[]
   tabOrder?: Record<string, string[]>
   sessionsCollapsed?: boolean
   reviewDiffStyle?: "unified" | "split"
@@ -733,12 +734,29 @@ export interface AgentManagerWorktreeDiffLoadingMessage {
   loading: boolean
 }
 
-// Per-worktree git stats: diff additions/deletions and commits missing from origin
+export type AgentManagerApplyWorktreeDiffStatus = "checking" | "applying" | "success" | "conflict" | "error"
+
+export interface AgentManagerApplyWorktreeDiffConflict {
+  file?: string
+  reason: string
+}
+
+export interface AgentManagerApplyWorktreeDiffResultMessage {
+  type: "agentManager.applyWorktreeDiffResult"
+  worktreeId: string
+  status: AgentManagerApplyWorktreeDiffStatus
+  message: string
+  conflicts?: AgentManagerApplyWorktreeDiffConflict[]
+}
+
+// Per-worktree git stats: diff additions/deletions and ahead/behind counts
 export interface WorktreeGitStats {
   worktreeId: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Worktree git stats push (extension → webview)
@@ -747,12 +765,14 @@ export interface AgentManagerWorktreeStatsMessage {
   stats: WorktreeGitStats[]
 }
 
-// Per-local-workspace git stats: branch name, diff additions/deletions, commits missing from origin
+// Per-local-workspace git stats: branch name, diff additions/deletions, ahead/behind counts
 export interface LocalGitStats {
   branch: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Local workspace git stats push (extension → webview)
@@ -882,6 +902,20 @@ export interface ClearLegacyDataMessage {
 }
 // legacy-migration end
 
+// Enhance prompt result (extension → webview)
+export interface EnhancePromptResultMessage {
+  type: "enhancePromptResult"
+  text: string
+  requestId: string
+}
+
+// Enhance prompt error (extension → webview)
+export interface EnhancePromptErrorMessage {
+  type: "enhancePromptError"
+  error: string
+  requestId: string
+}
+
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
@@ -939,13 +973,16 @@ export type ExtensionMessage =
   | WorkspaceDirectoryChangedMessage
   | AgentManagerWorktreeDiffMessage
   | AgentManagerWorktreeDiffLoadingMessage
+  | AgentManagerApplyWorktreeDiffResultMessage
   | AgentManagerWorktreeStatsMessage
   | AgentManagerLocalStatsMessage
   // legacy-migration start
   | LegacyMigrationDataMessage
   | LegacyMigrationProgressMessage
   | LegacyMigrationCompleteMessage
-// legacy-migration end
+  // legacy-migration end
+  | EnhancePromptResultMessage
+  | EnhancePromptErrorMessage
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1198,6 +1235,12 @@ export interface DeleteWorktreeRequest {
   worktreeId: string
 }
 
+// Remove a stale worktree entry from state without touching disk
+export interface RemoveStaleWorktreeRequest {
+  type: "agentManager.removeStaleWorktree"
+  worktreeId: string
+}
+
 // Promote a session: create a worktree and move the session into it
 export interface PromoteSessionRequest {
   type: "agentManager.promoteSession"
@@ -1346,6 +1389,12 @@ export interface StopDiffWatchMessage {
   type: "agentManager.stopDiffWatch"
 }
 
+export interface ApplyWorktreeDiffMessage {
+  type: "agentManager.applyWorktreeDiff"
+  worktreeId: string
+  selectedFiles?: string[]
+}
+
 // Variant persistence (webview → extension)
 export interface PersistVariantRequest {
   type: "persistVariant"
@@ -1356,6 +1405,13 @@ export interface PersistVariantRequest {
 // Request stored variants from extension (webview → extension)
 export interface RequestVariantsMessage {
   type: "requestVariants"
+}
+
+// Enhance prompt request (webview → extension)
+export interface EnhancePromptRequest {
+  type: "enhancePrompt"
+  text: string
+  requestId: string
 }
 
 export type WebviewMessage =
@@ -1401,6 +1457,7 @@ export type WebviewMessage =
   | DismissNotificationMessage
   | CreateWorktreeRequest
   | DeleteWorktreeRequest
+  | RemoveStaleWorktreeRequest
   | PromoteSessionRequest
   | AddSessionToWorktreeRequest
   | CloseSessionRequest
@@ -1434,7 +1491,9 @@ export type WebviewMessage =
   | StartLegacyMigrationMessage
   | SkipLegacyMigrationMessage
   | ClearLegacyDataMessage
-// legacy-migration end
+  // legacy-migration end
+  | ApplyWorktreeDiffMessage
+  | EnhancePromptRequest
 
 // ============================================
 // VS Code API type
