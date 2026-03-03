@@ -2,12 +2,12 @@
  * legacy-migration - Core migration service.
  *
  * Reads legacy Kilo Code v5.x data from VS Code SecretStorage and the extension's
- * global storage directory, then writes it to the new CLI backend via HTTP.
+ * global storage directory, then writes it to the new CLI backend via the SDK.
  */
 
 import * as vscode from "vscode"
-import type { HttpClient } from "../services/cli-backend/http-client"
-import type { McpServerConfig, AgentConfig } from "../services/cli-backend/types"
+import type { KiloClient } from "@kilocode/sdk/v2/client"
+import type { McpLocalConfig, McpRemoteConfig, AgentConfig } from "@kilocode/sdk/v2/client"
 import { PROVIDER_MAP, UNSUPPORTED_PROVIDERS, DEFAULT_MODE_SLUGS } from "./provider-mapping"
 import type {
   LegacyProviderProfiles,
@@ -83,7 +83,7 @@ export type ProgressCallback = (
  */
 export async function migrate(
   context: vscode.ExtensionContext,
-  httpClient: HttpClient,
+  client: KiloClient,
   selections: MigrationSelections,
   onProgress: ProgressCallback,
 ): Promise<MigrationResultItem[]> {
@@ -101,14 +101,14 @@ export async function migrate(
       continue
     }
     onProgress(profileName, "migrating")
-    const result = await migrateProvider(profileName, settings, httpClient)
+    const result = await migrateProvider(profileName, settings, client)
     results.push(result)
     onProgress(profileName, result.status, result.message)
   }
 
   // Migrate MCP servers
   if (selections.mcpServers.length > 0 && mcpSettings) {
-    const mcpConfig: Record<string, McpServerConfig> = {}
+    const mcpConfig: Record<string, McpLocalConfig | McpRemoteConfig> = {}
     for (const name of selections.mcpServers) {
       const server = mcpSettings.mcpServers[name]
       if (!server) {
@@ -132,7 +132,7 @@ export async function migrate(
       }
     }
     if (Object.keys(mcpConfig).length > 0) {
-      await httpClient.updateConfig({ mcp: mcpConfig })
+      await client.global.config.update({ config: { mcp: mcpConfig } })
     }
   }
 
@@ -151,7 +151,7 @@ export async function migrate(
       onProgress(mode.name, "success")
     }
     if (Object.keys(agentConfig).length > 0) {
-      await httpClient.updateConfig({ agent: agentConfig })
+      await client.global.config.update({ config: { agent: agentConfig } })
     }
   }
 
@@ -161,7 +161,7 @@ export async function migrate(
     const active = profiles.apiConfigs[activeName]
     if (active) {
       onProgress("Default model", "migrating")
-      const result = await migrateDefaultModel(active, httpClient)
+      const result = await migrateDefaultModel(active, client)
       results.push(result)
       onProgress("Default model", result.status, result.message)
     }
@@ -203,7 +203,7 @@ export async function clearLegacyData(context: vscode.ExtensionContext): Promise
 async function migrateProvider(
   profileName: string,
   settings: LegacyProviderSettings,
-  httpClient: HttpClient,
+  client: KiloClient,
 ): Promise<MigrationResultItem> {
   const provider = settings.apiProvider
   if (!provider) {
@@ -234,14 +234,14 @@ async function migrateProvider(
     return { item: profileName, category: "provider", status: "warning", message: "No API key found in profile" }
   }
 
-  await httpClient.setAuth(mapping.id, { type: "api", key: apiKey })
+  await client.auth.set({ providerID: mapping.id, auth: { type: "api", key: apiKey } })
 
   // If a custom base URL is configured, also persist it to the backend config
   if (mapping.urlField) {
     const url = settings[mapping.urlField] as string | undefined
     if (url) {
-      await httpClient.updateConfig({
-        provider: { [mapping.id]: { api_key: apiKey, base_url: url } },
+      await client.global.config.update({
+        config: { provider: { [mapping.id]: { options: { apiKey, baseURL: url } } } },
       })
     }
   }
@@ -249,10 +249,7 @@ async function migrateProvider(
   return { item: profileName, category: "provider", status: "success" }
 }
 
-async function migrateDefaultModel(
-  settings: LegacyProviderSettings,
-  httpClient: HttpClient,
-): Promise<MigrationResultItem> {
+async function migrateDefaultModel(settings: LegacyProviderSettings, client: KiloClient): Promise<MigrationResultItem> {
   const provider = settings.apiProvider
   if (!provider) {
     return { item: "Default model", category: "defaultModel", status: "error", message: "No provider type found" }
@@ -274,7 +271,7 @@ async function migrateDefaultModel(
     return { item: "Default model", category: "defaultModel", status: "warning", message: "No model ID found" }
   }
 
-  await httpClient.updateConfig({ model: `${mapping.id}/${modelId}` })
+  await client.global.config.update({ config: { model: `${mapping.id}/${modelId}` } })
   return { item: "Default model", category: "defaultModel", status: "success" }
 }
 
@@ -282,17 +279,18 @@ async function migrateDefaultModel(
 // Internal — MCP conversion (legacy → McpServerConfig)
 // ---------------------------------------------------------------------------
 
-function convertMcpServer(server: LegacyMcpServer): McpServerConfig | null {
+function convertMcpServer(server: LegacyMcpServer): McpLocalConfig | McpRemoteConfig | null {
   if (server.type === "sse" || server.type === "streamable-http") {
     if (!server.url) return null
-    return { url: server.url, headers: server.headers }
+    return { type: "remote", url: server.url, headers: server.headers }
   }
   // Default: stdio
   if (!server.command) return null
+  const command = server.args ? [server.command, ...server.args] : [server.command]
   return {
-    command: server.command,
-    args: server.args,
-    env: server.env,
+    type: "local",
+    command,
+    environment: server.env,
   }
 }
 
