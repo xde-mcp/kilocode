@@ -1438,8 +1438,11 @@ ToolRegistry.register({
     const [copied, setCopied] = createSignal(false)
 
     const handleCopy = async () => {
-      const content = text()
-      if (!content) return
+      // kilocode_change start - strip leading "$ " prompt indicator from copied text
+      const raw = text()
+      if (!raw) return
+      const content = raw.startsWith("$ ") ? raw.slice(2) : raw
+      // kilocode_change end
       await navigator.clipboard.writeText(content)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
