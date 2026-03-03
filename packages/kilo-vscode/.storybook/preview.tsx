@@ -3,7 +3,7 @@ import type { Preview, SolidRenderer } from "storybook-solidjs-vite"
 import type { DecoratorFunction } from "storybook/internal/types"
 // Reference kilo-ui stories helpers directly — not exported via package.json
 import { applyKiloTheme, applyVscodeTheme, clearVscodeTheme } from "../../kilo-ui/src/stories/theme-decorator"
-import "./fonts.css"
+import "../../kilo-ui/.storybook/fonts.css"
 import "@kilocode/kilo-ui/styles"
 import "../webview-ui/src/styles/chat.css"
 
