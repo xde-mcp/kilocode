@@ -425,10 +425,35 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           const sdkClient = this.client
           if (sdkClient) {
             const dir = this.getWorkspaceDirectory(this.currentSession?.id)
+            // Collect open tab paths (relative, forward-slash) for prioritization
+            const openPaths = new Set<string>()
+            if (dir) {
+              for (const group of vscode.window.tabGroups.all) {
+                for (const tab of group.tabs) {
+                  if (tab.input instanceof vscode.TabInputText) {
+                    const uri = tab.input.uri
+                    if (uri.scheme === "file") {
+                      const rel = path.relative(dir, uri.fsPath)
+                      if (!rel.startsWith("..")) {
+                        openPaths.add(rel.replaceAll("\\", "/"))
+                      }
+                    }
+                  }
+                }
+              }
+            }
             void sdkClient.find
               .files({ query: message.query, directory: dir }, { throwOnError: true })
               .then(({ data: paths }) => {
-                this.postMessage({ type: "fileSearchResult", paths, dir, requestId: message.requestId })
+                // Prioritize open files: open tabs first, then the rest
+                const open = paths.filter((p) => openPaths.has(p))
+                const rest = paths.filter((p) => !openPaths.has(p))
+                this.postMessage({
+                  type: "fileSearchResult",
+                  paths: [...open, ...rest],
+                  dir,
+                  requestId: message.requestId,
+                })
               })
               .catch((error: unknown) => {
                 console.error("[Kilo New] File search failed:", error)
@@ -518,7 +543,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "enhancePrompt": {
           const sdkClient = this.client
           if (!sdkClient) {
-            this.postMessage({ type: "enhancePromptError", error: "Not connected to CLI backend", requestId: message.requestId })
+            this.postMessage({
+              type: "enhancePromptError",
+              error: "Not connected to CLI backend",
+              requestId: message.requestId,
+            })
             break
           }
           void sdkClient.enhancePrompt
