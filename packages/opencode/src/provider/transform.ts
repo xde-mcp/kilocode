@@ -276,7 +276,7 @@ export namespace ProviderTransform {
             return false
           }
           if (rd.text) {
-            if (model.family === 'claude' && !rd.signature) return false
+            if ((model.family === "claude" || model.id.includes("claude")) && !rd.signature) return false
             if (!set.has(rd.text)) {
               set.add(rd.text)
               return true
