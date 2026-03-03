@@ -193,7 +193,6 @@ interface LanguageContextValue {
   t: (key: string, params?: UiI18nParams) => string
 }
 
-// kilocode_change - export context for Storybook mock providers
 export const LanguageContext = createContext<LanguageContextValue>()
 
 export function useLanguage() {

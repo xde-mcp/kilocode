@@ -138,7 +138,6 @@ interface SessionContextValue {
   selectCloudSession: (cloudSessionId: string) => void
 }
 
-// kilocode_change - export context for Storybook mock providers
 export const SessionContext = createContext<SessionContextValue>()
 
 export const SessionProvider: ParentComponent = (props) => {
