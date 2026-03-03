@@ -91,8 +91,9 @@ test("ask agent denies edit/write/bash even when user config adds a specific edi
     fn: async () => {
       const ask = await Agent.get("ask")
       expect(ask).toBeDefined()
-      // user config must not leak edit capability into ask mode
-      expect(evalPerm(ask, "edit")).toBe("deny")
+      // user config must not leak edit capability into ask mode — even for the
+      // specific path the user allowed, ask mode must still deny it
+      expect(PermissionNext.evaluate("edit", "src/output.log", ask!.permission).action).toBe("deny")
       expect(evalPerm(ask, "bash")).toBe("deny")
       expect(evalPerm(ask, "task")).toBe("deny")
       // safe tools still work
