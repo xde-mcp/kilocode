@@ -5,10 +5,13 @@
  * individually for maximum verbosity in the VS Code sidebar context.
  */
 
-import { Component, For, Show, createMemo } from "solid-js"
+import { Component, For, Show, createMemo, createSignal } from "solid-js"
 import { Part, PART_MAPPING } from "@kilocode/kilo-ui/message-part"
+import { Button } from "@kilocode/kilo-ui/button"
 import type { AssistantMessage as SDKAssistantMessage, Part as SDKPart, Message as SDKMessage } from "@kilocode/sdk/v2"
 import { useData } from "@kilocode/kilo-ui/context/data"
+import { useSession } from "../../context/session"
+import { useLanguage } from "../../context/language"
 
 const HIDDEN_TOOLS = new Set(["todowrite", "todoread"])
 
@@ -33,12 +36,32 @@ interface AssistantMessageProps {
 
 export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
   const data = useData()
+  const session = useSession()
+  const language = useLanguage()
 
   const parts = createMemo(() => {
     const stored = data.store.part?.[props.message.id]
     if (!stored) return []
     return (stored as SDKPart[]).filter(isRenderable)
   })
+
+  const id = () => session.currentSessionID()
+  const permissions = () => session.permissions().filter((p) => p.sessionID === id() && p.tool)
+
+  const permissionForPart = (part: SDKPart) => {
+    if (part.type !== "tool") return undefined
+    const callID = (part as SDKPart & { callID: string }).callID
+    return permissions().find((p) => p.tool!.callID === callID && p.tool!.messageID === props.message.id)
+  }
+
+  const [responding, setResponding] = createSignal(false)
+
+  const decide = (permissionId: string, response: "once" | "always" | "reject") => {
+    if (responding()) return
+    setResponding(true)
+    session.respondToPermission(permissionId, response)
+    setResponding(false)
+  }
 
   return (
     <For each={parts()}>
@@ -50,6 +73,24 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
             showAssistantCopyPartID={props.showAssistantCopyPartID}
             turnDurationMs={props.turnDurationMs}
           />
+          <Show when={permissionForPart(part)} keyed>
+            {(perm) => (
+              <div data-component="permission-prompt">
+                <div data-slot="permission-actions">
+                  <Button variant="ghost" size="small" onClick={() => decide(perm.id, "reject")} disabled={responding()}>
+                    {language.t("ui.permission.deny")}
+                  </Button>
+                  <Button variant="secondary" size="small" onClick={() => decide(perm.id, "always")} disabled={responding()}>
+                    {language.t("ui.permission.allowAlways")}
+                  </Button>
+                  <Button variant="primary" size="small" onClick={() => decide(perm.id, "once")} disabled={responding()}>
+                    {language.t("ui.permission.allowOnce")}
+                  </Button>
+                </div>
+                <p data-slot="permission-hint">{language.t("ui.permission.sessionHint")}</p>
+              </div>
+            )}
+          </Show>
         </Show>
       )}
     </For>
