@@ -22,7 +22,7 @@ import { StoryProviders, defaultMockData, mockSessionValue } from "./StoryProvid
 import { AssistantMessage } from "../components/chat/AssistantMessage"
 import { registerVscodeToolOverrides } from "../components/chat/VscodeToolOverrides"
 import { SessionContext } from "../context/session"
-import type { PermissionRequest } from "../types/messages"
+import type { PermissionRequest, QuestionRequest } from "../types/messages"
 
 // Register VS Code tool overrides (bash expanded by default, etc.)
 registerVscodeToolOverrides()
@@ -191,6 +191,44 @@ const dockPermission: PermissionRequest = {
   patterns: ["src/main.tsx", "src/utils.ts"],
   args: {},
   // No `tool` field — this is a non-tool (dock) permission
+}
+
+// ---------------------------------------------------------------------------
+// Question fixtures
+// ---------------------------------------------------------------------------
+
+const questionRequest: QuestionRequest = {
+  id: "question-001",
+  sessionID: SESSION_ID,
+  questions: [
+    {
+      question: "Kies een naam voor de hoofdpersoon van het verhaal:",
+      header: "Choose a name",
+      options: [
+        { label: "Henk van der Berg", description: "Een klassieke Hollandse naam" },
+        { label: "Gerrit Dijkstra", description: "Een degelijke Friese achternaam" },
+        { label: "Piet Janssen", description: "Zo Nederlands als stroopwafels" },
+        { label: "Koos Vermeer", description: "Klonkt als een schilder uit Delft" },
+      ],
+    },
+  ],
+  tool: { messageID: ASST_MSG_ID, callID: "call-question-001" },
+}
+
+const questionToolPart: ToolPart = {
+  id: "part-question-001",
+  sessionID: SESSION_ID,
+  messageID: ASST_MSG_ID,
+  type: "tool",
+  callID: "call-question-001",
+  tool: "question",
+  state: {
+    status: "running",
+    input: { question: "Kies een naam", options: [] },
+    title: "Asking question",
+    metadata: {},
+    time: { start: now - 1000 },
+  },
 }
 
 // ---------------------------------------------------------------------------
@@ -401,6 +439,23 @@ export const MultipleToolCalls: Story = {
     const data = dataWith([readCompleted, globCompleted, textPart])
     return (
       <StoryProviders data={data} sessionID={SESSION_ID}>
+        <AssistantMessage message={baseAssistantMessage} />
+      </StoryProviders>
+    )
+  },
+}
+
+// ---------------------------------------------------------------------------
+// 8. Inline question (tool-linked question rendered in message flow)
+// ---------------------------------------------------------------------------
+
+export const InlineQuestion: Story = {
+  name: "Inline Question",
+  render: () => {
+    const qs = [questionRequest]
+    const data = dataWith([textPart, questionToolPart])
+    return (
+      <StoryProviders data={data} questions={qs} sessionID={SESSION_ID}>
         <AssistantMessage message={baseAssistantMessage} />
       </StoryProviders>
     )

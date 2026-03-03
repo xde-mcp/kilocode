@@ -21,7 +21,7 @@ import { LanguageContext } from "../context/language"
 import { dict as uiEn } from "@kilocode/kilo-ui/i18n/en"
 import { dict as appEn } from "../i18n/en"
 import { dict as kiloEn } from "@kilocode/kilo-i18n/en"
-import type { PermissionRequest } from "../types/messages"
+import type { PermissionRequest, QuestionRequest } from "../types/messages"
 
 // Merged English dictionary (same merge order as the real LanguageProvider)
 const dict: Record<string, string> = { ...appEn, ...uiEn, ...kiloEn }
@@ -54,10 +54,12 @@ function noop() {}
 export function mockSessionValue(overrides?: {
   id?: string
   permissions?: PermissionRequest[]
+  questions?: QuestionRequest[]
   status?: string
 }) {
   const id = overrides?.id ?? "story-session-001"
   const permissions = overrides?.permissions ?? []
+  const qs = overrides?.questions ?? []
   const status = (overrides?.status ?? "idle") as "idle" | "busy"
 
   return {
@@ -78,7 +80,7 @@ export function mockSessionValue(overrides?: {
     getParts: () => [],
     todos: () => [],
     permissions: () => permissions,
-    questions: () => [],
+    questions: () => qs,
     questionErrors: () => new Set<string>(),
     selected: () => ({ providerID: "anthropic", modelID: "claude-sonnet-4-20250514" }),
     selectModel: noop,
@@ -119,6 +121,7 @@ export function mockSessionValue(overrides?: {
 interface StoryProvidersProps {
   data?: any
   permissions?: PermissionRequest[]
+  questions?: QuestionRequest[]
   status?: string
   sessionID?: string
 }
@@ -128,6 +131,7 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
   const session = mockSessionValue({
     id: props.sessionID,
     permissions: props.permissions,
+    questions: props.questions,
     status: props.status,
   })
   const [locale] = createSignal<"en">("en")
