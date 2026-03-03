@@ -1,4 +1,7 @@
 import { describe, it, expect } from "bun:test"
+import * as fs from "fs"
+import * as os from "os"
+import * as path from "path"
 import type { KiloClient } from "@kilocode/sdk/v2/client"
 import { GitStatsPoller } from "../../src/agent-manager/GitStatsPoller"
 import { GitOps } from "../../src/agent-manager/GitOps"
@@ -122,6 +125,133 @@ describe("GitStatsPoller", () => {
       batch.some((item) => item.additions === 0 && item.deletions === 0 && item.ahead === 0),
     )
     expect(hasZeros).toBe(false)
+  })
+
+  it("emits present worktree probes on the poll loop", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gsp-presence-"))
+    const wtPath = path.join(root, "wt-a")
+    fs.mkdirSync(wtPath, { recursive: true })
+
+    const presence: Array<{ worktrees: Array<{ worktreeId: string; missing: boolean }>; degraded: boolean }> = []
+
+    const poller = new GitStatsPoller({
+      getWorktrees: () => [{ ...worktree("a"), path: wtPath }],
+      getWorkspaceRoot: () => root,
+      getClient: () => {
+        throw new Error("backend unavailable")
+      },
+      onStats: () => undefined,
+      onLocalStats: () => undefined,
+      onWorktreePresence: (result) => presence.push(result),
+      log: () => undefined,
+      intervalMs: 5,
+      git: gitOps(async (args) => {
+        if (args[0] === "worktree") {
+          return `worktree ${wtPath}\nbranch refs/heads/branch-a\n`
+        }
+        return ""
+      }),
+    })
+
+    poller.setEnabled(true)
+    await waitFor(() => presence.length >= 1)
+    poller.stop()
+    fs.rmSync(root, { recursive: true, force: true })
+
+    expect(presence[0]).toEqual({ worktrees: [{ worktreeId: "a", missing: false }], degraded: false })
+  })
+
+  it("emits degraded probe when git worktree listing fails", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gsp-presence-fail-"))
+    const wtPath = path.join(root, "wt-a")
+    fs.mkdirSync(wtPath, { recursive: true })
+
+    const presence: Array<{ worktrees: Array<{ worktreeId: string; missing: boolean }>; degraded: boolean }> = []
+
+    const poller = new GitStatsPoller({
+      getWorktrees: () => [{ ...worktree("a"), path: wtPath }],
+      getWorkspaceRoot: () => root,
+      getClient: () => {
+        throw new Error("backend unavailable")
+      },
+      onStats: () => undefined,
+      onLocalStats: () => undefined,
+      onWorktreePresence: (result) => presence.push(result),
+      log: () => undefined,
+      intervalMs: 5,
+      git: gitOps(async (args) => {
+        if (args[0] === "worktree") {
+          throw new Error("git worktree list failed")
+        }
+        return ""
+      }),
+    })
+
+    poller.setEnabled(true)
+    await waitFor(() => presence.length >= 1)
+    poller.stop()
+    fs.rmSync(root, { recursive: true, force: true })
+
+    expect(presence[0]).toEqual({ worktrees: [], degraded: true })
+  })
+
+  it("skips stats fetch for missing worktrees detected by presence probe", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gsp-skip-missing-"))
+    const wtAPath = path.join(root, "wt-a")
+    const wtBPath = path.join(root, "wt-b")
+    fs.mkdirSync(wtAPath, { recursive: true })
+
+    const calls: string[] = []
+    const emitted: Array<Array<{ worktreeId: string; additions: number; deletions: number; commits: number }>> = []
+    const presence: Array<{ worktrees: Array<{ worktreeId: string; missing: boolean }>; degraded: boolean }> = []
+
+    const client = {
+      worktree: {
+        diff: async ({ directory }: { directory: string }) => {
+          calls.push(directory)
+          return { data: diff(1, 1) }
+        },
+      },
+    } as unknown as KiloClient
+
+    const poller = new GitStatsPoller({
+      getWorktrees: () => [
+        { ...worktree("a"), path: wtAPath },
+        { ...worktree("b"), path: wtBPath },
+      ],
+      getWorkspaceRoot: () => root,
+      getClient: () => client,
+      onStats: (stats) => emitted.push(stats),
+      onLocalStats: () => undefined,
+      onWorktreePresence: (result) => presence.push(result),
+      log: () => undefined,
+      intervalMs: 5,
+      git: gitOps(async (args) => {
+        if (args[0] === "worktree") {
+          return `worktree ${wtAPath}\nbranch refs/heads/branch-a\n`
+        }
+        if (args[0] === "rev-parse" && args[1] === "--git-common-dir") return ".git"
+        if (args[0] === "rev-parse" && args[3] === "@{upstream}") return "origin/main"
+        if (args[0] === "fetch") return ""
+        if (args[0] === "rev-list") return "1"
+        return ""
+      }),
+    })
+
+    poller.setEnabled(true)
+    await waitFor(() => calls.length >= 1)
+    poller.stop()
+    fs.rmSync(root, { recursive: true, force: true })
+
+    expect(calls.some((cwd) => cwd === wtBPath)).toBe(false)
+    expect(presence[0]).toEqual({
+      worktrees: [
+        { worktreeId: "a", missing: false },
+        { worktreeId: "b", missing: true },
+      ],
+      degraded: false,
+    })
+    expect(emitted[0]?.map((item) => item.worktreeId)).toEqual(["a"])
   })
 
   it("preserves local stats when client fails after initial success", async () => {

@@ -1,6 +1,9 @@
+import * as fs from "fs"
+import * as path from "path"
 import type { KiloClient, FileDiff } from "@kilocode/sdk/v2/client"
 import type { Worktree } from "./WorktreeStateManager"
 import type { GitOps } from "./GitOps"
+import { normalizePath } from "./git-import"
 
 export interface WorktreeStats {
   worktreeId: string
@@ -20,6 +23,16 @@ export interface LocalStats {
   behind: number
 }
 
+export interface WorktreePresence {
+  worktreeId: string
+  missing: boolean
+}
+
+export interface WorktreePresenceResult {
+  worktrees: WorktreePresence[]
+  degraded: boolean
+}
+
 interface GitStatsPollerOptions {
   getWorktrees: () => Worktree[]
   getWorkspaceRoot: () => string | undefined
@@ -27,6 +40,7 @@ interface GitStatsPollerOptions {
   git: GitOps
   onStats: (stats: WorktreeStats[]) => void
   onLocalStats: (stats: LocalStats) => void
+  onWorktreePresence?: (result: WorktreePresenceResult) => void
   log: (...args: unknown[]) => void
   intervalMs?: number
 }
@@ -111,11 +125,27 @@ export class GitStatsPoller {
   private async fetchWorktreeStats(client: KiloClient | undefined): Promise<void> {
     const worktrees = this.options.getWorktrees()
     if (worktrees.length === 0) return
+
+    const presence = await this.probeWorktreePresence(worktrees)
+    this.options.onWorktreePresence?.(presence)
+
     if (!client) return
+
+    const missing = new Set(
+      presence.degraded ? [] : presence.worktrees.filter((item) => item.missing).map((item) => item.worktreeId),
+    )
+    const active = worktrees.filter((wt) => !missing.has(wt.id))
+    if (active.length === 0) {
+      if (this.lastHash === "") return
+      this.lastHash = ""
+      this.lastStats = {}
+      this.options.onStats([])
+      return
+    }
 
     const stats = (
       await Promise.all(
-        worktrees.map(async (wt) => {
+        active.map(async (wt) => {
           try {
             const [{ data: diffs }, ab] = await Promise.all([
               client.worktree.diff({ directory: wt.path, base: wt.parentBranch }, { throwOnError: true }),
@@ -166,6 +196,36 @@ export class GitStatsPoller {
     )
 
     this.options.onStats(stats)
+  }
+
+  private async probeWorktreePresence(worktrees: Worktree[]): Promise<WorktreePresenceResult> {
+    const root = this.options.getWorkspaceRoot()
+    if (!root) {
+      return { worktrees: [], degraded: true }
+    }
+
+    const tracked = await this.git.listWorktreePaths(root).catch((err) => {
+      this.options.log("Failed to list worktree paths:", err)
+      return undefined
+    })
+    if (!tracked) {
+      return { worktrees: [], degraded: true }
+    }
+
+    const worktreeStatuses = await Promise.all(
+      worktrees.map(async (wt) => {
+        const abs = path.isAbsolute(wt.path) ? wt.path : path.join(root, wt.path)
+        const normalized = normalizePath(abs)
+        const exists = await fs.promises.access(abs).then(
+          () => true,
+          () => false,
+        )
+        const missing = !exists || !tracked.has(normalized)
+        return { worktreeId: wt.id, missing }
+      }),
+    )
+
+    return { worktrees: worktreeStatuses, degraded: false }
   }
 
   private async fetchLocalStats(client: KiloClient | undefined): Promise<void> {

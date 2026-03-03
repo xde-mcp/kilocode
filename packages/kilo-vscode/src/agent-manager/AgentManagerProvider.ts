@@ -8,7 +8,7 @@ import { KiloProvider } from "../KiloProvider"
 import { buildWebviewHtml } from "../utils"
 import { WorktreeManager, type CreateWorktreeResult } from "./WorktreeManager"
 import { WorktreeStateManager } from "./WorktreeStateManager"
-import { GitStatsPoller } from "./GitStatsPoller"
+import { GitStatsPoller, type WorktreePresenceResult } from "./GitStatsPoller"
 import { GitOps, type ApplyConflict } from "./GitOps"
 import { versionedName } from "./branch-name"
 import { normalizePath } from "./git-import"
@@ -48,6 +48,7 @@ export class AgentManagerProvider implements vscode.Disposable {
   private statsPoller: GitStatsPoller
   private gitOps: GitOps
   private cachedDiffTarget: { directory: string; baseBranch: string } | undefined
+  private staleWorktreeIds = new Set<string>()
   private cachedWorktreeStats: Record<string, unknown> | undefined
   private cachedLocalStats: Record<string, unknown> | undefined
   private applyingWorktreeId: string | undefined
@@ -74,6 +75,9 @@ export class AgentManagerProvider implements vscode.Disposable {
         const msg = { type: "agentManager.localStats", stats }
         this.cachedLocalStats = msg
         this.postToWebview(msg)
+      },
+      onWorktreePresence: (presence) => {
+        this.onWorktreePresence(presence)
       },
       log: (...args) => this.log(...args),
       git: this.gitOps,
@@ -145,9 +149,8 @@ export class AgentManagerProvider implements vscode.Disposable {
 
     await state.load()
 
-    // Validate worktree directories still exist (handles manual deletion)
-    const root = this.getWorkspaceRoot()
-    if (root) await state.validate(root)
+    // Do not auto-remove stale worktrees on load.
+    // Presence checks run in the shared poller and require explicit user cleanup.
 
     // Register all worktree sessions with KiloProvider
     for (const worktree of state.getWorktrees()) {
@@ -178,6 +181,8 @@ export class AgentManagerProvider implements vscode.Disposable {
     }
     if (type === "agentManager.deleteWorktree" && typeof msg.worktreeId === "string")
       return this.onDeleteWorktree(msg.worktreeId)
+    if (type === "agentManager.removeStaleWorktree" && typeof msg.worktreeId === "string")
+      return this.onRemoveStaleWorktree(msg.worktreeId)
     if (type === "agentManager.promoteSession" && typeof msg.sessionId === "string")
       return this.onPromoteSession(msg.sessionId)
     if (type === "agentManager.addSessionToWorktree" && typeof msg.worktreeId === "string")
@@ -556,6 +561,41 @@ export class AgentManagerProvider implements vscode.Disposable {
     }
     this.pushState()
     this.log(`Deleted worktree ${worktreeId} (${worktree.branch})`)
+    return null
+  }
+
+  /** Remove a stale worktree entry from state without touching the filesystem. */
+  private async onRemoveStaleWorktree(worktreeId: string): Promise<null> {
+    const state = this.getStateManager()
+    if (!state) return null
+    if (!this.staleWorktreeIds.has(worktreeId)) {
+      this.log(`Ignored stale removal for non-stale worktree ${worktreeId}`)
+      return null
+    }
+
+    const worktree = state.getWorktree(worktreeId)
+    if (!worktree) {
+      this.clearStaleTracking(worktreeId)
+      this.pushState()
+      return null
+    }
+
+    const orphaned = state.removeWorktree(worktreeId)
+    for (const session of orphaned) {
+      this.provider?.clearSessionDirectory(session.id)
+    }
+    this.clearStaleTracking(worktreeId)
+
+    if (this.cachedDiffTarget && normalizePath(this.cachedDiffTarget.directory) === normalizePath(worktree.path)) {
+      this.stopDiffPolling()
+    }
+
+    if (this.diffSessionId && orphaned.some((session) => session.id === this.diffSessionId)) {
+      this.stopDiffPolling()
+    }
+
+    this.pushState()
+    this.log(`Removed stale worktree entry ${worktreeId} (${worktree.branch})`)
     return null
   }
 
@@ -1271,29 +1311,76 @@ export class AgentManagerProvider implements vscode.Disposable {
     this.provider.trackSession(sessionId)
   }
 
+  private onWorktreePresence(result: WorktreePresenceResult): void {
+    const state = this.state
+    if (!state) return
+
+    const worktrees = state.getWorktrees()
+    const ids = new Set(worktrees.map((wt) => wt.id))
+    this.pruneStaleWorktreeIds(ids)
+
+    if (result.degraded) {
+      this.log("Skipping stale worktree update: degraded worktree probe")
+      return
+    }
+
+    const entries = result.worktrees.filter((item) => ids.has(item.worktreeId))
+    if (entries.length === 0) return
+
+    const next = new Set(entries.filter((entry) => entry.missing).map((entry) => entry.worktreeId))
+    const changed =
+      next.size !== this.staleWorktreeIds.size || [...next].some((worktreeId) => !this.staleWorktreeIds.has(worktreeId))
+    this.staleWorktreeIds = next
+
+    if (changed) {
+      this.pushState()
+    }
+  }
+
+  private clearStaleTracking(worktreeId: string): void {
+    this.staleWorktreeIds.delete(worktreeId)
+  }
+
+  private staleWorktreesForState(worktrees: ReturnType<WorktreeStateManager["getWorktrees"]>): string[] {
+    const ids = new Set(worktrees.map((wt) => wt.id))
+    this.pruneStaleWorktreeIds(ids)
+    return worktrees.filter((wt) => this.staleWorktreeIds.has(wt.id)).map((wt) => wt.id)
+  }
+
+  private pruneStaleWorktreeIds(ids: Set<string>): void {
+    for (const id of [...this.staleWorktreeIds]) {
+      if (ids.has(id)) continue
+      this.staleWorktreeIds.delete(id)
+    }
+  }
+
   private pushState(): void {
     const state = this.state
     if (!state) return
+    const worktrees = state.getWorktrees()
+    const staleWorktreeIds = this.staleWorktreesForState(worktrees)
     this.postToWebview({
       type: "agentManager.state",
-      worktrees: state.getWorktrees(),
+      worktrees,
       sessions: state.getSessions(),
+      staleWorktreeIds,
       tabOrder: state.getTabOrder(),
       sessionsCollapsed: state.getSessionsCollapsed(),
       reviewDiffStyle: state.getReviewDiffStyle(),
       isGitRepo: true,
     })
 
-    const worktrees = state.getWorktrees()
     this.statsPoller.setEnabled(worktrees.length > 0 || this.panel !== undefined)
   }
 
   /** Push empty state when the workspace is not a git repo or has no workspace folder. */
   private pushEmptyState(): void {
+    this.staleWorktreeIds.clear()
     this.postToWebview({
       type: "agentManager.state",
       worktrees: [],
       sessions: [],
+      staleWorktreeIds: [],
       reviewDiffStyle: "unified",
       isGitRepo: false,
     })

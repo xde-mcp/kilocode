@@ -650,6 +650,7 @@ export interface AgentManagerStateMessage {
   type: "agentManager.state"
   worktrees: WorktreeState[]
   sessions: ManagedSessionState[]
+  staleWorktreeIds?: string[]
   tabOrder?: Record<string, string[]>
   sessionsCollapsed?: boolean
   reviewDiffStyle?: "unified" | "split"
@@ -1120,6 +1121,12 @@ export interface DeleteWorktreeRequest {
   worktreeId: string
 }
 
+// Remove a stale worktree entry from state without touching disk
+export interface RemoveStaleWorktreeRequest {
+  type: "agentManager.removeStaleWorktree"
+  worktreeId: string
+}
+
 // Promote a session: create a worktree and move the session into it
 export interface PromoteSessionRequest {
   type: "agentManager.promoteSession"
@@ -1336,6 +1343,7 @@ export type WebviewMessage =
   | DismissNotificationMessage
   | CreateWorktreeRequest
   | DeleteWorktreeRequest
+  | RemoveStaleWorktreeRequest
   | PromoteSessionRequest
   | AddSessionToWorktreeRequest
   | CloseSessionRequest

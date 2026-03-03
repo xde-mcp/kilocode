@@ -295,6 +295,30 @@ button.am-section-toggle:hover .am-section-label {
   pointer-events: none;
 }
 
+.am-worktree-stale-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-right: 2px;
+  color: var(--text-warning, #f59e0b);
+  flex-shrink: 0;
+}
+
+.am-worktree-item-active .am-worktree-stale-badge {
+  color: color-mix(in oklab, var(--text-warning, #f59e0b) 90%, var(--text-base));
+}
+
+.am-worktree-stale-badge [data-component="icon"] {
+  color: currentColor;
+}
+
+.am-tooltip-wrap {
+  max-width: 240px;
+  white-space: normal;
+}
+
 .am-worktree-spinner {
   width: 16px;
   height: 16px;
@@ -1990,6 +2014,32 @@ button.am-section-toggle:hover .am-section-label {
   gap: 6px;
   font-family: var(--font-mono, monospace);
   font-variant-numeric: tabular-nums;
+}
+
+.am-hover-card-row-stale {
+  align-items: center;
+}
+
+.am-hover-card-stale-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-warning, #f59e0b);
+  font-weight: 600;
+}
+
+.am-hover-card-note {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-weak);
+  text-align: left;
+}
+
+.am-hover-card-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-start;
 }
 
 /* Keyboard shortcuts dialog */
