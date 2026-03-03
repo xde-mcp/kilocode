@@ -80,6 +80,8 @@ kilo run --auto "run tests and fix any failures"
 We welcome contributions from developers, writers, and enthusiasts!
 To get started, please read our [Contributing Guide](/CONTRIBUTING.md). It includes details on setting up your environment, coding standards, types of contribution and how to submit pull requests.
 
+See [RELEASING.md](RELEASING.md) for the release process.
+
 ## Code of Conduct
 
 Our community is built on respect, inclusivity, and collaboration. Please review our [Code of Conduct](/CODE_OF_CONDUCT.md) to understand the expectations for all contributors and community members.
