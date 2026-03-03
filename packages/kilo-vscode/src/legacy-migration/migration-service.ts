@@ -411,11 +411,15 @@ async function migrateAutoApproval(
       await client.global.config.update({ config: { permission: "allow" } })
     } else if (hasCommandLists) {
       const bashRules: PermissionObjectConfig = {}
+      // The legacy system matched commands as longest prefix (e.g. "npm run" matched "npm run dev").
+      // The new CLI uses Wildcard.match with full command text anchored to ^ and $, so "npm run"
+      // would only match the literal string "npm run". Appending " *" approximates prefix semantics:
+      // Wildcard.match treats trailing " *" as "( .*)?", matching with or without arguments.
       for (const cmd of allowedCommands ?? []) {
-        bashRules[cmd] = "allow"
+        bashRules[cmd.trimEnd() + " *"] = "allow"
       }
       for (const cmd of deniedCommands ?? []) {
-        bashRules[cmd] = "deny"
+        bashRules[cmd.trimEnd() + " *"] = "deny"
       }
       // alwaysAllowExecute=false must override the master toggle
       bashRules["*"] = alwaysAllowExecute === true ? "allow" : alwaysAllowExecute === false ? "ask" : fallback
