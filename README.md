@@ -20,7 +20,6 @@
 - 🎁 API keys optional
 - 💡 **Get $20 in bonus credits when you top-up for the first time** Credits can be used with 500+ models like Gemini 3.1 Pro, Claude 4.6 Sonnet & Opus, and GPT-5.2
 
-
 ## Quick Links
 
 - [VS Code Marketplace](https://kilo.ai/vscode-marketplace?utm_source=Readme) (download)
