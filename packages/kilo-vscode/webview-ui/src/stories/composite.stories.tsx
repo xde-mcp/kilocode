@@ -202,13 +202,13 @@ const questionRequest: QuestionRequest = {
   sessionID: SESSION_ID,
   questions: [
     {
-      question: "Kies een naam voor de hoofdpersoon van het verhaal:",
-      header: "Choose a name",
+      question: "Which testing framework should I use for this project?",
+      header: "Choose a framework",
       options: [
-        { label: "Henk van der Berg", description: "Een klassieke Hollandse naam" },
-        { label: "Gerrit Dijkstra", description: "Een degelijke Friese achternaam" },
-        { label: "Piet Janssen", description: "Zo Nederlands als stroopwafels" },
-        { label: "Koos Vermeer", description: "Klonkt als een schilder uit Delft" },
+        { label: "Vitest", description: "Fast, Vite-native unit testing" },
+        { label: "Jest", description: "Widely adopted, rich ecosystem" },
+        { label: "Playwright", description: "End-to-end browser testing" },
+        { label: "Bun test", description: "Built-in, zero config" },
       ],
     },
   ],
@@ -224,7 +224,7 @@ const questionToolPart: ToolPart = {
   tool: "question",
   state: {
     status: "running",
-    input: { question: "Kies een naam", options: [] },
+    input: { question: "Which testing framework?", options: [] },
     title: "Asking question",
     metadata: {},
     time: { start: now - 1000 },
