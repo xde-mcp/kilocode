@@ -98,6 +98,7 @@ export interface LegacyProviderSettings {
   // Kilocode
   kilocodeToken?: string
   kilocodeModel?: string
+  kilocodeOrganizationId?: string
 
   // LiteLLM
   litellmApiKey?: string

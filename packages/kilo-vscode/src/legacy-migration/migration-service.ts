@@ -317,7 +317,17 @@ async function migrateProvider(
     return { item: profileName, category: "provider", status: "warning", message: "No API key found in profile" }
   }
 
-  await client.auth.set({ providerID: mapping.id, auth: { type: "api", key: apiKey } })
+  // For providers that support an organization ID (e.g. Kilo Gateway), migrate using OAuth
+  // auth so the CLI can read accountId for org-scoped API requests.
+  const organizationId = mapping.organizationIdField
+    ? (settings[mapping.organizationIdField] as string | undefined)
+    : undefined
+
+  const auth = organizationId
+    ? { type: "oauth" as const, access: apiKey, refresh: "", expires: 0, accountId: organizationId }
+    : { type: "api" as const, key: apiKey }
+
+  await client.auth.set({ providerID: mapping.id, auth })
 
   // If a custom base URL is configured, also persist it to the backend config
   if (mapping.urlField) {
@@ -590,9 +600,51 @@ function convertMcpServer(server: LegacyMcpServer): McpLocalConfig | McpRemoteCo
 // Internal — custom mode conversion (legacy → AgentConfig)
 // ---------------------------------------------------------------------------
 
+// Group name → CLI permission key (mirrors ModesMigrator.convertPermissions in the CLI)
+const GROUP_TO_PERMISSION: Record<string, string> = {
+  read: "read",
+  edit: "edit",
+  browser: "bash",
+  command: "bash",
+  mcp: "skill",
+}
+const ALL_MODE_PERMISSIONS = ["read", "edit", "bash", "skill"]
+
+function convertCustomModePermissions(groups: LegacyCustomMode["groups"]): PermissionConfig {
+  const permission: Record<string, unknown> = {}
+  const allowed = new Set<string>()
+
+  for (const group of groups) {
+    const groupName = typeof group === "string" ? group : group[0]
+    const groupConfig = typeof group === "string" ? undefined : group[1]
+    const permKey = GROUP_TO_PERMISSION[groupName] ?? groupName
+    allowed.add(permKey)
+
+    if (groupConfig?.fileRegex) {
+      permission[permKey] = { [groupConfig.fileRegex]: "allow", "*": "deny" }
+    } else {
+      permission[permKey] = "allow"
+    }
+  }
+
+  // Explicitly deny permissions not in the groups (CLI defaults to "ask" for missing ones)
+  for (const perm of ALL_MODE_PERMISSIONS) {
+    if (!allowed.has(perm)) {
+      permission[perm] = "deny"
+    }
+  }
+
+  return permission as PermissionConfig
+}
+
 function convertCustomMode(mode: LegacyCustomMode): AgentConfig {
   const prompt = [mode.roleDefinition, mode.customInstructions].filter(Boolean).join("\n\n")
-  return { prompt }
+  return {
+    mode: "primary",
+    description: mode.customInstructions ?? mode.roleDefinition?.slice(0, 120),
+    prompt,
+    permission: convertCustomModePermissions(mode.groups),
+  }
 }
 
 // ---------------------------------------------------------------------------

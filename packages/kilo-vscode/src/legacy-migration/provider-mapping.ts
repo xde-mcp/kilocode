@@ -16,6 +16,8 @@ export interface ProviderMapping {
   modelField?: string
   /** Field holding custom base URL (to also store in config) */
   urlField?: string
+  /** Field holding an organization/account ID (used for OAuth-style auth) */
+  organizationIdField?: string
 }
 
 /**
@@ -129,6 +131,7 @@ export const PROVIDER_MAP: Record<string, ProviderMapping> = {
     key: "kilocodeToken",
     name: "Kilo (Gateway)",
     modelField: "kilocodeModel",
+    organizationIdField: "kilocodeOrganizationId",
   },
   litellm: {
     id: "litellm",
