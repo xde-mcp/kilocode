@@ -122,7 +122,7 @@ export const PromptInput: Component = () => {
     }
 
     if (message.type === "enhancePromptResult") {
-      const result = message as { type: "enhancePromptResult"; text: string; requestId: string }
+      const result = message as import("../../types/messages").EnhancePromptResultMessage
       if (result.requestId === `enhance-${enhanceCounter}`) {
         setText(result.text)
         setGhostText("")
@@ -136,7 +136,7 @@ export const PromptInput: Component = () => {
     }
 
     if (message.type === "enhancePromptError") {
-      const result = message as { type: "enhancePromptError"; error: string; requestId: string }
+      const result = message as import("../../types/messages").EnhancePromptErrorMessage
       if (result.requestId === `enhance-${enhanceCounter}`) {
         setEnhancing(false)
       }
