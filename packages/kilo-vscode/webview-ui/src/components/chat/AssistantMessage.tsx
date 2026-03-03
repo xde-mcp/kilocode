@@ -65,34 +65,39 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
 
   return (
     <For each={parts()}>
-      {(part) => (
-        <Show when={PART_MAPPING[part.type]}>
-          <Part
-            part={part}
-            message={props.message as SDKMessage}
-            showAssistantCopyPartID={props.showAssistantCopyPartID}
-            turnDurationMs={props.turnDurationMs}
-          />
-          <Show when={permissionForPart(part)} keyed>
-            {(perm) => (
-              <div data-component="permission-prompt">
-                <div data-slot="permission-actions">
-                  <Button variant="ghost" size="small" onClick={() => decide(perm.id, "reject")} disabled={responding()}>
-                    {language.t("ui.permission.deny")}
-                  </Button>
-                  <Button variant="secondary" size="small" onClick={() => decide(perm.id, "always")} disabled={responding()}>
-                    {language.t("ui.permission.allowAlways")}
-                  </Button>
-                  <Button variant="primary" size="small" onClick={() => decide(perm.id, "once")} disabled={responding()}>
-                    {language.t("ui.permission.allowOnce")}
-                  </Button>
-                </div>
-                <p data-slot="permission-hint">{language.t("ui.permission.sessionHint")}</p>
-              </div>
-            )}
+      {(part) => {
+        const perm = () => permissionForPart(part)
+        return (
+          <Show when={PART_MAPPING[part.type]}>
+            <div data-component="tool-part-wrapper" data-permission={!!perm()}>
+              <Part
+                part={part}
+                message={props.message as SDKMessage}
+                showAssistantCopyPartID={props.showAssistantCopyPartID}
+                turnDurationMs={props.turnDurationMs}
+              />
+              <Show when={perm()} keyed>
+                {(p) => (
+                  <div data-component="permission-prompt">
+                    <div data-slot="permission-actions">
+                      <Button variant="ghost" size="small" onClick={() => decide(p.id, "reject")} disabled={responding()}>
+                        {language.t("ui.permission.deny")}
+                      </Button>
+                      <Button variant="secondary" size="small" onClick={() => decide(p.id, "always")} disabled={responding()}>
+                        {language.t("ui.permission.allowAlways")}
+                      </Button>
+                      <Button variant="primary" size="small" onClick={() => decide(p.id, "once")} disabled={responding()}>
+                        {language.t("ui.permission.allowOnce")}
+                      </Button>
+                    </div>
+                    <p data-slot="permission-hint">{language.t("ui.permission.sessionHint")}</p>
+                  </div>
+                )}
+              </Show>
+            </div>
           </Show>
-        </Show>
-      )}
+        )
+      }}
     </For>
   )
 }

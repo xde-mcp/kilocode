@@ -696,8 +696,18 @@
   word-break: break-all;
 }
 
-/* Permission Prompt (inline and dock) */
+/* Permission Prompt (inline with tool cards) */
+[data-component="tool-part-wrapper"][data-permission="true"] {
+  /* When wrapping a Part + permission, the outer wrapper provides the card border.
+     Remove the inner Part's tool-part-wrapper border so we don't get double borders. */
+  > [data-component="tool-part-wrapper"] {
+    border: none;
+    border-radius: 0;
+  }
+}
+
 [data-component="permission-prompt"] {
+  border-top: 1px solid var(--border-weak-base, var(--vscode-panel-border));
   padding: 8px 12px;
 }
 
