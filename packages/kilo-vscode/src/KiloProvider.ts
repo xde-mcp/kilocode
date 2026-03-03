@@ -62,8 +62,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private pendingSessionRefresh = false
   private unsubscribeEvent: (() => void) | null = null
   private unsubscribeState: (() => void) | null = null
-  /** Cached legacy migration data so migrate() doesn't re-read from disk/SecretStorage. */
+  /** Cached legacy migration data so migrate() doesn't re-read from disk/SecretStorage. */ // legacy-migration
   private cachedLegacyData: import("./legacy-migration/legacy-types").LegacyMigrationData | null = null // legacy-migration
+  /** Guard to prevent checkAndShowMigrationWizard running concurrently. */ // legacy-migration
+  private migrationCheckInFlight = false // legacy-migration
   private unsubscribeNotificationDismiss: (() => void) | null = null
   private webviewMessageDisposable: vscode.Disposable | null = null
 
@@ -2017,10 +2019,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    */
   private async checkAndShowMigrationWizard(): Promise<void> {
     if (!this.extensionContext) return
+    if (this.migrationCheckInFlight) return
     const status = MigrationService.getMigrationStatus(this.extensionContext)
     if (status) return // already prompted (skipped or completed)
 
+    this.migrationCheckInFlight = true
     const data = await MigrationService.detectLegacyData(this.extensionContext)
+    this.migrationCheckInFlight = false
+
     if (!data.hasData) return
 
     // Cache so migrate() doesn't re-read from SecretStorage/disk
