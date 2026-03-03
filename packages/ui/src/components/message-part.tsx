@@ -1430,19 +1430,17 @@ ToolRegistry.register({
   name: "bash",
   render(props) {
     const i18n = useI18n()
-    const text = createMemo(() => {
-      const cmd = props.input.command ?? props.metadata.command ?? ""
-      const out = stripAnsi(props.output || props.metadata.output || "")
-      return `$ ${cmd}${out ? "\n\n" + out : ""}`
-    })
+    // kilocode_change start - separate cmd/output memos so copy excludes the "$ " display prefix
+    const cmd = createMemo(() => props.input.command ?? props.metadata.command ?? "")
+    const out = createMemo(() => stripAnsi(props.output || props.metadata.output || ""))
+    const text = createMemo(() => `$ ${cmd()}${out() ? "\n\n" + out() : ""}`)
+    // kilocode_change end
     const [copied, setCopied] = createSignal(false)
 
     const handleCopy = async () => {
-      // kilocode_change start - strip leading "$ " prompt indicator from copied text
-      const raw = text()
-      if (!raw) return
-      const content = raw.startsWith("$ ") ? raw.slice(2) : raw
-      // kilocode_change end
+      const command = cmd()
+      if (!command) return
+      const content = out() ? `${command}\n\n${out()}` : command // kilocode_change
       await navigator.clipboard.writeText(content)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
