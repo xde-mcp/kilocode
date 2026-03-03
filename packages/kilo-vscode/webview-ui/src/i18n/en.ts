@@ -1112,27 +1112,33 @@ export const dict = {
 
   // legacy-migration start
   "settings.legacyMigration.link": "Migrate from Legacy Version",
+  "settings.aboutKiloCode.legacyMigration.title": "Legacy Migration",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "Migrate settings from a previous installation of Kilo Code, including provider API keys and default model.",
   "migration.welcome.title": "Welcome to the New Kilo Code",
   "migration.welcome.detected": "We detected settings from a previous installation of Kilo Code.",
   "migration.welcome.sessionsInfo":
     "Chat sessions and history cannot be migrated — the new version uses a different architecture.",
   "migration.welcome.canMigrate": "The following settings can be migrated to the new version:",
-  "migration.welcome.continue": "Continue",
+  "migration.welcome.start": "Start Migration",
   "migration.welcome.skip": "Skip Migration",
+  "migration.steps.title": "Migrate your settings",
+  "migration.steps.subtitle": "We found settings from your previous Kilo Code installation. Choose what to bring over.",
   "migration.select.providers": "Provider API Keys",
   "migration.select.mcpServers": "MCP Servers",
   "migration.select.customModes": "Custom Modes / Agents",
   "migration.select.defaultModel": "Default Model",
   "migration.select.unsupported": "Not supported in new version",
   "migration.select.nothingToMigrate": "Nothing to migrate was found in the legacy settings.",
-  "migration.select.migrate": "Migrate Selected",
+  "migration.select.continue": "Continue",
   "migration.select.back": "Back",
-  "migration.progress.title": "Migrating your settings...",
-  "migration.progress.done": "Done",
+  "migration.select.approvalNote": "Approval settings will be migrated based on your previous configuration.",
+  "migration.progress.title": "Migrating your settings…",
+  "migration.progress.done": "Continue",
   "migration.complete.summary": "{{success}} of {{total}} items migrated successfully.",
   "migration.complete.cleanup": "Remove legacy settings data",
   "migration.complete.cleanupDescription":
     "This removes the old settings from VS Code storage. You will not be able to re-run this migration.",
-  "migration.complete.done": "Get Started",
+  "migration.complete.done": "Done",
   // legacy-migration end
 }

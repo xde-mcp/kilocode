@@ -8,7 +8,7 @@
  *   4. Complete — summary + optional cleanup checkbox
  */
 
-import { Component, For, Show, createSignal, onMount, onCleanup, JSX } from "solid-js"
+import { Component, For, Show, Switch, Match, createSignal, onMount, onCleanup, JSX } from "solid-js"
 import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
 import type {
@@ -32,17 +32,61 @@ const KiloLogo = (): JSX.Element => {
     document.body.classList.contains("vscode-light") || document.body.classList.contains("vscode-high-contrast-light")
   const icon = isLight ? "kilo-light.svg" : "kilo-dark.svg"
   return (
-    <div class="kilo-logo migration-wizard__logo">
+    <div class="migration-wizard__welcome-logo">
       <img src={`${iconsBaseUri}/${icon}`} alt="Kilo Code" />
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
+// CheckIcon — checkmark SVG for completed steps
+// ---------------------------------------------------------------------------
+
+const CheckIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+)
+
+// ---------------------------------------------------------------------------
+// InfoIcon — info circle SVG for notes
+// ---------------------------------------------------------------------------
+
+const InfoIcon = (): JSX.Element => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    class="migration-wizard__note-icon"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
+  </svg>
+)
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type Step = "welcome" | "select" | "progress" | "complete"
+type StepStatus = "upcoming" | "current" | "done"
 
 interface ProgressEntry {
   item: string
@@ -208,44 +252,58 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
 
   const successCount = () => results().filter((r) => r.status === "success").length
   const totalCount = () => results().length
-  const hasWarnings = () => results().some((r) => r.status === "warning" || r.status === "error")
 
   // ---------------------------------------------------------------------------
-  // Step indicator helper
+  // Step indicator helpers
   // ---------------------------------------------------------------------------
 
-  const STEPS: Step[] = ["welcome", "select", "progress", "complete"]
+  // The 3-step indicator maps to the non-welcome steps
+  const WIZARD_STEPS: Step[] = ["select", "progress", "complete"]
 
-  const stepClass = (s: Step) => {
-    const current = STEPS.indexOf(step())
-    const idx = STEPS.indexOf(s)
-    return (
-      "migration-wizard__step" +
-      (step() === s ? " migration-wizard__step--active" : "") +
-      (current > idx ? " migration-wizard__step--done" : "")
-    )
+  const stepStatus = (s: Step): StepStatus => {
+    const idx = WIZARD_STEPS.indexOf(s)
+    const curr = WIZARD_STEPS.indexOf(step())
+    if (curr < 0) return "upcoming" // welcome step — all upcoming
+    if (curr > idx) return "done"
+    if (curr === idx) return "current"
+    return "upcoming"
   }
 
   // ---------------------------------------------------------------------------
-  // Render helpers
+  // Progress item render helpers
   // ---------------------------------------------------------------------------
 
-  const statusIcon = (status: ProgressEntry["status"]) => {
+  const dotColor = (status: ProgressEntry["status"]) => {
     switch (status) {
-      case "pending":
-        return "○"
-      case "migrating":
-        return "◌"
       case "success":
-        return "✓"
+        return "var(--vscode-testing-iconPassed, #89d185)"
       case "warning":
-        return "⚠"
+        return "var(--vscode-testing-iconQueued, #cca700)"
       case "error":
-        return "✗"
+        return "var(--vscode-testing-iconFailed, #f14c4c)"
+      case "migrating":
+        return "var(--vscode-button-background)"
+      default:
+        return "var(--vscode-descriptionForeground)"
     }
   }
 
-  const statusColor = (status: ProgressEntry["status"]) => {
+  const statusLabel = (status: ProgressEntry["status"]) => {
+    switch (status) {
+      case "success":
+        return "✓ Done"
+      case "warning":
+        return "⚠ Warning"
+      case "error":
+        return "✗ Failed"
+      case "migrating":
+        return "..."
+      default:
+        return ""
+    }
+  }
+
+  const statusLabelColor = (status: ProgressEntry["status"]) => {
     switch (status) {
       case "success":
         return "var(--vscode-testing-iconPassed, #89d185)"
@@ -267,30 +325,43 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
       {/* Header — only shown on steps 2-4 */}
       <Show when={step() !== "welcome"}>
         <div class="migration-wizard__header">
-          <h2 class="migration-wizard__title">{language.t("migration.welcome.title")}</h2>
+          <h2 class="migration-wizard__title">{language.t("migration.steps.title")}</h2>
+          <p class="migration-wizard__header-subtitle">{language.t("migration.steps.subtitle")}</p>
+
+          {/* Step indicator */}
+          <div class="migration-wizard__steps">
+            <For each={WIZARD_STEPS}>
+              {(s, i) => (
+                <>
+                  <div class={`migration-wizard__step migration-wizard__step--${stepStatus(s)}`}>
+                    <Switch>
+                      <Match when={stepStatus(s) === "done"}>
+                        <CheckIcon />
+                      </Match>
+                      <Match when={true}>
+                        <span>{i() + 1}</span>
+                      </Match>
+                    </Switch>
+                  </div>
+                  <Show when={i() < WIZARD_STEPS.length - 1}>
+                    <span
+                      class={`migration-wizard__step-connector${stepStatus(s) === "done" ? " migration-wizard__step-connector--done" : ""}`}
+                    />
+                  </Show>
+                </>
+              )}
+            </For>
+          </div>
         </div>
       </Show>
 
       <div class="migration-wizard__body">
-        {/* Step indicator — only shown on steps 2-4 */}
-        <Show when={step() !== "welcome"}>
-          <div class="migration-wizard__steps">
-            <div class={stepClass("welcome")}>1</div>
-            <span class="migration-wizard__step-connector" />
-            <div class={stepClass("select")}>2</div>
-            <span class="migration-wizard__step-connector" />
-            <div class={stepClass("progress")}>3</div>
-            <span class="migration-wizard__step-connector" />
-            <div class={stepClass("complete")}>4</div>
-          </div>
-        </Show>
-
         {/* ---- Step 1: Welcome ---- */}
         <Show when={step() === "welcome"}>
           <div class="migration-wizard__welcome">
             <KiloLogo />
             <h2 class="migration-wizard__welcome-title">{language.t("migration.welcome.title")}</h2>
-            <p class="kilo-about-text migration-wizard__welcome-subtitle">{language.t("migration.welcome.detected")}</p>
+            <p class="migration-wizard__welcome-subtitle">{language.t("migration.welcome.detected")}</p>
 
             <div class="migration-wizard__welcome-cards">
               <div class="migration-wizard__info-card migration-wizard__info-card--warning">
@@ -332,7 +403,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
               class="migration-wizard__btn migration-wizard__btn--primary"
               onClick={() => setStep("select")}
             >
-              {language.t("migration.welcome.continue")}
+              {language.t("migration.welcome.start")}
             </button>
           </div>
         </Show>
@@ -441,6 +512,12 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
             <Show when={providers().length === 0 && mcpServers().length === 0 && customModes().length === 0}>
               <p class="migration-wizard__empty">{language.t("migration.select.nothingToMigrate")}</p>
             </Show>
+
+            {/* Approval settings info note */}
+            <div class="migration-wizard__note">
+              <InfoIcon />
+              <p class="migration-wizard__note-text">{language.t("migration.select.approvalNote")}</p>
+            </div>
           </div>
 
           <div class="migration-wizard__footer">
@@ -457,7 +534,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
               disabled={!hasAnySelection()}
               onClick={handleStartMigration}
             >
-              {language.t("migration.select.migrate")}
+              {language.t("migration.select.continue")}
             </button>
           </div>
         </Show>
@@ -465,25 +542,40 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         {/* ---- Step 3: Progress ---- */}
         <Show when={step() === "progress"}>
           <div class="migration-wizard__content">
-            <p class="migration-wizard__lead">{language.t("migration.progress.title")}</p>
-            <div class="migration-wizard__progress-list">
-              <For each={progressEntries()}>
-                {(entry) => (
-                  <div class="migration-wizard__progress-item">
-                    <span class="migration-wizard__progress-icon" style={{ color: statusColor(entry.status) }}>
-                      {statusIcon(entry.status)}
-                    </span>
-                    <span class="migration-wizard__progress-name">{entry.item}</span>
-                    <Show when={entry.message}>
-                      <span class="migration-wizard__progress-msg">{entry.message}</span>
-                    </Show>
-                  </div>
-                )}
-              </For>
+            <div class="migration-wizard__progress-card">
+              <p class="migration-wizard__lead">{language.t("migration.progress.title")}</p>
+              <div class="migration-wizard__progress-list">
+                <For each={progressEntries()}>
+                  {(entry) => (
+                    <div class="migration-wizard__progress-item">
+                      <span class="migration-wizard__progress-dot" style={{ background: dotColor(entry.status) }} />
+                      <span class="migration-wizard__progress-name">{entry.item}</span>
+                      <Show when={entry.message}>
+                        <span class="migration-wizard__progress-msg">{entry.message}</span>
+                      </Show>
+                      <Show when={statusLabel(entry.status)}>
+                        <span
+                          class="migration-wizard__progress-label"
+                          style={{ color: statusLabelColor(entry.status) }}
+                        >
+                          {statusLabel(entry.status)}
+                        </span>
+                      </Show>
+                    </div>
+                  )}
+                </For>
+              </div>
             </div>
           </div>
 
           <div class="migration-wizard__footer">
+            <button
+              type="button"
+              class="migration-wizard__btn migration-wizard__btn--ghost"
+              onClick={() => setStep("select")}
+            >
+              {language.t("migration.select.back")}
+            </button>
             <button
               type="button"
               class="migration-wizard__btn migration-wizard__btn--primary"
@@ -506,24 +598,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
                 })}
               </strong>
             </div>
-
-            <Show when={hasWarnings()}>
-              <div class="migration-wizard__progress-list" style={{ "margin-top": "12px" }}>
-                <For each={results().filter((r) => r.status !== "success")}>
-                  {(result) => (
-                    <div class="migration-wizard__progress-item">
-                      <span class="migration-wizard__progress-icon" style={{ color: statusColor(result.status) }}>
-                        {statusIcon(result.status)}
-                      </span>
-                      <span class="migration-wizard__progress-name">{result.item}</span>
-                      <Show when={result.message}>
-                        <span class="migration-wizard__progress-msg">{result.message}</span>
-                      </Show>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </Show>
 
             <label class="migration-wizard__cleanup">
               <input

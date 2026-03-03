@@ -1812,6 +1812,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
+    // Refresh provider and agent lists when the server signals a state disposal
+    if (event.type === "server.instance.disposed" || event.type === "global.disposed") {
+      void this.fetchAndSendProviders()
+      void this.fetchAndSendAgents()
+      return
+    }
+
     // Forward relevant events to webview
     // Side effects that must happen before the webview message is sent
     if (event.type === "session.created" && !this.currentSession) {
@@ -2047,6 +2054,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       },
     )
     await MigrationService.setMigrationStatus(this.extensionContext, "completed")
+    // Refresh providers so webview immediately sees the newly-migrated API keys
+    await this.fetchAndSendProviders()
     this.postMessage({ type: "legacyMigrationComplete", results })
   }
 
