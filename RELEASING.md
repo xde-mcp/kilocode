@@ -10,6 +10,10 @@ Kilocode uses a fully automated CI pipeline triggered via GitHub Actions `workfl
 4. Fill in the inputs:
    - **`bump`** (choice): `patch`, `minor`, or `major`. Determines how the version number is incremented.
    - **`version`** (string, optional): Override the version explicitly instead of using `bump`. Leave empty to use the bump-based calculation.
+
+   > **⚠️ Do not fill in `version` unless you have a specific reason to.**
+   > The default behavior — leaving `version` empty and selecting a `bump` level — is almost always what you want. The automated bump logic computes the correct next version from the current state of the repo. Only use the `version` override for exceptional cases like skipping versions or publishing a pre-release (e.g. `1.5.0-beta.1`).
+
 5. Click **"Run workflow"** to start the release.
 
 ## What Happens During a Release
