@@ -1,4 +1,4 @@
-# Releasing Kilocode
+# Releasing Kilo Code
 
 Kilocode uses a fully automated CI pipeline triggered via GitHub Actions `workflow_dispatch`. A single workflow handles version bumping, building all artifacts, publishing to every distribution channel, and updating package registries.
 
