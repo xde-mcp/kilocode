@@ -748,12 +748,14 @@ export interface AgentManagerApplyWorktreeDiffResultMessage {
   conflicts?: AgentManagerApplyWorktreeDiffConflict[]
 }
 
-// Per-worktree git stats: diff additions/deletions and commits missing from origin
+// Per-worktree git stats: diff additions/deletions and ahead/behind counts
 export interface WorktreeGitStats {
   worktreeId: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Worktree git stats push (extension → webview)
@@ -762,12 +764,14 @@ export interface AgentManagerWorktreeStatsMessage {
   stats: WorktreeGitStats[]
 }
 
-// Per-local-workspace git stats: branch name, diff additions/deletions, commits missing from origin
+// Per-local-workspace git stats: branch name, diff additions/deletions, ahead/behind counts
 export interface LocalGitStats {
   branch: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Local workspace git stats push (extension → webview)
