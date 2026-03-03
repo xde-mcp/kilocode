@@ -733,12 +733,29 @@ export interface AgentManagerWorktreeDiffLoadingMessage {
   loading: boolean
 }
 
-// Per-worktree git stats: diff additions/deletions and commits missing from origin
+export type AgentManagerApplyWorktreeDiffStatus = "checking" | "applying" | "success" | "conflict" | "error"
+
+export interface AgentManagerApplyWorktreeDiffConflict {
+  file?: string
+  reason: string
+}
+
+export interface AgentManagerApplyWorktreeDiffResultMessage {
+  type: "agentManager.applyWorktreeDiffResult"
+  worktreeId: string
+  status: AgentManagerApplyWorktreeDiffStatus
+  message: string
+  conflicts?: AgentManagerApplyWorktreeDiffConflict[]
+}
+
+// Per-worktree git stats: diff additions/deletions and ahead/behind counts
 export interface WorktreeGitStats {
   worktreeId: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Worktree git stats push (extension → webview)
@@ -747,12 +764,14 @@ export interface AgentManagerWorktreeStatsMessage {
   stats: WorktreeGitStats[]
 }
 
-// Per-local-workspace git stats: branch name, diff additions/deletions, commits missing from origin
+// Per-local-workspace git stats: branch name, diff additions/deletions, ahead/behind counts
 export interface LocalGitStats {
   branch: string
+  files: number
   additions: number
   deletions: number
-  commits: number
+  ahead: number
+  behind: number
 }
 
 // Agent Manager: Local workspace git stats push (extension → webview)
@@ -771,6 +790,20 @@ export interface AgentManagerSendInitialMessage {
   modelID?: string
   agent?: string
   files?: Array<{ mime: string; url: string }>
+}
+
+// Enhance prompt result (extension → webview)
+export interface EnhancePromptResultMessage {
+  type: "enhancePromptResult"
+  text: string
+  requestId: string
+}
+
+// Enhance prompt error (extension → webview)
+export interface EnhancePromptErrorMessage {
+  type: "enhancePromptError"
+  error: string
+  requestId: string
 }
 
 export type ExtensionMessage =
@@ -830,8 +863,11 @@ export type ExtensionMessage =
   | WorkspaceDirectoryChangedMessage
   | AgentManagerWorktreeDiffMessage
   | AgentManagerWorktreeDiffLoadingMessage
+  | AgentManagerApplyWorktreeDiffResultMessage
   | AgentManagerWorktreeStatsMessage
   | AgentManagerLocalStatsMessage
+  | EnhancePromptResultMessage
+  | EnhancePromptErrorMessage
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1232,6 +1268,12 @@ export interface StopDiffWatchMessage {
   type: "agentManager.stopDiffWatch"
 }
 
+export interface ApplyWorktreeDiffMessage {
+  type: "agentManager.applyWorktreeDiff"
+  worktreeId: string
+  selectedFiles?: string[]
+}
+
 // Variant persistence (webview → extension)
 export interface PersistVariantRequest {
   type: "persistVariant"
@@ -1242,6 +1284,13 @@ export interface PersistVariantRequest {
 // Request stored variants from extension (webview → extension)
 export interface RequestVariantsMessage {
   type: "requestVariants"
+}
+
+// Enhance prompt request (webview → extension)
+export interface EnhancePromptRequest {
+  type: "enhancePrompt"
+  text: string
+  requestId: string
 }
 
 export type WebviewMessage =
@@ -1315,6 +1364,8 @@ export type WebviewMessage =
   | RequestWorktreeDiffMessage
   | StartDiffWatchMessage
   | StopDiffWatchMessage
+  | ApplyWorktreeDiffMessage
+  | EnhancePromptRequest
 
 // ============================================
 // VS Code API type
