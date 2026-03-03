@@ -138,7 +138,8 @@ interface SessionContextValue {
   selectCloudSession: (cloudSessionId: string) => void
 }
 
-const SessionContext = createContext<SessionContextValue>()
+// kilocode_change - export context for Storybook mock providers
+export const SessionContext = createContext<SessionContextValue>()
 
 export const SessionProvider: ParentComponent = (props) => {
   const vscode = useVSCode()
