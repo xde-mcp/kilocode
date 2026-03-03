@@ -797,7 +797,6 @@ export interface LegacyAutocompleteSettings {
   enableAutoTrigger?: boolean
   enableSmartInlineTaskKeybinding?: boolean
   enableChatAutocomplete?: boolean
-  snoozeUntil?: number
 }
 
 export interface LegacySettings {
@@ -812,7 +811,6 @@ export interface LegacySettings {
   alwaysAllowMcp?: boolean
   alwaysAllowModeSwitch?: boolean
   alwaysAllowSubtasks?: boolean
-  alwaysAllowFollowupQuestions?: boolean
   language?: string
   autocomplete?: LegacyAutocompleteSettings
 }
@@ -858,7 +856,6 @@ export interface MigrationAutoApprovalSelections {
   executePermission: boolean
   mcpPermission: boolean
   taskPermission: boolean
-  questionPermission: boolean
 }
 
 export interface StartLegacyMigrationMessage {

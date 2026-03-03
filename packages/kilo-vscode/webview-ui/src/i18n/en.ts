@@ -1144,8 +1144,6 @@ export const dict = {
   "migration.select.autoApproval.mcpPermissionDesc": "MCP tool usage",
   "migration.select.autoApproval.taskPermission": "Task Permission",
   "migration.select.autoApproval.taskPermissionDesc": "Mode switching and subtask creation",
-  "migration.select.autoApproval.questionPermission": "Question Permission",
-  "migration.select.autoApproval.questionPermissionDesc": "Follow-up questions to the user",
   "migration.select.language": "UI Language",
   "migration.select.languageDesc": "Your language preference will be applied to the new extension",
   "migration.select.autocomplete": "Autocomplete Settings",

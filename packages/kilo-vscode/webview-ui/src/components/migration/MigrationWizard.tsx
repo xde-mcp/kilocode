@@ -105,7 +105,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     executePermission: false,
     mcpPermission: false,
     taskPermission: false,
-    questionPermission: false,
   }
   const [autoApprovalSel, setAutoApprovalSel] = createSignal<MigrationAutoApprovalSelections>({ ...ALL_AP_OFF })
   const [migrateLanguage, setMigrateLanguage] = createSignal(false)
@@ -155,7 +154,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
             executePermission: s.alwaysAllowExecute !== undefined,
             mcpPermission: s.alwaysAllowMcp !== undefined,
             taskPermission: s.alwaysAllowModeSwitch !== undefined || s.alwaysAllowSubtasks !== undefined,
-            questionPermission: s.alwaysAllowFollowupQuestions !== undefined,
           })
           setMigrateLanguage(Boolean(s.language))
           setMigrateAutocomplete(Boolean(s.autocomplete))
@@ -209,7 +207,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
       ...(autoApprovalSel().executePermission ? [{ item: "Execute permission", status: "pending" as const }] : []),
       ...(autoApprovalSel().mcpPermission ? [{ item: "MCP permission", status: "pending" as const }] : []),
       ...(autoApprovalSel().taskPermission ? [{ item: "Task permission", status: "pending" as const }] : []),
-      ...(autoApprovalSel().questionPermission ? [{ item: "Question permission", status: "pending" as const }] : []),
       ...(migrateLanguage() && legacySettings()?.language
         ? [{ item: "Language preference", status: "pending" as const }]
         : []),
@@ -305,7 +302,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     const s = legacySettings()
     return s !== undefined && (s.alwaysAllowModeSwitch !== undefined || s.alwaysAllowSubtasks !== undefined)
   }
-  const hasQuestionPermissionData = () => legacySettings()?.alwaysAllowFollowupQuestions !== undefined
 
   const hasAnyAutoApprovalData = () =>
     hasCommandRulesData() ||
@@ -313,8 +309,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     hasWritePermissionData() ||
     hasExecutePermissionData() ||
     hasMcpPermissionData() ||
-    hasTaskPermissionData() ||
-    hasQuestionPermissionData()
+    hasTaskPermissionData()
 
   const hasLanguageData = () => Boolean(legacySettings()?.language)
 
@@ -702,25 +697,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
                         </span>
                         <span class="migration-wizard__item-meta">
                           {language.t("migration.select.autoApproval.taskPermissionDesc")}
-                        </span>
-                      </div>
-                    </label>
-                  </Show>
-                  <Show when={hasQuestionPermissionData()}>
-                    <label class="migration-wizard__item">
-                      <input
-                        type="checkbox"
-                        checked={autoApprovalSel().questionPermission}
-                        onChange={(e) =>
-                          setAutoApprovalSel((p) => ({ ...p, questionPermission: e.currentTarget.checked }))
-                        }
-                      />
-                      <div class="migration-wizard__item-info">
-                        <span class="migration-wizard__item-name">
-                          {language.t("migration.select.autoApproval.questionPermission")}
-                        </span>
-                        <span class="migration-wizard__item-meta">
-                          {language.t("migration.select.autoApproval.questionPermissionDesc")}
                         </span>
                       </div>
                     </label>

@@ -83,7 +83,6 @@ export async function detectLegacyData(context: vscode.ExtensionContext): Promis
     settings.alwaysAllowMcp !== undefined ||
     settings.alwaysAllowModeSwitch !== undefined ||
     settings.alwaysAllowSubtasks !== undefined ||
-    settings.alwaysAllowFollowupQuestions !== undefined ||
     Boolean(settings.language) ||
     Boolean(settings.autocomplete)
 
@@ -212,8 +211,7 @@ export async function migrate(
     apSel.writePermission ||
     apSel.executePermission ||
     apSel.mcpPermission ||
-    apSel.taskPermission ||
-    apSel.questionPermission
+    apSel.taskPermission
   ) {
     const apItems = await migrateAutoApproval(legacySettings, apSel, client, onProgress)
     results.push(...apItems)
@@ -415,7 +413,6 @@ async function migrateAutoApproval(
     alwaysAllowMcp,
     alwaysAllowModeSwitch,
     alwaysAllowSubtasks,
-    alwaysAllowFollowupQuestions,
   } = settings
 
   // The master toggle acts as a global fallback for unspecified tools.
@@ -532,19 +529,6 @@ async function migrateAutoApproval(
     onProgress(label, "success")
   }
 
-  // Follow-up question permissions
-  if (sel.questionPermission) {
-    const label = "Question permission"
-    onProgress(label, "migrating")
-    if (alwaysAllowFollowupQuestions === true) {
-      permission.question = "allow"
-    } else if (alwaysAllowFollowupQuestions === false) {
-      permission.question = "ask"
-    }
-    results.push({ item: label, category: "settings", status: "success" })
-    onProgress(label, "success")
-  }
-
   if (Object.keys(permission).length > 0) {
     await client.global.config.update({ config: { permission } })
   }
@@ -566,10 +550,6 @@ async function migrateAutocomplete(settings: LegacyAutocompleteSettings): Promis
   }
   if (settings.enableChatAutocomplete !== undefined) {
     await config.update("enableChatAutocomplete", settings.enableChatAutocomplete, vscode.ConfigurationTarget.Global)
-  }
-  // Only migrate snooze if the timestamp is still in the future
-  if (settings.snoozeUntil !== undefined && settings.snoozeUntil > Date.now()) {
-    await config.update("snoozeUntil", settings.snoozeUntil, vscode.ConfigurationTarget.Global)
   }
   return { item: "Autocomplete settings", category: "settings", status: "success" }
 }
@@ -713,14 +693,13 @@ async function readLegacyCustomModes(context: vscode.ExtensionContext): Promise<
 }
 
 function readLegacySettings(context: vscode.ExtensionContext): LegacySettings {
-  const raw = context.globalState.get<LegacyAutocompleteSettings>("ghostServiceSettings")
+  const raw = context.globalState.get<Record<string, unknown>>("ghostServiceSettings")
   const autocomplete: LegacyAutocompleteSettings | undefined =
     raw && typeof raw === "object"
       ? {
-          enableAutoTrigger: raw.enableAutoTrigger,
-          enableSmartInlineTaskKeybinding: raw.enableSmartInlineTaskKeybinding,
-          enableChatAutocomplete: raw.enableChatAutocomplete,
-          snoozeUntil: raw.snoozeUntil,
+          enableAutoTrigger: raw.enableAutoTrigger as boolean | undefined,
+          enableSmartInlineTaskKeybinding: raw.enableSmartInlineTaskKeybinding as boolean | undefined,
+          enableChatAutocomplete: raw.enableChatAutocomplete as boolean | undefined,
         }
       : undefined
 
@@ -736,7 +715,6 @@ function readLegacySettings(context: vscode.ExtensionContext): LegacySettings {
     alwaysAllowMcp: context.globalState.get<boolean>("alwaysAllowMcp"),
     alwaysAllowModeSwitch: context.globalState.get<boolean>("alwaysAllowModeSwitch"),
     alwaysAllowSubtasks: context.globalState.get<boolean>("alwaysAllowSubtasks"),
-    alwaysAllowFollowupQuestions: context.globalState.get<boolean>("alwaysAllowFollowupQuestions"),
     language: context.globalState.get<string>("kilo-code.language"),
     autocomplete: hasAutocompleteData(autocomplete) ? autocomplete : undefined,
   }
@@ -747,8 +725,7 @@ function hasAutocompleteData(s: LegacyAutocompleteSettings | undefined): s is Le
   return (
     s.enableAutoTrigger !== undefined ||
     s.enableSmartInlineTaskKeybinding !== undefined ||
-    s.enableChatAutocomplete !== undefined ||
-    (s.snoozeUntil !== undefined && s.snoozeUntil > Date.now())
+    s.enableChatAutocomplete !== undefined
   )
 }
 
