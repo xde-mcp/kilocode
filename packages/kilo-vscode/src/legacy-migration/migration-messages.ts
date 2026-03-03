@@ -12,6 +12,7 @@ import type {
   MigrationCustomModeInfo,
   MigrationSelections,
   MigrationResultItem,
+  LegacySettings,
 } from "./legacy-types"
 
 // ---------------------------------------------------------------------------
@@ -26,6 +27,7 @@ export interface LegacyMigrationDataMessage {
     mcpServers: MigrationMcpServerInfo[]
     customModes: MigrationCustomModeInfo[]
     defaultModel?: { provider: string; model: string }
+    settings?: LegacySettings
   }
 }
 

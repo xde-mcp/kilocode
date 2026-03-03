@@ -195,6 +195,38 @@ export interface LegacyMcpServer {
 }
 
 // ---------------------------------------------------------------------------
+// Autocomplete settings (stored in globalState under "ghostServiceSettings")
+// ---------------------------------------------------------------------------
+
+export interface LegacyAutocompleteSettings {
+  enableAutoTrigger?: boolean
+  enableSmartInlineTaskKeybinding?: boolean
+  enableChatAutocomplete?: boolean
+  snoozeUntil?: number
+}
+
+// ---------------------------------------------------------------------------
+// Settings (stored in VS Code globalState under "kilo-code.*" keys)
+// ---------------------------------------------------------------------------
+
+export interface LegacySettings {
+  autoApprovalEnabled?: boolean
+  allowedCommands?: string[]
+  deniedCommands?: string[]
+  // Fine-grained auto-approval (legacy globalState keys — no prefix)
+  alwaysAllowReadOnly?: boolean
+  alwaysAllowReadOnlyOutsideWorkspace?: boolean
+  alwaysAllowWrite?: boolean
+  alwaysAllowExecute?: boolean
+  alwaysAllowMcp?: boolean
+  alwaysAllowModeSwitch?: boolean
+  alwaysAllowSubtasks?: boolean
+  alwaysAllowFollowupQuestions?: boolean
+  language?: string
+  autocomplete?: LegacyAutocompleteSettings
+}
+
+// ---------------------------------------------------------------------------
 // Custom modes (stored on disk at <globalStorage>/settings/custom_modes.yaml)
 // ---------------------------------------------------------------------------
 
@@ -240,7 +272,31 @@ export interface LegacyMigrationData {
   mcpServers: MigrationMcpServerInfo[]
   customModes: MigrationCustomModeInfo[]
   defaultModel?: { provider: string; model: string }
+  settings?: LegacySettings
   hasData: boolean
+}
+
+export interface MigrationAutoApprovalSelections {
+  /** Master toggle + command allowlist/denylist */
+  commandRules: boolean
+  /** Read permission (alwaysAllowReadOnly / alwaysAllowReadOnlyOutsideWorkspace) */
+  readPermission: boolean
+  /** Write permission (alwaysAllowWrite) */
+  writePermission: boolean
+  /** Execute permission (alwaysAllowExecute) */
+  executePermission: boolean
+  /** MCP tool permission (alwaysAllowMcp) */
+  mcpPermission: boolean
+  /** Task/subtask permission (alwaysAllowModeSwitch / alwaysAllowSubtasks) */
+  taskPermission: boolean
+  /** Follow-up question permission (alwaysAllowFollowupQuestions) */
+  questionPermission: boolean
+}
+
+export interface MigrationSettingsSelections {
+  autoApproval: MigrationAutoApprovalSelections
+  language: boolean
+  autocomplete: boolean
 }
 
 export interface MigrationSelections {
@@ -248,11 +304,12 @@ export interface MigrationSelections {
   mcpServers: string[]
   customModes: string[]
   defaultModel: boolean
+  settings: MigrationSettingsSelections
 }
 
 export interface MigrationResultItem {
   item: string
-  category: "provider" | "mcpServer" | "customMode" | "defaultModel"
+  category: "provider" | "mcpServer" | "customMode" | "defaultModel" | "settings"
   status: "success" | "warning" | "error"
   message?: string
 }

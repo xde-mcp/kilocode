@@ -2026,6 +2026,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         mcpServers: data.mcpServers,
         customModes: data.customModes,
         defaultModel: data.defaultModel,
+        settings: data.settings,
       },
     })
   }
@@ -2041,6 +2042,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         mcpServers: data.mcpServers,
         customModes: data.customModes,
         defaultModel: data.defaultModel,
+        settings: data.settings,
       },
     })
   }

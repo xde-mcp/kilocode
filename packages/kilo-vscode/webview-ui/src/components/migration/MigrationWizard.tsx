@@ -16,6 +16,8 @@ import type {
   MigrationMcpServerInfo,
   MigrationCustomModeInfo,
   MigrationResultItem,
+  MigrationAutoApprovalSelections,
+  LegacySettings,
   LegacyMigrationDataMessage,
   LegacyMigrationProgressMessage,
   LegacyMigrationCompleteMessage,
@@ -59,29 +61,6 @@ const CheckIcon = (): JSX.Element => (
 )
 
 // ---------------------------------------------------------------------------
-// InfoIcon — info circle SVG for notes
-// ---------------------------------------------------------------------------
-
-const InfoIcon = (): JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    class="migration-wizard__note-icon"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 16v-4" />
-    <path d="M12 8h.01" />
-  </svg>
-)
-
-// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
@@ -112,12 +91,25 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
   const [mcpServers, setMcpServers] = createSignal<MigrationMcpServerInfo[]>([])
   const [customModes, setCustomModes] = createSignal<MigrationCustomModeInfo[]>([])
   const [defaultModel, setDefaultModel] = createSignal<{ provider: string; model: string } | undefined>(undefined)
+  const [legacySettings, setLegacySettings] = createSignal<LegacySettings | undefined>(undefined)
 
   // Selections (profile names / server names / mode slugs)
   const [selectedProviders, setSelectedProviders] = createSignal<Set<string>>(new Set())
   const [selectedMcpServers, setSelectedMcpServers] = createSignal<Set<string>>(new Set())
   const [selectedModes, setSelectedModes] = createSignal<Set<string>>(new Set())
   const [migrateDefaultModel, setMigrateDefaultModel] = createSignal(true)
+  const ALL_AP_OFF: MigrationAutoApprovalSelections = {
+    commandRules: false,
+    readPermission: false,
+    writePermission: false,
+    executePermission: false,
+    mcpPermission: false,
+    taskPermission: false,
+    questionPermission: false,
+  }
+  const [autoApprovalSel, setAutoApprovalSel] = createSignal<MigrationAutoApprovalSelections>({ ...ALL_AP_OFF })
+  const [migrateLanguage, setMigrateLanguage] = createSignal(false)
+  const [migrateAutocomplete, setMigrateAutocomplete] = createSignal(false)
 
   // Progress tracking
   const [progressEntries, setProgressEntries] = createSignal<ProgressEntry[]>([])
@@ -140,6 +132,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         setMcpServers(data.mcpServers)
         setCustomModes(data.customModes)
         setDefaultModel(data.defaultModel)
+        setLegacySettings(data.settings)
 
         // Pre-select everything that is supported and has a key
         setSelectedProviders(
@@ -148,6 +141,25 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         setSelectedMcpServers(new Set(data.mcpServers.map((s) => s.name)))
         setSelectedModes(new Set(data.customModes.map((m) => m.slug)))
         setMigrateDefaultModel(Boolean(data.defaultModel))
+
+        // Pre-select settings migration if data exists
+        const s = data.settings
+        if (s) {
+          setAutoApprovalSel({
+            commandRules:
+              s.autoApprovalEnabled !== undefined ||
+              Boolean(s.allowedCommands?.length) ||
+              Boolean(s.deniedCommands?.length),
+            readPermission: s.alwaysAllowReadOnly !== undefined || s.alwaysAllowReadOnlyOutsideWorkspace !== undefined,
+            writePermission: s.alwaysAllowWrite !== undefined,
+            executePermission: s.alwaysAllowExecute !== undefined,
+            mcpPermission: s.alwaysAllowMcp !== undefined,
+            taskPermission: s.alwaysAllowModeSwitch !== undefined || s.alwaysAllowSubtasks !== undefined,
+            questionPermission: s.alwaysAllowFollowupQuestions !== undefined,
+          })
+          setMigrateLanguage(Boolean(s.language))
+          setMigrateAutocomplete(Boolean(s.autocomplete))
+        }
       }
 
       if (msg?.type === "legacyMigrationProgress") {
@@ -191,6 +203,19 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         return { item: mode?.name ?? slug, status: "pending" as const }
       }),
       ...(migrateDefaultModel() && defaultModel() ? [{ item: "Default model", status: "pending" as const }] : []),
+      ...(autoApprovalSel().commandRules ? [{ item: "Command rules", status: "pending" as const }] : []),
+      ...(autoApprovalSel().readPermission ? [{ item: "Read permission", status: "pending" as const }] : []),
+      ...(autoApprovalSel().writePermission ? [{ item: "Write permission", status: "pending" as const }] : []),
+      ...(autoApprovalSel().executePermission ? [{ item: "Execute permission", status: "pending" as const }] : []),
+      ...(autoApprovalSel().mcpPermission ? [{ item: "MCP permission", status: "pending" as const }] : []),
+      ...(autoApprovalSel().taskPermission ? [{ item: "Task permission", status: "pending" as const }] : []),
+      ...(autoApprovalSel().questionPermission ? [{ item: "Question permission", status: "pending" as const }] : []),
+      ...(migrateLanguage() && legacySettings()?.language
+        ? [{ item: "Language preference", status: "pending" as const }]
+        : []),
+      ...(migrateAutocomplete() && legacySettings()?.autocomplete
+        ? [{ item: "Autocomplete settings", status: "pending" as const }]
+        : []),
     ]
     setProgressEntries(allItems)
     setStep("progress")
@@ -201,6 +226,11 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         mcpServers: Array.from(selectedMcpServers()),
         customModes: Array.from(selectedModes()),
         defaultModel: migrateDefaultModel(),
+        settings: {
+          autoApproval: autoApprovalSel(),
+          language: migrateLanguage(),
+          autocomplete: migrateAutocomplete(),
+        },
       },
     })
   }
@@ -240,11 +270,55 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     })
   }
 
+  const anyAutoApprovalSelected = () => Object.values(autoApprovalSel()).some(Boolean)
+
   const hasAnySelection = () =>
     selectedProviders().size > 0 ||
     selectedMcpServers().size > 0 ||
     selectedModes().size > 0 ||
-    (migrateDefaultModel() && Boolean(defaultModel()))
+    (migrateDefaultModel() && Boolean(defaultModel())) ||
+    anyAutoApprovalSelected() ||
+    (migrateLanguage() && Boolean(legacySettings()?.language)) ||
+    (migrateAutocomplete() && Boolean(legacySettings()?.autocomplete))
+
+  // ---------------------------------------------------------------------------
+  // Settings data helpers
+  // ---------------------------------------------------------------------------
+
+  const hasCommandRulesData = () => {
+    const s = legacySettings()
+    return (
+      s !== undefined &&
+      (s.autoApprovalEnabled !== undefined || Boolean(s.allowedCommands?.length) || Boolean(s.deniedCommands?.length))
+    )
+  }
+  const hasReadPermissionData = () => {
+    const s = legacySettings()
+    return (
+      s !== undefined && (s.alwaysAllowReadOnly !== undefined || s.alwaysAllowReadOnlyOutsideWorkspace !== undefined)
+    )
+  }
+  const hasWritePermissionData = () => legacySettings()?.alwaysAllowWrite !== undefined
+  const hasExecutePermissionData = () => legacySettings()?.alwaysAllowExecute !== undefined
+  const hasMcpPermissionData = () => legacySettings()?.alwaysAllowMcp !== undefined
+  const hasTaskPermissionData = () => {
+    const s = legacySettings()
+    return s !== undefined && (s.alwaysAllowModeSwitch !== undefined || s.alwaysAllowSubtasks !== undefined)
+  }
+  const hasQuestionPermissionData = () => legacySettings()?.alwaysAllowFollowupQuestions !== undefined
+
+  const hasAnyAutoApprovalData = () =>
+    hasCommandRulesData() ||
+    hasReadPermissionData() ||
+    hasWritePermissionData() ||
+    hasExecutePermissionData() ||
+    hasMcpPermissionData() ||
+    hasTaskPermissionData() ||
+    hasQuestionPermissionData()
+
+  const hasLanguageData = () => Boolean(legacySettings()?.language)
+
+  const hasAutocompleteData = () => Boolean(legacySettings()?.autocomplete)
 
   // ---------------------------------------------------------------------------
   // Result summary helpers
@@ -389,6 +463,15 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
                   <Show when={Boolean(defaultModel())}>
                     <li>{language.t("migration.select.defaultModel")}</li>
                   </Show>
+                  <Show when={hasAnyAutoApprovalData()}>
+                    <li>{language.t("migration.select.autoApproval")}</li>
+                  </Show>
+                  <Show when={hasLanguageData()}>
+                    <li>{language.t("migration.select.language")}</li>
+                  </Show>
+                  <Show when={hasAutocompleteData()}>
+                    <li>{language.t("migration.select.autocomplete")}</li>
+                  </Show>
                 </ul>
               </div>
             </div>
@@ -509,15 +592,184 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
               </div>
             </Show>
 
-            <Show when={providers().length === 0 && mcpServers().length === 0 && customModes().length === 0}>
-              <p class="migration-wizard__empty">{language.t("migration.select.nothingToMigrate")}</p>
+            {/* Settings (auto-approval, language, autocomplete) */}
+            <Show when={hasAnyAutoApprovalData() || hasLanguageData() || hasAutocompleteData()}>
+              <div class="migration-wizard__section">
+                <h4 class="migration-wizard__section-title">{language.t("migration.select.settings")}</h4>
+
+                {/* Auto-Approval — one row per permission group */}
+                <Show when={hasAnyAutoApprovalData()}>
+                  <p class="migration-wizard__section-subtitle">{language.t("migration.select.autoApproval")}</p>
+                  <Show when={hasCommandRulesData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().commandRules}
+                        onChange={(e) => setAutoApprovalSel((p) => ({ ...p, commandRules: e.currentTarget.checked }))}
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.commandRules")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.commandRulesDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasReadPermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().readPermission}
+                        onChange={(e) => setAutoApprovalSel((p) => ({ ...p, readPermission: e.currentTarget.checked }))}
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.readPermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.readPermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasWritePermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().writePermission}
+                        onChange={(e) =>
+                          setAutoApprovalSel((p) => ({ ...p, writePermission: e.currentTarget.checked }))
+                        }
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.writePermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.writePermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasExecutePermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().executePermission}
+                        onChange={(e) =>
+                          setAutoApprovalSel((p) => ({ ...p, executePermission: e.currentTarget.checked }))
+                        }
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.executePermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.executePermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasMcpPermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().mcpPermission}
+                        onChange={(e) => setAutoApprovalSel((p) => ({ ...p, mcpPermission: e.currentTarget.checked }))}
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.mcpPermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.mcpPermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasTaskPermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().taskPermission}
+                        onChange={(e) => setAutoApprovalSel((p) => ({ ...p, taskPermission: e.currentTarget.checked }))}
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.taskPermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.taskPermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                  <Show when={hasQuestionPermissionData()}>
+                    <label class="migration-wizard__item">
+                      <input
+                        type="checkbox"
+                        checked={autoApprovalSel().questionPermission}
+                        onChange={(e) =>
+                          setAutoApprovalSel((p) => ({ ...p, questionPermission: e.currentTarget.checked }))
+                        }
+                      />
+                      <div class="migration-wizard__item-info">
+                        <span class="migration-wizard__item-name">
+                          {language.t("migration.select.autoApproval.questionPermission")}
+                        </span>
+                        <span class="migration-wizard__item-meta">
+                          {language.t("migration.select.autoApproval.questionPermissionDesc")}
+                        </span>
+                      </div>
+                    </label>
+                  </Show>
+                </Show>
+
+                <Show when={hasLanguageData()}>
+                  <label class="migration-wizard__item">
+                    <input
+                      type="checkbox"
+                      checked={migrateLanguage()}
+                      onChange={(e) => setMigrateLanguage(e.currentTarget.checked)}
+                    />
+                    <div class="migration-wizard__item-info">
+                      <span class="migration-wizard__item-name">{language.t("migration.select.language")}</span>
+                      <span class="migration-wizard__item-meta">
+                        {language.t("migration.select.languageDesc")} ({legacySettings()?.language})
+                      </span>
+                    </div>
+                  </label>
+                </Show>
+                <Show when={hasAutocompleteData()}>
+                  <label class="migration-wizard__item">
+                    <input
+                      type="checkbox"
+                      checked={migrateAutocomplete()}
+                      onChange={(e) => setMigrateAutocomplete(e.currentTarget.checked)}
+                    />
+                    <div class="migration-wizard__item-info">
+                      <span class="migration-wizard__item-name">{language.t("migration.select.autocomplete")}</span>
+                      <span class="migration-wizard__item-meta">{language.t("migration.select.autocompleteDesc")}</span>
+                    </div>
+                  </label>
+                </Show>
+              </div>
             </Show>
 
-            {/* Approval settings info note */}
-            <div class="migration-wizard__note">
-              <InfoIcon />
-              <p class="migration-wizard__note-text">{language.t("migration.select.approvalNote")}</p>
-            </div>
+            <Show
+              when={
+                providers().length === 0 &&
+                mcpServers().length === 0 &&
+                customModes().length === 0 &&
+                !hasAnyAutoApprovalData() &&
+                !hasLanguageData() &&
+                !hasAutocompleteData()
+              }
+            >
+              <p class="migration-wizard__empty">{language.t("migration.select.nothingToMigrate")}</p>
+            </Show>
           </div>
 
           <div class="migration-wizard__footer">

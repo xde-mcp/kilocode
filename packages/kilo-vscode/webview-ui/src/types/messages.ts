@@ -793,9 +793,33 @@ export interface MigrationCustomModeInfo {
   slug: string
 }
 
+export interface LegacyAutocompleteSettings {
+  enableAutoTrigger?: boolean
+  enableSmartInlineTaskKeybinding?: boolean
+  enableChatAutocomplete?: boolean
+  snoozeUntil?: number
+}
+
+export interface LegacySettings {
+  autoApprovalEnabled?: boolean
+  allowedCommands?: string[]
+  deniedCommands?: string[]
+  // Fine-grained auto-approval (legacy globalState keys — no prefix)
+  alwaysAllowReadOnly?: boolean
+  alwaysAllowReadOnlyOutsideWorkspace?: boolean
+  alwaysAllowWrite?: boolean
+  alwaysAllowExecute?: boolean
+  alwaysAllowMcp?: boolean
+  alwaysAllowModeSwitch?: boolean
+  alwaysAllowSubtasks?: boolean
+  alwaysAllowFollowupQuestions?: boolean
+  language?: string
+  autocomplete?: LegacyAutocompleteSettings
+}
+
 export interface MigrationResultItem {
   item: string
-  category: "provider" | "mcpServer" | "customMode" | "defaultModel"
+  category: "provider" | "mcpServer" | "customMode" | "defaultModel" | "settings"
   status: "success" | "warning" | "error"
   message?: string
 }
@@ -807,6 +831,7 @@ export interface LegacyMigrationDataMessage {
     mcpServers: MigrationMcpServerInfo[]
     customModes: MigrationCustomModeInfo[]
     defaultModel?: { provider: string; model: string }
+    settings?: LegacySettings
   }
 }
 
@@ -826,6 +851,16 @@ export interface RequestLegacyMigrationDataMessage {
   type: "requestLegacyMigrationData"
 }
 
+export interface MigrationAutoApprovalSelections {
+  commandRules: boolean
+  readPermission: boolean
+  writePermission: boolean
+  executePermission: boolean
+  mcpPermission: boolean
+  taskPermission: boolean
+  questionPermission: boolean
+}
+
 export interface StartLegacyMigrationMessage {
   type: "startLegacyMigration"
   selections: {
@@ -833,6 +868,11 @@ export interface StartLegacyMigrationMessage {
     mcpServers: string[]
     customModes: string[]
     defaultModel: boolean
+    settings: {
+      autoApproval: MigrationAutoApprovalSelections
+      language: boolean
+      autocomplete: boolean
+    }
   }
 }
 
