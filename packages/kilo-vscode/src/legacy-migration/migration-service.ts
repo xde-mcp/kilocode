@@ -421,6 +421,9 @@ async function migrateAutoApproval(
   const results: MigrationResultItem[] = []
   // We collect all permission updates and apply them in one call at the end.
   const permission: PermissionConfig = {}
+  // Track if global "allow" was already written so we skip the per-tool object update
+  // that would otherwise overwrite it with a narrower permission set.
+  let globalAllowApplied = false
 
   // Command rules: master toggle + allowedCommands + deniedCommands
   if (sel.commandRules) {
@@ -432,6 +435,7 @@ async function migrateAutoApproval(
       // PermissionConfig is "allow" | "ask" | "deny" | { read?: ..., ... }, so a global allow
       // must be the scalar string, not an object with a "*" key.
       await client.global.config.update({ config: { permission: "allow" } })
+      globalAllowApplied = true
     } else if (hasCommandLists) {
       const bashRules: PermissionObjectConfig = {}
       // The legacy system matched commands as longest prefix (e.g. "npm run" matched "npm run dev").
@@ -529,7 +533,9 @@ async function migrateAutoApproval(
     onProgress(label, "success")
   }
 
-  if (Object.keys(permission).length > 0) {
+  // Only write the per-tool object form if global allow wasn't already applied —
+  // writing an object after "allow" would narrow permissions to only the listed tools.
+  if (!globalAllowApplied && Object.keys(permission).length > 0) {
     await client.global.config.update({ config: { permission } })
   }
 
@@ -700,9 +706,13 @@ function convertCustomMode(mode: LegacyCustomMode): AgentConfig {
 async function readLegacyProviderProfiles(context: vscode.ExtensionContext): Promise<LegacyProviderProfiles | null> {
   const raw = await context.secrets.get(SECRET_KEY)
   if (!raw) return null
-  const parsed = JSON.parse(raw) as Record<string, unknown>
-  if (!parsed.apiConfigs || typeof parsed.apiConfigs !== "object") return null
-  return parsed as unknown as LegacyProviderProfiles
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    if (!parsed.apiConfigs || typeof parsed.apiConfigs !== "object") return null
+    return parsed as unknown as LegacyProviderProfiles
+  } catch {
+    return null
+  }
 }
 
 async function readLegacyMcpSettings(context: vscode.ExtensionContext): Promise<LegacyMcpSettings | null> {
@@ -712,9 +722,13 @@ async function readLegacyMcpSettings(context: vscode.ExtensionContext): Promise<
     () => null,
   )
   if (!bytes) return null
-  const parsed = JSON.parse(Buffer.from(bytes).toString("utf8")) as Record<string, unknown>
-  if (!parsed.mcpServers || typeof parsed.mcpServers !== "object") return null
-  return parsed as unknown as LegacyMcpSettings
+  try {
+    const parsed = JSON.parse(Buffer.from(bytes).toString("utf8")) as Record<string, unknown>
+    if (!parsed.mcpServers || typeof parsed.mcpServers !== "object") return null
+    return parsed as unknown as LegacyMcpSettings
+  } catch {
+    return null
+  }
 }
 
 async function readLegacyCustomModes(context: vscode.ExtensionContext): Promise<LegacyCustomMode[] | null> {
