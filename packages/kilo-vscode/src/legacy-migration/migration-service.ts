@@ -112,17 +112,21 @@ export type ProgressCallback = (
 /**
  * Executes migration for the selected items.
  * Calls onProgress for each item with real-time status updates.
+ * Pass `cachedSettings` (from a prior detectLegacyData call) to avoid re-reading
+ * globalState. Provider profiles, MCP servers, and custom modes are always re-read
+ * from SecretStorage/disk to ensure the data is current at migration time.
  */
 export async function migrate(
   context: vscode.ExtensionContext,
   client: KiloClient,
   selections: MigrationSelections,
   onProgress: ProgressCallback,
+  cachedSettings?: LegacySettings,
 ): Promise<MigrationResultItem[]> {
   const profiles = await readLegacyProviderProfiles(context)
   const mcpSettings = await readLegacyMcpSettings(context)
   const customModes = await readLegacyCustomModes(context)
-  const legacySettings = readLegacySettings(context)
+  const legacySettings = cachedSettings ?? readLegacySettings(context)
 
   const results: MigrationResultItem[] = []
 
@@ -391,8 +395,10 @@ async function migrateAutoApproval(
     onProgress(label, "migrating")
     const hasCommandLists = Boolean(allowedCommands?.length || deniedCommands?.length)
     if (autoApprovalEnabled === true && !hasCommandLists) {
-      // Global allow — no specific bash rules, covers everything
-      permission["*" as keyof PermissionConfig] = "allow" as never
+      // Global allow with no specific command rules — apply immediately using the scalar form.
+      // PermissionConfig is "allow" | "ask" | "deny" | { read?: ..., ... }, so a global allow
+      // must be the scalar string, not an object with a "*" key.
+      await client.global.config.update({ config: { permission: "allow" } })
     } else if (hasCommandLists) {
       const bashRules: PermissionObjectConfig = {}
       for (const cmd of allowedCommands ?? []) {
@@ -401,7 +407,8 @@ async function migrateAutoApproval(
       for (const cmd of deniedCommands ?? []) {
         bashRules[cmd] = "deny"
       }
-      bashRules["*"] = alwaysAllowExecute === true ? "allow" : fallback
+      // alwaysAllowExecute=false must override the master toggle
+      bashRules["*"] = alwaysAllowExecute === true ? "allow" : alwaysAllowExecute === false ? "ask" : fallback
       permission.bash = bashRules
     }
     results.push({ item: label, category: "settings", status: "success" })
