@@ -243,7 +243,7 @@ export async function migrate(
 // ---------------------------------------------------------------------------
 
 /**
- * Removes legacy data from SecretStorage and relevant globalState keys.
+ * Removes legacy data from SecretStorage, globalState, and VS Code settings.
  */
 export async function clearLegacyData(context: vscode.ExtensionContext): Promise<void> {
   await context.secrets.delete(SECRET_KEY)
@@ -276,6 +276,32 @@ export async function clearLegacyData(context: vscode.ExtensionContext): Promise
   ]
   for (const key of legacyStateKeys) {
     await context.globalState.update(key, undefined)
+  }
+
+  // Clear legacy VS Code settings registered under the "kilo-code" configuration scope.
+  // These are set via the old extension's contributes.configuration and persist in the
+  // user's settings.json even after the extension is uninstalled.
+  const legacyVscodeSettings = [
+    "allowedCommands",
+    "deniedCommands",
+    "commandExecutionTimeout",
+    "commandTimeoutAllowlist",
+    "preventCompletionWithOpenTodos",
+    "vsCodeLmModelSelector",
+    "customStoragePath",
+    "enableCodeActions",
+    "autoImportSettingsPath",
+    "maximumIndexedFilesForFileSearch",
+    "useAgentRules",
+    "apiRequestTimeout",
+    "newTaskRequireTodos",
+    "enableSettingsSync",
+    "toolProtocol",
+    "debug",
+  ]
+  const cfg = vscode.workspace.getConfiguration("kilo-code")
+  for (const key of legacyVscodeSettings) {
+    await cfg.update(key, undefined, vscode.ConfigurationTarget.Global)
   }
 }
 
