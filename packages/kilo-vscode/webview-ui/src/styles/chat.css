@@ -696,6 +696,23 @@
   word-break: break-all;
 }
 
+/* Permission Prompt (inline and dock) */
+[data-component="permission-prompt"] {
+  padding: 8px 12px;
+}
+
+[data-component="permission-prompt"] [data-slot="permission-actions"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-component="permission-prompt"] [data-slot="permission-hint"] {
+  font-size: 11px;
+  color: var(--text-weak, var(--vscode-descriptionForeground));
+  margin: 4px 0 0;
+}
+
 /* Dialog Confirmation */
 .dialog-confirm-body {
   display: flex;
