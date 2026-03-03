@@ -12,7 +12,8 @@ export default defineConfig({
   reporter: [["html", { open: "never" }], ["list"]],
   use: {
     baseURL: "http://localhost:6007",
-    viewport: { width: 1280, height: 720 },
+    // VS Code sidebar is typically 350-450px wide
+    viewport: { width: 420, height: 720 },
     reducedMotion: "reduce",
     screenshot: "only-on-failure",
   },

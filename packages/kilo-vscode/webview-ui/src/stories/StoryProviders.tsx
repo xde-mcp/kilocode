@@ -148,7 +148,7 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
               <DiffComponentProvider component={Diff}>
                 <CodeComponentProvider component={Code}>
                   <MarkedProvider>
-                    <div style={{ padding: "16px", "max-width": "420px" }}>{props.children}</div>
+                    <div style={{ padding: "12px" }}>{props.children}</div>
                   </MarkedProvider>
                 </CodeComponentProvider>
               </DiffComponentProvider>

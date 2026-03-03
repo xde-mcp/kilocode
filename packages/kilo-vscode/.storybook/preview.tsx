@@ -31,7 +31,7 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
-    layout: "centered",
+    layout: "fullscreen",
   },
   decorators: [themeDecorator],
   globalTypes: {
