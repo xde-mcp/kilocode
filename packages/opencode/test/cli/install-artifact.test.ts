@@ -18,6 +18,12 @@ describe("npm install artifact behavior", () => {
   })
 
   test("links npm bin commands to the wrapper during local install", async () => {
+    const npmPath = Bun.which("npm")
+    if (!npmPath) {
+      console.warn("Skipping install artifact test: npm is not available in PATH")
+      return
+    }
+
     const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "kilo-install-artifact-"))
     try {
       const pkg = path.join(tmp, "pkg")
