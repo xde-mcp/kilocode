@@ -198,17 +198,14 @@ export namespace KiloSessions {
   }
 
   export async function create(sessionId: string) {
-    // kilocode_change start
     const result = await bootstrap(sessionId)
     if (!result) return { id: "", ingestPath: "" }
-    // kilocode_change end
 
     void fullSync(sessionId).catch((error) => log.error("share full sync failed", { sessionId, error }))
 
     return result
   }
 
-  // kilocode_change start
   export async function bootstrap(sessionId: string) {
     if (ingestDisabled) {
       log.info("session bootstrap skipped: ingest disabled", { sessionId })
@@ -240,7 +237,6 @@ export namespace KiloSessions {
 
     return result
   }
-  // kilocode_change end
 
   export async function share(sessionId: string) {
     if (ingestDisabled) {
