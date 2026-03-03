@@ -537,21 +537,30 @@ async function migrateAutoApproval(
 }
 
 async function migrateAutocomplete(settings: LegacyAutocompleteSettings): Promise<MigrationResultItem> {
-  const config = vscode.workspace.getConfiguration("kilo-code.new.autocomplete")
-  if (settings.enableAutoTrigger !== undefined) {
-    await config.update("enableAutoTrigger", settings.enableAutoTrigger, vscode.ConfigurationTarget.Global)
+  try {
+    const config = vscode.workspace.getConfiguration("kilo-code.new.autocomplete")
+    if (settings.enableAutoTrigger !== undefined) {
+      await config.update("enableAutoTrigger", settings.enableAutoTrigger, vscode.ConfigurationTarget.Global)
+    }
+    if (settings.enableSmartInlineTaskKeybinding !== undefined) {
+      await config.update(
+        "enableSmartInlineTaskKeybinding",
+        settings.enableSmartInlineTaskKeybinding,
+        vscode.ConfigurationTarget.Global,
+      )
+    }
+    if (settings.enableChatAutocomplete !== undefined) {
+      await config.update("enableChatAutocomplete", settings.enableChatAutocomplete, vscode.ConfigurationTarget.Global)
+    }
+    return { item: "Autocomplete settings", category: "settings", status: "success" }
+  } catch (err) {
+    return {
+      item: "Autocomplete settings",
+      category: "settings",
+      status: "error",
+      message: err instanceof Error ? err.message : String(err),
+    }
   }
-  if (settings.enableSmartInlineTaskKeybinding !== undefined) {
-    await config.update(
-      "enableSmartInlineTaskKeybinding",
-      settings.enableSmartInlineTaskKeybinding,
-      vscode.ConfigurationTarget.Global,
-    )
-  }
-  if (settings.enableChatAutocomplete !== undefined) {
-    await config.update("enableChatAutocomplete", settings.enableChatAutocomplete, vscode.ConfigurationTarget.Global)
-  }
-  return { item: "Autocomplete settings", category: "settings", status: "success" }
 }
 
 // Maps legacy locale codes to their new-extension equivalents.
@@ -588,9 +597,18 @@ async function migrateLanguage(language: string): Promise<MigrationResultItem> {
       message: `Language "${language}" is not supported in the new version`,
     }
   }
-  const config = vscode.workspace.getConfiguration("kilo-code.new")
-  await config.update("language", mapped, vscode.ConfigurationTarget.Global)
-  return { item: "Language preference", category: "settings", status: "success" }
+  try {
+    const config = vscode.workspace.getConfiguration("kilo-code.new")
+    await config.update("language", mapped, vscode.ConfigurationTarget.Global)
+    return { item: "Language preference", category: "settings", status: "success" }
+  } catch (err) {
+    return {
+      item: "Language preference",
+      category: "settings",
+      status: "error",
+      message: err instanceof Error ? err.message : String(err),
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -740,6 +758,11 @@ function hasAutocompleteData(s: LegacyAutocompleteSettings | undefined): s is Le
  * Tries JSON first (some legacy versions stored JSON), then parses the simple
  * YAML structure manually to avoid a runtime dependency on a YAML library.
  */
+// Strip surrounding single or double quotes from a YAML scalar value
+function stripYamlQuotes(value: string): string {
+  return value.replace(/^(['"])(.*)\1$/, "$2")
+}
+
 function parseCustomModesYaml(text: string): LegacyCustomMode[] | null {
   // Try JSON first
   const jsonResult = (() => {
@@ -764,21 +787,22 @@ function parseCustomModesYaml(text: string): LegacyCustomMode[] | null {
   const lines = text.split("\n")
   let inModes = false
   let current: Partial<LegacyCustomMode> | null = null
-  let inRoleDefinition = false
+  // Track which block scalar field is currently being collected
+  let blockField: "roleDefinition" | "customInstructions" | null = null
   let inGroups = false
-  let roleLines: string[] = []
+  let blockLines: string[] = []
 
   const flush = () => {
     if (current?.slug && current?.name) {
-      if (!current.roleDefinition && roleLines.length > 0) {
-        current.roleDefinition = roleLines.join("\n").trim()
+      if (blockField && blockLines.length > 0) {
+        current[blockField] = blockLines.join("\n").trim()
       }
       modes.push({ groups: [], ...current } as LegacyCustomMode)
     }
     current = null
-    inRoleDefinition = false
+    blockField = null
     inGroups = false
-    roleLines = []
+    blockLines = []
   }
 
   for (const rawLine of lines) {
@@ -789,42 +813,61 @@ function parseCustomModesYaml(text: string): LegacyCustomMode[] | null {
 
     if (/^  - slug: /.test(rawLine)) {
       flush()
-      current = { slug: rawLine.replace(/^  - slug: /, "").trim(), groups: [] }
+      current = { slug: stripYamlQuotes(rawLine.replace(/^  - slug: /, "").trim()), groups: [] }
       continue
     }
 
     if (!current) continue
 
     if (/^    name: /.test(rawLine)) {
-      current.name = rawLine.replace(/^    name: /, "").trim()
+      current.name = stripYamlQuotes(rawLine.replace(/^    name: /, "").trim())
       continue
     }
 
-    if (/^    roleDefinition: [|>]/.test(rawLine)) {
-      inRoleDefinition = true
+    // Block scalar fields (roleDefinition, customInstructions) with | or >
+    const blockMatch = rawLine.match(/^    (roleDefinition|customInstructions): [|>]/)
+    if (blockMatch) {
+      // Flush any previously open block
+      if (blockField && blockLines.length > 0) {
+        current[blockField] = blockLines.join("\n").trim()
+      }
+      blockField = blockMatch[1] as "roleDefinition" | "customInstructions"
       inGroups = false
-      roleLines = []
+      blockLines = []
       continue
     }
 
-    if (/^    roleDefinition: /.test(rawLine) && !inRoleDefinition) {
-      current.roleDefinition = rawLine.replace(/^    roleDefinition: /, "").trim()
+    // Single-line scalar fields
+    if (/^    roleDefinition: /.test(rawLine) && !blockField) {
+      current.roleDefinition = stripYamlQuotes(rawLine.replace(/^    roleDefinition: /, "").trim())
       continue
     }
 
-    if (inRoleDefinition) {
+    if (/^    customInstructions: /.test(rawLine) && !blockField) {
+      current.customInstructions = stripYamlQuotes(rawLine.replace(/^    customInstructions: /, "").trim())
+      continue
+    }
+
+    if (/^    whenToUse: /.test(rawLine) && !blockField) {
+      current.whenToUse = stripYamlQuotes(rawLine.replace(/^    whenToUse: /, "").trim())
+      continue
+    }
+
+    if (/^    description: /.test(rawLine) && !blockField) {
+      current.description = stripYamlQuotes(rawLine.replace(/^    description: /, "").trim())
+      continue
+    }
+
+    // Continuation lines of an open block scalar
+    if (blockField) {
       if (/^      /.test(rawLine)) {
-        roleLines.push(rawLine.replace(/^      /, ""))
+        blockLines.push(rawLine.replace(/^      /, ""))
         continue
       }
-      current.roleDefinition = roleLines.join("\n").trim()
-      inRoleDefinition = false
-      roleLines = []
-    }
-
-    if (/^    customInstructions: /.test(rawLine)) {
-      current.customInstructions = rawLine.replace(/^    customInstructions: /, "").trim()
-      continue
+      // Block ended — flush and fall through to process this line
+      current[blockField] = blockLines.join("\n").trim()
+      blockField = null
+      blockLines = []
     }
 
     if (/^    groups:/.test(rawLine)) {
@@ -834,7 +877,7 @@ function parseCustomModesYaml(text: string): LegacyCustomMode[] | null {
     }
 
     if (inGroups && /^      - /.test(rawLine)) {
-      const group = rawLine.replace(/^      - /, "").trim()
+      const group = stripYamlQuotes(rawLine.replace(/^      - /, "").trim())
       current.groups = [...(current.groups ?? []), group]
       continue
     }

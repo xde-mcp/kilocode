@@ -2079,7 +2079,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         },
         this.cachedLegacyData?.settings,
       )
-      await MigrationService.setMigrationStatus(this.extensionContext, "completed")
+      // Only mark as completed if at least one item succeeded — if everything failed
+      // the user can still re-run migration via Settings → About.
+      const anySuccess = results.some((r) => r.status === "success")
+      if (anySuccess) {
+        await MigrationService.setMigrationStatus(this.extensionContext, "completed")
+      }
       // Refresh providers so webview immediately sees the newly-migrated API keys
       await this.fetchAndSendProviders()
       this.postMessage({ type: "legacyMigrationComplete", results })
