@@ -627,6 +627,7 @@ function convertMcpServer(server: LegacyMcpServer): McpLocalConfig | McpRemoteCo
     type: "local",
     command,
     environment: server.env,
+    ...(server.timeout !== undefined && { timeout: server.timeout }),
   }
 }
 
@@ -654,10 +655,21 @@ function convertCustomModePermissions(groups: LegacyCustomMode["groups"]): Permi
     const permKey = GROUP_TO_PERMISSION[groupName] ?? groupName
     allowed.add(permKey)
 
-    if (groupConfig?.fileRegex) {
-      permission[permKey] = { [groupConfig.fileRegex]: "allow", "*": "deny" }
-    } else {
+    const newValue = groupConfig?.fileRegex ? { [groupConfig.fileRegex]: "allow", "*": "deny" } : "allow"
+
+    // Multiple legacy groups can map to the same permission key (browser + command → bash).
+    // Merge rules so neither overwrites the other:
+    //   - if either side is "allow", the key is fully allowed
+    //   - if both sides are objects, merge their pattern maps
+    const existing = permission[permKey]
+    if (existing === undefined) {
+      permission[permKey] = newValue
+    } else if (existing === "allow" || newValue === "allow") {
       permission[permKey] = "allow"
+    } else if (typeof existing === "object" && typeof newValue === "object") {
+      permission[permKey] = { ...existing, ...newValue }
+    } else {
+      permission[permKey] = newValue
     }
   }
 

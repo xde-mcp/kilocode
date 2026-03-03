@@ -19,17 +19,7 @@ import { Agent } from "../agent/agent"
 import { Skill } from "../skill/skill"
 import { Auth } from "../auth"
 import { ModelCache } from "../provider/model-cache" // kilocode_change
-
-// kilocode_change start - debounce disposeAll so bulk auth changes (e.g. migration) only trigger one cycle
-let disposeAllTimer: ReturnType<typeof setTimeout> | undefined
-function scheduleDisposeAll() {
-  if (disposeAllTimer) clearTimeout(disposeAllTimer)
-  disposeAllTimer = setTimeout(() => {
-    disposeAllTimer = undefined
-    void Instance.disposeAll().catch(() => undefined)
-  }, 300)
-}
-// kilocode_change end
+import { scheduleDisposeAll } from "../kilocode/dispose" // kilocode_change
 import { Flag } from "../flag/flag"
 import { Command } from "../command"
 import { Global } from "../global"
