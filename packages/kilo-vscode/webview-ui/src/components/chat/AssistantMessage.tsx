@@ -79,6 +79,13 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
               <Show when={perm()} keyed>
                 {(p) => (
                   <div data-component="permission-prompt">
+                    <Show when={p.patterns.length > 0}>
+                      <div class="permission-dock-patterns">
+                        <For each={p.patterns}>
+                          {(pattern) => <code class="permission-dock-pattern">{pattern}</code>}
+                        </For>
+                      </div>
+                    </Show>
                     <div data-slot="permission-actions">
                       <Button variant="ghost" size="small" onClick={() => decide(p.id, "reject")} disabled={responding()}>
                         {language.t("ui.permission.deny")}
