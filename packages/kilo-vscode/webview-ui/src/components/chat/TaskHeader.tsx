@@ -18,6 +18,7 @@ export const TaskHeader: Component = () => {
   const hasMessages = createMemo(() => session.messages().length > 0)
   const busy = createMemo(() => session.status() === "busy")
   const canCompact = createMemo(() => !busy() && hasMessages() && !!session.selected())
+  const canNewTask = createMemo(() => !busy() && hasMessages())
 
   const cost = createMemo(() => {
     const total = session.totalCost()
@@ -60,6 +61,16 @@ export const TaskHeader: Component = () => {
               </Tooltip>
             )}
           </Show>
+          <Tooltip value={language.t("command.session.new.task")} placement="bottom">
+            <IconButton
+              icon="new-session"
+              size="small"
+              variant="ghost"
+              disabled={!canNewTask()}
+              onClick={() => session.clearCurrentSession()}
+              aria-label={language.t("command.session.new.task")}
+            />
+          </Tooltip>
           <Tooltip value={language.t("command.session.compact")} placement="bottom">
             <IconButton
               icon="collapse"
