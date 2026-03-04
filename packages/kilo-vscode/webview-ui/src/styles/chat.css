@@ -44,8 +44,9 @@
 /* New Task Button */
 .new-task-button {
   display: block;
-  width: calc(100% - 24px);
+  width: auto;
   margin: 8px 12px 0;
+  box-sizing: border-box;
 }
 
 /* ============================================
