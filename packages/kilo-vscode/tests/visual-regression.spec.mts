@@ -56,6 +56,7 @@ const stories = IS_DARWIN ? [] : (await fetchStories()).filter((s) => !SKIP.has(
 for (const story of stories) {
   test(`${story.title} / ${story.name}`, async ({ page }) => {
     // Narrow stories (IDs ending in "-200") use a 200px viewport
+    // The "-200" suffix comes from the export name convention (e.g. Default200, WithThinking200)
     const narrow = story.id.endsWith("-200")
     await page.setViewportSize({ width: narrow ? 200 : 420, height: 720 })
 
@@ -68,6 +69,6 @@ for (const story of stories) {
 
     const [component, variant] = story.id.split("--")
     const root = page.locator("#storybook-root")
-    await expect(root).toHaveScreenshot([component!, `${variant!}.png`])
+    await expect(root).toHaveScreenshot([component!, `${variant}.png`])
   })
 }
