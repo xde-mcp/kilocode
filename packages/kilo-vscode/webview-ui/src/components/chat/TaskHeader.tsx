@@ -67,7 +67,7 @@ export const TaskHeader: Component = () => {
               size="small"
               variant="ghost"
               disabled={!canNewTask()}
-              onClick={() => session.clearCurrentSession()}
+              onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
               aria-label={language.t("command.session.new.task")}
             />
           </Tooltip>

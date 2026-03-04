@@ -23,6 +23,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const language = useLanguage()
 
   const id = () => session.currentSessionID()
+  const hasMessages = () => session.messages().length > 0
   const sessionQuestions = () => session.questions().filter((q) => q.sessionID === id())
   const sessionPermissions = () => session.permissions().filter((p) => p.sessionID === id())
 
@@ -101,6 +102,17 @@ export const ChatView: Component<ChatViewProps> = (props) => {
                 </div>
               </div>
             )}
+          </Show>
+          <Show when={hasMessages() && !blocked()}>
+            <Button
+              variant="secondary"
+              size="small"
+              class="new-task-button"
+              onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
+              aria-label={language.t("command.session.new.task")}
+            >
+              {language.t("command.session.new.task")}
+            </Button>
           </Show>
           <Show when={!blocked()}>
             <PromptInput />

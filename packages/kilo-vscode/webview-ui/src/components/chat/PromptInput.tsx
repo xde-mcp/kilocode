@@ -72,6 +72,27 @@ export const PromptInput: Component = () => {
   window.addEventListener("focusPrompt", onFocusPrompt)
   onCleanup(() => window.removeEventListener("focusPrompt", onFocusPrompt))
 
+  // Start a new task, carrying over the current prompt text if any
+  const onNewTaskRequest = () => {
+    const prompt = text().trim()
+    const sel = session.selected()
+    session.clearCurrentSession()
+    if (prompt) {
+      session.sendMessage(prompt, sel?.providerID, sel?.modelID)
+      setText("")
+      setGhostText("")
+      imageAttach.clear()
+      if (debounceTimer) clearTimeout(debounceTimer)
+      mention.closeMention()
+      if (textareaRef) {
+        textareaRef.value = ""
+        textareaRef.style.height = "auto"
+      }
+    }
+  }
+  window.addEventListener("newTaskRequest", onNewTaskRequest)
+  onCleanup(() => window.removeEventListener("newTaskRequest", onNewTaskRequest))
+
   const isBusy = () => session.status() === "busy"
   const isDisabled = () => !server.isConnected()
   const canSend = () => (text().trim().length > 0 || imageAttach.images().length > 0) && !isBusy() && !isDisabled()
