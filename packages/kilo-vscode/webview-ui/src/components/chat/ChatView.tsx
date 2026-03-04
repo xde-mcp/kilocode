@@ -24,6 +24,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
 
   const id = () => session.currentSessionID()
   const hasMessages = () => session.messages().length > 0
+  const idle = () => session.status() !== "busy"
   const sessionQuestions = () => session.questions().filter((q) => q.sessionID === id())
   const sessionPermissions = () => session.permissions().filter((p) => p.sessionID === id())
 
@@ -103,7 +104,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
               </div>
             )}
           </Show>
-          <Show when={hasMessages() && !blocked()}>
+          <Show when={hasMessages() && idle() && !blocked()}>
             <Button
               variant="secondary"
               size="small"
