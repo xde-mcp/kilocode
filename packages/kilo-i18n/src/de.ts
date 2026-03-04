@@ -13,5 +13,5 @@ export const dict = {
   "dialog.provider.kilo.note": "Zugriff auf 500+ KI-Modelle",
 
   // Reasoning block label
-  "ui.reasoning.label": "Überlegung",
+  "ui.reasoning.label": "Denken",
 }
