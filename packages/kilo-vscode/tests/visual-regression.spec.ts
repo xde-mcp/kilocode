@@ -55,6 +55,10 @@ const stories = IS_DARWIN ? [] : (await fetchStories()).filter((s) => !SKIP.has(
 
 for (const story of stories) {
   test(`${story.title} / ${story.name}`, async ({ page }) => {
+    // Narrow stories (IDs ending in "-200") use a 200px viewport
+    const narrow = story.id.endsWith("-200")
+    await page.setViewportSize({ width: narrow ? 200 : 420, height: 720 })
+
     await page.goto(
       `/iframe.html?id=${story.id}&viewMode=story&globals=colorScheme:dark;theme:kilo-vscode;vscodeTheme:dark-modern`,
       { waitUntil: "load" },
@@ -62,10 +66,8 @@ for (const story of stories) {
     await disableAnimations(page)
     await page.waitForSelector("#storybook-root *", { state: "attached" })
 
-    // Screenshot just the story content, not the full viewport canvas.
-    // Use [component, variant] path so snapshots are grouped per component dir.
     const [component, variant] = story.id.split("--")
     const root = page.locator("#storybook-root")
-    await expect(root).toHaveScreenshot([component!, `${variant}.png`])
+    await expect(root).toHaveScreenshot([component!, `${variant!}.png`])
   })
 }

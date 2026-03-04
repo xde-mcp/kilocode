@@ -10,7 +10,6 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
 import { StoryProviders } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
-import { MessageList } from "../components/chat/MessageList"
 import { QuestionDock } from "../components/chat/QuestionDock"
 import type { QuestionRequest } from "../types/messages"
 
@@ -44,11 +43,21 @@ const multiQuestion: QuestionRequest = {
   questions: [
     {
       question: "Which testing framework?",
-      options: [{ label: "Vitest" }, { label: "Jest" }, { label: "Bun test" }],
+      header: "Step 1 of 2",
+      options: [
+        { label: "Vitest", description: "Fast, Vite-native" },
+        { label: "Jest", description: "Widely adopted" },
+        { label: "Bun test", description: "Built-in, zero config" },
+      ],
     },
     {
       question: "Should I include coverage reporting?",
-      options: [{ label: "Yes, Istanbul" }, { label: "Yes, V8" }, { label: "No" }],
+      header: "Step 2 of 2",
+      options: [
+        { label: "Yes, Istanbul", description: "Instrumentation-based" },
+        { label: "Yes, V8", description: "Native V8 coverage" },
+        { label: "No", description: "Skip coverage" },
+      ],
     },
   ],
   tool: { messageID: "asst-msg-001", callID: "call-question-002" },
