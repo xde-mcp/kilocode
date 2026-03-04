@@ -191,7 +191,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       triggerAs={Button}
       triggerProps={{
         variant: "ghost",
-        size: "small",
+        size: "normal",
         disabled: !hasProviders(),
         title: selectedModel()?.id,
       }}
