@@ -1909,8 +1909,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Gather VS Code editor context to send alongside messages to the CLI backend.
    */
   /**
-   * Get or create a FileIgnoreController for the current workspace directory.
-   * Reinitializes if the workspace directory has changed.
+   * Return the set of relative paths for all open text-editor tabs within the
+   * given directory, filtered through .kilocodeignore.
    */
   private async getOpenTabPaths(dir: string): Promise<Set<string>> {
     const controller = await this.getIgnoreController(dir)
@@ -1931,6 +1931,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     return result
   }
 
+  /**
+   * Get or create a FileIgnoreController for the current workspace directory.
+   * Reinitializes if the workspace directory has changed.
+   */
   private async getIgnoreController(workspaceDir: string): Promise<FileIgnoreController> {
     if (this.ignoreController && this.ignoreControllerDir === workspaceDir) {
       return this.ignoreController
