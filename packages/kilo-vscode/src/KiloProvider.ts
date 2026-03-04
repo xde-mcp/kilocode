@@ -443,7 +443,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
               }
             }
             void sdkClient.find
-              .files({ query: message.query, directory: dir }, { throwOnError: true })
+              .files({ query: message.query, directory: dir, dirs: "false" }, { throwOnError: true })
               .then(({ data: paths }) => {
                 // Prioritize open files: open tabs first, then the rest
                 const open = paths.filter((p) => openPaths.has(p))
