@@ -1,16 +1,18 @@
 /** @jsxImportSource solid-js */
 /**
  * Stories for high-priority chat components:
- * ChatView, MessageList, QuestionDock
+ * ChatView, MessageList, QuestionDock, TaskHeader
  *
  * These render with mocked session/server/provider contexts — the components
  * will show their "idle / empty" states since no real extension host is connected.
  */
 
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { StoryProviders } from "./StoryProviders"
+import { StoryProviders, mockSessionValue } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
+import { TaskHeader } from "../components/chat/TaskHeader"
 import { QuestionDock } from "../components/chat/QuestionDock"
+import { SessionContext } from "../context/session"
 import type { QuestionRequest } from "../types/messages"
 
 const SESSION_ID = "story-session-chat-001"
@@ -113,4 +115,52 @@ export const QuestionDockMulti: Story = {
       </div>
     </StoryProviders>
   ),
+}
+
+// ---------------------------------------------------------------------------
+// TaskHeader stories
+// ---------------------------------------------------------------------------
+
+/** Session with messages (idle) — shows the "New task" and Compact buttons */
+export const TaskHeaderWithMessages: Story = {
+  name: "TaskHeader — with messages (idle)",
+  render: () => {
+    const session = {
+      ...mockSessionValue({ id: SESSION_ID, status: "idle" }),
+      messages: () => [{ id: "msg-001" }] as any[],
+      totalCost: () => 0.0023,
+      contextUsage: () => ({ tokens: 1024, percentage: 12 }),
+    }
+    return (
+      <StoryProviders sessionID={SESSION_ID} status="idle">
+        <SessionContext.Provider value={session as any}>
+          <div style={{ width: "420px" }}>
+            <TaskHeader />
+          </div>
+        </SessionContext.Provider>
+      </StoryProviders>
+    )
+  },
+}
+
+/** Session with messages (busy) — "New task" and Compact buttons are disabled */
+export const TaskHeaderBusy: Story = {
+  name: "TaskHeader — with messages (busy)",
+  render: () => {
+    const session = {
+      ...mockSessionValue({ id: SESSION_ID, status: "busy" }),
+      messages: () => [{ id: "msg-001" }] as any[],
+      totalCost: () => 0,
+      contextUsage: () => undefined,
+    }
+    return (
+      <StoryProviders sessionID={SESSION_ID} status="busy">
+        <SessionContext.Provider value={session as any}>
+          <div style={{ width: "420px" }}>
+            <TaskHeader />
+          </div>
+        </SessionContext.Provider>
+      </StoryProviders>
+    )
+  },
 }
