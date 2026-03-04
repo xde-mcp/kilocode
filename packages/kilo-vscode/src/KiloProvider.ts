@@ -1707,7 +1707,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * settings from the previous version of the extension which shares the same
    * extension ID and "kilo-code.*" namespace.
    */
-  // kilocode_change start
   private async handleResetAllSettings(): Promise<void> {
     const confirmed = await vscode.window.showWarningMessage(
       "Reset all Kilo Code extension settings to defaults?",
@@ -1735,7 +1734,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.sendBrowserSettings()
     this.sendNotificationSettings()
   }
-  // kilocode_change end
 
   /**
    * Read the current browser automation settings and push them to the webview.
