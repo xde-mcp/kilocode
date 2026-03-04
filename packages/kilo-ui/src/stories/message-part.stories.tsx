@@ -206,6 +206,24 @@ export const WithReasoningCollapsed: Story = {
   ),
 }
 
+export const WithReasoningExpanded: Story = {
+  name: "WithReasoning (expanded)",
+  render: () => {
+    // Use a wrapper to render with the collapsible open by default
+    const expandedReasoningPart = { ...reasoningPart, id: "part-reasoning-expanded" }
+    return (
+      <AllProviders>
+        <AssistantMessageDisplay message={mockAssistantMessage} parts={[expandedReasoningPart, textPart]} />
+      </AllProviders>
+    )
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    // Click the collapsible trigger to expand it
+    const trigger = canvasElement.querySelector("[data-slot='reasoning-header']")?.closest("button")
+    if (trigger) trigger.click()
+  },
+}
+
 export const MessageSwitch: Story = {
   render: () => (
     <AllProviders>
