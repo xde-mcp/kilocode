@@ -1438,7 +1438,7 @@ ToolRegistry.register({
     const [copied, setCopied] = createSignal(false)
 
     const handleCopy = async () => {
-      const command = cmd()
+      const command = cmd() // kilocode_change
       if (!command) return
       const content = out() ? `${command}\n\n${out()}` : command // kilocode_change
       await navigator.clipboard.writeText(content)
