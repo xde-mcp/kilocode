@@ -105,15 +105,17 @@ export const ChatView: Component<ChatViewProps> = (props) => {
             )}
           </Show>
           <Show when={hasMessages() && idle() && !blocked()}>
-            <Button
-              variant="secondary"
-              size="small"
-              class="new-task-button"
-              onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
-              aria-label={language.t("command.session.new.task")}
-            >
-              {language.t("command.session.new.task")}
-            </Button>
+            <div class="new-task-button-wrapper">
+              <Button
+                variant="secondary"
+                size="small"
+                data-full-width="true"
+                onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
+                aria-label={language.t("command.session.new.task")}
+              >
+                {language.t("command.session.new.task")}
+              </Button>
+            </div>
           </Show>
           <Show when={!blocked()}>
             <PromptInput />
