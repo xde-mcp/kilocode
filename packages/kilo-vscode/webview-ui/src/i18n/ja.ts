@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "新しいセッション",
   "command.file.open": "ファイルを開く",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "選択範囲をコンテキストに追加",
   "command.context.addSelection.description": "現在のファイルから選択した行を追加",
   "command.terminal.toggle": "ターミナルの切り替え",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "編集を自動承認",
   "command.permissions.autoaccept.disable": "編集の自動承認を停止",
   "command.workspace.toggle": "ワークスペースを切り替え",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "元に戻す",
   "command.session.undo.description": "最後のメッセージを元に戻す",
   "command.session.redo": "やり直す",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "人気",
   "dialog.provider.group.other": "その他",
   "dialog.provider.tag.recommended": "推奨",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Claude Pro/MaxまたはAPIキーで接続",
   "dialog.provider.openai.note": "ChatGPT Pro/PlusまたはAPIキーで接続",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "CopilotまたはAPIキーで接続",
 
   "dialog.model.select.title": "モデルを選択",
@@ -163,6 +169,7 @@ export const dict = {
   "model.tooltip.context": "コンテキスト上限 {{limit}}",
   "common.search.placeholder": "検索",
   "common.goBack": "戻る",
+  "common.goForward": "Forward",
   "common.loading": "読み込み中",
   "common.loading.ellipsis": "...",
   "common.cancel": "キャンセル",
@@ -327,8 +334,44 @@ export const dict = {
   "toast.language.title": "言語",
   "toast.language.description": "{{language}}に切り替えました",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "テーマが切り替わりました",
   "toast.scheme.title": "配色",
+  "toast.workspace.enabled.title": "Workspaces enabled",
+  "toast.workspace.enabled.description": "Multiple worktrees are now shown in the sidebar",
+  "toast.workspace.disabled.title": "Workspaces disabled",
+  "toast.workspace.disabled.description": "Only the main worktree is shown in the sidebar",
 
   "toast.permissions.autoaccept.on.title": "編集を自動承認中",
   "toast.permissions.autoaccept.on.description": "編集と書き込みの権限は自動的に承認されます",
@@ -440,6 +483,11 @@ export const dict = {
 
   "session.header.search.placeholder": "{{project}}を検索",
   "session.header.searchFiles": "ファイルを検索",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "ステータス",
   "status.popover.ariaLabel": "サーバー設定",
@@ -946,7 +994,6 @@ export const dict = {
   "dialog.model.notSet": "未設定",
   "profile.personalAccount": "個人アカウント",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/ja.ts
-
 
   "question.summary": "{{total}} 問中 {{n}} 問目",
   "common.review": "確認",

@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "جلسة جديدة",
   "command.file.open": "فتح ملف",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "إضافة التحديد إلى السياق",
   "command.context.addSelection.description": "إضافة الأسطر المحددة من الملف الحالي",
   "command.terminal.toggle": "تبديل المحطة الطرفية",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "قبول التعديلات تلقائيًا",
   "command.permissions.autoaccept.disable": "إيقاف قبول التعديلات تلقائيًا",
   "command.workspace.toggle": "تبديل مساحات العمل",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "تراجع",
   "command.session.undo.description": "تراجع عن الرسالة الأخيرة",
   "command.session.redo": "إعادة",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "شائع",
   "dialog.provider.group.other": "آخر",
   "dialog.provider.tag.recommended": "موصى به",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "اتصل باستخدام Claude Pro/Max أو مفتاح API",
   "dialog.provider.openai.note": "اتصل باستخدام ChatGPT Pro/Plus أو مفتاح API",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "اتصل باستخدام Copilot أو مفتاح API",
 
   "dialog.model.select.title": "تحديد نموذج",
@@ -163,6 +169,7 @@ export const dict = {
 
   "common.search.placeholder": "بحث",
   "common.goBack": "رجوع",
+  "common.goForward": "Forward",
   "common.loading": "جارٍ التحميل",
   "common.loading.ellipsis": "...",
   "common.cancel": "إلغاء",
@@ -326,6 +333,38 @@ export const dict = {
   "toast.language.title": "لغة",
   "toast.language.description": "تم التبديل إلى {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "تم تبديل السمة",
   "toast.scheme.title": "مخطط الألوان",
 
@@ -443,6 +482,11 @@ export const dict = {
 
   "session.header.search.placeholder": "بحث {{project}}",
   "session.header.searchFiles": "بحث عن الملفات",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "الحالة",
   "status.popover.ariaLabel": "إعدادات الخوادم",
@@ -942,7 +986,6 @@ export const dict = {
   "profile.personalAccount": "حساب شخصي",
 
   // Agent Manager strings live in webview-ui/agent-manager/i18n/ar.ts
-
 
   "question.summary": "{{n}} من {{total}} أسئلة",
   "common.review": "مراجعة",

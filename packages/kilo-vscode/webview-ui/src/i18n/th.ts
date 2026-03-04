@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "เซสชันใหม่",
   "command.file.open": "เปิดไฟล์",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "เพิ่มส่วนที่เลือกไปยังบริบท",
   "command.context.addSelection.description": "เพิ่มบรรทัดที่เลือกจากไฟล์ปัจจุบัน",
   "command.terminal.toggle": "สลับเทอร์มินัล",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "ยอมรับการแก้ไขโดยอัตโนมัติ",
   "command.permissions.autoaccept.disable": "หยุดยอมรับการแก้ไขโดยอัตโนมัติ",
   "command.workspace.toggle": "สลับพื้นที่ทำงาน",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "ยกเลิก",
   "command.session.undo.description": "ยกเลิกข้อความล่าสุด",
   "command.session.redo": "ทำซ้ำ",
@@ -168,6 +170,7 @@ export const dict = {
 
   "common.search.placeholder": "ค้นหา",
   "common.goBack": "ย้อนกลับ",
+  "common.goForward": "Forward",
   "common.loading": "กำลังโหลด",
   "common.loading.ellipsis": "...",
   "common.cancel": "ยกเลิก",
@@ -331,6 +334,38 @@ export const dict = {
   "toast.language.title": "ภาษา",
   "toast.language.description": "สลับไปที่ {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "สลับธีมแล้ว",
   "toast.scheme.title": "โทนสี",
 
@@ -450,6 +485,11 @@ export const dict = {
 
   "session.header.search.placeholder": "ค้นหา {{project}}",
   "session.header.searchFiles": "ค้นหาไฟล์",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "สถานะ",
   "status.popover.ariaLabel": "การกำหนดค่าเซิร์ฟเวอร์",
@@ -531,6 +571,14 @@ export const dict = {
 
   "settings.general.row.releaseNotes.title": "บันทึกการอัปเดต",
   "settings.general.row.releaseNotes.description": "แสดงป๊อปอัพ What's New หลังจากอัปเดต",
+  "settings.updates.row.startup.title": "Check for updates on startup",
+  "settings.updates.row.startup.description": "Automatically check for updates when Kilo launches",
+  "settings.updates.row.check.title": "Check for updates",
+  "settings.updates.row.check.description": "Manually check for updates and install if available",
+  "settings.updates.action.checkNow": "Check now",
+  "settings.updates.action.checking": "Checking...",
+  "settings.updates.toast.latest.title": "You're up to date",
+  "settings.updates.toast.latest.description": "You're running the latest version of Kilo.",
   "font.option.ibmPlexMono": "IBM Plex Mono",
   "font.option.cascadiaCode": "Cascadia Code",
   "font.option.firaCode": "Fira Code",
@@ -939,7 +987,6 @@ export const dict = {
   "dialog.model.notSet": "ไม่ได้ตั้งค่า",
   "profile.personalAccount": "บัญชีส่วนตัว",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/th.ts
-
 
   "question.summary": "{{n}} จาก {{total}} คำถาม",
   "common.review": "ตรวจสอบ",

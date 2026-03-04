@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "Новая сессия",
   "command.file.open": "Открыть файл",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "Добавить выделение в контекст",
   "command.context.addSelection.description": "Добавить выбранные строки из текущего файла",
   "command.terminal.toggle": "Переключить терминал",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Авто-принятие изменений",
   "command.permissions.autoaccept.disable": "Прекратить авто-принятие изменений",
   "command.workspace.toggle": "Переключить рабочие пространства",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "Отменить",
   "command.session.undo.description": "Отменить последнее сообщение",
   "command.session.redo": "Повторить",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "Популярные",
   "dialog.provider.group.other": "Другие",
   "dialog.provider.tag.recommended": "Рекомендуемые",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Подключитесь с помощью Claude Pro/Max или API ключа",
   "dialog.provider.openai.note": "Подключитесь с помощью ChatGPT Pro/Plus или API ключа",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Подключитесь с помощью Copilot или API ключа",
 
   "dialog.model.select.title": "Выбрать модель",
@@ -164,6 +170,7 @@ export const dict = {
 
   "common.search.placeholder": "Поиск",
   "common.goBack": "Назад",
+  "common.goForward": "Forward",
   "common.loading": "Загрузка",
   "common.loading.ellipsis": "...",
   "common.cancel": "Отмена",
@@ -329,6 +336,38 @@ export const dict = {
   "toast.language.title": "Язык",
   "toast.language.description": "Переключено на {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "Тема переключена",
   "toast.scheme.title": "Цветовая схема",
 
@@ -449,6 +488,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Поиск {{project}}",
   "session.header.searchFiles": "Поиск файлов",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "Статус",
   "status.popover.ariaLabel": "Настройки серверов",
@@ -955,7 +999,6 @@ export const dict = {
   "dialog.model.notSet": "Не задано",
   "profile.personalAccount": "Личный аккаунт",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/ru.ts
-
 
   "question.summary": "{{n}} из {{total}} вопросов",
   "common.review": "Просмотр",

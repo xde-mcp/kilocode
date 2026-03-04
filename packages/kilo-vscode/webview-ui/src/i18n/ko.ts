@@ -48,6 +48,7 @@ export const dict = {
 
   "command.session.new": "새 세션",
   "command.file.open": "파일 열기",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "선택 영역을 컨텍스트에 추가",
   "command.context.addSelection.description": "현재 파일에서 선택한 줄을 추가",
   "command.terminal.toggle": "터미널 토글",
@@ -74,6 +75,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "편집 자동 수락",
   "command.permissions.autoaccept.disable": "편집 자동 수락 중지",
   "command.workspace.toggle": "작업 공간 전환",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "실행 취소",
   "command.session.undo.description": "마지막 메시지 실행 취소",
   "command.session.redo": "다시 실행",
@@ -97,8 +99,12 @@ export const dict = {
   "dialog.provider.group.popular": "인기",
   "dialog.provider.group.other": "기타",
   "dialog.provider.tag.recommended": "추천",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Claude Pro/Max 또는 API 키로 연결",
   "dialog.provider.openai.note": "ChatGPT Pro/Plus 또는 API 키로 연결",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Copilot 또는 API 키로 연결",
 
   "dialog.model.select.title": "모델 선택",
@@ -167,6 +173,7 @@ export const dict = {
   "model.tooltip.context": "컨텍스트 제한 {{limit}}",
   "common.search.placeholder": "검색",
   "common.goBack": "뒤로 가기",
+  "common.goForward": "Forward",
   "common.loading": "로딩 중",
   "common.loading.ellipsis": "...",
   "common.cancel": "취소",
@@ -330,6 +337,38 @@ export const dict = {
   "toast.language.title": "언어",
   "toast.language.description": "{{language}}(으)로 전환됨",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "테마 전환됨",
   "toast.scheme.title": "색상 테마",
 
@@ -447,6 +486,11 @@ export const dict = {
 
   "session.header.search.placeholder": "{{project}} 검색",
   "session.header.searchFiles": "파일 검색",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "상태",
   "status.popover.ariaLabel": "서버 구성",
@@ -947,7 +991,6 @@ export const dict = {
   "dialog.model.notSet": "설정되지 않음",
   "profile.personalAccount": "개인 계정",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/ko.ts
-
 
   "question.summary": "{{total}}개 질문 중 {{n}}번째",
   "common.review": "검토",

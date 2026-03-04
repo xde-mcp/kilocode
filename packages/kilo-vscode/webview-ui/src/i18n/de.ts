@@ -48,6 +48,7 @@ export const dict = {
 
   "command.session.new": "Neue Sitzung",
   "command.file.open": "Datei öffnen",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "Auswahl zum Kontext hinzufügen",
   "command.context.addSelection.description": "Ausgewählte Zeilen aus der aktuellen Datei hinzufügen",
   "command.terminal.toggle": "Terminal umschalten",
@@ -74,6 +75,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Änderungen automatisch akzeptieren",
   "command.permissions.autoaccept.disable": "Automatische Annahme von Änderungen stoppen",
   "command.workspace.toggle": "Arbeitsbereiche umschalten",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "Rückgängig",
   "command.session.undo.description": "Letzte Nachricht rückgängig machen",
   "command.session.redo": "Wiederherstellen",
@@ -97,8 +99,12 @@ export const dict = {
   "dialog.provider.group.popular": "Beliebt",
   "dialog.provider.group.other": "Andere",
   "dialog.provider.tag.recommended": "Empfohlen",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Mit Claude Pro/Max oder API-Schlüssel verbinden",
   "dialog.provider.openai.note": "Mit ChatGPT Pro/Plus oder API-Schlüssel verbinden",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Mit Copilot oder API-Schlüssel verbinden",
 
   "dialog.model.select.title": "Modell auswählen",
@@ -168,6 +174,7 @@ export const dict = {
   "model.tooltip.context": "Kontextlimit {{limit}}",
   "common.search.placeholder": "Suchen",
   "common.goBack": "Zurück",
+  "common.goForward": "Forward",
   "common.loading": "Laden",
   "common.loading.ellipsis": "...",
   "common.cancel": "Abbrechen",
@@ -334,8 +341,44 @@ export const dict = {
   "toast.language.title": "Sprache",
   "toast.language.description": "Zu {{language}} gewechselt",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "Thema gewechselt",
   "toast.scheme.title": "Farbschema",
+  "toast.workspace.enabled.title": "Workspaces enabled",
+  "toast.workspace.enabled.description": "Multiple worktrees are now shown in the sidebar",
+  "toast.workspace.disabled.title": "Workspaces disabled",
+  "toast.workspace.disabled.description": "Only the main worktree is shown in the sidebar",
 
   "toast.permissions.autoaccept.on.title": "Änderungen werden automatisch akzeptiert",
   "toast.permissions.autoaccept.on.description": "Bearbeitungs- und Schreibrechte werden automatisch genehmigt",
@@ -449,6 +492,11 @@ export const dict = {
 
   "session.header.search.placeholder": "{{project}} durchsuchen",
   "session.header.searchFiles": "Dateien suchen",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Serverkonfigurationen",
@@ -964,7 +1012,6 @@ export const dict = {
   "profile.personalAccount": "Persönliches Konto",
 
   // Agent Manager strings live in webview-ui/agent-manager/i18n/de.ts
-
 
   "question.summary": "{{n}} von {{total}} Fragen",
   "common.review": "Überprüfen",

@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "Nova sessão",
   "command.file.open": "Abrir arquivo",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "Adicionar seleção ao contexto",
   "command.context.addSelection.description": "Adicionar as linhas selecionadas do arquivo atual",
   "command.terminal.toggle": "Alternar terminal",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Aceitar edições automaticamente",
   "command.permissions.autoaccept.disable": "Parar de aceitar edições automaticamente",
   "command.workspace.toggle": "Alternar espaços de trabalho",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "Desfazer",
   "command.session.undo.description": "Desfazer a última mensagem",
   "command.session.redo": "Refazer",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "Popular",
   "dialog.provider.group.other": "Outro",
   "dialog.provider.tag.recommended": "Recomendado",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Conectar com Claude Pro/Max ou chave de API",
   "dialog.provider.openai.note": "Conectar com ChatGPT Pro/Plus ou chave de API",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Conectar com Copilot ou chave de API",
 
   "dialog.model.select.title": "Selecionar modelo",
@@ -164,6 +170,7 @@ export const dict = {
 
   "common.search.placeholder": "Buscar",
   "common.goBack": "Voltar",
+  "common.goForward": "Forward",
   "common.loading": "Carregando",
   "common.loading.ellipsis": "...",
   "common.cancel": "Cancelar",
@@ -326,6 +333,38 @@ export const dict = {
   "toast.language.title": "Idioma",
   "toast.language.description": "Alterado para {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "Tema alterado",
   "toast.scheme.title": "Esquema de cores",
 
@@ -445,6 +484,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Buscar {{project}}",
   "session.header.searchFiles": "Buscar arquivos",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Configurações de servidores",
@@ -956,7 +1000,6 @@ export const dict = {
   "profile.personalAccount": "Conta pessoal",
 
   // Agent Manager strings live in webview-ui/agent-manager/i18n/br.ts
-
 
   "question.summary": "{{n}} de {{total}} perguntas",
   "common.review": "Revisar",

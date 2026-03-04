@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "Ny session",
   "command.file.open": "Åbn fil",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "Tilføj markering til kontekst",
   "command.context.addSelection.description": "Tilføj markerede linjer fra den aktuelle fil",
   "command.terminal.toggle": "Skift terminal",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Accepter ændringer automatisk",
   "command.permissions.autoaccept.disable": "Stop automatisk accept af ændringer",
   "command.workspace.toggle": "Skift arbejdsområder",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "Fortryd",
   "command.session.undo.description": "Fortryd den sidste besked",
   "command.session.redo": "Omgør",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "Populære",
   "dialog.provider.group.other": "Andre",
   "dialog.provider.tag.recommended": "Anbefalet",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Forbind med Claude Pro/Max eller API-nøgle",
   "dialog.provider.openai.note": "Forbind med ChatGPT Pro/Plus eller API-nøgle",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Forbind med Copilot eller API-nøgle",
 
   "dialog.model.select.title": "Vælg model",
@@ -164,6 +170,7 @@ export const dict = {
   "model.tooltip.context": "Kontekstgrænse {{limit}}",
   "common.search.placeholder": "Søg",
   "common.goBack": "Gå tilbage",
+  "common.goForward": "Forward",
   "common.loading": "Indlæser",
   "common.loading.ellipsis": "...",
   "common.cancel": "Annuller",
@@ -328,6 +335,38 @@ export const dict = {
   "toast.language.title": "Sprog",
   "toast.language.description": "Skiftede til {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "Tema skiftet",
   "toast.scheme.title": "Farveskema",
 
@@ -446,6 +485,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Søg {{project}}",
   "session.header.searchFiles": "Søg efter filer",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Serverkonfigurationer",
@@ -951,7 +995,6 @@ export const dict = {
   "profile.personalAccount": "Personlig konto",
 
   // Agent Manager strings live in webview-ui/agent-manager/i18n/da.ts
-
 
   "question.summary": "{{n}} af {{total}} spørgsmål",
   "common.review": "Gennemgå",

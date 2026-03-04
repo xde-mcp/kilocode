@@ -44,6 +44,7 @@ export const dict = {
 
   "command.session.new": "Nowa sesja",
   "command.file.open": "Otwórz plik",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "Dodaj zaznaczenie do kontekstu",
   "command.context.addSelection.description": "Dodaj zaznaczone linie z bieżącego pliku",
   "command.terminal.toggle": "Przełącz terminal",
@@ -70,6 +71,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Automatyczne akceptowanie edycji",
   "command.permissions.autoaccept.disable": "Zatrzymaj automatyczne akceptowanie edycji",
   "command.workspace.toggle": "Przełącz przestrzenie robocze",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "Cofnij",
   "command.session.undo.description": "Cofnij ostatnią wiadomość",
   "command.session.redo": "Ponów",
@@ -93,8 +95,12 @@ export const dict = {
   "dialog.provider.group.popular": "Popularne",
   "dialog.provider.group.other": "Inne",
   "dialog.provider.tag.recommended": "Zalecane",
+  "dialog.provider.opencode.note": "Curated models including Claude, GPT, Gemini and more",
   "dialog.provider.anthropic.note": "Połącz z Claude Pro/Max lub kluczem API",
   "dialog.provider.openai.note": "Połącz z ChatGPT Pro/Plus lub kluczem API",
+  "dialog.provider.google.note": "Gemini models for fast, structured responses",
+  "dialog.provider.openrouter.note": "Access all supported models from one provider",
+  "dialog.provider.vercel.note": "Unified access to AI models with smart routing",
   "dialog.provider.copilot.note": "Połącz z Copilot lub kluczem API",
 
   "dialog.model.select.title": "Wybierz model",
@@ -164,6 +170,7 @@ export const dict = {
 
   "common.search.placeholder": "Szukaj",
   "common.goBack": "Wstecz",
+  "common.goForward": "Forward",
   "common.loading": "Ładowanie",
   "common.loading.ellipsis": "...",
   "common.cancel": "Anuluj",
@@ -328,6 +335,38 @@ export const dict = {
   "toast.language.title": "Język",
   "toast.language.description": "Przełączono na {{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "Przełączono motyw",
   "toast.scheme.title": "Schemat kolorów",
 
@@ -447,6 +486,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Szukaj {{project}}",
   "session.header.searchFiles": "Szukaj plików",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Konfiguracje serwerów",
@@ -953,7 +997,6 @@ export const dict = {
   "dialog.model.notSet": "Nie ustawiono",
   "profile.personalAccount": "Konto osobiste",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/pl.ts
-
 
   "question.summary": "{{n}} z {{total}} pytań",
   "common.review": "Przejrzyj",

@@ -48,6 +48,7 @@ export const dict = {
 
   "command.session.new": "新建会话",
   "command.file.open": "打开文件",
+  "command.tab.close": "Close tab",
   "command.context.addSelection": "将所选内容添加到上下文",
   "command.context.addSelection.description": "添加当前文件中选中的行",
   "command.terminal.toggle": "切换终端",
@@ -74,6 +75,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "自动接受编辑",
   "command.permissions.autoaccept.disable": "停止自动接受编辑",
   "command.workspace.toggle": "切换工作区",
+  "command.workspace.toggle.description": "Enable or disable multiple workspaces in the sidebar",
   "command.session.undo": "撤销",
   "command.session.undo.description": "撤销上一条消息",
   "command.session.redo": "重做",
@@ -168,6 +170,7 @@ export const dict = {
   "model.tooltip.context": "上下文上限 {{limit}}",
   "common.search.placeholder": "搜索",
   "common.goBack": "返回",
+  "common.goForward": "Forward",
   "common.loading": "加载中",
   "common.loading.ellipsis": "...",
   "common.cancel": "取消",
@@ -330,6 +333,38 @@ export const dict = {
   "toast.language.title": "语言",
   "toast.language.description": "已切换到{{language}}",
 
+  "language.th": "ไทย",
+
+  "language.bs": "Bosanski",
+
+  "language.br": "Português (Brasil)",
+
+  "language.no": "Norsk",
+
+  "language.ar": "العربية",
+
+  "language.ru": "Русский",
+
+  "language.pl": "Polski",
+
+  "language.ja": "日本語",
+
+  "language.da": "Dansk",
+
+  "language.fr": "Français",
+
+  "language.es": "Español",
+
+  "language.de": "Deutsch",
+
+  "language.ko": "한국어",
+
+  "language.zht": "繁體中文",
+
+  "language.zh": "简体中文",
+
+  "language.en": "English",
+
   "toast.theme.title": "主题已切换",
   "toast.scheme.title": "颜色方案",
 
@@ -446,6 +481,11 @@ export const dict = {
 
   "session.header.search.placeholder": "搜索 {{project}}",
   "session.header.searchFiles": "搜索文件",
+  "session.header.openIn": "Open in",
+  "session.header.open.action": "Open {{app}}",
+  "session.header.open.ariaLabel": "Open in {{app}}",
+  "session.header.open.menu": "Open options",
+  "session.header.open.copyPath": "Copy Path",
 
   "status.popover.trigger": "状态",
   "status.popover.ariaLabel": "服务器配置",
@@ -942,7 +982,6 @@ export const dict = {
   "dialog.model.notSet": "未设置",
   "profile.personalAccount": "个人账户",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/zh.ts
-
 
   "question.summary": "第 {{n}} / {{total}} 个问题",
   "common.review": "审查",
