@@ -1243,6 +1243,9 @@ export class AgentManagerProvider implements vscode.Disposable {
     if (!bindings.toggleDiff) {
       bindings.toggleDiff = formatKeybinding(mac ? "cmd+d" : "ctrl+d", mac)
     }
+    if (!bindings.showShortcuts) {
+      bindings.showShortcuts = formatKeybinding(mac ? "cmd+shift+/" : "ctrl+shift+/", mac)
+    }
 
     this.postToWebview({ type: "agentManager.keybindings", bindings })
   }
