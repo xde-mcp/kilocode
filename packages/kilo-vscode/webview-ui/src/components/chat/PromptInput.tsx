@@ -72,23 +72,12 @@ export const PromptInput: Component = () => {
   window.addEventListener("focusPrompt", onFocusPrompt)
   onCleanup(() => window.removeEventListener("focusPrompt", onFocusPrompt))
 
-  // Start a new task, carrying over the current prompt text if any
+  // Start a new task, carrying over the current prompt text (without auto-sending it)
   const onNewTaskRequest = () => {
     const prompt = text().trim()
-    const sel = session.selected()
+    // Pre-populate the draft for the new (empty) session so the effect restores it
+    if (prompt) drafts.set("__new__", prompt)
     session.clearCurrentSession()
-    if (prompt) {
-      session.sendMessage(prompt, sel?.providerID, sel?.modelID)
-      setText("")
-      setGhostText("")
-      imageAttach.clear()
-      if (debounceTimer) clearTimeout(debounceTimer)
-      mention.closeMention()
-      if (textareaRef) {
-        textareaRef.value = ""
-        textareaRef.style.height = "auto"
-      }
-    }
   }
   window.addEventListener("newTaskRequest", onNewTaskRequest)
   onCleanup(() => window.removeEventListener("newTaskRequest", onNewTaskRequest))

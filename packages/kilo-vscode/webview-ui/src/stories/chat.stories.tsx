@@ -91,6 +91,28 @@ export const ChatViewIdle: Story = {
   ),
 }
 
+/** ChatView with messages — shows the full-width "New task" button above the prompt */
+export const ChatViewWithMessages: Story = {
+  name: "ChatView — with messages (shows New Task button)",
+  render: () => {
+    const session = {
+      ...mockSessionValue({ id: SESSION_ID, status: "idle" }),
+      messages: () => [{ id: "msg-001" }] as any[],
+      totalCost: () => 0.0012,
+      contextUsage: () => ({ tokens: 512, percentage: 6 }),
+    }
+    return (
+      <StoryProviders sessionID={SESSION_ID} status="idle">
+        <SessionContext.Provider value={session as any}>
+          <div style={{ width: "420px", height: "600px", display: "flex", "flex-direction": "column" }}>
+            <ChatView />
+          </div>
+        </SessionContext.Provider>
+      </StoryProviders>
+    )
+  },
+}
+
 // ---------------------------------------------------------------------------
 // QuestionDock stories
 // ---------------------------------------------------------------------------
