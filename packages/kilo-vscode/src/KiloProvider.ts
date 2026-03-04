@@ -442,23 +442,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           const sdkClient = this.client
           if (sdkClient) {
             const dir = this.getWorkspaceDirectory(this.currentSession?.id)
-            // Collect open tab paths (relative, forward-slash) for prioritization
-            const openPaths = new Set<string>()
-            if (dir) {
-              for (const group of vscode.window.tabGroups.all) {
-                for (const tab of group.tabs) {
-                  if (tab.input instanceof vscode.TabInputText) {
-                    const uri = tab.input.uri
-                    if (uri.scheme === "file") {
-                      const rel = path.relative(dir, uri.fsPath)
-                      if (!rel.startsWith("..")) {
-                        openPaths.add(rel.replaceAll("\\", "/"))
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            const openPaths = dir ? await this.getOpenTabPaths(dir) : new Set<string>()
             void sdkClient.find
               .files({ query: message.query, directory: dir }, { throwOnError: true })
               .then(({ data: paths }) => {
@@ -1928,6 +1912,25 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Get or create a FileIgnoreController for the current workspace directory.
    * Reinitializes if the workspace directory has changed.
    */
+  private async getOpenTabPaths(dir: string): Promise<Set<string>> {
+    const controller = await this.getIgnoreController(dir)
+    const result = new Set<string>()
+    for (const group of vscode.window.tabGroups.all) {
+      for (const tab of group.tabs) {
+        if (tab.input instanceof vscode.TabInputText) {
+          const uri = tab.input.uri
+          if (uri.scheme === "file") {
+            const rel = path.relative(dir, uri.fsPath)
+            if (!rel.startsWith("..") && controller.validateAccess(uri.fsPath)) {
+              result.add(rel.replaceAll("\\", "/"))
+            }
+          }
+        }
+      }
+    }
+    return result
+  }
+
   private async getIgnoreController(workspaceDir: string): Promise<FileIgnoreController> {
     if (this.ignoreController && this.ignoreControllerDir === workspaceDir) {
       return this.ignoreController
@@ -1963,21 +1966,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       .slice(0, 200)
 
     // Open tabs — use instanceof TabInputText to exclude notebooks, diffs, custom editors
-    const openTabSet = new Set<string>()
-    for (const group of vscode.window.tabGroups.all) {
-      for (const tab of group.tabs) {
-        if (tab.input instanceof vscode.TabInputText) {
-          const uri = tab.input.uri
-          if (uri.scheme === "file") {
-            const rel = toRelative(uri.fsPath)
-            if (rel && controller.validateAccess(uri.fsPath)) {
-              openTabSet.add(rel)
-            }
-          }
-        }
-      }
-    }
-    const openTabs = [...openTabSet].slice(0, 20)
+    const openTabs = [...(await this.getOpenTabPaths(workspaceDir))].slice(0, 20)
 
     // Active file (also filtered through .kilocodeignore)
     const activeEditor = vscode.window.activeTextEditor
