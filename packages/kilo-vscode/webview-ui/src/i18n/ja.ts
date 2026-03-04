@@ -15,10 +15,12 @@ export const dict = {
   "command.category.agent": "エージェント",
   "command.category.permissions": "権限",
   "command.category.workspace": "ワークスペース",
+
   "command.category.settings": "設定",
   "theme.scheme.system": "システム",
   "theme.scheme.light": "ライト",
   "theme.scheme.dark": "ダーク",
+
   "command.sidebar.toggle": "サイドバーの切り替え",
   "command.project.open": "プロジェクトを開く",
   "command.provider.connect": "プロバイダーに接続",
@@ -29,13 +31,17 @@ export const dict = {
   "command.session.previous.unseen": "Previous unread session",
   "command.session.next.unseen": "Next unread session",
   "command.session.archive": "セッションをアーカイブ",
+
   "command.palette": "コマンドパレット",
+
   "command.theme.cycle": "テーマの切り替え",
   "command.theme.set": "テーマを使用: {{theme}}",
   "command.theme.scheme.cycle": "配色の切り替え",
   "command.theme.scheme.set": "配色を使用: {{scheme}}",
+
   "command.language.cycle": "言語の切り替え",
   "command.language.set": "言語を使用: {{language}}",
+
   "command.session.new": "新しいセッション",
   "command.file.open": "ファイルを開く",
   "command.tab.close": "タブを閉じる",
@@ -78,10 +84,12 @@ export const dict = {
   "command.session.share.description": "このセッションを共有しURLをクリップボードにコピー",
   "command.session.unshare": "セッションの共有を停止",
   "command.session.unshare.description": "このセッションの共有を停止",
+
   "palette.search.placeholder": "ファイル、コマンド、セッションを検索",
   "palette.empty": "結果が見つかりません",
   "palette.group.commands": "コマンド",
   "palette.group.files": "ファイル",
+
   "dialog.provider.search.placeholder": "プロバイダーを検索",
   "dialog.provider.empty": "プロバイダーが見つかりません",
   "dialog.provider.group.popular": "人気",
@@ -94,14 +102,18 @@ export const dict = {
   "dialog.provider.openrouter.note": "1つのプロバイダーからすべてのモデルにアクセス",
   "dialog.provider.vercel.note": "スマートルーティングによるAIモデルへの統合アクセス",
   "dialog.provider.copilot.note": "CopilotまたはAPIキーで接続",
+
   "dialog.model.select.title": "モデルを選択",
   "dialog.model.search.placeholder": "モデルを検索",
   "dialog.model.empty": "モデルが見つかりません",
   "dialog.model.manage": "モデルを管理",
   "dialog.model.manage.description": "モデルセレクターに表示するモデルをカスタマイズします。",
+
   "dialog.model.unpaid.freeModels.title": "Kiloが提供する無料モデル",
   "dialog.model.unpaid.addMore.title": "人気のプロバイダーからモデルを追加",
+
   "dialog.provider.viewAll": "さらにプロバイダーを表示",
+
   "provider.connect.title": "{{provider}}を接続",
   "provider.connect.title.anthropicProMax": "Claude Pro/Maxでログイン",
   "provider.connect.selectMethod": "{{provider}}のログイン方法を選択してください。",
@@ -135,10 +147,12 @@ export const dict = {
   "provider.connect.oauth.auto.confirmationCode": "確認コード",
   "provider.connect.toast.connected.title": "{{provider}}が接続されました",
   "provider.connect.toast.connected.description": "{{provider}}モデルが使用可能になりました。",
+
   "provider.disconnect.toast.disconnected.title": "{{provider}}が切断されました",
   "provider.disconnect.toast.disconnected.description": "{{provider}}のモデルは利用できなくなりました。",
   "model.tag.free": "無料",
   "model.tag.latest": "最新",
+
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -166,12 +180,14 @@ export const dict = {
   "common.saving": "保存中...",
   "common.default": "デフォルト",
   "common.attachment": "添付ファイル",
+
   "prompt.placeholder.shell": "シェルコマンドを入力...",
   "prompt.placeholder.normal": '何でも聞いてください... "{{example}}"',
   "prompt.placeholder.summarizeComments": "コメントを要約…",
   "prompt.placeholder.summarizeComment": "コメントを要約…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.shell.exit": "escで終了",
+
   "prompt.example.1": "コードベースのTODOを修正",
   "prompt.example.2": "このプロジェクトの技術スタックは何ですか？",
   "prompt.example.3": "壊れたテストを修正",
@@ -197,6 +213,7 @@ export const dict = {
   "prompt.example.23": "このリストにページネーションを追加",
   "prompt.example.24": "〜のCLIコマンドを作成",
   "prompt.example.25": "ここでは環境変数はどう機能しますか？",
+
   "prompt.popover.emptyResults": "一致する結果がありません",
   "prompt.popover.emptyCommands": "一致するコマンドがありません",
   "prompt.dropzone.label": "画像またはPDFをここにドロップ",
@@ -224,18 +241,24 @@ export const dict = {
   "prompt.toast.shellSendFailed.title": "シェルコマンドの送信に失敗しました",
   "prompt.toast.commandSendFailed.title": "コマンドの送信に失敗しました",
   "prompt.toast.promptSendFailed.title": "プロンプトの送信に失敗しました",
+
   "dialog.mcp.title": "MCP",
   "dialog.mcp.description": "{{total}}個中{{enabled}}個が有効",
   "dialog.mcp.empty": "MCPが設定されていません",
+
   "dialog.lsp.empty": "ファイルタイプから自動検出されたLSP",
   "dialog.plugins.empty": "opencode.jsonで設定されたプラグイン",
+
   "mcp.status.connected": "接続済み",
   "mcp.status.failed": "失敗",
   "mcp.status.needs_auth": "認証が必要",
   "mcp.status.disabled": "無効",
+
   "dialog.fork.empty": "フォーク元のメッセージがありません",
+
   "dialog.directory.search.placeholder": "フォルダを検索",
   "dialog.directory.empty": "フォルダが見つかりません",
+
   "dialog.server.title": "サーバー",
   "dialog.server.description": "このアプリが接続するKiloサーバーを切り替えます。",
   "dialog.server.search.placeholder": "サーバーを検索",
@@ -253,12 +276,14 @@ export const dict = {
   "dialog.server.default.set": "現在のサーバーをデフォルトに設定",
   "dialog.server.default.clear": "クリア",
   "dialog.server.action.remove": "サーバーを削除",
+
   "dialog.server.menu.edit": "編集",
   "dialog.server.menu.default": "デフォルトに設定",
   "dialog.server.menu.defaultRemove": "デフォルト設定を解除",
   "dialog.server.menu.delete": "削除",
   "dialog.server.current": "現在のサーバー",
   "dialog.server.status.default": "デフォルト",
+
   "dialog.project.edit.title": "プロジェクトを編集",
   "dialog.project.edit.name": "名前",
   "dialog.project.edit.icon": "アイコン",
@@ -267,6 +292,7 @@ export const dict = {
   "dialog.project.edit.icon.recommended": "推奨: 128x128px",
   "dialog.project.edit.color": "色",
   "dialog.project.edit.color.select": "{{color}}の色を選択",
+
   "dialog.project.edit.worktree.startup": "ワークスペース起動スクリプト",
   "dialog.project.edit.worktree.startup.description":
     "新しいワークスペース (ワークツリー) を作成した後に実行されます。",
@@ -278,8 +304,10 @@ export const dict = {
   "context.breakdown.assistant": "アシスタント",
   "context.breakdown.tool": "ツール呼び出し",
   "context.breakdown.other": "その他",
+
   "context.systemPrompt.title": "システムプロンプト",
   "context.rawMessages.title": "生のメッセージ",
+
   "context.stats.session": "セッション",
   "context.stats.messages": "メッセージ",
   "context.stats.provider": "プロバイダー",
@@ -296,42 +324,49 @@ export const dict = {
   "context.stats.totalCost": "総コスト",
   "context.stats.sessionCreated": "セッション作成日時",
   "context.stats.lastActivity": "最終アクティビティ",
+
   "context.usage.tokens": "トークン",
   "context.usage.usage": "使用量",
   "context.usage.cost": "コスト",
   "context.usage.clickToView": "クリックしてコンテキストを表示",
   "context.usage.view": "コンテキスト使用量を表示",
+
   "toast.language.title": "言語",
   "toast.language.description": "{{language}}に切り替えました",
-  "language.th": "ไทย",
-  "language.bs": "Bosanski",
-  "language.br": "Português (Brasil)",
-  "language.no": "Norsk",
-  "language.ar": "العربية",
-  "language.ru": "Русский",
-  "language.pl": "Polski",
-  "language.ja": "日本語",
-  "language.da": "Dansk",
-  "language.fr": "Français",
-  "language.es": "Español",
-  "language.de": "Deutsch",
-  "language.ko": "한국어",
-  "language.zht": "繁體中文",
-  "language.zh": "简体中文",
   "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
+
   "toast.theme.title": "テーマが切り替わりました",
   "toast.scheme.title": "配色",
   "toast.workspace.enabled.title": "ワークスペースが有効になりました",
   "toast.workspace.enabled.description": "サイドバーに複数のワークツリーが表示されます",
   "toast.workspace.disabled.title": "ワークスペースが無効になりました",
   "toast.workspace.disabled.description": "サイドバーにはメインのワークツリーのみ表示されます",
+
   "toast.permissions.autoaccept.on.title": "編集を自動承認中",
   "toast.permissions.autoaccept.on.description": "編集と書き込みの権限は自動的に承認されます",
   "toast.permissions.autoaccept.off.title": "編集の自動承認を停止しました",
   "toast.permissions.autoaccept.off.description": "編集と書き込みの権限には承認が必要です",
+
   "toast.model.none.title": "モデルが選択されていません",
   "toast.model.none.description": "このセッションを要約するにはプロバイダーを接続してください",
+
   "toast.file.loadFailed.title": "ファイルの読み込みに失敗しました",
+
   "toast.file.listFailed.title": "ファイル一覧の取得に失敗しました",
   "toast.context.noLineSelection.title": "行が選択されていません",
   "toast.context.noLineSelection.description": "まずファイルタブで行範囲を選択してください。",
@@ -340,15 +375,19 @@ export const dict = {
   "toast.session.share.success.description": "共有URLをクリップボードにコピーしました！",
   "toast.session.share.failed.title": "セッションの共有に失敗しました",
   "toast.session.share.failed.description": "セッションの共有中にエラーが発生しました",
+
   "toast.session.unshare.success.title": "セッションの共有を解除しました",
   "toast.session.unshare.success.description": "セッションの共有解除に成功しました！",
   "toast.session.unshare.failed.title": "セッションの共有解除に失敗しました",
   "toast.session.unshare.failed.description": "セッションの共有解除中にエラーが発生しました",
+
   "toast.session.listFailed.title": "{{project}}のセッション読み込みに失敗しました",
+
   "toast.update.title": "アップデートが利用可能です",
   "toast.update.description": "Kiloの新しいバージョン ({{version}}) がインストール可能です。",
   "toast.update.action.installRestart": "インストールして再起動",
   "toast.update.action.notYet": "今はしない",
+
   "error.page.title": "問題が発生しました",
   "error.page.description": "アプリケーションの読み込み中にエラーが発生しました。",
   "error.page.details.label": "エラー詳細",
@@ -359,10 +398,12 @@ export const dict = {
   "error.page.report.prefix": "このエラーをKiloチームに報告してください: ",
   "error.page.report.discord": "Discord",
   "error.page.version": "バージョン: {{version}}",
+
   "error.dev.rootNotFound":
     "ルート要素が見つかりません。index.htmlに追加するのを忘れていませんか？またはid属性のスペルが間違っていませんか？",
 
   "error.globalSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
+
   "error.chain.unknown": "不明なエラー",
   "error.chain.causedBy": "原因:",
   "error.chain.apiError": "APIエラー",
@@ -383,17 +424,21 @@ export const dict = {
   "error.chain.configFrontmatterError": "{{path}} のフロントマターの解析に失敗しました:\n{{message}}",
   "error.chain.configInvalid": "{{path}} の設定ファイルが無効です",
   "error.chain.configInvalidWithMessage": "{{path}} の設定ファイルが無効です: {{message}}",
+
   "notification.permission.title": "権限が必要です",
   "notification.permission.description": "{{projectName}} の {{sessionTitle}} が権限を必要としています",
   "notification.question.title": "質問",
   "notification.question.description": "{{projectName}} の {{sessionTitle}} から質問があります",
   "notification.action.goToSession": "セッションへ移動",
+
   "notification.session.responseReady.title": "応答の準備ができました",
   "notification.session.error.title": "セッションエラー",
   "notification.session.error.fallbackDescription": "エラーが発生しました",
+
   "home.recentProjects": "最近のプロジェクト",
   "home.empty.title": "最近のプロジェクトはありません",
   "home.empty.description": "ローカルプロジェクトを開いて始めましょう",
+
   "session.tab.session": "セッション",
   "session.tab.review": "レビュー",
   "session.tab.context": "コンテキスト",
@@ -411,12 +456,15 @@ export const dict = {
   "session.messages.loadingEarlier": "以前のメッセージを読み込み中...",
   "session.messages.loadEarlier": "以前のメッセージを読み込む",
   "session.messages.loading": "メッセージを読み込み中...",
+
   "session.messages.jumpToLatest": "最新へジャンプ",
   "session.context.addToContext": "{{selection}}をコンテキストに追加",
+
   "session.new.worktree.main": "メインブランチ",
   "session.new.worktree.mainWithBranch": "メインブランチ ({{branch}})",
   "session.new.worktree.create": "新しいワークツリーを作成",
   "session.new.lastModified": "最終更新",
+
   "session.header.search.placeholder": "{{project}}を検索",
   "session.header.searchFiles": "ファイルを検索",
   "session.header.openIn": "で開く",
@@ -424,6 +472,7 @@ export const dict = {
   "session.header.open.ariaLabel": "{{app}}で開く",
   "session.header.open.menu": "開くオプション",
   "session.header.open.copyPath": "パスをコピー",
+
   "status.popover.trigger": "ステータス",
   "status.popover.ariaLabel": "サーバー設定",
   "status.popover.tab.servers": "サーバー",
@@ -431,6 +480,7 @@ export const dict = {
   "status.popover.tab.lsp": "LSP",
   "status.popover.tab.plugins": "プラグイン",
   "status.popover.action.manageServers": "サーバーを管理",
+
   "session.share.popover.title": "ウェブで公開",
   "session.share.popover.description.shared":
     "このセッションはウェブで公開されています。リンクを知っている人なら誰でもアクセスできます。",
@@ -444,13 +494,16 @@ export const dict = {
   "session.share.action.view": "表示",
   "session.share.copy.copied": "コピーしました",
   "session.share.copy.copyLink": "リンクをコピー",
+
   "lsp.tooltip.none": "LSPサーバーなし",
   "lsp.label.connected": "{{count}} LSP",
+
   "prompt.loading": "プロンプトを読み込み中...",
   "terminal.loading": "ターミナルを読み込み中...",
   "terminal.title": "ターミナル",
   "terminal.title.numbered": "ターミナル {{number}}",
   "terminal.close": "ターミナルを閉じる",
+
   "terminal.connectionLost.title": "接続が失われました",
   "terminal.connectionLost.description":
     "ターミナルの接続が中断されました。これはサーバーが再起動したときに発生することがあります。",
@@ -466,6 +519,7 @@ export const dict = {
   "common.close": "閉じる",
   "common.edit": "編集",
   "common.loadMore": "さらに読み込む",
+
   "common.key.esc": "ESC",
   "sidebar.menu.toggle": "メニューを切り替え",
   "sidebar.nav.projectsAndSessions": "プロジェクトとセッション",
@@ -478,15 +532,18 @@ export const dict = {
   "sidebar.gettingStarted.line2": "プロバイダーを接続して、Claude、GPT、Geminiなどのモデルを使用できます。",
   "sidebar.project.recentSessions": "最近のセッション",
   "sidebar.project.viewAllSessions": "すべてのセッションを表示",
+
   "app.name.desktop": "Kilo Desktop",
   "settings.section.desktop": "デスクトップ",
   "settings.section.server": "サーバー",
   "settings.tab.general": "一般",
   "settings.tab.shortcuts": "ショートカット",
+
   "settings.general.section.appearance": "外観",
   "settings.general.section.notifications": "システム通知",
   "settings.general.section.updates": "アップデート",
   "settings.general.section.sounds": "効果音",
+
   "settings.general.row.language.title": "言語",
   "settings.general.row.language.description": "Kiloの表示言語を変更します",
   "settings.general.row.appearance.title": "外観",
@@ -495,8 +552,10 @@ export const dict = {
   "settings.general.row.theme.description": "Kiloのテーマをカスタマイズします。",
   "settings.general.row.font.title": "フォント",
   "settings.general.row.font.description": "コードブロックで使用する等幅フォントをカスタマイズします",
+
   "settings.general.row.releaseNotes.title": "リリースノート",
   "settings.general.row.releaseNotes.description": "アップデート後に「新機能」ポップアップを表示",
+
   "settings.updates.row.startup.title": "起動時にアップデートを確認",
   "settings.updates.row.startup.description": "Kilo の起動時に自動でアップデートを確認します",
   "settings.updates.row.check.title": "アップデートを確認",
@@ -505,6 +564,7 @@ export const dict = {
   "settings.updates.action.checking": "確認中...",
   "settings.updates.toast.latest.title": "最新です",
   "settings.updates.toast.latest.description": "Kilo は最新バージョンです。",
+
   "font.option.ibmPlexMono": "IBM Plex Mono",
   "font.option.cascadiaCode": "Cascadia Code",
   "font.option.firaCode": "Fira Code",
@@ -569,12 +629,14 @@ export const dict = {
   "settings.general.notifications.permissions.description": "権限が必要な場合にシステム通知を表示します",
   "settings.general.notifications.errors.title": "エラー",
   "settings.general.notifications.errors.description": "エラーが発生した場合にシステム通知を表示します",
+
   "settings.general.sounds.agent.title": "エージェント",
   "settings.general.sounds.agent.description": "エージェントが完了したか、注意が必要な場合に音を再生します",
   "settings.general.sounds.permissions.title": "権限",
   "settings.general.sounds.permissions.description": "権限が必要な場合に音を再生します",
   "settings.general.sounds.errors.title": "エラー",
   "settings.general.sounds.errors.description": "エラーが発生した場合に音を再生します",
+
   "settings.shortcuts.title": "キーボードショートカット",
   "settings.shortcuts.reset.button": "デフォルトにリセット",
   "settings.shortcuts.reset.toast.title": "ショートカットをリセットしました",
@@ -585,12 +647,14 @@ export const dict = {
   "settings.shortcuts.pressKeys": "キーを押してください",
   "settings.shortcuts.search.placeholder": "ショートカットを検索",
   "settings.shortcuts.search.empty": "ショートカットが見つかりません",
+
   "settings.shortcuts.group.general": "一般",
   "settings.shortcuts.group.session": "セッション",
   "settings.shortcuts.group.navigation": "ナビゲーション",
   "settings.shortcuts.group.modelAndAgent": "モデルとエージェント",
   "settings.shortcuts.group.terminal": "ターミナル",
   "settings.shortcuts.group.prompt": "プロンプト",
+
   "settings.providers.title": "プロバイダー",
   "settings.providers.description": "プロバイダー設定はここで構成できます。",
   "settings.providers.section.connected": "接続済みプロバイダー",
@@ -608,13 +672,16 @@ export const dict = {
   "settings.commands.description": "コマンド設定はここで構成できます。",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP設定はここで構成できます。",
+
   "settings.permissions.title": "権限",
   "settings.permissions.description": "サーバーがデフォルトで使用できるツールを制御します。",
   "settings.permissions.section.tools": "ツール",
   "settings.permissions.toast.updateFailed.title": "権限の更新に失敗しました",
+
   "settings.permissions.action.allow": "許可",
   "settings.permissions.action.ask": "確認",
   "settings.permissions.action.deny": "拒否",
+
   "settings.permissions.tool.read.title": "読み込み",
   "settings.permissions.tool.read.description": "ファイルの読み込み (ファイルパスに一致)",
   "settings.permissions.tool.edit.title": "編集",
@@ -647,6 +714,7 @@ export const dict = {
   "settings.permissions.tool.external_directory.description": "プロジェクトディレクトリ外のファイルへのアクセス",
   "settings.permissions.tool.doom_loop.title": "Doom Loop",
   "settings.permissions.tool.doom_loop.description": "同一入力による繰り返しのツール呼び出しを検出",
+
   "session.delete.failed.title": "セッションの削除に失敗しました",
   "session.delete.title": "セッションの削除",
   "session.delete.confirm": 'セッション "{{name}}" を削除しますか？',
@@ -662,6 +730,7 @@ export const dict = {
   "session.cloud.import.button": "インポート",
   "session.cloud.import.invalid": "セッションIDの形式が無効です",
   "session.cloud.import.failed": "クラウドセッションのインポートに失敗しました",
+
   "workspace.new": "新しいワークスペース",
   "workspace.type.local": "ローカル",
   "workspace.type.sandbox": "サンドボックス",
@@ -687,6 +756,7 @@ export const dict = {
   "workspace.reset.archived.one": "1つのセッションがアーカイブされます。",
   "workspace.reset.archived.many": "{{count}}個のセッションがアーカイブされます。",
   "workspace.reset.note": "これにより、ワークスペースはデフォルトブランチと一致するようにリセットされます。",
+
   "deviceAuth.toast.urlCopied": "URLをクリップボードにコピーしました",
   "deviceAuth.toast.codeCopied": "コードをクリップボードにコピーしました",
   "deviceAuth.status.initiating": "ログインを開始しています...",
@@ -702,8 +772,10 @@ export const dict = {
   "deviceAuth.status.failed": "ログイン失敗",
   "deviceAuth.status.cancelled": "ログインがキャンセルされました",
   "deviceAuth.action.tryAgain": "再試行",
+
   "common.retry": "再試行",
   "common.refresh": "更新",
+
   "profile.title": "プロフィール",
   "profile.notLoggedIn": "ログインしていません",
   "profile.action.login": "Kilo Codeでログイン",
@@ -711,6 +783,7 @@ export const dict = {
   "profile.balance.refresh": "残高を更新",
   "profile.action.dashboard": "ダッシュボード",
   "profile.action.logout": "ログアウト",
+
   "settings.section.configuration": "設定",
   "settings.agentBehaviour.title": "エージェントの動作",
   "settings.autoApprove.title": "自動承認",
@@ -725,6 +798,7 @@ export const dict = {
   "settings.experimental.title": "実験的機能",
   "settings.language.title": "言語",
   "settings.aboutKiloCode.title": "Kilo Codeについて",
+
   "session.messages.empty": "下にメッセージを入力して会話を始めましょう。",
   "session.messages.welcome":
     "Kilo CodeはAIコーディングアシスタントです。機能の構築、バグの修正、コードベースの説明を依頼できます。",
@@ -732,10 +806,14 @@ export const dict = {
   "session.status.writingResponse": "応答を作成中…",
   "session.status.retrying": "再試行中（{{ attempt }}回目）… {{ message }}",
   "session.status.working": "作業中…",
+
   "dialog.model.noProviders": "プロバイダーなし",
+
   "prompt.placeholder.connecting": "サーバーに接続中...",
   "prompt.placeholder.default": "メッセージを入力... (Enterで送信、Shift+Enterで改行)",
+
   "context.usage.sessionCost": "セッションコスト",
+
   "time.justNow": "たった今",
   "time.minutesAgo": "{{count}}分前",
   "time.hoursAgo": "{{count}}時間前",
@@ -746,6 +824,7 @@ export const dict = {
   "time.thisWeek": "今週",
   "time.thisMonth": "今月",
   "time.older": "それ以前",
+
   "settings.aboutKiloCode.status.connected": "接続済み",
   "settings.aboutKiloCode.status.connecting": "接続中...",
   "settings.aboutKiloCode.status.disconnected": "切断",
@@ -765,12 +844,14 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Kilo Code拡張機能のすべての設定をデフォルト値にリセットします。CLIやバックエンドの設定には影響しません。",
   "settings.aboutKiloCode.resetSettings.button": "すべての設定をリセット",
+
   "settings.agentBehaviour.subtab.modes": "モード",
   "settings.agentBehaviour.subtab.agents": "Agents",
   "settings.agentBehaviour.subtab.mcpServers": "MCPサーバー",
   "settings.agentBehaviour.subtab.rules": "ルール",
   "settings.agentBehaviour.subtab.workflows": "ワークフロー",
   "settings.agentBehaviour.subtab.skills": "スキル",
+
   "settings.browser.description":
     "有効にすると、AIエージェントがWebページを操作できるようになります — ナビゲーション、クリック、入力、スクリーンショットの撮影。Chromeウィンドウが開き、エージェントの作業を確認できます。",
   "settings.browser.enable.title": "ブラウザ自動化を有効にする",
@@ -780,9 +861,11 @@ export const dict = {
     "別のChromiumインスタンスの代わりに、インストール済みのChromeブラウザを使用します。",
   "settings.browser.headless.title": "ヘッドレスモード",
   "settings.browser.headless.description": "ヘッドレスモードで実行します（ブラウザウィンドウは表示されません）。",
+
   "settings.language.description": "Kilo Code UIの言語を選択します。「自動」はVS Codeの表示言語を使用します。",
   "settings.language.auto": "自動（VS Code言語）",
   "settings.language.current": "現在：",
+
   "common.add": "追加",
   "common.choose": "選択…",
   "settings.notImplemented": "このセクションはまだ実装されていません。",
@@ -895,6 +978,7 @@ export const dict = {
   "dialog.model.notSet": "未設定",
   "profile.personalAccount": "個人アカウント",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/ja.ts
+
 
   "question.summary": "{{total}} 問中 {{n}} 問目",
   "common.review": "確認",

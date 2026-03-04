@@ -16,9 +16,11 @@ export const dict = {
   "command.category.permissions": "สิทธิ์",
   "command.category.workspace": "พื้นที่ทำงาน",
   "command.category.settings": "การตั้งค่า",
+
   "theme.scheme.system": "ระบบ",
   "theme.scheme.light": "สว่าง",
   "theme.scheme.dark": "มืด",
+
   "command.sidebar.toggle": "สลับแถบข้าง",
   "command.project.open": "เปิดโปรเจกต์",
   "command.provider.connect": "เชื่อมต่อผู้ให้บริการ",
@@ -29,13 +31,17 @@ export const dict = {
   "command.session.previous.unseen": "Previous unread session",
   "command.session.next.unseen": "Next unread session",
   "command.session.archive": "จัดเก็บเซสชัน",
+
   "command.palette": "คำสั่งค้นหา",
+
   "command.theme.cycle": "เปลี่ยนธีม",
   "command.theme.set": "ใช้ธีม: {{theme}}",
   "command.theme.scheme.cycle": "เปลี่ยนโทนสี",
   "command.theme.scheme.set": "ใช้โทนสี: {{scheme}}",
+
   "command.language.cycle": "เปลี่ยนภาษา",
   "command.language.set": "ใช้ภาษา: {{language}}",
+
   "command.session.new": "เซสชันใหม่",
   "command.file.open": "เปิดไฟล์",
   "command.tab.close": "ปิดแท็บ",
@@ -78,10 +84,12 @@ export const dict = {
   "command.session.share.description": "แชร์เซสชันนี้และคัดลอก URL ไปยังคลิปบอร์ด",
   "command.session.unshare": "ยกเลิกการแชร์เซสชัน",
   "command.session.unshare.description": "หยุดการแชร์เซสชันนี้",
+
   "palette.search.placeholder": "ค้นหาไฟล์ คำสั่ง และเซสชัน",
   "palette.empty": "ไม่พบผลลัพธ์",
   "palette.group.commands": "คำสั่ง",
   "palette.group.files": "ไฟล์",
+
   "dialog.provider.search.placeholder": "ค้นหาผู้ให้บริการ",
   "dialog.provider.empty": "ไม่พบผู้ให้บริการ",
   "dialog.provider.group.popular": "ยอดนิยม",
@@ -94,14 +102,18 @@ export const dict = {
   "dialog.provider.google.note": "โมเดล Gemini สำหรับการตอบสนองที่รวดเร็วและมีโครงสร้าง",
   "dialog.provider.openrouter.note": "เข้าถึงโมเดลที่รองรับทั้งหมดจากผู้ให้บริการเดียว",
   "dialog.provider.vercel.note": "การเข้าถึงโมเดล AI แบบรวมด้วยการกำหนดเส้นทางอัจฉริยะ",
+
   "dialog.model.select.title": "เลือกโมเดล",
   "dialog.model.search.placeholder": "ค้นหาโมเดล",
   "dialog.model.empty": "ไม่พบผลลัพธ์โมเดล",
   "dialog.model.manage": "จัดการโมเดล",
   "dialog.model.manage.description": "ปรับแต่งโมเดลที่จะปรากฏในตัวเลือกโมเดล",
+
   "dialog.model.unpaid.freeModels.title": "โมเดลฟรีที่จัดหาให้โดย Kilo",
   "dialog.model.unpaid.addMore.title": "เพิ่มโมเดลเพิ่มเติมจากผู้ให้บริการยอดนิยม",
+
   "dialog.provider.viewAll": "แสดงผู้ให้บริการเพิ่มเติม",
+
   "provider.connect.title": "เชื่อมต่อ {{provider}}",
   "provider.connect.title.anthropicProMax": "เข้าสู่ระบบด้วย Claude Pro/Max",
   "provider.connect.selectMethod": "เลือกวิธีการเข้าสู่ระบบสำหรับ {{provider}}",
@@ -135,8 +147,10 @@ export const dict = {
   "provider.connect.oauth.auto.confirmationCode": "รหัสยืนยัน",
   "provider.connect.toast.connected.title": "{{provider}} ที่เชื่อมต่อแล้ว",
   "provider.connect.toast.connected.description": "โมเดล {{provider}} พร้อมใช้งานแล้ว",
+
   "provider.disconnect.toast.disconnected.title": "{{provider}} ที่ยกเลิกการเชื่อมต่อแล้ว",
   "provider.disconnect.toast.disconnected.description": "โมเดล {{provider}} ไม่พร้อมใช้งานอีกต่อไป",
+
   "model.tag.free": "ฟรี",
   "model.tag.latest": "ล่าสุด",
   "model.provider.anthropic": "Anthropic",
@@ -153,6 +167,7 @@ export const dict = {
   "model.tooltip.reasoning.allowed": "อนุญาตการใช้เหตุผล",
   "model.tooltip.reasoning.none": "ไม่มีการใช้เหตุผล",
   "model.tooltip.context": "ขีดจำกัดบริบท {{limit}}",
+
   "common.search.placeholder": "ค้นหา",
   "common.goBack": "ย้อนกลับ",
   "common.goForward": "ไปข้างหน้า",
@@ -166,12 +181,14 @@ export const dict = {
   "common.saving": "กำลังบันทึก...",
   "common.default": "ค่าเริ่มต้น",
   "common.attachment": "ไฟล์แนบ",
+
   "prompt.placeholder.shell": "ป้อนคำสั่งเชลล์...",
   "prompt.placeholder.normal": 'ถามอะไรก็ได้... "{{example}}"',
   "prompt.placeholder.summarizeComments": "สรุปความคิดเห็น…",
   "prompt.placeholder.summarizeComment": "สรุปความคิดเห็น…",
   "prompt.mode.shell": "เชลล์",
   "prompt.mode.shell.exit": "กด esc เพื่อออก",
+
   "prompt.example.1": "แก้ไข TODO ในโค้ดเบส",
   "prompt.example.2": "เทคโนโลยีของโปรเจกต์นี้คืออะไร?",
   "prompt.example.3": "แก้ไขการทดสอบที่เสีย",
@@ -197,6 +214,7 @@ export const dict = {
   "prompt.example.23": "เพิ่มการแบ่งหน้าในรายการนี้",
   "prompt.example.24": "สร้างคำสั่ง CLI สำหรับ...",
   "prompt.example.25": "ตัวแปรสภาพแวดล้อมทำงานอย่างไรที่นี่?",
+
   "prompt.popover.emptyResults": "ไม่พบผลลัพธ์ที่ตรงกัน",
   "prompt.popover.emptyCommands": "ไม่พบคำสั่งที่ตรงกัน",
   "prompt.dropzone.label": "วางรูปภาพหรือ PDF ที่นี่",
@@ -224,18 +242,24 @@ export const dict = {
   "prompt.toast.shellSendFailed.title": "ไม่สามารถส่งคำสั่งเชลล์",
   "prompt.toast.commandSendFailed.title": "ไม่สามารถส่งคำสั่ง",
   "prompt.toast.promptSendFailed.title": "ไม่สามารถส่งพร้อมท์",
+
   "dialog.mcp.title": "MCPs",
   "dialog.mcp.description": "{{enabled}} จาก {{total}} ที่เปิดใช้งาน",
   "dialog.mcp.empty": "ไม่มี MCP ที่กำหนดค่า",
+
   "dialog.lsp.empty": "LSPs ตรวจจับอัตโนมัติจากประเภทไฟล์",
   "dialog.plugins.empty": "ปลั๊กอินที่กำหนดค่าใน opencode.json",
+
   "mcp.status.connected": "เชื่อมต่อแล้ว",
   "mcp.status.failed": "ล้มเหลว",
   "mcp.status.needs_auth": "ต้องการการตรวจสอบสิทธิ์",
   "mcp.status.disabled": "ปิดใช้งาน",
+
   "dialog.fork.empty": "ไม่มีข้อความให้แตกแขนง",
+
   "dialog.directory.search.placeholder": "ค้นหาโฟลเดอร์",
   "dialog.directory.empty": "ไม่พบโฟลเดอร์",
+
   "dialog.server.title": "เซิร์ฟเวอร์",
   "dialog.server.description": "สลับเซิร์ฟเวอร์ Kilo ที่แอปนี้เชื่อมต่อด้วย",
   "dialog.server.search.placeholder": "ค้นหาเซิร์ฟเวอร์",
@@ -253,12 +277,14 @@ export const dict = {
   "dialog.server.default.set": "ตั้งเซิร์ฟเวอร์ปัจจุบันเป็นค่าเริ่มต้น",
   "dialog.server.default.clear": "ล้าง",
   "dialog.server.action.remove": "เอาเซิร์ฟเวอร์ออก",
+
   "dialog.server.menu.edit": "แก้ไข",
   "dialog.server.menu.default": "ตั้งเป็นค่าเริ่มต้น",
   "dialog.server.menu.defaultRemove": "เอาค่าเริ่มต้นออก",
   "dialog.server.menu.delete": "ลบ",
   "dialog.server.current": "เซิร์ฟเวอร์ปัจจุบัน",
   "dialog.server.status.default": "ค่าเริ่มต้น",
+
   "dialog.project.edit.title": "แก้ไขโปรเจกต์",
   "dialog.project.edit.name": "ชื่อ",
   "dialog.project.edit.icon": "ไอคอน",
@@ -270,6 +296,7 @@ export const dict = {
   "dialog.project.edit.worktree.startup": "สคริปต์เริ่มต้นพื้นที่ทำงาน",
   "dialog.project.edit.worktree.startup.description": "ทำงานหลังจากสร้างพื้นที่ทำงานใหม่ (worktree)",
   "dialog.project.edit.worktree.startup.placeholder": "เช่น bun install",
+
   "context.breakdown.title": "การแบ่งบริบท",
   "context.breakdown.note": 'การแบ่งโดยประมาณของโทเค็นนำเข้า "อื่น ๆ" รวมถึงคำนิยามเครื่องมือและโอเวอร์เฮด',
   "context.breakdown.system": "ระบบ",
@@ -277,8 +304,10 @@ export const dict = {
   "context.breakdown.assistant": "ผู้ช่วย",
   "context.breakdown.tool": "การเรียกเครื่องมือ",
   "context.breakdown.other": "อื่น ๆ",
+
   "context.systemPrompt.title": "พร้อมท์ระบบ",
   "context.rawMessages.title": "ข้อความดิบ",
+
   "context.stats.session": "เซสชัน",
   "context.stats.messages": "ข้อความ",
   "context.stats.provider": "ผู้ให้บริการ",
@@ -295,59 +324,72 @@ export const dict = {
   "context.stats.totalCost": "ต้นทุนทั้งหมด",
   "context.stats.sessionCreated": "สร้างเซสชันเมื่อ",
   "context.stats.lastActivity": "กิจกรรมล่าสุด",
+
   "context.usage.tokens": "โทเค็น",
   "context.usage.usage": "การใช้งาน",
   "context.usage.cost": "ต้นทุน",
   "context.usage.clickToView": "คลิกเพื่อดูบริบท",
   "context.usage.view": "ดูการใช้บริบท",
+
   "toast.language.title": "ภาษา",
   "toast.language.description": "สลับไปที่ {{language}}",
-  "language.th": "ไทย",
-  "language.bs": "Bosanski",
-  "language.br": "Português (Brasil)",
-  "language.no": "Norsk",
-  "language.ar": "العربية",
-  "language.ru": "Русский",
-  "language.pl": "Polski",
-  "language.ja": "日本語",
-  "language.da": "Dansk",
-  "language.fr": "Français",
-  "language.es": "Español",
-  "language.de": "Deutsch",
-  "language.ko": "한국어",
-  "language.zht": "繁體中文",
-  "language.zh": "简体中文",
   "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
+
   "toast.theme.title": "สลับธีมแล้ว",
   "toast.scheme.title": "โทนสี",
+
   "toast.permissions.autoaccept.on.title": "กำลังยอมรับการแก้ไขโดยอัตโนมัติ",
   "toast.permissions.autoaccept.on.description": "สิทธิ์การแก้ไขและจะได้รับเขียนการอนุมัติโดยอัตโนมัติ",
   "toast.permissions.autoaccept.off.title": "หยุดยอมรับการแก้ไขโดยอัตโนมัติ",
   "toast.permissions.autoaccept.off.description": "สิทธิ์การแก้ไขและเขียนจะต้องได้รับการอนุมัติ",
+
   "toast.workspace.enabled.title": "เปิดใช้งานพื้นที่ทำงานแล้ว",
   "toast.workspace.enabled.description": "ตอนนี้จะแสดง worktree หลายรายการในแถบด้านข้าง",
   "toast.workspace.disabled.title": "ปิดใช้งานพื้นที่ทำงานแล้ว",
   "toast.workspace.disabled.description": "จะแสดงเฉพาะ worktree หลักในแถบด้านข้าง",
+
   "toast.model.none.title": "ไม่ได้เลือกโมเดล",
   "toast.model.none.description": "เชื่อมต่อผู้ให้บริการเพื่อสรุปเซสชันนี้",
+
   "toast.file.loadFailed.title": "ไม่สามารถโหลดไฟล์",
   "toast.file.listFailed.title": "ไม่สามารถแสดงรายการไฟล์",
+
   "toast.context.noLineSelection.title": "ไม่มีการเลือกบรรทัด",
   "toast.context.noLineSelection.description": "เลือกช่วงบรรทัดในแท็บไฟล์ก่อน",
+
   "toast.session.share.copyFailed.title": "ไม่สามารถคัดลอก URL ไปยังคลิปบอร์ด",
   "toast.session.share.success.title": "แชร์เซสชันแล้ว",
   "toast.session.share.success.description": "คัดลอก URL แชร์ไปยังคลิปบอร์ดแล้ว!",
   "toast.session.share.failed.title": "ไม่สามารถแชร์เซสชัน",
   "toast.session.share.failed.description": "เกิดข้อผิดพลาดระหว่างการแชร์เซสชัน",
+
   "toast.session.unshare.success.title": "ยกเลิกการแชร์เซสชันแล้ว",
   "toast.session.unshare.success.description": "ยกเลิกการแชร์เซสชันสำเร็จ!",
   "toast.session.unshare.failed.title": "ไม่สามารถยกเลิกการแชร์เซสชัน",
   "toast.session.unshare.failed.description": "เกิดข้อผิดพลาดระหว่างการยกเลิกการแชร์เซสชัน",
+
   "toast.session.listFailed.title": "ไม่สามารถโหลดเซสชันสำหรับ {{project}}",
+
   "toast.update.title": "มีการอัปเดต",
   "toast.update.description": "เวอร์ชันใหม่ของ Kilo ({{version}}) พร้อมใช้งานสำหรับติดตั้ง",
   "toast.update.action.installRestart": "ติดตั้งและรีสตาร์ท",
   "toast.update.action.notYet": "ยังไม่",
+
   "error.page.title": "เกิดข้อผิดพลาด",
   "error.page.description": "เกิดข้อผิดพลาดระหว่างการโหลดแอปพลิเคชัน",
   "error.page.details.label": "รายละเอียดข้อผิดพลาด",
@@ -358,8 +400,11 @@ export const dict = {
   "error.page.report.prefix": "โปรดรายงานข้อผิดพลาดนี้ให้ทีม Kilo",
   "error.page.report.discord": "บน Discord",
   "error.page.version": "เวอร์ชัน: {{version}}",
+
   "error.dev.rootNotFound": "ไม่พบองค์ประกอบรูท คุณลืมเพิ่มใน index.html หรือบางทีแอตทริบิวต์ id อาจสะกดผิด?",
+
   "error.globalSync.connectFailed": "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ มีเซิร์ฟเวอร์ทำงานอยู่ที่ `{{url}}` หรือไม่?",
+
   "error.chain.unknown": "ข้อผิดพลาดที่ไม่รู้จัก",
   "error.chain.causedBy": "สาเหตุ:",
   "error.chain.apiError": "ข้อผิดพลาด API",
@@ -379,17 +424,21 @@ export const dict = {
   "error.chain.configFrontmatterError": "ไม่สามารถแยกวิเคราะห์ frontmatter ใน {{path}}:\n{{message}}",
   "error.chain.configInvalid": "ไฟล์กำหนดค่าที่ {{path}} ไม่ถูกต้อง",
   "error.chain.configInvalidWithMessage": "ไฟล์กำหนดค่าที่ {{path}} ไม่ถูกต้อง: {{message}}",
+
   "notification.permission.title": "ต้องการสิทธิ์",
   "notification.permission.description": "{{sessionTitle}} ใน {{projectName}} ต้องการสิทธิ์",
   "notification.question.title": "คำถาม",
   "notification.question.description": "{{sessionTitle}} ใน {{projectName}} มีคำถาม",
   "notification.action.goToSession": "ไปที่เซสชัน",
+
   "notification.session.responseReady.title": "การตอบสนองพร้อม",
   "notification.session.error.title": "ข้อผิดพลาดเซสชัน",
   "notification.session.error.fallbackDescription": "เกิดข้อผิดพลาด",
+
   "home.recentProjects": "โปรเจกต์ล่าสุด",
   "home.empty.title": "ไม่มีโปรเจกต์ล่าสุด",
   "home.empty.description": "เริ่มต้นโดยเปิดโปรเจกต์ในเครื่อง",
+
   "session.tab.session": "เซสชัน",
   "session.tab.review": "ตรวจสอบ",
   "session.tab.context": "บริบท",
@@ -400,19 +449,24 @@ export const dict = {
   "session.review.loadingChanges": "กำลังโหลดการเปลี่ยนแปลง...",
   "session.review.empty": "ยังไม่มีการเปลี่ยนแปลงในเซสชันนี้",
   "session.review.noChanges": "ไม่มีการเปลี่ยนแปลง",
+
   "session.files.selectToOpen": "เลือกไฟล์เพื่อเปิด",
   "session.files.all": "ไฟล์ทั้งหมด",
   "session.files.binaryContent": "ไฟล์ไบนารี (ไม่สามารถแสดงเนื้อหาได้)",
+
   "session.messages.renderEarlier": "แสดงข้อความก่อนหน้า",
   "session.messages.loadingEarlier": "กำลังโหลดข้อความก่อนหน้า...",
   "session.messages.loadEarlier": "โหลดข้อความก่อนหน้า",
   "session.messages.loading": "กำลังโหลดข้อความ...",
   "session.messages.jumpToLatest": "ไปที่ล่าสุด",
+
   "session.context.addToContext": "เพิ่ม {{selection}} ไปยังบริบท",
+
   "session.new.worktree.main": "สาขาหลัก",
   "session.new.worktree.mainWithBranch": "สาขาหลัก ({{branch}})",
   "session.new.worktree.create": "สร้าง worktree ใหม่",
   "session.new.lastModified": "แก้ไขล่าสุด",
+
   "session.header.search.placeholder": "ค้นหา {{project}}",
   "session.header.searchFiles": "ค้นหาไฟล์",
   "session.header.openIn": "เปิดใน",
@@ -420,6 +474,7 @@ export const dict = {
   "session.header.open.ariaLabel": "เปิดใน {{app}}",
   "session.header.open.menu": "ตัวเลือกการเปิด",
   "session.header.open.copyPath": "คัดลอกเส้นทาง",
+
   "status.popover.trigger": "สถานะ",
   "status.popover.ariaLabel": "การกำหนดค่าเซิร์ฟเวอร์",
   "status.popover.tab.servers": "เซิร์ฟเวอร์",
@@ -427,6 +482,7 @@ export const dict = {
   "status.popover.tab.lsp": "LSP",
   "status.popover.tab.plugins": "ปลั๊กอิน",
   "status.popover.action.manageServers": "จัดการเซิร์ฟเวอร์",
+
   "session.share.popover.title": "เผยแพร่บนเว็บ",
   "session.share.popover.description.shared": "เซสชันนี้เป็นสาธารณะบนเว็บ สามารถเข้าถึงได้โดยผู้ที่มีลิงก์",
   "session.share.popover.description.unshared": "แชร์เซสชันสาธารณะบนเว็บ จะเข้าถึงได้โดยผู้ที่มีลิงก์",
@@ -438,8 +494,10 @@ export const dict = {
   "session.share.action.view": "ดู",
   "session.share.copy.copied": "คัดลอกแล้ว",
   "session.share.copy.copyLink": "คัดลอกลิงก์",
+
   "lsp.tooltip.none": "ไม่มีเซิร์ฟเวอร์ LSP",
   "lsp.label.connected": "{{count}} LSP",
+
   "prompt.loading": "กำลังโหลดพร้อมท์...",
   "terminal.loading": "กำลังโหลดเทอร์มินัล...",
   "terminal.title": "เทอร์มินัล",
@@ -447,6 +505,7 @@ export const dict = {
   "terminal.close": "ปิดเทอร์มินัล",
   "terminal.connectionLost.title": "การเชื่อมต่อขาดหาย",
   "terminal.connectionLost.description": "การเชื่อมต่อเทอร์มินัลถูกขัดจังหวะ อาจเกิดขึ้นเมื่อเซิร์ฟเวอร์รีสตาร์ท",
+
   "common.closeTab": "ปิดแท็บ",
   "common.dismiss": "ปิด",
   "common.requestFailed": "คำขอล้มเหลว",
@@ -460,6 +519,7 @@ export const dict = {
   "common.edit": "แก้ไข",
   "common.loadMore": "โหลดเพิ่มเติม",
   "common.key.esc": "ESC",
+
   "sidebar.menu.toggle": "สลับเมนู",
   "sidebar.nav.projectsAndSessions": "โปรเจกต์และเซสชัน",
   "sidebar.settings": "การตั้งค่า",
@@ -471,15 +531,19 @@ export const dict = {
   "sidebar.gettingStarted.line2": "เชื่อมต่อผู้ให้บริการใด ๆ เพื่อใช้โมเดล รวมถึง Claude, GPT, Gemini ฯลฯ",
   "sidebar.project.recentSessions": "เซสชันล่าสุด",
   "sidebar.project.viewAllSessions": "ดูเซสชันทั้งหมด",
+
   "app.name.desktop": "Kilo Desktop",
+
   "settings.section.desktop": "เดสก์ท็อป",
   "settings.section.server": "เซิร์ฟเวอร์",
   "settings.tab.general": "ทั่วไป",
   "settings.tab.shortcuts": "ทางลัด",
+
   "settings.general.section.appearance": "รูปลักษณ์",
   "settings.general.section.notifications": "การแจ้งเตือนระบบ",
   "settings.general.section.updates": "การอัปเดต",
   "settings.general.section.sounds": "เสียงเอฟเฟกต์",
+
   "settings.general.row.language.title": "ภาษา",
   "settings.general.row.language.description": "เปลี่ยนภาษาที่แสดงสำหรับ Kilo",
   "settings.general.row.appearance.title": "รูปลักษณ์",
@@ -488,6 +552,7 @@ export const dict = {
   "settings.general.row.theme.description": "ปรับแต่งวิธีการที่ Kilo มีธีม",
   "settings.general.row.font.title": "ฟอนต์",
   "settings.general.row.font.description": "ปรับแต่งฟอนต์โมโนที่ใช้ในบล็อกโค้ด",
+
   "settings.general.row.releaseNotes.title": "บันทึกการอัปเดต",
   "settings.general.row.releaseNotes.description": "แสดงป๊อปอัพ What's New หลังจากอัปเดต",
   "settings.updates.row.startup.title": "ตรวจสอบการอัปเดตเมื่อเริ่มต้น",
@@ -555,18 +620,21 @@ export const dict = {
   "sound.option.yup04": "Yup 04",
   "sound.option.yup05": "Yup 05",
   "sound.option.yup06": "Yup 06",
+
   "settings.general.notifications.agent.title": "เอเจนต์",
   "settings.general.notifications.agent.description": "แสดงการแจ้งเตือนระบบเมื่อเอเจนต์เสร็จสิ้นหรือต้องการความสนใจ",
   "settings.general.notifications.permissions.title": "สิทธิ์",
   "settings.general.notifications.permissions.description": "แสดงการแจ้งเตือนระบบเมื่อต้องการสิทธิ์",
   "settings.general.notifications.errors.title": "ข้อผิดพลาด",
   "settings.general.notifications.errors.description": "แสดงการแจ้งเตือนระบบเมื่อเกิดข้อผิดพลาด",
+
   "settings.general.sounds.agent.title": "เอเจนต์",
   "settings.general.sounds.agent.description": "เล่นเสียงเมื่อเอเจนต์เสร็จสิ้นหรือต้องการความสนใจ",
   "settings.general.sounds.permissions.title": "สิทธิ์",
   "settings.general.sounds.permissions.description": "เล่นเสียงเมื่อต้องการสิทธิ์",
   "settings.general.sounds.errors.title": "ข้อผิดพลาด",
   "settings.general.sounds.errors.description": "เล่นเสียงเมื่อเกิดข้อผิดพลาด",
+
   "settings.shortcuts.title": "ทางลัดแป้นพิมพ์",
   "settings.shortcuts.reset.button": "รีเซ็ตเป็นค่าเริ่มต้น",
   "settings.shortcuts.reset.toast.title": "รีเซ็ตทางลัดแล้ว",
@@ -577,12 +645,14 @@ export const dict = {
   "settings.shortcuts.pressKeys": "กดปุ่ม",
   "settings.shortcuts.search.placeholder": "ค้นหาทางลัด",
   "settings.shortcuts.search.empty": "ไม่พบทางลัด",
+
   "settings.shortcuts.group.general": "ทั่วไป",
   "settings.shortcuts.group.session": "เซสชัน",
   "settings.shortcuts.group.navigation": "การนำทาง",
   "settings.shortcuts.group.modelAndAgent": "โมเดลและเอเจนต์",
   "settings.shortcuts.group.terminal": "เทอร์มินัล",
   "settings.shortcuts.group.prompt": "พร้อมท์",
+
   "settings.providers.title": "ผู้ให้บริการ",
   "settings.providers.description": "การตั้งค่าผู้ให้บริการจะสามารถกำหนดค่าได้ที่นี่",
   "settings.providers.section.connected": "ผู้ให้บริการที่เชื่อมต่อ",
@@ -600,13 +670,16 @@ export const dict = {
   "settings.commands.description": "การตั้งค่าคำสั่งจะสามารถกำหนดค่าได้ที่นี่",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "การตั้งค่า MCP จะสามารถกำหนดค่าได้ที่นี่",
+
   "settings.permissions.title": "สิทธิ์",
   "settings.permissions.description": "ควบคุมเครื่องมือที่เซิร์ฟเวอร์สามารถใช้โดยค่าเริ่มต้น",
   "settings.permissions.section.tools": "เครื่องมือ",
   "settings.permissions.toast.updateFailed.title": "ไม่สามารถอัปเดตสิทธิ์",
+
   "settings.permissions.action.allow": "อนุญาต",
   "settings.permissions.action.ask": "ถาม",
   "settings.permissions.action.deny": "ปฏิเสธ",
+
   "settings.permissions.tool.read.title": "อ่าน",
   "settings.permissions.tool.read.description": "อ่านไฟล์ (ตรงกับเส้นทางไฟล์)",
   "settings.permissions.tool.edit.title": "แก้ไข",
@@ -639,6 +712,7 @@ export const dict = {
   "settings.permissions.tool.external_directory.description": "เข้าถึงไฟล์นอกไดเรกทอรีโปรเจกต์",
   "settings.permissions.tool.doom_loop.title": "Doom Loop",
   "settings.permissions.tool.doom_loop.description": "ตรวจจับการเรียกเครื่องมือซ้ำด้วยข้อมูลนำเข้าเหมือนกัน",
+
   "session.delete.failed.title": "ไม่สามารถลบเซสชัน",
   "session.delete.title": "ลบเซสชัน",
   "session.delete.confirm": 'ลบเซสชัน "{{name}}" หรือไม่?',
@@ -654,6 +728,7 @@ export const dict = {
   "session.cloud.import.button": "นำเข้า",
   "session.cloud.import.invalid": "รูปแบบ ID เซสชันไม่ถูกต้อง",
   "session.cloud.import.failed": "ไม่สามารถนำเข้าเซสชันคลาวด์ได้",
+
   "workspace.new": "พื้นที่ทำงานใหม่",
   "workspace.type.local": "ในเครื่อง",
   "workspace.type.sandbox": "แซนด์บ็อกซ์",
@@ -679,6 +754,7 @@ export const dict = {
   "workspace.reset.archived.one": "1 เซสชันจะถูกจัดเก็บ",
   "workspace.reset.archived.many": "{{count}} เซสชันจะถูกจัดเก็บ",
   "workspace.reset.note": "สิ่งนี้จะรีเซ็ตพื้นที่ทำงานให้ตรงกับสาขาเริ่มต้น",
+
   "deviceAuth.toast.urlCopied": "คัดลอก URL ไปยังคลิปบอร์ดแล้ว",
   "deviceAuth.toast.codeCopied": "คัดลอกรหัสไปยังคลิปบอร์ดแล้ว",
   "deviceAuth.status.initiating": "กำลังเริ่มเข้าสู่ระบบ...",
@@ -694,8 +770,10 @@ export const dict = {
   "deviceAuth.status.failed": "เข้าสู่ระบบล้มเหลว",
   "deviceAuth.status.cancelled": "ยกเลิกการเข้าสู่ระบบ",
   "deviceAuth.action.tryAgain": "ลองอีกครั้ง",
+
   "common.retry": "ลองอีกครั้ง",
   "common.refresh": "รีเฟรช",
+
   "profile.title": "โปรไฟล์",
   "profile.notLoggedIn": "ยังไม่ได้เข้าสู่ระบบ",
   "profile.action.login": "เข้าสู่ระบบด้วย Kilo Code",
@@ -703,6 +781,7 @@ export const dict = {
   "profile.balance.refresh": "รีเฟรชยอดคงเหลือ",
   "profile.action.dashboard": "แดชบอร์ด",
   "profile.action.logout": "ออกจากระบบ",
+
   "settings.section.configuration": "การกำหนดค่า",
   "settings.agentBehaviour.title": "พฤติกรรมของเอเจนต์",
   "settings.autoApprove.title": "อนุมัติอัตโนมัติ",
@@ -717,16 +796,21 @@ export const dict = {
   "settings.experimental.title": "ทดลอง",
   "settings.language.title": "ภาษา",
   "settings.aboutKiloCode.title": "เกี่ยวกับ Kilo Code",
+
   "session.messages.empty": "เริ่มการสนทนาโดยพิมพ์ข้อความด้านล่าง",
   "session.messages.welcome": "Kilo Code เป็นผู้ช่วยเขียนโค้ด AI ขอให้สร้างฟีเจอร์ แก้ไขบัก หรืออธิบายโค้ดเบสของคุณ",
   "session.messages.scrollToBottom": "เลื่อนไปด้านล่าง",
   "session.status.writingResponse": "กำลังเขียนคำตอบ...",
   "session.status.retrying": "กำลังลองใหม่ (ครั้งที่ {{ attempt }})… {{ message }}",
   "session.status.working": "กำลังทำงาน...",
+
   "dialog.model.noProviders": "ไม่มีผู้ให้บริการ",
+
   "prompt.placeholder.connecting": "กำลังเชื่อมต่อกับเซิร์ฟเวอร์...",
   "prompt.placeholder.default": "พิมพ์ข้อความ... (Enter เพื่อส่ง, Shift+Enter เพื่อขึ้นบรรทัดใหม่)",
+
   "context.usage.sessionCost": "ค่าใช้จ่ายเซสชัน",
+
   "time.justNow": "เมื่อสักครู่",
   "time.minutesAgo": "{{count}} นาทีที่แล้ว",
   "time.hoursAgo": "{{count}} ชม. ที่แล้ว",
@@ -737,6 +821,7 @@ export const dict = {
   "time.thisWeek": "สัปดาห์นี้",
   "time.thisMonth": "เดือนนี้",
   "time.older": "เก่ากว่า",
+
   "settings.aboutKiloCode.status.connected": "เชื่อมต่อแล้ว",
   "settings.aboutKiloCode.status.connecting": "กำลังเชื่อมต่อ...",
   "settings.aboutKiloCode.status.disconnected": "ตัดการเชื่อมต่อ",
@@ -755,12 +840,14 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "รีเซ็ตการตั้งค่าส่วนขยาย Kilo Code ทั้งหมดเป็นค่าเริ่มต้น ไม่ส่งผลกระทบต่อการกำหนดค่า CLI หรือแบ็กเอนด์",
   "settings.aboutKiloCode.resetSettings.button": "รีเซ็ตการตั้งค่าทั้งหมด",
+
   "settings.agentBehaviour.subtab.modes": "โหมด",
   "settings.agentBehaviour.subtab.agents": "Agents",
   "settings.agentBehaviour.subtab.mcpServers": "เซิร์ฟเวอร์ MCP",
   "settings.agentBehaviour.subtab.rules": "กฎ",
   "settings.agentBehaviour.subtab.workflows": "เวิร์กโฟลว์",
   "settings.agentBehaviour.subtab.skills": "ทักษะ",
+
   "settings.browser.description":
     "เมื่อเปิดใช้งาน ตัวแทน AI สามารถโต้ตอบกับหน้าเว็บได้ — นำทาง คลิก พิมพ์ และจับภาพหน้าจอ หน้าต่าง Chrome จะเปิดขึ้นเพื่อให้คุณดูการทำงานของตัวแทน",
   "settings.browser.enable.title": "เปิดใช้งานการทำงานอัตโนมัติของเบราว์เซอร์",
@@ -769,9 +856,11 @@ export const dict = {
   "settings.browser.systemChrome.description": "ใช้เบราว์เซอร์ Chrome ที่ติดตั้งแทนอินสแตนซ์ Chromium แยกต่างหาก",
   "settings.browser.headless.title": "โหมด Headless",
   "settings.browser.headless.description": "ทำงานในโหมด headless (ไม่มีหน้าต่างเบราว์เซอร์ที่มองเห็นได้)",
+
   "settings.language.description": 'เลือกภาษาสำหรับ UI ของ Kilo Code "อัตโนมัติ" จะใช้ภาษาการแสดงผลของ VS Code',
   "settings.language.auto": "อัตโนมัติ (ภาษา VS Code)",
   "settings.language.current": "ปัจจุบัน:",
+
   "common.add": "เพิ่ม",
   "common.choose": "เลือก…",
   "settings.notImplemented": "ส่วนนี้ยังไม่ได้ใช้งาน",
@@ -882,6 +971,7 @@ export const dict = {
   "dialog.model.notSet": "ไม่ได้ตั้งค่า",
   "profile.personalAccount": "บัญชีส่วนตัว",
   // Agent Manager strings live in webview-ui/agent-manager/i18n/th.ts
+
 
   "question.summary": "{{n}} จาก {{total}} คำถาม",
   "common.review": "ตรวจสอบ",
