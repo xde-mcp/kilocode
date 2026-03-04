@@ -15,12 +15,10 @@ export const dict = {
   "command.category.agent": "Agente",
   "command.category.permissions": "Permisos",
   "command.category.workspace": "Espacio de trabajo",
-
   "command.category.settings": "Ajustes",
   "theme.scheme.system": "Sistema",
   "theme.scheme.light": "Claro",
   "theme.scheme.dark": "Oscuro",
-
   "command.sidebar.toggle": "Alternar barra lateral",
   "command.project.open": "Abrir proyecto",
   "command.provider.connect": "Conectar proveedor",
@@ -31,17 +29,13 @@ export const dict = {
   "command.session.previous.unseen": "Previous unread session",
   "command.session.next.unseen": "Next unread session",
   "command.session.archive": "Archivar sesión",
-
   "command.palette": "Paleta de comandos",
-
   "command.theme.cycle": "Alternar tema",
   "command.theme.set": "Usar tema: {{theme}}",
   "command.theme.scheme.cycle": "Alternar esquema de color",
   "command.theme.scheme.set": "Usar esquema de color: {{scheme}}",
-
   "command.language.cycle": "Alternar idioma",
   "command.language.set": "Usar idioma: {{language}}",
-
   "command.session.new": "Nueva sesión",
   "command.file.open": "Abrir archivo",
   "command.tab.close": "Cerrar pestaña",
@@ -84,12 +78,10 @@ export const dict = {
   "command.session.share.description": "Compartir esta sesión y copiar la URL al portapapeles",
   "command.session.unshare": "Dejar de compartir sesión",
   "command.session.unshare.description": "Dejar de compartir esta sesión",
-
   "palette.search.placeholder": "Buscar archivos, comandos y sesiones",
   "palette.empty": "No se encontraron resultados",
   "palette.group.commands": "Comandos",
   "palette.group.files": "Archivos",
-
   "dialog.provider.search.placeholder": "Buscar proveedores",
   "dialog.provider.empty": "No se encontraron proveedores",
   "dialog.provider.group.popular": "Popular",
@@ -102,18 +94,14 @@ export const dict = {
   "dialog.provider.openrouter.note": "Accede a todos los modelos soportados desde un solo proveedor",
   "dialog.provider.vercel.note": "Acceso unificado a modelos de IA con enrutamiento inteligente",
   "dialog.provider.copilot.note": "Conectar con Copilot o clave API",
-
   "dialog.model.select.title": "Seleccionar modelo",
   "dialog.model.search.placeholder": "Buscar modelos",
   "dialog.model.empty": "Sin resultados de modelos",
   "dialog.model.manage": "Gestionar modelos",
   "dialog.model.manage.description": "Personalizar qué modelos aparecen en el selector de modelos.",
-
   "dialog.model.unpaid.freeModels.title": "Modelos gratuitos proporcionados por Kilo",
   "dialog.model.unpaid.addMore.title": "Añadir más modelos de proveedores populares",
-
   "dialog.provider.viewAll": "Ver más proveedores",
-
   "provider.connect.title": "Conectar {{provider}}",
   "provider.connect.title.anthropicProMax": "Iniciar sesión con Claude Pro/Max",
   "provider.connect.selectMethod": "Seleccionar método de inicio de sesión para {{provider}}.",
@@ -148,12 +136,10 @@ export const dict = {
   "provider.connect.oauth.auto.confirmationCode": "Código de confirmación",
   "provider.connect.toast.connected.title": "{{provider}} conectado",
   "provider.connect.toast.connected.description": "Los modelos de {{provider}} ahora están disponibles para usar.",
-
   "provider.disconnect.toast.disconnected.title": "{{provider}} desconectado",
   "provider.disconnect.toast.disconnected.description": "Los modelos de {{provider}} ya no están disponibles.",
   "model.tag.free": "Gratis",
   "model.tag.latest": "Último",
-
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -181,14 +167,12 @@ export const dict = {
   "common.saving": "Guardando...",
   "common.default": "Predeterminado",
   "common.attachment": "adjunto",
-
   "prompt.placeholder.shell": "Introduce comando de shell...",
   "prompt.placeholder.normal": 'Pregunta cualquier cosa... "{{example}}"',
   "prompt.placeholder.summarizeComments": "Resumir comentarios…",
   "prompt.placeholder.summarizeComment": "Resumir comentario…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.shell.exit": "esc para salir",
-
   "prompt.example.1": "Arreglar un TODO en el código",
   "prompt.example.2": "¿Cuál es el stack tecnológico de este proyecto?",
   "prompt.example.3": "Arreglar pruebas rotas",
@@ -214,7 +198,6 @@ export const dict = {
   "prompt.example.23": "Añadir paginación a esta lista",
   "prompt.example.24": "Crear un comando CLI para...",
   "prompt.example.25": "¿Cómo funcionan las variables de entorno aquí?",
-
   "prompt.popover.emptyResults": "Sin resultados coincidentes",
   "prompt.popover.emptyCommands": "Sin comandos coincidentes",
   "prompt.dropzone.label": "Suelta imágenes o PDFs aquí",
@@ -242,24 +225,18 @@ export const dict = {
   "prompt.toast.shellSendFailed.title": "Fallo al enviar comando de shell",
   "prompt.toast.commandSendFailed.title": "Fallo al enviar comando",
   "prompt.toast.promptSendFailed.title": "Fallo al enviar prompt",
-
   "dialog.mcp.title": "MCPs",
   "dialog.mcp.description": "{{enabled}} de {{total}} habilitados",
   "dialog.mcp.empty": "No hay MCPs configurados",
-
   "dialog.lsp.empty": "LSPs detectados automáticamente por tipo de archivo",
   "dialog.plugins.empty": "Plugins configurados en opencode.json",
-
   "mcp.status.connected": "conectado",
   "mcp.status.failed": "fallido",
   "mcp.status.needs_auth": "necesita auth",
   "mcp.status.disabled": "deshabilitado",
-
   "dialog.fork.empty": "No hay mensajes desde donde bifurcar",
-
   "dialog.directory.search.placeholder": "Buscar carpetas",
   "dialog.directory.empty": "No se encontraron carpetas",
-
   "dialog.server.title": "Servidores",
   "dialog.server.description": "Cambiar a qué servidor de Kilo se conecta esta app.",
   "dialog.server.search.placeholder": "Buscar servidores",
@@ -277,14 +254,12 @@ export const dict = {
   "dialog.server.default.set": "Establecer servidor actual como predeterminado",
   "dialog.server.default.clear": "Limpiar",
   "dialog.server.action.remove": "Eliminar servidor",
-
   "dialog.server.menu.edit": "Editar",
   "dialog.server.menu.default": "Establecer como predeterminado",
   "dialog.server.menu.defaultRemove": "Quitar predeterminado",
   "dialog.server.menu.delete": "Eliminar",
   "dialog.server.current": "Servidor actual",
   "dialog.server.status.default": "Predeterminado",
-
   "dialog.project.edit.title": "Editar proyecto",
   "dialog.project.edit.name": "Nombre",
   "dialog.project.edit.icon": "Icono",
@@ -293,7 +268,6 @@ export const dict = {
   "dialog.project.edit.icon.recommended": "Recomendado: 128x128px",
   "dialog.project.edit.color": "Color",
   "dialog.project.edit.color.select": "Seleccionar color {{color}}",
-
   "dialog.project.edit.worktree.startup": "Script de inicio del espacio de trabajo",
   "dialog.project.edit.worktree.startup.description":
     "Se ejecuta después de crear un nuevo espacio de trabajo (árbol de trabajo).",
@@ -306,10 +280,8 @@ export const dict = {
   "context.breakdown.assistant": "Asistente",
   "context.breakdown.tool": "Llamadas a herramientas",
   "context.breakdown.other": "Otro",
-
   "context.systemPrompt.title": "Prompt del Sistema",
   "context.rawMessages.title": "Mensajes en bruto",
-
   "context.stats.session": "Sesión",
   "context.stats.messages": "Mensajes",
   "context.stats.provider": "Proveedor",
@@ -326,66 +298,42 @@ export const dict = {
   "context.stats.totalCost": "Costo Total",
   "context.stats.sessionCreated": "Sesión Creada",
   "context.stats.lastActivity": "Última Actividad",
-
   "context.usage.tokens": "Tokens",
   "context.usage.usage": "Uso",
   "context.usage.cost": "Costo",
   "context.usage.clickToView": "Haz clic para ver contexto",
   "context.usage.view": "Ver uso del contexto",
-
   "toast.language.title": "Idioma",
   "toast.language.description": "Cambiado a {{language}}",
-
   "language.th": "ไทย",
-
   "language.bs": "Bosanski",
-
   "language.br": "Português (Brasil)",
-
   "language.no": "Norsk",
-
   "language.ar": "العربية",
-
   "language.ru": "Русский",
-
   "language.pl": "Polski",
-
   "language.ja": "日本語",
-
   "language.da": "Dansk",
-
   "language.fr": "Français",
-
   "language.es": "Español",
-
   "language.de": "Deutsch",
-
   "language.ko": "한국어",
-
   "language.zht": "繁體中文",
-
   "language.zh": "简体中文",
-
   "language.en": "English",
-
   "toast.theme.title": "Tema cambiado",
   "toast.scheme.title": "Esquema de color",
-
   "toast.permissions.autoaccept.on.title": "Aceptando ediciones automáticamente",
   "toast.permissions.autoaccept.on.description": "Los permisos de edición y escritura serán aprobados automáticamente",
   "toast.permissions.autoaccept.off.title": "Se dejó de aceptar ediciones automáticamente",
   "toast.permissions.autoaccept.off.description": "Los permisos de edición y escritura requerirán aprobación",
-
   "toast.workspace.enabled.title": "Espacios de trabajo habilitados",
   "toast.workspace.enabled.description": "Ahora se muestran varios worktrees en la barra lateral",
   "toast.workspace.disabled.title": "Espacios de trabajo deshabilitados",
   "toast.workspace.disabled.description": "Solo se muestra el worktree principal en la barra lateral",
-
   "toast.model.none.title": "Ningún modelo seleccionado",
   "toast.model.none.description": "Conecta un proveedor para resumir esta sesión",
-
   "toast.file.loadFailed.title": "Fallo al cargar archivo",
-
   "toast.file.listFailed.title": "Fallo al listar archivos",
   "toast.context.noLineSelection.title": "Sin selección de líneas",
   "toast.context.noLineSelection.description": "Primero selecciona un rango de líneas en una pestaña de archivo.",
@@ -394,19 +342,15 @@ export const dict = {
   "toast.session.share.success.description": "¡URL compartida copiada al portapapeles!",
   "toast.session.share.failed.title": "Fallo al compartir sesión",
   "toast.session.share.failed.description": "Ocurrió un error al compartir la sesión",
-
   "toast.session.unshare.success.title": "Sesión dejó de compartirse",
   "toast.session.unshare.success.description": "¡La sesión dejó de compartirse exitosamente!",
   "toast.session.unshare.failed.title": "Fallo al dejar de compartir sesión",
   "toast.session.unshare.failed.description": "Ocurrió un error al dejar de compartir la sesión",
-
   "toast.session.listFailed.title": "Fallo al cargar sesiones para {{project}}",
-
   "toast.update.title": "Actualización disponible",
   "toast.update.description": "Una nueva versión de Kilo ({{version}}) está disponible para instalar.",
   "toast.update.action.installRestart": "Instalar y reiniciar",
   "toast.update.action.notYet": "Todavía no",
-
   "error.page.title": "Algo salió mal",
   "error.page.description": "Ocurrió un error al cargar la aplicación.",
   "error.page.details.label": "Detalles del error",
@@ -417,12 +361,10 @@ export const dict = {
   "error.page.report.prefix": "Por favor reporta este error al equipo de Kilo",
   "error.page.report.discord": "en Discord",
   "error.page.version": "Versión: {{version}}",
-
   "error.dev.rootNotFound":
     "Elemento raíz no encontrado. ¿Olvidaste añadirlo a tu index.html? ¿O tal vez el atributo id está mal escrito?",
 
   "error.globalSync.connectFailed": "No se pudo conectar al servidor. ¿Hay un servidor ejecutándose en `{{url}}`?",
-
   "error.chain.unknown": "Error desconocido",
   "error.chain.causedBy": "Causado por:",
   "error.chain.apiError": "Error de API",
@@ -444,21 +386,17 @@ export const dict = {
   "error.chain.configFrontmatterError": "Fallo al analizar frontmatter en {{path}}:\n{{message}}",
   "error.chain.configInvalid": "El archivo de configuración en {{path}} es inválido",
   "error.chain.configInvalidWithMessage": "El archivo de configuración en {{path}} es inválido: {{message}}",
-
   "notification.permission.title": "Permiso requerido",
   "notification.permission.description": "{{sessionTitle}} en {{projectName}} necesita permiso",
   "notification.question.title": "Pregunta",
   "notification.question.description": "{{sessionTitle}} en {{projectName}} tiene una pregunta",
   "notification.action.goToSession": "Ir a sesión",
-
   "notification.session.responseReady.title": "Respuesta lista",
   "notification.session.error.title": "Error de sesión",
   "notification.session.error.fallbackDescription": "Ocurrió un error",
-
   "home.recentProjects": "Proyectos recientes",
   "home.empty.title": "Sin proyectos recientes",
   "home.empty.description": "Empieza abriendo un proyecto local",
-
   "session.tab.session": "Sesión",
   "session.tab.review": "Revisión",
   "session.tab.context": "Contexto",
@@ -476,15 +414,12 @@ export const dict = {
   "session.messages.loadingEarlier": "Cargando mensajes anteriores...",
   "session.messages.loadEarlier": "Cargar mensajes anteriores",
   "session.messages.loading": "Cargando mensajes...",
-
   "session.messages.jumpToLatest": "Ir al último",
   "session.context.addToContext": "Añadir {{selection}} al contexto",
-
   "session.new.worktree.main": "Rama principal",
   "session.new.worktree.mainWithBranch": "Rama principal ({{branch}})",
   "session.new.worktree.create": "Crear nuevo árbol de trabajo",
   "session.new.lastModified": "Última modificación",
-
   "session.header.search.placeholder": "Buscar {{project}}",
   "session.header.searchFiles": "Buscar archivos",
   "session.header.openIn": "Abrir en",
@@ -492,7 +427,6 @@ export const dict = {
   "session.header.open.ariaLabel": "Abrir en {{app}}",
   "session.header.open.menu": "Opciones de apertura",
   "session.header.open.copyPath": "Copiar ruta",
-
   "status.popover.trigger": "Estado",
   "status.popover.ariaLabel": "Configuraciones del servidor",
   "status.popover.tab.servers": "Servidores",
@@ -500,7 +434,6 @@ export const dict = {
   "status.popover.tab.lsp": "LSP",
   "status.popover.tab.plugins": "Plugins",
   "status.popover.action.manageServers": "Administrar servidores",
-
   "session.share.popover.title": "Publicar en web",
   "session.share.popover.description.shared":
     "Esta sesión es pública en la web. Es accesible para cualquiera con el enlace.",
@@ -514,16 +447,13 @@ export const dict = {
   "session.share.action.view": "Ver",
   "session.share.copy.copied": "Copiado",
   "session.share.copy.copyLink": "Copiar enlace",
-
   "lsp.tooltip.none": "Sin servidores LSP",
   "lsp.label.connected": "{{count}} LSP",
-
   "prompt.loading": "Cargando prompt...",
   "terminal.loading": "Cargando terminal...",
   "terminal.title": "Terminal",
   "terminal.title.numbered": "Terminal {{number}}",
   "terminal.close": "Cerrar terminal",
-
   "terminal.connectionLost.title": "Conexión perdida",
   "terminal.connectionLost.description":
     "La conexión del terminal se interrumpió. Esto puede ocurrir cuando el servidor se reinicia.",
@@ -539,7 +469,6 @@ export const dict = {
   "common.close": "Cerrar",
   "common.edit": "Editar",
   "common.loadMore": "Cargar más",
-
   "common.key.esc": "ESC",
   "sidebar.menu.toggle": "Alternar menú",
   "sidebar.nav.projectsAndSessions": "Proyectos y sesiones",
@@ -552,18 +481,15 @@ export const dict = {
   "sidebar.gettingStarted.line2": "Conecta cualquier proveedor para usar modelos, inc. Claude, GPT, Gemini etc.",
   "sidebar.project.recentSessions": "Sesiones recientes",
   "sidebar.project.viewAllSessions": "Ver todas las sesiones",
-
   "app.name.desktop": "Kilo Desktop",
   "settings.section.desktop": "Escritorio",
   "settings.section.server": "Servidor",
   "settings.tab.general": "General",
   "settings.tab.shortcuts": "Atajos",
-
   "settings.general.section.appearance": "Apariencia",
   "settings.general.section.notifications": "Notificaciones del sistema",
   "settings.general.section.updates": "Actualizaciones",
   "settings.general.section.sounds": "Efectos de sonido",
-
   "settings.general.row.language.title": "Idioma",
   "settings.general.row.language.description": "Cambiar el idioma de visualización para Kilo",
   "settings.general.row.appearance.title": "Apariencia",
@@ -572,7 +498,6 @@ export const dict = {
   "settings.general.row.theme.description": "Personaliza el tema de Kilo.",
   "settings.general.row.font.title": "Fuente",
   "settings.general.row.font.description": "Personaliza la fuente mono usada en bloques de código",
-
   "settings.general.row.releaseNotes.title": "Notas de la versión",
   "settings.general.row.releaseNotes.description":
     'Mostrar ventanas emergentes de "Novedades" después de las actualizaciones',
@@ -585,7 +510,6 @@ export const dict = {
   "settings.updates.action.checking": "Buscando...",
   "settings.updates.toast.latest.title": "Estás al día",
   "settings.updates.toast.latest.description": "Estás usando la última versión de Kilo.",
-
   "font.option.ibmPlexMono": "IBM Plex Mono",
   "font.option.cascadiaCode": "Cascadia Code",
   "font.option.firaCode": "Fira Code",
@@ -651,14 +575,12 @@ export const dict = {
     "Mostrar notificación del sistema cuando se requiera un permiso",
   "settings.general.notifications.errors.title": "Errores",
   "settings.general.notifications.errors.description": "Mostrar notificación del sistema cuando ocurra un error",
-
   "settings.general.sounds.agent.title": "Agente",
   "settings.general.sounds.agent.description": "Reproducir sonido cuando el agente termine o necesite atención",
   "settings.general.sounds.permissions.title": "Permisos",
   "settings.general.sounds.permissions.description": "Reproducir sonido cuando se requiera un permiso",
   "settings.general.sounds.errors.title": "Errores",
   "settings.general.sounds.errors.description": "Reproducir sonido cuando ocurra un error",
-
   "settings.shortcuts.title": "Atajos de teclado",
   "settings.shortcuts.reset.button": "Restablecer a valores predeterminados",
   "settings.shortcuts.reset.toast.title": "Atajos restablecidos",
@@ -670,14 +592,12 @@ export const dict = {
   "settings.shortcuts.pressKeys": "Presiona teclas",
   "settings.shortcuts.search.placeholder": "Buscar atajos",
   "settings.shortcuts.search.empty": "No se encontraron atajos",
-
   "settings.shortcuts.group.general": "General",
   "settings.shortcuts.group.session": "Sesión",
   "settings.shortcuts.group.navigation": "Navegación",
   "settings.shortcuts.group.modelAndAgent": "Modelo y agente",
   "settings.shortcuts.group.terminal": "Terminal",
   "settings.shortcuts.group.prompt": "Prompt",
-
   "settings.providers.title": "Proveedores",
   "settings.providers.description": "La configuración de proveedores estará disponible aquí.",
   "settings.providers.section.connected": "Proveedores conectados",
@@ -695,16 +615,13 @@ export const dict = {
   "settings.commands.description": "La configuración de comandos estará disponible aquí.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "La configuración de MCP estará disponible aquí.",
-
   "settings.permissions.title": "Permisos",
   "settings.permissions.description": "Controla qué herramientas puede usar el servidor por defecto.",
   "settings.permissions.section.tools": "Herramientas",
   "settings.permissions.toast.updateFailed.title": "Fallo al actualizar permisos",
-
   "settings.permissions.action.allow": "Permitir",
   "settings.permissions.action.ask": "Preguntar",
   "settings.permissions.action.deny": "Denegar",
-
   "settings.permissions.tool.read.title": "Leer",
   "settings.permissions.tool.read.description": "Leer un archivo (coincide con la ruta del archivo)",
   "settings.permissions.tool.edit.title": "Editar",
@@ -738,7 +655,6 @@ export const dict = {
   "settings.permissions.tool.external_directory.description": "Acceder a archivos fuera del directorio del proyecto",
   "settings.permissions.tool.doom_loop.title": "Bucle Infinito",
   "settings.permissions.tool.doom_loop.description": "Detectar llamadas a herramientas repetidas con entrada idéntica",
-
   "session.delete.failed.title": "Fallo al eliminar sesión",
   "session.delete.title": "Eliminar sesión",
   "session.delete.confirm": '¿Eliminar sesión "{{name}}"?',
@@ -754,7 +670,6 @@ export const dict = {
   "session.cloud.import.button": "Importar",
   "session.cloud.import.invalid": "Formato de ID de sesión no válido",
   "session.cloud.import.failed": "Error al importar la sesión de la nube",
-
   "workspace.new": "Nuevo espacio de trabajo",
   "workspace.type.local": "local",
   "workspace.type.sandbox": "sandbox",
@@ -780,7 +695,6 @@ export const dict = {
   "workspace.reset.archived.one": "1 sesión será archivada.",
   "workspace.reset.archived.many": "{{count}} sesiones serán archivadas.",
   "workspace.reset.note": "Esto restablecerá el espacio de trabajo para coincidir con la rama predeterminada.",
-
   "deviceAuth.toast.urlCopied": "URL copiada al portapapeles",
   "deviceAuth.toast.codeCopied": "Código copiado al portapapeles",
   "deviceAuth.status.initiating": "Iniciando sesión...",
@@ -796,10 +710,8 @@ export const dict = {
   "deviceAuth.status.failed": "Error en el inicio de sesión",
   "deviceAuth.status.cancelled": "Inicio de sesión cancelado",
   "deviceAuth.action.tryAgain": "Intentar de nuevo",
-
   "common.retry": "Reintentar",
   "common.refresh": "Actualizar",
-
   "profile.title": "Perfil",
   "profile.notLoggedIn": "No conectado",
   "profile.action.login": "Iniciar sesión con Kilo Code",
@@ -807,7 +719,6 @@ export const dict = {
   "profile.balance.refresh": "Actualizar saldo",
   "profile.action.dashboard": "Panel",
   "profile.action.logout": "Cerrar sesión",
-
   "settings.section.configuration": "Configuración",
   "settings.agentBehaviour.title": "Comportamiento del agente",
   "settings.autoApprove.title": "Aprobación automática",
@@ -822,7 +733,6 @@ export const dict = {
   "settings.experimental.title": "Experimental",
   "settings.language.title": "Idioma",
   "settings.aboutKiloCode.title": "Acerca de Kilo Code",
-
   "session.messages.empty": "Inicia una conversación escribiendo un mensaje a continuación.",
   "session.messages.welcome":
     "Kilo Code es un asistente de programación con IA. Pídele que cree funcionalidades, corrija errores o explique tu código.",
@@ -830,14 +740,10 @@ export const dict = {
   "session.status.writingResponse": "Escribiendo respuesta…",
   "session.status.retrying": "Reintentando (intento {{ attempt }})… {{ message }}",
   "session.status.working": "Trabajando…",
-
   "dialog.model.noProviders": "Sin proveedores",
-
   "prompt.placeholder.connecting": "Conectando al servidor...",
   "prompt.placeholder.default": "Escribe un mensaje... (Enter para enviar, Shift+Enter para nueva línea)",
-
   "context.usage.sessionCost": "Coste de la sesión",
-
   "time.justNow": "justo ahora",
   "time.minutesAgo": "hace {{count}} min",
   "time.hoursAgo": "hace {{count}}h",
@@ -848,7 +754,6 @@ export const dict = {
   "time.thisWeek": "Esta semana",
   "time.thisMonth": "Este mes",
   "time.older": "Anterior",
-
   "settings.aboutKiloCode.status.connected": "Conectado",
   "settings.aboutKiloCode.status.connecting": "Conectando...",
   "settings.aboutKiloCode.status.disconnected": "Desconectado",
@@ -867,14 +772,12 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Restablecer todas las configuraciones de la extensión Kilo Code a sus valores predeterminados. Esto no afecta la configuración del CLI o del backend.",
   "settings.aboutKiloCode.resetSettings.button": "Restablecer toda la configuración",
-
   "settings.agentBehaviour.subtab.modes": "Modos",
   "settings.agentBehaviour.subtab.agents": "Agents",
   "settings.agentBehaviour.subtab.mcpServers": "Servidores MCP",
   "settings.agentBehaviour.subtab.rules": "Reglas",
   "settings.agentBehaviour.subtab.workflows": "Flujos de trabajo",
   "settings.agentBehaviour.subtab.skills": "Habilidades",
-
   "settings.browser.description":
     "Cuando está activado, el agente de IA puede interactuar con páginas web: navegar, hacer clic, escribir y capturar pantallas. Se abrirá una ventana de Chrome para que puedas ver al agente trabajar.",
   "settings.browser.enable.title": "Activar automatización del navegador",
@@ -884,12 +787,10 @@ export const dict = {
     "Usar el navegador Chrome instalado en lugar de una instancia separada de Chromium.",
   "settings.browser.headless.title": "Modo headless",
   "settings.browser.headless.description": "Ejecutar en modo headless (sin ventana de navegador visible).",
-
   "settings.language.description":
     'Elige el idioma de la interfaz de Kilo Code. "Auto" utiliza el idioma de visualización de VS Code.',
   "settings.language.auto": "Auto (idioma de VS Code)",
   "settings.language.current": "Actual:",
-
   "common.add": "Añadir",
   "common.choose": "Elegir…",
   "settings.notImplemented": "Esta sección aún no está implementada.",

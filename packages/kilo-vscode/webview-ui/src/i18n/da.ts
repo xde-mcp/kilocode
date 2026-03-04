@@ -15,12 +15,10 @@ export const dict = {
   "command.category.agent": "Agent",
   "command.category.permissions": "Tilladelser",
   "command.category.workspace": "Arbejdsområde",
-
   "command.category.settings": "Indstillinger",
   "theme.scheme.system": "System",
   "theme.scheme.light": "Lys",
   "theme.scheme.dark": "Mørk",
-
   "command.sidebar.toggle": "Skift sidebjælke",
   "command.project.open": "Åbn projekt",
   "command.provider.connect": "Tilslut udbyder",
@@ -31,17 +29,13 @@ export const dict = {
   "command.session.previous.unseen": "Previous unread session",
   "command.session.next.unseen": "Next unread session",
   "command.session.archive": "Arkivér session",
-
   "command.palette": "Kommandopalette",
-
   "command.theme.cycle": "Skift tema",
   "command.theme.set": "Brug tema: {{theme}}",
   "command.theme.scheme.cycle": "Skift farveskema",
   "command.theme.scheme.set": "Brug farveskema: {{scheme}}",
-
   "command.language.cycle": "Skift sprog",
   "command.language.set": "Brug sprog: {{language}}",
-
   "command.session.new": "Ny session",
   "command.file.open": "Åbn fil",
   "command.tab.close": "Luk fane",
@@ -84,12 +78,10 @@ export const dict = {
   "command.session.share.description": "Del denne session og kopier URL'en til udklipsholderen",
   "command.session.unshare": "Stop deling af session",
   "command.session.unshare.description": "Stop med at dele denne session",
-
   "palette.search.placeholder": "Søg i filer, kommandoer og sessioner",
   "palette.empty": "Ingen resultater fundet",
   "palette.group.commands": "Kommandoer",
   "palette.group.files": "Filer",
-
   "dialog.provider.search.placeholder": "Søg udbydere",
   "dialog.provider.empty": "Ingen udbydere fundet",
   "dialog.provider.group.popular": "Populære",
@@ -102,18 +94,14 @@ export const dict = {
   "dialog.provider.openrouter.note": "Adgang til alle understøttede modeller fra én udbyder",
   "dialog.provider.vercel.note": "Samlet adgang til AI-modeller med smart routing",
   "dialog.provider.copilot.note": "Forbind med Copilot eller API-nøgle",
-
   "dialog.model.select.title": "Vælg model",
   "dialog.model.search.placeholder": "Søg modeller",
   "dialog.model.empty": "Ingen modeller fundet",
   "dialog.model.manage": "Administrer modeller",
   "dialog.model.manage.description": "Tilpas hvilke modeller der vises i modelvælgeren.",
-
   "dialog.model.unpaid.freeModels.title": "Gratis modeller leveret af Kilo",
   "dialog.model.unpaid.addMore.title": "Tilføj flere modeller fra populære udbydere",
-
   "dialog.provider.viewAll": "Vis flere udbydere",
-
   "provider.connect.title": "Forbind {{provider}}",
   "provider.connect.title.anthropicProMax": "Log ind med Claude Pro/Max",
   "provider.connect.selectMethod": "Vælg loginmetode for {{provider}}.",
@@ -148,12 +136,10 @@ export const dict = {
   "provider.connect.oauth.auto.confirmationCode": "Bekræftelseskode",
   "provider.connect.toast.connected.title": "{{provider}} forbundet",
   "provider.connect.toast.connected.description": "{{provider}} modeller er nu tilgængelige.",
-
   "provider.disconnect.toast.disconnected.title": "{{provider}} frakoblet",
   "provider.disconnect.toast.disconnected.description": "Modeller fra {{provider}} er ikke længere tilgængelige.",
   "model.tag.free": "Gratis",
   "model.tag.latest": "Nyeste",
-
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -181,14 +167,12 @@ export const dict = {
   "common.saving": "Gemmer...",
   "common.default": "Standard",
   "common.attachment": "vedhæftning",
-
   "prompt.placeholder.shell": "Indtast shell-kommando...",
   "prompt.placeholder.normal": 'Spørg om hvad som helst... "{{example}}"',
   "prompt.placeholder.summarizeComments": "Opsummér kommentarer…",
   "prompt.placeholder.summarizeComment": "Opsummér kommentar…",
   "prompt.mode.shell": "Shell",
   "prompt.mode.shell.exit": "esc for at afslutte",
-
   "prompt.example.1": "Ret en TODO i koden",
   "prompt.example.2": "Hvad er teknologistakken for dette projekt?",
   "prompt.example.3": "Ret ødelagte tests",
@@ -214,7 +198,6 @@ export const dict = {
   "prompt.example.23": "Tilføj sideinddeling til denne liste",
   "prompt.example.24": "Opret en CLI-kommando til...",
   "prompt.example.25": "Hvordan fungerer miljøvariabler her?",
-
   "prompt.popover.emptyResults": "Ingen matchende resultater",
   "prompt.popover.emptyCommands": "Ingen matchende kommandoer",
   "prompt.dropzone.label": "Slip billeder eller PDF'er her",
@@ -242,24 +225,18 @@ export const dict = {
   "prompt.toast.shellSendFailed.title": "Kunne ikke sende shell-kommando",
   "prompt.toast.commandSendFailed.title": "Kunne ikke sende kommando",
   "prompt.toast.promptSendFailed.title": "Kunne ikke sende forespørgsel",
-
   "dialog.mcp.title": "MCP'er",
   "dialog.mcp.description": "{{enabled}} af {{total}} aktiveret",
   "dialog.mcp.empty": "Ingen MCP'er konfigureret",
-
   "dialog.lsp.empty": "LSP'er registreret automatisk fra filtyper",
   "dialog.plugins.empty": "Plugins konfigureret i opencode.json",
-
   "mcp.status.connected": "forbundet",
   "mcp.status.failed": "mislykkedes",
   "mcp.status.needs_auth": "kræver godkendelse",
   "mcp.status.disabled": "deaktiveret",
-
   "dialog.fork.empty": "Ingen beskeder at forgrene fra",
-
   "dialog.directory.search.placeholder": "Søg mapper",
   "dialog.directory.empty": "Ingen mapper fundet",
-
   "dialog.server.title": "Servere",
   "dialog.server.description": "Skift hvilken Kilo-server denne app forbinder til.",
   "dialog.server.search.placeholder": "Søg servere",
@@ -277,14 +254,12 @@ export const dict = {
   "dialog.server.default.set": "Sæt nuværende server som standard",
   "dialog.server.default.clear": "Ryd",
   "dialog.server.action.remove": "Fjern server",
-
   "dialog.server.menu.edit": "Rediger",
   "dialog.server.menu.default": "Sæt som standard",
   "dialog.server.menu.defaultRemove": "Fjern som standard",
   "dialog.server.menu.delete": "Slet",
   "dialog.server.current": "Nuværende server",
   "dialog.server.status.default": "Standard",
-
   "dialog.project.edit.title": "Rediger projekt",
   "dialog.project.edit.name": "Navn",
   "dialog.project.edit.icon": "Ikon",
@@ -293,7 +268,6 @@ export const dict = {
   "dialog.project.edit.icon.recommended": "Anbefalet: 128x128px",
   "dialog.project.edit.color": "Farve",
   "dialog.project.edit.color.select": "Vælg farven {{color}}",
-
   "dialog.project.edit.worktree.startup": "Opstartsscript for arbejdsområde",
   "dialog.project.edit.worktree.startup.description": "Køres efter oprettelse af et nyt arbejdsområde (worktree).",
   "dialog.project.edit.worktree.startup.placeholder": "f.eks. bun install",
@@ -305,10 +279,8 @@ export const dict = {
   "context.breakdown.assistant": "Assistent",
   "context.breakdown.tool": "Værktøjskald",
   "context.breakdown.other": "Andre",
-
   "context.systemPrompt.title": "Systemprompt",
   "context.rawMessages.title": "Rå beskeder",
-
   "context.stats.session": "Session",
   "context.stats.messages": "Beskeder",
   "context.stats.provider": "Udbyder",
@@ -325,66 +297,42 @@ export const dict = {
   "context.stats.totalCost": "Samlede omkostninger",
   "context.stats.sessionCreated": "Session oprettet",
   "context.stats.lastActivity": "Seneste aktivitet",
-
   "context.usage.tokens": "Tokens",
   "context.usage.usage": "Forbrug",
   "context.usage.cost": "Omkostning",
   "context.usage.clickToView": "Klik for at se kontekst",
   "context.usage.view": "Se kontekstforbrug",
-
   "toast.language.title": "Sprog",
   "toast.language.description": "Skiftede til {{language}}",
-
   "language.th": "ไทย",
-
   "language.bs": "Bosanski",
-
   "language.br": "Português (Brasil)",
-
   "language.no": "Norsk",
-
   "language.ar": "العربية",
-
   "language.ru": "Русский",
-
   "language.pl": "Polski",
-
   "language.ja": "日本語",
-
   "language.da": "Dansk",
-
   "language.fr": "Français",
-
   "language.es": "Español",
-
   "language.de": "Deutsch",
-
   "language.ko": "한국어",
-
   "language.zht": "繁體中文",
-
   "language.zh": "简体中文",
-
   "language.en": "English",
-
   "toast.theme.title": "Tema skiftet",
   "toast.scheme.title": "Farveskema",
-
   "toast.permissions.autoaccept.on.title": "Accepterer ændringer automatisk",
   "toast.permissions.autoaccept.on.description": "Redigerings- og skrivetilladelser vil automatisk blive godkendt",
   "toast.permissions.autoaccept.off.title": "Stoppede automatisk accept af ændringer",
   "toast.permissions.autoaccept.off.description": "Redigerings- og skrivetilladelser vil kræve godkendelse",
-
   "toast.workspace.enabled.title": "Arbejdsområder aktiveret",
   "toast.workspace.enabled.description": "Flere worktrees vises nu i sidepanelet",
   "toast.workspace.disabled.title": "Arbejdsområder deaktiveret",
   "toast.workspace.disabled.description": "Kun hoved-worktree vises i sidepanelet",
-
   "toast.model.none.title": "Ingen model valgt",
   "toast.model.none.description": "Forbind en udbyder for at opsummere denne session",
-
   "toast.file.loadFailed.title": "Kunne ikke indlæse fil",
-
   "toast.file.listFailed.title": "Kunne ikke liste filer",
   "toast.context.noLineSelection.title": "Ingen linjevalg",
   "toast.context.noLineSelection.description": "Vælg først et linjeinterval i en filfane.",
@@ -393,19 +341,15 @@ export const dict = {
   "toast.session.share.success.description": "Delings-URL kopieret til udklipsholder!",
   "toast.session.share.failed.title": "Kunne ikke dele session",
   "toast.session.share.failed.description": "Der opstod en fejl under deling af sessionen",
-
   "toast.session.unshare.success.title": "Deling af session stoppet",
   "toast.session.unshare.success.description": "Deling af session blev stoppet!",
   "toast.session.unshare.failed.title": "Kunne ikke stoppe deling af session",
   "toast.session.unshare.failed.description": "Der opstod en fejl under stop af sessionsdeling",
-
   "toast.session.listFailed.title": "Kunne ikke indlæse sessioner for {{project}}",
-
   "toast.update.title": "Opdatering tilgængelig",
   "toast.update.description": "En ny version af Kilo ({{version}}) er nu tilgængelig til installation.",
   "toast.update.action.installRestart": "Installer og genstart",
   "toast.update.action.notYet": "Ikke endnu",
-
   "error.page.title": "Noget gik galt",
   "error.page.description": "Der opstod en fejl under indlæsning af applikationen.",
   "error.page.details.label": "Fejldetaljer",
@@ -416,12 +360,10 @@ export const dict = {
   "error.page.report.prefix": "Rapporter venligst denne fejl til Kilo-teamet",
   "error.page.report.discord": "på Discord",
   "error.page.version": "Version: {{version}}",
-
   "error.dev.rootNotFound":
     "Rodelement ikke fundet. Har du glemt at tilføje det til din index.html? Eller måske er id-attributten stavet forkert?",
 
   "error.globalSync.connectFailed": "Kunne ikke forbinde til server. Kører der en server på `{{url}}`?",
-
   "error.chain.unknown": "Ukendt fejl",
   "error.chain.causedBy": "Forårsaget af:",
   "error.chain.apiError": "API-fejl",
@@ -442,21 +384,17 @@ export const dict = {
   "error.chain.configFrontmatterError": "Kunne ikke parse frontmatter i {{path}}:\n{{message}}",
   "error.chain.configInvalid": "Konfigurationsfil på {{path}} er ugyldig",
   "error.chain.configInvalidWithMessage": "Konfigurationsfil på {{path}} er ugyldig: {{message}}",
-
   "notification.permission.title": "Tilladelse påkrævet",
   "notification.permission.description": "{{sessionTitle}} i {{projectName}} kræver tilladelse",
   "notification.question.title": "Spørgsmål",
   "notification.question.description": "{{sessionTitle}} i {{projectName}} har et spørgsmål",
   "notification.action.goToSession": "Gå til session",
-
   "notification.session.responseReady.title": "Svar klar",
   "notification.session.error.title": "Sessionsfejl",
   "notification.session.error.fallbackDescription": "Der opstod en fejl",
-
   "home.recentProjects": "Seneste projekter",
   "home.empty.title": "Ingen seneste projekter",
   "home.empty.description": "Kom i gang ved at åbne et lokalt projekt",
-
   "session.tab.session": "Session",
   "session.tab.review": "Gennemgang",
   "session.tab.context": "Kontekst",
@@ -474,15 +412,12 @@ export const dict = {
   "session.messages.loadingEarlier": "Indlæser tidligere beskeder...",
   "session.messages.loadEarlier": "Indlæs tidligere beskeder",
   "session.messages.loading": "Indlæser beskeder...",
-
   "session.messages.jumpToLatest": "Gå til seneste",
   "session.context.addToContext": "Tilføj {{selection}} til kontekst",
-
   "session.new.worktree.main": "Hovedgren",
   "session.new.worktree.mainWithBranch": "Hovedgren ({{branch}})",
   "session.new.worktree.create": "Opret nyt worktree",
   "session.new.lastModified": "Sidst ændret",
-
   "session.header.search.placeholder": "Søg {{project}}",
   "session.header.searchFiles": "Søg efter filer",
   "session.header.openIn": "Åbn i",
@@ -490,7 +425,6 @@ export const dict = {
   "session.header.open.ariaLabel": "Åbn i {{app}}",
   "session.header.open.menu": "Åbn-muligheder",
   "session.header.open.copyPath": "Kopiér sti",
-
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Serverkonfigurationer",
   "status.popover.tab.servers": "Servere",
@@ -498,7 +432,6 @@ export const dict = {
   "status.popover.tab.lsp": "LSP",
   "status.popover.tab.plugins": "Plugins",
   "status.popover.action.manageServers": "Administrer servere",
-
   "session.share.popover.title": "Udgiv på nettet",
   "session.share.popover.description.shared":
     "Denne session er offentlig på nettet. Den er tilgængelig for alle med linket.",
@@ -512,16 +445,13 @@ export const dict = {
   "session.share.action.view": "Vis",
   "session.share.copy.copied": "Kopieret",
   "session.share.copy.copyLink": "Kopier link",
-
   "lsp.tooltip.none": "Ingen LSP-servere",
   "lsp.label.connected": "{{count}} LSP",
-
   "prompt.loading": "Indlæser prompt...",
   "terminal.loading": "Indlæser terminal...",
   "terminal.title": "Terminal",
   "terminal.title.numbered": "Terminal {{number}}",
   "terminal.close": "Luk terminal",
-
   "terminal.connectionLost.title": "Forbindelse mistet",
   "terminal.connectionLost.description": "Terminalforbindelsen blev afbrudt. Dette kan ske, når serveren genstarter.",
   "common.closeTab": "Luk fane",
@@ -536,7 +466,6 @@ export const dict = {
   "common.close": "Luk",
   "common.edit": "Rediger",
   "common.loadMore": "Indlæs flere",
-
   "common.key.esc": "ESC",
   "sidebar.menu.toggle": "Skift menu",
   "sidebar.nav.projectsAndSessions": "Projekter og sessioner",
@@ -549,18 +478,15 @@ export const dict = {
   "sidebar.gettingStarted.line2": "Forbind enhver udbyder for at bruge modeller, inkl. Claude, GPT, Gemini osv.",
   "sidebar.project.recentSessions": "Seneste sessioner",
   "sidebar.project.viewAllSessions": "Vis alle sessioner",
-
   "app.name.desktop": "Kilo Desktop",
   "settings.section.desktop": "Desktop",
   "settings.section.server": "Server",
   "settings.tab.general": "Generelt",
   "settings.tab.shortcuts": "Genveje",
-
   "settings.general.section.appearance": "Udseende",
   "settings.general.section.notifications": "Systemmeddelelser",
   "settings.general.section.updates": "Opdateringer",
   "settings.general.section.sounds": "Lydeffekter",
-
   "settings.general.row.language.title": "Sprog",
   "settings.general.row.language.description": "Ændr visningssproget for Kilo",
   "settings.general.row.appearance.title": "Udseende",
@@ -569,10 +495,8 @@ export const dict = {
   "settings.general.row.theme.description": "Tilpas hvordan Kilo er temabestemt.",
   "settings.general.row.font.title": "Skrifttype",
   "settings.general.row.font.description": "Tilpas mono-skrifttypen brugt i kodeblokke",
-
   "settings.general.row.releaseNotes.title": "Udgivelsesnoter",
   "settings.general.row.releaseNotes.description": 'Vis "Hvad er nyt"-popups efter opdateringer',
-
   "settings.updates.row.startup.title": "Tjek for opdateringer ved opstart",
   "settings.updates.row.startup.description": "Tjek automatisk for opdateringer, når Kilo starter",
   "settings.updates.row.check.title": "Tjek for opdateringer",
@@ -581,7 +505,6 @@ export const dict = {
   "settings.updates.action.checking": "Tjekker...",
   "settings.updates.toast.latest.title": "Du er opdateret",
   "settings.updates.toast.latest.description": "Du kører den nyeste version af Kilo.",
-
   "font.option.ibmPlexMono": "IBM Plex Mono",
   "font.option.cascadiaCode": "Cascadia Code",
   "font.option.firaCode": "Fira Code",
@@ -646,14 +569,12 @@ export const dict = {
   "settings.general.notifications.permissions.description": "Vis systemmeddelelse når en tilladelse er påkrævet",
   "settings.general.notifications.errors.title": "Fejl",
   "settings.general.notifications.errors.description": "Vis systemmeddelelse når der opstår en fejl",
-
   "settings.general.sounds.agent.title": "Agent",
   "settings.general.sounds.agent.description": "Afspil lyd når agenten er færdig eller kræver opmærksomhed",
   "settings.general.sounds.permissions.title": "Tilladelser",
   "settings.general.sounds.permissions.description": "Afspil lyd når en tilladelse er påkrævet",
   "settings.general.sounds.errors.title": "Fejl",
   "settings.general.sounds.errors.description": "Afspil lyd når der opstår en fejl",
-
   "settings.shortcuts.title": "Tastaturgenveje",
   "settings.shortcuts.reset.button": "Nulstil til standard",
   "settings.shortcuts.reset.toast.title": "Genveje nulstillet",
@@ -664,14 +585,12 @@ export const dict = {
   "settings.shortcuts.pressKeys": "Tryk på taster",
   "settings.shortcuts.search.placeholder": "Søg genveje",
   "settings.shortcuts.search.empty": "Ingen genveje fundet",
-
   "settings.shortcuts.group.general": "Generelt",
   "settings.shortcuts.group.session": "Session",
   "settings.shortcuts.group.navigation": "Navigation",
   "settings.shortcuts.group.modelAndAgent": "Model og agent",
   "settings.shortcuts.group.terminal": "Terminal",
   "settings.shortcuts.group.prompt": "Prompt",
-
   "settings.providers.title": "Udbydere",
   "settings.providers.description": "Udbyderindstillinger vil kunne konfigureres her.",
   "settings.providers.section.connected": "Forbundne udbydere",
@@ -689,16 +608,13 @@ export const dict = {
   "settings.commands.description": "Kommandoindstillinger vil kunne konfigureres her.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP-indstillinger vil kunne konfigureres her.",
-
   "settings.permissions.title": "Tilladelser",
   "settings.permissions.description": "Styr hvilke værktøjer serveren kan bruge som standard.",
   "settings.permissions.section.tools": "Værktøjer",
   "settings.permissions.toast.updateFailed.title": "Kunne ikke opdatere tilladelser",
-
   "settings.permissions.action.allow": "Tillad",
   "settings.permissions.action.ask": "Spørg",
   "settings.permissions.action.deny": "Afvis",
-
   "settings.permissions.tool.read.title": "Læs",
   "settings.permissions.tool.read.description": "Læsning af en fil (matcher filstien)",
   "settings.permissions.tool.edit.title": "Rediger",
@@ -732,7 +648,6 @@ export const dict = {
   "settings.permissions.tool.external_directory.description": "Få adgang til filer uden for projektmappen",
   "settings.permissions.tool.doom_loop.title": "Doom Loop",
   "settings.permissions.tool.doom_loop.description": "Opdag gentagne værktøjskald med identisk input",
-
   "session.delete.failed.title": "Kunne ikke slette session",
   "session.delete.title": "Slet session",
   "session.delete.confirm": 'Slet session "{{name}}"?',
@@ -748,7 +663,6 @@ export const dict = {
   "session.cloud.import.button": "Importér",
   "session.cloud.import.invalid": "Ugyldigt sessions-ID-format",
   "session.cloud.import.failed": "Kunne ikke importere cloud-session",
-
   "workspace.new": "Nyt arbejdsområde",
   "workspace.type.local": "lokal",
   "workspace.type.sandbox": "sandkasse",
@@ -774,7 +688,6 @@ export const dict = {
   "workspace.reset.archived.one": "1 session vil blive arkiveret.",
   "workspace.reset.archived.many": "{{count}} sessioner vil blive arkiveret.",
   "workspace.reset.note": "Dette vil nulstille arbejdsområdet til at matche hovedgrenen.",
-
   "deviceAuth.toast.urlCopied": "URL kopieret til udklipsholder",
   "deviceAuth.toast.codeCopied": "Kode kopieret til udklipsholder",
   "deviceAuth.status.initiating": "Starter login...",
@@ -790,10 +703,8 @@ export const dict = {
   "deviceAuth.status.failed": "Login mislykkedes",
   "deviceAuth.status.cancelled": "Login annulleret",
   "deviceAuth.action.tryAgain": "Prøv igen",
-
   "common.retry": "Prøv igen",
   "common.refresh": "Opdatér",
-
   "profile.title": "Profil",
   "profile.notLoggedIn": "Ikke logget ind",
   "profile.action.login": "Log ind med Kilo Code",
@@ -801,7 +712,6 @@ export const dict = {
   "profile.balance.refresh": "Opdatér saldo",
   "profile.action.dashboard": "Dashboard",
   "profile.action.logout": "Log ud",
-
   "settings.section.configuration": "Konfiguration",
   "settings.agentBehaviour.title": "Agentadfærd",
   "settings.autoApprove.title": "Automatisk godkendelse",
@@ -816,7 +726,6 @@ export const dict = {
   "settings.experimental.title": "Eksperimentelt",
   "settings.language.title": "Sprog",
   "settings.aboutKiloCode.title": "Om Kilo Code",
-
   "session.messages.empty": "Start en samtale ved at skrive en besked nedenfor.",
   "session.messages.welcome":
     "Kilo Code er en AI-kodningsassistent. Bed den om at bygge funktioner, rette fejl eller forklare din kodebase.",
@@ -824,14 +733,10 @@ export const dict = {
   "session.status.writingResponse": "Skriver svar…",
   "session.status.retrying": "Prøver igen (forsøg {{ attempt }})… {{ message }}",
   "session.status.working": "Arbejder…",
-
   "dialog.model.noProviders": "Ingen udbydere",
-
   "prompt.placeholder.connecting": "Opretter forbindelse til server...",
   "prompt.placeholder.default": "Skriv en besked... (Enter for at sende, Shift+Enter for ny linje)",
-
   "context.usage.sessionCost": "Sessionsomkostning",
-
   "time.justNow": "lige nu",
   "time.minutesAgo": "{{count}} min. siden",
   "time.hoursAgo": "{{count}}t siden",
@@ -842,7 +747,6 @@ export const dict = {
   "time.thisWeek": "Denne uge",
   "time.thisMonth": "Denne måned",
   "time.older": "Ældre",
-
   "settings.aboutKiloCode.status.connected": "Forbundet",
   "settings.aboutKiloCode.status.connecting": "Forbinder...",
   "settings.aboutKiloCode.status.disconnected": "Afbrudt",
@@ -862,14 +766,12 @@ export const dict = {
   "settings.aboutKiloCode.resetSettings.description":
     "Nulstil alle Kilo Code-udvidelsesindstillinger til standardværdierne. Dette påvirker ikke CLI- eller backend-konfiguration.",
   "settings.aboutKiloCode.resetSettings.button": "Nulstil alle indstillinger",
-
   "settings.agentBehaviour.subtab.modes": "Tilstande",
   "settings.agentBehaviour.subtab.agents": "Agents",
   "settings.agentBehaviour.subtab.mcpServers": "MCP-servere",
   "settings.agentBehaviour.subtab.rules": "Regler",
   "settings.agentBehaviour.subtab.workflows": "Arbejdsgange",
   "settings.agentBehaviour.subtab.skills": "Færdigheder",
-
   "settings.browser.description":
     "Når aktiveret kan AI-agenten interagere med websider — navigere, klikke, skrive og tage skærmbilleder. Et Chrome-vindue åbnes, så du kan se agenten arbejde.",
   "settings.browser.enable.title": "Aktivér browserautomatisering",
@@ -879,11 +781,9 @@ export const dict = {
     "Brug din installerede Chrome-browser i stedet for en separat Chromium-instans.",
   "settings.browser.headless.title": "Headless-tilstand",
   "settings.browser.headless.description": "Kør i headless-tilstand (intet synligt browservindue).",
-
   "settings.language.description": 'Vælg sproget til Kilo Code-brugerfladen. "Auto" bruger VS Codes visningssprog.',
   "settings.language.auto": "Auto (VS Code-sprog)",
   "settings.language.current": "Nuværende:",
-
   "common.add": "Tilføj",
   "common.choose": "Vælg…",
   "settings.notImplemented": "Denne sektion er endnu ikke implementeret.",
