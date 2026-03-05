@@ -912,6 +912,10 @@
   padding: 0 4px;
 }
 
+.vscode-session-turn + .vscode-session-turn {
+  margin-top: 12px;
+}
+
 .vscode-session-turn-user {
   width: 100%;
 }
