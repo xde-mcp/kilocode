@@ -16,7 +16,10 @@ export function isFree(model: Pick<EnrichedModel, "inputPrice">): boolean {
 
 export function stripSubProviderPrefix(name: string): string {
   const colon = name.indexOf(": ")
-  return colon >= 0 ? name.slice(colon + 2) : name
+  if (colon < 0) return name
+  const prefix = name.slice(0, colon)
+  if (prefix.toLowerCase() === KILO_GATEWAY_ID) return name
+  return name.slice(colon + 2)
 }
 
 export function buildTriggerLabel(

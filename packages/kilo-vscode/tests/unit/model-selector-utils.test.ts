@@ -68,6 +68,11 @@ describe("stripSubProviderPrefix", () => {
     expect(stripSubProviderPrefix("GPT-4o")).toBe("GPT-4o")
     expect(stripSubProviderPrefix("claude-3-5-sonnet")).toBe("claude-3-5-sonnet")
   })
+
+  it("does not strip 'Kilo: ' prefix", () => {
+    expect(stripSubProviderPrefix("Kilo: Auto")).toBe("Kilo: Auto")
+    expect(stripSubProviderPrefix("kilo: Auto")).toBe("kilo: Auto")
+  })
 })
 
 describe("buildTriggerLabel", () => {
