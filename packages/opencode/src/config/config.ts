@@ -774,7 +774,7 @@ export namespace Config {
 
   export const Agent = z
     .object({
-      model: ModelId.optional(),
+      model: ModelId.nullable().optional(),
       variant: z
         .string()
         .optional()
@@ -1129,8 +1129,8 @@ export namespace Config {
         .array(z.string())
         .optional()
         .describe("When set, ONLY these providers will be enabled. All other providers will be ignored"),
-      model: ModelId.describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
-      small_model: ModelId.describe(
+      model: ModelId.nullable().describe("Model to use in the format of provider/model, eg anthropic/claude-2").optional(),
+      small_model: ModelId.nullable().describe(
         "Small model to use for tasks like title generation in the format of provider/model",
       ).optional(),
       // kilocode_change start - renamed from "build" to "code"
@@ -1407,7 +1407,7 @@ export namespace Config {
   export async function update(config: Info) {
     const filepath = path.join(Instance.directory, "config.json")
     const existing = await loadFile(filepath)
-    await Filesystem.writeJson(filepath, mergeDeep(existing, config))
+    await Filesystem.writeJson(filepath, stripNulls(mergeDeep(existing, config) as Record<string, unknown>))
     await Instance.dispose()
   }
 
@@ -1427,9 +1427,24 @@ export namespace Config {
     return !!value && typeof value === "object" && !Array.isArray(value)
   }
 
+  /** Recursively remove keys whose value is null (used after mergeDeep to honor delete sentinels). */
+  function stripNulls(obj: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === null) continue
+      if (isRecord(value)) {
+        result[key] = stripNulls(value)
+      } else {
+        result[key] = value
+      }
+    }
+    return result
+  }
+
   function patchJsonc(input: string, patch: unknown, path: string[] = []): string {
     if (!isRecord(patch)) {
-      const edits = modify(input, path, patch, {
+      // null means "delete this key" — pass undefined to jsonc-parser's modify()
+      const edits = modify(input, path, patch === null ? undefined : patch, {
         formattingOptions: {
           insertSpaces: true,
           tabSize: 2,
@@ -1488,7 +1503,7 @@ export namespace Config {
     const next = await (async () => {
       if (!filepath.endsWith(".jsonc")) {
         const existing = parseConfig(before, filepath)
-        const merged = mergeDeep(existing, config)
+        const merged = stripNulls(mergeDeep(existing, config) as Record<string, unknown>) as Info
         await Filesystem.writeJson(filepath, merged)
         return merged
       }

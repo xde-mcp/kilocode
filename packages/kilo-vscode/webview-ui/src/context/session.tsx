@@ -20,6 +20,7 @@ import { createStore, produce } from "solid-js/store"
 import { useVSCode } from "./vscode"
 import { useServer } from "./server"
 import { useProvider } from "./provider"
+import { useConfig } from "./config"
 import { useLanguage } from "./language"
 import { showToast } from "@kilocode/kilo-ui/toast"
 import type {
@@ -144,6 +145,7 @@ export const SessionProvider: ParentComponent = (props) => {
   const vscode = useVSCode()
   const server = useServer()
   const provider = useProvider()
+  const { config } = useConfig()
   const language = useLanguage()
 
   // Current session ID
@@ -202,7 +204,7 @@ export const SessionProvider: ParentComponent = (props) => {
     variantSelections: {},
   })
 
-  // Keep pending selection in sync with provider default until the user
+  // Keep pending selection in sync with provider/mode default until the user
   // explicitly changes it (or a session exists).
   createEffect(() => {
     const def = provider.defaultSelection()
@@ -214,23 +216,45 @@ export const SessionProvider: ParentComponent = (props) => {
       return
     }
 
-    setPendingModelSelection(def)
+    // Per-mode config takes priority over global default
+    const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    const modeModel = getModeModel(pendingAgent)
+    setPendingModelSelection(modeModel ?? def)
   })
 
   // If we have no pending yet, initialize it from provider default.
   createEffect(() => {
     if (!pendingModelSelection()) {
-      setPendingModelSelection(provider.defaultSelection())
+      const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+      const modeModel = getModeModel(pendingAgent)
+      setPendingModelSelection(modeModel ?? provider.defaultSelection())
     }
   })
 
+  /** Parse a "provider/model" config string into a ModelSelection (or null). */
+  function getModeModel(agentName: string): ModelSelection | null {
+    const raw = config().agent?.[agentName]?.model
+    if (!raw) return null
+    const slash = raw.indexOf("/")
+    if (slash <= 0) return null
+    return { providerID: raw.slice(0, slash), modelID: raw.slice(slash + 1) }
+  }
+
   // Per-session model selection
+  // Precedence: session override > per-mode config > global default > kilo/auto
   const selected = createMemo<ModelSelection | null>(() => {
     const sessionID = currentSessionID()
     if (sessionID) {
-      return store.modelSelections[sessionID] ?? provider.defaultSelection()
+      const sessionModel = store.modelSelections[sessionID]
+      if (sessionModel) return sessionModel
+      const agentName = store.agentSelections[sessionID] ?? defaultAgent()
+      return getModeModel(agentName) ?? provider.defaultSelection()
     }
-    return pendingModelSelection()
+    // Pre-session: check pending agent's per-mode default
+    const pending = pendingModelSelection()
+    if (pending) return pending
+    const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    return getModeModel(pendingAgent) ?? provider.defaultSelection()
   })
 
   // Per-session agent selection
@@ -788,6 +812,12 @@ export const SessionProvider: ParentComponent = (props) => {
       setStore("agentSelections", id, name)
     } else {
       setPendingAgentSelection(name)
+      // When switching mode pre-session, update pending model to per-mode default
+      // (unless user explicitly set a model for this session)
+      if (!pendingWasUserSet()) {
+        const modeModel = getModeModel(name)
+        setPendingModelSelection(modeModel ?? provider.defaultSelection())
+      }
     }
   }
 
