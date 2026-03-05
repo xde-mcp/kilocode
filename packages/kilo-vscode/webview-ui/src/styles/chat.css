@@ -571,9 +571,8 @@
 
 .prompt-input-hint {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 8px;
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
@@ -584,6 +583,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
 
   [data-component="button"] {
     height: auto !important;
@@ -621,6 +622,8 @@
 .prompt-input-hint-actions {
   display: flex;
   gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
 
   [data-component="button"] {
     background: transparent;
