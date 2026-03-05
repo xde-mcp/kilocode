@@ -125,7 +125,6 @@ export namespace ProviderAuth {
 
         // kilocode_change start - invalidate provider/model cache after auth change
         ModelCache.clear(input.providerID)
-        scheduleDisposeAll()
         // kilocode_change end
 
         return
@@ -147,7 +146,6 @@ export namespace ProviderAuth {
       })
       // kilocode_change start - invalidate provider/model cache after auth change
       ModelCache.clear(input.providerID)
-      scheduleDisposeAll()
       // kilocode_change end
     },
   )

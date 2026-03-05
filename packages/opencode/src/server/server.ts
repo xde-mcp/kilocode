@@ -171,7 +171,6 @@ export namespace Server {
             await Auth.set(providerID, info)
             // kilocode_change start - invalidate provider/model cache after auth change
             ModelCache.clear(providerID)
-            scheduleDisposeAll()
             // kilocode_change end
             return c.json(true)
           },
@@ -205,7 +204,6 @@ export namespace Server {
             await Auth.remove(providerID)
             // kilocode_change start - invalidate provider/model cache after auth removal
             ModelCache.clear(providerID)
-            scheduleDisposeAll()
             // kilocode_change end
             return c.json(true)
           },
