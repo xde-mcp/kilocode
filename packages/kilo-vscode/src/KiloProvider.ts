@@ -1719,7 +1719,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       })
 
       await this.client.global.dispose().catch((e: unknown) =>
-      console.warn("[Kilo New] KiloProvider: global.dispose() after logout failed:", e),
+        console.warn("[Kilo New] KiloProvider: global.dispose() after logout failed:", e),
       )
 
     } catch (error) {
