@@ -3,6 +3,7 @@ import {
   providerSortKey,
   isFree,
   buildTriggerLabel,
+  stripSubProviderPrefix,
   KILO_GATEWAY_ID,
   PROVIDER_ORDER,
 } from "../../webview-ui/src/components/shared/model-selector-utils"
@@ -57,15 +58,37 @@ describe("isFree", () => {
   })
 })
 
-describe("buildTriggerLabel", () => {
-  it("returns resolved model name when available", () => {
-    expect(buildTriggerLabel("GPT-4o", undefined, null, false, "", true, labels)).toBe("GPT-4o")
+describe("stripSubProviderPrefix", () => {
+  it("strips prefix before ': '", () => {
+    expect(stripSubProviderPrefix("Anthropic: Claude Sonnet")).toBe("Claude Sonnet")
+    expect(stripSubProviderPrefix("OpenAI: GPT-4o")).toBe("GPT-4o")
   })
 
-  it("strips provider prefix from resolved name when providerName matches", () => {
-    expect(buildTriggerLabel("Anthropic: Claude Sonnet", "Anthropic", null, false, "", true, labels)).toBe(
+  it("leaves names without ': ' unchanged", () => {
+    expect(stripSubProviderPrefix("GPT-4o")).toBe("GPT-4o")
+    expect(stripSubProviderPrefix("claude-3-5-sonnet")).toBe("claude-3-5-sonnet")
+  })
+})
+
+describe("buildTriggerLabel", () => {
+  it("returns resolved model name for non-kilo provider unchanged", () => {
+    expect(buildTriggerLabel("GPT-4o", "openai", null, false, "", true, labels)).toBe("GPT-4o")
+  })
+
+  it("strips sub-provider prefix from resolved name for kilo gateway models", () => {
+    expect(buildTriggerLabel("Anthropic: Claude Sonnet", KILO_GATEWAY_ID, null, false, "", true, labels)).toBe(
       "Claude Sonnet",
     )
+  })
+
+  it("does not strip prefix for non-kilo provider even if name contains ': '", () => {
+    expect(buildTriggerLabel("Anthropic: Claude Sonnet", "anthropic", null, false, "", true, labels)).toBe(
+      "Anthropic: Claude Sonnet",
+    )
+  })
+
+  it("returns resolved name as-is when providerID is undefined", () => {
+    expect(buildTriggerLabel("GPT-4o", undefined, null, false, "", true, labels)).toBe("GPT-4o")
   })
 
   it("returns modelID for kilo gateway raw selection", () => {

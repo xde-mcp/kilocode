@@ -14,21 +14,22 @@ export function isFree(model: Pick<EnrichedModel, "inputPrice">): boolean {
   return model.inputPrice === 0
 }
 
-export function stripProviderPrefix(name: string, providerName: string): string {
-  const prefix = `${providerName}: `
-  return name.startsWith(prefix) ? name.slice(prefix.length) : name
+export function stripSubProviderPrefix(name: string): string {
+  const colon = name.indexOf(": ")
+  return colon >= 0 ? name.slice(colon + 2) : name
 }
 
 export function buildTriggerLabel(
   resolvedName: string | undefined,
-  providerName: string | undefined,
+  providerID: string | undefined,
   raw: ModelSelection | null,
   allowClear: boolean,
   clearLabel: string,
   hasProviders: boolean,
   labels: { select: string; noProviders: string; notSet: string },
 ): string {
-  if (resolvedName) return providerName ? stripProviderPrefix(resolvedName, providerName) : resolvedName
+  if (resolvedName)
+    return providerID === KILO_GATEWAY_ID ? stripSubProviderPrefix(resolvedName) : resolvedName
   if (raw?.providerID && raw?.modelID) {
     return raw.providerID === KILO_GATEWAY_ID ? raw.modelID : `${raw.providerID} / ${raw.modelID}`
   }

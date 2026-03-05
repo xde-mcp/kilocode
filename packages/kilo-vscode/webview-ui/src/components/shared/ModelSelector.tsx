@@ -172,7 +172,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const triggerLabel = () =>
     buildTriggerLabel(
       selectedModel()?.name,
-      selectedModel()?.providerName,
+      selectedModel()?.providerID,
       props.value,
       props.allowClear ?? false,
       props.clearLabel ?? "",
