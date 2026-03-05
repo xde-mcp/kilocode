@@ -975,7 +975,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   return (
     <Show when={!hideQuestion()}>
       <Show when={dismissed()}>
-        <div style="width: 100%; display: flex; justify-content: flex-end; padding: 4px 0;">
+        <div style="width: 100%; display: flex; justify-content: flex-end; padding: 4px 8px 4px 0;">
           <span class="text-13-regular text-text-weak cursor-default">
             {i18n.t("ui.tool.questions")} dismissed
           </span>
