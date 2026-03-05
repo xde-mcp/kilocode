@@ -12,7 +12,7 @@ jobs:
       matched: ${{ steps.filter.outputs.matched }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: Kilo-Org/paths-filter@master
         id: filter
         with:
           filters: |
