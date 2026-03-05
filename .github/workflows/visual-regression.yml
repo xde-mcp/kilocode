@@ -2,6 +2,7 @@ name: Visual Regression Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   check-paths:
