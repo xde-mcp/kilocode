@@ -987,6 +987,43 @@
     color: var(--text-weaker);
   }
 
+  [data-slot="question-review"] {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 10px;
+  }
+
+  [data-slot="review-title"] {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-strong);
+  }
+
+  [data-slot="review-item"] {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  [data-slot="review-label"] {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-small);
+    color: var(--text-weak);
+  }
+
+  [data-slot="review-value"] {
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-base);
+    color: var(--text-strong);
+
+    &[data-answered="false"] {
+      color: var(--text-weaker);
+      font-style: italic;
+    }
+  }
+
   [data-slot="custom-input-form"] {
     display: flex;
     align-items: center;
