@@ -78,7 +78,7 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
           const perm = () => permissionForPart(part)
           return (
             <Show when={PART_MAPPING[part.type]}>
-              <div data-component="tool-part-wrapper" data-permission={!!perm()}>
+              <div data-component="tool-part-wrapper" data-permission={!!perm()} data-part-type={part.type}>
                 <Part
                   part={part}
                   message={props.message as SDKMessage}
