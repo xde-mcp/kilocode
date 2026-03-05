@@ -149,6 +149,7 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
   }
 
   return (
+    <div onClick={(e: MouseEvent) => e.stopPropagation()}>
     <DockPrompt
       kind="question"
       header={
@@ -335,5 +336,6 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
         </div>
       </Show>
     </DockPrompt>
+    </div>
   )
 }
