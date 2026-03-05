@@ -41,6 +41,11 @@
   border-top: 1px solid var(--vscode-panel-border);
 }
 
+/* New Task Button */
+.new-task-button-wrapper {
+  padding: 8px 12px 0;
+}
+
 /* ============================================
    Message List
    ============================================ */
@@ -345,6 +350,7 @@
 
 .prompt-input-hint {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
@@ -355,6 +361,7 @@
 
 .prompt-input-hint-selectors {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 
   [data-component="button"] {
@@ -694,6 +701,33 @@
   word-break: break-all;
 }
 
+/* Permission Prompt (inline with tool cards) */
+[data-component="tool-part-wrapper"][data-permission="true"] {
+  /* When wrapping a Part + permission, the outer wrapper provides the card border.
+     Remove the inner Part's tool-part-wrapper border so we don't get double borders. */
+  > [data-component="tool-part-wrapper"] {
+    border: none;
+    border-radius: 0;
+  }
+}
+
+[data-component="permission-prompt"] {
+  border-top: 1px solid var(--border-weak-base, var(--vscode-panel-border));
+  padding: 8px 12px;
+}
+
+[data-component="permission-prompt"] [data-slot="permission-actions"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-component="permission-prompt"] [data-slot="permission-hint"] {
+  font-size: 11px;
+  color: var(--text-weak, var(--vscode-descriptionForeground));
+  margin: 4px 0 0;
+}
+
 /* Dialog Confirmation */
 .dialog-confirm-body {
   display: flex;
@@ -878,6 +912,10 @@
   padding: 0 4px;
 }
 
+.vscode-session-turn + .vscode-session-turn {
+  margin-top: 12px;
+}
+
 .vscode-session-turn-user {
   width: 100%;
 }
@@ -903,14 +941,10 @@
 }
 
 /* ============================================
-   Question Prompt
+   Question Prompt (VS Code overrides)
    ============================================ */
 
-[data-component="question-prompt"] {
-  [data-slot="question-header"] {
-    padding: 0;
-  }
-
+[data-component="dock-prompt"][data-kind="question"] {
   [data-slot="question-progress-nav"] {
     display: inline-flex;
     align-items: center;
@@ -938,12 +972,6 @@
     }
   }
 
-  [data-slot="question-footer"] {
-    padding: 8px;
-    padding-top: 8px;
-    margin-top: 0;
-  }
-
   [data-slot="question-footer"] > [data-component="button"][data-variant="ghost"] {
     border: none;
     box-shadow: none;
@@ -963,44 +991,11 @@
     color: var(--text-weaker);
   }
 
-  [data-slot="question-text"] {
-    font-size: var(--font-size-base);
-    padding: 0 2px;
-  }
-
-  [data-slot="question-hint"] {
-    font-size: var(--font-size-small);
-    padding: 0 2px;
-  }
-
-  [data-slot="question-options"] {
-    margin-top: 8px;
-    gap: 4px;
-    padding: 1px 1px 4px;
-  }
-
-  [data-slot="question-option"] {
-    padding: 6px 8px;
-    border-radius: var(--radius-lg);
-    gap: 8px;
-  }
-
-  [data-slot="option-label"] {
-    font-size: var(--font-size-base);
-  }
-
-  [data-slot="option-description"] {
-    font-size: var(--font-size-small);
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
-
   [data-slot="question-review"] {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 4px 2px;
+    padding: 4px 10px;
   }
 
   [data-slot="review-title"] {
@@ -1061,6 +1056,57 @@
 
     &:disabled {
       opacity: 0.6;
+    }
+  }
+}
+
+/* ============================================
+   Enhance Prompt Spinner
+   ============================================ */
+
+@keyframes enhance-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.enhance-spinner {
+  animation: enhance-spin 1s linear infinite;
+}
+
+[data-slot="settings-row"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  [data-slot="settings-row-label"] {
+    flex: 1 1 0%;
+    min-width: 150px;
+
+    [data-slot="settings-row-label-title"] {
+      font-weight: 500;
+      min-height: 16px;
+      margin-bottom: 4px;
+    }
+
+    [data-slot="settings-row-label-subtitle"] {
+      font-size: 12px;
+      min-height: 14px;
+      color: var(--text-weak-base, var(--vscode-descriptionForeground));
+    }
+  }
+
+  [data-slot="settings-row-input"] {
+    flex: 0 0 auto;
+    max-width: 160px;
+
+    & > * {
+      max-width: 100%;
     }
   }
 }
