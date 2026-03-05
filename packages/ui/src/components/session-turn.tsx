@@ -14,6 +14,7 @@ import { Collapsible } from "./collapsible"
 import { DiffChanges } from "./diff-changes"
 import { Icon } from "./icon"
 import { TextShimmer } from "./text-shimmer"
+import { ErrorDetails, hasErrorDetails } from "./error-details"
 import { createAutoScroll } from "../hooks"
 import { useI18n } from "../context/i18n"
 
@@ -485,7 +486,18 @@ export function SessionTurn(
                 </Show>
                 <Show when={error()}>
                   <Card variant="error" class="error-card">
-                    {errorText()}
+                    <div>{errorText()}</div>
+                    <Show when={hasErrorDetails(error())}>
+                      <Collapsible variant="ghost">
+                        <Collapsible.Trigger class="error-details-trigger">
+                          <span>{i18n.t("error.details.show")}</span>
+                          <Collapsible.Arrow />
+                        </Collapsible.Trigger>
+                        <Collapsible.Content>
+                          <ErrorDetails error={error()!} />
+                        </Collapsible.Content>
+                      </Collapsible>
+                    </Show>
                   </Card>
                 </Show>
               </div>

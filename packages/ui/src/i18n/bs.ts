@@ -121,4 +121,12 @@ export const dict = {
   "ui.question.multiHint": "Odaberi sve što važi",
   "ui.question.singleHint": "Odaberi jedan odgovor",
   "ui.question.custom.placeholder": "Unesi svoj odgovor...",
+
+  "error.details.show": "Detalji",
+  "error.details.type": "Tip",
+  "error.details.statusCode": "Statusni kod",
+  "error.details.provider": "Provajder",
+  "error.details.retryable": "Ponovljivo",
+  "error.details.retries": "Pokušaji",
+  "error.details.responseBody": "Odgovor",
 } satisfies Partial<Record<Keys, string>>

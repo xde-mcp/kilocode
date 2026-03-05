@@ -120,4 +120,12 @@ export const dict = {
   "ui.question.multiHint": "可多選",
   "ui.question.singleHint": "選擇一個答案",
   "ui.question.custom.placeholder": "輸入你的答案...",
+
+  "error.details.show": "詳細資訊",
+  "error.details.type": "類型",
+  "error.details.statusCode": "狀態碼",
+  "error.details.provider": "提供者",
+  "error.details.retryable": "可重試",
+  "error.details.retries": "重試次數",
+  "error.details.responseBody": "回應",
 } satisfies Partial<Record<Keys, string>>

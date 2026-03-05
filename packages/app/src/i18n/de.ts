@@ -749,4 +749,12 @@ export const dict = {
   "workspace.reset.archived.one": "1 Sitzung wird archiviert.",
   "workspace.reset.archived.many": "{{count}} Sitzungen werden archiviert.",
   "workspace.reset.note": "Dadurch wird der Arbeitsbereich auf den Standard-Branch zurückgesetzt.",
+
+  "error.details.show": "Details",
+  "error.details.type": "Typ",
+  "error.details.statusCode": "Statuscode",
+  "error.details.provider": "Anbieter",
+  "error.details.retryable": "Wiederholbar",
+  "error.details.retries": "Versuche",
+  "error.details.responseBody": "Antwort",
 } satisfies Partial<Record<Keys, string>>

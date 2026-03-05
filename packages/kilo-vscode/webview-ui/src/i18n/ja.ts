@@ -1031,4 +1031,12 @@ export const dict = {
     "VS Codeのストレージから古い設定を削除します。この移行を再度実行することはできなくなります。",
   "migration.complete.done": "完了",
   // legacy-migration end
+
+  "error.details.show": "詳細",
+  "error.details.type": "タイプ",
+  "error.details.statusCode": "ステータスコード",
+  "error.details.provider": "プロバイダー",
+  "error.details.retryable": "リトライ可能",
+  "error.details.retries": "リトライ回数",
+  "error.details.responseBody": "レスポンス",
 }

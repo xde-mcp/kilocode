@@ -116,4 +116,12 @@ export const dict = {
   "ui.question.multiHint": "該当するものをすべて選択",
   "ui.question.singleHint": "1 つ選択",
   "ui.question.custom.placeholder": "回答を入力...",
+
+  "error.details.show": "詳細",
+  "error.details.type": "タイプ",
+  "error.details.statusCode": "ステータスコード",
+  "error.details.provider": "プロバイダー",
+  "error.details.retryable": "リトライ可能",
+  "error.details.retries": "リトライ回数",
+  "error.details.responseBody": "レスポンス",
 }

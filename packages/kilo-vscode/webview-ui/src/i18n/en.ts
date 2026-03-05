@@ -1051,4 +1051,13 @@ export const dict = {
     "This removes the old settings from VS Code storage. You will not be able to re-run this migration.",
   "migration.complete.done": "Done",
   // legacy-migration end
+
+  // error details
+  "error.details.show": "Details",
+  "error.details.type": "Type",
+  "error.details.statusCode": "Status code",
+  "error.details.provider": "Provider",
+  "error.details.retryable": "Retryable",
+  "error.details.retries": "Retries",
+  "error.details.responseBody": "Response",
 }

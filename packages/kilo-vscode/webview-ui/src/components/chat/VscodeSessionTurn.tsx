@@ -17,6 +17,7 @@ import { Accordion } from "@kilocode/kilo-ui/accordion"
 import { DiffChanges } from "@kilocode/kilo-ui/diff-changes"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Card } from "@kilocode/kilo-ui/card"
+import { ErrorDetails, hasErrorDetails } from "@kilocode/kilo-ui/error-details"
 import { StickyAccordionHeader } from "@kilocode/kilo-ui/sticky-accordion-header"
 import { useData } from "@kilocode/kilo-ui/context/data"
 import { useDiffComponent } from "@kilocode/kilo-ui/context/diff"
@@ -329,7 +330,18 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
           {/* Error card */}
           <Show when={error()}>
             <Card variant="error" class="error-card">
-              {errorText()}
+              <div>{errorText()}</div>
+              <Show when={hasErrorDetails(error())}>
+                <Collapsible variant="ghost">
+                  <Collapsible.Trigger class="error-details-trigger">
+                    <span>{i18n.t("error.details.show")}</span>
+                    <Collapsible.Arrow />
+                  </Collapsible.Trigger>
+                  <Collapsible.Content>
+                    <ErrorDetails error={error()!} />
+                  </Collapsible.Content>
+                </Collapsible>
+              </Show>
             </Card>
           </Show>
         </div>

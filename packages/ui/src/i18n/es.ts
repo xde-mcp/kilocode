@@ -117,4 +117,12 @@ export const dict = {
   "ui.question.multiHint": "Selecciona todas las que correspondan",
   "ui.question.singleHint": "Selecciona una respuesta",
   "ui.question.custom.placeholder": "Escribe tu respuesta...",
+
+  "error.details.show": "Detalles",
+  "error.details.type": "Tipo",
+  "error.details.statusCode": "Código de estado",
+  "error.details.provider": "Proveedor",
+  "error.details.retryable": "Reintentable",
+  "error.details.retries": "Reintentos",
+  "error.details.responseBody": "Respuesta",
 }

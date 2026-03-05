@@ -1028,4 +1028,12 @@ export const dict = {
     "이 작업은 VS Code 저장소에서 이전 설정을 제거합니다. 이 마이그레이션을 다시 실행할 수 없게 됩니다.",
   "migration.complete.done": "완료",
   // legacy-migration end
+
+  "error.details.show": "상세 정보",
+  "error.details.type": "유형",
+  "error.details.statusCode": "상태 코드",
+  "error.details.provider": "제공자",
+  "error.details.retryable": "재시도 가능",
+  "error.details.retries": "재시도 횟수",
+  "error.details.responseBody": "응답",
 }

@@ -116,4 +116,12 @@ export const dict = {
   "ui.question.multiHint": "해당하는 항목 모두 선택",
   "ui.question.singleHint": "하나의 답변을 선택",
   "ui.question.custom.placeholder": "답변 입력...",
+
+  "error.details.show": "상세 정보",
+  "error.details.type": "유형",
+  "error.details.statusCode": "상태 코드",
+  "error.details.provider": "제공자",
+  "error.details.retryable": "재시도 가능",
+  "error.details.retries": "재시도 횟수",
+  "error.details.responseBody": "응답",
 }

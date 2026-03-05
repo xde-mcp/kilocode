@@ -736,4 +736,12 @@ export const dict = {
   "workspace.reset.archived.one": "1개의 세션이 보관됩니다.",
   "workspace.reset.archived.many": "{{count}}개의 세션이 보관됩니다.",
   "workspace.reset.note": "이 작업은 작업 공간을 기본 브랜치와 일치하도록 재설정합니다.",
+
+  "error.details.show": "상세 정보",
+  "error.details.type": "유형",
+  "error.details.statusCode": "상태 코드",
+  "error.details.provider": "제공자",
+  "error.details.retryable": "재시도 가능",
+  "error.details.retries": "재시도 횟수",
+  "error.details.responseBody": "응답",
 }

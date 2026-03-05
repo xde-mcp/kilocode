@@ -116,4 +116,12 @@ export const dict = {
   "ui.question.multiHint": "حدد كل ما ينطبق",
   "ui.question.singleHint": "حدد إجابة واحدة",
   "ui.question.custom.placeholder": "اكتب إجابتك...",
+
+  "error.details.show": "التفاصيل",
+  "error.details.type": "النوع",
+  "error.details.statusCode": "رمز الحالة",
+  "error.details.provider": "المزود",
+  "error.details.retryable": "قابل لإعادة المحاولة",
+  "error.details.retries": "المحاولات",
+  "error.details.responseBody": "الاستجابة",
 }

@@ -736,4 +736,12 @@ export const dict = {
   "workspace.reset.archived.one": "1つのセッションがアーカイブされます。",
   "workspace.reset.archived.many": "{{count}}個のセッションがアーカイブされます。",
   "workspace.reset.note": "これにより、ワークスペースはデフォルトブランチと一致するようにリセットされます。",
+
+  "error.details.show": "詳細",
+  "error.details.type": "タイプ",
+  "error.details.statusCode": "ステータスコード",
+  "error.details.provider": "プロバイダー",
+  "error.details.retryable": "リトライ可能",
+  "error.details.retries": "リトライ回数",
+  "error.details.responseBody": "レスポンス",
 }

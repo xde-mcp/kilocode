@@ -1024,4 +1024,12 @@ export const dict = {
     "การดำเนินการนี้จะลบการตั้งค่าเก่าออกจากพื้นที่เก็บข้อมูลของ VS Code คุณจะไม่สามารถเรียกใช้การย้ายข้อมูลนี้ซ้ำได้อีก",
   "migration.complete.done": "เสร็จสิ้น",
   // legacy-migration end
+
+  "error.details.show": "รายละเอียด",
+  "error.details.type": "ประเภท",
+  "error.details.statusCode": "รหัสสถานะ",
+  "error.details.provider": "ผู้ให้บริการ",
+  "error.details.retryable": "ลองใหม่ได้",
+  "error.details.retries": "จำนวนครั้งที่ลอง",
+  "error.details.responseBody": "การตอบกลับ",
 }

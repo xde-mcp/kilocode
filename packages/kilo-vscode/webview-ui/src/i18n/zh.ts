@@ -1017,4 +1017,12 @@ export const dict = {
   "migration.complete.cleanupDescription": "这将从 VS Code 存储中移除旧设置。您将无法再次运行此迁移。",
   "migration.complete.done": "完成",
   // legacy-migration end
+
+  "error.details.show": "详细信息",
+  "error.details.type": "类型",
+  "error.details.statusCode": "状态码",
+  "error.details.provider": "提供商",
+  "error.details.retryable": "可重试",
+  "error.details.retries": "重试次数",
+  "error.details.responseBody": "响应",
 } satisfies Partial<Record<Keys, string>>

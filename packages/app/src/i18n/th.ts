@@ -808,4 +808,12 @@ export const dict = {
   "workspace.reset.archived.one": "1 เซสชันจะถูกจัดเก็บ",
   "workspace.reset.archived.many": "{{count}} เซสชันจะถูกจัดเก็บ",
   "workspace.reset.note": "สิ่งนี้จะรีเซ็ตพื้นที่ทำงานให้ตรงกับสาขาเริ่มต้น",
+
+  "error.details.show": "รายละเอียด",
+  "error.details.type": "ประเภท",
+  "error.details.statusCode": "รหัสสถานะ",
+  "error.details.provider": "ผู้ให้บริการ",
+  "error.details.retryable": "ลองใหม่ได้",
+  "error.details.retries": "จำนวนครั้งที่ลอง",
+  "error.details.responseBody": "การตอบกลับ",
 }
