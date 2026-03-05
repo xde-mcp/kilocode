@@ -231,6 +231,23 @@ const questionToolPart: ToolPart = {
   },
 }
 
+const questionDismissedPart: ToolPart = {
+  id: "part-question-dismissed-001",
+  sessionID: SESSION_ID,
+  messageID: ASST_MSG_ID,
+  type: "tool",
+  callID: "call-question-dismissed-001",
+  tool: "question",
+  state: {
+    status: "error",
+    input: { question: "Which testing framework?", options: [] },
+    error: "Error: User dismissed this question",
+    title: "Question dismissed",
+    metadata: {},
+    time: { start: now - 2000, end: now - 1500 },
+  },
+}
+
 // ---------------------------------------------------------------------------
 // Data helpers
 // ---------------------------------------------------------------------------
@@ -452,6 +469,22 @@ export const InlineQuestion: Story = {
     const data = dataWith([textPart, questionToolPart])
     return (
       <StoryProviders data={data} questions={qs} sessionID={SESSION_ID}>
+        <AssistantMessage message={baseAssistantMessage} />
+      </StoryProviders>
+    )
+  },
+}
+
+// ---------------------------------------------------------------------------
+// 9. Dismissed question (right-aligned "Questions dismissed" text)
+// ---------------------------------------------------------------------------
+
+export const QuestionDismissed: Story = {
+  name: "Question Dismissed",
+  render: () => {
+    const data = dataWith([textPart, questionDismissedPart])
+    return (
+      <StoryProviders data={data} sessionID={SESSION_ID}>
         <AssistantMessage message={baseAssistantMessage} />
       </StoryProviders>
     )
