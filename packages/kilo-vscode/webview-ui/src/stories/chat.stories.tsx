@@ -70,7 +70,7 @@ const multiQuestion: QuestionRequest = {
 
 const meta: Meta = {
   title: "Chat",
-  parameters: { layout: "padded" },
+  parameters: { layout: "fullscreen" },
 }
 export default meta
 type Story = StoryObj
@@ -83,7 +83,7 @@ export const ChatViewIdle: Story = {
   name: "ChatView — idle (empty)",
   render: () => (
     <StoryProviders sessionID={SESSION_ID} status="idle">
-      <div style={{ width: "420px", height: "600px", display: "flex", "flex-direction": "column" }}>
+      <div style={{ width: "100%", height: "600px", display: "flex", "flex-direction": "column" }}>
         <ChatView />
       </div>
     </StoryProviders>
@@ -103,7 +103,7 @@ export const ChatViewWithMessages: Story = {
     return (
       <StoryProviders sessionID={SESSION_ID} status="idle" noPadding>
         <SessionContext.Provider value={session as any}>
-          <div style={{ width: "420px", height: "200px", display: "flex", "flex-direction": "column" }}>
+          <div style={{ width: "100%", height: "200px", display: "flex", "flex-direction": "column" }}>
             <ChatView />
           </div>
         </SessionContext.Provider>
@@ -120,7 +120,7 @@ export const QuestionDockSingle: Story = {
   name: "QuestionDock — single question",
   render: () => (
     <StoryProviders sessionID={SESSION_ID} questions={[singleQuestion]}>
-      <div style={{ width: "420px" }}>
+      <div style={{ width: "100%" }}>
         <QuestionDock request={singleQuestion} />
       </div>
     </StoryProviders>
@@ -131,7 +131,7 @@ export const QuestionDockMulti: Story = {
   name: "QuestionDock — multi-question wizard",
   render: () => (
     <StoryProviders sessionID={SESSION_ID} questions={[multiQuestion]}>
-      <div style={{ width: "420px" }}>
+      <div style={{ width: "100%" }}>
         <QuestionDock request={multiQuestion} />
       </div>
     </StoryProviders>
