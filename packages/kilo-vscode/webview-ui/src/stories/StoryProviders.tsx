@@ -9,7 +9,7 @@
  * thing so components that call useVSCode()/useServer()/useProvider() don't throw.
  */
 
-import { createSignal, type ParentComponent } from "solid-js"
+import { createSignal, onMount, type ParentComponent } from "solid-js"
 import { VSCodeProvider } from "../context/vscode"
 import { ServerProvider } from "../context/server"
 import { ProviderProvider } from "../context/provider"
@@ -57,6 +57,35 @@ export const defaultMockData = {
 
 function noop() {}
 
+/** Dispatch a providersLoaded message so ProviderProvider has real model data. */
+export function dispatchMockProviders() {
+  window.dispatchEvent(
+    new MessageEvent("message", {
+      data: {
+        type: "providersLoaded",
+        providers: {
+          kilo: {
+            id: "kilo",
+            name: "Kilo",
+            env: [],
+            models: {
+              "anthropic/claude-sonnet-4-5": {
+                id: "anthropic/claude-sonnet-4-5",
+                name: "Anthropic: Claude Sonnet 4.5",
+                inputPrice: 0.003,
+                outputPrice: 0.015,
+              },
+            },
+          },
+        },
+        connected: ["kilo"],
+        defaults: {},
+        defaultSelection: { providerID: "kilo", modelID: "anthropic/claude-sonnet-4-5" },
+      },
+    }),
+  )
+}
+
 export function mockSessionValue(overrides?: {
   id?: string
   permissions?: PermissionRequest[]
@@ -93,7 +122,7 @@ export function mockSessionValue(overrides?: {
     permissions: () => permissions,
     questions: () => qs,
     questionErrors: () => new Set<string>(),
-    selected: () => ({ providerID: "anthropic", modelID: "claude-sonnet-4-20250514" }),
+    selected: () => ({ providerID: "kilo", modelID: "anthropic/claude-sonnet-4-5" }),
     selectModel: noop,
     totalCost: () => 0,
     contextUsage: () => undefined,
@@ -101,7 +130,7 @@ export function mockSessionValue(overrides?: {
     selectedAgent: () => "code",
     selectAgent: noop,
     getSessionAgent: () => "code",
-    getSessionModel: () => ({ providerID: "anthropic", modelID: "claude-sonnet-4-20250514" }),
+    getSessionModel: () => ({ providerID: "kilo", modelID: "anthropic/claude-sonnet-4-5" }),
     setSessionModel: noop,
     setSessionAgent: noop,
     variantList: () => [],
@@ -148,6 +177,8 @@ export const StoryProviders: ParentComponent<StoryProvidersProps> = (props) => {
     status: props.status,
   })
   const [locale] = createSignal<"en">("en")
+
+  onMount(() => dispatchMockProviders())
 
   return (
     <VSCodeProvider>
