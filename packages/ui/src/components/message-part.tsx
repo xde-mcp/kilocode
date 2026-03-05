@@ -973,7 +973,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
               const cleaned = error().replace("Error: ", "")
               if (part.tool === "question" && cleaned.includes("dismissed this question")) {
                 return (
-                  <div style="width: 100%; display: flex; justify-content: flex-end;">
+                  <div style="width: 100%; display: flex; justify-content: flex-end; padding: 4px 0;">
                     <span class="text-13-regular text-text-weak cursor-default">
                       {i18n.t("ui.tool.questions")} dismissed
                     </span>
