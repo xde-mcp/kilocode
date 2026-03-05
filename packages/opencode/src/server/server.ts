@@ -19,7 +19,6 @@ import { Agent } from "../agent/agent"
 import { Skill } from "../skill/skill"
 import { Auth } from "../auth"
 import { ModelCache } from "../provider/model-cache" // kilocode_change
-import { scheduleDisposeAll } from "../kilocode/dispose" // kilocode_change
 import { Flag } from "../flag/flag"
 import { Command } from "../command"
 import { Global } from "../global"

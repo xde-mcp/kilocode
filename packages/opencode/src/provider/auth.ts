@@ -8,7 +8,6 @@ import { NamedError } from "@opencode-ai/util/error"
 import { Auth } from "@/auth"
 import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
 import { ModelCache } from "./model-cache" // kilocode_change
-import { scheduleDisposeAll } from "../kilocode/dispose" // kilocode_change
 
 export namespace ProviderAuth {
   const state = Instance.state(async () => {
