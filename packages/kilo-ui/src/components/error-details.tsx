@@ -1,6 +1,4 @@
 import type { AssistantMessage } from "@kilocode/sdk/v2/client"
-import { For, Show } from "solid-js"
-import { useI18n, type UiI18nKey } from "@opencode-ai/ui/context/i18n"
 
 type ErrorType = NonNullable<AssistantMessage["error"]>
 
@@ -14,78 +12,11 @@ interface ErrorDetailsProps {
 }
 
 export function ErrorDetails(props: ErrorDetailsProps) {
-  const i18n = useI18n()
-  const t = (key: string) => i18n.t(key as UiI18nKey)
-
-  const rows = () => {
-    const error = props.error
-    const result: Array<{ label: string; value: string; pre?: boolean }> = []
-
-    result.push({ label: t("error.details.type"), value: error.name })
-
-    switch (error.name) {
-      case "APIError": {
-        if (error.data.statusCode) {
-          result.push({ label: t("error.details.statusCode"), value: String(error.data.statusCode) })
-        }
-        result.push({ label: t("error.details.retryable"), value: error.data.isRetryable ? "Yes" : "No" })
-        if (error.data.responseBody) {
-          result.push({ label: t("error.details.responseBody"), value: error.data.responseBody, pre: true })
-        }
-        if (error.data.metadata && Object.keys(error.data.metadata).length > 0) {
-          result.push({
-            label: "Metadata",
-            value: JSON.stringify(error.data.metadata, null, 2),
-            pre: true,
-          })
-        }
-        break
-      }
-      case "ProviderAuthError": {
-        result.push({ label: t("error.details.provider"), value: error.data.providerID })
-        break
-      }
-      case "ContextOverflowError": {
-        if (error.data.responseBody) {
-          result.push({ label: t("error.details.responseBody"), value: error.data.responseBody, pre: true })
-        }
-        break
-      }
-      case "StructuredOutputError": {
-        result.push({ label: t("error.details.retries"), value: String(error.data.retries) })
-        break
-      }
-      case "MessageOutputLengthError": {
-        const data = error.data
-        if (Object.keys(data).length > 0) {
-          result.push({ label: "Data", value: JSON.stringify(data, null, 2), pre: true })
-        }
-        break
-      }
-      default: {
-        const data = (error as { data?: unknown }).data
-        if (data && typeof data === "object" && Object.keys(data).length > 0) {
-          result.push({ label: "Data", value: JSON.stringify(data, null, 2), pre: true })
-        }
-        break
-      }
-    }
-
-    return result
-  }
+  const raw = () => JSON.stringify(props.error, null, 2)
 
   return (
     <div class="error-details">
-      <For each={rows()}>
-        {(row) => (
-          <div class="error-detail-row">
-            <span class="error-detail-label">{row.label}</span>
-            <Show when={row.pre} fallback={<span class="error-detail-value">{row.value}</span>}>
-              <pre class="error-detail-pre">{row.value}</pre>
-            </Show>
-          </div>
-        )}
-      </For>
+      <pre class="error-detail-pre">{raw()}</pre>
     </div>
   )
 }
