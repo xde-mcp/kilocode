@@ -1662,7 +1662,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     await this.client.global.dispose().catch((e: unknown) =>
-      console.warn("[Kilo New] KiloProvider: global.dispose() after login failed:", e),
+      console.warn("[Kilo New] KiloProvider: global.dispose() after org switch failed:", e),
     )
 
     // Org switch succeeded — refresh profile and providers independently (best-effort)
@@ -1717,6 +1717,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "profileData",
         data: null,
       })
+
+      await this.client.global.dispose().catch((e: unknown) =>
+      console.warn("[Kilo New] KiloProvider: global.dispose() after logout failed:", e),
+      )
+
     } catch (error) {
       console.error("[Kilo New] KiloProvider: ❌ Logout failed:", error)
       this.postMessage({
@@ -1725,9 +1730,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       })
     }
 
-    await this.client.global.dispose().catch((e: unknown) =>
-      console.warn("[Kilo New] KiloProvider: global.dispose() after login failed:", e),
-    )
+
   }
 
   /**
