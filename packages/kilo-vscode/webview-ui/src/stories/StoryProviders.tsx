@@ -96,35 +96,6 @@ export const defaultMockData = {
 
 function noop() {}
 
-/** Dispatch a providersLoaded message so ProviderProvider has real model data. */
-export function dispatchMockProviders() {
-  window.dispatchEvent(
-    new MessageEvent("message", {
-      data: {
-        type: "providersLoaded",
-        providers: {
-          kilo: {
-            id: "kilo",
-            name: "Kilo",
-            env: [],
-            models: {
-              "anthropic/claude-sonnet-4-5": {
-                id: "anthropic/claude-sonnet-4-5",
-                name: "Anthropic: Claude Sonnet 4.5",
-                inputPrice: 0.003,
-                outputPrice: 0.015,
-              },
-            },
-          },
-        },
-        connected: ["kilo"],
-        defaults: {},
-        defaultSelection: { providerID: "kilo", modelID: "anthropic/claude-sonnet-4-5" },
-      },
-    }),
-  )
-}
-
 export function mockSessionValue(overrides?: {
   id?: string
   permissions?: PermissionRequest[]
