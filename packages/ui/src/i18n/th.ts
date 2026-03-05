@@ -117,12 +117,4 @@ export const dict = {
   "ui.question.multiHint": "เลือกทั้งหมดที่ใช้",
   "ui.question.singleHint": "เลือกหนึ่งคำตอบ",
   "ui.question.custom.placeholder": "พิมพ์คำตอบของคุณ...",
-
-  "error.details.show": "รายละเอียด",
-  "error.details.type": "ประเภท",
-  "error.details.statusCode": "รหัสสถานะ",
-  "error.details.provider": "ผู้ให้บริการ",
-  "error.details.retryable": "ลองใหม่ได้",
-  "error.details.retries": "จำนวนครั้งที่ลอง",
-  "error.details.responseBody": "การตอบกลับ",
 }

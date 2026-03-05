@@ -116,12 +116,4 @@ export const dict = {
   "ui.question.multiHint": "Vælg alle der gælder",
   "ui.question.singleHint": "Vælg ét svar",
   "ui.question.custom.placeholder": "Skriv dit svar...",
-
-  "error.details.show": "Detaljer",
-  "error.details.type": "Type",
-  "error.details.statusCode": "Statuskode",
-  "error.details.provider": "Udbyder",
-  "error.details.retryable": "Kan forsøges igen",
-  "error.details.retries": "Forsøg",
-  "error.details.responseBody": "Svar",
 }

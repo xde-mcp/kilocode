@@ -120,12 +120,4 @@ export const dict: Record<Keys, string> = {
   "ui.question.multiHint": "Velg alle som gjelder",
   "ui.question.singleHint": "Velg ett svar",
   "ui.question.custom.placeholder": "Skriv svaret ditt...",
-
-  "error.details.show": "Detaljer",
-  "error.details.type": "Type",
-  "error.details.statusCode": "Statuskode",
-  "error.details.provider": "Leverandør",
-  "error.details.retryable": "Kan forsøkes på nytt",
-  "error.details.retries": "Forsøk",
-  "error.details.responseBody": "Respons",
 }

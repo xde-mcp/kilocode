@@ -116,12 +116,4 @@ export const dict = {
   "ui.question.multiHint": "Выберите все подходящие",
   "ui.question.singleHint": "Выберите один ответ",
   "ui.question.custom.placeholder": "Введите ваш ответ...",
-
-  "error.details.show": "Подробности",
-  "error.details.type": "Тип",
-  "error.details.statusCode": "Код статуса",
-  "error.details.provider": "Провайдер",
-  "error.details.retryable": "Повторяемый",
-  "error.details.retries": "Попытки",
-  "error.details.responseBody": "Ответ",
 }

@@ -120,12 +120,4 @@ export const dict = {
   "ui.question.multiHint": "Alle zutreffenden auswählen",
   "ui.question.singleHint": "Eine Antwort auswählen",
   "ui.question.custom.placeholder": "Geben Sie Ihre Antwort ein...",
-
-  "error.details.show": "Details",
-  "error.details.type": "Typ",
-  "error.details.statusCode": "Statuscode",
-  "error.details.provider": "Anbieter",
-  "error.details.retryable": "Wiederholbar",
-  "error.details.retries": "Versuche",
-  "error.details.responseBody": "Antwort",
 } satisfies Partial<Record<Keys, string>>

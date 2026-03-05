@@ -1,84 +1,55 @@
 /** @jsxImportSource solid-js */
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { SessionTurn } from "@opencode-ai/ui/session-turn"
-import { DataProvider } from "@opencode-ai/ui/context/data"
-import { DiffComponentProvider } from "@opencode-ai/ui/context/diff"
-import { DialogProvider } from "@opencode-ai/ui/context/dialog"
-import { MarkedProvider } from "@opencode-ai/ui/context/marked"
-import { Diff } from "@opencode-ai/ui/diff"
-import type { UserMessage, AssistantMessage, TextPart } from "@kilocode/sdk/v2"
+import type { AssistantMessage } from "@kilocode/sdk/v2"
+import type { UiI18nKey, UiI18nParams } from "@opencode-ai/ui/context/i18n"
+import { I18nProvider } from "@opencode-ai/ui/context/i18n"
+import { Card } from "@opencode-ai/ui/card"
+import { Collapsible } from "@opencode-ai/ui/collapsible"
+import { ErrorDetails, hasErrorDetails } from "../components/error-details"
+import { Show } from "solid-js"
 
-const now = Date.now()
+type ErrorType = NonNullable<AssistantMessage["error"]>
 
-function makeSession(id: string, error: AssistantMessage["error"]) {
-  const sessionID = `error-details-${id}`
-  const userMsgID = `user-msg-${id}`
-  const asstMsgID = `asst-msg-${id}`
-
-  const userMessage: UserMessage = {
-    id: userMsgID,
-    sessionID,
-    role: "user",
-    time: { created: now - 10000 },
-    agent: "default",
-    model: { providerID: "anthropic", modelID: "claude-3-5-sonnet" },
-  }
-
-  const assistantMessage: AssistantMessage = {
-    id: asstMsgID,
-    sessionID,
-    role: "assistant",
-    parentID: userMsgID,
-    time: { created: now - 9000, completed: now - 8000 },
-    modelID: "claude-3-5-sonnet",
-    providerID: "anthropic",
-    mode: "default",
-    agent: "default",
-    path: { cwd: "/project", root: "/project" },
-    cost: 0,
-    tokens: { total: 0, input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } },
-    error,
-  }
-
-  const userTextPart: TextPart = {
-    id: `part-user-${id}`,
-    sessionID,
-    messageID: userMsgID,
-    type: "text",
-    text: "Tell me about SolidJS signals.",
-  }
-
-  const data = {
-    session: [],
-    session_status: { [sessionID]: { type: "idle" as const } },
-    session_diff: {},
-    message: { [sessionID]: [userMessage, assistantMessage] },
-    part: { [userMsgID]: [userTextPart], [asstMsgID]: [] },
-  }
-
-  return { sessionID, userMsgID, data }
+const labels: Record<string, string> = {
+  "error.details.show": "Details",
+  "error.details.type": "Type",
+  "error.details.statusCode": "Status code",
+  "error.details.provider": "Provider",
+  "error.details.retryable": "Retryable",
+  "error.details.retries": "Retries",
+  "error.details.responseBody": "Response",
 }
 
-function Providers(props: { data: any; children: any }) {
-  return (
-    <DataProvider data={props.data} directory="/project">
-      <DiffComponentProvider component={Diff}>
-        <DialogProvider>
-          <MarkedProvider>{props.children}</MarkedProvider>
-        </DialogProvider>
-      </DiffComponentProvider>
-    </DataProvider>
-  )
+const i18nValue = {
+  locale: () => "en",
+  t: (key: UiI18nKey, _params?: UiI18nParams) => labels[key] ?? key,
 }
 
-function ErrorStory(props: { id: string; error: AssistantMessage["error"] }) {
-  const { sessionID, userMsgID, data } = makeSession(props.id, props.error)
+function ErrorCard(props: { error: ErrorType; defaultOpen?: boolean }) {
+  const message =
+    "data" in props.error && typeof props.error.data === "object" && "message" in props.error.data
+      ? String(props.error.data.message)
+      : props.error.name
+
   return (
-    <Providers data={data}>
-      <div style={{ width: "700px" }}>
-        <SessionTurn sessionID={sessionID} messageID={userMsgID} lastUserMessageID={userMsgID} />
+    <I18nProvider value={i18nValue}>
+      <div style={{ width: "600px" }}>
+        <Card variant="error" class="error-card">
+          <div>{message}</div>
+          <Show when={hasErrorDetails(props.error)}>
+            <Collapsible variant="ghost" defaultOpen={props.defaultOpen}>
+              <Collapsible.Trigger class="error-details-trigger">
+                <span>Details</span>
+                <Collapsible.Arrow />
+              </Collapsible.Trigger>
+              <Collapsible.Content>
+                <ErrorDetails error={props.error} />
+              </Collapsible.Content>
+            </Collapsible>
+          </Show>
+        </Card>
       </div>
-    </Providers>
+    </I18nProvider>
   )
 }
 
@@ -90,10 +61,11 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-export const ApiError: Story = {
+export const ApiErrorExpanded: Story = {
+  name: "API Error (expanded)",
   render: () => (
-    <ErrorStory
-      id="api"
+    <ErrorCard
+      defaultOpen
       error={{
         name: "APIError",
         data: {
@@ -117,11 +89,10 @@ export const ApiError: Story = {
   ),
 }
 
-export const ApiErrorMinimal: Story = {
-  name: "API Error (minimal)",
+export const ApiErrorCollapsed: Story = {
+  name: "API Error (collapsed)",
   render: () => (
-    <ErrorStory
-      id="api-min"
+    <ErrorCard
       error={{
         name: "APIError",
         data: {
@@ -134,10 +105,11 @@ export const ApiErrorMinimal: Story = {
   ),
 }
 
-export const ProviderAuthError: Story = {
+export const ProviderAuthErrorExpanded: Story = {
+  name: "Provider Auth Error (expanded)",
   render: () => (
-    <ErrorStory
-      id="auth"
+    <ErrorCard
+      defaultOpen
       error={{
         name: "ProviderAuthError",
         data: {
@@ -149,10 +121,11 @@ export const ProviderAuthError: Story = {
   ),
 }
 
-export const ContextOverflowError: Story = {
+export const ContextOverflowExpanded: Story = {
+  name: "Context Overflow (expanded)",
   render: () => (
-    <ErrorStory
-      id="ctx"
+    <ErrorCard
+      defaultOpen
       error={{
         name: "ContextOverflowError",
         data: {
@@ -164,10 +137,11 @@ export const ContextOverflowError: Story = {
   ),
 }
 
-export const StructuredOutputError: Story = {
+export const StructuredOutputExpanded: Story = {
+  name: "Structured Output Error (expanded)",
   render: () => (
-    <ErrorStory
-      id="struct"
+    <ErrorCard
+      defaultOpen
       error={{
         name: "StructuredOutputError",
         data: {
@@ -179,11 +153,10 @@ export const StructuredOutputError: Story = {
   ),
 }
 
-export const UnknownError: Story = {
+export const UnknownErrorNoDetails: Story = {
   name: "Unknown Error (no details)",
   render: () => (
-    <ErrorStory
-      id="unknown"
+    <ErrorCard
       error={{
         name: "UnknownError",
         data: {
