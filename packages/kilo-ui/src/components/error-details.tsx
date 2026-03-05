@@ -6,20 +6,7 @@ type ErrorType = NonNullable<AssistantMessage["error"]>
 
 export function hasErrorDetails(error: ErrorType | undefined): boolean {
   if (!error) return false
-  switch (error.name) {
-    case "APIError":
-      return !!(error.data.statusCode || error.data.responseBody || error.data.metadata)
-    case "ProviderAuthError":
-      return !!error.data.providerID
-    case "ContextOverflowError":
-      return !!error.data.responseBody
-    case "StructuredOutputError":
-      return error.data.retries > 0
-    case "MessageOutputLengthError":
-      return Object.keys(error.data).length > 0
-    default:
-      return false
-  }
+  return true
 }
 
 interface ErrorDetailsProps {
@@ -71,6 +58,13 @@ export function ErrorDetails(props: ErrorDetailsProps) {
       case "MessageOutputLengthError": {
         const data = error.data
         if (Object.keys(data).length > 0) {
+          result.push({ label: "Data", value: JSON.stringify(data, null, 2), pre: true })
+        }
+        break
+      }
+      default: {
+        const data = (error as { data?: unknown }).data
+        if (data && typeof data === "object" && Object.keys(data).length > 0) {
           result.push({ label: "Data", value: JSON.stringify(data, null, 2), pre: true })
         }
         break

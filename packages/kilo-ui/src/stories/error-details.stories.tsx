@@ -153,10 +153,11 @@ export const StructuredOutputExpanded: Story = {
   ),
 }
 
-export const UnknownErrorNoDetails: Story = {
-  name: "Unknown Error (no details)",
+export const UnknownErrorExpanded: Story = {
+  name: "Unknown Error (expanded)",
   render: () => (
     <ErrorCard
+      defaultOpen
       error={{
         name: "UnknownError",
         data: {
