@@ -31,24 +31,24 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
       </Card>
     }>
       <Match when={isUnauthorizedPaidModelError(parsed())}>
-        <div>
-          <div>
-            <span>✨</span>
-            <span>You need to sign in to use this model</span>
+        <div data-component="auth-prompt">
+          <div data-slot="auth-prompt-header">
+            <span data-slot="auth-prompt-icon">✨</span>
+            <span data-slot="auth-prompt-title">You need to sign in to use this model</span>
           </div>
-          <p>
+          <p data-slot="auth-prompt-description">
             Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.
           </p>
           <Button variant="primary" onClick={() => props.onLogin?.()}>Sign In</Button>
         </div>
       </Match>
       <Match when={isUnauthorizedPromotionLimitError(parsed())}>
-        <div>
-          <div>
-            <span>🕙</span>
-            <span>You need to sign up to keep going</span>
+        <div data-component="auth-prompt">
+          <div data-slot="auth-prompt-header">
+            <span data-slot="auth-prompt-icon">🕙</span>
+            <span data-slot="auth-prompt-title">You need to sign up to keep going</span>
           </div>
-          <p>
+          <p data-slot="auth-prompt-description">
             Sign up for free to continue and explore 500 other models. Takes 2 minutes, no credit card required. Or come back later.
           </p>
           <Button variant="primary" onClick={() => props.onLogin?.()}>Sign Up</Button>
