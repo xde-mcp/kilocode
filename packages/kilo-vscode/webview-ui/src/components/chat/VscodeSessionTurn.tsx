@@ -28,6 +28,8 @@ import type {
   Part as SDKPart,
   FileDiff,
 } from "@kilocode/sdk/v2"
+import { ErrorDisplay } from "./ErrorDisplay"
+
 function getDirectory(path: string): string {
   const sep = path.includes("/") ? "/" : "\\"
   const idx = path.lastIndexOf(sep)
@@ -326,11 +328,9 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
             </div>
           </Show>
 
-          {/* Error card */}
+          {/* Error handling */}
           <Show when={error()}>
-            <Card variant="error" class="error-card">
-              {errorText()}
-            </Card>
+            <ErrorDisplay error={error()!} />
           </Show>
         </div>
       )}
