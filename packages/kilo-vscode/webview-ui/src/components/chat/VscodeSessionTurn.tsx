@@ -16,7 +16,6 @@ import { Collapsible } from "@kilocode/kilo-ui/collapsible"
 import { Accordion } from "@kilocode/kilo-ui/accordion"
 import { DiffChanges } from "@kilocode/kilo-ui/diff-changes"
 import { Icon } from "@kilocode/kilo-ui/icon"
-import { Card } from "@kilocode/kilo-ui/card"
 import { StickyAccordionHeader } from "@kilocode/kilo-ui/sticky-accordion-header"
 import { useData } from "@kilocode/kilo-ui/context/data"
 import { useDiffComponent } from "@kilocode/kilo-ui/context/diff"
@@ -29,7 +28,7 @@ import type {
   FileDiff,
 } from "@kilocode/sdk/v2"
 import { ErrorDisplay } from "./ErrorDisplay"
-import { unwrapError } from "../../utils/errorUtils"
+import { useServer } from "../../context/server"
 
 function getDirectory(path: string): string {
   const sep = path.includes("/") ? "/" : "\\"
@@ -53,6 +52,7 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
   const data = useData()
   const i18n = useI18n()
   const diffComponent = useDiffComponent()
+  const server = useServer()
 
   const emptyMessages: SDKMessage[] = []
   const emptyParts: SDKPart[] = []
@@ -99,13 +99,6 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
   const error = createMemo(
     () => assistantMessages().find((m) => m.error && m.error.name !== "MessageAbortedError")?.error,
   )
-
-  const errorText = createMemo(() => {
-    const msg = error()?.data?.message
-    if (typeof msg === "string") return unwrapError(msg)
-    if (msg === undefined || msg === null) return ""
-    return unwrapError(String(msg))
-  })
 
   // Diffs from message summary
   const diffs = createMemo(() => {
@@ -289,7 +282,7 @@ export const VscodeSessionTurn: Component<VscodeSessionTurnProps> = (props) => {
 
           {/* Error handling */}
           <Show when={error()}>
-            <ErrorDisplay error={error()!} />
+            <ErrorDisplay error={error()!} onLogin={server.startLogin} />
           </Show>
         </div>
       )}
