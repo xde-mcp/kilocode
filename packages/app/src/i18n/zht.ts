@@ -801,12 +801,4 @@ export const dict = {
   "workspace.reset.archived.one": "將封存 1 個工作階段。",
   "workspace.reset.archived.many": "將封存 {{count}} 個工作階段。",
   "workspace.reset.note": "這將把工作區重設為與預設分支一致。",
-
-  "error.details.show": "詳細資訊",
-  "error.details.type": "類型",
-  "error.details.statusCode": "狀態碼",
-  "error.details.provider": "提供者",
-  "error.details.retryable": "可重試",
-  "error.details.retries": "重試次數",
-  "error.details.responseBody": "回應",
 } satisfies Partial<Record<Keys, string>>

@@ -5,19 +5,12 @@ import type { UiI18nKey, UiI18nParams } from "@opencode-ai/ui/context/i18n"
 import { I18nProvider } from "@opencode-ai/ui/context/i18n"
 import { Card } from "@opencode-ai/ui/card"
 import { Collapsible } from "@opencode-ai/ui/collapsible"
-import { ErrorDetails, hasErrorDetails } from "../components/error-details"
-import { Show } from "solid-js"
+import { ErrorDetails } from "../components/error-details"
 
 type ErrorType = NonNullable<AssistantMessage["error"]>
 
 const labels: Record<string, string> = {
   "error.details.show": "Details",
-  "error.details.type": "Type",
-  "error.details.statusCode": "Status code",
-  "error.details.provider": "Provider",
-  "error.details.retryable": "Retryable",
-  "error.details.retries": "Retries",
-  "error.details.responseBody": "Response",
 }
 
 const i18nValue = {
@@ -36,17 +29,15 @@ function ErrorCard(props: { error: ErrorType; defaultOpen?: boolean }) {
       <div style={{ width: "600px" }}>
         <Card variant="error" class="error-card">
           <div>{message}</div>
-          <Show when={hasErrorDetails(props.error)}>
-            <Collapsible variant="ghost" defaultOpen={props.defaultOpen}>
-              <Collapsible.Trigger class="error-details-trigger">
-                <span>Details</span>
-                <Collapsible.Arrow />
-              </Collapsible.Trigger>
-              <Collapsible.Content>
-                <ErrorDetails error={props.error} />
-              </Collapsible.Content>
-            </Collapsible>
-          </Show>
+          <Collapsible variant="ghost" defaultOpen={props.defaultOpen}>
+            <Collapsible.Trigger class="error-details-trigger">
+              <span>Details</span>
+              <Collapsible.Arrow />
+            </Collapsible.Trigger>
+            <Collapsible.Content>
+              <ErrorDetails error={props.error} />
+            </Collapsible.Content>
+          </Collapsible>
         </Card>
       </div>
     </I18nProvider>

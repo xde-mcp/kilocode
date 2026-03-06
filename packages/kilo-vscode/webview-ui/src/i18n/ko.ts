@@ -1047,10 +1047,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "상세 정보",
-  "error.details.type": "유형",
-  "error.details.statusCode": "상태 코드",
-  "error.details.provider": "제공자",
-  "error.details.retryable": "재시도 가능",
-  "error.details.retries": "재시도 횟수",
-  "error.details.responseBody": "응답",
 }

@@ -823,12 +823,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 sesión será archivada.",
   "workspace.reset.archived.many": "{{count}} sesiones serán archivadas.",
   "workspace.reset.note": "Esto restablecerá el espacio de trabajo para coincidir con la rama predeterminada.",
-
-  "error.details.show": "Detalles",
-  "error.details.type": "Tipo",
-  "error.details.statusCode": "Código de estado",
-  "error.details.provider": "Proveedor",
-  "error.details.retryable": "Reintentable",
-  "error.details.retries": "Reintentos",
-  "error.details.responseBody": "Respuesta",
 }

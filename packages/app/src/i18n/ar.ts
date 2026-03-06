@@ -731,12 +731,4 @@ export const dict = {
   "workspace.reset.archived.one": "ستتم أرشفة جلسة واحدة.",
   "workspace.reset.archived.many": "ستتم أرشفة {{count}} جلسات.",
   "workspace.reset.note": "سيؤدي هذا إلى إعادة تعيين مساحة العمل لتتطابق مع الفرع الافتراضي.",
-
-  "error.details.show": "التفاصيل",
-  "error.details.type": "النوع",
-  "error.details.statusCode": "رمز الحالة",
-  "error.details.provider": "المزود",
-  "error.details.retryable": "قابل لإعادة المحاولة",
-  "error.details.retries": "المحاولات",
-  "error.details.responseBody": "الاستجابة",
 }

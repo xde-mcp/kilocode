@@ -1043,10 +1043,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "รายละเอียด",
-  "error.details.type": "ประเภท",
-  "error.details.statusCode": "รหัสสถานะ",
-  "error.details.provider": "ผู้ให้บริการ",
-  "error.details.retryable": "ลองใหม่ได้",
-  "error.details.retries": "จำนวนครั้งที่ลอง",
-  "error.details.responseBody": "การตอบกลับ",
 }

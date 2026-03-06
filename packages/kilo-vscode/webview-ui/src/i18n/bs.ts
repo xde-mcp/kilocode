@@ -1055,10 +1055,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "Detalji",
-  "error.details.type": "Tip",
-  "error.details.statusCode": "Statusni kod",
-  "error.details.provider": "Provajder",
-  "error.details.retryable": "Ponovljivo",
-  "error.details.retries": "Pokušaji",
-  "error.details.responseBody": "Odgovor",
 }

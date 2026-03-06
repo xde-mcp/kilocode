@@ -27,23 +27,6 @@
   margin-top: 4px;
 }
 
-.error-detail-row {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-}
-
-.error-detail-label {
-  font-weight: var(--font-weight-medium, 500);
-  white-space: nowrap;
-  min-width: 70px;
-  flex-shrink: 0;
-}
-
-.error-detail-value {
-  word-break: break-all;
-}
-
 .error-detail-pre {
   margin: 0;
   max-height: 120px;

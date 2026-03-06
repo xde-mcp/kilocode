@@ -811,12 +811,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 session vil blive arkiveret.",
   "workspace.reset.archived.many": "{{count}} sessioner vil blive arkiveret.",
   "workspace.reset.note": "Dette vil nulstille arbejdsområdet til at matche hovedgrenen.",
-
-  "error.details.show": "Detaljer",
-  "error.details.type": "Type",
-  "error.details.statusCode": "Statuskode",
-  "error.details.provider": "Udbyder",
-  "error.details.retryable": "Kan forsøges igen",
-  "error.details.retries": "Forsøg",
-  "error.details.responseBody": "Svar",
 }

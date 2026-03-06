@@ -1070,10 +1070,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "Details",
-  "error.details.type": "Typ",
-  "error.details.statusCode": "Statuscode",
-  "error.details.provider": "Anbieter",
-  "error.details.retryable": "Wiederholbar",
-  "error.details.retries": "Versuche",
-  "error.details.responseBody": "Antwort",
 } satisfies Partial<Record<Keys, string>>

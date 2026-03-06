@@ -819,12 +819,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 сессия будет архивирована.",
   "workspace.reset.archived.many": "{{count}} сессий будет архивировано.",
   "workspace.reset.note": "Рабочее пространство будет сброшено в соответствие с веткой по умолчанию.",
-
-  "error.details.show": "Подробности",
-  "error.details.type": "Тип",
-  "error.details.statusCode": "Код статуса",
-  "error.details.provider": "Провайдер",
-  "error.details.retryable": "Повторяемый",
-  "error.details.retries": "Попытки",
-  "error.details.responseBody": "Ответ",
 }

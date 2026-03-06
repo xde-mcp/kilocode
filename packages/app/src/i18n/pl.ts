@@ -738,12 +738,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 sesja zostanie zarchiwizowana.",
   "workspace.reset.archived.many": "{{count}} sesji zostanie zarchiwizowanych.",
   "workspace.reset.note": "To zresetuje przestrzeń roboczą, aby odpowiadała domyślnej gałęzi.",
-
-  "error.details.show": "Szczegóły",
-  "error.details.type": "Typ",
-  "error.details.statusCode": "Kod statusu",
-  "error.details.provider": "Dostawca",
-  "error.details.retryable": "Możliwa ponowna próba",
-  "error.details.retries": "Próby",
-  "error.details.responseBody": "Odpowiedź",
 }

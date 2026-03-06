@@ -747,12 +747,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 session sera archivée.",
   "workspace.reset.archived.many": "{{count}} sessions seront archivées.",
   "workspace.reset.note": "Cela réinitialisera l'espace de travail pour correspondre à la branche par défaut.",
-
-  "error.details.show": "Détails",
-  "error.details.type": "Type",
-  "error.details.statusCode": "Code de statut",
-  "error.details.provider": "Fournisseur",
-  "error.details.retryable": "Réessayable",
-  "error.details.retries": "Tentatives",
-  "error.details.responseBody": "Réponse",
 }

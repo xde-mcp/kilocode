@@ -1050,10 +1050,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "詳細",
-  "error.details.type": "タイプ",
-  "error.details.statusCode": "ステータスコード",
-  "error.details.provider": "プロバイダー",
-  "error.details.retryable": "リトライ可能",
-  "error.details.retries": "リトライ回数",
-  "error.details.responseBody": "レスポンス",
 }

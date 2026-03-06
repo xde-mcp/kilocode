@@ -817,12 +817,4 @@ export const dict = {
   "workspace.reset.archived.one": "1 sesija će biti arhivirana.",
   "workspace.reset.archived.many": "Biće arhivirano {{count}} sesija.",
   "workspace.reset.note": "Ovo će resetovati radni prostor da odgovara podrazumijevanoj grani.",
-
-  "error.details.show": "Detalji",
-  "error.details.type": "Tip",
-  "error.details.statusCode": "Statusni kod",
-  "error.details.provider": "Provajder",
-  "error.details.retryable": "Ponovljivo",
-  "error.details.retries": "Pokušaji",
-  "error.details.responseBody": "Odgovor",
 }

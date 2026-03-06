@@ -1035,10 +1035,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "详细信息",
-  "error.details.type": "类型",
-  "error.details.statusCode": "状态码",
-  "error.details.provider": "提供商",
-  "error.details.retryable": "可重试",
-  "error.details.retries": "重试次数",
-  "error.details.responseBody": "响应",
 } satisfies Partial<Record<Keys, string>>

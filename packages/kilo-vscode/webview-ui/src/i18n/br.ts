@@ -1056,10 +1056,4 @@ export const dict = {
   // legacy-migration end
 
   "error.details.show": "Detalhes",
-  "error.details.type": "Tipo",
-  "error.details.statusCode": "Código de status",
-  "error.details.provider": "Provedor",
-  "error.details.retryable": "Repetível",
-  "error.details.retries": "Tentativas",
-  "error.details.responseBody": "Resposta",
 }
