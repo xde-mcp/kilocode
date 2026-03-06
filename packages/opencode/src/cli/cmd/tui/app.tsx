@@ -28,7 +28,7 @@ import { PromptHistoryProvider } from "./component/prompt/history"
 import { FrecencyProvider } from "./component/prompt/frecency"
 import { PromptStashProvider } from "./component/prompt/stash"
 import { DialogAlert } from "./ui/dialog-alert"
-import { isKiloError } from "@/kilocode/kilo-errors" // kilocode_change
+import { isKiloError, showKiloErrorToast } from "@/kilocode/kilo-errors" // kilocode_change
 import { ToastProvider, useToast } from "./ui/toast"
 import { ExitProvider, useExit } from "./context/exit"
 import { Session as SessionApi } from "@/session"
@@ -718,8 +718,11 @@ function App() {
   sdk.event.on(SessionApi.Event.Error.type, (evt) => {
     const error = evt.properties.error
     if (error && typeof error === "object" && error.name === "MessageAbortedError") return
-    // kilocode_change start - Skip toast for current Kilo errors - Just show inline
-    if (error && typeof error === "object" && isKiloError(error)) return
+    // kilocode_change start - Show warning toast for Kilo errors instead of generic error toast
+    if (error && typeof error === "object" && isKiloError(error)) {
+      showKiloErrorToast(error, toast)
+      return
+    }
     // kilocode_change end
     const message = (() => {
       if (!error) return "An error occurred"

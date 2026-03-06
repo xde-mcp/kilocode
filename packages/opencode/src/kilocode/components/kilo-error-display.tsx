@@ -1,7 +1,7 @@
 import { createMemo, Match, Switch, type JSX } from "solid-js"
 import { SplitBorder } from "@tui/component/border"
 import { useTheme } from "@tui/context/theme"
-import { KILO_ERROR_CODES, parseKiloErrorCode } from "@/kilocode/kilo-errors"
+import { parseKiloErrorCode, kiloErrorTitle, kiloErrorDescription } from "@/kilocode/kilo-errors"
 import type { AssistantMessage } from "@kilocode/sdk/v2"
 
 interface KiloErrorBlockProps {
@@ -16,26 +16,14 @@ export function KiloErrorBlock(props: KiloErrorBlockProps) {
     return parseKiloErrorCode(props.error)
   })
 
-  const kiloErrorTitle = createMemo(() => {
-    switch (kiloErrorCode()) {
-      case KILO_ERROR_CODES.PAID_MODEL_AUTH_REQUIRED:
-        return "You need to sign in to use this model"
-      case KILO_ERROR_CODES.PROMOTION_MODEL_LIMIT_REACHED:
-        return "You need to sign up to keep going"
-      default:
-        return undefined
-    }
+  const title = createMemo(() => {
+    const code = kiloErrorCode()
+    return code ? kiloErrorTitle(code) : undefined
   })
 
-  const kiloErrorDescription = createMemo(() => {
-    switch (kiloErrorCode()) {
-      case KILO_ERROR_CODES.PAID_MODEL_AUTH_REQUIRED:
-        return "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key."
-      case KILO_ERROR_CODES.PROMOTION_MODEL_LIMIT_REACHED:
-        return "Sign up for free to continue and explore 500 other models. Takes 2 minutes, no credit card required. Or come back later."
-      default:
-        return undefined
-    }
+  const description = createMemo(() => {
+    const code = kiloErrorCode()
+    return code ? kiloErrorDescription(code) : undefined
   })
 
   return (
@@ -51,8 +39,8 @@ export function KiloErrorBlock(props: KiloErrorBlockProps) {
           customBorderChars={SplitBorder.customBorderChars}
           borderColor={theme.primary}
         >
-          <text fg={theme.text}>{kiloErrorTitle()}</text>
-          <text fg={theme.textMuted}>{kiloErrorDescription()}</text>
+          <text fg={theme.text}>{title()}</text>
+          <text fg={theme.textMuted}>{description()}</text>
           <text fg={theme.primary}>{"Run /connect or `kilo auth login` to sign in to Kilo Gateway"}</text>
         </box>
       </Match>
