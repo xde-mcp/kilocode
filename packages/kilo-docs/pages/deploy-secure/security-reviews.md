@@ -17,7 +17,7 @@ Available on **Teams** and **Enterprise** plans.
 
 You need three things before enabling Security Reviews:
 
-1. The [Kilo GitHub App](/docs/automate/integrations#connecting-github) installed with `vulnerability_alerts` permission
+1. The [KiloConnect GitHub App](/docs/automate/integrations#connecting-github) installed with `vulnerability_alerts` permission
 2. [Dependabot alerts](https://docs.github.com/en/code-security/dependabot/dependabot-alerts) enabled on your target repositories
 3. Kilo Code credits for AI model usage
 
@@ -40,7 +40,7 @@ The Security Agent processes each vulnerability alert through four stages.
 
 **Sync** pulls Dependabot alerts from your connected repositories on a 6-hour cycle.
 
-**Triage** runs a quick LLM assessment of the alert metadata — the advisory, severity, package, and version range. Each finding gets classified as **Safe to Dismiss**, **Needs Analysis**, or **Needs Manual Review**.
+**Triage** runs a quick LLM assessment of the alert metadata — the advisory, severity, package, and version range. Each finding gets classified as **Safe to Dismiss**, **Needs Analysis**, or **Needs Review**.
 
 **Deep analysis** kicks in for findings that warrant it. The Cloud Agent performs a full codebase search for actual usage of the vulnerable package, checks whether the vulnerable code paths are reachable, and suggests fixes when possible.
 
@@ -70,7 +70,7 @@ The dashboard is the Security Agent's landing page. It gives you a high-level vi
 
 **Severity breakdown** shows open finding counts across Critical, High, Medium, and Low in a 2×2 grid. Click any severity to see those findings.
 
-**Finding status** is a donut chart of Open, Fixed, and Ignored findings. Click a segment to filter the Findings page.
+**Finding status** is a donut chart of Open, Fixed, and Dismissed findings. Click a segment to filter the Findings page.
 
 **Analysis coverage** shows a progress bar of analyzed vs. total findings, with an outcome breakdown (Exploitable, Not Exploitable, Safe to Dismiss, etc.).
 
@@ -98,7 +98,7 @@ Click any finding to open its detail dialog. There are three tabs.
 
 The **Details** tab shows the vulnerability metadata — package name and ecosystem, CVE and GHSA IDs, the vulnerable and patched version ranges, manifest path, and a full description. You'll also find a **View on GitHub** link to the original Dependabot alert, plus detection and last sync dates.
 
-The **Triage** tab shows the agent's initial assessment: a suggested action badge (Safe to Dismiss, Needs Analysis, or Manual Review), a confidence level, and the reasoning behind the decision. If triage hasn't run yet, you can start it here. If it failed, you can retry.
+The **Triage** tab shows the agent's initial assessment: a suggested action badge (Safe to Dismiss, Needs Analysis, or Needs Review), a confidence level, and the reasoning behind the decision. If triage hasn't run yet, you can start it here. If it failed, you can retry.
 
 The **Analysis** tab shows the deep analysis results when available — whether the vulnerability is exploitable or not, a summary, up to 5 usage locations found in your codebase, a suggested fix, and full analysis details. There's also a link to continue the investigation in Cloud Agent if you want to dig deeper.
 
@@ -145,7 +145,7 @@ There are two ways findings get dismissed.
 
 All settings are on the Security Agent configuration page.
 
-**Repository selection** lets you monitor all repositories accessible to the GitHub App or pick specific ones from a list.
+**Repository selection** lets you monitor all repositories accessible to the KiloConnect App or pick specific ones from a list.
 
 **AI models** can be configured separately for triage and deep analysis. The default is Claude Opus 4.6.
 
