@@ -600,7 +600,7 @@
         },
         "kilo-code.new.model.providerID": {
           "type": "string",
-          "default": "kilo-auto",
+          "default": "kilo",
           "description": "Default model provider ID for new sessions"
         },
         "kilo-code.new.model.modelID": {

@@ -3,7 +3,7 @@ const title = process.env.KILO_E2E_SESSION_TITLE ?? "E2E Session"
 const text = process.env.KILO_E2E_MESSAGE ?? "Seeded for UI e2e"
 const model = process.env.KILO_E2E_MODEL ?? "kilo-auto/frontier"
 const parts = model.split("/")
-const providerID = parts[0] ?? "kilo-auto" // kilocode_change
+const providerID = parts[0] ?? "kilo" // kilocode_change
 const modelID = parts.slice(1).join("/") || "kilo-auto/frontier" // kilocode_change
 const now = Date.now()
 
