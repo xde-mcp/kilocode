@@ -409,6 +409,15 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Не удалось подключиться к серверу. Запущен ли сервер по адресу `{{url}}`?",
 
+  "error.paidModel.title": "Для использования этой модели необходимо войти",
+  "error.paidModel.description":
+    "Войдите или создайте аккаунт для доступа к более чем 500 моделям, используйте кредиты по себестоимости или подключите свой ключ.",
+  "error.paidModel.action": "Войти",
+  "error.promotionLimit.title": "Для продолжения необходимо зарегистрироваться",
+  "error.promotionLimit.description":
+    "Зарегистрируйтесь бесплатно, чтобы продолжить и исследовать более 500 моделей. Займёт 2 минуты, кредитная карта не нужна. Или вернитесь позже.",
+  "error.promotionLimit.action": "Зарегистрироваться",
+
   "error.chain.unknown": "Неизвестная ошибка",
   "error.chain.causedBy": "Причина:",
   "error.chain.apiError": "Ошибка API",

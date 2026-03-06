@@ -405,6 +405,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "无法连接到服务器。是否有服务器正在 `{{url}}` 运行？",
 
+  "error.paidModel.title": "您需要登录才能使用此模型",
+  "error.paidModel.description": "登录或创建账户以访问500多个模型，按成本使用积分，或使用您自己的密钥。",
+  "error.paidModel.action": "登录",
+  "error.promotionLimit.title": "您需要注册才能继续",
+  "error.promotionLimit.description": "免费注册以继续探索500多个模型。只需2分钟，无需信用卡。或稍后再来。",
+  "error.promotionLimit.action": "注册",
+
   "error.chain.unknown": "未知错误",
   "error.chain.causedBy": "原因：",
   "error.chain.apiError": "API 错误",

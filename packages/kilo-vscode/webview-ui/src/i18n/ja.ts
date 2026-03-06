@@ -406,6 +406,15 @@ export const dict = {
 
   "error.globalSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
 
+  "error.paidModel.title": "このモデルを使用するにはサインインが必要です",
+  "error.paidModel.description":
+    "サインインまたはアカウントを作成して、500以上のモデルにアクセスし、原価でクレジットを使用するか、独自のキーを持ち込みましょう。",
+  "error.paidModel.action": "サインイン",
+  "error.promotionLimit.title": "続けるにはサインアップが必要です",
+  "error.promotionLimit.description":
+    "無料でサインアップして、500以上のモデルを探索しましょう。2分で完了、クレジットカード不要。または後でお戻りください。",
+  "error.promotionLimit.action": "サインアップ",
+
   "error.chain.unknown": "不明なエラー",
   "error.chain.causedBy": "原因:",
   "error.chain.apiError": "APIエラー",

@@ -407,6 +407,15 @@ export const dict = {
 
   "error.globalSync.connectFailed": "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ มีเซิร์ฟเวอร์ทำงานอยู่ที่ `{{url}}` หรือไม่?",
 
+  "error.paidModel.title": "คุณต้องเข้าสู่ระบบเพื่อใช้โมเดลนี้",
+  "error.paidModel.description":
+    "เข้าสู่ระบบหรือสร้างบัญชีเพื่อเข้าถึงโมเดลกว่า 500 รายการ ใช้เครดิตในราคาทุน หรือใช้คีย์ของคุณเอง",
+  "error.paidModel.action": "เข้าสู่ระบบ",
+  "error.promotionLimit.title": "คุณต้องสมัครสมาชิกเพื่อดำเนินการต่อ",
+  "error.promotionLimit.description":
+    "สมัครฟรีเพื่อดำเนินการต่อและสำรวจโมเดลกว่า 500 รายการ ใช้เวลา 2 นาที ไม่ต้องใช้บัตรเครดิต หรือกลับมาทีหลัง",
+  "error.promotionLimit.action": "สมัครสมาชิก",
+
   "error.chain.unknown": "ข้อผิดพลาดที่ไม่รู้จัก",
   "error.chain.causedBy": "สาเหตุ:",
   "error.chain.apiError": "ข้อผิดพลาด API",
