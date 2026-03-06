@@ -56,6 +56,7 @@ import { TodoItem } from "../../component/todo-item"
 import { DialogMessage } from "./dialog-message"
 import type { PromptInfo } from "../../component/prompt/history"
 import { DialogConfirm } from "@tui/ui/dialog-confirm"
+import { MessageV2 } from "@/session/message-v2" // kilocode_change
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
@@ -1295,6 +1296,36 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
     return props.message.time.completed - user.time.created
   })
 
+  // kilocode_change start - Kilo-specific error detection
+  const kiloErrorCode = createMemo(() => {
+    const error = props.message.error
+    if (!error) return undefined
+    return MessageV2.parseKiloErrorCode(error)
+  })
+
+  const kiloErrorTitle = createMemo(() => {
+    switch (kiloErrorCode()) {
+      case MessageV2.KILO_ERROR_CODES.PAID_MODEL_AUTH_REQUIRED:
+        return "You need to sign in to use this model"
+      case MessageV2.KILO_ERROR_CODES.PROMOTION_MODEL_LIMIT_REACHED:
+        return "You need to sign up to keep going"
+      default:
+        return undefined
+    }
+  })
+
+  const kiloErrorDescription = createMemo(() => {
+    switch (kiloErrorCode()) {
+      case MessageV2.KILO_ERROR_CODES.PAID_MODEL_AUTH_REQUIRED:
+        return "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key."
+      case MessageV2.KILO_ERROR_CODES.PROMOTION_MODEL_LIMIT_REACHED:
+        return "Sign up for free to continue and explore 500 other models. Takes 2 minutes, no credit card required. Or come back later."
+      default:
+        return undefined
+    }
+  })
+  // kilocode_change end
+
   return (
     <>
       <For each={props.parts}>
@@ -1313,18 +1344,41 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
         }}
       </For>
       <Show when={props.message.error && props.message.error.name !== "MessageAbortedError"}>
-        <box
-          border={["left"]}
-          paddingTop={1}
-          paddingBottom={1}
-          paddingLeft={2}
-          marginTop={1}
-          backgroundColor={theme.backgroundPanel}
-          customBorderChars={SplitBorder.customBorderChars}
-          borderColor={theme.error}
+        {/* kilocode_change start - Kilo-specific error display */}
+        <Switch
+          fallback={
+            <box
+              border={["left"]}
+              paddingTop={1}
+              paddingBottom={1}
+              paddingLeft={2}
+              marginTop={1}
+              backgroundColor={theme.backgroundPanel}
+              customBorderChars={SplitBorder.customBorderChars}
+              borderColor={theme.error}
+            >
+              <text fg={theme.textMuted}>{props.message.error?.data.message}</text>
+            </box>
+          }
         >
-          <text fg={theme.textMuted}>{props.message.error?.data.message}</text>
-        </box>
+          <Match when={kiloErrorCode()}>
+            <box
+              border={["left"]}
+              paddingTop={1}
+              paddingBottom={1}
+              paddingLeft={2}
+              marginTop={1}
+              backgroundColor={theme.backgroundPanel}
+              customBorderChars={SplitBorder.customBorderChars}
+              borderColor={theme.primary}
+            >
+              <text fg={theme.text}>{kiloErrorTitle()}</text>
+              <text fg={theme.textMuted}>{kiloErrorDescription()}</text>
+              <text fg={theme.primary}>{"Run /connect or `kilo auth login` to sign in to Kilo Gateway"}</text>
+            </box>
+          </Match>
+        </Switch>
+        {/* kilocode_change end */}
       </Show>
       <Switch>
         <Match when={props.last || final() || props.message.error?.name === "MessageAbortedError"}>
