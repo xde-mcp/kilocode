@@ -138,7 +138,7 @@ You can also run it non-interactively:
 
 ```bash
 kilo agent create \
-  --path .opencode \
+  --path .kilo \
   --description "Reviews code for security vulnerabilities" \
   --mode subagent \
   --tools "read,grep,glob"
