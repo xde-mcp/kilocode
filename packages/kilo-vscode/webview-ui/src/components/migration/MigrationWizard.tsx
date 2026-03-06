@@ -6,7 +6,7 @@
  *   2. Migrate     — grouped selection, live in-place progress, cleanup
  */
 
-import { Component, For, Show, createSignal, onMount, onCleanup, JSX } from "solid-js"
+import { Component, Show, createSignal, onMount, onCleanup, JSX } from "solid-js"
 import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
 import type {
@@ -177,7 +177,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
 
   const [screen, setScreen] = createSignal<Screen>("whats-new")
   const [phase, setPhase] = createSignal<MigratePhase>("selecting")
-  const [exiting, setExiting] = createSignal(false)
 
   // Data from extension
   const [providers, setProviders] = createSignal<MigrationProviderInfo[]>([])
@@ -267,23 +266,6 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     vscode.postMessage({ type: "requestLegacyMigrationData" })
     onCleanup(() => window.removeEventListener("message", handler))
   })
-
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
-
-  const goToMigrate = () => {
-    setExiting(true)
-    setTimeout(() => {
-      setScreen("migrate")
-      setExiting(false)
-    }, 80)
-  }
-
-  const goToWhatsNew = () => {
-    setScreen("whats-new")
-    setExiting(false)
-  }
 
   // ---------------------------------------------------------------------------
   // Actions
@@ -492,9 +474,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
     <div class="migration-wizard">
       <div class="migration-wizard__container">
         {/* ---- Screen 1: What's New ---- */}
-        <div
-          class={`migration-wizard__screen${screen() === "whats-new" && !exiting() ? " migration-wizard__screen--active" : ""}${exiting() ? " migration-wizard__screen--exit" : ""}`}
-        >
+        <div class={screen() === "whats-new" ? "migration-wizard__screen--active" : "migration-wizard__screen--hidden"}>
           <div class="migration-wizard__header">
             <KiloLogo />
             <h1>
@@ -554,7 +534,11 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
 
           <div class="migration-wizard__footer">
             <div class="migration-wizard__btn-group">
-              <button type="button" class="migration-wizard__btn migration-wizard__btn--primary" onClick={goToMigrate}>
+              <button
+                type="button"
+                class="migration-wizard__btn migration-wizard__btn--primary"
+                onClick={() => setScreen("migrate")}
+              >
                 {language.t("migration.whatsNew.continue")}
               </button>
             </div>
@@ -562,7 +546,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
         </div>
 
         {/* ---- Screen 2: Migrate Settings ---- */}
-        <div class={`migration-wizard__screen${screen() === "migrate" ? " migration-wizard__screen--active" : ""}`}>
+        <div class={screen() === "migrate" ? "migration-wizard__screen--active" : "migration-wizard__screen--hidden"}>
           <div class="migration-wizard__header">
             <KiloLogo />
             <h1>{language.t("migration.migrate.title")}</h1>
@@ -770,7 +754,7 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
               {/* Cleanup option after done */}
               <Show when={phase() === "done"}>
                 <div class="migration-wizard__divider" />
-                <label class="migration-wizard__cleanup" onClick={() => setClearLegacyData((v) => !v)}>
+                <div class="migration-wizard__item migration-wizard__item--clickable">
                   <label class="migration-wizard__checkbox">
                     <input
                       type="checkbox"
@@ -781,11 +765,11 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
                       <CheckmarkSvg />
                     </span>
                   </label>
-                  <div class="migration-wizard__item-text">
+                  <div class="migration-wizard__item-text" onClick={() => setClearLegacyData((v) => !v)}>
                     <div class="label">{language.t("migration.complete.cleanup")}</div>
                     <div class="desc">{language.t("migration.complete.cleanupDescription")}</div>
                   </div>
-                </label>
+                </div>
               </Show>
             </div>
           </Show>
@@ -794,7 +778,11 @@ const MigrationWizard: Component<MigrationWizardProps> = (props) => {
           <div class="migration-wizard__footer">
             <div class="migration-wizard__btn-group">
               <Show when={phase() === "selecting"}>
-                <button type="button" class="migration-wizard__btn migration-wizard__btn--ghost" onClick={goToWhatsNew}>
+                <button
+                  type="button"
+                  class="migration-wizard__btn migration-wizard__btn--ghost"
+                  onClick={() => setScreen("whats-new")}
+                >
                   {language.t("migration.migrate.back")}
                 </button>
                 <button type="button" class="migration-wizard__btn migration-wizard__btn--ghost" onClick={handleSkip}>

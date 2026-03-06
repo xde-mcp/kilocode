@@ -14,32 +14,27 @@
 
 .migration-wizard__container {
   width: 520px;
-  position: relative;
 }
 
 /* Screen transitions */
-.migration-wizard__screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(40px);
-  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+.migration-wizard__screen--hidden {
+  display: none;
 }
 
 .migration-wizard__screen--active {
-  opacity: 1;
-  pointer-events: auto;
-  position: relative;
-  transform: translateX(0);
+  display: block;
+  animation: mw-screen-enter 0.28s ease-out;
 }
 
-.migration-wizard__screen--exit {
-  opacity: 0;
-  transform: translateX(-40px);
-  pointer-events: none;
+@keyframes mw-screen-enter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Header */
@@ -343,25 +338,16 @@
   border-color: color-mix(in srgb, var(--vscode-foreground) 8%, transparent);
 }
 
+/* Clickable item (cleanup row) — text area triggers checkbox */
+.migration-wizard__item--clickable .migration-wizard__item-text {
+  cursor: pointer;
+  user-select: none;
+}
+
 /* Divider */
 .migration-wizard__divider {
   height: 1px;
   background: var(--vscode-panel-border);
-}
-
-/* Cleanup section (shown after migration) */
-.migration-wizard__cleanup {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--vscode-panel-border);
-  cursor: pointer;
-  transition: background 0.1s;
-}
-
-.migration-wizard__cleanup:hover {
-  background: var(--vscode-list-hoverBackground);
 }
 
 /* Summary badge */
