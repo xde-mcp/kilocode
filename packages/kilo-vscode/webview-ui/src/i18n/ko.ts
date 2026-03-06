@@ -234,6 +234,7 @@ export const dict = {
   "prompt.action.send": "전송",
   "prompt.action.stop": "중지",
   "prompt.action.enhance": "프롬프트 개선",
+  "prompt.action.resetModel": "모델을 기본값으로 재설정",
   "prompt.action.enhanceDescription":
     "'프롬프트 향상' 버튼은 추가 컨텍스트, 명확화 또는 재구성을 제공하여 요청을 개선합니다. 여기에 요청을 입력한 다음 버튼을 다시 클릭하여 작동 방식을 확인해보세요.",
 

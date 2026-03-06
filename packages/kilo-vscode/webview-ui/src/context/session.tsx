@@ -100,6 +100,8 @@ interface SessionContextValue {
   // Model selection (per-session)
   selected: Accessor<ModelSelection | null>
   selectModel: (providerID: string, modelID: string) => void
+  hasModelOverride: Accessor<boolean>
+  clearModelOverride: () => void
 
   // Cost and context usage for the current session
   totalCost: Accessor<number>
@@ -274,6 +276,36 @@ export const SessionProvider: ParentComponent = (props) => {
     } else {
       setPendingWasUserSet(true)
       setPendingModelSelection(selection)
+    }
+  }
+
+  /** The config/default model for the current mode (what settings says). */
+  const configModel = createMemo<ModelSelection | null>(() => {
+    const agentName = selectedAgentName()
+    return getModeModel(agentName) ?? provider.defaultSelection()
+  })
+
+  /** True when the active model differs from what the config dictates. */
+  const hasModelOverride = createMemo<boolean>(() => {
+    const sel = selected()
+    const cfg = configModel()
+    if (!sel || !cfg) return false
+    return sel.providerID !== cfg.providerID || sel.modelID !== cfg.modelID
+  })
+
+  /** Clear the session-level model override, falling back to config default. */
+  function clearModelOverride() {
+    const id = currentSessionID()
+    if (id) {
+      setStore(
+        "modelSelections",
+        produce((selections) => {
+          delete selections[id]
+        }),
+      )
+    } else {
+      setPendingWasUserSet(false)
+      setPendingModelSelection(null)
     }
   }
 
@@ -1112,6 +1144,8 @@ export const SessionProvider: ParentComponent = (props) => {
     questionErrors,
     selected,
     selectModel,
+    hasModelOverride,
+    clearModelOverride,
     totalCost,
     contextUsage,
     agents,
