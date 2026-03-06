@@ -1,10 +1,13 @@
 import { describe, it, expect } from "bun:test"
+import type { AssistantMessage } from "@kilocode/sdk/v2"
 import {
   unwrapError,
   parseAssistantError,
   isUnauthorizedPaidModelError,
   isUnauthorizedPromotionLimitError,
 } from "../../webview-ui/src/utils/errorUtils"
+
+type AssistantError = AssistantMessage["error"]
 
 describe("unwrapError", () => {
   it("returns plain string messages unchanged", () => {
@@ -36,52 +39,60 @@ describe("parseAssistantError", () => {
   })
 
   it("returns null for non-APIError (e.g. MessageAbortedError)", () => {
-    expect(parseAssistantError({ name: "MessageAbortedError" })).toBeNull()
+    const error: AssistantError = { name: "MessageAbortedError", data: { message: "aborted" } }
+    expect(parseAssistantError(error)).toBeNull()
   })
 
   it("returns null when APIError has no data", () => {
-    expect(parseAssistantError({ name: "APIError" })).toBeNull()
+    // Simulate a malformed error where data is missing at runtime
+    const error = { name: "APIError" } as unknown as AssistantError
+    expect(parseAssistantError(error)).toBeNull()
   })
 
   it("extracts statusCode and message from APIError data", () => {
-    const result = parseAssistantError({
+    const error: AssistantError = {
       name: "APIError",
-      data: { statusCode: 401, message: "Unauthorized" },
-    })
+      data: { statusCode: 401, message: "Unauthorized", isRetryable: false },
+    }
+    const result = parseAssistantError(error)
     expect(result).toEqual({ statusCode: 401, code: undefined, message: "Unauthorized" })
   })
 
   it("extracts code from responseBody JSON with error.code", () => {
     const responseBody = JSON.stringify({ error: { code: "PAID_MODEL_AUTH_REQUIRED" } })
-    const result = parseAssistantError({
+    const error: AssistantError = {
       name: "APIError",
-      data: { statusCode: 401, message: "Unauthorized", responseBody },
-    })
+      data: { statusCode: 401, message: "Unauthorized", isRetryable: false, responseBody },
+    }
+    const result = parseAssistantError(error)
     expect(result).toEqual({ statusCode: 401, code: "PAID_MODEL_AUTH_REQUIRED", message: "Unauthorized" })
   })
 
   it("extracts code from responseBody JSON with top-level code", () => {
     const responseBody = JSON.stringify({ code: "PROMOTION_MODEL_LIMIT_REACHED" })
-    const result = parseAssistantError({
+    const error: AssistantError = {
       name: "APIError",
-      data: { statusCode: 429, message: "Too Many Requests", responseBody },
-    })
+      data: { statusCode: 429, message: "Too Many Requests", isRetryable: false, responseBody },
+    }
+    const result = parseAssistantError(error)
     expect(result).toEqual({ statusCode: 429, code: "PROMOTION_MODEL_LIMIT_REACHED", message: "Too Many Requests" })
   })
 
   it("handles invalid responseBody JSON gracefully", () => {
-    const result = parseAssistantError({
+    const error: AssistantError = {
       name: "APIError",
-      data: { statusCode: 500, message: "Server Error", responseBody: "not json" },
-    })
+      data: { statusCode: 500, message: "Server Error", isRetryable: false, responseBody: "not json" },
+    }
+    const result = parseAssistantError(error)
     expect(result).toEqual({ statusCode: 500, code: undefined, message: "Server Error" })
   })
 
   it("handles missing responseBody", () => {
-    const result = parseAssistantError({
+    const error: AssistantError = {
       name: "APIError",
-      data: { statusCode: 403, message: "Forbidden" },
-    })
+      data: { statusCode: 403, message: "Forbidden", isRetryable: false },
+    }
+    const result = parseAssistantError(error)
     expect(result).toEqual({ statusCode: 403, code: undefined, message: "Forbidden" })
   })
 })

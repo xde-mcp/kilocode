@@ -1,3 +1,5 @@
+import type { AssistantMessage } from "@kilocode/sdk/v2"
+
 export function unwrapError(message: string): string {
   const text = message.replace(/^Error:\s*/, "").trim()
   const tryParse = (v: string) => {
@@ -51,9 +53,7 @@ export interface ParsedError {
   message?: string
 }
 
-export function parseAssistantError(
-  error: { name: string; data?: Record<string, unknown> } | null | undefined,
-): ParsedError | null {
+export function parseAssistantError(error: AssistantMessage["error"] | null | undefined): ParsedError | null {
   if (!error) return null
   if (error.name !== "APIError") return null
 
