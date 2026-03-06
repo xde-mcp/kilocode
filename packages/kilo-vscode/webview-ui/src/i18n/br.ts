@@ -231,6 +231,7 @@ export const dict = {
   "prompt.action.send": "Enviar",
   "prompt.action.stop": "Parar",
   "prompt.action.enhance": "Melhorar prompt",
+  "prompt.action.resetModel": "Redefinir modelo para o padrão",
   "prompt.action.enhanceDescription":
     "O botão 'Aprimorar prompt' ajuda a melhorar seu pedido fornecendo contexto adicional, esclarecimentos ou reformulações. Tente digitar um pedido aqui e clique no botão novamente para ver como funciona.",
 

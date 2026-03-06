@@ -234,6 +234,7 @@ export const dict = {
   "prompt.action.send": "Send",
   "prompt.action.stop": "Stopp",
   "prompt.action.enhance": "Forbedre prompt",
+  "prompt.action.resetModel": "Tilbakestill modell til standard",
   "prompt.action.enhanceDescription":
     "Knappen 'Forbedre prompt' hjelper med å forbedre forespørselen din ved å gi ekstra kontekst, avklaring eller omformulering. Prøv å skrive en forespørsel her og klikk på knappen igjen for å se hvordan det fungerer.",
 

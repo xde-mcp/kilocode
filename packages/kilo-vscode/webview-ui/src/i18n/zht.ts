@@ -231,6 +231,7 @@ export const dict = {
   "prompt.action.send": "傳送",
   "prompt.action.stop": "停止",
   "prompt.action.enhance": "改善提示詞",
+  "prompt.action.resetModel": "重置模型為預設值",
   "prompt.action.enhanceDescription":
     "「強化提示詞」按鈕可透過提供額外內容、說明或改寫來協助改善提示詞。試著在這裡輸入提示詞，再點選一次按鈕以了解其運作方式。",
 

@@ -231,6 +231,7 @@ export const dict = {
   "prompt.action.send": "Wyślij",
   "prompt.action.stop": "Zatrzymaj",
   "prompt.action.enhance": "Ulepsz prompt",
+  "prompt.action.resetModel": "Zresetuj model do domyślnego",
   "prompt.action.enhanceDescription":
     "Przycisk 'Ulepsz podpowiedź' pomaga ulepszyć Twoją prośbę, dostarczając dodatkowy kontekst, wyjaśnienia lub przeformułowania. Spróbuj wpisać prośbę tutaj i kliknij przycisk ponownie, aby zobaczyć, jak to działa.",
 

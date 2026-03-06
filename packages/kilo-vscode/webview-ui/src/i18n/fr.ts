@@ -232,6 +232,7 @@ export const dict = {
   "prompt.action.send": "Envoyer",
   "prompt.action.stop": "Arrêter",
   "prompt.action.enhance": "Améliorer le prompt",
+  "prompt.action.resetModel": "Réinitialiser le modèle par défaut",
   "prompt.action.enhanceDescription":
     "Le bouton 'Améliorer la requête' aide à améliorer votre demande en fournissant un contexte supplémentaire, des clarifications ou des reformulations. Essayez de taper une demande ici et cliquez à nouveau sur le bouton pour voir comment cela fonctionne.",
 
