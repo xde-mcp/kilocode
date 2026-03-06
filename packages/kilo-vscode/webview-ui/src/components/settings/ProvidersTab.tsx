@@ -116,14 +116,13 @@ const ProvidersTab: Component = () => {
       </Card>
 
       {/* Model per Mode */}
-      <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>{language.t("settings.providers.modeModels")}</h4>
+      <h4 style={{ "margin-top": "24px", "margin-bottom": "8px" }}>{language.t("settings.providers.modeModels")}</h4>
       <Card>
         <div
           style={{
             "font-size": "12px",
             color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
-            "padding-bottom": "8px",
-            "border-bottom": primaryAgents().length > 0 ? "1px solid var(--border-weak-base)" : "none",
+            "margin-bottom": primaryAgents().length > 0 ? "12px" : "0",
           }}
         >
           {language.t("settings.providers.modeModels.description")}
