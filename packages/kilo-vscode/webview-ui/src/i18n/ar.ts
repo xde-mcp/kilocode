@@ -405,6 +405,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "تعذر الاتصال بالخادم. هل هناك خادم يعمل في `{{url}}`؟",
 
+  "error.paidModel.title": "يجب عليك تسجيل الدخول لاستخدام هذا النموذج",
+  "error.paidModel.description": "سجّل الدخول أو أنشئ حسابًا للوصول إلى أكثر من 500 نموذج، واستخدم الرصيد بسعر التكلفة، أو استخدم مفتاحك الخاص.",
+  "error.paidModel.action": "تسجيل الدخول",
+  "error.promotionLimit.title": "يجب عليك التسجيل للمتابعة",
+  "error.promotionLimit.description": "سجّل مجانًا للمتابعة واستكشاف أكثر من 500 نموذج. يستغرق دقيقتين، بدون بطاقة ائتمان. أو عُد لاحقًا.",
+  "error.promotionLimit.action": "التسجيل",
+
   "error.chain.unknown": "خطأ غير معروف",
   "error.chain.causedBy": "بسبب:",
   "error.chain.apiError": "خطأ API",

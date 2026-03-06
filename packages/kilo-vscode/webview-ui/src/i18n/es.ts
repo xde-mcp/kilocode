@@ -408,6 +408,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "No se pudo conectar al servidor. ¿Hay un servidor ejecutándose en `{{url}}`?",
 
+  "error.paidModel.title": "Necesitas iniciar sesión para usar este modelo",
+  "error.paidModel.description": "Inicia sesión o crea una cuenta para acceder a más de 500 modelos, usar créditos a precio de coste o traer tu propia clave.",
+  "error.paidModel.action": "Iniciar sesión",
+  "error.promotionLimit.title": "Necesitas registrarte para continuar",
+  "error.promotionLimit.description": "Regístrate gratis para continuar y explorar más de 500 modelos. Solo 2 minutos, sin tarjeta de crédito. O vuelve más tarde.",
+  "error.promotionLimit.action": "Registrarse",
+
   "error.chain.unknown": "Error desconocido",
   "error.chain.causedBy": "Causado por:",
   "error.chain.apiError": "Error de API",

@@ -407,6 +407,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Nie można połączyć się z serwerem. Czy serwer działa pod adresem `{{url}}`?",
 
+  "error.paidModel.title": "Musisz się zalogować, aby użyć tego modelu",
+  "error.paidModel.description": "Zaloguj się lub utwórz konto, aby uzyskać dostęp do ponad 500 modeli, korzystać z kredytów po kosztach lub użyć własnego klucza.",
+  "error.paidModel.action": "Zaloguj się",
+  "error.promotionLimit.title": "Musisz się zarejestrować, aby kontynuować",
+  "error.promotionLimit.description": "Zarejestruj się za darmo, aby kontynuować i odkryć ponad 500 modeli. Zajmie to 2 minuty, bez karty kredytowej. Lub wróć później.",
+  "error.promotionLimit.action": "Zarejestruj się",
+
   "error.chain.unknown": "Nieznany błąd",
   "error.chain.causedBy": "Spowodowany przez:",
   "error.chain.apiError": "Błąd API",

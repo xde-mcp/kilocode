@@ -410,6 +410,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Nije moguće povezati se na server. Da li server radi na `{{url}}`?",
 
+  "error.paidModel.title": "Morate se prijaviti da biste koristili ovaj model",
+  "error.paidModel.description": "Prijavite se ili kreirajte račun za pristup preko 500 modela, koristite kredite po cijeni koštanja ili donesite vlastiti ključ.",
+  "error.paidModel.action": "Prijava",
+  "error.promotionLimit.title": "Morate se registrovati da biste nastavili",
+  "error.promotionLimit.description": "Registrujte se besplatno da nastavite i istražite preko 500 modela. Traje 2 minute, bez kreditne kartice. Ili se vratite kasnije.",
+  "error.promotionLimit.action": "Registracija",
+
   "error.chain.unknown": "Nepoznata greška",
   "error.chain.causedBy": "Uzrok:",
   "error.chain.apiError": "API greška",

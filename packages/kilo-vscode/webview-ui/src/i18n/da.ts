@@ -407,6 +407,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Kunne ikke forbinde til server. Kører der en server på `{{url}}`?",
 
+  "error.paidModel.title": "Du skal logge ind for at bruge denne model",
+  "error.paidModel.description": "Log ind eller opret en konto for at få adgang til over 500 modeller, brug kreditter til kostpris, eller medbring din egen nøgle.",
+  "error.paidModel.action": "Log ind",
+  "error.promotionLimit.title": "Du skal tilmelde dig for at fortsætte",
+  "error.promotionLimit.description": "Tilmeld dig gratis for at fortsætte og udforske over 500 modeller. Tager 2 minutter, intet kreditkort nødvendigt. Eller kom tilbage senere.",
+  "error.promotionLimit.action": "Tilmeld dig",
+
   "error.chain.unknown": "Ukendt fejl",
   "error.chain.causedBy": "Forårsaget af:",
   "error.chain.apiError": "API-fejl",
