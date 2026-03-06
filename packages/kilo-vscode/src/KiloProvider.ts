@@ -1002,8 +1002,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       const normalized = indexProvidersById(response.all)
 
       const config = vscode.workspace.getConfiguration("kilo-code.new.model")
-      const providerID = config.get<string>("providerID", "kilo")
-      const modelID = config.get<string>("modelID", "kilo/auto")
+      const providerID = config.get<string>("providerID", "kilo-auto")
+      const modelID = config.get<string>("modelID", "kilo-auto/frontier")
 
       const message = {
         type: "providersLoaded",
