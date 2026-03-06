@@ -86,6 +86,10 @@ export function isUnauthorizedPaidModelError(parsed: ParsedError | null): boolea
   return parsed.statusCode === 401 && parsed.code === errorCodes.PAID_MODEL_AUTH_REQUIRED
 }
 
+/**
+ * Accepts both 401 (current backend) and 429 (future backend) to support
+ * the transition. Keep 401 until the backend is updated to return 429.
+ */
 export function isUnauthorizedPromotionLimitError(parsed: ParsedError | null): boolean {
   if (!parsed) return false
   return (
