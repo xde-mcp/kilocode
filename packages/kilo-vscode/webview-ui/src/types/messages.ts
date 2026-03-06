@@ -257,7 +257,7 @@ export type PermissionLevel = "allow" | "ask" | "deny"
 export type PermissionConfig = Partial<Record<string, PermissionLevel>>
 
 export interface AgentConfig {
-  model?: string
+  model?: string | null
   prompt?: string
   temperature?: number
   top_p?: number
@@ -309,8 +309,8 @@ export interface ExperimentalConfig {
 
 export interface Config {
   permission?: PermissionConfig
-  model?: string
-  small_model?: string
+  model?: string | null
+  small_model?: string | null
   default_agent?: string
   agent?: Record<string, AgentConfig>
   provider?: Record<string, ProviderConfig>
@@ -468,6 +468,25 @@ export interface SetChatBoxMessage {
   text: string
 }
 
+export interface AppendChatBoxMessage {
+  type: "appendChatBoxMessage"
+  text: string
+}
+
+export interface ReviewComment {
+  id: string
+  file: string
+  side: "additions" | "deletions"
+  line: number
+  comment: string
+  selectedText: string
+}
+
+export interface AppendReviewCommentsMessage {
+  type: "appendReviewComments"
+  comments: ReviewComment[]
+}
+
 export interface TriggerTaskMessage {
   type: "triggerTask"
   text: string
@@ -607,6 +626,7 @@ export interface AgentManagerSessionMetaMessage {
 export interface AgentManagerRepoInfoMessage {
   type: "agentManager.repoInfo"
   branch: string
+  defaultBranch?: string
 }
 
 // Agent Manager worktree setup progress
@@ -655,6 +675,7 @@ export interface AgentManagerStateMessage {
   sessionsCollapsed?: boolean
   reviewDiffStyle?: "unified" | "split"
   isGitRepo?: boolean
+  defaultBaseBranch?: string
 }
 
 // Resolved keybindings for agent manager actions
@@ -684,6 +705,7 @@ export interface BranchInfo {
   isRemote: boolean
   isDefault: boolean
   lastCommitDate?: string
+  isCheckedOut?: boolean
 }
 
 export interface AgentManagerBranchesMessage {
@@ -961,6 +983,8 @@ export type ExtensionMessage =
   | AgentManagerMultiVersionProgressMessage
   | AgentManagerSendInitialMessage
   | SetChatBoxMessage
+  | AppendChatBoxMessage
+  | AppendReviewCommentsMessage
   | TriggerTaskMessage
   | VariantsLoadedMessage
   | CloudSessionDataLoadedMessage
@@ -1301,6 +1325,15 @@ export interface ShowExistingLocalTerminalRequest {
   type: "agentManager.showExistingLocalTerminal"
 }
 
+// Open a file in the selected worktree for a specific session
+export interface AgentManagerOpenFileRequest {
+  type: "agentManager.openFile"
+  sessionId: string
+  filePath: string
+  line?: number
+  column?: number
+}
+
 /**
  * Maximum number of parallel worktree versions for multi-version mode.
  * Keep in sync with MAX_MULTI_VERSIONS in src/agent-manager/constants.ts.
@@ -1420,6 +1453,12 @@ export interface EnhancePromptRequest {
   requestId: string
 }
 
+// Set default base branch (webview → extension)
+export interface SetDefaultBaseBranchRequest {
+  type: "agentManager.setDefaultBaseBranch"
+  branch?: string
+}
+
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
@@ -1476,6 +1515,7 @@ export type WebviewMessage =
   | ShowLocalTerminalRequest
   | OpenWorktreeRequest
   | ShowExistingLocalTerminalRequest
+  | AgentManagerOpenFileRequest
   | CreateMultiVersionRequest
   | SetTabOrderRequest
   | SetSessionsCollapsedRequest
@@ -1501,6 +1541,7 @@ export type WebviewMessage =
   // legacy-migration end
   | ApplyWorktreeDiffMessage
   | EnhancePromptRequest
+  | SetDefaultBaseBranchRequest
 
 // ============================================
 // VS Code API type
