@@ -50,42 +50,6 @@ export namespace MessageV2 {
     z.object({ message: z.string(), responseBody: z.string().optional() }),
   )
 
-  // kilocode_change start - Kilo-specific error detection
-  export const KILO_ERROR_CODES = {
-    PAID_MODEL_AUTH_REQUIRED: "PAID_MODEL_AUTH_REQUIRED",
-    PROMOTION_MODEL_LIMIT_REACHED: "PROMOTION_MODEL_LIMIT_REACHED",
-  } as const
-
-  export type KiloErrorCode = (typeof KILO_ERROR_CODES)[keyof typeof KILO_ERROR_CODES]
-
-  /**
-   * Check if an error is a Kilo-specific error (has a known Kilo error code in responseBody).
-   * Currently all Kilo errors are non-retryable, but this may change in the future.
-   */
-  export function isKiloError(error: ReturnType<NamedError["toObject"]>): boolean {
-    return parseKiloErrorCode(error) !== undefined
-  }
-
-  /**
-   * Extract the specific Kilo error code from an APIError's responseBody.
-   * Returns the code string if found, undefined otherwise.
-   */
-  export function parseKiloErrorCode(error: ReturnType<NamedError["toObject"]>): KiloErrorCode | undefined {
-    if (!APIError.isInstance(error)) return undefined
-    const responseBody = error.data.responseBody
-    if (!responseBody) return undefined
-    try {
-      const body = JSON.parse(responseBody)
-      // Backend sends: { error: { code: "PAID_MODEL_AUTH_REQUIRED" } }
-      // or: { code: "PROMOTION_MODEL_LIMIT_REACHED" }
-      const code = body?.error?.code ?? body?.code
-      if (code === KILO_ERROR_CODES.PAID_MODEL_AUTH_REQUIRED) return code
-      if (code === KILO_ERROR_CODES.PROMOTION_MODEL_LIMIT_REACHED) return code
-    } catch {}
-    return undefined
-  }
-  // kilocode_change end
-
   export const OutputFormatText = z
     .object({
       type: z.literal("text"),

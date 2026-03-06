@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test"
 import { MessageV2 } from "../../src/session/message-v2"
+import { KILO_ERROR_CODES, isKiloError, parseKiloErrorCode } from "../../src/kilocode/kilo-errors"
 import { SessionRetry } from "../../src/session/retry"
 import { NamedError } from "@opencode-ai/util/error"
 
@@ -26,7 +27,7 @@ describe("parseKiloErrorCode", () => {
       statusCode: 401,
       responseBody: JSON.stringify({ error: { code: "PAID_MODEL_AUTH_REQUIRED" } }),
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBe("PAID_MODEL_AUTH_REQUIRED")
+    expect(parseKiloErrorCode(error)).toBe("PAID_MODEL_AUTH_REQUIRED")
   })
 
   it("extracts PROMOTION_MODEL_LIMIT_REACHED from { code } (top-level)", () => {
@@ -34,7 +35,7 @@ describe("parseKiloErrorCode", () => {
       statusCode: 429,
       responseBody: JSON.stringify({ code: "PROMOTION_MODEL_LIMIT_REACHED" }),
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBe("PROMOTION_MODEL_LIMIT_REACHED")
+    expect(parseKiloErrorCode(error)).toBe("PROMOTION_MODEL_LIMIT_REACHED")
   })
 
   it("extracts PROMOTION_MODEL_LIMIT_REACHED from { error: { code } }", () => {
@@ -47,7 +48,7 @@ describe("parseKiloErrorCode", () => {
         },
       }),
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBe("PROMOTION_MODEL_LIMIT_REACHED")
+    expect(parseKiloErrorCode(error)).toBe("PROMOTION_MODEL_LIMIT_REACHED")
   })
 
   it("returns undefined for non-Kilo error codes", () => {
@@ -55,12 +56,12 @@ describe("parseKiloErrorCode", () => {
       statusCode: 429,
       responseBody: JSON.stringify({ error: { code: "SOME_OTHER_ERROR" } }),
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBeUndefined()
+    expect(parseKiloErrorCode(error)).toBeUndefined()
   })
 
   it("returns undefined for non-APIError types", () => {
     const error = new MessageV2.AbortedError({ message: "aborted" }).toObject()
-    expect(MessageV2.parseKiloErrorCode(error)).toBeUndefined()
+    expect(parseKiloErrorCode(error)).toBeUndefined()
   })
 
   it("returns undefined for malformed responseBody", () => {
@@ -68,14 +69,14 @@ describe("parseKiloErrorCode", () => {
       statusCode: 401,
       responseBody: "not valid json",
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBeUndefined()
+    expect(parseKiloErrorCode(error)).toBeUndefined()
   })
 
   it("returns undefined when responseBody is missing", () => {
     const error = makeAPIError({
       statusCode: 401,
     })
-    expect(MessageV2.parseKiloErrorCode(error)).toBeUndefined()
+    expect(parseKiloErrorCode(error)).toBeUndefined()
   })
 })
 
@@ -85,7 +86,7 @@ describe("isKiloError", () => {
       statusCode: 401,
       responseBody: JSON.stringify({ error: { code: "PAID_MODEL_AUTH_REQUIRED" } }),
     })
-    expect(MessageV2.isKiloError(error)).toBe(true)
+    expect(isKiloError(error)).toBe(true)
   })
 
   it("returns true for PROMOTION_MODEL_LIMIT_REACHED", () => {
@@ -93,7 +94,7 @@ describe("isKiloError", () => {
       statusCode: 429,
       responseBody: JSON.stringify({ code: "PROMOTION_MODEL_LIMIT_REACHED" }),
     })
-    expect(MessageV2.isKiloError(error)).toBe(true)
+    expect(isKiloError(error)).toBe(true)
   })
 
   it("returns false for regular 429 errors without Kilo code", () => {
@@ -102,12 +103,12 @@ describe("isKiloError", () => {
       isRetryable: true,
       message: "Too Many Requests",
     })
-    expect(MessageV2.isKiloError(error)).toBe(false)
+    expect(isKiloError(error)).toBe(false)
   })
 
   it("returns false for non-APIError types", () => {
     const error = new MessageV2.AbortedError({ message: "aborted" }).toObject()
-    expect(MessageV2.isKiloError(error)).toBe(false)
+    expect(isKiloError(error)).toBe(false)
   })
 })
 
