@@ -29,6 +29,7 @@ import type {
   FileDiff,
 } from "@kilocode/sdk/v2"
 import { ErrorDisplay } from "./ErrorDisplay"
+import { unwrapError } from "../../utils/errorUtils"
 
 function getDirectory(path: string): string {
   const sep = path.includes("/") ? "/" : "\\"
@@ -40,48 +41,6 @@ function getFilename(path: string): string {
   const sep = path.includes("/") ? "/" : "\\"
   const idx = path.lastIndexOf(sep)
   return idx === -1 ? path : path.slice(idx + 1)
-}
-
-function unwrapError(message: string): string {
-  const text = message.replace(/^Error:\s*/, "").trim()
-  const tryParse = (v: string) => {
-    try {
-      return JSON.parse(v) as unknown
-    } catch {
-      return undefined
-    }
-  }
-  const read = (v: string) => {
-    const first = tryParse(v)
-    if (typeof first !== "string") return first
-    return tryParse(first.trim())
-  }
-  let json = read(text)
-  if (json === undefined) {
-    const start = text.indexOf("{")
-    const end = text.lastIndexOf("}")
-    if (start !== -1 && end > start) json = read(text.slice(start, end + 1))
-  }
-  if (!json || typeof json !== "object" || Array.isArray(json)) return message
-  const rec = json as Record<string, unknown>
-  const err =
-    rec.error && typeof rec.error === "object" && !Array.isArray(rec.error)
-      ? (rec.error as Record<string, unknown>)
-      : undefined
-  if (err) {
-    const type = typeof err.type === "string" ? err.type : undefined
-    const msg = typeof err.message === "string" ? err.message : undefined
-    if (type && msg) return `${type}: ${msg}`
-    if (msg) return msg
-    if (type) return type
-    const code = typeof err.code === "string" ? err.code : undefined
-    if (code) return code
-  }
-  const msg = typeof rec.message === "string" ? rec.message : undefined
-  if (msg) return msg
-  const reason = typeof rec.error === "string" ? rec.error : undefined
-  if (reason) return reason
-  return message
 }
 
 interface VscodeSessionTurnProps {

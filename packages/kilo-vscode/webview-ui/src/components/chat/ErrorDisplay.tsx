@@ -17,7 +17,6 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
     return unwrapError(String(msg))
   })
 
-
   return (
     <Card variant="error" class="error-card">
       {errorText()}
