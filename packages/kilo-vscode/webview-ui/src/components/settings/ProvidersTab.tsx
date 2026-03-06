@@ -70,9 +70,7 @@ const ProvidersTab: Component = () => {
     }
   }
 
-  const primaryAgents = createMemo(() =>
-    session.agents().filter((a) => a.mode === "primary" || a.mode === "all"),
-  )
+  const allAgents = createMemo(() => session.agents())
 
   function handleModeModelSelect(agentName: string) {
     return (providerID: string, modelID: string) => {
@@ -118,11 +116,11 @@ const ProvidersTab: Component = () => {
       {/* Model per Mode */}
       <h4 style={{ "margin-top": "24px", "margin-bottom": "8px" }}>{language.t("settings.providers.modeModels")}</h4>
       <Card>
-        <For each={primaryAgents()}>
+        <For each={allAgents()}>
           {(agent, index) => (
             <SettingsRow
               title={agent.name.charAt(0).toUpperCase() + agent.name.slice(1)}
-              last={index() === primaryAgents().length - 1}
+              last={index() === allAgents().length - 1}
             >
               <ModelSelectorBase
                 value={parseModelConfig(config().agent?.[agent.name]?.model ?? undefined)}
