@@ -410,10 +410,12 @@ export const dict = {
   "error.globalSync.connectFailed": "서버에 연결할 수 없습니다. `{{url}}`에서 서버가 실행 중인가요?",
 
   "error.paidModel.title": "이 모델을 사용하려면 로그인이 필요합니다",
-  "error.paidModel.description": "로그인하거나 계정을 만들어 500개 이상의 모델에 접근하고, 원가로 크레딧을 사용하거나, 자체 키를 가져오세요.",
+  "error.paidModel.description":
+    "로그인하거나 계정을 만들어 500개 이상의 모델에 접근하고, 원가로 크레딧을 사용하거나, 자체 키를 가져오세요.",
   "error.paidModel.action": "로그인",
   "error.promotionLimit.title": "계속하려면 가입이 필요합니다",
-  "error.promotionLimit.description": "무료로 가입하여 500개 이상의 모델을 탐색하세요. 2분이면 완료, 신용카드 불필요. 또는 나중에 다시 오세요.",
+  "error.promotionLimit.description":
+    "무료로 가입하여 500개 이상의 모델을 탐색하세요. 2분이면 완료, 신용카드 불필요. 또는 나중에 다시 오세요.",
   "error.promotionLimit.action": "가입하기",
 
   "error.chain.unknown": "알 수 없는 오류",

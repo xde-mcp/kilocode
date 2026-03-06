@@ -406,10 +406,12 @@ export const dict = {
   "error.globalSync.connectFailed": "Não foi possível conectar ao servidor. Há um servidor executando em `{{url}}`?",
 
   "error.paidModel.title": "Você precisa fazer login para usar este modelo",
-  "error.paidModel.description": "Faça login ou crie uma conta para acessar mais de 500 modelos, usar créditos a preço de custo ou trazer sua própria chave.",
+  "error.paidModel.description":
+    "Faça login ou crie uma conta para acessar mais de 500 modelos, usar créditos a preço de custo ou trazer sua própria chave.",
   "error.paidModel.action": "Fazer login",
   "error.promotionLimit.title": "Você precisa se cadastrar para continuar",
-  "error.promotionLimit.description": "Cadastre-se gratuitamente para continuar e explorar mais de 500 modelos. Leva 2 minutos, sem cartão de crédito. Ou volte mais tarde.",
+  "error.promotionLimit.description":
+    "Cadastre-se gratuitamente para continuar e explorar mais de 500 modelos. Leva 2 minutos, sem cartão de crédito. Ou volte mais tarde.",
   "error.promotionLimit.action": "Cadastrar-se",
 
   "error.chain.unknown": "Erro desconhecido",

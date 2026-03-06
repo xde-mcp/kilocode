@@ -413,10 +413,12 @@ export const dict = {
   "error.globalSync.connectFailed": "Verbindung zum Server fehlgeschlagen. Läuft ein Server unter `{{url}}`?",
 
   "error.paidModel.title": "Du musst dich anmelden, um dieses Modell zu nutzen",
-  "error.paidModel.description": "Melde dich an oder erstelle ein Konto, um auf über 500 Modelle zuzugreifen, Credits zum Selbstkostenpreis zu nutzen oder deinen eigenen Schlüssel mitzubringen.",
+  "error.paidModel.description":
+    "Melde dich an oder erstelle ein Konto, um auf über 500 Modelle zuzugreifen, Credits zum Selbstkostenpreis zu nutzen oder deinen eigenen Schlüssel mitzubringen.",
   "error.paidModel.action": "Anmelden",
   "error.promotionLimit.title": "Du musst dich registrieren, um weiterzumachen",
-  "error.promotionLimit.description": "Registriere dich kostenlos, um weiterzumachen und über 500 Modelle zu entdecken. Dauert 2 Minuten, keine Kreditkarte nötig. Oder komm später wieder.",
+  "error.promotionLimit.description":
+    "Registriere dich kostenlos, um weiterzumachen und über 500 Modelle zu entdecken. Dauert 2 Minuten, keine Kreditkarte nötig. Oder komm später wieder.",
   "error.promotionLimit.action": "Registrieren",
 
   "error.chain.unknown": "Unbekannter Fehler",
