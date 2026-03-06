@@ -409,6 +409,13 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Could not connect to server. Is there a server running at `{{url}}`?",
 
+  "error.paidModel.title": "You need to sign in to use this model",
+  "error.paidModel.description": "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.",
+  "error.paidModel.action": "Sign In",
+  "error.promotionLimit.title": "You need to sign up to keep going",
+  "error.promotionLimit.description": "Sign up for free to continue and explore 500 other models. Takes 2 minutes, no credit card required. Or come back later.",
+  "error.promotionLimit.action": "Sign Up",
+
   "error.chain.unknown": "Unknown error",
   "error.chain.causedBy": "Caused by:",
   "error.chain.apiError": "API error",

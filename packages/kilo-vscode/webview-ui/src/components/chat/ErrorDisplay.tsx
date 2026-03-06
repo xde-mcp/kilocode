@@ -2,6 +2,7 @@ import { Component, createMemo, Switch, Match } from "solid-js"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Button } from "@kilocode/kilo-ui/button"
 import type { AssistantMessage } from "@kilocode/sdk/v2"
+import { useLanguage } from "../../context/language"
 import {
   unwrapError,
   parseAssistantError,
@@ -15,6 +16,7 @@ interface ErrorDisplayProps {
 }
 
 export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
+  const { t } = useLanguage()
   const parsed = createMemo(() => parseAssistantError(props.error))
 
   const errorText = createMemo(() => {
@@ -34,24 +36,24 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
         <div data-component="auth-prompt">
           <div data-slot="auth-prompt-header">
             <span data-slot="auth-prompt-icon">✨</span>
-            <span data-slot="auth-prompt-title">You need to sign in to use this model</span>
+            <span data-slot="auth-prompt-title">{t("error.paidModel.title")}</span>
           </div>
           <p data-slot="auth-prompt-description">
-            Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.
+            {t("error.paidModel.description")}
           </p>
-          <Button variant="primary" onClick={() => props.onLogin?.()}>Sign In</Button>
+          <Button variant="primary" onClick={() => props.onLogin?.()}>{t("error.paidModel.action")}</Button>
         </div>
       </Match>
       <Match when={isUnauthorizedPromotionLimitError(parsed())}>
         <div data-component="auth-prompt">
           <div data-slot="auth-prompt-header">
             <span data-slot="auth-prompt-icon">🕙</span>
-            <span data-slot="auth-prompt-title">You need to sign up to keep going</span>
+            <span data-slot="auth-prompt-title">{t("error.promotionLimit.title")}</span>
           </div>
           <p data-slot="auth-prompt-description">
-            Sign up for free to continue and explore 500 other models. Takes 2 minutes, no credit card required. Or come back later.
+            {t("error.promotionLimit.description")}
           </p>
-          <Button variant="primary" onClick={() => props.onLogin?.()}>Sign Up</Button>
+          <Button variant="primary" onClick={() => props.onLogin?.()}>{t("error.promotionLimit.action")}</Button>
         </div>
       </Match>
     </Switch>
