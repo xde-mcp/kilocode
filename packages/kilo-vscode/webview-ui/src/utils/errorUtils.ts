@@ -39,3 +39,57 @@ export function unwrapError(message: string): string {
   if (reason) return reason
   return message
 }
+
+export const errorCodes = {
+  PAID_MODEL_AUTH_REQUIRED: "PAID_MODEL_AUTH_REQUIRED",
+  PROMOTION_MODEL_LIMIT_REACHED: "PROMOTION_MODEL_LIMIT_REACHED",
+} as const
+
+export interface ParsedError {
+  statusCode?: number
+  code?: string
+  message?: string
+}
+
+export function parseAssistantError(
+  error: { name: string; data?: Record<string, unknown> } | null | undefined,
+): ParsedError | null {
+  if (!error) return null
+  if (error.name !== "APIError") return null
+
+  const data = error.data
+  if (!data) return null
+
+  const statusCode = typeof data.statusCode === "number" ? data.statusCode : undefined
+  const message = typeof data.message === "string" ? data.message : undefined
+
+  let code: string | undefined
+  if (typeof data.responseBody === "string") {
+    try {
+      const body = JSON.parse(data.responseBody) as Record<string, unknown>
+      const bodyError = body.error as Record<string, unknown> | undefined
+      if (bodyError && typeof bodyError.code === "string") {
+        code = bodyError.code
+      } else if (typeof body.code === "string") {
+        code = body.code
+      }
+    } catch {
+      // responseBody is not valid JSON — ignore
+    }
+  }
+
+  return { statusCode, code, message }
+}
+
+export function isUnauthorizedPaidModelError(parsed: ParsedError | null): boolean {
+  if (!parsed) return false
+  return parsed.statusCode === 401 && parsed.code === errorCodes.PAID_MODEL_AUTH_REQUIRED
+}
+
+export function isUnauthorizedPromotionLimitError(parsed: ParsedError | null): boolean {
+  if (!parsed) return false
+  return (
+    (parsed.statusCode === 401 || parsed.statusCode === 429) &&
+    parsed.code === errorCodes.PROMOTION_MODEL_LIMIT_REACHED
+  )
+}
