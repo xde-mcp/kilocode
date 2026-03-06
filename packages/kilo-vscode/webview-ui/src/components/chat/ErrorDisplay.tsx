@@ -27,21 +27,23 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
   })
 
   return (
-    <Switch fallback={
-      <Card variant="error" class="error-card">
-        {errorText()}
-      </Card>
-    }>
+    <Switch
+      fallback={
+        <Card variant="error" class="error-card">
+          {errorText()}
+        </Card>
+      }
+    >
       <Match when={isUnauthorizedPaidModelError(parsed())}>
         <div data-component="auth-prompt">
           <div data-slot="auth-prompt-header">
             <span data-slot="auth-prompt-icon">✨</span>
             <span data-slot="auth-prompt-title">{t("error.paidModel.title")}</span>
           </div>
-          <p data-slot="auth-prompt-description">
-            {t("error.paidModel.description")}
-          </p>
-          <Button variant="primary" onClick={() => props.onLogin?.()}>{t("error.paidModel.action")}</Button>
+          <p data-slot="auth-prompt-description">{t("error.paidModel.description")}</p>
+          <Button variant="primary" onClick={() => props.onLogin?.()}>
+            {t("error.paidModel.action")}
+          </Button>
         </div>
       </Match>
       <Match when={isUnauthorizedPromotionLimitError(parsed())}>
@@ -50,10 +52,10 @@ export const ErrorDisplay: Component<ErrorDisplayProps> = (props) => {
             <span data-slot="auth-prompt-icon">🕙</span>
             <span data-slot="auth-prompt-title">{t("error.promotionLimit.title")}</span>
           </div>
-          <p data-slot="auth-prompt-description">
-            {t("error.promotionLimit.description")}
-          </p>
-          <Button variant="primary" onClick={() => props.onLogin?.()}>{t("error.promotionLimit.action")}</Button>
+          <p data-slot="auth-prompt-description">{t("error.promotionLimit.description")}</p>
+          <Button variant="primary" onClick={() => props.onLogin?.()}>
+            {t("error.promotionLimit.action")}
+          </Button>
         </div>
       </Match>
     </Switch>

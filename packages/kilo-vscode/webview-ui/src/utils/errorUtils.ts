@@ -89,7 +89,6 @@ export function isUnauthorizedPaidModelError(parsed: ParsedError | null): boolea
 export function isUnauthorizedPromotionLimitError(parsed: ParsedError | null): boolean {
   if (!parsed) return false
   return (
-    (parsed.statusCode === 401 || parsed.statusCode === 429) &&
-    parsed.code === errorCodes.PROMOTION_MODEL_LIMIT_REACHED
+    (parsed.statusCode === 401 || parsed.statusCode === 429) && parsed.code === errorCodes.PROMOTION_MODEL_LIMIT_REACHED
   )
 }
