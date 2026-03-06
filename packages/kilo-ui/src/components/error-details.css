@@ -1,3 +1,7 @@
+.error-card {
+  padding-bottom: 0;
+}
+
 .error-card [data-component="collapsible"] {
   margin-top: 8px;
 }
