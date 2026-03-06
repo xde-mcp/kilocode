@@ -232,6 +232,7 @@ export const dict = {
   "prompt.action.send": "Send",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Enhance prompt",
+  "prompt.action.resetModel": "Reset model to default",
   "prompt.action.enhanceDescription":
     "The 'Enhance Prompt' button helps improve your prompt by providing additional context, clarification, or rephrasing. Try typing a prompt in here and clicking the button again to see how it works.",
 
@@ -988,6 +989,8 @@ export const dict = {
   "settings.providers.defaultModel.description": "Primary model for conversations",
   "settings.providers.smallModel.title": "Small Model",
   "settings.providers.smallModel.description": "Lightweight model for title generation and other quick tasks",
+  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels.description": "Override the default model for specific modes. If not set, the global default model is used.",
   "settings.providers.disabled": "Disabled Providers",
   "settings.providers.disabled.description": "Providers to hide from the provider list",
   "settings.providers.enabled": "Enabled Providers (Allowlist)",
