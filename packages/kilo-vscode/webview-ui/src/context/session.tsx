@@ -48,7 +48,7 @@ interface SessionStore {
   messages: Record<string, Message[]> // sessionID -> messages
   parts: Record<string, Part[]> // messageID -> parts
   todos: Record<string, TodoItem[]> // sessionID -> todos
-  modelSelections: Record<string, ModelSelection> // sessionID -> model
+  modelSelections: Record<string, ModelSelection> // "sessionID/agentName" -> model
   agentSelections: Record<string, string> // sessionID -> agent name
   variantSelections: Record<string, string> // "providerID/modelID" -> variant name
 }
@@ -181,9 +181,9 @@ export const SessionProvider: ParentComponent = (props) => {
   // Tracks question IDs that failed so the UI can reset sending state
   const [questionErrors, setQuestionErrors] = createSignal<Set<string>>(new Set())
 
-  // Pending model selection for before a session exists
-  const [pendingModelSelection, setPendingModelSelection] = createSignal<ModelSelection | null>(null)
-  const [pendingWasUserSet, setPendingWasUserSet] = createSignal(false)
+  // Pending model selection for before a session exists (per-mode)
+  const [pendingModelSelections, setPendingModelSelections] = createSignal<Record<string, ModelSelection>>({})
+  const [pendingWasUserSet, setPendingWasUserSet] = createSignal<Record<string, boolean>>({})
 
   // Agents (modes) loaded from the CLI backend
   const [agents, setAgents] = createSignal<AgentInfo[]>([])
@@ -206,6 +206,9 @@ export const SessionProvider: ParentComponent = (props) => {
     variantSelections: {},
   })
 
+  /** Composite key for per-session per-mode model selections. */
+  const modelKey = (sessionID: string, agentName: string) => `${sessionID}/${agentName}`
+
   // Keep pending selection in sync with provider/mode default until the user
   // explicitly changes it (or a session exists).
   createEffect(() => {
@@ -214,22 +217,23 @@ export const SessionProvider: ParentComponent = (props) => {
       return
     }
 
-    if (pendingWasUserSet()) {
+    const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    if (pendingWasUserSet()[pendingAgent]) {
       return
     }
 
     // Per-mode config takes priority over global default
-    const pendingAgent = pendingAgentSelection() ?? defaultAgent()
     const modeModel = getModeModel(pendingAgent)
-    setPendingModelSelection(modeModel ?? def)
+    setPendingModelSelections((prev) => ({ ...prev, [pendingAgent]: (modeModel ?? def)! }))
   })
 
   // If we have no pending yet, initialize it from provider default.
   createEffect(() => {
-    if (!pendingModelSelection()) {
-      const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    if (!pendingModelSelections()[pendingAgent]) {
       const modeModel = getModeModel(pendingAgent)
-      setPendingModelSelection(modeModel ?? provider.defaultSelection())
+      const sel = modeModel ?? provider.defaultSelection()
+      if (sel) setPendingModelSelections((prev) => ({ ...prev, [pendingAgent]: sel }))
     }
   })
 
@@ -242,20 +246,20 @@ export const SessionProvider: ParentComponent = (props) => {
     return { providerID: raw.slice(0, slash), modelID: raw.slice(slash + 1) }
   }
 
-  // Per-session model selection
-  // Precedence: session override > per-mode config > global default > kilo/auto
+  // Per-session per-mode model selection
+  // Precedence: session+mode override > per-mode config > global default > kilo/auto
   const selected = createMemo<ModelSelection | null>(() => {
     const sessionID = currentSessionID()
     if (sessionID) {
-      const sessionModel = store.modelSelections[sessionID]
-      if (sessionModel) return sessionModel
       const agentName = store.agentSelections[sessionID] ?? defaultAgent()
+      const sessionModel = store.modelSelections[modelKey(sessionID, agentName)]
+      if (sessionModel) return sessionModel
       return getModeModel(agentName) ?? provider.defaultSelection()
     }
-    // Pre-session: check pending agent's per-mode default
-    const pending = pendingModelSelection()
-    if (pending) return pending
+    // Pre-session: check pending agent's per-mode override
     const pendingAgent = pendingAgentSelection() ?? defaultAgent()
+    const pending = pendingModelSelections()[pendingAgent]
+    if (pending) return pending
     return getModeModel(pendingAgent) ?? provider.defaultSelection()
   })
 
@@ -271,11 +275,12 @@ export const SessionProvider: ParentComponent = (props) => {
   function selectModel(providerID: string, modelID: string) {
     const selection: ModelSelection = { providerID, modelID }
     const id = currentSessionID()
+    const agentName = selectedAgentName()
     if (id) {
-      setStore("modelSelections", id, selection)
+      setStore("modelSelections", modelKey(id, agentName), selection)
     } else {
-      setPendingWasUserSet(true)
-      setPendingModelSelection(selection)
+      setPendingWasUserSet((prev) => ({ ...prev, [agentName]: true }))
+      setPendingModelSelections((prev) => ({ ...prev, [agentName]: selection }))
     }
   }
 
@@ -293,19 +298,29 @@ export const SessionProvider: ParentComponent = (props) => {
     return sel.providerID !== cfg.providerID || sel.modelID !== cfg.modelID
   })
 
-  /** Clear the session-level model override, falling back to config default. */
+  /** Clear the per-mode model override, falling back to config default. */
   function clearModelOverride() {
+    const agentName = selectedAgentName()
     const id = currentSessionID()
     if (id) {
+      const key = modelKey(id, agentName)
       setStore(
         "modelSelections",
         produce((selections) => {
-          delete selections[id]
+          delete selections[key]
         }),
       )
     } else {
-      setPendingWasUserSet(false)
-      setPendingModelSelection(null)
+      setPendingWasUserSet((prev) => {
+        const next = { ...prev }
+        delete next[agentName]
+        return next
+      })
+      setPendingModelSelections((prev) => {
+        const next = { ...prev }
+        delete next[agentName]
+        return next
+      })
     }
   }
 
@@ -488,15 +503,18 @@ export const SessionProvider: ParentComponent = (props) => {
         setStore("messages", session.id, [])
       }
 
-      // If there's a pending model selection, assign it to this new session.
+      // Transfer pending per-mode model selections to the new session.
       // Guard against duplicate sessionCreated events (HTTP response + SSE)
       // which would overwrite the user's selection with the effect-restored default.
-      const pending = pendingModelSelection()
-      if (pending && !store.modelSelections[session.id]) {
-        setStore("modelSelections", session.id, pending)
-        setPendingModelSelection(null)
-        setPendingWasUserSet(false)
+      const pendingModels = pendingModelSelections()
+      for (const [agent, sel] of Object.entries(pendingModels)) {
+        const key = modelKey(session.id, agent)
+        if (!store.modelSelections[key]) {
+          setStore("modelSelections", key, sel)
+        }
       }
+      setPendingModelSelections({})
+      setPendingWasUserSet({})
 
       // Transfer pending agent selection to the new session
       const pendingAgent = pendingAgentSelection()
@@ -713,7 +731,9 @@ export const SessionProvider: ParentComponent = (props) => {
       setStore(
         "modelSelections",
         produce((selections) => {
-          delete selections[sessionID]
+          for (const key of Object.keys(selections)) {
+            if (key.startsWith(`${sessionID}/`)) delete selections[key]
+          }
         }),
       )
       setStore(
@@ -780,9 +800,12 @@ export const SessionProvider: ParentComponent = (props) => {
     batch(() => {
       setStore("sessions", session.id, session)
 
-      const pending = pendingModelSelection()
-      if (pending && !store.modelSelections[session.id]) {
-        setStore("modelSelections", session.id, pending)
+      const pendingModels = pendingModelSelections()
+      for (const [agent, sel] of Object.entries(pendingModels)) {
+        const key = modelKey(session.id, agent)
+        if (!store.modelSelections[key]) {
+          setStore("modelSelections", key, sel)
+        }
       }
       const pendingAgent = pendingAgentSelection()
       if (pendingAgent && !store.agentSelections[session.id]) {
@@ -844,11 +867,12 @@ export const SessionProvider: ParentComponent = (props) => {
       setStore("agentSelections", id, name)
     } else {
       setPendingAgentSelection(name)
-      // When switching mode pre-session, update pending model to per-mode default
-      // (unless user explicitly set a model for this session)
-      if (!pendingWasUserSet()) {
+      // When switching mode pre-session, initialize pending model for the new mode
+      // if the user hasn't explicitly set one for it
+      if (!pendingWasUserSet()[name] && !pendingModelSelections()[name]) {
         const modeModel = getModeModel(name)
-        setPendingModelSelection(modeModel ?? provider.defaultSelection())
+        const sel = modeModel ?? provider.defaultSelection()
+        if (sel) setPendingModelSelections((prev) => ({ ...prev, [name]: sel }))
       }
     }
   }
@@ -986,9 +1010,9 @@ export const SessionProvider: ParentComponent = (props) => {
       return
     }
 
-    // Reset pending selection to default for the new session
-    setPendingModelSelection(provider.defaultSelection())
-    setPendingWasUserSet(false)
+    // Reset pending selections to defaults for the new session
+    setPendingModelSelections({})
+    setPendingWasUserSet({})
     setPendingAgentSelection(defaultAgent())
     vscode.postMessage({ type: "createSession" })
   }
@@ -1000,8 +1024,8 @@ export const SessionProvider: ParentComponent = (props) => {
     setPermissions([])
     setQuestions([])
     setQuestionErrors(new Set<string>())
-    setPendingModelSelection(provider.defaultSelection())
-    setPendingWasUserSet(false)
+    setPendingModelSelections({})
+    setPendingWasUserSet({})
     setPendingAgentSelection(defaultAgent())
     vscode.postMessage({ type: "clearSession" })
   }
@@ -1152,9 +1176,13 @@ export const SessionProvider: ParentComponent = (props) => {
     selectedAgent: selectedAgentName,
     selectAgent,
     getSessionAgent: (sessionID: string) => store.agentSelections[sessionID] ?? defaultAgent(),
-    getSessionModel: (sessionID: string) => store.modelSelections[sessionID] ?? provider.defaultSelection(),
+    getSessionModel: (sessionID: string) => {
+      const agentName = store.agentSelections[sessionID] ?? defaultAgent()
+      return store.modelSelections[modelKey(sessionID, agentName)] ?? provider.defaultSelection()
+    },
     setSessionModel: (sessionID: string, providerID: string, modelID: string) => {
-      setStore("modelSelections", sessionID, { providerID, modelID })
+      const agentName = store.agentSelections[sessionID] ?? defaultAgent()
+      setStore("modelSelections", modelKey(sessionID, agentName), { providerID, modelID })
     },
     setSessionAgent: (sessionID: string, name: string) => {
       setStore("agentSelections", sessionID, name)
