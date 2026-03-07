@@ -74,10 +74,10 @@ If you prefer downloading a binary from the [Releases page](https://github.com/K
 For most users:
 
 - **Windows (most PCs):** `kilo-windows-x64.zip`
-- **Windows on ARM:** `kilo-windows-arm64.zip`
 - **macOS Apple Silicon:** `kilo-darwin-arm64.zip`
 - **macOS Intel:** `kilo-darwin-x64.zip`
-- **Linux x64:** `kilo-linux-x64.zip`
+- **Linux x64:** `kilo-linux-x64.tar,gz`
+- **Linux on ARM:** `kilo-linux-arm64.zip`
 
 On some systems and npm versions, installing `@kilocode/cli` can create a hidden `.kilo` file near the installed `kilo` command (for example in a global npm bin directory). This file is an npm-generated launcher helper, not project data.
 
