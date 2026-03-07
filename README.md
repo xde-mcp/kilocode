@@ -65,8 +65,9 @@ If you prefer downloading a binary from the [Releases page](https://github.com/K
 - `kilo-<os>-<arch>.zip` is the CLI binary for your OS and CPU architecture on Windows and macOS. (`kilo-linux-<arch>.tar.gz` for Linux)
 - `darwin` means macOS.
 - `x64` is standard 64-bit Intel/AMD CPUs.
-- `x64-baseline` is a compatibility build for older x64 CPUs(may not support newer instruction sets).
+- `x64-baseline` is a compatibility build for older x64 CPUs(do not support AVX Instruction).
 - `arm64` is ARM-based Linux/MacOS.
+- `musl` is statically linked Linux build for Alpine/minimal Docker without glibc. Alpine/minimal Docker users should prefer the matching *-musl asset.
 - `kilo-vscode-*.vsix` is the VS Code extension package and not the CLI binary.
 - `Source code` releases are for building from source, not normal installation.
 
