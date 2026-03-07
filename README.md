@@ -74,7 +74,7 @@ For most users:
 - **macOS Apple Silicon:** `kilo-darwin-arm64.zip`
 - **macOS Intel:** `kilo-darwin-x64.zip`
 - **Linux x64:** `kilo-linux-x64.tar,gz`
-- **Linux on ARM:** `kilo-linux-arm64.zip`
+- **Linux on ARM:** `kilo-linux-arm64.tar.gz`
 
 <!-- kilocode_change start -->
 ### npm Install Note: Hidden `.kilo` File
