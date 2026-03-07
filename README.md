@@ -55,9 +55,6 @@ npx @kilocode/cli
 
 Then run `kilo` in any project directory to start.
 
-<!-- kilocode_change start -->
-### npm Install Note: Hidden `.kilo` File
-
 ### Install from GitHub Releases (Optional)
 
 If you prefer downloading a binary from the [Releases page](https://github.com/Kilo-Org/kilo/releases), use this quick guide:
@@ -78,6 +75,9 @@ For most users:
 - **macOS Intel:** `kilo-darwin-x64.zip`
 - **Linux x64:** `kilo-linux-x64.tar,gz`
 - **Linux on ARM:** `kilo-linux-arm64.zip`
+
+<!-- kilocode_change start -->
+### npm Install Note: Hidden `.kilo` File
 
 On some systems and npm versions, installing `@kilocode/cli` can create a hidden `.kilo` file near the installed `kilo` command (for example in a global npm bin directory). This file is an npm-generated launcher helper, not project data.
 
