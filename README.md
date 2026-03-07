@@ -55,9 +55,19 @@ npx @kilocode/cli
 
 Then run `kilo` in any project directory to start.
 
+<!-- kilocode_change start -->
+### npm Install Note: Hidden `.kilo` File
+
+On some systems and npm versions, installing `@kilocode/cli` can create a hidden `.kilo` file near the installed `kilo` command (for example in a global npm bin directory). This file is an npm-generated launcher helper, not project data.
+
+- Why it exists: npm may create helper artifacts while wiring CLI executables.
+- Size caveat: size can vary by platform, npm version, and install mode (symlink vs copied launcher), so a strict fixed size is not guaranteed.
+- Safety: it is safe to leave in place. Do not edit it manually. Use your package manager's uninstall (`npm uninstall -g @kilocode/cli`) to remove install artifacts cleanly.
+<!-- kilocode_change end -->
+
 ### Install from GitHub Releases (Optional)
 
-If you prefer downloading a binary from the [Releases page](https://github.com/Kilo-Org/kilocode/releases), use this quick guide:
+Download the latest binary or source code from the [Releases page](https://github.com/Kilo-Org/kilocode/releases), use this quick guide:
 
 - `kilo-<os>-<arch>.zip` is the CLI binary for your OS and CPU architecture on Windows and macOS. (`kilo-linux-<arch>.tar.gz` for Linux)
 - `darwin` means macOS.
@@ -75,16 +85,6 @@ For most users:
 - **macOS Intel:** `kilo-darwin-x64.zip`
 - **Linux x64:** `kilo-linux-x64.tar,gz`
 - **Linux on ARM:** `kilo-linux-arm64.tar.gz`
-
-<!-- kilocode_change start -->
-### npm Install Note: Hidden `.kilo` File
-
-On some systems and npm versions, installing `@kilocode/cli` can create a hidden `.kilo` file near the installed `kilo` command (for example in a global npm bin directory). This file is an npm-generated launcher helper, not project data.
-
-- Why it exists: npm may create helper artifacts while wiring CLI executables.
-- Size caveat: size can vary by platform, npm version, and install mode (symlink vs copied launcher), so a strict fixed size is not guaranteed.
-- Safety: it is safe to leave in place. Do not edit it manually. Use your package manager's uninstall (`npm uninstall -g @kilocode/cli`) to remove install artifacts cleanly.
-<!-- kilocode_change end -->
 
 ### Autonomous Mode (CI/CD)
 
