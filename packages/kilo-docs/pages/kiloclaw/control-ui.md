@@ -29,7 +29,7 @@ Do not use the **Update** feature in the Control UI to update KiloClaw. Use **Re
 
 ## Authentication
 
-Auth is handled via token or password on the WebSocket handshake. We use the one time "access code" from your KiloClaw Dashboard to pair your device. Other remote connections require one-time device pairing — the pairing request appears on the [KiloClaw Dashboard](/docs/kiloclaw/dashboard#pairing-requests) or in the Control UI itself.
+Auth is handled via token or password on the WebSocket handshake. Remote connections require one-time device pairing — the pairing request appears on the [KiloClaw Dashboard](/docs/kiloclaw/dashboard#pairing-requests) or in the Control UI itself.
 
 ## Exec Approvals
 

@@ -100,9 +100,7 @@ At the bottom of Settings:
 
 When your instance is running you can access the [OpenClaw Control UI](/docs/kiloclaw/control-ui) — a browser-based dashboard for managing your agent, channels, sessions, exec approvals, and more:
 
-1. Click **Access Code** to generate a one-time code (expires in 10 minutes)
-2. Click **Open** to launch the OpenClaw web interface in a new tab
-3. Enter the access code to authenticate
+1. Click **Open** to launch the OpenClaw web interface in a new tab
 
 See the [Control UI reference](/docs/kiloclaw/control-ui) for a full overview of its capabilities.
 

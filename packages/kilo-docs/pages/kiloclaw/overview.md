@@ -65,12 +65,7 @@ When you initialize a new channel for the first time, or a new device connects t
 
 ## Accessing Your Agent
 
-1. Click **Access Code** to get a one-time code (expires in 10 minutes)
-
-{% image src="/docs/img/kiloclaw/access-code-modal.png" alt="Access code modal showing one-time code" width="500" caption="One-time access code with 10-minute expiration" /%}
-
-2. Click **Open** to launch the OpenClaw web interface
-3. Enter your access code to authenticate
+1. Click **Open** on your dashboard to launch the OpenClaw web interface
 
 {% image src="/docs/img/kiloclaw/openclaw-dashboard.png" alt="OpenClaw web interface" width="800" caption="OpenClaw web UI" /%}
 

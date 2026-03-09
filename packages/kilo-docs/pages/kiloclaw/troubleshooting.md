@@ -41,10 +41,6 @@ The OpenClaw process is automatically restarted when it crashes. Check the Gatew
 2. Try a **Redeploy** to apply the latest platform image
 3. If the issue persists, join the [Kilo Discord](https://kilo.ai/discord) and share details in the KiloClaw channel
 
-### My access code isn't working
-
-Access codes are one-time use and expire after 10 minutes. Generate a new one by clicking **Access Code** on the dashboard. Make sure your instance is running before clicking **Open**.
-
 ### I changed the model but the agent is still using the old one
 
 After selecting a new model, click **Save & Provision** to apply it. This refreshes the API key and saves the new model. You may also need to **Restart OpenClaw** for the change to take full effect.
@@ -59,6 +55,25 @@ The Gateway Process tab shows the current state of the OpenClaw process inside y
 - **Stopping** — The process is shutting down gracefully
 - **Crashed** — The process exited unexpectedly and will be automatically restarted
 - **Shutting Down** — The process is stopping as part of a machine stop or redeploy
+
+## FAQ
+
+### How can I change my model?
+
+You can change the model in two ways:
+
+- **From chat** — Type `/model` in the Chat window within the OpenClaw Control UI to switch models directly.
+- **From the dashboard** — Go to [https://app.kilo.ai/claw](https://app.kilo.ai/claw), select the model you want, and click **Save**. No redeploy is needed.
+
+### Can I access the filesystem?
+
+Direct filesystem access is not available at this time. You can interact with files through your OpenClaw agent using its built-in file tools.
+
+### How can I update my OpenClaw?
+
+Do **not** click **Update Now** inside the OpenClaw Control UI — this is not supported for KiloClaw instances and may break your setup.
+
+Updates are managed by the KiloClaw platform team to ensure stability. When a new version is available, it will be announced in the **Changelog** on your dashboard. To apply the update, click **Upgrade & Redeploy** from the [KiloClaw Dashboard](/docs/kiloclaw/dashboard#redeploy).
 
 ## Architecture Notes
 
