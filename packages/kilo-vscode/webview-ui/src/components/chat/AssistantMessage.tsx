@@ -18,13 +18,21 @@ import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import { QuestionDock } from "./QuestionDock"
 
-export const HIDDEN_TOOLS = new Set(["todowrite", "todoread"])
+// Tools that the upstream message-part renderer suppresses (returns null for).
+// We render these ourselves via ToolRegistry when they have a pending permission
+// or when they complete, so the user can see what the AI set up.
+// We also use this set in ChatView to know NOT to block the prompt input for
+// these tool permissions (since they're shown inline in the message stream).
+export const UPSTREAM_SUPPRESSED_TOOLS = new Set(["todowrite", "todoread"])
+
+// Keep the old export name for ChatView compatibility
+export const HIDDEN_TOOLS = UPSTREAM_SUPPRESSED_TOOLS
 
 function isRenderable(part: SDKPart, pendingPermissionCallIDs: Set<string>): boolean {
   if (part.type === "tool") {
     const tool = (part as SDKPart & { tool: string }).tool
     const state = (part as SDKPart & { state: { status: string } }).state
-    if (HIDDEN_TOOLS.has(tool)) {
+    if (UPSTREAM_SUPPRESSED_TOOLS.has(tool)) {
       const callID = (part as SDKPart & { callID: string }).callID
       // Show todo parts when waiting for permission (inline) or when completed (to show what happened)
       return pendingPermissionCallIDs.has(callID) || state.status === "completed"
@@ -41,6 +49,27 @@ interface AssistantMessageProps {
   message: SDKAssistantMessage
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
+}
+
+function TodoToolCard(props: { part: ToolPart }) {
+  const render = ToolRegistry.render(props.part.tool)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const state = props.part.state as any
+  return (
+    <Show when={render}>
+      {(renderFn) => (
+        <Dynamic
+          component={renderFn()}
+          input={state?.input ?? {}}
+          metadata={state?.metadata ?? {}}
+          tool={props.part.tool}
+          output={state?.output}
+          status={state?.status}
+          defaultOpen
+        />
+      )}
+    </Show>
+  )
 }
 
 export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
@@ -89,12 +118,14 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
       <For each={parts()}>
         {(part) => {
           const perm = () => permissionForPart(part)
-          const isTodoTool = part.type === "tool" && HIDDEN_TOOLS.has((part as SDKPart & { tool: string }).tool)
+          // Upstream PART_MAPPING["tool"] returns null for todowrite/todoread,
+          // so we detect them here and render via ToolRegistry directly.
+          const isUpstreamSuppressed = part.type === "tool" && UPSTREAM_SUPPRESSED_TOOLS.has((part as SDKPart & { tool: string }).tool)
           return (
-            <Show when={isTodoTool || PART_MAPPING[part.type]}>
+            <Show when={isUpstreamSuppressed || PART_MAPPING[part.type]}>
               <div data-component="tool-part-wrapper" data-permission={!!perm()} data-part-type={part.type}>
                 <Show
-                  when={isTodoTool}
+                  when={isUpstreamSuppressed}
                   fallback={
                     <Part
                       part={part}
@@ -104,31 +135,11 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                     />
                   }
                 >
-                  {() => {
-                    const toolPart = part as unknown as ToolPart
-                    const render = ToolRegistry.render(toolPart.tool)
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const state = toolPart.state as any
-                    return (
-                      <Show when={render}>
-                        {(renderFn) => (
-                          <Dynamic
-                            component={renderFn()}
-                            input={state?.input ?? {}}
-                            metadata={state?.metadata ?? {}}
-                            tool={toolPart.tool}
-                            output={state?.output}
-                            status={state?.status}
-                            defaultOpen
-                          />
-                        )}
-                      </Show>
-                    )
-                  }}
+                  <TodoToolCard part={part as unknown as ToolPart} />
                 </Show>
                 <Show when={perm()} keyed>
                   {(p) => {
-                    const isTodoPerm = HIDDEN_TOOLS.has(p.toolName)
+                    const isTodoPerm = UPSTREAM_SUPPRESSED_TOOLS.has(p.toolName)
                     // For todo tools: show the friendly operation description instead of raw patterns like '*'
                     // For other tools: show patterns only if they're meaningful (not just '*')
                     const meaningfulPatterns = p.patterns.filter((pat) => pat !== "*")
