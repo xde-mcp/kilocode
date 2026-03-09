@@ -1223,6 +1223,15 @@
 }
 
 /* ============================================
+   Todo tool — align checkboxes with icon in header
+   The trigger has 8px left padding, 16px icon, 8px gap = 32px total offset.
+   ============================================ */
+
+.vscode-session-turn-assistant [data-component="todos"] {
+  padding-left: 32px;
+}
+
+/* ============================================
    Task Tool (sub-agent, v1.0.25 style)
    tool-output scrollable container size override
    ============================================ */
