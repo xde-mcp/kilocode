@@ -1,8 +1,8 @@
 /** @jsxImportSource solid-js */
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
 import { SessionReview } from "@opencode-ai/ui/session-review"
-import { DiffComponentProvider } from "@opencode-ai/ui/context/diff"
-import { Diff } from "@opencode-ai/ui/diff"
+import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
+import { Diff } from "@kilocode/kilo-ui/diff"
 
 const meta: Meta = {
   title: "Components/SessionReview",

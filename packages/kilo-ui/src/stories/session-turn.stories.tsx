@@ -2,10 +2,10 @@
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
 import { SessionTurn } from "@opencode-ai/ui/session-turn"
 import { DataProvider } from "@opencode-ai/ui/context/data"
-import { DiffComponentProvider } from "@opencode-ai/ui/context/diff"
+import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
 import { DialogProvider } from "@opencode-ai/ui/context/dialog"
 import { MarkedProvider } from "@opencode-ai/ui/context/marked"
-import { Diff } from "@opencode-ai/ui/diff"
+import { Diff } from "@kilocode/kilo-ui/diff"
 import type { UserMessage, AssistantMessage, TextPart, ToolPart } from "@kilocode/sdk/v2"
 
 const SESSION_ID = "session-turn-story-001"

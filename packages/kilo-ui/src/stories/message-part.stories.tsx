@@ -4,12 +4,12 @@ import { Message, AssistantMessageDisplay, UserMessageDisplay } from "@opencode-
 // Side-effect import: registers kilo-ui's PART_MAPPING override for reasoning blocks
 import "../components/message-part"
 import { DataProvider } from "@opencode-ai/ui/context/data"
-import { DiffComponentProvider } from "@opencode-ai/ui/context/diff"
-import { CodeComponentProvider } from "@opencode-ai/ui/context/code"
+import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
+import { CodeComponentProvider } from "@kilocode/kilo-ui/context/code"
 import { DialogProvider } from "@opencode-ai/ui/context/dialog"
 import { MarkedProvider } from "@opencode-ai/ui/context/marked"
-import { Diff } from "@opencode-ai/ui/diff"
-import { Code } from "@opencode-ai/ui/code"
+import { Diff } from "@kilocode/kilo-ui/diff"
+import { Code } from "@kilocode/kilo-ui/code"
 import type { UserMessage, AssistantMessage, TextPart, ToolPart, ReasoningPart } from "@kilocode/sdk/v2"
 
 const SESSION_ID = "session-story-001"

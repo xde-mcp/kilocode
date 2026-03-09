@@ -8,6 +8,7 @@
     "./button": "./src/components/button.tsx",
     "./code": "./src/components/code.tsx",
     "./diff": "./src/components/diff.tsx",
+    "./diff-ssr": "./src/components/diff-ssr.tsx",
     "./dialog": "./src/components/dialog.tsx",
     "./icon": "./src/components/icon.tsx",
     "./icon-button": "./src/components/icon-button.tsx",
@@ -112,6 +113,9 @@
   },
   "dependencies": {
     "@kobalte/core": "0.13.11",
+    "@opencode-ai/util": "workspace:*",
+    "@pierre/diffs": "catalog:",
+    "@solid-primitives/media": "2.3.3",
     "lucide-solid": "0.576.0"
   }
 }
