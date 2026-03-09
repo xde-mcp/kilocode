@@ -5,6 +5,7 @@
 
 import { Component, For, Show, createSignal, createEffect, on, onCleanup, onMount } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
+import { Icon } from "@kilocode/kilo-ui/icon"
 import { BasicTool } from "@kilocode/kilo-ui/basic-tool"
 import { TaskHeader } from "./TaskHeader"
 import { MessageList } from "./MessageList"
@@ -12,7 +13,9 @@ import { PromptInput } from "./PromptInput"
 import { QuestionDock } from "./QuestionDock"
 import { UPSTREAM_SUPPRESSED_TOOLS } from "./AssistantMessage"
 import { useSession } from "../../context/session"
+import { useVSCode } from "../../context/vscode"
 import { useLanguage } from "../../context/language"
+import { useWorktreeMode } from "../../context/worktree-mode"
 import type { PermissionRequest } from "../../types/messages"
 
 interface ChatViewProps {
@@ -22,7 +25,11 @@ interface ChatViewProps {
 
 export const ChatView: Component<ChatViewProps> = (props) => {
   const session = useSession()
+  const vscode = useVSCode()
   const language = useLanguage()
+  const worktreeMode = useWorktreeMode()
+  // Show "Show Changes" only in the standalone sidebar, not inside Agent Manager
+  const isSidebar = () => worktreeMode === undefined
 
   const id = () => session.currentSessionID()
   const hasMessages = () => session.messages().length > 0
@@ -34,8 +41,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const permissionRequest = () => sessionPermissions().find((p) => !p.tool)
   // Only block the prompt when there's a non-todo permission (todo permissions are shown inline)
   const isInlinePermission = (p: PermissionRequest) => p.tool && UPSTREAM_SUPPRESSED_TOOLS.has(p.toolName)
-  const blocked = () =>
-    sessionPermissions().some((p) => !isInlinePermission(p)) || sessionQuestions().length > 0
+  const blocked = () => sessionPermissions().some((p) => !isInlinePermission(p)) || sessionQuestions().length > 0
 
   // When a bottom-dock permission/question disappears while the session is busy,
   // the scroll container grows taller. Dispatch a custom event so MessageList can
@@ -131,6 +137,18 @@ export const ChatView: Component<ChatViewProps> = (props) => {
               >
                 {language.t("command.session.new.task")}
               </Button>
+              <Show when={isSidebar()}>
+                <Button
+                  variant="ghost"
+                  size="small"
+                  data-full-width="true"
+                  onClick={() => vscode.postMessage({ type: "openChanges" })}
+                  aria-label={language.t("command.session.show.changes")}
+                >
+                  <Icon name="file-tree" size="small" />
+                  {language.t("command.session.show.changes")}
+                </Button>
+              </Show>
             </div>
           </Show>
           <Show when={!blocked()}>

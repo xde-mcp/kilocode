@@ -253,7 +253,6 @@ export const SessionProvider: ParentComponent = (props) => {
     if (override) return override
     return getModeModel(agentName) ?? getGlobalModel() ?? provider.defaultSelection()
   })
-
   function selectModel(providerID: string, modelID: string) {
     const agentName = selectedAgentName()
     setUserSetAgents((prev) => ({ ...prev, [agentName]: true }))
