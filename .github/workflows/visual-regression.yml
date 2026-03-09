@@ -115,7 +115,7 @@ jobs:
           else
             echo "::error::Visual regression detected. Screenshot baselines have changed."
             echo "::error::Since this PR is from a fork, updated screenshots cannot be committed automatically."
-            echo "::error::Please update your screenshots locally by running 'bun run test:visual:update' in packages/kilo-ui/ and commit the results."
+            echo "::error::Please ask a Kilo developer for help updating the screenshots."
             git diff --cached --stat
             exit 1
           fi
@@ -233,7 +233,7 @@ jobs:
           else
             echo "::error::Visual regression detected. Screenshot baselines have changed."
             echo "::error::Since this PR is from a fork, updated screenshots cannot be committed automatically."
-            echo "::error::Please update your screenshots locally by running 'bun run test:visual:update' in packages/kilo-vscode/ and commit the results."
+            echo "::error::Please ask a Kilo developer for help updating the screenshots."
             git diff --cached --stat
             exit 1
           fi
