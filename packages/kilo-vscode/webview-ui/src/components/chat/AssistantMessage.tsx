@@ -127,14 +127,26 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                   }}
                 </Show>
                 <Show when={perm()} keyed>
-                  {(p) => (
+                  {(p) => {
+                    const isTodoPerm = HIDDEN_TOOLS.has(p.toolName)
+                    // For todo tools: show the friendly operation description instead of raw patterns like '*'
+                    // For other tools: show patterns only if they're meaningful (not just '*')
+                    const meaningfulPatterns = p.patterns.filter((pat) => pat !== "*")
+                    return (
                     <div data-component="permission-prompt" onClick={(e: MouseEvent) => e.stopPropagation()}>
-                      <Show when={p.patterns.length > 0}>
+                      <Show when={!isTodoPerm && meaningfulPatterns.length > 0}>
                         <div class="permission-dock-patterns">
-                          <For each={p.patterns}>
+                          <For each={meaningfulPatterns}>
                             {(pattern) => <code class="permission-dock-pattern">{pattern}</code>}
                           </For>
                         </div>
+                      </Show>
+                      <Show when={isTodoPerm}>
+                        <p data-slot="permission-description">
+                          {p.toolName === "todowrite"
+                            ? language.t("settings.permissions.tool.todowrite.description")
+                            : language.t("settings.permissions.tool.todoread.description")}
+                        </p>
                       </Show>
                       <div data-slot="permission-actions">
                         <Button
@@ -164,7 +176,8 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                       </div>
                       <p data-slot="permission-hint">{language.t("ui.permission.sessionHint")}</p>
                     </div>
-                  )}
+                    )
+                  }}
                 </Show>
               </div>
             </Show>
