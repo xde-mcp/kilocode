@@ -1,6 +1,9 @@
+// kilocode_change - new file
 import { createEffect, on, onCleanup } from "solid-js"
 import { createStore } from "solid-js/store"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
+
+const DEBOUNCE_MS = 100
 
 export interface AutoScrollOptions {
   working: () => boolean
@@ -14,8 +17,9 @@ export function createAutoScroll(options: AutoScrollOptions) {
   let settling = false
   let settleTimer: ReturnType<typeof setTimeout> | undefined
   let autoTimer: ReturnType<typeof setTimeout> | undefined
+  let stopTimer: ReturnType<typeof setTimeout> | undefined
   let cleanup: (() => void) | undefined
-  let auto: { top: number; time: number } | undefined
+  let auto: { time: number } | undefined
 
   const threshold = () => options.bottomThreshold ?? 10
 
@@ -38,11 +42,8 @@ export function createAutoScroll(options: AutoScrollOptions) {
   // between us calling `scrollTo()` and the subsequent `scroll` event firing,
   // the handler can see a non-zero `distanceFromBottom` and incorrectly assume
   // the user scrolled.
-  const markAuto = (el: HTMLElement) => {
-    auto = {
-      top: Math.max(0, el.scrollHeight - el.clientHeight),
-      time: Date.now(),
-    }
+  const markAuto = (_el: HTMLElement) => {
+    auto = { time: Date.now() }
 
     if (autoTimer) clearTimeout(autoTimer)
     autoTimer = setTimeout(() => {
@@ -51,7 +52,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
     }, 250)
   }
 
-  const isAuto = (el: HTMLElement) => {
+  const isAuto = (_el: HTMLElement) => {
     const a = auto
     if (!a) return false
 
@@ -60,7 +61,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
       return false
     }
 
-    return Math.abs(el.scrollTop - a.top) < 2
+    return true
   }
 
   const scrollToBottomNow = (behavior: ScrollBehavior) => {
@@ -137,7 +138,17 @@ export function createAutoScroll(options: AutoScrollOptions) {
       return
     }
 
-    stop()
+    // Debounce to avoid layout-induced scroll shifts (e.g. images loading,
+    // virtual-list reflows) from incorrectly breaking auto-follow.
+    if (stopTimer) clearTimeout(stopTimer)
+    stopTimer = setTimeout(() => {
+      stopTimer = undefined
+      const cur = scroll
+      if (!cur) return
+      if (distanceFromBottom(cur) < threshold()) return
+      if (!store.userScrolled && isAuto(cur)) return
+      stop()
+    }, DEBOUNCE_MS)
   }
 
   const handleInteraction = () => {
@@ -185,7 +196,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
       settleTimer = undefined
 
       if (working) {
-        if (!store.userScrolled) scrollToBottom(true)
+        scrollToBottom(true)
         return
       }
 
@@ -208,6 +219,7 @@ export function createAutoScroll(options: AutoScrollOptions) {
   onCleanup(() => {
     if (settleTimer) clearTimeout(settleTimer)
     if (autoTimer) clearTimeout(autoTimer)
+    if (stopTimer) clearTimeout(stopTimer)
     if (cleanup) cleanup()
   })
 
