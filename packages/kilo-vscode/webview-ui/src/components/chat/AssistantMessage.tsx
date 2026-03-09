@@ -25,9 +25,6 @@ import { QuestionDock } from "./QuestionDock"
 // these tool permissions (since they're shown inline in the message stream).
 export const UPSTREAM_SUPPRESSED_TOOLS = new Set(["todowrite", "todoread"])
 
-// Keep the old export name for ChatView compatibility
-export const HIDDEN_TOOLS = UPSTREAM_SUPPRESSED_TOOLS
-
 function isRenderable(part: SDKPart, pendingPermissionCallIDs: Set<string>): boolean {
   if (part.type === "tool") {
     const tool = (part as SDKPart & { tool: string }).tool

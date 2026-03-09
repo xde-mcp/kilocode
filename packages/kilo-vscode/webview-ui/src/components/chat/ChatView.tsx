@@ -10,7 +10,7 @@ import { TaskHeader } from "./TaskHeader"
 import { MessageList } from "./MessageList"
 import { PromptInput } from "./PromptInput"
 import { QuestionDock } from "./QuestionDock"
-import { HIDDEN_TOOLS } from "./AssistantMessage"
+import { UPSTREAM_SUPPRESSED_TOOLS } from "./AssistantMessage"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { PermissionRequest } from "../../types/messages"
@@ -33,7 +33,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const questionRequest = () => sessionQuestions().find((q) => !q.tool)
   const permissionRequest = () => sessionPermissions().find((p) => !p.tool)
   // Only block the prompt when there's a non-todo permission (todo permissions are shown inline)
-  const isInlinePermission = (p: PermissionRequest) => p.tool && HIDDEN_TOOLS.has(p.toolName)
+  const isInlinePermission = (p: PermissionRequest) => p.tool && UPSTREAM_SUPPRESSED_TOOLS.has(p.toolName)
   const blocked = () =>
     sessionPermissions().some((p) => !isInlinePermission(p)) || sessionQuestions().length > 0
 
