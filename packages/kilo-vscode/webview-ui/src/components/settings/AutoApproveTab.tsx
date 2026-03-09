@@ -99,6 +99,28 @@ const TRAILING_TOOLS: ToolDef[] = [
   { id: "doom_loop", descriptionKey: "settings.autoApprove.tool.doom_loop" },
 ]
 
+/**
+ * Backend default permission levels — mirrors the base defaults defined in
+ * packages/opencode/src/agent/agent.ts (lines 61-78). The global default
+ * is "*": "allow"; these are the per-tool overrides. If the backend defaults
+ * change, this map must be updated to match.
+ */
+const TOOL_DEFAULTS: Partial<Record<string, PermissionLevel>> = {
+  doom_loop: "ask",
+  external_directory: "ask",
+}
+
+const RESTRICTION_ORDER: Record<PermissionLevel, number> = { allow: 0, ask: 1, deny: 2 }
+
+/** For grouped tools, return the most restrictive level across all IDs. */
+function mostRestrictive(levels: PermissionLevel[]): PermissionLevel {
+  let result: PermissionLevel = levels[0] ?? "allow"
+  for (const l of levels) {
+    if (RESTRICTION_ORDER[l] > RESTRICTION_ORDER[result]) result = l
+  }
+  return result
+}
+
 function wildcardAction(rule: PermissionRule | undefined, fallback: PermissionLevel): PermissionLevel {
   if (!rule) return fallback
   if (typeof rule === "string") return rule
@@ -121,10 +143,12 @@ const AutoApproveTab: Component = () => {
   const globalFallback = createMemo((): PermissionLevel => {
     const star = permissions()["*"]
     if (typeof star === "string") return star
-    return "ask"
+    return "allow" // backend default: "*": "allow" (agent.ts)
   })
 
-  const levelFor = (tool: string): PermissionLevel => wildcardAction(permissions()[tool], globalFallback())
+  const defaultFor = (tool: string): PermissionLevel => TOOL_DEFAULTS[tool] ?? globalFallback()
+
+  const levelFor = (tool: string): PermissionLevel => wildcardAction(permissions()[tool], defaultFor(tool))
 
   const ruleFor = (tool: string): PermissionRule | undefined => permissions()[tool]
 
@@ -174,12 +198,16 @@ const AutoApproveTab: Component = () => {
       if (k !== pattern) rebuilt[k] = v
     }
     const keys = Object.keys(rebuilt)
+    const fallback = defaultFor(tool)
     const value: PermissionRule =
-      keys.length === 0 ? "ask" : keys.length === 1 && keys[0] === "*" ? rebuilt["*"]! : rebuilt
+      keys.length === 0 ? fallback : keys.length === 1 && keys[0] === "*" ? rebuilt["*"]! : rebuilt
     // patchJsonc only sets keys present in the patch — it won't remove the deleted key
     // from the JSONC file. To work around this, first set the tool to a string (which
     // replaces the entire JSONC node), then set the rebuilt object if needed.
-    const wildcard = rebuilt["*"] ?? "ask"
+    // Ideally when keys.length === 0 we'd remove the tool key entirely so it
+    // inherits the global default, but that requires backend support for null
+    // delete sentinels (tracked in #6625).
+    const wildcard = rebuilt["*"] ?? fallback
     updateConfig({ permission: { [tool]: wildcard } })
     if (typeof value === "object") {
       updateConfig({ permission: { [tool]: value } })
@@ -204,7 +232,7 @@ const AutoApproveTab: Component = () => {
           <GranularToolRow
             tool={tool}
             rule={ruleFor(tool.id)}
-            fallback={globalFallback()}
+            fallback={defaultFor(tool.id)}
             onWildcardChange={(level) => setWildcard(tool.id, level)}
             onExceptionChange={(pattern, level) => setException(tool.id, pattern, level)}
             onExceptionAdd={(pattern) => addException(tool.id, pattern)}
@@ -229,7 +257,7 @@ const AutoApproveTab: Component = () => {
           <SimpleToolRow
             id={group.label}
             descriptionKey={group.descriptionKey}
-            level={levelFor(group.ids[0])}
+            level={mostRestrictive(group.ids.map(levelFor))}
             onChange={(level) => setGrouped(group.ids, level)}
           />
         )}
