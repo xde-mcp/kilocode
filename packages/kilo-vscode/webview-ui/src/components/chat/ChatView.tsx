@@ -13,6 +13,7 @@ import { QuestionDock } from "./QuestionDock"
 import { HIDDEN_TOOLS } from "./AssistantMessage"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
+import type { PermissionRequest } from "../../types/messages"
 
 interface ChatViewProps {
   onSelectSession?: (id: string) => void
@@ -30,8 +31,11 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const sessionPermissions = () => session.permissions().filter((p) => p.sessionID === id())
 
   const questionRequest = () => sessionQuestions().find((q) => !q.tool)
-  const permissionRequest = () => sessionPermissions().find((p) => !p.tool || HIDDEN_TOOLS.has(p.toolName))
-  const blocked = () => sessionPermissions().length > 0 || sessionQuestions().length > 0
+  const permissionRequest = () => sessionPermissions().find((p) => !p.tool)
+  // Only block the prompt when there's a non-todo permission (todo permissions are shown inline)
+  const isInlinePermission = (p: PermissionRequest) => p.tool && HIDDEN_TOOLS.has(p.toolName)
+  const blocked = () =>
+    sessionPermissions().some((p) => !isInlinePermission(p)) || sessionQuestions().length > 0
 
   // When a bottom-dock permission/question disappears while the session is busy,
   // the scroll container grows taller. Dispatch a custom event so MessageList can

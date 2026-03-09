@@ -9,9 +9,10 @@
  */
 
 import { Component, For, Show, createMemo, createSignal } from "solid-js"
-import { Part, PART_MAPPING } from "@kilocode/kilo-ui/message-part"
+import { Dynamic } from "solid-js/web"
+import { Part, PART_MAPPING, ToolRegistry } from "@kilocode/kilo-ui/message-part"
 import { Button } from "@kilocode/kilo-ui/button"
-import type { AssistantMessage as SDKAssistantMessage, Part as SDKPart, Message as SDKMessage } from "@kilocode/sdk/v2"
+import type { AssistantMessage as SDKAssistantMessage, Part as SDKPart, Message as SDKMessage, ToolPart } from "@kilocode/sdk/v2"
 import { useData } from "@kilocode/kilo-ui/context/data"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
@@ -19,11 +20,15 @@ import { QuestionDock } from "./QuestionDock"
 
 export const HIDDEN_TOOLS = new Set(["todowrite", "todoread"])
 
-function isRenderable(part: SDKPart): boolean {
+function isRenderable(part: SDKPart, pendingPermissionCallIDs: Set<string>): boolean {
   if (part.type === "tool") {
     const tool = (part as SDKPart & { tool: string }).tool
-    if (HIDDEN_TOOLS.has(tool)) return false
     const state = (part as SDKPart & { state: { status: string } }).state
+    if (HIDDEN_TOOLS.has(tool)) {
+      const callID = (part as SDKPart & { callID: string }).callID
+      // Show todo parts when waiting for permission (inline) or when completed (to show what happened)
+      return pendingPermissionCallIDs.has(callID) || state.status === "completed"
+    }
     if (tool === "question" && (state.status === "pending" || state.status === "running")) return false
     return true
   }
@@ -43,15 +48,23 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
   const session = useSession()
   const language = useLanguage()
 
-  const parts = createMemo(() => {
-    const stored = data.store.part?.[props.message.id]
-    if (!stored) return []
-    return (stored as SDKPart[]).filter(isRenderable)
-  })
-
   const id = () => session.currentSessionID()
   const permissions = () => session.permissions().filter((p) => p.sessionID === id() && p.tool)
   const questions = () => session.questions().filter((q) => q.sessionID === id() && q.tool)
+
+  const pendingPermissionCallIDs = createMemo(() => {
+    const ids = new Set<string>()
+    for (const p of permissions()) {
+      if (p.tool?.messageID === props.message.id) ids.add(p.tool.callID)
+    }
+    return ids
+  })
+
+  const parts = createMemo(() => {
+    const stored = data.store.part?.[props.message.id]
+    if (!stored) return []
+    return (stored as SDKPart[]).filter((part) => isRenderable(part, pendingPermissionCallIDs()))
+  })
 
   const permissionForPart = (part: SDKPart) => {
     if (part.type !== "tool") return undefined
@@ -76,15 +89,43 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
       <For each={parts()}>
         {(part) => {
           const perm = () => permissionForPart(part)
+          const isTodoTool = part.type === "tool" && HIDDEN_TOOLS.has((part as SDKPart & { tool: string }).tool)
           return (
-            <Show when={PART_MAPPING[part.type]}>
+            <Show when={isTodoTool || PART_MAPPING[part.type]}>
               <div data-component="tool-part-wrapper" data-permission={!!perm()} data-part-type={part.type}>
-                <Part
-                  part={part}
-                  message={props.message as SDKMessage}
-                  showAssistantCopyPartID={props.showAssistantCopyPartID}
-                  turnDurationMs={props.turnDurationMs}
-                />
+                <Show
+                  when={isTodoTool}
+                  fallback={
+                    <Part
+                      part={part}
+                      message={props.message as SDKMessage}
+                      showAssistantCopyPartID={props.showAssistantCopyPartID}
+                      turnDurationMs={props.turnDurationMs}
+                    />
+                  }
+                >
+                  {() => {
+                    const toolPart = part as unknown as ToolPart
+                    const render = ToolRegistry.render(toolPart.tool)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const state = toolPart.state as any
+                    return (
+                      <Show when={render}>
+                        {(renderFn) => (
+                          <Dynamic
+                            component={renderFn()}
+                            input={state?.input ?? {}}
+                            metadata={state?.metadata ?? {}}
+                            tool={toolPart.tool}
+                            output={state?.output}
+                            status={state?.status}
+                            defaultOpen
+                          />
+                        )}
+                      </Show>
+                    )
+                  }}
+                </Show>
                 <Show when={perm()} keyed>
                   {(p) => (
                     <div data-component="permission-prompt" onClick={(e: MouseEvent) => e.stopPropagation()}>
