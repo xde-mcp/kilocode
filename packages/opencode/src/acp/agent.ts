@@ -531,7 +531,7 @@ export namespace ACP {
           "terminal-auth": {
             command: "opencode",
             args: ["auth", "login"],
-            label: "OpenCode Login",
+            label: "Kilo Login", // kilocode_change
           },
         }
       }
@@ -556,7 +556,7 @@ export namespace ACP {
         },
         authMethods: [authMethod],
         agentInfo: {
-          name: "OpenCode",
+          name: "Kilo", // kilocode_change
           version: Installation.VERSION,
         },
       }
