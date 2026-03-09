@@ -87,8 +87,8 @@ The file path is relative to the config file location, so this works for both gl
 
 Define agents as markdown files with YAML frontmatter. Place them in:
 
-- **Global**: `~/.config/kilo/agent/`
-- **Project-specific**: `.kilo/agent/` or `.kilo/agents/`
+- **Global**: `~/.config/kilo/agents/`
+- **Project-specific**: `.kilo/agents/`
 
 The **filename** (without `.md`) becomes the agent name.
 
@@ -245,9 +245,9 @@ Agent configurations are merged from multiple sources. Later sources override ea
 
 1. **Built-in agent defaults** (native agents defined in the codebase)
 2. **Global config** (`~/.config/kilo/config.json`)
-3. **Global agent markdown files** (`~/.config/kilo/agent/*.md`)
+3. **Global agent markdown files** (`~/.config/kilo/agents/*.md`)
 4. **Project config** (`kilo.json` in the project root)
-5. **Project agent markdown files** (`.kilo/agent/*.md`)
+5. **Project agent markdown files** (`.kilo/agents/*.md`)
 
 When overriding a built-in agent, properties are merged — only the fields you specify are overridden. When creating a new custom agent, unspecified fields use sensible defaults (`mode: "all"`, full permissions inherited from global config).
 
