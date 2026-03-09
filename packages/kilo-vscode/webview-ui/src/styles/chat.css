@@ -178,6 +178,73 @@
 }
 
 /* ============================================
+   Feedback Button (empty state)
+   ============================================ */
+
+.feedback-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px dashed var(--vscode-button-background, #007acc);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--vscode-button-background, #007acc);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.feedback-button:hover {
+  background: var(--vscode-button-background, #007acc);
+  color: var(--vscode-button-foreground, #fff);
+  border-style: solid;
+}
+
+/* Feedback Dialog */
+
+.feedback-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 24px 16px;
+  text-align: center;
+}
+
+.feedback-dialog-logo {
+  width: 48px;
+  height: 48px;
+}
+
+.feedback-dialog-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.feedback-dialog-message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+  max-width: 280px;
+}
+
+.feedback-dialog-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* ============================================
    Recent Sessions (empty state)
    ============================================ */
 
