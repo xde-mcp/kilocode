@@ -1115,13 +1115,25 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
 
   const render = createMemo(() => ToolRegistry.render(part().tool) ?? GenericTool)
 
-  const dismissed = createMemo(
-    () =>
-      part.tool === "question" &&
-      part.state.status === "error" &&
-      typeof part.state.error === "string" &&
-      part.state.error.includes("dismissed this question"),
-  )
+  // kilocode_change start
+  const dismissed = createMemo(() => {
+    if (part().tool !== "question") return false
+    const s = part().state
+    return s.status === "error" && s.error.includes("dismissed this question")
+  })
+
+  if (dismissed()) {
+    return (
+      <Show when={!hideQuestion()}>
+        <div data-component="tool-part-wrapper">
+          <div style="width: 100%; display: flex; justify-content: flex-end; padding: 4px 0;">
+            <span class="text-13-regular text-text-weak cursor-default">{i18n.t("ui.tool.questions")} dismissed</span>
+          </div>
+        </div>
+      </Show>
+    )
+  }
+  // kilocode_change end
 
   return (
     <Show when={!hideQuestion()}>
@@ -1307,7 +1319,7 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
             data-slot="text-part-copy-wrapper"
             data-interrupted={interrupted() ? "" : undefined}
             data-is-turn-copy={
-              typeof props.showAssistantCopyPartID === "string" && props.showAssistantCopyPartID === part.id
+              typeof props.showAssistantCopyPartID === "string" && props.showAssistantCopyPartID === part().id
                 ? ""
                 : undefined
             }
