@@ -12,7 +12,7 @@ OpenClaw Doctor is the recommended first step when something isn't working. It r
 To use it:
 
 1. Make sure your instance is running
-2. Click **OpenClaw Doctor** on your [dashboard](/docs/automate/kiloclaw/dashboard)
+2. Click **OpenClaw Doctor** on your [dashboard](/docs/kiloclaw/dashboard)
 3. Watch the output as it runs — results appear in real time
 
 ## Common Questions
@@ -28,9 +28,9 @@ No. Redeploy does **not** delete your files, git repos, or cron jobs. It stops t
 
 ### My bot isn't responding on Telegram/Discord/Slack
 
-1. Check that the channel token is configured in [Settings](/docs/automate/kiloclaw/dashboard#channels)
+1. Check that the channel token is configured in [Settings](/docs/kiloclaw/dashboard#channels)
 2. Make sure you **Redeployed** or **Restarted OpenClaw** after saving tokens
-3. Check for pending [pairing requests](/docs/automate/kiloclaw/chat-platforms#pairing-requests) — the user may need to be approved
+3. Check for pending [pairing requests](/docs/kiloclaw/chat-platforms#pairing-requests) — the user may need to be approved
 4. Try running **OpenClaw Doctor**
 
 ### The gateway shows "Crashed"
@@ -72,7 +72,7 @@ For advanced users — how KiloClaw instances are structured:
 
 ## Related
 
-- [KiloClaw Overview](/docs/automate/kiloclaw/overview)
-- [Dashboard Reference](/docs/automate/kiloclaw/dashboard)
-- [Connecting Chat Platforms](/docs/automate/kiloclaw/chat-platforms)
-- [KiloClaw Pricing](/docs/automate/kiloclaw/pricing)
+- [KiloClaw Overview](/docs/kiloclaw/overview)
+- [Dashboard Reference](/docs/kiloclaw/dashboard)
+- [Connecting Chat Platforms](/docs/kiloclaw/chat-platforms)
+- [KiloClaw Pricing](/docs/kiloclaw/pricing)

@@ -1,53 +1,5 @@
 module.exports = [
   {
-    source: "/docs/automate/kiloclaw",
-    destination: "/docs/kiloclaw/overview",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/overview",
-    destination: "/docs/kiloclaw/overview",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/dashboard",
-    destination: "/docs/kiloclaw/dashboard",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/pre-installed-software",
-    destination: "/docs/kiloclaw/pre-installed-software",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/control-ui",
-    destination: "/docs/kiloclaw/control-ui",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/chat-platforms",
-    destination: "/docs/kiloclaw/chat-platforms",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/troubleshooting",
-    destination: "/docs/kiloclaw/troubleshooting",
-    basePath: false,
-    permanent: true,
-  },
-  {
-    source: "/docs/automate/kiloclaw/pricing",
-    destination: "/docs/kiloclaw/pricing",
-    basePath: false,
-    permanent: true,
-  },
-  {
     source: "/docs/features/custom-modes",
     destination: "/docs/customize/custom-modes",
     basePath: false,
