@@ -1227,7 +1227,7 @@
    The trigger has 8px left padding, 16px icon, 8px gap = 32px total offset.
    ============================================ */
 
-.vscode-session-turn-assistant [data-component="todos"] {
+[data-component="todos"] {
   padding-left: 32px;
 }
 
