@@ -31,6 +31,7 @@ const mainNavItems: NavItem[] = [
   { label: "Automate", href: "/automate" },
   { label: "Deploy & Secure", href: "/deploy-secure" },
   { label: "Kilo Gateway", href: "/gateway" },
+  { label: "KiloClaw", href: "/kiloclaw/overview" },
   { label: "Contributing", href: "/contributing" },
 ]
 
