@@ -29,7 +29,7 @@ const mainNavItems = [
   { label: "Automate", href: "/automate", sectionKey: "automate" },
   { label: "Deploy & Secure", href: "/deploy-secure", sectionKey: "deploy-secure" },
   { label: "AI Gateway", href: "/gateway", sectionKey: "gateway" },
-  { label: "KiloClaw", href: "/kiloclaw/overview", sectionKey: "kiloclaw" },
+  { label: "KiloClaw", href: "/kiloclaw", sectionKey: "kiloclaw" },
   { label: "Contributing", href: "/contributing", sectionKey: "contributing" },
 ]
 

@@ -789,4 +789,10 @@ module.exports = [
     basePath: false,
     permanent: true,
   },
+  {
+    source: "/docs/automate/kiloclaw/:path*",
+    destination: "/docs/kiloclaw/:path*",
+    basePath: false,
+    permanent: true,
+  },
 ]
