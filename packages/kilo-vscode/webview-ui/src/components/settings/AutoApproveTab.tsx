@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createSignal } from "solid-js"
+import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { useConfig } from "../../context/config"
@@ -16,14 +16,20 @@ const LEVEL_OPTIONS: LevelOption[] = [
   { value: "deny", labelKey: "settings.autoApprove.level.deny" },
 ]
 
+interface GranularConfig {
+  wildcardKey: string
+  addKey: string
+  placeholderKey: string
+}
+
 interface ToolDef {
   id: string
   descriptionKey: string
-  granular?: {
-    wildcardKey: string
-    addKey: string
-    placeholderKey: string
-  }
+  granular?: GranularConfig
+}
+
+interface GranularToolDef extends ToolDef {
+  granular: GranularConfig
 }
 
 /** Grouped tool: maps a single UI row to multiple config keys */
@@ -33,7 +39,7 @@ interface GroupedToolDef {
   descriptionKey: string
 }
 
-const GRANULAR_TOOLS: ToolDef[] = [
+const GRANULAR_TOOLS: GranularToolDef[] = [
   {
     id: "external_directory",
     descriptionKey: "settings.autoApprove.tool.external_directory",
@@ -114,11 +120,10 @@ const RESTRICTION_ORDER: Record<PermissionLevel, number> = { allow: 0, ask: 1, d
 
 /** For grouped tools, return the most restrictive level across all IDs. */
 function mostRestrictive(levels: PermissionLevel[]): PermissionLevel {
-  let result: PermissionLevel = levels[0] ?? "allow"
-  for (const l of levels) {
-    if (RESTRICTION_ORDER[l] > RESTRICTION_ORDER[result]) result = l
-  }
-  return result
+  return levels.reduce<PermissionLevel>(
+    (best, l) => (RESTRICTION_ORDER[l] > RESTRICTION_ORDER[best] ? l : best),
+    levels[0] ?? "allow",
+  )
 }
 
 function wildcardAction(rule: PermissionRule | undefined, fallback: PermissionLevel): PermissionLevel {
@@ -132,6 +137,16 @@ function exceptions(rule: PermissionRule | undefined): Array<{ pattern: string; 
   return Object.entries(rule)
     .filter(([key]) => key !== "*")
     .map(([pattern, action]) => ({ pattern, action }))
+}
+
+function toolTitle(id: string): string {
+  return id
+    .split("_")
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ")
+    .split(" / ")
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join(" / ")
 }
 
 const AutoApproveTab: Component = () => {
@@ -202,14 +217,23 @@ const AutoApproveTab: Component = () => {
     const value: PermissionRule =
       keys.length === 0 ? fallback : keys.length === 1 && keys[0] === "*" ? rebuilt["*"]! : rebuilt
     // patchJsonc only sets keys present in the patch — it won't remove the deleted key
-    // from the JSONC file. To work around this, first set the tool to a string (which
-    // replaces the entire JSONC node), then set the rebuilt object if needed.
+    // from the JSONC file. To work around this, first set the tool to a plain string
+    // (which replaces the entire JSONC node), then immediately send the rebuilt object
+    // in a second call only when necessary.
+    // Both messages are dispatched synchronously before any reactive flush, so the
+    // second call always operates on the value we just computed — not on stale signal
+    // state — avoiding a race condition.
     // Ideally when keys.length === 0 we'd remove the tool key entirely so it
     // inherits the global default, but that requires backend support for null
     // delete sentinels (tracked in #6625).
     const wildcard = rebuilt["*"] ?? fallback
+    // Single call covers string and collapsed-to-string cases
     updateConfig({ permission: { [tool]: wildcard } })
+    // Only send the second call when the result must remain an object
     if (typeof value === "object") {
+      // This runs synchronously in the same microtask tick; the first updateConfig
+      // queues a JSONC node replacement, and this one immediately overwrites it with
+      // the full object — no intervening reactive update occurs.
       updateConfig({ permission: { [tool]: value } })
     }
   }
@@ -296,7 +320,7 @@ const SimpleToolRow: Component<{
       }}
     >
       <div style={{ flex: 1, "min-width": 0 }}>
-        <div style={{ "font-size": "13px", color: "var(--text-strong-base, white)" }}>{props.id}</div>
+        <div style={{ "font-size": "13px", color: "var(--text-strong-base, white)" }}>{toolTitle(props.id)}</div>
         <div
           style={{
             "font-size": "12px",
@@ -313,7 +337,7 @@ const SimpleToolRow: Component<{
 }
 
 const GranularToolRow: Component<{
-  tool: ToolDef
+  tool: GranularToolDef
   rule: PermissionRule | undefined
   fallback: PermissionLevel
   onWildcardChange: (level: PermissionLevel) => void
@@ -324,6 +348,11 @@ const GranularToolRow: Component<{
   const language = useLanguage()
   const [adding, setAdding] = createSignal(false)
   const [input, setInput] = createSignal("")
+  let inputRef: HTMLInputElement | undefined
+
+  createEffect(() => {
+    if (adding()) inputRef?.focus()
+  })
 
   const excs = createMemo(() => exceptions(props.rule))
   const level = createMemo(() => wildcardAction(props.rule, props.fallback))
@@ -347,7 +376,7 @@ const GranularToolRow: Component<{
       {/* Tool header with name and description */}
       <div style={{ display: "flex", gap: "24px", "align-items": "flex-start", "justify-content": "space-between" }}>
         <div style={{ flex: 1, "min-width": 0 }}>
-          <div style={{ "font-size": "13px", color: "var(--text-strong-base, white)" }}>{props.tool.id}</div>
+          <div style={{ "font-size": "13px", color: "var(--text-strong-base, white)" }}>{toolTitle(props.tool.id)}</div>
           <div
             style={{
               "font-size": "12px",
@@ -372,7 +401,7 @@ const GranularToolRow: Component<{
       >
         <div style={{ flex: 1, "min-width": 0 }}>
           <div style={{ "font-size": "12px", color: "var(--text-base, #ccc)" }}>
-            {language.t(props.tool.granular!.wildcardKey)}
+            {language.t(props.tool.granular.wildcardKey)}
           </div>
         </div>
         <ActionSelect level={level()} onChange={props.onWildcardChange} />
@@ -453,13 +482,13 @@ const GranularToolRow: Component<{
             onClick={() => setAdding(true)}
           >
             <span style={{ "font-size": "14px" }}>+</span>
-            {language.t(props.tool.granular!.addKey)}
+            {language.t(props.tool.granular.addKey)}
           </button>
         }
       >
         <div style={{ display: "flex", gap: "8px", "align-items": "center", "margin-top": "4px" }}>
           <input
-            ref={(el) => setTimeout(() => el.focus(), 0)}
+            ref={(el) => (inputRef = el)}
             type="text"
             value={input()}
             onInput={(e) => setInput(e.currentTarget.value)}
@@ -470,7 +499,7 @@ const GranularToolRow: Component<{
             onBlur={() => {
               if (!input().trim()) cancel()
             }}
-            placeholder={language.t(props.tool.granular!.placeholderKey)}
+            placeholder={language.t(props.tool.granular.placeholderKey)}
             style={{
               flex: 1,
               "min-width": 0,
