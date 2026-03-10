@@ -692,6 +692,7 @@
   line-height: 1.4;
   resize: none;
   outline: none;
+  scrollbar-gutter: stable;
 }
 
 .prompt-input:focus {
@@ -738,6 +739,7 @@
   word-wrap: break-word;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   z-index: 0;
   color: var(--vscode-input-foreground);
 }
