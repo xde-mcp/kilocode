@@ -29,4 +29,5 @@ try {
 }
 
 const vsix = (await $`ls -1v ${outDir}/*.vsix`.text()).trim().split("\n").at(-1)!
-await $`code --force --install-extension ${vsix}`
+const codeCmd = (await $`which code-insiders`.nothrow().text()).trim() ? "code-insiders" : "code"
+await $`${codeCmd} --force --install-extension ${vsix}`
