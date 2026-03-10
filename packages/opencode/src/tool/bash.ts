@@ -240,7 +240,9 @@ export const BashTool = Tool.define("bash", async () => {
           ctx.abort.removeEventListener("abort", abortHandler)
         }
 
-        proc.once("exit", () => {
+        // kilocode_change - use "close" instead of "exit" so stdio streams are fully drained
+        // before we flush the StringDecoders and read `output`
+        proc.once("close", () => {
           exited = true
           cleanup()
           resolve()
