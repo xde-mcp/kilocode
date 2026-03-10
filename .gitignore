@@ -1,3 +1,4 @@
+.husky/_
 .DS_Store
 node_modules
 .worktrees
@@ -37,3 +38,4 @@ logs/
 
 # Telemetry ID
 telemetry-id
+tsconfig.tsbuildinfo

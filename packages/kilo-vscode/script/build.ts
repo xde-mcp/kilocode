@@ -5,9 +5,7 @@ import { existsSync, mkdirSync, rmSync, chmodSync } from "node:fs"
 
 const packageJsonPath = join(import.meta.dir, "..", "package.json")
 const packageJson = await Bun.file(packageJsonPath).json()
-const version = process.env.KILO_VERSION
-  ? process.env.KILO_VERSION.replace(/^\d+/, (m) => String(Number(m) + 6))
-  : packageJson.version
+const version = process.env.KILO_VERSION ? process.env.KILO_VERSION : packageJson.version
 
 console.log(`Building VSCode extension version: ${version}`)
 
@@ -48,6 +46,9 @@ for (const dir of [binDir, distDir, outDir]) {
 
 mkdirSync(outDir, { recursive: true })
 mkdirSync(distDir, { recursive: true })
+
+console.log("\n🔄 Rebuilding SDK types (ensures dist/ is in sync with server API)...")
+await $`bun run --cwd ${join(import.meta.dir, "..", "..", "sdk", "js")} build`
 
 console.log("\n📦 Compiling extension...")
 await $`bun run check-types`

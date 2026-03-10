@@ -1,4 +1,3 @@
-/* kilocode_change - new file */
 /* Kilo Dialog overrides – harmonized with @vscode/webview-ui-toolkit */
 
 [data-component="dialog-overlay"] {
@@ -20,4 +19,13 @@
   [data-slot="dialog-title"] {
     font-weight: 600;
   }
+}
+
+[data-component="dialog"][data-fit] [data-slot="dialog-container"] {
+  height: auto;
+}
+
+[data-component="dialog"][data-fit] [data-slot="dialog-content"] {
+  min-height: 0;
+  align-self: center;
 }

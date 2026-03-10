@@ -1,18 +1,18 @@
 /**
  * QuestionDock component
  * Displays question requests from the AI assistant inline above the prompt input.
- * Uses kilo-ui's data-component/data-slot CSS pattern for styling.
+ * Uses kilo-ui's DockPrompt component for proper surface styling.
  */
 
 import { Component, For, Show, createMemo, createEffect } from "solid-js"
 import { createStore } from "solid-js/store"
 import { Button } from "@kilocode/kilo-ui/button"
-import { BasicTool } from "@kilocode/kilo-ui/basic-tool"
+import { DockPrompt } from "@kilocode/kilo-ui/dock-prompt"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { QuestionRequest } from "../../types/messages"
-import { toggleAnswer, buildSubtitleText } from "./question-dock-utils"
+import { toggleAnswer } from "./question-dock-utils"
 
 export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => {
   const session = useSession()
@@ -47,9 +47,13 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
     return store.answers[store.tab]?.includes(value) ?? false
   })
 
-  const subtitle = createMemo(() =>
-    buildSubtitleText(questions().length, language.t("ui.common.question.one"), language.t("ui.common.question.other")),
-  )
+  const total = createMemo(() => questions().length)
+  const last = createMemo(() => store.tab >= total() - 1)
+
+  const summary = createMemo(() => {
+    const n = Math.min(store.tab + 1, total())
+    return language.t("question.summary", { n, total: total() })
+  })
 
   const reply = (answers: string[][]) => {
     if (store.sending) return
@@ -67,6 +71,12 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
     reply(questions().map((_, i) => [...(store.answers[i] ?? [])]))
   }
 
+  const back = () => {
+    if (store.sending || store.tab <= 0) return
+    setStore("tab", store.tab - 1)
+    setStore("editing", false)
+  }
+
   const pick = (answer: string, custom = false) => {
     const answers = [...store.answers]
     answers[store.tab] = [answer]
@@ -78,12 +88,9 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
       setStore("custom", inputs)
     }
 
-    if (single()) {
-      reply([[answer]])
-      return
+    if (!single() && !multi()) {
+      setStore("tab", store.tab + 1)
     }
-
-    setStore("tab", store.tab + 1)
   }
 
   const toggle = (answer: string) => {
@@ -142,121 +149,167 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
   }
 
   return (
-    <div data-component="tool-part-wrapper" data-question="true">
-      <BasicTool
-        icon="bubble-5"
-        locked
-        defaultOpen
-        trigger={{
-          title: language.t("ui.tool.questions"),
-          subtitle: subtitle(),
-        }}
-      />
-      <div data-component="question-prompt">
-        <Show when={!single()}>
-          <div data-slot="question-tabs">
-            <For each={questions()}>
-              {(q, index) => {
-                const active = () => index() === store.tab
-                const answered = () => (store.answers[index()]?.length ?? 0) > 0
+    <div onClick={(e: MouseEvent) => e.stopPropagation()}>
+      <DockPrompt
+        kind="question"
+        header={
+          <>
+            <div data-slot="question-header-title">{summary()}</div>
+            <Show when={!single()}>
+              <div data-slot="question-progress">
+                <button
+                  type="button"
+                  data-slot="question-progress-nav"
+                  disabled={store.sending || store.tab <= 0}
+                  onClick={back}
+                >
+                  <Icon name="chevron-left" size="small" />
+                </button>
+                <button
+                  type="button"
+                  data-slot="question-progress-nav"
+                  disabled={
+                    store.sending ||
+                    store.tab >= questions().length ||
+                    (!confirm() && (store.answers[store.tab]?.length ?? 0) === 0)
+                  }
+                  onClick={() => selectTab(store.tab + 1)}
+                >
+                  <Icon name="chevron-right" size="small" />
+                </button>
+              </div>
+            </Show>
+          </>
+        }
+        footer={
+          <>
+            <Button variant="ghost" size="small" onClick={reject} disabled={store.sending}>
+              {language.t("ui.common.dismiss")}
+            </Button>
+            <div data-slot="question-footer-actions">
+              <Show when={store.tab > 0}>
+                <Button variant="secondary" size="small" onClick={back} disabled={store.sending}>
+                  {language.t("ui.common.back")}
+                </Button>
+              </Show>
+              <Show
+                when={confirm()}
+                fallback={
+                  <Button
+                    variant={last() && single() ? "primary" : "secondary"}
+                    size="small"
+                    onClick={last() && single() ? submit : () => selectTab(store.tab + 1)}
+                    disabled={store.sending || (!confirm() && (store.answers[store.tab]?.length ?? 0) === 0)}
+                  >
+                    {last() && single()
+                      ? language.t("ui.common.submit")
+                      : last()
+                        ? language.t("common.review")
+                        : language.t("ui.common.next")}
+                  </Button>
+                }
+              >
+                <Button variant="primary" size="small" onClick={submit} disabled={store.sending}>
+                  {language.t("ui.common.submit")}
+                </Button>
+              </Show>
+            </div>
+          </>
+        }
+      >
+        <Show when={!confirm()}>
+          <div data-slot="question-text">{question()?.question}</div>
+          <Show when={multi()} fallback={<div data-slot="question-hint">{language.t("ui.question.singleHint")}</div>}>
+            <div data-slot="question-hint">{language.t("ui.question.multiHint")}</div>
+          </Show>
+          <div data-slot="question-options">
+            <For each={options()}>
+              {(opt, i) => {
+                const picked = () => store.answers[store.tab]?.includes(opt.label) ?? false
                 return (
                   <button
-                    data-slot="question-tab"
-                    data-active={active()}
-                    data-answered={answered()}
+                    data-slot="question-option"
+                    data-picked={picked()}
                     disabled={store.sending}
-                    onClick={() => selectTab(index())}
+                    onClick={() => selectOption(i())}
                   >
-                    {q.header}
-                  </button>
-                )
-              }}
-            </For>
-            <button
-              data-slot="question-tab"
-              data-active={confirm()}
-              disabled={store.sending}
-              onClick={() => selectTab(questions().length)}
-            >
-              {language.t("ui.common.confirm")}
-            </button>
-          </div>
-        </Show>
-
-        <Show when={!confirm()}>
-          <div data-slot="question-content">
-            <div data-slot="question-text">
-              {question()?.question}
-              {multi() ? " " + language.t("ui.question.multiHint") : ""}
-            </div>
-            <div data-slot="question-options">
-              <For each={options()}>
-                {(opt, i) => {
-                  const picked = () => store.answers[store.tab]?.includes(opt.label) ?? false
-                  return (
-                    <button
-                      data-slot="question-option"
-                      data-picked={picked()}
-                      disabled={store.sending}
-                      onClick={() => selectOption(i())}
-                    >
+                    <span data-slot="question-option-check" aria-hidden="true">
+                      <span
+                        data-slot="question-option-box"
+                        data-type={multi() ? "checkbox" : "radio"}
+                        data-picked={picked()}
+                      >
+                        <Show when={multi()} fallback={<span data-slot="question-option-radio-dot" />}>
+                          <Icon name="check-small" size="small" />
+                        </Show>
+                      </span>
+                    </span>
+                    <span data-slot="question-option-main">
                       <span data-slot="option-label">{opt.label}</span>
                       <Show when={opt.description}>
                         <span data-slot="option-description">{opt.description}</span>
                       </Show>
-                      <Show when={picked()}>
-                        <Icon name="check-small" size="normal" />
-                      </Show>
-                    </button>
-                  )
-                }}
-              </For>
-              <Show when={question()?.custom !== false}>
-                <button
-                  data-slot="question-option"
-                  data-picked={customPicked()}
-                  disabled={store.sending}
-                  onClick={() => selectOption(options().length)}
-                >
+                    </span>
+                  </button>
+                )
+              }}
+            </For>
+            <Show when={question()?.custom !== false}>
+              <button
+                data-slot="question-option"
+                data-custom="true"
+                data-picked={customPicked()}
+                disabled={store.sending}
+                onClick={() => selectOption(options().length)}
+              >
+                <span data-slot="question-option-check" aria-hidden="true">
+                  <span
+                    data-slot="question-option-box"
+                    data-type={multi() ? "checkbox" : "radio"}
+                    data-picked={customPicked()}
+                  >
+                    <Show when={multi()} fallback={<span data-slot="question-option-radio-dot" />}>
+                      <Icon name="check-small" size="small" />
+                    </Show>
+                  </span>
+                </span>
+                <span data-slot="question-option-main">
                   <span data-slot="option-label">{language.t("ui.messagePart.option.typeOwnAnswer")}</span>
-                  <Show when={!store.editing && input()}>
-                    <span data-slot="option-description">{input()}</span>
-                  </Show>
-                  <Show when={customPicked()}>
-                    <Icon name="check-small" size="normal" />
-                  </Show>
-                </button>
-                <Show when={store.editing}>
-                  <form data-slot="custom-input-form" onSubmit={handleCustomSubmit}>
-                    <input
-                      ref={(el) => setTimeout(() => el.focus(), 0)}
-                      type="text"
-                      data-slot="custom-input"
-                      placeholder={language.t("ui.question.custom.placeholder")}
-                      value={input()}
-                      disabled={store.sending}
-                      onInput={(e) => {
-                        const inputs = [...store.custom]
-                        inputs[store.tab] = e.currentTarget.value
-                        setStore("custom", inputs)
-                      }}
-                    />
-                    <Button type="submit" variant="primary" size="small" disabled={store.sending}>
-                      {multi() ? language.t("ui.common.add") : language.t("ui.common.submit")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="small"
-                      disabled={store.sending}
-                      onClick={() => setStore("editing", false)}
-                    >
-                      {language.t("ui.common.cancel")}
-                    </Button>
-                  </form>
-                </Show>
+                  <span data-slot="option-description" data-placeholder={!input()}>
+                    {input() || language.t("ui.question.custom.placeholder")}
+                  </span>
+                </span>
+              </button>
+              <Show when={store.editing}>
+                <form data-slot="custom-input-form" onSubmit={handleCustomSubmit}>
+                  <input
+                    ref={(el) => setTimeout(() => el.focus(), 0)}
+                    type="text"
+                    data-slot="custom-input"
+                    placeholder={language.t("ui.question.custom.placeholder")}
+                    value={input()}
+                    disabled={store.sending}
+                    onInput={(e) => {
+                      const inputs = [...store.custom]
+                      inputs[store.tab] = e.currentTarget.value
+                      setStore("custom", inputs)
+                    }}
+                  />
+                  <Button type="submit" variant="primary" size="small" disabled={store.sending}>
+                    {multi() ? language.t("ui.common.add") : language.t("ui.common.submit")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="small"
+                    disabled={store.sending}
+                    onClick={() => setStore("editing", false)}
+                  >
+                    {language.t("ui.common.cancel")}
+                  </Button>
+                </form>
               </Show>
-            </div>
+            </Show>
           </div>
         </Show>
 
@@ -279,30 +332,7 @@ export const QuestionDock: Component<{ request: QuestionRequest }> = (props) => 
             </For>
           </div>
         </Show>
-
-        <div data-slot="question-actions">
-          <Button variant="ghost" size="small" onClick={reject} disabled={store.sending}>
-            {language.t("ui.common.dismiss")}
-          </Button>
-          <Show when={!single()}>
-            <Show when={confirm()}>
-              <Button variant="primary" size="small" onClick={submit} disabled={store.sending}>
-                {language.t("ui.common.submit")}
-              </Button>
-            </Show>
-            <Show when={!confirm() && multi()}>
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => selectTab(store.tab + 1)}
-                disabled={store.sending || (store.answers[store.tab]?.length ?? 0) === 0}
-              >
-                {language.t("ui.common.next")}
-              </Button>
-            </Show>
-          </Show>
-        </div>
-      </div>
+      </DockPrompt>
     </div>
   )
 }

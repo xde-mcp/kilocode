@@ -13,6 +13,8 @@ import { Installation } from "./installation"
 import { NamedError } from "@opencode-ai/util/error"
 import { FormatError } from "./cli/error"
 import { ServeCommand } from "./cli/cmd/serve"
+import { WorkspaceServeCommand } from "./cli/cmd/workspace-serve"
+import { Filesystem } from "./util/filesystem"
 import { DebugCommand } from "./cli/cmd/debug"
 import { StatsCommand } from "./cli/cmd/stats"
 import { McpCommand } from "./cli/cmd/mcp"
@@ -23,13 +25,13 @@ import { AttachCommand } from "./cli/cmd/tui/attach"
 import { TuiThreadCommand } from "./cli/cmd/tui/thread"
 import { AcpCommand } from "./cli/cmd/acp"
 import { EOL } from "os"
-import { WebCommand } from "./cli/cmd/web"
+// import { WebCommand } from "./cli/cmd/web" // kilocode_change (Disabled unsupported opencode web UI)
 import { PrCommand } from "./cli/cmd/pr"
 import { SessionCommand } from "./cli/cmd/session"
 // kilocode_change start - Import telemetry, instance disposal, and legacy migration
 import { Telemetry } from "@kilocode/kilo-telemetry"
 import { Instance } from "./project/instance" // kilocode_change
-import { migrateLegacyKiloAuth, ENV_FEATURE } from "@kilocode/kilo-gateway"
+import { migrateLegacyKiloAuth, ENV_FEATURE, ENV_VERSION } from "@kilocode/kilo-gateway"
 
 // kilocode_change - set feature for tracking. 'serve' is spawned by other services
 // (extension, cloud) which set their own KILOCODE_FEATURE env var. Direct CLI use
@@ -39,10 +41,19 @@ if (!process.env[ENV_FEATURE]) {
   const isServe = process.argv.includes("serve")
   process.env[ENV_FEATURE] = isServe ? "unknown" : "cli"
 }
-import { Global } from "./global"
+
+// kilocode_change - set version so kilo-gateway can include it in the editor name header
+if (!process.env[ENV_VERSION]) {
+  process.env[ENV_VERSION] = Installation.VERSION
+}
 import { Config } from "./config/config"
 import { Auth } from "./auth"
 // kilocode_change end
+import { DbCommand } from "./cli/cmd/db"
+import path from "path"
+import { Global } from "./global"
+import { JsonMigration } from "./storage/json-migration"
+import { Database } from "./storage/db"
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -56,7 +67,7 @@ process.on("uncaughtException", (e) => {
   })
 })
 
-const cli = yargs(hideBin(process.argv))
+let cli = yargs(hideBin(process.argv))
   .parserConfiguration({ "populate--": true })
   .scriptName("kilo") // kilocode_change
   .wrap(100)
@@ -115,6 +126,43 @@ const cli = yargs(hideBin(process.argv))
 
     Telemetry.trackCliStart()
     // kilocode_change end
+
+    const marker = path.join(Global.Path.data, "kilo.db")
+    if (!(await Filesystem.exists(marker))) {
+      const tty = process.stderr.isTTY
+      process.stderr.write("Performing one time database migration, may take a few minutes..." + EOL)
+      const width = 36
+      const orange = "\x1b[38;5;214m"
+      const muted = "\x1b[0;2m"
+      const reset = "\x1b[0m"
+      let last = -1
+      if (tty) process.stderr.write("\x1b[?25l")
+      try {
+        await JsonMigration.run(Database.Client().$client, {
+          progress: (event) => {
+            const percent = Math.floor((event.current / event.total) * 100)
+            if (percent === last && event.current !== event.total) return
+            last = percent
+            if (tty) {
+              const fill = Math.round((percent / 100) * width)
+              const bar = `${"■".repeat(fill)}${"･".repeat(width - fill)}`
+              process.stderr.write(
+                `\r${orange}${bar} ${percent.toString().padStart(3)}%${reset} ${muted}${event.label.padEnd(12)} ${event.current}/${event.total}${reset}`,
+              )
+              if (event.current === event.total) process.stderr.write("\n")
+            } else {
+              process.stderr.write(`sqlite-migration:${percent}${EOL}`)
+            }
+          },
+        })
+      } finally {
+        if (tty) process.stderr.write("\x1b[?25h")
+        else {
+          process.stderr.write(`sqlite-migration:done${EOL}`)
+        }
+      }
+      process.stderr.write("Database migration complete." + EOL)
+    }
   })
   .usage("\n" + UI.logo())
   .completion("completion", "generate shell completion script")
@@ -130,7 +178,7 @@ const cli = yargs(hideBin(process.argv))
   .command(UpgradeCommand)
   .command(UninstallCommand)
   .command(ServeCommand)
-  .command(WebCommand)
+  // .command(WebCommand) // kilocode_change (Disabled unsupported opencode web UI)
   .command(ModelsCommand)
   .command(StatsCommand)
   .command(ExportCommand)
@@ -138,6 +186,13 @@ const cli = yargs(hideBin(process.argv))
   // .command(GithubCommand) // kilocode_change (Disabled until backend is ready)
   .command(PrCommand)
   .command(SessionCommand)
+  .command(DbCommand)
+
+if (Installation.isLocal()) {
+  cli = cli.command(WorkspaceServeCommand)
+}
+
+cli = cli
   .fail((msg, err) => {
     if (
       msg?.startsWith("Unknown argument") ||
@@ -188,7 +243,7 @@ try {
   if (formatted) UI.error(formatted)
   if (formatted === undefined) {
     UI.error("Unexpected error, check log file at " + Log.file() + " for more details" + EOL)
-    console.error(e instanceof Error ? e.message : String(e))
+    process.stderr.write((e instanceof Error ? e.message : String(e)) + EOL)
   }
   process.exitCode = 1
 } finally {

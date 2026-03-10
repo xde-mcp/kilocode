@@ -107,20 +107,25 @@ export namespace KiloSessions {
     })
   }
 
+  const shareDisabled = process.env["KILO_DISABLE_SHARE"] === "true" || process.env["KILO_DISABLE_SHARE"] === "1"
+  const ingestDisabled =
+    process.env["KILO_DISABLE_SESSION_INGEST"] === "true" || process.env["KILO_DISABLE_SESSION_INGEST"] === "1"
+  const debugIngest =
+    process.env["KILO_DEBUG_SESSION_INGEST"] === "true" || process.env["KILO_DEBUG_SESSION_INGEST"] === "1"
+
   const ingest = IngestQueue.create({
     getShare: async (sessionId) => get(sessionId).catch(() => undefined),
     getClient,
-    log,
+    log: {
+      ...(debugIngest ? { info: log.info.bind(log) } : {}),
+      error: log.error.bind(log),
+    },
     onAuthError: () => {
       // Non-retryable until credentials are fixed.
       // Clearing caches prevents repeated use of a now-invalid token/client.
       clearCache()
     },
   })
-
-  const shareDisabled = process.env["KILO_DISABLE_SHARE"] === "true" || process.env["KILO_DISABLE_SHARE"] === "1"
-  const ingestDisabled =
-    process.env["KILO_DISABLE_SESSION_INGEST"] === "true" || process.env["KILO_DISABLE_SESSION_INGEST"] === "1"
 
   export async function init() {
     if (ingestDisabled) return
@@ -134,7 +139,7 @@ export namespace KiloSessions {
       await ingest.sync(evt.properties.info.id, [
         {
           type: "kilo_meta",
-          data: await meta(),
+          data: await meta(evt.properties.info.id),
         },
         {
           type: "session",
@@ -193,8 +198,25 @@ export namespace KiloSessions {
   }
 
   export async function create(sessionId: string) {
+    const result = await bootstrap(sessionId)
+    if (!result) return { id: "", ingestPath: "" }
+
+    void fullSync(sessionId).catch((error) => log.error("share full sync failed", { sessionId, error }))
+
+    return result
+  }
+
+  export async function bootstrap(sessionId: string) {
+    if (ingestDisabled) {
+      log.info("session bootstrap skipped: ingest disabled", { sessionId })
+      return
+    }
+
     const client = await getClient()
-    if (!client) return { id: "", ingestPath: "" }
+    if (!client) {
+      log.info("session bootstrap skipped: no client", { sessionId })
+      return
+    }
 
     log.info("creating session", { sessionId })
 
@@ -211,7 +233,7 @@ export namespace KiloSessions {
 
     await Storage.write(["session_share", sessionId], result)
 
-    void fullSync(sessionId).catch((error) => log.error("share full sync failed", { sessionId, error }))
+    log.info("session bootstrap completed", { sessionId })
 
     return result
   }
@@ -343,6 +365,7 @@ export namespace KiloSessions {
     const session = await Session.get(sessionId)
     const diffs = await Session.diff(sessionId)
     const messages = await Array.fromAsync(MessageV2.stream(sessionId))
+    messages.reverse()
     const models = await Promise.all(
       messages
         .filter((m) => m.info.role === "user")
@@ -353,7 +376,7 @@ export namespace KiloSessions {
     await ingest.sync(sessionId, [
       {
         type: "kilo_meta",
-        data: await meta(),
+        data: await meta(sessionId),
       },
       {
         type: "session",
@@ -414,8 +437,9 @@ export namespace KiloSessions {
     })
   }
 
-  async function meta() {
-    const platform = process.env["KILO_PLATFORM"] || "cli"
+  async function meta(sessionId?: string) {
+    const override = sessionId ? Session.getPlatformOverride(sessionId) : undefined
+    const platform = override || process.env["KILO_PLATFORM"] || "cli"
     const orgId = await getOrgId()
     const gitBranch = await Vcs.branch().catch(() => undefined)
     const gitUrl = await getGitUrl().catch(() => undefined)

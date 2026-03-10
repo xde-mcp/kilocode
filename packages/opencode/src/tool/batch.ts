@@ -2,7 +2,7 @@ import z from "zod"
 import { Tool } from "./tool"
 import DESCRIPTION from "./batch.txt"
 
-const DISALLOWED = new Set(["batch"])
+const DISALLOWED = new Set(["batch", "plan_exit"]) // kilocode_change - plan_exit is agent-gated, not registry-gated
 const FILTERED_FROM_SUGGESTIONS = new Set(["invalid", "patch", ...DISALLOWED])
 
 export const BatchTool = Tool.define("batch", async () => {
@@ -77,6 +77,12 @@ export const BatchTool = Tool.define("batch", async () => {
           })
 
           const result = await tool.execute(validatedParams, { ...ctx, callID: partID })
+          const attachments = result.attachments?.map((attachment) => ({
+            ...attachment,
+            id: Identifier.ascending("part"),
+            sessionID: ctx.sessionID,
+            messageID: ctx.messageID,
+          }))
 
           await Session.updatePart({
             id: partID,
@@ -91,7 +97,7 @@ export const BatchTool = Tool.define("batch", async () => {
               output: result.output,
               title: result.title,
               metadata: result.metadata,
-              attachments: result.attachments,
+              attachments,
               time: {
                 start: callStartTime,
                 end: Date.now(),

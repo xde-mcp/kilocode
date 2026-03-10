@@ -1,5 +1,17 @@
 module.exports = [
   {
+    source: "/docs/automate/kiloclaw",
+    destination: "/docs/automate/kiloclaw/overview",
+    basePath: false,
+    permanent: true,
+  },
+  {
+    source: "/docs/features/custom-modes",
+    destination: "/docs/customize/custom-modes",
+    basePath: false,
+    permanent: true,
+  },
+  {
     source: "/docs/features/system-notifications",
     destination: "/docs/getting-started/settings/system-notifications",
     basePath: false,
@@ -203,6 +215,12 @@ module.exports = [
   {
     source: "/docs/basic-usage/task-todo-list",
     destination: "/docs/code-with-ai/features/task-todo-list",
+    basePath: false,
+    permanent: true,
+  },
+  {
+    source: "/docs/features/experimental/voice-transcription",
+    destination: "/docs/code-with-ai/features/speech-to-text",
     basePath: false,
     permanent: true,
   },

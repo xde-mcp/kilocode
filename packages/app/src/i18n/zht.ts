@@ -73,6 +73,8 @@ export const dict = {
   "command.agent.cycle.reverse.description": "切換到上一個代理程式",
   "command.model.variant.cycle": "循環思考強度",
   "command.model.variant.cycle.description": "切換到下一個強度等級",
+  "command.prompt.mode.shell": "Shell",
+  "command.prompt.mode.normal": "Prompt",
   "command.permissions.autoaccept.enable": "自動接受編輯",
   "command.permissions.autoaccept.disable": "停止自動接受編輯",
   "command.workspace.toggle": "切換工作區",
@@ -113,6 +115,7 @@ export const dict = {
   "dialog.model.empty": "找不到模型",
   "dialog.model.manage": "管理模型",
   "dialog.model.manage.description": "自訂模型選擇器中顯示的模型。",
+  "dialog.model.manage.provider.toggle": "切換所有 {{provider}} 模型",
 
   "dialog.model.unpaid.freeModels.title": "Kilo 提供的免費模型",
   "dialog.model.unpaid.addMore.title": "從熱門提供者新增更多模型",
@@ -222,9 +225,11 @@ export const dict = {
 
   "prompt.placeholder.shell": "輸入 shell 命令...",
   "prompt.placeholder.normal": '隨便問點什麼... "{{example}}"',
+  "prompt.placeholder.simple": "隨便問點什麼...",
   "prompt.placeholder.summarizeComments": "摘要評論…",
   "prompt.placeholder.summarizeComment": "摘要這則評論…",
   "prompt.mode.shell": "Shell",
+  "prompt.mode.normal": "Prompt",
   "prompt.mode.shell.exit": "按 esc 退出",
 
   "prompt.example.1": "修復程式碼庫中的一個 TODO",
@@ -486,6 +491,7 @@ export const dict = {
   "session.review.loadingChanges": "正在載入變更...",
   "session.review.empty": "此工作階段暫無變更",
   "session.review.noChanges": "沒有變更",
+  "session.review.noVcs": "未偵測到 git VCS，因此無法偵測到工作階段變更",
   "session.files.selectToOpen": "選取要開啟的檔案",
   "session.files.all": "所有檔案",
   "session.files.binaryContent": "二進位檔案（無法顯示內容）",
@@ -496,6 +502,14 @@ export const dict = {
 
   "session.messages.jumpToLatest": "跳到最新",
   "session.context.addToContext": "將 {{selection}} 新增到上下文",
+  "session.todo.title": "待辦事項",
+  "session.todo.collapse": "折疊",
+  "session.todo.expand": "展開",
+
+  "session.modeSwitch.switching": "正在切換到 {{mode}} 模式…",
+  "session.modeSwitch.waiting": "等待目前任務完成",
+  "session.modeSwitch.notAvailable": "Agent 不可用",
+  "session.modeSwitch.fallback": '找不到 "{{requested}}"，使用 "{{actual}}"',
 
   "session.new.worktree.main": "主分支",
   "session.new.worktree.mainWithBranch": "主分支 ({{branch}})",
@@ -566,6 +580,7 @@ export const dict = {
   "sidebar.gettingStarted.line2": "連線任意提供者即可使用更多模型，如 Claude、GPT、Gemini 等。",
   "sidebar.project.recentSessions": "最近工作階段",
   "sidebar.project.viewAllSessions": "查看全部工作階段",
+  "sidebar.project.clearNotifications": "清除通知",
 
   "app.name.desktop": "Kilo Desktop",
   "settings.section.desktop": "桌面",
@@ -580,6 +595,7 @@ export const dict = {
   "settings.general.section.notifications": "系統通知",
   "settings.general.section.updates": "更新",
   "settings.general.section.sounds": "音效",
+  "settings.general.section.feed": "資訊流",
   "settings.general.section.display": "顯示",
 
   "settings.general.row.language.title": "語言",
@@ -590,7 +606,13 @@ export const dict = {
   "settings.general.row.theme.description": "自訂 Kilo 的主題。",
   "settings.general.row.font.title": "字型",
   "settings.general.row.font.description": "自訂程式碼區塊使用的等寬字型",
+  "settings.general.row.reasoningSummaries.title": "顯示推理摘要",
+  "settings.general.row.reasoningSummaries.description": "在時間軸中顯示模型推理摘要",
 
+  "settings.general.row.shellToolPartsExpanded.title": "展開 shell 工具區塊",
+  "settings.general.row.shellToolPartsExpanded.description": "在時間軸中預設展開 shell 工具區塊",
+  "settings.general.row.editToolPartsExpanded.title": "展開 edit 工具區塊",
+  "settings.general.row.editToolPartsExpanded.description": "在時間軸中預設展開 edit、write 和 patch 工具區塊",
   "settings.general.row.wayland.title": "使用原生 Wayland",
   "settings.general.row.wayland.description": "在 Wayland 上停用 X11 後備模式。需要重新啟動。",
   "settings.general.row.wayland.tooltip": "在混合更新率螢幕的 Linux 系統上，原生 Wayland 可能更穩定。",
@@ -619,6 +641,8 @@ export const dict = {
   "font.option.robotoMono": "Roboto Mono",
   "font.option.sourceCodePro": "Source Code Pro",
   "font.option.ubuntuMono": "Ubuntu Mono",
+  "font.option.geistMono": "Geist Mono",
+  "sound.option.none": "無",
   "sound.option.alert01": "警報 01",
   "sound.option.alert02": "警報 02",
   "sound.option.alert03": "警報 03",

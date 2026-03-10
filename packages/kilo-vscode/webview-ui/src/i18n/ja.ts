@@ -43,7 +43,10 @@ export const dict = {
   "command.language.set": "言語を使用: {{language}}",
 
   "command.session.new": "新しいセッション",
+  "command.session.new.task": "新しいタスク",
+  "command.session.show.changes": "変更を表示",
   "command.file.open": "ファイルを開く",
+  "command.tab.close": "タブを閉じる",
   "command.context.addSelection": "選択範囲をコンテキストに追加",
   "command.context.addSelection.description": "現在のファイルから選択した行を追加",
   "command.terminal.toggle": "ターミナルの切り替え",
@@ -70,6 +73,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "編集を自動承認",
   "command.permissions.autoaccept.disable": "編集の自動承認を停止",
   "command.workspace.toggle": "ワークスペースを切り替え",
+  "command.workspace.toggle.description": "サイドバーの複数ワークスペースを有効または無効にする",
   "command.session.undo": "元に戻す",
   "command.session.undo.description": "最後のメッセージを元に戻す",
   "command.session.redo": "やり直す",
@@ -93,8 +97,12 @@ export const dict = {
   "dialog.provider.group.popular": "人気",
   "dialog.provider.group.other": "その他",
   "dialog.provider.tag.recommended": "推奨",
+  "dialog.provider.opencode.note": "Claude、GPT、Geminiなどの厳選されたモデル",
   "dialog.provider.anthropic.note": "Claude Pro/MaxまたはAPIキーで接続",
   "dialog.provider.openai.note": "ChatGPT Pro/PlusまたはAPIキーで接続",
+  "dialog.provider.google.note": "高速で構造化された応答のためのGeminiモデル",
+  "dialog.provider.openrouter.note": "1つのプロバイダーからすべてのモデルにアクセス",
+  "dialog.provider.vercel.note": "スマートルーティングによるAIモデルへの統合アクセス",
   "dialog.provider.copilot.note": "CopilotまたはAPIキーで接続",
 
   "dialog.model.select.title": "モデルを選択",
@@ -163,6 +171,7 @@ export const dict = {
   "model.tooltip.context": "コンテキスト上限 {{limit}}",
   "common.search.placeholder": "検索",
   "common.goBack": "戻る",
+  "common.goForward": "進む",
   "common.loading": "読み込み中",
   "common.loading.ellipsis": "...",
   "common.cancel": "キャンセル",
@@ -221,6 +230,10 @@ export const dict = {
   "prompt.attachment.remove": "添付ファイルを削除",
   "prompt.action.send": "送信",
   "prompt.action.stop": "停止",
+  "prompt.action.enhance": "プロンプトを改善",
+  "prompt.action.resetModel": "モデルをデフォルトにリセット",
+  "prompt.action.enhanceDescription":
+    "「プロンプトを強化」ボタンは、追加コンテキスト、説明、または言い換えを提供することで、リクエストを改善します。ここにリクエストを入力し、ボタンを再度クリックして動作を確認してください。",
 
   "prompt.toast.pasteUnsupported.title": "サポートされていない貼り付け",
   "prompt.toast.pasteUnsupported.description": "ここでは画像またはPDFのみ貼り付け可能です。",
@@ -323,9 +336,29 @@ export const dict = {
 
   "toast.language.title": "言語",
   "toast.language.description": "{{language}}に切り替えました",
+  "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
 
   "toast.theme.title": "テーマが切り替わりました",
   "toast.scheme.title": "配色",
+  "toast.workspace.enabled.title": "ワークスペースが有効になりました",
+  "toast.workspace.enabled.description": "サイドバーに複数のワークツリーが表示されます",
+  "toast.workspace.disabled.title": "ワークスペースが無効になりました",
+  "toast.workspace.disabled.description": "サイドバーにはメインのワークツリーのみ表示されます",
 
   "toast.permissions.autoaccept.on.title": "編集を自動承認中",
   "toast.permissions.autoaccept.on.description": "編集と書き込みの権限は自動的に承認されます",
@@ -373,6 +406,15 @@ export const dict = {
     "ルート要素が見つかりません。index.htmlに追加するのを忘れていませんか？またはid属性のスペルが間違っていませんか？",
 
   "error.globalSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
+
+  "error.paidModel.title": "このモデルを使用するにはサインインが必要です",
+  "error.paidModel.description":
+    "サインインまたはアカウントを作成して、500以上のモデルにアクセスし、原価でクレジットを使用するか、独自のキーを持ち込みましょう。",
+  "error.paidModel.action": "サインイン",
+  "error.promotionLimit.title": "続けるにはサインアップが必要です",
+  "error.promotionLimit.description":
+    "無料でサインアップして、500以上のモデルを探索しましょう。2分で完了、クレジットカード不要。または後でお戻りください。",
+  "error.promotionLimit.action": "サインアップ",
 
   "error.chain.unknown": "不明なエラー",
   "error.chain.causedBy": "原因:",
@@ -437,6 +479,11 @@ export const dict = {
 
   "session.header.search.placeholder": "{{project}}を検索",
   "session.header.searchFiles": "ファイルを検索",
+  "session.header.openIn": "で開く",
+  "session.header.open.action": "{{app}}で開く",
+  "session.header.open.ariaLabel": "{{app}}で開く",
+  "session.header.open.menu": "開くオプション",
+  "session.header.open.copyPath": "パスをコピー",
 
   "status.popover.trigger": "ステータス",
   "status.popover.ariaLabel": "サーバー設定",
@@ -688,6 +735,13 @@ export const dict = {
   "session.recent": "最近",
   "session.search.placeholder": "セッションを検索...",
   "session.empty": "セッションがありません。+ をクリックして新しい会話を始めましょう。",
+  "session.cloud.repoOnly": "このリポジトリのみ",
+  "session.cloud.import": "クラウドからインポート",
+  "session.cloud.import.title": "クラウドからインポート",
+  "session.cloud.import.placeholder": "セッションID、URL、またはkilo importコマンド",
+  "session.cloud.import.button": "インポート",
+  "session.cloud.import.invalid": "セッションIDの形式が無効です",
+  "session.cloud.import.failed": "クラウドセッションのインポートに失敗しました",
 
   "workspace.new": "新しいワークスペース",
   "workspace.type.local": "ローカル",
@@ -825,7 +879,6 @@ export const dict = {
   "settings.language.current": "現在：",
 
   "common.add": "追加",
-  "common.default": "デフォルト",
   "common.choose": "選択…",
   "settings.notImplemented": "このセクションはまだ実装されていません。",
   "settings.notImplemented.description":
@@ -891,26 +944,33 @@ export const dict = {
   "settings.agentBehaviour.workflowsPlaceholder":
     "ワークフローはワークスペース内のワークフローファイルを通じて管理されます。",
   "settings.agentBehaviour.notImplemented": "まだ実装されていません。",
-  "settings.autoApprove.setAll": "すべての権限を設定",
+  "settings.autoApprove.description":
+    "ツールの実行許可を定義します。ほとんどのツールはデフォルトで「許可」されます。doom_loop と external_directory はデフォルトで「確認」になります。",
   "settings.autoApprove.level.allow": "許可",
   "settings.autoApprove.level.ask": "確認",
   "settings.autoApprove.level.deny": "拒否",
-  "settings.autoApprove.tool.read": "ファイルの内容を読み取る",
-  "settings.autoApprove.tool.edit": "ファイルを編集または作成",
-  "settings.autoApprove.tool.glob": "パターンでファイルを検索",
-  "settings.autoApprove.tool.grep": "ファイルの内容を検索",
-  "settings.autoApprove.tool.list": "ディレクトリの内容を一覧表示",
-  "settings.autoApprove.tool.bash": "シェルコマンドを実行",
-  "settings.autoApprove.tool.task": "サブエージェントタスクを作成",
-  "settings.autoApprove.tool.skill": "スキルを実行",
-  "settings.autoApprove.tool.lsp": "言語サーバー操作",
-  "settings.autoApprove.tool.todoread": "TODOリストを読み取る",
-  "settings.autoApprove.tool.todowrite": "TODOリストに書き込む",
-  "settings.autoApprove.tool.webfetch": "ウェブページを取得",
-  "settings.autoApprove.tool.websearch": "ウェブ検索",
-  "settings.autoApprove.tool.codesearch": "コードベースを検索",
-  "settings.autoApprove.tool.external_directory": "ワークスペース外のファイルにアクセス",
-  "settings.autoApprove.tool.doom_loop": "繰り返しの失敗後に続行",
+  "settings.autoApprove.wildcardLabel.commands": "すべてのコマンド (*)",
+  "settings.autoApprove.wildcardLabel.paths": "すべてのパス (*)",
+  "settings.autoApprove.exceptions": "例外",
+  "settings.autoApprove.addCommand": "コマンドを追加",
+  "settings.autoApprove.addPath": "パスを追加",
+  "settings.autoApprove.placeholder.command": "例: git *",
+  "settings.autoApprove.placeholder.path": "例: *.env",
+  "settings.autoApprove.tool.read": "ファイルを読み取る。指定されたパスに一致するファイルをエージェントが読み取ることを許可します。",
+  "settings.autoApprove.tool.edit": "ファイルを変更する。パッチや複数ファイルの更新を含め、エージェントがファイルを作成または編集することを許可します。",
+  "settings.autoApprove.tool.glob": "パターンでファイルを一致。globパターン（例：src/**/*.ts）を使用したファイルの一致を許可します。",
+  "settings.autoApprove.tool.grep": "ファイル内容を検索。ファイル内の正規表現ベースの検索を許可します。",
+  "settings.autoApprove.tool.list": "ディレクトリの内容を一覧表示。ディレクトリ内のファイルとフォルダの表示を許可します。",
+  "settings.autoApprove.tool.bash": "ターミナルコマンドを実行。シェルコマンド（例：git status）の実行を許可します。",
+  "settings.autoApprove.tool.task": "サブエージェントを起動。特定のタスク用に特化したサブエージェントを開始することを許可します。",
+  "settings.autoApprove.tool.skill": "スキルを読み込む。事前定義されたスキルを名前で読み込むことを許可します。",
+  "settings.autoApprove.tool.lsp": "言語サーバーにクエリ。コードインテリジェンスのために言語サーバークエリの実行を許可します。",
+  "settings.autoApprove.tool.todoreadwrite": "タスクリストの管理。内部タスクリストの読み取りと更新を許可します。",
+  "settings.autoApprove.tool.webfetch": "URLをフェッチ。特定のURLからコンテンツを取得することを許可します。",
+  "settings.autoApprove.tool.websearchcodesearch":
+    "Webまたはコードの検索。外部のWebまたはコード検索の実行を許可します。",
+  "settings.autoApprove.tool.external_directory": "ワークスペース外のファイルにアクセス。現在のプロジェクトディレクトリ外のファイルにアクセスしたときにトリガーされます。",
+  "settings.autoApprove.tool.doom_loop": "繰り返し同一のアクションを防止。同じツール呼び出しが同一の入力で繰り返されたときにトリガーされます。",
   "settings.checkpoints.enable.title": "スナップショットを有効にする",
   "settings.checkpoints.enable.description": "ファイル編集前にチェックポイントを作成して以前の状態を復元可能にする",
   "settings.context.autoCompaction.title": "自動圧縮",
@@ -936,4 +996,69 @@ export const dict = {
   "settings.providers.notSet": "未設定（サーバーのデフォルトを使用）",
   "dialog.model.notSet": "未設定",
   "profile.personalAccount": "個人アカウント",
+  // Agent Manager strings live in webview-ui/agent-manager/i18n/ja.ts
+
+  "question.summary": "{{total}} 問中 {{n}} 問目",
+  "common.review": "確認",
+
+  // legacy-migration start
+  "settings.legacyMigration.link": "レガシーバージョンからの移行",
+  "settings.aboutKiloCode.legacyMigration.title": "レガシー移行",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "プロバイダーのAPIキーやデフォルトモデルなど、以前にインストールしたKilo Codeから設定を移行します。",
+
+  // Screen 1 — What's New
+  "migration.whatsNew.title": "Kilo Codeの新機能",
+  "migration.whatsNew.badge": "Beta",
+  "migration.whatsNew.subtitle": "より高速で効率的な基盤上に拡張機能を再構築しました。",
+  "migration.whatsNew.features.performance.title": "高速なエージェントパフォーマンス",
+  "migration.whatsNew.features.performance.detail":
+    "並列ツール呼び出しとサブエージェントにより、エージェントがより多くのタスクを同時に処理できます — 待ち時間が減り、作業効率が向上します。",
+  "migration.whatsNew.features.interface.title": "洗練されたインターフェース",
+  "migration.whatsNew.features.interface.detail": "不要な要素を排除し、より読みやすく素早く操作できます。",
+  "migration.whatsNew.features.agentManager.title": "Agent Manager",
+  "migration.whatsNew.features.agentManager.detail":
+    "複数のエージェントを並列実行するための統合インターフェース。それぞれ独自のワークツリー上で動作し、進捗の確認、コンテキストの切り替え、変更のレビューを一箇所で行えます。",
+  "migration.whatsNew.features.foundation.title": "共通基盤",
+  "migration.whatsNew.features.foundation.detail":
+    "すべてのKilo製品で共有される小さく効率的なコア。どのような作業スタイルでも馴染みのある体験を提供します。",
+  "migration.whatsNew.blogLink": "完全なアナウンスを読む",
+  "migration.whatsNew.continue": "続行",
+
+  // Screen 2 — Migrate Settings
+  "migration.migrate.title": "設定の移行",
+  "migration.migrate.subtitle": "以前のインストールから設定が見つかりました。移行可能な項目は以下の通りです。",
+  "migration.migrate.selectLabel": "移行する項目を選択",
+  "migration.migrate.cannotMigrate": "移行できません",
+  "migration.migrate.chatHistory": "チャットセッションと履歴",
+  "migration.migrate.chatHistoryDesc": "新しいアーキテクチャと互換性がありません",
+  "migration.migrate.button": "設定を移行",
+  "migration.migrate.skip": "スキップ",
+  "migration.migrate.back": "戻る",
+  "migration.migrate.keysDetected": "{{count}}個のキーを検出",
+  "migration.migrate.serversConfigured": "{{count}}個のサーバーが設定済み",
+  "migration.migrate.modesFound": "{{count}}個のモードが見つかりました",
+  "migration.migrate.nothingToMigrate": "レガシー設定に移行する項目が見つかりませんでした。",
+
+  // Migrate — item labels (reused from old select keys)
+  "migration.select.providers": "プロバイダーのAPIキー",
+  "migration.select.mcpServers": "MCPサーバー",
+  "migration.select.customModes": "カスタムモード / エージェント",
+  "migration.select.defaultModel": "デフォルトモデル",
+  "migration.select.autoApproval": "自動承認",
+  "migration.select.language": "UI言語",
+  "migration.select.autocomplete": "オートコンプリート設定",
+
+  // Migrate — completion
+  "migration.complete.summary": "{{total}}個中{{success}}個の項目が正常に移行されました。",
+  "migration.complete.cleanup": "レガシー設定データを削除する",
+  "migration.complete.cleanupDescription":
+    "VS Codeのストレージから古い設定を削除します。この移行を再度実行することはできなくなります。",
+  "migration.complete.done": "完了",
+  // legacy-migration end
+
+  "error.details.show": "詳細",
+
+  "task.todos.progress": "{{done}}/{{total}} タスク完了",
+  "task.todos.allDone": "{{count}} タスク完了",
 }

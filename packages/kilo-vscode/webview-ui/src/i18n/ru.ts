@@ -43,7 +43,10 @@ export const dict = {
   "command.language.set": "Использовать язык: {{language}}",
 
   "command.session.new": "Новая сессия",
+  "command.session.new.task": "Новая задача",
+  "command.session.show.changes": "Показать изменения",
   "command.file.open": "Открыть файл",
+  "command.tab.close": "Закрыть вкладку",
   "command.context.addSelection": "Добавить выделение в контекст",
   "command.context.addSelection.description": "Добавить выбранные строки из текущего файла",
   "command.terminal.toggle": "Переключить терминал",
@@ -70,6 +73,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Авто-принятие изменений",
   "command.permissions.autoaccept.disable": "Прекратить авто-принятие изменений",
   "command.workspace.toggle": "Переключить рабочие пространства",
+  "command.workspace.toggle.description": "Включить или отключить несколько рабочих пространств в боковой панели",
   "command.session.undo": "Отменить",
   "command.session.undo.description": "Отменить последнее сообщение",
   "command.session.redo": "Повторить",
@@ -93,8 +97,12 @@ export const dict = {
   "dialog.provider.group.popular": "Популярные",
   "dialog.provider.group.other": "Другие",
   "dialog.provider.tag.recommended": "Рекомендуемые",
+  "dialog.provider.opencode.note": "Отобранные модели, включая Claude, GPT, Gemini и другие",
   "dialog.provider.anthropic.note": "Подключитесь с помощью Claude Pro/Max или API ключа",
   "dialog.provider.openai.note": "Подключитесь с помощью ChatGPT Pro/Plus или API ключа",
+  "dialog.provider.google.note": "Модели Gemini для быстрых структурированных ответов",
+  "dialog.provider.openrouter.note": "Доступ ко всем поддерживаемым моделям через одного провайдера",
+  "dialog.provider.vercel.note": "Единый доступ к AI-моделям с интеллектуальной маршрутизацией",
   "dialog.provider.copilot.note": "Подключитесь с помощью Copilot или API ключа",
 
   "dialog.model.select.title": "Выбрать модель",
@@ -164,6 +172,7 @@ export const dict = {
 
   "common.search.placeholder": "Поиск",
   "common.goBack": "Назад",
+  "common.goForward": "Вперёд",
   "common.loading": "Загрузка",
   "common.loading.ellipsis": "...",
   "common.cancel": "Отмена",
@@ -222,6 +231,10 @@ export const dict = {
   "prompt.attachment.remove": "Удалить вложение",
   "prompt.action.send": "Отправить",
   "prompt.action.stop": "Остановить",
+  "prompt.action.enhance": "Улучшить промпт",
+  "prompt.action.resetModel": "Сбросить модель на значение по умолчанию",
+  "prompt.action.enhanceDescription":
+    "Кнопка 'Улучшить запрос' помогает сделать ваш запрос лучше, предоставляя дополнительный контекст, уточнения или переформулировку. Попробуйте ввести запрос и снова нажать кнопку, чтобы увидеть, как это работает.",
 
   "prompt.toast.pasteUnsupported.title": "Неподдерживаемая вставка",
   "prompt.toast.pasteUnsupported.description": "Сюда можно вставлять только изображения или PDF.",
@@ -325,6 +338,22 @@ export const dict = {
 
   "toast.language.title": "Язык",
   "toast.language.description": "Переключено на {{language}}",
+  "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
 
   "toast.theme.title": "Тема переключена",
   "toast.scheme.title": "Цветовая схема",
@@ -380,6 +409,15 @@ export const dict = {
     "Корневой элемент не найден. Вы забыли добавить его в index.html? Или, может быть, атрибут id был написан неправильно?",
 
   "error.globalSync.connectFailed": "Не удалось подключиться к серверу. Запущен ли сервер по адресу `{{url}}`?",
+
+  "error.paidModel.title": "Для использования этой модели необходимо войти",
+  "error.paidModel.description":
+    "Войдите или создайте аккаунт для доступа к более чем 500 моделям, используйте кредиты по себестоимости или подключите свой ключ.",
+  "error.paidModel.action": "Войти",
+  "error.promotionLimit.title": "Для продолжения необходимо зарегистрироваться",
+  "error.promotionLimit.description":
+    "Зарегистрируйтесь бесплатно, чтобы продолжить и исследовать более 500 моделей. Займёт 2 минуты, кредитная карта не нужна. Или вернитесь позже.",
+  "error.promotionLimit.action": "Зарегистрироваться",
 
   "error.chain.unknown": "Неизвестная ошибка",
   "error.chain.causedBy": "Причина:",
@@ -446,6 +484,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Поиск {{project}}",
   "session.header.searchFiles": "Поиск файлов",
+  "session.header.openIn": "Открыть в",
+  "session.header.open.action": "Открыть {{app}}",
+  "session.header.open.ariaLabel": "Открыть в {{app}}",
+  "session.header.open.menu": "Параметры открытия",
+  "session.header.open.copyPath": "Копировать путь",
 
   "status.popover.trigger": "Статус",
   "status.popover.ariaLabel": "Настройки серверов",
@@ -700,6 +743,13 @@ export const dict = {
   "session.recent": "Недавние",
   "session.search.placeholder": "Поиск сессий...",
   "session.empty": "Сессий пока нет. Нажмите + чтобы начать новый разговор.",
+  "session.cloud.repoOnly": "Только этот репозиторий",
+  "session.cloud.import": "Импорт из облака",
+  "session.cloud.import.title": "Импорт из облака",
+  "session.cloud.import.placeholder": "ID сессии, URL или команда kilo import",
+  "session.cloud.import.button": "Импортировать",
+  "session.cloud.import.invalid": "Неверный формат ID сессии",
+  "session.cloud.import.failed": "Не удалось импортировать облачную сессию",
 
   "workspace.new": "Новое рабочее пространство",
   "workspace.type.local": "локальное",
@@ -836,7 +886,6 @@ export const dict = {
   "settings.language.current": "Текущий:",
 
   "common.add": "Добавить",
-  "common.default": "По умолчанию",
   "common.choose": "Выбрать…",
   "settings.notImplemented": "Этот раздел ещё не реализован.",
   "settings.notImplemented.description": "Здесь будут параметры конфигурации и пояснительный текст.",
@@ -900,26 +949,34 @@ export const dict = {
     "MCP-серверы не настроены. Отредактируйте файл конфигурации opencode для добавления MCP-серверов.",
   "settings.agentBehaviour.workflowsPlaceholder": "Рабочие процессы управляются через файлы рабочих процессов.",
   "settings.agentBehaviour.notImplemented": "Ещё не реализовано.",
-  "settings.autoApprove.setAll": "Установить все разрешения",
+  "settings.autoApprove.description":
+    "Определите правила запуска инструментов. Большинство инструментов по умолчанию Разрешены. Для doom_loop и external_directory по умолчанию установлено Спрашивать.",
   "settings.autoApprove.level.allow": "Разрешить",
   "settings.autoApprove.level.ask": "Спросить",
   "settings.autoApprove.level.deny": "Отклонить",
-  "settings.autoApprove.tool.read": "Чтение содержимого файлов",
-  "settings.autoApprove.tool.edit": "Редактирование или создание файлов",
-  "settings.autoApprove.tool.glob": "Поиск файлов по шаблону",
-  "settings.autoApprove.tool.grep": "Поиск в содержимом файлов",
-  "settings.autoApprove.tool.list": "Список содержимого каталога",
-  "settings.autoApprove.tool.bash": "Выполнение команд оболочки",
-  "settings.autoApprove.tool.task": "Создание подзадач агента",
-  "settings.autoApprove.tool.skill": "Выполнение навыков",
-  "settings.autoApprove.tool.lsp": "Операции языкового сервера",
-  "settings.autoApprove.tool.todoread": "Чтение списков задач",
-  "settings.autoApprove.tool.todowrite": "Запись списков задач",
-  "settings.autoApprove.tool.webfetch": "Получение веб-страниц",
-  "settings.autoApprove.tool.websearch": "Поиск в интернете",
-  "settings.autoApprove.tool.codesearch": "Поиск в кодовой базе",
-  "settings.autoApprove.tool.external_directory": "Доступ к файлам вне рабочей области",
-  "settings.autoApprove.tool.doom_loop": "Продолжить после повторных сбоев",
+  "settings.autoApprove.wildcardLabel.commands": "Все команды (*)",
+  "settings.autoApprove.wildcardLabel.paths": "Все пути (*)",
+  "settings.autoApprove.exceptions": "Исключения",
+  "settings.autoApprove.addCommand": "Добавить команду",
+  "settings.autoApprove.addPath": "Добавить путь",
+  "settings.autoApprove.placeholder.command": "например, git *",
+  "settings.autoApprove.placeholder.path": "например, *.env",
+  "settings.autoApprove.tool.read": "Чтение файлов. Разрешает агенту читать файлы, соответствующие указанному пути.",
+  "settings.autoApprove.tool.edit": "Изменение файлов. Разрешает агенту создавать или редактировать файлы, включая патчи и обновления нескольких файлов.",
+  "settings.autoApprove.tool.glob": "Поиск файлов по шаблону. Разрешает поиск файлов с использованием glob-шаблонов (например, src/**/*.ts).",
+  "settings.autoApprove.tool.grep": "Поиск по содержимому файлов. Разрешает поиск на основе регулярных выражений внутри файлов.",
+  "settings.autoApprove.tool.list": "Просмотр содержимого каталогов. Разрешает просмотр файлов и папок внутри каталога.",
+  "settings.autoApprove.tool.bash": "Выполнение команд терминала. Разрешает выполнение команд оболочки (например, git status).",
+  "settings.autoApprove.tool.task": "Запуск субагентов. Разрешает запуск специализированных субагентов для конкретных задач.",
+  "settings.autoApprove.tool.skill": "Загрузка навыков. Разрешает загрузку предопределенных навыков по имени.",
+  "settings.autoApprove.tool.lsp": "Запрос к языковому серверу. Разрешает выполнение запросов к языковому серверу для анализа кода.",
+  "settings.autoApprove.tool.todoreadwrite":
+    "Управление списком задач. Разрешает чтение и обновление внутреннего списка задач.",
+  "settings.autoApprove.tool.webfetch": "Получение URL. Разрешает извлечение содержимого по указанному URL-адресу.",
+  "settings.autoApprove.tool.websearchcodesearch":
+    "Поиск в интернете или коде. Разрешает выполнение внешних поисковых запросов в интернете или коде.",
+  "settings.autoApprove.tool.external_directory": "Доступ к файлам вне рабочей области. Срабатывает при доступе к файлам за пределами текущего каталога проекта.",
+  "settings.autoApprove.tool.doom_loop": "Предотвращение повторных идентичных действий. Срабатывает, когда один и тот же вызов инструмента повторяется с идентичными входными данными.",
   "settings.checkpoints.enable.title": "Включить снимки",
   "settings.checkpoints.enable.description": "Создавать контрольные точки перед редактированием файлов",
   "settings.context.autoCompaction.title": "Автоматическое сжатие",
@@ -945,4 +1002,69 @@ export const dict = {
   "settings.providers.notSet": "Не задано (использовать значение сервера по умолчанию)",
   "dialog.model.notSet": "Не задано",
   "profile.personalAccount": "Личный аккаунт",
+  // Agent Manager strings live in webview-ui/agent-manager/i18n/ru.ts
+
+  "question.summary": "{{n}} из {{total}} вопросов",
+  "common.review": "Просмотр",
+
+  // legacy-migration start
+  "settings.legacyMigration.link": "Миграция с устаревшей версии",
+  "settings.aboutKiloCode.legacyMigration.title": "Миграция с устаревшей версии",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "Перенос настроек из предыдущей установки Kilo Code, включая API-ключи провайдеров и модель по умолчанию.",
+
+  // Screen 1 — What's New
+  "migration.whatsNew.title": "Что нового в Kilo Code",
+  "migration.whatsNew.badge": "Beta",
+  "migration.whatsNew.subtitle": "Мы перестроили расширение на более быстрой и эффективной основе.",
+  "migration.whatsNew.features.performance.title": "Более быстрая работа агента",
+  "migration.whatsNew.features.performance.detail":
+    "Параллельные вызовы инструментов и подагенты позволяют вашему агенту делать больше одновременно — меньше ожидания, больше результатов.",
+  "migration.whatsNew.features.interface.title": "Упрощённый интерфейс",
+  "migration.whatsNew.features.interface.detail": "Меньше отвлекающих факторов, проще и быстрее для чтения.",
+  "migration.whatsNew.features.agentManager.title": "Agent Manager",
+  "migration.whatsNew.features.agentManager.detail":
+    "Единый интерфейс для запуска нескольких агентов параллельно, каждый в своём worktree — отслеживайте прогресс, переключайте контекст и просматривайте изменения в одном месте.",
+  "migration.whatsNew.features.foundation.title": "Общая основа",
+  "migration.whatsNew.features.foundation.detail":
+    "Одно компактное и эффективное ядро для всех продуктов Kilo. Знакомый опыт независимо от выбранного способа работы.",
+  "migration.whatsNew.blogLink": "Читать полный анонс",
+  "migration.whatsNew.continue": "Продолжить",
+
+  // Screen 2 — Migrate Settings
+  "migration.migrate.title": "Перенос ваших настроек",
+  "migration.migrate.subtitle": "Мы нашли настройки от вашей предыдущей установки. Вот что можно перенести.",
+  "migration.migrate.selectLabel": "Выберите, что перенести",
+  "migration.migrate.cannotMigrate": "Невозможно перенести",
+  "migration.migrate.chatHistory": "Сессии чата и история",
+  "migration.migrate.chatHistoryDesc": "Несовместимы с новой архитектурой",
+  "migration.migrate.button": "Перенести настройки",
+  "migration.migrate.skip": "Пропустить",
+  "migration.migrate.back": "Назад",
+  "migration.migrate.keysDetected": "Обнаружено ключей: {{count}}",
+  "migration.migrate.serversConfigured": "Настроено серверов: {{count}}",
+  "migration.migrate.modesFound": "Найдено режимов: {{count}}",
+  "migration.migrate.nothingToMigrate": "В старых настройках не найдено данных для переноса.",
+
+  // Migrate — item labels (reused from old select keys)
+  "migration.select.providers": "API-ключи провайдеров",
+  "migration.select.mcpServers": "Серверы MCP",
+  "migration.select.customModes": "Пользовательские режимы / Агенты",
+  "migration.select.defaultModel": "Модель по умолчанию",
+  "migration.select.autoApproval": "Автоматическое подтверждение",
+  "migration.select.language": "Язык интерфейса",
+  "migration.select.autocomplete": "Настройки автодополнения",
+
+  // Migrate — completion
+  "migration.complete.summary": "Успешно перенесено: {{success}} из {{total}} элементов.",
+  "migration.complete.cleanup": "Удалить данные старых настроек",
+  "migration.complete.cleanupDescription":
+    "Это удалит старые настройки из хранилища VS Code. Вы не сможете запустить эту миграцию повторно.",
+  "migration.complete.done": "Готово",
+  // legacy-migration end
+
+  "error.details.show": "Подробности",
+
+  "task.todos.progress": "{{done}}/{{total}} задач выполнено",
+  "task.todos.allDone": "{{count}} задач выполнено",
 }

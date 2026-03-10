@@ -1,17 +1,9 @@
-import type {
-  Message,
-  Session,
-  Part,
-  FileDiff,
-  SessionStatus,
-  PermissionRequest,
-  QuestionRequest,
-  QuestionAnswer,
-} from "@kilocode/sdk/v2"
+import type { Message, Session, Part, FileDiff, SessionStatus, ProviderListResponse } from "@kilocode/sdk/v2"
 import { createSimpleContext } from "./helper"
 import { PreloadMultiFileDiffResult } from "@pierre/diffs/ssr"
 
 type Data = {
+  provider?: ProviderListResponse
   session: Session[]
   session_status: {
     [sessionID: string]: SessionStatus
@@ -22,12 +14,6 @@ type Data = {
   session_diff_preload?: {
     [sessionID: string]: PreloadMultiFileDiffResult<any>[]
   }
-  permission?: {
-    [sessionID: string]: PermissionRequest[]
-  }
-  question?: {
-    [sessionID: string]: QuestionRequest[]
-  }
   message: {
     [sessionID: string]: Message[]
   }
@@ -36,21 +22,9 @@ type Data = {
   }
 }
 
-export type PermissionRespondFn = (input: {
-  sessionID: string
-  permissionID: string
-  response: "once" | "always" | "reject"
-}) => void
-
-export type QuestionReplyFn = (input: { requestID: string; answers: QuestionAnswer[] }) => void
-
-export type QuestionRejectFn = (input: { requestID: string }) => void
-
 export type NavigateToSessionFn = (sessionID: string) => void
 
 export type SessionHrefFn = (sessionID: string) => string
-
-export type SyncSessionFn = (sessionID: string) => void | Promise<void>
 
 export type OpenFileFn = (filePath: string, line?: number, column?: number) => void // kilocode_change
 
@@ -59,12 +33,8 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
   init: (props: {
     data: Data
     directory: string
-    onPermissionRespond?: PermissionRespondFn
-    onQuestionReply?: QuestionReplyFn
-    onQuestionReject?: QuestionRejectFn
     onNavigateToSession?: NavigateToSessionFn
     onSessionHref?: SessionHrefFn
-    onSyncSession?: SyncSessionFn
     onOpenFile?: OpenFileFn // kilocode_change
   }) => {
     return {
@@ -74,12 +44,8 @@ export const { use: useData, provider: DataProvider } = createSimpleContext({
       get directory() {
         return props.directory
       },
-      respondToPermission: props.onPermissionRespond,
-      replyToQuestion: props.onQuestionReply,
-      rejectQuestion: props.onQuestionReject,
       navigateToSession: props.onNavigateToSession,
       sessionHref: props.onSessionHref,
-      syncSession: props.onSyncSession,
       openFile: props.onOpenFile, // kilocode_change
     }
   },

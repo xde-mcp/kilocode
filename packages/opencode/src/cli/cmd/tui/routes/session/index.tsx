@@ -56,6 +56,7 @@ import { TodoItem } from "../../component/todo-item"
 import { DialogMessage } from "./dialog-message"
 import type { PromptInfo } from "../../component/prompt/history"
 import { DialogConfirm } from "@tui/ui/dialog-confirm"
+import { KiloErrorBlock } from "@/kilocode/components/kilo-error-display" // kilocode_change
 import { DialogTimeline } from "./dialog-timeline"
 import { DialogForkFromTimeline } from "./dialog-fork-from-timeline"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
@@ -78,6 +79,7 @@ import { QuestionPrompt } from "./question"
 import { DialogExportOptions } from "../../ui/dialog-export-options"
 import { formatTranscript } from "../../util/transcript"
 import { UI } from "@/cli/ui.ts"
+import { useTuiConfig } from "../../context/tui-config"
 
 import { formatMarkdownTables } from "../../util/markdown" // kilocode_change
 
@@ -100,8 +102,10 @@ const context = createContext<{
   showThinking: () => boolean
   showTimestamps: () => boolean
   showDetails: () => boolean
+  showGenericToolOutput: () => boolean
   diffWrapMode: () => "word" | "none"
   sync: ReturnType<typeof useSync>
+  tui: ReturnType<typeof useTuiConfig>
 }>()
 
 function use() {
@@ -114,6 +118,7 @@ export function Session() {
   const route = useRouteData("session")
   const { navigate } = useRoute()
   const sync = useSync()
+  const tuiConfig = useTuiConfig()
   const kv = useKV()
   const { theme } = useTheme()
   const promptRef = usePromptRef()
@@ -154,6 +159,7 @@ export function Session() {
   const [showHeader, setShowHeader] = kv.signal("header_visible", true)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [animationsEnabled, setAnimationsEnabled] = kv.signal("animations_enabled", true)
+  const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
 
   const wide = createMemo(() => dimensions().width > 120)
   const sidebarVisible = createMemo(() => {
@@ -166,7 +172,7 @@ export function Session() {
   const contentWidth = createMemo(() => dimensions().width - (sidebarVisible() ? 42 : 0) - 4)
 
   const scrollAcceleration = createMemo(() => {
-    const tui = sync.data.config.tui
+    const tui = tuiConfig
     if (tui?.scroll_acceleration?.enabled) {
       return new MacOSScrollAccel()
     }
@@ -211,10 +217,8 @@ export function Session() {
     if (part.state.status !== "completed") return
     if (part.id === lastSwitch) return
 
-    if (part.tool === "plan_exit") {
-      local.agent.set("build")
-      lastSwitch = part.id
-    } else if (part.tool === "plan_enter") {
+    // kilocode_change - plan_exit no longer switches agent; PlanFollowup handles it
+    if (part.tool === "plan_enter") {
       local.agent.set("plan")
       lastSwitch = part.id
     }
@@ -607,6 +611,15 @@ export function Session() {
       },
     },
     {
+      title: showGenericToolOutput() ? "Hide generic tool output" : "Show generic tool output",
+      value: "session.toggle.generic_tool_output",
+      category: "Session",
+      onSelect: (dialog) => {
+        setShowGenericToolOutput((prev) => !prev)
+        dialog.clear()
+      },
+    },
+    {
       title: "Page up",
       value: "session.page.up",
       keybind: "messages_page_up",
@@ -980,8 +993,10 @@ export function Session() {
         showThinking,
         showTimestamps,
         showDetails,
+        showGenericToolOutput,
         diffWrapMode,
         sync,
+        tui: tuiConfig,
       }}
     >
       <box flexDirection="row">
@@ -1299,18 +1314,25 @@ function AssistantMessage(props: { message: AssistantMessage; parts: Part[]; las
         }}
       </For>
       <Show when={props.message.error && props.message.error.name !== "MessageAbortedError"}>
-        <box
-          border={["left"]}
-          paddingTop={1}
-          paddingBottom={1}
-          paddingLeft={2}
-          marginTop={1}
-          backgroundColor={theme.backgroundPanel}
-          customBorderChars={SplitBorder.customBorderChars}
-          borderColor={theme.error}
-        >
-          <text fg={theme.textMuted}>{props.message.error?.data.message}</text>
-        </box>
+        {/* kilocode_change start - Kilo-specific error display */}
+        <KiloErrorBlock
+          error={props.message.error!}
+          fallback={
+            <box
+              border={["left"]}
+              paddingTop={1}
+              paddingBottom={1}
+              paddingLeft={2}
+              marginTop={1}
+              backgroundColor={theme.backgroundPanel}
+              customBorderChars={SplitBorder.customBorderChars}
+              borderColor={theme.error}
+            >
+              <text fg={theme.textMuted}>{props.message.error?.data.message}</text>
+            </box>
+          }
+        />
+        {/* kilocode_change end */}
       </Show>
       <Switch>
         <Match when={props.last || final() || props.message.error?.name === "MessageAbortedError"}>
@@ -1517,10 +1539,40 @@ type ToolProps<T extends Tool.Info> = {
   part: ToolPart
 }
 function GenericTool(props: ToolProps<any>) {
+  const { theme } = useTheme()
+  const ctx = use()
+  const output = createMemo(() => props.output?.trim() ?? "")
+  const [expanded, setExpanded] = createSignal(false)
+  const lines = createMemo(() => output().split("\n"))
+  const maxLines = 3
+  const overflow = createMemo(() => lines().length > maxLines)
+  const limited = createMemo(() => {
+    if (expanded() || !overflow()) return output()
+    return [...lines().slice(0, maxLines), "…"].join("\n")
+  })
+
   return (
-    <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
-      {props.tool} {input(props.input)}
-    </InlineTool>
+    <Show
+      when={props.output && ctx.showGenericToolOutput()}
+      fallback={
+        <InlineTool icon="⚙" pending="Writing command..." complete={true} part={props.part}>
+          {props.tool} {input(props.input)}
+        </InlineTool>
+      }
+    >
+      <BlockTool
+        title={`# ${props.tool} ${input(props.input)}`}
+        part={props.part}
+        onClick={overflow() ? () => setExpanded((prev) => !prev) : undefined}
+      >
+        <box gap={1}>
+          <text fg={theme.text}>{limited()}</text>
+          <Show when={overflow()}>
+            <text fg={theme.textMuted}>{expanded() ? "Click to collapse" : "Click to expand"}</text>
+          </Show>
+        </box>
+      </BlockTool>
+    </Show>
   )
 }
 
@@ -1729,11 +1781,6 @@ function Write(props: ToolProps<typeof WriteTool>) {
     return props.input.content
   })
 
-  const diagnostics = createMemo(() => {
-    const filePath = Filesystem.normalizePath(props.input.filePath ?? "")
-    return props.metadata.diagnostics?.[filePath] ?? []
-  })
-
   return (
     <Switch>
       <Match when={props.metadata.diagnostics !== undefined}>
@@ -1747,15 +1794,7 @@ function Write(props: ToolProps<typeof WriteTool>) {
               content={code()}
             />
           </line_number>
-          <Show when={diagnostics().length}>
-            <For each={diagnostics()}>
-              {(diagnostic) => (
-                <text fg={theme.error}>
-                  Error [{diagnostic.range.start.line}:{diagnostic.range.start.character}]: {diagnostic.message}
-                </text>
-              )}
-            </For>
-          </Show>
+          <Diagnostics diagnostics={props.metadata.diagnostics} filePath={props.input.filePath ?? ""} />
         </BlockTool>
       </Match>
       <Match when={true}>
@@ -1929,7 +1968,7 @@ function Edit(props: ToolProps<typeof EditTool>) {
   const { theme, syntax } = useTheme()
 
   const view = createMemo(() => {
-    const diffStyle = ctx.sync.data.config.tui?.diff_style
+    const diffStyle = ctx.tui.diff_style
     if (diffStyle === "stacked") return "unified"
     // Default to "auto" behavior
     return ctx.width > 120 ? "split" : "unified"
@@ -1938,12 +1977,6 @@ function Edit(props: ToolProps<typeof EditTool>) {
   const ft = createMemo(() => filetype(props.input.filePath))
 
   const diffContent = createMemo(() => props.metadata.diff)
-
-  const diagnostics = createMemo(() => {
-    const filePath = Filesystem.normalizePath(props.input.filePath ?? "")
-    const arr = props.metadata.diagnostics?.[filePath] ?? []
-    return arr.filter((x) => x.severity === 1).slice(0, 3)
-  })
 
   return (
     <Switch>
@@ -1970,18 +2003,7 @@ function Edit(props: ToolProps<typeof EditTool>) {
               removedLineNumberBg={theme.diffRemovedLineNumberBg}
             />
           </box>
-          <Show when={diagnostics().length}>
-            <box>
-              <For each={diagnostics()}>
-                {(diagnostic) => (
-                  <text fg={theme.error}>
-                    Error [{diagnostic.range.start.line + 1}:{diagnostic.range.start.character + 1}]{" "}
-                    {diagnostic.message}
-                  </text>
-                )}
-              </For>
-            </box>
-          </Show>
+          <Diagnostics diagnostics={props.metadata.diagnostics} filePath={props.input.filePath ?? ""} />
         </BlockTool>
       </Match>
       <Match when={true}>
@@ -2000,7 +2022,7 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
   const files = createMemo(() => props.metadata.files ?? [])
 
   const view = createMemo(() => {
-    const diffStyle = ctx.sync.data.config.tui?.diff_style
+    const diffStyle = ctx.tui.diff_style
     if (diffStyle === "stacked") return "unified"
     return ctx.width > 120 ? "split" : "unified"
   })
@@ -2053,14 +2075,15 @@ function ApplyPatch(props: ToolProps<typeof ApplyPatchTool>) {
                 }
               >
                 <Diff diff={file.diff} filePath={file.filePath} />
+                <Diagnostics diagnostics={props.metadata.diagnostics} filePath={file.movePath ?? file.filePath} />
               </Show>
             </BlockTool>
           )}
         </For>
       </Match>
       <Match when={true}>
-        <InlineTool icon="%" pending="Preparing apply_patch..." complete={false} part={props.part}>
-          apply_patch
+        <InlineTool icon="%" pending="Preparing patch..." complete={false} part={props.part}>
+          Patch
         </InlineTool>
       </Match>
     </Switch>
@@ -2127,6 +2150,29 @@ function Skill(props: ToolProps<typeof SkillTool>) {
     <InlineTool icon="→" pending="Loading skill..." complete={props.input.name} part={props.part}>
       Skill "{props.input.name}"
     </InlineTool>
+  )
+}
+
+function Diagnostics(props: { diagnostics?: Record<string, Record<string, any>[]>; filePath: string }) {
+  const { theme } = useTheme()
+  const errors = createMemo(() => {
+    const normalized = Filesystem.normalizePath(props.filePath)
+    const arr = props.diagnostics?.[normalized] ?? []
+    return arr.filter((x) => x.severity === 1).slice(0, 3)
+  })
+
+  return (
+    <Show when={errors().length}>
+      <box>
+        <For each={errors()}>
+          {(diagnostic) => (
+            <text fg={theme.error}>
+              Error [{diagnostic.range.start.line + 1}:{diagnostic.range.start.character + 1}] {diagnostic.message}
+            </text>
+          )}
+        </For>
+      </box>
+    </Show>
   )
 }
 

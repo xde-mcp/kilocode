@@ -47,7 +47,10 @@ export const dict = {
   "command.language.set": "使用语言：{{language}}",
 
   "command.session.new": "新建会话",
+  "command.session.new.task": "新建任务",
+  "command.session.show.changes": "显示更改",
   "command.file.open": "打开文件",
+  "command.tab.close": "关闭标签页",
   "command.context.addSelection": "将所选内容添加到上下文",
   "command.context.addSelection.description": "添加当前文件中选中的行",
   "command.terminal.toggle": "切换终端",
@@ -74,6 +77,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "自动接受编辑",
   "command.permissions.autoaccept.disable": "停止自动接受编辑",
   "command.workspace.toggle": "切换工作区",
+  "command.workspace.toggle.description": "启用或禁用侧边栏中的多工作区",
   "command.session.undo": "撤销",
   "command.session.undo.description": "撤销上一条消息",
   "command.session.redo": "重做",
@@ -168,6 +172,7 @@ export const dict = {
   "model.tooltip.context": "上下文上限 {{limit}}",
   "common.search.placeholder": "搜索",
   "common.goBack": "返回",
+  "common.goForward": "前进",
   "common.loading": "加载中",
   "common.loading.ellipsis": "...",
   "common.cancel": "取消",
@@ -226,6 +231,10 @@ export const dict = {
   "prompt.attachment.remove": "移除附件",
   "prompt.action.send": "发送",
   "prompt.action.stop": "停止",
+  "prompt.action.enhance": "优化提示词",
+  "prompt.action.resetModel": "重置模型为默认值",
+  "prompt.action.enhanceDescription":
+    "'增强提示'按钮通过提供额外上下文、澄清或重新表述来帮助改进您的请求。尝试在此处输入请求，然后再次点击按钮查看其工作原理。",
 
   "prompt.toast.pasteUnsupported.title": "不支持的粘贴",
   "prompt.toast.pasteUnsupported.description": "这里只能粘贴图片或 PDF 文件。",
@@ -326,6 +335,22 @@ export const dict = {
 
   "toast.language.title": "语言",
   "toast.language.description": "已切换到{{language}}",
+  "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
 
   "toast.theme.title": "主题已切换",
   "toast.scheme.title": "颜色方案",
@@ -380,6 +405,13 @@ export const dict = {
   "error.dev.rootNotFound": "未找到根元素。你是不是忘了把它添加到 index.html？或者 id 属性拼写错了？",
 
   "error.globalSync.connectFailed": "无法连接到服务器。是否有服务器正在 `{{url}}` 运行？",
+
+  "error.paidModel.title": "您需要登录才能使用此模型",
+  "error.paidModel.description": "登录或创建账户以访问500多个模型，按成本使用积分，或使用您自己的密钥。",
+  "error.paidModel.action": "登录",
+  "error.promotionLimit.title": "您需要注册才能继续",
+  "error.promotionLimit.description": "免费注册以继续探索500多个模型。只需2分钟，无需信用卡。或稍后再来。",
+  "error.promotionLimit.action": "注册",
 
   "error.chain.unknown": "未知错误",
   "error.chain.causedBy": "原因：",
@@ -443,6 +475,11 @@ export const dict = {
 
   "session.header.search.placeholder": "搜索 {{project}}",
   "session.header.searchFiles": "搜索文件",
+  "session.header.openIn": "打开方式",
+  "session.header.open.action": "在 {{app}} 中打开",
+  "session.header.open.ariaLabel": "在 {{app}} 中打开",
+  "session.header.open.menu": "打开选项",
+  "session.header.open.copyPath": "复制路径",
 
   "status.popover.trigger": "状态",
   "status.popover.ariaLabel": "服务器配置",
@@ -689,6 +726,13 @@ export const dict = {
   "session.recent": "最近",
   "session.search.placeholder": "搜索会话...",
   "session.empty": "暂无会话。点击 + 开始新的对话。",
+  "session.cloud.repoOnly": "仅此仓库",
+  "session.cloud.import": "从云端导入",
+  "session.cloud.import.title": "从云端导入",
+  "session.cloud.import.placeholder": "会话 ID、URL 或 kilo import 命令",
+  "session.cloud.import.button": "导入",
+  "session.cloud.import.invalid": "会话 ID 格式无效",
+  "session.cloud.import.failed": "导入云会话失败",
 
   "workspace.new": "新建工作区",
   "workspace.type.local": "本地",
@@ -823,7 +867,6 @@ export const dict = {
   "settings.language.current": "当前：",
 
   "common.add": "添加",
-  "common.default": "默认",
   "common.choose": "选择…",
   "settings.notImplemented": "此部分尚未实现。",
   "settings.notImplemented.description":
@@ -887,26 +930,32 @@ export const dict = {
   "settings.agentBehaviour.mcpEmpty": "未配置 MCP 服务器。编辑 opencode 配置文件以添加 MCP 服务器。",
   "settings.agentBehaviour.workflowsPlaceholder": "工作流通过工作区中的工作流文件管理。",
   "settings.agentBehaviour.notImplemented": "尚未实现。",
-  "settings.autoApprove.setAll": "设置所有权限",
+  "settings.autoApprove.description":
+    "定义工具的运行权限。大多数工具默认为「允许」。doom_loop 和 external_directory 默认为「询问」。",
   "settings.autoApprove.level.allow": "允许",
   "settings.autoApprove.level.ask": "询问",
   "settings.autoApprove.level.deny": "拒绝",
-  "settings.autoApprove.tool.read": "读取文件内容",
-  "settings.autoApprove.tool.edit": "编辑或创建文件",
-  "settings.autoApprove.tool.glob": "按模式查找文件",
-  "settings.autoApprove.tool.grep": "搜索文件内容",
-  "settings.autoApprove.tool.list": "列出目录内容",
-  "settings.autoApprove.tool.bash": "执行 shell 命令",
-  "settings.autoApprove.tool.task": "创建子智能体任务",
-  "settings.autoApprove.tool.skill": "执行技能",
-  "settings.autoApprove.tool.lsp": "语言服务器操作",
-  "settings.autoApprove.tool.todoread": "读取待办列表",
-  "settings.autoApprove.tool.todowrite": "写入待办列表",
-  "settings.autoApprove.tool.webfetch": "获取网页",
-  "settings.autoApprove.tool.websearch": "搜索网络",
-  "settings.autoApprove.tool.codesearch": "搜索代码库",
-  "settings.autoApprove.tool.external_directory": "访问工作区外的文件",
-  "settings.autoApprove.tool.doom_loop": "重复失败后继续",
+  "settings.autoApprove.wildcardLabel.commands": "所有命令 (*)",
+  "settings.autoApprove.wildcardLabel.paths": "所有路径 (*)",
+  "settings.autoApprove.exceptions": "例外",
+  "settings.autoApprove.addCommand": "添加命令",
+  "settings.autoApprove.addPath": "添加路径",
+  "settings.autoApprove.placeholder.command": "例如：git *",
+  "settings.autoApprove.placeholder.path": "例如：*.env",
+  "settings.autoApprove.tool.read": "读取文件。允许代理读取符合指定路径的文件。",
+  "settings.autoApprove.tool.edit": "修改文件。允许代理创建或编辑文件，包括补丁和多文件更新。",
+  "settings.autoApprove.tool.glob": "按模式匹配文件。允许使用 glob 模式匹配文件（例如 src/**/*.ts）。",
+  "settings.autoApprove.tool.grep": "搜索文件内容。允许在文件内进行基于正则表达式的搜索。",
+  "settings.autoApprove.tool.list": "列出目录内容。允许查看目录内的文件和文件夹。",
+  "settings.autoApprove.tool.bash": "运行终端命令。允许执行 shell 命令（例如 git status）。",
+  "settings.autoApprove.tool.task": "启动子代理。允许启动执行特定任务的专用子代理。",
+  "settings.autoApprove.tool.skill": "加载技能。允许按名称加载预定义的技能。",
+  "settings.autoApprove.tool.lsp": "查询语言服务器。允许运行语言服务器查询以获取代码智能。",
+  "settings.autoApprove.tool.todoreadwrite": "管理任务列表。允许读取和更新内部任务列表。",
+  "settings.autoApprove.tool.webfetch": "获取 URL。允许从特定 URL 检索内容。",
+  "settings.autoApprove.tool.websearchcodesearch": "搜索 Web 或代码。允许执行外部 Web 或代码搜索。",
+  "settings.autoApprove.tool.external_directory": "访问工作区外部的文件。访问当前项目目录之外的文件时触发。",
+  "settings.autoApprove.tool.doom_loop": "防止重复相同操作。当相同的工具调用以相同的输入重复时触发。",
   "settings.checkpoints.enable.title": "启用快照",
   "settings.checkpoints.enable.description": "在文件编辑前创建检查点，以便恢复之前的状态",
   "settings.context.autoCompaction.title": "自动压缩",
@@ -932,4 +981,68 @@ export const dict = {
   "settings.providers.notSet": "未设置（使用服务器默认值）",
   "dialog.model.notSet": "未设置",
   "profile.personalAccount": "个人账户",
+  // Agent Manager strings live in webview-ui/agent-manager/i18n/zh.ts
+
+  "question.summary": "第 {{n}} / {{total}} 个问题",
+  "common.review": "审查",
+
+  // legacy-migration start
+  "settings.legacyMigration.link": "从旧版迁移",
+  "settings.aboutKiloCode.legacyMigration.title": "旧版迁移",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "从旧版 Kilo Code 安装迁移设置，包括提供商 API 密钥和默认模型。",
+
+  // Screen 1 — What's New
+  "migration.whatsNew.title": "Kilo Code 新功能",
+  "migration.whatsNew.badge": "Beta",
+  "migration.whatsNew.subtitle": "我们在更快、更高效的基础上重新构建了扩展。",
+  "migration.whatsNew.features.performance.title": "更快的智能体性能",
+  "migration.whatsNew.features.performance.detail":
+    "并行工具调用和子智能体让你的智能体可以同时处理更多任务——减少等待时间，更快交付成果。",
+  "migration.whatsNew.features.interface.title": "简洁的界面",
+  "migration.whatsNew.features.interface.detail": "更少干扰，更易阅读，更快上手。",
+  "migration.whatsNew.features.agentManager.title": "Agent Manager",
+  "migration.whatsNew.features.agentManager.detail":
+    "一个统一的界面，可以并行运行多个智能体，每个智能体各自使用独立的 worktree——在同一个地方监控进度、切换上下文和审查变更。",
+  "migration.whatsNew.features.foundation.title": "共享基础",
+  "migration.whatsNew.features.foundation.detail":
+    "所有 Kilo 产品共享一个小巧高效的核心。无论你选择哪种方式工作，都能获得熟悉的体验。",
+  "migration.whatsNew.blogLink": "阅读完整公告",
+  "migration.whatsNew.continue": "继续",
+
+  // Screen 2 — Migrate Settings
+  "migration.migrate.title": "迁移你的设置",
+  "migration.migrate.subtitle": "我们发现了你之前安装的设置。以下是可以迁移的内容。",
+  "migration.migrate.selectLabel": "选择要迁移的内容",
+  "migration.migrate.cannotMigrate": "无法迁移",
+  "migration.migrate.chatHistory": "聊天会话和历史记录",
+  "migration.migrate.chatHistoryDesc": "与新架构不兼容",
+  "migration.migrate.button": "迁移设置",
+  "migration.migrate.skip": "跳过",
+  "migration.migrate.back": "返回",
+  "migration.migrate.keysDetected": "检测到 {{count}} 个密钥",
+  "migration.migrate.serversConfigured": "已配置 {{count}} 个服务器",
+  "migration.migrate.modesFound": "发现 {{count}} 个模式",
+  "migration.migrate.nothingToMigrate": "在旧版设置中未找到要迁移的内容。",
+
+  // Migrate — item labels (reused from old select keys)
+  "migration.select.providers": "提供商 API 密钥",
+  "migration.select.mcpServers": "MCP 服务器",
+  "migration.select.customModes": "自定义模式 / 代理",
+  "migration.select.defaultModel": "默认模型",
+  "migration.select.autoApproval": "自动审批",
+  "migration.select.language": "界面语言",
+  "migration.select.autocomplete": "自动补全设置",
+
+  // Migrate — completion
+  "migration.complete.summary": "成功迁移 {{success}}/{{total}} 项。",
+  "migration.complete.cleanup": "清除旧版设置数据",
+  "migration.complete.cleanupDescription": "此操作将从 VS Code 存储中删除旧版设置。您将无法再次运行此迁移。",
+  "migration.complete.done": "完成",
+  // legacy-migration end
+
+  "error.details.show": "详细信息",
+
+  "task.todos.progress": "{{done}}/{{total}} 个待办已完成",
+  "task.todos.allDone": "{{count}} 个待办已完成",
 } satisfies Partial<Record<Keys, string>>

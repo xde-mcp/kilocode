@@ -59,7 +59,11 @@ export namespace Installation {
   }
 
   export async function method() {
-    if (process.execPath.includes(path.join(".opencode", "bin"))) return "curl"
+    if (
+      process.execPath.includes(path.join(".kilo", "bin")) ||
+      process.execPath.includes(path.join(".opencode", "bin"))
+    )
+      return "curl" // kilocode_change
     if (process.execPath.includes(path.join(".local", "bin"))) return "curl"
     const exec = process.execPath.toLowerCase()
 
@@ -254,7 +258,7 @@ export namespace Installation {
         .then((data: any) => data.version)
     }
 
-    return fetch("https://api.github.com/repos/Kilo-Org/kilo/releases/latest")
+    return fetch("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest")
       .then((res) => {
         if (!res.ok) throw new Error(res.statusText)
         return res.json()

@@ -8,6 +8,7 @@ export namespace Flag {
   export const KILO_AUTO_SHARE = truthy("KILO_AUTO_SHARE")
   export const KILO_GIT_BASH_PATH = process.env["KILO_GIT_BASH_PATH"]
   export const KILO_CONFIG = process.env["KILO_CONFIG"]
+  export declare const KILO_TUI_CONFIG: string | undefined
   export declare const KILO_CONFIG_DIR: string | undefined
   export const KILO_CONFIG_CONTENT = process.env["KILO_CONFIG_CONTENT"]
   export const KILO_DISABLE_AUTOUPDATE = truthy("KILO_DISABLE_AUTOUPDATE")
@@ -28,6 +29,7 @@ export namespace Flag {
   export declare const KILO_CLIENT: string
   export const KILO_SERVER_PASSWORD = process.env["KILO_SERVER_PASSWORD"]
   export const KILO_SERVER_USERNAME = process.env["KILO_SERVER_USERNAME"]
+  export const KILO_ENABLE_QUESTION_TOOL = truthy("KILO_ENABLE_QUESTION_TOOL")
 
   // Experimental
   export const KILO_EXPERIMENTAL = truthy("KILO_EXPERIMENTAL")
@@ -64,6 +66,17 @@ export namespace Flag {
 Object.defineProperty(Flag, "KILO_DISABLE_PROJECT_CONFIG", {
   get() {
     return truthy("KILO_DISABLE_PROJECT_CONFIG")
+  },
+  enumerable: true,
+  configurable: false,
+})
+
+// Dynamic getter for KILO_TUI_CONFIG
+// This must be evaluated at access time, not module load time,
+// because tests and external tooling may set this env var at runtime
+Object.defineProperty(Flag, "KILO_TUI_CONFIG", {
+  get() {
+    return process.env["KILO_TUI_CONFIG"]
   },
   enumerable: true,
   configurable: false,

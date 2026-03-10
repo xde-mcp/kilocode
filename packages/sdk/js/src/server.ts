@@ -51,7 +51,7 @@ export type TuiOptions = {
   config?: Config
 }
 
-export async function createOpencodeServer(options?: ServerOptions) {
+export async function createKiloServer(options?: ServerOptions) {
   options = Object.assign(
     {
       hostname: "127.0.0.1",
@@ -64,7 +64,9 @@ export async function createOpencodeServer(options?: ServerOptions) {
   const args = [`serve`, `--hostname=${options.hostname}`, `--port=${options.port}`]
   if (options.config?.logLevel) args.push(`--log-level=${options.config.logLevel}`)
 
-  const proc = spawn(`opencode`, args, {
+  // kilocode_change start
+  const proc = spawn(`kilo`, args, {
+    // kilocode_change end
     signal: options.signal,
     env: {
       ...process.env,
@@ -125,7 +127,7 @@ export async function createOpencodeServer(options?: ServerOptions) {
   }
 }
 
-export function createOpencodeTui(options?: TuiOptions) {
+export function createKiloTui(options?: TuiOptions) {
   const args = []
 
   if (options?.project) {
@@ -141,7 +143,9 @@ export function createOpencodeTui(options?: TuiOptions) {
     args.push(`--agent=${options.agent}`)
   }
 
-  const proc = spawn(`opencode`, args, {
+  // kilocode_change start
+  const proc = spawn(`kilo`, args, {
+    // kilocode_change end
     signal: options?.signal,
     stdio: "inherit",
     env: {

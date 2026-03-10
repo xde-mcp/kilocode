@@ -18,6 +18,7 @@ import { Vcs } from "../project/vcs"
 import { Agent } from "../agent/agent"
 import { Skill } from "../skill/skill"
 import { Auth } from "../auth"
+import { ModelCache } from "../provider/model-cache" // kilocode_change
 import { Flag } from "../flag/flag"
 import { Command } from "../command"
 import { Global } from "../global"
@@ -31,14 +32,19 @@ import { ExperimentalRoutes } from "./routes/experimental"
 import { TelemetryRoutes } from "./routes/telemetry" // kilocode_change
 import { ProviderRoutes } from "./routes/provider"
 import { createKiloRoutes } from "@kilocode/kilo-gateway" // kilocode_change
+import { Database } from "../storage/db" // kilocode_change
+import { Session } from "../session" // kilocode_change
+import { Identifier } from "../id/id" // kilocode_change
+import { SessionTable, MessageTable, PartTable } from "../session/session.sql" // kilocode_change
 import { lazy } from "../util/lazy"
 import { InstanceBootstrap } from "../project/bootstrap"
-import { Storage } from "../storage/storage"
+import { NotFoundError } from "../storage/db"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import { websocket } from "hono/bun"
 import { HTTPException } from "hono/http-exception"
 import { errors } from "./error"
 import { CommitMessageRoutes } from "./routes/commit-message"
+import { EnhancePromptRoutes } from "./routes/enhance-prompt" // kilocode_change
 import { QuestionRoutes } from "./routes/question"
 import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
@@ -68,7 +74,7 @@ export namespace Server {
           })
           if (err instanceof NamedError) {
             let status: ContentfulStatusCode
-            if (err instanceof Storage.NotFoundError) status = 404
+            if (err instanceof NotFoundError) status = 404
             else if (err instanceof Provider.ModelNotFoundError) status = 400
             else if (err.name.startsWith("Worktree")) status = 400
             else status = 500
@@ -162,6 +168,9 @@ export namespace Server {
             const providerID = c.req.valid("param").providerID
             const info = c.req.valid("json")
             await Auth.set(providerID, info)
+            // kilocode_change start - invalidate provider/model cache after auth change
+            ModelCache.clear(providerID)
+            // kilocode_change end
             return c.json(true)
           },
         )
@@ -192,6 +201,9 @@ export namespace Server {
           async (c) => {
             const providerID = c.req.valid("param").providerID
             await Auth.remove(providerID)
+            // kilocode_change start - invalidate provider/model cache after auth removal
+            ModelCache.clear(providerID)
+            // kilocode_change end
             return c.json(true)
           },
         )
@@ -237,6 +249,7 @@ export namespace Server {
         .route("/provider", ProviderRoutes())
         .route("/telemetry", TelemetryRoutes()) // kilocode_change
         .route("/commit-message", CommitMessageRoutes()) // kilocode_change
+        .route("/enhance-prompt", EnhancePromptRoutes()) // kilocode_change
         // kilocode_change start - Kilo Gateway routes
         .route(
           "/kilo",
@@ -248,6 +261,16 @@ export namespace Server {
             errors,
             Auth,
             z,
+            Database, // kilocode_change
+            Instance, // kilocode_change
+            SessionTable, // kilocode_change
+            MessageTable, // kilocode_change
+            PartTable, // kilocode_change
+            SessionToRow: Session.toRow, // kilocode_change
+            Bus, // kilocode_change
+            SessionCreatedEvent: Session.Event.Created, // kilocode_change
+            Identifier, // kilocode_change
+            ModelCache, // kilocode_change
           }),
         )
         // kilocode_change end
@@ -520,6 +543,8 @@ export namespace Server {
           }),
           async (c) => {
             log.info("event connected")
+            c.header("X-Accel-Buffering", "no")
+            c.header("X-Content-Type-Options", "nosniff")
             return streamSSE(c, async (stream) => {
               stream.writeSSE({
                 data: JSON.stringify({
@@ -536,7 +561,7 @@ export namespace Server {
                 }
               })
 
-              // Send heartbeat every 30s to prevent WKWebView timeout (60s default)
+              // Send heartbeat every 10s to prevent stalled proxy streams.
               const heartbeat = setInterval(() => {
                 stream.writeSSE({
                   data: JSON.stringify({
@@ -544,7 +569,7 @@ export namespace Server {
                     properties: {},
                   }),
                 })
-              }, 30000)
+              }, 10_000)
 
               await new Promise<void>((resolve) => {
                 stream.onAbort(() => {

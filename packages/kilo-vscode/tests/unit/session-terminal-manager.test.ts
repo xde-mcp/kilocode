@@ -34,8 +34,8 @@ describe("SessionTerminalManager structure", () => {
     expect(ctor).toBeTruthy()
     const text = ctor!.getText()
     // Both listeners are required: close (cleanup) and active-change (context key)
-    expect(text).toContain("onDidCloseTerminal")
-    expect(text).toContain("onDidChangeActiveTerminal")
+    expect(text).toContain("onTerminalClosed")
+    expect(text).toContain("onActiveTerminalChanged")
   })
 
   it("dispose clears the context key, disposes terminals, and clears the map", () => {
@@ -74,5 +74,17 @@ describe("SessionTerminalManager structure", () => {
     expect(showIdx).toBeGreaterThan(-1)
     expect(contextIdx).toBeGreaterThan(-1)
     expect(showIdx, "show must precede updateContextKey").toBeLessThan(contextIdx)
+  })
+
+  it("syncOnSessionSwitch only switches when panel is open", () => {
+    const text = body("syncOnSessionSwitch")
+    expect(text).toContain("if (!this.panelOpen)")
+    expect(text).toContain("this.showExisting(sessionId)")
+  })
+
+  it("syncLocalOnSessionSwitch only switches when panel is open", () => {
+    const text = body("syncLocalOnSessionSwitch")
+    expect(text).toContain("if (!this.panelOpen)")
+    expect(text).toContain("this.showExistingLocal()")
   })
 })
