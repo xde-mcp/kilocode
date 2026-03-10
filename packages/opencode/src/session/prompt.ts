@@ -1752,6 +1752,10 @@ NOTE: At any point in time through this workflow you should feel free to ask the
       })
     })
 
+    // kilocode_change - flush any trailing buffered bytes from decoders
+    output += stdoutDecoder.end()
+    output += stderrDecoder.end()
+
     if (aborted) {
       output += "\n\n" + ["<metadata>", "User aborted the command", "</metadata>"].join("\n")
     }

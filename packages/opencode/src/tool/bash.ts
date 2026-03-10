@@ -253,6 +253,10 @@ export const BashTool = Tool.define("bash", async () => {
         })
       })
 
+      // kilocode_change - flush any trailing buffered bytes from decoders
+      output += stdoutDecoder.end()
+      output += stderrDecoder.end()
+
       const resultMetadata: string[] = []
 
       if (timedOut) {

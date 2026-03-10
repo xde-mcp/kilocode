@@ -270,6 +270,7 @@ export namespace Ripgrep {
       }
     }
 
+    buffer += decoder.end() // kilocode_change - flush any trailing buffered bytes
     if (buffer) yield buffer
     await proc.exited
 
