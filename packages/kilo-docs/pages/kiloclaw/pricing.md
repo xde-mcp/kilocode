@@ -5,7 +5,7 @@ description: "Pricing details for KiloClaw instances and model inference"
 
 # KiloClaw Pricing
 
-KiloClaw uses your existing Kilo Gateway credits — there's no separate billing or subscription.
+KiloClaw uses Kilo Gateway credits by default — if you route requests through BYOK, model usage is billed directly by your provider instead.
 
 ### Instance Hosting
 
