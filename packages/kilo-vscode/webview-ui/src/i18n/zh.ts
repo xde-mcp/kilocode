@@ -737,6 +737,7 @@ export const dict = {
   "session.cloud.import.placeholder": "会话 ID、URL 或 kilo import 命令",
   "session.cloud.import.button": "导入",
   "session.cloud.import.invalid": "会话 ID 格式无效",
+  "session.cloud.import.legacy": "会话 ID 无效。云会话 ID 必须以 'ses_' 开头。注意：旧版扩展中的会话与此版本不兼容。",
   "session.cloud.import.failed": "导入云会话失败",
 
   "workspace.new": "新建工作区",

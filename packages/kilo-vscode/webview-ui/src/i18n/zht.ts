@@ -739,6 +739,8 @@ export const dict = {
   "session.cloud.import.placeholder": "工作階段 ID、URL 或 kilo import 指令",
   "session.cloud.import.button": "匯入",
   "session.cloud.import.invalid": "工作階段 ID 格式無效",
+  "session.cloud.import.legacy":
+    "工作階段 ID 無效。雲端工作階段 ID 必須以 'ses_' 開頭。注意：舊版擴充功能中的工作階段與此版本不相容。",
   "session.cloud.import.failed": "無法匯入雲端工作階段",
 
   "workspace.new": "新增工作區",
