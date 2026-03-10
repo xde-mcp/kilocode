@@ -745,6 +745,12 @@ export const dict = {
   "session.empty": "Aún no hay sesiones. Haz clic en + para iniciar una nueva conversación.",
   "session.cloud.repoOnly": "Solo este repositorio",
   "session.cloud.import": "Importar desde la nube",
+  "feedback.button": "Comentarios y soporte",
+  "feedback.dialog.message":
+    "Nos encantaría escuchar tus comentarios o ayudarte con cualquier problema que estés experimentando.",
+  "feedback.dialog.github": "Reportar un problema en GitHub",
+  "feedback.dialog.discord": "Unirse a nuestra comunidad de Discord",
+  "feedback.dialog.support": "Atención al cliente",
   "session.cloud.import.title": "Importar desde la nube",
   "session.cloud.import.placeholder": "ID de sesión, URL o comando kilo import",
   "session.cloud.import.button": "Importar",
