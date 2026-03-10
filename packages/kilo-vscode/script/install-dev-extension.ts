@@ -31,4 +31,5 @@ try {
 const vsix = (await $`ls -1v ${outDir}/*.vsix`.text()).trim().split("\n").at(-1)!
 const ipc = process.env.VSCODE_IPC_HOOK ?? ""
 const cli = ipc.includes("Insiders") ? "code-insiders" : "code"
+console.log(`Installing into: ${cli} (VSCODE_IPC_HOOK=${ipc || "<not set>"})`)
 await $`${cli} --force --install-extension ${vsix}`
