@@ -207,6 +207,10 @@
   border-color: var(--vscode-textLink-foreground, #3794ff);
 }
 
+.feedback-button:hover [data-slot="icon-svg"] {
+  color: var(--vscode-editor-background, #1e1e1e);
+}
+
 /* Feedback Dialog */
 
 @keyframes feedback-dialog-enter {
