@@ -99,34 +99,32 @@ export const ChatView: Component<ChatViewProps> = (props) => {
               />
             )}
           </Show>
-          <Show when={!blocked()}>
-            <Show when={hasMessages() && idle()}>
-              <div class="new-task-button-wrapper">
+          <Show when={hasMessages() && idle() && !blocked()}>
+            <div class="new-task-button-wrapper">
+              <Button
+                variant="secondary"
+                size="small"
+                data-full-width="true"
+                onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
+                aria-label={language.t("command.session.new.task")}
+              >
+                {language.t("command.session.new.task")}
+              </Button>
+              <Show when={isSidebar()}>
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   size="small"
                   data-full-width="true"
-                  onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
-                  aria-label={language.t("command.session.new.task")}
+                  onClick={() => vscode.postMessage({ type: "openChanges" })}
+                  aria-label={language.t("command.session.show.changes")}
                 >
-                  {language.t("command.session.new.task")}
+                  <Icon name="file-tree" size="small" />
+                  {language.t("command.session.show.changes")}
                 </Button>
-                <Show when={isSidebar()}>
-                  <Button
-                    variant="ghost"
-                    size="small"
-                    data-full-width="true"
-                    onClick={() => vscode.postMessage({ type: "openChanges" })}
-                    aria-label={language.t("command.session.show.changes")}
-                  >
-                    <Icon name="file-tree" size="small" />
-                    {language.t("command.session.show.changes")}
-                  </Button>
-                </Show>
-              </div>
-            </Show>
-            <PromptInput />
+              </Show>
+            </div>
           </Show>
+          <PromptInput />
         </div>
       </Show>
     </div>
