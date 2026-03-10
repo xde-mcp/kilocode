@@ -1832,7 +1832,6 @@ describe("ProviderTransform.variants", () => {
 
     test("mercury-2 uses server-provided variants from kilo gateway", () => {
       const serverVariants = {
-        instant: { reasoningEffort: "instant" },
         low: { reasoningEffort: "low" },
         medium: { reasoningEffort: "medium" },
         high: { reasoningEffort: "high" },
@@ -1849,7 +1848,7 @@ describe("ProviderTransform.variants", () => {
       })
       const result = ProviderTransform.variants(model)
       expect(result).toEqual(serverVariants)
-      expect(Object.keys(result)).toEqual(["instant", "low", "medium", "high"])
+      expect(Object.keys(result)).toEqual(["low", "medium", "high"])
     })
   })
   // kilocode_change end
@@ -2157,7 +2156,7 @@ describe("ProviderTransform.variants", () => {
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })
 
-    test("mercury-2 returns instant + WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
+    test("mercury-2 returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
       const model = createMockModel({
         id: "inception/mercury-2-coder",
         providerID: "inception",
@@ -2168,8 +2167,7 @@ describe("ProviderTransform.variants", () => {
         },
       })
       const result = ProviderTransform.variants(model)
-      expect(Object.keys(result)).toEqual(["instant", "low", "medium", "high"])
-      expect(result.instant).toEqual({ reasoningEffort: "instant" })
+      expect(Object.keys(result)).toEqual(["low", "medium", "high"])
       expect(result.low).toEqual({ reasoningEffort: "low" })
       expect(result.high).toEqual({ reasoningEffort: "high" })
     })

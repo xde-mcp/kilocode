@@ -482,10 +482,6 @@ export namespace ProviderTransform {
       case "venice-ai-sdk-provider":
       // https://docs.venice.ai/overview/guides/reasoning-models#reasoning-effort
       case "@ai-sdk/openai-compatible":
-        if (id.includes("mercury-2")) {
-          const mercuryEfforts = ["instant", ...WIDELY_SUPPORTED_EFFORTS]
-          return Object.fromEntries(mercuryEfforts.map((effort) => [effort, { reasoningEffort: effort }]))
-        }
         return Object.fromEntries(WIDELY_SUPPORTED_EFFORTS.map((effort) => [effort, { reasoningEffort: effort }]))
 
       case "@ai-sdk/azure":
