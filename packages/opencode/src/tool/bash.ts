@@ -193,8 +193,10 @@ export const BashTool = Tool.define("bash", async () => {
       })
 
       // kilocode_change start - use StringDecoder to handle multi-byte UTF-8 characters split across chunks
-      const decoder = new StringDecoder("utf8")
-      const append = (chunk: Buffer) => {
+      // separate decoder per stream so partial bytes from one pipe don't corrupt the other
+      const stdoutDecoder = new StringDecoder("utf8")
+      const stderrDecoder = new StringDecoder("utf8")
+      const append = (decoder: StringDecoder) => (chunk: Buffer) => {
         output += decoder.write(chunk)
         ctx.metadata({
           metadata: {
@@ -206,8 +208,8 @@ export const BashTool = Tool.define("bash", async () => {
       }
       // kilocode_change end
 
-      proc.stdout?.on("data", append)
-      proc.stderr?.on("data", append)
+      proc.stdout?.on("data", append(stdoutDecoder))
+      proc.stderr?.on("data", append(stderrDecoder))
 
       let timedOut = false
       let aborted = false

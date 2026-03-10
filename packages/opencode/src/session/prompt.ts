@@ -1700,10 +1700,12 @@ NOTE: At any point in time through this workflow you should feel free to ask the
 
     let output = ""
     // kilocode_change start - use StringDecoder to handle multi-byte UTF-8 characters split across chunks
-    const decoder = new StringDecoder("utf8")
+    // separate decoder per stream so partial bytes from one pipe don't corrupt the other
+    const stdoutDecoder = new StringDecoder("utf8")
+    const stderrDecoder = new StringDecoder("utf8")
 
     proc.stdout?.on("data", (chunk) => {
-      output += decoder.write(chunk)
+      output += stdoutDecoder.write(chunk)
       if (part.state.status === "running") {
         part.state.metadata = {
           output: output,
@@ -1714,7 +1716,7 @@ NOTE: At any point in time through this workflow you should feel free to ask the
     })
 
     proc.stderr?.on("data", (chunk) => {
-      output += decoder.write(chunk)
+      output += stderrDecoder.write(chunk)
       if (part.state.status === "running") {
         part.state.metadata = {
           output: output,
