@@ -1191,6 +1191,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           role: m.info.role as "user" | "assistant",
           parts: m.parts,
           createdAt: m.info.time?.created ? new Date(m.info.time.created).toISOString() : new Date().toISOString(),
+          time: m.info.time,
           cost: m.info.cost,
           tokens: m.info.tokens,
         }))
