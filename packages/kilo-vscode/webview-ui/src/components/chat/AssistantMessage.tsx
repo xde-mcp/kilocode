@@ -55,7 +55,6 @@ interface AssistantMessageProps {
 
 function TodoToolCard(props: { part: ToolPart }) {
   const render = ToolRegistry.render(props.part.tool)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const state = props.part.state as any
   return (
     <Show when={render}>
