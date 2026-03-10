@@ -1136,6 +1136,15 @@
   [data-slot="permission-footer"] {
     padding: 8px;
     margin-top: 0;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  [data-slot="permission-session-hint"] {
+    font-size: 11px;
+    color: var(--text-weak, var(--vscode-descriptionForeground));
+    margin: 0;
+    padding: 0 4px;
   }
 
   [data-slot="permission-footer-actions"] > [data-component="button"][data-variant="primary"] {

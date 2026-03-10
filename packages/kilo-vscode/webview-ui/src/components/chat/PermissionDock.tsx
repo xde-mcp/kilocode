@@ -48,7 +48,7 @@ export const PermissionDock: Component<{
       }
       footer={
         <>
-          <div />
+          <p data-slot="permission-session-hint">{language.t("ui.permission.sessionHint")}</p>
           <div data-slot="permission-footer-actions">
             <Button variant="ghost" size="small" onClick={() => props.onDecide("reject")} disabled={props.responding}>
               {language.t("ui.permission.deny")}
