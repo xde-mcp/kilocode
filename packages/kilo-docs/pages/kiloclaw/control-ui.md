@@ -91,10 +91,6 @@ Approval prompts can also be forwarded to chat channels (Slack, Telegram, Discor
 
 Navigate to **Nodes > Exec Approvals** in the Control UI to edit defaults, per-agent overrides, and allowlists. Select a scope (Defaults or a specific agent), adjust the policy, add or remove allowlist patterns, then save.
 
-{% callout type="info" %}
-If a node does not yet advertise exec approval capabilities, edit its `~/.openclaw/exec-approvals.json` file directly. You can also use the CLI: `openclaw approvals`.
-{% /callout %}
-
 ## Related
 
 - [KiloClaw Dashboard](/docs/kiloclaw/dashboard)
