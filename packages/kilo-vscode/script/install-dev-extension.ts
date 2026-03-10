@@ -29,5 +29,6 @@ try {
 }
 
 const vsix = (await $`ls -1v ${outDir}/*.vsix`.text()).trim().split("\n").at(-1)!
-const codeCmd = (await $`which code-insiders`.nothrow().text()).trim() ? "code-insiders" : "code"
-await $`${codeCmd} --force --install-extension ${vsix}`
+const ipc = process.env.VSCODE_IPC_HOOK ?? ""
+const cli = ipc.includes("Insiders") ? "code-insiders" : "code"
+await $`${cli} --force --install-extension ${vsix}`
