@@ -34,14 +34,23 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   const id = () => session.currentSessionID()
   const hasMessages = () => session.messages().length > 0
   const idle = () => session.status() !== "busy"
-  const sessionQuestions = () => session.questions().filter((q) => q.sessionID === id())
-  const sessionPermissions = () => session.permissions().filter((p) => p.sessionID === id())
+  // Include ALL pending permissions/questions -- both from the current session
+  // and from child sessions (subagents). The extension host already filters
+  // SSE events to only tracked sessions, so everything in these lists is
+  // relevant to the current workspace.
+  const allPermissions = () => session.permissions()
+  const allQuestions = () => session.questions()
 
-  const questionRequest = () => sessionQuestions().find((q) => !q.tool)
-  const permissionRequest = () => sessionPermissions().find((p) => !p.tool)
-  // Only block the prompt when there's a non-todo permission (todo permissions are shown inline)
+  // Bottom-dock permission: prefer current-session non-tool permissions,
+  // then fall back to any pending permission (including child sessions).
+  const questionRequest = () =>
+    allQuestions().find((q) => q.sessionID === id() && !q.tool) ?? allQuestions().find((q) => !q.tool) ?? allQuestions()[0]
+  const permissionRequest = () =>
+    allPermissions().find((p) => p.sessionID === id() && !p.tool) ?? allPermissions().find((p) => !p.tool) ?? allPermissions()[0]
+  // Only block the prompt when there's a non-inline permission or any question pending
+  // (todo permissions are shown inline, not in the bottom dock)
   const isInlinePermission = (p: PermissionRequest) => p.tool && UPSTREAM_SUPPRESSED_TOOLS.has(p.toolName)
-  const blocked = () => sessionPermissions().some((p) => !isInlinePermission(p)) || sessionQuestions().length > 0
+  const blocked = () => allPermissions().some((p) => !isInlinePermission(p)) || allQuestions().length > 0
 
   // When a bottom-dock permission/question disappears while the session is busy,
   // the scroll container grows taller. Dispatch a custom event so MessageList can
@@ -86,7 +95,10 @@ export const ChatView: Component<ChatViewProps> = (props) => {
             {(req) => <QuestionDock request={req} />}
           </Show>
           <Show when={permissionRequest()} keyed>
-            {(perm) => (
+            {(perm) => {
+              const fromChild = () => perm.sessionID !== id()
+              const subtitle = () => fromChild() ? `${perm.toolName} (subagent)` : perm.toolName
+              return (
               <div data-component="tool-part-wrapper" data-permission="true">
                 <BasicTool
                   icon="checklist"
@@ -94,7 +106,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
                   defaultOpen
                   trigger={{
                     title: language.t("notification.permission.title"),
-                    subtitle: perm.toolName,
+                    subtitle: subtitle(),
                   }}
                 >
                   <Show when={perm.patterns.length > 0}>
@@ -135,7 +147,8 @@ export const ChatView: Component<ChatViewProps> = (props) => {
                   <p data-slot="permission-hint">{language.t("ui.permission.sessionHint")}</p>
                 </div>
               </div>
-            )}
+              )
+            }}
           </Show>
           <Show when={hasMessages() && idle() && !blocked()}>
             <div class="new-task-button-wrapper">
