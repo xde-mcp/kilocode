@@ -254,7 +254,9 @@ export interface ModelSelection {
 
 export type PermissionLevel = "allow" | "ask" | "deny"
 
-export type PermissionConfig = Partial<Record<string, PermissionLevel>>
+export type PermissionRule = PermissionLevel | Record<string, PermissionLevel>
+
+export type PermissionConfig = Partial<Record<string, PermissionRule>>
 
 export interface AgentConfig {
   model?: string | null
@@ -384,6 +386,16 @@ export interface SessionStatusMessage {
 export interface PermissionRequestMessage {
   type: "permissionRequest"
   permission: PermissionRequest
+}
+
+export interface PermissionResolvedMessage {
+  type: "permissionResolved"
+  permissionID: string
+}
+
+export interface PermissionErrorMessage {
+  type: "permissionError"
+  permissionID: string
 }
 
 export interface TodoUpdatedMessage {
@@ -955,6 +967,8 @@ export type ExtensionMessage =
   | PartUpdatedMessage
   | SessionStatusMessage
   | PermissionRequestMessage
+  | PermissionResolvedMessage
+  | PermissionErrorMessage
   | TodoUpdatedMessage
   | SessionCreatedMessage
   | SessionUpdatedMessage
