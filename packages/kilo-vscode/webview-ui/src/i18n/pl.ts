@@ -43,7 +43,10 @@ export const dict = {
   "command.language.set": "Użyj języka: {{language}}",
 
   "command.session.new": "Nowa sesja",
+  "command.session.new.task": "Nowe zadanie",
+  "command.session.show.changes": "Pokaż zmiany",
   "command.file.open": "Otwórz plik",
+  "command.tab.close": "Zamknij kartę",
   "command.context.addSelection": "Dodaj zaznaczenie do kontekstu",
   "command.context.addSelection.description": "Dodaj zaznaczone linie z bieżącego pliku",
   "command.terminal.toggle": "Przełącz terminal",
@@ -70,6 +73,7 @@ export const dict = {
   "command.permissions.autoaccept.enable": "Automatyczne akceptowanie edycji",
   "command.permissions.autoaccept.disable": "Zatrzymaj automatyczne akceptowanie edycji",
   "command.workspace.toggle": "Przełącz przestrzenie robocze",
+  "command.workspace.toggle.description": "Włącz lub wyłącz wiele przestrzeni roboczych na pasku bocznym",
   "command.session.undo": "Cofnij",
   "command.session.undo.description": "Cofnij ostatnią wiadomość",
   "command.session.redo": "Ponów",
@@ -93,8 +97,12 @@ export const dict = {
   "dialog.provider.group.popular": "Popularne",
   "dialog.provider.group.other": "Inne",
   "dialog.provider.tag.recommended": "Zalecane",
+  "dialog.provider.opencode.note": "Wybrane modele, w tym Claude, GPT, Gemini i więcej",
   "dialog.provider.anthropic.note": "Połącz z Claude Pro/Max lub kluczem API",
   "dialog.provider.openai.note": "Połącz z ChatGPT Pro/Plus lub kluczem API",
+  "dialog.provider.google.note": "Modele Gemini do szybkich, strukturalnych odpowiedzi",
+  "dialog.provider.openrouter.note": "Dostęp do wszystkich obsługiwanych modeli od jednego dostawcy",
+  "dialog.provider.vercel.note": "Ujednolicony dostęp do modeli AI z inteligentnym routingiem",
   "dialog.provider.copilot.note": "Połącz z Copilot lub kluczem API",
 
   "dialog.model.select.title": "Wybierz model",
@@ -164,6 +172,7 @@ export const dict = {
 
   "common.search.placeholder": "Szukaj",
   "common.goBack": "Wstecz",
+  "common.goForward": "Dalej",
   "common.loading": "Ładowanie",
   "common.loading.ellipsis": "...",
   "common.cancel": "Anuluj",
@@ -222,6 +231,10 @@ export const dict = {
   "prompt.attachment.remove": "Usuń załącznik",
   "prompt.action.send": "Wyślij",
   "prompt.action.stop": "Zatrzymaj",
+  "prompt.action.enhance": "Ulepsz prompt",
+  "prompt.action.resetModel": "Zresetuj model do domyślnego",
+  "prompt.action.enhanceDescription":
+    "Przycisk 'Ulepsz podpowiedź' pomaga ulepszyć Twoją prośbę, dostarczając dodatkowy kontekst, wyjaśnienia lub przeformułowania. Spróbuj wpisać prośbę tutaj i kliknij przycisk ponownie, aby zobaczyć, jak to działa.",
 
   "prompt.toast.pasteUnsupported.title": "Nieobsługiwane wklejanie",
   "prompt.toast.pasteUnsupported.description": "Tylko obrazy lub pliki PDF mogą być tutaj wklejane.",
@@ -324,6 +337,22 @@ export const dict = {
 
   "toast.language.title": "Język",
   "toast.language.description": "Przełączono na {{language}}",
+  "language.en": "English",
+  "language.zh": "简体中文",
+  "language.zht": "繁體中文",
+  "language.ko": "한국어",
+  "language.de": "Deutsch",
+  "language.es": "Español",
+  "language.fr": "Français",
+  "language.da": "Dansk",
+  "language.ja": "日本語",
+  "language.pl": "Polski",
+  "language.ru": "Русский",
+  "language.ar": "العربية",
+  "language.no": "Norsk",
+  "language.br": "Português (Brasil)",
+  "language.bs": "Bosanski",
+  "language.th": "ไทย",
 
   "toast.theme.title": "Przełączono motyw",
   "toast.scheme.title": "Schemat kolorów",
@@ -379,6 +408,15 @@ export const dict = {
     "Nie znaleziono elementu głównego. Czy zapomniałeś dodać go do swojego index.html? A może atrybut id został błędnie wpisany?",
 
   "error.globalSync.connectFailed": "Nie można połączyć się z serwerem. Czy serwer działa pod adresem `{{url}}`?",
+
+  "error.paidModel.title": "Musisz się zalogować, aby użyć tego modelu",
+  "error.paidModel.description":
+    "Zaloguj się lub utwórz konto, aby uzyskać dostęp do ponad 500 modeli, korzystać z kredytów po kosztach lub użyć własnego klucza.",
+  "error.paidModel.action": "Zaloguj się",
+  "error.promotionLimit.title": "Musisz się zarejestrować, aby kontynuować",
+  "error.promotionLimit.description":
+    "Zarejestruj się za darmo, aby kontynuować i odkryć ponad 500 modeli. Zajmie to 2 minuty, bez karty kredytowej. Lub wróć później.",
+  "error.promotionLimit.action": "Zarejestruj się",
 
   "error.chain.unknown": "Nieznany błąd",
   "error.chain.causedBy": "Spowodowany przez:",
@@ -444,6 +482,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Szukaj {{project}}",
   "session.header.searchFiles": "Szukaj plików",
+  "session.header.openIn": "Otwórz w",
+  "session.header.open.action": "Otwórz {{app}}",
+  "session.header.open.ariaLabel": "Otwórz w {{app}}",
+  "session.header.open.menu": "Opcje otwierania",
+  "session.header.open.copyPath": "Kopiuj ścieżkę",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Konfiguracje serwerów",
@@ -696,6 +739,13 @@ export const dict = {
   "session.recent": "Ostatnie",
   "session.search.placeholder": "Szukaj sesji...",
   "session.empty": "Brak sesji. Kliknij + aby rozpocząć nową rozmowę.",
+  "session.cloud.repoOnly": "Tylko to repozytorium",
+  "session.cloud.import": "Importuj z chmury",
+  "session.cloud.import.title": "Importuj z chmury",
+  "session.cloud.import.placeholder": "ID sesji, URL lub polecenie kilo import",
+  "session.cloud.import.button": "Importuj",
+  "session.cloud.import.invalid": "Nieprawidłowy format ID sesji",
+  "session.cloud.import.failed": "Nie udało się zaimportować sesji chmurowej",
 
   "workspace.new": "Nowa przestrzeń robocza",
   "workspace.type.local": "lokalna",
@@ -833,7 +883,6 @@ export const dict = {
   "settings.language.current": "Bieżący:",
 
   "common.add": "Dodaj",
-  "common.default": "Domyślny",
   "common.choose": "Wybierz…",
   "settings.notImplemented": "Ta sekcja nie jest jeszcze zaimplementowana.",
   "settings.notImplemented.description": "Będzie zawierać opcje konfiguracji i tekst objaśniający.",
@@ -898,26 +947,34 @@ export const dict = {
     "Brak skonfigurowanych serwerów MCP. Edytuj plik konfiguracyjny opencode, aby dodać serwery MCP.",
   "settings.agentBehaviour.workflowsPlaceholder": "Przepływy pracy zarządzane są za pomocą plików przepływów pracy.",
   "settings.agentBehaviour.notImplemented": "Jeszcze nie zaimplementowano.",
-  "settings.autoApprove.setAll": "Ustaw wszystkie uprawnienia",
+  "settings.autoApprove.description":
+    "Zdefiniuj, jak narzędzia mogą być uruchamiane. Większość narzędzi domyślnie ma ustawienie Zezwalaj. doom_loop i external_directory domyślnie mają ustawienie Pytaj.",
   "settings.autoApprove.level.allow": "Zezwól",
   "settings.autoApprove.level.ask": "Pytaj",
   "settings.autoApprove.level.deny": "Odmów",
-  "settings.autoApprove.tool.read": "Odczyt zawartości plików",
-  "settings.autoApprove.tool.edit": "Edycja lub tworzenie plików",
-  "settings.autoApprove.tool.glob": "Wyszukiwanie plików według wzorca",
-  "settings.autoApprove.tool.grep": "Przeszukiwanie zawartości plików",
-  "settings.autoApprove.tool.list": "Listowanie zawartości katalogu",
-  "settings.autoApprove.tool.bash": "Wykonywanie poleceń powłoki",
-  "settings.autoApprove.tool.task": "Tworzenie podzadań agenta",
-  "settings.autoApprove.tool.skill": "Wykonywanie umiejętności",
-  "settings.autoApprove.tool.lsp": "Operacje serwera języka",
-  "settings.autoApprove.tool.todoread": "Odczyt list zadań",
-  "settings.autoApprove.tool.todowrite": "Zapis list zadań",
-  "settings.autoApprove.tool.webfetch": "Pobieranie stron internetowych",
-  "settings.autoApprove.tool.websearch": "Wyszukiwanie w internecie",
-  "settings.autoApprove.tool.codesearch": "Przeszukiwanie bazy kodu",
-  "settings.autoApprove.tool.external_directory": "Dostęp do plików poza obszarem roboczym",
-  "settings.autoApprove.tool.doom_loop": "Kontynuuj po powtarzających się błędach",
+  "settings.autoApprove.wildcardLabel.commands": "Wszystkie polecenia (*)",
+  "settings.autoApprove.wildcardLabel.paths": "Wszystkie ścieżki (*)",
+  "settings.autoApprove.exceptions": "Wyjątki",
+  "settings.autoApprove.addCommand": "Dodaj polecenie",
+  "settings.autoApprove.addPath": "Dodaj ścieżkę",
+  "settings.autoApprove.placeholder.command": "np. git *",
+  "settings.autoApprove.placeholder.path": "np. *.env",
+  "settings.autoApprove.tool.read": "Odczytywanie plików. Pozwala agentowi na odczytywanie plików pasujących do określonej ścieżki.",
+  "settings.autoApprove.tool.edit": "Modyfikowanie plików. Pozwala agentowi na tworzenie lub edytowanie plików, w tym wprowadzanie poprawek i aktualizację wielu plików.",
+  "settings.autoApprove.tool.glob": "Dopasowywanie plików do wzorca. Pozwala na dopasowywanie plików za pomocą wzorców glob (np. src/**/*.ts).",
+  "settings.autoApprove.tool.grep": "Przeszukiwanie zawartości plików. Pozwala na wyszukiwanie oparte na wyrażeniach regularnych wewnątrz plików.",
+  "settings.autoApprove.tool.list": "Wyświetlanie zawartości katalogu. Pozwala na przeglądanie plików i folderów w katalogu.",
+  "settings.autoApprove.tool.bash": "Uruchamianie poleceń terminala. Pozwala na wykonanie poleceń powłoki (np. git status).",
+  "settings.autoApprove.tool.task": "Uruchamianie podagentów. Pozwala na uruchamianie wyspecjalizowanych podagentów do określonych zadań.",
+  "settings.autoApprove.tool.skill": "Ładowanie umiejętności. Pozwala na ładowanie predefiniowanych umiejętności po nazwie.",
+  "settings.autoApprove.tool.lsp": "Zapytania do serwera języka. Pozwala na uruchamianie zapytań do serwera języka w celu analizy kodu.",
+  "settings.autoApprove.tool.todoreadwrite":
+    "Zarządzaj listą zadań. Pozwala na odczytywanie i aktualizowanie wewnętrznej listy zadań.",
+  "settings.autoApprove.tool.webfetch": "Pobieranie URL. Pozwala na pobieranie zawartości z określonego adresu URL.",
+  "settings.autoApprove.tool.websearchcodesearch":
+    "Przeszukuj sieć lub kod. Pozwala na wykonywanie zewnętrznych wyszukiwań w sieci lub kodzie.",
+  "settings.autoApprove.tool.external_directory": "Dostęp do plików poza obszarem roboczym. Uruchamiane przy dostępie do plików poza bieżącym katalogiem projektu.",
+  "settings.autoApprove.tool.doom_loop": "Zapobieganie powtarzaniu tych samych akcji. Uruchamiane, gdy to samo wywołanie narzędzia powtarza się z identycznymi danymi wejściowymi.",
   "settings.checkpoints.enable.title": "Włącz migawki",
   "settings.checkpoints.enable.description": "Twórz punkty kontrolne przed edycją plików",
   "settings.context.autoCompaction.title": "Automatyczna kompakcja",
@@ -943,4 +1000,69 @@ export const dict = {
   "settings.providers.notSet": "Nie ustawiono (użyj domyślnego serwera)",
   "dialog.model.notSet": "Nie ustawiono",
   "profile.personalAccount": "Konto osobiste",
+  // Agent Manager strings live in webview-ui/agent-manager/i18n/pl.ts
+
+  "question.summary": "{{n}} z {{total}} pytań",
+  "common.review": "Przejrzyj",
+
+  // legacy-migration start
+  "settings.legacyMigration.link": "Migracja ze starszej wersji",
+  "settings.aboutKiloCode.legacyMigration.title": "Migracja starszej wersji",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "Migruj ustawienia z poprzedniej instalacji Kilo Code, w tym klucze API dostawców i domyślny model.",
+
+  // Screen 1 — What's New
+  "migration.whatsNew.title": "Co nowego w Kilo Code",
+  "migration.whatsNew.badge": "Beta",
+  "migration.whatsNew.subtitle": "Przebudowaliśmy rozszerzenie na szybszym i wydajniejszym fundamencie.",
+  "migration.whatsNew.features.performance.title": "Szybsza wydajność agenta",
+  "migration.whatsNew.features.performance.detail":
+    "Równoległe wywołania narzędzi i podagenci pozwalają agentowi robić więcej naraz — mniej czekania, więcej działania.",
+  "migration.whatsNew.features.interface.title": "Uproszczony interfejs",
+  "migration.whatsNew.features.interface.detail": "Mniej rozpraszaczy, łatwiejszy i szybszy do czytania.",
+  "migration.whatsNew.features.agentManager.title": "Agent Manager",
+  "migration.whatsNew.features.agentManager.detail":
+    "Zunifikowany interfejs do uruchamiania wielu agentów równolegle, każdy na własnym drzewie roboczym — monitoruj postęp, przełączaj kontekst i przeglądaj zmiany w jednym miejscu.",
+  "migration.whatsNew.features.foundation.title": "Wspólny fundament",
+  "migration.whatsNew.features.foundation.detail":
+    "Jedno małe, wydajne jądro we wszystkich produktach Kilo. Znajome doświadczenie niezależnie od sposobu pracy.",
+  "migration.whatsNew.blogLink": "Przeczytaj pełne ogłoszenie",
+  "migration.whatsNew.continue": "Kontynuuj",
+
+  // Screen 2 — Migrate Settings
+  "migration.migrate.title": "Migruj swoje ustawienia",
+  "migration.migrate.subtitle": "Znaleźliśmy ustawienia z poprzedniej instalacji. Oto co możemy przenieść.",
+  "migration.migrate.selectLabel": "Wybierz, co zmigrować",
+  "migration.migrate.cannotMigrate": "Nie można zmigrować",
+  "migration.migrate.chatHistory": "Sesje czatu i historia",
+  "migration.migrate.chatHistoryDesc": "Niekompatybilne z nową architekturą",
+  "migration.migrate.button": "Migruj ustawienia",
+  "migration.migrate.skip": "Pomiń",
+  "migration.migrate.back": "Wstecz",
+  "migration.migrate.keysDetected": "Wykryto {{count}} kluczy",
+  "migration.migrate.serversConfigured": "Skonfigurowano {{count}} serwer(ów)",
+  "migration.migrate.modesFound": "Znaleziono {{count}} tryb(ów)",
+  "migration.migrate.nothingToMigrate": "W starszych ustawieniach nie znaleziono niczego do zmigrowania.",
+
+  // Migrate — item labels (reused from old select keys)
+  "migration.select.providers": "Klucze API dostawców",
+  "migration.select.mcpServers": "Serwery MCP",
+  "migration.select.customModes": "Niestandardowe tryby / Agenci",
+  "migration.select.defaultModel": "Domyślny model",
+  "migration.select.autoApproval": "Automatyczne zatwierdzanie",
+  "migration.select.language": "Język interfejsu",
+  "migration.select.autocomplete": "Ustawienia autouzupełniania",
+
+  // Migrate — completion
+  "migration.complete.summary": "Pomyślnie zmigrowano {{success}} z {{total}} elementów.",
+  "migration.complete.cleanup": "Usuń dane starszych ustawień",
+  "migration.complete.cleanupDescription":
+    "Spowoduje to usunięcie starych ustawień z magazynu VS Code. Nie będzie można ponownie uruchomić tej migracji.",
+  "migration.complete.done": "Gotowe",
+  // legacy-migration end
+
+  "error.details.show": "Szczegóły",
+
+  "task.todos.progress": "{{done}}/{{total}} zadań ukończono",
+  "task.todos.allDone": "{{count}} zadań ukończono",
 }

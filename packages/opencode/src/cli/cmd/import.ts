@@ -3,10 +3,15 @@ import type { Session as SDKSession, Message, Part } from "@kilocode/sdk/v2"
 import { Session } from "../../session"
 import { cmd } from "./cmd"
 import { bootstrap } from "../bootstrap"
-import { Storage } from "../../storage/storage"
+import { Database } from "../../storage/db"
+import { SessionTable, MessageTable, PartTable } from "../../session/session.sql"
 import { Instance } from "../../project/instance"
 import { ShareNext } from "../../share/share-next"
 import { EOL } from "os"
+import { Filesystem } from "../../util/filesystem"
+import { Log } from "../../util/log"
+
+const log = Log.create({ service: "import-command" })
 
 /** Discriminated union returned by the ShareNext API (GET /api/share/:id/data) */
 export type ShareData =
@@ -62,6 +67,44 @@ export function transformShareData(shareData: ShareData[]): {
   }
 }
 
+// kilocode_change start
+export function ingestBootstrapWarning(sessionId: string, error: unknown) {
+  const details = error instanceof Error ? error.message : String(error)
+  return `Warning: imported session ${sessionId} locally, but ingest bootstrap failed: ${details}`
+}
+
+async function ingestBootstrap(sessionId: string) {
+  const { KiloSessions } = await import("../../kilo-sessions/kilo-sessions")
+  return KiloSessions.bootstrap(sessionId)
+}
+
+export async function bootstrapImportedSessionIngest(
+  sessionId: string,
+  input?: {
+    bootstrap?: (sessionId: string) => Promise<unknown>
+    warn?: (message: string) => void
+  },
+) {
+  const run = input?.bootstrap ?? ingestBootstrap
+  const warn =
+    input?.warn ??
+    ((message: string) => {
+      process.stderr.write(message)
+      process.stderr.write(EOL)
+    })
+
+  log.info("ingest bootstrap started", { sessionId })
+  await run(sessionId)
+    .then(() => {
+      log.info("ingest bootstrap completed", { sessionId })
+    })
+    .catch((error) => {
+      log.error("ingest bootstrap failed", { sessionId, error })
+      warn(ingestBootstrapWarning(sessionId, error))
+    })
+}
+// kilocode_change end
+
 export const ImportCommand = cmd({
   command: "import <file>",
   describe: "import session data from JSON file or URL",
@@ -115,8 +158,7 @@ export const ImportCommand = cmd({
 
         exportData = transformed
       } else {
-        const file = Bun.file(args.file)
-        exportData = await file.json().catch(() => {})
+        exportData = await Filesystem.readJson<NonNullable<typeof exportData>>(args.file).catch(() => undefined)
         if (!exportData) {
           process.stdout.write(`File not found: ${args.file}`)
           process.stdout.write(EOL)
@@ -130,15 +172,43 @@ export const ImportCommand = cmd({
         return
       }
 
-      await Storage.write(["session", Instance.project.id, exportData.info.id], exportData.info)
+      Database.use((db) => {
+        db.insert(SessionTable).values(Session.toRow(exportData.info)).onConflictDoNothing().run()
+      })
 
       for (const msg of exportData.messages) {
-        await Storage.write(["message", exportData.info.id, msg.info.id], msg.info)
+        Database.use((db) =>
+          db
+            .insert(MessageTable)
+            .values({
+              id: msg.info.id,
+              session_id: exportData.info.id,
+              time_created: msg.info.time?.created ?? Date.now(),
+              data: msg.info,
+            })
+            .onConflictDoNothing()
+            .run(),
+        )
 
         for (const part of msg.parts) {
-          await Storage.write(["part", msg.info.id, part.id], part)
+          Database.use((db) =>
+            db
+              .insert(PartTable)
+              .values({
+                id: part.id,
+                message_id: msg.info.id,
+                session_id: exportData.info.id,
+                data: part,
+              })
+              .onConflictDoNothing()
+              .run(),
+          )
         }
       }
+
+      // kilocode_change start
+      await bootstrapImportedSessionIngest(exportData.info.id)
+      // kilocode_change end
 
       process.stdout.write(`Imported session: ${exportData.info.id}`)
       process.stdout.write(EOL)

@@ -1,6 +1,8 @@
 import * as vscode from "vscode"
 import { KiloProvider } from "./KiloProvider"
 import { AgentManagerProvider } from "./agent-manager/AgentManagerProvider"
+import { DiffViewerProvider } from "./DiffViewerProvider"
+import { SettingsEditorProvider } from "./SettingsEditorProvider"
 import { EXTENSION_DISPLAY_NAME } from "./constants"
 import { KiloConnectionService } from "./services/cli-backend"
 import { registerAutocompleteProvider } from "./services/autocomplete"
@@ -47,6 +49,17 @@ export function activate(context: vscode.ExtensionContext) {
   const agentManagerProvider = new AgentManagerProvider(context.extensionUri, connectionService)
   context.subscriptions.push(agentManagerProvider)
 
+  // Create standalone diff viewer provider for the sidebar "Show Changes" action
+  const diffViewerProvider = new DiffViewerProvider(context.extensionUri, connectionService)
+  diffViewerProvider.setCommentHandler((comments) => {
+    void provider.appendReviewComments(comments)
+  })
+  context.subscriptions.push(diffViewerProvider)
+
+  // Create settings/profile editor provider (opens in editor area, not sidebar)
+  const settingsEditorProvider = new SettingsEditorProvider(context.extensionUri, connectionService, context)
+  context.subscriptions.push(settingsEditorProvider)
+
   // Register toolbar button command handlers
   context.subscriptions.push(
     vscode.commands.registerCommand("kilo-code.new.plusButtonClicked", () => {
@@ -61,14 +74,25 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("kilo-code.new.historyButtonClicked", () => {
       provider.postMessage({ type: "action", action: "historyButtonClicked" })
     }),
+    vscode.commands.registerCommand("kilo-code.new.cloudHistoryButtonClicked", () => {
+      provider.postMessage({ type: "action", action: "cloudHistoryButtonClicked" })
+    }),
     vscode.commands.registerCommand("kilo-code.new.profileButtonClicked", () => {
-      provider.postMessage({ type: "action", action: "profileButtonClicked" })
+      settingsEditorProvider.openPanel("profile")
     }),
     vscode.commands.registerCommand("kilo-code.new.settingsButtonClicked", () => {
-      provider.postMessage({ type: "action", action: "settingsButtonClicked" })
+      settingsEditorProvider.openPanel("settings")
     }),
+    // legacy-migration start
+    vscode.commands.registerCommand("kilo-code.new.openMigrationWizard", () => {
+      provider.postMessage({ type: "navigate", view: "migration" })
+    }),
+    // legacy-migration end
     vscode.commands.registerCommand("kilo-code.new.openInTab", () => {
       return openKiloInNewTab(context, connectionService)
+    }),
+    vscode.commands.registerCommand("kilo-code.new.showChanges", () => {
+      diffViewerProvider.openPanel()
     }),
     vscode.commands.registerCommand("kilo-code.new.agentManager.previousSession", () => {
       agentManagerProvider.postMessage({ type: "action", action: "sessionPrevious" })
@@ -85,6 +109,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("kilo-code.new.agentManager.showTerminal", () => {
       agentManagerProvider.showTerminalForCurrentSession()
     }),
+    vscode.commands.registerCommand("kilo-code.new.agentManager.toggleDiff", () => {
+      agentManagerProvider.postMessage({ type: "action", action: "toggleDiff" })
+    }),
+    vscode.commands.registerCommand("kilo-code.new.agentManager.showShortcuts", () => {
+      agentManagerProvider.postMessage({ type: "action", action: "showShortcuts" })
+    }),
     vscode.commands.registerCommand("kilo-code.new.agentManager.focusPanel", () => {
       agentManagerProvider.focusPanel()
     }),
@@ -97,8 +127,33 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("kilo-code.new.agentManager.newWorktree", () => {
       agentManagerProvider.postMessage({ type: "action", action: "newWorktree" })
     }),
+    vscode.commands.registerCommand("kilo-code.new.agentManager.openWorktree", () => {
+      agentManagerProvider.postMessage({ type: "action", action: "openWorktree" })
+    }),
     vscode.commands.registerCommand("kilo-code.new.agentManager.closeWorktree", () => {
       agentManagerProvider.postMessage({ type: "action", action: "closeWorktree" })
+    }),
+    vscode.commands.registerCommand("kilo-code.new.agentManager.advancedWorktree", () => {
+      agentManagerProvider.postMessage({ type: "action", action: "advancedWorktree" })
+    }),
+    ...Array.from({ length: 9 }, (_, i) =>
+      vscode.commands.registerCommand(`kilo-code.new.agentManager.jumpTo${i + 1}`, () => {
+        agentManagerProvider.postMessage({ type: "action", action: `jumpTo${i + 1}` })
+      }),
+    ),
+  )
+
+  // Register URI handler for session imports (vscode://kilocode.kilo-code/kilocode/s/{sessionId})
+  context.subscriptions.push(
+    vscode.window.registerUriHandler({
+      async handleUri(uri: vscode.Uri) {
+        const match = uri.path.match(/^\/kilocode\/s\/([a-zA-Z0-9_-]+)$/)
+        if (!match) return
+        const sessionId = match[1]
+        console.log("[Kilo New] URI handler: opening cloud session:", sessionId)
+        await vscode.commands.executeCommand(`${KiloProvider.viewType}.focus`)
+        provider.openCloudSession(sessionId)
+      },
     }),
   )
 

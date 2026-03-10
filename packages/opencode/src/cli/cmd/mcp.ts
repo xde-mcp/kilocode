@@ -13,6 +13,7 @@ import { Installation } from "../../installation"
 import path from "path"
 import { Global } from "../../global"
 import { modify, applyEdits } from "jsonc-parser"
+import { Filesystem } from "../../util/filesystem"
 import { Bus } from "../../bus"
 
 function getAuthStatusIcon(status: MCP.AuthStatus): string {
@@ -380,29 +381,41 @@ export const McpLogoutCommand = cmd({
 })
 
 async function resolveConfigPath(baseDir: string, global = false) {
-  // Check for existing config files (prefer .jsonc over .json, check .opencode/ subdirectory too)
-  const candidates = [path.join(baseDir, "opencode.json"), path.join(baseDir, "opencode.jsonc")]
+  // kilocode_change start - prefer kilo.json/.kilo over opencode.json/.opencode
+  // Check for existing config files (prefer .jsonc over .json, check .kilo/ and .opencode/ subdirectory too)
+  const candidates = [
+    path.join(baseDir, "kilo.json"),
+    path.join(baseDir, "kilo.jsonc"),
+    path.join(baseDir, "opencode.json"),
+    path.join(baseDir, "opencode.jsonc"),
+  ]
 
   if (!global) {
-    candidates.push(path.join(baseDir, ".opencode", "opencode.json"), path.join(baseDir, ".opencode", "opencode.jsonc"))
+    candidates.push(
+      path.join(baseDir, ".kilo", "kilo.json"),
+      path.join(baseDir, ".kilo", "kilo.jsonc"),
+      path.join(baseDir, ".kilo", "opencode.json"),
+      path.join(baseDir, ".kilo", "opencode.jsonc"),
+      path.join(baseDir, ".opencode", "opencode.json"),
+      path.join(baseDir, ".opencode", "opencode.jsonc"),
+    )
   }
 
   for (const candidate of candidates) {
-    if (await Bun.file(candidate).exists()) {
+    if (await Filesystem.exists(candidate)) {
       return candidate
     }
   }
 
-  // Default to opencode.json if none exist
-  return candidates[0]
+  // Default to kilo.json if none exist
+  return path.join(baseDir, "kilo.json")
+  // kilocode_change end
 }
 
 async function addMcpToConfig(name: string, mcpConfig: Config.Mcp, configPath: string) {
-  const file = Bun.file(configPath)
-
   let text = "{}"
-  if (await file.exists()) {
-    text = await file.text()
+  if (await Filesystem.exists(configPath)) {
+    text = await Filesystem.readText(configPath)
   }
 
   // Use jsonc-parser to modify while preserving comments
@@ -411,7 +424,7 @@ async function addMcpToConfig(name: string, mcpConfig: Config.Mcp, configPath: s
   })
   const result = applyEdits(text, edits)
 
-  await Bun.write(configPath, result)
+  await Filesystem.write(configPath, result)
 
   return configPath
 }

@@ -43,6 +43,8 @@ export const dict = {
   "command.language.set": "Koristi jezik: {{language}}",
 
   "command.session.new": "Nova sesija",
+  "command.session.new.task": "Novi zadatak",
+  "command.session.show.changes": "Prikaži promjene",
   "command.file.open": "Otvori datoteku",
   "command.tab.close": "Zatvori karticu",
   "command.context.addSelection": "Dodaj odabir u kontekst",
@@ -230,6 +232,10 @@ export const dict = {
   "prompt.attachment.remove": "Ukloni prilog",
   "prompt.action.send": "Pošalji",
   "prompt.action.stop": "Zaustavi",
+  "prompt.action.enhance": "Poboljšaj prompt",
+  "prompt.action.resetModel": "Resetuj model na zadani",
+  "prompt.action.enhanceDescription":
+    "Dugme 'Poboljšaj prompt' pomaže poboljšati vaš zahtjev pružajući dodatni kontekst, pojašnjenje ili preformulaciju. Pokušajte upisati zahtjev ovdje i ponovo kliknite na dugme da vidite kako funkcioniše.",
 
   "prompt.toast.pasteUnsupported.title": "Nepodržano lijepljenje",
   "prompt.toast.pasteUnsupported.description": "Ovdje se mogu zalijepiti samo slike ili PDF-ovi.",
@@ -406,6 +412,15 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Nije moguće povezati se na server. Da li server radi na `{{url}}`?",
 
+  "error.paidModel.title": "Morate se prijaviti da biste koristili ovaj model",
+  "error.paidModel.description":
+    "Prijavite se ili kreirajte račun za pristup preko 500 modela, koristite kredite po cijeni koštanja ili donesite vlastiti ključ.",
+  "error.paidModel.action": "Prijava",
+  "error.promotionLimit.title": "Morate se registrovati da biste nastavili",
+  "error.promotionLimit.description":
+    "Registrujte se besplatno da nastavite i istražite preko 500 modela. Traje 2 minute, bez kreditne kartice. Ili se vratite kasnije.",
+  "error.promotionLimit.action": "Registracija",
+
   "error.chain.unknown": "Nepoznata greška",
   "error.chain.causedBy": "Uzrok:",
   "error.chain.apiError": "API greška",
@@ -471,6 +486,11 @@ export const dict = {
 
   "session.header.search.placeholder": "Pretraži {{project}}",
   "session.header.searchFiles": "Pretraži datoteke",
+  "session.header.openIn": "Otvori u",
+  "session.header.open.action": "Otvori {{app}}",
+  "session.header.open.ariaLabel": "Otvori u {{app}}",
+  "session.header.open.menu": "Opcije otvaranja",
+  "session.header.open.copyPath": "Kopiraj putanju",
 
   "status.popover.trigger": "Status",
   "status.popover.ariaLabel": "Konfiguracije servera",
@@ -722,6 +742,13 @@ export const dict = {
   "session.recent": "Nedavne",
   "session.search.placeholder": "Pretraži sesije...",
   "session.empty": "Još nema sesija. Kliknite + za početak novog razgovora.",
+  "session.cloud.repoOnly": "Samo ovaj repozitorij",
+  "session.cloud.import": "Uvezi iz oblaka",
+  "session.cloud.import.title": "Uvezi iz oblaka",
+  "session.cloud.import.placeholder": "ID sesije, URL ili kilo import naredba",
+  "session.cloud.import.button": "Uvezi",
+  "session.cloud.import.invalid": "Neispravan format ID-a sesije",
+  "session.cloud.import.failed": "Uvoz sesije iz oblaka nije uspio",
 
   "workspace.new": "Novi radni prostor",
   "workspace.type.local": "lokalno",
@@ -858,7 +885,6 @@ export const dict = {
   "settings.language.current": "Trenutni:",
 
   "common.add": "Dodaj",
-  "common.default": "Zadano",
   "common.choose": "Odaberi…",
   "settings.notImplemented": "Ovaj dio još nije implementiran.",
   "settings.notImplemented.description": "Sadržavat će opcije konfiguracije i objašnjenje.",
@@ -922,26 +948,34 @@ export const dict = {
     "Nema konfiguriranih MCP servera. Uredite konfiguracijsku datoteku opencode za dodavanje MCP servera.",
   "settings.agentBehaviour.workflowsPlaceholder": "Tokovi rada se upravljaju putem datoteka tokova rada.",
   "settings.agentBehaviour.notImplemented": "Još nije implementirano.",
-  "settings.autoApprove.setAll": "Postavi sve dozvole",
+  "settings.autoApprove.description":
+    "Definišite kako je dozvoljeno pokretanje alata. Većina alata je podrazumijevano na Dozvoli. doom_loop i external_directory su podrazumijevano na Pitaj.",
   "settings.autoApprove.level.allow": "Dozvoli",
   "settings.autoApprove.level.ask": "Pitaj",
   "settings.autoApprove.level.deny": "Odbij",
-  "settings.autoApprove.tool.read": "Čitanje sadržaja datoteka",
-  "settings.autoApprove.tool.edit": "Uređivanje ili kreiranje datoteka",
-  "settings.autoApprove.tool.glob": "Pronalaženje datoteka po uzorku",
-  "settings.autoApprove.tool.grep": "Pretraživanje sadržaja datoteka",
-  "settings.autoApprove.tool.list": "Prikaz sadržaja direktorija",
-  "settings.autoApprove.tool.bash": "Pokretanje shell naredbi",
-  "settings.autoApprove.tool.task": "Kreiranje podzadataka agenta",
-  "settings.autoApprove.tool.skill": "Pokretanje vještina",
-  "settings.autoApprove.tool.lsp": "Operacije jezičkog servera",
-  "settings.autoApprove.tool.todoread": "Čitanje popisa zadataka",
-  "settings.autoApprove.tool.todowrite": "Pisanje popisa zadataka",
-  "settings.autoApprove.tool.webfetch": "Dohvaćanje web stranica",
-  "settings.autoApprove.tool.websearch": "Pretraživanje weba",
-  "settings.autoApprove.tool.codesearch": "Pretraživanje baze koda",
-  "settings.autoApprove.tool.external_directory": "Pristup datotekama izvan radnog prostora",
-  "settings.autoApprove.tool.doom_loop": "Nastavi nakon ponovljenih neuspjeha",
+  "settings.autoApprove.wildcardLabel.commands": "Sve komande (*)",
+  "settings.autoApprove.wildcardLabel.paths": "Sve putanje (*)",
+  "settings.autoApprove.exceptions": "Izuzeci",
+  "settings.autoApprove.addCommand": "Dodaj komandu",
+  "settings.autoApprove.addPath": "Dodaj putanju",
+  "settings.autoApprove.placeholder.command": "npr. git *",
+  "settings.autoApprove.placeholder.path": "npr. *.env",
+  "settings.autoApprove.tool.read": "Čitanje datoteka. Omogućava agentu da čita datoteke koje odgovaraju navedenoj putanji.",
+  "settings.autoApprove.tool.edit": "Izmjena datoteka. Omogućava agentu da kreira ili uređuje datoteke, uključujući zakrpe i ažuriranja više datoteka.",
+  "settings.autoApprove.tool.glob": "Podudaranje datoteka po uzorku. Omogućava podudaranje datoteka koristeći glob uzorke (npr. src/**/*.ts).",
+  "settings.autoApprove.tool.grep": "Pretraživanje sadržaja datoteka. Omogućava pretraživanje zasnovano na regex-u unutar datoteka.",
+  "settings.autoApprove.tool.list": "Prikaz sadržaja direktorija. Omogućava pregled datoteka i fascikli unutar direktorija.",
+  "settings.autoApprove.tool.bash": "Pokretanje terminalskih komandi. Omogućava izvršavanje shell komandi (npr. git status).",
+  "settings.autoApprove.tool.task": "Pokretanje pod-agenata. Omogućava pokretanje specijalizovanih pod-agenata za određene zadatke.",
+  "settings.autoApprove.tool.skill": "Učitavanje vještina. Omogućava učitavanje unaprijed definisanih vještina po imenu.",
+  "settings.autoApprove.tool.lsp": "Upit ka jezičkom serveru. Omogućava pokretanje upita jezičkom serveru za analizu koda.",
+  "settings.autoApprove.tool.todoreadwrite":
+    "Upravljanje listom zadataka. Dozvoljava čitanje i ažuriranje interne liste zadataka.",
+  "settings.autoApprove.tool.webfetch": "Preuzimanje URL-a. Omogućava preuzimanje sadržaja sa određenog URL-a.",
+  "settings.autoApprove.tool.websearchcodesearch":
+    "Pretraga weba ili koda. Dozvoljava izvršavanje eksternih pretraga weba ili koda.",
+  "settings.autoApprove.tool.external_directory": "Pristup datotekama izvan radnog prostora. Pokreće se prilikom pristupa datotekama izvan trenutnog direktorija projekta.",
+  "settings.autoApprove.tool.doom_loop": "Sprečavanje ponavljanja identičnih radnji. Pokreće se kada se isti poziv alata ponovi sa identičnim unosom.",
   "settings.checkpoints.enable.title": "Omogući snimke",
   "settings.checkpoints.enable.description": "Kreiraj kontrolne točke prije uređivanja datoteka",
   "settings.context.autoCompaction.title": "Automatska kompresija",
@@ -967,4 +1001,70 @@ export const dict = {
   "settings.providers.notSet": "Nije postavljeno (koristi zadano servera)",
   "dialog.model.notSet": "Nije postavljeno",
   "profile.personalAccount": "Osobni račun",
+
+  // Agent Manager strings live in webview-ui/agent-manager/i18n/bs.ts
+
+  "question.summary": "{{n}} od {{total}} pitanja",
+  "common.review": "Pregled",
+
+  // legacy-migration start
+  "settings.legacyMigration.link": "Migriraj sa prethodne verzije",
+  "settings.aboutKiloCode.legacyMigration.title": "Migracija sa prethodne verzije",
+  "settings.aboutKiloCode.legacyMigration.description":
+    "Migrirajte postavke iz prethodne instalacije Kilo Code, uključujući API ključeve provajdera i podrazumijevani model.",
+
+  // Screen 1 — What's New
+  "migration.whatsNew.title": "Šta je novo u Kilo Code",
+  "migration.whatsNew.badge": "Beta",
+  "migration.whatsNew.subtitle": "Ponovo smo izgradili ekstenziju na bržem i efikasnijem temelju.",
+  "migration.whatsNew.features.performance.title": "Brže performanse agenta",
+  "migration.whatsNew.features.performance.detail":
+    "Paralelni pozivi alata i podagenti omogućavaju vašem agentu da radi više odjednom — tako trošite manje vremena čekajući, a više isporučujući.",
+  "migration.whatsNew.features.interface.title": "Pojednostavljeni interfejs",
+  "migration.whatsNew.features.interface.detail": "Manje distrakcija, lakše i brže za čitanje.",
+  "migration.whatsNew.features.agentManager.title": "Agent Manager",
+  "migration.whatsNew.features.agentManager.detail":
+    "Jedinstveni interfejs za pokretanje više agenata paralelno, svaki na svom worktree-u — pratite napredak, mijenjajte kontekst i pregledajte promjene na jednom mjestu.",
+  "migration.whatsNew.features.foundation.title": "Zajednički temelj",
+  "migration.whatsNew.features.foundation.detail":
+    "Jedno malo, efikasno jezgro kroz sve Kilo proizvode. Poznato iskustvo bez obzira na to kako odaberete raditi.",
+  "migration.whatsNew.blogLink": "Pročitajte cijeli oglas",
+  "migration.whatsNew.continue": "Nastavi",
+
+  // Screen 2 — Migrate Settings
+  "migration.migrate.title": "Migrirajte svoje postavke",
+  "migration.migrate.subtitle": "Pronašli smo postavke iz vaše prethodne instalacije. Evo šta možemo prenijeti.",
+  "migration.migrate.selectLabel": "Odaberite šta želite migrirati",
+  "migration.migrate.cannotMigrate": "Nije moguće migrirati",
+  "migration.migrate.chatHistory": "Sesije razgovora i historija",
+  "migration.migrate.chatHistoryDesc": "Nekompatibilno sa novom arhitekturom",
+  "migration.migrate.button": "Migriraj postavke",
+  "migration.migrate.skip": "Preskoči",
+  "migration.migrate.back": "Nazad",
+  "migration.migrate.keysDetected": "{{count}} ključeva otkriveno",
+  "migration.migrate.serversConfigured": "{{count}} server(a) konfigurisano",
+  "migration.migrate.modesFound": "{{count}} režim(a) pronađeno",
+  "migration.migrate.nothingToMigrate": "U starim postavkama nije pronađeno ništa za migraciju.",
+
+  // Migrate — item labels (reused from old select keys)
+  "migration.select.providers": "API ključevi provajdera",
+  "migration.select.mcpServers": "MCP serveri",
+  "migration.select.customModes": "Prilagođeni režimi / Agenti",
+  "migration.select.defaultModel": "Podrazumijevani model",
+  "migration.select.autoApproval": "Automatsko odobravanje",
+  "migration.select.language": "Jezik korisničkog interfejsa",
+  "migration.select.autocomplete": "Postavke automatskog dovršavanja",
+
+  // Migrate — completion
+  "migration.complete.summary": "Uspješno migrirano {{success}} od {{total}} stavki.",
+  "migration.complete.cleanup": "Ukloni stare podatke postavki",
+  "migration.complete.cleanupDescription":
+    "Ovo uklanja stare postavke iz VS Code pohrane. Nećete moći ponovo pokrenuti ovu migraciju.",
+  "migration.complete.done": "Završeno",
+  // legacy-migration end
+
+  "error.details.show": "Detalji",
+
+  "task.todos.progress": "{{done}}/{{total}} zadataka završeno",
+  "task.todos.allDone": "{{count}} zadataka završeno",
 }

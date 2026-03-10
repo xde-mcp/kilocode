@@ -57,13 +57,13 @@ export namespace Agent {
     const cfg = await Config.get()
 
     const skillDirs = await Skill.dirs()
+    const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
     const defaults = PermissionNext.fromConfig({
       "*": "allow",
       doom_loop: "ask",
       external_directory: {
         "*": "ask",
-        [Truncate.GLOB]: "allow",
-        ...Object.fromEntries(skillDirs.map((dir) => [path.join(dir, "*"), "allow"])),
+        ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
       },
       question: "deny",
       plan_enter: "deny",
@@ -110,7 +110,8 @@ export namespace Agent {
             },
             edit: {
               "*": "deny",
-              [path.join(".opencode", "plans", "*.md")]: "allow",
+              [path.join(".kilo", "plans", "*.md")]: "allow", // kilocode_change
+              [path.join(".opencode", "plans", "*.md")]: "allow", // kilocode_change: .opencode fallback
               [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
             },
           }),
@@ -173,6 +174,7 @@ export namespace Agent {
         options: {},
         permission: PermissionNext.merge(
           defaults,
+          user, // kilocode_change: user before ask-specific so ask's deny+allowlist wins
           PermissionNext.fromConfig({
             "*": "deny",
             read: {
@@ -192,7 +194,6 @@ export namespace Agent {
               [Truncate.GLOB]: "allow",
             },
           }),
-          user,
         ),
         mode: "primary",
         native: true,
@@ -228,7 +229,8 @@ export namespace Agent {
             codesearch: "allow",
             read: "allow",
             external_directory: {
-              [Truncate.GLOB]: "allow",
+              "*": "ask",
+              ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
             },
           }),
           user,
