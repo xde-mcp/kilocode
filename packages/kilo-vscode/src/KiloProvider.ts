@@ -29,6 +29,7 @@ import {
   mapSSEEventToWebviewMessage,
   getErrorMessage,
   isEventFromForeignProject,
+  mapCloudSessionMessageToWebviewMessage,
   loadSessions as loadSessionsUtil,
   flushPendingSessionRefresh as flushPendingSessionRefreshUtil,
   type SessionRefreshContext,
@@ -1183,18 +1184,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         return
       }
 
-      const messages = (data.messages ?? [])
-        .filter((m) => m.info)
-        .map((m) => ({
-          id: m.info.id,
-          sessionID: m.info.sessionID,
-          role: m.info.role as "user" | "assistant",
-          parts: m.parts,
-          createdAt: m.info.time?.created ? new Date(m.info.time.created).toISOString() : new Date().toISOString(),
-          time: m.info.time,
-          cost: m.info.cost,
-          tokens: m.info.tokens,
-        }))
+      const messages = (data.messages ?? []).filter((m) => m.info).map(mapCloudSessionMessageToWebviewMessage)
 
       this.postMessage({
         type: "cloudSessionDataLoaded",
