@@ -164,18 +164,8 @@ export const LanguageBridge: Component<{ children: any }> = (props) => {
 // Inner app component that uses the contexts
 const AppContent: Component = () => {
   const [currentView, setCurrentView] = createSignal<ViewType>("newTask")
-  // Tracks whether this webview was opened as a standalone editor panel
-  // (e.g. Settings or Profile). When true, the back button closes the
-  // panel instead of navigating back to the chat view.
-  const [panelMode, setPanelMode] = createSignal(false)
   const session = useSession()
   const server = useServer()
-  const vscode = useVSCode()
-
-  /** Close the editor panel by asking the extension to dispose it. */
-  const closePanel = () => {
-    vscode.postMessage({ type: "closePanel" } as any)
-  }
 
   const handleViewAction = (action: string) => {
     switch (action) {
@@ -210,16 +200,6 @@ const AppContent: Component = () => {
       }
       if (message?.type === "navigate" && message.view && VALID_VIEWS.has(message.view)) {
         console.log("[Kilo New] App: 🧭 navigate:", message.view)
-        // When receiving a navigate message for settings/profile in a fresh
-        // webview (before any user interaction), treat this as a standalone
-        // editor panel so back buttons close the panel instead of showing chat.
-        if (
-          (message.view === "settings" || message.view === "profile") &&
-          currentView() === "newTask" &&
-          message.panel
-        ) {
-          setPanelMode(true)
-        }
         setCurrentView(message.view as ViewType)
       }
       if (message?.type === "openCloudSession" && message.sessionId) {
@@ -265,14 +245,10 @@ const AppContent: Component = () => {
             profileData={server.profileData()}
             deviceAuth={server.deviceAuth()}
             onLogin={server.startLogin}
-            onBack={panelMode() ? closePanel : () => setCurrentView("newTask")}
           />
         </Match>
         <Match when={currentView() === "settings"}>
-          <Settings
-            onBack={panelMode() ? closePanel : () => setCurrentView("newTask")}
-            onMigrateClick={() => setCurrentView("migration")}
-          />
+          <Settings onMigrateClick={() => setCurrentView("migration")} />
           {/* legacy-migration */}
         </Match>
         {/* legacy-migration start */}

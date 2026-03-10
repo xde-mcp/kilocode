@@ -58,13 +58,11 @@ export class SettingsEditorProvider implements vscode.Disposable {
     })
 
     // Once the webview signals ready, navigate to the target view.
-    // The panel flag tells the webview this is a standalone editor panel
-    // so the back button will close the panel instead of navigating to chat.
     const readyDisposable = panel.webview.onDidReceiveMessage((msg) => {
       if (msg.type === "webviewReady") {
         // Small delay to let KiloProvider's own webviewReady handler finish first
         setTimeout(() => {
-          provider.postMessage({ type: "navigate", view, panel: true })
+          provider.postMessage({ type: "navigate", view })
         }, 50)
         readyDisposable.dispose()
       }
