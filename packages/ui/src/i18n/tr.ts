@@ -22,6 +22,16 @@ export const dict = {
   "ui.sessionReview.largeDiff.meta": "Limit: {{limit}} değişen satır. Mevcut: {{current}} değişen satır.",
   "ui.sessionReview.largeDiff.renderAnyway": "Yine de göster",
 
+  "ui.fileMedia.kind.image": "resim",
+  "ui.fileMedia.kind.audio": "ses",
+  "ui.fileMedia.state.removed": "{{kind}} kaldırıldı",
+  "ui.fileMedia.state.loading": "{{kind}} yükleniyor...",
+  "ui.fileMedia.state.error": "{{kind}} yüklenemedi",
+  "ui.fileMedia.state.unavailable": "{{kind}} önizlemesi mevcut değil",
+  "ui.fileMedia.binary.title": "İkili dosya",
+  "ui.fileMedia.binary.description.path": "{{path}} ikili bir dosya olduğundan görüntülenemiyor.",
+  "ui.fileMedia.binary.description.default": "Bu dosya ikili bir dosya olduğundan görüntülenemiyor.",
+
   "ui.lineComment.label.prefix": "Yorum: ",
   "ui.lineComment.label.suffix": "",
   "ui.lineComment.editorLabel.prefix": "Yorum yapılıyor: ",
