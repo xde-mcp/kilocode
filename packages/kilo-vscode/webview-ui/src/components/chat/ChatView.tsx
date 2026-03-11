@@ -51,7 +51,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
         if (!msgParts) continue
         for (const p of msgParts) {
           if (p.type !== "tool") continue
-          const child = (p as { metadata?: { sessionId?: string } }).metadata?.sessionId
+          const child = (p as { state?: { metadata?: { sessionId?: string } } }).state?.metadata?.sessionId
           if (child && !family.has(child)) {
             family.add(child)
             queue.push(child)
