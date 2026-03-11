@@ -1,7 +1,6 @@
 import * as vscode from "vscode"
 import { KiloProvider } from "./KiloProvider"
 import type { KiloConnectionService } from "./services/cli-backend"
-import { sessionToWebview } from "./kilo-provider-utils"
 
 /**
  * Opens a read-only editor panel to view a sub-agent session.
@@ -53,16 +52,16 @@ export class SubAgentViewerProvider implements vscode.Disposable {
       // Small delay to let KiloProvider's own webviewReady handler finish first
       await new Promise((resolve) => setTimeout(resolve, 50))
 
-      // Fetch session info and send it to the webview so it appears in the store
       try {
         const client = this.connectionService.getClient()
         const { data: session } = await client.session.get({ sessionID }, { throwOnError: true })
-        provider.postMessage({
-          type: "sessionCreated",
-          session: sessionToWebview(session),
-        })
 
-        // Fetch and send messages
+        // Register the session on the provider — this adds it to
+        // trackedSessionIds for live SSE updates and sends
+        // sessionCreated to the webview.
+        provider.registerSession(session)
+
+        // Fetch and send existing messages
         const { data: messagesData } = await client.session.messages({ sessionID }, { throwOnError: true })
         const messages = messagesData.map((m) => ({
           ...m.info,
