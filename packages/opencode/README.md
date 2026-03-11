@@ -11,7 +11,7 @@ npm install -g @kilocode/cli
 Or run directly with npx:
 
 ```bash
-npx @kilocode/cli
+npx --package @kilocode/cli kilo
 ```
 
 ## Getting Started
@@ -28,12 +28,6 @@ Run a one-off task:
 kilo run "add input validation to the signup form"
 ```
 
-Run in fully autonomous mode (for CI/CD):
-
-```bash
-kilo run --auto "run tests and fix any failures"
-```
-
 ## Features
 
 - **Code generation** -- describe what you want in natural language
@@ -46,19 +40,17 @@ kilo run --auto "run tests and fix any failures"
 
 ## Commands
 
-| Command                    | Description                  |
-| -------------------------- | ---------------------------- |
-| `kilo`                     | Launch interactive TUI       |
-| `kilo run "<task>"`        | Run a one-off task           |
-| `kilo run --auto "<task>"` | Autonomous mode (no prompts) |
-| `kilo auth`                | Manage authentication        |
-| `kilo models`              | List available models        |
-| `kilo mcp`                 | Manage MCP servers           |
-| `kilo serve`               | Start the HTTP server        |
-| `kilo session`             | Manage sessions              |
-| `kilo export`              | Export session transcripts   |
-| `kilo pr`                  | Work with pull requests      |
-| `kilo completion`          | Generate shell completions   |
+| Command               | Description                |
+| --------------------- | -------------------------- |
+| `kilo`                | Launch interactive TUI     |
+| `kilo run "<task>"`   | Run a one-off task         |
+| `kilo auth`           | Manage authentication      |
+| `kilo models`         | List available models      |
+| `kilo mcp`            | Manage MCP servers         |
+| `kilo session list`   | List sessions              |
+| `kilo session delete` | Delete a session           |
+| `kilo export`         | Export session transcripts |
+| `kilo pr`             | Work with pull requests    |
 
 Run `kilo --help` for the full list.
 
