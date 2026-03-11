@@ -117,7 +117,11 @@ export class ServerManager {
           this.instance = null
         }
         if (!resolved) {
-          const { text } = toErrorMessage(`CLI process exited with code ${code} before server started`, stderrLines)
+          const { text } = toErrorMessage(
+            `CLI process exited with code ${code} before server started`,
+            stderrLines,
+            cliPath,
+          )
           reject(new Error(text))
         }
       })
@@ -127,7 +131,7 @@ export class ServerManager {
         if (!resolved) {
           console.error("[Kilo New] ServerManager: ⏰ Server startup timeout (30s)")
           ServerManager.killProcess(serverProcess)
-          const { text } = toErrorMessage("Server startup timeout after 30 seconds", stderrLines)
+          const { text } = toErrorMessage("Server startup timeout after 30 seconds", stderrLines, cliPath)
           reject(new Error(text))
         }
       }, 30000)
@@ -189,8 +193,9 @@ export class ServerManager {
   }
 }
 
-function toErrorMessage(message: string, stderrLines: string[]): { text: string; details: string } {
+function toErrorMessage(message: string, stderrLines: string[], cliPath?: string): { text: string; details: string } {
   const details = stderrLines.join("").trim()
-  const text = details ? `${message}\n\nCLI output:\n${details}` : message
+  const header = cliPath ? `${message}\nCLI path: ${cliPath}` : message
+  const text = details ? `${header}\n\nCLI output:\n${details}` : header
   return { text, details }
 }
