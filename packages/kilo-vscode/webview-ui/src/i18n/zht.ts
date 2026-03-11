@@ -739,7 +739,7 @@ export const dict = {
   "session.cloud.import.placeholder": "工作階段 ID、URL 或 kilo import 指令",
   "session.cloud.import.button": "匯入",
   "session.cloud.import.invalid": "工作階段 ID 格式無效",
-  "session.cloud.import.legacy": "這似乎是一個舊版工作階段 ID，已不再受支援。請使用目前版本擴充功能中的工作階段 ID。",
+  "session.cloud.import.legacy": "這似乎是一個舊版工作階段，已不再受支援。",
   "session.cloud.import.failed": "無法匯入雲端工作階段",
 
   "workspace.new": "新增工作區",

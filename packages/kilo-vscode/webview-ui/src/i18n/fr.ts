@@ -760,7 +760,7 @@ export const dict = {
   "session.cloud.import.placeholder": "ID de session, URL ou commande kilo import",
   "session.cloud.import.button": "Importer",
   "session.cloud.import.invalid": "Format d'ID de session invalide",
-  "session.cloud.import.legacy": "Cet identifiant de session semble être un ancien format qui n'est plus pris en charge. Veuillez utiliser un identifiant de session de la version actuelle de l'extension.",
+  "session.cloud.import.legacy": "Cette session semble être une ancienne session qui n'est plus prise en charge.",
   "session.cloud.import.failed": "Échec de l'importation de la session cloud",
 
   "workspace.new": "Nouvel espace de travail",

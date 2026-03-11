@@ -753,7 +753,7 @@ export const dict = {
   "session.cloud.import.placeholder": "ID sesije, URL ili kilo import naredba",
   "session.cloud.import.button": "Uvezi",
   "session.cloud.import.invalid": "Neispravan format ID-a sesije",
-  "session.cloud.import.legacy": "Čini se da je ovo zastarjeli ID sesije koji više nije podržan. Molimo koristite ID sesije iz trenutne verzije ekstenzije.",
+  "session.cloud.import.legacy": "Čini se da je ovo zastarjela sesija koja više nije podržana.",
   "session.cloud.import.failed": "Uvoz sesije iz oblaka nije uspio",
 
   "workspace.new": "Novi radni prostor",

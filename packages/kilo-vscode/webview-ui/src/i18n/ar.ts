@@ -742,7 +742,7 @@ export const dict = {
   "session.cloud.import.placeholder": "معرّف الجلسة أو الرابط أو أمر kilo import",
   "session.cloud.import.button": "استيراد",
   "session.cloud.import.invalid": "تنسيق معرّف الجلسة غير صالح",
-  "session.cloud.import.legacy": "يبدو أن هذا معرّف جلسة قديم لم يعد مدعومًا. يرجى استخدام معرّف جلسة من الإصدار الحالي للإضافة.",
+  "session.cloud.import.legacy": "يبدو أن هذه جلسة قديمة لم تعد مدعومة.",
   "session.cloud.import.failed": "فشل استيراد جلسة السحابة",
 
   "workspace.new": "مساحة عمل جديدة",

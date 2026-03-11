@@ -747,7 +747,7 @@ export const dict = {
   "session.cloud.import.placeholder": "세션 ID, URL 또는 kilo import 명령어",
   "session.cloud.import.button": "가져오기",
   "session.cloud.import.invalid": "잘못된 세션 ID 형식입니다",
-  "session.cloud.import.legacy": "이전 버전의 세션 ID로 보입니다. 이 세션 ID는 더 이상 지원되지 않습니다. 현재 버전의 확장 프로그램에서 생성된 세션 ID를 사용해 주세요.",
+  "session.cloud.import.legacy": "이전 버전의 세션으로 보이며 더 이상 지원되지 않습니다.",
   "session.cloud.import.failed": "클라우드 세션 가져오기 실패",
 
   "workspace.new": "새 작업 공간",

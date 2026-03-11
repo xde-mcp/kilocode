@@ -758,7 +758,7 @@ export const dict = {
   "session.cloud.import.placeholder": "Sitzungs-ID, URL oder kilo import-Befehl",
   "session.cloud.import.button": "Importieren",
   "session.cloud.import.invalid": "Ungültiges Sitzungs-ID-Format",
-  "session.cloud.import.legacy": "Dies scheint eine veraltete Sitzungs-ID zu sein, die nicht mehr unterstützt wird. Bitte verwenden Sie eine Sitzungs-ID aus der aktuellen Version der Erweiterung.",
+  "session.cloud.import.legacy": "Dies scheint eine veraltete Sitzung zu sein, die nicht mehr unterstützt wird.",
   "session.cloud.import.failed": "Fehler beim Importieren der Cloud-Sitzung",
 
   "workspace.new": "Neuer Arbeitsbereich",
