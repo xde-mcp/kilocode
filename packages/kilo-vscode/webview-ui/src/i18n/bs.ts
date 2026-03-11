@@ -676,7 +676,7 @@ export const dict = {
   "settings.providers.title": "Provajderi",
   "settings.providers.description": "Postavke provajdera će se ovdje moći podešavati.",
   "settings.providers.betaNotice":
-    "U beta verziji još nije moguće konfigurisati druge provajdere u korisničkom interfejsu. Ovo će biti dodano prije izdanja.",
+    "Tokom beta faze, samo se Kilo Gateway može konfigurisati u ekstenziji. Potpuna podrška za sve provajdere — uključujući i one iz prethodne verzije — stiže uskoro. Posvećeni smo tome da Kilo ostane otvoren, bez vezivanja.",
   "settings.providers.section.connected": "Povezani provajderi",
   "settings.providers.connected.empty": "Nema povezanih provajdera",
   "settings.providers.section.popular": "Popularni provajderi",

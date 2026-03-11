@@ -662,7 +662,8 @@ export const dict = {
 
   "settings.providers.title": "供應商",
   "settings.providers.description": "可在此調整供應商設定。",
-  "settings.providers.betaNotice": "在測試版中，目前尚無法在介面中設定其他供應商。此功能將在正式發布前加入。",
+  "settings.providers.betaNotice":
+    "在 Beta 測試期間，擴充套件中只能設定 Kilo Gateway。對所有供應商的完整支援——包含來自上一版本的供應商——即將推出。我們致力於保持 Kilo 的開放，絕不綁定。",
   "settings.providers.section.connected": "已連線的供應商",
   "settings.providers.connected.empty": "沒有已連線的供應商",
   "settings.providers.section.popular": "熱門供應商",

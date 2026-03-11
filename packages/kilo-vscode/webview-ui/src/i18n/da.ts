@@ -671,7 +671,7 @@ export const dict = {
   "settings.providers.title": "Udbydere",
   "settings.providers.description": "Udbyderindstillinger vil kunne konfigureres her.",
   "settings.providers.betaNotice":
-    "I betaversionen er det endnu ikke muligt at konfigurere andre udbydere i brugerfladen. Dette vil blive tilføjet inden udgivelsen.",
+    "Under betaen kan kun Kilo Gateway konfigureres i udvidelsen. Fuld understøttelse af alle udbydere — herunder dem fra den tidligere version — kommer snart. Vi er forpligtede til at holde Kilo åbent, ingen lock-in.",
   "settings.providers.section.connected": "Forbundne udbydere",
   "settings.providers.connected.empty": "Ingen forbundne udbydere",
   "settings.providers.section.popular": "Populære udbydere",

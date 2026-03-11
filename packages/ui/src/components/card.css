@@ -26,4 +26,17 @@
       color: var(--icon-critical-active);
     }
   }
+
+  &[data-variant="warning"] {
+    background-color: var(--surface-warning-weak);
+    border: 1px solid var(--border-warning-base);
+
+    /* text-12-regular */
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-small);
+    font-style: normal;
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-large); /* 166.667% */
+    letter-spacing: var(--letter-spacing-normal);
+  }
 }
