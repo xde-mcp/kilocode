@@ -6,10 +6,12 @@ import "../components/message-part"
 import { DataProvider } from "@opencode-ai/ui/context/data"
 import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
 import { CodeComponentProvider } from "@kilocode/kilo-ui/context/code"
+import { FileComponentProvider } from "@kilocode/kilo-ui/context/file"
 import { DialogProvider } from "@opencode-ai/ui/context/dialog"
 import { MarkedProvider } from "@opencode-ai/ui/context/marked"
 import { Diff } from "@kilocode/kilo-ui/diff"
 import { Code } from "@kilocode/kilo-ui/code"
+import { File } from "@kilocode/kilo-ui/file"
 import type { UserMessage, AssistantMessage, TextPart, ToolPart, ReasoningPart } from "@kilocode/sdk/v2"
 
 const SESSION_ID = "session-story-001"
@@ -133,11 +135,13 @@ function AllProviders(props: { children: any }) {
     <DataProvider data={mockData} directory="/project">
       <DiffComponentProvider component={Diff}>
         <CodeComponentProvider component={Code}>
-          <DialogProvider>
-            <MarkedProvider>
-              <div style={{ padding: "16px", "max-width": "700px" }}>{props.children}</div>
-            </MarkedProvider>
-          </DialogProvider>
+          <FileComponentProvider component={File}>
+            <DialogProvider>
+              <MarkedProvider>
+                <div style={{ padding: "16px", "max-width": "700px" }}>{props.children}</div>
+              </MarkedProvider>
+            </DialogProvider>
+          </FileComponentProvider>
         </CodeComponentProvider>
       </DiffComponentProvider>
     </DataProvider>
