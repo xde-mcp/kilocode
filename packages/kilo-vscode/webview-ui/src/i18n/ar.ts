@@ -664,6 +664,8 @@ export const dict = {
 
   "settings.providers.title": "الموفرون",
   "settings.providers.description": "ستكون إعدادات الموفر قابلة للتكوين هنا.",
+  "settings.providers.betaNotice":
+    "خلال المرحلة التجريبية، يمكن إعداد Kilo Gateway فقط في الإضافة. الدعم لإعداد مزودين آخرين قادم قريباً وسيكون متاحاً قبل خروج هذه الإضافة من المرحلة التجريبية. نحن ملتزمون بإبقاء Kilo مفتوحاً، دون تقييد.",
   "settings.providers.section.connected": "الموفرون المتصلون",
   "settings.providers.connected.empty": "لا يوجد موفرون متصلون",
   "settings.providers.section.popular": "الموفرون الشائعون",
