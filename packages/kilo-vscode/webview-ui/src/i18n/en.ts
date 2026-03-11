@@ -753,6 +753,7 @@ export const dict = {
   "session.cloud.import.placeholder": "Session ID, URL, or kilo import command",
   "session.cloud.import.button": "Import",
   "session.cloud.import.invalid": "Invalid session ID format",
+  "session.cloud.import.legacy": "This appears to be a legacy session that is no longer supported.",
   "session.cloud.import.failed": "Failed to import cloud session",
 
   "workspace.new": "New workspace",

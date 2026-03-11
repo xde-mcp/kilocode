@@ -748,6 +748,7 @@ export const dict = {
   "session.cloud.import.placeholder": "Sessions-ID, URL eller kilo import-kommando",
   "session.cloud.import.button": "Importér",
   "session.cloud.import.invalid": "Ugyldigt sessions-ID-format",
+  "session.cloud.import.legacy": "Dette ser ud til at være en ældre session, som ikke længere understøttes.",
   "session.cloud.import.failed": "Kunne ikke importere cloud-session",
 
   "workspace.new": "Nyt arbejdsområde",

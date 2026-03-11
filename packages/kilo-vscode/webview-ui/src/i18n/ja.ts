@@ -746,6 +746,7 @@ export const dict = {
   "session.cloud.import.placeholder": "セッションID、URL、またはkilo importコマンド",
   "session.cloud.import.button": "インポート",
   "session.cloud.import.invalid": "セッションIDの形式が無効です",
+  "session.cloud.import.legacy": "これは以前のバージョンのセッションのようです。このセッションはサポートされなくなりました。",
   "session.cloud.import.failed": "クラウドセッションのインポートに失敗しました",
 
   "workspace.new": "新しいワークスペース",

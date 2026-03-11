@@ -744,6 +744,7 @@ export const dict = {
   "session.cloud.import.placeholder": "ID เซสชัน, URL หรือคำสั่ง kilo import",
   "session.cloud.import.button": "นำเข้า",
   "session.cloud.import.invalid": "รูปแบบ ID เซสชันไม่ถูกต้อง",
+  "session.cloud.import.legacy": "นี่ดูเหมือนจะเป็นเซสชันเวอร์ชันเก่าที่ไม่รองรับอีกต่อไปแล้ว",
   "session.cloud.import.failed": "ไม่สามารถนำเข้าเซสชันคลาวด์ได้",
 
   "workspace.new": "พื้นที่ทำงานใหม่",
