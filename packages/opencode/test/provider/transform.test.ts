@@ -1675,10 +1675,10 @@ describe("ProviderTransform.variants", () => {
 
     test("mercury-2 returns OPENAI_EFFORTS with reasoning", () => {
       const model = createMockModel({
-        id: "openrouter/inception/mercury-2-coder",
+        id: "openrouter/inception/mercury-2",
         providerID: "openrouter",
         api: {
-          id: "inception/mercury-2-coder",
+          id: "inception/mercury-2",
           url: "https://openrouter.ai",
           npm: "@openrouter/ai-sdk-provider",
         },
@@ -1837,10 +1837,10 @@ describe("ProviderTransform.variants", () => {
         high: { reasoningEffort: "high" },
       }
       const model = createMockModel({
-        id: "kilo/inception/mercury-2-coder",
+        id: "kilo/inception/mercury-2",
         providerID: "kilo",
         api: {
-          id: "inception/mercury-2-coder",
+          id: "inception/mercury-2",
           url: "https://gateway.kilo.ai",
           npm: "@kilocode/kilo-gateway",
         },
@@ -2158,10 +2158,10 @@ describe("ProviderTransform.variants", () => {
 
     test("mercury-2 returns WIDELY_SUPPORTED_EFFORTS with reasoningEffort", () => {
       const model = createMockModel({
-        id: "inception/mercury-2-coder",
+        id: "inception/mercury-2",
         providerID: "inception",
         api: {
-          id: "mercury-2-coder",
+          id: "mercury-2",
           url: "https://api.inceptionlabs.ai",
           npm: "@ai-sdk/openai-compatible",
         },
