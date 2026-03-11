@@ -17,6 +17,7 @@ import { useI18n } from "@kilocode/kilo-ui/context/i18n"
 import { createAutoScroll } from "@kilocode/kilo-ui/hooks"
 import { useSession } from "../../context/session"
 import { useVSCode } from "../../context/vscode"
+import { useWorktreeMode } from "../../context/worktree-mode"
 import type { ToolPart, Message as SDKMessage } from "@kilocode/sdk/v2"
 
 /** Collect all tool parts from all assistant messages in a given session. */
@@ -40,6 +41,9 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
   const i18n = useI18n()
   const session = useSession()
   const vscode = useVSCode()
+  const worktreeMode = useWorktreeMode()
+  // Hide the open-in-tab button inside the Agent Manager
+  const inAgentManager = worktreeMode !== undefined
 
   const childSessionId = () => props.metadata.sessionId as string | undefined
 
@@ -88,7 +92,7 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
           <span data-slot="basic-tool-tool-subtitle">{description()}</span>
         </Show>
       </div>
-      <Show when={childSessionId()}>
+      <Show when={!inAgentManager && childSessionId()}>
         <IconButton
           icon="square-arrow-top-right"
           size="small"
