@@ -1088,11 +1088,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const message = {
         type: "skillsLoaded",
-        skills: skills.map((s) => ({
-          name: s.name,
-          description: s.description,
-          location: s.location,
-        })),
+        skills,
       }
       this.cachedSkillsMessage = message
       this.postMessage(message)

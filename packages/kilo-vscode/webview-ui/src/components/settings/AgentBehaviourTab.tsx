@@ -393,21 +393,12 @@ const AgentBehaviourTab: Component = () => {
                   style={{
                     "font-size": "12px",
                     color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
-                    "margin-top": "2px",
-                  }}
-                >
-                  {skill.description}
-                </div>
-                <div
-                  style={{
-                    "font-size": "11px",
-                    color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
                     "margin-top": "4px",
                     "font-family": "var(--vscode-editor-font-family, monospace)",
-                    "word-break": "break-all",
                   }}
                 >
-                  {skill.location}
+                  <div>{skill.description}</div>
+                  <div>{skill.location}</div>
                 </div>
               </div>
             )}
