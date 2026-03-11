@@ -671,7 +671,7 @@ export const dict = {
   "settings.providers.title": "공급자",
   "settings.providers.description": "공급자 설정은 여기서 구성할 수 있습니다.",
   "settings.providers.betaNotice":
-    "베타 기간 동안에는 확장 프로그램에서 Kilo Gateway만 설정할 수 있습니다. 이전 버전을 포함한 모든 프로바이더에 대한 완전한 지원이 곧 제공될 예정입니다. 저희는 락인(lock-in) 없이 Kilo를 개방적으로 유지하기 위해 최선을 다하고 있습니다.",
+    "베타 기간 동안 확장 프로그램에서는 Kilo Gateway만 설정할 수 있습니다. 이전 버전의 모든 프로바이더를 포함한 전체 프로바이더 설정은 곧 추가될 예정이며, 이 확장 프로그램의 베타가 종료되기 전에 제공될 것입니다. 저희는 락인(lock-in) 없이 Kilo를 개방적으로 유지할 것을 약속드립니다.",
   "settings.providers.section.connected": "연결된 공급자",
   "settings.providers.connected.empty": "연결된 공급자 없음",
   "settings.providers.section.popular": "인기 공급자",

@@ -677,7 +677,7 @@ export const dict = {
   "settings.providers.title": "Providers",
   "settings.providers.description": "Provider settings will be configurable here.",
   "settings.providers.betaNotice":
-    "During the beta, only Kilo Gateway can be configured in the extension. Full support for all providers — including those from the previous version — is coming soon. We're committed to keeping Kilo open, no lock-in.",
+    "During the beta, only Kilo Gateway can be configured in the extension. Full provider configuration — including all providers from the previous version — will be added soon and will be available before this extension leaves beta. We're committed to keeping Kilo open, no lock-in.",
   "settings.providers.section.connected": "Connected providers",
   "settings.providers.connected.empty": "No connected providers",
   "settings.providers.section.popular": "Popular providers",

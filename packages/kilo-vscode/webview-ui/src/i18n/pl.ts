@@ -674,7 +674,7 @@ export const dict = {
   "settings.providers.title": "Dostawcy",
   "settings.providers.description": "Ustawienia dostawców będą tutaj konfigurowalne.",
   "settings.providers.betaNotice":
-    "W fazie beta w rozszerzeniu można skonfigurować tylko Kilo Gateway. Pełne wsparcie dla wszystkich dostawców — w tym tych z poprzedniej wersji — pojawi się wkrótce. Zależy nam na tym, aby Kilo pozostało otwarte, bez lock-inu.",
+    "W fazie beta w rozszerzeniu można skonfigurować tylko Kilo Gateway. Pełna konfiguracja dostawców — w tym wszystkich dostawców z poprzedniej wersji — zostanie wkrótce dodana i będzie dostępna przed wyjściem tego rozszerzenia z fazy beta. Zależy nam na tym, aby Kilo pozostało otwarte, bez uzależniania od jednego dostawcy.",
   "settings.providers.section.connected": "Połączeni dostawcy",
   "settings.providers.connected.empty": "Brak połączonych dostawców",
   "settings.providers.section.popular": "Popularni dostawcy",

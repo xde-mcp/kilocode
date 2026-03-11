@@ -674,7 +674,7 @@ export const dict = {
   "settings.providers.title": "Leverandører",
   "settings.providers.description": "Leverandørinnstillinger vil kunne konfigureres her.",
   "settings.providers.betaNotice":
-    "Under betaen kan kun Kilo Gateway konfigureres i utvidelsen. Full støtte for alle leverandører — inkludert de fra forrige versjon — kommer snart. Vi er opptatt av å holde Kilo åpent, uten innelåsing.",
+    "Under betaen kan kun Kilo Gateway konfigureres i utvidelsen. Full leverandørkonfigurasjon — inkludert alle leverandører fra forrige versjon — vil snart bli lagt til og vil være tilgjengelig før denne utvidelsen går ut av beta. Vi er forpliktet til å holde Kilo åpent, uten innlåsing.",
   "settings.providers.section.connected": "Tilkoblede leverandører",
   "settings.providers.connected.empty": "Ingen tilkoblede leverandører",
   "settings.providers.section.popular": "Populære leverandører",
