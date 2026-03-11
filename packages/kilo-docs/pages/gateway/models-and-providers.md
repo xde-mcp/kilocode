@@ -71,8 +71,8 @@ The `kilo-auto/frontier` virtual model automatically selects the best model base
 | Mode                                                           | Resolved Model                |
 | -------------------------------------------------------------- | ----------------------------- |
 | `plan`, `general`, `architect`, `orchestrator`, `ask`, `debug` | `anthropic/claude-opus-4.6`   |
-| `build`, `explore`, `code`                                     | `anthropic/claude-sonnet-4.5` |
-| Default (no mode specified)                                    | `anthropic/claude-sonnet-4.5` |
+| `build`, `explore`, `code`                                     | `anthropic/claude-sonnet-4.6` |
+| Default (no mode specified)                                    | `anthropic/claude-sonnet-4.6` |
 
 ```json
 {
