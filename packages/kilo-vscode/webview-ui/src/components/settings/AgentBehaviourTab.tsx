@@ -371,14 +371,7 @@ const AgentBehaviourTab: Component = () => {
         when={discoveredSkills().length > 0}
         fallback={
           <Card style={{ "margin-bottom": "16px" }}>
-            <div
-              style={{
-                "font-size": "12px",
-                color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
-              }}
-            >
-              {language.t("settings.agentBehaviour.noSkillsFound")}
-            </div>
+            <div data-slot="settings-row-label-subtitle">{language.t("settings.agentBehaviour.noSkillsFound")}</div>
           </Card>
         }
       >
@@ -392,11 +385,12 @@ const AgentBehaviourTab: Component = () => {
                     index() < discoveredSkills().length - 1 ? "1px solid var(--border-weak-base)" : "none",
                 }}
               >
-                <div style={{ "font-weight": "500" }}>{skill.name}</div>
+                <div data-slot="settings-row-label-title" style={{ "margin-bottom": "0" }}>
+                  {skill.name}
+                </div>
                 <div
+                  data-slot="settings-row-label-subtitle"
                   style={{
-                    "font-size": "12px",
-                    color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
                     "margin-top": "4px",
                     "font-family": "var(--vscode-editor-font-family, monospace)",
                   }}
