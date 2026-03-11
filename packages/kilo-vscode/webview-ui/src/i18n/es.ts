@@ -755,8 +755,7 @@ export const dict = {
   "session.cloud.import.placeholder": "ID de sesión, URL o comando kilo import",
   "session.cloud.import.button": "Importar",
   "session.cloud.import.invalid": "Formato de ID de sesión no válido",
-  "session.cloud.import.legacy":
-    "ID de sesión no válido. Los ID de sesión en la nube deben comenzar con 'ses_'. Nota: las sesiones de la extensión anterior no son compatibles con esta versión.",
+  "session.cloud.import.legacy": "Este parece ser un ID de sesión heredado que ya no es compatible. Por favor, use un ID de sesión de la versión actual de la extensión.",
   "session.cloud.import.failed": "Error al importar la sesión de la nube",
 
   "workspace.new": "Nuevo espacio de trabajo",
@@ -972,32 +971,22 @@ export const dict = {
   "settings.autoApprove.addPath": "Agregar ruta",
   "settings.autoApprove.placeholder.command": "ej. git *",
   "settings.autoApprove.placeholder.path": "ej. *.env",
-  "settings.autoApprove.tool.read":
-    "Leer archivos. Permite que el agente lea archivos que coincidan con la ruta especificada.",
-  "settings.autoApprove.tool.edit":
-    "Modificar archivos. Permite que el agente cree o edite archivos, incluyendo parches y actualizaciones de múltiples archivos.",
-  "settings.autoApprove.tool.glob":
-    "Buscar archivos por patrón. Permite la búsqueda de archivos mediante patrones glob (ej. src/**/*.ts).",
-  "settings.autoApprove.tool.grep":
-    "Buscar en el contenido de archivos. Permite la búsqueda basada en expresiones regulares dentro de los archivos.",
-  "settings.autoApprove.tool.list":
-    "Listar contenido del directorio. Permite ver archivos y carpetas dentro de un directorio.",
-  "settings.autoApprove.tool.bash":
-    "Ejecutar comandos de terminal. Permite la ejecución de comandos de shell (ej. git status).",
-  "settings.autoApprove.tool.task":
-    "Iniciar subagentes. Permite iniciar subagentes especializados para tareas específicas.",
+  "settings.autoApprove.tool.read": "Leer archivos. Permite que el agente lea archivos que coincidan con la ruta especificada.",
+  "settings.autoApprove.tool.edit": "Modificar archivos. Permite que el agente cree o edite archivos, incluyendo parches y actualizaciones de múltiples archivos.",
+  "settings.autoApprove.tool.glob": "Buscar archivos por patrón. Permite la búsqueda de archivos mediante patrones glob (ej. src/**/*.ts).",
+  "settings.autoApprove.tool.grep": "Buscar en el contenido de archivos. Permite la búsqueda basada en expresiones regulares dentro de los archivos.",
+  "settings.autoApprove.tool.list": "Listar contenido del directorio. Permite ver archivos y carpetas dentro de un directorio.",
+  "settings.autoApprove.tool.bash": "Ejecutar comandos de terminal. Permite la ejecución de comandos de shell (ej. git status).",
+  "settings.autoApprove.tool.task": "Iniciar subagentes. Permite iniciar subagentes especializados para tareas específicas.",
   "settings.autoApprove.tool.skill": "Cargar habilidades. Permite cargar habilidades predefinidas por su nombre.",
-  "settings.autoApprove.tool.lsp":
-    "Consultar servidor de lenguaje. Permite ejecutar consultas al servidor de lenguaje para la inteligencia del código.",
+  "settings.autoApprove.tool.lsp": "Consultar servidor de lenguaje. Permite ejecutar consultas al servidor de lenguaje para la inteligencia del código.",
   "settings.autoApprove.tool.todoreadwrite":
     "Administrar lista de tareas. Permite leer y actualizar la lista de tareas interna.",
   "settings.autoApprove.tool.webfetch": "Obtener una URL. Permite recuperar contenido de una URL específica.",
   "settings.autoApprove.tool.websearchcodesearch":
     "Buscar en la web o en el código. Permite realizar búsquedas externas en la web o en el código.",
-  "settings.autoApprove.tool.external_directory":
-    "Acceder a archivos fuera del espacio de trabajo. Se activa al acceder a archivos fuera del directorio del proyecto actual.",
-  "settings.autoApprove.tool.doom_loop":
-    "Evitar acciones idénticas repetidas. Se activa cuando se repite la misma llamada de herramienta con entrada idéntica.",
+  "settings.autoApprove.tool.external_directory": "Acceder a archivos fuera del espacio de trabajo. Se activa al acceder a archivos fuera del directorio del proyecto actual.",
+  "settings.autoApprove.tool.doom_loop": "Evitar acciones idénticas repetidas. Se activa cuando se repite la misma llamada de herramienta con entrada idéntica.",
   "settings.checkpoints.enable.title": "Habilitar instantáneas",
   "settings.checkpoints.enable.description": "Crear puntos de control antes de editar archivos",
   "settings.context.autoCompaction.title": "Compactación automática",
