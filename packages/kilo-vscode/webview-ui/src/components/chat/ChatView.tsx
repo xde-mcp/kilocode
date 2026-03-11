@@ -51,7 +51,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
         if (!msgParts) continue
         for (const p of msgParts) {
           if (p.type !== "tool") continue
-          const child = (p as { metadata?: { sessionId?: string } }).metadata?.sessionId
+          const child = (p as { state?: { metadata?: { sessionId?: string } } }).state?.metadata?.sessionId
           if (child && !family.has(child)) {
             family.add(child)
             queue.push(child)
@@ -89,6 +89,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
   )
 
   onMount(() => {
+    if (props.readonly) return
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && session.status() === "busy") {
         e.preventDefault()
@@ -107,7 +108,7 @@ export const ChatView: Component<ChatViewProps> = (props) => {
 
   return (
     <div class="chat-view">
-      <TaskHeader />
+      <TaskHeader readonly={props.readonly} />
       <div class="chat-messages-wrapper">
         <div class="chat-messages">
           <MessageList onSelectSession={props.onSelectSession} />
