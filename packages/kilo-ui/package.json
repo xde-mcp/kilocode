@@ -1,6 +1,6 @@
 {
   "name": "@kilocode/kilo-ui",
-  "version": "7.0.40",
+  "version": "7.0.43",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -116,6 +116,7 @@
     "@opencode-ai/util": "workspace:*",
     "@pierre/diffs": "catalog:",
     "@solid-primitives/media": "2.3.3",
+    "@solid-primitives/resize-observer": "2.1.5",
     "lucide-solid": "0.576.0"
   }
 }
