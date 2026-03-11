@@ -394,6 +394,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "openChanges":
           vscode.commands.executeCommand("kilo-code.new.showChanges")
           break
+        case "openSubAgentViewer":
+          vscode.commands.executeCommand("kilo-code.new.openSubAgentViewer", message.sessionID, message.title)
+          break
         case "openFile":
           if (message.filePath) {
             this.handleOpenFile(message.filePath, message.line, message.column)
@@ -1013,7 +1016,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const config = vscode.workspace.getConfiguration("kilo-code.new.model")
       const providerID = config.get<string>("providerID", "kilo")
-      const modelID = config.get<string>("modelID", "kilo-auto/frontier")
+      const modelID = config.get<string>("modelID", "kilo-auto/free")
 
       const message = {
         type: "providersLoaded",
