@@ -50,7 +50,6 @@ kilo run "add input validation to the signup form"
 | `kilo session list`   | List sessions              |
 | `kilo session delete` | Delete a session           |
 | `kilo export`         | Export session transcripts |
-| `kilo pr`             | Work with pull requests    |
 
 Run `kilo --help` for the full list.
 
