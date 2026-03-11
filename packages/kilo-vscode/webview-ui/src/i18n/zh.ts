@@ -661,7 +661,7 @@ export const dict = {
   "settings.providers.title": "提供商",
   "settings.providers.description": "提供商设置将在此处可配置。",
   "settings.providers.betaNotice":
-    "在 Beta 测试期间，扩展中只能配置 Kilo Gateway。完整的提供商配置——包括上一版本中的所有提供商——将很快添加，并会在本扩展结束 Beta 阶段之前提供。我们致力于保持 Kilo 开放，无任何锁定。",
+    "在测试版期间，只能在扩展中配置 Kilo Gateway。对配置其他提供商的支持即将推出，并将在该扩展结束测试前上线。我们致力于保持 Kilo 开放，无锁定。",
   "settings.providers.section.connected": "已连接的提供商",
   "settings.providers.connected.empty": "没有已连接的提供商",
   "settings.providers.section.popular": "热门提供商",
