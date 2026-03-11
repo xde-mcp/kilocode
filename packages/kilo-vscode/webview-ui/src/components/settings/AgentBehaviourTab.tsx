@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, For, Show } from "solid-js"
+import { Component, createSignal, createMemo, For, Show, onCleanup } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -8,7 +8,8 @@ import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
-import type { AgentConfig } from "../../types/messages"
+import { useVSCode } from "../../context/vscode"
+import type { AgentConfig, SkillInfo, ExtensionMessage } from "../../types/messages"
 
 type SubtabId = "agents" | "mcpServers" | "rules" | "workflows" | "skills"
 
@@ -51,11 +52,25 @@ const AgentBehaviourTab: Component = () => {
   const language = useLanguage()
   const { config, updateConfig } = useConfig()
   const session = useSession()
+  const vscode = useVSCode()
   const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>("agents")
   const [selectedAgent, setSelectedAgent] = createSignal<string>("")
   const [newSkillPath, setNewSkillPath] = createSignal("")
   const [newSkillUrl, setNewSkillUrl] = createSignal("")
   const [newInstruction, setNewInstruction] = createSignal("")
+  const [discoveredSkills, setDiscoveredSkills] = createSignal<SkillInfo[]>([])
+
+  // Subscribe to skillsLoaded messages from the extension
+  const unsub = vscode.onMessage((message: ExtensionMessage) => {
+    if (message.type === "skillsLoaded") {
+      setDiscoveredSkills(message.skills)
+    }
+  })
+
+  // Request skills from the backend
+  vscode.postMessage({ type: "requestSkills" })
+
+  onCleanup(() => unsub())
 
   const agentNames = createMemo(() => {
     const names = session.agents().map((a) => a.name)
@@ -344,6 +359,62 @@ const AgentBehaviourTab: Component = () => {
 
   const renderSkillsSubtab = () => (
     <div>
+      {/* Discovered skills */}
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>
+        {language.t("settings.agentBehaviour.discoveredSkills")}
+      </h4>
+      <Show
+        when={discoveredSkills().length > 0}
+        fallback={
+          <Card style={{ "margin-bottom": "16px" }}>
+            <div
+              style={{
+                "font-size": "12px",
+                color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
+              }}
+            >
+              {language.t("settings.agentBehaviour.noSkillsFound")}
+            </div>
+          </Card>
+        }
+      >
+        <Card style={{ "margin-bottom": "16px" }}>
+          <For each={discoveredSkills()}>
+            {(skill, index) => (
+              <div
+                style={{
+                  padding: "8px 0",
+                  "border-bottom":
+                    index() < discoveredSkills().length - 1 ? "1px solid var(--border-weak-base)" : "none",
+                }}
+              >
+                <div style={{ "font-weight": "500" }}>{skill.name}</div>
+                <div
+                  style={{
+                    "font-size": "12px",
+                    color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
+                    "margin-top": "2px",
+                  }}
+                >
+                  {skill.description}
+                </div>
+                <div
+                  style={{
+                    "font-size": "11px",
+                    color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
+                    "margin-top": "4px",
+                    "font-family": "var(--vscode-editor-font-family, monospace)",
+                    "word-break": "break-all",
+                  }}
+                >
+                  {skill.location}
+                </div>
+              </div>
+            )}
+          </For>
+        </Card>
+      </Show>
+
       {/* Skill paths */}
       <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>{language.t("settings.agentBehaviour.skillPaths")}</h4>
       <Card style={{ "margin-bottom": "16px" }}>
