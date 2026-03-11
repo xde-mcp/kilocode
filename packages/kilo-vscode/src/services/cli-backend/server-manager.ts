@@ -84,6 +84,7 @@ export class ServerManager {
       console.log("[Kilo New] ServerManager: 📦 Process spawned with PID:", serverProcess.pid)
 
       let resolved = false
+      const stderrLines: string[] = []
 
       serverProcess.stdout?.on("data", (data: Buffer) => {
         const output = data.toString()
@@ -100,6 +101,7 @@ export class ServerManager {
       serverProcess.stderr?.on("data", (data: Buffer) => {
         const errorOutput = data.toString()
         console.error("[Kilo New] ServerManager: ⚠️ CLI Server stderr:", errorOutput)
+        stderrLines.push(errorOutput)
       })
 
       serverProcess.on("error", (error) => {
@@ -115,7 +117,8 @@ export class ServerManager {
           this.instance = null
         }
         if (!resolved) {
-          reject(new Error(`CLI process exited with code ${code} before server started`))
+          const { text } = toErrorMessage(`CLI process exited with code ${code} before server started`, stderrLines)
+          reject(new Error(text))
         }
       })
 
@@ -124,7 +127,8 @@ export class ServerManager {
         if (!resolved) {
           console.error("[Kilo New] ServerManager: ⏰ Server startup timeout (30s)")
           ServerManager.killProcess(serverProcess)
-          reject(new Error("Server startup timeout"))
+          const { text } = toErrorMessage("Server startup timeout after 30 seconds", stderrLines)
+          reject(new Error(text))
         }
       }, 30000)
     })
@@ -183,4 +187,10 @@ export class ServerManager {
     timer.unref()
     proc.on("exit", () => clearTimeout(timer))
   }
+}
+
+function toErrorMessage(message: string, stderrLines: string[]): { text: string; details: string } {
+  const details = stderrLines.join("").trim()
+  const text = details ? `${message}\n\nCLI output:\n${details}` : message
+  return { text, details }
 }
