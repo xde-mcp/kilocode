@@ -1070,6 +1070,7 @@ export class Worktree extends HeyApiClient {
   public diffSummary<ThrowOnError extends boolean = false>(
     parameters?: {
       directory?: string
+      workspace?: string
       base?: string
     },
     options?: Options<never, ThrowOnError>,
@@ -1080,6 +1081,7 @@ export class Worktree extends HeyApiClient {
         {
           args: [
             { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
             { in: "query", key: "base" },
           ],
         },
@@ -1100,6 +1102,7 @@ export class Worktree extends HeyApiClient {
   public diffFile<ThrowOnError extends boolean = false>(
     parameters: {
       directory?: string
+      workspace?: string
       base?: string
       file: string
     },
@@ -1111,6 +1114,7 @@ export class Worktree extends HeyApiClient {
         {
           args: [
             { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
             { in: "query", key: "base" },
             { in: "query", key: "file" },
           ],

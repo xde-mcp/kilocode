@@ -2724,6 +2724,7 @@ export type WorktreeDiffSummaryData = {
   path?: never
   query?: {
     directory?: string
+    workspace?: string
     /**
      * Base branch or ref to diff against
      */
@@ -2755,6 +2756,7 @@ export type WorktreeDiffFileData = {
   path?: never
   query: {
     directory?: string
+    workspace?: string
     /**
      * Base branch or ref to diff against
      */
