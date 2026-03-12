@@ -1157,6 +1157,10 @@
   color: var(--text-weak, var(--vscode-descriptionForeground));
 }
 
+.mode-switcher-item.selected .mode-switcher-item-desc {
+  color: inherit;
+}
+
 /* ============================================
    Permission Dock (VS Code overrides)
    ============================================ */
