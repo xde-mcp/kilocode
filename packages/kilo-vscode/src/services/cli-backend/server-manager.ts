@@ -235,7 +235,7 @@ export function toErrorMessage(
     lines = [`CLI path: ${cliPath}`, ...lines]
   }
 
-  const detailsText = lines.join("\n").trim()
+  const detailsText = lines.map(stripAnsi).join("\n").trim()
 
   return {
     userMessage,
