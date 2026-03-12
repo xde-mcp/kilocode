@@ -139,7 +139,8 @@ export const ImportCommand = cmd({
           return
         }
 
-        const response = await fetch(`https://ingest.kilosessions.ai/session/${encodeURIComponent(slug)}`)
+        const base = process.env["KILO_SESSION_INGEST_URL"] ?? "https://ingest.kilosessions.ai"
+        const response = await fetch(`${base}/session/${encodeURIComponent(slug)}`)
 
         if (!response.ok) {
           process.stdout.write(`Failed to fetch share data: ${response.statusText}`)
