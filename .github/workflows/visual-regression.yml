@@ -111,7 +111,11 @@ jobs:
         run: bun run build-storybook
         working-directory: packages/kilo-ui
 
-      - name: Generate baselines for new/missing stories
+      - name: Remove existing baselines
+        run: rm -rf tests/visual-regression.spec.ts-snapshots/
+        working-directory: packages/kilo-ui
+
+      - name: Generate baselines for all stories
         run: bun run test:visual:update
         working-directory: packages/kilo-ui
         env:
@@ -255,7 +259,11 @@ jobs:
         run: bun run build-storybook
         working-directory: packages/kilo-vscode
 
-      - name: Generate baselines for new/missing stories
+      - name: Remove existing baselines
+        run: rm -rf tests/visual-regression.spec.ts-snapshots/
+        working-directory: packages/kilo-vscode
+
+      - name: Generate baselines for all stories
         run: bun run test:visual:update
         working-directory: packages/kilo-vscode
         env:
