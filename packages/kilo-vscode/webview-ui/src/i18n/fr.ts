@@ -414,6 +414,8 @@ export const dict = {
   "error.globalSync.connectFailed":
     "Impossible de se connecter au serveur. Y a-t-il un serveur en cours d'exécution à `{{url}}` ?",
 
+  "error.startup.title": "Échec de la connexion au serveur",
+
   "error.paidModel.title": "Vous devez vous connecter pour utiliser ce modèle",
   "error.paidModel.description":
     "Connectez-vous ou créez un compte pour accéder à plus de 500 modèles, utiliser des crédits au prix coûtant ou apporter votre propre clé.",

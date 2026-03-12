@@ -406,6 +406,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "无法连接到服务器。是否有服务器正在 `{{url}}` 运行？",
 
+  "error.startup.title": "服务器连接失败",
+
   "error.paidModel.title": "您需要登录才能使用此模型",
   "error.paidModel.description": "登录或创建账户以访问500多个模型，按成本使用积分，或使用您自己的密钥。",
   "error.paidModel.action": "登录",

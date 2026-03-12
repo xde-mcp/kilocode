@@ -363,6 +363,8 @@ export interface ConnectionStateMessage {
   type: "connectionState"
   state: ConnectionState
   error?: string
+  userMessage?: string
+  userDetails?: string
 }
 
 export interface ErrorMessage {
@@ -1539,6 +1541,10 @@ export interface OpenChangesRequest {
   type: "openChanges"
 }
 
+export interface RetryConnectionRequest {
+  type: "retryConnection"
+}
+
 // Open a sub-agent session in a read-only editor panel
 export interface OpenSubAgentViewerRequest {
   type: "openSubAgentViewer"
@@ -1637,6 +1643,7 @@ export type WebviewMessage =
   | ApplyWorktreeDiffMessage
   | EnhancePromptRequest
   | OpenChangesRequest
+  | RetryConnectionRequest
   | OpenSubAgentViewerRequest
   | SetDefaultBaseBranchRequest
 

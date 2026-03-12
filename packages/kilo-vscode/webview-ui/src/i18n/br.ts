@@ -407,6 +407,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Não foi possível conectar ao servidor. Há um servidor executando em `{{url}}`?",
 
+  "error.startup.title": "Falha na conexão com o servidor",
+
   "error.paidModel.title": "Você precisa fazer login para usar este modelo",
   "error.paidModel.description":
     "Faça login ou crie uma conta para acessar mais de 500 modelos, usar créditos a preço de custo ou trazer sua própria chave.",
