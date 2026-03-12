@@ -928,6 +928,7 @@ export const dict = {
   "settings.experimental.toolToggles": "สวิตช์เครื่องมือ",
   "settings.agentBehaviour.defaultAgent.title": "เอเจนต์เริ่มต้น",
   "settings.agentBehaviour.defaultAgent.description": "เอเจนต์ที่ใช้เมื่อไม่ได้ระบุ",
+  "settings.agentBehaviour.availableAgents": "เอเจนต์ที่ใช้งานได้",
   "settings.agentBehaviour.selectAgent": "เลือกเอเจนต์เพื่อกำหนดค่า…",
   "settings.agentBehaviour.selectAgent.title": "เอเจนต์",
   "settings.agentBehaviour.selectAgent.description": "เลือกเอเจนต์เพื่อกำหนดค่า…",

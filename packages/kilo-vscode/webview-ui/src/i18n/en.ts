@@ -947,6 +947,7 @@ export const dict = {
 
   "settings.agentBehaviour.defaultAgent.title": "Default Agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent to use when none is specified",
+  "settings.agentBehaviour.availableAgents": "Available Agents",
   "settings.agentBehaviour.selectAgent": "Select an agent to configure…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Select an agent to configure…",

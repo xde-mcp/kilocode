@@ -932,6 +932,7 @@ export const dict = {
   "settings.experimental.toolToggles": "도구 토글",
   "settings.agentBehaviour.defaultAgent.title": "기본 에이전트",
   "settings.agentBehaviour.defaultAgent.description": "지정되지 않은 경우 사용할 에이전트",
+  "settings.agentBehaviour.availableAgents": "사용 가능한 에이전트",
   "settings.agentBehaviour.selectAgent": "구성할 에이전트를 선택하세요…",
   "settings.agentBehaviour.selectAgent.title": "에이전트",
   "settings.agentBehaviour.selectAgent.description": "구성할 에이전트를 선택하세요…",
