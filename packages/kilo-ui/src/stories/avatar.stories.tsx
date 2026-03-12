@@ -33,10 +33,15 @@ export const WithCustomColors: Story = {
   args: { fallback: "KL", background: "#1a4d8f", foreground: "#ffffff" },
 }
 
+// Inline data URI so the visual regression test never depends on network.
+// 1×1 teal PNG — small enough to embed, large enough to prove <img> rendering.
+const AVATAR_DATA_URI =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAADZJREFUWIW2xzERACAQBLA7/pWACxrsgfFhJpmtsrMn0N2S2RNIZk+gu2X2BLpbZk8gmT0B4AWJGwMhBjARKwAAAABJRU5ErkJggg=="
+
 export const WithImage: Story = {
   args: {
     fallback: "OC",
-    src: "https://avatars.githubusercontent.com/u/154330673?s=48",
+    src: AVATAR_DATA_URI,
   },
 }
 
