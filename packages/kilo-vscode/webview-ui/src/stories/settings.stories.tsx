@@ -47,8 +47,8 @@ export const AgentBehaviourAgents: Story = {
       agents: () => [
         { name: "code", description: "General-purpose coding agent", mode: "primary" },
         { name: "debug", description: "Diagnose and fix bugs", mode: "primary" },
-        { name: "architect", description: "Design systems and plan features", mode: "secondary" },
-        { name: "review", description: "Review code for issues and improvements", mode: "secondary" },
+        { name: "architect", description: "Design systems and plan features", mode: "all" },
+        { name: "review", description: "Review code for issues and improvements", mode: "subagent" },
       ],
     }
     return (
