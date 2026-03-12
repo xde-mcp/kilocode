@@ -150,7 +150,7 @@ export const ImportCommand = cmd({
 
         const data = await response.json()
 
-        if (!data.info || !data.messages || !Array.isArray(data.messages)) {
+        if (!data || typeof data !== "object" || !data.info || !data.messages || !Array.isArray(data.messages)) {
           process.stdout.write(`Share not found or empty: ${slug}`)
           process.stdout.write(EOL)
           return
