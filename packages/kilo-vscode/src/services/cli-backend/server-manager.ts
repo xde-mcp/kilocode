@@ -208,7 +208,11 @@ export class ServerStartupError extends Error {
   }
 }
 
-function toErrorMessage(
+function stripAnsi(str: string): string {
+  return str.replace(/\x1b\[[0-9;]*m/g, "")
+}
+
+export function toErrorMessage(
   error: string,
   stderrLines: string[],
   cliPath?: string,
@@ -218,7 +222,11 @@ function toErrorMessage(
   error: string
 } {
   let lines = stderrLines.flatMap((line) => line.split("\n"))
-  const userMessage = [...lines].reverse().find((line) => line.trim() !== "") ?? error
+
+  const errorLine = lines.map(stripAnsi).find((line) => /Error:\s+/.test(line))
+  const userMessage = errorLine
+    ? errorLine.match(/Error:\s+(.+)/)![1].trim()
+    : stripAnsi([...lines].reverse().find((line) => line.trim() !== "") ?? error).trim()
 
   lines = [error, ...lines]
   if (cliPath && cliPath.trim() !== "") {
@@ -228,8 +236,8 @@ function toErrorMessage(
   const detailsText = lines.join("\n").trim()
 
   return {
-    userMessage: userMessage,
+    userMessage,
     userDetails: detailsText,
-    error: error,
+    error,
   }
 }
