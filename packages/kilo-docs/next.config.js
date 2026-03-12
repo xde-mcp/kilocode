@@ -32,9 +32,9 @@ module.exports = withMarkdoc(/* config: https://markdoc.io/docs/nextjs#options *
         },
       ],
       afterFiles: [
-        { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
-        { source: "/ingest/decide",        destination: "https://us.i.posthog.com/decide" },
-        { source: "/ingest/:path*",        destination: "https://us.i.posthog.com/:path*" }, // catch-all must be last
+        { source: "/ingest/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*", basePath: false },
+        { source: "/ingest/decide",        destination: "https://us.i.posthog.com/decide",               basePath: false },
+        { source: "/ingest/:path*",        destination: "https://us.i.posthog.com/:path*",               basePath: false }, // catch-all must be last
       ],
     }
   },
