@@ -120,27 +120,45 @@ jobs:
             exit 1
           fi
 
-      - name: Commit and push new baselines (if any)
+      - name: Verify updated baselines are stable
         if: needs.check-paths.outputs.is_fork != 'true'
-        id: commit-baselines
+        id: verify-baselines
+        run: |
+          git add packages/kilo-ui/tests/visual-regression.spec.ts-snapshots/
+          if git diff --cached --quiet; then
+            echo "No new baselines — nothing to verify."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Baselines changed — re-running tests to verify stability..."
+            git reset HEAD -- packages/kilo-ui/tests/visual-regression.spec.ts-snapshots/
+            if (cd packages/kilo-ui && bun run test:visual); then
+              echo "Baselines are stable."
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Visual regression baselines are non-deterministic. Tests failed against newly generated baselines."
+              echo "::error::This means screenshots keep changing between runs, which would cause an infinite update loop."
+              echo "::error::Please investigate the flaky screenshots and add non-deterministic stories to the SKIP set."
+              exit 1
+            fi
+          fi
+        env:
+          CI: true
+          PLAYWRIGHT_WORKERS: "4"
+
+      - name: Commit and push new baselines (if any)
+        if: needs.check-paths.outputs.is_fork != 'true' && steps.verify-baselines.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.BOT_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add packages/kilo-ui/tests/visual-regression.spec.ts-snapshots/
-          if git diff --cached --quiet; then
-            echo "No new baselines — nothing to commit."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: update visual regression baselines"
-            git lfs push --all origin
-            git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          git commit -m "chore: update visual regression baselines"
+          git lfs push --all origin
+          git push
 
       - name: Fail if baselines changed
-        if: needs.check-paths.outputs.is_fork != 'true' && steps.commit-baselines.outputs.changed == 'true'
+        if: needs.check-paths.outputs.is_fork != 'true' && steps.verify-baselines.outputs.changed == 'true'
         run: |
           echo "::error::Visual regression baselines changed. New baselines have been committed to the branch. Please pull and review."
           exit 1
@@ -238,27 +256,45 @@ jobs:
             exit 1
           fi
 
-      - name: Commit and push new baselines (if any)
+      - name: Verify updated baselines are stable
         if: needs.check-paths.outputs.is_fork != 'true'
-        id: commit-baselines-vscode
+        id: verify-baselines-vscode
+        run: |
+          git add packages/kilo-vscode/tests/visual-regression.spec.ts-snapshots/
+          if git diff --cached --quiet; then
+            echo "No new baselines — nothing to verify."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Baselines changed — re-running tests to verify stability..."
+            git reset HEAD -- packages/kilo-vscode/tests/visual-regression.spec.ts-snapshots/
+            if (cd packages/kilo-vscode && bun run test:visual); then
+              echo "Baselines are stable."
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::error::Visual regression baselines are non-deterministic. Tests failed against newly generated baselines."
+              echo "::error::This means screenshots keep changing between runs, which would cause an infinite update loop."
+              echo "::error::Please investigate the flaky screenshots and add non-deterministic stories to the SKIP set."
+              exit 1
+            fi
+          fi
+        env:
+          CI: true
+          PLAYWRIGHT_WORKERS: "4"
+
+      - name: Commit and push new baselines (if any)
+        if: needs.check-paths.outputs.is_fork != 'true' && steps.verify-baselines-vscode.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.BOT_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add packages/kilo-vscode/tests/visual-regression.spec.ts-snapshots/
-          if git diff --cached --quiet; then
-            echo "No new baselines — nothing to commit."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "chore: update kilo-vscode visual regression baselines"
-            git lfs push --all origin
-            git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
+          git commit -m "chore: update kilo-vscode visual regression baselines"
+          git lfs push --all origin
+          git push
 
       - name: Fail if baselines changed
-        if: needs.check-paths.outputs.is_fork != 'true' && steps.commit-baselines-vscode.outputs.changed == 'true'
+        if: needs.check-paths.outputs.is_fork != 'true' && steps.verify-baselines-vscode.outputs.changed == 'true'
         run: |
           echo "::error::Visual regression baselines changed. New baselines have been committed to the branch. Please pull and review."
           exit 1
