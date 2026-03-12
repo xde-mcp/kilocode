@@ -411,6 +411,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Could not connect to server. Is there a server running at `{{url}}`?",
 
+  "error.startup.title": "Server connection failed",
+
   "error.paidModel.title": "You need to sign in to use this model",
   "error.paidModel.description":
     "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.",
@@ -676,6 +678,8 @@ export const dict = {
 
   "settings.providers.title": "Providers",
   "settings.providers.description": "Provider settings will be configurable here.",
+  "settings.providers.betaNotice":
+    "Currently only the Kilo Gateway provider can be configured in the settings interface. Support for configuring other providers is coming soon during the beta period. In the interim you can configure providers using the CLI or config file. We're committed to keeping Kilo open, no lock-in.",
   "settings.providers.section.connected": "Connected providers",
   "settings.providers.connected.empty": "No connected providers",
   "settings.providers.section.popular": "Popular providers",
@@ -753,6 +757,7 @@ export const dict = {
   "session.cloud.import.placeholder": "Session ID, URL, or kilo import command",
   "session.cloud.import.button": "Import",
   "session.cloud.import.invalid": "Invalid session ID format",
+  "session.cloud.import.legacy": "This appears to be a legacy session that is no longer supported.",
   "session.cloud.import.failed": "Failed to import cloud session",
 
   "workspace.new": "New workspace",
@@ -835,6 +840,7 @@ export const dict = {
 
   "prompt.placeholder.connecting": "Connecting to server...",
   "prompt.placeholder.default": "Type a message... (Enter to send, Shift+Enter for new line)",
+  "prompt.placeholder.error": "",
 
   "context.usage.sessionCost": "Session cost",
 
@@ -941,6 +947,8 @@ export const dict = {
 
   "settings.agentBehaviour.defaultAgent.title": "Default Agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent to use when none is specified",
+  "settings.agentBehaviour.availableAgents": "Available Agents",
+  "settings.agentBehaviour.selectAgent": "Select an agent to configure…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Select an agent to configure…",
   "settings.agentBehaviour.modelOverride.title": "Model Override",
@@ -953,6 +961,9 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "Nucleus sampling parameter (0-1)",
   "settings.agentBehaviour.maxSteps.title": "Max Steps",
   "settings.agentBehaviour.maxSteps.description": "Maximum agentic iterations",
+  "settings.agentBehaviour.discoveredSkills": "Discovered Skills",
+  "settings.agentBehaviour.noSkillsFound":
+    "No skills discovered. Add skill folder paths or URLs below to make skills available.",
   "settings.agentBehaviour.skillPaths": "Skill Folder Paths",
   "settings.agentBehaviour.skillUrls": "Skill URLs",
   "settings.agentBehaviour.instructionFiles": "Additional Instruction Files",
