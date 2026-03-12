@@ -177,6 +177,70 @@ export const TuiThreadCommand = cmd({
         })
         worker.terminate()
       }
+      // kilocode_change start - graceful shutdown on external signals
+      // The worker's postMessage for the RPC result may never be delivered
+      // after shutdown because the worker's event loop drains. Send the
+      // shutdown request without awaiting the response, wait for the worker
+      // to exit naturally or force-terminate after a timeout.
+      // Guard against multiple invocations (SIGHUP + SIGTERM + onExit).
+      const shutdownAndExit = (input: { reason: string; code: number; signal?: NodeJS.Signals }) => {
+        if (shutdown.exiting) return
+        shutdown.exiting = true
+        Log.Default.info("shutting down tui thread", {
+          reason: input.reason,
+          signal: input.signal,
+          code: input.code,
+          pid: process.pid,
+          ppid: process.ppid,
+        })
+        stop()
+          .catch((err) => {
+            Log.Default.error("failed to terminate worker during shutdown", {
+              reason: input.reason,
+              signal: input.signal,
+              error: err,
+            })
+          })
+          .finally(() => {
+            unguard?.()
+            process.exit(input.code)
+          })
+      }
+      process.once("SIGHUP", () => shutdownAndExit({ reason: "signal", signal: "SIGHUP", code: 129 }))
+      process.once("SIGTERM", () => shutdownAndExit({ reason: "signal", signal: "SIGTERM", code: 143 }))
+      // In some terminal/tab-close paths the parent shell is terminated without
+      // forwarding a signal to this process, leaving the TUI orphaned. Detect
+      // parent PID re-parenting and exit explicitly.
+      const parent = process.ppid
+      const orphanWatch = setInterval(() => {
+        const orphaned = (() => {
+          if (process.ppid !== parent) return true
+          if (parent === 1) return false
+          try {
+            process.kill(parent, 0)
+            return false
+          } catch (err) {
+            const code = (err as NodeJS.ErrnoException).code
+            if (code !== "ESRCH") {
+              Log.Default.debug("parent liveness check failed", {
+                parent,
+                code,
+                error: err,
+              })
+              return false
+            }
+            Log.Default.debug("detected dead parent process", {
+              parent,
+              error: err,
+            })
+            return true
+          }
+        })()
+        if (!orphaned) return
+        shutdownAndExit({ reason: "parent-exit", code: 0 })
+      }, 1000)
+      orphanWatch.unref()
+      // kilocode_change end
 
       const prompt = await input(args.prompt)
       const config = await Instance.provide({
@@ -210,6 +274,25 @@ export const TuiThreadCommand = cmd({
       }, 1000).unref?.()
 
       try {
+        // kilocode_change start - import cloud session before TUI renders
+        if (args.cloudFork && args.session) {
+          UI.println("Importing session from cloud...")
+          const sdk = createKiloClient({
+            baseUrl: transport.url,
+            fetch: transport.fetch,
+            directory: cwd,
+          })
+          const id = await importCloudSession(sdk, args.session).catch(() => undefined)
+          if (!id) {
+            UI.error("Failed to import session from cloud")
+            shutdownAndExit({ reason: "cloud-fork-failed", code: 1 })
+            return
+          }
+          args.session = id
+          args.cloudFork = false
+        }
+        // kilocode_change end
+
         await tui({
           url: transport.url,
           config,
