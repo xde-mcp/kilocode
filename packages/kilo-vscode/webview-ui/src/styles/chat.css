@@ -1123,7 +1123,7 @@
 }
 
 .mode-switcher-list {
-  max-height: 280px;
+  max-height: var(--kb-popper-content-available-height, 280px);
   overflow-y: auto;
 }
 
