@@ -202,9 +202,16 @@ const AgentBehaviourTab: Component = () => {
       </Card>
 
       {/* Available agents list */}
-      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>
+      <hr
+        style={{
+          border: "none",
+          "border-top": "1px solid var(--border-weak-base)",
+          margin: "16px 0",
+        }}
+      />
+      <div data-slot="settings-row-label-title" style={{ "margin-bottom": "8px" }}>
         {language.t("settings.agentBehaviour.availableAgents")}
-      </h4>
+      </div>
       <Card style={{ "margin-bottom": "12px" }}>
         <For each={agentNames()}>
           {(name, index) => {
@@ -216,15 +223,9 @@ const AgentBehaviourTab: Component = () => {
                   "align-items": "center",
                   "justify-content": "space-between",
                   padding: "8px 4px",
-                  cursor: "pointer",
                   "border-bottom": index() < agentNames().length - 1 ? "1px solid var(--border-weak-base)" : "none",
-                  "background-color":
-                    selectedAgent() === name
-                      ? "var(--bg-active-base, var(--vscode-list-activeSelectionBackground))"
-                      : "transparent",
                   "border-radius": "4px",
                 }}
-                onClick={() => setSelectedAgent(selectedAgent() === name ? "" : name)}
               >
                 <div>
                   <div style={{ "font-weight": "500", "font-size": "13px" }}>{name}</div>
@@ -240,19 +241,6 @@ const AgentBehaviourTab: Component = () => {
                     </div>
                   </Show>
                 </div>
-                <Show when={agent()?.mode}>
-                  <span
-                    style={{
-                      "font-size": "11px",
-                      padding: "1px 6px",
-                      "border-radius": "4px",
-                      background: "var(--bg-subtle-base, var(--vscode-badge-background))",
-                      color: "var(--text-weak-base, var(--vscode-badge-foreground))",
-                    }}
-                  >
-                    {agent()!.mode}
-                  </span>
-                </Show>
               </div>
             )
           }}
