@@ -414,6 +414,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Verbindung zum Server fehlgeschlagen. Läuft ein Server unter `{{url}}`?",
 
+  "error.startup.title": "Serververbindung fehlgeschlagen",
+
   "error.paidModel.title": "Du musst dich anmelden, um dieses Modell zu nutzen",
   "error.paidModel.description":
     "Melde dich an oder erstelle ein Konto, um auf über 500 Modelle zuzugreifen, Credits zum Selbstkostenpreis zu nutzen oder deinen eigenen Schlüssel mitzubringen.",

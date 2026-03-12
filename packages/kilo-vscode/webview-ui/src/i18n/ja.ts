@@ -407,6 +407,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
 
+  "error.startup.title": "サーバー接続に失敗しました",
+
   "error.paidModel.title": "このモデルを使用するにはサインインが必要です",
   "error.paidModel.description":
     "サインインまたはアカウントを作成して、500以上のモデルにアクセスし、原価でクレジットを使用するか、独自のキーを持ち込みましょう。",

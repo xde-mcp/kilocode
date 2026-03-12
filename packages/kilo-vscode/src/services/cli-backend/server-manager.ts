@@ -3,6 +3,7 @@ import * as crypto from "crypto"
 import * as fs from "fs"
 import * as path from "path"
 import * as vscode from "vscode"
+import { t } from "./i18n"
 import { parseServerPort } from "./server-utils"
 
 export interface ServerInstance {
@@ -10,6 +11,8 @@ export interface ServerInstance {
   password: string
   process: ChildProcess
 }
+
+const STARTUP_TIMEOUT_SECONDS = 30
 
 export class ServerManager {
   private instance: ServerInstance | null = null
@@ -118,7 +121,7 @@ export class ServerManager {
         }
         if (!resolved) {
           const { userMessage, userDetails } = toErrorMessage(
-            `CLI process exited with code ${code} before server started`,
+            t("server.processExited", { code: code ?? "null" }),
             stderrLines,
             cliPath,
           )
@@ -126,19 +129,18 @@ export class ServerManager {
         }
       })
 
-      // Timeout after 30 seconds
       setTimeout(() => {
         if (!resolved) {
-          console.error("[Kilo New] ServerManager: ⏰ Server startup timeout (30s)")
+          console.error(`[Kilo New] ServerManager: ⏰ Server startup timeout (${STARTUP_TIMEOUT_SECONDS}s)`)
           ServerManager.killProcess(serverProcess)
           const { userMessage, userDetails } = toErrorMessage(
-            "Server startup timeout after 30 seconds",
+            t("server.startupTimeout", { seconds: STARTUP_TIMEOUT_SECONDS }),
             stderrLines,
             cliPath,
           )
           reject(new ServerStartupError(userMessage, userDetails))
         }
-      }, 30000)
+      }, STARTUP_TIMEOUT_SECONDS * 1000)
     })
   }
 

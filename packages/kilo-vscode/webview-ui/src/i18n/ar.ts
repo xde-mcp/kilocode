@@ -407,6 +407,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "تعذر الاتصال بالخادم. هل هناك خادم يعمل في `{{url}}`؟",
 
+  "error.startup.title": "فشل الاتصال بالخادم",
+
   "error.paidModel.title": "يجب عليك تسجيل الدخول لاستخدام هذا النموذج",
   "error.paidModel.description":
     "سجّل الدخول أو أنشئ حسابًا للوصول إلى أكثر من 500 نموذج، واستخدم الرصيد بسعر التكلفة، أو استخدم مفتاحك الخاص.",
