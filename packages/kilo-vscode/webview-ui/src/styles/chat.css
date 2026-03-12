@@ -1123,7 +1123,7 @@
 }
 
 .mode-switcher-list {
-  max-height: 280px;
+  max-height: var(--kb-popper-content-available-height, 280px);
   overflow-y: auto;
 }
 
@@ -1133,7 +1133,7 @@
   gap: 2px;
   padding: 8px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--vscode-font-size);
 }
 
 .mode-switcher-item:hover {
@@ -1154,13 +1154,11 @@
 
 .mode-switcher-item-desc {
   font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text-weak, var(--vscode-descriptionForeground));
 }
 
-.mode-switcher-item:not(.selected) .mode-switcher-item-desc {
-  color: var(--text-weak, var(--vscode-descriptionForeground));
+.mode-switcher-item.selected .mode-switcher-item-desc {
+  color: inherit;
 }
 
 /* ============================================
