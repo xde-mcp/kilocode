@@ -120,8 +120,8 @@ export const ChatView: Component<ChatViewProps> = (props) => {
 
       <Show when={!props.readonly}>
         <div class="chat-input">
-          <Show when={server.connectionState() === "error" && server.error()}>
-            <StartupErrorBanner error={server.error()!} />
+          <Show when={server.connectionState() === "error" && server.errorMessage()}>
+            <StartupErrorBanner errorMessage={server.errorMessage()!} errorDetails={server.errorDetails()!} />
           </Show>
           <Show when={questionRequest()} keyed>
             {(req) => <QuestionDock request={req} />}

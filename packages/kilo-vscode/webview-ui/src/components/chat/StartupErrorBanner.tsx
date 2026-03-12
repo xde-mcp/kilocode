@@ -9,15 +9,14 @@ import { useLanguage } from "../../context/language"
 import { useVSCode } from "../../context/vscode"
 
 interface StartupErrorBannerProps {
-  error: string
+  errorMessage: string
+  errorDetails: string
 }
 
 export const StartupErrorBanner: Component<StartupErrorBannerProps> = (props) => {
   const language = useLanguage()
   const vscode = useVSCode()
   const [expanded, setExpanded] = createSignal(false)
-
-  const firstLine = () => props.error.split("\n")[0] ?? ""
 
   const retry = () => {
     vscode.postMessage({ type: "retryConnection" })
@@ -30,7 +29,7 @@ export const StartupErrorBanner: Component<StartupErrorBannerProps> = (props) =>
           <Icon name="chevron-right" size="small" />
         </span>
         <span class="startup-error-title">
-          {language.t("error.startup.title")}: <span class="startup-error-firstline">{firstLine()}</span>
+          {language.t("error.startup.title")}: <span class="startup-error-firstline">{props.errorMessage}</span>
         </span>
         <button
           class="startup-error-retry"
@@ -44,7 +43,7 @@ export const StartupErrorBanner: Component<StartupErrorBannerProps> = (props) =>
         </button>
       </div>
       <Show when={expanded()}>
-        <pre class="startup-error-details">{props.error}</pre>
+        <pre class="startup-error-details">{props.errorDetails}</pre>
       </Show>
     </div>
   )

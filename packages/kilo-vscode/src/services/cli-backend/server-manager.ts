@@ -117,12 +117,12 @@ export class ServerManager {
           this.instance = null
         }
         if (!resolved) {
-          const { text } = toErrorMessage(
+          const { userMessage, userDetails } = toErrorMessage(
             `CLI process exited with code ${code} before server started`,
             stderrLines,
             cliPath,
           )
-          reject(new Error(text))
+          reject(new ServerStartupError(userMessage, userDetails))
         }
       })
 
@@ -131,8 +131,12 @@ export class ServerManager {
         if (!resolved) {
           console.error("[Kilo New] ServerManager: ⏰ Server startup timeout (30s)")
           ServerManager.killProcess(serverProcess)
-          const { text } = toErrorMessage("Server startup timeout after 30 seconds", stderrLines, cliPath)
-          reject(new Error(text))
+          const { userMessage, userDetails } = toErrorMessage(
+            "Server startup timeout after 30 seconds",
+            stderrLines,
+            cliPath,
+          )
+          reject(new ServerStartupError(userMessage, userDetails))
         }
       }, 30000)
     })
@@ -193,9 +197,39 @@ export class ServerManager {
   }
 }
 
-function toErrorMessage(message: string, stderrLines: string[], cliPath?: string): { text: string; details: string } {
-  const details = stderrLines.join("").trim()
-  const header = cliPath ? `${message}\nCLI path: ${cliPath}` : message
-  const text = details ? `${header}\n\nCLI output:\n${details}` : header
-  return { text, details }
+export class ServerStartupError extends Error {
+  readonly userMessage: string
+  readonly userDetails: string
+  constructor(userMessage: string, userDetails: string) {
+    super(userDetails)
+    this.name = "ServerStartupError"
+    this.userMessage = userMessage
+    this.userDetails = userDetails
+  }
+}
+
+function toErrorMessage(
+  error: string,
+  stderrLines: string[],
+  cliPath?: string,
+): {
+  userMessage: string
+  userDetails: string
+  error: string
+} {
+  let lines = stderrLines.flatMap((line) => line.split("\n"))
+  const userMessage = [...lines].reverse().find((line) => line.trim() !== "") ?? error
+
+  lines = [error, ...lines]
+  if (cliPath && cliPath.trim() !== "") {
+    lines = [`CLI path: ${cliPath}`, ...lines]
+  }
+
+  const detailsText = lines.join("\n").trim()
+
+  return {
+    userMessage: userMessage,
+    userDetails: detailsText,
+    error: error,
+  }
 }
