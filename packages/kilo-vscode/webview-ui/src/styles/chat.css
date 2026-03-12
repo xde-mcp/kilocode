@@ -1154,7 +1154,9 @@
 
 .mode-switcher-item-desc {
   font-size: 11px;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mode-switcher-item:not(.selected) .mode-switcher-item-desc {
