@@ -933,6 +933,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Værktøjsskift",
   "settings.agentBehaviour.defaultAgent.title": "Standardagent",
   "settings.agentBehaviour.defaultAgent.description": "Agent til brug, når ingen er angivet",
+  "settings.agentBehaviour.availableAgents": "Tilgængelige agenter",
   "settings.agentBehaviour.selectAgent": "Vælg en agent at konfigurere…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Vælg en agent at konfigurere…",

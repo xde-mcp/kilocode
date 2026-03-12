@@ -201,23 +201,62 @@ const AgentBehaviourTab: Component = () => {
         </SettingsRow>
       </Card>
 
+      {/* Available agents list */}
+      <h4 style={{ "margin-top": "0", "margin-bottom": "8px" }}>
+        {language.t("settings.agentBehaviour.availableAgents")}
+      </h4>
       <Card style={{ "margin-bottom": "12px" }}>
-        <SettingsRow
-          title={language.t("settings.agentBehaviour.selectAgent.title")}
-          description={language.t("settings.agentBehaviour.selectAgent.description")}
-          last
-        >
-          <Select
-            options={agentSelectorOptions()}
-            current={agentSelectorOptions().find((o) => o.value === selectedAgent())}
-            value={(o) => o.value}
-            label={(o) => o.label}
-            onSelect={(o) => o && setSelectedAgent(o.value)}
-            variant="secondary"
-            size="small"
-            triggerVariant="settings"
-          />
-        </SettingsRow>
+        <For each={agentNames()}>
+          {(name, index) => {
+            const agent = () => session.agents().find((a) => a.name === name)
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  "align-items": "center",
+                  "justify-content": "space-between",
+                  padding: "8px 4px",
+                  cursor: "pointer",
+                  "border-bottom": index() < agentNames().length - 1 ? "1px solid var(--border-weak-base)" : "none",
+                  "background-color":
+                    selectedAgent() === name
+                      ? "var(--bg-active-base, var(--vscode-list-activeSelectionBackground))"
+                      : "transparent",
+                  "border-radius": "4px",
+                }}
+                onClick={() => setSelectedAgent(selectedAgent() === name ? "" : name)}
+              >
+                <div>
+                  <div style={{ "font-weight": "500", "font-size": "13px" }}>{name}</div>
+                  <Show when={agent()?.description}>
+                    <div
+                      style={{
+                        "font-size": "11px",
+                        color: "var(--text-weak-base, var(--vscode-descriptionForeground))",
+                        "margin-top": "2px",
+                      }}
+                    >
+                      {agent()!.description}
+                    </div>
+                  </Show>
+                </div>
+                <Show when={agent()?.mode}>
+                  <span
+                    style={{
+                      "font-size": "11px",
+                      padding: "1px 6px",
+                      "border-radius": "4px",
+                      background: "var(--bg-subtle-base, var(--vscode-badge-background))",
+                      color: "var(--text-weak-base, var(--vscode-badge-foreground))",
+                    }}
+                  >
+                    {agent()!.mode}
+                  </span>
+                </Show>
+              </div>
+            )
+          }}
+        </For>
       </Card>
 
       <Show when={selectedAgent()}>

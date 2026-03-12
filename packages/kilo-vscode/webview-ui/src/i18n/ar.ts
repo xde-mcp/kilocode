@@ -925,6 +925,7 @@ export const dict = {
   "settings.experimental.toolToggles": "مفاتيح الأدوات",
   "settings.agentBehaviour.defaultAgent.title": "الوكيل الافتراضي",
   "settings.agentBehaviour.defaultAgent.description": "الوكيل المستخدم عند عدم التحديد",
+  "settings.agentBehaviour.availableAgents": "الوكلاء المتاحون",
   "settings.agentBehaviour.selectAgent": "اختر وكيلاً للتهيئة…",
   "settings.agentBehaviour.selectAgent.title": "الوكيل",
   "settings.agentBehaviour.selectAgent.description": "اختر وكيلاً للتهيئة…",
