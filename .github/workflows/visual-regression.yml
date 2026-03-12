@@ -118,6 +118,26 @@ jobs:
           CI: true
           PLAYWRIGHT_WORKERS: "4"
 
+      - name: Remove stale baselines for deleted stories
+        run: |
+          node -e "
+            const fs = require('fs'), path = require('path');
+            const idx = JSON.parse(fs.readFileSync('storybook-static/index.json', 'utf8'));
+            const stories = Object.values(idx.entries || idx.stories || {}).filter(s => s.id && !s.id.endsWith('--docs'));
+            const expected = new Set(stories.map(s => { const [c,v] = s.id.split('--'); return c + '/' + v + '-chromium-linux.png'; }));
+            const dir = 'tests/visual-regression.spec.ts-snapshots';
+            if (!fs.existsSync(dir)) process.exit(0);
+            for (const component of fs.readdirSync(dir)) {
+              const cdir = path.join(dir, component);
+              if (!fs.statSync(cdir).isDirectory()) continue;
+              for (const file of fs.readdirSync(cdir)) {
+                const rel = component + '/' + file;
+                if (file.endsWith('.png') && !expected.has(rel)) { console.log('Removing stale baseline:', rel); fs.unlinkSync(path.join(cdir, file)); }
+              }
+            }
+          "
+        working-directory: packages/kilo-ui
+
       - name: Check for baseline changes (fork PRs)
         if: needs.check-paths.outputs.is_fork == 'true'
         run: |
@@ -261,6 +281,26 @@ jobs:
         env:
           CI: true
           PLAYWRIGHT_WORKERS: "4"
+
+      - name: Remove stale baselines for deleted stories
+        run: |
+          node -e "
+            const fs = require('fs'), path = require('path');
+            const idx = JSON.parse(fs.readFileSync('storybook-static/index.json', 'utf8'));
+            const stories = Object.values(idx.entries || idx.stories || {}).filter(s => s.id && !s.id.endsWith('--docs'));
+            const expected = new Set(stories.map(s => { const [c,v] = s.id.split('--'); return c + '/' + v + '-chromium-linux.png'; }));
+            const dir = 'tests/visual-regression.spec.ts-snapshots';
+            if (!fs.existsSync(dir)) process.exit(0);
+            for (const component of fs.readdirSync(dir)) {
+              const cdir = path.join(dir, component);
+              if (!fs.statSync(cdir).isDirectory()) continue;
+              for (const file of fs.readdirSync(cdir)) {
+                const rel = component + '/' + file;
+                if (file.endsWith('.png') && !expected.has(rel)) { console.log('Removing stale baseline:', rel); fs.unlinkSync(path.join(cdir, file)); }
+              }
+            }
+          "
+        working-directory: packages/kilo-vscode
 
       - name: Check for baseline changes (fork PRs)
         if: needs.check-paths.outputs.is_fork == 'true'
