@@ -34,9 +34,9 @@ export const WithCustomColors: Story = {
 }
 
 // Inline data URI so the visual regression test never depends on network.
-// 1×1 teal PNG — small enough to embed, large enough to prove <img> rendering.
+// 32×32 avatar silhouette (blue circle, white head, light-blue shoulders).
 const AVATAR_DATA_URI =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAADZJREFUWIW2xzERACAQBLA7/pWACxrsgfFhJpmtsrMn0N2S2RNIZk+gu2X2BLpbZk8gmT0B4AWJGwMhBjARKwAAAABJRU5ErkJggg=="
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAq0lEQVR4nNXUyw2AIBBFUfuyO9u0Awtwqa5IjIDzeW8cIZml3CMGp2n0NS/7+WlMO2lhKgQJwxBpw9aiITxxGgKJUxBoXIMIfXvoFFIBmqvEBFSIIQCsWwABJIRlHzegh7Du4Y4zJxUBfYI0wLod4oQANGErRA3wxDUI1e8Yib8hqngLwIj3EE3AExEF6MZ/ASgIZvyOEONRCFO8LCbAHGdBoDACoYYlFPL8Bcdqxc2w0JfIAAAAAElFTkSuQmCC"
 
 export const WithImage: Story = {
   args: {
