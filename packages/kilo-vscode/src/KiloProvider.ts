@@ -75,6 +75,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   /** Guard to prevent checkAndShowMigrationWizard running concurrently. */ // legacy-migration
   private migrationCheckInFlight = false // legacy-migration
   private unsubscribeNotificationDismiss: (() => void) | null = null
+  private initConnectionPromise: Promise<void> | null = null
   private webviewMessageDisposable: vscode.Disposable | null = null
 
   /** Lazily initialized ignore controller for .kilocodeignore filtering */
@@ -616,7 +617,17 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Initialize connection to the CLI backend server.
    * Subscribes to the shared KiloConnectionService.
    */
-  private async initializeConnection(): Promise<void> {
+  private initializeConnection(): Promise<void> {
+    if (this.initConnectionPromise) {
+      return this.initConnectionPromise
+    }
+    this.initConnectionPromise = this.doInitializeConnection().finally(() => {
+      this.initConnectionPromise = null
+    })
+    return this.initConnectionPromise
+  }
+
+  private async doInitializeConnection(): Promise<void> {
     console.log("[Kilo New] KiloProvider: 🔧 Starting initializeConnection...")
 
     this.connectionState = "connecting"
