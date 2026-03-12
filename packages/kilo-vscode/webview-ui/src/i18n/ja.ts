@@ -933,6 +933,7 @@ export const dict = {
   "settings.experimental.toolToggles": "ツールトグル",
   "settings.agentBehaviour.defaultAgent.title": "デフォルトエージェント",
   "settings.agentBehaviour.defaultAgent.description": "指定されていない場合に使用するエージェント",
+  "settings.agentBehaviour.availableAgents": "利用可能なエージェント",
   "settings.agentBehaviour.selectAgent": "設定するエージェントを選択…",
   "settings.agentBehaviour.selectAgent.title": "エージェント",
   "settings.agentBehaviour.selectAgent.description": "設定するエージェントを選択…",

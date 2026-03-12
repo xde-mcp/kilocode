@@ -937,6 +937,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Alternadores de ferramentas",
   "settings.agentBehaviour.defaultAgent.title": "Agente padrão",
   "settings.agentBehaviour.defaultAgent.description": "Agente a usar quando nenhum é especificado",
+  "settings.agentBehaviour.availableAgents": "Agentes Disponíveis",
   "settings.agentBehaviour.selectAgent": "Selecionar um agente para configurar…",
   "settings.agentBehaviour.selectAgent.title": "Agente",
   "settings.agentBehaviour.selectAgent.description": "Selecionar um agente para configurar…",
