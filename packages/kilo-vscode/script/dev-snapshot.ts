@@ -44,7 +44,7 @@ console.log("\n🔧 Preparing CLI binary...")
 await $`bun script/local-bin.ts`.cwd(root)
 
 console.log("\n✅ Type-checking...")
-await $`bun run check-types`.cwd(root)
+await $`bun run typecheck`.cwd(root)
 
 console.log("\n🔍 Linting...")
 await $`bun run lint`.cwd(root)
