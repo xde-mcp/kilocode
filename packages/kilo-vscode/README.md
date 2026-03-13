@@ -46,6 +46,19 @@
 
 If you want to contribute or modify the extension locally, see the [DEVELOPMENT.md](/DEVELOPMENT.md) file for build and setup instructions.
 
+### Snapshot Builds
+
+To build and share a development snapshot of the extension:
+
+```bash
+# Build only (outputs VSIX to system temp dir)
+bun run snapshot:build
+
+# Build and install directly into VS Code
+bun run snapshot:install
+```
+
+
 ## Contributing
 
 We welcome contributions from developers, writers, and enthusiasts!
