@@ -13,7 +13,7 @@ const pkgPath = join(root, "package.json")
 const pkg = await Bun.file(pkgPath).json()
 const sha = (await $`git rev-parse --short HEAD`.text()).trim()
 const user =
-  (await $`git config user.name`.text())
+  (await $`git config --get --default local user.name`.text())
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
