@@ -12,7 +12,12 @@ const pkgPath = join(root, "package.json")
 
 const pkg = await Bun.file(pkgPath).json()
 const sha = (await $`git rev-parse --short HEAD`.text()).trim()
-const user = (await $`git config user.name`.text()).trim().toLowerCase().replace(/\s+/g, "-")
+const user =
+  (await $`git config user.name`.text())
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "local"
 const snapshotVersion = `${pkg.version}-snapshot+${sha}.${user}`
 
 console.log(`Building snapshot version: ${snapshotVersion}`)
