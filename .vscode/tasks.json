@@ -101,9 +101,9 @@
       "problemMatcher": []
     },
     {
-      "label": "install-dev-extension",
+      "label": "snapshot:install",
       "type": "shell",
-      "command": "bun script/install-dev-extension.ts",
+      "command": "bun run snapshot:install",
       "group": "build",
       "presentation": {
         "echo": true,
