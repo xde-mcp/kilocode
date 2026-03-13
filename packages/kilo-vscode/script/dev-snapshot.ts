@@ -64,6 +64,6 @@ if (shouldInstall) {
   console.log(`\n🚀 Installing to ${cli}...`)
   await $`${cli} --force --install-extension ${vsixPath}`
 
-  console.log(`\n✨ Successfully installed snapshot extension!`)
+  console.log(`\n✅ Successfully installed snapshot extension!`)
   console.log(`   Version: ${snapshotVersion}`)
 }
