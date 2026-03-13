@@ -48,12 +48,10 @@ console.log("\n🏗️  Building extension...")
 await $`node ${join(root, "esbuild.js")} --production`.cwd(root)
 
 console.log("\n📦 Packaging VSIX...")
-const vsixPath = join(outDir, `kilo-vscode-snapshot-${sha}.vsix`)
+const vsixPath = join(outDir, `kilo-vscode-snapshot-${sha}-${user}.vsix`)
 await $`bunx vsce package ${snapshotVersion} --no-update-package-json --no-dependencies --skip-license -o ${vsixPath}`.cwd(
   root,
 )
-
-console.log(`\n✅ VSIX created: ${vsixPath}`)
 
 if (shouldInstall) {
   const execPath = process.env.VSCODE_EXEC_PATH ?? ""
@@ -63,6 +61,4 @@ if (shouldInstall) {
 
   console.log(`\n✨ Successfully installed snapshot extension!`)
   console.log(`   Version: ${snapshotVersion}`)
-} else {
-  console.log(`\n📍 VSIX path: ${vsixPath}`)
 }
