@@ -380,7 +380,7 @@ export namespace ProviderTransform {
           !model.id.includes("gpt") &&
           !model.id.includes("gemini-3") &&
           !model.id.includes("claude") &&
-          !model.id.includes("mercury")
+          !model.id.includes("mercury") // kilocode_change
         )
           return {}
         return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
