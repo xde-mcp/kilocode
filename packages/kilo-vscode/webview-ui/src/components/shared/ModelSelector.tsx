@@ -7,7 +7,7 @@
  * ModelSelector    — thin wrapper wired to session context for chat usage.
  */
 
-import { Component, createSignal, createMemo, createEffect, For, Show, createSelector } from "solid-js"
+import { Component, createSignal, createMemo, createEffect, onCleanup, For, Show, createSelector } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
 import { useProvider, EnrichedModel } from "../../context/provider"
@@ -45,6 +45,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const [open, setOpen] = createSignal(false)
   const [search, setSearch] = createSignal("")
+  const [debouncedSearch, setDebouncedSearch] = createSignal("")
   const [selectedIndex, setSelectedIndex] = createSignal(0)
 
   let searchRef: HTMLInputElement | undefined
@@ -58,9 +59,16 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const hasProviders = () => visibleModels().length > 0
 
+  // Debounce search input to avoid re-filtering on every keystroke
+  createEffect(() => {
+    const q = search()
+    const t = setTimeout(() => setDebouncedSearch(q), 250)
+    onCleanup(() => clearTimeout(t))
+  })
+
   // Flat filtered list for keyboard navigation
   const filtered = createMemo(() => {
-    const q = search().toLowerCase()
+    const q = debouncedSearch().toLowerCase()
     if (!q) {
       return visibleModels()
     }
@@ -115,6 +123,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       requestAnimationFrame(() => searchRef?.focus())
     } else {
       setSearch("")
+      setDebouncedSearch("")
     }
   })
 
