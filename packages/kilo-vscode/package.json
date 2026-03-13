@@ -692,8 +692,6 @@
   },
   "scripts": {
     "prepare:cli-binary": "bun script/local-bin.ts",
-    "snapshot:build": "bun script/dev-snapshot.ts build",
-    "snapshot:install": "bun script/dev-snapshot.ts install",
     "compile": "bun run prepare:cli-binary && bun run rebuild-sdk && bun run typecheck && bun run lint && node esbuild.js",
     "watch": "bun run rebuild-sdk && bun run --parallel watch:esbuild watch:tsc",
     "watch:esbuild": "bun run prepare:cli-binary && node esbuild.js --watch",
@@ -717,7 +715,9 @@
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build -o storybook-static",
     "test:visual": "playwright test",
-    "test:visual:update": "playwright test --update-snapshots"
+    "test:visual:update": "playwright test --update-snapshots",
+    "snapshot:build": "bun script/dev-snapshot.ts build",
+    "snapshot:install": "bun script/dev-snapshot.ts install"
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
