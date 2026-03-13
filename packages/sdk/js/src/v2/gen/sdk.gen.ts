@@ -94,6 +94,8 @@ import type {
   PermissionRespondErrors,
   PermissionRespondResponses,
   PermissionRuleset,
+  PermissionSavePatternRulesErrors,
+  PermissionSavePatternRulesResponses,
   ProjectCurrentResponses,
   ProjectListResponses,
   ProjectUpdateErrors,
@@ -2448,6 +2450,51 @@ export class Permission extends HeyApiClient {
     )
     return (options?.client ?? this.client).post<PermissionReplyResponses, PermissionReplyErrors, ThrowOnError>({
       url: "/permission/{requestID}/reply",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Save per-pattern permission rules
+   *
+   * Save approved/denied patterns for a pending permission request.
+   */
+  public savePatternRules<ThrowOnError extends boolean = false>(
+    parameters: {
+      requestID: string
+      directory?: string
+      workspace?: string
+      approvedPatterns?: Array<string>
+      deniedPatterns?: Array<string>
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "requestID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "approvedPatterns" },
+            { in: "body", key: "deniedPatterns" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<
+      PermissionSavePatternRulesResponses,
+      PermissionSavePatternRulesErrors,
+      ThrowOnError
+    >({
+      url: "/permission/{requestID}/pattern-rules",
       ...options,
       ...params,
       headers: {
