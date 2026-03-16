@@ -957,6 +957,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Opdagede skills",
   "settings.agentBehaviour.noSkillsFound":
     "Ingen skills fundet. Tilføj skill-mappestier eller URL'er nedenfor for at gøre skills tilgængelige.",
+  "settings.agentBehaviour.availableModes": "Tilgængelige brugerdefinerede tilstande",
+  "settings.agentBehaviour.noModesFound": "Ingen tilstande fundet.",
+  "settings.agentBehaviour.removeMode.title": "Fjern tilstand",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Vil du fjerne tilstanden "{{name}}"? Dette vil deaktivere tilstanden ved at opdatere din konfiguration.',
+  "settings.agentBehaviour.removeMode.button": "Fjern",
   "settings.agentBehaviour.skillPaths": "Skill-mappestier",
   "settings.agentBehaviour.skillUrls": "Skill-URL'er",
   "settings.agentBehaviour.removeSkill.title": "Fjern færdighed",

@@ -961,6 +961,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Otkrivene vještine",
   "settings.agentBehaviour.noSkillsFound":
     "Nisu pronađene vještine. Dodajte putanje mapa ili URL-ove ispod kako biste učinili vještine dostupnim.",
+  "settings.agentBehaviour.availableModes": "Dostupni prilagođeni modovi",
+  "settings.agentBehaviour.noModesFound": "Nisu pronađeni modovi.",
+  "settings.agentBehaviour.removeMode.title": "Ukloni mod",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Ukloniti mod "{{name}}"? Ovo će onemogućiti mod ažuriranjem vaše konfiguracije.',
+  "settings.agentBehaviour.removeMode.button": "Ukloni",
   "settings.agentBehaviour.skillPaths": "Putanje mapa vještina",
   "settings.agentBehaviour.skillUrls": "URL-ovi vještina",
   "settings.agentBehaviour.removeSkill.title": "Ukloni vještinu",

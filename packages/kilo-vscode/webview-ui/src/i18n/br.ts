@@ -961,6 +961,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Habilidades descobertas",
   "settings.agentBehaviour.noSkillsFound":
     "Nenhuma habilidade encontrada. Adicione caminhos de pastas ou URLs abaixo para disponibilizar habilidades.",
+  "settings.agentBehaviour.availableModes": "Modos personalizados disponíveis",
+  "settings.agentBehaviour.noModesFound": "Nenhum modo encontrado.",
+  "settings.agentBehaviour.removeMode.title": "Remover modo",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Remover o modo "{{name}}"? Isso desativará o modo atualizando sua configuração.',
+  "settings.agentBehaviour.removeMode.button": "Remover",
   "settings.agentBehaviour.skillPaths": "Caminhos de pastas de habilidades",
   "settings.agentBehaviour.skillUrls": "URLs de habilidades",
   "settings.agentBehaviour.removeSkill.title": "Remover habilidade",

@@ -949,6 +949,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "المهارات المكتشفة",
   "settings.agentBehaviour.noSkillsFound":
     "لم يتم العثور على مهارات. أضف مسارات مجلدات أو عناوين URL أدناه لإتاحة المهارات.",
+  "settings.agentBehaviour.availableModes": "الأوضاع المخصصة المتاحة",
+  "settings.agentBehaviour.noModesFound": "لم يتم العثور على أوضاع.",
+  "settings.agentBehaviour.removeMode.title": "إزالة الوضع",
+  "settings.agentBehaviour.removeMode.confirm":
+    'هل تريد إزالة الوضع "{{name}}"؟ سيؤدي هذا إلى تعطيل الوضع عن طريق تحديث الإعدادات.',
+  "settings.agentBehaviour.removeMode.button": "إزالة",
   "settings.agentBehaviour.skillPaths": "مسارات مجلدات المهارات",
   "settings.agentBehaviour.skillUrls": "عناوين URL للمهارات",
   "settings.agentBehaviour.removeSkill.title": "إزالة المهارة",

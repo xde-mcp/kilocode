@@ -10,7 +10,7 @@ import { useDialog } from "@kilocode/kilo-ui/context/dialog"
 import { useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
-import type { AgentConfig, SkillInfo } from "../../types/messages"
+import type { AgentConfig, AgentInfo, SkillInfo } from "../../types/messages"
 
 type SubtabId = "agents" | "mcpServers" | "rules" | "workflows" | "skills"
 
@@ -195,6 +195,36 @@ const AgentBehaviourTab: Component = () => {
     ))
   }
 
+  const removableModes = createMemo(() => session.agents().filter((a) => !a.native))
+
+  const confirmRemoveMode = (agent: AgentInfo) => {
+    dialog.show(() => (
+      <Dialog title={language.t("settings.agentBehaviour.removeMode.title")} fit>
+        <div class="dialog-confirm-body">
+          <span>{language.t("settings.agentBehaviour.removeMode.confirm", { name: agent.name })}</span>
+          <div class="dialog-confirm-actions">
+            <Button variant="ghost" size="large" onClick={() => dialog.close()}>
+              {language.t("common.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              size="large"
+              onClick={() => {
+                dialog.close()
+                // Delay optimistic removal until after dialog close animation (100ms)
+                // to prevent the reactive list re-render from firing click handlers
+                // on shifted list items while the dialog overlay is still present.
+                setTimeout(() => session.removeMode(agent.name), 150)
+              }}
+            >
+              {language.t("settings.agentBehaviour.removeMode.button")}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    ))
+  }
+
   const renderAgentsSubtab = () => (
     <div>
       {/* Default agent */}
@@ -343,6 +373,48 @@ const AgentBehaviourTab: Component = () => {
               }}
             />
           </SettingsRow>
+        </Card>
+      </Show>
+
+      {/* Available modes (non-native only, with remove button) */}
+      <Show when={removableModes().length > 0}>
+        <h4 style={{ "margin-top": "16px", "margin-bottom": "8px" }}>
+          {language.t("settings.agentBehaviour.availableModes")}
+        </h4>
+        <Card>
+          <For each={removableModes()}>
+            {(agent, index) => (
+              <div
+                style={{
+                  display: "flex",
+                  "align-items": "center",
+                  "justify-content": "space-between",
+                  padding: "8px 0",
+                  "border-bottom": index() < removableModes().length - 1 ? "1px solid var(--border-weak-base)" : "none",
+                }}
+              >
+                <div style={{ flex: 1, "min-width": 0 }}>
+                  <div data-slot="settings-row-label-title" style={{ "margin-bottom": "0" }}>
+                    {agent.name}
+                  </div>
+                  <Show when={agent.description}>
+                    <div data-slot="settings-row-label-subtitle" style={{ "margin-top": "4px" }}>
+                      {agent.description}
+                    </div>
+                  </Show>
+                </div>
+                <IconButton
+                  size="small"
+                  variant="ghost"
+                  icon="close"
+                  onClick={(e: MouseEvent) => {
+                    e.stopPropagation()
+                    confirmRemoveMode(agent)
+                  }}
+                />
+              </div>
+            )}
+          </For>
         </Card>
       </Show>
     </div>

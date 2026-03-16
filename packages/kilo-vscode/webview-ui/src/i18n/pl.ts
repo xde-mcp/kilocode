@@ -959,6 +959,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Wykryte umiejętności",
   "settings.agentBehaviour.noSkillsFound":
     "Nie znaleziono umiejętności. Dodaj ścieżki folderów lub adresy URL poniżej, aby udostępnić umiejętności.",
+  "settings.agentBehaviour.availableModes": "Dostępne tryby niestandardowe",
+  "settings.agentBehaviour.noModesFound": "Nie znaleziono trybów.",
+  "settings.agentBehaviour.removeMode.title": "Usuń tryb",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Usunąć tryb "{{name}}"? Spowoduje to wyłączenie trybu poprzez aktualizację konfiguracji.',
+  "settings.agentBehaviour.removeMode.button": "Usuń",
   "settings.agentBehaviour.skillPaths": "Ścieżki folderów umiejętności",
   "settings.agentBehaviour.skillUrls": "Adresy URL umiejętności",
   "settings.agentBehaviour.removeSkill.title": "Usuń umiejętność",
