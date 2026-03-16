@@ -429,6 +429,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "requestSkills":
           this.fetchAndSendSkills().catch((e) => console.error("[Kilo New] fetchAndSendSkills failed:", e))
           break
+        case "removeSkill":
+          this.handleRemoveSkill(message.location).catch((e) =>
+            console.error("[Kilo New] handleRemoveSkill failed:", e),
+          )
+          break
         case "questionReply":
           await this.handleQuestionReply(message.requestID, message.answers)
           break
@@ -1125,6 +1130,21 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to fetch skills:", error)
     }
+  }
+
+  /**
+   * Remove a skill by deleting its directory from disk, then refresh the skills list.
+   * The location is the path to the SKILL.md file; the skill directory is its parent.
+   */
+  private async handleRemoveSkill(location: string): Promise<void> {
+    const dir = path.dirname(location)
+    try {
+      await vscode.workspace.fs.delete(vscode.Uri.file(dir), { recursive: true })
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to delete skill directory:", dir, error)
+    }
+    this.cachedSkillsMessage = null
+    await this.fetchAndSendSkills()
   }
 
   /**

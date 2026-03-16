@@ -4,6 +4,8 @@ import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Button } from "@kilocode/kilo-ui/button"
 import { IconButton } from "@kilocode/kilo-ui/icon-button"
+import { Dialog } from "@kilocode/kilo-ui/dialog"
+import { useDialog } from "@kilocode/kilo-ui/context/dialog"
 
 import { useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
@@ -53,6 +55,7 @@ const AgentBehaviourTab: Component = () => {
   const { config, updateConfig } = useConfig()
   const session = useSession()
   const vscode = useVSCode()
+  const dialog = useDialog()
   const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>("agents")
   const [selectedAgent, setSelectedAgent] = createSignal<string>("")
   const [newSkillPath, setNewSkillPath] = createSignal("")
@@ -177,6 +180,35 @@ const AgentBehaviourTab: Component = () => {
     const current = [...skillUrls()]
     current.splice(index, 1)
     updateConfig({ skills: { ...config().skills, urls: current } })
+  }
+
+  const removeSkill = (skill: SkillInfo) => {
+    vscode.postMessage({ type: "removeSkill", location: skill.location })
+  }
+
+  const confirmRemoveSkill = (skill: SkillInfo) => {
+    dialog.show(() => (
+      <Dialog title={language.t("settings.agentBehaviour.removeSkill.title")} fit>
+        <div class="dialog-confirm-body">
+          <span>{language.t("settings.agentBehaviour.removeSkill.confirm", { name: skill.name })}</span>
+          <div class="dialog-confirm-actions">
+            <Button variant="ghost" size="large" onClick={() => dialog.close()}>
+              {language.t("common.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              size="large"
+              onClick={() => {
+                removeSkill(skill)
+                dialog.close()
+              }}
+            >
+              {language.t("settings.agentBehaviour.removeSkill.button")}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    ))
   }
 
   const renderAgentsSubtab = () => (
@@ -410,24 +442,30 @@ const AgentBehaviourTab: Component = () => {
             {(skill, index) => (
               <div
                 style={{
+                  display: "flex",
+                  "align-items": "center",
+                  "justify-content": "space-between",
                   padding: "8px 0",
                   "border-bottom":
                     index() < discoveredSkills().length - 1 ? "1px solid var(--border-weak-base)" : "none",
                 }}
               >
-                <div data-slot="settings-row-label-title" style={{ "margin-bottom": "0" }}>
-                  {skill.name}
+                <div style={{ flex: 1, "min-width": 0 }}>
+                  <div data-slot="settings-row-label-title" style={{ "margin-bottom": "0" }}>
+                    {skill.name}
+                  </div>
+                  <div
+                    data-slot="settings-row-label-subtitle"
+                    style={{
+                      "margin-top": "4px",
+                      "font-family": "var(--vscode-editor-font-family, monospace)",
+                    }}
+                  >
+                    <div>{skill.description}</div>
+                    <div>{skill.location}</div>
+                  </div>
                 </div>
-                <div
-                  data-slot="settings-row-label-subtitle"
-                  style={{
-                    "margin-top": "4px",
-                    "font-family": "var(--vscode-editor-font-family, monospace)",
-                  }}
-                >
-                  <div>{skill.description}</div>
-                  <div>{skill.location}</div>
-                </div>
+                <IconButton size="small" variant="ghost" icon="close" onClick={() => confirmRemoveSkill(skill)} />
               </div>
             )}
           </For>
