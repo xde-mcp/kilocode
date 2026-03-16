@@ -161,25 +161,25 @@ export namespace PermissionNext {
   )
 
   // kilocode_change start
-  export const savePatternRules = fn(
+  export const saveAlwaysRules = fn(
     z.object({
       requestID: Identifier.schema("permission"),
-      approvedPatterns: z.string().array().optional(),
-      deniedPatterns: z.string().array().optional(),
+      approvedAlways: z.string().array().optional(),
+      deniedAlways: z.string().array().optional(),
     }),
     async (input) => {
       const s = await state()
       const existing = s.pending[input.requestID]
       if (!existing) throw new NotFoundError({ message: `Permission request ${input.requestID} not found` })
 
-      const validPatterns = new Set(existing.info.patterns)
+      const validRules = new Set(existing.info.metadata?.rules ?? [])
       const permission = existing.info.permission
 
-      for (const pattern of input.approvedPatterns ?? []) {
-        if (validPatterns.has(pattern)) s.approved.push({ permission, pattern, action: "allow" })
+      for (const pattern of input.approvedAlways ?? []) {
+        if (validRules.has(pattern)) s.approved.push({ permission, pattern, action: "allow" })
       }
-      for (const pattern of input.deniedPatterns ?? []) {
-        if (validPatterns.has(pattern)) s.approved.push({ permission, pattern, action: "deny" })
+      for (const pattern of input.deniedAlways ?? []) {
+        if (validRules.has(pattern)) s.approved.push({ permission, pattern, action: "deny" })
       }
     },
   )

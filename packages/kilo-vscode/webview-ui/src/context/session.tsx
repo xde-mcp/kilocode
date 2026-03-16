@@ -142,8 +142,8 @@ interface SessionContextValue {
   respondToPermission: (
     permissionId: string,
     response: "once" | "always" | "reject",
-    approvedPatterns: string[],
-    deniedPatterns: string[],
+    approvedAlways: string[],
+    deniedAlways: string[],
   ) => void
   replyToQuestion: (requestID: string, answers: string[][]) => void
   rejectQuestion: (requestID: string) => void
@@ -1116,8 +1116,8 @@ export const SessionProvider: ParentComponent = (props) => {
   function respondToPermission(
     permissionId: string,
     response: "once" | "always" | "reject",
-    approvedPatterns: string[],
-    deniedPatterns: string[],
+    approvedAlways: string[],
+    deniedAlways: string[],
   ) {
     // Resolve sessionID from the stored permission request
     const permission = permissions().find((p) => p.id === permissionId)
@@ -1132,8 +1132,8 @@ export const SessionProvider: ParentComponent = (props) => {
       permissionId,
       sessionID,
       response,
-      approvedPatterns,
-      deniedPatterns,
+      approvedAlways,
+      deniedAlways,
     })
   }
 

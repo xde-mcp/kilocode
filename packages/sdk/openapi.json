@@ -4320,9 +4320,9 @@
         ]
       }
     },
-    "/permission/{requestID}/pattern-rules": {
+    "/permission/{requestID}/always-rules": {
       "post": {
-        "operationId": "permission.savePatternRules",
+        "operationId": "permission.saveAlwaysRules",
         "parameters": [
           {
             "in": "query",
@@ -4347,11 +4347,11 @@
             "required": true
           }
         ],
-        "summary": "Save per-pattern permission rules",
-        "description": "Save approved/denied patterns for a pending permission request.",
+        "summary": "Save always-allow/deny permission rules",
+        "description": "Save approved/denied always-rules for a pending permission request.",
         "responses": {
           "200": {
-            "description": "Pattern rules saved successfully",
+            "description": "Always rules saved successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -4387,13 +4387,13 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "approvedPatterns": {
+                  "approvedAlways": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     }
                   },
-                  "deniedPatterns": {
+                  "deniedAlways": {
                     "type": "array",
                     "items": {
                       "type": "string"
@@ -4407,7 +4407,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.permission.savePatternRules({\n  ...\n})"
+            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.permission.saveAlwaysRules({\n  ...\n})"
           }
         ]
       }
