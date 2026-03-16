@@ -81,6 +81,8 @@ export const defaultConfig: MergeConfig = {
     ".opencode/command/commit.md",
     // Kilo-specific publish scripts
     "packages/opencode/script/publish-registries.ts",
+    // Generated OpenAPI spec - kept ours and regenerated post-merge via script/generate.ts
+    "packages/sdk/openapi.json",
     // GitHub Action - Kilo version is fully ported and complete
     "github/action.yml",
     "github/README.md",
