@@ -78,19 +78,31 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     )
   })
 
-  // Grouped for rendering
+  // Grouped for rendering — recommended models float to the top as their own group
   const groups = createMemo<ModelGroup[]>(() => {
+    const recommended: EnrichedModel[] = []
     const map = new Map<string, ModelGroup>()
+
     for (const m of filtered()) {
-      let group = map.get(m.providerID)
-      if (!group) {
-        group = { providerName: m.providerName, models: [] }
-        map.set(m.providerID, group)
+      if (m.recommendedIndex !== undefined) {
+        recommended.push(m)
+      } else {
+        let group = map.get(m.providerID)
+        if (!group) {
+          group = { providerName: m.providerName, models: [] }
+          map.set(m.providerID, group)
+        }
+        group.models.push(m)
       }
-      group.models.push(m)
     }
 
-    return [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
+    recommended.sort((a, b) => (a.recommendedIndex ?? Infinity) - (b.recommendedIndex ?? Infinity))
+
+    const rest = [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
+
+    return recommended.length > 0
+      ? [{ providerName: language.t("model.group.recommended"), models: recommended }, ...rest]
+      : rest
   })
 
   // Flat list for keyboard indexing (mirrors render order)
