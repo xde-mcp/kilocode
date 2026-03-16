@@ -45,16 +45,24 @@ describe("providerSortKey", () => {
 })
 
 describe("isFree", () => {
-  it("returns true when inputPrice is 0", () => {
-    expect(isFree({ inputPrice: 0 })).toBe(true)
+  it("returns true when isFree attribute is true", () => {
+    expect(isFree({ isFree: true, cost: { input: 0, output: 0 } })).toBe(true)
   })
 
-  it("returns false when inputPrice is positive", () => {
-    expect(isFree({ inputPrice: 0.001 })).toBe(false)
+  it("returns false when isFree attribute is false", () => {
+    expect(isFree({ isFree: false, cost: { input: 0, output: 0 } })).toBe(false)
   })
 
-  it("returns false when inputPrice is non-zero", () => {
-    expect(isFree({ inputPrice: 5 })).toBe(false)
+  it("returns true when cost input and output are both 0", () => {
+    expect(isFree({ cost: { input: 0, output: 0 } })).toBe(true)
+  })
+
+  it("returns false when cost input is non-zero", () => {
+    expect(isFree({ cost: { input: 3, output: 0 } })).toBe(false)
+  })
+
+  it("returns false when cost output is non-zero", () => {
+    expect(isFree({ cost: { input: 0, output: 15 } })).toBe(false)
   })
 })
 
