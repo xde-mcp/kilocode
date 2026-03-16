@@ -72,10 +72,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     if (!q) {
       return visibleModels()
     }
-    return visibleModels().filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) || m.providerName.toLowerCase().includes(q) || m.id.toLowerCase().includes(q),
-    )
+    return visibleModels().filter((m) => m.name.toLowerCase().includes(q))
   })
 
   // Grouped for rendering — recommended models float to the top as their own group
