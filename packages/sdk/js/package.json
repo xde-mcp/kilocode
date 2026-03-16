@@ -4,6 +4,11 @@
   "version": "7.0.47",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kilo-Org/kilocode",
+    "directory": "packages/sdk/js"
+  },
   "scripts": {
     "typecheck": "tsgo --noEmit",
     "build": "bun ./script/build.ts"
