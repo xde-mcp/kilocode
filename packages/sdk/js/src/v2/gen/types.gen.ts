@@ -4432,6 +4432,36 @@ export type KilocodeRemoveSkillResponses = {
 
 export type KilocodeRemoveSkillResponse = KilocodeRemoveSkillResponses[keyof KilocodeRemoveSkillResponses]
 
+export type KilocodeRemoveAgentData = {
+  body?: {
+    name: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/kilocode/agent/remove"
+}
+
+export type KilocodeRemoveAgentErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type KilocodeRemoveAgentError = KilocodeRemoveAgentErrors[keyof KilocodeRemoveAgentErrors]
+
+export type KilocodeRemoveAgentResponses = {
+  /**
+   * Agent removed
+   */
+  200: boolean
+}
+
+export type KilocodeRemoveAgentResponse = KilocodeRemoveAgentResponses[keyof KilocodeRemoveAgentResponses]
+
 export type KiloProfileData = {
   body?: never
   path?: never

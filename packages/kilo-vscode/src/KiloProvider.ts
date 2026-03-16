@@ -1162,25 +1162,30 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Remove (disable) a mode via config, then refresh agents.
+   * Remove a custom mode via the CLI backend (deletes from disk + refreshes state).
    * The webview optimistically removes the mode from its list before this runs.
    * On failure, re-fetches agents so the webview reverts to the authoritative state.
    */
   private async handleRemoveMode(name: string): Promise<void> {
     if (!this.client) return
     try {
-      await this.client.global.config.update(
-        { config: { agent: { [name]: { disable: true } } } },
-        { throwOnError: true },
-      )
-      // Invalidate cache so next requestAgents fetches fresh data
-      this.cachedAgentsMessage = null
-      await this.fetchAndSendAgents()
+      const dir = this.getWorkspaceDirectory()
+      const result = await this.client.kilocode.removeAgent({ name, directory: dir })
+      if (result.error) {
+        console.error("[Kilo New] KiloProvider: removeAgent returned error:", result.error)
+        this.cachedAgentsMessage = null
+        await this.fetchAndSendAgents()
+        return
+      }
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to remove mode:", error)
       this.cachedAgentsMessage = null
       await this.fetchAndSendAgents()
+      return
     }
+    // Invalidate cache so next requestAgents fetches fresh data
+    this.cachedAgentsMessage = null
+    await this.fetchAndSendAgents()
   }
 
   /**
