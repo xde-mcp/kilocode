@@ -73,7 +73,9 @@ export namespace ProcessInfo {
 
   async function info(pid: number): Promise<Info | undefined> {
     if (process.platform === "win32") return undefined
-    const proc = Bun.spawn(["ps", "-p", String(pid), "-o", "pid=,ppid=,rss=,comm=,args="], {
+    // ucomm gives the short executable name (e.g. "node", "bun")
+    // comm on macOS is an alias for command (full path + args) which breaks whitespace parsing
+    const proc = Bun.spawn(["ps", "-p", String(pid), "-o", "pid=,ppid=,rss=,ucomm=,args="], {
       stdout: "pipe",
       stderr: "pipe",
     })
@@ -83,8 +85,8 @@ export namespace ProcessInfo {
     if (code !== 0) return undefined
     const line = out.trim()
     if (!line) return undefined
-    // ps output: PID PPID RSS COMM ARGS
-    // RSS is in KB from ps
+    // ps output: PID PPID RSS UCOMM ARGS...
+    // RSS is in KB from ps, ucomm is a single word (executable basename)
     const parts = line.trim().split(/\s+/)
     if (parts.length < 4) return undefined
     const parsed = {

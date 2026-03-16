@@ -22,12 +22,38 @@ function shortCommand(info: ProcessInfo): string {
   const cmd = info.command.split("/").pop() ?? info.command
   const args = info.args
   if (!args || args === info.command) return cmd
-  // Show first meaningful arg (e.g. "typescript-language-server" from "bun x typescript-language-server --stdio")
   const parts = args.split(/\s+/)
+
+  // For node/bun: find the script being run (.js/.ts/.mjs/.cjs file)
+  if (cmd === "node" || cmd === "bun") {
+    const script = parts.find((p) => /\.(js|ts|mjs|cjs)(['"]?)$/.test(p))
+    if (script) {
+      const name = script
+        .split("/")
+        .pop()!
+        .replace(/\.(js|ts|mjs|cjs)$/, "")
+      return `${cmd} → ${name}`
+    }
+  }
+
+  // Find first non-flag, non-path, non-trivial arg
   const interesting = parts.find(
     (p) => !p.startsWith("-") && !p.startsWith("/") && p !== cmd && p !== "x" && p !== "run",
   )
-  return interesting ? `${cmd} → ${interesting}` : cmd
+  if (interesting) return `${cmd} → ${interesting}`
+
+  // Last resort: extract basename from first path arg that isn't the executable itself
+  const exe = parts[0]
+  const path = parts.find((p) => p.startsWith("/") && p !== exe)
+  if (path) {
+    const base = path
+      .split("/")
+      .pop()!
+      .replace(/\.(js|ts|mjs|cjs)$/, "")
+    return `${cmd} → ${base}`
+  }
+
+  return cmd
 }
 // kilocode_change end
 
