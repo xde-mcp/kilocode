@@ -84,16 +84,17 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       if (m.recommendedIndex !== undefined) {
         recommended.push(m)
       } else {
-        let group = map.get(m.providerID)
-        if (!group) {
-          group = { providerName: m.providerName, models: [] }
-          map.set(m.providerID, group)
-        }
+        const group = map.get(m.providerID) ?? { providerName: m.providerName, models: [] }
         group.models.push(m)
+        map.set(m.providerID, group)
       }
     }
 
     recommended.sort((a, b) => (a.recommendedIndex ?? Infinity) - (b.recommendedIndex ?? Infinity))
+
+    for (const group of map.values()) {
+      group.models.sort((a, b) => a.name.localeCompare(b.name))
+    }
 
     const rest = [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
 
