@@ -10,6 +10,7 @@ import { Config } from "../config/config"
 import { spawn } from "child_process"
 import { Instance } from "../project/instance"
 import { Flag } from "@/flag/flag"
+import { TsClient } from "../kilocode/ts-client" // kilocode_change
 
 export namespace LSP {
   const log = Log.create({ service: "lsp" })
@@ -234,6 +235,16 @@ export namespace LSP {
         result.push(match)
         continue
       }
+
+      // kilocode_change start - use lightweight tsgo-based client instead of spawning typescript-language-server
+      if (server.id === "typescript") {
+        const client = TsClient.create({ root })
+        s.clients.push(client)
+        result.push(client)
+        Bus.publish(Event.Updated, {})
+        continue
+      }
+      // kilocode_change end
 
       const inflight = s.spawning.get(root + server.id)
       if (inflight) {

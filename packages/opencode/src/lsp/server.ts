@@ -98,6 +98,13 @@ export namespace LSPServer {
     },
   }
 
+  // kilocode_change start - replaced typescript-language-server with lightweight tsgo/tsc diagnostic client
+  // The spawn() returns undefined so no node process is started. The actual
+  // TypeScript diagnostics are handled by TsClient (src/kilocode/ts-client.ts)
+  // which shells out to tsgo --noEmit on demand, using ~50MB peak / 0 idle
+  // instead of the ~500MB persistent typescript-language-server.
+  // The root() and extensions are preserved because getClients() still uses
+  // them for routing files to the correct project root.
   export const Typescript: Info = {
     id: "typescript",
     root: NearestRoot(
@@ -105,31 +112,11 @@ export namespace LSPServer {
       ["deno.json", "deno.jsonc"],
     ),
     extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"],
-    async spawn(root) {
-      const tsserver = await Bun.resolve("typescript/lib/tsserver.js", Instance.directory).catch(() => {})
-      log.info("typescript server", { tsserver })
-      if (!tsserver) return
-      const proc = spawn(BunProc.which(), ["x", "typescript-language-server", "--stdio"], {
-        cwd: root,
-        env: {
-          ...process.env,
-          BUN_BE_BUN: "1",
-        },
-      })
-      return {
-        process: proc,
-        initialization: {
-          // kilocode_change start - cap tsserver memory to prevent multi-GB usage on large monorepos
-          maxTsServerMemory: 1536,
-          disableAutomaticTypingAcquisition: true,
-          // kilocode_change end
-          tsserver: {
-            path: tsserver,
-          },
-        },
-      }
+    async spawn() {
+      return undefined
     },
   }
+  // kilocode_change end
 
   export const Vue: Info = {
     id: "vue",
