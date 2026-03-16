@@ -5400,14 +5400,32 @@
           }
         ],
         "summary": "Remove a skill",
-        "description": "Remove a skill by deleting its directory from disk and clearing it from cache.",
+        "description": "Remove a skill by deleting its directory from disk and clearing it from cache. Returns the updated skills list.",
         "responses": {
           "200": {
-            "description": "Skill removed",
+            "description": "Updated list of skills after removal",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["name", "description", "location", "content"]
+                  }
                 }
               }
             }

@@ -217,13 +217,16 @@ export namespace Skill {
 
   // kilocode_change start
   export async function remove(location: string) {
-    const dir = path.dirname(location)
+    const resolved = path.resolve(location)
+    const dir = path.dirname(resolved)
     await rm(dir, { recursive: true, force: true })
     const s = await state()
-    const name = Object.keys(s.skills).find((k) => s.skills[k].location === location)
+    const name = Object.keys(s.skills).find((k) => path.resolve(s.skills[k].location) === resolved)
     if (name) {
       delete s.skills[name]
-      s.dirs = s.dirs.filter((d) => d !== dir)
+      s.dirs = s.dirs.filter((d) => path.resolve(d) !== dir)
+    } else {
+      log.warn("skill not found in cache during remove", { location, resolved })
     }
   }
   // kilocode_change end

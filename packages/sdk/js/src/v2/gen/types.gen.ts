@@ -4424,9 +4424,14 @@ export type KilocodeRemoveSkillError = KilocodeRemoveSkillErrors[keyof KilocodeR
 
 export type KilocodeRemoveSkillResponses = {
   /**
-   * Skill removed
+   * Updated list of skills after removal
    */
-  200: boolean
+  200: Array<{
+    name: string
+    description: string
+    location: string
+    content: string
+  }>
 }
 
 export type KilocodeRemoveSkillResponse = KilocodeRemoveSkillResponses[keyof KilocodeRemoveSkillResponses]

@@ -2934,7 +2934,7 @@ export class Kilocode extends HeyApiClient {
   /**
    * Remove a skill
    *
-   * Remove a skill by deleting its directory from disk and clearing it from cache.
+   * Remove a skill by deleting its directory from disk and clearing it from cache. Returns the updated skills list.
    */
   public removeSkill<ThrowOnError extends boolean = false>(
     parameters: {
