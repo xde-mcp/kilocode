@@ -557,6 +557,7 @@ export interface DeviceAuthCancelledMessage {
 export interface NavigateMessage {
   type: "navigate"
   view: "newTask" | "marketplace" | "history" | "cloudHistory" | "profile" | "settings" | "migration" | "subAgentViewer" // legacy-migration: "migration"
+  tab?: string
 }
 
 export interface ProvidersLoadedMessage {
@@ -1327,6 +1328,11 @@ export interface ResetAllSettingsRequest {
   type: "resetAllSettings"
 }
 
+export interface SettingsTabChangedMessage {
+  type: "settingsTabChanged"
+  tab: string
+}
+
 export interface RequestNotificationsMessage {
   type: "requestNotifications"
 }
@@ -1638,6 +1644,7 @@ export type WebviewMessage =
   | UpdateConfigMessage
   | RequestNotificationSettingsMessage
   | ResetAllSettingsRequest
+  | SettingsTabChangedMessage
   | SyncSessionRequest
   | CreateWorktreeSessionRequest
   | RequestNotificationsMessage
