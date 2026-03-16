@@ -74,7 +74,6 @@ export const defaultConfig: MergeConfig = {
     "SECURITY.md",
     "AGENTS.md",
     // GitHub workflows - MANUAL REVIEW (can break CI/CD)
-    ".github/workflows/publish-stable.yml",
     ".github/workflows/publish.yml",
     ".github/workflows/close-stale-prs.yml",
     ".github/pull_request_template.md",
