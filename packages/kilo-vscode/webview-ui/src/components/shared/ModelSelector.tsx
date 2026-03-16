@@ -295,7 +295,10 @@ export const ModelSelector: Component = () => {
   return (
     <ModelSelectorBase
       value={session.selected()}
-      onSelect={(providerID, modelID) => session.selectModel(providerID, modelID)}
+      onSelect={(providerID, modelID) => {
+        session.selectModel(providerID, modelID)
+        requestAnimationFrame(() => window.dispatchEvent(new Event("focusPrompt")))
+      }}
     />
   )
 }
