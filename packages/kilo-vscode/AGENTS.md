@@ -194,10 +194,6 @@ New webview features must use **`@kilocode/kilo-ui`** components instead of raw 
 - All VSCode commands must use `kilo-code.new.` prefix (not `kilo-code.`)
 - All view IDs must use `kilo-code.new.` prefix (e.g., `kilo-code.new.sidebarView`)
 
-## Coexistence with Old Extension
-
-While the old extension coexists, runtime labels append `(NEW)` — controlled by the flag in [`constants.ts`](src/constants.ts). Static labels in `package.json` must be updated separately. Remove this convention once the old extension is retired.
-
 ## Kilocode Change Markers
 
 This package is entirely Kilo-specific — `kilocode_change` markers are NOT needed in any files under `packages/kilo-vscode/`. The markers are only necessary when modifying shared upstream opencode files.
