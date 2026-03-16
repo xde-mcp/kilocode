@@ -362,6 +362,13 @@ async function main() {
   const keepOursResults = await resetToOurs(config.keepOurs, { dryRun: false, verbose: options.verbose })
   logger.success(`Reset ${keepOursResults.length} files to Kilo's version`)
 
+  // Clean untracked build artifacts from Kilo-specific directories.
+  // These packages don't exist in upstream, so their .gitignore files are absent
+  // on the opencode branch. Artifacts like bin/, out/, .next/ etc. would otherwise
+  // be picked up by the git add -A below.
+  logger.info("Cleaning Kilo-specific directory artifacts...")
+  await git.cleanDirectories(config.kiloDirectories)
+
   // Commit all transformations
   await git.stageAll()
   await git.commit(`refactor: kilo compat for ${targetVersion.tag}`)
