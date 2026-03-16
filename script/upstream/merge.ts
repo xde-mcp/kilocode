@@ -622,6 +622,22 @@ async function main() {
     }
   }
 
+  // Regenerate OpenAPI spec and SDK (keeps generated files in sync with merged code)
+  logger.info("Regenerating OpenAPI spec and SDK...")
+  const regenResult = await $`bun ./script/generate.ts`.quiet().nothrow()
+  if (regenResult.exitCode === 0) {
+    logger.success("Regenerated OpenAPI spec and SDK")
+    await git.stageAll()
+    const hasSpecChanges = await git.hasUncommittedChanges()
+    if (hasSpecChanges) {
+      await git.commit("chore: regenerate openapi spec and sdk after upstream merge")
+      logger.success("Committed regenerated OpenAPI spec and SDK")
+    }
+  } else {
+    logger.warn("OpenAPI spec regeneration failed — run ./script/generate.ts manually after resolving any issues")
+    logger.warn(regenResult.stderr.toString().trim())
+  }
+
   if (options.push) {
     await git.push(config.originRemote, kiloBranch)
     logger.success(`Pushed ${kiloBranch} to ${config.originRemote}`)
