@@ -5372,9 +5372,9 @@
         ]
       }
     },
-    "/skill": {
+    "/kilocode/skill": {
       "delete": {
-        "operationId": "skill.remove",
+        "operationId": "kilocode.removeSkill",
         "parameters": [
           {
             "in": "query",
@@ -5426,64 +5426,7 @@
         "x-codeSamples": [
           {
             "lang": "js",
-            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.skill.remove({\n  ...\n})"
-          }
-        ]
-      },
-      "get": {
-        "operationId": "app.skills",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "workspace",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "List skills",
-        "description": "Get a list of all available skills in the OpenCode system.",
-        "responses": {
-          "200": {
-            "description": "List of skills",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "location": {
-                        "type": "string"
-                      },
-                      "content": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["name", "description", "location", "content"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.app.skills({\n  ...\n})"
+            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.kilocode.removeSkill({\n  ...\n})"
           }
         ]
       }
@@ -7990,6 +7933,65 @@
           {
             "lang": "js",
             "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.app.agents({\n  ...\n})"
+          }
+        ]
+      }
+    },
+    "/skill": {
+      "get": {
+        "operationId": "app.skills",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "directory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "summary": "List skills",
+        "description": "Get a list of all available skills in the OpenCode system.",
+        "responses": {
+          "200": {
+            "description": "List of skills",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["name", "description", "location", "content"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "js",
+            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.app.skills({\n  ...\n})"
           }
         ]
       }

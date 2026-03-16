@@ -4402,7 +4402,7 @@ export type EnhancePromptEnhanceResponses = {
 
 export type EnhancePromptEnhanceResponse = EnhancePromptEnhanceResponses[keyof EnhancePromptEnhanceResponses]
 
-export type SkillRemoveData = {
+export type KilocodeRemoveSkillData = {
   body?: never
   path?: never
   query: {
@@ -4410,50 +4410,26 @@ export type SkillRemoveData = {
     workspace?: string
     location: string
   }
-  url: "/skill"
+  url: "/kilocode/skill"
 }
 
-export type SkillRemoveErrors = {
+export type KilocodeRemoveSkillErrors = {
   /**
    * Bad request
    */
   400: BadRequestError
 }
 
-export type SkillRemoveError = SkillRemoveErrors[keyof SkillRemoveErrors]
+export type KilocodeRemoveSkillError = KilocodeRemoveSkillErrors[keyof KilocodeRemoveSkillErrors]
 
-export type SkillRemoveResponses = {
+export type KilocodeRemoveSkillResponses = {
   /**
    * Skill removed
    */
   200: boolean
 }
 
-export type SkillRemoveResponse = SkillRemoveResponses[keyof SkillRemoveResponses]
-
-export type AppSkillsData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/skill"
-}
-
-export type AppSkillsResponses = {
-  /**
-   * List of skills
-   */
-  200: Array<{
-    name: string
-    description: string
-    location: string
-    content: string
-  }>
-}
-
-export type AppSkillsResponse = AppSkillsResponses[keyof AppSkillsResponses]
+export type KilocodeRemoveSkillResponse = KilocodeRemoveSkillResponses[keyof KilocodeRemoveSkillResponses]
 
 export type KiloProfileData = {
   body?: never
@@ -5535,6 +5511,30 @@ export type AppAgentsResponses = {
 }
 
 export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
+
+export type AppSkillsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/skill"
+}
+
+export type AppSkillsResponses = {
+  /**
+   * List of skills
+   */
+  200: Array<{
+    name: string
+    description: string
+    location: string
+    content: string
+  }>
+}
+
+export type AppSkillsResponse = AppSkillsResponses[keyof AppSkillsResponses]
 
 export type LspStatusData = {
   body?: never
