@@ -30,9 +30,16 @@ You can remove or replace a configured token at any time.
 
 To connect Discord, you need a **Bot Token** from the [Discord Developer Portal](https://discord.com/developers/applications).
 
+#### Create an Application and Bot
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and log in
+2. Click **New Application**, give it a name, and click **Create**
+3. Click **Bot** on the left sidebar
+4. Click **Add Bot** and confirm
+
 #### Enable Privileged Intents
 
-Still on the **Bot** page, scroll down to **Privileged Gateway Intents** and enable:
+On the **Bot** page, scroll down to **Privileged Gateway Intents** and enable:
 
 - **Message Content Intent** (required)
 - **Server Members Intent** (recommended — needed for role allowlists and name matching)
