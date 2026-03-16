@@ -451,8 +451,10 @@ export namespace Agent {
   )
 
   /**
-   * Remove a custom agent by deleting its markdown file from disk.
-   * Scans all config directories for agent/mode .md files matching the name.
+   * Remove a custom agent by deleting its markdown source file and/or
+   * removing it from legacy .kilocodemodes YAML files.
+   * Scans all config directories for agent/mode .md files matching the name,
+   * then also checks the .kilocodemodes files the ModesMigrator reads.
    */
   export async function remove(name: string) {
     const agents = await state()
@@ -460,24 +462,51 @@ export namespace Agent {
     if (!agent) throw new RemoveError({ name, message: "agent not found" })
     if (agent.native) throw new RemoveError({ name, message: "cannot remove native agent" })
 
+    const { unlink, readFile, writeFile } = await import("fs/promises")
+    let found = false
+
+    // 1. Delete .md files from config directories
     const dirs = await Config.directories()
     const patterns = ["{agent,agents}/**/" + name + ".md", "{mode,modes}/" + name + ".md"]
-
-    let found = false
     for (const dir of dirs) {
       for (const pattern of patterns) {
         const matches = await Glob.scan(pattern, { cwd: dir, absolute: true, dot: true })
         for (const file of matches) {
-          await Bun.file(file)
-            .exists()
-            .then(async (exists) => {
-              if (!exists) return
-              const { unlink } = await import("fs/promises")
-              await unlink(file)
-              found = true
-            })
+          if (await Bun.file(file).exists()) {
+            await unlink(file)
+            found = true
+          }
         }
       }
+    }
+
+    // 2. Remove from legacy .kilocodemodes YAML files (read by ModesMigrator)
+    const { ModesMigrator } = await import("@/kilocode/modes-migrator")
+    const { KilocodePaths } = await import("@/kilocode/paths")
+    const os = await import("os")
+    const matter = (await import("gray-matter")).default
+    const home = os.default.homedir()
+    const modesFiles = [
+      path.join(KilocodePaths.vscodeGlobalStorage(), "settings", "custom_modes.yaml"),
+      path.join(home, ".kilocode", "cli", "global", "settings", "custom_modes.yaml"),
+      path.join(home, ".kilocodemodes"),
+      path.join(Instance.directory, ".kilocodemodes"),
+    ]
+
+    for (const file of modesFiles) {
+      const modes = await ModesMigrator.readModesFile(file)
+      if (!modes.length) continue
+
+      const filtered = modes.filter((m) => m.slug !== name)
+      if (filtered.length === modes.length) continue
+
+      // Rewrite the file without the removed mode
+      const yaml = matter
+        .stringify("", { customModes: filtered })
+        .replace(/^---\n/, "")
+        .replace(/\n---\n?$/, "")
+      await writeFile(file, yaml)
+      found = true
     }
 
     if (!found) throw new RemoveError({ name, message: "no agent file found on disk" })
