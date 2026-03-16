@@ -14,6 +14,7 @@
 import { $ } from "bun"
 import { info, success, warn, debug } from "../utils/logger"
 import { getCurrentVersion } from "./preserve-versions"
+import { oursHasKilocodeChanges } from "../utils/git"
 
 /**
  * Extract clean version string from a version specifier
@@ -156,7 +157,7 @@ function mergeWithNewestVersions(
 
 export interface PackageJsonResult {
   file: string
-  action: "transformed" | "skipped" | "failed"
+  action: "transformed" | "skipped" | "failed" | "flagged"
   changes: string[]
   dryRun: boolean
 }
@@ -238,6 +239,12 @@ export async function transformPackageJson(file: string, options: PackageJsonOpt
   if (options.dryRun) {
     info(`[DRY-RUN] Would transform package.json: ${file}`)
     return { file, action: "transformed", changes: [], dryRun: true }
+  }
+
+  // If our version has kilocode_change markers, flag for manual resolution
+  if (await oursHasKilocodeChanges(file)) {
+    warn(`${file} has kilocode_change markers — skipping auto-transform, needs manual resolution`)
+    return { file, action: "flagged", changes: [], dryRun: false }
   }
 
   try {
