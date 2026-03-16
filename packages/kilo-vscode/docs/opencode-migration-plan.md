@@ -72,7 +72,6 @@ Open issues from the [GitHub project board](https://github.com/orgs/Kilo-Org/pro
 | Feature                                                   | Remaining Work                                                               | Priority |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
 | [Settings Migration](migration/settings-migration.md)     | Read old extension settings and offer to import into CLI config on first run | P1       |
-| [Sessions Migration](migration/sessions-migration.md)     | Convert old session format to CLI session format; preserve chat history      | P3       |
 | [MemoryBank Migration](migration/memorybank-migration.md) | Detect MemoryBank content and offer to migrate it to AGENTS.md               | P1       |
 | [Upgrade Onboarding](migration/upgrade-onboarding.md)     | Show distinct onboarding for upgraders explaining what changed               | P1       |
 
@@ -80,7 +79,7 @@ Open issues from the [GitHub project board](https://github.com/orgs/Kilo-Org/pro
 
 | Feature                                                                                   | Remaining Work                                                               | Priority |
 | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- |
-| [Pre-Release Switch CPU Spike](error-handling/pre-release-switch-crash.md)                | Fix race condition / process conflict when switching release ↔ pre-release   | P0       |
+| [Pre-Release Switch CPU Spike](error-handling/pre-release-switch-crash.md)                | Fix race condition / process conflict when switching release ↔ pre-release  | P0       |
 | [Extension View Doesn't Refresh on Update](error-handling/extension-refresh-on-update.md) | Force webview reload when extension version changes                          | P1       |
 | [Propagate CLI Errors to UI](error-handling/propagate-cli-errors-to-ui.md)                | Surface CLI stderr errors in chat or as VS Code notifications                | P1       |
 | [CLI Startup Errors](error-handling/cli-startup-errors.md)                                | Detect CLI process exit before connection; show error with details and retry | P1       |
