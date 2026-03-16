@@ -216,18 +216,25 @@ export namespace Skill {
   }
 
   // kilocode_change start
+  export const RemoveError = NamedError.create(
+    "SkillRemoveError",
+    z.object({
+      location: z.string(),
+      message: z.string(),
+    }),
+  )
+
   export async function remove(location: string) {
     const resolved = path.resolve(location)
-    const dir = path.dirname(resolved)
-    await rm(dir, { recursive: true, force: true })
     const s = await state()
     const name = Object.keys(s.skills).find((k) => path.resolve(s.skills[k].location) === resolved)
-    if (name) {
-      delete s.skills[name]
-      s.dirs = s.dirs.filter((d) => path.resolve(d) !== dir)
-    } else {
-      log.warn("skill not found in cache during remove", { location, resolved })
+    if (!name) {
+      throw new RemoveError({ location: resolved, message: "skill not found in registry" })
     }
+    const dir = path.dirname(resolved)
+    await rm(dir, { recursive: true, force: true })
+    delete s.skills[name]
+    s.dirs = s.dirs.filter((d) => path.resolve(d) !== dir)
   }
   // kilocode_change end
 }
