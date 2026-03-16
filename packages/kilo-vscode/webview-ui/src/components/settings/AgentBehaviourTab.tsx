@@ -1,4 +1,4 @@
-import { Component, createSignal, createMemo, createEffect, For, Show, onCleanup } from "solid-js"
+import { Component, createSignal, createMemo, createEffect, For, Show } from "solid-js"
 import { Select } from "@kilocode/kilo-ui/select"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
@@ -10,8 +10,7 @@ import { useDialog } from "@kilocode/kilo-ui/context/dialog"
 import { useConfig } from "../../context/config"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
-import { useVSCode } from "../../context/vscode"
-import type { AgentConfig, SkillInfo, ExtensionMessage } from "../../types/messages"
+import type { AgentConfig, SkillInfo } from "../../types/messages"
 
 type SubtabId = "agents" | "mcpServers" | "rules" | "workflows" | "skills"
 
@@ -54,30 +53,19 @@ const AgentBehaviourTab: Component = () => {
   const language = useLanguage()
   const { config, updateConfig } = useConfig()
   const session = useSession()
-  const vscode = useVSCode()
   const dialog = useDialog()
   const [activeSubtab, setActiveSubtab] = createSignal<SubtabId>("agents")
   const [selectedAgent, setSelectedAgent] = createSignal<string>("")
   const [newSkillPath, setNewSkillPath] = createSignal("")
   const [newSkillUrl, setNewSkillUrl] = createSignal("")
   const [newInstruction, setNewInstruction] = createSignal("")
-  const [discoveredSkills, setDiscoveredSkills] = createSignal<SkillInfo[]>([])
-
-  // Subscribe to skillsLoaded messages from the extension
-  const unsub = vscode.onMessage((message: ExtensionMessage) => {
-    if (message.type === "skillsLoaded") {
-      setDiscoveredSkills(message.skills)
-    }
-  })
 
   // Fetch skills whenever the skills subtab becomes active
   createEffect(() => {
     if (activeSubtab() === "skills") {
-      vscode.postMessage({ type: "requestSkills" })
+      session.refreshSkills()
     }
   })
-
-  onCleanup(() => unsub())
 
   const agentNames = createMemo(() => {
     const names = session.agents().map((a) => a.name)
@@ -182,10 +170,6 @@ const AgentBehaviourTab: Component = () => {
     updateConfig({ skills: { ...config().skills, urls: current } })
   }
 
-  const removeSkill = (skill: SkillInfo) => {
-    vscode.postMessage({ type: "removeSkill", location: skill.location })
-  }
-
   const confirmRemoveSkill = (skill: SkillInfo) => {
     dialog.show(() => (
       <Dialog title={language.t("settings.agentBehaviour.removeSkill.title")} fit>
@@ -199,7 +183,7 @@ const AgentBehaviourTab: Component = () => {
               variant="primary"
               size="large"
               onClick={() => {
-                removeSkill(skill)
+                session.removeSkill(skill.location)
                 dialog.close()
               }}
             >
@@ -430,7 +414,7 @@ const AgentBehaviourTab: Component = () => {
         {language.t("settings.agentBehaviour.discoveredSkills")}
       </h4>
       <Show
-        when={discoveredSkills().length > 0}
+        when={session.skills().length > 0}
         fallback={
           <Card style={{ "margin-bottom": "16px" }}>
             <div data-slot="settings-row-label-subtitle">{language.t("settings.agentBehaviour.noSkillsFound")}</div>
@@ -438,7 +422,7 @@ const AgentBehaviourTab: Component = () => {
         }
       >
         <Card style={{ "margin-bottom": "16px" }}>
-          <For each={discoveredSkills()}>
+          <For each={session.skills()}>
             {(skill, index) => (
               <div
                 style={{
@@ -446,8 +430,7 @@ const AgentBehaviourTab: Component = () => {
                   "align-items": "center",
                   "justify-content": "space-between",
                   padding: "8px 0",
-                  "border-bottom":
-                    index() < discoveredSkills().length - 1 ? "1px solid var(--border-weak-base)" : "none",
+                  "border-bottom": index() < session.skills().length - 1 ? "1px solid var(--border-weak-base)" : "none",
                 }}
               >
                 <div style={{ flex: 1, "min-width": 0 }}>
