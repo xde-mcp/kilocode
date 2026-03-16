@@ -11,6 +11,7 @@ import z from "zod"
 import { Provider } from "../provider/provider"
 import { NamedError } from "@opencode-ai/util/error"
 import { LSP } from "../lsp"
+import { ProcessInfo } from "../kilocode/process-info" // kilocode_change
 import { Format } from "../format"
 import { TuiRoutes } from "./routes/tui"
 import { Instance } from "../project/instance"
@@ -521,6 +522,29 @@ export namespace Server {
             return c.json(await LSP.status())
           },
         )
+        // kilocode_change start - process diagnostics route
+        .get(
+          "/process",
+          describeRoute({
+            summary: "Get process status",
+            description: "Get process tree with memory usage for all related processes",
+            operationId: "process.status",
+            responses: {
+              200: {
+                description: "Process status",
+                content: {
+                  "application/json": {
+                    schema: resolver(ProcessInfo.Status),
+                  },
+                },
+              },
+            },
+          }),
+          async (c) => {
+            return c.json(await ProcessInfo.status())
+          },
+        )
+        // kilocode_change end
         .get(
           "/formatter",
           describeRoute({
