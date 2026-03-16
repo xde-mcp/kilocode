@@ -13,15 +13,14 @@ export const KilocodeRoutes = lazy(() =>
     "/skill",
     describeRoute({
       summary: "Remove a skill",
-      description:
-        "Remove a skill by deleting its directory from disk and clearing it from cache. Returns the updated skills list.",
+      description: "Remove a skill by deleting its directory from disk and clearing it from cache.",
       operationId: "kilocode.removeSkill",
       responses: {
         200: {
-          description: "Updated list of skills after removal",
+          description: "Skill removed",
           content: {
             "application/json": {
-              schema: resolver(Skill.Info.array()),
+              schema: resolver(z.boolean()),
             },
           },
         },
@@ -37,8 +36,7 @@ export const KilocodeRoutes = lazy(() =>
     async (c) => {
       const { location } = c.req.valid("query")
       await Skill.remove(location)
-      const skills = await Skill.all()
-      return c.json(skills)
+      return c.json(true)
     },
   ),
 )

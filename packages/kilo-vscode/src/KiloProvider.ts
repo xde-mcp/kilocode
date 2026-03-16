@@ -1133,23 +1133,19 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Remove a skill via the CLI backend (deletes from disk + clears cache).
-   * The DELETE endpoint returns the updated skills list, which we send directly to the webview.
+   * Remove a skill via the CLI backend (deletes from disk + clears cache), then refresh.
+   * The webview optimistically removes the skill from its list before this runs.
    */
   private async handleRemoveSkill(location: string): Promise<void> {
     if (!this.client) return
     try {
       const dir = this.getWorkspaceDirectory()
-      const { data: skills } = await this.client.kilocode.removeSkill(
-        { location, directory: dir },
-        { throwOnError: true },
-      )
-      const message = { type: "skillsLoaded", skills }
-      this.cachedSkillsMessage = message
-      this.postMessage(message)
+      await this.client.kilocode.removeSkill({ location, directory: dir })
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to remove skill:", error)
     }
+    // Invalidate cache so next requestSkills fetches fresh data
+    this.cachedSkillsMessage = null
   }
 
   /**
