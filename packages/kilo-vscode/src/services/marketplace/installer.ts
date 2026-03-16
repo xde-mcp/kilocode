@@ -6,6 +6,9 @@ import { promisify } from "util"
 import type {
   MarketplaceItem,
   SkillMarketplaceItem,
+  McpMarketplaceItem,
+  ModeMarketplaceItem,
+  McpInstallationMethod,
   InstallMarketplaceItemOptions,
   InstallResult,
   RemoveResult,
@@ -24,8 +27,95 @@ export class MarketplaceInstaller {
   ): Promise<InstallResult> {
     const scope = options.target ?? "project"
     if (item.type === "skill") return this.installSkill(item, scope, workspace)
-    return { success: false, slug: item.id, error: `${item.type} installation not yet implemented` }
+    if (item.type === "mcp") return this.installMcp(item, options, scope, workspace)
+    return this.installMode(item, scope, workspace)
   }
+
+  // ── MCP ─────────────────────────────────────────────────────────────
+
+  async installMcp(
+    item: McpMarketplaceItem,
+    options: InstallMarketplaceItemOptions,
+    scope: "project" | "global",
+    workspace?: string,
+  ): Promise<InstallResult> {
+    if (scope === "project" && !workspace) {
+      return { success: false, slug: item.id, error: "No workspace directory for project-scope install" }
+    }
+
+    const config = await this.readConfig(scope, workspace)
+    if (!config.mcp) config.mcp = {}
+
+    if (config.mcp[item.id]) {
+      return { success: false, slug: item.id, error: "MCP server already installed. Remove it first." }
+    }
+
+    const content = this.resolveMcpContent(item, options)
+    if (!content) {
+      return { success: false, slug: item.id, error: "No installation content for MCP server" }
+    }
+
+    const entry = this.buildMcpEntry(content, options.parameters)
+    config.mcp[item.id] = entry
+
+    await this.writeConfig(scope, workspace, config)
+    return { success: true, slug: item.id }
+  }
+
+  private resolveMcpContent(item: McpMarketplaceItem, options: InstallMarketplaceItemOptions): string | undefined {
+    if (typeof item.content === "string") return item.content
+    if (!Array.isArray(item.content) || item.content.length === 0) return undefined
+    const name = options.parameters?.__method as string | undefined
+    if (name) {
+      const found = item.content.find((m: McpInstallationMethod) => m.name === name)
+      if (found) return found.content
+    }
+    return item.content[0].content
+  }
+
+  private buildMcpEntry(content: string, params?: Record<string, unknown>): Record<string, unknown> {
+    const filtered = Object.fromEntries(Object.entries(params ?? {}).filter(([k]) => k !== "__method"))
+    const replaced = Object.keys(filtered).length > 0 ? substituteParams(content, filtered) : content
+
+    // Parse the content as JSON — the marketplace API provides JSON config blocks
+    try {
+      return JSON.parse(replaced)
+    } catch {
+      // Fallback: treat as a command string
+      return { command: replaced }
+    }
+  }
+
+  // ── Mode ────────────────────────────────────────────────────────────
+
+  async installMode(
+    item: ModeMarketplaceItem,
+    scope: "project" | "global",
+    workspace?: string,
+  ): Promise<InstallResult> {
+    if (scope === "project" && !workspace) {
+      return { success: false, slug: item.id, error: "No workspace directory for project-scope install" }
+    }
+
+    const config = await this.readConfig(scope, workspace)
+    if (!config.agent) config.agent = {}
+
+    if (config.agent[item.id]) {
+      return { success: false, slug: item.id, error: "Mode already installed. Remove it first." }
+    }
+
+    // Mode content is a JSON blob for the agent config
+    try {
+      config.agent[item.id] = JSON.parse(item.content)
+    } catch {
+      config.agent[item.id] = { system: item.content }
+    }
+
+    await this.writeConfig(scope, workspace, config)
+    return { success: true, slug: item.id }
+  }
+
+  // ── Skill ───────────────────────────────────────────────────────────
 
   async installSkill(
     item: SkillMarketplaceItem,
@@ -106,9 +196,34 @@ export class MarketplaceInstaller {
     }
   }
 
+  // ── Remove ──────────────────────────────────────────────────────────
+
   async remove(item: MarketplaceItem, scope: "project" | "global", workspace?: string): Promise<RemoveResult> {
     if (item.type === "skill") return this.removeSkill(item, scope, workspace)
-    return { success: false, slug: item.id, error: `${item.type} removal not yet implemented` }
+    if (item.type === "mcp") return this.removeMcp(item, scope, workspace)
+    return this.removeMode(item, scope, workspace)
+  }
+
+  async removeMcp(item: McpMarketplaceItem, scope: "project" | "global", workspace?: string): Promise<RemoveResult> {
+    const config = await this.readConfig(scope, workspace)
+    if (!config.mcp?.[item.id]) {
+      return { success: true, slug: item.id }
+    }
+    delete config.mcp[item.id]
+    if (Object.keys(config.mcp).length === 0) delete config.mcp
+    await this.writeConfig(scope, workspace, config)
+    return { success: true, slug: item.id }
+  }
+
+  async removeMode(item: ModeMarketplaceItem, scope: "project" | "global", workspace?: string): Promise<RemoveResult> {
+    const config = await this.readConfig(scope, workspace)
+    if (!config.agent?.[item.id]) {
+      return { success: true, slug: item.id }
+    }
+    delete config.agent[item.id]
+    if (Object.keys(config.agent).length === 0) delete config.agent
+    await this.writeConfig(scope, workspace, config)
+    return { success: true, slug: item.id }
   }
 
   async removeSkill(
@@ -136,6 +251,32 @@ export class MarketplaceInstaller {
       return { success: false, slug: item.id, error: String(err) }
     }
   }
+
+  // ── Config helpers ──────────────────────────────────────────────────
+
+  private async readConfig(
+    scope: "project" | "global",
+    workspace?: string,
+  ): Promise<Record<string, Record<string, unknown>>> {
+    const filepath = this.paths.configPath(scope, workspace)
+    try {
+      const content = await fs.readFile(filepath, "utf-8")
+      return JSON.parse(content)
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") return {}
+      throw err
+    }
+  }
+
+  private async writeConfig(
+    scope: "project" | "global",
+    workspace: string | undefined,
+    config: Record<string, unknown>,
+  ): Promise<void> {
+    const filepath = this.paths.configPath(scope, workspace)
+    await fs.mkdir(path.dirname(filepath), { recursive: true })
+    await fs.writeFile(filepath, JSON.stringify(config, null, 2) + "\n", "utf-8")
+  }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -143,6 +284,15 @@ export class MarketplaceInstaller {
 function isSafeId(id: string): boolean {
   if (!id || id.includes("..") || id.includes("/") || id.includes("\\")) return false
   return /^[\w\-@.]+$/.test(id)
+}
+
+function substituteParams(template: string, params: Record<string, unknown>): string {
+  let result = template
+  for (const [key, value] of Object.entries(params)) {
+    result = result.replaceAll(`{{${key}}}`, String(value ?? ""))
+    result = result.replaceAll(`\${${key}}`, String(value ?? ""))
+  }
+  return result
 }
 
 async function findEscapedPaths(dir: string): Promise<string[]> {

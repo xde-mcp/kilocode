@@ -1,11 +1,11 @@
-import { Component, createSignal, createMemo, For, Show } from "solid-js"
+import { createSignal, createMemo, For, Show } from "solid-js"
 import { TextField } from "@kilocode/kilo-ui/text-field"
 import { RadioGroup } from "@kilocode/kilo-ui/radio-group"
 import { Tag } from "@kilocode/kilo-ui/tag"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import type { SkillMarketplaceItem, MarketplaceInstalledMetadata, MarketplaceItem } from "../../types/marketplace"
 import { useLanguage } from "../../context/language"
-import ItemCard from "./ItemCard"
+import { ItemCard } from "./ItemCard"
 
 interface Props {
   items: SkillMarketplaceItem[]
@@ -17,7 +17,7 @@ interface Props {
 
 const ALL = "__all__"
 
-const SkillsMarketplace: Component<Props> = (props) => {
+export const SkillsMarketplace = (props: Props) => {
   const { t } = useLanguage()
   const [search, setSearch] = createSignal("")
   const [category, setCategory] = createSignal(ALL)
@@ -82,5 +82,3 @@ const SkillsMarketplace: Component<Props> = (props) => {
     </div>
   )
 }
-
-export default SkillsMarketplace
