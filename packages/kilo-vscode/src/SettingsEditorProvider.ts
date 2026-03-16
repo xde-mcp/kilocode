@@ -18,6 +18,7 @@ type PanelView = "settings" | "profile"
 export class SettingsEditorProvider implements vscode.Disposable {
   private panels = new Map<PanelView, vscode.WebviewPanel>()
   private providers = new Map<PanelView, KiloProvider>()
+  private tabs = new Map<PanelView, string>()
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -25,9 +26,15 @@ export class SettingsEditorProvider implements vscode.Disposable {
     private readonly context: vscode.ExtensionContext,
   ) {}
 
-  openPanel(view: PanelView): void {
+  openPanel(view: PanelView, tab?: string): void {
+    if (tab) this.tabs.set(view, tab)
+
     const existing = this.panels.get(view)
     if (existing) {
+      if (tab) {
+        const provider = this.providers.get(view)
+        provider?.postMessage({ type: "navigate", view, tab })
+      }
       existing.reveal(vscode.ViewColumn.One)
       return
     }
@@ -63,8 +70,15 @@ export class SettingsEditorProvider implements vscode.Disposable {
       if (msg.type === "webviewReady") {
         // Small delay to let KiloProvider's own webviewReady handler finish first
         setTimeout(() => {
-          provider.postMessage({ type: "navigate", view })
+          provider.postMessage({ type: "navigate", view, tab: this.tabs.get(view) })
         }, 50)
+      }
+    })
+
+    // Remember the active settings tab so it survives webview reloads.
+    const tabDisposable = panel.webview.onDidReceiveMessage((msg) => {
+      if (msg.type === "settingsTabChanged" && typeof msg.tab === "string") {
+        this.tabs.set(view, msg.tab)
       }
     })
 
@@ -75,9 +89,11 @@ export class SettingsEditorProvider implements vscode.Disposable {
       console.log(`[Kilo New] ${title} panel disposed`)
       closePanelDisposable.dispose()
       readyDisposable.dispose()
+      tabDisposable.dispose()
       provider.dispose()
       this.panels.delete(view)
       this.providers.delete(view)
+      this.tabs.delete(view)
     })
   }
 
