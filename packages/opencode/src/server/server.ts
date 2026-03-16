@@ -47,6 +47,7 @@ import { HTTPException } from "hono/http-exception"
 import { errors } from "./error"
 import { CommitMessageRoutes } from "./routes/commit-message"
 import { EnhancePromptRoutes } from "./routes/enhance-prompt" // kilocode_change
+import { KilocodeRoutes } from "./routes/kilocode" // kilocode_change
 import { QuestionRoutes } from "./routes/question"
 import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
@@ -268,6 +269,7 @@ export namespace Server {
         .route("/telemetry", TelemetryRoutes()) // kilocode_change
         .route("/commit-message", CommitMessageRoutes()) // kilocode_change
         .route("/enhance-prompt", EnhancePromptRoutes()) // kilocode_change
+        .route("/kilocode", KilocodeRoutes()) // kilocode_change
         // kilocode_change start - Kilo Gateway routes
         .route(
           "/kilo",

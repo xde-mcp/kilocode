@@ -976,6 +976,10 @@ export const dict = {
     "Aucune compétence découverte. Ajoutez des chemins de dossiers ou des URLs ci-dessous pour rendre les compétences disponibles.",
   "settings.agentBehaviour.skillPaths": "Chemins des dossiers de compétences",
   "settings.agentBehaviour.skillUrls": "URLs de compétences",
+  "settings.agentBehaviour.removeSkill.title": "Supprimer la compétence",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Supprimer la compétence "{{name}}" ? Cela supprimera les fichiers de la compétence du disque.',
+  "settings.agentBehaviour.removeSkill.button": "Supprimer",
   "settings.agentBehaviour.instructionFiles": "Fichiers d'instructions supplémentaires",
   "settings.agentBehaviour.instructionFiles.description": "Chemins vers des fichiers d'instructions supplémentaires",
   "settings.agentBehaviour.mcpEmpty":

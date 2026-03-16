@@ -961,6 +961,10 @@ export const dict = {
     "Nie znaleziono umiejętności. Dodaj ścieżki folderów lub adresy URL poniżej, aby udostępnić umiejętności.",
   "settings.agentBehaviour.skillPaths": "Ścieżki folderów umiejętności",
   "settings.agentBehaviour.skillUrls": "Adresy URL umiejętności",
+  "settings.agentBehaviour.removeSkill.title": "Usuń umiejętność",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Usunąć umiejętność "{{name}}"? Spowoduje to usunięcie plików umiejętności z dysku.',
+  "settings.agentBehaviour.removeSkill.button": "Usuń",
   "settings.agentBehaviour.instructionFiles": "Dodatkowe pliki instrukcji",
   "settings.agentBehaviour.instructionFiles.description":
     "Ścieżki do dodatkowych plików instrukcji w prompcie systemowym",

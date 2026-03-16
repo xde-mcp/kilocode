@@ -961,6 +961,10 @@ export const dict = {
     "Ingen ferdigheter funnet. Legg til ferdighetsmappestier eller URLer nedenfor for å gjøre ferdigheter tilgjengelige.",
   "settings.agentBehaviour.skillPaths": "Ferdighetsmappe-stier",
   "settings.agentBehaviour.skillUrls": "Ferdighets-URLer",
+  "settings.agentBehaviour.removeSkill.title": "Fjern ferdighet",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Vil du fjerne ferdigheten "{{name}}"? Dette vil slette ferdighetsfilene fra disken.',
+  "settings.agentBehaviour.removeSkill.button": "Fjern",
   "settings.agentBehaviour.instructionFiles": "Ekstra instruksjonsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til ekstra instruksjonsfiler i systemprompten",
   "settings.agentBehaviour.mcpEmpty":

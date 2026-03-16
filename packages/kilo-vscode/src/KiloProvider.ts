@@ -429,6 +429,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "requestSkills":
           this.fetchAndSendSkills().catch((e) => console.error("[Kilo New] fetchAndSendSkills failed:", e))
           break
+        case "removeSkill":
+          this.handleRemoveSkill(message.location).catch((e) =>
+            console.error("[Kilo New] handleRemoveSkill failed:", e),
+          )
+          break
         case "questionReply":
           await this.handleQuestionReply(message.requestID, message.answers)
           break
@@ -1125,6 +1130,32 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to fetch skills:", error)
     }
+  }
+
+  /**
+   * Remove a skill via the CLI backend (deletes from disk + clears cache), then refresh.
+   * The webview optimistically removes the skill from its list before this runs.
+   * On failure, re-fetches skills so the webview reverts to the authoritative state.
+   */
+  private async handleRemoveSkill(location: string): Promise<void> {
+    if (!this.client) return
+    try {
+      const dir = this.getWorkspaceDirectory()
+      const result = await this.client.kilocode.removeSkill({ location, directory: dir })
+      if (result.error) {
+        console.error("[Kilo New] KiloProvider: removeSkill returned error:", result.error)
+        this.cachedSkillsMessage = null
+        await this.fetchAndSendSkills()
+        return
+      }
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to remove skill:", error)
+      this.cachedSkillsMessage = null
+      await this.fetchAndSendSkills()
+      return
+    }
+    // Invalidate cache so next requestSkills fetches fresh data
+    this.cachedSkillsMessage = null
   }
 
   /**

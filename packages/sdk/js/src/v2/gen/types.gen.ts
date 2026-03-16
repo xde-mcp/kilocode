@@ -4402,6 +4402,36 @@ export type EnhancePromptEnhanceResponses = {
 
 export type EnhancePromptEnhanceResponse = EnhancePromptEnhanceResponses[keyof EnhancePromptEnhanceResponses]
 
+export type KilocodeRemoveSkillData = {
+  body?: {
+    location: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/kilocode/skill/remove"
+}
+
+export type KilocodeRemoveSkillErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type KilocodeRemoveSkillError = KilocodeRemoveSkillErrors[keyof KilocodeRemoveSkillErrors]
+
+export type KilocodeRemoveSkillResponses = {
+  /**
+   * Skill removed
+   */
+  200: boolean
+}
+
+export type KilocodeRemoveSkillResponse = KilocodeRemoveSkillResponses[keyof KilocodeRemoveSkillResponses]
+
 export type KiloProfileData = {
   body?: never
   path?: never

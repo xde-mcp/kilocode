@@ -956,6 +956,10 @@ export const dict = {
     "스킬을 찾을 수 없습니다. 스킬을 사용하려면 아래에 스킬 폴더 경로 또는 URL을 추가하세요.",
   "settings.agentBehaviour.skillPaths": "스킬 폴더 경로",
   "settings.agentBehaviour.skillUrls": "스킬 URL",
+  "settings.agentBehaviour.removeSkill.title": "스킬 제거",
+  "settings.agentBehaviour.removeSkill.confirm":
+    '스킬 "{{name}}"을(를) 제거하시겠습니까? 디스크에서 스킬 파일이 삭제됩니다.',
+  "settings.agentBehaviour.removeSkill.button": "제거",
   "settings.agentBehaviour.instructionFiles": "추가 지시 파일",
   "settings.agentBehaviour.instructionFiles.description": "시스템 프롬프트에 포함되는 추가 지시 파일 경로",
   "settings.agentBehaviour.mcpEmpty":

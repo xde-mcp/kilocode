@@ -57,6 +57,8 @@ import type {
   KiloCloudSessionImportResponses,
   KiloCloudSessionsErrors,
   KiloCloudSessionsResponses,
+  KilocodeRemoveSkillErrors,
+  KilocodeRemoveSkillResponses,
   KiloFimErrors,
   KiloFimResponses,
   KiloNotificationsErrors,
@@ -2928,6 +2930,47 @@ export class EnhancePrompt extends HeyApiClient {
   }
 }
 
+export class Kilocode extends HeyApiClient {
+  /**
+   * Remove a skill
+   *
+   * Remove a skill by deleting its directory from disk and clearing it from cache.
+   */
+  public removeSkill<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      location?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "location" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<KilocodeRemoveSkillResponses, KilocodeRemoveSkillErrors, ThrowOnError>(
+      {
+        url: "/kilocode/skill/remove",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    )
+  }
+}
+
 export class Organization extends HeyApiClient {
   /**
    * Update Kilo Gateway organization
@@ -4543,6 +4586,11 @@ export class KiloClient extends HeyApiClient {
   private _enhancePrompt?: EnhancePrompt
   get enhancePrompt(): EnhancePrompt {
     return (this._enhancePrompt ??= new EnhancePrompt({ client: this.client }))
+  }
+
+  private _kilocode?: Kilocode
+  get kilocode(): Kilocode {
+    return (this._kilocode ??= new Kilocode({ client: this.client }))
   }
 
   private _kilo?: Kilo
