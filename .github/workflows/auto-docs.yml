@@ -1,0 +1,26 @@
+name: Documentation Webhook on trigger on Feat PRs
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  webhook:
+    # Only run if the PR was merged AND the head branch name contains 'feat'
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.head.ref, 'feat')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Webhook
+        run: |
+          curl -X POST ${{ secrets.DOC_WEBHOOK_URL }} \
+          -H "Content-Type: application/json" \
+           -d '{
+            "repo": "${{ github.repository }}",
+            "pr_number": "${{ github.event.pull_request.number }}",
+            "title": "${{ github.event.pull_request.title }}",
+            "description": "${{ github.event.pull_request.body }}",
+            "author": "${{ github.event.pull_request.user.login }}",
+            "merged_at": "${{ github.event.pull_request.merged_at }}"
+          }'
