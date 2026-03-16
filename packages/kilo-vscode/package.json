@@ -708,6 +708,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "knip": "knip",
+    "check-kilocode-change": "! grep -r -l 'kilocode_change' . ../kilo-ui/ --exclude='package.json' --exclude='*.md'",
     "lint": "eslint src webview-ui",
     "test": "vscode-test",
     "test:unit": "bun test tests/unit/",
