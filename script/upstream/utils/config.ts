@@ -203,6 +203,10 @@ export const defaultConfig: MergeConfig = {
     "packages/opencode/test/kilocode",
     "packages/kilo-gateway",
     "packages/kilo-telemetry",
+    "packages/kilo-vscode",
+    "packages/kilo-ui",
+    "packages/kilo-docs",
+    "packages/kilo-i18n",
     "script/upstream",
   ],
 
