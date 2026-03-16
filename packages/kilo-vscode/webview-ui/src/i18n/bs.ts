@@ -961,7 +961,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Otkrivene vještine",
   "settings.agentBehaviour.noSkillsFound":
     "Nisu pronađene vještine. Dodajte putanje mapa ili URL-ove ispod kako biste učinili vještine dostupnim.",
-  "settings.agentBehaviour.availableModes": "Dostupni modovi",
+  "settings.agentBehaviour.availableModes": "Dostupni prilagođeni modovi",
   "settings.agentBehaviour.noModesFound": "Nisu pronađeni modovi.",
   "settings.agentBehaviour.removeMode.title": "Ukloni mod",
   "settings.agentBehaviour.removeMode.confirm":

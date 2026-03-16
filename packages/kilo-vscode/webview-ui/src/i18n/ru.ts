@@ -962,7 +962,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Обнаруженные навыки",
   "settings.agentBehaviour.noSkillsFound":
     "Навыки не обнаружены. Добавьте пути к папкам навыков или URL-адреса ниже, чтобы сделать навыки доступными.",
-  "settings.agentBehaviour.availableModes": "Доступные режимы",
+  "settings.agentBehaviour.availableModes": "Доступные пользовательские режимы",
   "settings.agentBehaviour.noModesFound": "Режимы не найдены.",
   "settings.agentBehaviour.removeMode.title": "Удалить режим",
   "settings.agentBehaviour.removeMode.confirm":

@@ -949,7 +949,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "المهارات المكتشفة",
   "settings.agentBehaviour.noSkillsFound":
     "لم يتم العثور على مهارات. أضف مسارات مجلدات أو عناوين URL أدناه لإتاحة المهارات.",
-  "settings.agentBehaviour.availableModes": "الأوضاع المتاحة",
+  "settings.agentBehaviour.availableModes": "الأوضاع المخصصة المتاحة",
   "settings.agentBehaviour.noModesFound": "لم يتم العثور على أوضاع.",
   "settings.agentBehaviour.removeMode.title": "إزالة الوضع",
   "settings.agentBehaviour.removeMode.confirm":

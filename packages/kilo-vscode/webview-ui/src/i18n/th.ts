@@ -949,7 +949,7 @@ export const dict = {
   "settings.agentBehaviour.maxSteps.description": "จำนวนรอบเอเจนต์สูงสุด",
   "settings.agentBehaviour.discoveredSkills": "ทักษะที่ค้นพบ",
   "settings.agentBehaviour.noSkillsFound": "ไม่พบทักษะ เพิ่มเส้นทางโฟลเดอร์หรือ URL ด้านล่างเพื่อทำให้ทักษะพร้อมใช้งาน",
-  "settings.agentBehaviour.availableModes": "โหมดที่ใช้ได้",
+  "settings.agentBehaviour.availableModes": "โหมดกำหนดเองที่ใช้ได้",
   "settings.agentBehaviour.noModesFound": "ไม่พบโหมด",
   "settings.agentBehaviour.removeMode.title": "ลบโหมด",
   "settings.agentBehaviour.removeMode.confirm":

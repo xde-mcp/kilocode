@@ -944,7 +944,7 @@ export const dict = {
   "settings.agentBehaviour.maxSteps.description": "最大 Agent 迭代次數",
   "settings.agentBehaviour.discoveredSkills": "已發現的 Skill",
   "settings.agentBehaviour.noSkillsFound": "未發現任何 Skill。請在下方新增 Skill 資料夾路徑或 URL 以使 Skill 可用。",
-  "settings.agentBehaviour.availableModes": "可用模式",
+  "settings.agentBehaviour.availableModes": "可用自訂模式",
   "settings.agentBehaviour.noModesFound": "未找到模式。",
   "settings.agentBehaviour.removeMode.title": "移除模式",
   "settings.agentBehaviour.removeMode.confirm": '要移除模式 "{{name}}" 嗎？這將透過更新設定來停用該模式。',

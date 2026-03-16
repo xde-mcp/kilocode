@@ -972,7 +972,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Erkannte Skills",
   "settings.agentBehaviour.noSkillsFound":
     "Keine Skills gefunden. Fügen Sie unten Skill-Ordnerpfade oder URLs hinzu, um Skills verfügbar zu machen.",
-  "settings.agentBehaviour.availableModes": "Verfügbare Modi",
+  "settings.agentBehaviour.availableModes": "Verfügbare benutzerdefinierte Modi",
   "settings.agentBehaviour.noModesFound": "Keine Modi gefunden.",
   "settings.agentBehaviour.removeMode.title": "Modus entfernen",
   "settings.agentBehaviour.removeMode.confirm":

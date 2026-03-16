@@ -957,7 +957,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "検出されたスキル",
   "settings.agentBehaviour.noSkillsFound":
     "スキルが見つかりません。スキルを利用可能にするには、以下にスキルフォルダパスまたはURLを追加してください。",
-  "settings.agentBehaviour.availableModes": "利用可能なモード",
+  "settings.agentBehaviour.availableModes": "利用可能なカスタムモード",
   "settings.agentBehaviour.noModesFound": "モードが見つかりません。",
   "settings.agentBehaviour.removeMode.title": "モードを削除",
   "settings.agentBehaviour.removeMode.confirm":

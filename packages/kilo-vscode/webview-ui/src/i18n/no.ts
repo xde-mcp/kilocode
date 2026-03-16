@@ -959,7 +959,7 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Oppdagede ferdigheter",
   "settings.agentBehaviour.noSkillsFound":
     "Ingen ferdigheter funnet. Legg til ferdighetsmappestier eller URLer nedenfor for å gjøre ferdigheter tilgjengelige.",
-  "settings.agentBehaviour.availableModes": "Tilgjengelige moduser",
+  "settings.agentBehaviour.availableModes": "Tilgjengelige egendefinerte moduser",
   "settings.agentBehaviour.noModesFound": "Ingen moduser funnet.",
   "settings.agentBehaviour.removeMode.title": "Fjern modus",
   "settings.agentBehaviour.removeMode.confirm":

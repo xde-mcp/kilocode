@@ -943,7 +943,7 @@ export const dict = {
   "settings.agentBehaviour.maxSteps.description": "最大智能体迭代次数",
   "settings.agentBehaviour.discoveredSkills": "已发现的技能",
   "settings.agentBehaviour.noSkillsFound": "未发现任何技能。请在下方添加技能文件夹路径或 URL 以使技能可用。",
-  "settings.agentBehaviour.availableModes": "可用模式",
+  "settings.agentBehaviour.availableModes": "可用自定义模式",
   "settings.agentBehaviour.noModesFound": "未找到模式。",
   "settings.agentBehaviour.removeMode.title": "移除模式",
   "settings.agentBehaviour.removeMode.confirm": '移除模式 "{{name}}" 吗？这将通过更新配置来禁用该模式。',
