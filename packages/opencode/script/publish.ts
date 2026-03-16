@@ -56,10 +56,10 @@ const tasks = Object.entries(binaries).map(async ([name]) => {
     await $`chmod -R 755 .`.cwd(`./dist/${name}`)
   }
   await $`bun pm pack`.cwd(`./dist/${name}`)
-  await $`npm publish *.tgz --access public --tag ${Script.channel}`.cwd(`./dist/${name}`)
+  await $`npm publish *.tgz --access public --tag ${Script.channel} --provenance`.cwd(`./dist/${name}`) // kilocode_change
 })
 await Promise.all(tasks)
-await $`npm publish *.tgz --access public --tag ${Script.channel} --provenance`.cwd(`./dist/${name}`) // kilocode_change
+await $`cd ./dist/${pkg.name} && bun pm pack && npm publish *.tgz --access public --tag ${Script.channel} --provenance` // kilocode_change
 
 const image = "ghcr.io/kilo-org/kilo" // kilocode_change
 const platforms = "linux/amd64,linux/arm64"
