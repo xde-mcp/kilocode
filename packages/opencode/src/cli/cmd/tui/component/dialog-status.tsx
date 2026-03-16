@@ -3,77 +3,15 @@ import { fileURLToPath } from "bun"
 import { useTheme } from "../context/theme"
 import { useDialog } from "@tui/ui/dialog"
 import { useSync } from "@tui/context/sync"
-import { useSDK } from "@tui/context/sdk" // kilocode_change
-import { For, Match, Switch, Show, createMemo, onMount, onCleanup } from "solid-js"
+import { For, Match, Switch, Show, createMemo } from "solid-js"
 import { Installation } from "../../../../installation"
-import type { ProcessInfo } from "@kilocode/sdk/v2" // kilocode_change
 
 export type DialogStatusProps = {}
-
-// kilocode_change start - format bytes for process memory display
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB"
-  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB"
-  if (bytes >= 1024) return (bytes / 1024).toFixed(0) + " KB"
-  return bytes + " B"
-}
-
-function shortCommand(info: ProcessInfo): string {
-  const cmd = info.command.split("/").pop() ?? info.command
-  const args = info.args
-  if (!args || args === info.command) return cmd
-  const parts = args.split(/\s+/)
-
-  // For node/bun: find the script being run (.js/.ts/.mjs/.cjs file)
-  if (cmd === "node" || cmd === "bun") {
-    const script = parts.find((p) => /\.(js|ts|mjs|cjs)(['"]?)$/.test(p))
-    if (script) {
-      const name = script
-        .split("/")
-        .pop()!
-        .replace(/\.(js|ts|mjs|cjs)$/, "")
-      return `${cmd} → ${name}`
-    }
-  }
-
-  // Find first non-flag, non-path, non-trivial arg
-  const interesting = parts.find(
-    (p) => !p.startsWith("-") && !p.startsWith("/") && p !== cmd && p !== "x" && p !== "run",
-  )
-  if (interesting) return `${cmd} → ${interesting}`
-
-  // Last resort: extract basename from first path arg that isn't the executable itself
-  const exe = parts[0]
-  const path = parts.find((p) => p.startsWith("/") && p !== exe)
-  if (path) {
-    const base = path
-      .split("/")
-      .pop()!
-      .replace(/\.(js|ts|mjs|cjs)$/, "")
-    return `${cmd} → ${base}`
-  }
-
-  return cmd
-}
-// kilocode_change end
 
 export function DialogStatus() {
   const sync = useSync()
   const { theme } = useTheme()
   const dialog = useDialog()
-  // kilocode_change start - refresh process data while dialog is open
-  const sdk = useSDK()
-  const refresh = () => {
-    sdk.client.process.status().then((x) => {
-      if (x.data) sync.set("processes", x.data)
-    })
-  }
-  onMount(() => {
-    refresh()
-    const timer = setInterval(refresh, 3000)
-    onCleanup(() => clearInterval(timer))
-  })
-  // kilocode_change end
 
   const enabledFormatters = createMemo(() => sync.data.formatter.filter((f) => f.enabled))
 
@@ -114,50 +52,6 @@ export function DialogStatus() {
       </box>
       {/* kilocode_change start */}
       <text fg={theme.textMuted}>Kilo v{Installation.VERSION}</text>
-      {/* kilocode_change end */}
-      {/* kilocode_change start - process memory diagnostics */}
-      <Show when={sync.data.processes}>
-        {(procs) => {
-          const total = createMemo(() => {
-            const all = [procs().self, ...procs().children]
-            return all.reduce((sum, p) => sum + p.rss, 0)
-          })
-          return (
-            <box>
-              <text fg={theme.text}>
-                Processes ({1 + procs().children.length}) — {formatBytes(total())} total RSS
-              </text>
-              <box flexDirection="row" gap={1}>
-                <text flexShrink={0} style={{ fg: theme.success }}>
-                  •
-                </text>
-                <text fg={theme.text} wrapMode="word">
-                  <b>self</b>{" "}
-                  <span style={{ fg: theme.textMuted }}>
-                    PID {procs().self.pid} | {formatBytes(procs().self.rss)} RSS | heap {formatBytes(procs().heap.used)}
-                    /{formatBytes(procs().heap.total)}
-                  </span>
-                </text>
-              </box>
-              <For each={procs().children}>
-                {(child) => (
-                  <box flexDirection="row" gap={1}>
-                    <text flexShrink={0} style={{ fg: child.rss > 512 * 1024 * 1024 ? theme.warning : theme.success }}>
-                      •
-                    </text>
-                    <text fg={theme.text} wrapMode="word">
-                      <b>{shortCommand(child)}</b>{" "}
-                      <span style={{ fg: theme.textMuted }}>
-                        PID {child.pid} | {formatBytes(child.rss)}
-                      </span>
-                    </text>
-                  </box>
-                )}
-              </For>
-            </box>
-          )
-        }}
-      </Show>
       {/* kilocode_change end */}
       <Show when={Object.keys(sync.data.mcp).length > 0} fallback={<text fg={theme.text}>No MCP Servers</text>}>
         <box>

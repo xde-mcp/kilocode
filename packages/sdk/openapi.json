@@ -8047,47 +8047,6 @@
         ]
       }
     },
-    "/process": {
-      "get": {
-        "operationId": "process.status",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "directory",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "workspace",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "summary": "Get process status",
-        "description": "Get process tree with memory usage for all related processes",
-        "responses": {
-          "200": {
-            "description": "Process status",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProcessStatus"
-                }
-              }
-            }
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "js",
-            "source": "import { createKiloClient } from \"@kilocode/sdk\n\nconst client = createKiloClient()\nawait client.process.status({\n  ...\n})"
-          }
-        ]
-      }
-    },
     "/formatter": {
       "get": {
         "operationId": "formatter.status",
@@ -13282,60 +13241,6 @@
           }
         },
         "required": ["id", "name", "root", "status"]
-      },
-      "ProcessInfo": {
-        "type": "object",
-        "properties": {
-          "pid": {
-            "type": "number"
-          },
-          "ppid": {
-            "type": "number"
-          },
-          "rss": {
-            "type": "number"
-          },
-          "command": {
-            "type": "string"
-          },
-          "args": {
-            "type": "string"
-          }
-        },
-        "required": ["pid", "ppid", "rss", "command", "args"]
-      },
-      "ProcessStatus": {
-        "type": "object",
-        "properties": {
-          "self": {
-            "$ref": "#/components/schemas/ProcessInfo"
-          },
-          "heap": {
-            "type": "object",
-            "properties": {
-              "used": {
-                "type": "number"
-              },
-              "total": {
-                "type": "number"
-              },
-              "external": {
-                "type": "number"
-              },
-              "buffers": {
-                "type": "number"
-              }
-            },
-            "required": ["used", "total", "external", "buffers"]
-          },
-          "children": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ProcessInfo"
-            }
-          }
-        },
-        "required": ["self", "heap", "children"]
       },
       "FormatterStatus": {
         "type": "object",
