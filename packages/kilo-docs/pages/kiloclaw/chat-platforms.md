@@ -75,6 +75,14 @@ Enter the token in the Settings tab and click **Save**. You can remove or replac
 5. Paste it into your browser, select your server, and click **Continue**
 6. You should now see your bot in the Discord server
 
+#### Start Chatting with the Bot
+
+1. Right-click on the Bot in Discord and click **Message**
+2. DM the bot `/start` or `/restart`
+3. You should get a response back with a pairing code
+4. Go back to [app.kilocode.ai/claw](https://app.kilocode.ai/claw) and confirm the pairing code and approve
+5. You should now be able to chat with the bot from Discord
+
 ### Slack
 
 To connect Slack, you need **both** of the following tokens from [Slack App Management](https://api.slack.com/apps):
