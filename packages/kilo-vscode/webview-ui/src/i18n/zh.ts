@@ -946,7 +946,8 @@ export const dict = {
   "settings.agentBehaviour.availableModes": "可用自定义模式",
   "settings.agentBehaviour.noModesFound": "未找到模式。",
   "settings.agentBehaviour.removeMode.title": "移除模式",
-  "settings.agentBehaviour.removeMode.confirm": '移除模式 "{{name}}" 吗？这将通过更新配置来禁用该模式。',
+  "settings.agentBehaviour.removeMode.confirm":
+    '移除模式 "{{name}}" 吗？这将通过更新配置来禁用该模式。',
   "settings.agentBehaviour.removeMode.button": "移除",
   "settings.agentBehaviour.skillPaths": "技能文件夹路径",
   "settings.agentBehaviour.skillUrls": "技能 URL",
