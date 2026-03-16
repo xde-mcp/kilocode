@@ -128,9 +128,12 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     setSelectedIndex(0)
   })
 
-  // Focus search input and scroll active item into view when popover opens
+  // Focus search input, set selectedIndex to active model, and scroll it into view when popover opens
   createEffect(() => {
     if (open()) {
+      const active = activeModel()
+      const activeIdx = active ? (flatIndexMap().get(active) ?? 0) : 0
+      setSelectedIndex(activeIdx)
       requestAnimationFrame(() => {
         searchRef?.focus()
         listRef?.querySelector(".model-selector-item.active")?.scrollIntoView({ block: "center" })
