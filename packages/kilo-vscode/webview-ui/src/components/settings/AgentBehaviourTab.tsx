@@ -196,10 +196,8 @@ const AgentBehaviourTab: Component = () => {
   }
 
   const removableModes = createMemo(() => session.agents().filter((a) => !a.native))
-  const [removing, setRemoving] = createSignal(false)
 
   const confirmRemoveMode = (agent: AgentInfo) => {
-    if (removing()) return
     dialog.show(() => (
       <Dialog title={language.t("settings.agentBehaviour.removeMode.title")} fit>
         <div class="dialog-confirm-body">
@@ -212,10 +210,11 @@ const AgentBehaviourTab: Component = () => {
               variant="primary"
               size="large"
               onClick={() => {
-                setRemoving(true)
                 dialog.close()
-                session.removeMode(agent.name)
-                setTimeout(() => setRemoving(false), 200)
+                // Delay optimistic removal until after dialog close animation (100ms)
+                // to prevent the reactive list re-render from firing click handlers
+                // on shifted list items while the dialog overlay is still present.
+                setTimeout(() => session.removeMode(agent.name), 150)
               }}
             >
               {language.t("settings.agentBehaviour.removeMode.button")}
