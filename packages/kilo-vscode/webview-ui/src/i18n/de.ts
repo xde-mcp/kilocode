@@ -414,6 +414,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Verbindung zum Server fehlgeschlagen. Läuft ein Server unter `{{url}}`?",
 
+  "error.startup.title": "Serververbindung fehlgeschlagen",
+
   "error.paidModel.title": "Du musst dich anmelden, um dieses Modell zu nutzen",
   "error.paidModel.description":
     "Melde dich an oder erstelle ein Konto, um auf über 500 Modelle zuzugreifen, Credits zum Selbstkostenpreis zu nutzen oder deinen eigenen Schlüssel mitzubringen.",
@@ -448,6 +450,11 @@ export const dict = {
 
   "notification.permission.title": "Berechtigung erforderlich",
   "notification.permission.description": "{{sessionTitle}} in {{projectName}} benötigt Berechtigung",
+  "ui.permission.permissionRules": "Berechtigungsregeln",
+  "ui.permission.rule.addToAllowed": "Zur Erlaubt-Liste hinzufügen",
+  "ui.permission.rule.removeFromAllowed": "Aus der Erlaubt-Liste entfernen",
+  "ui.permission.rule.addToDenied": "Zur Verweigert-Liste hinzufügen",
+  "ui.permission.rule.removeFromDenied": "Aus der Verweigert-Liste entfernen",
   "notification.question.title": "Frage",
   "notification.question.description": "{{sessionTitle}} in {{projectName}} hat eine Frage",
   "notification.action.goToSession": "Zur Sitzung gehen",
@@ -948,6 +955,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Werkzeug-Schalter",
   "settings.agentBehaviour.defaultAgent.title": "Standard-Agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent, der verwendet wird, wenn keiner angegeben ist",
+  "settings.agentBehaviour.availableAgents": "Verfügbare Agenten",
   "settings.agentBehaviour.selectAgent": "Agent zum Konfigurieren auswählen…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Agent zum Konfigurieren auswählen…",
@@ -964,8 +972,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Erkannte Skills",
   "settings.agentBehaviour.noSkillsFound":
     "Keine Skills gefunden. Fügen Sie unten Skill-Ordnerpfade oder URLs hinzu, um Skills verfügbar zu machen.",
+  "settings.agentBehaviour.availableModes": "Verfügbare benutzerdefinierte Modi",
+  "settings.agentBehaviour.noModesFound": "Keine Modi gefunden.",
+  "settings.agentBehaviour.removeMode.title": "Modus entfernen",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Modus "{{name}}" entfernen? Dadurch wird der Modus durch Aktualisierung Ihrer Konfiguration deaktiviert.',
+  "settings.agentBehaviour.removeMode.button": "Entfernen",
   "settings.agentBehaviour.skillPaths": "Skill-Ordnerpfade",
   "settings.agentBehaviour.skillUrls": "Skill-URLs",
+  "settings.agentBehaviour.removeSkill.title": "Skill entfernen",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Skill "{{name}}" entfernen? Dadurch werden die Skill-Dateien vom Datenträger gelöscht.',
+  "settings.agentBehaviour.removeSkill.button": "Entfernen",
   "settings.agentBehaviour.instructionFiles": "Zusätzliche Anweisungsdateien",
   "settings.agentBehaviour.instructionFiles.description": "Pfade zu zusätzlichen Anweisungsdateien im System-Prompt",
   "settings.agentBehaviour.mcpEmpty":

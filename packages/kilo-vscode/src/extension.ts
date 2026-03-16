@@ -50,6 +50,16 @@ export function activate(context: vscode.ExtensionContext) {
   const agentManagerProvider = new AgentManagerProvider(context.extensionUri, connectionService)
   context.subscriptions.push(agentManagerProvider)
 
+  // Register serializer so Agent Manager restores when VS Code restarts
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer(AgentManagerProvider.viewType, {
+      deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+        agentManagerProvider.deserializeWebviewPanel(panel)
+        return Promise.resolve()
+      },
+    }),
+  )
+
   // Create standalone diff viewer provider for the sidebar "Show Changes" action
   const diffViewerProvider = new DiffViewerProvider(context.extensionUri, connectionService)
   diffViewerProvider.setCommentHandler((comments) => {
@@ -85,8 +95,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("kilo-code.new.profileButtonClicked", () => {
       settingsEditorProvider.openPanel("profile")
     }),
-    vscode.commands.registerCommand("kilo-code.new.settingsButtonClicked", () => {
-      settingsEditorProvider.openPanel("settings")
+    vscode.commands.registerCommand("kilo-code.new.settingsButtonClicked", (tab?: string) => {
+      settingsEditorProvider.openPanel("settings", tab)
     }),
     // legacy-migration start
     vscode.commands.registerCommand("kilo-code.new.openMigrationWizard", () => {
@@ -173,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register code actions (editor context menus, terminal context menus, keyboard shortcuts)
   registerCodeActions(context, provider, agentManagerProvider)
-  registerTerminalActions(context, provider)
+  registerTerminalActions(context, provider, agentManagerProvider)
 
   // Register CodeActionProvider (lightbulb quick fixes)
   context.subscriptions.push(

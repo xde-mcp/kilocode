@@ -414,6 +414,8 @@ export const dict = {
   "error.globalSync.connectFailed":
     "Impossible de se connecter au serveur. Y a-t-il un serveur en cours d'exécution à `{{url}}` ?",
 
+  "error.startup.title": "Échec de la connexion au serveur",
+
   "error.paidModel.title": "Vous devez vous connecter pour utiliser ce modèle",
   "error.paidModel.description":
     "Connectez-vous ou créez un compte pour accéder à plus de 500 modèles, utiliser des crédits au prix coûtant ou apporter votre propre clé.",
@@ -448,6 +450,11 @@ export const dict = {
 
   "notification.permission.title": "Permission requise",
   "notification.permission.description": "{{sessionTitle}} dans {{projectName}} a besoin d'une permission",
+  "ui.permission.permissionRules": "Règles de permission",
+  "ui.permission.rule.addToAllowed": "Ajouter à la liste des autorisés",
+  "ui.permission.rule.removeFromAllowed": "Retirer de la liste des autorisés",
+  "ui.permission.rule.addToDenied": "Ajouter à la liste des refusés",
+  "ui.permission.rule.removeFromDenied": "Retirer de la liste des refusés",
   "notification.question.title": "Question",
   "notification.question.description": "{{sessionTitle}} dans {{projectName}} a une question",
   "notification.action.goToSession": "Aller à la session",
@@ -950,6 +957,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Commutateurs d'outils",
   "settings.agentBehaviour.defaultAgent.title": "Agent par défaut",
   "settings.agentBehaviour.defaultAgent.description": "Agent à utiliser lorsqu'aucun n'est spécifié",
+  "settings.agentBehaviour.availableAgents": "Agents disponibles",
   "settings.agentBehaviour.selectAgent": "Sélectionner un agent à configurer…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Sélectionner un agent à configurer…",
@@ -966,8 +974,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Compétences découvertes",
   "settings.agentBehaviour.noSkillsFound":
     "Aucune compétence découverte. Ajoutez des chemins de dossiers ou des URLs ci-dessous pour rendre les compétences disponibles.",
+  "settings.agentBehaviour.availableModes": "Modes personnalisés disponibles",
+  "settings.agentBehaviour.noModesFound": "Aucun mode trouvé.",
+  "settings.agentBehaviour.removeMode.title": "Supprimer le mode",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Supprimer le mode "{{name}}" ? Cela désactivera le mode en mettant à jour votre configuration.',
+  "settings.agentBehaviour.removeMode.button": "Supprimer",
   "settings.agentBehaviour.skillPaths": "Chemins des dossiers de compétences",
   "settings.agentBehaviour.skillUrls": "URLs de compétences",
+  "settings.agentBehaviour.removeSkill.title": "Supprimer la compétence",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Supprimer la compétence "{{name}}" ? Cela supprimera les fichiers de la compétence du disque.',
+  "settings.agentBehaviour.removeSkill.button": "Supprimer",
   "settings.agentBehaviour.instructionFiles": "Fichiers d'instructions supplémentaires",
   "settings.agentBehaviour.instructionFiles.description": "Chemins vers des fichiers d'instructions supplémentaires",
   "settings.agentBehaviour.mcpEmpty":

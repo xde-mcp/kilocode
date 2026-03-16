@@ -411,6 +411,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Kunne ikke koble til server. Kjører det en server på `{{url}}`?",
 
+  "error.startup.title": "Servertilkobling mislyktes",
+
   "error.paidModel.title": "Du må logge inn for å bruke denne modellen",
   "error.paidModel.description":
     "Logg inn eller opprett en konto for å få tilgang til over 500 modeller, bruk kreditter til kostpris, eller ta med din egen nøkkel.",
@@ -443,6 +445,11 @@ export const dict = {
 
   "notification.permission.title": "Tillatelse påkrevd",
   "notification.permission.description": "{{sessionTitle}} i {{projectName}} trenger tillatelse",
+  "ui.permission.permissionRules": "Tillatelsesregler",
+  "ui.permission.rule.addToAllowed": "Legg til i tillatt-listen",
+  "ui.permission.rule.removeFromAllowed": "Fjern fra tillatt-listen",
+  "ui.permission.rule.addToDenied": "Legg til i blokkert-listen",
+  "ui.permission.rule.removeFromDenied": "Fjern fra blokkert-listen",
   "notification.question.title": "Spørsmål",
   "notification.question.description": "{{sessionTitle}} i {{projectName}} har et spørsmål",
   "notification.action.goToSession": "Gå til sesjon",
@@ -935,6 +942,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Verktøybrytere",
   "settings.agentBehaviour.defaultAgent.title": "Standardagent",
   "settings.agentBehaviour.defaultAgent.description": "Agent å bruke når ingen er angitt",
+  "settings.agentBehaviour.availableAgents": "Tilgjengelige agenter",
   "settings.agentBehaviour.selectAgent": "Velg en agent å konfigurere…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Velg en agent å konfigurere…",
@@ -951,8 +959,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Oppdagede ferdigheter",
   "settings.agentBehaviour.noSkillsFound":
     "Ingen ferdigheter funnet. Legg til ferdighetsmappestier eller URLer nedenfor for å gjøre ferdigheter tilgjengelige.",
+  "settings.agentBehaviour.availableModes": "Tilgjengelige egendefinerte moduser",
+  "settings.agentBehaviour.noModesFound": "Ingen moduser funnet.",
+  "settings.agentBehaviour.removeMode.title": "Fjern modus",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Vil du fjerne modusen "{{name}}"? Dette vil deaktivere modusen ved å oppdatere konfigurasjonen din.',
+  "settings.agentBehaviour.removeMode.button": "Fjern",
   "settings.agentBehaviour.skillPaths": "Ferdighetsmappe-stier",
   "settings.agentBehaviour.skillUrls": "Ferdighets-URLer",
+  "settings.agentBehaviour.removeSkill.title": "Fjern ferdighet",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Vil du fjerne ferdigheten "{{name}}"? Dette vil slette ferdighetsfilene fra disken.',
+  "settings.agentBehaviour.removeSkill.button": "Fjern",
   "settings.agentBehaviour.instructionFiles": "Ekstra instruksjonsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til ekstra instruksjonsfiler i systemprompten",
   "settings.agentBehaviour.mcpEmpty":

@@ -3,7 +3,7 @@ import { BusEvent } from "@/bus/bus-event"
 import { Config } from "@/config/config"
 import { Identifier } from "@/id/id"
 import { Instance } from "@/project/instance"
-import { Database, eq } from "@/storage/db"
+import { Database, eq, NotFoundError } from "@/storage/db"
 import { PermissionTable } from "@/session/session.sql"
 import { fn } from "@/util/fn"
 import { Log } from "@/util/log"
@@ -160,6 +160,31 @@ export namespace PermissionNext {
     },
   )
 
+  // kilocode_change start
+  export const saveAlwaysRules = fn(
+    z.object({
+      requestID: Identifier.schema("permission"),
+      approvedAlways: z.string().array().optional(),
+      deniedAlways: z.string().array().optional(),
+    }),
+    async (input) => {
+      const s = await state()
+      const existing = s.pending[input.requestID]
+      if (!existing) throw new NotFoundError({ message: `Permission request ${input.requestID} not found` })
+
+      const validRules = new Set(existing.info.metadata?.rules ?? [])
+      const permission = existing.info.permission
+
+      for (const pattern of input.approvedAlways ?? []) {
+        if (validRules.has(pattern)) s.approved.push({ permission, pattern, action: "allow" })
+      }
+      for (const pattern of input.deniedAlways ?? []) {
+        if (validRules.has(pattern)) s.approved.push({ permission, pattern, action: "deny" })
+      }
+    },
+  )
+  // kilocode_change end
+
   export const reply = fn(
     z.object({
       requestID: Identifier.schema("permission"),
@@ -176,6 +201,7 @@ export namespace PermissionNext {
         requestID: existing.info.id,
         reply: input.reply,
       })
+
       if (input.reply === "reject") {
         existing.reject(input.message ? new CorrectedError(input.message) : new RejectedError())
         // Reject all other pending permissions for this session

@@ -407,6 +407,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "サーバーに接続できませんでした。`{{url}}`でサーバーが実行されていますか？",
 
+  "error.startup.title": "サーバー接続に失敗しました",
+
   "error.paidModel.title": "このモデルを使用するにはサインインが必要です",
   "error.paidModel.description":
     "サインインまたはアカウントを作成して、500以上のモデルにアクセスし、原価でクレジットを使用するか、独自のキーを持ち込みましょう。",
@@ -439,6 +441,11 @@ export const dict = {
 
   "notification.permission.title": "権限が必要です",
   "notification.permission.description": "{{projectName}} の {{sessionTitle}} が権限を必要としています",
+  "ui.permission.permissionRules": "権限ルール",
+  "ui.permission.rule.addToAllowed": "許可リストに追加",
+  "ui.permission.rule.removeFromAllowed": "許可リストから削除",
+  "ui.permission.rule.addToDenied": "拒否リストに追加",
+  "ui.permission.rule.removeFromDenied": "拒否リストから削除",
   "notification.question.title": "質問",
   "notification.question.description": "{{projectName}} の {{sessionTitle}} から質問があります",
   "notification.action.goToSession": "セッションへ移動",
@@ -933,6 +940,7 @@ export const dict = {
   "settings.experimental.toolToggles": "ツールトグル",
   "settings.agentBehaviour.defaultAgent.title": "デフォルトエージェント",
   "settings.agentBehaviour.defaultAgent.description": "指定されていない場合に使用するエージェント",
+  "settings.agentBehaviour.availableAgents": "利用可能なエージェント",
   "settings.agentBehaviour.selectAgent": "設定するエージェントを選択…",
   "settings.agentBehaviour.selectAgent.title": "エージェント",
   "settings.agentBehaviour.selectAgent.description": "設定するエージェントを選択…",
@@ -949,8 +957,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "検出されたスキル",
   "settings.agentBehaviour.noSkillsFound":
     "スキルが見つかりません。スキルを利用可能にするには、以下にスキルフォルダパスまたはURLを追加してください。",
+  "settings.agentBehaviour.availableModes": "利用可能なカスタムモード",
+  "settings.agentBehaviour.noModesFound": "モードが見つかりません。",
+  "settings.agentBehaviour.removeMode.title": "モードを削除",
+  "settings.agentBehaviour.removeMode.confirm":
+    'モード "{{name}}" を削除しますか？設定を更新してモードを無効にします。',
+  "settings.agentBehaviour.removeMode.button": "削除",
   "settings.agentBehaviour.skillPaths": "スキルフォルダパス",
   "settings.agentBehaviour.skillUrls": "スキルURL",
+  "settings.agentBehaviour.removeSkill.title": "スキルを削除",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'スキル "{{name}}" を削除しますか？これにより、ディスクからスキルファイルが削除されます。',
+  "settings.agentBehaviour.removeSkill.button": "削除",
   "settings.agentBehaviour.instructionFiles": "追加の指示ファイル",
   "settings.agentBehaviour.instructionFiles.description": "システムプロンプトに含まれる追加の指示ファイルへのパス",
   "settings.agentBehaviour.mcpEmpty":

@@ -408,6 +408,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ มีเซิร์ฟเวอร์ทำงานอยู่ที่ `{{url}}` หรือไม่?",
 
+  "error.startup.title": "การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว",
+
   "error.paidModel.title": "คุณต้องเข้าสู่ระบบเพื่อใช้โมเดลนี้",
   "error.paidModel.description":
     "เข้าสู่ระบบหรือสร้างบัญชีเพื่อเข้าถึงโมเดลกว่า 500 รายการ ใช้เครดิตในราคาทุน หรือใช้คีย์ของคุณเอง",
@@ -439,6 +441,11 @@ export const dict = {
 
   "notification.permission.title": "ต้องการสิทธิ์",
   "notification.permission.description": "{{sessionTitle}} ใน {{projectName}} ต้องการสิทธิ์",
+  "ui.permission.permissionRules": "กฎการอนุญาต",
+  "ui.permission.rule.addToAllowed": "เพิ่มไปยังรายการที่อนุญาต",
+  "ui.permission.rule.removeFromAllowed": "นำออกจากรายการที่อนุญาต",
+  "ui.permission.rule.addToDenied": "เพิ่มไปยังรายการที่ถูกปฏิเสธ",
+  "ui.permission.rule.removeFromDenied": "นำออกจากรายการที่ถูกปฏิเสธ",
   "notification.question.title": "คำถาม",
   "notification.question.description": "{{sessionTitle}} ใน {{projectName}} มีคำถาม",
   "notification.action.goToSession": "ไปที่เซสชัน",
@@ -926,6 +933,7 @@ export const dict = {
   "settings.experimental.toolToggles": "สวิตช์เครื่องมือ",
   "settings.agentBehaviour.defaultAgent.title": "เอเจนต์เริ่มต้น",
   "settings.agentBehaviour.defaultAgent.description": "เอเจนต์ที่ใช้เมื่อไม่ได้ระบุ",
+  "settings.agentBehaviour.availableAgents": "เอเจนต์ที่ใช้งานได้",
   "settings.agentBehaviour.selectAgent": "เลือกเอเจนต์เพื่อกำหนดค่า…",
   "settings.agentBehaviour.selectAgent.title": "เอเจนต์",
   "settings.agentBehaviour.selectAgent.description": "เลือกเอเจนต์เพื่อกำหนดค่า…",
@@ -941,8 +949,18 @@ export const dict = {
   "settings.agentBehaviour.maxSteps.description": "จำนวนรอบเอเจนต์สูงสุด",
   "settings.agentBehaviour.discoveredSkills": "ทักษะที่ค้นพบ",
   "settings.agentBehaviour.noSkillsFound": "ไม่พบทักษะ เพิ่มเส้นทางโฟลเดอร์หรือ URL ด้านล่างเพื่อทำให้ทักษะพร้อมใช้งาน",
+  "settings.agentBehaviour.availableModes": "โหมดกำหนดเองที่ใช้ได้",
+  "settings.agentBehaviour.noModesFound": "ไม่พบโหมด",
+  "settings.agentBehaviour.removeMode.title": "ลบโหมด",
+  "settings.agentBehaviour.removeMode.confirm":
+    'ต้องการลบโหมด "{{name}}" หรือไม่? การดำเนินการนี้จะปิดใช้งานโหมดโดยอัปเดตการกำหนดค่าของคุณ',
+  "settings.agentBehaviour.removeMode.button": "ลบ",
   "settings.agentBehaviour.skillPaths": "เส้นทางโฟลเดอร์ทักษะ",
   "settings.agentBehaviour.skillUrls": "URL ทักษะ",
+  "settings.agentBehaviour.removeSkill.title": "ลบทักษะ",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'ต้องการลบทักษะ "{{name}}" หรือไม่? การดำเนินการนี้จะลบไฟล์ทักษะออกจากดิสก์',
+  "settings.agentBehaviour.removeSkill.button": "ลบ",
   "settings.agentBehaviour.instructionFiles": "ไฟล์คำสั่งเพิ่มเติม",
   "settings.agentBehaviour.instructionFiles.description": "เส้นทางไฟล์คำสั่งเพิ่มเติมในพรอมต์ระบบ",
   "settings.agentBehaviour.mcpEmpty":

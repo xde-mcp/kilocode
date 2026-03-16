@@ -34,6 +34,13 @@ export interface TextPart extends BasePart {
   text: string
 }
 
+export interface FilePart extends BasePart {
+  type: "file"
+  mime: string
+  url: string
+  filename?: string
+}
+
 export interface ToolPart extends BasePart {
   type: "tool"
   tool: string
@@ -62,7 +69,7 @@ export interface StepFinishPart extends BasePart {
   }
 }
 
-export type Part = TextPart | ToolPart | ReasoningPart | StepStartPart | StepFinishPart
+export type Part = TextPart | FilePart | ToolPart | ReasoningPart | StepStartPart | StepFinishPart
 
 // Part delta for streaming updates
 export interface PartDelta {
@@ -128,7 +135,7 @@ export interface PermissionRequest {
   sessionID: string
   toolName: string
   patterns: string[]
-  args: Record<string, unknown>
+  args: Record<string, unknown> & { rules?: string[] }
   message?: string
   tool?: { messageID: string; callID: string }
 }
@@ -363,6 +370,8 @@ export interface ConnectionStateMessage {
   type: "connectionState"
   state: ConnectionState
   error?: string
+  userMessage?: string
+  userDetails?: string
 }
 
 export interface ErrorMessage {
@@ -370,6 +379,15 @@ export interface ErrorMessage {
   message: string
   code?: string
   sessionID?: string
+}
+
+export interface SendMessageFailedMessage {
+  type: "sendMessageFailed"
+  error: string
+  text: string
+  sessionID?: string
+  messageID?: string
+  files?: FileAttachment[]
 }
 
 export interface PartUpdatedMessage {
@@ -539,6 +557,7 @@ export interface DeviceAuthCancelledMessage {
 export interface NavigateMessage {
   type: "navigate"
   view: "newTask" | "marketplace" | "history" | "cloudHistory" | "profile" | "settings" | "migration" | "subAgentViewer" // legacy-migration: "migration"
+  tab?: string
 }
 
 export interface ProvidersLoadedMessage {
@@ -653,6 +672,8 @@ export interface AgentManagerRepoInfoMessage {
   defaultBranch?: string
 }
 
+export type WorktreeErrorCode = "git_not_found" | "not_git_repo" | "lfs_missing"
+
 // Agent Manager worktree setup progress
 export interface AgentManagerWorktreeSetupMessage {
   type: "agentManager.worktreeSetup"
@@ -661,6 +682,7 @@ export interface AgentManagerWorktreeSetupMessage {
   sessionId?: string
   branch?: string
   worktreeId?: string
+  errorCode?: WorktreeErrorCode
 }
 
 // Agent Manager worktree state types (mirrored from WorktreeStateManager)
@@ -690,6 +712,14 @@ export interface AgentManagerSessionAddedMessage {
   type: "agentManager.sessionAdded"
   sessionId: string
   worktreeId: string
+}
+
+// Agent Manager session forked from an existing session
+export interface AgentManagerSessionForkedMessage {
+  type: "agentManager.sessionForked"
+  sessionId: string
+  forkedFromId: string
+  worktreeId?: string
 }
 
 // Full state push from extension to webview
@@ -757,6 +787,7 @@ export interface AgentManagerImportResultMessage {
   type: "agentManager.importResult"
   success: boolean
   message: string
+  errorCode?: WorktreeErrorCode
 }
 
 // Shared FileDiff shape (matches Snapshot.FileDiff from CLI backend)
@@ -767,6 +798,10 @@ export interface WorktreeFileDiff {
   additions: number
   deletions: number
   status?: "added" | "deleted" | "modified"
+  tracked?: boolean
+  generatedLike?: boolean
+  summarized?: boolean
+  stamp?: string
 }
 
 // Agent Manager: Diff data push (extension → webview)
@@ -774,6 +809,13 @@ export interface AgentManagerWorktreeDiffMessage {
   type: "agentManager.worktreeDiff"
   sessionId: string
   diffs: WorktreeFileDiff[]
+}
+
+export interface AgentManagerWorktreeDiffFileMessage {
+  type: "agentManager.worktreeDiffFile"
+  sessionId: string
+  file: string
+  diff: WorktreeFileDiff | null
 }
 
 // Agent Manager: Diff loading state (extension → webview)
@@ -993,6 +1035,7 @@ export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
   | ErrorMessage
+  | SendMessageFailedMessage
   | PartUpdatedMessage
   | SessionStatusMessage
   | PermissionRequestMessage
@@ -1032,6 +1075,7 @@ export type ExtensionMessage =
   | AgentManagerRepoInfoMessage
   | AgentManagerWorktreeSetupMessage
   | AgentManagerSessionAddedMessage
+  | AgentManagerSessionForkedMessage
   | AgentManagerStateMessage
   | AgentManagerKeybindingsMessage
   | AgentManagerMultiVersionProgressMessage
@@ -1051,6 +1095,7 @@ export type ExtensionMessage =
   | AgentManagerImportResultMessage
   | WorkspaceDirectoryChangedMessage
   | AgentManagerWorktreeDiffMessage
+  | AgentManagerWorktreeDiffFileMessage
   | AgentManagerWorktreeDiffLoadingMessage
   | AgentManagerApplyWorktreeDiffResultMessage
   | AgentManagerWorktreeStatsMessage
@@ -1073,11 +1118,13 @@ export type ExtensionMessage =
 export interface FileAttachment {
   mime: string
   url: string
+  filename?: string
 }
 
 export interface SendMessageRequest {
   type: "sendMessage"
   text: string
+  messageID?: string
   sessionID?: string
   providerID?: string
   modelID?: string
@@ -1096,6 +1143,8 @@ export interface PermissionResponseRequest {
   permissionId: string
   sessionID: string
   response: "once" | "always" | "reject"
+  approvedAlways: string[]
+  deniedAlways: string[]
 }
 
 export interface CreateSessionRequest {
@@ -1135,6 +1184,7 @@ export interface ImportAndSendMessage {
   type: "importAndSend"
   cloudSessionId: string
   text: string
+  messageID?: string
   providerID?: string
   modelID?: string
   agent?: string
@@ -1196,6 +1246,16 @@ export interface RequestAgentsMessage {
 
 export interface RequestSkillsMessage {
   type: "requestSkills"
+}
+
+export interface RemoveSkillMessage {
+  type: "removeSkill"
+  location: string
+}
+
+export interface RemoveModeMessage {
+  type: "removeMode"
+  name: string
 }
 
 export interface SetLanguageRequest {
@@ -1278,6 +1338,11 @@ export interface ResetAllSettingsRequest {
   type: "resetAllSettings"
 }
 
+export interface SettingsTabChangedMessage {
+  type: "settingsTabChanged"
+  tab: string
+}
+
 export interface RequestNotificationsMessage {
   type: "requestNotifications"
 }
@@ -1337,6 +1402,13 @@ export interface PromoteSessionRequest {
 export interface AddSessionToWorktreeRequest {
   type: "agentManager.addSessionToWorktree"
   worktreeId: string
+}
+
+// Fork an existing session (copies conversation history)
+export interface ForkSessionRequest {
+  type: "agentManager.forkSession"
+  sessionId: string
+  worktreeId?: string
 }
 
 // Close (remove) a session from its worktree
@@ -1480,6 +1552,12 @@ export interface RequestWorktreeDiffMessage {
   sessionId: string
 }
 
+export interface RequestWorktreeDiffFileMessage {
+  type: "agentManager.requestWorktreeDiffFile"
+  sessionId: string
+  file: string
+}
+
 // Agent Manager: Start polling for live diff updates (webview → extension)
 export interface StartDiffWatchMessage {
   type: "agentManager.startDiffWatch"
@@ -1521,6 +1599,10 @@ export interface OpenChangesRequest {
   type: "openChanges"
 }
 
+export interface RetryConnectionRequest {
+  type: "retryConnection"
+}
+
 // Open a sub-agent session in a read-only editor panel
 export interface OpenSubAgentViewerRequest {
   type: "openSubAgentViewer"
@@ -1556,6 +1638,8 @@ export type WebviewMessage =
   | CompactRequest
   | RequestAgentsMessage
   | RequestSkillsMessage
+  | RemoveSkillMessage
+  | RemoveModeMessage
   | SetLanguageRequest
   | QuestionReplyRequest
   | QuestionRejectRequest
@@ -1572,6 +1656,7 @@ export type WebviewMessage =
   | UpdateConfigMessage
   | RequestNotificationSettingsMessage
   | ResetAllSettingsRequest
+  | SettingsTabChangedMessage
   | SyncSessionRequest
   | CreateWorktreeSessionRequest
   | RequestNotificationsMessage
@@ -1581,6 +1666,7 @@ export type WebviewMessage =
   | RemoveStaleWorktreeRequest
   | PromoteSessionRequest
   | AddSessionToWorktreeRequest
+  | ForkSessionRequest
   | CloseSessionRequest
   | RenameWorktreeRequest
   | TelemetryRequest
@@ -1607,6 +1693,7 @@ export type WebviewMessage =
   | ImportExternalWorktreeRequest
   | ImportAllExternalWorktreesRequest
   | RequestWorktreeDiffMessage
+  | RequestWorktreeDiffFileMessage
   | StartDiffWatchMessage
   | StopDiffWatchMessage
   // legacy-migration start
@@ -1618,6 +1705,7 @@ export type WebviewMessage =
   | ApplyWorktreeDiffMessage
   | EnhancePromptRequest
   | OpenChangesRequest
+  | RetryConnectionRequest
   | OpenSubAgentViewerRequest
   | SetDefaultBaseBranchRequest
 

@@ -161,7 +161,7 @@ const globPermission: PermissionRequest = {
   sessionID: SESSION_ID,
   toolName: "glob",
   patterns: ["**/*.md"],
-  args: { pattern: "**/*.md" },
+  args: { pattern: "**/*.md", rules: ["**/*.md"] },
   tool: { messageID: ASST_MSG_ID, callID: "call-glob-001" },
 }
 
@@ -170,7 +170,7 @@ const bashPermission: PermissionRequest = {
   sessionID: SESSION_ID,
   toolName: "bash",
   patterns: ["bun test"],
-  args: { command: "bun test" },
+  args: { command: "bun test", rules: ["bun *", "bun test"] },
   tool: { messageID: ASST_MSG_ID, callID: "call-bash-001" },
 }
 
@@ -179,7 +179,7 @@ const dockPermission: PermissionRequest = {
   sessionID: SESSION_ID,
   toolName: "write",
   patterns: ["src/main.tsx", "src/utils.ts"],
-  args: {},
+  args: { rules: ["src/main.tsx", "src/utils.ts"] },
   // No `tool` field — this is a non-tool (dock) permission
 }
 
@@ -291,7 +291,7 @@ const todoWritePermission: PermissionRequest = {
   sessionID: SESSION_ID,
   toolName: "todowrite",
   patterns: ["*"],
-  args: {},
+  args: { rules: ["*"] },
   tool: { messageID: ASST_MSG_ID, callID: "call-todo-001" },
 }
 
@@ -539,23 +539,6 @@ export const MultipleToolCalls: Story = {
     const data = dataWith([readCompleted, globCompleted, textPart])
     return (
       <StoryProviders data={data} sessionID={SESSION_ID}>
-        <AssistantMessage message={baseAssistantMessage} />
-      </StoryProviders>
-    )
-  },
-}
-
-// ---------------------------------------------------------------------------
-// 8. Inline question (tool-linked question rendered in message flow)
-// ---------------------------------------------------------------------------
-
-export const InlineQuestion: Story = {
-  name: "Inline Question",
-  render: () => {
-    const qs = [questionRequest]
-    const data = dataWith([textPart, questionToolPart])
-    return (
-      <StoryProviders data={data} questions={qs} sessionID={SESSION_ID}>
         <AssistantMessage message={baseAssistantMessage} />
       </StoryProviders>
     )

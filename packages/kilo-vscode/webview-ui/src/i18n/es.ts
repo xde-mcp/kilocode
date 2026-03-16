@@ -410,6 +410,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "No se pudo conectar al servidor. ¿Hay un servidor ejecutándose en `{{url}}`?",
 
+  "error.startup.title": "Error de conexión al servidor",
+
   "error.paidModel.title": "Necesitas iniciar sesión para usar este modelo",
   "error.paidModel.description":
     "Inicia sesión o crea una cuenta para acceder a más de 500 modelos, usar créditos a precio de coste o traer tu propia clave.",
@@ -443,6 +445,11 @@ export const dict = {
 
   "notification.permission.title": "Permiso requerido",
   "notification.permission.description": "{{sessionTitle}} en {{projectName}} necesita permiso",
+  "ui.permission.permissionRules": "Reglas de permisos",
+  "ui.permission.rule.addToAllowed": "Añadir a la lista de permitidos",
+  "ui.permission.rule.removeFromAllowed": "Quitar de la lista de permitidos",
+  "ui.permission.rule.addToDenied": "Añadir a la lista de denegados",
+  "ui.permission.rule.removeFromDenied": "Quitar de la lista de denegados",
   "notification.question.title": "Pregunta",
   "notification.question.description": "{{sessionTitle}} en {{projectName}} tiene una pregunta",
   "notification.action.goToSession": "Ir a sesión",
@@ -940,6 +947,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Interruptores de herramientas",
   "settings.agentBehaviour.defaultAgent.title": "Agente predeterminado",
   "settings.agentBehaviour.defaultAgent.description": "Agente a usar cuando no se especifica ninguno",
+  "settings.agentBehaviour.availableAgents": "Agentes disponibles",
   "settings.agentBehaviour.selectAgent": "Seleccionar un agente para configurar…",
   "settings.agentBehaviour.selectAgent.title": "Agente",
   "settings.agentBehaviour.selectAgent.description": "Seleccionar un agente para configurar…",
@@ -956,8 +964,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Habilidades descubiertas",
   "settings.agentBehaviour.noSkillsFound":
     "No se encontraron habilidades. Agregue rutas de carpetas o URLs abajo para hacer disponibles las habilidades.",
+  "settings.agentBehaviour.availableModes": "Modos personalizados disponibles",
+  "settings.agentBehaviour.noModesFound": "No se encontraron modos.",
+  "settings.agentBehaviour.removeMode.title": "Eliminar modo",
+  "settings.agentBehaviour.removeMode.confirm":
+    '¿Eliminar el modo "{{name}}"? Esto desactivará el modo actualizando su configuración.',
+  "settings.agentBehaviour.removeMode.button": "Eliminar",
   "settings.agentBehaviour.skillPaths": "Rutas de carpetas de habilidades",
   "settings.agentBehaviour.skillUrls": "URLs de habilidades",
+  "settings.agentBehaviour.removeSkill.title": "Eliminar habilidad",
+  "settings.agentBehaviour.removeSkill.confirm":
+    '¿Eliminar la habilidad "{{name}}"? Esto borrará los archivos de la habilidad del disco.',
+  "settings.agentBehaviour.removeSkill.button": "Eliminar",
   "settings.agentBehaviour.instructionFiles": "Archivos de instrucciones adicionales",
   "settings.agentBehaviour.instructionFiles.description":
     "Rutas a archivos de instrucciones adicionales incluidos en el prompt del sistema",

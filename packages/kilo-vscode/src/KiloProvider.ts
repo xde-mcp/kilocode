@@ -11,7 +11,7 @@ import type {
   FilePartInput,
   Config,
 } from "@kilocode/sdk/v2/client"
-import { type KiloConnectionService, type KilocodeNotification } from "./services/cli-backend"
+import { type KiloConnectionService, type KilocodeNotification, ServerStartupError } from "./services/cli-backend"
 import type { EditorContext, CloudSessionData } from "./services/cli-backend/types"
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
 import { handleChatCompletionRequest } from "./services/autocomplete/chat-autocomplete/handleChatCompletionRequest"
@@ -75,6 +75,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   /** Guard to prevent checkAndShowMigrationWizard running concurrently. */ // legacy-migration
   private migrationCheckInFlight = false // legacy-migration
   private unsubscribeNotificationDismiss: (() => void) | null = null
+  private initConnectionPromise: Promise<void> | null = null
   private webviewMessageDisposable: vscode.Disposable | null = null
 
   /** Lazily initialized ignore controller for .kilocodeignore filtering */
@@ -335,6 +336,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
             .parse(message.files)
           await this.handleSendMessage(
             message.text,
+            typeof message.messageID === "string" ? message.messageID : undefined,
             message.sessionID,
             message.providerID,
             message.modelID,
@@ -348,15 +350,19 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           await this.handleAbort(message.sessionID)
           break
         case "permissionResponse":
-          await this.handlePermissionResponse(message.permissionId, message.sessionID, message.response)
+          await this.handlePermissionResponse(
+            message.permissionId,
+            message.sessionID,
+            message.response,
+            message.approvedAlways,
+            message.deniedAlways,
+          )
           break
         case "createSession":
           await this.handleCreateSession()
           break
         case "clearSession":
           this.currentSession = null
-          this.trackedSessionIds.clear()
-          this.syncedChildSessions.clear()
           break
         case "loadMessages":
           // Don't await: allow parallel loads so rapid session switching
@@ -397,6 +403,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "openChanges":
           vscode.commands.executeCommand("kilo-code.new.showChanges")
           break
+        case "retryConnection":
+          console.log("[Kilo New] KiloProvider: 🔄 Retrying connection...")
+          this.initializeConnection().catch((e) =>
+            console.error("[Kilo New] KiloProvider: ❌ Retry connection failed:", e),
+          )
+          break
         case "openSubAgentViewer":
           vscode.commands.executeCommand("kilo-code.new.openSubAgentViewer", message.sessionID, message.title)
           break
@@ -416,6 +428,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "requestSkills":
           this.fetchAndSendSkills().catch((e) => console.error("[Kilo New] fetchAndSendSkills failed:", e))
+          break
+        case "removeSkill":
+          this.handleRemoveSkill(message.location).catch((e) =>
+            console.error("[Kilo New] handleRemoveSkill failed:", e),
+          )
+          break
+        case "removeMode":
+          this.handleRemoveMode(message.name).catch((e) => console.error("[Kilo New] handleRemoveMode failed:", e))
           break
         case "questionReply":
           await this.handleQuestionReply(message.requestID, message.answers)
@@ -533,6 +553,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           void this.handleImportAndSend(
             message.cloudSessionId,
             message.text,
+            typeof message.messageID === "string" ? message.messageID : undefined,
             message.providerID,
             message.modelID,
             message.agent,
@@ -610,8 +631,21 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Initialize connection to the CLI backend server.
    * Subscribes to the shared KiloConnectionService.
    */
-  private async initializeConnection(): Promise<void> {
+  private initializeConnection(): Promise<void> {
+    if (this.initConnectionPromise) {
+      return this.initConnectionPromise
+    }
+    this.initConnectionPromise = this.doInitializeConnection().finally(() => {
+      this.initConnectionPromise = null
+    })
+    return this.initConnectionPromise
+  }
+
+  private async doInitializeConnection(): Promise<void> {
     console.log("[Kilo New] KiloProvider: 🔧 Starting initializeConnection...")
+
+    this.connectionState = "connecting"
+    this.postMessage({ type: "connectionState", state: "connecting" })
 
     // Clean up any existing subscriptions (e.g., sidebar re-shown)
     this.unsubscribeEvent?.()
@@ -710,6 +744,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "connectionState",
         state: "error",
         error: getErrorMessage(error) || "Failed to connect to CLI backend",
+        ...(error instanceof ServerStartupError && {
+          userMessage: error.userMessage,
+          userDetails: error.userDetails,
+        }),
       })
     }
   }
@@ -1098,10 +1136,63 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
+   * Remove a skill via the CLI backend (deletes from disk + clears cache), then refresh.
+   * The webview optimistically removes the skill from its list before this runs.
+   * On failure, re-fetches skills so the webview reverts to the authoritative state.
+   */
+  private async handleRemoveSkill(location: string): Promise<void> {
+    if (!this.client) return
+    try {
+      const dir = this.getWorkspaceDirectory()
+      const result = await this.client.kilocode.removeSkill({ location, directory: dir })
+      if (result.error) {
+        console.error("[Kilo New] KiloProvider: removeSkill returned error:", result.error)
+        this.cachedSkillsMessage = null
+        await this.fetchAndSendSkills()
+        return
+      }
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to remove skill:", error)
+      this.cachedSkillsMessage = null
+      await this.fetchAndSendSkills()
+      return
+    }
+    // Invalidate cache so next requestSkills fetches fresh data
+    this.cachedSkillsMessage = null
+  }
+
+  /**
+   * Remove a custom mode via the CLI backend (deletes from disk + refreshes state).
+   * The webview optimistically removes the mode from its list before this runs.
+   * On failure, re-fetches agents so the webview reverts to the authoritative state.
+   */
+  private async handleRemoveMode(name: string): Promise<void> {
+    if (!this.client) return
+    try {
+      const dir = this.getWorkspaceDirectory()
+      const result = await this.client.kilocode.removeAgent({ name, directory: dir })
+      if (result.error) {
+        console.error("[Kilo New] KiloProvider: removeAgent returned error:", result.error)
+        this.cachedAgentsMessage = null
+        await this.fetchAndSendAgents()
+        return
+      }
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to remove mode:", error)
+      this.cachedAgentsMessage = null
+      await this.fetchAndSendAgents()
+      return
+    }
+    // Invalidate cache so next requestAgents fetches fresh data
+    this.cachedAgentsMessage = null
+    await this.fetchAndSendAgents()
+  }
+
+  /**
    * Fetch backend config and send to webview.
    */
   private async fetchAndSendConfig(): Promise<void> {
-    if (!this.client) {
+    if (!this.client || this.connectionState !== "connected") {
       if (this.cachedConfigMessage) {
         this.postMessage(this.cachedConfigMessage)
       }
@@ -1242,6 +1333,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private async handleImportAndSend(
     cloudSessionId: string,
     text: string,
+    messageID?: string,
     providerID?: string,
     modelID?: string,
     agent?: string,
@@ -1310,10 +1402,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     try {
       const editorContext = await this.gatherEditorContext()
 
-      await this.client.session.prompt(
+      if (messageID) {
+        this.connectionService.recordMessageSessionId(messageID, session.id)
+      }
+
+      await this.client.session.promptAsync(
         {
           sessionID: session.id,
           directory: workspaceDir,
+          messageID,
           parts,
           model: providerID && modelID ? { providerID, modelID } : undefined,
           agent,
@@ -1325,9 +1422,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch (err) {
       console.error("[Kilo New] Failed to send message after cloud import:", err)
       this.postMessage({
-        type: "error",
-        message: err instanceof Error ? err.message : "Failed to send message after import",
+        type: "sendMessageFailed",
+        error: err instanceof Error ? err.message : "Failed to send message after import",
+        text,
         sessionID: session.id,
+        messageID,
+        files,
       })
     }
   }
@@ -1370,7 +1470,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the full merged config back to the webview.
    */
   private async handleUpdateConfig(partial: Partial<Config>): Promise<void> {
-    if (!this.client) {
+    if (!this.client || this.connectionState !== "connected") {
       this.postMessage({ type: "error", message: "Not connected to CLI backend" })
       return
     }
@@ -1395,9 +1495,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Handle sending a message from the webview.
+   * Uses promptAsync (fire-and-forget) — the server queues concurrent prompts
+   * internally, so the client doesn't need to block on busy sessions.
    */
   private async handleSendMessage(
     text: string,
+    messageID?: string,
     sessionID?: string,
     providerID?: string,
     modelID?: string,
@@ -1407,12 +1510,17 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   ): Promise<void> {
     if (!this.client) {
       this.postMessage({
-        type: "error",
-        message: "Not connected to CLI backend",
+        type: "sendMessageFailed",
+        error: "Not connected to CLI backend",
+        text,
+        sessionID,
+        messageID,
+        files,
       })
       return
     }
 
+    let targetSessionID = sessionID
     try {
       const workspaceDir = this.getWorkspaceDirectory(sessionID || this.currentSession?.id)
 
@@ -1431,10 +1539,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         })
       }
 
-      const targetSessionID = sessionID || this.currentSession?.id
+      targetSessionID = sessionID || this.currentSession?.id
       if (!targetSessionID) {
         throw new Error("No session available")
       }
+      this.trackedSessionIds.add(targetSessionID)
 
       // Build parts array with file context and user text
       const parts: Array<TextPartInput | FilePartInput> = []
@@ -1450,10 +1559,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const editorContext = await this.gatherEditorContext()
 
-      await this.client.session.prompt(
+      if (messageID) {
+        this.connectionService.recordMessageSessionId(messageID, targetSessionID)
+      }
+
+      await this.client.session.promptAsync(
         {
           sessionID: targetSessionID,
           directory: workspaceDir,
+          messageID,
           parts,
           model: providerID && modelID ? { providerID, modelID } : undefined,
           agent,
@@ -1465,8 +1579,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to send message:", error)
       this.postMessage({
-        type: "error",
-        message: getErrorMessage(error) || "Failed to send message",
+        type: "sendMessageFailed",
+        error: getErrorMessage(error) || "Failed to send message",
+        text,
+        sessionID: targetSessionID,
+        messageID,
+        files,
       })
     }
   }
@@ -1536,11 +1654,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
   /**
    * Handle permission response from the webview.
+   * Calls saveAlwaysRules first (if any), then reply — sequentially to avoid races.
    */
   private async handlePermissionResponse(
     permissionId: string,
     sessionID: string,
     response: "once" | "always" | "reject",
+    approvedAlways: string[],
+    deniedAlways: string[],
   ): Promise<void> {
     if (!this.client) {
       this.postMessage({ type: "permissionError", permissionID: permissionId })
@@ -1556,6 +1677,20 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     try {
       const workspaceDir = this.getWorkspaceDirectory(targetSessionID)
+
+      // Save per-pattern rules before replying (reply deletes the pending request)
+      if (approvedAlways.length > 0 || deniedAlways.length > 0) {
+        await this.client.permission.saveAlwaysRules(
+          {
+            requestID: permissionId,
+            directory: workspaceDir,
+            approvedAlways,
+            deniedAlways,
+          },
+          { throwOnError: true },
+        )
+      }
+
       await this.client.permission.reply(
         { requestID: permissionId, reply: response, directory: workspaceDir },
         { throwOnError: true },
@@ -1666,8 +1801,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       const codeMatch = auth.instructions?.match(/code:\s*(\S+)/i)
       const code = codeMatch ? codeMatch[1] : undefined
 
-      // Step 2: Open browser for user to authorize
-      vscode.env.openExternal(vscode.Uri.parse(auth.url))
+      // The backend already opens the browser via the `open` npm package during
+      // authorize(). Calling vscode.env.openExternal() here would show a VS Code
+      // trust dialog that persists after the user completes authentication in the
+      // browser, and would open a second browser tab. The DeviceAuthCard webview
+      // provides an "Open Browser" button as a user-initiated fallback.
 
       // Send device auth details to webview
       this.postMessage({

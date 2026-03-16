@@ -412,6 +412,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Nije moguće povezati se na server. Da li server radi na `{{url}}`?",
 
+  "error.startup.title": "Povezivanje sa serverom nije uspjelo",
+
   "error.paidModel.title": "Morate se prijaviti da biste koristili ovaj model",
   "error.paidModel.description":
     "Prijavite se ili kreirajte račun za pristup preko 500 modela, koristite kredite po cijeni koštanja ili donesite vlastiti ključ.",
@@ -444,6 +446,11 @@ export const dict = {
 
   "notification.permission.title": "Potrebna dozvola",
   "notification.permission.description": "{{sessionTitle}} u {{projectName}} traži dozvolu",
+  "ui.permission.permissionRules": "Pravila dozvola",
+  "ui.permission.rule.addToAllowed": "Dodaj na listu dozvoljenih",
+  "ui.permission.rule.removeFromAllowed": "Ukloni sa liste dozvoljenih",
+  "ui.permission.rule.addToDenied": "Dodaj na listu odbijenih",
+  "ui.permission.rule.removeFromDenied": "Ukloni sa liste odbijenih",
   "notification.question.title": "Pitanje",
   "notification.question.description": "{{sessionTitle}} u {{projectName}} ima pitanje",
   "notification.action.goToSession": "Idi na sesiju",
@@ -937,6 +944,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Prekidači alata",
   "settings.agentBehaviour.defaultAgent.title": "Zadani agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent koji se koristi kada nijedan nije naveden",
+  "settings.agentBehaviour.availableAgents": "Dostupni agenti",
   "settings.agentBehaviour.selectAgent": "Odaberi agenta za konfiguraciju…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Odaberi agenta za konfiguraciju…",
@@ -953,8 +961,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Otkrivene vještine",
   "settings.agentBehaviour.noSkillsFound":
     "Nisu pronađene vještine. Dodajte putanje mapa ili URL-ove ispod kako biste učinili vještine dostupnim.",
+  "settings.agentBehaviour.availableModes": "Dostupni prilagođeni modovi",
+  "settings.agentBehaviour.noModesFound": "Nisu pronađeni modovi.",
+  "settings.agentBehaviour.removeMode.title": "Ukloni mod",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Ukloniti mod "{{name}}"? Ovo će onemogućiti mod ažuriranjem vaše konfiguracije.',
+  "settings.agentBehaviour.removeMode.button": "Ukloni",
   "settings.agentBehaviour.skillPaths": "Putanje mapa vještina",
   "settings.agentBehaviour.skillUrls": "URL-ovi vještina",
+  "settings.agentBehaviour.removeSkill.title": "Ukloni vještinu",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Ukloniti vještinu "{{name}}"? Ovo će obrisati datoteke vještine sa diska.',
+  "settings.agentBehaviour.removeSkill.button": "Ukloni",
   "settings.agentBehaviour.instructionFiles": "Dodatne datoteke uputa",
   "settings.agentBehaviour.instructionFiles.description": "Putanje do dodatnih datoteka uputa u sistemskom promptu",
   "settings.agentBehaviour.mcpEmpty":

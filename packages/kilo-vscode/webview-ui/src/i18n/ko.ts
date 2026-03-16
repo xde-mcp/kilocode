@@ -411,6 +411,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "서버에 연결할 수 없습니다. `{{url}}`에서 서버가 실행 중인가요?",
 
+  "error.startup.title": "서버 연결 실패",
+
   "error.paidModel.title": "이 모델을 사용하려면 로그인이 필요합니다",
   "error.paidModel.description":
     "로그인하거나 계정을 만들어 500개 이상의 모델에 접근하고, 원가로 크레딧을 사용하거나, 자체 키를 가져오세요.",
@@ -442,6 +444,11 @@ export const dict = {
 
   "notification.permission.title": "권한 필요",
   "notification.permission.description": "{{projectName}}의 {{sessionTitle}}에서 권한이 필요합니다",
+  "ui.permission.permissionRules": "권한 규칙",
+  "ui.permission.rule.addToAllowed": "허용 목록에 추가",
+  "ui.permission.rule.removeFromAllowed": "허용 목록에서 제거",
+  "ui.permission.rule.addToDenied": "거부 목록에 추가",
+  "ui.permission.rule.removeFromDenied": "거부 목록에서 제거",
   "notification.question.title": "질문",
   "notification.question.description": "{{projectName}}의 {{sessionTitle}}에서 질문이 있습니다",
   "notification.action.goToSession": "세션으로 이동",
@@ -930,6 +937,7 @@ export const dict = {
   "settings.experimental.toolToggles": "도구 토글",
   "settings.agentBehaviour.defaultAgent.title": "기본 에이전트",
   "settings.agentBehaviour.defaultAgent.description": "지정되지 않은 경우 사용할 에이전트",
+  "settings.agentBehaviour.availableAgents": "사용 가능한 에이전트",
   "settings.agentBehaviour.selectAgent": "구성할 에이전트를 선택하세요…",
   "settings.agentBehaviour.selectAgent.title": "에이전트",
   "settings.agentBehaviour.selectAgent.description": "구성할 에이전트를 선택하세요…",
@@ -946,8 +954,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "검색된 스킬",
   "settings.agentBehaviour.noSkillsFound":
     "스킬을 찾을 수 없습니다. 스킬을 사용하려면 아래에 스킬 폴더 경로 또는 URL을 추가하세요.",
+  "settings.agentBehaviour.availableModes": "사용 가능한 사용자 정의 모드",
+  "settings.agentBehaviour.noModesFound": "모드를 찾을 수 없습니다.",
+  "settings.agentBehaviour.removeMode.title": "모드 제거",
+  "settings.agentBehaviour.removeMode.confirm":
+    '모드 "{{name}}"을(를) 제거하시겠습니까? 구성을 업데이트하여 모드를 비활성화합니다.',
+  "settings.agentBehaviour.removeMode.button": "제거",
   "settings.agentBehaviour.skillPaths": "스킬 폴더 경로",
   "settings.agentBehaviour.skillUrls": "스킬 URL",
+  "settings.agentBehaviour.removeSkill.title": "스킬 제거",
+  "settings.agentBehaviour.removeSkill.confirm":
+    '스킬 "{{name}}"을(를) 제거하시겠습니까? 디스크에서 스킬 파일이 삭제됩니다.',
+  "settings.agentBehaviour.removeSkill.button": "제거",
   "settings.agentBehaviour.instructionFiles": "추가 지시 파일",
   "settings.agentBehaviour.instructionFiles.description": "시스템 프롬프트에 포함되는 추가 지시 파일 경로",
   "settings.agentBehaviour.mcpEmpty":

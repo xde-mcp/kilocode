@@ -4,8 +4,10 @@ import { DialogProvider } from "@kilocode/kilo-ui/context/dialog"
 import { MarkedProvider } from "@kilocode/kilo-ui/context/marked"
 import { CodeComponentProvider } from "@kilocode/kilo-ui/context/code"
 import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
+import { FileComponentProvider } from "@kilocode/kilo-ui/context/file"
 import { Code } from "@kilocode/kilo-ui/code"
 import { Diff } from "@kilocode/kilo-ui/diff"
+import { File } from "@kilocode/kilo-ui/file"
 import { DataProvider } from "@kilocode/kilo-ui/context/data"
 import { Toast } from "@kilocode/kilo-ui/toast"
 import Settings from "./components/settings/Settings"
@@ -122,7 +124,7 @@ export const DataBridge: Component<{ children: any }> = (props) => {
   })
 
   const respond = (input: { sessionID: string; permissionID: string; response: "once" | "always" | "reject" }) => {
-    session.respondToPermission(input.permissionID, input.response)
+    session.respondToPermission(input.permissionID, input.response, [], [])
   }
 
   const reply = (input: { requestID: string; answers: string[][] }) => {
@@ -174,6 +176,7 @@ export const LanguageBridge: Component<{ children: any }> = (props) => {
 // Inner app component that uses the contexts
 const AppContent: Component = () => {
   const [currentView, setCurrentView] = createSignal<ViewType>("newTask")
+  const [settingsTab, setSettingsTab] = createSignal<string | undefined>()
   const [migrationReturnView, setMigrationReturnView] = createSignal<ViewType>("newTask") // legacy-migration
   const session = useSession()
   const server = useServer()
@@ -210,7 +213,8 @@ const AppContent: Component = () => {
         handleViewAction(message.action)
       }
       if (message?.type === "navigate" && message.view && VALID_VIEWS.has(message.view)) {
-        console.log("[Kilo New] App: 🧭 navigate:", message.view)
+        console.log("[Kilo New] App: 🧭 navigate:", message.view, message.tab ? `tab=${message.tab}` : "")
+        if (message.tab) setSettingsTab(message.tab)
         setCurrentView(message.view as ViewType)
       }
       if (message?.type === "openCloudSession" && message.sessionId) {
@@ -265,6 +269,8 @@ const AppContent: Component = () => {
         </Match>
         <Match when={currentView() === "settings"}>
           <Settings
+            tab={settingsTab()}
+            onTabChange={setSettingsTab}
             onMigrateClick={() => {
               setMigrationReturnView("settings")
               setCurrentView("migration")
@@ -299,17 +305,19 @@ const App: Component = () => {
               <MarkedProvider>
                 <DiffComponentProvider component={Diff}>
                   <CodeComponentProvider component={Code}>
-                    <ProviderProvider>
-                      <ConfigProvider>
-                        <NotificationsProvider>
-                          <SessionProvider>
-                            <DataBridge>
-                              <AppContent />
-                            </DataBridge>
-                          </SessionProvider>
-                        </NotificationsProvider>
-                      </ConfigProvider>
-                    </ProviderProvider>
+                    <FileComponentProvider component={File}>
+                      <ProviderProvider>
+                        <ConfigProvider>
+                          <NotificationsProvider>
+                            <SessionProvider>
+                              <DataBridge>
+                                <AppContent />
+                              </DataBridge>
+                            </SessionProvider>
+                          </NotificationsProvider>
+                        </ConfigProvider>
+                      </ProviderProvider>
+                    </FileComponentProvider>
                   </CodeComponentProvider>
                 </DiffComponentProvider>
               </MarkedProvider>

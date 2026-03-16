@@ -407,6 +407,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "تعذر الاتصال بالخادم. هل هناك خادم يعمل في `{{url}}`؟",
 
+  "error.startup.title": "فشل الاتصال بالخادم",
+
   "error.paidModel.title": "يجب عليك تسجيل الدخول لاستخدام هذا النموذج",
   "error.paidModel.description":
     "سجّل الدخول أو أنشئ حسابًا للوصول إلى أكثر من 500 نموذج، واستخدم الرصيد بسعر التكلفة، أو استخدم مفتاحك الخاص.",
@@ -438,6 +440,11 @@ export const dict = {
 
   "notification.permission.title": "مطلوب إذن",
   "notification.permission.description": "{{sessionTitle}} في {{projectName}} يحتاج إلى إذن",
+  "ui.permission.permissionRules": "قواعد الأذونات",
+  "ui.permission.rule.addToAllowed": "أضف إلى قائمة المسموح",
+  "ui.permission.rule.removeFromAllowed": "أزل من قائمة المسموح",
+  "ui.permission.rule.addToDenied": "أضف إلى قائمة المرفوض",
+  "ui.permission.rule.removeFromDenied": "أزل من قائمة المرفوض",
   "notification.question.title": "سؤال",
   "notification.question.description": "{{sessionTitle}} في {{projectName}} لديه سؤال",
   "notification.action.goToSession": "انتقل إلى الجلسة",
@@ -925,6 +932,7 @@ export const dict = {
   "settings.experimental.toolToggles": "مفاتيح الأدوات",
   "settings.agentBehaviour.defaultAgent.title": "الوكيل الافتراضي",
   "settings.agentBehaviour.defaultAgent.description": "الوكيل المستخدم عند عدم التحديد",
+  "settings.agentBehaviour.availableAgents": "الوكلاء المتاحون",
   "settings.agentBehaviour.selectAgent": "اختر وكيلاً للتهيئة…",
   "settings.agentBehaviour.selectAgent.title": "الوكيل",
   "settings.agentBehaviour.selectAgent.description": "اختر وكيلاً للتهيئة…",
@@ -941,8 +949,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "المهارات المكتشفة",
   "settings.agentBehaviour.noSkillsFound":
     "لم يتم العثور على مهارات. أضف مسارات مجلدات أو عناوين URL أدناه لإتاحة المهارات.",
+  "settings.agentBehaviour.availableModes": "الأوضاع المخصصة المتاحة",
+  "settings.agentBehaviour.noModesFound": "لم يتم العثور على أوضاع.",
+  "settings.agentBehaviour.removeMode.title": "إزالة الوضع",
+  "settings.agentBehaviour.removeMode.confirm":
+    'هل تريد إزالة الوضع "{{name}}"؟ سيؤدي هذا إلى تعطيل الوضع عن طريق تحديث الإعدادات.',
+  "settings.agentBehaviour.removeMode.button": "إزالة",
   "settings.agentBehaviour.skillPaths": "مسارات مجلدات المهارات",
   "settings.agentBehaviour.skillUrls": "عناوين URL للمهارات",
+  "settings.agentBehaviour.removeSkill.title": "إزالة المهارة",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'هل تريد إزالة المهارة "{{name}}"؟ سيؤدي هذا إلى حذف ملفات المهارة من القرص.',
+  "settings.agentBehaviour.removeSkill.button": "إزالة",
   "settings.agentBehaviour.instructionFiles": "ملفات تعليمات إضافية",
   "settings.agentBehaviour.instructionFiles.description": "مسارات ملفات التعليمات الإضافية في موجه النظام",
   "settings.agentBehaviour.mcpEmpty": "لم يتم تهيئة خوادم MCP. قم بتحرير ملف تهيئة opencode لإضافة خوادم MCP.",

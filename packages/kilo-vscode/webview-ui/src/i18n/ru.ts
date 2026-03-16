@@ -410,6 +410,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Не удалось подключиться к серверу. Запущен ли сервер по адресу `{{url}}`?",
 
+  "error.startup.title": "Ошибка подключения к серверу",
+
   "error.paidModel.title": "Для использования этой модели необходимо войти",
   "error.paidModel.description":
     "Войдите или создайте аккаунт для доступа к более чем 500 моделям, используйте кредиты по себестоимости или подключите свой ключ.",
@@ -444,6 +446,11 @@ export const dict = {
 
   "notification.permission.title": "Требуется разрешение",
   "notification.permission.description": "{{sessionTitle}} в {{projectName}} требуется разрешение",
+  "ui.permission.permissionRules": "Правила разрешений",
+  "ui.permission.rule.addToAllowed": "Добавить в список разрешённых",
+  "ui.permission.rule.removeFromAllowed": "Убрать из списка разрешённых",
+  "ui.permission.rule.addToDenied": "Добавить в список запрещённых",
+  "ui.permission.rule.removeFromDenied": "Убрать из списка запрещённых",
   "notification.question.title": "Вопрос",
   "notification.question.description": "У {{sessionTitle}} в {{projectName}} есть вопрос",
   "notification.action.goToSession": "Перейти к сессии",
@@ -938,6 +945,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Переключатели инструментов",
   "settings.agentBehaviour.defaultAgent.title": "Агент по умолчанию",
   "settings.agentBehaviour.defaultAgent.description": "Агент при отсутствии указания",
+  "settings.agentBehaviour.availableAgents": "Доступные агенты",
   "settings.agentBehaviour.selectAgent": "Выберите агента для настройки…",
   "settings.agentBehaviour.selectAgent.title": "Агент",
   "settings.agentBehaviour.selectAgent.description": "Выберите агента для настройки…",
@@ -954,8 +962,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Обнаруженные навыки",
   "settings.agentBehaviour.noSkillsFound":
     "Навыки не обнаружены. Добавьте пути к папкам навыков или URL-адреса ниже, чтобы сделать навыки доступными.",
+  "settings.agentBehaviour.availableModes": "Доступные пользовательские режимы",
+  "settings.agentBehaviour.noModesFound": "Режимы не найдены.",
+  "settings.agentBehaviour.removeMode.title": "Удалить режим",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Удалить режим "{{name}}"? Это отключит режим, обновив вашу конфигурацию.',
+  "settings.agentBehaviour.removeMode.button": "Удалить",
   "settings.agentBehaviour.skillPaths": "Пути папок навыков",
   "settings.agentBehaviour.skillUrls": "URL навыков",
+  "settings.agentBehaviour.removeSkill.title": "Удалить навык",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Удалить навык "{{name}}"? Это приведет к удалению файлов навыка с диска.',
+  "settings.agentBehaviour.removeSkill.button": "Удалить",
   "settings.agentBehaviour.instructionFiles": "Дополнительные файлы инструкций",
   "settings.agentBehaviour.instructionFiles.description": "Пути к дополнительным файлам инструкций в системном промпте",
   "settings.agentBehaviour.mcpEmpty":

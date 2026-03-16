@@ -409,6 +409,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Kunne ikke forbinde til server. Kører der en server på `{{url}}`?",
 
+  "error.startup.title": "Serverforbindelse mislykkedes",
+
   "error.paidModel.title": "Du skal logge ind for at bruge denne model",
   "error.paidModel.description":
     "Log ind eller opret en konto for at få adgang til over 500 modeller, brug kreditter til kostpris, eller medbring din egen nøgle.",
@@ -441,6 +443,11 @@ export const dict = {
 
   "notification.permission.title": "Tilladelse påkrævet",
   "notification.permission.description": "{{sessionTitle}} i {{projectName}} kræver tilladelse",
+  "ui.permission.permissionRules": "Tilladelsesregler",
+  "ui.permission.rule.addToAllowed": "Tilføj til tilladelseslisten",
+  "ui.permission.rule.removeFromAllowed": "Fjern fra tilladelseslisten",
+  "ui.permission.rule.addToDenied": "Tilføj til afvisningslisten",
+  "ui.permission.rule.removeFromDenied": "Fjern fra afvisningslisten",
   "notification.question.title": "Spørgsmål",
   "notification.question.description": "{{sessionTitle}} i {{projectName}} har et spørgsmål",
   "notification.action.goToSession": "Gå til session",
@@ -933,6 +940,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Værktøjsskift",
   "settings.agentBehaviour.defaultAgent.title": "Standardagent",
   "settings.agentBehaviour.defaultAgent.description": "Agent til brug, når ingen er angivet",
+  "settings.agentBehaviour.availableAgents": "Tilgængelige agenter",
   "settings.agentBehaviour.selectAgent": "Vælg en agent at konfigurere…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Vælg en agent at konfigurere…",
@@ -949,8 +957,18 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Opdagede skills",
   "settings.agentBehaviour.noSkillsFound":
     "Ingen skills fundet. Tilføj skill-mappestier eller URL'er nedenfor for at gøre skills tilgængelige.",
+  "settings.agentBehaviour.availableModes": "Tilgængelige brugerdefinerede tilstande",
+  "settings.agentBehaviour.noModesFound": "Ingen tilstande fundet.",
+  "settings.agentBehaviour.removeMode.title": "Fjern tilstand",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Vil du fjerne tilstanden "{{name}}"? Dette vil deaktivere tilstanden ved at opdatere din konfiguration.',
+  "settings.agentBehaviour.removeMode.button": "Fjern",
   "settings.agentBehaviour.skillPaths": "Skill-mappestier",
   "settings.agentBehaviour.skillUrls": "Skill-URL'er",
+  "settings.agentBehaviour.removeSkill.title": "Fjern færdighed",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Vil du fjerne færdigheden "{{name}}"? Dette vil slette færdighedsfilerne fra disken.',
+  "settings.agentBehaviour.removeSkill.button": "Fjern",
   "settings.agentBehaviour.instructionFiles": "Yderligere instruktionsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til yderligere instruktionsfiler i systemprompten",
   "settings.agentBehaviour.mcpEmpty":

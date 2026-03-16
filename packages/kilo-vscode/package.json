@@ -2,7 +2,7 @@
   "name": "kilo-code",
   "displayName": "Kilo Code: AI Coding Agent, Copilot, and Autocomplete",
   "description": "Open Source AI coding agent that generates code from natural language, automates tasks, and runs terminal commands. Features inline autocomplete, browser automation, automated refactoring, and custom modes for planning, coding, and debugging. Supports 500+ AI models including Claude (Anthropic), Gemini, Grok, GPT, Codex and GLM.",
-  "version": "7.0.46",
+  "version": "7.0.47",
   "icon": "assets/icons/logo-outline-black.png",
   "galleryBanner": {
     "color": "#FFFFFF",
@@ -44,7 +44,9 @@
     "Kilo Code",
     "kilocode"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onWebviewPanel:kilo-code.new.AgentManagerPanel"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -706,6 +708,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "knip": "knip",
+    "check-kilocode-change": "! grep -rn 'kilocode_change' . ../kilo-ui/ --exclude='package.json' --exclude='*.md' --exclude-dir='node_modules' --exclude-dir='dist' | grep -v '`kilocode_change`'",
     "lint": "eslint src webview-ui",
     "test": "vscode-test",
     "test:unit": "bun test tests/unit/",
@@ -713,7 +716,9 @@
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build -o storybook-static",
     "test:visual": "playwright test",
-    "test:visual:update": "playwright test --update-snapshots"
+    "test:visual:update": "playwright test --update-snapshots",
+    "snapshot:build": "bun script/dev-snapshot.ts build",
+    "snapshot:install": "bun script/dev-snapshot.ts install"
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
