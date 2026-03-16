@@ -4,6 +4,7 @@ import { RadioGroup } from "@kilocode/kilo-ui/radio-group"
 import { Tag } from "@kilocode/kilo-ui/tag"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import type { SkillMarketplaceItem, MarketplaceInstalledMetadata, MarketplaceItem } from "../../types/marketplace"
+import { useLanguage } from "../../context/language"
 import ItemCard from "./ItemCard"
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 const ALL = "__all__"
 
 const SkillsMarketplace: Component<Props> = (props) => {
+  const { t } = useLanguage()
   const [search, setSearch] = createSignal("")
   const [category, setCategory] = createSignal(ALL)
 
@@ -47,19 +49,19 @@ const SkillsMarketplace: Component<Props> = (props) => {
   return (
     <div class="marketplace-list">
       <div class="marketplace-filters">
-        <TextField placeholder="Search skills..." value={search()} onChange={setSearch} />
+        <TextField placeholder={t("marketplace.search.skills")} value={search()} onChange={setSearch} />
       </div>
       <div class="marketplace-category-filters">
         <RadioGroup
           options={categories()}
           current={category()}
           value={(c: string) => c}
-          label={(c: string) => (c === ALL ? "All" : c)}
+          label={(c: string) => (c === ALL ? t("marketplace.category.all") : c)}
           onSelect={(v: string | undefined) => v && setCategory(v)}
         />
       </div>
       <Show when={!props.fetching} fallback={<Spinner />}>
-        <Show when={filtered().length > 0} fallback={<p class="marketplace-empty">No skills found</p>}>
+        <Show when={filtered().length > 0} fallback={<p class="marketplace-empty">{t("marketplace.empty.skills")}</p>}>
           <div class="marketplace-grid">
             <For each={filtered()}>
               {(item) => (

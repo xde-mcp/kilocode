@@ -2,6 +2,7 @@ import { Component, createSignal, createMemo, onMount, onCleanup, Show } from "s
 import { Tabs } from "@kilocode/kilo-ui/tabs"
 import { useVSCode } from "../../context/vscode"
 import { useServer } from "../../context/server"
+import { useLanguage } from "../../context/language"
 import type { MarketplaceItem, SkillMarketplaceItem, MarketplaceInstalledMetadata } from "../../types/marketplace"
 import SkillsMarketplace from "./SkillsMarketplace"
 import InstallModal from "./InstallModal"
@@ -13,6 +14,7 @@ const EMPTY_METADATA: MarketplaceInstalledMetadata = { project: {}, global: {} }
 const MarketplaceView: Component = () => {
   const vscode = useVSCode()
   const server = useServer()
+  const { t } = useLanguage()
 
   const [items, setItems] = createSignal<MarketplaceItem[]>([])
   const [metadata, setMetadata] = createSignal<MarketplaceInstalledMetadata>(EMPTY_METADATA)
@@ -92,9 +94,9 @@ const MarketplaceView: Component = () => {
     <div class="marketplace-view">
       <Tabs value={tab()} onChange={setTab}>
         <Tabs.List>
-          <Tabs.Trigger value="skill">Skills</Tabs.Trigger>
-          <Tabs.Trigger value="mcp">MCP Servers</Tabs.Trigger>
-          <Tabs.Trigger value="mode">Modes</Tabs.Trigger>
+          <Tabs.Trigger value="skill">{t("marketplace.tab.skills")}</Tabs.Trigger>
+          <Tabs.Trigger value="mcp">{t("marketplace.tab.mcpServers")}</Tabs.Trigger>
+          <Tabs.Trigger value="mode">{t("marketplace.tab.modes")}</Tabs.Trigger>
         </Tabs.List>
 
         <Tabs.Content value="skill">
@@ -109,13 +111,13 @@ const MarketplaceView: Component = () => {
 
         <Tabs.Content value="mcp">
           <div class="marketplace-placeholder">
-            <p>To be implemented</p>
+            <p>{t("marketplace.placeholder")}</p>
           </div>
         </Tabs.Content>
 
         <Tabs.Content value="mode">
           <div class="marketplace-placeholder">
-            <p>To be implemented</p>
+            <p>{t("marketplace.placeholder")}</p>
           </div>
         </Tabs.Content>
       </Tabs>

@@ -3,6 +3,7 @@ import { Button } from "@kilocode/kilo-ui/button"
 import { RadioGroup } from "@kilocode/kilo-ui/radio-group"
 import { useVSCode } from "../../context/vscode"
 import { useServer } from "../../context/server"
+import { useLanguage } from "../../context/language"
 import type { MarketplaceItem } from "../../types/marketplace"
 
 interface ScopeOption {
@@ -20,11 +21,12 @@ interface Props {
 const InstallModal: Component<Props> = (props) => {
   const vscode = useVSCode()
   const server = useServer()
+  const { t } = useLanguage()
 
   const workspace = () => server.workspaceDirectory()
   const scopeOptions = (): ScopeOption[] => [
-    { value: "project", label: "Project", disabled: !workspace() },
-    { value: "global", label: "Global" },
+    { value: "project", label: t("marketplace.install.scope.project"), disabled: !workspace() },
+    { value: "global", label: t("marketplace.install.scope.global") },
   ]
   const [scope, setScope] = createSignal<ScopeOption>(workspace() ? scopeOptions()[0] : scopeOptions()[1])
   const [installing, setInstalling] = createSignal(false)
@@ -57,11 +59,11 @@ const InstallModal: Component<Props> = (props) => {
   return (
     <div class="marketplace-modal-overlay" onClick={() => !installing() && props.onClose()}>
       <div class="marketplace-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Install {props.item.name}</h3>
+        <h3>{t("marketplace.install.title", { name: props.item.name })}</h3>
 
         <Show when={!result()}>
           <div class="marketplace-modal-section">
-            <label>Scope</label>
+            <label>{t("marketplace.install.scope")}</label>
             <RadioGroup
               options={scopeOptions()}
               current={scope()}
@@ -73,7 +75,7 @@ const InstallModal: Component<Props> = (props) => {
 
           <Show when={prerequisites().length > 0}>
             <div class="marketplace-modal-section">
-              <label>Prerequisites</label>
+              <label>{t("marketplace.install.prerequisites")}</label>
               <ul class="marketplace-prerequisites">
                 <For each={prerequisites()}>{(p) => <li>{p}</li>}</For>
               </ul>
@@ -82,10 +84,10 @@ const InstallModal: Component<Props> = (props) => {
 
           <div class="marketplace-modal-actions">
             <Button variant="secondary" onClick={props.onClose} disabled={installing()}>
-              Cancel
+              {t("marketplace.install.cancel")}
             </Button>
             <Button variant="primary" onClick={handleInstall} disabled={installing()}>
-              {installing() ? "Installing..." : "Install"}
+              {installing() ? t("marketplace.install.installing") : t("marketplace.card.install")}
             </Button>
           </div>
         </Show>
@@ -97,13 +99,13 @@ const InstallModal: Component<Props> = (props) => {
                 when={r().success}
                 fallback={
                   <>
-                    <p class="marketplace-error">{r().error ?? "Installation failed"}</p>
-                    <Button onClick={props.onClose}>Close</Button>
+                    <p class="marketplace-error">{r().error ?? t("marketplace.install.failed")}</p>
+                    <Button onClick={props.onClose}>{t("marketplace.install.close")}</Button>
                   </>
                 }
               >
-                <p class="marketplace-success">Successfully installed!</p>
-                <Button onClick={props.onClose}>Done</Button>
+                <p class="marketplace-success">{t("marketplace.install.success")}</p>
+                <Button onClick={props.onClose}>{t("marketplace.install.done")}</Button>
               </Show>
             </div>
           )}

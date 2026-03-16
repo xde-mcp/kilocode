@@ -2,6 +2,7 @@ import { Component, Show, JSX } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Tag } from "@kilocode/kilo-ui/tag"
 import type { MarketplaceItem, MarketplaceInstalledMetadata } from "../../types/marketplace"
+import { useLanguage } from "../../context/language"
 import { installedScopes } from "./utils"
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 const ItemCard: Component<Props> = (props) => {
+  const { t } = useLanguage()
   const scopes = () => installedScopes(props.item.id, props.item.type, props.metadata)
   const installed = () => scopes().length > 0
   const name = () => props.displayName ?? props.item.name
@@ -46,7 +48,7 @@ const ItemCard: Component<Props> = (props) => {
       <div class="marketplace-card-footer">
         <div class="marketplace-card-tags">
           <Show when={installed()}>
-            <Tag class="marketplace-installed-tag">Installed</Tag>
+            <Tag class="marketplace-installed-tag">{t("marketplace.card.installed")}</Tag>
           </Show>
           {props.footer}
         </div>
@@ -55,13 +57,13 @@ const ItemCard: Component<Props> = (props) => {
             when={installed()}
             fallback={
               <Button size="small" onClick={() => props.onInstall(props.item)}>
-                Install
+                {t("marketplace.card.install")}
               </Button>
             }
           >
             {scopes().map((scope) => (
               <Button size="small" class="marketplace-remove-btn" onClick={() => props.onRemove(props.item, scope)}>
-                Remove{scopes().length > 1 ? ` (${scope})` : ""}
+                {scopes().length > 1 ? t("marketplace.card.removeScope", { scope }) : t("marketplace.card.remove")}
               </Button>
             ))}
           </Show>
