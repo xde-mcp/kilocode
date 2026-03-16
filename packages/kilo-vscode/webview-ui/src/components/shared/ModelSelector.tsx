@@ -10,6 +10,7 @@
 import { Component, createSignal, createMemo, createEffect, onCleanup, For, Show, createSelector } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
+import { Tag } from "@kilocode/kilo-ui/tag"
 import { useProvider, EnrichedModel } from "../../context/provider"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
@@ -280,7 +281,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                       >
                         <span class="model-selector-item-name">{model.name}</span>
                         <Show when={isFree(model)}>
-                          <span class="model-selector-tag">{language.t("model.tag.free")}</span>
+                          <Tag data-variant="member">{language.t("model.tag.free")}</Tag>
                         </Show>
                       </div>
                     )

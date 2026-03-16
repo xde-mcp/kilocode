@@ -250,6 +250,8 @@ export interface ProviderModel {
   variants?: Record<string, Record<string, unknown>>
   capabilities?: { reasoning: boolean }
   recommendedIndex?: number
+  isFree?: boolean
+  cost?: { input: number; output: number }
 }
 
 export interface Provider {

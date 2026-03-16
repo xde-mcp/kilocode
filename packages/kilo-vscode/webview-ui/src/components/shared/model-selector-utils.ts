@@ -10,8 +10,10 @@ export function providerSortKey(providerID: string, order = PROVIDER_ORDER): num
   return idx >= 0 ? idx : order.length
 }
 
-export function isFree(model: Pick<EnrichedModel, "inputPrice">): boolean {
-  return model.inputPrice === 0
+export function isFree(model: Pick<EnrichedModel, "isFree" | "cost">): boolean {
+  if (model.isFree !== undefined) return model.isFree
+  // TODO: fallback to cost check — delete once backend ships isFree attribute
+  return model.cost?.input === 0 && model.cost?.output === 0
 }
 
 export function stripSubProviderPrefix(name: string): string {
