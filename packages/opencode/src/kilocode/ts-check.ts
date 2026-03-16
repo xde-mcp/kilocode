@@ -3,6 +3,7 @@ import type { Diagnostic } from "vscode-languageserver-types"
 import { Log } from "../util/log"
 import { Filesystem } from "../util/filesystem"
 import path from "path"
+import fs from "fs/promises"
 
 export namespace TsCheck {
   const log = Log.create({ service: "ts-check" })
@@ -18,10 +19,10 @@ export namespace TsCheck {
       return result
     }
 
-    log.info("running ts check", { bin: bin.cmd, root })
+    log.info("running ts check", { bin, root })
     const start = Date.now()
 
-    const proc = Bun.spawn([bin.cmd, "--noEmit", "--pretty", "false"], {
+    const proc = Bun.spawn([bin, "--noEmit", "--pretty", "false"], {
       cwd: root,
       stdout: "pipe",
       stderr: "pipe",
@@ -30,10 +31,9 @@ export namespace TsCheck {
 
     const stdout = await new Response(proc.stdout).text()
     const stderr = await new Response(proc.stderr).text()
-    const code = await proc.exited
+    await proc.exited
 
     log.info("ts check done", {
-      exit: code,
       elapsed: Date.now() - start,
       lines: stdout.split("\n").length,
     })
@@ -45,20 +45,24 @@ export namespace TsCheck {
     for (const line of stdout.split("\n")) {
       const m = DIAG_RE.exec(line)
       if (!m) continue
+      if (m.length < 7) continue
 
-      const [, file, row, col, severity, code, msg] = m
+      const file = m[1]!
+      const row = parseInt(m[2]!, 10) - 1
+      const col = parseInt(m[3]!, 10) - 1
+      const sev = m[4]!
       const abs = path.isAbsolute(file) ? file : path.resolve(root, file)
       const normalized = Filesystem.normalizePath(abs)
 
       const diag: Diagnostic = {
         range: {
-          start: { line: parseInt(row) - 1, character: parseInt(col) - 1 },
-          end: { line: parseInt(row) - 1, character: parseInt(col) - 1 },
+          start: { line: row, character: col },
+          end: { line: row, character: col },
         },
-        severity: severity === "error" ? 1 : 2,
-        message: msg,
+        severity: sev === "error" ? 1 : 2,
+        message: m[6]!,
         source: "ts",
-        code,
+        code: m[5]!,
       }
 
       const arr = result.get(normalized) ?? []
@@ -69,23 +73,64 @@ export namespace TsCheck {
     return result
   }
 
-  async function resolve(root: string): Promise<{ cmd: string } | undefined> {
-    // 1. Try local tsgo from node_modules
-    const local = path.join(root, "node_modules", ".bin", "tsgo")
-    if (await Filesystem.exists(local)) return { cmd: local }
+  // Resolve the native tsgo binary directly, avoiding the node.js wrapper
+  // (node_modules/.bin/tsgo is a #!/usr/bin/env node script that spawns a
+  // node process just to execFileSync the native binary — adding ~200MB overhead).
+  async function resolve(root: string): Promise<string | undefined> {
+    // 1. Try resolving the native tsgo binary from the platform-specific package
+    const native = await native_tsgo(root)
+    if (native) return native
 
-    // 2. Try global tsgo
-    const global = Bun.which("tsgo")
-    if (global) return { cmd: global }
-
-    // 3. Try local tsc
-    const tsc = path.join(root, "node_modules", ".bin", "tsc")
-    if (await Filesystem.exists(tsc)) return { cmd: tsc }
-
-    // 4. Try global tsc
-    const gtsc = Bun.which("tsc")
-    if (gtsc) return { cmd: gtsc }
+    // 2. Try global tsc (fallback — this is a node script so still spawns node,
+    //    but it's the last resort)
+    const tsc = Bun.which("tsc")
+    if (tsc) return tsc
 
     return undefined
+  }
+
+  // Resolve the native tsgo binary by finding the platform-specific package.
+  // The @typescript/native-preview npm package includes platform-specific
+  // optional dependencies like @typescript/native-preview-darwin-arm64 that
+  // contain the actual native binary at lib/tsgo.
+  async function native_tsgo(root: string): Promise<string | undefined> {
+    const pkg = `@typescript/native-preview-${process.platform}-${process.arch}`
+
+    // Walk up from root looking in node_modules (including .bun hoisted paths)
+    let dir = root
+    while (true) {
+      // Standard node_modules layout
+      const standard = path.join(dir, "node_modules", pkg, "lib", "tsgo")
+      if (await exists(standard)) return standard
+
+      // Bun hoisted layout: node_modules/.bun/<pkg>@<version>/node_modules/<pkg>/lib/tsgo
+      const bun = path.join(dir, "node_modules", ".bun")
+      if (await exists(bun)) {
+        const match = await scan_bun(bun, pkg)
+        if (match) return match
+      }
+
+      const parent = path.dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+
+    return undefined
+  }
+
+  // Scan .bun hoisted directory for the platform package
+  async function scan_bun(dir: string, pkg: string): Promise<string | undefined> {
+    const prefix = pkg.replace("/", "+")
+    const entries = await fs.readdir(dir).catch(() => [] as string[])
+    for (const entry of entries) {
+      if (!entry.startsWith(prefix + "@")) continue
+      const bin = path.join(dir, entry, "node_modules", pkg, "lib", "tsgo")
+      if (await exists(bin)) return bin
+    }
+    return undefined
+  }
+
+  async function exists(p: string): Promise<boolean> {
+    return Filesystem.exists(p)
   }
 }
