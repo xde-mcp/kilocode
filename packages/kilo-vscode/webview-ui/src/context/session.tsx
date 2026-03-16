@@ -216,6 +216,17 @@ export const SessionProvider: ParentComponent = (props) => {
 
   const removeMode = (name: string) => {
     setAgents((prev) => prev.filter((a) => a.name !== name))
+
+    // Clear stale selections so selectedAgentName() falls back to the default
+    if (pendingAgentSelection() === name) {
+      setPendingAgentSelection(null)
+    }
+    for (const sid of Object.keys(store.agentSelections)) {
+      if (store.agentSelections[sid] === name) {
+        setStore("agentSelections", sid, undefined as unknown as string)
+      }
+    }
+
     vscode.postMessage({ type: "removeMode", name })
   }
 
