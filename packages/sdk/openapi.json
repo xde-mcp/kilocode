@@ -5372,8 +5372,8 @@
         ]
       }
     },
-    "/kilocode/skill": {
-      "delete": {
+    "/kilocode/skill/remove": {
+      "post": {
         "operationId": "kilocode.removeSkill",
         "parameters": [
           {
@@ -5389,14 +5389,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "location",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
           }
         ],
         "summary": "Remove a skill",
@@ -5419,6 +5411,21 @@
                 "schema": {
                   "$ref": "#/components/schemas/BadRequestError"
                 }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string"
+                  }
+                },
+                "required": ["location"]
               }
             }
           }

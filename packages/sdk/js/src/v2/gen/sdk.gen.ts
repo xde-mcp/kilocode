@@ -2937,10 +2937,10 @@ export class Kilocode extends HeyApiClient {
    * Remove a skill by deleting its directory from disk and clearing it from cache.
    */
   public removeSkill<ThrowOnError extends boolean = false>(
-    parameters: {
+    parameters?: {
       directory?: string
       workspace?: string
-      location: string
+      location?: string
     },
     options?: Options<never, ThrowOnError>,
   ) {
@@ -2951,20 +2951,23 @@ export class Kilocode extends HeyApiClient {
           args: [
             { in: "query", key: "directory" },
             { in: "query", key: "workspace" },
-            { in: "query", key: "location" },
+            { in: "body", key: "location" },
           ],
         },
       ],
     )
-    return (options?.client ?? this.client).delete<
-      KilocodeRemoveSkillResponses,
-      KilocodeRemoveSkillErrors,
-      ThrowOnError
-    >({
-      url: "/kilocode/skill",
-      ...options,
-      ...params,
-    })
+    return (options?.client ?? this.client).post<KilocodeRemoveSkillResponses, KilocodeRemoveSkillErrors, ThrowOnError>(
+      {
+        url: "/kilocode/skill/remove",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    )
   }
 }
 

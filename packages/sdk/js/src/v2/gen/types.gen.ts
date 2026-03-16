@@ -4403,14 +4403,15 @@ export type EnhancePromptEnhanceResponses = {
 export type EnhancePromptEnhanceResponse = EnhancePromptEnhanceResponses[keyof EnhancePromptEnhanceResponses]
 
 export type KilocodeRemoveSkillData = {
-  body?: never
-  path?: never
-  query: {
-    directory?: string
-    workspace?: string
+  body?: {
     location: string
   }
-  url: "/kilocode/skill"
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/kilocode/skill/remove"
 }
 
 export type KilocodeRemoveSkillErrors = {

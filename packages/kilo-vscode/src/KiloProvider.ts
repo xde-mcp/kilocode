@@ -1140,7 +1140,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     if (!this.client) return
     try {
       const dir = this.getWorkspaceDirectory()
-      await this.client.kilocode.removeSkill({ location, directory: dir })
+      const result = await this.client.kilocode.removeSkill({ location, directory: dir })
+      if (result.error) {
+        console.error("[Kilo New] KiloProvider: removeSkill returned error:", result.error)
+      }
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to remove skill:", error)
     }

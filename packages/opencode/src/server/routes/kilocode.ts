@@ -9,8 +9,8 @@ import { lazy } from "../../util/lazy"
 import { errors } from "../error"
 
 export const KilocodeRoutes = lazy(() =>
-  new Hono().delete(
-    "/skill",
+  new Hono().post(
+    "/skill/remove",
     describeRoute({
       summary: "Remove a skill",
       description: "Remove a skill by deleting its directory from disk and clearing it from cache.",
@@ -28,13 +28,13 @@ export const KilocodeRoutes = lazy(() =>
       },
     }),
     validator(
-      "query",
+      "json",
       z.object({
         location: z.string(),
       }),
     ),
     async (c) => {
-      const { location } = c.req.valid("query")
+      const { location } = c.req.valid("json")
       await Skill.remove(location)
       return c.json(true)
     },
