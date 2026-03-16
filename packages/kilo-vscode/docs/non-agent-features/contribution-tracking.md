@@ -9,3 +9,9 @@
 - Line hashing/fingerprinting
 - Token/JWT handling for attribution APIs
 - Reporting UI
+
+## Primary Implementation Anchors (kilocode-legacy)
+
+These exist in the [kilocode-legacy](https://github.com/Kilo-Org/kilocode-legacy) repo, not in this extension:
+
+- `src/services/contribution-tracking/`
