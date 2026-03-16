@@ -47,6 +47,7 @@ import { HTTPException } from "hono/http-exception"
 import { errors } from "./error"
 import { CommitMessageRoutes } from "./routes/commit-message"
 import { EnhancePromptRoutes } from "./routes/enhance-prompt" // kilocode_change
+import { SkillRoutes } from "./routes/skill" // kilocode_change
 import { QuestionRoutes } from "./routes/question"
 import { PermissionRoutes } from "./routes/permission"
 import { GlobalRoutes } from "./routes/global"
@@ -268,6 +269,7 @@ export namespace Server {
         .route("/telemetry", TelemetryRoutes()) // kilocode_change
         .route("/commit-message", CommitMessageRoutes()) // kilocode_change
         .route("/enhance-prompt", EnhancePromptRoutes()) // kilocode_change
+        .route("/skill", SkillRoutes()) // kilocode_change
         // kilocode_change start - Kilo Gateway routes
         .route(
           "/kilo",
@@ -500,38 +502,6 @@ export namespace Server {
             return c.json(skills)
           },
         )
-        // kilocode_change start
-        .delete(
-          "/skill",
-          describeRoute({
-            summary: "Remove a skill",
-            description: "Remove a skill by deleting its directory from disk and clearing it from cache.",
-            operationId: "app.removeSkill",
-            responses: {
-              200: {
-                description: "Skill removed",
-                content: {
-                  "application/json": {
-                    schema: resolver(z.boolean()),
-                  },
-                },
-              },
-              ...errors(400),
-            },
-          }),
-          validator(
-            "query",
-            z.object({
-              location: z.string(),
-            }),
-          ),
-          async (c) => {
-            const { location } = c.req.valid("query")
-            await Skill.remove(location)
-            return c.json(true)
-          },
-        )
-        // kilocode_change end
         .get(
           "/lsp",
           describeRoute({

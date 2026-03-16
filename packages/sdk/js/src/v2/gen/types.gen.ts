@@ -4402,6 +4402,59 @@ export type EnhancePromptEnhanceResponses = {
 
 export type EnhancePromptEnhanceResponse = EnhancePromptEnhanceResponses[keyof EnhancePromptEnhanceResponses]
 
+export type SkillRemoveData = {
+  body?: never
+  path?: never
+  query: {
+    directory?: string
+    workspace?: string
+    location: string
+  }
+  url: "/skill"
+}
+
+export type SkillRemoveErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SkillRemoveError = SkillRemoveErrors[keyof SkillRemoveErrors]
+
+export type SkillRemoveResponses = {
+  /**
+   * Skill removed
+   */
+  200: boolean
+}
+
+export type SkillRemoveResponse = SkillRemoveResponses[keyof SkillRemoveResponses]
+
+export type AppSkillsData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/skill"
+}
+
+export type AppSkillsResponses = {
+  /**
+   * List of skills
+   */
+  200: Array<{
+    name: string
+    description: string
+    location: string
+    content: string
+  }>
+}
+
+export type AppSkillsResponse = AppSkillsResponses[keyof AppSkillsResponses]
+
 export type KiloProfileData = {
   body?: never
   path?: never
@@ -5482,59 +5535,6 @@ export type AppAgentsResponses = {
 }
 
 export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
-
-export type AppRemoveSkillData = {
-  body?: never
-  path?: never
-  query: {
-    directory?: string
-    workspace?: string
-    location: string
-  }
-  url: "/skill"
-}
-
-export type AppRemoveSkillErrors = {
-  /**
-   * Bad request
-   */
-  400: BadRequestError
-}
-
-export type AppRemoveSkillError = AppRemoveSkillErrors[keyof AppRemoveSkillErrors]
-
-export type AppRemoveSkillResponses = {
-  /**
-   * Skill removed
-   */
-  200: boolean
-}
-
-export type AppRemoveSkillResponse = AppRemoveSkillResponses[keyof AppRemoveSkillResponses]
-
-export type AppSkillsData = {
-  body?: never
-  path?: never
-  query?: {
-    directory?: string
-    workspace?: string
-  }
-  url: "/skill"
-}
-
-export type AppSkillsResponses = {
-  /**
-   * List of skills
-   */
-  200: Array<{
-    name: string
-    description: string
-    location: string
-    content: string
-  }>
-}
-
-export type AppSkillsResponse = AppSkillsResponses[keyof AppSkillsResponses]
 
 export type LspStatusData = {
   body?: never
