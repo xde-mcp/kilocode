@@ -254,10 +254,11 @@ export namespace ProviderTransform {
   // kilocode_change - function added
   function fixDuplicateReasoning(msgs: ModelMessage[], model: Provider.Model) {
     for (const msg of msgs) {
-      if (msg.role !== "assistant" || !Array.isArray(msg.content)) {
+      if (!Array.isArray(msg.content)) {
         continue
       }
-      const set = new Set<string>()
+      const encryptedDataSet = new Set<string>()
+      const textSet = new Set<string>()
       for (const part of msg.content) {
         const openrouterProviderOptions = part.providerOptions?.openrouter as
           | {
@@ -269,16 +270,16 @@ export namespace ProviderTransform {
         }
         openrouterProviderOptions.reasoning_details = openrouterProviderOptions.reasoning_details.filter((rd) => {
           if (rd.data) {
-            if (!set.has(rd.data)) {
-              set.add(rd.data)
+            if (!encryptedDataSet.has(rd.data)) {
+              encryptedDataSet.add(rd.data)
               return true
             }
             return false
           }
           if (rd.text) {
             if ((model.family === "claude" || model.id.includes("claude")) && !rd.signature) return false
-            if (!set.has(rd.text)) {
-              set.add(rd.text)
+            if (!textSet.has(rd.text)) {
+              textSet.add(rd.text)
               return true
             }
             return false
@@ -295,7 +296,7 @@ export namespace ProviderTransform {
 
     // kilocode_change - workaround for @openrouter/ai-sdk-provider v1 duplicating reasoning
     // fixed in https://github.com/OpenRouterTeam/ai-sdk-provider/pull/344/
-    if (model.api.npm === "@kilocode/kilo-gateway") {
+    if (model.api.npm === "@openrouter/ai-sdk-provider") {
       fixDuplicateReasoning(msgs, model)
     }
 
