@@ -5483,6 +5483,35 @@ export type AppAgentsResponses = {
 
 export type AppAgentsResponse = AppAgentsResponses[keyof AppAgentsResponses]
 
+export type AppRemoveSkillData = {
+  body?: never
+  path?: never
+  query: {
+    directory?: string
+    workspace?: string
+    location: string
+  }
+  url: "/skill"
+}
+
+export type AppRemoveSkillErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type AppRemoveSkillError = AppRemoveSkillErrors[keyof AppRemoveSkillErrors]
+
+export type AppRemoveSkillResponses = {
+  /**
+   * Skill removed
+   */
+  200: boolean
+}
+
+export type AppRemoveSkillResponse = AppRemoveSkillResponses[keyof AppRemoveSkillResponses]
+
 export type AppSkillsData = {
   body?: never
   path?: never

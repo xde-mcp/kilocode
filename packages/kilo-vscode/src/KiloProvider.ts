@@ -1133,15 +1133,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   }
 
   /**
-   * Remove a skill by deleting its directory from disk, then refresh the skills list.
-   * The location is the path to the SKILL.md file; the skill directory is its parent.
+   * Remove a skill via the CLI backend (deletes from disk + clears cache), then refresh.
    */
   private async handleRemoveSkill(location: string): Promise<void> {
-    const dir = path.dirname(location)
+    if (!this.client) return
     try {
-      await vscode.workspace.fs.delete(vscode.Uri.file(dir), { recursive: true })
+      const dir = this.getWorkspaceDirectory()
+      await this.client.app.removeSkill({ location, directory: dir }, { throwOnError: true })
     } catch (error) {
-      console.error("[Kilo New] KiloProvider: Failed to delete skill directory:", dir, error)
+      console.error("[Kilo New] KiloProvider: Failed to remove skill:", error)
     }
     this.cachedSkillsMessage = null
     await this.fetchAndSendSkills()

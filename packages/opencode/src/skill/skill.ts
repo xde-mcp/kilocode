@@ -1,6 +1,7 @@
 import z from "zod"
 import path from "path"
 import os from "os"
+import { rm } from "fs/promises"
 import { Config } from "../config/config"
 import { Instance } from "../project/instance"
 import { NamedError } from "@opencode-ai/util/error"
@@ -213,4 +214,17 @@ export namespace Skill {
   export async function dirs() {
     return state().then((x) => x.dirs)
   }
+
+  // kilocode_change start
+  export async function remove(location: string) {
+    const dir = path.dirname(location)
+    await rm(dir, { recursive: true, force: true })
+    const s = await state()
+    const name = Object.keys(s.skills).find((k) => s.skills[k].location === location)
+    if (name) {
+      delete s.skills[name]
+      s.dirs = s.dirs.filter((d) => d !== dir)
+    }
+  }
+  // kilocode_change end
 }
