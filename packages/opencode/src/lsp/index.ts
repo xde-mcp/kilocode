@@ -264,6 +264,16 @@ export namespace LSP {
       })
 
       const client = await task
+      // kilocode_change start - fallback to lightweight client when tsgo LSP spawn fails
+      if (!client && server.id === "typescript") {
+        s.broken.delete(root + server.id)
+        const fallback = TsClient.create({ root })
+        s.clients.push(fallback)
+        result.push(fallback)
+        Bus.publish(Event.Updated, {})
+        continue
+      }
+      // kilocode_change end
       if (!client) continue
 
       result.push(client)
