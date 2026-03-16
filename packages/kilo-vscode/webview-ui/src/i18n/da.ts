@@ -959,6 +959,10 @@ export const dict = {
     "Ingen skills fundet. Tilføj skill-mappestier eller URL'er nedenfor for at gøre skills tilgængelige.",
   "settings.agentBehaviour.skillPaths": "Skill-mappestier",
   "settings.agentBehaviour.skillUrls": "Skill-URL'er",
+  "settings.agentBehaviour.removeSkill.title": "Fjern færdighed",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Vil du fjerne færdigheden "{{name}}"? Dette vil slette færdighedsfilerne fra disken.',
+  "settings.agentBehaviour.removeSkill.button": "Fjern",
   "settings.agentBehaviour.instructionFiles": "Yderligere instruktionsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til yderligere instruktionsfiler i systemprompten",
   "settings.agentBehaviour.mcpEmpty":

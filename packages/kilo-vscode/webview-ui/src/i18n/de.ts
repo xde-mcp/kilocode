@@ -974,6 +974,10 @@ export const dict = {
     "Keine Skills gefunden. Fügen Sie unten Skill-Ordnerpfade oder URLs hinzu, um Skills verfügbar zu machen.",
   "settings.agentBehaviour.skillPaths": "Skill-Ordnerpfade",
   "settings.agentBehaviour.skillUrls": "Skill-URLs",
+  "settings.agentBehaviour.removeSkill.title": "Skill entfernen",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Skill "{{name}}" entfernen? Dadurch werden die Skill-Dateien vom Datenträger gelöscht.',
+  "settings.agentBehaviour.removeSkill.button": "Entfernen",
   "settings.agentBehaviour.instructionFiles": "Zusätzliche Anweisungsdateien",
   "settings.agentBehaviour.instructionFiles.description": "Pfade zu zusätzlichen Anweisungsdateien im System-Prompt",
   "settings.agentBehaviour.mcpEmpty":

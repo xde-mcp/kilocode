@@ -951,6 +951,10 @@ export const dict = {
   "settings.agentBehaviour.noSkillsFound": "ไม่พบทักษะ เพิ่มเส้นทางโฟลเดอร์หรือ URL ด้านล่างเพื่อทำให้ทักษะพร้อมใช้งาน",
   "settings.agentBehaviour.skillPaths": "เส้นทางโฟลเดอร์ทักษะ",
   "settings.agentBehaviour.skillUrls": "URL ทักษะ",
+  "settings.agentBehaviour.removeSkill.title": "ลบทักษะ",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'ต้องการลบทักษะ "{{name}}" หรือไม่? การดำเนินการนี้จะลบไฟล์ทักษะออกจากดิสก์',
+  "settings.agentBehaviour.removeSkill.button": "ลบ",
   "settings.agentBehaviour.instructionFiles": "ไฟล์คำสั่งเพิ่มเติม",
   "settings.agentBehaviour.instructionFiles.description": "เส้นทางไฟล์คำสั่งเพิ่มเติมในพรอมต์ระบบ",
   "settings.agentBehaviour.mcpEmpty":

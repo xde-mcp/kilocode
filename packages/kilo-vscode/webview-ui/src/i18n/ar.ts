@@ -951,6 +951,10 @@ export const dict = {
     "لم يتم العثور على مهارات. أضف مسارات مجلدات أو عناوين URL أدناه لإتاحة المهارات.",
   "settings.agentBehaviour.skillPaths": "مسارات مجلدات المهارات",
   "settings.agentBehaviour.skillUrls": "عناوين URL للمهارات",
+  "settings.agentBehaviour.removeSkill.title": "إزالة المهارة",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'هل تريد إزالة المهارة "{{name}}"؟ سيؤدي هذا إلى حذف ملفات المهارة من القرص.',
+  "settings.agentBehaviour.removeSkill.button": "إزالة",
   "settings.agentBehaviour.instructionFiles": "ملفات تعليمات إضافية",
   "settings.agentBehaviour.instructionFiles.description": "مسارات ملفات التعليمات الإضافية في موجه النظام",
   "settings.agentBehaviour.mcpEmpty": "لم يتم تهيئة خوادم MCP. قم بتحرير ملف تهيئة opencode لإضافة خوادم MCP.",

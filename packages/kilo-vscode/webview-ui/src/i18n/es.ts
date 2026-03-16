@@ -966,6 +966,10 @@ export const dict = {
     "No se encontraron habilidades. Agregue rutas de carpetas o URLs abajo para hacer disponibles las habilidades.",
   "settings.agentBehaviour.skillPaths": "Rutas de carpetas de habilidades",
   "settings.agentBehaviour.skillUrls": "URLs de habilidades",
+  "settings.agentBehaviour.removeSkill.title": "Eliminar habilidad",
+  "settings.agentBehaviour.removeSkill.confirm":
+    '¿Eliminar la habilidad "{{name}}"? Esto borrará los archivos de la habilidad del disco.',
+  "settings.agentBehaviour.removeSkill.button": "Eliminar",
   "settings.agentBehaviour.instructionFiles": "Archivos de instrucciones adicionales",
   "settings.agentBehaviour.instructionFiles.description":
     "Rutas a archivos de instrucciones adicionales incluidos en el prompt del sistema",
