@@ -119,6 +119,10 @@ export namespace LSPServer {
       return {
         process: proc,
         initialization: {
+          // kilocode_change start - cap tsserver memory to prevent multi-GB usage on large monorepos
+          maxTsServerMemory: 1536,
+          disableAutomaticTypingAcquisition: true,
+          // kilocode_change end
           tsserver: {
             path: tsserver,
           },
