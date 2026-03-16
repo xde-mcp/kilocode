@@ -8,11 +8,8 @@ import { Log } from "../util/log"
 import { BunProc } from "../bun"
 import { Hash } from "../util/hash"
 import { Plugin } from "../plugin"
-import {
-  ModelsDev,
-  Prompt, // kilocode_change
-} from "./models"
 import { NamedError } from "@opencode-ai/util/error"
+import { ModelsDev, Prompt } from "./models" // kilocode_change
 import { Auth } from "../auth"
 import { Env } from "../env"
 import { Instance } from "../project/instance"
