@@ -1162,7 +1162,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * Fetch backend config and send to webview.
    */
   private async fetchAndSendConfig(): Promise<void> {
-    if (!this.client) {
+    if (!this.client || this.connectionState !== "connected") {
       if (this.cachedConfigMessage) {
         this.postMessage(this.cachedConfigMessage)
       }
@@ -1440,7 +1440,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    * the full merged config back to the webview.
    */
   private async handleUpdateConfig(partial: Partial<Config>): Promise<void> {
-    if (!this.client) {
+    if (!this.client || this.connectionState !== "connected") {
       this.postMessage({ type: "error", message: "Not connected to CLI backend" })
       return
     }
