@@ -122,6 +122,7 @@ interface SessionContextValue {
 
   // Agent/mode selection (per-session)
   agents: Accessor<AgentInfo[]>
+  removeMode: (name: string) => void
   selectedAgent: Accessor<string>
   selectAgent: (name: string) => void
   getSessionAgent: (sessionID: string) => string
@@ -212,6 +213,11 @@ export const SessionProvider: ParentComponent = (props) => {
 
   // Skills loaded from the CLI backend
   const [skills, setSkills] = createSignal<SkillInfo[]>([])
+
+  const removeMode = (name: string) => {
+    setAgents((prev) => prev.filter((a) => a.name !== name))
+    vscode.postMessage({ type: "removeMode", name })
+  }
 
   // Pending agent selection for before a session exists
   const [pendingAgentSelection, setPendingAgentSelection] = createSignal<string | null>(null)
@@ -1314,6 +1320,7 @@ export const SessionProvider: ParentComponent = (props) => {
     skills,
     refreshSkills,
     removeSkill,
+    removeMode,
     selectedAgent: selectedAgentName,
     selectAgent,
     getSessionAgent: (sessionID: string) => store.agentSelections[sessionID] ?? defaultAgent(),

@@ -962,6 +962,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Обнаруженные навыки",
   "settings.agentBehaviour.noSkillsFound":
     "Навыки не обнаружены. Добавьте пути к папкам навыков или URL-адреса ниже, чтобы сделать навыки доступными.",
+  "settings.agentBehaviour.availableModes": "Доступные режимы",
+  "settings.agentBehaviour.noModesFound": "Режимы не найдены.",
+  "settings.agentBehaviour.removeMode.title": "Удалить режим",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Удалить режим "{{name}}"? Это отключит режим, обновив вашу конфигурацию.',
+  "settings.agentBehaviour.removeMode.button": "Удалить",
   "settings.agentBehaviour.skillPaths": "Пути папок навыков",
   "settings.agentBehaviour.skillUrls": "URL навыков",
   "settings.agentBehaviour.removeSkill.title": "Удалить навык",

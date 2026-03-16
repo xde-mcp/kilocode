@@ -959,6 +959,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "Oppdagede ferdigheter",
   "settings.agentBehaviour.noSkillsFound":
     "Ingen ferdigheter funnet. Legg til ferdighetsmappestier eller URLer nedenfor for å gjøre ferdigheter tilgjengelige.",
+  "settings.agentBehaviour.availableModes": "Tilgjengelige moduser",
+  "settings.agentBehaviour.noModesFound": "Ingen moduser funnet.",
+  "settings.agentBehaviour.removeMode.title": "Fjern modus",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Vil du fjerne modusen "{{name}}"? Dette vil deaktivere modusen ved å oppdatere konfigurasjonen din.',
+  "settings.agentBehaviour.removeMode.button": "Fjern",
   "settings.agentBehaviour.skillPaths": "Ferdighetsmappe-stier",
   "settings.agentBehaviour.skillUrls": "Ferdighets-URLer",
   "settings.agentBehaviour.removeSkill.title": "Fjern ferdighet",

@@ -954,6 +954,12 @@ export const dict = {
   "settings.agentBehaviour.discoveredSkills": "검색된 스킬",
   "settings.agentBehaviour.noSkillsFound":
     "스킬을 찾을 수 없습니다. 스킬을 사용하려면 아래에 스킬 폴더 경로 또는 URL을 추가하세요.",
+  "settings.agentBehaviour.availableModes": "사용 가능한 모드",
+  "settings.agentBehaviour.noModesFound": "모드를 찾을 수 없습니다.",
+  "settings.agentBehaviour.removeMode.title": "모드 제거",
+  "settings.agentBehaviour.removeMode.confirm":
+    '모드 "{{name}}"을(를) 제거하시겠습니까? 구성을 업데이트하여 모드를 비활성화합니다.',
+  "settings.agentBehaviour.removeMode.button": "제거",
   "settings.agentBehaviour.skillPaths": "스킬 폴더 경로",
   "settings.agentBehaviour.skillUrls": "스킬 URL",
   "settings.agentBehaviour.removeSkill.title": "스킬 제거",

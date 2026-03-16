@@ -434,6 +434,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
             console.error("[Kilo New] handleRemoveSkill failed:", e),
           )
           break
+        case "removeMode":
+          this.handleRemoveMode(message.name).catch((e) => console.error("[Kilo New] handleRemoveMode failed:", e))
+          break
         case "questionReply":
           await this.handleQuestionReply(message.requestID, message.answers)
           break
@@ -1156,6 +1159,28 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
     // Invalidate cache so next requestSkills fetches fresh data
     this.cachedSkillsMessage = null
+  }
+
+  /**
+   * Remove (disable) a mode via config, then refresh agents.
+   * The webview optimistically removes the mode from its list before this runs.
+   * On failure, re-fetches agents so the webview reverts to the authoritative state.
+   */
+  private async handleRemoveMode(name: string): Promise<void> {
+    if (!this.client) return
+    try {
+      await this.client.global.config.update(
+        { config: { agent: { [name]: { disable: true } } } },
+        { throwOnError: true },
+      )
+      // Invalidate cache so next requestAgents fetches fresh data
+      this.cachedAgentsMessage = null
+      await this.fetchAndSendAgents()
+    } catch (error) {
+      console.error("[Kilo New] KiloProvider: Failed to remove mode:", error)
+      this.cachedAgentsMessage = null
+      await this.fetchAndSendAgents()
+    }
   }
 
   /**
