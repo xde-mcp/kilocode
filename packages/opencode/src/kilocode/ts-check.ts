@@ -96,7 +96,8 @@ export namespace TsCheck {
   // The @typescript/native-preview npm package includes platform-specific
   // optional dependencies like @typescript/native-preview-darwin-arm64 that
   // contain the actual native binary at lib/tsgo.
-  async function native_tsgo(root: string): Promise<string | undefined> {
+  // Exported for use by the LSP server spawn (tsgo --lsp --stdio).
+  export async function native_tsgo(root: string): Promise<string | undefined> {
     const pkg = `@typescript/native-preview-${process.platform}-${process.arch}`
 
     // Walk up from root looking in node_modules (including .bun hoisted paths)

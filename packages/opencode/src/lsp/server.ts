@@ -10,6 +10,7 @@ import fs from "fs/promises"
 import { Filesystem } from "../util/filesystem"
 import { Instance } from "../project/instance"
 import { Flag } from "../flag/flag"
+import { TsCheck } from "../kilocode/ts-check" // kilocode_change
 import { Archive } from "../util/archive"
 import { Process } from "../util/process"
 
@@ -98,13 +99,11 @@ export namespace LSPServer {
     },
   }
 
-  // kilocode_change start - replaced typescript-language-server with lightweight tsgo/tsc diagnostic client
-  // The spawn() returns undefined so no node process is started. The actual
-  // TypeScript diagnostics are handled by TsClient (src/kilocode/ts-client.ts)
-  // which shells out to tsgo --noEmit on demand, using ~50MB peak / 0 idle
-  // instead of the ~500MB persistent typescript-language-server.
-  // The root() and extensions are preserved because getClients() still uses
-  // them for routing files to the correct project root.
+  // kilocode_change start - tsgo native LSP or lightweight diagnostic client
+  // When KILO_EXPERIMENTAL_LSP_TOOL is enabled, spawn tsgo --lsp --stdio as a
+  // persistent LSP server (full diagnostics, hover, go-to-definition, etc.).
+  // Otherwise spawn() returns undefined and getClients() in index.ts falls
+  // through to the lightweight TsClient that shells out to tsgo --noEmit on demand.
   export const Typescript: Info = {
     id: "typescript",
     root: NearestRoot(
@@ -112,8 +111,17 @@ export namespace LSPServer {
       ["deno.json", "deno.jsonc"],
     ),
     extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts"],
-    async spawn() {
-      return undefined
+    async spawn(root) {
+      if (!Flag.KILO_EXPERIMENTAL_LSP_TOOL) return undefined
+      const bin = await TsCheck.native_tsgo(root)
+      if (!bin) {
+        log.info("tsgo native binary not found, falling back to lightweight client")
+        return undefined
+      }
+      log.info("spawning tsgo --lsp", { bin, root })
+      return {
+        process: spawn(bin, ["--lsp", "--stdio"], { cwd: root }),
+      }
     },
   }
   // kilocode_change end
