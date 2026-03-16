@@ -1248,6 +1248,11 @@ export interface RequestSkillsMessage {
   type: "requestSkills"
 }
 
+export interface RemoveSkillMessage {
+  type: "removeSkill"
+  location: string
+}
+
 export interface SetLanguageRequest {
   type: "setLanguage"
   locale: string
@@ -1628,6 +1633,7 @@ export type WebviewMessage =
   | CompactRequest
   | RequestAgentsMessage
   | RequestSkillsMessage
+  | RemoveSkillMessage
   | SetLanguageRequest
   | QuestionReplyRequest
   | QuestionRejectRequest

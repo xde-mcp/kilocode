@@ -963,6 +963,10 @@ export const dict = {
     "Nisu pronađene vještine. Dodajte putanje mapa ili URL-ove ispod kako biste učinili vještine dostupnim.",
   "settings.agentBehaviour.skillPaths": "Putanje mapa vještina",
   "settings.agentBehaviour.skillUrls": "URL-ovi vještina",
+  "settings.agentBehaviour.removeSkill.title": "Ukloni vještinu",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Ukloniti vještinu "{{name}}"? Ovo će obrisati datoteke vještine sa diska.',
+  "settings.agentBehaviour.removeSkill.button": "Ukloni",
   "settings.agentBehaviour.instructionFiles": "Dodatne datoteke uputa",
   "settings.agentBehaviour.instructionFiles.description": "Putanje do dodatnih datoteka uputa u sistemskom promptu",
   "settings.agentBehaviour.mcpEmpty":

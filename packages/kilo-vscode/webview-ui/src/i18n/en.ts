@@ -971,6 +971,9 @@ export const dict = {
     "No skills discovered. Add skill folder paths or URLs below to make skills available.",
   "settings.agentBehaviour.skillPaths": "Skill Folder Paths",
   "settings.agentBehaviour.skillUrls": "Skill URLs",
+  "settings.agentBehaviour.removeSkill.title": "Remove skill",
+  "settings.agentBehaviour.removeSkill.confirm": 'Remove skill "{{name}}"? This will delete the skill files from disk.',
+  "settings.agentBehaviour.removeSkill.button": "Remove",
   "settings.agentBehaviour.instructionFiles": "Additional Instruction Files",
   "settings.agentBehaviour.instructionFiles.description":
     "Paths to additional instruction files that are included in the system prompt",
