@@ -62,6 +62,10 @@ export function registerCodeActions(
         selectedText: ctx.selectedText,
       })
       target().postMessage({ type: "appendChatBoxMessage", text: prompt })
+<<<<<<< HEAD
+=======
+      target().postMessage({ type: "action", action: "focusInput" })
+>>>>>>> 70920c798 (fix(vscode): implement terminal Add to Context using clipboard-based selection)
     }),
 
     vscode.commands.registerCommand("kilo-code.new.focusChatInput", () => {
