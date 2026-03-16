@@ -1,0 +1,26 @@
+name: check kilocode_change markers
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check:
+    name: no kilocode_change in kilo packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for kilocode_change markers
+        run: |
+          if grep -r --include='*' -l 'kilocode_change' packages/kilo-vscode/ packages/kilo-ui/; then
+            echo ""
+            echo "ERROR: Found 'kilocode_change' markers in kilo-specific packages."
+            echo "These packages are entirely Kilo Code additions and do not need kilocode_change markers."
+            echo "Please remove them from the files listed above."
+            exit 1
+          fi
+          echo "No kilocode_change markers found. All clear."
