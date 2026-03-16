@@ -96,6 +96,7 @@ import type {
   PermissionRuleset,
   PermissionSavePatternRulesErrors,
   PermissionSavePatternRulesResponses,
+  ProcessStatusResponses,
   ProjectCurrentResponses,
   ProjectListResponses,
   ProjectUpdateErrors,
@@ -4393,6 +4394,38 @@ export class Lsp extends HeyApiClient {
   }
 }
 
+export class Process extends HeyApiClient {
+  /**
+   * Get process status
+   *
+   * Get process tree with memory usage for all related processes
+   */
+  public status<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<ProcessStatusResponses, unknown, ThrowOnError>({
+      url: "/process",
+      ...options,
+      ...params,
+    })
+  }
+}
+
 export class Formatter extends HeyApiClient {
   /**
    * Get formatter status
@@ -4598,6 +4631,11 @@ export class KiloClient extends HeyApiClient {
   private _lsp?: Lsp
   get lsp(): Lsp {
     return (this._lsp ??= new Lsp({ client: this.client }))
+  }
+
+  private _process?: Process
+  get process(): Process {
+    return (this._process ??= new Process({ client: this.client }))
   }
 
   private _formatter?: Formatter

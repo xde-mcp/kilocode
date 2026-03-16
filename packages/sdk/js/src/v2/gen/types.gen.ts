@@ -1947,6 +1947,25 @@ export type LspStatus = {
   status: "connected" | "error"
 }
 
+export type ProcessInfo = {
+  pid: number
+  ppid: number
+  rss: number
+  command: string
+  args: string
+}
+
+export type ProcessStatus = {
+  self: ProcessInfo
+  heap: {
+    used: number
+    total: number
+    external: number
+    buffers: number
+  }
+  children: Array<ProcessInfo>
+}
+
 export type FormatterStatus = {
   name: string
   extensions: Array<string>
@@ -5525,6 +5544,25 @@ export type LspStatusResponses = {
 }
 
 export type LspStatusResponse = LspStatusResponses[keyof LspStatusResponses]
+
+export type ProcessStatusData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/process"
+}
+
+export type ProcessStatusResponses = {
+  /**
+   * Process status
+   */
+  200: ProcessStatus
+}
+
+export type ProcessStatusResponse = ProcessStatusResponses[keyof ProcessStatusResponses]
 
 export type FormatterStatusData = {
   body?: never
