@@ -34,6 +34,13 @@ export interface TextPart extends BasePart {
   text: string
 }
 
+export interface FilePart extends BasePart {
+  type: "file"
+  mime: string
+  url: string
+  filename?: string
+}
+
 export interface ToolPart extends BasePart {
   type: "tool"
   tool: string
@@ -62,7 +69,7 @@ export interface StepFinishPart extends BasePart {
   }
 }
 
-export type Part = TextPart | ToolPart | ReasoningPart | StepStartPart | StepFinishPart
+export type Part = TextPart | FilePart | ToolPart | ReasoningPart | StepStartPart | StepFinishPart
 
 // Part delta for streaming updates
 export interface PartDelta {
@@ -372,6 +379,15 @@ export interface ErrorMessage {
   message: string
   code?: string
   sessionID?: string
+}
+
+export interface SendMessageFailedMessage {
+  type: "sendMessageFailed"
+  error: string
+  text: string
+  sessionID?: string
+  messageID?: string
+  files?: FileAttachment[]
 }
 
 export interface PartUpdatedMessage {
@@ -1018,6 +1034,7 @@ export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
   | ErrorMessage
+  | SendMessageFailedMessage
   | PartUpdatedMessage
   | SessionStatusMessage
   | PermissionRequestMessage
@@ -1100,11 +1117,13 @@ export type ExtensionMessage =
 export interface FileAttachment {
   mime: string
   url: string
+  filename?: string
 }
 
 export interface SendMessageRequest {
   type: "sendMessage"
   text: string
+  messageID?: string
   sessionID?: string
   providerID?: string
   modelID?: string
@@ -1164,6 +1183,7 @@ export interface ImportAndSendMessage {
   type: "importAndSend"
   cloudSessionId: string
   text: string
+  messageID?: string
   providerID?: string
   modelID?: string
   agent?: string
