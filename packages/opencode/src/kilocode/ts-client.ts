@@ -6,7 +6,6 @@
 import type { LSPClient } from "../lsp/client"
 import { TsCheck } from "./ts-check"
 import { Log } from "../util/log"
-import { Filesystem } from "../util/filesystem"
 import path from "path"
 import { Instance } from "../project/instance"
 
@@ -15,11 +14,28 @@ export namespace TsClient {
 
   export function create(input: { root: string }): LSPClient.Info {
     const diagnostics = new Map<string, LSPClient.Diagnostic[]>()
-    // Track files we've seen to replicate the first-publish suppression
-    // from client.ts:60 — skip the first Bus publish for unseen files.
-    // Since we compute diagnostics synchronously on notify.open, we don't
-    // use Bus at all; instead waitForDiagnostics resolves immediately.
+    // Pending tsgo run promise — used for coalescing rapid calls.
+    // Only set when waitForDiagnostics() triggers a run, NOT on
+    // notify.open() (which is a warm-up call from read.ts).
     let pending: Promise<void> | undefined
+
+    function check(): Promise<void> {
+      if (pending) return pending
+      pending = TsCheck.run(client.root)
+        .then((result) => {
+          diagnostics.clear()
+          for (const [file, diags] of result) {
+            diagnostics.set(file, diags)
+          }
+        })
+        .catch((err) => {
+          log.error("ts check failed", { error: err })
+        })
+        .finally(() => {
+          pending = undefined
+        })
+      return pending
+    }
 
     const client: LSPClient.Info = {
       root: input.root,
@@ -43,37 +59,19 @@ export namespace TsClient {
         }
       },
       notify: {
-        async open(input: { path: string }) {
-          const abs = path.isAbsolute(input.path) ? input.path : path.resolve(Instance.directory, input.path)
-          log.info("notify.open (queuing tsgo)", { path: abs })
-
-          // Run a full project check. Multiple rapid calls are coalesced:
-          // we store the promise and reuse it until it settles.
-          if (!pending) {
-            pending = TsCheck.run(client.root)
-              .then((result) => {
-                // Replace the entire diagnostics map with fresh results
-                diagnostics.clear()
-                for (const [file, diags] of result) {
-                  diagnostics.set(file, diags)
-                }
-                pending = undefined
-              })
-              .catch((err) => {
-                log.error("ts check failed", { error: err })
-                pending = undefined
-              })
-          }
-          await pending
+        async open(_input: { path: string }) {
+          // No-op. Warm-up calls from read.ts (touchFile(path, false))
+          // trigger notify.open() but should NOT spawn tsgo. The actual
+          // check is deferred to waitForDiagnostics() which is only
+          // called when tools need diagnostics (write, edit, apply_patch).
         },
       },
       get diagnostics() {
         return diagnostics
       },
       async waitForDiagnostics(_input: { path: string }) {
-        // Diagnostics are computed synchronously during notify.open.
-        // If there's a pending run, wait for it; otherwise resolve immediately.
-        if (pending) await pending
+        // Run tsgo --noEmit and wait for results. Coalesces concurrent calls.
+        await check()
       },
       async shutdown() {
         log.info("shutting down ts-client")
