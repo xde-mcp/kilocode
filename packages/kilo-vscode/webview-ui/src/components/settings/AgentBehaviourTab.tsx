@@ -196,8 +196,10 @@ const AgentBehaviourTab: Component = () => {
   }
 
   const removableModes = createMemo(() => session.agents().filter((a) => !a.native))
+  const [removing, setRemoving] = createSignal(false)
 
   const confirmRemoveMode = (agent: AgentInfo) => {
+    if (removing()) return
     dialog.show(() => (
       <Dialog title={language.t("settings.agentBehaviour.removeMode.title")} fit>
         <div class="dialog-confirm-body">
@@ -210,8 +212,10 @@ const AgentBehaviourTab: Component = () => {
               variant="primary"
               size="large"
               onClick={() => {
-                session.removeMode(agent.name)
+                setRemoving(true)
                 dialog.close()
+                session.removeMode(agent.name)
+                setTimeout(() => setRemoving(false), 200)
               }}
             >
               {language.t("settings.agentBehaviour.removeMode.button")}
@@ -400,7 +404,15 @@ const AgentBehaviourTab: Component = () => {
                     </div>
                   </Show>
                 </div>
-                <IconButton size="small" variant="ghost" icon="close" onClick={() => confirmRemoveMode(agent)} />
+                <IconButton
+                  size="small"
+                  variant="ghost"
+                  icon="close"
+                  onClick={(e: MouseEvent) => {
+                    e.stopPropagation()
+                    confirmRemoveMode(agent)
+                  }}
+                />
               </div>
             )}
           </For>
