@@ -84,11 +84,27 @@ export namespace TsCheck {
     const native = await native_tsgo(root)
     if (native) return native
 
-    // 2. Try global tsc (fallback — this is a node script so still spawns node,
-    //    but it's the last resort)
+    // 2. Try workspace-local tsc from node_modules
+    const local = await local_tsc(root)
+    if (local) return local
+
+    // 3. Try global tsc (fallback)
     const tsc = Bun.which("tsc")
     if (tsc) return tsc
 
+    return undefined
+  }
+
+  // Walk up from root looking for node_modules/typescript/bin/tsc
+  async function local_tsc(root: string): Promise<string | undefined> {
+    let dir = root
+    while (true) {
+      const bin = path.join(dir, "node_modules", "typescript", "bin", "tsc")
+      if (await exists(bin)) return bin
+      const parent = path.dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
     return undefined
   }
 
