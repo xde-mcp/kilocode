@@ -8,7 +8,8 @@
  * 3. Injecting Kilo-specific dependencies
  * 4. Preserving Kilo's version number
  * 5. Preserving overrides and patchedDependencies
- * 6. Using "newest wins" strategy for dependency versions
+ * 6. Preserving Kilo's repository configuration
+ * 7. Using "newest wins" strategy for dependency versions
  */
 
 import { $ } from "bun"
@@ -333,7 +334,14 @@ export async function transformPackageJson(file: string, options: PackageJsonOpt
         }
       }
 
-      // 6. Handle workspaces for root package.json
+      // 6. Preserve repository (Kilo-specific, upstream doesn't have this)
+      const ourRepo = ourPkg.repository
+      if (ourRepo && JSON.stringify(pkg.repository) !== JSON.stringify(ourRepo)) {
+        pkg.repository = ourRepo
+        changes.push(`repository: preserved Kilo's repository configuration`)
+      }
+
+      // 7. Handle workspaces for root package.json
       // Kilo has removed hosted platform packages (console/*, slack, etc.)
       // so we need to preserve Kilo's workspace configuration instead of taking upstream's
       const ourWorkspaces = ourPkg.workspaces as { packages?: string[]; catalog?: Record<string, string> } | undefined
@@ -534,7 +542,14 @@ export async function transformAllPackageJson(options: PackageJsonOptions = {}):
           }
         }
 
-        // 6. Handle workspaces for root package.json
+        // 6. Preserve repository (Kilo-specific, upstream doesn't have this)
+        const kiloRepo = kiloPkg.repository
+        if (kiloRepo && JSON.stringify(pkg.repository) !== JSON.stringify(kiloRepo)) {
+          pkg.repository = kiloRepo
+          changes.push(`repository: preserved Kilo's repository configuration`)
+        }
+
+        // 7. Handle workspaces for root package.json
         // Kilo has removed hosted platform packages (console/*, slack, etc.)
         // so we need to preserve Kilo's workspace configuration instead of taking upstream's
         const kiloWorkspaces = kiloPkg.workspaces as
