@@ -32,9 +32,17 @@ export namespace TsCheck {
       env: { ...process.env },
     })
 
+    const TIMEOUT = 30_000
     const stdout = await new Response(proc.stdout).text()
     const stderr = await new Response(proc.stderr).text()
-    await proc.exited
+    const exited = await Promise.race([
+      proc.exited.then(() => true),
+      new Promise<false>((r) => setTimeout(() => r(false), TIMEOUT)),
+    ])
+    if (!exited) {
+      log.warn("ts check timed out, killing process", { elapsed: Date.now() - start })
+      proc.kill()
+    }
 
     log.info("ts check done", {
       elapsed: Date.now() - start,
