@@ -121,8 +121,6 @@ export const dict = {
   "ui.permission.deny": "Refuser",
   "ui.permission.allowAlways": "Toujours autoriser",
   "ui.permission.allowOnce": "Autoriser une fois",
-  "ui.permission.sessionHint":
-    '"Toujours autoriser" s\'applique uniquement à cette session. Utilisez les paramètres pour les autorisations globales.',
 
   "ui.message.expand": "Développer le message",
   "ui.message.collapse": "Réduire le message",
@@ -130,6 +128,7 @@ export const dict = {
   "ui.message.copyMessage": "Copier le message",
   "ui.message.copyResponse": "Copier la réponse",
   "ui.message.copied": "Copié !",
+  "ui.message.revert": "Revert to here",
   "ui.message.interrupted": "Interrompu",
   "ui.message.queued": "En file",
   "ui.message.attachment.alt": "pièce jointe",

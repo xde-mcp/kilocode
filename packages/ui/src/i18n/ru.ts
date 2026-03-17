@@ -120,8 +120,6 @@ export const dict = {
   "ui.permission.deny": "Запретить",
   "ui.permission.allowAlways": "Разрешить всегда",
   "ui.permission.allowOnce": "Разрешить один раз",
-  "ui.permission.sessionHint":
-    "«Разрешить всегда» применяется только к текущей сессии. Для глобальных разрешений используйте настройки.",
 
   "ui.message.expand": "Развернуть сообщение",
   "ui.message.collapse": "Свернуть сообщение",
@@ -129,6 +127,7 @@ export const dict = {
   "ui.message.copyMessage": "Копировать сообщение",
   "ui.message.copyResponse": "Копировать ответ",
   "ui.message.copied": "Скопировано!",
+  "ui.message.revert": "Revert to here",
   "ui.message.interrupted": "Прервано",
   "ui.message.queued": "В очереди",
   "ui.message.attachment.alt": "вложение",

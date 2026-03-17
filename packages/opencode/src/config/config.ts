@@ -1426,7 +1426,7 @@ export namespace Config {
   export async function update(config: Info) {
     const filepath = path.join(Instance.directory, "config.json")
     const existing = await loadFile(filepath)
-    await Filesystem.writeJson(filepath, stripNulls(mergeDeep(existing, config) as Record<string, unknown>)) // kilocode_change - strip null delete sentinels
+    await Filesystem.writeJson(filepath, mergeConfig(existing, config)) // kilocode_change
     await Instance.dispose()
   }
 
@@ -1462,6 +1462,35 @@ export namespace Config {
   }
   // kilocode_change end
 
+  // kilocode_change start — merge config with normalization pipeline
+  /**
+   * Merge a patch into an existing config:
+   * 1. Normalize permission scalars → objects when the patch has an object
+   *    (e.g. existing `"bash": "ask"` + patch `"bash": { "npm *": "allow" }`
+   *    → promotes existing to `"bash": { "*": "ask" }` so mergeDeep works)
+   * 2. Deep-merge
+   * 3. Strip null delete sentinels
+   */
+  function mergeConfig(existing: Info, patch: Info): Info {
+    const e = { ...existing } as Record<string, unknown>
+    const p = patch as Record<string, unknown>
+    // Normalize permission scalars before merge (clone to avoid mutating the input)
+    const existingPerm = e.permission
+    const patchPerm = p.permission
+    if (isRecord(existingPerm) && isRecord(patchPerm)) {
+      const cloned = { ...existingPerm }
+      for (const [key, patchValue] of Object.entries(patchPerm)) {
+        const existingValue = cloned[key]
+        if (typeof existingValue === "string" && isRecord(patchValue)) {
+          cloned[key] = { "*": existingValue }
+        }
+      }
+      e.permission = cloned
+    }
+    return stripNulls(mergeDeep(e, p) as Record<string, unknown>) as Info
+  }
+  // kilocode_change end
+
   function patchJsonc(input: string, patch: unknown, path: string[] = []): string {
     if (!isRecord(patch)) {
       // kilocode_change - null means "delete this key" — pass undefined to jsonc-parser's modify()
@@ -1478,11 +1507,15 @@ export namespace Config {
     // scalar (e.g. permission.bash is "ask" as a string), jsonc-parser cannot
     // add child keys to it. Detect this case and replace the whole node with
     // the patch object in a single modify() call instead of recursing.
+    // For permission keys, promote the scalar to { "*": scalarValue } so the
+    // wildcard default is preserved. For other keys, replace directly.
     if (path.length > 0) {
       const tree = parseTree(input)
       const node = tree && findNodeAtLocation(tree, path)
       if (node && node.type !== "object") {
-        const edits = modify(input, path, patch, {
+        const isPermissionKey = path[0] === "permission" && path.length === 2
+        const replacement = isPermissionKey ? { "*": node.value, ...patch } : patch
+        const edits = modify(input, path, replacement, {
           formattingOptions: { insertSpaces: true, tabSize: 2 },
         })
         return applyEdits(input, edits)
@@ -1530,7 +1563,10 @@ export namespace Config {
     })
   }
 
-  export async function updateGlobal(config: Info) {
+  // kilocode_change start — add dispose option to skip Instance.disposeAll for permission-only changes
+  export async function updateGlobal(config: Info, options?: { dispose?: boolean }) {
+    const dispose = options?.dispose ?? true
+    // kilocode_change end
     const filepath = globalConfigFile()
     const before = await Filesystem.readText(filepath).catch((err: any) => {
       if (err.code === "ENOENT") return "{}"
@@ -1540,7 +1576,7 @@ export namespace Config {
     const next = await (async () => {
       if (!filepath.endsWith(".jsonc")) {
         const existing = parseConfig(before, filepath)
-        const merged = stripNulls(mergeDeep(existing, config) as Record<string, unknown>) as Info // kilocode_change - strip null delete sentinels
+        const merged = mergeConfig(existing, config) // kilocode_change
         await Filesystem.writeJson(filepath, merged)
         return merged
       }
@@ -1553,17 +1589,13 @@ export namespace Config {
 
     global.reset()
 
-    void Instance.disposeAll()
-      .catch(() => undefined)
-      .finally(() => {
-        GlobalBus.emit("event", {
-          directory: "global",
-          payload: {
-            type: Event.Disposed.type,
-            properties: {},
-          },
-        })
-      })
+    GlobalBus.emit("event", {
+      directory: "global",
+      payload: {
+        type: Event.Disposed.type,
+        properties: {},
+      },
+    })
 
     return next
   }

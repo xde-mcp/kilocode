@@ -673,6 +673,7 @@ export function UserMessageDisplay(props: {
   interrupted?: boolean
   animate?: boolean
   queued?: boolean
+  onRevert?: () => void
 }) {
   const data = useData()
   const dialog = useDialog()
