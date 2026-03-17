@@ -317,7 +317,8 @@
       "name": "@kilocode/cli",
       "version": "7.0.49",
       "bin": {
-        "opencode": "./bin/opencode",
+        "kilo": "./bin/kilo",
+        "kilocode": "./bin/kilo",
       },
       "dependencies": {
         "@actions/core": "1.11.1",
