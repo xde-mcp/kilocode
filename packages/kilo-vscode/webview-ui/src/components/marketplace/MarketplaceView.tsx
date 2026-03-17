@@ -147,8 +147,8 @@ export const MarketplaceView = () => {
               metadata={metadata()}
               fetching={fetching()}
               type="mcp"
-              searchPlaceholder={t("marketplace.search.mcp")}
-              emptyMessage={t("marketplace.empty.mcp")}
+              searchPlaceholder={t("marketplace.search")}
+              emptyMessage={t("marketplace.empty")}
               onInstall={handleInstall}
               onRemove={handleRemove}
             />
@@ -160,8 +160,8 @@ export const MarketplaceView = () => {
               metadata={metadata()}
               fetching={fetching()}
               type="mode"
-              searchPlaceholder={t("marketplace.search.modes")}
-              emptyMessage={t("marketplace.empty.modes")}
+              searchPlaceholder={t("marketplace.search")}
+              emptyMessage={t("marketplace.empty")}
               onInstall={handleInstall}
               onRemove={handleRemove}
             />
@@ -173,8 +173,8 @@ export const MarketplaceView = () => {
               metadata={metadata()}
               fetching={fetching()}
               type="skill"
-              searchPlaceholder={t("marketplace.search.skills")}
-              emptyMessage={t("marketplace.empty.skills")}
+              searchPlaceholder={t("marketplace.search")}
+              emptyMessage={t("marketplace.empty")}
               onInstall={handleInstall}
               onRemove={handleRemove}
             />
