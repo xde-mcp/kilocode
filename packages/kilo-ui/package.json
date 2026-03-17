@@ -117,6 +117,7 @@
     "@pierre/diffs": "catalog:",
     "@solid-primitives/media": "2.3.3",
     "@solid-primitives/resize-observer": "2.1.5",
-    "lucide-solid": "0.576.0"
+    "lucide-solid": "0.576.0",
+    "strip-ansi": "7.1.2"
   }
 }

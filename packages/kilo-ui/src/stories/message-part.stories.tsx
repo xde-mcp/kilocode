@@ -1,8 +1,6 @@
 /** @jsxImportSource solid-js */
 import type { Meta, StoryObj } from "storybook-solidjs-vite"
-import { Message, AssistantMessageDisplay, UserMessageDisplay } from "@opencode-ai/ui/message-part"
-// Side-effect import: registers kilo-ui's PART_MAPPING override for reasoning blocks
-import "../components/message-part"
+import { UserMessageDisplay, AssistantParts } from "../components/message-part"
 import { DataProvider } from "@opencode-ai/ui/context/data"
 import { DiffComponentProvider } from "@kilocode/kilo-ui/context/diff"
 import { CodeComponentProvider } from "@kilocode/kilo-ui/context/code"
@@ -169,7 +167,7 @@ export const AssistantMessageStory: Story = {
   name: "AssistantMessage",
   render: () => (
     <AllProviders>
-      <AssistantMessageDisplay message={mockAssistantMessage} parts={[textPart, completedToolPart]} />
+      <AssistantParts messages={[mockAssistantMessage]} />
     </AllProviders>
   ),
 }
@@ -177,7 +175,7 @@ export const AssistantMessageStory: Story = {
 export const WithRunningTool: Story = {
   render: () => (
     <AllProviders>
-      <AssistantMessageDisplay message={mockAssistantMessage} parts={[runningToolPart]} />
+      <AssistantParts messages={[mockAssistantMessage]} working />
     </AllProviders>
   ),
 }
@@ -185,7 +183,7 @@ export const WithRunningTool: Story = {
 export const WithErrorTool: Story = {
   render: () => (
     <AllProviders>
-      <AssistantMessageDisplay message={mockAssistantMessage} parts={[errorToolPart]} />
+      <AssistantParts messages={[mockAssistantMessage]} />
     </AllProviders>
   ),
 }
@@ -195,7 +193,7 @@ export const FullConversationTurn: Story = {
     <AllProviders>
       <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
         <UserMessageDisplay message={mockUserMessage} parts={[userTextPart]} />
-        <AssistantMessageDisplay message={mockAssistantMessage} parts={[completedToolPart, textPart]} />
+        <AssistantParts messages={[mockAssistantMessage]} />
       </div>
     </AllProviders>
   ),
@@ -205,36 +203,21 @@ export const WithReasoningCollapsed: Story = {
   name: "WithReasoning (collapsed)",
   render: () => (
     <AllProviders>
-      <AssistantMessageDisplay message={mockAssistantMessage} parts={[reasoningPart, textPart]} />
+      <AssistantParts messages={[mockAssistantMessage]} />
     </AllProviders>
   ),
 }
 
 export const WithReasoningExpanded: Story = {
   name: "WithReasoning (expanded)",
-  render: () => {
-    // Use a wrapper to render with the collapsible open by default
-    const expandedReasoningPart = { ...reasoningPart, id: "part-reasoning-expanded" }
-    return (
-      <AllProviders>
-        <AssistantMessageDisplay message={mockAssistantMessage} parts={[expandedReasoningPart, textPart]} />
-      </AllProviders>
-    )
-  },
+  render: () => (
+    <AllProviders>
+      <AssistantParts messages={[mockAssistantMessage]} />
+    </AllProviders>
+  ),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     // Click the collapsible trigger to expand it
     const trigger = canvasElement.querySelector("[data-slot='reasoning-header']")?.closest("button")
     if (trigger) trigger.click()
   },
-}
-
-export const MessageSwitch: Story = {
-  render: () => (
-    <AllProviders>
-      <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
-        <Message message={mockUserMessage} parts={[userTextPart]} />
-        <Message message={mockAssistantMessage} parts={[textPart, completedToolPart]} />
-      </div>
-    </AllProviders>
-  ),
 }
