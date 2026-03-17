@@ -40,6 +40,21 @@ import { dict as appBs } from "../../webview-ui/src/i18n/bs"
 
 // Layer 2: upstream UI (@opencode-ai/ui re-exported via @kilocode/kilo-ui)
 import { dict as uiEn } from "../../../ui/src/i18n/en"
+import { dict as uiZh } from "../../../ui/src/i18n/zh"
+import { dict as uiZht } from "../../../ui/src/i18n/zht"
+import { dict as uiKo } from "../../../ui/src/i18n/ko"
+import { dict as uiDe } from "../../../ui/src/i18n/de"
+import { dict as uiEs } from "../../../ui/src/i18n/es"
+import { dict as uiFr } from "../../../ui/src/i18n/fr"
+import { dict as uiDa } from "../../../ui/src/i18n/da"
+import { dict as uiJa } from "../../../ui/src/i18n/ja"
+import { dict as uiPl } from "../../../ui/src/i18n/pl"
+import { dict as uiRu } from "../../../ui/src/i18n/ru"
+import { dict as uiAr } from "../../../ui/src/i18n/ar"
+import { dict as uiNo } from "../../../ui/src/i18n/no"
+import { dict as uiBr } from "../../../ui/src/i18n/br"
+import { dict as uiTh } from "../../../ui/src/i18n/th"
+import { dict as uiBs } from "../../../ui/src/i18n/bs"
 
 // Layer 3: kilo-i18n overrides
 import { dict as kiloEn } from "../../../kilo-i18n/src/en"
@@ -125,6 +140,25 @@ const kiloLocales: Record<string, Record<string, string>> = {
   bs: kiloBs,
 }
 
+const uiLocales: Record<string, Record<string, string>> = {
+  en: uiEn,
+  zh: uiZh,
+  zht: uiZht,
+  ko: uiKo,
+  de: uiDe,
+  es: uiEs,
+  fr: uiFr,
+  da: uiDa,
+  ja: uiJa,
+  pl: uiPl,
+  ru: uiRu,
+  ar: uiAr,
+  no: uiNo,
+  br: uiBr,
+  th: uiTh,
+  bs: uiBs,
+}
+
 const cliLocales: Record<string, Record<string, string>> = {
   en: cliEn,
   zh: cliZh,
@@ -158,26 +192,31 @@ interface Missing {
 }
 
 /**
- * Regex to match t("key") / t('key') calls.
+ * Regex to match t("key") / t('key') calls, including multiline.
  *
- * Captures the string literal argument to any of these patterns:
- *   t("key")  language.t("key")  i18n.t("key")
- *
- * Skips template literals (backticks) and variable arguments.
+ * The `s` (dotAll) flag lets `\s*` span newlines so that calls like:
+ *   t(
+ *     "key"
+ *   )
+ * are captured. Runs against the entire file content, not line-by-line.
  */
-const T_CALL = /(?:^|[^a-zA-Z_$])t\(\s*(?:["'])([^"']+)["']/g
+const T_CALL = /(?:^|[^a-zA-Z_$])t\(\s*(?:["'])([^"']+)["']/gs
+
+function offsetToLine(content: string, offset: number): number {
+  let line = 1
+  for (let i = 0; i < offset && i < content.length; i++) {
+    if (content[i] === "\n") line++
+  }
+  return line
+}
 
 function extractKeys(content: string): Array<{ line: number; key: string }> {
   const results: Array<{ line: number; key: string }> = []
-  const lines = content.split("\n")
-  for (let i = 0; i < lines.length; i++) {
-    const text = lines[i]
-    let match: RegExpExecArray | null
-    T_CALL.lastIndex = 0
-    while ((match = T_CALL.exec(text)) !== null) {
-      const key = match[1]
-      if (key) results.push({ line: i + 1, key })
-    }
+  let match: RegExpExecArray | null
+  T_CALL.lastIndex = 0
+  while ((match = T_CALL.exec(content)) !== null) {
+    const key = match[1]
+    if (key) results.push({ line: offsetToLine(content, match.index), key })
   }
   return results
 }
@@ -322,6 +361,17 @@ describe("i18n key validation — no missing translation keys", () => {
 })
 
 describe("i18n locale completeness — every English key exists in all locales", () => {
+  it("shared UI: every English key has a translation in all locales", () => {
+    const missing = findMissingLocaleKeys(uiEn, uiLocales)
+    if (missing.length > 0) {
+      expect(
+        missing,
+        `Found ${missing.length} missing shared UI translation(s):\n${formatLocaleReport(missing)}`,
+      ).toEqual([])
+    }
+    expect(missing).toEqual([])
+  })
+
   it("sidebar app: every English key has a translation in all locales", () => {
     const missing = findMissingLocaleKeys(appEn, appLocales)
     if (missing.length > 0) {
