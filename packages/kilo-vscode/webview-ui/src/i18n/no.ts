@@ -398,7 +398,7 @@ export const dict = {
   "error.page.title": "Noe gikk galt",
   "error.page.description": "Det oppstod en feil under lasting av applikasjonen.",
   "error.page.details.label": "Feildetaljer",
-  "error.details.show": "Details",
+  "error.details.show": "Detaljer",
   "error.page.action.restart": "Start på nytt",
   "error.page.action.checking": "Sjekker...",
   "error.page.action.checkUpdates": "Se etter oppdateringer",
