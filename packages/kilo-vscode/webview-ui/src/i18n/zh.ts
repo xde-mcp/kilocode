@@ -676,9 +676,8 @@ export const dict = {
   "settings.providers.tag.config": "配置",
   "settings.providers.tag.custom": "自定义",
   "settings.providers.tag.other": "其他",
-  "settings.providers.modeModels": "Model per Mode",
-  "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+  "settings.providers.modeModels": "按模式选择模型",
+  "settings.providers.modeModels.description": "为特定模式覆盖默认模型。如果未设置，将使用全局默认模型。",
   "settings.models.title": "模型",
   "settings.models.description": "模型设置将在此处可配置。",
   "settings.agents.title": "智能体",

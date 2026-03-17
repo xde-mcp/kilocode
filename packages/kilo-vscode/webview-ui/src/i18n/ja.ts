@@ -685,9 +685,9 @@ export const dict = {
   "settings.providers.tag.config": "設定",
   "settings.providers.tag.custom": "カスタム",
   "settings.providers.tag.other": "その他",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "モードごとのモデル",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "特定のモードのデフォルトモデルを上書きします。設定されていない場合、グローバルデフォルトモデルが使用されます。",
   "settings.models.title": "モデル",
   "settings.models.description": "モデル設定はここで構成できます。",
   "settings.agents.title": "エージェント",
@@ -835,7 +835,7 @@ export const dict = {
     "Kilo CodeはAIコーディングアシスタントです。機能の構築、バグの修正、コードベースの説明を依頼できます。",
   "session.messages.scrollToBottom": "下にスクロール",
   "session.status.writingResponse": "応答を作成中…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "再試行中…",
   "session.status.retrying": "再試行中（{{ attempt }}回目）… {{ message }}",
   "session.status.working": "作業中…",
 

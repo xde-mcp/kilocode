@@ -689,9 +689,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguracja",
   "settings.providers.tag.custom": "Niestandardowe",
   "settings.providers.tag.other": "Inne",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "Model na tryb",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "Zastąp domyślny model dla określonych trybów. Jeśli nie ustawiono, używany jest globalny domyślny model.",
   "settings.models.title": "Modele",
   "settings.models.description": "Ustawienia modeli będą tutaj konfigurowalne.",
   "settings.agents.title": "Agenci",

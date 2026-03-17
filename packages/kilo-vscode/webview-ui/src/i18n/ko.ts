@@ -686,9 +686,9 @@ export const dict = {
   "settings.providers.tag.config": "구성",
   "settings.providers.tag.custom": "사용자 지정",
   "settings.providers.tag.other": "기타",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "모드별 모델",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "특정 모드의 기본 모델을 재정의합니다. 설정하지 않으면 전역 기본 모델이 사용됩니다.",
   "settings.models.title": "모델",
   "settings.models.description": "모델 설정은 여기서 구성할 수 있습니다.",
   "settings.agents.title": "에이전트",

@@ -686,9 +686,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguration",
   "settings.providers.tag.custom": "Brugerdefineret",
   "settings.providers.tag.other": "Andet",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "Model pr. tilstand",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "Tilsidesæt standardmodellen for bestemte tilstande. Hvis ikke angivet, bruges den globale standardmodel.",
   "settings.models.title": "Modeller",
   "settings.models.description": "Modelindstillinger vil kunne konfigureres her.",
   "settings.agents.title": "Agenter",
@@ -836,7 +836,7 @@ export const dict = {
     "Kilo Code er en AI-kodningsassistent. Bed den om at bygge funktioner, rette fejl eller forklare din kodebase.",
   "session.messages.scrollToBottom": "Rul til bunden",
   "session.status.writingResponse": "Skriver svar…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "Prøver igen…",
   "session.status.retrying": "Prøver igen (forsøg {{ attempt }})… {{ message }}",
   "session.status.working": "Arbejder…",
 

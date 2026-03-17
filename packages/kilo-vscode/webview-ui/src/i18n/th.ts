@@ -683,9 +683,9 @@ export const dict = {
   "settings.providers.tag.config": "กำหนดค่า",
   "settings.providers.tag.custom": "กำหนดเอง",
   "settings.providers.tag.other": "อื่น ๆ",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "โมเดลต่อโหมด",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "แทนที่โมเดลเริ่มต้นสำหรับโหมดที่กำหนด หากไม่ได้ตั้งค่า จะใช้โมเดลเริ่มต้นทั่วไป",
   "settings.models.title": "โมเดล",
   "settings.models.description": "การตั้งค่าโมเดลจะสามารถกำหนดค่าได้ที่นี่",
   "settings.agents.title": "เอเจนต์",

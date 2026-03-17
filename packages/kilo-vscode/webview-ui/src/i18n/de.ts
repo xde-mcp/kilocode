@@ -696,9 +696,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguration",
   "settings.providers.tag.custom": "Benutzerdefiniert",
   "settings.providers.tag.other": "Andere",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "Modell pro Modus",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "Überschreiben Sie das Standardmodell für bestimmte Modi. Wenn nicht festgelegt, wird das globale Standardmodell verwendet.",
   "settings.models.title": "Modelle",
   "settings.models.description": "Modelleinstellungen können hier konfiguriert werden.",
   "settings.agents.title": "Agenten",
@@ -846,7 +846,7 @@ export const dict = {
     "Kilo Code ist ein KI-Programmierassistent. Bitten Sie ihn, Funktionen zu erstellen, Fehler zu beheben oder Ihre Codebasis zu erklären.",
   "session.messages.scrollToBottom": "Nach unten scrollen",
   "session.status.writingResponse": "Antwort wird geschrieben…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "Erneuter Versuch…",
   "session.status.retrying": "Erneuter Versuch ({{ attempt }})… {{ message }}",
   "session.status.working": "Wird bearbeitet…",
 

@@ -690,9 +690,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfigurasjon",
   "settings.providers.tag.custom": "Tilpasset",
   "settings.providers.tag.other": "Annet",
-  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels": "Modell per modus",
   "settings.providers.modeModels.description":
-    "Override the default model for specific modes. If not set, the global default model is used.",
+    "Overstyr standardmodellen for bestemte moduser. Hvis ikke angitt, brukes den globale standardmodellen.",
   "settings.models.title": "Modeller",
   "settings.models.description": "Modellinnstillinger vil kunne konfigureres her.",
   "settings.agents.title": "Agenter",
