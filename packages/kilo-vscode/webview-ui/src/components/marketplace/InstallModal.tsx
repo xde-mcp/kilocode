@@ -119,7 +119,12 @@ export const InstallModal = (props: Props) => {
                 current={method()}
                 value={(m: McpInstallationMethod) => m.name}
                 label={(m: McpInstallationMethod) => m.name}
-                onSelect={(v: McpInstallationMethod | undefined) => v && setMethod(v)}
+                onSelect={(v: McpInstallationMethod | undefined) => {
+                  if (v) {
+                    setMethod(v)
+                    setParams({})
+                  }
+                }}
               />
             </div>
           </Show>
