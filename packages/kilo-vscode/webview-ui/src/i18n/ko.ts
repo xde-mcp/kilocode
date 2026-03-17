@@ -166,6 +166,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "{{provider}} 모델을 더 이상 사용할 수 없습니다.",
   "model.tag.free": "무료",
   "model.tag.latest": "최신",
+  "model.group.recommended": "추천",
 
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",

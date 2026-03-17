@@ -163,6 +163,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "Modeller fra {{provider}} er ikke længere tilgængelige.",
   "model.tag.free": "Gratis",
   "model.tag.latest": "Nyeste",
+  "model.group.recommended": "Anbefalet",
 
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",

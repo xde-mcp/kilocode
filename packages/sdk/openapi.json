@@ -4838,6 +4838,9 @@
                                   "type": "string",
                                   "enum": ["codex", "gemini", "beast", "anthropic", "trinity", "anthropic_without_todo"]
                                 },
+                                "isFree": {
+                                  "type": "boolean"
+                                },
                                 "experimental": {
                                   "type": "boolean"
                                 },
@@ -11403,6 +11406,9 @@
                   "type": "string",
                   "enum": ["codex", "gemini", "beast", "anthropic", "trinity", "anthropic_without_todo"]
                 },
+                "isFree": {
+                  "type": "boolean"
+                },
                 "experimental": {
                   "type": "boolean"
                 },
@@ -12373,6 +12379,9 @@
           "prompt": {
             "type": "string",
             "enum": ["codex", "gemini", "beast", "anthropic", "trinity", "anthropic_without_todo"]
+          },
+          "isFree": {
+            "type": "boolean"
           }
         },
         "required": [

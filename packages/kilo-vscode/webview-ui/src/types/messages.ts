@@ -272,6 +272,9 @@ export interface ProviderModel {
   limit?: { context: number; input?: number; output: number }
   variants?: Record<string, Record<string, unknown>>
   capabilities?: { reasoning: boolean }
+  recommendedIndex?: number
+  isFree?: boolean
+  cost?: { input: number; output: number }
 }
 
 export interface Provider {

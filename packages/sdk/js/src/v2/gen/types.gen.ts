@@ -1214,6 +1214,7 @@ export type ProviderConfig = {
       }
       recommendedIndex?: number
       prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+      isFree?: boolean
       experimental?: boolean
       status?: "alpha" | "beta" | "deprecated"
       options?: {
@@ -1646,6 +1647,7 @@ export type Model = {
   }
   recommendedIndex?: number
   prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+  isFree?: boolean
 }
 
 export type Provider = {
@@ -4159,6 +4161,7 @@ export type ProviderListResponses = {
           }
           recommendedIndex?: number
           prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+          isFree?: boolean
           experimental?: boolean
           status?: "alpha" | "beta" | "deprecated"
           options: {

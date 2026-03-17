@@ -1097,13 +1097,19 @@
 }
 
 .model-selector-group-label {
-  padding: 6px 12px 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  font-size: var(--font-size-x-small, 11px);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: var(--line-height-large, 1.67);
+  letter-spacing: var(--letter-spacing-normal, 0);
   color: var(--text-weak, var(--vscode-descriptionForeground));
   user-select: none;
+}
+
+.model-selector-group-label:not(:first-child) {
+  border-top: 1px solid var(--border-weak-base, var(--vscode-panel-border));
+  margin-top: 4px;
+  padding-top: 8px;
 }
 
 .model-selector-item {
@@ -1122,6 +1128,14 @@
 }
 
 .model-selector-item.active {
+  background: var(
+    --surface-interactive-active,
+    var(--vscode-list-activeSelectionBackground, var(--vscode-list-hoverBackground))
+  );
+  color: var(--text-on-interactive-base, var(--vscode-list-activeSelectionForeground));
+}
+
+.model-selector-item.active .model-selector-item-name {
   font-weight: 600;
 }
 
@@ -1130,18 +1144,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
-}
-
-.model-selector-tag {
-  flex-shrink: 0;
-  padding: 1px 5px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 3px;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 /* ============================================
@@ -1225,6 +1227,10 @@
 .mode-switcher-item-desc {
   font-size: 11px;
   color: var(--text-weak, var(--vscode-descriptionForeground));
+}
+
+.mode-switcher-item.selected .mode-switcher-item-name {
+  font-weight: 600;
 }
 
 .mode-switcher-item.selected .mode-switcher-item-desc {

@@ -162,6 +162,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "لم تعد نماذج {{provider}} متاحة.",
   "model.tag.free": "مجاني",
   "model.tag.latest": "الأحدث",
+  "model.group.recommended": "موصى به",
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",

@@ -163,6 +163,7 @@ export const dict = {
 
   "model.tag.free": "ฟรี",
   "model.tag.latest": "ล่าสุด",
+  "model.group.recommended": "แนะนำ",
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
