@@ -59,6 +59,7 @@ export class AutocompleteServiceManager {
   public readonly codeActionProvider: AutocompleteCodeActionProvider
   public readonly inlineCompletionProvider: AutocompleteInlineCompletionProvider
   private inlineCompletionProviderDisposable: vscode.Disposable | null = null
+  private unsubscribeState: (() => void) | null = null
 
   constructor(context: vscode.ExtensionContext, connectionService: KiloConnectionService) {
     if (AutocompleteServiceManager._instance) {
@@ -85,6 +86,12 @@ export class AutocompleteServiceManager {
       workspacePath,
       new AutocompleteTelemetry(),
     )
+
+    // Reload when CLI backend connection state changes so autocomplete
+    // picks up the connected state even if it wasn't ready at startup.
+    this.unsubscribeState = connectionService.onStateChange(() => {
+      void this.load()
+    })
 
     void this.load()
   }
@@ -359,6 +366,10 @@ export class AutocompleteServiceManager {
       clearTimeout(this.snoozeTimer)
       this.snoozeTimer = null
     }
+
+    // Unsubscribe from connection state changes
+    this.unsubscribeState?.()
+    this.unsubscribeState = null
 
     // Dispose inline completion provider registration
     if (this.inlineCompletionProviderDisposable) {

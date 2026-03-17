@@ -169,7 +169,9 @@ async function createManager(): Promise<AutocompleteServiceManager> {
     postStateToWebview: vi.fn().mockResolvedValue(undefined),
   }
 
-  const manager = new AutocompleteServiceManager(context, cline as any)
+  const connection = { onStateChange: vi.fn().mockReturnValue(() => {}), ...cline }
+
+  const manager = new AutocompleteServiceManager(context, connection as any)
 
   await manager.load()
 
