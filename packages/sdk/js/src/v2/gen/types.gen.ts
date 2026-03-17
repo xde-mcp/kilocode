@@ -3947,10 +3947,10 @@ export type PermissionReplyResponses = {
 
 export type PermissionReplyResponse = PermissionReplyResponses[keyof PermissionReplyResponses]
 
-export type PermissionSavePatternRulesData = {
+export type PermissionSaveAlwaysRulesData = {
   body?: {
-    approvedPatterns?: Array<string>
-    deniedPatterns?: Array<string>
+    approvedAlways?: Array<string>
+    deniedAlways?: Array<string>
   }
   path: {
     requestID: string
@@ -3959,10 +3959,10 @@ export type PermissionSavePatternRulesData = {
     directory?: string
     workspace?: string
   }
-  url: "/permission/{requestID}/pattern-rules"
+  url: "/permission/{requestID}/always-rules"
 }
 
-export type PermissionSavePatternRulesErrors = {
+export type PermissionSaveAlwaysRulesErrors = {
   /**
    * Bad request
    */
@@ -3973,17 +3973,17 @@ export type PermissionSavePatternRulesErrors = {
   404: NotFoundError
 }
 
-export type PermissionSavePatternRulesError = PermissionSavePatternRulesErrors[keyof PermissionSavePatternRulesErrors]
+export type PermissionSaveAlwaysRulesError = PermissionSaveAlwaysRulesErrors[keyof PermissionSaveAlwaysRulesErrors]
 
-export type PermissionSavePatternRulesResponses = {
+export type PermissionSaveAlwaysRulesResponses = {
   /**
-   * Pattern rules saved successfully
+   * Always rules saved successfully
    */
   200: boolean
 }
 
-export type PermissionSavePatternRulesResponse =
-  PermissionSavePatternRulesResponses[keyof PermissionSavePatternRulesResponses]
+export type PermissionSaveAlwaysRulesResponse =
+  PermissionSaveAlwaysRulesResponses[keyof PermissionSaveAlwaysRulesResponses]
 
 export type PermissionListData = {
   body?: never
@@ -4431,6 +4431,36 @@ export type KilocodeRemoveSkillResponses = {
 }
 
 export type KilocodeRemoveSkillResponse = KilocodeRemoveSkillResponses[keyof KilocodeRemoveSkillResponses]
+
+export type KilocodeRemoveAgentData = {
+  body?: {
+    name: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/kilocode/agent/remove"
+}
+
+export type KilocodeRemoveAgentErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type KilocodeRemoveAgentError = KilocodeRemoveAgentErrors[keyof KilocodeRemoveAgentErrors]
+
+export type KilocodeRemoveAgentResponses = {
+  /**
+   * Agent removed
+   */
+  200: boolean
+}
+
+export type KilocodeRemoveAgentResponse = KilocodeRemoveAgentResponses[keyof KilocodeRemoveAgentResponses]
 
 export type KiloProfileData = {
   body?: never

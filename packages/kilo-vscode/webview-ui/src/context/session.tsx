@@ -122,6 +122,7 @@ interface SessionContextValue {
 
   // Agent/mode selection (per-session)
   agents: Accessor<AgentInfo[]>
+  removeMode: (name: string) => void
   selectedAgent: Accessor<string>
   selectAgent: (name: string) => void
   getSessionAgent: (sessionID: string) => string
@@ -141,8 +142,8 @@ interface SessionContextValue {
   respondToPermission: (
     permissionId: string,
     response: "once" | "always" | "reject",
-    approvedPatterns: string[],
-    deniedPatterns: string[],
+    approvedAlways: string[],
+    deniedAlways: string[],
   ) => void
   replyToQuestion: (requestID: string, answers: string[][]) => void
   rejectQuestion: (requestID: string) => void
@@ -212,6 +213,22 @@ export const SessionProvider: ParentComponent = (props) => {
 
   // Skills loaded from the CLI backend
   const [skills, setSkills] = createSignal<SkillInfo[]>([])
+
+  const removeMode = (name: string) => {
+    setAgents((prev) => prev.filter((a) => a.name !== name))
+
+    // Clear stale selections so selectedAgentName() falls back to the default
+    if (pendingAgentSelection() === name) {
+      setPendingAgentSelection(null)
+    }
+    for (const sid of Object.keys(store.agentSelections)) {
+      if (store.agentSelections[sid] === name) {
+        setStore("agentSelections", sid, undefined as unknown as string)
+      }
+    }
+
+    vscode.postMessage({ type: "removeMode", name })
+  }
 
   // Pending agent selection for before a session exists
   const [pendingAgentSelection, setPendingAgentSelection] = createSignal<string | null>(null)
@@ -1099,8 +1116,8 @@ export const SessionProvider: ParentComponent = (props) => {
   function respondToPermission(
     permissionId: string,
     response: "once" | "always" | "reject",
-    approvedPatterns: string[],
-    deniedPatterns: string[],
+    approvedAlways: string[],
+    deniedAlways: string[],
   ) {
     // Resolve sessionID from the stored permission request
     const permission = permissions().find((p) => p.id === permissionId)
@@ -1115,8 +1132,8 @@ export const SessionProvider: ParentComponent = (props) => {
       permissionId,
       sessionID,
       response,
-      approvedPatterns,
-      deniedPatterns,
+      approvedAlways,
+      deniedAlways,
     })
   }
 
@@ -1314,6 +1331,7 @@ export const SessionProvider: ParentComponent = (props) => {
     skills,
     refreshSkills,
     removeSkill,
+    removeMode,
     selectedAgent: selectedAgentName,
     selectAgent,
     getSessionAgent: (sessionID: string) => store.agentSelections[sessionID] ?? defaultAgent(),
