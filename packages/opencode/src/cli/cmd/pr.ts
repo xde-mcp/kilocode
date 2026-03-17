@@ -96,8 +96,8 @@ export const PrCommand = cmd({
 
         // Launch kilo TUI with session ID if available
         const { spawn } = await import("child_process")
-        const args = sessionId ? ["-s", sessionId] : []
-        const child = spawn("kilo", args, {
+        const flags = sessionId ? ["-s", sessionId] : []
+        const child = spawn("kilo", flags, {
           stdio: "inherit",
           cwd: process.cwd(),
           windowsHide: true,
