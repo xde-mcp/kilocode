@@ -16,17 +16,6 @@ function createMockConnectionService(state: "connecting" | "connected" | "discon
 
 describe("AutocompleteModel", () => {
   describe("constructor", () => {
-    it("sets loaded to true when connection service is provided", () => {
-      const connection = createMockConnectionService()
-      const model = new AutocompleteModel(connection)
-      expect(model.loaded).toBe(true)
-    })
-
-    it("defaults loaded to false without connection service", () => {
-      const model = new AutocompleteModel()
-      expect(model.loaded).toBe(false)
-    })
-
     it("defaults profileName and profileType to null", () => {
       const model = new AutocompleteModel()
       expect(model.profileName).toBeNull()
@@ -45,44 +34,6 @@ describe("AutocompleteModel", () => {
     })
   })
 
-  describe("reload", () => {
-    it("sets loaded to true", async () => {
-      const model = new AutocompleteModel()
-      expect(model.loaded).toBe(false)
-      await model.reload()
-      expect(model.loaded).toBe(true)
-    })
-
-    it("returns true when connected", async () => {
-      const connection = createMockConnectionService("connected")
-      const model = new AutocompleteModel(connection)
-      expect(await model.reload()).toBe(true)
-    })
-
-    it("returns false when disconnected", async () => {
-      const connection = createMockConnectionService("disconnected")
-      const model = new AutocompleteModel(connection)
-      expect(await model.reload()).toBe(false)
-    })
-
-    it("returns false when connecting", async () => {
-      const connection = createMockConnectionService("connecting")
-      const model = new AutocompleteModel(connection)
-      expect(await model.reload()).toBe(false)
-    })
-
-    it("returns false when in error state", async () => {
-      const connection = createMockConnectionService("error")
-      const model = new AutocompleteModel(connection)
-      expect(await model.reload()).toBe(false)
-    })
-
-    it("returns false without connection service", async () => {
-      const model = new AutocompleteModel()
-      expect(await model.reload()).toBe(false)
-    })
-  })
-
   describe("hasValidCredentials", () => {
     it("returns true when connected", () => {
       const connection = createMockConnectionService("connected")
@@ -92,6 +43,18 @@ describe("AutocompleteModel", () => {
 
     it("returns false when disconnected", () => {
       const connection = createMockConnectionService("disconnected")
+      const model = new AutocompleteModel(connection)
+      expect(model.hasValidCredentials()).toBe(false)
+    })
+
+    it("returns false when connecting", () => {
+      const connection = createMockConnectionService("connecting")
+      const model = new AutocompleteModel(connection)
+      expect(model.hasValidCredentials()).toBe(false)
+    })
+
+    it("returns false when in error state", () => {
+      const connection = createMockConnectionService("error")
       const model = new AutocompleteModel(connection)
       expect(model.hasValidCredentials()).toBe(false)
     })

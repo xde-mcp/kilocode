@@ -63,12 +63,7 @@ vi.mock("vscode", () => {
 
 vi.mock("../AutocompleteModel", () => {
   class AutocompleteModel {
-    public loaded = false
     public profileName = "test-profile"
-
-    public async reload(): Promise<void> {
-      this.loaded = true
-    }
 
     public getModelName(): string {
       return "test-model"

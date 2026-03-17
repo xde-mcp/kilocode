@@ -103,7 +103,6 @@ export class AutocompleteServiceManager {
   }
 
   public async load() {
-    await this.model.reload()
     this.settings = readSettings()
 
     await this.updateGlobalContext()
@@ -243,11 +242,6 @@ export class AutocompleteServiceManager {
 
     const document = editor.document
 
-    // Ensure model is loaded
-    if (!this.model.loaded) {
-      await this.load()
-    }
-
     // Call the inline completion provider directly with manual trigger context
     const position = editor.selection.active
     const context: vscode.InlineCompletionContext = {
@@ -299,22 +293,16 @@ export class AutocompleteServiceManager {
     })
   }
 
-  private getCurrentModelName(): string | undefined {
-    if (!this.model.loaded) {
-      return
-    }
+  private getCurrentModelName(): string {
     return this.model.getModelName()
   }
 
-  private getCurrentProviderName(): string | undefined {
-    if (!this.model.loaded) {
-      return
-    }
+  private getCurrentProviderName(): string {
     return this.model.getProviderDisplayName()
   }
 
   private hasNoUsableProvider(): boolean {
-    return this.model.loaded && !this.model.hasValidCredentials()
+    return !this.model.hasValidCredentials()
   }
 
   private updateCostTracking(cost: number, _inputTokens: number, _outputTokens: number): void {
