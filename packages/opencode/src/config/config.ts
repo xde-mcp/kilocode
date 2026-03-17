@@ -1553,17 +1553,19 @@ export namespace Config {
 
     global.reset()
 
-    void Instance.disposeAll()
-      .catch(() => undefined)
-      .finally(() => {
-        GlobalBus.emit("event", {
-          directory: "global",
-          payload: {
-            type: Event.Disposed.type,
-            properties: {},
-          },
-        })
-      })
+    // kilocode_change start - only reset config cache, don't dispose all instances.
+    // Instance.disposeAll() was destroying all session state, MCP connections, and
+    // in-flight operations across every project whenever any global config changed
+    // (e.g. removing a mode). The cache reset above is sufficient — consumers will
+    // pick up the new config on their next read.
+    GlobalBus.emit("event", {
+      directory: "global",
+      payload: {
+        type: Event.Disposed.type,
+        properties: {},
+      },
+    })
+    // kilocode_change end
 
     return next
   }
