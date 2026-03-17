@@ -669,11 +669,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "removeInstalledMarketplaceItem": {
           const workspace = this.getProjectDirectory(this.currentSession?.id)
           const scope = message.mpInstallOptions?.target ?? "project"
-          const result =
-            message.mpItem.type === "mode"
-              ? await this.removeModeViaCli(message.mpItem)
-              : await this.getMarketplace().remove(message.mpItem, scope, workspace)
-          if (result.success && message.mpItem.type !== "mode") await this.disposeCliInstance(scope)
+          const result = await this.getMarketplace().remove(message.mpItem, scope, workspace)
+          if (result.success) await this.disposeCliInstance(scope)
           this.postMessage({
             type: "marketplaceRemoveResult",
             success: result.success,
@@ -1239,50 +1236,36 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
    */
   private async handleRemoveMode(name: string): Promise<void> {
     if (!this.client) return
+    let removed = false
+
+    // 1. Try CLI removal (handles .md files and legacy .kilocodemodes)
     try {
       const dir = this.getWorkspaceDirectory()
       const result = await this.client.kilocode.removeAgent({ name, directory: dir })
-      if (result.error) {
-        console.error("[Kilo New] KiloProvider: removeAgent returned error:", result.error)
-        this.cachedAgentsMessage = null
-        await this.fetchAndSendAgents()
-        return
-      }
-    } catch (error) {
-      console.error("[Kilo New] KiloProvider: Failed to remove mode:", error)
-      this.cachedAgentsMessage = null
-      await this.fetchAndSendAgents()
-      return
+      if (!result.error) removed = true
+    } catch {
+      // CLI removal failed — agent may be in kilo.json instead
     }
-    // Invalidate cache so next requestAgents fetches fresh data
+
+    // 2. Try removing from kilo.json (handles marketplace-installed modes)
+    if (!removed) {
+      const workspace = this.getProjectDirectory(this.currentSession?.id)
+      const mp = this.getMarketplace()
+      const stub = { id: name, type: "mode" as const, name, description: "", content: "" }
+      const project = await mp.remove(stub, "project", workspace)
+      const global = await mp.remove(stub, "global", workspace)
+      if (project.success || global.success) {
+        await this.disposeCliInstance("global")
+        removed = true
+      }
+    }
+
+    if (!removed) {
+      console.error("[Kilo New] KiloProvider: Failed to remove mode:", name)
+    }
+
     this.cachedAgentsMessage = null
     await this.fetchAndSendAgents()
-  }
-
-  /**
-   * Remove a marketplace mode via the CLI removeAgent endpoint.
-   * Returns a RemoveResult so it plugs into the marketplace removal flow.
-   */
-  private async removeModeViaCli(item: {
-    id: string
-    content: string
-  }): Promise<{ success: boolean; slug: string; error?: string }> {
-    if (!this.client) return { success: false, slug: item.id, error: "CLI not connected" }
-    const yaml = await import("yaml")
-    const mode = yaml.parse(item.content) as Record<string, unknown> | undefined
-    const slug = (mode?.slug as string) ?? item.id
-    try {
-      const dir = this.getWorkspaceDirectory()
-      const result = await this.client.kilocode.removeAgent({ name: slug, directory: dir })
-      if (result.error) {
-        console.error("[Kilo New] removeAgent (marketplace) returned error:", result.error)
-        return { success: false, slug: item.id, error: String(result.error) }
-      }
-      return { success: true, slug: item.id }
-    } catch (error) {
-      console.error("[Kilo New] Failed to remove mode (marketplace):", error)
-      return { success: false, slug: item.id, error: String(error) }
-    }
   }
 
   /**
