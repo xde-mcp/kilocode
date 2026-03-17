@@ -51,7 +51,7 @@ export const MarketplaceListView = (props: Props) => {
     for (const item of props.items) {
       for (const tag of tagsFor(item)) counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
-    const min = props.type === "mcp" ? 2 : 1
+    const min = props.type === "mcp" ? 5 : 1
     return Array.from(counts.entries())
       .filter(([, n]) => n >= min)
       .map(([tag]) => tag)
