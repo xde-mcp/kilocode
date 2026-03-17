@@ -694,6 +694,18 @@ export namespace SessionPrompt {
 
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
+      // kilocode_change start — ephemerally inject dynamic editor context into last user message
+      const envBlock = environmentDetails(lastUser.editorContext)
+      if (envBlock) {
+        const last = msgs.findLast((m) => m.info.role === "user")
+        if (last)
+          last.parts.push({
+            type: "text",
+            text: envBlock,
+          } as MessageV2.TextPart)
+      }
+      // kilocode_change end
+
       // Build system prompt, adding structured output instruction if needed
       const system = [
         ...(await SystemPrompt.environment(model, lastUser.editorContext)),
@@ -1354,20 +1366,6 @@ export namespace SessionPrompt {
         ]
       }),
     ).then((x) => x.flat().map(assign))
-
-    // kilocode_change start — inject dynamic editor context into user message
-    const envBlock = environmentDetails(input.editorContext)
-    if (envBlock) {
-      parts.push({
-        id: Identifier.ascending("part"),
-        messageID: info.id,
-        sessionID: input.sessionID,
-        type: "text",
-        text: envBlock,
-        synthetic: true,
-      })
-    }
-    // kilocode_change end
 
     await Plugin.trigger(
       "chat.message",
