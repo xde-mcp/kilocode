@@ -11,7 +11,7 @@ export interface EditorContext {
  * so they benefit from prompt caching.
  */
 export function staticEnvLines(ctx?: EditorContext): string[] {
-  const lines = [`  Today's date: ${new Date().toDateString()}`]
+  const lines: string[] = []
   if (ctx?.shell) {
     lines.push(`  Default shell: ${ctx.shell}`)
   }
@@ -22,10 +22,22 @@ export function staticEnvLines(ctx?: EditorContext): string[] {
  * Build a per-message <environment_details> block from editor context.
  * These change frequently (user switches files/tabs) and belong in the
  * user message so the model always has fresh context.
- * Returns undefined when there is nothing dynamic to report.
+ * Always includes at least the current timestamp.
  */
-export function environmentDetails(ctx?: EditorContext): string | undefined {
-  const lines: string[] = []
+function timestamp(): string {
+  const now = new Date()
+  const offset = -now.getTimezoneOffset()
+  const sign = offset >= 0 ? "+" : "-"
+  const h = Math.floor(Math.abs(offset) / 60)
+    .toString()
+    .padStart(2, "0")
+  const m = (Math.abs(offset) % 60).toString().padStart(2, "0")
+  const pad = (n: number) => n.toString().padStart(2, "0")
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}${sign}${h}:${m}`
+}
+
+export function environmentDetails(ctx?: EditorContext): string {
+  const lines: string[] = [`Current time: ${timestamp()}`]
   if (ctx?.activeFile) {
     lines.push(`Active file: ${ctx.activeFile}`)
   }
@@ -41,6 +53,5 @@ export function environmentDetails(ctx?: EditorContext): string | undefined {
       lines.push(`  ${f}`)
     }
   }
-  if (lines.length === 0) return undefined
   return ["<environment_details>", ...lines, "</environment_details>"].join("\n")
 }
