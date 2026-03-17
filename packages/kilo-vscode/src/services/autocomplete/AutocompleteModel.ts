@@ -21,7 +21,6 @@ export class AutocompleteModel {
   public profileName: string | null = null
   public profileType: string | null = null
   public loaded = false
-  public hasKilocodeProfileWithNoBalance = false
 
   constructor(connectionService?: KiloConnectionService) {
     if (connectionService) {

@@ -18,7 +18,6 @@ export interface AutocompleteServiceSettings {
   provider?: string
   model?: string
   snoozeUntil?: number
-  hasKilocodeProfileWithNoBalance?: boolean
 }
 
 function readSettings(): AutocompleteServiceSettings {
@@ -315,7 +314,7 @@ export class AutocompleteServiceManager {
   }
 
   private hasNoUsableProvider(): boolean {
-    return this.model.loaded && !this.model.hasValidCredentials() && !this.model.hasKilocodeProfileWithNoBalance
+    return this.model.loaded && !this.model.hasValidCredentials()
   }
 
   private updateCostTracking(cost: number, _inputTokens: number, _outputTokens: number): void {
@@ -335,7 +334,6 @@ export class AutocompleteServiceManager {
       model: this.getCurrentModelName(),
       provider: this.getCurrentProviderName(),
       profileName: this.model.profileName,
-      hasKilocodeProfileWithNoBalance: this.model.hasKilocodeProfileWithNoBalance,
       hasNoUsableProvider: this.hasNoUsableProvider(),
       totalSessionCost: this.sessionCost,
       completionCount: this.completionCount,

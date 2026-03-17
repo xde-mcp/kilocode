@@ -358,6 +358,8 @@ const AgentBehaviourTab: Component = () => {
             />
           </SettingsRow>
 
+          <div
+
           {/* Max steps */}
           <SettingsRow
             title={language.t("settings.agentBehaviour.maxSteps.title")}
