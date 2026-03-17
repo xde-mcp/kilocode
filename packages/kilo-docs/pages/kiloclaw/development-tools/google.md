@@ -5,11 +5,11 @@ description: "Connect your Google account to KiloClaw for access to Gmail, Calen
 
 # Google Workspace Integration
 
-{% callout type="warning" title="Use a standalone Google account" %}
-We strongly recommend creating a **dedicated Google account** specifically for KiloClaw rather than giving it access to your personal Google account. This keeps your personal data separate and gives you full control over what KiloClaw can access. **Do not give KiloClaw access to your own personal Google account.**
-{% /callout %}
-
 Connect your Google account to KiloClaw so it can interact with your Google Workspace services — Gmail, Calendar, Drive, Docs, Sheets, Slides, Tasks, People, Forms, Chat, Classroom, and Apps Script.
+
+{% callout type="warning" title="Use a standalone Google account" %}
+We strongly recommend creating a **dedicated Google account** specifically for KiloClaw rather than giving it access to your personal Google account. This keeps your personal data separate and gives you full control over what KiloClaw can access. 
+{% /callout %}
 
 ## What You Get
 
