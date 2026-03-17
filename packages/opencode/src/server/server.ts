@@ -523,6 +523,7 @@ export namespace Server {
             return c.json(await LSP.status())
           },
         )
+
         .get(
           "/formatter",
           describeRoute({
