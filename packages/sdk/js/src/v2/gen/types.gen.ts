@@ -1516,6 +1516,10 @@ export type Config = {
      */
     batch_tool?: boolean
     /**
+     * Enable AI-powered codebase search
+     */
+    codebase_search?: boolean
+    /**
      * Enable telemetry. Set to false to opt-out.
      */
     openTelemetry?: boolean
