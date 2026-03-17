@@ -3,7 +3,8 @@
 // instead of spawning a persistent typescript-language-server process.
 // This drops memory from ~500MB persistent to ~50MB peak (0 idle).
 
-import type { LSPClient } from "../lsp/client"
+import { LSPClient } from "../lsp/client"
+import { Bus } from "../bus"
 import { TsCheck } from "./ts-check"
 import { Log } from "../util/log"
 import { withTimeout } from "../util/timeout"
@@ -27,6 +28,12 @@ export namespace TsClient {
           diagnostics.clear()
           for (const [file, diags] of result) {
             diagnostics.set(file, diags)
+          }
+          for (const file of result.keys()) {
+            Bus.publish(LSPClient.Event.Diagnostics, {
+              path: file,
+              serverID: client.serverID,
+            })
           }
         })
         .catch((err) => {
