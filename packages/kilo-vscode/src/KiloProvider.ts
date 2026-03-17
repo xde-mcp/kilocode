@@ -657,7 +657,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           const workspace = this.getProjectDirectory(this.currentSession?.id)
           const scope = message.mpInstallOptions?.target ?? "project"
           const result = await this.getMarketplace().install(message.mpItem, message.mpInstallOptions, workspace)
-          if (result.success) await this.disposeCliInstance(scope)
+          if (result.success) {
+            await this.disposeCliInstance(scope)
+            this.cachedAgentsMessage = null
+            await this.fetchAndSendAgents()
+          }
           this.postMessage({
             type: "marketplaceInstallResult",
             success: result.success,
@@ -670,7 +674,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           const workspace = this.getProjectDirectory(this.currentSession?.id)
           const scope = message.mpInstallOptions?.target ?? "project"
           const result = await this.getMarketplace().remove(message.mpItem, scope, workspace)
-          if (result.success) await this.disposeCliInstance(scope)
+          if (result.success) {
+            await this.disposeCliInstance(scope)
+            this.cachedAgentsMessage = null
+            await this.fetchAndSendAgents()
+          }
           this.postMessage({
             type: "marketplaceRemoveResult",
             success: result.success,
