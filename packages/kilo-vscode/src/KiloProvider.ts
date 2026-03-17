@@ -1287,12 +1287,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       await this.client.global.dispose().catch((e: unknown) => {
         console.warn("[Kilo New] global.dispose() after marketplace change failed:", e)
       })
-    } else {
-      const dir = this.getWorkspaceDirectory()
-      await this.client.instance.dispose({ directory: dir }).catch((e: unknown) => {
-        console.warn("[Kilo New] instance.dispose() after marketplace change failed:", e)
-      })
     }
+    // Always dispose the per-project instance so it rebuilds state from
+    // the (possibly updated) global + project config on the next request.
+    const dir = this.getWorkspaceDirectory()
+    await this.client.instance.dispose({ directory: dir }).catch((e: unknown) => {
+      console.warn("[Kilo New] instance.dispose() after marketplace change failed:", e)
+    })
   }
 
   /**
