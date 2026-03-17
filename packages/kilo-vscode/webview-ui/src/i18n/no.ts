@@ -847,7 +847,7 @@ export const dict = {
   "dialog.model.noProviders": "Ingen leverandører",
 
   "prompt.placeholder.connecting": "Kobler til server...",
-  "prompt.placeholder.error": "",
+  "prompt.placeholder.error": "Tilkobling mislyktes. Sjekk utdatapanelet eller start utvidelsen på nytt.",
   "prompt.placeholder.default": "Skriv en melding... (Enter for å sende, Shift+Enter for ny linje)",
 
   "context.usage.sessionCost": "Sesjonskostnad",

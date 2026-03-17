@@ -837,7 +837,7 @@ export const dict = {
   "dialog.model.noProviders": "لا يوجد موفرون",
 
   "prompt.placeholder.connecting": "جارٍ الاتصال بالخادم...",
-  "prompt.placeholder.error": "",
+  "prompt.placeholder.error": "فشل الاتصال. تحقق من لوحة الإخراج أو أعد تشغيل الإضافة.",
   "prompt.placeholder.default": "اكتب رسالة... (Enter للإرسال، Shift+Enter لسطر جديد)",
 
   "context.usage.sessionCost": "تكلفة الجلسة",

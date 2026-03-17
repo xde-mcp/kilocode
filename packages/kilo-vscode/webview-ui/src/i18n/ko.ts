@@ -842,7 +842,7 @@ export const dict = {
   "dialog.model.noProviders": "공급자 없음",
 
   "prompt.placeholder.connecting": "서버에 연결 중...",
-  "prompt.placeholder.error": "",
+  "prompt.placeholder.error": "연결에 실패했습니다. 출력 패널을 확인하거나 확장 프로그램을 다시 시작하세요.",
   "prompt.placeholder.default": "메시지를 입력하세요... (Enter로 전송, Shift+Enter로 줄 바꿈)",
 
   "context.usage.sessionCost": "세션 비용",

@@ -845,7 +845,7 @@ export const dict = {
   "dialog.model.noProviders": "Nenhum provedor",
 
   "prompt.placeholder.connecting": "Conectando ao servidor...",
-  "prompt.placeholder.error": "",
+  "prompt.placeholder.error": "Conexão falhou. Verifique o painel de saída ou reinicie a extensão.",
   "prompt.placeholder.default": "Digite uma mensagem... (Enter para enviar, Shift+Enter para nova linha)",
 
   "context.usage.sessionCost": "Custo da sessão",
