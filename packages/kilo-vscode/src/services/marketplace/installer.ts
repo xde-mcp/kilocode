@@ -286,11 +286,21 @@ function isSafeId(id: string): boolean {
   return /^[\w\-@.]+$/.test(id)
 }
 
+function escapeJsonValue(raw: string): string {
+  return raw
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t")
+}
+
 function substituteParams(template: string, params: Record<string, unknown>): string {
   let result = template
   for (const [key, value] of Object.entries(params)) {
-    result = result.replaceAll(`{{${key}}}`, String(value ?? ""))
-    result = result.replaceAll(`\${${key}}`, String(value ?? ""))
+    const escaped = escapeJsonValue(String(value ?? ""))
+    result = result.replaceAll(`{{${key}}}`, escaped)
+    result = result.replaceAll(`\${${key}}`, escaped)
   }
   return result
 }
