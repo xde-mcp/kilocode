@@ -65,7 +65,7 @@ export const PrCommand = cmd({
 
             // Check for opencode session link in PR body
             if (prInfo && prInfo.body) {
-              const sessionMatch = prInfo.body.match(/https:\/\/opncd\.ai\/s\/([a-zA-Z0-9_-]+)/)
+              const sessionMatch = prInfo.body.match(/https://app\.kilo\.ai/s/([a-zA-Z0-9_-]+)/)
               if (sessionMatch) {
                 const sessionUrl = sessionMatch[0]
                 // kilocode_change start
