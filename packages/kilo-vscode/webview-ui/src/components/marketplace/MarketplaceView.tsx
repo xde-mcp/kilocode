@@ -31,6 +31,7 @@ export const MarketplaceView = () => {
   const [fetching, setFetching] = createSignal(true)
   const [errors, setErrors] = createSignal<string[]>([])
   const [tab, setTab] = createSignal("mcp")
+  const [pending, setPending] = createSignal<{ item: MarketplaceItem; scope: "project" | "global" } | null>(null)
 
   const skills = createMemo(() => items().filter((i): i is SkillMarketplaceItem => i.type === "skill"))
   const mcps = createMemo(() => items().filter((i): i is McpMarketplaceItem => i.type === "mcp"))
@@ -51,7 +52,17 @@ export const MarketplaceView = () => {
         setFetching(false)
       }
       if (msg.type === "marketplaceRemoveResult") {
+        const removed = pending()
+        setPending(null)
         if (msg.success) {
+          if (removed) {
+            telemetry("Marketplace Item Removed", {
+              itemId: removed.item.id,
+              itemType: removed.item.type,
+              itemName: removed.item.name,
+              target: removed.scope,
+            })
+          }
           fetchData()
         } else {
           setErrors((prev) => [...prev, msg.error ?? t("marketplace.remove.failed", { name: msg.slug })])
@@ -72,16 +83,22 @@ export const MarketplaceView = () => {
   }
 
   const handleInstall = (item: MarketplaceItem) => {
+    telemetry("Marketplace Install Button Clicked", {
+      itemId: item.id,
+      itemType: item.type,
+      itemName: item.name,
+    })
     dialog.show(() => (
       <InstallModal
         item={item}
         onClose={() => dialog.close()}
         onInstallResult={(success, scope) => {
           if (success) {
-            telemetry("marketplace_item_installed", {
-              id: item.id,
-              type: item.type,
-              scope,
+            telemetry("Marketplace Item Installed", {
+              itemId: item.id,
+              itemType: item.type,
+              itemName: item.name,
+              target: scope,
             })
             dialog.close()
             fetchData()
@@ -98,15 +115,11 @@ export const MarketplaceView = () => {
         scope={scope}
         onClose={() => dialog.close()}
         onConfirm={() => {
+          setPending({ item, scope })
           vscode.postMessage({
             type: "removeInstalledMarketplaceItem",
             mpItem: item,
             mpInstallOptions: { target: scope },
-          })
-          telemetry("marketplace_item_removed", {
-            id: item.id,
-            type: item.type,
-            scope,
           })
           dialog.close()
         }}
