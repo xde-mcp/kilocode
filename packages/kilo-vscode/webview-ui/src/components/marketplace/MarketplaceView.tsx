@@ -53,12 +53,6 @@ export const MarketplaceView = () => {
       if (msg.type === "marketplaceRemoveResult") {
         if (msg.success) fetchData()
       }
-      if (msg.type === "agentsLoaded" || msg.type === "skillsLoaded") {
-        fetchData()
-      }
-      if (msg.type === "workspaceDirectoryChanged") {
-        fetchData()
-      }
     })
     onCleanup(unsub)
   })
