@@ -33,16 +33,20 @@ export namespace TsCheck {
     })
 
     const TIMEOUT = 30_000
-    const stdout = await new Response(proc.stdout).text()
-    const stderr = await new Response(proc.stderr).text()
-    const exited = await Promise.race([
-      proc.exited.then(() => true),
-      new Promise<false>((r) => setTimeout(() => r(false), TIMEOUT)),
+    const done = Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text(), proc.exited])
+    const settled = await Promise.race([
+      done.then(([out, err]) => ({ out, err, timedOut: false as const })),
+      new Promise<{ out: string; err: string; timedOut: true }>((r) =>
+        setTimeout(() => r({ out: "", err: "", timedOut: true }), TIMEOUT),
+      ),
     ])
-    if (!exited) {
+    if (settled.timedOut) {
       log.warn("ts check timed out, killing process", { elapsed: Date.now() - start })
       proc.kill()
     }
+
+    const stdout = settled.out
+    const stderr = settled.err
 
     log.info("ts check done", {
       elapsed: Date.now() - start,
