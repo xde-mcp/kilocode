@@ -10,8 +10,10 @@ export function providerSortKey(providerID: string, order = PROVIDER_ORDER): num
   return idx >= 0 ? idx : order.length
 }
 
-export function isFree(model: Pick<EnrichedModel, "isFree" | "cost">): boolean {
+export function isFree(model: Pick<EnrichedModel, "isFree" | "cost" | "providerID">): boolean {
   if (model.isFree !== undefined) return model.isFree
+  // TODO: temporary — this logic will be moved to the backend
+  if (model.providerID !== KILO_GATEWAY_ID) return false
   // TODO: fallback to cost check — delete once backend ships isFree attribute
   return model.cost?.input === 0 && model.cost?.output === 0
 }
