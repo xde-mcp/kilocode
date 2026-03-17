@@ -822,6 +822,7 @@ export default function Page() {
     showAllFiles,
     tabForPath: file.tab,
     openTab: tabs().open,
+    setActive: tabs().setActive,
     loadFile: file.load,
   })
 

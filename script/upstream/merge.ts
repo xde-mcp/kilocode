@@ -141,6 +141,22 @@ async function main() {
   const currentBranch = await git.getCurrentBranch()
   logger.info(`Current branch: ${currentBranch}`)
 
+  // Enable git rerere so conflict resolutions are recorded and reused across merges
+  if (!options.dryRun) {
+    await git.ensureRerere()
+    logger.info("git rerere enabled (resolutions will be recorded and reused automatically)")
+
+    // Train rerere from past upstream merge commits so the cache is populated
+    // even on a fresh clone. This replays past merges to learn their resolutions.
+    logger.info("Training rerere cache from past merge history...")
+    const learned = await git.trainRerere("merge: upstream\\|Resolve merge conflict")
+    if (learned > 0) {
+      logger.success(`Learned ${learned} conflict resolution(s) from history`)
+    } else {
+      logger.info("No new resolutions to learn from history (cache already up to date)")
+    }
+  }
+
   // Step 2: Fetch upstream
   logger.step(2, 8, "Fetching upstream...")
 
@@ -362,6 +378,13 @@ async function main() {
   const keepOursResults = await resetToOurs(config.keepOurs, { dryRun: false, verbose: options.verbose })
   logger.success(`Reset ${keepOursResults.length} files to Kilo's version`)
 
+  // Clean untracked build artifacts from Kilo-specific directories.
+  // These packages don't exist in upstream, so their .gitignore files are absent
+  // on the opencode branch. Artifacts like bin/, out/, .next/ etc. would otherwise
+  // be picked up by the git add -A below.
+  logger.info("Cleaning Kilo-specific directory artifacts...")
+  await git.cleanDirectories(config.kiloDirectories)
+
   // Commit all transformations
   await git.stageAll()
   await git.commit(`refactor: kilo compat for ${targetVersion.tag}`)
@@ -377,6 +400,14 @@ async function main() {
     logger.warn("Merge has conflicts (these should only be files with actual code differences)")
     logger.info("Conflicted files:")
     logger.list(mergeResult.conflicts)
+
+    // Check if git rerere already auto-resolved any conflicts from recorded history.
+    // rerere.autoupdate stages them automatically; we just log how many were handled.
+    const rerereResolved = await git.getRerereResolved()
+    if (rerereResolved.length > 0) {
+      logger.success(`git rerere auto-resolved ${rerereResolved.length} conflict(s) from recorded history:`)
+      logger.list(rerereResolved)
+    }
 
     // Since we applied all branding transforms pre-merge, remaining conflicts should be minimal.
     // These are likely files with kilocode_change markers or actual logic differences.
