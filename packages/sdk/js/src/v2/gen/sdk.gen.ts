@@ -1943,7 +1943,6 @@ export class Session2 extends HeyApiClient {
         openTabs?: Array<string>
         activeFile?: string
         shell?: string
-        timezone?: string
       }
       parts?: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
     },
@@ -2083,7 +2082,6 @@ export class Session2 extends HeyApiClient {
         openTabs?: Array<string>
         activeFile?: string
         shell?: string
-        timezone?: string
       }
       parts?: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
     },

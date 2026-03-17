@@ -143,7 +143,6 @@ export type UserMessage = {
     openTabs?: Array<string>
     activeFile?: string
     shell?: string
-    timezone?: string
   }
 }
 
@@ -3428,7 +3427,6 @@ export type SessionPromptData = {
       openTabs?: Array<string>
       activeFile?: string
       shell?: string
-      timezone?: string
     }
     parts: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
   }
@@ -3668,7 +3666,6 @@ export type SessionPromptAsyncData = {
       openTabs?: Array<string>
       activeFile?: string
       shell?: string
-      timezone?: string
     }
     parts: Array<TextPartInput | FilePartInput | AgentPartInput | SubtaskPartInput>
   }

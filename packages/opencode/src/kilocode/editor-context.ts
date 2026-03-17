@@ -3,7 +3,6 @@ export interface EditorContext {
   openTabs?: string[]
   activeFile?: string
   shell?: string
-  timezone?: string
 }
 
 /**
@@ -12,15 +11,7 @@ export interface EditorContext {
  * so they benefit from prompt caching.
  */
 export function staticEnvLines(ctx?: EditorContext): string[] {
-  const now = new Date()
-  const lines = [`  Today's date: ${now.toDateString()}`]
-  if (ctx?.timezone) {
-    const offset = -now.getTimezoneOffset()
-    const sign = offset >= 0 ? "+" : "-"
-    const hours = Math.floor(Math.abs(offset) / 60)
-    const mins = Math.abs(offset) % 60
-    lines.push(`  User timezone: ${ctx.timezone}, UTC${sign}${hours}:${mins.toString().padStart(2, "0")}`)
-  }
+  const lines = [`  Today's date: ${new Date().toDateString()}`]
   if (ctx?.shell) {
     lines.push(`  Default shell: ${ctx.shell}`)
   }

@@ -131,7 +131,6 @@ export namespace SessionPrompt {
         openTabs: z.array(z.string()).optional(),
         activeFile: z.string().optional(),
         shell: z.string().optional(),
-        timezone: z.string().optional(),
       })
       .optional(),
     // kilocode_change end

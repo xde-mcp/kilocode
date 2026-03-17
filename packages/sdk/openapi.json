@@ -3186,9 +3186,6 @@
                       },
                       "shell": {
                         "type": "string"
-                      },
-                      "timezone": {
-                        "type": "string"
                       }
                     }
                   },
@@ -3695,9 +3692,6 @@
                         "type": "string"
                       },
                       "shell": {
-                        "type": "string"
-                      },
-                      "timezone": {
                         "type": "string"
                       }
                     }
@@ -8581,9 +8575,6 @@
               },
               "shell": {
                 "type": "string"
-              },
-              "timezone": {
-                "type": "string"
               }
             }
           }
@@ -12025,6 +12016,10 @@
               },
               "batch_tool": {
                 "description": "Enable the batch tool",
+                "type": "boolean"
+              },
+              "codebase_search": {
+                "description": "Enable AI-powered codebase search",
                 "type": "boolean"
               },
               "openTelemetry": {
