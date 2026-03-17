@@ -678,6 +678,9 @@ export const dict = {
   "settings.providers.tag.config": "設定",
   "settings.providers.tag.custom": "自訂",
   "settings.providers.tag.other": "其他",
+  "settings.providers.modeModels": "Model per Mode",
+  "settings.providers.modeModels.description":
+    "Override the default model for specific modes. If not set, the global default model is used.",
   "settings.models.title": "模型",
   "settings.models.description": "可在此調整模型設定。",
   "settings.agents.title": "Agents",
@@ -823,12 +826,14 @@ export const dict = {
   "session.messages.welcome": "Kilo Code 是一個 AI 程式設計助手。讓它幫你建構功能、修復 bug 或解釋程式碼庫。",
   "session.messages.scrollToBottom": "捲動至底部",
   "session.status.writingResponse": "正在撰寫回覆…",
+  "session.status.retry": "Retrying…",
   "session.status.retrying": "正在重試（第 {{ attempt }} 次）… {{ message }}",
   "session.status.working": "處理中…",
 
   "dialog.model.noProviders": "沒有供應商",
 
   "prompt.placeholder.connecting": "正在連線至伺服器...",
+  "prompt.placeholder.error": "",
   "prompt.placeholder.default": "輸入訊息... (Enter 送出，Shift+Enter 換行)",
 
   "context.usage.sessionCost": "工作階段費用",
