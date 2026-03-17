@@ -18,7 +18,11 @@ interface ScopeOption {
 interface Props {
   item: MarketplaceItem
   onClose: () => void
-  onInstallResult: (success: boolean, scope: "project" | "global") => void
+  onInstallResult: (
+    success: boolean,
+    scope: "project" | "global",
+    extra?: { hasParameters?: boolean; installationMethodName?: string },
+  ) => void
 }
 
 export const InstallModal = (props: Props) => {
@@ -77,7 +81,10 @@ export const InstallModal = (props: Props) => {
       if (msg.type === "marketplaceInstallResult" && msg.slug === props.item.id) {
         setInstalling(false)
         setResult({ success: msg.success, error: msg.error })
-        props.onInstallResult(msg.success, scope().value)
+        props.onInstallResult(msg.success, scope().value, {
+          hasParameters: Object.keys(params()).length > 0,
+          installationMethodName: method()?.name,
+        })
       }
     })
     onCleanup(unsub)

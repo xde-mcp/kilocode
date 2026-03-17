@@ -92,13 +92,15 @@ export const MarketplaceView = () => {
       <InstallModal
         item={item}
         onClose={() => dialog.close()}
-        onInstallResult={(success, scope) => {
+        onInstallResult={(success, scope, extra) => {
           if (success) {
             telemetry("Marketplace Item Installed", {
               itemId: item.id,
               itemType: item.type,
               itemName: item.name,
               target: scope,
+              ...(extra?.hasParameters && { hasParameters: true }),
+              ...(extra?.installationMethodName && { installationMethodName: extra.installationMethodName }),
             })
             dialog.close()
             fetchData()
