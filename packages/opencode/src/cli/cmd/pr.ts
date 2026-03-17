@@ -91,26 +91,27 @@ export const PrCommand = cmd({
         UI.println(`Successfully checked out PR #${prNumber} as branch '${localBranchName}'`)
         UI.println()
         // kilocode_change start
-        UI.println("Starting kilo...")
+        const bin = "kilo"
+        // kilocode_change end
+        UI.println(`Starting ${bin}...`) // kilocode_change
         UI.println()
 
-        // Launch kilo TUI with session ID if available
+        // Launch opencode TUI with session ID if available
         const { spawn } = await import("child_process")
-        const flags = sessionId ? ["-s", sessionId] : []
-        const child = spawn("kilo", flags, {
+        const opencodeArgs = sessionId ? ["-s", sessionId] : []
+        const opencodeProcess = spawn(bin, opencodeArgs, { // kilocode_change
           stdio: "inherit",
           cwd: process.cwd(),
-          windowsHide: true,
+          windowsHide: true, // kilocode_change - prevent CMD window flash on Windows
         })
 
         await new Promise<void>((resolve, reject) => {
-          child.on("exit", (code) => {
+          opencodeProcess.on("exit", (code) => {
             if (code === 0) resolve()
-            else reject(new Error(`kilo exited with code ${code}`))
+            else reject(new Error(`${bin} exited with code ${code}`)) // kilocode_change
           })
-          child.on("error", reject)
+          opencodeProcess.on("error", reject)
         })
-        // kilocode_change end
       },
     })
   },
