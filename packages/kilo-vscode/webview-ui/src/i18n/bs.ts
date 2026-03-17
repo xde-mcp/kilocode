@@ -692,6 +692,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguracija",
   "settings.providers.tag.custom": "Prilagođeno",
   "settings.providers.tag.other": "Ostalo",
+  "settings.providers.modeModels": "Model po režimu",
+  "settings.providers.modeModels.description":
+    "Zamijenite podrazumijevani model za određene režime. Ako nije postavljeno, koristi se globalni podrazumijevani model.",
   "settings.models.title": "Modeli",
   "settings.models.description": "Postavke modela će se ovdje moći podešavati.",
   "settings.agents.title": "Agenti",
@@ -839,12 +842,14 @@ export const dict = {
     "Kilo Code je AI asistent za programiranje. Zatražite da gradi funkcionalnosti, ispravlja greške ili objasni vašu bazu koda.",
   "session.messages.scrollToBottom": "Pomakni se na dno",
   "session.status.writingResponse": "Pisanje odgovora…",
+  "session.status.retry": "Ponovni pokušaj…",
   "session.status.retrying": "Ponovni pokušaj (pokušaj {{ attempt }})… {{ message }}",
   "session.status.working": "Radim…",
 
   "dialog.model.noProviders": "Nema pružatelja",
 
   "prompt.placeholder.connecting": "Povezivanje na server...",
+  "prompt.placeholder.error": "Povezivanje nije uspjelo. Provjerite panel za izlaz ili ponovo pokrenite ekstenziju.",
   "prompt.placeholder.default": "Unesite poruku... (Enter za slanje, Shift+Enter za novi red)",
 
   "context.usage.sessionCost": "Cijena sesije",
