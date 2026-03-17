@@ -80,7 +80,7 @@ Enter the token in the Settings tab and click **Save**. You can remove or replac
 1. Right-click on the Bot in Discord and click **Message**
 2. DM the bot `/start` or `/restart`
 3. You should get a response back with a pairing code
-4. Go back to [app.kilocode.ai/claw](https://app.kilocode.ai/claw) and confirm the pairing code and approve
+4. Return to [app.kilocode.ai/claw](https://app.kilocode.ai/claw) and confirm the pairing code and approve
 5. You should now be able to chat with the bot from Discord
 
 ### Slack
