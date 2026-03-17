@@ -5,58 +5,19 @@ description: "Connect your Google account to KiloClaw for access to Gmail, Calen
 
 # Google Workspace Integration
 
+{% callout type="warning" title="Use a standalone Google account" %}
+We strongly recommend creating a **dedicated Google account** specifically for KiloClaw rather than giving it access to your personal Google account. This keeps your personal data separate and gives you full control over what KiloClaw can access. **Do not give KiloClaw access to your own personal Google account.**
+{% /callout %}
+
 Connect your Google account to KiloClaw so it can interact with your Google Workspace services — Gmail, Calendar, Drive, Docs, Sheets, Slides, Tasks, People, Forms, Chat, Classroom, and Apps Script.
 
-The setup uses the `ghcr.io/kilo-org/google-setup` container, which walks you through an interactive flow to authorize KiloClaw against 12+ Google APIs and securely upload your credentials.
+## What You Get
 
-## Prerequisites
+Once setup is complete, your KiloClaw machine will have the following configured automatically:
 
-Before you begin, make sure you have:
-
-- **Docker** installed and running on your machine
-- A **Google account** with access to [Google Cloud Console](https://console.cloud.google.com)
-- A **web browser** for the OAuth authentication flow
-
-## Setup
-
-### Step 1: Copy the setup command
-
-1. Go to the **Settings** tab on your [KiloClaw dashboard](/docs/kiloclaw/dashboard)
-2. Find the **Google Account** section
-3. Copy the provided `docker run` command — it includes a short-lived authentication token
-
-### Step 2: Run the setup container
-
-Paste the command into your terminal and run it:
-
-```bash
-docker run -it --rm ghcr.io/kilo-org/google-setup <token>
-```
-
-The container launches an interactive setup flow. Follow the on-screen prompts — you will need to switch to a web browser at several points during the process.
-
-### Step 3: Authenticate with KiloClaw
-
-The container first verifies your identity using the short-lived session token included in the `docker run` command.
-
-### Step 4: Sign in to Google Cloud
-
-The setup opens a browser-based Google Cloud authentication flow. During this step, the container:
-
-1. Signs you into Google Cloud
-2. Creates or selects a GCP project for KiloClaw
-3. Enables the necessary Google APIs on that project
-
-### Step 5: Configure OAuth consent screen
-
-You will be guided through creating an OAuth consent screen in your Google Cloud project:
-
-1. Configure the OAuth consent screen with the required details
-2. Create a **Desktop OAuth client** — the container provides the exact steps
-
-### Step 6: Authorize Google services
-
-The setup uses the [`gog` CLI](/docs/kiloclaw/pre-installed-software) to authenticate against all supported Google APIs with your OAuth credentials. This grants KiloClaw access to:
+- The [`gog` CLI](/docs/kiloclaw/pre-installed-software) pre-loaded with your Google credentials, giving the agent access to 12+ Google APIs
+- Real-time Gmail push notifications via Google Pub/Sub, so KiloClaw can react to incoming emails without polling
+- Access to the full range of Google Workspace services:
 
 | Service               | What KiloClaw can do         |
 | --------------------- | ---------------------------- |
@@ -73,23 +34,30 @@ The setup uses the [`gog` CLI](/docs/kiloclaw/pre-installed-software) to authent
 | **Google Classroom**  | Access classroom resources   |
 | **Apps Script**       | Manage Apps Script projects  |
 
-### Step 7: Gmail push notifications
+## Prerequisites
 
-The container configures Google Pub/Sub so that KiloClaw receives real-time email notifications. This allows the agent to react to incoming emails without polling.
+Before you begin, make sure you have:
 
-### Step 8: Upload credentials
+- **Docker** installed and running on your machine
 
-Your Google credentials are encrypted with **RSA + AES-256-GCM envelope encryption** and uploaded to KiloClaw's backend. No plaintext credentials leave the setup container.
+## Setup
 
-## How It Works
+### Step 1: Verify Google Cloud Console access
 
-After setup completes, KiloClaw automatically:
+Log into the [Google Cloud Console](https://console.cloud.google.com) to confirm you have access.
 
-1. Decrypts your Google credentials inside your personal KiloClaw machine at startup
-2. Makes the `gog` CLI available to the agent with your credentials pre-loaded
-3. Receives real-time Gmail push notifications via Pub/Sub
+{% callout type="info" %}
+Don't worry about providing billing details — this setup does not use any paid resources. The Google Cloud Console access is only needed for creating an OAuth consent screen and enabling APIs.
+{% /callout %}
 
-The agent can then interact with your Google Workspace services through natural language requests.
+### Step 2: Run the setup container
+
+1. Go to the **Settings** tab on your [KiloClaw dashboard](/docs/kiloclaw/dashboard)
+2. Find the **Google Account** section
+3. Copy the provided `docker run` command — it includes a short-lived authentication token
+4. Paste the command into a terminal on your local machine and run it
+
+The container launches an interactive setup flow. Follow the on-screen prompts — you will need to switch to a web browser at several points during the process.
 
 ## Using Google Services
 
@@ -102,13 +70,9 @@ Once setup is complete, you can ask KiloClaw to interact with your Google servic
 
 KiloClaw will automatically use the configured Google credentials to fulfill these requests.
 
-## Security
-
-- Credentials are encrypted with RSA + AES-256-GCM envelope encryption before leaving the setup container
-- Encrypted credentials are stored in KiloClaw's backend and are only decrypted inside your running instance
-- The setup token is short-lived and single-use
-- OAuth scopes are limited to the Google APIs that KiloClaw needs to operate
-- You can revoke access at any time from your [Google Account permissions page](https://myaccount.google.com/permissions)
+{% callout type="info" %}
+If you followed our recommendation and set up a **standalone Google account** for KiloClaw, remember that KiloClaw's credentials are tied to that account — not your personal one. To access your personal Google data, you'll need to delegate access from your personal account to the standalone KiloClaw account (e.g., sharing calendars, Drive folders, or granting Gmail delegation). When making requests, instruct KiloClaw to access **your** account that was delegated to it, not its own account.
+{% /callout %}
 
 ## Related
 
