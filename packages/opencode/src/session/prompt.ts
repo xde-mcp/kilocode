@@ -324,6 +324,10 @@ export namespace SessionPrompt {
     // on the user message and will be retrieved from lastUser below
     let structuredOutput: unknown | undefined
 
+    // kilocode_change — cache environment details per turn so the last user
+    // message stays byte-identical across tool-loop steps (prompt caching).
+    let envBlock: string | undefined
+
     let step = 0
     const session = await Session.get(sessionID)
     while (true) {
@@ -695,7 +699,7 @@ export namespace SessionPrompt {
       await Plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
       // kilocode_change start — ephemerally inject dynamic editor context into last user message
-      const envBlock = environmentDetails(lastUser.editorContext)
+      envBlock ??= environmentDetails(lastUser.editorContext)
       if (envBlock) {
         const last = msgs.findLast((m) => m.info.role === "user")
         if (last)
