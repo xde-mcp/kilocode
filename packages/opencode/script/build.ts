@@ -179,8 +179,8 @@ for (const item of targets) {
       autoloadTsconfig: true,
       autoloadPackageJson: true,
       target: name.replace(pkg.name, "bun") as any,
-      outfile: `dist/${name}/bin/opencode`,
-      execArgv: [`--user-agent=opencode/${Script.version}`, "--use-system-ca", "--"],
+      outfile: `dist/${name}/bin/kilo`, // kilocode_change
+      execArgv: [`--user-agent=kilo/${Script.version}`, "--use-system-ca", "--"], // kilocode_change
       windows: {},
     },
     entrypoints: ["./src/index.ts", parserWorker, workerPath],
@@ -193,6 +193,27 @@ for (const item of targets) {
       KILO_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "",
     },
   })
+
+  // kilocode_change start - fix Nix-specific ELF interpreter paths for Linux binaries
+  if (item.os === "linux") {
+    const interpreters: Record<string, string> = {
+      x64: "/lib64/ld-linux-x86-64.so.2",
+      arm64: "/lib/ld-linux-aarch64.so.1",
+      "x64-musl": "/lib/ld-musl-x86_64.so.1",
+      "arm64-musl": "/lib/ld-musl-aarch64.so.1",
+    }
+    const key = item.abi === "musl" ? `${item.arch}-musl` : item.arch
+    const interpreter = interpreters[key]
+    if (interpreter) {
+      try {
+        await $`patchelf --set-interpreter ${interpreter} dist/${name}/bin/kilo`
+        console.log(`patched interpreter for ${name} -> ${interpreter}`)
+      } catch {
+        console.warn(`patchelf not available, skipping interpreter fix for ${name}`)
+      }
+    }
+  }
+  // kilocode_change end
 
   await $`rm -rf ./dist/${name}/bin/tui`
   await Bun.file(`dist/${name}/package.json`).write(
@@ -217,14 +238,20 @@ for (const item of targets) {
 }
 
 if (Script.release) {
+  const archives: string[] = [] // kilocode_change
   for (const key of Object.keys(binaries)) {
+    const archive = key.replace(pkg.name, "kilo") // kilocode_change
     if (key.includes("linux")) {
-      await $`tar -czf ../../${key}.tar.gz *`.cwd(`dist/${key}/bin`)
+      const out = path.resolve("dist", `${archive}.tar.gz`) // kilocode_change
+      await $`tar -czf ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
+      archives.push(out) // kilocode_change
     } else {
-      await $`zip -r ../../${key}.zip *`.cwd(`dist/${key}/bin`)
+      const out = path.resolve("dist", `${archive}.zip`) // kilocode_change
+      await $`zip -r ${out} *`.cwd(`dist/${key}/bin`) // kilocode_change
+      archives.push(out) // kilocode_change
     }
   }
-  await $`gh release upload v${Script.version} ./dist/*.zip ./dist/*.tar.gz --clobber --repo ${process.env.GH_REPO}`
+  await $`gh release upload v${Script.version} ${archives} --clobber` // kilocode_change
 }
 
 export { binaries }
