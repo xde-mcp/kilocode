@@ -41,7 +41,7 @@ export const ItemCard = (props: Props) => {
       <div class="marketplace-card-header">
         <div class="marketplace-card-title">
           <Show when={props.linkUrl} fallback={<span class="marketplace-card-name">{name()}</span>}>
-            <span class="marketplace-card-name link" onClick={() => openLink(props.linkUrl!)}>
+            <span class="marketplace-card-name clickable" onClick={() => openLink(props.linkUrl!)}>
               {name()}
             </span>
           </Show>

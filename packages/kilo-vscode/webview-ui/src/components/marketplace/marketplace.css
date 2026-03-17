@@ -118,6 +118,14 @@
   color: var(--text-base);
 }
 
+.marketplace-card-name.clickable {
+  cursor: pointer;
+}
+
+.marketplace-card-name.clickable:hover {
+  text-decoration: underline;
+}
+
 .marketplace-card-author {
   font-size: 12px;
   color: var(--text-weak);
