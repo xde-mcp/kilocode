@@ -707,12 +707,18 @@ export namespace SessionPrompt {
         envUser = lastUser.id
       }
       if (envBlock) {
-        const last = msgs.findLast((m) => m.info.role === "user")
-        if (last)
-          last.parts.push({
-            type: "text",
-            text: envBlock,
-          } as MessageV2.TextPart)
+        const idx = msgs.findLastIndex((m) => m.info.role === "user")
+        if (idx !== -1)
+          msgs[idx] = {
+            ...msgs[idx],
+            parts: [
+              ...msgs[idx].parts,
+              {
+                type: "text",
+                text: envBlock,
+              } as MessageV2.TextPart,
+            ],
+          }
       }
       // kilocode_change end
 
