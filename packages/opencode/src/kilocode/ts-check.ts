@@ -107,11 +107,13 @@ export namespace TsCheck {
     return undefined
   }
 
-  // Walk up from root looking for node_modules/typescript/bin/tsc
+  // Walk up from root looking for a usable tsc binary.
+  // On Windows the JS entrypoint has no shebang support, so use the .cmd shim.
   async function local_tsc(root: string): Promise<string | undefined> {
+    const shim = process.platform === "win32" ? path.join(".bin", "tsc.cmd") : path.join("typescript", "bin", "tsc")
     let dir = root
     while (true) {
-      const bin = path.join(dir, "node_modules", "typescript", "bin", "tsc")
+      const bin = path.join(dir, "node_modules", shim)
       if (await exists(bin)) return bin
       const parent = path.dirname(dir)
       if (parent === dir) break
