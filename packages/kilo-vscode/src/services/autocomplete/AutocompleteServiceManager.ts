@@ -124,12 +124,12 @@ export class AutocompleteServiceManager {
       return
     }
 
-    // Register classic provider
+    // Register classic provider (tracked via this.inlineCompletionProviderDisposable,
+    // not context.subscriptions, so re-registration on reconnect doesn't leak)
     this.inlineCompletionProviderDisposable = vscode.languages.registerInlineCompletionItemProvider(
       { scheme: "file" },
       this.inlineCompletionProvider,
     )
-    this.context.subscriptions.push(this.inlineCompletionProviderDisposable)
   }
 
   public async disable() {
