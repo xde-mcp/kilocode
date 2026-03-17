@@ -10,9 +10,6 @@ import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Checkbox } from "@kilocode/kilo-ui/checkbox"
-import { Dialog } from "@kilocode/kilo-ui/dialog"
-import { Button } from "@kilocode/kilo-ui/button"
-import { useDialog } from "@kilocode/kilo-ui/context/dialog"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { TodoItem } from "../../types/messages"
@@ -24,13 +21,11 @@ interface TaskHeaderProps {
 export const TaskHeader: Component<TaskHeaderProps> = (props) => {
   const session = useSession()
   const language = useLanguage()
-  const dialog = useDialog()
 
   const title = createMemo(() => session.currentSession()?.title ?? language.t("command.session.new"))
   const hasMessages = createMemo(() => session.messages().length > 0)
   const busy = createMemo(() => session.status() === "busy")
   const canCompact = createMemo(() => !busy() && hasMessages() && !!session.selected())
-  const canDelete = createMemo(() => !busy() && !!session.currentSessionID())
 
   const cost = createMemo(() => {
     const total = session.totalCost()
@@ -65,33 +60,6 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
 
   const [todosOpen, setTodosOpen] = createSignal(false)
 
-  function confirmDelete() {
-    const name = session.currentSession()?.title || language.t("session.untitled")
-    dialog.show(() => (
-      <Dialog title={language.t("session.delete.title")} fit>
-        <div class="dialog-confirm-body">
-          <span>{language.t("session.delete.confirm", { name })}</span>
-          <div class="dialog-confirm-actions">
-            <Button variant="ghost" size="large" onClick={() => dialog.close()}>
-              {language.t("common.cancel")}
-            </Button>
-            <Button
-              variant="primary"
-              size="large"
-              onClick={() => {
-                const id = session.currentSessionID()
-                if (id) session.deleteSession(id)
-                dialog.close()
-              }}
-            >
-              {language.t("session.delete.button")}
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-    ))
-  }
-
   return (
     <Show when={hasMessages()}>
       <div data-component="task-header">
@@ -125,16 +93,6 @@ export const TaskHeader: Component<TaskHeaderProps> = (props) => {
                 disabled={!canCompact()}
                 onClick={() => session.compact()}
                 aria-label={language.t("command.session.compact")}
-              />
-            </Tooltip>
-            <Tooltip value={language.t("session.delete.title")} placement="bottom">
-              <IconButton
-                icon="trash"
-                size="small"
-                variant="ghost"
-                disabled={!canDelete()}
-                onClick={() => confirmDelete()}
-                aria-label={language.t("session.delete.title")}
               />
             </Tooltip>
           </Show>
