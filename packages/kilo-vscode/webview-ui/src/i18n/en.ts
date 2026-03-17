@@ -838,6 +838,7 @@ export const dict = {
     "Kilo Code is an AI coding assistant. Ask it to build features, fix bugs, or explain your codebase.",
   "session.messages.scrollToBottom": "Scroll to bottom",
   "session.status.writingResponse": "Writing response...",
+  "session.status.retry": "Retrying…",
   "session.status.retrying": "Retrying (attempt {{ attempt }})… {{ message }}",
   "session.status.working": "Working...",
 
