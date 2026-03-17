@@ -9,7 +9,7 @@ import {
   WIPE_MASK,
 } from "./motion"
 import { prefersReducedMotion } from "../hooks/use-reduced-motion"
-import type { ToolPart } from "@opencode-ai/sdk/v2"
+import type { ToolPart } from "@kilocode/sdk/v2"
 
 export const TEXT_RENDER_THROTTLE_MS = 100
 
