@@ -66,4 +66,7 @@ export const dict = {
   "marketplace.remove.type.skill": "vještina",
   "marketplace.remove.type.mode": "režim",
   "marketplace.remove.failed": "Uklanjanje {{name}} nije uspjelo",
+  "marketplace.install": "Instaliraj",
+  "marketplace.filter.installed": "Instalirano",
+  "marketplace.error.dismiss": "Odbaci",
 }

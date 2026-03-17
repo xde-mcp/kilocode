@@ -63,4 +63,7 @@ export const dict = {
   "marketplace.remove.type.skill": "skill",
   "marketplace.remove.type.mode": "mode",
   "marketplace.remove.failed": "Failed to remove {{name}}",
+  "marketplace.install": "Install",
+  "marketplace.filter.installed": "Installed",
+  "marketplace.error.dismiss": "Dismiss",
 }

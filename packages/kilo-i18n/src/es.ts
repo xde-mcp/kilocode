@@ -61,4 +61,7 @@ export const dict = {
   "marketplace.remove.type.skill": "habilidad",
   "marketplace.remove.type.mode": "modo",
   "marketplace.remove.failed": "Error al eliminar {{name}}",
+  "marketplace.install": "Instalar",
+  "marketplace.filter.installed": "Instalado",
+  "marketplace.error.dismiss": "Descartar",
 }

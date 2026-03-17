@@ -86,7 +86,9 @@ export const ItemCard = (props: Props) => {
                 class="marketplace-remove-btn"
                 onClick={() => props.onRemove(props.item, scope)}
               >
-                {scopes().length > 1 ? t("marketplace.card.removeScope", { scope }) : t("marketplace.card.remove")}
+                {scopes().length > 1
+                  ? t("marketplace.card.removeScope", { scope: t(`marketplace.scope.${scope}`) })
+                  : t("marketplace.card.remove")}
               </Button>
             ))}
           </Show>

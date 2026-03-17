@@ -58,4 +58,7 @@ export const dict = {
   "marketplace.remove.type.skill": "技能",
   "marketplace.remove.type.mode": "模式",
   "marketplace.remove.failed": "移除 {{name}} 失敗",
+  "marketplace.install": "安裝",
+  "marketplace.filter.installed": "已安裝",
+  "marketplace.error.dismiss": "關閉",
 }

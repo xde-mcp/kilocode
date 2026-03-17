@@ -61,4 +61,7 @@ export const dict = {
   "marketplace.remove.type.skill": "ทักษะ",
   "marketplace.remove.type.mode": "โหมด",
   "marketplace.remove.failed": "ไม่สามารถลบ {{name}} ได้",
+  "marketplace.install": "ติดตั้ง",
+  "marketplace.filter.installed": "ติดตั้งแล้ว",
+  "marketplace.error.dismiss": "ปิด",
 }

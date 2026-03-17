@@ -59,4 +59,7 @@ export const dict = {
   "marketplace.remove.type.skill": "스킬",
   "marketplace.remove.type.mode": "모드",
   "marketplace.remove.failed": "{{name}} 제거 실패",
+  "marketplace.install": "설치",
+  "marketplace.filter.installed": "설치됨",
+  "marketplace.error.dismiss": "닫기",
 }
