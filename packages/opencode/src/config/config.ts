@@ -355,7 +355,7 @@ export namespace Config {
     }))
     json.dependencies = {
       ...json.dependencies,
-      "@kilocode/plugin": targetVersion, // kilocode_change
+      "@kilocode/plugin": targetVersion,
     }
     await Filesystem.writeJson(pkg, json)
 
@@ -405,7 +405,6 @@ export namespace Config {
 
     const parsed = await Filesystem.readJson<{ dependencies?: Record<string, string> }>(pkg).catch(() => null)
     const dependencies = parsed?.dependencies ?? {}
-    // kilocode_change start
     const depVersion = dependencies["@kilocode/plugin"]
     if (!depVersion) return true
 
@@ -1284,6 +1283,7 @@ export namespace Config {
         .object({
           disable_paste_summary: z.boolean().optional(),
           batch_tool: z.boolean().optional().describe("Enable the batch tool"),
+          codebase_search: z.boolean().optional().describe("Enable AI-powered codebase search"), // kilocode_change
           // kilocode_change start - enable telemetry by default
           openTelemetry: z.boolean().default(true).describe("Enable telemetry. Set to false to opt-out."),
           // kilocode_change end
@@ -1376,7 +1376,7 @@ export namespace Config {
       if (!parsed.data.$schema && isFile) {
         parsed.data.$schema = "https://app.kilo.ai/config.json" // kilocode_change
         const updated = original.replace(/^\s*\{/, '{\n  "$schema": "https://app.kilo.ai/config.json",') // kilocode_change
-        await Bun.write(options.path, updated).catch(() => {})
+        await Filesystem.write(options.path, updated).catch(() => {})
       }
       const data = parsed.data
       if (data.plugin && isFile) {
@@ -1553,17 +1553,19 @@ export namespace Config {
 
     global.reset()
 
-    void Instance.disposeAll()
-      .catch(() => undefined)
-      .finally(() => {
-        GlobalBus.emit("event", {
-          directory: "global",
-          payload: {
-            type: Event.Disposed.type,
-            properties: {},
-          },
-        })
-      })
+    // kilocode_change start - only reset config cache, don't dispose all instances.
+    // Instance.disposeAll() was destroying all session state, MCP connections, and
+    // in-flight operations across every project whenever any global config changed
+    // (e.g. removing a mode). The cache reset above is sufficient — consumers will
+    // pick up the new config on their next read.
+    GlobalBus.emit("event", {
+      directory: "global",
+      payload: {
+        type: Event.Disposed.type,
+        properties: {},
+      },
+    })
+    // kilocode_change end
 
     return next
   }
@@ -1572,3 +1574,5 @@ export namespace Config {
     return state().then((x) => x.directories)
   }
 }
+Filesystem.write
+Filesystem.write
