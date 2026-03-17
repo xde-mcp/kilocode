@@ -604,6 +604,20 @@ export namespace Server {
         )
         // kilocode_change start - disable external proxy to app.opencode.ai for privacy/security
         .all("/*", async (c) => {
+          // const path = c.req.path
+          //
+          // const response = await proxy(`https://app.opencode.ai${path}`, {
+          //   ...c.req,
+          //   headers: {
+          //     ...c.req.raw.headers,
+          //     host: "app.opencode.ai",
+          //   },
+          // })
+          // response.headers.set(
+          //   "Content-Security-Policy",
+          //   "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; media-src 'self' data:; connect-src 'self' data:",
+          // )
+          // return response
           return c.notFound()
         }) as unknown as Hono,
     // kilocode_change end
