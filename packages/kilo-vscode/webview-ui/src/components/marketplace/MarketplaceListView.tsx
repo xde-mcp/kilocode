@@ -6,7 +6,7 @@ import { Spinner } from "@kilocode/kilo-ui/spinner"
 import type {
   MarketplaceItem,
   McpMarketplaceItem,
-  ModeMarketplaceItem,
+  SkillMarketplaceItem,
   MarketplaceInstalledMetadata,
 } from "../../types/marketplace"
 import { useLanguage } from "../../context/language"
@@ -19,10 +19,10 @@ interface StatusOption {
 }
 
 interface Props {
-  items: (McpMarketplaceItem | ModeMarketplaceItem)[]
+  items: MarketplaceItem[]
   metadata: MarketplaceInstalledMetadata
   fetching: boolean
-  type: "mcp" | "mode"
+  type: "mcp" | "mode" | "skill"
   searchPlaceholder: string
   emptyMessage: string
   onInstall: (item: MarketplaceItem) => void
@@ -41,10 +41,15 @@ export const MarketplaceListView = (props: Props) => {
     { value: "notInstalled", label: t("marketplace.filter.notInstalled") },
   ]
 
+  const tagsFor = (item: MarketplaceItem): string[] => {
+    if (item.type === "skill") return [(item as SkillMarketplaceItem).displayCategory]
+    return item.tags ?? []
+  }
+
   const allTags = createMemo(() => {
     const set = new Set<string>()
     for (const item of props.items) {
-      for (const tag of item.tags ?? []) set.add(tag)
+      for (const tag of tagsFor(item)) set.add(tag)
     }
     return Array.from(set).sort()
   })
@@ -65,13 +70,15 @@ export const MarketplaceListView = (props: Props) => {
     return props.items.filter((item) => {
       if (s === "installed" && !isInstalled(item.id, item.type, props.metadata)) return false
       if (s === "notInstalled" && isInstalled(item.id, item.type, props.metadata)) return false
-      if (active.length > 0 && !active.some((tag) => item.tags?.includes(tag))) return false
+      if (active.length > 0 && !active.some((tag) => tagsFor(item).includes(tag))) return false
       if (!q) return true
+      const skill = item.type === "skill" ? (item as SkillMarketplaceItem) : undefined
       return (
         item.id.toLowerCase().includes(q) ||
         item.name.toLowerCase().includes(q) ||
         item.description.toLowerCase().includes(q) ||
-        (item.author?.toLowerCase().includes(q) ?? false)
+        (item.author?.toLowerCase().includes(q) ?? false) ||
+        (skill?.displayName.toLowerCase().includes(q) ?? false)
       )
     })
   })
@@ -116,17 +123,28 @@ export const MarketplaceListView = (props: Props) => {
         <Show when={filtered().length > 0} fallback={<p class="marketplace-empty">{props.emptyMessage}</p>}>
           <div class="marketplace-grid">
             <For each={filtered()}>
-              {(item) => (
-                <ItemCard
-                  item={item}
-                  metadata={props.metadata}
-                  linkUrl={item.type === "mcp" ? (item as McpMarketplaceItem).url : undefined}
-                  typeBadge={item.type === "mcp" ? t("marketplace.badge.mcpServer") : t("marketplace.badge.mode")}
-                  onInstall={props.onInstall}
-                  onRemove={props.onRemove}
-                  footer={<For each={item.tags ?? []}>{(tag) => <Tag>{tag}</Tag>}</For>}
-                />
-              )}
+              {(item) => {
+                const skill = item.type === "skill" ? (item as SkillMarketplaceItem) : undefined
+                const mcp = item.type === "mcp" ? (item as McpMarketplaceItem) : undefined
+                return (
+                  <ItemCard
+                    item={item}
+                    metadata={props.metadata}
+                    displayName={skill?.displayName}
+                    linkUrl={skill?.githubUrl ?? mcp?.url}
+                    typeBadge={
+                      item.type === "mcp"
+                        ? t("marketplace.badge.mcpServer")
+                        : item.type === "mode"
+                          ? t("marketplace.badge.mode")
+                          : undefined
+                    }
+                    onInstall={props.onInstall}
+                    onRemove={props.onRemove}
+                    footer={<For each={tagsFor(item)}>{(tag) => <Tag>{tag}</Tag>}</For>}
+                  />
+                )
+              }}
             </For>
           </div>
         </Show>

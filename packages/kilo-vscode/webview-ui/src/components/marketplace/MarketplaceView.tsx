@@ -13,7 +13,6 @@ import type {
   SkillMarketplaceItem,
   MarketplaceInstalledMetadata,
 } from "../../types/marketplace"
-import { SkillsMarketplace } from "./SkillsMarketplace"
 import { MarketplaceListView } from "./MarketplaceListView"
 import { InstallModal } from "./InstallModal"
 import { RemoveDialog } from "./RemoveDialog"
@@ -169,10 +168,13 @@ export const MarketplaceView = () => {
           </Tabs.Content>
 
           <Tabs.Content value="skill">
-            <SkillsMarketplace
+            <MarketplaceListView
               items={skills()}
               metadata={metadata()}
               fetching={fetching()}
+              type="skill"
+              searchPlaceholder={t("marketplace.search.skills")}
+              emptyMessage={t("marketplace.empty.skills")}
               onInstall={handleInstall}
               onRemove={handleRemove}
             />
