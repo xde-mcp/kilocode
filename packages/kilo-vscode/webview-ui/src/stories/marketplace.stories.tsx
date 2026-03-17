@@ -156,17 +156,6 @@ export const SkillsTabEmpty: Story = {
   ),
 }
 
-export const SkillsTabLoading: Story = {
-  name: "Skills tab — loading",
-  render: () => (
-    <StoryProviders>
-      <div style={{ width: "420px", height: "400px", overflow: "auto", padding: "12px" }}>
-        <SkillsMarketplace items={[]} metadata={EMPTY_METADATA} fetching={true} onInstall={noop} onRemove={noop} />
-      </div>
-    </StoryProviders>
-  ),
-}
-
 export const SingleSkillCard: Story = {
   name: "ItemCard — single skill not installed",
   render: () => (
