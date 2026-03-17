@@ -562,6 +562,7 @@ export namespace SessionPrompt {
             },
             agent: lastUser.agent,
             model: lastUser.model,
+            editorContext: lastUser.editorContext, // kilocode_change — preserve editor context
           }
           await Session.updateMessage(summaryUserMsg)
           await Session.updatePart({
