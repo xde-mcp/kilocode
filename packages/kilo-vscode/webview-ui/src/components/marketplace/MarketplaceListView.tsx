@@ -47,11 +47,15 @@ export const MarketplaceListView = (props: Props) => {
   }
 
   const allTags = createMemo(() => {
-    const set = new Set<string>()
+    const counts = new Map<string, number>()
     for (const item of props.items) {
-      for (const tag of tagsFor(item)) set.add(tag)
+      for (const tag of tagsFor(item)) counts.set(tag, (counts.get(tag) ?? 0) + 1)
     }
-    return Array.from(set).sort()
+    const min = props.type === "mcp" ? 2 : 1
+    return Array.from(counts.entries())
+      .filter(([, n]) => n >= min)
+      .map(([tag]) => tag)
+      .sort()
   })
 
   const toggleTag = (tag: string) => {
