@@ -51,7 +51,11 @@ export const MarketplaceView = () => {
         setFetching(false)
       }
       if (msg.type === "marketplaceRemoveResult") {
-        if (msg.success) fetchData()
+        if (msg.success) {
+          fetchData()
+        } else {
+          setErrors((prev) => [...prev, msg.error ?? t("marketplace.remove.failed", { name: msg.slug })])
+        }
       }
     })
     onCleanup(unsub)
