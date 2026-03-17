@@ -30,6 +30,8 @@ export const dict = {
   "marketplace.card.install": "Instaliraj",
   "marketplace.card.remove": "Ukloni",
   "marketplace.card.removeScope": "Ukloni ({{scope}})",
+  "marketplace.card.showMore": "Prikaži više",
+  "marketplace.card.showLess": "Prikaži manje",
   "marketplace.install.title": "Instaliraj {{name}}",
   "marketplace.install.scope": "Opseg",
   "marketplace.install.scope.project": "Projekat",

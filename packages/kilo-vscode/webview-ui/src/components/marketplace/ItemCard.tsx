@@ -1,4 +1,4 @@
-import { Show, JSX } from "solid-js"
+import { Show, JSX, createSignal, onMount } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Tag } from "@kilocode/kilo-ui/tag"
@@ -24,6 +24,13 @@ export const ItemCard = (props: Props) => {
   const scopes = () => installedScopes(props.item.id, props.item.type, props.metadata)
   const installed = () => scopes().length > 0
   const name = () => props.displayName ?? props.item.name
+  const [expanded, setExpanded] = createSignal(false)
+  const [clamped, setClamped] = createSignal(false)
+  let ref: HTMLParagraphElement | undefined
+
+  onMount(() => {
+    if (ref && ref.scrollHeight > ref.clientHeight) setClamped(true)
+  })
 
   const openLink = (url: string) => {
     vscode.postMessage({ type: "openExternal", url })
@@ -52,7 +59,14 @@ export const ItemCard = (props: Props) => {
           </span>
         </Show>
       </div>
-      <p class="marketplace-card-description">{props.item.description}</p>
+      <p ref={ref} class="marketplace-card-description" classList={{ expanded: expanded() }}>
+        {props.item.description}
+      </p>
+      <Show when={clamped()}>
+        <button class="marketplace-card-expand" onClick={() => setExpanded(!expanded())}>
+          {expanded() ? t("marketplace.card.showLess") : t("marketplace.card.showMore")}
+        </button>
+      </Show>
       <div class="marketplace-card-footer">
         <div class="marketplace-card-tags">
           <Show when={installed()}>

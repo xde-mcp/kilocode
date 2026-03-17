@@ -25,6 +25,8 @@ export const dict = {
   "marketplace.card.install": "ติดตั้ง",
   "marketplace.card.remove": "ลบ",
   "marketplace.card.removeScope": "ลบ ({{scope}})",
+  "marketplace.card.showMore": "แสดงเพิ่มเติม",
+  "marketplace.card.showLess": "แสดงน้อยลง",
   "marketplace.install.title": "ติดตั้ง {{name}}",
   "marketplace.install.scope": "ขอบเขต",
   "marketplace.install.scope.project": "โปรเจกต์",

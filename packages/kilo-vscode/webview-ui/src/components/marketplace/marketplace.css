@@ -86,7 +86,7 @@
 
 .marketplace-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 12px;
   max-width: 1200px;
 }
@@ -131,6 +131,22 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
+}
+
+.marketplace-card-description.expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.marketplace-card-expand {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-interactive-base);
+}
+
+.marketplace-card-expand:hover {
+  text-decoration: underline;
 }
 
 .marketplace-card-footer {

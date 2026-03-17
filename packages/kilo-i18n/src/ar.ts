@@ -25,6 +25,8 @@ export const dict = {
   "marketplace.card.install": "تثبيت",
   "marketplace.card.remove": "إزالة",
   "marketplace.card.removeScope": "إزالة ({{scope}})",
+  "marketplace.card.showMore": "عرض المزيد",
+  "marketplace.card.showLess": "عرض أقل",
   "marketplace.install.title": "تثبيت {{name}}",
   "marketplace.install.scope": "النطاق",
   "marketplace.install.scope.project": "المشروع",

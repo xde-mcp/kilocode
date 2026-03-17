@@ -23,6 +23,8 @@ export const dict = {
   "marketplace.card.install": "安裝",
   "marketplace.card.remove": "移除",
   "marketplace.card.removeScope": "移除 ({{scope}})",
+  "marketplace.card.showMore": "展開",
+  "marketplace.card.showLess": "收起",
   "marketplace.install.title": "安裝 {{name}}",
   "marketplace.install.scope": "作用域",
   "marketplace.install.scope.project": "專案",

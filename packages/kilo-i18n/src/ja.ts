@@ -24,6 +24,8 @@ export const dict = {
   "marketplace.card.install": "インストール",
   "marketplace.card.remove": "削除",
   "marketplace.card.removeScope": "削除 ({{scope}})",
+  "marketplace.card.showMore": "もっと見る",
+  "marketplace.card.showLess": "折りたたむ",
   "marketplace.install.title": "{{name}} のインストール",
   "marketplace.install.scope": "スコープ",
   "marketplace.install.scope.project": "プロジェクト",

@@ -14,4 +14,8 @@ export const dict = {
 
   // Reasoning block label
   "ui.reasoning.label": "Akıl Yürütme",
+
+  // Marketplace card translations
+  "marketplace.card.showMore": "Daha fazla göster",
+  "marketplace.card.showLess": "Daha az göster",
 }

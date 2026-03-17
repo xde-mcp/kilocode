@@ -24,6 +24,8 @@ export const dict = {
   "marketplace.card.install": "설치",
   "marketplace.card.remove": "제거",
   "marketplace.card.removeScope": "제거 ({{scope}})",
+  "marketplace.card.showMore": "더 보기",
+  "marketplace.card.showLess": "접기",
   "marketplace.install.title": "{{name}} 설치",
   "marketplace.install.scope": "범위",
   "marketplace.install.scope.project": "프로젝트",
