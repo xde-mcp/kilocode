@@ -28,8 +28,8 @@ export const dict = {
   "command.settings.open": "เปิดการตั้งค่า",
   "command.session.previous": "เซสชันก่อนหน้า",
   "command.session.next": "เซสชันถัดไป",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "เซสชันที่ยังไม่ได้อ่านก่อนหน้า",
+  "command.session.next.unseen": "เซสชันที่ยังไม่ได้อ่านถัดไป",
   "command.session.archive": "จัดเก็บเซสชัน",
 
   "command.palette": "คำสั่งค้นหา",
@@ -831,7 +831,7 @@ export const dict = {
   "session.messages.welcome": "Kilo Code เป็นผู้ช่วยเขียนโค้ด AI ขอให้สร้างฟีเจอร์ แก้ไขบัก หรืออธิบายโค้ดเบสของคุณ",
   "session.messages.scrollToBottom": "เลื่อนไปด้านล่าง",
   "session.status.writingResponse": "กำลังเขียนคำตอบ...",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "กำลังลองใหม่…",
   "session.status.retrying": "กำลังลองใหม่ (ครั้งที่ {{ attempt }})… {{ message }}",
   "session.status.working": "กำลังทำงาน...",
 

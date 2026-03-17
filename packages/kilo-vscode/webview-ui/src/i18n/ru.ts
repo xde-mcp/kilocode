@@ -28,8 +28,8 @@ export const dict = {
   "command.settings.open": "Открыть настройки",
   "command.session.previous": "Предыдущая сессия",
   "command.session.next": "Следующая сессия",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "Предыдущая непрочитанная сессия",
+  "command.session.next.unseen": "Следующая непрочитанная сессия",
   "command.session.archive": "Архивировать сессию",
 
   "command.palette": "Палитра команд",
@@ -842,7 +842,7 @@ export const dict = {
     "Kilo Code — это AI-помощник для программирования. Попросите его создать функции, исправить ошибки или объяснить вашу кодовую базу.",
   "session.messages.scrollToBottom": "Прокрутить вниз",
   "session.status.writingResponse": "Пишу ответ…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "Повторная попытка…",
   "session.status.retrying": "Повторная попытка ({{ attempt }})… {{ message }}",
   "session.status.working": "Работаю…",
 

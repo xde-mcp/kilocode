@@ -32,8 +32,8 @@ export const dict = {
   "command.settings.open": "打开设置",
   "command.session.previous": "上一个会话",
   "command.session.next": "下一个会话",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "上一个未读会话",
+  "command.session.next.unseen": "下一个未读会话",
   "command.session.archive": "归档会话",
 
   "command.palette": "命令面板",
@@ -823,7 +823,7 @@ export const dict = {
   "session.messages.welcome": "Kilo Code 是一个 AI 编程助手。让它帮你构建功能、修复 bug 或解释代码库。",
   "session.messages.scrollToBottom": "滚动到底部",
   "session.status.writingResponse": "正在撰写回复…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "正在重试…",
   "session.status.retrying": "正在重试（第 {{ attempt }} 次）… {{ message }}",
   "session.status.working": "处理中…",
 

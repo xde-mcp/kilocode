@@ -31,8 +31,8 @@ export const dict = {
   "command.settings.open": "Åpne innstillinger",
   "command.session.previous": "Forrige sesjon",
   "command.session.next": "Neste sesjon",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "Forrige uleste økt",
+  "command.session.next.unseen": "Neste uleste økt",
   "command.session.archive": "Arkiver sesjon",
 
   "command.palette": "Kommandopalett",
@@ -840,7 +840,7 @@ export const dict = {
     "Kilo Code er en AI-kodingsassistent. Be den om å bygge funksjoner, fikse feil eller forklare kodebasen din.",
   "session.messages.scrollToBottom": "Rull til bunnen",
   "session.status.writingResponse": "Skriver svar…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "Prøver på nytt…",
   "session.status.retrying": "Prøver på nytt (forsøk {{ attempt }})… {{ message }}",
   "session.status.working": "Arbeider…",
 

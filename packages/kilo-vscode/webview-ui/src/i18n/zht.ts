@@ -825,7 +825,7 @@ export const dict = {
   "session.messages.welcome": "Kilo Code 是一個 AI 程式設計助手。讓它幫你建構功能、修復 bug 或解釋程式碼庫。",
   "session.messages.scrollToBottom": "捲動至底部",
   "session.status.writingResponse": "正在撰寫回覆…",
-  "session.status.retry": "Retrying…",
+  "session.status.retry": "正在重試…",
   "session.status.retrying": "正在重試（第 {{ attempt }} 次）… {{ message }}",
   "session.status.working": "處理中…",
 
