@@ -12,7 +12,6 @@ interface Props {
   metadata: MarketplaceInstalledMetadata
   displayName?: string
   linkUrl?: string
-  typeBadge?: string
   onInstall: (item: MarketplaceItem) => void
   onRemove: (item: MarketplaceItem, scope: "project" | "global") => void
   footer?: JSX.Element
@@ -44,9 +43,6 @@ export const ItemCard = (props: Props) => {
             <span class="marketplace-card-name clickable" onClick={() => openLink(props.linkUrl!)}>
               {name()}
             </span>
-          </Show>
-          <Show when={props.typeBadge}>
-            <Tag>{props.typeBadge}</Tag>
           </Show>
         </div>
         <Show when={props.item.author}>

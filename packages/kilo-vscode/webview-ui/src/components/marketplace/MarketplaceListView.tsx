@@ -136,13 +136,6 @@ export const MarketplaceListView = (props: Props) => {
                     metadata={props.metadata}
                     displayName={skill?.displayName}
                     linkUrl={skill?.githubUrl ?? mcp?.url}
-                    typeBadge={
-                      item.type === "mcp"
-                        ? t("marketplace.badge.mcpServer")
-                        : item.type === "mode"
-                          ? t("marketplace.badge.mode")
-                          : undefined
-                    }
                     onInstall={props.onInstall}
                     onRemove={props.onRemove}
                     footer={<For each={tagsFor(item)}>{(tag) => <Tag>{tag}</Tag>}</For>}
