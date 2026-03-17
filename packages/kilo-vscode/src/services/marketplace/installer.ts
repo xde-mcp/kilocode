@@ -3,6 +3,7 @@ import * as path from "path"
 import * as os from "os"
 import { execFile } from "child_process"
 import { promisify } from "util"
+import * as yaml from "yaml"
 import type {
   MarketplaceItem,
   SkillMarketplaceItem,
@@ -55,8 +56,11 @@ export class MarketplaceInstaller {
       return { success: false, slug: item.id, error: "No installation content for MCP server" }
     }
 
-    const entry = this.buildMcpEntry(content, options.parameters)
-    config.mcp[item.id] = entry
+    try {
+      config.mcp[item.id] = this.buildMcpEntry(content, options.parameters)
+    } catch (err) {
+      return { success: false, slug: item.id, error: `Invalid MCP config: ${err}` }
+    }
 
     await this.writeConfig(scope, workspace, config)
     return { success: true, slug: item.id }
@@ -76,14 +80,7 @@ export class MarketplaceInstaller {
   private buildMcpEntry(content: string, params?: Record<string, unknown>): Record<string, unknown> {
     const filtered = Object.fromEntries(Object.entries(params ?? {}).filter(([k]) => k !== "__method"))
     const replaced = Object.keys(filtered).length > 0 ? substituteParams(content, filtered) : content
-
-    // Parse the content as JSON — the marketplace API provides JSON config blocks
-    try {
-      return JSON.parse(replaced)
-    } catch {
-      // Fallback: treat as a command string
-      return { command: replaced }
-    }
+    return JSON.parse(replaced)
   }
 
   // ── Mode ────────────────────────────────────────────────────────────
@@ -104,12 +101,7 @@ export class MarketplaceInstaller {
       return { success: false, slug: item.id, error: "Mode already installed. Remove it first." }
     }
 
-    // Mode content is a JSON blob for the agent config
-    try {
-      config.agent[item.id] = JSON.parse(item.content)
-    } catch {
-      config.agent[item.id] = { system: item.content }
-    }
+    config.agent[item.id] = convertModeToAgent(item.content)
 
     await this.writeConfig(scope, workspace, config)
     return { success: true, slug: item.id }
@@ -284,6 +276,47 @@ export class MarketplaceInstaller {
 function isSafeId(id: string): boolean {
   if (!id || id.includes("..") || id.includes("/") || id.includes("\\")) return false
   return /^[\w\-@.]+$/.test(id)
+}
+
+// Group name → opencode permission key mapping (mirrors ModesMigrator)
+const GROUP_PERMISSIONS: Record<string, string> = {
+  read: "read",
+  edit: "edit",
+  browser: "bash",
+  command: "bash",
+  mcp: "mcp",
+}
+const ALL_PERMISSIONS = ["read", "edit", "bash", "mcp"]
+
+function convertModeToAgent(content: string): Record<string, unknown> {
+  const mode = yaml.parse(content) as Record<string, unknown>
+  const groups = (mode.groups ?? []) as Array<string | [string, Record<string, unknown>]>
+
+  const permission: Record<string, unknown> = {}
+  const allowed = new Set<string>()
+  for (const group of groups) {
+    if (typeof group === "string") {
+      const key = GROUP_PERMISSIONS[group] ?? group
+      allowed.add(key)
+      permission[key] = "allow"
+    } else if (Array.isArray(group)) {
+      const [name, cfg] = group
+      const key = GROUP_PERMISSIONS[name] ?? name
+      allowed.add(key)
+      permission[key] = cfg?.fileRegex ? { [String(cfg.fileRegex)]: "allow", "*": "deny" } : "allow"
+    }
+  }
+  for (const perm of ALL_PERMISSIONS) {
+    if (!allowed.has(perm)) permission[perm] = "deny"
+  }
+
+  const prompt = [mode.roleDefinition, mode.customInstructions].filter(Boolean).join("\n\n")
+  return {
+    mode: "primary",
+    description: mode.description ?? mode.whenToUse ?? mode.name,
+    prompt,
+    permission,
+  }
 }
 
 function escapeJsonValue(raw: string): string {
