@@ -13,7 +13,7 @@ import type {
   SkillMarketplaceItem,
   MarketplaceInstalledMetadata,
 } from "../../types/marketplace"
-import { MarketplaceTelemetry } from "../../types/marketplace"
+import { TelemetryEventName } from "../../../../src/services/telemetry/types"
 import { MarketplaceListView } from "./MarketplaceListView"
 import { InstallModal } from "./InstallModal"
 import { RemoveDialog } from "./RemoveDialog"
@@ -57,7 +57,7 @@ export const MarketplaceView = () => {
         setPending(null)
         if (msg.success) {
           if (removed) {
-            telemetry(MarketplaceTelemetry.ITEM_REMOVED, {
+            telemetry(TelemetryEventName.MARKETPLACE_ITEM_REMOVED, {
               itemId: removed.item.id,
               itemType: removed.item.type,
               itemName: removed.item.name,
@@ -84,11 +84,11 @@ export const MarketplaceView = () => {
   }
 
   onMount(() => {
-    telemetry(MarketplaceTelemetry.TAB_VIEWED)
+    telemetry(TelemetryEventName.MARKETPLACE_TAB_VIEWED)
   })
 
   const handleInstall = (item: MarketplaceItem) => {
-    telemetry(MarketplaceTelemetry.INSTALL_BUTTON_CLICKED, {
+    telemetry(TelemetryEventName.MARKETPLACE_INSTALL_BUTTON_CLICKED, {
       itemId: item.id,
       itemType: item.type,
       itemName: item.name,
@@ -99,7 +99,7 @@ export const MarketplaceView = () => {
         onClose={() => dialog.close()}
         onInstallResult={(success, scope, extra) => {
           if (success) {
-            telemetry(MarketplaceTelemetry.ITEM_INSTALLED, {
+            telemetry(TelemetryEventName.MARKETPLACE_ITEM_INSTALLED, {
               itemId: item.id,
               itemType: item.type,
               itemName: item.name,
