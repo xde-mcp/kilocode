@@ -6,6 +6,7 @@
 import type { LSPClient } from "../lsp/client"
 import { TsCheck } from "./ts-check"
 import { Log } from "../util/log"
+import { withTimeout } from "../util/timeout"
 import path from "path"
 import { Instance } from "../project/instance"
 
@@ -71,7 +72,9 @@ export namespace TsClient {
       },
       async waitForDiagnostics(_input: { path: string }) {
         // Run tsgo --noEmit and wait for results. Coalesces concurrent calls.
-        await check()
+        // 30s cap matches the process timeout in TsCheck.run(). Silent catch
+        // matches the real LSPClient's .catch(() => {}) on its 3s timeout.
+        await withTimeout(check(), 30_000).catch(() => {})
       },
       async shutdown() {
         log.info("shutting down ts-client")
