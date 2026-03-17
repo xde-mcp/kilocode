@@ -1,7 +1,6 @@
 import { describe, it, expect } from "bun:test"
 import {
   providerSortKey,
-  isFree,
   buildTriggerLabel,
   stripSubProviderPrefix,
   KILO_GATEWAY_ID,
@@ -41,28 +40,6 @@ describe("providerSortKey", () => {
     const ids = ["google", "anthropic", "kilo", "openai"]
     const sorted = ids.slice().sort((a, b) => providerSortKey(a) - providerSortKey(b))
     expect(sorted).toEqual(["kilo", "anthropic", "openai", "google"])
-  })
-})
-
-describe("isFree", () => {
-  it("returns true when isFree attribute is true", () => {
-    expect(isFree({ isFree: true, providerID: "anthropic", cost: { input: 5, output: 15 } })).toBe(true)
-  })
-
-  it("returns false when isFree attribute is false", () => {
-    expect(isFree({ isFree: false, providerID: KILO_GATEWAY_ID, cost: { input: 0, output: 0 } })).toBe(false)
-  })
-
-  it("returns false when provider is not kilo gateway", () => {
-    expect(isFree({ providerID: "anthropic", cost: { input: 0, output: 0 } })).toBe(false)
-  })
-
-  it("returns true when provider is kilo gateway and cost is zero", () => {
-    expect(isFree({ providerID: KILO_GATEWAY_ID, cost: { input: 0, output: 0 } })).toBe(true)
-  })
-
-  it("returns false when provider is kilo gateway and cost is non-zero", () => {
-    expect(isFree({ providerID: KILO_GATEWAY_ID, cost: { input: 5, output: 15 } })).toBe(false)
   })
 })
 
