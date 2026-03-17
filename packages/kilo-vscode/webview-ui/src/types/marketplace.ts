@@ -60,3 +60,14 @@ export interface MarketplaceFilters {
   search?: string
   tags?: string[]
 }
+
+/**
+ * Telemetry event names for marketplace actions.
+ * Must match TelemetryEventName values in src/services/telemetry/types.ts.
+ */
+export const MarketplaceTelemetry = {
+  INSTALL_BUTTON_CLICKED: "Marketplace Install Button Clicked",
+  ITEM_INSTALLED: "Marketplace Item Installed",
+  ITEM_REMOVED: "Marketplace Item Removed",
+  TAB_VIEWED: "Marketplace Tab Viewed",
+} as const

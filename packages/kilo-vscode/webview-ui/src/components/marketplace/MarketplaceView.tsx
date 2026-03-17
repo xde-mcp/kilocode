@@ -1,4 +1,4 @@
-import { createSignal, createMemo, createEffect, onCleanup, Show } from "solid-js"
+import { createSignal, createMemo, createEffect, onCleanup, onMount, Show } from "solid-js"
 import { Tabs } from "@kilocode/kilo-ui/tabs"
 import { Card } from "@kilocode/kilo-ui/card"
 import { Button } from "@kilocode/kilo-ui/button"
@@ -13,6 +13,7 @@ import type {
   SkillMarketplaceItem,
   MarketplaceInstalledMetadata,
 } from "../../types/marketplace"
+import { MarketplaceTelemetry } from "../../types/marketplace"
 import { MarketplaceListView } from "./MarketplaceListView"
 import { InstallModal } from "./InstallModal"
 import { RemoveDialog } from "./RemoveDialog"
@@ -56,7 +57,7 @@ export const MarketplaceView = () => {
         setPending(null)
         if (msg.success) {
           if (removed) {
-            telemetry("Marketplace Item Removed", {
+            telemetry(MarketplaceTelemetry.ITEM_REMOVED, {
               itemId: removed.item.id,
               itemType: removed.item.type,
               itemName: removed.item.name,
@@ -82,8 +83,12 @@ export const MarketplaceView = () => {
     vscode.postMessage({ type: "telemetry", event, properties: properties ?? {} })
   }
 
+  onMount(() => {
+    telemetry(MarketplaceTelemetry.TAB_VIEWED)
+  })
+
   const handleInstall = (item: MarketplaceItem) => {
-    telemetry("Marketplace Install Button Clicked", {
+    telemetry(MarketplaceTelemetry.INSTALL_BUTTON_CLICKED, {
       itemId: item.id,
       itemType: item.type,
       itemName: item.name,
@@ -94,7 +99,7 @@ export const MarketplaceView = () => {
         onClose={() => dialog.close()}
         onInstallResult={(success, scope, extra) => {
           if (success) {
-            telemetry("Marketplace Item Installed", {
+            telemetry(MarketplaceTelemetry.ITEM_INSTALLED, {
               itemId: item.id,
               itemType: item.type,
               itemName: item.name,
