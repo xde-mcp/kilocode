@@ -214,3 +214,14 @@ export async function checkoutTheirs(files: string[]): Promise<void> {
     await $`git checkout --theirs ${file}`
   }
 }
+
+/**
+ * Check if the "ours" version of a conflicted file contains kilocode_change markers.
+ * Uses git stage :2: which is the "ours" side during a merge conflict.
+ * Returns false if the file doesn't exist in ours (new file from upstream).
+ */
+export async function oursHasKilocodeChanges(file: string): Promise<boolean> {
+  const result = await $`git show :2:${file}`.quiet().nothrow()
+  if (result.exitCode !== 0) return false
+  return result.stdout.toString().includes("kilocode_change")
+}

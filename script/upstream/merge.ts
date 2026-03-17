@@ -398,8 +398,10 @@ async function main() {
     }
 
     // Step 7c: Try to auto-resolve remaining conflicts with post-merge transforms
-    // These handle edge cases where pre-merge transforms might have missed something
+    // These handle edge cases where pre-merge transforms might have missed something.
+    // Files with kilocode_change markers are flagged for manual resolution instead.
     let conflictedFiles = await git.getConflictedFiles()
+    const flaggedFiles: string[] = []
 
     if (conflictedFiles.length > 0) {
       logger.info("Attempting to auto-resolve remaining conflicts...")
@@ -409,6 +411,11 @@ async function main() {
       const i18nTransformed = i18nResults.filter((r) => r.replacements > 0).length
       if (i18nTransformed > 0) {
         logger.success(`Auto-resolved ${i18nTransformed} i18n conflicts`)
+      }
+      const i18nFlagged = i18nResults.filter((r) => r.flagged).map((r) => r.file)
+      if (i18nFlagged.length > 0) {
+        logger.warn(`${i18nFlagged.length} i18n file(s) have kilocode_change markers — flagged for manual resolution`)
+        flaggedFiles.push(...i18nFlagged)
       }
 
       // Transform branding-only files
@@ -421,6 +428,13 @@ async function main() {
         const takeTheirsCount = takeTheirsResults.filter((r) => r.action === "transformed").length
         if (takeTheirsCount > 0) {
           logger.success(`Auto-resolved ${takeTheirsCount} branding conflicts`)
+        }
+        const takeFlagged = takeTheirsResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (takeFlagged.length > 0) {
+          logger.warn(
+            `${takeFlagged.length} branding file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...takeFlagged)
         }
       }
 
@@ -435,6 +449,13 @@ async function main() {
         if (tauriCount > 0) {
           logger.success(`Auto-resolved ${tauriCount} Tauri conflicts`)
         }
+        const tauriFlagged = tauriResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (tauriFlagged.length > 0) {
+          logger.warn(
+            `${tauriFlagged.length} Tauri file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...tauriFlagged)
+        }
       }
 
       // Transform package.json files
@@ -447,6 +468,13 @@ async function main() {
         const pkgCount = pkgResults.filter((r) => r.action === "transformed").length
         if (pkgCount > 0) {
           logger.success(`Auto-resolved ${pkgCount} package.json conflicts`)
+        }
+        const pkgFlagged = pkgResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (pkgFlagged.length > 0) {
+          logger.warn(
+            `${pkgFlagged.length} package.json file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...pkgFlagged)
         }
       }
 
@@ -461,6 +489,13 @@ async function main() {
         if (scriptCount > 0) {
           logger.success(`Auto-resolved ${scriptCount} script conflicts`)
         }
+        const scriptFlagged = scriptResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (scriptFlagged.length > 0) {
+          logger.warn(
+            `${scriptFlagged.length} script file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...scriptFlagged)
+        }
       }
 
       // Transform extension files
@@ -474,6 +509,13 @@ async function main() {
         if (extCount > 0) {
           logger.success(`Auto-resolved ${extCount} extension conflicts`)
         }
+        const extFlagged = extResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (extFlagged.length > 0) {
+          logger.warn(
+            `${extFlagged.length} extension file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...extFlagged)
+        }
       }
 
       // Transform web/docs files
@@ -486,6 +528,13 @@ async function main() {
         const webCount = webResults.filter((r) => r.action === "transformed").length
         if (webCount > 0) {
           logger.success(`Auto-resolved ${webCount} web/docs conflicts`)
+        }
+        const webFlagged = webResults.filter((r) => r.action === "flagged").map((r) => r.file)
+        if (webFlagged.length > 0) {
+          logger.warn(
+            `${webFlagged.length} web/docs file(s) have kilocode_change markers — flagged for manual resolution`,
+          )
+          flaggedFiles.push(...webFlagged)
         }
       }
 
@@ -505,11 +554,21 @@ async function main() {
 
     // Check remaining conflicts
     const remaining = await git.getConflictedFiles()
-    if (remaining.length > 0) {
-      logger.warn(`${remaining.length} conflicts require manual resolution:`)
-      logger.list(remaining)
+    // Combine git-reported conflicts with files flagged due to kilocode_change markers
+    const allManual = [...new Set([...remaining, ...flaggedFiles])]
+    if (allManual.length > 0) {
+      if (flaggedFiles.length > 0) {
+        logger.warn(`${flaggedFiles.length} file(s) were flagged because they contain kilocode_change markers:`)
+        logger.list(flaggedFiles)
+        logger.info("  These files have intentional Kilo-specific changes. Keep our version or merge carefully.")
+        logger.info("")
+      }
+      if (remaining.length > 0) {
+        logger.warn(`${remaining.length} conflict(s) still require manual resolution:`)
+        logger.list(remaining)
+      }
       logger.info("")
-      logger.info("These conflicts likely contain kilocode_change markers or have actual code differences.")
+      logger.info("These conflicts contain kilocode_change markers or actual code differences.")
       logger.info("After resolving conflicts, run:")
       logger.info("  git add -A && git commit -m 'resolve merge conflicts'")
 
@@ -561,6 +620,22 @@ async function main() {
       await git.commit("chore: regenerate lock files after upstream merge")
       logger.success("Committed regenerated lock files")
     }
+  }
+
+  // Regenerate OpenAPI spec and SDK (keeps generated files in sync with merged code)
+  logger.info("Regenerating OpenAPI spec and SDK...")
+  const regenResult = await $`bun ./script/generate.ts`.quiet().nothrow()
+  if (regenResult.exitCode === 0) {
+    logger.success("Regenerated OpenAPI spec and SDK")
+    await git.stageAll()
+    const hasSpecChanges = await git.hasUncommittedChanges()
+    if (hasSpecChanges) {
+      await git.commit("chore: regenerate openapi spec and sdk after upstream merge")
+      logger.success("Committed regenerated OpenAPI spec and SDK")
+    }
+  } else {
+    logger.warn("OpenAPI spec regeneration failed — run ./script/generate.ts manually after resolving any issues")
+    logger.warn(regenResult.stderr.toString().trim())
   }
 
   if (options.push) {
