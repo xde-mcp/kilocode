@@ -78,6 +78,14 @@ export const dict = {
   "command.session.undo.description": "Undo the last message",
   "command.session.redo": "Redo",
   "command.session.redo.description": "Redo the last undone message",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "Compact session",
   "command.session.compact.description": "Summarize the session to reduce context size",
   "command.session.fork": "Fork from message",
@@ -232,6 +240,7 @@ export const dict = {
   "prompt.action.attachFile": "Attach file",
   "prompt.attachment.remove": "Remove attachment",
   "prompt.action.send": "Send",
+  "prompt.action.send.blocked": "Answer or dismiss the pending question first",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Enhance prompt",
   "prompt.action.resetModel": "Reset model to default",
@@ -839,6 +848,7 @@ export const dict = {
     "Kilo Code is an AI coding assistant. Ask it to build features, fix bugs, or explain your codebase.",
   "session.messages.scrollToBottom": "Scroll to bottom",
   "session.status.writingResponse": "Writing response...",
+  "session.status.retry": "Retrying…",
   "session.status.retrying": "Retrying (attempt {{ attempt }})… {{ message }}",
   "session.status.working": "Working...",
 
@@ -846,7 +856,7 @@ export const dict = {
 
   "prompt.placeholder.connecting": "Connecting to server...",
   "prompt.placeholder.default": "Type a message... (Enter to send, Shift+Enter for new line)",
-  "prompt.placeholder.error": "",
+  "prompt.placeholder.error": "Connection failed. Check the output panel or restart the extension.",
 
   "context.usage.sessionCost": "Session cost",
 
