@@ -734,7 +734,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           if (result.success) {
             await this.disposeCliInstance(scope)
             this.cachedAgentsMessage = null
-            await this.fetchAndSendAgents()
+            this.cachedConfigMessage = null
+            await Promise.all([this.fetchAndSendAgents(), this.fetchAndSendConfig()])
           }
           this.postMessage({
             type: "marketplaceInstallResult",
@@ -751,7 +752,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           if (result.success) {
             await this.disposeCliInstance(scope)
             this.cachedAgentsMessage = null
-            await this.fetchAndSendAgents()
+            this.cachedConfigMessage = null
+            await Promise.all([this.fetchAndSendAgents(), this.fetchAndSendConfig()])
           }
           this.postMessage({
             type: "marketplaceRemoveResult",
