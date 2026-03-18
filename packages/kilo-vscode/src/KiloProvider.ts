@@ -1404,6 +1404,18 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private async fetchAndSendNotifications(): Promise<void> {
     if (!this.client) {
       if (this.cachedNotificationsMessage) {
+        // Merge the latest dismissed IDs from globalState into the cached
+        // message so that dismissals persisted while offline are honoured.
+        const persisted = this.extensionContext?.globalState.get<string[]>("kilo.dismissedNotificationIds", []) ?? []
+        if (persisted.length > 0) {
+          const cached = this.cachedNotificationsMessage as {
+            type: string
+            notifications: unknown[]
+            dismissedIds: string[]
+          }
+          const merged = Array.from(new Set([...cached.dismissedIds, ...persisted]))
+          this.cachedNotificationsMessage = { ...cached, dismissedIds: merged }
+        }
         this.postMessage(this.cachedNotificationsMessage)
       }
       return
@@ -1414,7 +1426,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       const notifications = all.filter((n) => !n.showIn || n.showIn.includes("extension"))
       const existing = this.extensionContext?.globalState.get<string[]>("kilo.dismissedNotificationIds", []) ?? []
       const active = new Set(notifications.map((n) => n.id))
-      const dismissedIds = existing.filter((id) => active.has(id))
+      // Only prune stale dismissed IDs when we have a non-empty notification
+      // list. An empty list may mean the API returned nothing due to being
+      // unauthenticated (e.g. right after logout), not that all notifications
+      // are gone — pruning in that case would wipe the persisted dismissals.
+      const dismissedIds = notifications.length > 0 ? existing.filter((id) => active.has(id)) : existing
       if (dismissedIds.length !== existing.length) {
         await this.extensionContext?.globalState.update("kilo.dismissedNotificationIds", dismissedIds)
       }
@@ -1623,6 +1639,21 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     const existing = this.extensionContext.globalState.get<string[]>("kilo.dismissedNotificationIds", [])
     if (!existing.includes(notificationId)) {
       await this.extensionContext.globalState.update("kilo.dismissedNotificationIds", [...existing, notificationId])
+    }
+    // Update the cached message so the dismiss persists even if
+    // fetchAndSendNotifications() fails (e.g. no client / API error).
+    if (this.cachedNotificationsMessage) {
+      const cached = this.cachedNotificationsMessage as {
+        type: string
+        notifications: unknown[]
+        dismissedIds: string[]
+      }
+      if (!cached.dismissedIds.includes(notificationId)) {
+        this.cachedNotificationsMessage = {
+          ...cached,
+          dismissedIds: [...cached.dismissedIds, notificationId],
+        }
+      }
     }
     await this.fetchAndSendNotifications()
     this.connectionService.notifyNotificationDismissed(notificationId)
