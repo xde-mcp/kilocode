@@ -716,7 +716,7 @@ export namespace SessionPrompt {
               {
                 type: "text",
                 text: envBlock,
-              } as MessageV2.TextPart,
+              } satisfies MessageV2.TextPart,
             ],
           }
       }
