@@ -2,7 +2,7 @@ import type { ModelSelection } from "../../types/messages"
 import type { EnrichedModel } from "../../context/provider"
 
 export const KILO_GATEWAY_ID = "kilo"
-export const KILO_AUTO_SMALL_IDS = new Set(["kilo-auto/small", "kilo/auto-small"])
+export const KILO_AUTO_SMALL_IDS = new Set(["kilo-auto/small", "auto-small"])
 
 export function isSmall(model: Pick<EnrichedModel, "providerID" | "id">): boolean {
   return model.providerID === KILO_GATEWAY_ID && KILO_AUTO_SMALL_IDS.has(model.id)
