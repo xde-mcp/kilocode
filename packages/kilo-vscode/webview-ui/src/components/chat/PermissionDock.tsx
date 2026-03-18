@@ -6,20 +6,20 @@
  * Per-rule toggles allow users to approve/deny individual permission rules for future requests.
  * For bash, the hierarchical rules from metadata.rules are shown.
  * For other tools, the always array is shown so users can configure per-tool permissions.
- * The command buttons (Deny / Allow Once) control the current command.
+ * The command buttons (Deny / Run) control the current command.
  * When all rules are toggled ✓, the command auto-runs.
  */
 
-import { Component, For, Show, createSignal } from "solid-js"
+import { Component, For, Show, createMemo, createSignal } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { DockPrompt } from "@kilocode/kilo-ui/dock-prompt"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
+import { useConfig } from "../../context/config"
+import { describePatterns, resolveLabel, savedRuleStates, type RuleDecision } from "./permission-dock-utils"
 import type { PermissionRequest } from "../../types/messages"
-
-type RuleDecision = "approved" | "denied" | "pending"
 
 let rulesExpandedPreference = false
 
@@ -30,6 +30,7 @@ export const PermissionDock: Component<{
 }> = (props) => {
   const session = useSession()
   const language = useLanguage()
+  const { config } = useConfig()
 
   const fromChild = () => props.request.sessionID !== session.currentSessionID()
   // Bash sends fine-grained rules via metadata.rules; other tools use the always array.
@@ -41,8 +42,15 @@ export const PermissionDock: Component<{
     const cmd = props.request.args?.command
     return typeof cmd === "string" ? cmd : undefined
   }
+  const description = createMemo(() =>
+    command() ? null : describePatterns(props.request.toolName, props.request.patterns, language.t),
+  )
 
-  const [decisions, setDecisions] = createSignal<Record<number, RuleDecision>>({})
+  // Pre-populate toggle states from existing config rules so previously
+  // approved/denied patterns show their saved state immediately.
+  const saved = config().permission?.[props.request.toolName]
+  const loadState = savedRuleStates(rules(), saved)
+  const [decisions, setDecisions] = createSignal<Record<number, RuleDecision>>(loadState)
   const [expanded, setExpanded] = createSignal(rulesExpandedPreference)
 
   const hasRules = () => rules().length > 0
@@ -98,7 +106,8 @@ export const PermissionDock: Component<{
     return value
   }
 
-  const subtitle = () => (fromChild() ? `${props.request.toolName} (subagent)` : props.request.toolName)
+  const title = () =>
+    fromChild() ? language.t("notification.permission.titleSubagent") : language.t("notification.permission.title")
 
   return (
     <DockPrompt
@@ -108,10 +117,7 @@ export const PermissionDock: Component<{
           <span data-slot="permission-icon">
             <Icon name="warning" size="small" />
           </span>
-          <div data-slot="permission-header-title">
-            {language.t("notification.permission.title")}
-            <span data-slot="permission-header-subtitle">{subtitle()}</span>
-          </div>
+          <div data-slot="permission-header-title">{title()}</div>
         </div>
       }
       footer={
@@ -127,7 +133,7 @@ export const PermissionDock: Component<{
               <span data-slot="permission-rules-header-chevron" data-open={expanded() ? "" : undefined}>
                 <Icon name="chevron-down" size="small" />
               </span>
-              <span data-slot="permission-rules-header-title">{language.t("ui.permission.permissionRules")}</span>
+              <span data-slot="permission-rules-header-title">{language.t("ui.permission.manageAutoApprove")}</span>
             </button>
 
             <div data-slot="permission-rules-collapse" data-open={expanded() ? "" : undefined}>
@@ -162,8 +168,13 @@ export const PermissionDock: Component<{
                             </button>
                           </Tooltip>
                         </div>
-                        <span data-slot="permission-rule-type">{props.request.toolName}</span>
-                        <code data-slot="permission-rule">{label(rule)}</code>
+                        <code data-slot="permission-rule">
+                          {command()
+                            ? label(rule)
+                            : rule === "*"
+                              ? resolveLabel(props.request.toolName, language.t)
+                              : `${resolveLabel(props.request.toolName, language.t)} ${rule}`}
+                        </code>
                       </div>
                     )}
                   </For>
@@ -176,9 +187,18 @@ export const PermissionDock: Component<{
     >
       <Show when={command()}>{(cmd) => <code data-slot="permission-command">{cmd()}</code>}</Show>
 
-      <Show when={!command() && toolDescription()}>
-        <div data-slot="permission-hint">{toolDescription()}</div>
-      </Show>
+      {(() => {
+        const desc = description()
+        if (!desc)
+          return !command() && toolDescription() ? <div data-slot="permission-hint">{toolDescription()}</div> : null
+        if (desc.kind === "single") return <div data-slot="permission-hint">{desc.text}</div>
+        return (
+          <div data-slot="permission-patterns">
+            <span data-slot="permission-patterns-title">{desc.title}</span>
+            <For each={desc.paths}>{(path) => <code data-slot="permission-pattern">{path}</code>}</For>
+          </div>
+        )
+      })()}
 
       <div data-slot="permission-actions">
         <Button
@@ -190,7 +210,7 @@ export const PermissionDock: Component<{
           }}
           disabled={props.responding}
         >
-          {language.t("ui.permission.allowOnce")}
+          {language.t("ui.permission.run")}
         </Button>
         <Button
           variant="ghost"

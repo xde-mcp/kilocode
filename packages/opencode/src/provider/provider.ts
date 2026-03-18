@@ -534,7 +534,7 @@ export namespace Provider {
       if (!apiToken) {
         throw new Error(
           "CLOUDFLARE_API_TOKEN (or CF_AIG_TOKEN) is required for Cloudflare AI Gateway. " +
-            "Set it via environment variable or run `opencode auth cloudflare-ai-gateway`.",
+            "Set it via environment variable or run `kilo auth cloudflare-ai-gateway`.", // kilocode_change
         )
       }
 
@@ -689,6 +689,7 @@ export namespace Provider {
       // kilocode_change start
       recommendedIndex: z.number().optional(),
       prompt: Prompt.optional().catch(undefined),
+      isFree: z.boolean().optional(),
       // kilocode_change end
     })
     .meta({
@@ -775,6 +776,7 @@ export namespace Provider {
       variants: provider.id === "kilo" ? (model.variants ?? {}) : {},
       recommendedIndex: model.recommendedIndex,
       prompt: model.prompt,
+      isFree: model.isFree,
       // kilocode_change end
     }
 
@@ -923,6 +925,7 @@ export namespace Provider {
           // kilocode_change start
           recommendedIndex: model.recommendedIndex ?? existingModel?.recommendedIndex,
           prompt: model.prompt ?? existingModel?.prompt,
+          isFree: model.isFree ?? existingModel?.isFree,
           // kilocode_change end
         }
         const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})
