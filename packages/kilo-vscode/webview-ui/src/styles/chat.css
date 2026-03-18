@@ -1141,6 +1141,113 @@
     border-top-width 0.2s step-end;
 }
 
+/* ============================================
+   Model Preview Panel
+   ============================================ */
+
+.model-preview {
+  height: 100%;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+.model-preview-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.model-preview-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.model-preview-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.model-preview-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+  line-height: 1.3;
+}
+
+.model-preview-provider {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.model-preview-description {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--vscode-editor-foreground);
+  opacity: 0.85;
+}
+
+/* Two-column label/value grid for metrics */
+.model-preview-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  align-items: baseline;
+}
+
+.model-preview-label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.model-preview-value {
+  font-size: 11px;
+  color: var(--vscode-editor-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Capability badge row */
+.model-preview-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.model-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+}
+
+.model-preview-badge--reasoning {
+  background: var(--vscode-inputValidation-infoBackground);
+  color: var(--vscode-inputValidation-infoForeground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-inputValidation-infoBorder, transparent);
+}
+
+.model-preview-badge--free {
+  background: var(--vscode-testing-iconPassed, #4caf50);
+  color: #fff;
+}
+
 .model-selector-preview--visible {
   height: min(calc((100vh - 120px) / 3), 300px);
   border-top-width: 1px;

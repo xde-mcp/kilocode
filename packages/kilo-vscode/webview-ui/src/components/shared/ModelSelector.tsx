@@ -17,6 +17,7 @@ import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
 import type { ModelSelection } from "../../types/messages"
 import { KILO_GATEWAY_ID, isSmall, providerSortKey, isFree, buildTriggerLabel } from "./model-selector-utils"
+import { ModelPreview } from "./ModelPreview"
 
 interface ModelGroup {
   providerName: string
@@ -52,6 +53,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const [search, setSearch] = createSignal("")
   const [debouncedSearch, setDebouncedSearch] = createSignal("")
   const [selectedIndex, setSelectedIndex] = createSignal(0)
+  const [hoveredModel, setHoveredModel] = createSignal<EnrichedModel | null>(null)
 
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
@@ -299,7 +301,11 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                         role="option"
                         aria-selected={isActive(model)}
                         onClick={() => pick(model)}
-                        onMouseEnter={() => setSelectedIndex(idx())}
+                        onMouseEnter={() => {
+                          setSelectedIndex(idx())
+                          setHoveredModel(model)
+                        }}
+                        onMouseLeave={() => setHoveredModel(null)}
                       >
                         <span class="model-selector-item-name">{model.name}</span>
                         <Show when={isFree(model)}>
@@ -314,7 +320,9 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           </For>
         </div>
 
-        <div class={`model-selector-preview${expanded() ? " model-selector-preview--visible" : ""}`} />
+        <div class={`model-selector-preview${expanded() ? " model-selector-preview--visible" : ""}`}>
+          <ModelPreview model={hoveredModel() ?? activeModel() ?? null} />
+        </div>
       </div>
     </Popover>
   )
