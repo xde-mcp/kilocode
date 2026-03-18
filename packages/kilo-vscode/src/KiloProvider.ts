@@ -1359,12 +1359,14 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     const mp = this.getMarketplace()
     const stub = { id: name, type: "mcp" as const, name, description: "", url: "", content: "" }
 
-    // Try removing from project scope first, then global
+    // Remove from both scopes — an MCP could exist in project, global, or both
     const project = await mp.remove(stub, "project", workspace)
     const global = await mp.remove(stub, "global", workspace)
 
     if (project.success || global.success) {
-      const scope = project.success ? "project" : "global"
+      // Use global scope when removed from global (or both) so the global
+      // config cache is also invalidated; project scope is a subset.
+      const scope = global.success ? "global" : "project"
       await this.disposeCliInstance(scope)
       this.cachedConfigMessage = null
       await this.fetchAndSendConfig()
