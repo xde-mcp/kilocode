@@ -165,17 +165,19 @@ export function Session() {
   // kilocode_change start - ring terminal bell when input is needed
   createEffect(
     on(
-      () => permissions().length,
-      (len, prev) => {
-        if (prev !== undefined && len > (prev ?? 0)) bell()
+      () => [route.sessionID, permissions().length] as const,
+      ([id, len], prev) => {
+        if (!prev || prev[0] !== id) return
+        if (len > prev[1]) bell()
       },
     ),
   )
   createEffect(
     on(
-      () => questions().length,
-      (len, prev) => {
-        if (prev !== undefined && len > (prev ?? 0)) bell()
+      () => [route.sessionID, questions().length] as const,
+      ([id, len], prev) => {
+        if (!prev || prev[0] !== id) return
+        if (len > prev[1]) bell()
       },
     ),
   )
