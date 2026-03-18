@@ -10,6 +10,7 @@
 import { Component, createSignal, createMemo, createEffect, onCleanup, For, Show, createSelector } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
+import { IconButton } from "@kilocode/kilo-ui/icon-button"
 import { Tag } from "@kilocode/kilo-ui/tag"
 import { useProvider, EnrichedModel } from "../../context/provider"
 import { useSession } from "../../context/session"
@@ -47,6 +48,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const activeModel = () => findModel(props.value)
 
   const [open, setOpen] = createSignal(false)
+  const [expanded, setExpanded] = createSignal(false)
   const [search, setSearch] = createSignal("")
   const [debouncedSearch, setDebouncedSearch] = createSignal("")
   const [selectedIndex, setSelectedIndex] = createSignal(0)
@@ -147,6 +149,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     } else {
       setSearch("")
       setDebouncedSearch("")
+      setExpanded(false)
     }
   })
 
@@ -243,7 +246,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           </svg>
         </>
       }
-      class="model-selector-popover"
+      class={`model-selector-popover${expanded() ? " model-selector-popover--expanded" : ""}`}
     >
       <div onKeyDown={handleKeyDown}>
         <div class="model-selector-search-wrapper">
@@ -254,6 +257,13 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
             placeholder={language.t("dialog.model.search.placeholder")}
             value={search()}
             onInput={(e) => setSearch(e.currentTarget.value)}
+          />
+          <IconButton
+            icon={expanded() ? "collapse" : "expand"}
+            size="small"
+            variant="ghost"
+            label={expanded() ? "Collapse model picker" : "Expand model picker"}
+            onClick={() => setExpanded((v) => !v)}
           />
         </div>
 

@@ -1101,6 +1101,14 @@
 .model-selector-popover {
   width: 300px;
   max-width: 300px;
+  transition:
+    width 0.15s ease,
+    max-width 0.15s ease;
+}
+
+.model-selector-popover--expanded {
+  width: min(450px, 100vw);
+  max-width: min(450px, 100vw);
 }
 
 .model-selector-trigger-label {
@@ -1114,12 +1122,16 @@
 }
 
 .model-selector-search-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 8px;
   border-bottom: 1px solid var(--border-base, var(--vscode-panel-border));
 }
 
 .model-selector-search {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 5px 8px;
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
@@ -1143,6 +1155,11 @@
   overflow-y: auto;
   max-height: 300px;
   padding: 4px 0;
+  transition: max-height 0.15s ease;
+}
+
+.model-selector-popover--expanded .model-selector-list {
+  max-height: min(600px, calc(100vh - 120px));
 }
 
 .model-selector-empty {
