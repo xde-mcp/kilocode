@@ -156,7 +156,7 @@ export function Session() {
       () => [route.sessionID, sync.data.session_status?.[route.sessionID]?.type] as const,
       ([id, type], prev) => {
         if (!prev || prev[0] !== id) return
-        if (prev[1] && prev[1] !== "idle" && type === "idle") bell()
+        if (prev[1] && prev[1] !== "idle" && type === "idle" && bellEnabled()) bell()
       },
     ),
   )
@@ -168,7 +168,7 @@ export function Session() {
       () => [route.sessionID, permissions().length] as const,
       ([id, len], prev) => {
         if (!prev || prev[0] !== id) return
-        if (len > prev[1]) bell()
+        if (len > prev[1] && bellEnabled()) bell()
       },
     ),
   )
@@ -177,7 +177,7 @@ export function Session() {
       () => [route.sessionID, questions().length] as const,
       ([id, len], prev) => {
         if (!prev || prev[0] !== id) return
-        if (len > prev[1]) bell()
+        if (len > prev[1] && bellEnabled()) bell()
       },
     ),
   )
@@ -195,6 +195,7 @@ export function Session() {
   const [showHeader, setShowHeader] = kv.signal("header_visible", true)
   const [diffWrapMode] = kv.signal<"word" | "none">("diff_wrap_mode", "word")
   const [animationsEnabled, setAnimationsEnabled] = kv.signal("animations_enabled", true)
+  const [bellEnabled, setBellEnabled] = kv.signal("bell_enabled", true)
   const [showGenericToolOutput, setShowGenericToolOutput] = kv.signal("generic_tool_output_visibility", false)
 
   const wide = createMemo(() => dimensions().width > 120)
