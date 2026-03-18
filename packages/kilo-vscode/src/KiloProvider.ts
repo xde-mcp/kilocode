@@ -1426,7 +1426,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       const notifications = all.filter((n) => !n.showIn || n.showIn.includes("extension"))
       const existing = this.extensionContext?.globalState.get<string[]>("kilo.dismissedNotificationIds", []) ?? []
       const active = new Set(notifications.map((n) => n.id))
-      const dismissedIds = existing.filter((id) => active.has(id))
+      // Only prune stale dismissed IDs when we have a non-empty notification
+      // list. An empty list may mean the API returned nothing due to being
+      // unauthenticated (e.g. right after logout), not that all notifications
+      // are gone — pruning in that case would wipe the persisted dismissals.
+      const dismissedIds = notifications.length > 0 ? existing.filter((id) => active.has(id)) : existing
       if (dismissedIds.length !== existing.length) {
         await this.extensionContext?.globalState.update("kilo.dismissedNotificationIds", dismissedIds)
       }
