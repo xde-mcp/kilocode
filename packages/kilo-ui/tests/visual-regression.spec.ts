@@ -32,6 +32,19 @@ async function fetchStories(): Promise<Story[]> {
   return Object.values(map).filter((s) => s.id && !s.id.endsWith("--docs"))
 }
 
+// Animation protection is layered:
+//   1. playwright.config.ts `reducedMotion: "reduce"` — emulates the OS
+//      prefers-reduced-motion media feature before the page loads, so the
+//      module-level `prefersReducedMotion()` signal (use-reduced-motion.ts)
+//      initialises to `true`. This disables all JS spring animations driven
+//      by GrowBox, useSpring, useToolFade, useRowWipe, ShellRollingResults
+//      and ContextToolRollingResults.
+//   2. CSS injection below — zeroes out any remaining CSS animation/transition
+//      durations (Kobalte collapsible, Tailwind transitions, etc.).
+//   3. waitForSettled() — flushes two requestAnimationFrame ticks so that
+//      SolidJS reactive effects triggered by onMount (e.g. the `mounted()`
+//      signal one-tick delay in ShellRollingResults) have run and inline
+//      styles have been updated before the screenshot is taken.
 async function disableAnimations(page: Page) {
   await page.addStyleTag({
     content: `
@@ -40,9 +53,22 @@ async function disableAnimations(page: Page) {
         animation-delay: 0s !important;
         transition-duration: 0s !important;
         transition-delay: 0s !important;
+        scroll-behavior: auto !important;
       }
     `,
   })
+}
+
+// Flush two animation frames so all SolidJS reactive effects that were
+// scheduled during mount (e.g. mounted() signal flips) have been processed
+// and written to the DOM before we take a screenshot.
+async function waitForSettled(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      }),
+  )
 }
 
 // Wait for every <img> inside the story root to finish loading so screenshots
@@ -91,6 +117,9 @@ for (const story of stories) {
     // Wait for Kobalte/SolidJS to finish hydrating interactive components
     await page.waitForSelector("#storybook-root *", { state: "attached" })
     await waitForImages(page)
+    // Flush pending rAF ticks so SolidJS onMount effects (e.g. mounted()
+    // signal) have updated inline styles before the screenshot is taken.
+    await waitForSettled(page)
 
     // Screenshot just the story content, not the full 1280x720 canvas.
     // Use [component, variant] path so snapshots are grouped per component dir.
