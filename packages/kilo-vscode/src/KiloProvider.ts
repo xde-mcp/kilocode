@@ -40,6 +40,7 @@ import { resolveProjectDirectory } from "./project-directory"
 
 type KiloProviderOptions = {
   projectDirectory?: string | null
+  slimEditMetadata?: boolean
 }
 
 export class KiloProvider implements vscode.WebviewViewProvider, TelemetryPropertiesProvider {
@@ -90,6 +91,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreControllerDir: string | null = null
   private marketplace: MarketplaceService | null = null
   private projectDirectory: string | null | undefined
+  private slimEditMetadata = true
 
   /** Optional interceptor called before the standard message handler.
    *  Return null to consume the message, or return a (possibly transformed) message. */
@@ -102,6 +104,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     options?: KiloProviderOptions,
   ) {
     this.projectDirectory = options?.projectDirectory
+    this.slimEditMetadata = options?.slimEditMetadata ?? true
     TelemetryProxy.getInstance().setProvider(this)
   }
 
@@ -133,6 +136,63 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     } catch {
       return null
     }
+  }
+
+  // Edit tool parts carry full file contents in metadata.filediff.before/after.
+  // A session with many edits can produce multi-MB payloads serialized through
+  // postMessage on every session switch. Stripping those strings down to just
+  // file path + addition/deletion counts eliminates the dominant cost.
+
+  private slimMeta(meta: unknown) {
+    if (!this.slimEditMetadata) return meta
+    if (!meta || typeof meta !== "object") return undefined
+
+    const obj = meta as Record<string, unknown>
+    const filediff = obj.filediff
+    if (!filediff || typeof filediff !== "object") return undefined
+
+    const diff = filediff as Record<string, unknown>
+    const file = typeof diff.file === "string" ? diff.file : undefined
+    const additions = typeof diff.additions === "number" ? diff.additions : 0
+    const deletions = typeof diff.deletions === "number" ? diff.deletions : 0
+
+    const result: Record<string, unknown> = {
+      filediff: {
+        ...(file ? { file } : {}),
+        additions,
+        deletions,
+      },
+    }
+    // Preserve diagnostics so post-edit LSP errors still render
+    if (obj.diagnostics) result.diagnostics = obj.diagnostics
+    return result
+  }
+
+  /** Strip heavy metadata from a single edit tool part; pass-through for all other part types. */
+  private slimPart<T>(part: T): T {
+    if (!this.slimEditMetadata) return part
+    if (!part || typeof part !== "object") return part
+
+    const obj = part as Record<string, unknown>
+    if (obj.type !== "tool" || obj.tool !== "edit") return part
+
+    const state = obj.state
+    if (!state || typeof state !== "object") return part
+
+    const next = { ...(state as Record<string, unknown>) }
+    const meta = this.slimMeta(next.metadata)
+    if (meta) next.metadata = meta
+    else delete next.metadata
+
+    return {
+      ...obj,
+      state: next,
+    } as T
+  }
+
+  private slimParts<T>(parts: T[]) {
+    if (!this.slimEditMetadata) return parts
+    return parts.map((part) => this.slimPart(part))
   }
 
   /**
@@ -939,7 +999,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const messages = messagesData.map((m) => ({
         ...m.info,
-        parts: m.parts,
+        parts: this.slimParts(m.parts),
         createdAt: new Date(m.info.time.created).toISOString(),
       }))
 
@@ -988,7 +1048,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
       const messages = messagesData.map((m) => ({
         ...m.info,
-        parts: m.parts,
+        parts: this.slimParts(m.parts),
         createdAt: new Date(m.info.time.created).toISOString(),
       }))
 
@@ -1002,6 +1062,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         messages,
       })
     } catch (err) {
+      this.syncedChildSessions.delete(sessionID)
       console.error("[Kilo New] KiloProvider: Failed to sync child session:", err)
     }
   }
@@ -1598,13 +1659,20 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     try {
-      const { data: updated } = await this.client.global.config.update({ config: partial }, { throwOnError: true })
+      await this.client.global.config.update({ config: partial }, { throwOnError: true })
+
+      // Re-fetch the full merged config (global + project + all layers) so the
+      // webview receives the complete resolved config, not just global-only data.
+      // Without this, the global-only response would overwrite project-level
+      // values in the webview, causing settings to flicker and revert.
+      const dir = this.getWorkspaceDirectory()
+      const { data: merged } = await this.client.config.get({ directory: dir }, { throwOnError: true })
 
       const message = {
         type: "configUpdated",
-        config: updated,
+        config: merged,
       }
-      this.cachedConfigMessage = { type: "configLoaded", config: updated }
+      this.cachedConfigMessage = { type: "configLoaded", config: merged }
       this.postMessage(message)
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Failed to update config:", error)
@@ -2274,6 +2342,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     const msg = mapSSEEventToWebviewMessage(event, sessionID)
     if (msg) {
+      if (msg.type === "partUpdated") {
+        this.postMessage({
+          ...msg,
+          part: this.slimPart(msg.part),
+        })
+        return
+      }
       this.postMessage(msg)
     }
   }
