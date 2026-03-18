@@ -93,7 +93,7 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
           <span data-slot="basic-tool-tool-subtitle">
             {description()}
             <Show when={childToolParts().length > 0}>
-              {description() ? " " : ""}({childToolParts().length} toolcalls)
+              {description() ? " " : ""}({childToolParts().length})
             </Show>
           </span>
         </Show>
