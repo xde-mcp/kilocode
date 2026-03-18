@@ -1772,11 +1772,10 @@
 
 /* ============================================
    Todo tool — align checkboxes with icon in header
-   The trigger has 8px left padding, 16px icon, 8px gap = 32px total offset.
    ============================================ */
 
 [data-component="todos"] {
-  padding-left: 32px;
+  padding: 12px;
 }
 
 /* ============================================
