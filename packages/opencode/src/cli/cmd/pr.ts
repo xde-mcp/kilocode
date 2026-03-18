@@ -90,9 +90,7 @@ export const PrCommand = cmd({
 
         UI.println(`Successfully checked out PR #${prNumber} as branch '${localBranchName}'`)
         UI.println()
-        // kilocode_change start
-        const bin = "kilo"
-        // kilocode_change end
+        const bin = "kilo" // kilocode_change
         UI.println(`Starting ${bin}...`) // kilocode_change
         UI.println()
 
