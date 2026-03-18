@@ -567,7 +567,7 @@ export const RunCommand = cmd({
             event.properties.sessionID === sessionID &&
             event.properties.status.type === "idle"
           ) {
-            bell() // kilocode_change
+            if (args.format !== "json") bell() // kilocode_change
             break
           }
 
