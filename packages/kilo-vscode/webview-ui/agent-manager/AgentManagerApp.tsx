@@ -1099,6 +1099,9 @@ const AgentManagerContent: Component = () => {
             )
             setSelection(ev.worktreeId)
           }
+          // Close diff/review panels — nothing to show during setup
+          setDiffOpen(false)
+          setReviewActive(false)
           setSetup({ active: true, message: ev.message, branch: ev.branch, worktreeId: ev.worktreeId })
         }
       }
