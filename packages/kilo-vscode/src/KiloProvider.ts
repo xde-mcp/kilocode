@@ -61,8 +61,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private cachedSkillsMessage: unknown = null
   /** Cached configLoaded payload so requestConfig can be served before client is ready */
   private cachedConfigMessage: unknown = null
-  /** True while handleUpdateConfig is in flight; prevents fetchAndSendConfig from sending stale data */
-  private configUpdateInProgress = false
+  /** Ref-count of in-flight handleUpdateConfig calls; prevents fetchAndSendConfig from sending stale data */
+  private pending = 0
   /** Cached notificationsLoaded payload */
   private cachedNotificationsMessage: unknown = null
   private pendingReviewComments: unknown[][] = []
@@ -1419,7 +1419,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     // Skip if handleUpdateConfig is in flight — sending a configLoaded now
     // would race with the write and potentially overwrite optimistic webview state.
-    if (this.configUpdateInProgress) {
+    if (this.pending > 0) {
       return
     }
 
@@ -1733,14 +1733,17 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Belt-and-suspenders guard: prevent fetchAndSendConfig from sending a
     // stale configLoaded while this write is in flight (the SSE-triggered reload
     // races with the async config.update() write on the CLI backend).
-    this.configUpdateInProgress = true
+    this.pending++
     try {
       await this.client.global.config.update({ config: partial }, { throwOnError: true })
 
+      // global.config.update only resets the global config cache — the
+      // per-instance merged config (Config.state) is still stale. Force a
+      // full instance disposal so the next config.get re-merges all layers.
+      await this.client.global.dispose({ throwOnError: true })
+
       // Re-fetch the full merged config (global + project + all layers) so the
       // webview receives the complete resolved config, not just global-only data.
-      // Without this, the global-only response would overwrite project-level
-      // values in the webview, causing settings to flicker and revert.
       const dir = this.getWorkspaceDirectory()
       const { data: merged } = await this.client.config.get({ directory: dir }, { throwOnError: true })
 
@@ -1756,8 +1759,13 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "error",
         message: getErrorMessage(error) || "Failed to update config",
       })
+      // Send configUpdated with the last known good config so the webview
+      // decrements its pendingUpdates counter and reverts the optimistic state.
+      if (this.cachedConfigMessage) {
+        this.postMessage({ type: "configUpdated", config: (this.cachedConfigMessage as { config: unknown }).config })
+      }
     } finally {
-      this.configUpdateInProgress = false
+      this.pending--
     }
   }
 
