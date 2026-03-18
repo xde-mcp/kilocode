@@ -19,10 +19,12 @@ import { ModelSelector } from "../shared/ModelSelector"
 import { ModeSwitcher } from "../shared/ModeSwitcher"
 import { ThinkingSelector } from "../shared/ThinkingSelector"
 import { useFileMention } from "../../hooks/useFileMention"
+import { useSlashCommand } from "../../hooks/useSlashCommand"
 import { useImageAttachments } from "../../hooks/useImageAttachments"
+import { usePromptHistory } from "../../hooks/usePromptHistory"
 import { WandSparkles } from "@kilocode/kilo-ui/lucide"
-import { fileName, dirName, buildHighlightSegments } from "./prompt-input-utils"
-import type { ReviewComment } from "../../types/messages"
+import { fileName, dirName, buildHighlightSegments, atEnd } from "./prompt-input-utils"
+import type { ReviewComment, TextPart } from "../../types/messages"
 import { formatReviewCommentsMarkdown } from "../../utils/review-comment-markdown"
 
 const AUTOCOMPLETE_DEBOUNCE_MS = 500
@@ -41,7 +43,11 @@ function mergeReviewComments(current: ReviewComment[], incoming: ReviewComment[]
   return [...map.values()]
 }
 
-export const PromptInput: Component = () => {
+interface PromptInputProps {
+  blocked?: () => boolean
+}
+
+export const PromptInput: Component<PromptInputProps> = (props) => {
   const session = useSession()
   const server = useServer()
   const language = useLanguage()
@@ -49,7 +55,9 @@ export const PromptInput: Component = () => {
   const worktree = useWorktreeMode()
   const dialog = useDialog()
   const mention = useFileMention(vscode)
+  const slash = useSlashCommand(vscode)
   const imageAttach = useImageAttachments()
+  const history = usePromptHistory()
 
   const sessionKey = () => session.currentSessionID() ?? "__new__"
 
@@ -127,6 +135,7 @@ export const PromptInput: Component = () => {
   let textareaRef: HTMLTextAreaElement | undefined
   let highlightRef: HTMLDivElement | undefined
   let dropdownRef: HTMLDivElement | undefined
+  let slashDropdownRef: HTMLDivElement | undefined
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
   let requestCounter = 0
   // Save/restore input text when switching sessions.
@@ -144,6 +153,7 @@ export const PromptInput: Component = () => {
       setText(draft)
       setGhostText("")
       setReviewComments(pending)
+      history.reset()
       if (textareaRef) {
         textareaRef.value = draft
         // Reset height then adjust
@@ -153,6 +163,25 @@ export const PromptInput: Component = () => {
       window.dispatchEvent(new Event("focusPrompt"))
     }),
   )
+
+  // Seed prompt history from the current session's user messages (e.g., when a
+  // session is loaded that has existing conversation). Tracks userMessages()
+  // reactively so newly loaded sessions automatically contribute to history.
+  // Strip review-comment markdown prefix so only the user's draft is stored.
+  const REVIEW_PREFIX = /^## Review Comments\n[\s\S]*?\n\n/
+  createEffect(() => {
+    const msgs = session.userMessages()
+    if (msgs.length === 0) return
+    const texts = msgs.map((m) => {
+      const parts = session.getParts(m.id)
+      const raw = parts
+        .filter((p): p is TextPart => p.type === "text")
+        .map((p) => p.text)
+        .join("")
+      return raw.replace(REVIEW_PREFIX, "")
+    })
+    history.seed(texts)
+  })
 
   // Focus textarea when any part of the app requests it
   const onFocusPrompt = () => textareaRef?.focus()
@@ -172,8 +201,10 @@ export const PromptInput: Component = () => {
   const isBusy = () => session.status() === "busy"
   const isDisabled = () => !server.isConnected()
   const hasInput = () => text().trim().length > 0 || imageAttach.images().length > 0 || reviewComments().length > 0
-  const canSend = () => hasInput() && !isDisabled()
+  const canSend = () => hasInput() && !isDisabled() && !props.blocked?.()
   const showStop = () => isBusy() && !hasInput()
+  const isAtEnd = () =>
+    textareaRef ? atEnd(textareaRef.selectionStart, textareaRef.selectionEnd, textareaRef.value.length) : false
   const placeholder = () => {
     switch (server.connectionState()) {
       case "connecting":
@@ -188,9 +219,12 @@ export const PromptInput: Component = () => {
   const unsubscribe = vscode.onMessage((message) => {
     if (message.type === "chatCompletionResult") {
       const result = message as { type: "chatCompletionResult"; text: string; requestId: string }
-      if (result.requestId === `chat-ac-${requestCounter}` && result.text) {
+      if (result.requestId !== `chat-ac-${requestCounter}`) return
+      if (result.text && isAtEnd()) {
         setGhostText(result.text)
+        return
       }
+      setGhostText("")
     }
 
     if (message.type === "autocompleteSettingsLoaded") {
@@ -301,8 +335,9 @@ export const PromptInput: Component = () => {
   })
 
   const requestAutocomplete = (val: string) => {
-    if (val.length < MIN_TEXT_LENGTH || isDisabled() || !chatAutocompleteEnabled()) {
+    if (val.length < MIN_TEXT_LENGTH || isDisabled() || !chatAutocompleteEnabled() || !isAtEnd()) {
       setGhostText("")
+      requestCounter++
       return
     }
     requestCounter++
@@ -325,11 +360,22 @@ export const PromptInput: Component = () => {
   }
 
   const dismissSuggestion = () => setGhostText("")
+  const clearIfNotAtEnd = () => {
+    if (isAtEnd()) return
+    setGhostText("")
+  }
 
   const scrollToActiveItem = () => {
     if (!dropdownRef) return
     const items = dropdownRef.querySelectorAll(".file-mention-item")
     const active = items[mention.mentionIndex()] as HTMLElement | undefined
+    if (active) active.scrollIntoView({ block: "nearest" })
+  }
+
+  const scrollToActiveSlashItem = () => {
+    if (!slashDropdownRef) return
+    const items = slashDropdownRef.querySelectorAll(".slash-command-item")
+    const active = items[slash.index()] as HTMLElement | undefined
     if (active) active.scrollIntoView({ block: "nearest" })
   }
 
@@ -364,10 +410,12 @@ export const PromptInput: Component = () => {
     adjustHeight()
     setGhostText("")
     syncHighlightScroll()
+    history.reset()
 
+    slash.onInput(val, target.selectionStart ?? val.length)
     mention.onInput(val, target.selectionStart ?? val.length)
 
-    if (mention.showMention()) {
+    if (slash.show() || mention.showMention()) {
       setGhostText("")
       if (debounceTimer) clearTimeout(debounceTimer)
       return
@@ -392,13 +440,48 @@ export const PromptInput: Component = () => {
       return
     }
 
+    if (slash.onKeyDown(e, textareaRef, setText, adjustHeight)) {
+      setGhostText("")
+      queueMicrotask(scrollToActiveSlashItem)
+      return
+    }
+
     if (mention.onKeyDown(e, textareaRef, setText, adjustHeight)) {
       setGhostText("")
       queueMicrotask(scrollToActiveItem)
       return
     }
 
-    if ((e.key === "Tab" || e.key === "ArrowRight") && ghostText()) {
+    // Prompt history: ArrowUp/ArrowDown at cursor boundaries cycles through sent prompts
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      const start = textareaRef?.selectionStart ?? 0
+      const end = textareaRef?.selectionEnd ?? 0
+      if (start !== end) return // don't replace active text selection
+      const cursor = start
+      const direction = e.key === "ArrowUp" ? ("up" as const) : ("down" as const)
+      const entry = history.navigate(direction, text(), cursor)
+      if (entry !== null) {
+        e.preventDefault()
+        setText(entry)
+        setGhostText("")
+        if (textareaRef) {
+          textareaRef.value = entry
+          adjustHeight()
+          const pos = direction === "up" ? 0 : entry.length
+          textareaRef.setSelectionRange(pos, pos)
+        }
+        return
+      }
+    }
+
+    if (e.key === "Tab" && ghostText()) {
+      if (!isAtEnd()) return
+      e.preventDefault()
+      acceptSuggestion()
+      return
+    }
+    if (e.key === "ArrowRight" && ghostText()) {
+      if (!isAtEnd()) return
       e.preventDefault()
       acceptSuggestion()
       return
@@ -450,7 +533,7 @@ export const PromptInput: Component = () => {
     const pending = reviewComments()
     const review = pending.length > 0 ? formatReviewCommentsMarkdown(pending) : ""
     const message = draft && review ? `${review}\n\n${draft}` : draft || review
-    if ((!message && imgs.length === 0) || isDisabled()) return
+    if ((!message && imgs.length === 0) || isDisabled() || props.blocked?.()) return
 
     const mentionFiles = mention.parseFileAttachments(draft)
     const imgFiles = imgs.map((img) => ({ mime: img.mime, url: img.dataUrl, filename: img.filename }))
@@ -459,8 +542,19 @@ export const PromptInput: Component = () => {
     const sel = session.selected()
     const attachments = allFiles.length > 0 ? allFiles : undefined
 
-    session.sendMessage(message, sel?.providerID, sel?.modelID, attachments)
+    // Detect slash command: text starts with "/" and first word matches a known command
+    const cmdMatch = draft.match(/^\/(\S+)/)
+    const matched = cmdMatch ? slash.commands().find((c) => c.name === cmdMatch[1]) : undefined
+    if (matched) {
+      const rest = draft.slice(cmdMatch![0].length).trim()
+      const args = review && rest ? `${review}\n\n${rest}` : rest || review
+      session.sendCommand(matched.name, args, sel?.providerID, sel?.modelID, attachments)
+    } else {
+      session.sendMessage(message, sel?.providerID, sel?.modelID, attachments)
+    }
 
+    history.append(draft)
+    history.reset()
     requestCounter++
     setText("")
     setGhostText("")
@@ -468,6 +562,7 @@ export const PromptInput: Component = () => {
     imageAttach.clear()
     if (debounceTimer) clearTimeout(debounceTimer)
     mention.closeMention()
+    slash.close()
     drafts.delete(sessionKey())
 
     if (textareaRef) textareaRef.style.height = "auto"
@@ -557,12 +652,43 @@ export const PromptInput: Component = () => {
           </Show>
         </div>
       </Show>
+      <Show when={slash.show()}>
+        <div class="slash-command-dropdown" ref={slashDropdownRef}>
+          <Show when={slash.results().length > 0} fallback={<div class="slash-command-empty">No commands found</div>}>
+            <For each={slash.results()}>
+              {(cmd, idx) => (
+                <div
+                  class="slash-command-item"
+                  classList={{ "slash-command-item--active": idx() === slash.index() }}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    if (textareaRef) slash.select(cmd, textareaRef, setText, adjustHeight)
+                  }}
+                  onMouseEnter={() => slash.setIndex(idx())}
+                >
+                  <span class="slash-command-name">/{cmd.name}</span>
+                  <Show when={cmd.description}>
+                    <span class="slash-command-desc">{cmd.description}</span>
+                  </Show>
+                </div>
+              )}
+            </For>
+          </Show>
+        </div>
+      </Show>
       <Show when={imageAttach.images().length > 0}>
         <div class="image-attachments">
           <For each={imageAttach.images()}>
             {(img) => (
               <div class="image-attachment">
-                <img src={img.dataUrl} alt={img.filename} title={img.filename} />
+                <img
+                  src={img.dataUrl}
+                  alt={img.filename}
+                  title={img.filename}
+                  onClick={() =>
+                    vscode.postMessage({ type: "previewImage", dataUrl: img.dataUrl, filename: img.filename })
+                  }
+                />
                 <button
                   type="button"
                   class="image-attachment-remove"
@@ -597,7 +723,10 @@ export const PromptInput: Component = () => {
             value={text()}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onKeyUp={clearIfNotAtEnd}
             onPaste={handlePaste}
+            onClick={clearIfNotAtEnd}
+            onSelect={clearIfNotAtEnd}
             onScroll={syncHighlightScroll}
             disabled={isDisabled()}
             rows={1}
@@ -639,7 +768,10 @@ export const PromptInput: Component = () => {
           <Show
             when={showStop()}
             fallback={
-              <Tooltip value={language.t("prompt.action.send")} placement="top">
+              <Tooltip
+                value={props.blocked?.() ? language.t("prompt.action.send.blocked") : language.t("prompt.action.send")}
+                placement="top"
+              >
                 <Button
                   variant="ghost"
                   size="small"

@@ -1043,7 +1043,7 @@ export type GlobalEvent = {
 export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR"
 
 /**
- * Server configuration for opencode serve and web commands
+ * Server configuration for kilo serve and web commands
  */
 export type ServerConfig = {
   /**
@@ -1059,7 +1059,7 @@ export type ServerConfig = {
    */
   mdns?: boolean
   /**
-   * Custom domain name for mDNS service (default: opencode.local)
+   * Custom domain name for mDNS service (default: kilo.local)
    */
   mdnsDomain?: string
   /**
@@ -1214,6 +1214,7 @@ export type ProviderConfig = {
       }
       recommendedIndex?: number
       prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+      isFree?: boolean
       experimental?: boolean
       status?: "alpha" | "beta" | "deprecated"
       options?: {
@@ -1343,7 +1344,7 @@ export type Config = {
   logLevel?: LogLevel
   server?: ServerConfig
   /**
-   * Command configuration, see https://opencode.ai/docs/commands
+   * Command configuration, see https://kilo.ai/docs/commands
    */
   command?: {
     [key: string]: {
@@ -1417,7 +1418,7 @@ export type Config = {
     [key: string]: AgentConfig | undefined
   }
   /**
-   * Agent configuration, see https://opencode.ai/docs/agents
+   * Agent configuration, see https://kilo.ai/docs/agents
    */
   agent?: {
     plan?: AgentConfig
@@ -1515,6 +1516,10 @@ export type Config = {
      * Enable the batch tool
      */
     batch_tool?: boolean
+    /**
+     * Enable AI-powered codebase search
+     */
+    codebase_search?: boolean
     /**
      * Enable telemetry. Set to false to opt-out.
      */
@@ -1642,6 +1647,7 @@ export type Model = {
   }
   recommendedIndex?: number
   prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+  isFree?: boolean
 }
 
 export type Provider = {
@@ -4155,6 +4161,7 @@ export type ProviderListResponses = {
           }
           recommendedIndex?: number
           prompt?: "codex" | "gemini" | "beast" | "anthropic" | "trinity" | "anthropic_without_todo"
+          isFree?: boolean
           experimental?: boolean
           status?: "alpha" | "beta" | "deprecated"
           options: {

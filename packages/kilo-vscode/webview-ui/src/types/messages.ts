@@ -113,12 +113,34 @@ export interface Message {
   tokens?: TokenUsage
 }
 
+// File diff info (matches Snapshot.FileDiff from CLI backend)
+export interface SessionFileDiff {
+  file: string
+  before: string
+  after: string
+  additions: number
+  deletions: number
+  status?: "added" | "deleted" | "modified"
+}
+
 // Session info (simplified for webview)
 export interface SessionInfo {
   id: string
   title?: string
   createdAt: string
   updatedAt: string
+  revert?: {
+    messageID: string
+    partID?: string
+    snapshot?: string
+    diff?: string
+  } | null
+  summary?: {
+    additions: number
+    deletions: number
+    files: number
+    diffs?: SessionFileDiff[]
+  } | null
 }
 
 // Cloud session info (from Kilo cloud API)
@@ -135,6 +157,7 @@ export interface PermissionRequest {
   sessionID: string
   toolName: string
   patterns: string[]
+  always: string[]
   args: Record<string, unknown> & { rules?: string[] }
   message?: string
   tool?: { messageID: string; callID: string }
@@ -176,6 +199,14 @@ export interface SkillInfo {
   name: string
   description: string
   location: string
+}
+
+// Slash command info from CLI backend
+export interface SlashCommandInfo {
+  name: string
+  description?: string
+  source?: "command" | "mcp" | "skill"
+  hints: string[]
 }
 
 // Agent/mode info from CLI backend
@@ -249,6 +280,9 @@ export interface ProviderModel {
   limit?: { context: number; input?: number; output: number }
   variants?: Record<string, Record<string, unknown>>
   capabilities?: { reasoning: boolean }
+  recommendedIndex?: number
+  isFree?: boolean
+  cost?: { input: number; output: number }
 }
 
 export interface Provider {
@@ -321,6 +355,7 @@ export interface WatcherConfig {
 export interface ExperimentalConfig {
   disable_paste_summary?: boolean
   batch_tool?: boolean
+  codebase_search?: boolean
   primary_tools?: string[]
   continue_loop_on_deny?: boolean
   mcp_timeout?: number
@@ -445,6 +480,12 @@ export interface SessionUpdatedMessage {
 export interface SessionDeletedMessage {
   type: "sessionDeleted"
   sessionID: string
+}
+
+export interface MessageRemovedMessage {
+  type: "messageRemoved"
+  sessionID: string
+  messageID: string
 }
 
 export interface MessagesLoadedMessage {
@@ -580,6 +621,11 @@ export interface AgentsLoadedMessage {
 export interface SkillsLoadedMessage {
   type: "skillsLoaded"
   skills: SkillInfo[]
+}
+
+export interface CommandsLoadedMessage {
+  type: "commandsLoaded"
+  commands: SlashCommandInfo[]
 }
 
 export interface AutocompleteSettingsLoadedMessage {
@@ -1101,6 +1147,7 @@ export type ExtensionMessage =
   | SessionCreatedMessage
   | SessionUpdatedMessage
   | SessionDeletedMessage
+  | MessageRemovedMessage
   | MessagesLoadedMessage
   | MessageCreatedMessage
   | SessionsLoadedMessage
@@ -1116,6 +1163,7 @@ export type ExtensionMessage =
   | ProvidersLoadedMessage
   | AgentsLoadedMessage
   | SkillsLoadedMessage
+  | CommandsLoadedMessage
   | AutocompleteSettingsLoadedMessage
   | ChatCompletionResultMessage
   | FileSearchResultMessage
@@ -1197,6 +1245,17 @@ export interface AbortRequest {
   sessionID: string
 }
 
+export interface RevertSessionRequest {
+  type: "revertSession"
+  sessionID: string
+  messageID: string
+}
+
+export interface UnrevertSessionRequest {
+  type: "unrevertSession"
+  sessionID: string
+}
+
 export interface PermissionResponseRequest {
   type: "permissionResponse"
   permissionId: string
@@ -1249,6 +1308,8 @@ export interface ImportAndSendMessage {
   agent?: string
   variant?: string
   files?: FileAttachment[]
+  command?: string
+  commandArgs?: string
 }
 
 export interface LoginRequest {
@@ -1305,6 +1366,23 @@ export interface RequestAgentsMessage {
 
 export interface RequestSkillsMessage {
   type: "requestSkills"
+}
+
+export interface RequestCommandsMessage {
+  type: "requestCommands"
+}
+
+export interface SendCommandRequest {
+  type: "sendCommand"
+  command: string
+  arguments: string
+  messageID?: string
+  sessionID?: string
+  providerID?: string
+  modelID?: string
+  agent?: string
+  variant?: string
+  files?: FileAttachment[]
 }
 
 export interface RemoveSkillMessage {
@@ -1669,6 +1747,13 @@ export interface OpenSubAgentViewerRequest {
   title?: string
 }
 
+// Preview an image attachment in VS Code's built-in image viewer
+export interface PreviewImageRequest {
+  type: "previewImage"
+  dataUrl: string
+  filename: string
+}
+
 // Set default base branch (webview → extension)
 export interface SetDefaultBaseBranchRequest {
   type: "agentManager.setDefaultBaseBranch"
@@ -1678,6 +1763,8 @@ export interface SetDefaultBaseBranchRequest {
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
+  | RevertSessionRequest
+  | UnrevertSessionRequest
   | PermissionResponseRequest
   | CreateSessionRequest
   | ClearSessionRequest
@@ -1697,6 +1784,8 @@ export type WebviewMessage =
   | CompactRequest
   | RequestAgentsMessage
   | RequestSkillsMessage
+  | RequestCommandsMessage
+  | SendCommandRequest
   | RemoveSkillMessage
   | RemoveModeMessage
   | SetLanguageRequest
@@ -1766,6 +1855,7 @@ export type WebviewMessage =
   | OpenChangesRequest
   | RetryConnectionRequest
   | OpenSubAgentViewerRequest
+  | PreviewImageRequest
   | SetDefaultBaseBranchRequest
   | FetchMarketplaceDataMessage
   | FilterMarketplaceItemsMessage
