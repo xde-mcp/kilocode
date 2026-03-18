@@ -680,6 +680,15 @@ export function Session() {
       },
     },
     {
+      title: bellEnabled() ? "Disable notifications" : "Enable notifications",
+      value: "session.toggle.bell",
+      category: "Session",
+      onSelect: (dialog) => {
+        setBellEnabled((prev) => !prev)
+        dialog.clear()
+      },
+    },
+    {
       title: "Page up",
       value: "session.page.up",
       keybind: "messages_page_up",
