@@ -120,6 +120,21 @@ export function useCollapsible(options: {
         heightAnim?.stop()
         fadeAnim?.stop()
         const id = ++gen
+        if (prefersReducedMotion()) {
+          if (isOpen) {
+            content.style.display = ""
+            content.style.height = "auto"
+            body.style.opacity = "1"
+            body.style.filter = ""
+            options.onOpen?.()
+          } else {
+            content.style.height = "0px"
+            body.style.opacity = "0"
+            body.style.filter = "blur(2px)"
+            content.style.display = "none"
+          }
+          return
+        }
         if (isOpen) {
           content.style.display = ""
           content.style.height = "0px"
