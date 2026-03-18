@@ -84,6 +84,7 @@ import { UI } from "@/cli/ui.ts"
 import { useTuiConfig } from "../../context/tui-config"
 
 import { formatMarkdownTables } from "../../util/markdown" // kilocode_change
+import { bell } from "@/kilocode/bell" // kilocode_change
 
 addDefaultParsers(parsers.parsers)
 
@@ -148,6 +149,17 @@ export function Session() {
   const lastAssistant = createMemo(() => {
     return messages().findLast((x) => x.role === "assistant")
   })
+
+  // kilocode_change start - ring terminal bell on task completion
+  createEffect(
+    on(
+      () => sync.data.session_status?.[route.sessionID]?.type,
+      (type, prev) => {
+        if (prev && prev !== "idle" && type === "idle") bell()
+      },
+    ),
+  )
+  // kilocode_change end
 
   const dimensions = useTerminalDimensions()
   const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
