@@ -1,22 +1,22 @@
 ---
 title: "Google Workspace Integration"
-description: "Connect your Google account to KiloClaw for access to Gmail, Calendar, Drive, Docs, Sheets, and more"
+description: "Connect a dedicated Google account to KiloClaw for access to Gmail, Calendar, Drive, Docs, Sheets, and more"
 ---
 
 # Google Workspace Integration
 
-Connect your Google account to KiloClaw so it can interact with your Google Workspace services — Gmail, Calendar, Drive, Docs, Sheets, Slides, Tasks, People, Forms, Chat, Classroom, and Apps Script.
+Connect a dedicated Google account to KiloClaw so it can interact with Google Workspace services — Gmail, Calendar, Drive, Docs, Sheets, Slides, Tasks, People, Forms, Chat, Classroom, and Apps Script.
 
 {% callout type="warning" title="Use a standalone Google account" %}
-We strongly recommend creating a **dedicated Google account** specifically for KiloClaw rather than giving it access to your personal Google account. This keeps your personal data separate and gives you full control over what KiloClaw can access. 
+We strongly recommend creating a **dedicated Google account** specifically for KiloClaw rather than connecting your personal Google account. This keeps your personal data separate and gives you full control over what KiloClaw can access. Throughout this guide, "the KiloClaw Google account" refers to this dedicated account.
 {% /callout %}
 
 ## What You Get
 
 Once setup is complete, your KiloClaw machine will have the following configured automatically:
 
-- The [`gog` CLI](/docs/kiloclaw/pre-installed-software) pre-loaded with your Google credentials, giving the agent access to 12+ Google APIs
-- Real-time Gmail push notifications via Google Pub/Sub, so KiloClaw can react to incoming emails without polling
+- The [`gog` CLI](/docs/kiloclaw/pre-installed-software) pre-loaded with the KiloClaw Google account's credentials, giving the agent access to 12+ Google APIs
+- Real-time Gmail push notifications via Google Pub/Sub, so KiloClaw can react to incoming emails sent to the dedicated account without polling
 - Access to the full range of Google Workspace services:
 
 | Service               | What KiloClaw can do         |
@@ -44,7 +44,7 @@ Before you begin, make sure you have:
 
 ### Step 1: Verify Google Cloud Console access
 
-Log into the [Google Cloud Console](https://console.cloud.google.com) to confirm you have access.
+Log into the [Google Cloud Console](https://console.cloud.google.com) with the dedicated KiloClaw Google account to confirm you have access.
 
 {% callout type="info" %}
 Don't worry about providing billing details — this setup does not use any paid resources. The Google Cloud Console access is only needed for creating an OAuth consent screen and enabling APIs.
@@ -61,18 +61,32 @@ The container launches an interactive setup flow. Follow the on-screen prompts �
 
 ## Using Google Services
 
-Once setup is complete, you can ask KiloClaw to interact with your Google services naturally. For example:
+Once setup is complete, KiloClaw can interact with the dedicated Google account's services. You can issue natural language prompts referencing the KiloClaw account directly. For example:
 
-- "Check my Gmail for unread messages"
-- "Create a new Google Doc summarizing our meeting notes"
-- "Add a meeting to my calendar for tomorrow at 2pm"
-- "Find the latest spreadsheet in my Drive"
+- "Check the KiloClaw Gmail inbox for unread messages"
+- "Create a new Google Doc in the KiloClaw account summarizing our meeting notes"
+- "Add a meeting to the KiloClaw account's calendar for tomorrow at 2pm"
+- "List recent files in KiloClaw's Google Drive"
 
-KiloClaw will automatically use the configured Google credentials to fulfill these requests.
+KiloClaw will automatically use the dedicated account's credentials to fulfill these requests.
 
-{% callout type="info" %}
-If you followed our recommendation and set up a **standalone Google account** for KiloClaw, remember that KiloClaw's credentials are tied to that account — not your personal one. To access your personal Google data, you'll need to delegate access from your personal account to the standalone KiloClaw account (e.g., sharing calendars, Drive folders, or granting Gmail delegation). When making requests, instruct KiloClaw to access **your** account that was delegated to it, not its own account.
-{% /callout %}
+### Accessing your personal Google data
+
+KiloClaw's credentials are tied to its dedicated Google account — not your personal one. To let KiloClaw work with your personal Google data, you need to **share or delegate access from your personal account to the KiloClaw account**:
+
+| Service                           | How to share access                                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Google Calendar**               | Share your calendar with the KiloClaw account's email address ([instructions](https://support.google.com/calendar/answer/37082))      |
+| **Google Drive**                  | Share specific files or folders with the KiloClaw account's email address                                                             |
+| **Gmail**                         | Set up [Gmail delegation](https://support.google.com/mail/answer/138350) to grant the KiloClaw account read/send access to your inbox |
+| **Google Docs / Sheets / Slides** | Share individual documents with the KiloClaw account's email address                                                                  |
+
+Once access is shared, reference the delegation in your prompts so KiloClaw knows where to look:
+
+- "Check the shared calendar from alice@example.com for tomorrow's meetings"
+- "Open the Q3 report that was shared with the KiloClaw account from the team Drive"
+- "Read the latest emails in the delegated inbox from alice@example.com"
+- "Draft a reply in the delegated Gmail from alice@example.com to the last message from Bob"
 
 ## Related
 
