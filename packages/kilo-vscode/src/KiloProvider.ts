@@ -527,6 +527,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "removeMode":
           this.handleRemoveMode(message.name).catch((e) => console.error("[Kilo New] handleRemoveMode failed:", e))
           break
+        case "removeMcp":
+          this.handleRemoveMcp(message.name).catch((e) => console.error("[Kilo New] handleRemoveMcp failed:", e))
+          break
         case "questionReply":
           await this.handleQuestionReply(message.requestID, message.answers)
           break
@@ -1349,6 +1352,25 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     this.cachedAgentsMessage = null
     await this.fetchAndSendAgents()
+  }
+
+  private async handleRemoveMcp(name: string): Promise<void> {
+    const workspace = this.getProjectDirectory(this.currentSession?.id)
+    const mp = this.getMarketplace()
+    const stub = { id: name, type: "mcp" as const, name, description: "", url: "", content: "" }
+
+    // Try removing from project scope first, then global
+    const project = await mp.remove(stub, "project", workspace)
+    const global = await mp.remove(stub, "global", workspace)
+
+    if (project.success || global.success) {
+      const scope = project.success ? "project" : "global"
+      await this.disposeCliInstance(scope)
+      this.cachedConfigMessage = null
+      await this.fetchAndSendConfig()
+    } else {
+      console.error("[Kilo New] KiloProvider: Failed to remove MCP server:", name)
+    }
   }
 
   /**

@@ -1362,6 +1362,11 @@ export interface RemoveModeMessage {
   name: string
 }
 
+export interface RemoveMcpMessage {
+  type: "removeMcp"
+  name: string
+}
+
 export interface SetLanguageRequest {
   type: "setLanguage"
   locale: string
@@ -1753,6 +1758,7 @@ export type WebviewMessage =
   | RequestSkillsMessage
   | RemoveSkillMessage
   | RemoveModeMessage
+  | RemoveMcpMessage
   | SetLanguageRequest
   | QuestionReplyRequest
   | QuestionRejectRequest
