@@ -6,7 +6,7 @@
  * Per-rule toggles allow users to approve/deny individual permission rules for future requests.
  * For bash, the hierarchical rules from metadata.rules are shown.
  * For other tools, the always array is shown so users can configure per-tool permissions.
- * The command buttons (Deny / Allow Once) control the current command.
+ * The command buttons (Deny / Run) control the current command.
  * When all rules are toggled ✓, the command auto-runs.
  */
 
@@ -17,9 +17,9 @@ import { Icon } from "@kilocode/kilo-ui/icon"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
+import { useConfig } from "../../context/config"
+import { savedRuleStates, type RuleDecision } from "./permission-dock-utils"
 import type { PermissionRequest } from "../../types/messages"
-
-type RuleDecision = "approved" | "denied" | "pending"
 
 let rulesExpandedPreference = false
 
@@ -30,6 +30,7 @@ export const PermissionDock: Component<{
 }> = (props) => {
   const session = useSession()
   const language = useLanguage()
+  const { config } = useConfig()
 
   const fromChild = () => props.request.sessionID !== session.currentSessionID()
   // Bash sends fine-grained rules via metadata.rules; other tools use the always array.
@@ -42,7 +43,11 @@ export const PermissionDock: Component<{
     return typeof cmd === "string" ? cmd : undefined
   }
 
-  const [decisions, setDecisions] = createSignal<Record<number, RuleDecision>>({})
+  // Pre-populate toggle states from existing config rules so previously
+  // approved/denied patterns show their saved state immediately.
+  const saved = config().permission?.[props.request.toolName]
+  const loadState = savedRuleStates(rules(), saved)
+  const [decisions, setDecisions] = createSignal<Record<number, RuleDecision>>(loadState)
   const [expanded, setExpanded] = createSignal(rulesExpandedPreference)
 
   const hasRules = () => rules().length > 0
@@ -127,7 +132,7 @@ export const PermissionDock: Component<{
               <span data-slot="permission-rules-header-chevron" data-open={expanded() ? "" : undefined}>
                 <Icon name="chevron-down" size="small" />
               </span>
-              <span data-slot="permission-rules-header-title">{language.t("ui.permission.permissionRules")}</span>
+              <span data-slot="permission-rules-header-title">{language.t("ui.permission.manageAutoApprove")}</span>
             </button>
 
             <div data-slot="permission-rules-collapse" data-open={expanded() ? "" : undefined}>
@@ -190,7 +195,7 @@ export const PermissionDock: Component<{
           }}
           disabled={props.responding}
         >
-          {language.t("ui.permission.allowOnce")}
+          {language.t("ui.permission.run")}
         </Button>
         <Button
           variant="ghost"

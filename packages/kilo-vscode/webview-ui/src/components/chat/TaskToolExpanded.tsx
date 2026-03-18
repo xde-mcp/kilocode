@@ -49,7 +49,8 @@ const TaskToolRenderer: Component<ToolProps> = (props) => {
 
   const running = createMemo(() => props.status === "pending" || props.status === "running")
 
-  // Sync child session into store whenever we have a sessionId
+  // Warm child session data immediately so completed task tools already have
+  // their compact child tool list available when the user expands them.
   createEffect(() => {
     const id = childSessionId()
     if (!id) return
