@@ -1102,13 +1102,51 @@
   width: 300px;
   max-width: 300px;
   transition:
-    width 0.15s ease,
-    max-width 0.15s ease;
+    width 0.2s ease,
+    max-width 0.2s ease;
 }
 
 .model-selector-popover--expanded {
   width: min(450px, 100vw);
   max-width: min(450px, 100vw);
+}
+
+/* Body is always flex so height changes animate in the same pass as width */
+.model-selector-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 300px;
+  transition: max-height 0.2s ease;
+}
+
+.model-selector-body--expanded {
+  /* search row ~53px + preview + list must all fit inside the panel */
+  max-height: calc(100vh - 120px);
+}
+
+.model-selector-body .model-selector-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+.model-selector-preview {
+  flex-shrink: 0;
+  overflow: hidden;
+  height: 0;
+  border-top: 0 solid var(--border-base, var(--vscode-panel-border));
+  transition:
+    height 0.2s ease,
+    border-top-width 0.2s step-end;
+}
+
+.model-selector-preview--visible {
+  height: min(calc((100vh - 120px) / 3), 300px);
+  border-top-width: 1px;
+  transition:
+    height 0.2s ease,
+    border-top-width 0.2s step-start;
 }
 
 .model-selector-trigger-label {
@@ -1156,10 +1194,6 @@
   max-height: 300px;
   padding: 4px 0;
   transition: max-height 0.15s ease;
-}
-
-.model-selector-popover--expanded .model-selector-list {
-  max-height: min(600px, calc(100vh - 120px));
 }
 
 .model-selector-empty {

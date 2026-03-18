@@ -248,7 +248,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       }
       class={`model-selector-popover${expanded() ? " model-selector-popover--expanded" : ""}`}
     >
-      <div onKeyDown={handleKeyDown}>
+      <div onKeyDown={handleKeyDown} class={`model-selector-body${expanded() ? " model-selector-body--expanded" : ""}`}>
         <div class="model-selector-search-wrapper">
           <input
             ref={searchRef}
@@ -313,6 +313,8 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
             )}
           </For>
         </div>
+
+        <div class={`model-selector-preview${expanded() ? " model-selector-preview--visible" : ""}`} />
       </div>
     </Popover>
   )
