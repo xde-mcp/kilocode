@@ -153,9 +153,10 @@ export function Session() {
   // kilocode_change start - ring terminal bell on task completion
   createEffect(
     on(
-      () => sync.data.session_status?.[route.sessionID]?.type,
-      (type, prev) => {
-        if (prev && prev !== "idle" && type === "idle") bell()
+      () => [route.sessionID, sync.data.session_status?.[route.sessionID]?.type] as const,
+      ([id, type], prev) => {
+        if (!prev || prev[0] !== id) return
+        if (prev[1] && prev[1] !== "idle" && type === "idle") bell()
       },
     ),
   )
