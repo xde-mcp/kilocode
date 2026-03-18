@@ -28,8 +28,8 @@ export const dict = {
   "command.settings.open": "Otwórz ustawienia",
   "command.session.previous": "Poprzednia sesja",
   "command.session.next": "Następna sesja",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "Poprzednia nieprzeczytana sesja",
+  "command.session.next.unseen": "Następna nieprzeczytana sesja",
   "command.session.archive": "Zarchiwizuj sesję",
 
   "command.palette": "Paleta poleceń",
@@ -78,6 +78,14 @@ export const dict = {
   "command.session.undo.description": "Cofnij ostatnią wiadomość",
   "command.session.redo": "Ponów",
   "command.session.redo.description": "Ponów ostatnią cofniętą wiadomość",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "Kompaktuj sesję",
   "command.session.compact.description": "Podsumuj sesję, aby zmniejszyć rozmiar kontekstu",
   "command.session.fork": "Rozwidlij od wiadomości",
@@ -155,6 +163,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "Modele {{provider}} nie są już dostępne.",
   "model.tag.free": "Darmowy",
   "model.tag.latest": "Najnowszy",
+  "model.group.recommended": "Zalecane",
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -230,6 +239,7 @@ export const dict = {
   "prompt.action.attachFile": "Załącz plik",
   "prompt.attachment.remove": "Usuń załącznik",
   "prompt.action.send": "Wyślij",
+  "prompt.action.send.blocked": "Najpierw odpowiedz na oczekujące pytanie lub je odrzuć",
   "prompt.action.stop": "Zatrzymaj",
   "prompt.action.enhance": "Ulepsz prompt",
   "prompt.action.resetModel": "Zresetuj model do domyślnego",
@@ -409,6 +419,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Nie można połączyć się z serwerem. Czy serwer działa pod adresem `{{url}}`?",
 
+  "error.startup.title": "Błąd połączenia z serwerem",
+
   "error.paidModel.title": "Musisz się zalogować, aby użyć tego modelu",
   "error.paidModel.description":
     "Zaloguj się lub utwórz konto, aby uzyskać dostęp do ponad 500 modeli, korzystać z kredytów po kosztach lub użyć własnego klucza.",
@@ -442,6 +454,11 @@ export const dict = {
 
   "notification.permission.title": "Wymagane uprawnienie",
   "notification.permission.description": "{{sessionTitle}} w {{projectName}} potrzebuje uprawnienia",
+  "ui.permission.manageAutoApprove": "Zarządzaj regułami automatycznego zatwierdzania",
+  "ui.permission.rule.addToAllowed": "Dodaj do listy dozwolonych",
+  "ui.permission.rule.removeFromAllowed": "Usuń z listy dozwolonych",
+  "ui.permission.rule.addToDenied": "Dodaj do listy zablokowanych",
+  "ui.permission.rule.removeFromDenied": "Usuń z listy zablokowanych",
   "notification.question.title": "Pytanie",
   "notification.question.description": "{{sessionTitle}} w {{projectName}} ma pytanie",
   "notification.action.goToSession": "Przejdź do sesji",
@@ -682,6 +699,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguracja",
   "settings.providers.tag.custom": "Niestandardowe",
   "settings.providers.tag.other": "Inne",
+  "settings.providers.modeModels": "Model na tryb",
+  "settings.providers.modeModels.description":
+    "Zastąp domyślny model dla określonych trybów. Jeśli nie ustawiono, używany jest globalny domyślny model.",
   "settings.models.title": "Modele",
   "settings.models.description": "Ustawienia modeli będą tutaj konfigurowalne.",
   "settings.agents.title": "Agenci",
@@ -828,12 +848,14 @@ export const dict = {
     "Kilo Code to asystent programowania AI. Poproś go o tworzenie funkcji, naprawę błędów lub wyjaśnienie bazy kodu.",
   "session.messages.scrollToBottom": "Przewiń na dół",
   "session.status.writingResponse": "Pisanie odpowiedzi…",
+  "session.status.retry": "Ponawianie…",
   "session.status.retrying": "Ponawiam próbę ({{ attempt }})… {{ message }}",
   "session.status.working": "Pracuję…",
 
   "dialog.model.noProviders": "Brak dostawców",
 
   "prompt.placeholder.connecting": "Łączenie z serwerem...",
+  "prompt.placeholder.error": "Połączenie nie powiodło się. Sprawdź panel wyjściowy lub uruchom ponownie rozszerzenie.",
   "prompt.placeholder.default": "Wpisz wiadomość... (Enter, aby wysłać, Shift+Enter dla nowej linii)",
 
   "context.usage.sessionCost": "Koszt sesji",
@@ -928,6 +950,8 @@ export const dict = {
   "settings.experimental.pasteSummary.description": "Nie podsumowuj dużego wklejonego tekstu",
   "settings.experimental.batch.title": "Narzędzie wsadowe",
   "settings.experimental.batch.description": "Włącz przetwarzanie wsadowe wywołań narzędzi",
+  "settings.experimental.codebaseSearch.title": "Wyszukiwanie kodu",
+  "settings.experimental.codebaseSearch.description": "Włącz wyszukiwanie w języku naturalnym z AI w całej bazie kodu",
   "settings.experimental.continueOnDeny.title": "Kontynuuj przy odmowie",
   "settings.experimental.continueOnDeny.description": "Kontynuuj pętlę agenta po odmowie uprawnienia",
   "settings.experimental.mcpTimeout.title": "Limit czasu MCP (ms)",
@@ -935,6 +959,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Przełączniki narzędzi",
   "settings.agentBehaviour.defaultAgent.title": "Domyślny agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent używany, gdy żaden nie jest określony",
+  "settings.agentBehaviour.availableAgents": "Dostępni agenci",
   "settings.agentBehaviour.selectAgent": "Wybierz agenta do konfiguracji…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Wybierz agenta do konfiguracji…",
@@ -948,8 +973,21 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "Parametr próbkowania nucleus (0-1)",
   "settings.agentBehaviour.maxSteps.title": "Maks. kroki",
   "settings.agentBehaviour.maxSteps.description": "Maksymalna liczba iteracji agenta",
+  "settings.agentBehaviour.discoveredSkills": "Wykryte umiejętności",
+  "settings.agentBehaviour.noSkillsFound":
+    "Nie znaleziono umiejętności. Dodaj ścieżki folderów lub adresy URL poniżej, aby udostępnić umiejętności.",
+  "settings.agentBehaviour.availableModes": "Dostępne tryby niestandardowe",
+  "settings.agentBehaviour.noModesFound": "Nie znaleziono trybów.",
+  "settings.agentBehaviour.removeMode.title": "Usuń tryb",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Usunąć tryb "{{name}}"? Spowoduje to wyłączenie trybu poprzez aktualizację konfiguracji.',
+  "settings.agentBehaviour.removeMode.button": "Usuń",
   "settings.agentBehaviour.skillPaths": "Ścieżki folderów umiejętności",
   "settings.agentBehaviour.skillUrls": "Adresy URL umiejętności",
+  "settings.agentBehaviour.removeSkill.title": "Usuń umiejętność",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Usunąć umiejętność "{{name}}"? Spowoduje to usunięcie plików umiejętności z dysku.',
+  "settings.agentBehaviour.removeSkill.button": "Usuń",
   "settings.agentBehaviour.instructionFiles": "Dodatkowe pliki instrukcji",
   "settings.agentBehaviour.instructionFiles.description":
     "Ścieżki do dodatkowych plików instrukcji w prompcie systemowym",

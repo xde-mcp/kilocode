@@ -67,7 +67,8 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
 
   // --- New tab state ---
   const [name, setName] = createSignal("")
-  const [prompt, setPrompt] = createSignal("")
+  const cached = vscode.getState<Record<string, unknown>>()
+  const [prompt, setPrompt] = createSignal((cached?.advancedDialogPrompt as string) ?? "")
   const [versions, setVersions] = createSignal<VersionCount>(1)
   const [model, setModel] = createSignal<{ providerID: string; modelID: string } | null>(null)
   const [compareMode, setCompareMode] = createSignal(false)
@@ -83,16 +84,18 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
 
   const imageAttach = useImageAttachments()
 
+  const persistPrompt = (value: string) => {
+    const state = vscode.getState<Record<string, unknown>>() ?? {}
+    vscode.setState({ ...state, advancedDialogPrompt: value || undefined })
+  }
+
   let textareaRef: HTMLTextAreaElement | undefined
 
   onMount(() => {
-    requestAnimationFrame(() => {
-      if (!textareaRef) return
-      textareaRef.focus()
-      textareaRef.select()
-    })
     setBranchesLoading(true)
     vscode.postMessage({ type: "agentManager.requestBranches" })
+    // Resize textarea if restoring a cached prompt
+    if (prompt()) adjustHeight()
   })
 
   const effectiveBaseBranch = () => baseBranch() ?? defaultBranch()
@@ -140,6 +143,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
       files: imgFiles,
     })
 
+    persistPrompt("")
     props.onClose()
   }
 
@@ -179,7 +183,8 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
       if (ev.success) {
         props.onClose()
       } else {
-        showToast({ variant: "error", title: t("agentManager.import.failed"), description: ev.message })
+        const description = ev.errorCode ? t(`agentManager.setup.error.${ev.errorCode}`) : ev.message
+        showToast({ variant: "error", title: t("agentManager.import.failed"), description })
       }
     }
   })
@@ -246,7 +251,14 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                   <For each={imageAttach.images()}>
                     {(img) => (
                       <div class="image-attachment">
-                        <img src={img.dataUrl} alt={img.filename} title={img.filename} />
+                        <img
+                          src={img.dataUrl}
+                          alt={img.filename}
+                          title={img.filename}
+                          onClick={() =>
+                            vscode.postMessage({ type: "previewImage", dataUrl: img.dataUrl, filename: img.filename })
+                          }
+                        />
                         <button
                           type="button"
                           class="image-attachment-remove"
@@ -264,6 +276,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                 <div class="prompt-input-ghost-wrapper am-prompt-input-ghost-wrapper">
                   <textarea
                     ref={textareaRef}
+                    autofocus
                     class="prompt-input am-prompt-input"
                     placeholder={t(
                       isMac
@@ -272,7 +285,9 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                     )}
                     value={prompt()}
                     onInput={(e) => {
-                      setPrompt(e.currentTarget.value)
+                      const val = e.currentTarget.value
+                      setPrompt(val)
+                      persistPrompt(val)
                       adjustHeight()
                     }}
                     onPaste={(e) => imageAttach.handlePaste(e)}

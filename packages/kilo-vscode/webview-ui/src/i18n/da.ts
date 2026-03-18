@@ -28,8 +28,8 @@ export const dict = {
   "command.settings.open": "Åbn indstillinger",
   "command.session.previous": "Forrige session",
   "command.session.next": "Næste session",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "Forrige ulæste session",
+  "command.session.next.unseen": "Næste ulæste session",
   "command.session.archive": "Arkivér session",
 
   "command.palette": "Kommandopalette",
@@ -78,6 +78,14 @@ export const dict = {
   "command.session.undo.description": "Fortryd den sidste besked",
   "command.session.redo": "Omgør",
   "command.session.redo.description": "Omgør den sidste fortrudte besked",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "Komprimér session",
   "command.session.compact.description": "Opsummer sessionen for at reducere kontekststørrelsen",
   "command.session.fork": "Forgren fra besked",
@@ -155,6 +163,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "Modeller fra {{provider}} er ikke længere tilgængelige.",
   "model.tag.free": "Gratis",
   "model.tag.latest": "Nyeste",
+  "model.group.recommended": "Anbefalet",
 
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
@@ -230,6 +239,7 @@ export const dict = {
   "prompt.action.attachFile": "Vedhæft fil",
   "prompt.attachment.remove": "Fjern vedhæftning",
   "prompt.action.send": "Send",
+  "prompt.action.send.blocked": "Besvar eller afvis det afventende spørgsmål først",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Forbedr prompt",
   "prompt.action.resetModel": "Nulstil model til standard",
@@ -409,6 +419,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Kunne ikke forbinde til server. Kører der en server på `{{url}}`?",
 
+  "error.startup.title": "Serverforbindelse mislykkedes",
+
   "error.paidModel.title": "Du skal logge ind for at bruge denne model",
   "error.paidModel.description":
     "Log ind eller opret en konto for at få adgang til over 500 modeller, brug kreditter til kostpris, eller medbring din egen nøgle.",
@@ -441,6 +453,11 @@ export const dict = {
 
   "notification.permission.title": "Tilladelse påkrævet",
   "notification.permission.description": "{{sessionTitle}} i {{projectName}} kræver tilladelse",
+  "ui.permission.manageAutoApprove": "Administrer regler for automatisk godkendelse",
+  "ui.permission.rule.addToAllowed": "Tilføj til tilladelseslisten",
+  "ui.permission.rule.removeFromAllowed": "Fjern fra tilladelseslisten",
+  "ui.permission.rule.addToDenied": "Tilføj til afvisningslisten",
+  "ui.permission.rule.removeFromDenied": "Fjern fra afvisningslisten",
   "notification.question.title": "Spørgsmål",
   "notification.question.description": "{{sessionTitle}} i {{projectName}} har et spørgsmål",
   "notification.action.goToSession": "Gå til session",
@@ -679,6 +696,9 @@ export const dict = {
   "settings.providers.tag.config": "Konfiguration",
   "settings.providers.tag.custom": "Brugerdefineret",
   "settings.providers.tag.other": "Andet",
+  "settings.providers.modeModels": "Model pr. tilstand",
+  "settings.providers.modeModels.description":
+    "Tilsidesæt standardmodellen for bestemte tilstande. Hvis ikke angivet, bruges den globale standardmodel.",
   "settings.models.title": "Modeller",
   "settings.models.description": "Modelindstillinger vil kunne konfigureres her.",
   "settings.agents.title": "Agenter",
@@ -826,12 +846,14 @@ export const dict = {
     "Kilo Code er en AI-kodningsassistent. Bed den om at bygge funktioner, rette fejl eller forklare din kodebase.",
   "session.messages.scrollToBottom": "Rul til bunden",
   "session.status.writingResponse": "Skriver svar…",
+  "session.status.retry": "Prøver igen…",
   "session.status.retrying": "Prøver igen (forsøg {{ attempt }})… {{ message }}",
   "session.status.working": "Arbejder…",
 
   "dialog.model.noProviders": "Ingen udbydere",
 
   "prompt.placeholder.connecting": "Opretter forbindelse til server...",
+  "prompt.placeholder.error": "Forbindelse mislykkedes. Tjek outputpanelet eller genstart udvidelsen.",
   "prompt.placeholder.default": "Skriv en besked... (Enter for at sende, Shift+Enter for ny linje)",
 
   "context.usage.sessionCost": "Sessionsomkostning",
@@ -926,6 +948,8 @@ export const dict = {
   "settings.experimental.pasteSummary.description": "Resumér ikke stort indsat indhold",
   "settings.experimental.batch.title": "Batchværktøj",
   "settings.experimental.batch.description": "Aktiver batchbehandling af flere værktøjskald",
+  "settings.experimental.codebaseSearch.title": "Kodesøgning",
+  "settings.experimental.codebaseSearch.description": "Aktiver AI-drevet naturlig sprogsøgning på tværs af kodebasen",
   "settings.experimental.continueOnDeny.title": "Fortsæt ved afvisning",
   "settings.experimental.continueOnDeny.description": "Fortsæt agentløkken, når en tilladelse afvises",
   "settings.experimental.mcpTimeout.title": "MCP-timeout (ms)",
@@ -933,6 +957,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Værktøjsskift",
   "settings.agentBehaviour.defaultAgent.title": "Standardagent",
   "settings.agentBehaviour.defaultAgent.description": "Agent til brug, når ingen er angivet",
+  "settings.agentBehaviour.availableAgents": "Tilgængelige agenter",
   "settings.agentBehaviour.selectAgent": "Vælg en agent at konfigurere…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Vælg en agent at konfigurere…",
@@ -946,8 +971,21 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "Nucleus-samplingparameter (0-1)",
   "settings.agentBehaviour.maxSteps.title": "Maks. trin",
   "settings.agentBehaviour.maxSteps.description": "Maksimale agentiterationer",
+  "settings.agentBehaviour.discoveredSkills": "Opdagede skills",
+  "settings.agentBehaviour.noSkillsFound":
+    "Ingen skills fundet. Tilføj skill-mappestier eller URL'er nedenfor for at gøre skills tilgængelige.",
+  "settings.agentBehaviour.availableModes": "Tilgængelige brugerdefinerede tilstande",
+  "settings.agentBehaviour.noModesFound": "Ingen tilstande fundet.",
+  "settings.agentBehaviour.removeMode.title": "Fjern tilstand",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Vil du fjerne tilstanden "{{name}}"? Dette vil deaktivere tilstanden ved at opdatere din konfiguration.',
+  "settings.agentBehaviour.removeMode.button": "Fjern",
   "settings.agentBehaviour.skillPaths": "Skill-mappestier",
   "settings.agentBehaviour.skillUrls": "Skill-URL'er",
+  "settings.agentBehaviour.removeSkill.title": "Fjern færdighed",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Vil du fjerne færdigheden "{{name}}"? Dette vil slette færdighedsfilerne fra disken.',
+  "settings.agentBehaviour.removeSkill.button": "Fjern",
   "settings.agentBehaviour.instructionFiles": "Yderligere instruktionsfiler",
   "settings.agentBehaviour.instructionFiles.description": "Stier til yderligere instruktionsfiler i systemprompten",
   "settings.agentBehaviour.mcpEmpty":

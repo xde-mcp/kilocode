@@ -48,6 +48,7 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
     <Show when={hasAgents()}>
       <Popover
         placement="top-start"
+        fitViewport
         open={open()}
         onOpenChange={setOpen}
         triggerAs={Button}
@@ -90,5 +91,14 @@ export const ModeSwitcherBase: Component<ModeSwitcherBaseProps> = (props) => {
 export const ModeSwitcher: Component = () => {
   const session = useSession()
 
-  return <ModeSwitcherBase agents={session.agents()} value={session.selectedAgent()} onSelect={session.selectAgent} />
+  return (
+    <ModeSwitcherBase
+      agents={session.agents()}
+      value={session.selectedAgent()}
+      onSelect={(name) => {
+        session.selectAgent(name)
+        requestAnimationFrame(() => window.dispatchEvent(new Event("focusPrompt")))
+      }}
+    />
+  )
 }

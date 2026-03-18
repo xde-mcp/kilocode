@@ -28,8 +28,8 @@ export const dict = {
   "command.settings.open": "Abrir configurações",
   "command.session.previous": "Sessão anterior",
   "command.session.next": "Próxima sessão",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "Sessão não lida anterior",
+  "command.session.next.unseen": "Próxima sessão não lida",
   "command.session.archive": "Arquivar sessão",
 
   "command.palette": "Paleta de comandos",
@@ -78,6 +78,14 @@ export const dict = {
   "command.session.undo.description": "Desfazer a última mensagem",
   "command.session.redo": "Refazer",
   "command.session.redo.description": "Refazer a última mensagem desfeita",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "Compactar sessão",
   "command.session.compact.description": "Resumir a sessão para reduzir o tamanho do contexto",
   "command.session.fork": "Bifurcar da mensagem",
@@ -155,6 +163,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "Os modelos de {{provider}} não estão mais disponíveis.",
   "model.tag.free": "Grátis",
   "model.tag.latest": "Mais recente",
+  "model.group.recommended": "Recomendado",
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -230,6 +239,7 @@ export const dict = {
   "prompt.action.attachFile": "Anexar arquivo",
   "prompt.attachment.remove": "Remover anexo",
   "prompt.action.send": "Enviar",
+  "prompt.action.send.blocked": "Responda ou feche a pergunta pendente primeiro",
   "prompt.action.stop": "Parar",
   "prompt.action.enhance": "Melhorar prompt",
   "prompt.action.resetModel": "Redefinir modelo para o padrão",
@@ -407,6 +417,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Não foi possível conectar ao servidor. Há um servidor executando em `{{url}}`?",
 
+  "error.startup.title": "Falha na conexão com o servidor",
+
   "error.paidModel.title": "Você precisa fazer login para usar este modelo",
   "error.paidModel.description":
     "Faça login ou crie uma conta para acessar mais de 500 modelos, usar créditos a preço de custo ou trazer sua própria chave.",
@@ -440,6 +452,11 @@ export const dict = {
 
   "notification.permission.title": "Permissão necessária",
   "notification.permission.description": "{{sessionTitle}} em {{projectName}} precisa de permissão",
+  "ui.permission.manageAutoApprove": "Gerenciar regras de aprovação automática",
+  "ui.permission.rule.addToAllowed": "Adicionar à lista de permitidos",
+  "ui.permission.rule.removeFromAllowed": "Remover da lista de permitidos",
+  "ui.permission.rule.addToDenied": "Adicionar à lista de negados",
+  "ui.permission.rule.removeFromDenied": "Remover da lista de negados",
   "notification.question.title": "Pergunta",
   "notification.question.description": "{{sessionTitle}} em {{projectName}} tem uma pergunta",
   "notification.action.goToSession": "Ir para sessão",
@@ -680,6 +697,9 @@ export const dict = {
   "settings.providers.tag.config": "Configuração",
   "settings.providers.tag.custom": "Personalizado",
   "settings.providers.tag.other": "Outro",
+  "settings.providers.modeModels": "Modelo por Modo",
+  "settings.providers.modeModels.description":
+    "Substitua o modelo padrão para modos específicos. Se não definido, o modelo padrão global é usado.",
   "settings.models.title": "Modelos",
   "settings.models.description": "Configurações de modelos estarão disponíveis aqui.",
   "settings.agents.title": "Agentes",
@@ -828,12 +848,14 @@ export const dict = {
     "Kilo Code é um assistente de programação com IA. Peça para criar funcionalidades, corrigir bugs ou explicar sua base de código.",
   "session.messages.scrollToBottom": "Rolar para o final",
   "session.status.writingResponse": "Escrevendo resposta…",
+  "session.status.retry": "Tentando novamente…",
   "session.status.retrying": "Tentando novamente (tentativa {{ attempt }})… {{ message }}",
   "session.status.working": "Trabalhando…",
 
   "dialog.model.noProviders": "Nenhum provedor",
 
   "prompt.placeholder.connecting": "Conectando ao servidor...",
+  "prompt.placeholder.error": "Conexão falhou. Verifique o painel de saída ou reinicie a extensão.",
   "prompt.placeholder.default": "Digite uma mensagem... (Enter para enviar, Shift+Enter para nova linha)",
 
   "context.usage.sessionCost": "Custo da sessão",
@@ -930,6 +952,9 @@ export const dict = {
   "settings.experimental.pasteSummary.description": "Não resumir conteúdo colado grande",
   "settings.experimental.batch.title": "Ferramenta em lote",
   "settings.experimental.batch.description": "Ativar processamento em lote de chamadas de ferramentas",
+  "settings.experimental.codebaseSearch.title": "Pesquisa de código",
+  "settings.experimental.codebaseSearch.description":
+    "Ativar pesquisa por linguagem natural com IA em toda a base de código",
   "settings.experimental.continueOnDeny.title": "Continuar ao negar",
   "settings.experimental.continueOnDeny.description": "Continuar o loop do agente quando uma permissão é negada",
   "settings.experimental.mcpTimeout.title": "Tempo limite MCP (ms)",
@@ -937,6 +962,7 @@ export const dict = {
   "settings.experimental.toolToggles": "Alternadores de ferramentas",
   "settings.agentBehaviour.defaultAgent.title": "Agente padrão",
   "settings.agentBehaviour.defaultAgent.description": "Agente a usar quando nenhum é especificado",
+  "settings.agentBehaviour.availableAgents": "Agentes Disponíveis",
   "settings.agentBehaviour.selectAgent": "Selecionar um agente para configurar…",
   "settings.agentBehaviour.selectAgent.title": "Agente",
   "settings.agentBehaviour.selectAgent.description": "Selecionar um agente para configurar…",
@@ -950,8 +976,21 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "Parâmetro de amostragem nucleus (0-1)",
   "settings.agentBehaviour.maxSteps.title": "Passos máximos",
   "settings.agentBehaviour.maxSteps.description": "Iterações máximas do agente",
+  "settings.agentBehaviour.discoveredSkills": "Habilidades descobertas",
+  "settings.agentBehaviour.noSkillsFound":
+    "Nenhuma habilidade encontrada. Adicione caminhos de pastas ou URLs abaixo para disponibilizar habilidades.",
+  "settings.agentBehaviour.availableModes": "Modos personalizados disponíveis",
+  "settings.agentBehaviour.noModesFound": "Nenhum modo encontrado.",
+  "settings.agentBehaviour.removeMode.title": "Remover modo",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Remover o modo "{{name}}"? Isso desativará o modo atualizando sua configuração.',
+  "settings.agentBehaviour.removeMode.button": "Remover",
   "settings.agentBehaviour.skillPaths": "Caminhos de pastas de habilidades",
   "settings.agentBehaviour.skillUrls": "URLs de habilidades",
+  "settings.agentBehaviour.removeSkill.title": "Remover habilidade",
+  "settings.agentBehaviour.removeSkill.confirm":
+    'Remover a habilidade "{{name}}"? Isso excluirá os arquivos da habilidade do disco.',
+  "settings.agentBehaviour.removeSkill.button": "Remover",
   "settings.agentBehaviour.instructionFiles": "Arquivos de instruções adicionais",
   "settings.agentBehaviour.instructionFiles.description":
     "Caminhos para arquivos de instruções adicionais no prompt do sistema",

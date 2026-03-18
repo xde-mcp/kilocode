@@ -32,8 +32,8 @@ export const dict = {
   "command.settings.open": "설정 열기",
   "command.session.previous": "이전 세션",
   "command.session.next": "다음 세션",
-  "command.session.previous.unseen": "Previous unread session",
-  "command.session.next.unseen": "Next unread session",
+  "command.session.previous.unseen": "이전 읽지 않은 세션",
+  "command.session.next.unseen": "다음 읽지 않은 세션",
   "command.session.archive": "세션 보관",
 
   "command.palette": "명령 팔레트",
@@ -82,6 +82,14 @@ export const dict = {
   "command.session.undo.description": "마지막 메시지 실행 취소",
   "command.session.redo": "다시 실행",
   "command.session.redo.description": "마지막 실행 취소된 메시지 다시 실행",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "세션 압축",
   "command.session.compact.description": "컨텍스트 크기를 줄이기 위해 세션 요약",
   "command.session.fork": "메시지에서 분기",
@@ -158,6 +166,7 @@ export const dict = {
   "provider.disconnect.toast.disconnected.description": "{{provider}} 모델을 더 이상 사용할 수 없습니다.",
   "model.tag.free": "무료",
   "model.tag.latest": "최신",
+  "model.group.recommended": "추천",
 
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
@@ -233,6 +242,7 @@ export const dict = {
   "prompt.action.attachFile": "파일 첨부",
   "prompt.attachment.remove": "첨부 파일 제거",
   "prompt.action.send": "전송",
+  "prompt.action.send.blocked": "먼저 대기 중인 질문에 답하거나 닫아주세요",
   "prompt.action.stop": "중지",
   "prompt.action.enhance": "프롬프트 개선",
   "prompt.action.resetModel": "모델을 기본값으로 재설정",
@@ -411,6 +421,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "서버에 연결할 수 없습니다. `{{url}}`에서 서버가 실행 중인가요?",
 
+  "error.startup.title": "서버 연결 실패",
+
   "error.paidModel.title": "이 모델을 사용하려면 로그인이 필요합니다",
   "error.paidModel.description":
     "로그인하거나 계정을 만들어 500개 이상의 모델에 접근하고, 원가로 크레딧을 사용하거나, 자체 키를 가져오세요.",
@@ -442,6 +454,11 @@ export const dict = {
 
   "notification.permission.title": "권한 필요",
   "notification.permission.description": "{{projectName}}의 {{sessionTitle}}에서 권한이 필요합니다",
+  "ui.permission.manageAutoApprove": "자동 승인 규칙 관리",
+  "ui.permission.rule.addToAllowed": "허용 목록에 추가",
+  "ui.permission.rule.removeFromAllowed": "허용 목록에서 제거",
+  "ui.permission.rule.addToDenied": "거부 목록에 추가",
+  "ui.permission.rule.removeFromDenied": "거부 목록에서 제거",
   "notification.question.title": "질문",
   "notification.question.description": "{{projectName}}의 {{sessionTitle}}에서 질문이 있습니다",
   "notification.action.goToSession": "세션으로 이동",
@@ -679,6 +696,9 @@ export const dict = {
   "settings.providers.tag.config": "구성",
   "settings.providers.tag.custom": "사용자 지정",
   "settings.providers.tag.other": "기타",
+  "settings.providers.modeModels": "모드별 모델",
+  "settings.providers.modeModels.description":
+    "특정 모드의 기본 모델을 재정의합니다. 설정하지 않으면 전역 기본 모델이 사용됩니다.",
   "settings.models.title": "모델",
   "settings.models.description": "모델 설정은 여기서 구성할 수 있습니다.",
   "settings.agents.title": "에이전트",
@@ -825,12 +845,14 @@ export const dict = {
     "Kilo Code는 AI 코딩 어시스턴트입니다. 기능 구축, 버그 수정 또는 코드베이스 설명을 요청하세요.",
   "session.messages.scrollToBottom": "하단으로 스크롤",
   "session.status.writingResponse": "응답 작성 중...",
+  "session.status.retry": "재시도 중…",
   "session.status.retrying": "재시도 중 ({{ attempt }}번째 시도)… {{ message }}",
   "session.status.working": "작업 중...",
 
   "dialog.model.noProviders": "공급자 없음",
 
   "prompt.placeholder.connecting": "서버에 연결 중...",
+  "prompt.placeholder.error": "연결에 실패했습니다. 출력 패널을 확인하거나 확장 프로그램을 다시 시작하세요.",
   "prompt.placeholder.default": "메시지를 입력하세요... (Enter로 전송, Shift+Enter로 줄 바꿈)",
 
   "context.usage.sessionCost": "세션 비용",
@@ -923,6 +945,8 @@ export const dict = {
   "settings.experimental.pasteSummary.description": "대량 붙여넣기 콘텐츠를 요약하지 않음",
   "settings.experimental.batch.title": "배치 도구",
   "settings.experimental.batch.description": "여러 도구 호출의 배치 처리 활성화",
+  "settings.experimental.codebaseSearch.title": "코드베이스 검색",
+  "settings.experimental.codebaseSearch.description": "코드베이스 전체에서 AI 기반 자연어 검색 활성화",
   "settings.experimental.continueOnDeny.title": "거부 시 계속",
   "settings.experimental.continueOnDeny.description": "권한이 거부되면 에이전트 루프 계속",
   "settings.experimental.mcpTimeout.title": "MCP 타임아웃 (ms)",
@@ -930,6 +954,7 @@ export const dict = {
   "settings.experimental.toolToggles": "도구 토글",
   "settings.agentBehaviour.defaultAgent.title": "기본 에이전트",
   "settings.agentBehaviour.defaultAgent.description": "지정되지 않은 경우 사용할 에이전트",
+  "settings.agentBehaviour.availableAgents": "사용 가능한 에이전트",
   "settings.agentBehaviour.selectAgent": "구성할 에이전트를 선택하세요…",
   "settings.agentBehaviour.selectAgent.title": "에이전트",
   "settings.agentBehaviour.selectAgent.description": "구성할 에이전트를 선택하세요…",
@@ -943,8 +968,21 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "핵 샘플링 매개변수 (0-1)",
   "settings.agentBehaviour.maxSteps.title": "최대 단계",
   "settings.agentBehaviour.maxSteps.description": "최대 에이전트 반복 횟수",
+  "settings.agentBehaviour.discoveredSkills": "검색된 스킬",
+  "settings.agentBehaviour.noSkillsFound":
+    "스킬을 찾을 수 없습니다. 스킬을 사용하려면 아래에 스킬 폴더 경로 또는 URL을 추가하세요.",
+  "settings.agentBehaviour.availableModes": "사용 가능한 사용자 정의 모드",
+  "settings.agentBehaviour.noModesFound": "모드를 찾을 수 없습니다.",
+  "settings.agentBehaviour.removeMode.title": "모드 제거",
+  "settings.agentBehaviour.removeMode.confirm":
+    '모드 "{{name}}"을(를) 제거하시겠습니까? 구성을 업데이트하여 모드를 비활성화합니다.',
+  "settings.agentBehaviour.removeMode.button": "제거",
   "settings.agentBehaviour.skillPaths": "스킬 폴더 경로",
   "settings.agentBehaviour.skillUrls": "스킬 URL",
+  "settings.agentBehaviour.removeSkill.title": "스킬 제거",
+  "settings.agentBehaviour.removeSkill.confirm":
+    '스킬 "{{name}}"을(를) 제거하시겠습니까? 디스크에서 스킬 파일이 삭제됩니다.',
+  "settings.agentBehaviour.removeSkill.button": "제거",
   "settings.agentBehaviour.instructionFiles": "추가 지시 파일",
   "settings.agentBehaviour.instructionFiles.description": "시스템 프롬프트에 포함되는 추가 지시 파일 경로",
   "settings.agentBehaviour.mcpEmpty":

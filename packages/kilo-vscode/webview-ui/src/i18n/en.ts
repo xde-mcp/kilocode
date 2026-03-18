@@ -78,6 +78,14 @@ export const dict = {
   "command.session.undo.description": "Undo the last message",
   "command.session.redo": "Redo",
   "command.session.redo.description": "Redo the last undone message",
+  "revert.banner.count_one": "{{count}} message reverted",
+  "revert.banner.count_other": "{{count}} messages reverted",
+  "revert.banner.redo": "Redo",
+  "revert.banner.redo.all": "Redo All",
+  "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.turn.revert": "Revert to here",
+  "revert.turn.copy": "Copy message",
+  "revert.bottom.undo": "Undo Changes",
   "command.session.compact": "Compact session",
   "command.session.compact.description": "Summarize the session to reduce context size",
   "command.session.fork": "Fork from message",
@@ -156,6 +164,7 @@ export const dict = {
 
   "model.tag.free": "Free",
   "model.tag.latest": "Latest",
+  "model.group.recommended": "Recommended",
   "model.provider.anthropic": "Anthropic",
   "model.provider.openai": "OpenAI",
   "model.provider.google": "Google",
@@ -231,6 +240,7 @@ export const dict = {
   "prompt.action.attachFile": "Attach file",
   "prompt.attachment.remove": "Remove attachment",
   "prompt.action.send": "Send",
+  "prompt.action.send.blocked": "Answer or dismiss the pending question first",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Enhance prompt",
   "prompt.action.resetModel": "Reset model to default",
@@ -411,6 +421,8 @@ export const dict = {
 
   "error.globalSync.connectFailed": "Could not connect to server. Is there a server running at `{{url}}`?",
 
+  "error.startup.title": "Server connection failed",
+
   "error.paidModel.title": "You need to sign in to use this model",
   "error.paidModel.description":
     "Sign in or create an account to access over 500 models, use credits at cost, or bring your own key.",
@@ -443,6 +455,11 @@ export const dict = {
 
   "notification.permission.title": "Permission required",
   "notification.permission.description": "{{sessionTitle}} in {{projectName}} needs permission",
+  "ui.permission.manageAutoApprove": "Manage Auto-Approve Rules",
+  "ui.permission.rule.addToAllowed": "Add to allowed list",
+  "ui.permission.rule.removeFromAllowed": "Remove from allowed list",
+  "ui.permission.rule.addToDenied": "Add to denied list",
+  "ui.permission.rule.removeFromDenied": "Remove from denied list",
   "notification.question.title": "Question",
   "notification.question.description": "{{sessionTitle}} in {{projectName}} has a question",
   "notification.action.goToSession": "Go to session",
@@ -831,6 +848,7 @@ export const dict = {
     "Kilo Code is an AI coding assistant. Ask it to build features, fix bugs, or explain your codebase.",
   "session.messages.scrollToBottom": "Scroll to bottom",
   "session.status.writingResponse": "Writing response...",
+  "session.status.retry": "Retrying…",
   "session.status.retrying": "Retrying (attempt {{ attempt }})… {{ message }}",
   "session.status.working": "Working...",
 
@@ -838,6 +856,7 @@ export const dict = {
 
   "prompt.placeholder.connecting": "Connecting to server...",
   "prompt.placeholder.default": "Type a message... (Enter to send, Shift+Enter for new line)",
+  "prompt.placeholder.error": "Connection failed. Check the output panel or restart the extension.",
 
   "context.usage.sessionCost": "Session cost",
 
@@ -936,6 +955,8 @@ export const dict = {
   "settings.experimental.pasteSummary.description": "Don't summarize large pasted content",
   "settings.experimental.batch.title": "Batch Tool",
   "settings.experimental.batch.description": "Enable batching of multiple tool calls",
+  "settings.experimental.codebaseSearch.title": "Codebase Search",
+  "settings.experimental.codebaseSearch.description": "Enable AI-powered natural language search across your codebase",
   "settings.experimental.continueOnDeny.title": "Continue on Deny",
   "settings.experimental.continueOnDeny.description": "Continue the agent loop when a permission is denied",
   "settings.experimental.mcpTimeout.title": "MCP Timeout (ms)",
@@ -944,6 +965,7 @@ export const dict = {
 
   "settings.agentBehaviour.defaultAgent.title": "Default Agent",
   "settings.agentBehaviour.defaultAgent.description": "Agent to use when none is specified",
+  "settings.agentBehaviour.availableAgents": "Available Agents",
   "settings.agentBehaviour.selectAgent": "Select an agent to configure…",
   "settings.agentBehaviour.selectAgent.title": "Agent",
   "settings.agentBehaviour.selectAgent.description": "Select an agent to configure…",
@@ -957,8 +979,20 @@ export const dict = {
   "settings.agentBehaviour.topP.description": "Nucleus sampling parameter (0-1)",
   "settings.agentBehaviour.maxSteps.title": "Max Steps",
   "settings.agentBehaviour.maxSteps.description": "Maximum agentic iterations",
+  "settings.agentBehaviour.discoveredSkills": "Discovered Skills",
+  "settings.agentBehaviour.noSkillsFound":
+    "No skills discovered. Add skill folder paths or URLs below to make skills available.",
+  "settings.agentBehaviour.availableModes": "Available Custom Modes",
+  "settings.agentBehaviour.noModesFound": "No modes found.",
+  "settings.agentBehaviour.removeMode.title": "Remove mode",
+  "settings.agentBehaviour.removeMode.confirm":
+    'Remove mode "{{name}}"? This will disable the mode by updating your config.',
+  "settings.agentBehaviour.removeMode.button": "Remove",
   "settings.agentBehaviour.skillPaths": "Skill Folder Paths",
   "settings.agentBehaviour.skillUrls": "Skill URLs",
+  "settings.agentBehaviour.removeSkill.title": "Remove skill",
+  "settings.agentBehaviour.removeSkill.confirm": 'Remove skill "{{name}}"? This will delete the skill files from disk.',
+  "settings.agentBehaviour.removeSkill.button": "Remove",
   "settings.agentBehaviour.instructionFiles": "Additional Instruction Files",
   "settings.agentBehaviour.instructionFiles.description":
     "Paths to additional instruction files that are included in the system prompt",
