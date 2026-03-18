@@ -13,7 +13,18 @@ if (!existsSync(outDir)) {
   throw new Error(`VSIX directory not found: ${outDir}`)
 }
 
-const targets = ["linux-x64", "linux-arm64", "alpine-x64", "alpine-arm64", "darwin-x64", "darwin-arm64", "win32-x64"]
+// kilocode_change start - added Windows ARM64 target
+const targets = [
+  "linux-x64",
+  "linux-arm64",
+  "alpine-x64",
+  "alpine-arm64",
+  "darwin-x64",
+  "darwin-arm64",
+  "win32-x64",
+  "win32-arm64",
+]
+// kilocode_change end
 
 const vsixFiles: string[] = []
 for (const target of targets) {
