@@ -533,7 +533,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                   </>
                 }
               >
-                {t("agentManager.dialog.createWorkspace")}
+                {t("agentManager.dialog.createWorktree")}
               </Show>
             </Button>
           </div>
