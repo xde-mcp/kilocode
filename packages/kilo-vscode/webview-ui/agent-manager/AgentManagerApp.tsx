@@ -1642,12 +1642,16 @@ const AgentManagerContent: Component = () => {
     ))
   }
 
+  const loaded = () => worktreesLoaded() && sessionsLoaded()
+
   const handleCreateWorktree = () => {
+    if (!loaded()) return
     vscode.postMessage({ type: "agentManager.createWorktree" })
   }
 
   // Advanced worktree dialog — opens a full dialog with prompt, versions, model, mode
   const showAdvancedWorktreeDialog = () => {
+    if (!loaded()) return
     dialog.show(() => <NewWorktreeDialog onClose={() => dialog.close()} defaultBaseBranch={repoDefaultBranch()} />)
   }
 
@@ -1732,6 +1736,7 @@ const AgentManagerContent: Component = () => {
 
   const handlePromote = (sessionId: string, e: MouseEvent) => {
     e.stopPropagation()
+    if (!loaded()) return
     vscode.postMessage({ type: "agentManager.promoteSession", sessionId })
   }
 
@@ -1897,6 +1902,7 @@ const AgentManagerContent: Component = () => {
 
   // Cmd+N: if an unassigned session is selected, promote it; otherwise create a new worktree
   const handleNewWorktreeOrPromote = () => {
+    if (!loaded()) return
     const sel = selection()
     const sid = session.currentSessionID()
     if (sel === null && sid && !worktreeSessionIds().has(sid)) {
@@ -1997,11 +2003,13 @@ const AgentManagerContent: Component = () => {
                     variant="ghost"
                     label={t("agentManager.worktree.new")}
                     onClick={handleCreateWorktree}
+                    disabled={!loaded()}
                   />
                   <DropdownMenu gutter={4} placement="bottom-end">
                     <DropdownMenu.Trigger
                       class="am-split-arrow"
                       aria-label={t("agentManager.worktree.advancedOptions")}
+                      disabled={!loaded()}
                     >
                       <Icon name="chevron-down" size="small" />
                     </DropdownMenu.Trigger>
@@ -2556,6 +2564,7 @@ const AgentManagerContent: Component = () => {
                     variant="primary"
                     size="small"
                     onClick={() => {
+                      if (!loaded()) return
                       const sid = session.currentSessionID()
                       if (sid) vscode.postMessage({ type: "agentManager.promoteSession", sessionId: sid })
                     }}
