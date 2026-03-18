@@ -689,6 +689,7 @@ export namespace Provider {
       // kilocode_change start
       recommendedIndex: z.number().optional(),
       prompt: Prompt.optional().catch(undefined),
+      isFree: z.boolean().optional(),
       // kilocode_change end
     })
     .meta({
@@ -775,6 +776,7 @@ export namespace Provider {
       variants: provider.id === "kilo" ? (model.variants ?? {}) : {},
       recommendedIndex: model.recommendedIndex,
       prompt: model.prompt,
+      isFree: model.isFree,
       // kilocode_change end
     }
 
@@ -923,6 +925,7 @@ export namespace Provider {
           // kilocode_change start
           recommendedIndex: model.recommendedIndex ?? existingModel?.recommendedIndex,
           prompt: model.prompt ?? existingModel?.prompt,
+          isFree: model.isFree ?? existingModel?.isFree,
           // kilocode_change end
         }
         const merged = mergeDeep(ProviderTransform.variants(parsedModel), model.variants ?? {})

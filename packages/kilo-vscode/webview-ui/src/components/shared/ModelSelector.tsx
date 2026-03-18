@@ -10,6 +10,7 @@
 import { Component, createSignal, createMemo, createEffect, onCleanup, For, Show, createSelector } from "solid-js"
 import { Popover } from "@kilocode/kilo-ui/popover"
 import { Button } from "@kilocode/kilo-ui/button"
+import { Tag } from "@kilocode/kilo-ui/tag"
 import { useProvider, EnrichedModel } from "../../context/provider"
 import { useSession } from "../../context/session"
 import { useLanguage } from "../../context/language"
@@ -72,25 +73,35 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     if (!q) {
       return visibleModels()
     }
-    return visibleModels().filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) || m.providerName.toLowerCase().includes(q) || m.id.toLowerCase().includes(q),
-    )
+    return visibleModels().filter((m) => m.name.toLowerCase().includes(q))
   })
 
-  // Grouped for rendering
+  // Grouped for rendering — recommended models float to the top as their own group
   const groups = createMemo<ModelGroup[]>(() => {
+    const recommended: EnrichedModel[] = []
     const map = new Map<string, ModelGroup>()
+
     for (const m of filtered()) {
-      let group = map.get(m.providerID)
-      if (!group) {
-        group = { providerName: m.providerName, models: [] }
+      if (m.recommendedIndex !== undefined) {
+        recommended.push(m)
+      } else {
+        const group = map.get(m.providerID) ?? { providerName: m.providerName, models: [] }
+        group.models.push(m)
         map.set(m.providerID, group)
       }
-      group.models.push(m)
     }
 
-    return [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
+    recommended.sort((a, b) => (a.recommendedIndex ?? Infinity) - (b.recommendedIndex ?? Infinity))
+
+    for (const group of map.values()) {
+      group.models.sort((a, b) => a.name.localeCompare(b.name))
+    }
+
+    const rest = [...map.entries()].sort(([a], [b]) => providerSortKey(a) - providerSortKey(b)).map(([, g]) => g)
+
+    return recommended.length > 0
+      ? [{ providerName: language.t("model.group.recommended"), models: recommended }, ...rest]
+      : rest
   })
 
   // Flat list for keyboard indexing (mirrors render order)
@@ -117,10 +128,16 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     setSelectedIndex(0)
   })
 
-  // Focus search input when popover opens
+  // Focus search input, set selectedIndex to active model, and scroll it into view when popover opens
   createEffect(() => {
     if (open()) {
-      requestAnimationFrame(() => searchRef?.focus())
+      const active = activeModel()
+      const activeIdx = active ? (flatIndexMap().get(active) ?? 0) : 0
+      setSelectedIndex(activeIdx)
+      requestAnimationFrame(() => {
+        searchRef?.focus()
+        listRef?.querySelector(".model-selector-item.active")?.scrollIntoView({ block: "center" })
+      })
     } else {
       setSearch("")
       setDebouncedSearch("")
@@ -270,7 +287,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                       >
                         <span class="model-selector-item-name">{model.name}</span>
                         <Show when={isFree(model)}>
-                          <span class="model-selector-tag">{language.t("model.tag.free")}</span>
+                          <Tag data-variant="member">{language.t("model.tag.free")}</Tag>
                         </Show>
                       </div>
                     )
