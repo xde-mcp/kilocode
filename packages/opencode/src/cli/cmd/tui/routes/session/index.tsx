@@ -161,6 +161,25 @@ export function Session() {
   )
   // kilocode_change end
 
+  // kilocode_change start - ring terminal bell when input is needed
+  createEffect(
+    on(
+      () => permissions().length,
+      (len, prev) => {
+        if (prev !== undefined && len > (prev ?? 0)) bell()
+      },
+    ),
+  )
+  createEffect(
+    on(
+      () => questions().length,
+      (len, prev) => {
+        if (prev !== undefined && len > (prev ?? 0)) bell()
+      },
+    ),
+  )
+  // kilocode_change end
+
   const dimensions = useTerminalDimensions()
   const [sidebar, setSidebar] = kv.signal<"auto" | "hide">("sidebar", "auto")
   const [sidebarOpen, setSidebarOpen] = createSignal(false)
