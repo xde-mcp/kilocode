@@ -61,6 +61,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private cachedSkillsMessage: unknown = null
   /** Cached configLoaded payload so requestConfig can be served before client is ready */
   private cachedConfigMessage: unknown = null
+  /** True while handleUpdateConfig is in flight; prevents fetchAndSendConfig from sending stale data */
+  private configUpdateInProgress = false
   /** Cached notificationsLoaded payload */
   private cachedNotificationsMessage: unknown = null
   private pendingReviewComments: unknown[][] = []
@@ -1415,6 +1417,12 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
+    // Skip if handleUpdateConfig is in flight — sending a configLoaded now
+    // would race with the write and potentially overwrite optimistic webview state.
+    if (this.configUpdateInProgress) {
+      return
+    }
+
     try {
       const workspaceDir = this.getWorkspaceDirectory()
       const { data: config } = await this.client.config.get({ directory: workspaceDir }, { throwOnError: true })
@@ -1722,6 +1730,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       return
     }
 
+    // Belt-and-suspenders guard: prevent fetchAndSendConfig from sending a
+    // stale configLoaded while this write is in flight (the SSE-triggered reload
+    // races with the async config.update() write on the CLI backend).
+    this.configUpdateInProgress = true
     try {
       await this.client.global.config.update({ config: partial }, { throwOnError: true })
 
@@ -1744,6 +1756,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         type: "error",
         message: getErrorMessage(error) || "Failed to update config",
       })
+    } finally {
+      this.configUpdateInProgress = false
     }
   }
 
