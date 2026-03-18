@@ -28,7 +28,6 @@ import { SkillTool } from "../../tool/skill"
 import { BashTool } from "../../tool/bash"
 import { TodoWriteTool } from "../../tool/todo"
 import { Locale } from "../../util/locale"
-import { bell } from "../../kilocode/bell" // kilocode_change
 import { importCloudSession, validateCloudFork } from "@/kilocode/cloud-session" // kilocode_change
 
 type ToolProps<T extends Tool.Info> = {
@@ -567,7 +566,6 @@ export const RunCommand = cmd({
             event.properties.sessionID === sessionID &&
             event.properties.status.type === "idle"
           ) {
-            if (args.format !== "json") bell() // kilocode_change
             break
           }
 
