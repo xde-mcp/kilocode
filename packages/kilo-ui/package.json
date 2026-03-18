@@ -1,6 +1,6 @@
 {
   "name": "@kilocode/kilo-ui",
-  "version": "7.0.49",
+  "version": "7.0.50",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -93,7 +93,7 @@
     "solid-js": "catalog:"
   },
   "devDependencies": {
-    "@playwright/test": "1.58.2",
+    "@playwright/test": "1.57.0",
     "@storybook/addon-a11y": "10.2.10",
     "@storybook/addon-docs": "10.2.10",
     "@storybook/addon-themes": "10.2.10",
