@@ -714,6 +714,9 @@ export namespace SessionPrompt {
             parts: [
               ...msgs[idx].parts,
               {
+                id: Identifier.ascending("part"),
+                sessionID,
+                messageID: msgs[idx].info.id,
                 type: "text",
                 text: envBlock,
               } satisfies MessageV2.TextPart,
