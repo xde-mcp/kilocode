@@ -18,6 +18,8 @@ export interface ProviderMapping {
   urlField?: string
   /** Field holding an organization/account ID (used for OAuth-style auth) */
   organizationIdField?: string
+  /** VS Code secret key holding OAuth credentials stored separately from the provider profile */
+  oauthSecretKey?: string
 }
 
 /**
@@ -240,6 +242,38 @@ export const PROVIDER_MAP: Record<string, ProviderMapping> = {
     key: "syntheticApiKey",
     name: "Synthetic",
   },
+  "openai-codex": {
+    id: "openai",
+    key: "",
+    name: "OpenAI (ChatGPT Plus/Pro)",
+    oauthSecretKey: "openai-codex-oauth-credentials",
+  },
+  "nano-gpt": {
+    id: "nano-gpt",
+    key: "nanoGptApiKey",
+    name: "NanoGPT",
+    modelField: "nanoGptModelId",
+  },
+  poe: {
+    id: "poe",
+    key: "poeApiKey",
+    name: "Poe",
+    modelField: "poeModelId",
+  },
+  aihubmix: {
+    id: "aihubmix",
+    key: "aihubmixApiKey",
+    name: "AiHubMix",
+    modelField: "aihubmixModelId",
+    urlField: "aihubmixBaseUrl",
+  },
+  zenmux: {
+    id: "zenmux",
+    key: "zenmuxApiKey",
+    name: "ZenMux",
+    modelField: "zenmuxModelId",
+    urlField: "zenmuxBaseUrl",
+  },
 }
 
 /** Providers that have no equivalent in the new CLI backend */
@@ -248,16 +282,11 @@ export const UNSUPPORTED_PROVIDERS = new Set([
   "human-relay",
   "vscode-lm",
   "claude-code",
-  "openai-codex",
   "qwen-code",
   "virtual-quota-fallback",
   "glama",
   "roo",
-  "nano-gpt",
-  "poe",
-  "aihubmix",
   "apertis",
-  "zenmux",
 ])
 
 /** Built-in default mode slugs that should not be migrated */
