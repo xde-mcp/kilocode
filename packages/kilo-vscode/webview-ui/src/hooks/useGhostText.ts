@@ -134,8 +134,14 @@ export function useGhostText(
   // Reactively reconcile ghost text whenever the input text changes.
   // This replaces manual ghost.dismiss() calls after setText() — if the text
   // no longer matches savedPrefix, syncInternal will clear the ghost.
+  // Also cancels pending debounce when text is cleared (e.g., on send).
   createEffect(() => {
-    getText() // track the signal
+    const val = getText()
+    if (!val && timer) {
+      // Text cleared - cancel pending debounce to prevent empty-text completion
+      clearTimeout(timer)
+      timer = undefined
+    }
     syncInternal(undefined)
   })
 

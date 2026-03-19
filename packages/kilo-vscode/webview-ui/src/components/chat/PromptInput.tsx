@@ -498,7 +498,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     // Client-side slash command — runs locally without a backend round-trip
     if (matched?.action) {
       setText("")
-      ghost.invalidate()
       clearReviewComments()
       imageAttach.clear()
       mention.closeMention()
@@ -533,7 +532,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
     history.append(draft)
     history.reset()
-    ghost.invalidate()
     setText("")
     clearReviewComments()
     imageAttach.clear()
