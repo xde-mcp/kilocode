@@ -1360,6 +1360,11 @@ export interface CompactRequest {
   modelID?: string
 }
 
+export interface OpenSettingsPanelRequest {
+  type: "openSettingsPanel"
+  tab?: string
+}
+
 export interface RequestAgentsMessage {
   type: "requestAgents"
 }
@@ -1781,6 +1786,7 @@ export type WebviewMessage =
   | LogoutRequest
   | RefreshProfileRequest
   | OpenExternalRequest
+  | OpenSettingsPanelRequest
   | OpenFileRequest
   | CancelLoginRequest
   | SetOrganizationRequest
