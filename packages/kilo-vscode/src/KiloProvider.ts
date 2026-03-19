@@ -2760,15 +2760,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     // Shell
     const shell = vscode.env.shell || undefined
 
-    // Timezone
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || undefined
-
     return {
       ...(visibleFiles.length > 0 ? { visibleFiles } : {}),
       ...(openTabs.length > 0 ? { openTabs } : {}),
       ...(activeFile ? { activeFile } : {}),
       ...(shell ? { shell } : {}),
-      ...(timezone ? { timezone } : {}),
     }
   }
 
