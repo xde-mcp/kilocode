@@ -37,8 +37,8 @@ export interface PopupSelectorProps<T extends ValidComponent = ValidComponent>
   padding?: number
   /** Minimum popup width — never shrinks below this. Default: 100 */
   minWidth?: number
-  /** Render prop — receives a reactive `bodyH` accessor. */
-  children: (bodyH: Accessor<number>) => JSXElement
+  /** Render prop — receives a reactive `bodyH` accessor (undefined when no preferred height set). */
+  children: (bodyH: Accessor<number | undefined>) => JSXElement
 }
 
 export function PopupSelector<T extends ValidComponent = ValidComponent>(props: PopupSelectorProps<T>) {
@@ -62,14 +62,14 @@ export function PopupSelector<T extends ValidComponent = ValidComponent>(props: 
   })
 
   const popoverW = createMemo(() => {
-    const preferred = local.expanded ? (local.preferredExpandedWidth ?? 350) : (local.preferredWidth ?? 250)
+    const preferred = local.expanded ? local.preferredExpandedWidth : local.preferredWidth
     const pad = local.padding ?? 8
-    return Math.max(local.minWidth ?? 100, Math.min(preferred, panelW() - pad * 2))
+    const max = panelW() - pad * 2
+    if (preferred === undefined) return { max }
+    return { width: Math.max(local.minWidth ?? 100, Math.min(preferred, max)), max }
   })
 
-  const bodyH = createMemo(() =>
-    local.expanded ? (local.preferredExpandedHeight ?? 600) : (local.preferredHeight ?? 300),
-  )
+  const bodyH = createMemo(() => (local.expanded ? local.preferredExpandedHeight : local.preferredHeight))
 
   return (
     <Popover
@@ -77,7 +77,11 @@ export function PopupSelector<T extends ValidComponent = ValidComponent>(props: 
       slide={true}
       overflowPadding={local.padding ?? 8}
       {...(rest as PopoverProps)}
-      style={{ width: `${popoverW()}px`, "max-width": `${popoverW()}px` }}
+      style={
+        popoverW().width !== undefined
+          ? { width: `${popoverW().width}px`, "max-width": `${popoverW().max}px` }
+          : { "max-width": `${popoverW().max}px` }
+      }
     >
       {local.children(bodyH)}
     </Popover>
