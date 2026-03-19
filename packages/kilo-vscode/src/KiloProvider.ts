@@ -77,6 +77,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private projectID: string | undefined
   /** Abort controller for the current loadMessages request; aborted when a new session is selected. */
   private loadMessagesAbort: AbortController | null = null
+  /** Abort controller for the current chat autocomplete LLM request; aborted when a new request arrives. */
+  private chatCompletionAbort: AbortController | null = null
   /** Set when refreshSessions() is called before the client is ready.
    *  Cleared and retried once the connection transitions to "connected". */
   private pendingSessionRefresh = false
@@ -598,12 +600,22 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           }
           break
         }
-        case "requestChatCompletion":
+        case "requestChatCompletion": {
+          // Abort any in-flight chat completion request before starting a new one
+          this.chatCompletionAbort?.abort()
+          const controller = new AbortController()
+          this.chatCompletionAbort = controller
           void handleChatCompletionRequest(
             { type: "requestChatCompletion", text: message.text, requestId: message.requestId },
             { postMessage: (msg) => this.postMessage(msg) },
             this.connectionService,
+            controller.signal,
           )
+          break
+        }
+        case "cancelChatCompletion":
+          this.chatCompletionAbort?.abort()
+          this.chatCompletionAbort = null
           break
         case "requestFileSearch": {
           const sdkClient = this.client

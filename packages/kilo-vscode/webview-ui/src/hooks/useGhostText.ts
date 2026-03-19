@@ -144,6 +144,9 @@ export function useGhostText(vscode: VSCodeContext, getText: () => string, conne
 
     if (timer) clearTimeout(timer)
 
+    // Cancel any in-flight LLM request immediately on new input
+    vscode.postMessage({ type: "cancelChatCompletion" })
+
     if (mentionOpen) return
 
     if (val.length < MIN_LENGTH || !connected() || !enabled()) return

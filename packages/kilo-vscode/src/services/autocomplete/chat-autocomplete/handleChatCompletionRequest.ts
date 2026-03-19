@@ -17,27 +17,40 @@ export interface ChatCompletionResponseSender {
 /**
  * Handles a chat completion request from the webview.
  * Captures visible code context and generates an autocomplete suggestion.
+ *
+ * @param signal - Optional AbortSignal to cancel the in-flight LLM request
+ *                 (e.g. when the user types again before the previous request completes)
  */
 export async function handleChatCompletionRequest(
   message: ChatCompletionRequestMessage,
   responseSender: ChatCompletionResponseSender,
   connectionService: KiloConnectionService,
+  signal?: AbortSignal,
 ): Promise<void> {
   const userText = message.text || ""
   const requestId = message.requestId || ""
+
+  if (signal?.aborted) return
 
   const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ""
 
   const ignoreController = new FileIgnoreController(workspacePath)
   await ignoreController.initialize()
 
+  if (signal?.aborted) {
+    ignoreController.dispose()
+    return
+  }
+
   const tracker = new VisibleCodeTracker(workspacePath, ignoreController)
   const visibleContext = await tracker.captureVisibleCode()
 
   const autocomplete = new ChatTextAreaAutocomplete(connectionService)
-  const { suggestion } = await autocomplete.getCompletion(userText, visibleContext)
+  const { suggestion } = await autocomplete.getCompletion(userText, visibleContext, signal)
 
-  responseSender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId })
+  if (!signal?.aborted) {
+    responseSender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId })
+  }
 
   ignoreController.dispose()
 }
