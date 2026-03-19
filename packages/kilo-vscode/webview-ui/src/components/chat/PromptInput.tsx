@@ -66,7 +66,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   let enhanceCounter = 0
   let preEnhanceText: string | null = null
 
-  const ghost = useGhostText(vscode, text, () => server.isConnected())
+  const ghost = useGhostText(vscode, text, () => server.isConnected(), sessionKey)
 
   const replaceReviewComments = (next: ReviewComment[]) => {
     setReviewComments(next)
@@ -148,7 +148,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const draft = drafts.get(key) ?? ""
       const pending = reviewDrafts.get(key) ?? []
       setText(draft)
-      ghost.invalidate()
       setReviewComments(pending)
       history.reset()
       if (textareaRef) {

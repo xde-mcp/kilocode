@@ -36,7 +36,12 @@ export interface GhostText {
  *
  * Follows the legacy "syncAutocompleteTextVisibility" pattern.
  */
-export function useGhostText(vscode: VSCodeContext, getText: () => string, connected: () => boolean): GhostText {
+export function useGhostText(
+  vscode: VSCodeContext,
+  getText: () => string,
+  connected: () => boolean,
+  sessionKey?: () => string | undefined,
+): GhostText {
   const [ghost, setGhost] = createSignal("")
   const [enabled, setEnabled] = createSignal(false)
 
@@ -132,6 +137,12 @@ export function useGhostText(vscode: VSCodeContext, getText: () => string, conne
   createEffect(() => {
     getText() // track the signal
     syncInternal(undefined)
+  })
+
+  // Auto-invalidate when session changes to prevent cross-session ghost pollution
+  createEffect(() => {
+    sessionKey?.() // track the signal
+    invalidate()
   })
 
   function sync(textarea: HTMLTextAreaElement | undefined) {
