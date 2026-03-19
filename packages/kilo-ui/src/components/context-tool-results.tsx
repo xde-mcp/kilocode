@@ -3,7 +3,7 @@ import type { ToolPart } from "@kilocode/sdk/v2"
 import { getFilename } from "@opencode-ai/util/path"
 import { useReducedMotion } from "../hooks/use-reduced-motion"
 import { useI18n } from "../context/i18n"
-import { ToolCall } from "./basic-tool"
+import { BasicTool } from "./basic-tool"
 import { ToolStatusTitle } from "./tool-status-title"
 import { AnimatedCountList } from "./tool-count-summary"
 import { RollingResults } from "./rolling-results"
@@ -55,12 +55,10 @@ export function ContextToolGroupHeader(props: {
   const i18n = useI18n()
   const summary = createMemo(() => contextToolSummary(props.parts))
   return (
-    <ToolCall
-      variant="row"
+    <BasicTool
+      hideDetails
       icon="magnifying-glass-menu"
-      open={props.open}
-      showArrow
-      onOpenChange={props.onOpenChange}
+      forceOpen={props.open}
       trigger={
         <div data-component="context-tool-group-trigger" data-pending={props.pending || undefined}>
           <span
