@@ -63,7 +63,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [preActiveIdx, setPreActiveIdx] = createSignal(-1)
   const [previewIdx, setPreviewIdx] = createSignal(-1)
-  const [previewHeight, setPreviewHeight] = createSignal(200)
+  const [previewHeight, setPreviewHeight] = createSignal(320)
 
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
