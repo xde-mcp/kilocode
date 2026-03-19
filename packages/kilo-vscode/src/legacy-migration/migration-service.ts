@@ -76,7 +76,7 @@ export async function detectLegacyData(context: vscode.ExtensionContext): Promis
   const providers = buildProviderList(profiles, oauthProviders)
   const mcpServers = buildMcpServerList(mcpSettings)
   const modes = buildCustomModeList(customModes)
-  const defaultModel = resolveDefaultModel(profiles)
+  const defaultModel = resolveDefaultModel(profiles, oauthProviders)
 
   const hasSettings =
     settings.autoApprovalEnabled !== undefined ||
@@ -1048,12 +1048,18 @@ function buildCustomModeList(modes: LegacyCustomMode[] | null): MigrationCustomM
   return modes.filter((m) => !DEFAULT_MODE_SLUGS.has(m.slug)).map((m) => ({ name: m.name, slug: m.slug }))
 }
 
-function resolveDefaultModel(profiles: LegacyProviderProfiles | null): { provider: string; model: string } | undefined {
+function resolveDefaultModel(
+  profiles: LegacyProviderProfiles | null,
+  oauthProviders: Set<string>,
+): { provider: string; model: string } | undefined {
   if (!profiles?.currentApiConfigName) return undefined
   const active = profiles.apiConfigs[profiles.currentApiConfigName]
   if (!active?.apiProvider) return undefined
   const mapping = PROVIDER_MAP[active.apiProvider]
   if (!mapping) return undefined
+  // If the active profile requires OAuth credentials (e.g. openai-codex) but they are
+  // unavailable, do not offer default-model migration — it would write a broken reference.
+  if (mapping.oauthSecretKey && !oauthProviders.has(active.apiProvider)) return undefined
   const modelField = mapping.modelField ?? "apiModelId"
   const model = active[modelField] as string | undefined
   if (!model) return undefined
