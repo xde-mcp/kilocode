@@ -68,7 +68,8 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const popoverW = createMemo(() => {
     const preferred = expanded() ? 350 : 250
-    return Math.max(100, Math.min(preferred, panelW()))
+    const padding = 16
+    return Math.max(100, Math.min(preferred, panelW() - padding * 2))
   })
 
   let searchRef: HTMLInputElement | undefined
@@ -296,6 +297,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     <Popover
       placement={props.placement ?? "top-start"}
       slide={true}
+      overflowPadding={16}
       open={open()}
       onOpenChange={setOpen}
       triggerAs={Button}
