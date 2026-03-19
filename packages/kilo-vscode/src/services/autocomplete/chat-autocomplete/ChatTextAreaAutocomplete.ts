@@ -32,13 +32,9 @@ export class ChatTextAreaAutocomplete {
    * Full request handler — resolves visible code context, generates a
    * completion, and posts the result back to the webview.
    */
-  async handle(
-    message: ChatCompletionRequestMessage,
-    sender: ChatCompletionResponseSender,
-    connection: KiloConnectionService,
-  ): Promise<void> {
-    const text = message.text || ""
-    const id = message.requestId || ""
+  async handle(message: ChatCompletionRequestMessage, sender: ChatCompletionResponseSender): Promise<void> {
+    const { text, requestId } = message
+    if (!text || !requestId) return
 
     const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ""
 
@@ -55,7 +51,7 @@ export class ChatTextAreaAutocomplete {
 
     const { suggestion } = await this.getCompletion(text, context)
 
-    sender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId: id })
+    sender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId })
   }
 
   async getCompletion(userText: string, visibleCodeContext?: VisibleCodeContext): Promise<{ suggestion: string }> {

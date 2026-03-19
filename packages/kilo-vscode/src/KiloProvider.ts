@@ -608,7 +608,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
               postMessage: (msg: { type: "chatCompletionResult"; text: string; requestId: string }) =>
                 this.postMessage(msg),
             },
-            this.connectionService,
           )
           break
         }
