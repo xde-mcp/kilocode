@@ -1,12 +1,7 @@
 import { createEffect, createSignal, onCleanup } from "solid-js"
 import type { Accessor } from "solid-js"
 import type { FileAttachment, WebviewMessage, ExtensionMessage } from "../types/messages"
-import {
-  AT_PATTERN,
-  syncMentionedPaths as _syncMentionedPaths,
-  buildTextAfterMentionSelect,
-  buildFileAttachments,
-} from "./file-mention-utils"
+import { AT_PATTERN, syncMentionedPaths as _syncMentionedPaths, buildFileAttachments } from "./file-mention-utils"
 
 const FILE_SEARCH_DEBOUNCE_MS = 150
 
@@ -97,13 +92,16 @@ export function useFileMention(vscode: VSCodeContext): FileMention {
     const before = val.substring(0, cursor)
     const after = val.substring(cursor)
 
-    const result = buildTextAfterMentionSelect(before, after, path)
-    textarea.value = result
-    setText(result)
+    const replaced = before.replace(AT_PATTERN, (match) => {
+      const prefix = match.startsWith(" ") ? " " : ""
+      return `${prefix}@${path}`
+    })
+    const newText = replaced + after
+    textarea.value = newText
+    setText(newText)
 
-    // Position cursor right after the inserted @path
-    const pos = result.length - after.length
-    textarea.setSelectionRange(pos, pos)
+    const newCursor = replaced.length
+    textarea.setSelectionRange(newCursor, newCursor)
     textarea.focus()
 
     setMentionedPaths((prev) => new Set([...prev, path]))
