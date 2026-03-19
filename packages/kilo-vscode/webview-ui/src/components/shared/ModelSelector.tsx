@@ -59,6 +59,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const [open, setOpen] = createSignal(false)
   const [expanded, setExpanded] = createSignal(false)
   const [panelW, setPanelW] = createSignal(document.documentElement.clientWidth)
+  const [panelH, setPanelH] = createSignal(window.innerHeight)
   const [search, setSearch] = createSignal("")
   const [debouncedSearch, setDebouncedSearch] = createSignal("")
   const [selectedIndex, setSelectedIndex] = createSignal(0)
@@ -71,6 +72,11 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     const padding = 8
     return Math.max(100, Math.min(preferred, panelW() - padding * 2))
   })
+
+  const BODY_H = 300
+  const EXPANDED_MARGIN = 120
+
+  const bodyH = createMemo(() => (expanded() ? panelH() - EXPANDED_MARGIN : BODY_H))
 
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
@@ -191,6 +197,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   createEffect(() => {
     if (open()) {
       setPanelW(document.documentElement.clientWidth)
+      setPanelH(window.innerHeight)
       const active = activeModel()
       const activeIdx = active ? (flatIndexMap().get(active) ?? 0) : 0
       setSelectedIndex(activeIdx)
@@ -321,6 +328,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       <div
         onKeyDown={handleKeyDown}
         class={`model-selector-body${expanded() ? " model-selector-body--expanded" : ""}`}
+        style={{ height: `${bodyH()}px` }}
         ref={bodyRef}
       >
         <div class="model-selector-search-wrapper">
