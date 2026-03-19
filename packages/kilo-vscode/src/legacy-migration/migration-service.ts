@@ -15,6 +15,7 @@ import type {
   PermissionObjectConfig,
 } from "@kilocode/sdk/v2/client"
 import { PROVIDER_MAP, UNSUPPORTED_PROVIDERS, DEFAULT_MODE_SLUGS } from "./provider-mapping"
+import type { ProviderMapping } from "./provider-mapping"
 import type {
   LegacyProviderProfiles,
   LegacyProviderSettings,
@@ -353,6 +354,21 @@ async function migrateProvider(
     return { item: profileName, category: "provider", status: "success" }
   }
 
+  // Providers that use env/ADC-based auth (e.g. Vertex AI) — skip auth.set, only migrate config options
+  if (mapping.skipAuth) {
+    await migrateConfigFields(mapping, settings, client)
+    // Warn users who had inline service account credentials — the CLI uses ADC only
+    const hadCredentials = Boolean(settings.vertexJsonCredentials ?? settings.vertexKeyFile)
+    return {
+      item: profileName,
+      category: "provider",
+      status: hadCredentials ? "warning" : "success",
+      message: hadCredentials
+        ? "Project and location migrated. The new CLI uses Application Default Credentials — set GOOGLE_APPLICATION_CREDENTIALS or run 'gcloud auth application-default login'"
+        : undefined,
+    }
+  }
+
   const apiKey = settings[mapping.key] as string | undefined
   if (!apiKey) {
     return { item: profileName, category: "provider", status: "warning", message: "No API key found in profile" }
@@ -380,7 +396,27 @@ async function migrateProvider(
     }
   }
 
+  await migrateConfigFields(mapping, settings, client)
+
   return { item: profileName, category: "provider", status: "success" }
+}
+
+async function migrateConfigFields(
+  mapping: ProviderMapping,
+  settings: LegacyProviderSettings,
+  client: KiloClient,
+): Promise<void> {
+  if (!mapping.configFields?.length) return
+  const opts: Record<string, string> = {}
+  for (const { from, option } of mapping.configFields) {
+    const val = settings[from] as string | undefined
+    if (val) opts[option] = val
+  }
+  if (Object.keys(opts).length > 0) {
+    await client.global.config.update({
+      config: { provider: { [mapping.id]: { options: opts } } },
+    })
+  }
 }
 
 async function migrateDefaultModel(settings: LegacyProviderSettings, client: KiloClient): Promise<MigrationResultItem> {
@@ -983,9 +1019,11 @@ function buildProviderList(
 
     const hasApiKey = mapping?.oauthSecretKey
       ? oauthProviders.has(provider)
-      : mapping
-        ? Boolean(settings[mapping.key])
-        : false
+      : mapping?.skipAuth
+        ? (mapping.configFields?.some((f) => Boolean(settings[f.from])) ?? false)
+        : mapping
+          ? Boolean(settings[mapping.key])
+          : false
 
     return {
       profileName,

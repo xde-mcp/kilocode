@@ -20,6 +20,10 @@ export interface ProviderMapping {
   organizationIdField?: string
   /** VS Code secret key holding OAuth credentials stored separately from the provider profile */
   oauthSecretKey?: string
+  /** If true, skip auth.set entirely — provider uses env/ADC-based auth (e.g. Vertex AI) */
+  skipAuth?: boolean
+  /** Legacy settings fields to write as provider config options (e.g. project/location for Vertex) */
+  configFields?: Array<{ from: string; option: string }>
 }
 
 /**
@@ -67,6 +71,11 @@ export const PROVIDER_MAP: Record<string, ProviderMapping> = {
     id: "google-vertex",
     key: "vertexJsonCredentials",
     name: "Google Vertex AI",
+    skipAuth: true,
+    configFields: [
+      { from: "vertexProjectId", option: "project" },
+      { from: "vertexRegion", option: "location" },
+    ],
   },
   bedrock: {
     id: "amazon-bedrock",
