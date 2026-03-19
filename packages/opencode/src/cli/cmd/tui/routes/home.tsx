@@ -44,7 +44,7 @@ export function Home() {
   const onboarding = createMemo(() => isFirstTimeUser() && !connected())
   // kilocode_change end
   const showTips = createMemo(() => {
-    if (onboarding()) return true // kilocode_change
+    if (onboarding()) return !tipsHidden() // kilocode_change
     // Don't show tips for first-time users
     if (isFirstTimeUser()) return false
     return !tipsHidden()
