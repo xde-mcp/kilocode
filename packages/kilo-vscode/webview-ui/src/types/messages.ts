@@ -456,6 +456,12 @@ export interface SessionStatusMessage {
   next?: number
 }
 
+export interface SessionErrorMessage {
+  type: "sessionError"
+  sessionID?: string
+  error?: { name: string; data?: Record<string, unknown> }
+}
+
 export interface PermissionRequestMessage {
   type: "permissionRequest"
   permission: PermissionRequest
@@ -1184,6 +1190,7 @@ export type ExtensionMessage =
   | SendMessageFailedMessage
   | PartUpdatedMessage
   | SessionStatusMessage
+  | SessionErrorMessage
   | PermissionRequestMessage
   | PermissionResolvedMessage
   | PermissionErrorMessage
