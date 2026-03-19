@@ -1459,9 +1459,6 @@ export interface ChatCompletionAcceptedMessage {
   suggestionLength?: number
 }
 
-export interface CancelChatCompletionMessage {
-  type: "cancelChatCompletion"
-}
 export interface UpdateSettingRequest {
   type: "updateSetting"
   key: string
@@ -1814,7 +1811,6 @@ export type WebviewMessage =
   | RequestChatCompletionMessage
   | RequestFileSearchMessage
   | ChatCompletionAcceptedMessage
-  | CancelChatCompletionMessage
   | UpdateSettingRequest
   | RequestBrowserSettingsMessage
   | RequestConfigMessage

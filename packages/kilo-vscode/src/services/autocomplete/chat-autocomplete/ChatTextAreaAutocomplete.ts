@@ -15,11 +15,7 @@ export class ChatTextAreaAutocomplete {
     this.telemetry = telemetry ?? new AutocompleteTelemetry("chat-textarea")
   }
 
-  async getCompletion(
-    userText: string,
-    visibleCodeContext?: VisibleCodeContext,
-    signal?: AbortSignal,
-  ): Promise<{ suggestion: string }> {
+  async getCompletion(userText: string, visibleCodeContext?: VisibleCodeContext): Promise<{ suggestion: string }> {
     const startTime = Date.now()
 
     // Build context for telemetry
@@ -34,8 +30,6 @@ export class ChatTextAreaAutocomplete {
       return { suggestion: "" }
     }
 
-    if (signal?.aborted) return { suggestion: "" }
-
     // Capture suggestion requested
     this.telemetry.captureSuggestionRequested(context)
 
@@ -47,14 +41,9 @@ export class ChatTextAreaAutocomplete {
     try {
       // Use FIM if supported, otherwise fall back to chat-based completion
       if (this.model.supportsFim()) {
-        await this.model.generateFimResponse(
-          prefix,
-          suffix,
-          (chunk) => {
-            response += chunk
-          },
-          signal,
-        )
+        await this.model.generateFimResponse(prefix, suffix, (chunk) => {
+          response += chunk
+        })
       } else {
         // Fall back to chat-based completion for models without FIM support
         const systemPrompt = this.getChatSystemPrompt()

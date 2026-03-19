@@ -21,12 +21,9 @@ export class ChatAutocompleteService {
     message: ChatCompletionRequestMessage,
     sender: ChatCompletionResponseSender,
     connection: KiloConnectionService,
-    signal?: AbortSignal,
   ): Promise<void> {
     const text = message.text || ""
     const id = message.requestId || ""
-
-    if (signal?.aborted) return
 
     const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ""
 
@@ -38,17 +35,13 @@ export class ChatAutocompleteService {
       this.dir = workspace
     }
 
-    if (signal?.aborted) return
-
     const tracker = new VisibleCodeTracker(workspace, this.ignore)
     const context = await tracker.captureVisibleCode()
 
     const autocomplete = new ChatTextAreaAutocomplete(connection, this.telemetry)
-    const { suggestion } = await autocomplete.getCompletion(text, context, signal)
+    const { suggestion } = await autocomplete.getCompletion(text, context)
 
-    if (!signal?.aborted) {
-      sender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId: id })
-    }
+    sender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId: id })
   }
 
   dispose() {
