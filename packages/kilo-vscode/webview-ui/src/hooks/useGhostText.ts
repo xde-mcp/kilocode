@@ -21,8 +21,6 @@ export interface GhostText {
   accept: () => { text: string } | null
   /** Dismiss the current ghost text. */
   dismiss: () => void
-  /** Invalidate the current request (e.g. on send). */
-  invalidate: () => void
   /** Whether the mention dropdown is open (suppresses ghost text). */
   setMentionOpen: (open: boolean) => void
 }
@@ -36,12 +34,7 @@ export interface GhostText {
  *
  * Follows the legacy "syncAutocompleteTextVisibility" pattern.
  */
-export function useGhostText(
-  vscode: VSCodeContext,
-  getText: () => string,
-  connected: () => boolean,
-  sessionKey?: () => string | undefined,
-): GhostText {
+export function useGhostText(vscode: VSCodeContext, getText: () => string, connected: () => boolean): GhostText {
   const [ghost, setGhost] = createSignal("")
   const [enabled, setEnabled] = createSignal(false)
 
@@ -145,12 +138,6 @@ export function useGhostText(
     syncInternal(undefined)
   })
 
-  // Auto-invalidate when session changes to prevent cross-session ghost pollution
-  createEffect(() => {
-    sessionKey?.() // track the signal
-    invalidate()
-  })
-
   function sync(textarea: HTMLTextAreaElement | undefined) {
     // Track focus from the textarea
     if (textarea) {
@@ -202,18 +189,6 @@ export function useGhostText(
     setGhost("")
   }
 
-  function invalidate() {
-    counter++
-    saved = ""
-    savedPrefix = ""
-    setGhost("")
-    if (timer) clearTimeout(timer)
-  }
-
-  function cancelDebounce() {
-    if (timer) clearTimeout(timer)
-  }
-
   function setMentionOpen(open: boolean) {
     mentionOpen = open
     if (open) {
@@ -229,7 +204,6 @@ export function useGhostText(
     scheduleRequest,
     accept,
     dismiss,
-    invalidate,
     setMentionOpen,
   }
 }
