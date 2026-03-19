@@ -1,18 +1,61 @@
+import * as vscode from "vscode"
 import { AutocompleteModel } from "../AutocompleteModel"
 import { AutocompleteContext, VisibleCodeContext } from "../types"
 import { removePrefixOverlap } from "../continuedev/core/autocomplete/postprocessing/removePrefixOverlap.js"
 import { AutocompleteTelemetry } from "../classic-auto-complete/AutocompleteTelemetry"
 import { postprocessAutocompleteSuggestion } from "../classic-auto-complete/uselessSuggestionFilter"
+import { VisibleCodeTracker } from "../context/VisibleCodeTracker"
+import { FileIgnoreController } from "../shims/FileIgnoreController"
 import type { KiloConnectionService } from "../../cli-backend"
+import type { ChatCompletionRequestMessage, ChatCompletionResponseSender } from "./handleChatCompletionRequest"
 import { finalizeChatSuggestion, buildChatPrefix } from "./chat-autocomplete-utils"
 
+/**
+ * Chat textarea autocomplete with cached per-request objects.
+ *
+ * Caches FileIgnoreController (refreshed only when workspace changes) and
+ * shares a single AutocompleteTelemetry instance across requests so that
+ * request and acceptance events correlate.
+ */
 export class ChatTextAreaAutocomplete {
   private model: AutocompleteModel
-  private telemetry: AutocompleteTelemetry
+  readonly telemetry: AutocompleteTelemetry
+  private ignore: FileIgnoreController | null = null
+  private dir = ""
 
   constructor(connectionService: KiloConnectionService, telemetry?: AutocompleteTelemetry) {
     this.model = new AutocompleteModel(connectionService)
     this.telemetry = telemetry ?? new AutocompleteTelemetry("chat-textarea")
+  }
+
+  /**
+   * Full request handler — resolves visible code context, generates a
+   * completion, and posts the result back to the webview.
+   */
+  async handle(
+    message: ChatCompletionRequestMessage,
+    sender: ChatCompletionResponseSender,
+    connection: KiloConnectionService,
+  ): Promise<void> {
+    const text = message.text || ""
+    const id = message.requestId || ""
+
+    const workspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? ""
+
+    // Re-initialize the ignore controller only when the workspace changes
+    if (!this.ignore || this.dir !== workspace) {
+      this.ignore?.dispose()
+      this.ignore = new FileIgnoreController(workspace)
+      await this.ignore.initialize()
+      this.dir = workspace
+    }
+
+    const tracker = new VisibleCodeTracker(workspace, this.ignore)
+    const context = await tracker.captureVisibleCode()
+
+    const { suggestion } = await this.getCompletion(text, context)
+
+    sender.postMessage({ type: "chatCompletionResult", text: suggestion, requestId: id })
   }
 
   async getCompletion(userText: string, visibleCodeContext?: VisibleCodeContext): Promise<{ suggestion: string }> {
@@ -136,5 +179,10 @@ TASK: Complete the user's message naturally.
     })
     if (cleaned === undefined) return ""
     return finalizeChatSuggestion(cleaned)
+  }
+
+  dispose() {
+    this.ignore?.dispose()
+    this.ignore = null
   }
 }
