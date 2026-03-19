@@ -10,9 +10,9 @@ export class ChatTextAreaAutocomplete {
   private model: AutocompleteModel
   private telemetry: AutocompleteTelemetry
 
-  constructor(connectionService: KiloConnectionService) {
+  constructor(connectionService: KiloConnectionService, telemetry?: AutocompleteTelemetry) {
     this.model = new AutocompleteModel(connectionService)
-    this.telemetry = new AutocompleteTelemetry("chat-textarea")
+    this.telemetry = telemetry ?? new AutocompleteTelemetry("chat-textarea")
   }
 
   async getCompletion(

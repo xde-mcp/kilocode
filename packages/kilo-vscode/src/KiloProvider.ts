@@ -15,8 +15,7 @@ import type {
 import { type KiloConnectionService, type KilocodeNotification, ServerStartupError } from "./services/cli-backend"
 import type { EditorContext, CloudSessionData } from "./services/cli-backend/types"
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
-import { handleChatCompletionRequest } from "./services/autocomplete/chat-autocomplete/handleChatCompletionRequest"
-import { handleChatCompletionAccepted } from "./services/autocomplete/chat-autocomplete/handleChatCompletionAccepted"
+import { ChatAutocompleteService } from "./services/autocomplete/chat-autocomplete/ChatAutocompleteService"
 import { buildWebviewHtml } from "./utils"
 import { TelemetryProxy, type TelemetryPropertiesProvider } from "./services/telemetry"
 // legacy-migration start
@@ -96,6 +95,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreController: FileIgnoreController | null = null
   private ignoreControllerDir: string | null = null
   private marketplace: MarketplaceService | null = null
+  private chatAutocomplete = new ChatAutocompleteService()
   private projectDirectory: string | null | undefined
   private slimEditMetadata = true
 
@@ -605,7 +605,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           this.chatCompletionAbort?.abort()
           const controller = new AbortController()
           this.chatCompletionAbort = controller
-          void handleChatCompletionRequest(
+          void this.chatAutocomplete.handle(
             { type: "requestChatCompletion", text: message.text, requestId: message.requestId },
             { postMessage: (msg) => this.postMessage(msg) },
             this.connectionService,
@@ -645,7 +645,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         }
         case "chatCompletionAccepted":
-          handleChatCompletionAccepted({ type: "chatCompletionAccepted", suggestionLength: message.suggestionLength })
+          this.chatAutocomplete.telemetry.captureAcceptSuggestion(message.suggestionLength)
           break
         case "deleteSession":
           await this.handleDeleteSession(message.sessionID)
