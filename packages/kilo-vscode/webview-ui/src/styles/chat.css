@@ -1436,6 +1436,9 @@
   background: var(--vscode-testing-iconPassed, #4caf50) !important;
   color: #fff !important;
   text-transform: uppercase;
+  font-size: 8px !important;
+  padding: 1px 3px !important;
+  opacity: 0.8;
 }
 
 .model-selector-item-select-btn {
