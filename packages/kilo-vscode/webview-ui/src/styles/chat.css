@@ -1039,6 +1039,62 @@
 }
 
 /* ============================================
+   Slash Command Dropdown
+   ============================================ */
+
+.slash-command-dropdown {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-input-border));
+  border-radius: 4px;
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.slash-command-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--vscode-foreground);
+  min-width: 0;
+}
+
+.slash-command-item--active {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.slash-command-name {
+  flex-shrink: 0;
+  font-weight: 500;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.slash-command-desc {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.6;
+  font-size: 11px;
+}
+
+.slash-command-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  text-align: center;
+}
+
+/* ============================================
    Model Selector (uses kilo-ui Popover)
    ============================================ */
 
@@ -1294,6 +1350,25 @@
     font-size: 12px;
   }
 
+  [data-slot="permission-patterns"] {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+
+  [data-slot="permission-patterns-title"] {
+    font-size: 12px;
+    color: var(--text-weak, var(--vscode-descriptionForeground));
+  }
+
+  [data-slot="permission-pattern"] {
+    font-size: 12px;
+    font-family: var(--vscode-editor-font-family, monospace);
+    color: var(--text-weak, var(--vscode-descriptionForeground));
+    word-break: break-all;
+  }
+
   [data-slot="permission-rules"] {
     margin: 0;
     max-height: 160px;
@@ -1373,15 +1448,6 @@
     gap: 6px;
     padding: 3px 0 3px 8px;
     min-width: 0;
-
-    &[data-decision="approved"] [data-slot="permission-rule"] {
-      color: var(--text-success, var(--vscode-testing-iconPassed, #5cb85c));
-    }
-
-    &[data-decision="denied"] [data-slot="permission-rule"] {
-      color: var(--text-error, var(--vscode-errorForeground, #f44));
-      text-decoration: line-through;
-    }
   }
 
   [data-slot="permission-rule-type"] {
@@ -1706,11 +1772,10 @@
 
 /* ============================================
    Todo tool — align checkboxes with icon in header
-   The trigger has 8px left padding, 16px icon, 8px gap = 32px total offset.
    ============================================ */
 
 [data-component="todos"] {
-  padding-left: 32px;
+  padding: 12px;
 }
 
 /* ============================================
