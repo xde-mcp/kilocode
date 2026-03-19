@@ -134,7 +134,7 @@ const TIPS = [
   "Run {highlight}kilo debug config{/highlight} to troubleshoot configuration",
   "Use {highlight}--print-logs{/highlight} flag to see detailed logs in stderr",
   "Press {highlight}Ctrl+X G{/highlight} or {highlight}/timeline{/highlight} to jump to specific messages",
-  "Press {highlight}Ctrl+X S{/highlight} or {highlight}/status{/highlight} to see system status info",
+  "Press {highlight}Ctrl+X S{/highlight} or {highlight}/status{/highlight} to see config paths, MCP servers, and system info",
   "Enable {highlight}tui.scroll_acceleration{/highlight} for smooth macOS-style scrolling",
   "Toggle username display in chat via command palette ({highlight}Ctrl+P{/highlight})",
   "Commit your project's {highlight}AGENTS.md{/highlight} file to Git for team sharing",
