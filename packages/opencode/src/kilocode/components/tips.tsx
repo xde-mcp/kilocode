@@ -30,9 +30,9 @@ function parse(tip: string): TipPart[] {
   return parts
 }
 
-export function Tips() {
+export function Tips(props: { tip?: string }) {
   const theme = useTheme().theme
-  const parts = parse(TIPS[Math.floor(Math.random() * TIPS.length)])
+  const parts = parse(props.tip ?? TIPS[Math.floor(Math.random() * TIPS.length)])
 
   return (
     <box flexDirection="row" maxWidth="100%">
