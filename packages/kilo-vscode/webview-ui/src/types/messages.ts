@@ -1458,7 +1458,6 @@ export interface ChatCompletionAcceptedMessage {
   type: "chatCompletionAccepted"
   suggestionLength?: number
 }
-
 export interface UpdateSettingRequest {
   type: "updateSetting"
   key: string
