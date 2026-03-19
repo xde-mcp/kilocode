@@ -118,6 +118,8 @@ export const dict = {
   "dialog.model.empty": "No model results",
   "dialog.model.manage": "Manage models",
   "dialog.model.manage.description": "Customize which models appear in the model selector.",
+  "dialog.model.expand": "Expand",
+  "dialog.model.collapse": "Collapse",
 
   "dialog.model.unpaid.freeModels.title": "Free models provided by Kilo",
   "dialog.model.unpaid.addMore.title": "Add more models from popular providers",

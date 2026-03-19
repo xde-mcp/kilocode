@@ -19,6 +19,15 @@ export function isFree(model: Pick<EnrichedModel, "isFree">): boolean {
   return model.isFree === true
 }
 
+// Strips trailing free-indicator suffixes from model display names, e.g.
+// "Llama 3 (free)" → "Llama 3", "Mixtral free" → "Mixtral"
+export function sanitizeName(name: string): string {
+  return name
+    .replace(/[\s:_-]*\(free\)\s*$/i, "")
+    .replace(/[\s:_-]+free\s*$/i, "")
+    .trim()
+}
+
 export function stripSubProviderPrefix(name: string): string {
   const colon = name.indexOf(": ")
   if (colon < 0) return name

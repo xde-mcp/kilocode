@@ -118,6 +118,8 @@ export const dict = {
   "dialog.model.empty": "モデルが見つかりません",
   "dialog.model.manage": "モデルを管理",
   "dialog.model.manage.description": "モデルセレクターに表示するモデルをカスタマイズします。",
+  "dialog.model.expand": "展開",
+  "dialog.model.collapse": "折りたたむ",
 
   "dialog.model.unpaid.freeModels.title": "Kiloが提供する無料モデル",
   "dialog.model.unpaid.addMore.title": "人気のプロバイダーからモデルを追加",

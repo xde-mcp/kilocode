@@ -118,6 +118,8 @@ export const dict = {
   "dialog.model.empty": "Модели не найдены",
   "dialog.model.manage": "Управление моделями",
   "dialog.model.manage.description": "Настройте какие модели появляются в выборе модели",
+  "dialog.model.expand": "Развернуть",
+  "dialog.model.collapse": "Свернуть",
 
   "dialog.model.unpaid.freeModels.title": "Бесплатные модели от Kilo",
   "dialog.model.unpaid.addMore.title": "Добавьте больше моделей от популярных провайдеров",

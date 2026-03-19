@@ -122,6 +122,8 @@ export const dict = {
   "dialog.model.empty": "找不到模型",
   "dialog.model.manage": "管理模型",
   "dialog.model.manage.description": "自訂模型選擇器中顯示的模型。",
+  "dialog.model.expand": "展開",
+  "dialog.model.collapse": "收起",
 
   "dialog.model.unpaid.freeModels.title": "Kilo 提供的免費模型",
   "dialog.model.unpaid.addMore.title": "從熱門供應商新增更多模型",

@@ -1,5 +1,7 @@
 import { Component, Show, For } from "solid-js"
 import type { EnrichedModel } from "../../context/provider"
+import { Markdown } from "@kilocode/kilo-ui/markdown"
+import { sanitizeName } from "./model-selector-utils"
 
 interface Props {
   model: EnrichedModel | null
@@ -50,13 +52,13 @@ export const ModelPreview: Component<Props> = (props) => {
 
           return (
             <>
-              {/* Header — name + provider + free badge */}
+              <Show when={model().isFree}>
+                <span class="model-preview-badge model-preview-badge--free model-preview-badge--top-right">Free</span>
+              </Show>
+              {/* Header — name + provider */}
               <div class="model-preview-header">
                 <div class="model-preview-name-row">
-                  <span class="model-preview-name">{model().name}</span>
-                  <Show when={model().isFree}>
-                    <span class="model-preview-badge model-preview-badge--free">Free</span>
-                  </Show>
+                  <span class="model-preview-name">{sanitizeName(model().name)}</span>
                 </div>
                 <span class="model-preview-provider">{model().providerName}</span>
               </div>
@@ -96,7 +98,9 @@ export const ModelPreview: Component<Props> = (props) => {
 
               {/* Description */}
               <Show when={model().options?.description}>
-                <p class="model-preview-description">{model().options!.description}</p>
+                <div class="model-preview-description">
+                  <Markdown text={model().options!.description!} />
+                </div>
               </Show>
             </>
           )
