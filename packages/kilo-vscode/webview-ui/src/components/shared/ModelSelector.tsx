@@ -58,12 +58,18 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
   const [open, setOpen] = createSignal(false)
   const [expanded, setExpanded] = createSignal(false)
+  const [panelW, setPanelW] = createSignal(document.documentElement.clientWidth)
   const [search, setSearch] = createSignal("")
   const [debouncedSearch, setDebouncedSearch] = createSignal("")
   const [selectedIndex, setSelectedIndex] = createSignal(0)
   const [preActiveIdx, setPreActiveIdx] = createSignal(-1)
   const [previewIdx, setPreviewIdx] = createSignal(-1)
   const [previewHeight, setPreviewHeight] = createSignal(320)
+
+  const popoverW = createMemo(() => {
+    const preferred = expanded() ? 350 : 250
+    return Math.max(100, Math.min(preferred, panelW()))
+  })
 
   let searchRef: HTMLInputElement | undefined
   let listRef: HTMLDivElement | undefined
@@ -183,6 +189,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   // Focus search input, set selectedIndex to active model, and scroll it into view when popover opens
   createEffect(() => {
     if (open()) {
+      setPanelW(document.documentElement.clientWidth)
       const active = activeModel()
       const activeIdx = active ? (flatIndexMap().get(active) ?? 0) : 0
       setSelectedIndex(activeIdx)
@@ -288,6 +295,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   return (
     <Popover
       placement={props.placement ?? "top-start"}
+      slide={true}
       open={open()}
       onOpenChange={setOpen}
       triggerAs={Button}
@@ -306,6 +314,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
         </>
       }
       class={`model-selector-popover${expanded() ? " model-selector-popover--expanded" : ""}`}
+      style={{ width: `${popoverW()}px`, "max-width": `${popoverW()}px` }}
     >
       <div
         onKeyDown={handleKeyDown}

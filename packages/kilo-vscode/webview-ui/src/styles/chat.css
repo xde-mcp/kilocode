@@ -1115,16 +1115,12 @@
    ============================================ */
 
 .model-selector-popover {
-  width: 300px;
-  max-width: 300px;
   transition:
     width 0.2s ease,
     max-width 0.2s ease;
 }
 
 .model-selector-popover--expanded {
-  width: min(450px, 100vw);
-  max-width: min(450px, 100vw);
 }
 
 /* Body is always flex so height changes animate in the same pass as width */
