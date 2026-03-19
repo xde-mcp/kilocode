@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, onMount } from "solid-js"
+import { createEffect, createSignal, onCleanup, onMount } from "solid-js"
 import type { Accessor } from "solid-js"
 import type { ExtensionMessage, WebviewMessage } from "../types/messages"
 
@@ -23,8 +23,6 @@ export interface GhostText {
   dismiss: () => void
   /** Invalidate the current request (e.g. on send). */
   invalidate: () => void
-  /** Cancel any pending debounce timer. */
-  cancelDebounce: () => void
   /** Whether the mention dropdown is open (suppresses ghost text). */
   setMentionOpen: (open: boolean) => void
 }
@@ -128,6 +126,14 @@ export function useGhostText(vscode: VSCodeContext, getText: () => string, conne
     setGhost(saved)
   }
 
+  // Reactively reconcile ghost text whenever the input text changes.
+  // This replaces manual ghost.dismiss() calls after setText() — if the text
+  // no longer matches savedPrefix, syncInternal will clear the ghost.
+  createEffect(() => {
+    getText() // track the signal
+    syncInternal(undefined)
+  })
+
   function sync(textarea: HTMLTextAreaElement | undefined) {
     // Track focus from the textarea
     if (textarea) {
@@ -210,7 +216,6 @@ export function useGhostText(vscode: VSCodeContext, getText: () => string, conne
     accept,
     dismiss,
     invalidate,
-    cancelDebounce,
     setMentionOpen,
   }
 }

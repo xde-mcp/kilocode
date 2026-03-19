@@ -226,7 +226,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const unsubscribe = vscode.onMessage((message) => {
     if (message.type === "setChatBoxMessage") {
       setText(message.text)
-      ghost.dismiss()
       if (textareaRef) {
         textareaRef.value = message.text
         adjustHeight()
@@ -238,7 +237,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const separator = current && !current.endsWith("\n") ? "\n\n" : ""
       const next = current + separator + message.text
       setText(next)
-      ghost.dismiss()
       if (textareaRef) {
         textareaRef.value = next
         adjustHeight()
@@ -268,7 +266,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       if (target === sessionKey() && !text().trim() && imageAttach.images().length === 0) {
         if (failed.text) {
           setText(failed.text)
-          ghost.dismiss()
           if (textareaRef) {
             textareaRef.value = failed.text
             adjustHeight()
@@ -295,7 +292,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const result = message as import("../../types/messages").EnhancePromptResultMessage
       if (result.requestId === `enhance-${enhanceCounter}`) {
         setText(result.text)
-        ghost.dismiss()
         setEnhancing(false)
         if (textareaRef) {
           textareaRef.value = result.text
@@ -397,7 +393,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       const restored = preEnhanceText
       preEnhanceText = null
       setText(restored)
-      ghost.dismiss()
       if (textareaRef) {
         textareaRef.value = restored
         adjustHeight()
@@ -428,7 +423,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
       if (entry !== null) {
         e.preventDefault()
         setText(entry)
-        ghost.dismiss()
         if (textareaRef) {
           textareaRef.value = entry
           adjustHeight()
@@ -465,7 +459,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      ghost.dismiss()
       handleSend()
     }
   }
@@ -478,7 +471,6 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (!draft) {
       const description = language.t("prompt.action.enhanceDescription")
       setText(description)
-      ghost.dismiss()
       if (textareaRef) {
         textareaRef.value = description
         adjustHeight()
