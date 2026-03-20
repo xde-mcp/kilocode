@@ -83,6 +83,7 @@ export const dict = {
   "revert.banner.redo": "Redo",
   "revert.banner.redo.all": "Redo All",
   "revert.banner.hint": "Send a new message to make this permanent",
+  "revert.disabled.agentBusy": "Poczekaj aż agent zakończy",
   "command.session.compact": "Kompaktuj sesję",
   "command.session.compact.description": "Podsumuj sesję, aby zmniejszyć rozmiar kontekstu",
   "command.session.fork": "Rozwidlij od wiadomości",
