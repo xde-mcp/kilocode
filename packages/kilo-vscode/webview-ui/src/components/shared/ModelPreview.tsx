@@ -37,7 +37,7 @@ export const ModelPreview: Component<Props> = (props) => {
 
   return (
     <div class="model-preview">
-      <Show when={m()} fallback={<div class="model-preview-empty">No model selected</div>}>
+      <Show when={m()}>
         {(model) => {
           const cost = () => model().cost
           const ctx = () => model().limit?.context ?? model().contextLength
