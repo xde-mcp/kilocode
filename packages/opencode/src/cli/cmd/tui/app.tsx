@@ -379,7 +379,7 @@ function App() {
         dialog.replace(() => <DialogSessionList />)
       },
     },
-    ...(Flag.OPENCODE_EXPERIMENTAL_WORKSPACES_TUI
+    ...(Flag.KILO_EXPERIMENTAL_WORKSPACES_TUI
       ? [
           {
             title: "Manage workspaces",

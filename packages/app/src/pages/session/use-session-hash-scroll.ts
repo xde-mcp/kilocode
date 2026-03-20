@@ -44,9 +44,6 @@ export const useSessionHashScroll = (input: {
     frames.clear()
   }
 
-  const location = useLocation()
-  const navigate = useNavigate()
-
   const clearMessageHash = () => {
     cancel()
     input.consumePendingMessage(input.sessionKey())
