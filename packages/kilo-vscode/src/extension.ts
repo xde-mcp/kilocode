@@ -12,6 +12,7 @@ import { BrowserAutomationService } from "./services/browser-automation"
 import { TelemetryProxy } from "./services/telemetry"
 import { registerCommitMessageService } from "./services/commit-message"
 import { registerCodeActions, registerTerminalActions, KiloCodeActionProvider } from "./services/code-actions"
+import { registerToggleAutoApprove } from "./commands/toggle-auto-approve"
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("Kilo Code extension is now active")
@@ -195,6 +196,27 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register commit message generation
   registerCommitMessageService(context, connectionService)
+
+  // Register toggle auto-approve shortcut (Ctrl+Alt+A / Cmd+Alt+A)
+  const defaultDir = () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd()
+  registerToggleAutoApprove(
+    context,
+    connectionService,
+    (sessionId) => {
+      if (sessionId) {
+        const dir =
+          provider.getSessionDirectories().get(sessionId) ?? agentManagerProvider.getSessionDirectories().get(sessionId)
+        if (dir) return dir
+      }
+      return defaultDir()
+    },
+    () => {
+      const dirs = new Set([defaultDir()])
+      for (const dir of provider.getSessionDirectories().values()) dirs.add(dir)
+      for (const dir of agentManagerProvider.getSessionDirectories().values()) dirs.add(dir)
+      return [...dirs]
+    },
+  )
 
   // Register code actions (editor context menus, terminal context menus, keyboard shortcuts)
   registerCodeActions(context, provider, agentManagerProvider)
