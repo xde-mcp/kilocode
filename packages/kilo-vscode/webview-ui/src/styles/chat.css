@@ -1157,6 +1157,7 @@
 
 .model-selector-list {
   overflow-y: auto;
+  scrollbar-gutter: stable;
   max-height: 300px;
   padding: 4px 0;
 }
@@ -1619,6 +1620,32 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* Provider Connect Dialog */
+.provider-connect-body {
+  font-size: 13px;
+  color: var(--text-base);
+}
+
+.provider-connect-code-label {
+  font-size: 12px;
+  color: var(--text-weak-base);
+}
+
+.provider-connect-code {
+  font-family: monospace;
+  padding: 8px 10px;
+  border: 1px solid var(--border-weak-base);
+  border-radius: 8px;
+  margin-top: 6px;
+}
+
+.provider-connect-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
 }
 
 /* ============================================
