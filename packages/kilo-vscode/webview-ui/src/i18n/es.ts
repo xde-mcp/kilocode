@@ -116,6 +116,9 @@ export const dict = {
   "dialog.model.empty": "Sin resultados de modelos",
   "dialog.model.manage": "Gestionar modelos",
   "dialog.model.manage.description": "Personalizar qué modelos aparecen en el selector de modelos.",
+  "dialog.model.select": "Seleccionar",
+  "dialog.model.expand": "Expandir",
+  "dialog.model.collapse": "Contraer",
 
   "dialog.model.unpaid.freeModels.title": "Modelos gratuitos proporcionados por Kilo",
   "dialog.model.unpaid.addMore.title": "Añadir más modelos de proveedores populares",

@@ -3,6 +3,7 @@ import {
   providerSortKey,
   buildTriggerLabel,
   stripSubProviderPrefix,
+  sanitizeName,
   KILO_GATEWAY_ID,
   PROVIDER_ORDER,
 } from "../../webview-ui/src/components/shared/model-selector-utils"
@@ -57,6 +58,43 @@ describe("stripSubProviderPrefix", () => {
   it("does not strip 'Kilo: ' prefix", () => {
     expect(stripSubProviderPrefix("Kilo: Auto")).toBe("Kilo: Auto")
     expect(stripSubProviderPrefix("kilo: Auto")).toBe("kilo: Auto")
+  })
+})
+
+describe("sanitizeName", () => {
+  it("strips trailing (free) suffix", () => {
+    expect(sanitizeName("Llama 3 (free)")).toBe("Llama 3")
+  })
+
+  it("strips trailing free suffix", () => {
+    expect(sanitizeName("Mixtral free")).toBe("Mixtral")
+  })
+
+  it("strips trailing :free suffix", () => {
+    expect(sanitizeName("Mistral:free")).toBe("Mistral")
+  })
+
+  it("strips trailing -free suffix", () => {
+    expect(sanitizeName("Gemma-free")).toBe("Gemma")
+  })
+
+  it("is case-insensitive", () => {
+    expect(sanitizeName("Model (Free)")).toBe("Model")
+    expect(sanitizeName("Model FREE")).toBe("Model")
+  })
+
+  it("leaves names without free suffix unchanged", () => {
+    expect(sanitizeName("GPT-4o")).toBe("GPT-4o")
+    expect(sanitizeName("Claude Sonnet")).toBe("Claude Sonnet")
+  })
+
+  it("does not strip 'free' from the middle of a name", () => {
+    expect(sanitizeName("FreeAgent Pro")).toBe("FreeAgent Pro")
+  })
+
+  it("handles extra whitespace around suffix", () => {
+    expect(sanitizeName("Llama 3 (free)  ")).toBe("Llama 3")
+    expect(sanitizeName("Model  free  ")).toBe("Model")
   })
 })
 

@@ -116,6 +116,9 @@ export const dict = {
   "dialog.model.empty": "Ingen modeller fundet",
   "dialog.model.manage": "Administrer modeller",
   "dialog.model.manage.description": "Tilpas hvilke modeller der vises i modelvælgeren.",
+  "dialog.model.select": "Vælg",
+  "dialog.model.expand": "Udvid",
+  "dialog.model.collapse": "Skjul",
 
   "dialog.model.unpaid.freeModels.title": "Gratis modeller leveret af Kilo",
   "dialog.model.unpaid.addMore.title": "Tilføj flere modeller fra populære udbydere",
