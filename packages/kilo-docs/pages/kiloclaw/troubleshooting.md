@@ -35,7 +35,7 @@ No. Redeploy does **not** delete your files, git repos, or cron jobs. It stops t
 
 ### Accessing and Restoring Config Files
 
-You can directly access the files on your KiloClaw on the [KiloClaw Dashboard](https://app.kilo.ai/claw). This can be a useful way to examine config files (especially `openclaw.json`) if you run into an issue. There may also be automated backups under `openclaw.bak` that you can restore.
+You can directly access the files in /root/.openclaw/ on the [KiloClaw Dashboard](https://app.kilo.ai/claw) using the file browser of the edit files dialog. This can be a useful way to examine or update the config files (especially `openclaw.json`) if you run into an issue. There may also be backups in the form of `openclaw.bak` files that you can manually restore from if needed.
 
 ### The gateway shows "Crashed"
 
