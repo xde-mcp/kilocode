@@ -298,6 +298,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       preferredExpandedWidth={350}
       preferredHeight={300}
       preferredExpandedHeight={800}
+      minHeight={200}
       placement={props.placement ?? "top-start"}
       open={open()}
       onOpenChange={setOpen}
