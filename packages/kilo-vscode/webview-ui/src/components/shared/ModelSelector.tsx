@@ -69,7 +69,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   let listRef: HTMLDivElement | undefined
   let bodyRef: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
-  let pointer = true
+  const [pointer, setPointer] = createSignal(true)
 
   function onSplitterMouseDown(e: MouseEvent) {
     e.preventDefault()
@@ -233,7 +233,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
     if (e.key === "ArrowDown") {
       e.preventDefault()
-      pointer = false
+      setPointer(false)
       const next = Math.min(selectedIndex() + 1, totalLen - 1)
       setSelectedIndex(next)
       setPreActiveIdx(next)
@@ -242,7 +242,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       scrollSelectedIntoView()
     } else if (e.key === "ArrowUp") {
       e.preventDefault()
-      pointer = false
+      setPointer(false)
       const next = Math.max(selectedIndex() - 1, 0)
       setSelectedIndex(next)
       setPreActiveIdx(next)
@@ -372,10 +372,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                 aria-selected={!props.value?.providerID}
                 onClick={() => pickClear()}
                 onMouseMove={() => {
-                  pointer = true
+                  setPointer(true)
                 }}
                 onMouseEnter={() => {
-                  if (pointer) setSelectedIndex(0)
+                  if (pointer()) setSelectedIndex(0)
                 }}
               >
                 <span class="model-selector-item-name" style={{ "font-style": "italic", opacity: 0.7 }}>
@@ -396,7 +396,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                       const showSelectBtn = () => expanded() && preActive() && !isActive(model)
                       return (
                         <div
-                          class={`model-selector-item${hovered() ? " keyboard-focused" : ""}${hovered() || preActive() ? " selected" : ""}${isActive(model) ? " active" : ""}`}
+                          class={`model-selector-item${(hovered() && !pointer()) || preActive() ? " keyboard-focused" : ""}${hovered() || preActive() ? " selected" : ""}${isActive(model) ? " active" : ""}`}
                           role="option"
                           aria-selected={isActive(model)}
                           onClick={() => {
@@ -410,10 +410,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                             if (expanded()) pick(model)
                           }}
                           onMouseMove={() => {
-                            pointer = true
+                            setPointer(true)
                           }}
                           onMouseEnter={() => {
-                            if (pointer) setSelectedIndex(idx())
+                            if (pointer()) setSelectedIndex(idx())
                           }}
                         >
                           <div class="model-selector-item-left">
