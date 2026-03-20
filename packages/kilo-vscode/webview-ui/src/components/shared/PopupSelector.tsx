@@ -71,10 +71,7 @@ export function PopupSelector<T extends ValidComponent = ValidComponent>(props: 
   const [panelH, setPanelH] = createSignal<number | undefined>(undefined)
 
   createEffect(() => {
-    if (!rest.open) {
-      setPanelH(undefined)
-      return
-    }
+    if (!rest.open) return
 
     setPanelW(document.documentElement.clientWidth)
 
