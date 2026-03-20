@@ -372,7 +372,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
             <Show when={props.allowClear}>
               <div
-                class={`model-selector-item${isSelected(0) ? " selected" : ""}${!props.value?.providerID ? " active" : ""}`}
+                class={`model-selector-item${isSelected(0) && !pointer() ? " keyboard-focused" : ""}${isSelected(0) ? " selected" : ""}${!props.value?.providerID ? " active" : ""}`}
                 role="option"
                 aria-selected={!props.value?.providerID}
                 onClick={() => pickClear()}
