@@ -1285,6 +1285,7 @@ function WebfetchMeta(props: { url: string; animate?: boolean }) {
       <a
         data-slot="basic-tool-tool-subtitle"
         class="clickable subagent-link"
+        title={props.url}
         href={props.url}
         target="_blank"
         rel="noopener noreferrer"
@@ -1397,6 +1398,7 @@ function ToolMetaLine(props: {
   return (
     <span
       ref={ref}
+      title={props.path ? `${props.filename} ${props.path}` : props.filename}
       data-slot={props.soft ? "basic-tool-tool-subtitle" : "message-part-meta-line"}
       classList={{
         "message-part-meta-line": !!props.soft,
