@@ -66,6 +66,25 @@ export function activate(context: vscode.ExtensionContext) {
     }),
   )
 
+  // Register serializer so "Open in Tab" restores when VS Code restarts
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer("kilo-code.new.TabPanel", {
+      deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+        const tabProvider = new KiloProvider(context.extensionUri, connectionService, context)
+        tabProvider.resolveWebviewPanel(panel)
+        panel.onDidDispose(
+          () => {
+            console.log("[Kilo New] Tab panel restored from restart disposed")
+            tabProvider.dispose()
+          },
+          null,
+          context.subscriptions,
+        )
+        return Promise.resolve()
+      },
+    }),
+  )
+
   // Create standalone diff viewer provider for the sidebar "Show Changes" action
   const diffViewerProvider = new DiffViewerProvider(context.extensionUri, connectionService)
   diffViewerProvider.setCommentHandler((comments) => {
@@ -80,6 +99,39 @@ export function activate(context: vscode.ExtensionContext) {
   // Create sub-agent viewer provider (read-only editor panel for sub-agent sessions)
   const subAgentViewerProvider = new SubAgentViewerProvider(context.extensionUri, connectionService, context)
   context.subscriptions.push(subAgentViewerProvider)
+
+  // Register serializers so settings/diff/sub-agent panels restore on restart
+  const settingsViews = ["settingsPanel", "profilePanel", "marketplacePanel"] as const
+  for (const suffix of settingsViews) {
+    context.subscriptions.push(
+      vscode.window.registerWebviewPanelSerializer(`kilo-code.new.${suffix}`, {
+        deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+          settingsEditorProvider.deserializePanel(panel)
+          return Promise.resolve()
+        },
+      }),
+    )
+  }
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer(DiffViewerProvider.viewType, {
+      deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+        diffViewerProvider.deserializePanel(panel)
+        return Promise.resolve()
+      },
+    }),
+  )
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewPanelSerializer("kilo-code.new.SubAgentViewerPanel", {
+      deserializeWebviewPanel(panel: vscode.WebviewPanel) {
+        // Sub-agent viewer requires a session ID that can't be recovered
+        // after restart, so dispose the stale panel cleanly.
+        panel.dispose()
+        return Promise.resolve()
+      },
+    }),
+  )
 
   // Register toolbar button command handlers
   context.subscriptions.push(
