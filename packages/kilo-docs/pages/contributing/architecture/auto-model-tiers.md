@@ -54,7 +54,7 @@ For the current mode-to-model mappings, see the [Auto Model user docs](/docs/cod
 
 **What it does**: Follows the same mode-based routing structure as Frontier but uses cost-effective open-weight models for both reasoning and implementation tasks.
 
-**Pricing**: Paid, but significantly cheaper than Frontier. Some underlying models may be free.
+**Pricing**: Paid, but significantly cheaper than Frontier.
 
 For the current mode-to-model mappings, see the [Auto Model user docs](/docs/code-with-ai/agents/auto-model#auto-balanced).
 
@@ -72,7 +72,7 @@ For the current mode-to-model mappings, see the [Auto Model user docs](/docs/cod
 
 **Who it's for**: Not user-facing. Used internally by Kilo for lightweight background tasks (session titles, commit messages, conversation summaries).
 
-**What it does**: Automatically selects the right small model for lightweight tasks. When credits are available, it uses a fast paid small model. When no credits are available, it falls back to a capable free small model.
+**What it does**: Automatically selects the right small model for lightweight tasks. When credits are available, it uses a fast paid small model.
 
 **Why it matters**: Users never think about background tasks, and they shouldn't have to. Auto: Small ensures these tasks always work, always feel fast, and never waste credits on an expensive model when a cheap one will do.
 
@@ -96,7 +96,6 @@ Auto: Small does not appear in the model picker. It is filtered out by the UI (s
 
 - **Authenticated users**: Default to `kilo-auto/balanced` (defined in `packages/kilo-gateway/src/api/constants.ts`)
 - **Unauthenticated users**: Default to `kilo-auto/free`
-- **VS Code extension**: Defaults to `kilo-auto/free` as the fallback when no other selection exists
 
 This means a brand-new user who hasn't signed in gets a working experience immediately — no model selection required.
 
@@ -155,9 +154,6 @@ The client-side chain works as follows:
 ## Requirements
 
 - Unauthenticated users default to `kilo-auto/free` with no configuration required
-- Free tier handles model availability changes gracefully — fallback to next-best free model, never surface a "model unavailable" error if any free model exists
-- Balanced tier uses open-weight models as primary routing targets
-- Auto: Small detects credit availability and selects paid or free small models accordingly
 - All tiers use mode-based routing where the underlying models support it
 - When a tier routes to different model families across turns in a conversation, thinking/reasoning blocks from the previous model are stripped to prevent compatibility errors
 - Auto Model requires **VS Code/JetBrains extension v5.2.3+** or **CLI v1.0.15+** for mode-based switching. Older versions fall back to a single model for all requests.
