@@ -51,11 +51,7 @@ import { TextShimmer } from "@opencode-ai/ui/text-shimmer"
 import { GrowBox } from "./grow-box"
 import { COLLAPSIBLE_SPRING } from "./motion"
 import { busy, createThrottledValue, useToolFade, useContextToolPending } from "./tool-utils"
-import {
-  ContextToolGroupHeader,
-  ContextToolExpandedList,
-  ContextToolRollingResults,
-} from "./context-tool-results"
+import { ContextToolGroupHeader, ContextToolExpandedList, ContextToolRollingResults } from "./context-tool-results"
 import { ShellRollingResults } from "./shell-rolling-results"
 import { extractFilePathFromHref } from "../file-path"
 
@@ -1291,6 +1287,7 @@ function WebfetchMeta(props: { url: string; animate?: boolean }) {
       <a
         data-slot="basic-tool-tool-subtitle"
         class="clickable subagent-link"
+        title={props.url}
         href={props.url}
         target="_blank"
         rel="noopener noreferrer"
@@ -1403,6 +1400,7 @@ function ToolMetaLine(props: {
   return (
     <span
       ref={ref}
+      title={props.path ? `${props.filename} ${props.path}` : props.filename}
       data-slot={props.soft ? "basic-tool-tool-subtitle" : "message-part-meta-line"}
       classList={{
         "message-part-meta-line": !!props.soft,
