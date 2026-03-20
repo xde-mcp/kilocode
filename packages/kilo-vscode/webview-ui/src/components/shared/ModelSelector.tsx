@@ -66,6 +66,8 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   const [previewHeight, setPreviewHeight] = createSignal(320)
 
   let searchRef: HTMLInputElement | undefined
+  let searchWrapperRef: HTMLDivElement | undefined
+  let splitterRef: HTMLDivElement | undefined
   let listRef: HTMLDivElement | undefined
   let bodyRef: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
@@ -80,7 +82,10 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     function onMove(e: MouseEvent) {
       if (!body) return
       const delta = startY - e.clientY
-      const max = body.offsetHeight - 80
+      // Subtract fixed chrome (search wrapper + splitter) so the list always
+      // retains at least 80px, rather than the preview consuming that space.
+      const chrome = (searchWrapperRef?.offsetHeight ?? 0) + (splitterRef?.offsetHeight ?? 0)
+      const max = body.offsetHeight - chrome - 80
       setPreviewHeight(Math.max(80, Math.min(max, startH + delta)))
     }
 
@@ -326,7 +331,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           style={{ height: `${bodyH()}px` }}
           ref={bodyRef}
         >
-          <div class="model-selector-search-wrapper">
+          <div class="model-selector-search-wrapper" ref={searchWrapperRef}>
             <input
               ref={searchRef}
               class="model-selector-search"
@@ -455,7 +460,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
           </div>
 
           <Show when={expanded()}>
-            <div class="model-selector-splitter" onMouseDown={onSplitterMouseDown} />
+            <div class="model-selector-splitter" ref={splitterRef} onMouseDown={onSplitterMouseDown} />
           </Show>
           <div
             class={`model-selector-preview${expanded() ? " model-selector-preview--visible" : ""}`}
