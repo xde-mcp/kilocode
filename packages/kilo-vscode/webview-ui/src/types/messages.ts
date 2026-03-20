@@ -2,6 +2,8 @@
  * Types for extension <-> webview message communication
  */
 
+import type { ProviderAuthAuthorization, ProviderAuthMethod } from "@kilocode/sdk/v2/client"
+
 // Connection states
 export type ConnectionState = "connecting" | "connected" | "disconnected" | "error"
 
@@ -293,12 +295,16 @@ export interface Provider {
   id: string
   name: string
   models: Record<string, ProviderModel>
+  source?: "env" | "config" | "custom" | "api"
+  env?: string[]
 }
 
 export interface ModelSelection {
   providerID: string
   modelID: string
 }
+
+export type ProviderAuthState = "api" | "oauth" | "wellknown"
 
 // ============================================
 // Backend Config Types (mirrored for webview)
@@ -325,6 +331,9 @@ export interface ProviderConfig {
   api_key?: string
   base_url?: string
   models?: Record<string, unknown>
+  npm?: string
+  env?: string[]
+  options?: Record<string, unknown>
 }
 
 export interface McpConfig {
@@ -449,6 +458,12 @@ export interface SessionStatusMessage {
   attempt?: number
   message?: string
   next?: number
+}
+
+export interface SessionErrorMessage {
+  type: "sessionError"
+  sessionID?: string
+  error?: { name: string; data?: Record<string, unknown> }
 }
 
 export interface PermissionRequestMessage {
@@ -615,6 +630,8 @@ export interface ProvidersLoadedMessage {
   connected: string[]
   defaults: Record<string, string>
   defaultSelection: ModelSelection
+  authMethods: Record<string, ProviderAuthMethod[]>
+  authStates: Record<string, ProviderAuthState>
 }
 
 export interface AgentsLoadedMessage {
@@ -808,6 +825,11 @@ export interface AgentManagerMultiVersionProgressMessage {
 export interface VariantsLoadedMessage {
   type: "variantsLoaded"
   variants: Record<string, string>
+}
+
+export interface RecentsLoadedMessage {
+  type: "recentsLoaded"
+  recents: ModelSelection[]
 }
 
 export interface BranchInfo {
@@ -1138,6 +1160,33 @@ export interface RemoveInstalledMarketplaceItemMessage {
   mpInstallOptions: InstallMarketplaceItemOptions
 }
 
+export interface ProviderOAuthReadyMessage {
+  type: "providerOAuthReady"
+  requestId: string
+  providerID: string
+  authorization: ProviderAuthAuthorization
+}
+
+export interface ProviderConnectedMessage {
+  type: "providerConnected"
+  requestId: string
+  providerID: string
+}
+
+export interface ProviderDisconnectedMessage {
+  type: "providerDisconnected"
+  requestId: string
+  providerID: string
+}
+
+export interface ProviderActionErrorMessage {
+  type: "providerActionError"
+  requestId: string
+  providerID: string
+  action: "authorize" | "connect" | "disconnect"
+  message: string
+}
+
 export type ExtensionMessage =
   | ReadyMessage
   | ConnectionStateMessage
@@ -1145,6 +1194,7 @@ export type ExtensionMessage =
   | SendMessageFailedMessage
   | PartUpdatedMessage
   | SessionStatusMessage
+  | SessionErrorMessage
   | PermissionRequestMessage
   | PermissionResolvedMessage
   | PermissionErrorMessage
@@ -1222,6 +1272,11 @@ export type ExtensionMessage =
   | MarketplaceDataMessage
   | MarketplaceInstallResultMessage
   | MarketplaceRemoveResultMessage
+  | ProviderOAuthReadyMessage
+  | ProviderConnectedMessage
+  | ProviderDisconnectedMessage
+  | ProviderActionErrorMessage
+  | RecentsLoadedMessage
 
 // ============================================
 // Messages FROM webview TO extension
@@ -1775,6 +1830,51 @@ export interface SetDefaultBaseBranchRequest {
   branch?: string
 }
 
+export interface ConnectProviderMessage {
+  type: "connectProvider"
+  requestId: string
+  providerID: string
+  apiKey: string
+}
+
+export interface AuthorizeProviderOAuthMessage {
+  type: "authorizeProviderOAuth"
+  requestId: string
+  providerID: string
+  method: number
+}
+
+export interface CompleteProviderOAuthMessage {
+  type: "completeProviderOAuth"
+  requestId: string
+  providerID: string
+  method: number
+  code?: string
+}
+
+export interface DisconnectProviderMessage {
+  type: "disconnectProvider"
+  requestId: string
+  providerID: string
+}
+
+export interface SaveCustomProviderMessage {
+  type: "saveCustomProvider"
+  requestId: string
+  providerID: string
+  config: ProviderConfig
+  apiKey?: string
+}
+
+export interface PersistRecentsRequest {
+  type: "persistRecents"
+  recents: ModelSelection[]
+}
+
+export interface RequestRecentsMessage {
+  type: "requestRecents"
+}
+
 export type WebviewMessage =
   | SendMessageRequest
   | AbortRequest
@@ -1878,6 +1978,13 @@ export type WebviewMessage =
   | FilterMarketplaceItemsMessage
   | InstallMarketplaceItemMessage
   | RemoveInstalledMarketplaceItemMessage
+  | ConnectProviderMessage
+  | AuthorizeProviderOAuthMessage
+  | CompleteProviderOAuthMessage
+  | DisconnectProviderMessage
+  | SaveCustomProviderMessage
+  | PersistRecentsRequest
+  | RequestRecentsMessage
 
 // ============================================
 // VS Code API type
