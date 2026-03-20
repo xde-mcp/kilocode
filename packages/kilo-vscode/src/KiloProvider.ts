@@ -62,7 +62,7 @@ import {
   handlePermissionResponse,
   fetchAndSendPendingPermissions,
   type PermissionContext,
-} from "./kilo-provider/handlers/permission"
+} from "./kilo-provider/handlers/permission-handler"
 import { handleQuestionReply, handleQuestionReject } from "./kilo-provider/handlers/question"
 
 import {
