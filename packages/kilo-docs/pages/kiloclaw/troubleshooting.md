@@ -71,7 +71,7 @@ You can change the model in two ways:
 
 ### Can I access the filesystem?
 
-You can access instance files directly from the [KiloClaw Dashboard](https://app.kilo.ai/claw). This is useful for examining or restoring config files — see [Accessing and Restoring Config Files](#accessing-and-restoring-config-files) above. You can also interact with files through your OpenClaw agent using its built-in file tools.
+You can access instance files in `/root/.openclaw/` directly from the [KiloClaw Dashboard](https://app.kilo.ai/claw). This is useful for examining or restoring config files — see [Accessing and Restoring Config Files](#accessing-and-restoring-config-files) above. You can also interact with files through your OpenClaw agent using its built-in file tools.
 
 ### Can I access my KiloClaw via SSH?
 
