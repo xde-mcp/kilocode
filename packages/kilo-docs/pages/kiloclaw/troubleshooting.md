@@ -33,6 +33,10 @@ No. Redeploy does **not** delete your files, git repos, or cron jobs. It stops t
 3. Check for pending [pairing requests](/docs/kiloclaw/chat-platforms#pairing-requests) — the user may need to be approved
 4. Try running **OpenClaw Doctor**
 
+### Accessing and Restoring Config Files
+
+You can directly access the files on your KiloClaw on the [KiloClaw Dashboard](https://app.kilo.ai/claw). This can be a useful way to examine config files (especially `openclaw.json`) if you run into an issue. There may also be automated backups under `openclaw.bak` that you can restore.
+
 ### The gateway shows "Crashed"
 
 The OpenClaw process is automatically restarted when it crashes. Check the Gateway Process tab on your dashboard for the exit code and restart count. If it keeps crashing:
@@ -67,7 +71,7 @@ You can change the model in two ways:
 
 ### Can I access the filesystem?
 
-Direct filesystem access is not available at this time. You can interact with files through your OpenClaw agent using its built-in file tools.
+You can access instance files directly from the [KiloClaw Dashboard](https://app.kilo.ai/claw). This is useful for examining or restoring config files — see [Accessing and Restoring Config Files](#accessing-and-restoring-config-files) above. You can also interact with files through your OpenClaw agent using its built-in file tools.
 
 ### Can I access my KiloClaw via SSH?
 
