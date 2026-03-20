@@ -117,6 +117,7 @@ export const dict = {
   "dialog.model.empty": "Aucun résultat de modèle",
   "dialog.model.manage": "Gérer les modèles",
   "dialog.model.manage.description": "Personnalisez les modèles qui apparaissent dans le sélecteur.",
+  "dialog.model.select": "Sélectionner",
   "dialog.model.expand": "Développer",
   "dialog.model.collapse": "Réduire",
 

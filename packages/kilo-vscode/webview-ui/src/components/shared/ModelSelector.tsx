@@ -447,7 +447,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                                 pick(model)
                               }}
                             >
-                              Select
+                              {language.t("dialog.model.select")}
                             </button>
                           </Show>
                         </div>

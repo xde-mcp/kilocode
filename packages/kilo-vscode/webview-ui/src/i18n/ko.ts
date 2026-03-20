@@ -120,6 +120,7 @@ export const dict = {
   "dialog.model.empty": "모델 결과 없음",
   "dialog.model.manage": "모델 관리",
   "dialog.model.manage.description": "모델 선택기에 표시할 모델 사용자 지정",
+  "dialog.model.select": "선택",
   "dialog.model.expand": "펼치기",
   "dialog.model.collapse": "접기",
 

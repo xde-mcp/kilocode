@@ -116,6 +116,7 @@ export const dict = {
   "dialog.model.empty": "ไม่พบผลลัพธ์โมเดล",
   "dialog.model.manage": "จัดการโมเดล",
   "dialog.model.manage.description": "ปรับแต่งโมเดลที่จะปรากฏในตัวเลือกโมเดล",
+  "dialog.model.select": "เลือก",
   "dialog.model.expand": "ขยาย",
   "dialog.model.collapse": "ยุบ",
 

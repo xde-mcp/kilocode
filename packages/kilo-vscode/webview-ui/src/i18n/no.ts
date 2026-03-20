@@ -119,6 +119,7 @@ export const dict = {
   "dialog.model.empty": "Ingen modellresultater",
   "dialog.model.manage": "Administrer modeller",
   "dialog.model.manage.description": "Tilpass hvilke modeller som vises i modellvelgeren.",
+  "dialog.model.select": "Velg",
   "dialog.model.expand": "Utvid",
   "dialog.model.collapse": "Skjul",
 

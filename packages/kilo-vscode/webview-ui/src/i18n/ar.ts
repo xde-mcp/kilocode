@@ -116,6 +116,7 @@ export const dict = {
   "dialog.model.empty": "لا توجد نتائج للنماذج",
   "dialog.model.manage": "إدارة النماذج",
   "dialog.model.manage.description": "تخصيص النماذج التي تظهر في محدد النماذج.",
+  "dialog.model.select": "تحديد",
   "dialog.model.expand": "توسيع",
   "dialog.model.collapse": "طي",
 

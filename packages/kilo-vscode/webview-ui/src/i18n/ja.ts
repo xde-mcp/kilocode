@@ -116,6 +116,7 @@ export const dict = {
   "dialog.model.empty": "モデルが見つかりません",
   "dialog.model.manage": "モデルを管理",
   "dialog.model.manage.description": "モデルセレクターに表示するモデルをカスタマイズします。",
+  "dialog.model.select": "選択",
   "dialog.model.expand": "展開",
   "dialog.model.collapse": "折りたたむ",
 
