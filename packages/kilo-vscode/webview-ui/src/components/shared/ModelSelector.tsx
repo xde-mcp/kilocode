@@ -69,6 +69,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   let listRef: HTMLDivElement | undefined
   let bodyRef: HTMLDivElement | undefined
   let previewTimer: ReturnType<typeof setTimeout> | undefined
+  let pointer = true
 
   function onSplitterMouseDown(e: MouseEvent) {
     e.preventDefault()
@@ -172,6 +173,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
   // createSelector gives fine-grained reactivity: only the two items that
   // change (old selected → new selected) re-render, not the entire list.
   const isSelected = createSelector(selectedIndex)
+  const isPreActive = createSelector(preActiveIdx)
 
   // Reset selection when filter changes
   createEffect(() => {
@@ -231,6 +233,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
 
     if (e.key === "ArrowDown") {
       e.preventDefault()
+      pointer = false
       const next = Math.min(selectedIndex() + 1, totalLen - 1)
       setSelectedIndex(next)
       setPreActiveIdx(next)
@@ -239,6 +242,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
       scrollSelectedIntoView()
     } else if (e.key === "ArrowUp") {
       e.preventDefault()
+      pointer = false
       const next = Math.max(selectedIndex() - 1, 0)
       setSelectedIndex(next)
       setPreActiveIdx(next)
@@ -366,7 +370,12 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                 role="option"
                 aria-selected={!props.value?.providerID}
                 onClick={() => pickClear()}
-                onMouseEnter={() => setSelectedIndex(0)}
+                onMouseMove={() => {
+                  pointer = true
+                }}
+                onMouseEnter={() => {
+                  if (pointer) setSelectedIndex(0)
+                }}
               >
                 <span class="model-selector-item-name" style={{ "font-style": "italic", opacity: 0.7 }}>
                   {props.clearLabel ?? language.t("dialog.model.notSet")}
@@ -382,7 +391,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                     {(model) => {
                       const idx = () => flatIndexMap().get(model) ?? 0
                       const hovered = () => isSelected(idx())
-                      const preActive = () => preActiveIdx() === idx()
+                      const preActive = () => isPreActive(idx())
                       const showSelectBtn = () => expanded() && preActive() && !isActive(model)
                       return (
                         <div
@@ -399,7 +408,12 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
                           onDblClick={() => {
                             if (expanded()) pick(model)
                           }}
-                          onMouseEnter={() => setSelectedIndex(idx())}
+                          onMouseMove={() => {
+                            pointer = true
+                          }}
+                          onMouseEnter={() => {
+                            if (pointer) setSelectedIndex(idx())
+                          }}
                         >
                           <div class="model-selector-item-left">
                             <span class="model-selector-item-name">
