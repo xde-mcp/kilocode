@@ -295,7 +295,7 @@ export const ModelSelectorBase: Component<ModelSelectorBaseProps> = (props) => {
     <PopupSelector
       expanded={expanded()}
       preferredWidth={350}
-      preferredExpandedWidth={350}
+      preferredExpandedWidth={450}
       preferredHeight={300}
       preferredExpandedHeight={800}
       minHeight={200}
