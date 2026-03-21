@@ -322,6 +322,7 @@ export const SessionProvider: ParentComponent = (props) => {
 
   // Global model selection per agent/mode
   // Precedence: per-session override > user override > per-mode config > global config model > VS Code default > kilo-auto/free
+  // Each candidate is validated against the provider catalog; invalid models fall through.
   const selected = createMemo<ModelSelection | null>(() => {
     const sid = currentSessionID()
     if (sid) {
@@ -562,6 +563,25 @@ export const SessionProvider: ParentComponent = (props) => {
         case "messageRemoved":
           handleMessageRemoved(message.sessionID, message.messageID)
           break
+
+        case "sessionError": {
+          if (message.error?.name === "MessageAbortedError") break
+          const sid = message.sessionID ?? currentSessionID()
+          if (!sid) break
+          // Find the last user message in this session to use as parentID
+          const msgs = store.messages[sid] ?? []
+          const parent = [...msgs].reverse().find((m) => m.role === "user")
+          const errorMsg: Message = {
+            id: Identifier.ascending("message"),
+            sessionID: sid,
+            role: "assistant",
+            createdAt: new Date().toISOString(),
+            parentID: parent?.id,
+            error: message.error,
+          }
+          handleMessageCreated(errorMsg)
+          break
+        }
 
         case "error":
           // Only clear loading if the error is for the current session

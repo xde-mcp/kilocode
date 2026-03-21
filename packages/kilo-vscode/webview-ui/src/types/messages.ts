@@ -281,7 +281,11 @@ export interface ProviderModel {
   // Actual shape returned by the server (Provider.Model)
   limit?: { context: number; input?: number; output: number }
   variants?: Record<string, Record<string, unknown>>
-  capabilities?: { reasoning: boolean }
+  capabilities?: {
+    reasoning: boolean
+    input?: { text: boolean; image: boolean; audio: boolean; video: boolean; pdf: boolean }
+  }
+  options?: { description?: string }
   recommendedIndex?: number
   isFree?: boolean
   cost?: { input: number; output: number }
@@ -454,6 +458,12 @@ export interface SessionStatusMessage {
   attempt?: number
   message?: string
   next?: number
+}
+
+export interface SessionErrorMessage {
+  type: "sessionError"
+  sessionID?: string
+  error?: { name: string; data?: Record<string, unknown> }
 }
 
 export interface PermissionRequestMessage {
@@ -1184,6 +1194,7 @@ export type ExtensionMessage =
   | SendMessageFailedMessage
   | PartUpdatedMessage
   | SessionStatusMessage
+  | SessionErrorMessage
   | PermissionRequestMessage
   | PermissionResolvedMessage
   | PermissionErrorMessage

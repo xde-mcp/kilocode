@@ -116,6 +116,9 @@ export const dict = {
   "dialog.model.empty": "Nema rezultata za modele",
   "dialog.model.manage": "Upravljaj modelima",
   "dialog.model.manage.description": "Prilagodi koji se modeli prikazuju u izborniku modela.",
+  "dialog.model.select": "Odaberi",
+  "dialog.model.expand": "Proširi",
+  "dialog.model.collapse": "Skupi",
 
   "dialog.model.unpaid.freeModels.title": "Besplatni modeli koje obezbjeđuje Kilo",
   "dialog.model.unpaid.addMore.title": "Dodaj još modela od popularnih provajdera",
