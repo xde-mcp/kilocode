@@ -30,7 +30,8 @@ export class ChatTextAreaAutocomplete {
     this.telemetry = telemetry ?? new AutocompleteTelemetry("chat-textarea")
     this.watcher = vscode.workspace.createFileSystemWatcher("**/{.kilocodeignore,.gitignore}")
     const invalidate = () => {
-      this.ignore?.dispose()
+      // Don't dispose — an in-flight request may still hold a reference.
+      // The old instance will be garbage collected once no longer referenced.
       this.ignore = null
     }
     this.watcher.onDidChange(invalidate)
