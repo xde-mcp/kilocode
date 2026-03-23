@@ -13,19 +13,29 @@ import { finalizeChatSuggestion, buildChatPrefix } from "./chat-autocomplete-uti
 /**
  * Chat textarea autocomplete with cached per-request objects.
  *
- * Caches FileIgnoreController (refreshed only when workspace changes) and
- * shares a single AutocompleteTelemetry instance across requests so that
- * request and acceptance events correlate.
+ * Caches FileIgnoreController (refreshed when workspace changes or when
+ * .kilocodeignore / .gitignore files are modified) and shares a single
+ * AutocompleteTelemetry instance across requests so that request and
+ * acceptance events correlate.
  */
 export class ChatTextAreaAutocomplete {
   private model: AutocompleteModel
   readonly telemetry: AutocompleteTelemetry
   private ignore: FileIgnoreController | null = null
   private dir = ""
+  private watcher: vscode.FileSystemWatcher | undefined
 
   constructor(connectionService: KiloConnectionService, telemetry?: AutocompleteTelemetry) {
     this.model = new AutocompleteModel(connectionService)
     this.telemetry = telemetry ?? new AutocompleteTelemetry("chat-textarea")
+    this.watcher = vscode.workspace.createFileSystemWatcher("**/{.kilocodeignore,.gitignore}")
+    const invalidate = () => {
+      this.ignore?.dispose()
+      this.ignore = null
+    }
+    this.watcher.onDidChange(invalidate)
+    this.watcher.onDidCreate(invalidate)
+    this.watcher.onDidDelete(invalidate)
   }
 
   /**
@@ -178,6 +188,7 @@ TASK: Complete the user's message naturally.
   }
 
   dispose() {
+    this.watcher?.dispose()
     this.ignore?.dispose()
     this.ignore = null
   }
