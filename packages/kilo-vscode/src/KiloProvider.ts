@@ -2941,6 +2941,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.syncedChildSessions.clear()
     this.sessionDirectories.clear()
     this.ignoreController?.dispose()
+    this.chatAutocomplete?.dispose()
     this.marketplace?.dispose()
   }
 }
