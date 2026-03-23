@@ -328,6 +328,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     if (textareaRef) {
       textareaRef.value = val
       adjustHeight()
+      syncHighlightScroll()
     }
   }
 
