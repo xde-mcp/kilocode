@@ -15,8 +15,7 @@ import type {
 import { type KiloConnectionService, type KilocodeNotification, ServerStartupError } from "./services/cli-backend"
 import type { EditorContext } from "./services/cli-backend/types"
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
-import { handleChatCompletionRequest } from "./services/autocomplete/chat-autocomplete/handleChatCompletionRequest"
-import { handleChatCompletionAccepted } from "./services/autocomplete/chat-autocomplete/handleChatCompletionAccepted"
+import { ChatTextAreaAutocomplete } from "./services/autocomplete/chat-autocomplete/ChatTextAreaAutocomplete"
 import { buildWebviewHtml } from "./utils"
 import { TelemetryProxy, type TelemetryPropertiesProvider } from "./services/telemetry"
 import {
@@ -139,6 +138,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
   private ignoreController: FileIgnoreController | null = null
   private ignoreControllerDir: string | null = null
   private marketplace: MarketplaceService | null = null
+  private chatAutocomplete: ChatTextAreaAutocomplete | null = null
   private projectDirectory: string | null | undefined
   private slimEditMetadata = true
 
@@ -622,13 +622,19 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           }
           break
         }
-        case "requestChatCompletion":
-          void handleChatCompletionRequest(
+        case "requestChatCompletion": {
+          if (!this.chatAutocomplete) {
+            this.chatAutocomplete = new ChatTextAreaAutocomplete(this.connectionService)
+          }
+          void this.chatAutocomplete.handle(
             { type: "requestChatCompletion", text: message.text, requestId: message.requestId },
-            { postMessage: (msg) => this.postMessage(msg) },
-            this.connectionService,
+            {
+              postMessage: (msg: { type: "chatCompletionResult"; text: string; requestId: string }) =>
+                this.postMessage(msg),
+            },
           )
           break
+        }
         case "requestFileSearch": {
           const sdkClient = this.client
           if (sdkClient) {
@@ -657,7 +663,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         }
         case "chatCompletionAccepted":
-          handleChatCompletionAccepted({ type: "chatCompletionAccepted", suggestionLength: message.suggestionLength })
+          this.chatAutocomplete?.telemetry.captureAcceptSuggestion(message.suggestionLength)
           break
         case "deleteSession":
           await this.handleDeleteSession(message.sessionID)
@@ -2568,6 +2574,7 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.sessionDirectories.clear()
     this.sessionStatusMap.clear()
     this.ignoreController?.dispose()
+    this.chatAutocomplete?.dispose()
     this.marketplace?.dispose()
   }
 }
