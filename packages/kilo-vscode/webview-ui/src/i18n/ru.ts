@@ -1207,4 +1207,8 @@ export const dict = {
   "settings.saveBar.warning.many": "Несколько сеансов выполняются и будут прерваны",
   "settings.saveBar.saveAnyway": "Сохранить в любом случае",
   "settings.saveBar.cancel": "Отмена",
+  "notifications.action.previous": "Previous",
+  "notifications.action.next": "Next",
+  "notifications.action.close": "Close",
+  "notifications.action.tryModel": "Try model",
 }

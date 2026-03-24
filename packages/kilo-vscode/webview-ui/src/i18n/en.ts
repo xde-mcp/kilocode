@@ -1216,4 +1216,9 @@ export const dict = {
   "settings.saveBar.warning.many": "Several sessions are running and will be interrupted",
   "settings.saveBar.saveAnyway": "Save anyway",
   "settings.saveBar.cancel": "Cancel",
+
+  "notifications.action.previous": "Previous",
+  "notifications.action.next": "Next",
+  "notifications.action.close": "Close",
+  "notifications.action.tryModel": "Try model",
 }

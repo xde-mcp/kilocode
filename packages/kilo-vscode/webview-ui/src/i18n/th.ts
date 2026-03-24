@@ -1187,4 +1187,8 @@ export const dict = {
   "settings.saveBar.warning.many": "มีหลายเซสชันกำลังทำงานและจะถูกขัดจังหวะ",
   "settings.saveBar.saveAnyway": "บันทึกต่อไป",
   "settings.saveBar.cancel": "ยกเลิก",
+  "notifications.action.previous": "Previous",
+  "notifications.action.next": "Next",
+  "notifications.action.close": "Close",
+  "notifications.action.tryModel": "Try model",
 }
